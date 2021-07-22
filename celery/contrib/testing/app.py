@@ -9,14 +9,14 @@ from celery import Celery, _state
 
 #: Contains the default configuration values for the test app.
 DEFAULT_TEST_CONFIG = {
-    'worker_hijack_root_logger': False,
-    'worker_log_color': False,
-    'accept_content': {'json'},
-    'enable_utc': True,
-    'timezone': 'UTC',
-    'broker_url': 'memory://',
-    'result_backend': 'cache+memory://',
-    'broker_heartbeat': 0,
+    "worker_hijack_root_logger": False,
+    "worker_log_color": False,
+    "accept_content": {"json"},
+    "enable_utc": True,
+    "timezone": "UTC",
+    "broker_url": "memory://",
+    "result_backend": "cache+memory://",
+    "broker_heartbeat": 0,
 }
 
 
@@ -30,10 +30,10 @@ class Trap:
     def __getattr__(self, name):
         # Workaround to allow unittest.mock to patch this object
         # in Python 3.8 and above.
-        if name == '_is_coroutine' or name == '__func__':
+        if name == "_is_coroutine" or name == "__func__":
             return None
         print(name)
-        raise RuntimeError('Test depends on current_app')
+        raise RuntimeError("Test depends on current_app")
 
 
 class UnitLogging(symbol_by_name(Celery.log_cls)):
@@ -44,23 +44,33 @@ class UnitLogging(symbol_by_name(Celery.log_cls)):
         self.already_setup = True
 
 
-def TestApp(name=None, config=None, enable_logging=False, set_as_current=False,
-            log=UnitLogging, backend=None, broker=None, **kwargs):
+def TestApp(
+    name=None,
+    config=None,
+    enable_logging=False,
+    set_as_current=False,
+    log=UnitLogging,
+    backend=None,
+    broker=None,
+    **kwargs
+):
     """App used for testing."""
     from . import tasks  # noqa
+
     config = dict(deepcopy(DEFAULT_TEST_CONFIG), **config or {})
     if broker is not None:
-        config.pop('broker_url', None)
+        config.pop("broker_url", None)
     if backend is not None:
-        config.pop('result_backend', None)
+        config.pop("result_backend", None)
     log = None if enable_logging else log
     test_app = Celery(
-        name or 'celery.tests',
+        name or "celery.tests",
         set_as_current=set_as_current,
         log=log,
         broker=broker,
         backend=backend,
-        **kwargs)
+        **kwargs
+    )
     test_app.add_defaults(config)
     return test_app
 
@@ -78,6 +88,7 @@ def set_trap(app):
 
     class NonTLS:
         current_app = trap
+
     _state._tls = NonTLS()
 
     yield

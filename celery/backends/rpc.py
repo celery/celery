@@ -15,7 +15,7 @@ from celery._state import current_task, task_join_will_block
 from . import base
 from .asynchronous import AsyncBackendMixin, BaseResultConsumer
 
-__all__ = ('BacklogLimitExceeded', 'RPCBackend')
+__all__ = ("BacklogLimitExceeded", "RPCBackend")
 
 E_NO_CHORD_SUPPORT = """
 The "rpc" result backend does not support chords!
@@ -49,9 +49,12 @@ class ResultConsumer(BaseResultConsumer):
         self._connection = self.app.connection()
         initial_queue = self._create_binding(initial_task_id)
         self._consumer = self.Consumer(
-            self._connection.default_channel, [initial_queue],
-            callbacks=[self.on_state_change], no_ack=no_ack,
-            accept=self.accept)
+            self._connection.default_channel,
+            [initial_queue],
+            callbacks=[self.on_state_change],
+            no_ack=no_ack,
+            accept=self.accept,
+        )
         self._consumer.consume()
 
     def drain_events(self, timeout=None):
@@ -100,10 +103,10 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
     supports_native_join = True
 
     retry_policy = {
-        'max_retries': 20,
-        'interval_start': 0,
-        'interval_step': 1,
-        'interval_max': 1,
+        "max_retries": 20,
+        "interval_start": 0,
+        "interval_step": 1,
+        "interval_max": 1,
     }
 
     class Consumer(kombu.Consumer):
@@ -116,8 +119,17 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
 
         can_cache_declaration = False
 
-    def __init__(self, app, connection=None, exchange=None, exchange_type=None,
-                 persistent=None, serializer=None, auto_delete=True, **kwargs):
+    def __init__(
+        self,
+        app,
+        connection=None,
+        exchange=None,
+        exchange_type=None,
+        persistent=None,
+        serializer=None,
+        auto_delete=True,
+        **kwargs,
+    ):
         super().__init__(app, **kwargs)
         conf = self.app.conf
         self._connection = connection
@@ -127,13 +139,18 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
         exchange = exchange or conf.result_exchange
         exchange_type = exchange_type or conf.result_exchange_type
         self.exchange = self._create_exchange(
-            exchange, exchange_type, self.delivery_mode,
+            exchange,
+            exchange_type,
+            self.delivery_mode,
         )
         self.serializer = serializer or conf.result_serializer
         self.auto_delete = auto_delete
         self.result_consumer = self.ResultConsumer(
-            self, self.app, self.accept,
-            self._pending_results, self._pending_messages,
+            self,
+            self.app,
+            self.accept,
+            self._pending_results,
+            self._pending_messages,
         )
         if register_after_fork is not None:
             register_after_fork(self, _on_after_fork_cleanup_backend)
@@ -143,7 +160,7 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
         self._pending_results.clear()
         self.result_consumer._after_fork()
 
-    def _create_exchange(self, name, type='direct', delivery_mode=2):
+    def _create_exchange(self, name, type="direct", delivery_mode=2):
         # uses direct to queue routing (anon exchange).
         return self.Exchange(None)
 
@@ -174,8 +191,7 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
         try:
             request = request or current_task.request
         except AttributeError:
-            raise RuntimeError(
-                f'RPC backend missing task request for {task_id!r}')
+            raise RuntimeError(f"RPC backend missing task request for {task_id!r}")
         return request.reply_to, request.correlation_id or task_id
 
     def on_reply_declare(self, task_id):
@@ -190,10 +206,11 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
         pass
 
     def as_uri(self, include_password=True):
-        return 'rpc://'
+        return "rpc://"
 
-    def store_result(self, task_id, result, state,
-                     traceback=None, request=None, **kwargs):
+    def store_result(
+        self, task_id, result, state, traceback=None, request=None, **kwargs
+    ):
         """Send task return value and state."""
         routing_key, correlation_id = self.destination_for(task_id, request)
         if not routing_key:
@@ -205,7 +222,8 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
                 routing_key=routing_key,
                 correlation_id=correlation_id,
                 serializer=self.serializer,
-                retry=True, retry_policy=self.retry_policy,
+                retry=True,
+                retry_policy=self.retry_policy,
                 declare=self.on_reply_declare(task_id),
                 delivery_mode=self.delivery_mode,
             )
@@ -213,11 +231,11 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
 
     def _to_result(self, task_id, state, result, traceback, request):
         return {
-            'task_id': task_id,
-            'status': state,
-            'result': self.encode_result(result, state),
-            'traceback': traceback,
-            'children': self.current_task_children(request),
+            "task_id": task_id,
+            "status": state,
+            "result": self.encode_result(result, state),
+            "traceback": traceback,
+            "children": self.current_task_children(request),
         }
 
     def on_out_of_band_result(self, task_id, message):
@@ -259,16 +277,15 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
                 return self._cache[task_id]
             except KeyError:
                 # result probably pending.
-                return {'status': states.PENDING, 'result': None}
+                return {"status": states.PENDING, "result": None}
+
     poll = get_task_meta  # XXX compat
 
     def _set_cache_by_message(self, task_id, message):
-        payload = self._cache[task_id] = self.meta_from_decoded(
-            message.payload)
+        payload = self._cache[task_id] = self.meta_from_decoded(message.payload)
         return payload
 
-    def _slurp_from_queue(self, task_id, accept,
-                          limit=1000, no_ack=False):
+    def _slurp_from_queue(self, task_id, accept, limit=1000, no_ack=False):
         with self.app.pool.acquire_channel(block=True) as (_, channel):
             binding = self._create_binding(task_id)(channel)
             binding.declare()
@@ -285,52 +302,56 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
         try:
             # try property first so we don't have to deserialize
             # the payload.
-            return message.properties['correlation_id']
+            return message.properties["correlation_id"]
         except (AttributeError, KeyError):
             # message sent by old Celery version, need to deserialize.
-            return message.payload['task_id']
+            return message.payload["task_id"]
 
     def revive(self, channel):
         pass
 
     def reload_task_result(self, task_id):
         raise NotImplementedError(
-            'reload_task_result is not supported by this backend.')
+            "reload_task_result is not supported by this backend."
+        )
 
     def reload_group_result(self, task_id):
         """Reload group result, even if it has been previously fetched."""
         raise NotImplementedError(
-            'reload_group_result is not supported by this backend.')
+            "reload_group_result is not supported by this backend."
+        )
 
     def save_group(self, group_id, result):
-        raise NotImplementedError(
-            'save_group is not supported by this backend.')
+        raise NotImplementedError("save_group is not supported by this backend.")
 
     def restore_group(self, group_id, cache=True):
-        raise NotImplementedError(
-            'restore_group is not supported by this backend.')
+        raise NotImplementedError("restore_group is not supported by this backend.")
 
     def delete_group(self, group_id):
-        raise NotImplementedError(
-            'delete_group is not supported by this backend.')
+        raise NotImplementedError("delete_group is not supported by this backend.")
 
     def __reduce__(self, args=(), kwargs=None):
         kwargs = {} if not kwargs else kwargs
-        return super().__reduce__(args, dict(
-            kwargs,
-            connection=self._connection,
-            exchange=self.exchange.name,
-            exchange_type=self.exchange.type,
-            persistent=self.persistent,
-            serializer=self.serializer,
-            auto_delete=self.auto_delete,
-            expires=self.expires,
-        ))
+        return super().__reduce__(
+            args,
+            dict(
+                kwargs,
+                connection=self._connection,
+                exchange=self.exchange.name,
+                exchange_type=self.exchange.type,
+                persistent=self.persistent,
+                serializer=self.serializer,
+                auto_delete=self.auto_delete,
+                expires=self.expires,
+            ),
+        )
 
     @property
     def binding(self):
         return self.Queue(
-            self.oid, self.exchange, self.oid,
+            self.oid,
+            self.exchange,
+            self.oid,
             durable=False,
             auto_delete=True,
             expires=self.expires,

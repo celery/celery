@@ -18,7 +18,7 @@ from celery.utils.time import maybe_make_aware
 
 from . import routes as _routes
 
-__all__ = ('AMQP', 'Queues', 'task_message')
+__all__ = ("AMQP", "Queues", "task_message")
 
 #: earliest date supported by time.mktime.
 INT_MIN = -2147483648
@@ -29,13 +29,13 @@ QUEUE_FORMAT = """
 key={0.routing_key}
 """
 
-task_message = namedtuple('task_message',
-                          ('headers', 'properties', 'body', 'sent_event'))
+task_message = namedtuple(
+    "task_message", ("headers", "properties", "body", "sent_event")
+)
 
 
-def utf8dict(d, encoding='utf-8'):
-    return {k.decode(encoding) if isinstance(k, bytes) else k: v
-            for k, v in d.items()}
+def utf8dict(d, encoding="utf-8"):
+    return {k.decode(encoding) if isinstance(k, bytes) else k: v for k, v in d.items()}
 
 
 class Queues(dict):
@@ -53,9 +53,15 @@ class Queues(dict):
     #: The rest of the queues are then used for routing only.
     _consume_from = None
 
-    def __init__(self, queues=None, default_exchange=None,
-                 create_missing=True, autoexchange=None,
-                 max_priority=None, default_routing_key=None):
+    def __init__(
+        self,
+        queues=None,
+        default_exchange=None,
+        create_missing=True,
+        autoexchange=None,
+        max_priority=None,
+        default_routing_key=None,
+    ):
         dict.__init__(self)
         self.aliases = WeakValueDictionary()
         self.default_exchange = default_exchange
@@ -110,13 +116,13 @@ class Queues(dict):
 
     def add_compat(self, name, **options):
         # docs used to use binding_key as routing key
-        options.setdefault('routing_key', options.get('binding_key'))
-        if options['routing_key'] is None:
-            options['routing_key'] = name
+        options.setdefault("routing_key", options.get("binding_key"))
+        if options["routing_key"] is None:
+            options["routing_key"] = name
         return self._add(Queue.from_dict(name, **options))
 
     def _add(self, queue):
-        if queue.exchange is None or queue.exchange.name == '':
+        if queue.exchange is None or queue.exchange.name == "":
             queue.exchange = self.default_exchange
         if not queue.routing_key:
             queue.routing_key = self.default_routing_key
@@ -128,19 +134,18 @@ class Queues(dict):
         return queue
 
     def _set_max_priority(self, args):
-        if 'x-max-priority' not in args and self.max_priority is not None:
-            return args.update({'x-max-priority': self.max_priority})
+        if "x-max-priority" not in args and self.max_priority is not None:
+            return args.update({"x-max-priority": self.max_priority})
 
     def format(self, indent=0, indent_first=True):
         """Format routing table into string for log dumps."""
         active = self.consume_from
         if not active:
-            return ''
-        info = [QUEUE_FORMAT.strip().format(q)
-                for _, q in sorted(active.items())]
+            return ""
+        info = [QUEUE_FORMAT.strip().format(q) for _, q in sorted(active.items())]
         if indent_first:
-            return textindent('\n'.join(info), indent)
-        return info[0] + '\n' + textindent('\n'.join(info[1:]), indent)
+            return textindent("\n".join(info), indent)
+        return info[0] + "\n" + textindent("\n".join(info[1:]), indent)
 
     def select_add(self, queue, **kwargs):
         """Add new task queue that'll be consumed from.
@@ -160,9 +165,7 @@ class Queues(dict):
             include (Sequence[str], str): Names of queues to consume from.
         """
         if include:
-            self._consume_from = {
-                name: self[name] for name in maybe_list(include)
-            }
+            self._consume_from = {name: self[name] for name in maybe_list(include)}
 
     def deselect(self, exclude):
         """Deselect queues so that they won't be consumed from.
@@ -238,8 +241,7 @@ class AMQP:
     def send_task_message(self):
         return self._create_task_sender()
 
-    def Queues(self, queues, create_missing=None,
-               autoexchange=None, max_priority=None):
+    def Queues(self, queues, create_missing=None, autoexchange=None, max_priority=None):
         # Create new :class:`Queues` instance, using queue defaults
         # from the current configuration.
         conf = self.app.conf
@@ -249,21 +251,31 @@ class AMQP:
         if max_priority is None:
             max_priority = conf.task_queue_max_priority
         if not queues and conf.task_default_queue:
-            queues = (Queue(conf.task_default_queue,
-                            exchange=self.default_exchange,
-                            routing_key=default_routing_key),)
-        autoexchange = (self.autoexchange if autoexchange is None
-                        else autoexchange)
+            queues = (
+                Queue(
+                    conf.task_default_queue,
+                    exchange=self.default_exchange,
+                    routing_key=default_routing_key,
+                ),
+            )
+        autoexchange = self.autoexchange if autoexchange is None else autoexchange
         return self.queues_cls(
-            queues, self.default_exchange, create_missing,
-            autoexchange, max_priority, default_routing_key,
+            queues,
+            self.default_exchange,
+            create_missing,
+            autoexchange,
+            max_priority,
+            default_routing_key,
         )
 
     def Router(self, queues=None, create_missing=None):
         """Return the current task router."""
-        return _routes.Router(self.routes, queues or self.queues,
-                              self.app.either('task_create_missing_queues',
-                                              create_missing), app=self.app)
+        return _routes.Router(
+            self.routes,
+            queues or self.queues,
+            self.app.either("task_create_missing_queues", create_missing),
+            app=self.app,
+        )
 
     def flush_routes(self):
         self._rtable = _routes.prepare(self.app.conf.task_routes)
@@ -272,38 +284,62 @@ class AMQP:
         if accept is None:
             accept = self.app.conf.accept_content
         return self.Consumer(
-            channel, accept=accept,
+            channel,
+            accept=accept,
             queues=queues or list(self.queues.consume_from.values()),
-            **kw
+            **kw,
         )
 
-    def as_task_v2(self, task_id, name, args=None, kwargs=None,
-                   countdown=None, eta=None, group_id=None, group_index=None,
-                   expires=None, retries=0, chord=None,
-                   callbacks=None, errbacks=None, reply_to=None,
-                   time_limit=None, soft_time_limit=None,
-                   create_sent_event=False, root_id=None, parent_id=None,
-                   shadow=None, chain=None, now=None, timezone=None,
-                   origin=None, argsrepr=None, kwargsrepr=None):
+    def as_task_v2(
+        self,
+        task_id,
+        name,
+        args=None,
+        kwargs=None,
+        countdown=None,
+        eta=None,
+        group_id=None,
+        group_index=None,
+        expires=None,
+        retries=0,
+        chord=None,
+        callbacks=None,
+        errbacks=None,
+        reply_to=None,
+        time_limit=None,
+        soft_time_limit=None,
+        create_sent_event=False,
+        root_id=None,
+        parent_id=None,
+        shadow=None,
+        chain=None,
+        now=None,
+        timezone=None,
+        origin=None,
+        argsrepr=None,
+        kwargsrepr=None,
+    ):
         args = args or ()
         kwargs = kwargs or {}
         if not isinstance(args, (list, tuple)):
-            raise TypeError('task args must be a list or tuple')
+            raise TypeError("task args must be a list or tuple")
         if not isinstance(kwargs, Mapping):
-            raise TypeError('task keyword arguments must be a mapping')
+            raise TypeError("task keyword arguments must be a mapping")
         if countdown:  # convert countdown to ETA
-            self._verify_seconds(countdown, 'countdown')
+            self._verify_seconds(countdown, "countdown")
             now = now or self.app.now()
             timezone = timezone or self.app.timezone
             eta = maybe_make_aware(
-                now + timedelta(seconds=countdown), tz=timezone,
+                now + timedelta(seconds=countdown),
+                tz=timezone,
             )
         if isinstance(expires, numbers.Real):
-            self._verify_seconds(expires, 'expires')
+            self._verify_seconds(expires, "expires")
             now = now or self.app.now()
             timezone = timezone or self.app.timezone
             expires = maybe_make_aware(
-                now + timedelta(seconds=expires), tz=timezone,
+                now + timedelta(seconds=expires),
+                tz=timezone,
             )
         if not isinstance(eta, str):
             eta = eta and eta.isoformat()
@@ -321,68 +357,90 @@ class AMQP:
 
         return task_message(
             headers={
-                'lang': 'py',
-                'task': name,
-                'id': task_id,
-                'shadow': shadow,
-                'eta': eta,
-                'expires': expires,
-                'group': group_id,
-                'group_index': group_index,
-                'retries': retries,
-                'timelimit': [time_limit, soft_time_limit],
-                'root_id': root_id,
-                'parent_id': parent_id,
-                'argsrepr': argsrepr,
-                'kwargsrepr': kwargsrepr,
-                'origin': origin or anon_nodename()
+                "lang": "py",
+                "task": name,
+                "id": task_id,
+                "shadow": shadow,
+                "eta": eta,
+                "expires": expires,
+                "group": group_id,
+                "group_index": group_index,
+                "retries": retries,
+                "timelimit": [time_limit, soft_time_limit],
+                "root_id": root_id,
+                "parent_id": parent_id,
+                "argsrepr": argsrepr,
+                "kwargsrepr": kwargsrepr,
+                "origin": origin or anon_nodename(),
             },
             properties={
-                'correlation_id': task_id,
-                'reply_to': reply_to or '',
+                "correlation_id": task_id,
+                "reply_to": reply_to or "",
             },
             body=(
-                args, kwargs, {
-                    'callbacks': callbacks,
-                    'errbacks': errbacks,
-                    'chain': chain,
-                    'chord': chord,
+                args,
+                kwargs,
+                {
+                    "callbacks": callbacks,
+                    "errbacks": errbacks,
+                    "chain": chain,
+                    "chord": chord,
                 },
             ),
             sent_event={
-                'uuid': task_id,
-                'root_id': root_id,
-                'parent_id': parent_id,
-                'name': name,
-                'args': argsrepr,
-                'kwargs': kwargsrepr,
-                'retries': retries,
-                'eta': eta,
-                'expires': expires,
-            } if create_sent_event else None,
+                "uuid": task_id,
+                "root_id": root_id,
+                "parent_id": parent_id,
+                "name": name,
+                "args": argsrepr,
+                "kwargs": kwargsrepr,
+                "retries": retries,
+                "eta": eta,
+                "expires": expires,
+            }
+            if create_sent_event
+            else None,
         )
 
-    def as_task_v1(self, task_id, name, args=None, kwargs=None,
-                   countdown=None, eta=None, group_id=None, group_index=None,
-                   expires=None, retries=0,
-                   chord=None, callbacks=None, errbacks=None, reply_to=None,
-                   time_limit=None, soft_time_limit=None,
-                   create_sent_event=False, root_id=None, parent_id=None,
-                   shadow=None, now=None, timezone=None,
-                   **compat_kwargs):
+    def as_task_v1(
+        self,
+        task_id,
+        name,
+        args=None,
+        kwargs=None,
+        countdown=None,
+        eta=None,
+        group_id=None,
+        group_index=None,
+        expires=None,
+        retries=0,
+        chord=None,
+        callbacks=None,
+        errbacks=None,
+        reply_to=None,
+        time_limit=None,
+        soft_time_limit=None,
+        create_sent_event=False,
+        root_id=None,
+        parent_id=None,
+        shadow=None,
+        now=None,
+        timezone=None,
+        **compat_kwargs,
+    ):
         args = args or ()
         kwargs = kwargs or {}
         utc = self.utc
         if not isinstance(args, (list, tuple)):
-            raise TypeError('task args must be a list or tuple')
+            raise TypeError("task args must be a list or tuple")
         if not isinstance(kwargs, Mapping):
-            raise TypeError('task keyword arguments must be a mapping')
+            raise TypeError("task keyword arguments must be a mapping")
         if countdown:  # convert countdown to ETA
-            self._verify_seconds(countdown, 'countdown')
+            self._verify_seconds(countdown, "countdown")
             now = now or self.app.now()
             eta = now + timedelta(seconds=countdown)
         if isinstance(expires, numbers.Real):
-            self._verify_seconds(expires, 'expires')
+            self._verify_seconds(expires, "expires")
             now = now or self.app.now()
             expires = now + timedelta(seconds=expires)
         eta = eta and eta.isoformat()
@@ -391,40 +449,42 @@ class AMQP:
         return task_message(
             headers={},
             properties={
-                'correlation_id': task_id,
-                'reply_to': reply_to or '',
+                "correlation_id": task_id,
+                "reply_to": reply_to or "",
             },
             body={
-                'task': name,
-                'id': task_id,
-                'args': args,
-                'kwargs': kwargs,
-                'group': group_id,
-                'group_index': group_index,
-                'retries': retries,
-                'eta': eta,
-                'expires': expires,
-                'utc': utc,
-                'callbacks': callbacks,
-                'errbacks': errbacks,
-                'timelimit': (time_limit, soft_time_limit),
-                'taskset': group_id,
-                'chord': chord,
+                "task": name,
+                "id": task_id,
+                "args": args,
+                "kwargs": kwargs,
+                "group": group_id,
+                "group_index": group_index,
+                "retries": retries,
+                "eta": eta,
+                "expires": expires,
+                "utc": utc,
+                "callbacks": callbacks,
+                "errbacks": errbacks,
+                "timelimit": (time_limit, soft_time_limit),
+                "taskset": group_id,
+                "chord": chord,
             },
             sent_event={
-                'uuid': task_id,
-                'name': name,
-                'args': saferepr(args),
-                'kwargs': saferepr(kwargs),
-                'retries': retries,
-                'eta': eta,
-                'expires': expires,
-            } if create_sent_event else None,
+                "uuid": task_id,
+                "name": name,
+                "args": saferepr(args),
+                "kwargs": saferepr(kwargs),
+                "retries": retries,
+                "eta": eta,
+                "expires": expires,
+            }
+            if create_sent_event
+            else None,
         )
 
     def _verify_seconds(self, s, what):
         if s < INT_MIN:
-            raise ValueError(f'{what} is out of range: {s!r}')
+            raise ValueError(f"{what} is out of range: {s!r}")
         return s
 
     def _create_task_sender(self):
@@ -438,7 +498,7 @@ class AMQP:
         send_after_publish = signals.after_task_publish.send
         after_receivers = signals.after_task_publish.receivers
 
-        send_task_sent = signals.task_sent.send   # XXX compat
+        send_task_sent = signals.task_sent.send  # XXX compat
         sent_receivers = signals.task_sent.receivers
 
         default_evd = self._event_dispatcher
@@ -448,13 +508,24 @@ class AMQP:
         default_serializer = self.app.conf.task_serializer
         default_compressor = self.app.conf.result_compression
 
-        def send_task_message(producer, name, message,
-                              exchange=None, routing_key=None, queue=None,
-                              event_dispatcher=None,
-                              retry=None, retry_policy=None,
-                              serializer=None, delivery_mode=None,
-                              compression=None, declare=None,
-                              headers=None, exchange_type=None, **kwargs):
+        def send_task_message(
+            producer,
+            name,
+            message,
+            exchange=None,
+            routing_key=None,
+            queue=None,
+            event_dispatcher=None,
+            retry=None,
+            retry_policy=None,
+            serializer=None,
+            delivery_mode=None,
+            compression=None,
+            declare=None,
+            headers=None,
+            exchange_type=None,
+            **kwargs,
+        ):
             retry = default_retry if retry is None else retry
             headers2, properties, body, sent_event = message
             if headers:
@@ -482,11 +553,11 @@ class AMQP:
                 try:
                     exchange_type = queue.exchange.type
                 except AttributeError:
-                    exchange_type = 'direct'
+                    exchange_type = "direct"
 
             # convert to anon-exchange, when exchange not set and direct ex.
-            if (not exchange or not routing_key) and exchange_type == 'direct':
-                exchange, routing_key = '', qname
+            if (not exchange or not routing_key) and exchange_type == "direct":
+                exchange, routing_key = "", qname
             elif exchange is None:
                 # not topic exchange, and exchange not undefined
                 exchange = queue.exchange.name or default_exchange
@@ -496,15 +567,20 @@ class AMQP:
 
             # merge default and custom policy
             retry = default_retry if retry is None else retry
-            _rp = (dict(default_policy, **retry_policy) if retry_policy
-                   else default_policy)
+            _rp = (
+                dict(default_policy, **retry_policy) if retry_policy else default_policy
+            )
 
             if before_receivers:
                 send_before_publish(
-                    sender=name, body=body,
-                    exchange=exchange, routing_key=routing_key,
-                    declare=declare, headers=headers2,
-                    properties=properties, retry_policy=retry_policy,
+                    sender=name,
+                    body=body,
+                    exchange=exchange,
+                    routing_key=routing_key,
+                    declare=declare,
+                    headers=headers2,
+                    properties=properties,
+                    retry_policy=retry_policy,
                 )
             ret = producer.publish(
                 body,
@@ -512,40 +588,63 @@ class AMQP:
                 routing_key=routing_key,
                 serializer=serializer or default_serializer,
                 compression=compression or default_compressor,
-                retry=retry, retry_policy=_rp,
-                delivery_mode=delivery_mode, declare=declare,
+                retry=retry,
+                retry_policy=_rp,
+                delivery_mode=delivery_mode,
+                declare=declare,
                 headers=headers2,
-                **properties
+                **properties,
             )
             if after_receivers:
-                send_after_publish(sender=name, body=body, headers=headers2,
-                                   exchange=exchange, routing_key=routing_key)
+                send_after_publish(
+                    sender=name,
+                    body=body,
+                    headers=headers2,
+                    exchange=exchange,
+                    routing_key=routing_key,
+                )
             if sent_receivers:  # XXX deprecated
                 if isinstance(body, tuple):  # protocol version 2
                     send_task_sent(
-                        sender=name, task_id=headers2['id'], task=name,
-                        args=body[0], kwargs=body[1],
-                        eta=headers2['eta'], taskset=headers2['group'],
+                        sender=name,
+                        task_id=headers2["id"],
+                        task=name,
+                        args=body[0],
+                        kwargs=body[1],
+                        eta=headers2["eta"],
+                        taskset=headers2["group"],
                     )
                 else:  # protocol version 1
                     send_task_sent(
-                        sender=name, task_id=body['id'], task=name,
-                        args=body['args'], kwargs=body['kwargs'],
-                        eta=body['eta'], taskset=body['taskset'],
+                        sender=name,
+                        task_id=body["id"],
+                        task=name,
+                        args=body["args"],
+                        kwargs=body["kwargs"],
+                        eta=body["eta"],
+                        taskset=body["taskset"],
                     )
             if sent_event:
                 evd = event_dispatcher or default_evd
                 exname = exchange
                 if isinstance(exname, Exchange):
                     exname = exname.name
-                sent_event.update({
-                    'queue': qname,
-                    'exchange': exname,
-                    'routing_key': routing_key,
-                })
-                evd.publish('task-sent', sent_event,
-                            producer, retry=retry, retry_policy=retry_policy)
+                sent_event.update(
+                    {
+                        "queue": qname,
+                        "exchange": exname,
+                        "routing_key": routing_key,
+                    }
+                )
+                evd.publish(
+                    "task-sent",
+                    sent_event,
+                    producer,
+                    retry=retry,
+                    retry_policy=retry_policy,
+                )
             return ret
+
         return send_task_message
 
     @cached_property
@@ -578,16 +677,18 @@ class AMQP:
     @property
     def producer_pool(self):
         if self._producer_pool is None:
-            self._producer_pool = pools.producers[
-                self.app.connection_for_write()]
+            self._producer_pool = pools.producers[self.app.connection_for_write()]
             self._producer_pool.limit = self.app.pool.limit
         return self._producer_pool
+
     publisher_pool = producer_pool  # compat alias
 
     @cached_property
     def default_exchange(self):
-        return Exchange(self.app.conf.task_default_exchange,
-                        self.app.conf.task_default_exchange_type)
+        return Exchange(
+            self.app.conf.task_default_exchange,
+            self.app.conf.task_default_exchange_type,
+        )
 
     @cached_property
     def utc(self):
@@ -600,7 +701,7 @@ class AMQP:
         return self.app.events.Dispatcher(enabled=False)
 
     def _handle_conf_update(self, *args, **kwargs):
-        if ('task_routes' in kwargs or 'task_routes' in args):
+        if "task_routes" in kwargs or "task_routes" in args:
             self.flush_routes()
             self.router = self.Router()
         return

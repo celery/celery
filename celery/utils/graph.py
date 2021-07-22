@@ -4,22 +4,24 @@ from textwrap import dedent
 
 from kombu.utils.encoding import bytes_to_str, safe_str
 
-__all__ = ('DOT', 'CycleError', 'DependencyGraph', 'GraphFormatter')
+__all__ = ("DOT", "CycleError", "DependencyGraph", "GraphFormatter")
 
 
 class DOT:
     """Constants related to the dot format."""
 
-    HEAD = dedent("""
+    HEAD = dedent(
+        """
         {IN}{type} {id} {{
         {INp}graph [{attrs}]
-    """)
-    ATTR = '{name}={value}'
+    """
+    )
+    ATTR = "{name}={value}"
     NODE = '{INp}"{0}" [{attrs}]'
     EDGE = '{INp}"{0}" {dir} "{1}" [{attrs}]'
-    ATTRSEP = ', '
-    DIRS = {'graph': '--', 'digraph': '->'}
-    TAIL = '{IN}}}'
+    ATTRSEP = ", "
+    DIRS = {"graph": "--", "digraph": "->"}
+    TAIL = "{IN}}}"
 
 
 class CycleError(Exception):
@@ -69,9 +71,7 @@ class DependencyGraph:
         graph = DependencyGraph()
         components = self._tarjan72()
 
-        NC = {
-            node: component for component in components for node in component
-        }
+        NC = {node: component for component in components for node in component}
         for component in components:
             graph.add_arc(component)
         for node in self:
@@ -206,19 +206,20 @@ class DependencyGraph:
 
     def _iterate_items(self):
         return self.adjacent.items()
+
     items = iteritems = _iterate_items
 
     def __repr__(self):
-        return '\n'.join(self.repr_node(N) for N in self)
+        return "\n".join(self.repr_node(N) for N in self)
 
-    def repr_node(self, obj, level=1, fmt='{0}({1})'):
+    def repr_node(self, obj, level=1, fmt="{0}({1})"):
         output = [fmt.format(obj, self.valency_of(obj))]
         if obj in self:
             for other in self[obj]:
                 d = fmt.format(other, self.valency_of(other))
-                output.append('     ' * level + d)
-                output.extend(self.repr_node(other, level + 1).split('\n')[1:])
-        return '\n'.join(output)
+                output.append("     " * level + d)
+                output.extend(self.repr_node(other, level + 1).split("\n")[1:])
+        return "\n".join(output)
 
 
 class GraphFormatter:
@@ -233,25 +234,24 @@ class GraphFormatter:
     _dirs = dict(DOT.DIRS)
 
     scheme = {
-        'shape': 'box',
-        'arrowhead': 'vee',
-        'style': 'filled',
-        'fontname': 'HelveticaNeue',
+        "shape": "box",
+        "arrowhead": "vee",
+        "style": "filled",
+        "fontname": "HelveticaNeue",
     }
     edge_scheme = {
-        'color': 'darkseagreen4',
-        'arrowcolor': 'black',
-        'arrowsize': 0.7,
+        "color": "darkseagreen4",
+        "arrowcolor": "black",
+        "arrowsize": 0.7,
     }
-    node_scheme = {'fillcolor': 'palegreen3', 'color': 'palegreen4'}
-    term_scheme = {'fillcolor': 'palegreen1', 'color': 'palegreen2'}
-    graph_scheme = {'bgcolor': 'mintcream'}
+    node_scheme = {"fillcolor": "palegreen3", "color": "palegreen4"}
+    term_scheme = {"fillcolor": "palegreen1", "color": "palegreen2"}
+    graph_scheme = {"bgcolor": "mintcream"}
 
-    def __init__(self, root=None, type=None, id=None,
-                 indent=0, inw=' ' * 4, **scheme):
-        self.id = id or 'dependencies'
+    def __init__(self, root=None, type=None, id=None, indent=0, inw=" " * 4, **scheme):
+        self.id = id or "dependencies"
         self.root = root
-        self.type = type or 'digraph'
+        self.type = type or "digraph"
         self.direction = self._dirs[self.type]
         self.IN = inw * (indent or 0)
         self.INp = self.IN + inw
@@ -264,13 +264,13 @@ class GraphFormatter:
 
     def attrs(self, d, scheme=None):
         d = dict(self.scheme, **dict(scheme, **d or {}) if scheme else d)
-        return self._attrsep.join(
-            safe_str(self.attr(k, v)) for k, v in d.items()
-        )
+        return self._attrsep.join(safe_str(self.attr(k, v)) for k, v in d.items())
 
     def head(self, **attrs):
         return self.FMT(
-            self._head, id=self.id, type=self.type,
+            self._head,
+            id=self.id,
+            type=self.type,
             attrs=self.attrs(attrs, self.graph_scheme),
         )
 
@@ -290,20 +290,23 @@ class GraphFormatter:
         return self.draw_edge(a, b, **attrs)
 
     def _enc(self, s):
-        return s.encode('utf-8', 'ignore')
+        return s.encode("utf-8", "ignore")
 
     def FMT(self, fmt, *args, **kwargs):
-        return self._enc(fmt.format(
-            *args, **dict(kwargs, IN=self.IN, INp=self.INp)
-        ))
+        return self._enc(fmt.format(*args, **dict(kwargs, IN=self.IN, INp=self.INp)))
 
     def draw_edge(self, a, b, scheme=None, attrs=None):
         return self.FMT(
-            self._edge, self.label(a), self.label(b),
-            dir=self.direction, attrs=self.attrs(attrs, self.edge_scheme),
+            self._edge,
+            self.label(a),
+            self.label(b),
+            dir=self.direction,
+            attrs=self.attrs(attrs, self.edge_scheme),
         )
 
     def draw_node(self, obj, scheme=None, attrs=None):
         return self.FMT(
-            self._node, self.label(obj), attrs=self.attrs(attrs, scheme),
+            self._node,
+            self.label(obj),
+            attrs=self.attrs(attrs, scheme),
         )

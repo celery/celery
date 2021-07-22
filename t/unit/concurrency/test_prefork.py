@@ -36,12 +36,12 @@ except ImportError:
 
             def apply_async(self, *args, **kwargs):
                 pass
+
     mp = _mp()  # noqa
     asynpool = None  # noqa
 
 
 class MockResult:
-
     def __init__(self, value, pid):
         self.value = value
         self.pid = pid
@@ -54,16 +54,18 @@ class MockResult:
 
 
 class test_process_initializer:
-
-    @patch('celery.platforms.signals')
-    @patch('celery.platforms.set_mp_process_title')
+    @patch("celery.platforms.signals")
+    @patch("celery.platforms.set_mp_process_title")
     def test_process_initializer(self, set_mp_process_title, _signals):
         with mock.restore_logging():
             from celery import signals
             from celery._state import _tls
-            from celery.concurrency.prefork import (WORKER_SIGIGNORE,
-                                                    WORKER_SIGRESET,
-                                                    process_initializer)
+            from celery.concurrency.prefork import (
+                WORKER_SIGIGNORE,
+                WORKER_SIGRESET,
+                process_initializer,
+            )
+
             on_worker_process_init = Mock()
             signals.worker_process_init.connect(on_worker_process_init)
 
@@ -75,39 +77,41 @@ class test_process_initializer:
 
             with self.Celery(loader=Loader) as app:
                 app.conf = AttributeDict(DEFAULTS)
-                process_initializer(app, 'awesome.worker.com')
+                process_initializer(app, "awesome.worker.com")
                 _signals.ignore.assert_any_call(*WORKER_SIGIGNORE)
                 _signals.reset.assert_any_call(*WORKER_SIGRESET)
                 assert app.loader.init_worker.call_count
                 on_worker_process_init.assert_called()
                 assert _tls.current_app is app
                 set_mp_process_title.assert_called_with(
-                    'celeryd', hostname='awesome.worker.com',
+                    "celeryd",
+                    hostname="awesome.worker.com",
                 )
 
-                with patch('celery.app.trace.setup_worker_optimizations') as S:
-                    os.environ['FORKED_BY_MULTIPROCESSING'] = '1'
+                with patch("celery.app.trace.setup_worker_optimizations") as S:
+                    os.environ["FORKED_BY_MULTIPROCESSING"] = "1"
                     try:
-                        process_initializer(app, 'luke.worker.com')
-                        S.assert_called_with(app, 'luke.worker.com')
+                        process_initializer(app, "luke.worker.com")
+                        S.assert_called_with(app, "luke.worker.com")
                     finally:
-                        os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+                        os.environ.pop("FORKED_BY_MULTIPROCESSING", None)
 
-                os.environ['CELERY_LOG_FILE'] = 'worker%I.log'
-                app.log.setup = Mock(name='log_setup')
+                os.environ["CELERY_LOG_FILE"] = "worker%I.log"
+                app.log.setup = Mock(name="log_setup")
                 try:
-                    process_initializer(app, 'luke.worker.com')
+                    process_initializer(app, "luke.worker.com")
                 finally:
-                    os.environ.pop('CELERY_LOG_FILE', None)
+                    os.environ.pop("CELERY_LOG_FILE", None)
 
 
 class test_process_destructor:
-
-    @patch('celery.concurrency.prefork.signals')
+    @patch("celery.concurrency.prefork.signals")
     def test_process_destructor(self, signals):
         mp.process_destructor(13, -3)
         signals.worker_process_shutdown.send.assert_called_with(
-            sender=None, pid=13, exitcode=-3,
+            sender=None,
+            pid=13,
+            exitcode=-3,
         )
 
 
@@ -124,15 +128,16 @@ class MockPool:
         self._result_handler = Mock()
         self.maintain_pool = Mock()
         self._state = mp.RUN
-        self._processes = kwargs.get('processes')
-        self._proc_alive_timeout = kwargs.get('proc_alive_timeout')
-        self._pool = [Bunch(pid=i, inqW_fd=1, outqR_fd=2)
-                      for i in range(self._processes)]
+        self._processes = kwargs.get("processes")
+        self._proc_alive_timeout = kwargs.get("proc_alive_timeout")
+        self._pool = [
+            Bunch(pid=i, inqW_fd=1, outqR_fd=2) for i in range(self._processes)
+        ]
         self._current_proc = cycle(range(self._processes))
 
     def close(self):
         self.closed = True
-        self._state = 'CLOSE'
+        self._state = "CLOSE"
 
     def join(self):
         self.joined = True
@@ -166,9 +171,9 @@ class MockPool:
 
 
 class ExeMockPool(MockPool):
-
     def apply_async(self, target, args=(), kwargs={}, callback=noop):
         from threading import Timer
+
         res = target(*args, **kwargs)
         Timer(0.1, callback, (res,)).start()
         return MockResult(res, next(self._current_proc))
@@ -184,15 +189,14 @@ class ExeMockTaskPool(mp.TaskPool):
 
 @t.skip.if_win32
 class test_AsynPool:
-
     def setup(self):
-        pytest.importorskip('multiprocessing')
+        pytest.importorskip("multiprocessing")
 
     def test_gen_not_started(self):
-
         def gen():
             yield 1
             yield 2
+
         g = gen()
         assert asynpool.gen_not_started(g)
         next(g)
@@ -200,18 +204,20 @@ class test_AsynPool:
         list(g)
         assert not asynpool.gen_not_started(g)
 
-    @patch('select.select', create=True)
+    @patch("select.select", create=True)
     def test_select(self, __select):
         ebadf = socket.error()
         ebadf.errno = errno.EBADF
-        with patch('select.poll', create=True) as poller:
-            poll = poller.return_value = Mock(name='poll.poll')
+        with patch("select.poll", create=True) as poller:
+            poll = poller.return_value = Mock(name="poll.poll")
             poll.return_value = {3}, set(), 0
             assert asynpool._select({3}, poll=poll) == ({3}, set(), 0)
 
             poll.return_value = {3}, set(), 0
             assert asynpool._select({3}, None, {3}, poll=poll) == (
-                {3}, set(), 0,
+                {3},
+                set(),
+                0,
             )
 
             eintr = socket.error()
@@ -222,48 +228,52 @@ class test_AsynPool:
             assert asynpool._select(readers, poll=poll) == (set(), set(), 1)
             assert 3 in readers
 
-        with patch('select.poll', create=True) as poller:
-            poll = poller.return_value = Mock(name='poll.poll')
+        with patch("select.poll", create=True) as poller:
+            poll = poller.return_value = Mock(name="poll.poll")
             poll.side_effect = ebadf
-            with patch('select.select') as selcheck:
+            with patch("select.select") as selcheck:
                 selcheck.side_effect = ebadf
                 readers = {3}
                 assert asynpool._select(readers, poll=poll) == (
-                    set(), set(), 1,
+                    set(),
+                    set(),
+                    1,
                 )
                 assert 3 not in readers
 
-        with patch('select.poll', create=True) as poller:
-            poll = poller.return_value = Mock(name='poll.poll')
+        with patch("select.poll", create=True) as poller:
+            poll = poller.return_value = Mock(name="poll.poll")
             poll.side_effect = MemoryError()
             with pytest.raises(MemoryError):
                 asynpool._select({1}, poll=poll)
 
-        with patch('select.poll', create=True) as poller:
-            poll = poller.return_value = Mock(name='poll.poll')
-            with patch('select.select') as selcheck:
+        with patch("select.poll", create=True) as poller:
+            poll = poller.return_value = Mock(name="poll.poll")
+            with patch("select.select") as selcheck:
 
                 def se(*args):
                     selcheck.side_effect = MemoryError()
                     raise ebadf
+
                 poll.side_effect = se
                 with pytest.raises(MemoryError):
                     asynpool._select({3}, poll=poll)
 
-        with patch('select.poll', create=True) as poller:
-            poll = poller.return_value = Mock(name='poll.poll')
-            with patch('select.select') as selcheck:
+        with patch("select.poll", create=True) as poller:
+            poll = poller.return_value = Mock(name="poll.poll")
+            with patch("select.select") as selcheck:
 
                 def se2(*args):
                     selcheck.side_effect = socket.error()
                     selcheck.side_effect.errno = 1321
                     raise ebadf
+
                 poll.side_effect = se2
                 with pytest.raises(socket.error):
                     asynpool._select({3}, poll=poll)
 
-        with patch('select.poll', create=True) as poller:
-            poll = poller.return_value = Mock(name='poll.poll')
+        with patch("select.poll", create=True) as poller:
+            poll = poller.return_value = Mock(name="poll.poll")
 
             poll.side_effect = socket.error()
             poll.side_effect.errno = 34134
@@ -272,7 +282,7 @@ class test_AsynPool:
 
     def test_promise(self):
         fun = Mock()
-        x = asynpool.promise(fun, (1,), {'foo': 1})
+        x = asynpool.promise(fun, (1,), {"foo": 1})
         x()
         assert x.ready
         fun.assert_called_with(1, foo=1)
@@ -292,8 +302,13 @@ class test_AsynPool:
 
         # When Calling the helper to iterate_file_descriptors_safely
         iterate_file_descriptors_safely(
-            fd_iter, fd_iter, _fake_hub,
-            "arg1", "arg2", kw1="kw1", kw2="kw2",
+            fd_iter,
+            fd_iter,
+            _fake_hub,
+            "arg1",
+            "arg2",
+            kw1="kw1",
+            kw2="kw2",
         )
 
         # Then: all items were removed from the managed data source
@@ -309,8 +324,13 @@ class test_AsynPool:
 
         # When Calling the helper to iterate_file_descriptors_safely
         iterate_file_descriptors_safely(
-            fd_iter, fd_iter, _fake_hub,
-            "arg1", "arg2", kw1="kw1", kw2="kw2",
+            fd_iter,
+            fd_iter,
+            _fake_hub,
+            "arg1",
+            "arg2",
+            kw1="kw1",
+            kw2="kw2",
         )
 
         # Then: all items were removed from the managed data source
@@ -326,8 +346,13 @@ class test_AsynPool:
 
         # When Calling the helper to iterate_file_descriptors_safely
         iterate_file_descriptors_safely(
-            fd_iter, fd_iter, _fake_hub,
-            "arg1", "arg2", kw1="kw1", kw2="kw2",
+            fd_iter,
+            fd_iter,
+            _fake_hub,
+            "arg1",
+            "arg2",
+            kw1="kw1",
+            kw2="kw2",
         )
 
         # Then: all items were removed from the managed data source
@@ -336,21 +361,26 @@ class test_AsynPool:
 
 @t.skip.if_win32
 class test_ResultHandler:
-
     def setup(self):
-        pytest.importorskip('multiprocessing')
+        pytest.importorskip("multiprocessing")
 
     def test_process_result(self):
         x = asynpool.ResultHandler(
-            Mock(), Mock(), {}, Mock(),
-            Mock(), Mock(), Mock(), Mock(),
+            Mock(),
+            Mock(),
+            {},
+            Mock(),
+            Mock(),
+            Mock(),
+            Mock(),
+            Mock(),
             fileno_to_outq={},
             on_process_alive=Mock(),
             on_job_ready=Mock(),
         )
         assert x
-        hub = Mock(name='hub')
-        recv = x._recv_message = Mock(name='recv_message')
+        hub = Mock(name="hub")
+        recv = x._recv_message = Mock(name="recv_message")
         recv.return_value = iter([])
         x.on_state_change = Mock()
         x.register_with_event_loop(hub)
@@ -360,12 +390,13 @@ class test_ResultHandler:
         x.handle_event(6)  # KeyError
         x.handle_event(3)
         x._recv_message.assert_called_with(
-            hub.add_reader, 3, x.on_state_change,
+            hub.add_reader,
+            3,
+            x.on_state_change,
         )
 
 
 class test_TaskPool:
-
     def test_start(self):
         pool = TaskPool(10)
         pool.start()
@@ -386,33 +417,33 @@ class test_TaskPool:
 
     def test_restart(self):
         pool = TaskPool(10)
-        pool._pool = Mock(name='pool')
+        pool._pool = Mock(name="pool")
         pool.restart()
         pool._pool.restart.assert_called_with()
         pool._pool.apply_async.assert_called_with(mp.noop)
 
     def test_did_start_ok(self):
         pool = TaskPool(10)
-        pool._pool = Mock(name='pool')
+        pool._pool = Mock(name="pool")
         assert pool.did_start_ok() is pool._pool.did_start_ok()
 
     def test_register_with_event_loop(self):
         pool = TaskPool(10)
-        pool._pool = Mock(name='pool')
-        loop = Mock(name='loop')
+        pool._pool = Mock(name="pool")
+        loop = Mock(name="loop")
         pool.register_with_event_loop(loop)
         pool._pool.register_with_event_loop.assert_called_with(loop)
 
     def test_on_close(self):
         pool = TaskPool(10)
-        pool._pool = Mock(name='pool')
+        pool._pool = Mock(name="pool")
         pool._pool._state = mp.RUN
         pool.on_close()
         pool._pool.close.assert_called_with()
 
     def test_on_close__pool_not_running(self):
         pool = TaskPool(10)
-        pool._pool = Mock(name='pool')
+        pool._pool = Mock(name="pool")
         pool._pool._state = mp.CLOSE
         pool.on_close()
         pool._pool.close.assert_not_called()
@@ -443,25 +474,26 @@ class test_TaskPool:
 
             def human_write_stats(self, *args, **kwargs):
                 return {}
+
         pool._pool = _Pool()
         info = pool.info
-        assert info['max-concurrency'] == pool.limit
-        assert info['max-tasks-per-child'] == 'N/A'
-        assert info['timeouts'] == (5, 10)
+        assert info["max-concurrency"] == pool.limit
+        assert info["max-tasks-per-child"] == "N/A"
+        assert info["timeouts"] == (5, 10)
 
     def test_num_processes(self):
         pool = TaskPool(7)
         pool.start()
         assert pool.num_processes == 7
 
-    @patch('billiard.forking_enable')
+    @patch("billiard.forking_enable")
     def test_on_start_proc_alive_timeout_default(self, __forking_enable):
         app = Mock(conf=AttributeDict(DEFAULTS))
         pool = TaskPool(4, app=app)
         pool.on_start()
         assert pool._pool._proc_alive_timeout == 4.0
 
-    @patch('billiard.forking_enable')
+    @patch("billiard.forking_enable")
     def test_on_start_proc_alive_timeout_custom(self, __forking_enable):
         app = Mock(conf=AttributeDict(DEFAULTS))
         app.conf.worker_proc_alive_timeout = 8.0

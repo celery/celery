@@ -15,47 +15,52 @@ from celery.worker.strategy import hybrid_to_proto2, proto1_to_proto2
 
 
 class test_proto1_to_proto2:
-
     def setup(self):
-        self.message = Mock(name='message')
+        self.message = Mock(name="message")
         self.body = {
-            'args': (1,),
-            'kwargs': {'foo': 'baz'},
-            'utc': False,
-            'taskset': '123',
+            "args": (1,),
+            "kwargs": {"foo": "baz"},
+            "utc": False,
+            "taskset": "123",
         }
 
     def test_message_without_args(self):
-        self.body.pop('args')
+        self.body.pop("args")
         body, _, _, _ = proto1_to_proto2(self.message, self.body)
-        assert body[:2] == ((), {'foo': 'baz'})
+        assert body[:2] == ((), {"foo": "baz"})
 
     def test_message_without_kwargs(self):
-        self.body.pop('kwargs')
+        self.body.pop("kwargs")
         body, _, _, _ = proto1_to_proto2(self.message, self.body)
         assert body[:2] == ((1,), {})
 
     def test_message_kwargs_not_mapping(self):
-        self.body['kwargs'] = (2,)
+        self.body["kwargs"] = (2,)
         with pytest.raises(InvalidTaskError):
             proto1_to_proto2(self.message, self.body)
 
     def test_message_no_taskset_id(self):
-        self.body.pop('taskset')
+        self.body.pop("taskset")
         assert proto1_to_proto2(self.message, self.body)
 
     def test_message(self):
         body, headers, decoded, utc = proto1_to_proto2(self.message, self.body)
-        assert body == ((1,), {'foo': 'baz'}, {
-            'callbacks': None, 'errbacks': None, 'chord': None, 'chain': None,
-        })
-        assert headers == dict(self.body, group='123')
+        assert body == (
+            (1,),
+            {"foo": "baz"},
+            {
+                "callbacks": None,
+                "errbacks": None,
+                "chord": None,
+                "chain": None,
+            },
+        )
+        assert headers == dict(self.body, group="123")
         assert decoded
         assert not utc
 
 
 class test_default_strategy_proto2:
-
     def setup(self):
         @self.app.task(shared=False)
         def add(x, y):
@@ -70,7 +75,6 @@ class test_default_strategy_proto2:
         return message
 
     class Context:
-
         def __init__(self, sig, s, reserved, consumer, message):
             self.sig = sig
             self.s = s
@@ -81,9 +85,11 @@ class test_default_strategy_proto2:
         def __call__(self, callbacks=[], **kwargs):
             return self.s(
                 self.message,
-                (self.message.payload
-                    if not self.message.headers.get('id') else None),
-                self.message.ack, self.message.reject, callbacks, **kwargs
+                (self.message.payload if not self.message.headers.get("id") else None),
+                self.message.ack,
+                self.message.reject,
+                callbacks,
+                **kwargs
             )
 
         def was_reserved(self):
@@ -97,8 +103,10 @@ class test_default_strategy_proto2:
             assert not self.was_reserved()
             called = self.consumer.timer.call_at.called
             if called:
-                assert self.consumer.timer.call_at.call_args[0][1] == \
-                    self.consumer._limit_post_eta
+                assert (
+                    self.consumer.timer.call_at.call_args[0][1]
+                    == self.consumer._limit_post_eta
+                )
             return called
 
         def was_scheduled(self):
@@ -116,11 +124,10 @@ class test_default_strategy_proto2:
                 return self.consumer._limit_task.call_args[0][0]
             if self.was_scheduled():
                 return self.consumer.timer.call_at.call_args[0][0]
-            raise ValueError('request not handled')
+            raise ValueError("request not handled")
 
     @contextmanager
-    def _context(self, sig,
-                 rate_limits=True, events=True, utc=True, limit=None):
+    def _context(self, sig, rate_limits=True, events=True, utc=True, limit=None):
         assert sig.type.Strategy
         assert sig.type.Request
 
@@ -137,13 +144,16 @@ class test_default_strategy_proto2:
         assert s
 
         message = self.task_message_from_sig(
-            self.app, sig, utc=utc, TaskMessage=self.get_message_class(),
+            self.app,
+            sig,
+            utc=utc,
+            TaskMessage=self.get_message_class(),
         )
         message = self.prepare_message(message)
         yield self.Context(sig, s, reserved, consumer, message)
 
     def test_when_logging_disabled(self):
-        with patch('celery.worker.strategy.logger') as logger:
+        with patch("celery.worker.strategy.logger") as logger:
             logger.isEnabledFor.return_value = False
             with self._context(self.add.s(2, 2)) as C:
                 C()
@@ -159,7 +169,7 @@ class test_default_strategy_proto2:
 
     def test_callbacks(self):
         with self._context(self.add.s(2, 2)) as C:
-            callbacks = [Mock(name='cb1'), Mock(name='cb2')]
+            callbacks = [Mock(name="cb1"), Mock(name="cb2")]
             C(callbacks=callbacks)
             req = C.get_request()
             for callback in callbacks:
@@ -170,9 +180,9 @@ class test_default_strategy_proto2:
         with self._context(self.add.s(2, 2)) as C:
             signals.task_received.connect(callback)
             C()
-            callback.assert_called_once_with(sender=C.consumer,
-                                             request=ANY,
-                                             signal=signals.task_received)
+            callback.assert_called_once_with(
+                sender=C.consumer, request=ANY, signal=signals.task_received
+            )
 
     def test_when_events_disabled(self):
         with self._context(self.add.s(2, 2), events=False) as C:
@@ -194,20 +204,20 @@ class test_default_strategy_proto2:
 
     def test_when_rate_limited(self):
         task = self.add.s(2, 2)
-        with self._context(task, rate_limits=True, limit='1/m') as C:
+        with self._context(task, rate_limits=True, limit="1/m") as C:
             C()
             assert C.was_rate_limited()
 
     def test_when_rate_limited_with_eta(self):
         task = self.add.s(2, 2).set(countdown=10)
-        with self._context(task, rate_limits=True, limit='1/m') as C:
+        with self._context(task, rate_limits=True, limit="1/m") as C:
             C()
             assert C.was_limited_with_eta()
             C.consumer.qos.increment_eventually.assert_called_with()
 
     def test_when_rate_limited__limits_disabled(self):
         task = self.add.s(2, 2)
-        with self._context(task, rate_limits=False, limit='1/m') as C:
+        with self._context(task, rate_limits=False, limit="1/m") as C:
             C()
             assert C.was_reserved()
 
@@ -226,24 +236,22 @@ class test_default_strategy_proto2:
 
 
 class test_default_strategy_proto1(test_default_strategy_proto2):
-
     def get_message_class(self):
         return self.TaskMessage1
 
 
 class test_default_strategy_proto1__no_utc(test_default_strategy_proto2):
-
     def get_message_class(self):
         return self.TaskMessage1
 
     def prepare_message(self, message):
-        message.payload['utc'] = False
+        message.payload["utc"] = False
         return message
 
 
 class test_custom_request_for_default_strategy(test_default_strategy_proto2):
     def test_custom_request_gets_instantiated(self):
-        _MyRequest = Mock(name='MyRequest')
+        _MyRequest = Mock(name="MyRequest")
 
         class MyRequest(Request):
             def __init__(self, *args, **kwargs):
@@ -259,35 +267,30 @@ class test_custom_request_for_default_strategy(test_default_strategy_proto2):
 
         sig = failed.s()
         with self._context(sig) as C:
-            task_message_handler = default_strategy(
-                failed,
-                self.app,
-                C.consumer
-            )
+            task_message_handler = default_strategy(failed, self.app, C.consumer)
             task_message_handler(C.message, None, None, None, None)
             _MyRequest.assert_called()
 
 
 class test_hybrid_to_proto2:
-
     def setup(self):
-        self.message = Mock(name='message', headers={"custom": "header"})
+        self.message = Mock(name="message", headers={"custom": "header"})
         self.body = {
-            'args': (1,),
-            'kwargs': {'foo': 'baz'},
-            'utc': False,
-            'taskset': '123',
+            "args": (1,),
+            "kwargs": {"foo": "baz"},
+            "utc": False,
+            "taskset": "123",
         }
 
     def test_retries_default_value(self):
         _, headers, _, _ = hybrid_to_proto2(self.message, self.body)
-        assert headers.get('retries') == 0
+        assert headers.get("retries") == 0
 
     def test_retries_custom_value(self):
         _custom_value = 3
-        self.body['retries'] = _custom_value
+        self.body["retries"] = _custom_value
         _, headers, _, _ = hybrid_to_proto2(self.message, self.body)
-        assert headers.get('retries') == _custom_value
+        assert headers.get("retries") == _custom_value
 
     def test_custom_headers(self):
         _, headers, _, _ = hybrid_to_proto2(self.message, self.body)

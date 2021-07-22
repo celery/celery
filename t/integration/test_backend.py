@@ -5,21 +5,20 @@ import pytest
 from celery import states
 from celery.backends.azureblockblob import AzureBlockBlobBackend
 
-pytest.importorskip('azure')
+pytest.importorskip("azure")
 
 
 @pytest.mark.skipif(
-    not os.environ.get('AZUREBLOCKBLOB_URL'),
-    reason='Environment variable AZUREBLOCKBLOB_URL required'
+    not os.environ.get("AZUREBLOCKBLOB_URL"),
+    reason="Environment variable AZUREBLOCKBLOB_URL required",
 )
 class test_AzureBlockBlobBackend:
     def test_crud(self, manager):
         backend = AzureBlockBlobBackend(
-            app=manager.app,
-            url=os.environ["AZUREBLOCKBLOB_URL"])
+            app=manager.app, url=os.environ["AZUREBLOCKBLOB_URL"]
+        )
 
-        key_values = {("akey%d" % i).encode(): "avalue%d" % i
-                      for i in range(5)}
+        key_values = {("akey%d" % i).encode(): "avalue%d" % i for i in range(5)}
 
         for key, value in key_values.items():
             backend._set_with_state(key, value, states.SUCCESS)
@@ -34,7 +33,7 @@ class test_AzureBlockBlobBackend:
 
     def test_get_missing(self, manager):
         backend = AzureBlockBlobBackend(
-            app=manager.app,
-            url=os.environ["AZUREBLOCKBLOB_URL"])
+            app=manager.app, url=os.environ["AZUREBLOCKBLOB_URL"]
+        )
 
         assert backend.get(b"doesNotExist") is None

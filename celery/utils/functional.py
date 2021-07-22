@@ -5,15 +5,37 @@ from collections import UserList
 from functools import partial
 from itertools import chain, islice
 
-from kombu.utils.functional import (LRUCache, dictfilter, is_list, lazy,
-                                    maybe_evaluate, maybe_list, memoize)
+from kombu.utils.functional import (
+    LRUCache,
+    dictfilter,
+    is_list,
+    lazy,
+    maybe_evaluate,
+    maybe_list,
+    memoize,
+)
 from vine import promise
 
 __all__ = (
-    'LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
-    'first', 'firstmethod', 'chunks', 'padlist', 'mattrgetter', 'uniq',
-    'regen', 'dictfilter', 'lazy', 'maybe_evaluate', 'head_from_fun',
-    'maybe', 'fun_accepts_kwargs',
+    "LRUCache",
+    "is_list",
+    "maybe_list",
+    "memoize",
+    "mlazy",
+    "noop",
+    "first",
+    "firstmethod",
+    "chunks",
+    "padlist",
+    "mattrgetter",
+    "uniq",
+    "regen",
+    "dictfilter",
+    "lazy",
+    "maybe_evaluate",
+    "head_from_fun",
+    "maybe",
+    "fun_accepts_kwargs",
 )
 
 FUNHEAD_TEMPLATE = """
@@ -23,7 +45,6 @@ def {fun_name}({fun_args}):
 
 
 class DummyContext:
-
     def __enter__(self):
         return self
 
@@ -75,8 +96,11 @@ def first(predicate, it):
     :const:`None`.
     """
     return next(
-        (v for v in evaluate_promises(it) if (
-            predicate(v) if predicate is not None else v is not None)),
+        (
+            v
+            for v in evaluate_promises(it)
+            if (predicate(v) if predicate is not None else v is not None)
+        ),
         None,
     )
 
@@ -90,17 +114,20 @@ def firstmethod(method, on_call=None):
     The list can also contain lazy instances
     (:class:`~kombu.utils.functional.lazy`.)
     """
+
     def _matcher(it, *args, **kwargs):
         for obj in it:
             try:
                 meth = getattr(maybe_evaluate(obj), method)
-                reply = (on_call(meth, *args, **kwargs) if on_call
-                         else meth(*args, **kwargs))
+                reply = (
+                    on_call(meth, *args, **kwargs) if on_call else meth(*args, **kwargs)
+                )
             except AttributeError:
                 pass
             else:
                 if reply is not None:
                     return reply
+
     return _matcher
 
 
@@ -218,8 +245,9 @@ class _regen(UserList, list):
 def _argsfromspec(spec, replace_defaults=True):
     if spec.defaults:
         split = len(spec.defaults)
-        defaults = (list(range(len(spec.defaults))) if replace_defaults
-                    else spec.defaults)
+        defaults = (
+            list(range(len(spec.defaults))) if replace_defaults else spec.defaults
+        )
         positional = spec.args[:-split]
         optional = list(zip(spec.args[-split:], defaults))
     else:
@@ -232,21 +260,27 @@ def _argsfromspec(spec, replace_defaults=True):
         kwonlyargs = spec.kwonlyargs[:-split]
         if replace_defaults:
             kwonlyargs_optional = [
-                (kw, i) for i, kw in enumerate(spec.kwonlyargs[-split:])]
+                (kw, i) for i, kw in enumerate(spec.kwonlyargs[-split:])
+            ]
         else:
             kwonlyargs_optional = list(spec.kwonlydefaults.items())
     else:
         kwonlyargs, kwonlyargs_optional = spec.kwonlyargs, []
 
-    return ', '.join(filter(None, [
-        ', '.join(positional),
-        ', '.join(f'{k}={v}' for k, v in optional),
-        f'*{varargs}' if varargs else None,
-        '*' if (kwonlyargs or kwonlyargs_optional) and not varargs else None,
-        ', '.join(kwonlyargs) if kwonlyargs else None,
-        ', '.join(f'{k}="{v}"' for k, v in kwonlyargs_optional),
-        f'**{varkw}' if varkw else None,
-    ]))
+    return ", ".join(
+        filter(
+            None,
+            [
+                ", ".join(positional),
+                ", ".join(f"{k}={v}" for k, v in optional),
+                f"*{varargs}" if varargs else None,
+                "*" if (kwonlyargs or kwonlyargs_optional) and not varargs else None,
+                ", ".join(kwonlyargs) if kwonlyargs else None,
+                ", ".join(f'{k}="{v}"' for k, v in kwonlyargs_optional),
+                f"**{varkw}" if varkw else None,
+            ],
+        )
+    )
 
 
 def head_from_fun(fun, bound=False, debug=False):
@@ -257,8 +291,8 @@ def head_from_fun(fun, bound=False, debug=False):
     # with an empty body, meaning it has the same performance as
     # as just calling a function.
     is_function = inspect.isfunction(fun)
-    is_callable = hasattr(fun, '__call__')
-    is_cython = fun.__class__.__name__ == 'cython_function_or_method'
+    is_callable = hasattr(fun, "__call__")
+    is_cython = fun.__class__.__name__ == "cython_function_or_method"
     is_method = inspect.ismethod(fun)
 
     if not is_function and is_callable and not is_method and not is_cython:
@@ -272,7 +306,7 @@ def head_from_fun(fun, bound=False, debug=False):
     )
     if debug:  # pragma: no cover
         print(definition, file=sys.stderr)
-    namespace = {'__name__': fun.__module__}
+    namespace = {"__name__": fun.__module__}
     # pylint: disable=exec-used
     # Tasks are rarely, if ever, created at runtime - exec here is fine.
     exec(definition, namespace)
@@ -291,19 +325,25 @@ def arity_greater(fun, n):
 def fun_takes_argument(name, fun, position=None):
     spec = inspect.getfullargspec(fun)
     return (
-        spec.varkw or spec.varargs or
-        (len(spec.args) >= position if position else name in spec.args)
+        spec.varkw
+        or spec.varargs
+        or (len(spec.args) >= position if position else name in spec.args)
     )
 
 
-if hasattr(inspect, 'signature'):
+if hasattr(inspect, "signature"):
+
     def fun_accepts_kwargs(fun):
         """Return true if function accepts arbitrary keyword arguments."""
         return any(
-            p for p in inspect.signature(fun).parameters.values()
+            p
+            for p in inspect.signature(fun).parameters.values()
             if p.kind == p.VAR_KEYWORD
         )
+
+
 else:
+
     def fun_accepts_kwargs(fun):  # noqa
         """Return true if function accepts arbitrary keyword arguments."""
         try:

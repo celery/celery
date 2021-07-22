@@ -22,9 +22,7 @@ class MockDispatcher:
 
 
 class MockTimer:
-
     def call_repeatedly(self, secs, fun, args=(), kwargs={}):
-
         class entry(tuple):
             canceled = False
 
@@ -38,7 +36,6 @@ class MockTimer:
 
 
 class test_Heart:
-
     def test_start_stop(self):
         timer = MockTimer()
         eventer = MockDispatcher()
@@ -52,9 +49,9 @@ class test_Heart:
     def test_send_sends_signal(self):
         h = Heart(MockTimer(), MockDispatcher(), interval=1)
         h._send_sent_signal = None
-        h._send('worker-heartbeat')
-        h._send_sent_signal = Mock(name='send_sent_signal')
-        h._send('worker')
+        h._send("worker-heartbeat")
+        h._send_sent_signal = Mock(name="send_sent_signal")
+        h._send("worker")
         h._send_sent_signal.assert_called_with(sender=h)
 
     def test_start_when_disabled(self):

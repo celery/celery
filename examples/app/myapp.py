@@ -26,8 +26,8 @@ name using the fully qualified form::
 from celery import Celery
 
 app = Celery(
-    'myapp',
-    broker='amqp://guest@localhost//',
+    "myapp",
+    broker="amqp://guest@localhost//",
     # ## add result backend here if needed.
     # backend='rpc'
 )
@@ -38,5 +38,5 @@ def add(x, y):
     return x + y
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.start()

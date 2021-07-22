@@ -53,24 +53,35 @@ Misc
 """
 
 __all__ = (
-    'PENDING', 'RECEIVED', 'STARTED', 'SUCCESS', 'FAILURE',
-    'REVOKED', 'RETRY', 'IGNORED', 'READY_STATES', 'UNREADY_STATES',
-    'EXCEPTION_STATES', 'PROPAGATE_STATES', 'precedence', 'state',
+    "PENDING",
+    "RECEIVED",
+    "STARTED",
+    "SUCCESS",
+    "FAILURE",
+    "REVOKED",
+    "RETRY",
+    "IGNORED",
+    "READY_STATES",
+    "UNREADY_STATES",
+    "EXCEPTION_STATES",
+    "PROPAGATE_STATES",
+    "precedence",
+    "state",
 )
 
 #: State precedence.
 #: None represents the precedence of an unknown state.
 #: Lower index means higher precedence.
 PRECEDENCE = [
-    'SUCCESS',
-    'FAILURE',
+    "SUCCESS",
+    "FAILURE",
     None,
-    'REVOKED',
-    'STARTED',
-    'RECEIVED',
-    'REJECTED',
-    'RETRY',
-    'PENDING',
+    "REVOKED",
+    "STARTED",
+    "RECEIVED",
+    "REJECTED",
+    "RETRY",
+    "PENDING",
 ]
 
 #: Hash lookup of PRECEDENCE to index
@@ -124,28 +135,36 @@ class state(str):
 
 
 #: Task state is unknown (assumed pending since you know the id).
-PENDING = 'PENDING'
+PENDING = "PENDING"
 #: Task was received by a worker (only used in events).
-RECEIVED = 'RECEIVED'
+RECEIVED = "RECEIVED"
 #: Task was started by a worker (:setting:`task_track_started`).
-STARTED = 'STARTED'
+STARTED = "STARTED"
 #: Task succeeded
-SUCCESS = 'SUCCESS'
+SUCCESS = "SUCCESS"
 #: Task failed
-FAILURE = 'FAILURE'
+FAILURE = "FAILURE"
 #: Task was revoked.
-REVOKED = 'REVOKED'
+REVOKED = "REVOKED"
 #: Task was rejected (only used in events).
-REJECTED = 'REJECTED'
+REJECTED = "REJECTED"
 #: Task is waiting for retry.
-RETRY = 'RETRY'
-IGNORED = 'IGNORED'
+RETRY = "RETRY"
+IGNORED = "IGNORED"
 
 READY_STATES = frozenset({SUCCESS, FAILURE, REVOKED})
 UNREADY_STATES = frozenset({PENDING, RECEIVED, STARTED, REJECTED, RETRY})
 EXCEPTION_STATES = frozenset({RETRY, FAILURE, REVOKED})
 PROPAGATE_STATES = frozenset({FAILURE, REVOKED})
 
-ALL_STATES = frozenset({
-    PENDING, RECEIVED, STARTED, SUCCESS, FAILURE, RETRY, REVOKED,
-})
+ALL_STATES = frozenset(
+    {
+        PENDING,
+        RECEIVED,
+        STARTED,
+        SUCCESS,
+        FAILURE,
+        RETRY,
+        REVOKED,
+    }
+)

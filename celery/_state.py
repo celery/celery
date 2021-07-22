@@ -15,9 +15,13 @@ from celery.local import Proxy
 from celery.utils.threads import LocalStack
 
 __all__ = (
-    'set_default_app', 'get_current_app', 'get_current_task',
-    'get_current_worker_task', 'current_app', 'current_task',
-    'connect_on_app_finalize',
+    "set_default_app",
+    "get_current_app",
+    "get_current_task",
+    "get_current_worker_task",
+    "current_app",
+    "current_task",
+    "connect_on_app_finalize",
 )
 
 #: Global default app used when no current app.
@@ -93,10 +97,15 @@ def _get_current_app():
     if default_app is None:
         #: creates the global fallback app instance.
         from celery.app.base import Celery
-        set_default_app(Celery(
-            'default', fixups=[], set_as_current=False,
-            loader=os.environ.get('CELERY_LOADER') or 'default',
-        ))
+
+        set_default_app(
+            Celery(
+                "default",
+                fixups=[],
+                set_as_current=False,
+                loader=os.environ.get("CELERY_LOADER") or "default",
+            )
+        )
     return _tls.current_app or default_app
 
 
@@ -104,16 +113,23 @@ def _set_current_app(app):
     _tls.current_app = app
 
 
-if os.environ.get('C_STRICT_APP'):  # pragma: no cover
+if os.environ.get("C_STRICT_APP"):  # pragma: no cover
+
     def get_current_app():
         """Return the current app."""
-        raise RuntimeError('USES CURRENT APP')
-elif os.environ.get('C_WARN_APP'):  # pragma: no cover
+        raise RuntimeError("USES CURRENT APP")
+
+
+elif os.environ.get("C_WARN_APP"):  # pragma: no cover
+
     def get_current_app():  # noqa
         import traceback
-        print('-- USES CURRENT_APP', file=sys.stderr)  # noqa+
+
+        print("-- USES CURRENT_APP", file=sys.stderr)  # noqa+
         traceback.print_stack(file=sys.stderr)
         return _get_current_app()
+
+
 else:
     get_current_app = _get_current_app
 
@@ -162,18 +178,19 @@ def _app_or_default(app=None):
 
 def _app_or_default_trace(app=None):  # pragma: no cover
     from traceback import print_stack
+
     try:
         from billiard.process import current_process
     except ImportError:
         current_process = None
     if app is None:
-        if getattr(_tls, 'current_app', None):
-            print('-- RETURNING TO CURRENT APP --')  # noqa+
+        if getattr(_tls, "current_app", None):
+            print("-- RETURNING TO CURRENT APP --")  # noqa+
             print_stack()
             return _tls.current_app
-        if not current_process or current_process()._name == 'MainProcess':
-            raise Exception('DEFAULT APP')
-        print('-- RETURNING TO DEFAULT APP --')      # noqa+
+        if not current_process or current_process()._name == "MainProcess":
+            raise Exception("DEFAULT APP")
+        print("-- RETURNING TO DEFAULT APP --")  # noqa+
         print_stack()
         return default_app
     return app
@@ -191,7 +208,7 @@ def disable_trace():
     app_or_default = _app_or_default
 
 
-if os.environ.get('CELERY_TRACE_APP'):  # pragma: no cover
+if os.environ.get("CELERY_TRACE_APP"):  # pragma: no cover
     enable_trace()
 else:
     disable_trace()

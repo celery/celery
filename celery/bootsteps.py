@@ -18,7 +18,7 @@ except ImportError:  # pragma: no cover
 else:
     IGNORE_ERRORS = (GreenletExit,)
 
-__all__ = ('Blueprint', 'Step', 'StartStopStep', 'ConsumerStep')
+__all__ = ("Blueprint", "Step", "StartStopStep", "ConsumerStep")
 
 #: States
 RUN = 0x1
@@ -29,29 +29,28 @@ logger = get_logger(__name__)
 
 
 def _pre(ns, fmt):
-    return f'| {ns.alias}: {fmt}'
+    return f"| {ns.alias}: {fmt}"
 
 
 def _label(s):
-    return s.name.rsplit('.', 1)[-1]
+    return s.name.rsplit(".", 1)[-1]
 
 
 class StepFormatter(GraphFormatter):
     """Graph formatter for :class:`Blueprint`."""
 
-    blueprint_prefix = '⧉'
-    conditional_prefix = '∘'
+    blueprint_prefix = "⧉"
+    conditional_prefix = "∘"
     blueprint_scheme = {
-        'shape': 'parallelogram',
-        'color': 'slategray4',
-        'fillcolor': 'slategray3',
+        "shape": "parallelogram",
+        "color": "slategray4",
+        "fillcolor": "slategray3",
     }
 
     def label(self, step):
-        return step and '{}{}'.format(
+        return step and "{}{}".format(
             self._get_prefix(step),
-            bytes_to_str(
-                (step.label or _label(step)).encode('utf-8', 'ignore')),
+            bytes_to_str((step.label or _label(step)).encode("utf-8", "ignore")),
         )
 
     def _get_prefix(self, step):
@@ -59,7 +58,7 @@ class StepFormatter(GraphFormatter):
             return self.blueprint_prefix
         if step.conditional:
             return self.conditional_prefix
-        return ''
+        return ""
 
     def node(self, obj, **attrs):
         scheme = self.blueprint_scheme if obj.last else self.node_scheme
@@ -67,7 +66,7 @@ class StepFormatter(GraphFormatter):
 
     def edge(self, a, b, **attrs):
         if a.last:
-            attrs.update(arrowhead='none', color='darkseagreen3')
+            attrs.update(arrowhead="none", color="darkseagreen3")
         return self.draw_edge(a, b, self.edge_scheme, attrs)
 
 
@@ -90,14 +89,15 @@ class Blueprint:
     started = 0
     default_steps = set()
     state_to_name = {
-        0: 'initializing',
-        RUN: 'running',
-        CLOSE: 'closing',
-        TERMINATE: 'terminating',
+        0: "initializing",
+        RUN: "running",
+        CLOSE: "closing",
+        TERMINATE: "terminating",
     }
 
-    def __init__(self, steps=None, name=None,
-                 on_start=None, on_close=None, on_stopped=None):
+    def __init__(
+        self, steps=None, name=None, on_start=None, on_close=None, on_stopped=None
+    ):
         self.name = name or self.name or qualname(type(self))
         self.types = set(steps or []) | set(self.default_steps)
         self.on_start = on_start
@@ -111,10 +111,10 @@ class Blueprint:
         if self.on_start:
             self.on_start()
         for i, step in enumerate(s for s in parent.steps if s is not None):
-            self._debug('Starting %s', step.alias)
+            self._debug("Starting %s", step.alias)
             self.started = i + 1
             step.start(parent)
-            logger.debug('^-- substep ok')
+            logger.debug("^-- substep ok")
 
     def human_state(self):
         return self.state_to_name[self.state or 0]
@@ -128,32 +128,32 @@ class Blueprint:
     def close(self, parent):
         if self.on_close:
             self.on_close()
-        self.send_all(parent, 'close', 'closing', reverse=False)
+        self.send_all(parent, "close", "closing", reverse=False)
 
-    def restart(self, parent, method='stop',
-                description='restarting', propagate=False):
+    def restart(self, parent, method="stop", description="restarting", propagate=False):
         self.send_all(parent, method, description, propagate=propagate)
 
-    def send_all(self, parent, method,
-                 description=None, reverse=True, propagate=True, args=()):
-        description = description or method.replace('_', ' ')
+    def send_all(
+        self, parent, method, description=None, reverse=True, propagate=True, args=()
+    ):
+        description = description or method.replace("_", " ")
         steps = reversed(parent.steps) if reverse else parent.steps
         for step in steps:
             if step:
                 fun = getattr(step, method, None)
                 if fun is not None:
-                    self._debug('%s %s...',
-                                description.capitalize(), step.alias)
+                    self._debug("%s %s...", description.capitalize(), step.alias)
                     try:
                         fun(parent, *args)
                     except Exception as exc:  # pylint: disable=broad-except
                         if propagate:
                             raise
                         logger.exception(
-                            'Error on %s %s: %r', description, step.alias, exc)
+                            "Error on %s %s: %r", description, step.alias, exc
+                        )
 
     def stop(self, parent, close=True, terminate=False):
-        what = 'terminating' if terminate else 'stopping'
+        what = "terminating" if terminate else "stopping"
         if self.state in (CLOSE, TERMINATE):
             return
 
@@ -166,8 +166,10 @@ class Blueprint:
         self.state = CLOSE
 
         self.restart(
-            parent, 'terminate' if terminate else 'stop',
-            description=what, propagate=False,
+            parent,
+            "terminate" if terminate else "stop",
+            description=what,
+            propagate=False,
         )
 
         if self.on_stopped:
@@ -196,17 +198,16 @@ class Blueprint:
         For :class:`StartStopStep` the services created
         will also be added to the objects ``steps`` attribute.
         """
-        self._debug('Preparing bootsteps.')
+        self._debug("Preparing bootsteps.")
         order = self.order = []
         steps = self.steps = self.claim_steps()
 
-        self._debug('Building graph...')
+        self._debug("Building graph...")
         for S in self._finalize_steps(steps):
             step = S(parent, **kwargs)
             steps[step.name] = step
             order.append(step)
-        self._debug('New boot order: {%s}',
-                    ', '.join(s.alias for s in self.order))
+        self._debug("New boot order: {%s}", ", ".join(s.alias for s in self.order))
         for step in order:
             step.include(parent)
         return self
@@ -237,7 +238,8 @@ class Blueprint:
         self._firstpass(steps)
         it = ((C, C.requires) for C in steps.values())
         G = self.graph = DependencyGraph(
-            it, formatter=self.GraphFormatter(root=last),
+            it,
+            formatter=self.GraphFormatter(root=last),
         )
         if last:
             for obj in G:
@@ -246,7 +248,7 @@ class Blueprint:
         try:
             return G.topsort()
         except KeyError as exc:
-            raise KeyError('unknown bootstep: %s' % exc)
+            raise KeyError("unknown bootstep: %s" % exc)
 
     def claim_steps(self):
         return dict(self.load_step(step) for step in self.types)
@@ -270,11 +272,11 @@ class StepType(type):
     requires = None
 
     def __new__(cls, name, bases, attrs):
-        module = attrs.get('__module__')
-        qname = f'{module}.{name}' if module else name
+        module = attrs.get("__module__")
+        qname = f"{module}.{name}" if module else name
         attrs.update(
             __qualname__=qname,
-            name=attrs.get('name') or qname,
+            name=attrs.get("name") or qname,
         )
         return super().__new__(cls, name, bases, attrs)
 
@@ -282,7 +284,7 @@ class StepType(type):
         return cls.name
 
     def __repr__(cls):
-        return 'step:{0.name}{{{0.requires!r}}}'.format(cls)
+        return "step:{0.name}{{{0.requires!r}}}".format(cls)
 
 
 class Step(metaclass=StepType):
@@ -342,7 +344,7 @@ class Step(metaclass=StepType):
         """Create the step."""
 
     def __repr__(self):
-        return f'<step: {self.alias}>'
+        return f"<step: {self.alias}>"
 
     @property
     def alias(self):
@@ -373,7 +375,7 @@ class StartStopStep(Step):
 
     def terminate(self, parent):
         if self.obj:
-            return getattr(self.obj, 'terminate', self.obj.stop)()
+            return getattr(self.obj, "terminate", self.obj.stop)()
 
     def include(self, parent):
         inc, ret = self._should_include(parent)
@@ -386,11 +388,11 @@ class StartStopStep(Step):
 class ConsumerStep(StartStopStep):
     """Bootstep that starts a message consumer."""
 
-    requires = ('celery.worker.consumer:Connection',)
+    requires = ("celery.worker.consumer:Connection",)
     consumers = None
 
     def get_consumers(self, channel):
-        raise NotImplementedError('missing get_consumers')
+        raise NotImplementedError("missing get_consumers")
 
     def start(self, c):
         channel = c.connection.channel()

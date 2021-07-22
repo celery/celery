@@ -11,7 +11,7 @@ from kombu.utils.objects import cached_property
 from celery import _state, signals
 from celery.exceptions import FixupWarning, ImproperlyConfigured
 
-__all__ = ('DjangoFixup', 'fixup')
+__all__ = ("DjangoFixup", "fixup")
 
 ERR_NOT_INSTALLED = """\
 Environment variable DJANGO_SETTINGS_MODULE is defined
@@ -29,13 +29,13 @@ def _maybe_close_fd(fh):
 
 def _verify_django_version(django):
     if django.VERSION < (1, 11):
-        raise ImproperlyConfigured('Celery 5.x requires Django 1.11 or later.')
+        raise ImproperlyConfigured("Celery 5.x requires Django 1.11 or later.")
 
 
-def fixup(app, env='DJANGO_SETTINGS_MODULE'):
+def fixup(app, env="DJANGO_SETTINGS_MODULE"):
     """Install Django fixup if settings module environment is set."""
     SETTINGS_MODULE = os.environ.get(env)
-    if SETTINGS_MODULE and 'django' not in app.loader_cls.lower():
+    if SETTINGS_MODULE and "django" not in app.loader_cls.lower():
         try:
             import django  # noqa
         except ImportError:
@@ -60,7 +60,7 @@ class DjangoFixup:
         # so we prepend it to the path.
         sys.path.insert(0, os.getcwd())
 
-        self._settings = symbol_by_name('django.conf:settings')
+        self._settings = symbol_by_name("django.conf:settings")
         self.app.loader.now = self.now
 
         signals.import_modules.connect(self.on_import_modules)
@@ -89,11 +89,12 @@ class DjangoFixup:
 
     def autodiscover_tasks(self):
         from django.apps import apps
+
         return [config.name for config in apps.get_app_configs()]
 
     @cached_property
     def _now(self):
-        return symbol_by_name('django.utils.timezone:now')
+        return symbol_by_name("django.utils.timezone:now")
 
 
 class DjangoWorkerFixup:
@@ -101,22 +102,22 @@ class DjangoWorkerFixup:
 
     def __init__(self, app):
         self.app = app
-        self.db_reuse_max = self.app.conf.get('CELERY_DB_REUSE_MAX', None)
-        self._db = import_module('django.db')
-        self._cache = import_module('django.core.cache')
-        self._settings = symbol_by_name('django.conf:settings')
+        self.db_reuse_max = self.app.conf.get("CELERY_DB_REUSE_MAX", None)
+        self._db = import_module("django.db")
+        self._cache = import_module("django.core.cache")
+        self._settings = symbol_by_name("django.conf:settings")
 
-        self.interface_errors = (
-            symbol_by_name('django.db.utils.InterfaceError'),
-        )
-        self.DatabaseError = symbol_by_name('django.db:DatabaseError')
+        self.interface_errors = (symbol_by_name("django.db.utils.InterfaceError"),)
+        self.DatabaseError = symbol_by_name("django.db:DatabaseError")
 
     def django_setup(self):
         import django
+
         django.setup()
 
     def validate_models(self):
         from django.core.checks import run_checks
+
         self.django_setup()
         run_checks()
 
@@ -133,7 +134,7 @@ class DjangoWorkerFixup:
     def on_worker_process_init(self, **kwargs):
         # Child process must validate models again if on Windows,
         # or if they were started using execv.
-        if os.environ.get('FORKED_BY_MULTIPROCESSING'):
+        if os.environ.get("FORKED_BY_MULTIPROCESSING"):
             self.validate_models()
 
         # close connections:
@@ -160,13 +161,13 @@ class DjangoWorkerFixup:
 
     def on_task_prerun(self, sender, **kwargs):
         """Called before every task."""
-        if not getattr(sender.request, 'is_eager', False):
+        if not getattr(sender.request, "is_eager", False):
             self.close_database()
 
     def on_task_postrun(self, sender, **kwargs):
         # See https://groups.google.com/group/django-users/
         #            browse_thread/thread/78200863d0c07c6d/
-        if not getattr(sender.request, 'is_eager', False):
+        if not getattr(sender.request, "is_eager", False):
             self.close_database()
             self.close_cache()
 
@@ -189,7 +190,7 @@ class DjangoWorkerFixup:
                 pass
             except self.DatabaseError as exc:
                 str_exc = str(exc)
-                if 'closed' not in str_exc and 'not connected' not in str_exc:
+                if "closed" not in str_exc and "not connected" not in str_exc:
                     raise
 
     def close_cache(self):
@@ -200,5 +201,7 @@ class DjangoWorkerFixup:
 
     def on_worker_ready(self, **kwargs):
         if self._settings.DEBUG:
-            warnings.warn('''Using settings.DEBUG leads to a memory
-            leak, never use this setting in production environments!''')
+            warnings.warn(
+                """Using settings.DEBUG leads to a memory
+            leak, never use this setting in production environments!"""
+            )

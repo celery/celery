@@ -11,15 +11,27 @@ from kombu.utils.objects import cached_property
 
 from . import current_app
 from .utils.collections import AttributeDict
-from .utils.time import (ffwd, humanize_seconds, localize, maybe_make_aware,
-                         maybe_timedelta, remaining, timezone, weekday)
-
-__all__ = (
-    'ParseException', 'schedule', 'crontab', 'crontab_parser',
-    'maybe_schedule', 'solar',
+from .utils.time import (
+    ffwd,
+    humanize_seconds,
+    localize,
+    maybe_make_aware,
+    maybe_timedelta,
+    remaining,
+    timezone,
+    weekday,
 )
 
-schedstate = namedtuple('schedstate', ('is_due', 'next'))
+__all__ = (
+    "ParseException",
+    "schedule",
+    "crontab",
+    "crontab_parser",
+    "maybe_schedule",
+    "solar",
+)
+
+schedstate = namedtuple("schedstate", ("is_due", "next"))
 
 CRON_PATTERN_INVALID = """\
 Invalid crontab pattern.  Valid range is {min}-{max}. \
@@ -50,7 +62,7 @@ Argument event "{event}" is invalid, must be one of {all_events}.\
 
 
 def cronfield(s):
-    return '*' if s is None else s
+    return "*" if s is None else s
 
 
 class ParseException(Exception):
@@ -58,7 +70,6 @@ class ParseException(Exception):
 
 
 class BaseSchedule:
-
     def __init__(self, nowfun=None, app=None):
         self.nowfun = nowfun
         self._app = app
@@ -123,8 +134,10 @@ class schedule(BaseSchedule):
 
     def remaining_estimate(self, last_run_at):
         return remaining(
-            self.maybe_make_aware(last_run_at), self.run_every,
-            self.maybe_make_aware(self.now()), self.relative,
+            self.maybe_make_aware(last_run_at),
+            self.run_every,
+            self.maybe_make_aware(self.now()),
+            self.relative,
         )
 
     def is_due(self, last_run_at):
@@ -165,7 +178,7 @@ class schedule(BaseSchedule):
         return schedstate(is_due=False, next=remaining_s)
 
     def __repr__(self):
-        return f'<freq: {self.human_seconds}>'
+        return f"<freq: {self.human_seconds}>"
 
     def __eq__(self, other):
         if isinstance(other, schedule):
@@ -237,9 +250,9 @@ class crontab_parser:
 
     ParseException = ParseException
 
-    _range = r'(\w+?)-(\w+)'
-    _steps = r'/(\w+)?'
-    _star = r'\*'
+    _range = r"(\w+?)-(\w+)"
+    _steps = r"/(\w+)?"
+    _star = r"\*"
 
     def __init__(self, max_=60, min_=0):
         self.max_ = max_
@@ -248,14 +261,14 @@ class crontab_parser:
             (re.compile(self._range + self._steps), self._range_steps),
             (re.compile(self._range), self._expand_range),
             (re.compile(self._star + self._steps), self._star_steps),
-            (re.compile('^' + self._star + '$'), self._expand_star),
+            (re.compile("^" + self._star + "$"), self._expand_star),
         )
 
     def parse(self, spec):
         acc = set()
-        for part in spec.split(','):
+        for part in spec.split(","):
             if not part:
-                raise self.ParseException('empty part')
+                raise self.ParseException("empty part")
             acc |= set(self._parse_part(part))
         return acc
 
@@ -271,42 +284,41 @@ class crontab_parser:
         if len(toks) > 1:
             to = self._expand_number(toks[1])
             if to < fr:  # Wrap around max_ if necessary
-                return (list(range(fr, self.min_ + self.max_)) +
-                        list(range(self.min_, to + 1)))
+                return list(range(fr, self.min_ + self.max_)) + list(
+                    range(self.min_, to + 1)
+                )
             return list(range(fr, to + 1))
         return [fr]
 
     def _range_steps(self, toks):
         if len(toks) != 3 or not toks[2]:
-            raise self.ParseException('empty filter')
-        return self._expand_range(toks[:2])[::int(toks[2])]
+            raise self.ParseException("empty filter")
+        return self._expand_range(toks[:2])[:: int(toks[2])]
 
     def _star_steps(self, toks):
         if not toks or not toks[0]:
-            raise self.ParseException('empty filter')
-        return self._expand_star()[::int(toks[0])]
+            raise self.ParseException("empty filter")
+        return self._expand_star()[:: int(toks[0])]
 
     def _expand_star(self, *args):
         return list(range(self.min_, self.max_ + self.min_))
 
     def _expand_number(self, s):
-        if isinstance(s, str) and s[0] == '-':
-            raise self.ParseException('negative numbers not supported')
+        if isinstance(s, str) and s[0] == "-":
+            raise self.ParseException("negative numbers not supported")
         try:
             i = int(s)
         except ValueError:
             try:
                 i = weekday(s)
             except KeyError:
-                raise ValueError(f'Invalid weekday literal {s!r}.')
+                raise ValueError(f"Invalid weekday literal {s!r}.")
 
         max_val = self.min_ + self.max_ - 1
         if i > max_val:
-            raise ValueError(
-                f'Invalid end range: {i} > {max_val}.')
+            raise ValueError(f"Invalid end range: {i} > {max_val}.")
         if i < self.min_:
-            raise ValueError(
-                f'Invalid beginning range: {i} < {self.min_}.')
+            raise ValueError(f"Invalid beginning range: {i} < {self.min_}.")
 
         return i
 
@@ -389,8 +401,15 @@ class crontab(BaseSchedule):
     present in ``month_of_year``.
     """
 
-    def __init__(self, minute='*', hour='*', day_of_week='*',
-                 day_of_month='*', month_of_year='*', **kwargs):
+    def __init__(
+        self,
+        minute="*",
+        hour="*",
+        day_of_week="*",
+        day_of_month="*",
+        month_of_year="*",
+        **kwargs,
+    ):
         self._orig_minute = cronfield(minute)
         self._orig_hour = cronfield(hour)
         self._orig_day_of_week = cronfield(day_of_week)
@@ -445,8 +464,11 @@ class crontab(BaseSchedule):
         # assure the result does not preceed the min or exceed the max
         for number in result:
             if number >= max_ + min_ or number < min_:
-                raise ValueError(CRON_PATTERN_INVALID.format(
-                    min=min_, max=max_ - 1 + min_, value=number))
+                raise ValueError(
+                    CRON_PATTERN_INVALID.format(
+                        min=min_, max=max_ - 1 + min_, value=number
+                    )
+                )
         return result
 
     def _delta_to_next(self, last_run_at, next_hour, next_minute):
@@ -471,19 +493,25 @@ class crontab(BaseSchedule):
             return False
 
         def is_before_last_run(year, month, day):
-            return self.maybe_make_aware(datetime(year,
-                                                  month,
-                                                  day)) < last_run_at
+            return self.maybe_make_aware(datetime(year, month, day)) < last_run_at
 
         def roll_over():
             for _ in range(2000):
-                flag = (datedata.dom == len(days_of_month) or
-                        day_out_of_range(datedata.year,
-                                         months_of_year[datedata.moy],
-                                         days_of_month[datedata.dom]) or
-                        (is_before_last_run(datedata.year,
-                                            months_of_year[datedata.moy],
-                                            days_of_month[datedata.dom])))
+                flag = (
+                    datedata.dom == len(days_of_month)
+                    or day_out_of_range(
+                        datedata.year,
+                        months_of_year[datedata.moy],
+                        days_of_month[datedata.dom],
+                    )
+                    or (
+                        is_before_last_run(
+                            datedata.year,
+                            months_of_year[datedata.moy],
+                            days_of_month[datedata.dom],
+                        )
+                    )
+                )
 
                 if flag:
                     datedata.dom = 0
@@ -495,8 +523,9 @@ class crontab(BaseSchedule):
                     break
             else:
                 # Tried 2000 times, we're most likely in an infinite loop
-                raise RuntimeError('unable to rollover, '
-                                   'time specification is probably invalid')
+                raise RuntimeError(
+                    "unable to rollover, " "time specification is probably invalid"
+                )
 
         if last_run_at.month in self.month_of_year:
             datedata.dom = bisect(days_of_month, last_run_at.day)
@@ -509,31 +538,41 @@ class crontab(BaseSchedule):
         roll_over()
 
         while 1:
-            th = datetime(year=datedata.year,
-                          month=months_of_year[datedata.moy],
-                          day=days_of_month[datedata.dom])
+            th = datetime(
+                year=datedata.year,
+                month=months_of_year[datedata.moy],
+                day=days_of_month[datedata.dom],
+            )
             if th.isoweekday() % 7 in self.day_of_week:
                 break
             datedata.dom += 1
             roll_over()
 
-        return ffwd(year=datedata.year,
-                    month=months_of_year[datedata.moy],
-                    day=days_of_month[datedata.dom],
-                    hour=next_hour,
-                    minute=next_minute,
-                    second=0,
-                    microsecond=0)
+        return ffwd(
+            year=datedata.year,
+            month=months_of_year[datedata.moy],
+            day=days_of_month[datedata.dom],
+            hour=next_hour,
+            minute=next_minute,
+            second=0,
+            microsecond=0,
+        )
 
     def __repr__(self):
         return CRON_REPR.format(self)
 
     def __reduce__(self):
-        return (self.__class__, (self._orig_minute,
-                                 self._orig_hour,
-                                 self._orig_day_of_week,
-                                 self._orig_day_of_month,
-                                 self._orig_month_of_year), self._orig_kwargs)
+        return (
+            self.__class__,
+            (
+                self._orig_minute,
+                self._orig_hour,
+                self._orig_day_of_week,
+                self._orig_day_of_month,
+                self._orig_month_of_year,
+            ),
+            self._orig_kwargs,
+        )
 
     def __setstate__(self, state):
         # Calling super's init because the kwargs aren't necessarily passed in
@@ -549,41 +588,44 @@ class crontab(BaseSchedule):
         dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7
 
         execute_this_date = (
-            last_run_at.month in self.month_of_year and
-            last_run_at.day in self.day_of_month and
-            dow_num in self.day_of_week
+            last_run_at.month in self.month_of_year
+            and last_run_at.day in self.day_of_month
+            and dow_num in self.day_of_week
         )
 
         execute_this_hour = (
-            execute_this_date and
-            last_run_at.day == now.day and
-            last_run_at.month == now.month and
-            last_run_at.year == now.year and
-            last_run_at.hour in self.hour and
-            last_run_at.minute < max(self.minute)
+            execute_this_date
+            and last_run_at.day == now.day
+            and last_run_at.month == now.month
+            and last_run_at.year == now.year
+            and last_run_at.hour in self.hour
+            and last_run_at.minute < max(self.minute)
         )
 
         if execute_this_hour:
-            next_minute = min(minute for minute in self.minute
-                              if minute > last_run_at.minute)
+            next_minute = min(
+                minute for minute in self.minute if minute > last_run_at.minute
+            )
             delta = ffwd(minute=next_minute, second=0, microsecond=0)
         else:
             next_minute = min(self.minute)
-            execute_today = (execute_this_date and
-                             last_run_at.hour < max(self.hour))
+            execute_today = execute_this_date and last_run_at.hour < max(self.hour)
 
             if execute_today:
-                next_hour = min(hour for hour in self.hour
-                                if hour > last_run_at.hour)
-                delta = ffwd(hour=next_hour, minute=next_minute,
-                             second=0, microsecond=0)
+                next_hour = min(hour for hour in self.hour if hour > last_run_at.hour)
+                delta = ffwd(
+                    hour=next_hour, minute=next_minute, second=0, microsecond=0
+                )
             else:
                 next_hour = min(self.hour)
-                all_dom_moy = (self._orig_day_of_month == '*' and
-                               self._orig_month_of_year == '*')
+                all_dom_moy = (
+                    self._orig_day_of_month == "*" and self._orig_month_of_year == "*"
+                )
                 if all_dom_moy:
-                    next_day = min([day for day in self.day_of_week
-                                    if day > dow_num] or self.day_of_week)
+                    next_day = min(
+                        [day for day in self.day_of_week if day > dow_num]
+                        or self.day_of_week
+                    )
                     add_week = next_day == dow_num
 
                     delta = ffwd(
@@ -595,8 +637,7 @@ class crontab(BaseSchedule):
                         microsecond=0,
                     )
                 else:
-                    delta = self._delta_to_next(last_run_at,
-                                                next_hour, next_minute)
+                    delta = self._delta_to_next(last_run_at, next_hour, next_minute)
         return self.to_local(last_run_at), delta, self.to_local(now)
 
     def remaining_estimate(self, last_run_at, ffwd=ffwd):
@@ -629,12 +670,12 @@ class crontab(BaseSchedule):
     def __eq__(self, other):
         if isinstance(other, crontab):
             return (
-                other.month_of_year == self.month_of_year and
-                other.day_of_month == self.day_of_month and
-                other.day_of_week == self.day_of_week and
-                other.hour == self.hour and
-                other.minute == self.minute and
-                super().__eq__(other)
+                other.month_of_year == self.month_of_year
+                and other.day_of_month == self.day_of_month
+                and other.day_of_week == self.day_of_week
+                and other.hour == self.hour
+                and other.minute == self.minute
+                and super().__eq__(other)
             )
         return NotImplemented
 
@@ -688,61 +729,64 @@ class solar(BaseSchedule):
     """
 
     _all_events = {
-        'dawn_astronomical',
-        'dawn_nautical',
-        'dawn_civil',
-        'sunrise',
-        'solar_noon',
-        'sunset',
-        'dusk_civil',
-        'dusk_nautical',
-        'dusk_astronomical',
+        "dawn_astronomical",
+        "dawn_nautical",
+        "dawn_civil",
+        "sunrise",
+        "solar_noon",
+        "sunset",
+        "dusk_civil",
+        "dusk_nautical",
+        "dusk_astronomical",
     }
     _horizons = {
-        'dawn_astronomical': '-18',
-        'dawn_nautical': '-12',
-        'dawn_civil': '-6',
-        'sunrise': '-0:34',
-        'solar_noon': '0',
-        'sunset': '-0:34',
-        'dusk_civil': '-6',
-        'dusk_nautical': '-12',
-        'dusk_astronomical': '18',
+        "dawn_astronomical": "-18",
+        "dawn_nautical": "-12",
+        "dawn_civil": "-6",
+        "sunrise": "-0:34",
+        "solar_noon": "0",
+        "sunset": "-0:34",
+        "dusk_civil": "-6",
+        "dusk_nautical": "-12",
+        "dusk_astronomical": "18",
     }
     _methods = {
-        'dawn_astronomical': 'next_rising',
-        'dawn_nautical': 'next_rising',
-        'dawn_civil': 'next_rising',
-        'sunrise': 'next_rising',
-        'solar_noon': 'next_transit',
-        'sunset': 'next_setting',
-        'dusk_civil': 'next_setting',
-        'dusk_nautical': 'next_setting',
-        'dusk_astronomical': 'next_setting',
+        "dawn_astronomical": "next_rising",
+        "dawn_nautical": "next_rising",
+        "dawn_civil": "next_rising",
+        "sunrise": "next_rising",
+        "solar_noon": "next_transit",
+        "sunset": "next_setting",
+        "dusk_civil": "next_setting",
+        "dusk_nautical": "next_setting",
+        "dusk_astronomical": "next_setting",
     }
     _use_center_l = {
-        'dawn_astronomical': True,
-        'dawn_nautical': True,
-        'dawn_civil': True,
-        'sunrise': False,
-        'solar_noon': False,
-        'sunset': False,
-        'dusk_civil': True,
-        'dusk_nautical': True,
-        'dusk_astronomical': True,
+        "dawn_astronomical": True,
+        "dawn_nautical": True,
+        "dawn_civil": True,
+        "sunrise": False,
+        "solar_noon": False,
+        "sunset": False,
+        "dusk_civil": True,
+        "dusk_nautical": True,
+        "dusk_astronomical": True,
     }
 
     def __init__(self, event, lat, lon, **kwargs):
-        self.ephem = __import__('ephem')
+        self.ephem = __import__("ephem")
         self.event = event
         self.lat = lat
         self.lon = lon
         super().__init__(**kwargs)
 
         if event not in self._all_events:
-            raise ValueError(SOLAR_INVALID_EVENT.format(
-                event=event, all_events=', '.join(sorted(self._all_events)),
-            ))
+            raise ValueError(
+                SOLAR_INVALID_EVENT.format(
+                    event=event,
+                    all_events=", ".join(sorted(self._all_events)),
+                )
+            )
         if lat < -90 or lat > 90:
             raise ValueError(SOLAR_INVALID_LATITUDE.format(lat=lat))
         if lon < -180 or lon > 180:
@@ -763,8 +807,10 @@ class solar(BaseSchedule):
         return self.__class__, (self.event, self.lat, self.lon)
 
     def __repr__(self):
-        return '<solar: {} at latitude {}, longitude: {}>'.format(
-            self.event, self.lat, self.lon,
+        return "<solar: {} at latitude {}, longitude: {}>".format(
+            self.event,
+            self.lat,
+            self.lon,
         )
 
     def remaining_estimate(self, last_run_at):
@@ -782,8 +828,7 @@ class solar(BaseSchedule):
         try:
             if self.use_center:
                 next_utc = getattr(self.cal, self.method)(
-                    self.ephem.Sun(),
-                    start=last_run_at_utc, use_center=self.use_center
+                    self.ephem.Sun(), start=last_run_at_utc, use_center=self.use_center
                 )
             else:
                 next_utc = getattr(self.cal, self.method)(
@@ -793,9 +838,8 @@ class solar(BaseSchedule):
         except self.ephem.CircumpolarError:  # pragma: no cover
             # Sun won't rise/set today.  Check again tomorrow
             # (specifically, after the next anti-transit).
-            next_utc = (
-                self.cal.next_antitransit(self.ephem.Sun()) +
-                timedelta(minutes=1)
+            next_utc = self.cal.next_antitransit(self.ephem.Sun()) + timedelta(
+                minutes=1
             )
         next = self.maybe_make_aware(next_utc.datetime())
         now = self.maybe_make_aware(self.now())
@@ -822,9 +866,9 @@ class solar(BaseSchedule):
     def __eq__(self, other):
         if isinstance(other, solar):
             return (
-                other.event == self.event and
-                other.lat == self.lat and
-                other.lon == self.lon
+                other.event == self.event
+                and other.lat == self.lat
+                and other.lon == self.lon
             )
         return NotImplemented
 

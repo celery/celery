@@ -6,7 +6,6 @@ from celery import bootsteps
 
 
 class test_StepFormatter:
-
     def test_get_prefix(self):
         f = bootsteps.StepFormatter()
         s = Mock()
@@ -20,7 +19,7 @@ class test_StepFormatter:
 
         s3 = Mock()
         s3.last = s3.conditional = False
-        assert f._get_prefix(s3) == ''
+        assert f._get_prefix(s3) == ""
 
     def test_node(self):
         f = bootsteps.StepFormatter()
@@ -28,11 +27,11 @@ class test_StepFormatter:
         step = Mock()
         step.last = False
         f.node(step, x=3)
-        f.draw_node.assert_called_with(step, f.node_scheme, {'x': 3})
+        f.draw_node.assert_called_with(step, f.node_scheme, {"x": 3})
 
         step.last = True
         f.node(step, x=3)
-        f.draw_node.assert_called_with(step, f.blueprint_scheme, {'x': 3})
+        f.draw_node.assert_called_with(step, f.blueprint_scheme, {"x": 3})
 
     def test_edge(self):
         f = bootsteps.StepFormatter()
@@ -40,35 +39,47 @@ class test_StepFormatter:
         a, b = Mock(), Mock()
         a.last = True
         f.edge(a, b, x=6)
-        f.draw_edge.assert_called_with(a, b, f.edge_scheme, {
-            'x': 6, 'arrowhead': 'none', 'color': 'darkseagreen3',
-        })
+        f.draw_edge.assert_called_with(
+            a,
+            b,
+            f.edge_scheme,
+            {
+                "x": 6,
+                "arrowhead": "none",
+                "color": "darkseagreen3",
+            },
+        )
 
         a.last = False
         f.edge(a, b, x=6)
-        f.draw_edge.assert_called_with(a, b, f.edge_scheme, {
-            'x': 6,
-        })
+        f.draw_edge.assert_called_with(
+            a,
+            b,
+            f.edge_scheme,
+            {
+                "x": 6,
+            },
+        )
 
 
 class test_Step:
-
     class Def(bootsteps.StartStopStep):
-        name = 'test_Step.Def'
+        name = "test_Step.Def"
 
     def setup(self):
         self.steps = []
 
-    def test_blueprint_name(self, bp='test_blueprint_name'):
-
+    def test_blueprint_name(self, bp="test_blueprint_name"):
         class X(bootsteps.Step):
             blueprint = bp
-            name = 'X'
-        assert X.name == 'X'
+            name = "X"
+
+        assert X.name == "X"
 
         class Y(bootsteps.Step):
-            name = '%s.Y' % bp
-        assert Y.name == f'{bp}.Y'
+            name = "%s.Y" % bp
+
+        assert Y.name == f"{bp}.Y"
 
     def test_init(self):
         assert self.Def(self)
@@ -93,10 +104,10 @@ class test_Step:
     def test_include_when_enabled(self):
         x = self.Def(self)
         x.create = Mock()
-        x.create.return_value = 'George'
+        x.create.return_value = "George"
         assert x.include(self)
 
-        assert x.obj == 'George'
+        assert x.obj == "George"
         x.create.assert_called_with(self)
 
     def test_include_when_disabled(self):
@@ -113,7 +124,6 @@ class test_Step:
 
 
 class test_ConsumerStep:
-
     def test_interface(self):
         step = bootsteps.ConsumerStep(self)
         with pytest.raises(NotImplementedError):
@@ -124,7 +134,6 @@ class test_ConsumerStep:
         self.connection = Mock()
 
         class Step(bootsteps.ConsumerStep):
-
             def get_consumers(self, c):
                 return [consumer]
 
@@ -143,7 +152,6 @@ class test_ConsumerStep:
         self.connection = Mock()
 
         class Step(bootsteps.ConsumerStep):
-
             def get_consumers(self, c):
                 return ()
 
@@ -158,9 +166,8 @@ class test_ConsumerStep:
 
 
 class test_StartStopStep:
-
     class Def(bootsteps.StartStopStep):
-        name = 'test_StartStopStep.Def'
+        name = "test_StartStopStep.Def"
 
     def setup(self):
         self.steps = []
@@ -201,29 +208,28 @@ class test_StartStopStep:
         x.create = Mock()
 
         x.include(self)
-        delattr(x.obj, 'terminate')
+        delattr(x.obj, "terminate")
         x.terminate(self)
         x.obj.stop.assert_called_with()
 
 
 class test_Blueprint:
-
     class Blueprint(bootsteps.Blueprint):
-        name = 'test_Blueprint'
+        name = "test_Blueprint"
 
     def test_steps_added_to_unclaimed(self):
-
         class tnA(bootsteps.Step):
-            name = 'test_Blueprint.A'
+            name = "test_Blueprint.A"
 
         class tnB(bootsteps.Step):
-            name = 'test_Blueprint.B'
+            name = "test_Blueprint.B"
 
         class xxA(bootsteps.Step):
-            name = 'xx.A'
+            name = "xx.A"
 
         class Blueprint(self.Blueprint):
             default_steps = [tnA, tnB]
+
         blueprint = Blueprint()
 
         assert tnA in blueprint.types
@@ -232,7 +238,7 @@ class test_Blueprint:
 
     def test_init(self):
         blueprint = self.Blueprint()
-        assert blueprint.name == 'test_Blueprint'
+        assert blueprint.name == "test_Blueprint"
 
     def test_close__on_close_is_None(self):
         blueprint = self.Blueprint()
@@ -240,23 +246,26 @@ class test_Blueprint:
         blueprint.send_all = Mock()
         blueprint.close(1)
         blueprint.send_all.assert_called_with(
-            1, 'close', 'closing', reverse=False,
+            1,
+            "close",
+            "closing",
+            reverse=False,
         )
 
     def test_send_all_with_None_steps(self):
         parent = Mock()
         blueprint = self.Blueprint()
         parent.steps = [None, None, None]
-        blueprint.send_all(parent, 'close', 'Closing', reverse=False)
+        blueprint.send_all(parent, "close", "Closing", reverse=False)
 
     def test_send_all_raises(self):
         parent = Mock()
         blueprint = self.Blueprint()
         parent.steps = [Mock()]
         parent.steps[0].foo.side_effect = KeyError()
-        blueprint.send_all(parent, 'foo', propagate=False)
+        blueprint.send_all(parent, "foo", propagate=False)
         with pytest.raises(KeyError):
-            blueprint.send_all(parent, 'foo', propagate=True)
+            blueprint.send_all(parent, "foo", propagate=True)
 
     def test_stop_state_in_TERMINATE(self):
         blueprint = self.Blueprint()
@@ -268,14 +277,13 @@ class test_Blueprint:
         try:
             blueprint = self.Blueprint()
             blueprint.shutdown_complete = Mock()
-            blueprint.shutdown_complete.wait.side_effect = KeyError('luke')
+            blueprint.shutdown_complete.wait.side_effect = KeyError("luke")
             blueprint.join(timeout=10)
             blueprint.shutdown_complete.wait.assert_called_with(timeout=10)
         finally:
             bootsteps.IGNORE_ERRORS = prev
 
     def test_connect_with(self):
-
         class b1s1(bootsteps.Step):
             pass
 
@@ -302,9 +310,8 @@ class test_Blueprint:
         assert str(b1s1)
 
     def test_topsort_raises_KeyError(self):
-
         class Step(bootsteps.Step):
-            requires = ('xyxxx.fsdasewe.Unknown',)
+            requires = ("xyxxx.fsdasewe.Unknown",)
 
         b = self.Blueprint([Step])
         b.steps = b.claim_steps()
@@ -315,33 +322,32 @@ class test_Blueprint:
         b.steps = b.claim_steps()
         b._finalize_steps(b.steps)
 
-        with patch('celery.bootsteps.DependencyGraph') as Dep:
+        with patch("celery.bootsteps.DependencyGraph") as Dep:
             g = Dep.return_value = Mock()
-            g.topsort.side_effect = KeyError('foo')
+            g.topsort.side_effect = KeyError("foo")
             with pytest.raises(KeyError):
                 b._finalize_steps(b.steps)
 
     def test_apply(self):
-
         class MyBlueprint(bootsteps.Blueprint):
-            name = 'test_apply'
+            name = "test_apply"
 
             def modules(self):
-                return ['A', 'B']
+                return ["A", "B"]
 
         class B(bootsteps.Step):
-            name = 'test_apply.B'
+            name = "test_apply.B"
 
         class C(bootsteps.Step):
-            name = 'test_apply.C'
+            name = "test_apply.C"
             requires = [B]
 
         class A(bootsteps.Step):
-            name = 'test_apply.A'
+            name = "test_apply.A"
             requires = [C]
 
         class D(bootsteps.Step):
-            name = 'test_apply.D'
+            name = "test_apply.D"
             last = True
 
         x = MyBlueprint([A, D])
@@ -355,9 +361,8 @@ class test_Blueprint:
         assert x[A.name] is x.order[2]
 
     def test_find_last_but_no_steps(self):
-
         class MyBlueprint(bootsteps.Blueprint):
-            name = 'qwejwioqjewoqiej'
+            name = "qwejwioqjewoqiej"
 
         x = MyBlueprint()
         x.apply(self)

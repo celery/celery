@@ -8,7 +8,7 @@ from celery import bootsteps
 
 from .connection import Connection
 
-__all__ = ('Events',)
+__all__ = ("Events",)
 
 
 class Events(bootsteps.StartStopStep):
@@ -16,17 +16,16 @@ class Events(bootsteps.StartStopStep):
 
     requires = (Connection,)
 
-    def __init__(self, c,
-                 task_events=True,
-                 without_heartbeat=False,
-                 without_gossip=False,
-                 **kwargs):
-        self.groups = None if task_events else ['worker']
-        self.send_events = (
-            task_events or
-            not without_gossip or
-            not without_heartbeat
-        )
+    def __init__(
+        self,
+        c,
+        task_events=True,
+        without_heartbeat=False,
+        without_gossip=False,
+        **kwargs
+    ):
+        self.groups = None if task_events else ["worker"]
+        self.send_events = task_events or not without_gossip or not without_heartbeat
         self.enabled = self.send_events
         c.event_dispatcher = None
         super().__init__(c, **kwargs)
@@ -41,7 +40,7 @@ class Events(bootsteps.StartStopStep):
             groups=self.groups,
             # we currently only buffer events when the event loop is enabled
             # XXX This excludes eventlet/gevent, which should actually buffer.
-            buffer_group=['task'] if c.hub else None,
+            buffer_group=["task"] if c.hub else None,
             on_send_buffered=c.on_send_event_buffered if c.hub else None,
         )
         if prev:

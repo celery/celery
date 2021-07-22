@@ -12,25 +12,23 @@ from celery.worker.components import Beat, Hub, Pool, Timer
 
 
 class test_Timer:
-
     def test_create__eventloop(self):
-        w = Mock(name='w')
+        w = Mock(name="w")
         w.use_eventloop = True
         Timer(w).create(w)
         assert not w.timer.queue
 
 
 class test_Hub:
-
     def setup(self):
-        self.w = Mock(name='w')
+        self.w = Mock(name="w")
         self.hub = Hub(self.w)
-        self.w.hub = Mock(name='w.hub')
+        self.w.hub = Mock(name="w.hub")
 
-    @patch('celery.worker.components.set_event_loop')
-    @patch('celery.worker.components.get_event_loop')
+    @patch("celery.worker.components.set_event_loop")
+    @patch("celery.worker.components.get_event_loop")
     def test_create(self, get_event_loop, set_event_loop):
-        self.hub._patch_thread_primitives = Mock(name='ptp')
+        self.hub._patch_thread_primitives = Mock(name="ptp")
         assert self.hub.create(self.w) is self.hub
         self.hub._patch_thread_primitives.assert_called_with(self.w)
 
@@ -47,7 +45,6 @@ class test_Hub:
 
 
 class test_Pool:
-
     def test_close_terminate(self):
         w = Mock()
         comp = Pool(w)
@@ -79,13 +76,12 @@ class test_Pool:
 
         comp.create(w)
 
-        assert comp.instantiate.call_args[1]['max_memory_per_child'] == 32
+        assert comp.instantiate.call_args[1]["max_memory_per_child"] == 32
 
 
 class test_Beat:
-
     def test_create__green(self):
-        w = Mock(name='w')
-        w.pool_cls.__module__ = 'foo_gevent'
+        w = Mock(name="w")
+        w.pool_cls.__module__ = "foo_gevent"
         with pytest.raises(ImproperlyConfigured):
             Beat(w).create(w)

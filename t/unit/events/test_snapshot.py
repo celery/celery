@@ -12,14 +12,13 @@ class MockTimer:
 
     def call_repeatedly(self, secs, fun, *args, **kwargs):
         self.installed.append(fun)
-        return Mock(name='TRef')
+        return Mock(name="TRef")
 
 
 timer = MockTimer()
 
 
 class test_Polaroid:
-
     def setup(self):
         self.state = self.app.events.State()
 
@@ -74,7 +73,7 @@ class test_Polaroid:
         assert shutter_signal_sent[0]
 
     def test_shutter_maxrate(self):
-        x = Polaroid(self.state, app=self.app, maxrate='1/h')
+        x = Polaroid(self.state, app=self.app, maxrate="1/h")
         shutter_signal_sent = [0]
 
         def handler(**kwargs):
@@ -89,7 +88,6 @@ class test_Polaroid:
 
 
 class test_evcam:
-
     class MockReceiver:
         raise_keyboard_interrupt = False
 
@@ -98,7 +96,6 @@ class test_evcam:
                 raise KeyboardInterrupt()
 
     class MockEvents(Events):
-
         def Receiver(self, *args, **kwargs):
             return test_evcam.MockReceiver()
 
@@ -109,7 +106,7 @@ class test_evcam:
     @mock.restore_logging()
     def test_evcam(self):
         evcam(Polaroid, timer=timer, app=self.app)
-        evcam(Polaroid, timer=timer, loglevel='CRITICAL', app=self.app)
+        evcam(Polaroid, timer=timer, loglevel="CRITICAL", app=self.app)
         self.MockReceiver.raise_keyboard_interrupt = True
         try:
             with pytest.raises(SystemExit):
@@ -117,7 +114,7 @@ class test_evcam:
         finally:
             self.MockReceiver.raise_keyboard_interrupt = False
 
-    @patch('celery.platforms.create_pidlock')
+    @patch("celery.platforms.create_pidlock")
     def test_evcam_pidfile(self, create_pidlock):
-        evcam(Polaroid, timer=timer, pidfile='/var/pid', app=self.app)
-        create_pidlock.assert_called_with('/var/pid')
+        evcam(Polaroid, timer=timer, pidfile="/var/pid", app=self.app)
+        create_pidlock.assert_called_with("/var/pid")

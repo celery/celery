@@ -113,7 +113,7 @@ from celery.platforms import EX_FAILURE, EX_OK, signals
 from celery.utils import term
 from celery.utils.text import pluralize
 
-__all__ = ('MultiTool',)
+__all__ = ("MultiTool",)
 
 USAGE = """\
 usage: {prog_name} start <node1 node2 nodeN|range> [worker options]
@@ -141,43 +141,50 @@ def main():
 
 
 def splash(fun):
-
     @wraps(fun)
     def _inner(self, *args, **kwargs):
         self.splash()
         return fun(self, *args, **kwargs)
+
     return _inner
 
 
 def using_cluster(fun):
-
     @wraps(fun)
     def _inner(self, *argv, **kwargs):
         return fun(self, self.cluster_from_argv(argv), **kwargs)
+
     return _inner
 
 
 def using_cluster_and_sig(fun):
-
     @wraps(fun)
     def _inner(self, *argv, **kwargs):
         p, cluster = self._cluster_from_argv(argv)
         sig = self._find_sig_argument(p)
         return fun(self, cluster, sig, **kwargs)
+
     return _inner
 
 
 class TermLogger:
 
-    splash_text = 'celery multi v{version}'
-    splash_context = {'version': VERSION_BANNER}
+    splash_text = "celery multi v{version}"
+    splash_context = {"version": VERSION_BANNER}
 
     #: Final exit code.
     retcode = 0
 
-    def setup_terminal(self, stdout, stderr,
-                       nosplash=False, quiet=False, verbose=False,
-                       no_color=False, **kwargs):
+    def setup_terminal(
+        self,
+        stdout,
+        stderr,
+        nosplash=False,
+        quiet=False,
+        verbose=False,
+        no_color=False,
+        **kwargs,
+    ):
         self.stdout = stdout or sys.stdout
         self.stderr = stderr or sys.stderr
         self.nosplash = nosplash
@@ -190,7 +197,7 @@ class TermLogger:
         return EX_OK
 
     def say(self, m, newline=True, file=None):
-        print(m, file=file or self.stdout, end='\n' if newline else '')
+        print(m, file=file or self.stdout, end="\n" if newline else "")
 
     def carp(self, m, newline=True, file=None):
         return self.say(m, newline, file or self.stderr)
@@ -215,8 +222,7 @@ class TermLogger:
 
     def splash(self):
         if not self.nosplash:
-            self.note(self.colored.cyan(
-                self.splash_text.format(**self.splash_context)))
+            self.note(self.colored.cyan(self.splash_text.format(**self.splash_context)))
 
     @cached_property
     def colored(self):
@@ -230,33 +236,32 @@ class MultiTool(TermLogger):
     OptionParser = NamespacedOptionParser
 
     reserved_options = [
-        ('--nosplash', 'nosplash'),
-        ('--quiet', 'quiet'),
-        ('-q', 'quiet'),
-        ('--verbose', 'verbose'),
-        ('--no-color', 'no_color'),
+        ("--nosplash", "nosplash"),
+        ("--quiet", "quiet"),
+        ("-q", "quiet"),
+        ("--verbose", "verbose"),
+        ("--no-color", "no_color"),
     ]
 
-    def __init__(self, env=None, cmd=None,
-                 fh=None, stdout=None, stderr=None, **kwargs):
+    def __init__(self, env=None, cmd=None, fh=None, stdout=None, stderr=None, **kwargs):
         # fh is an old alias to stdout.
         self.env = env
         self.cmd = cmd
         self.setup_terminal(stdout or fh, stderr, **kwargs)
         self.fh = self.stdout
-        self.prog_name = 'celery multi'
+        self.prog_name = "celery multi"
         self.commands = {
-            'start': self.start,
-            'show': self.show,
-            'stop': self.stop,
-            'stopwait': self.stopwait,
-            'stop_verify': self.stopwait,  # compat alias
-            'restart': self.restart,
-            'kill': self.kill,
-            'names': self.names,
-            'expand': self.expand,
-            'get': self.get,
-            'help': self.help,
+            "start": self.start,
+            "show": self.show,
+            "stop": self.stop,
+            "stopwait": self.stopwait,
+            "stop_verify": self.stopwait,  # compat alias
+            "restart": self.restart,
+            "kill": self.kill,
+            "names": self.names,
+            "expand": self.expand,
+            "get": self.get,
+            "help": self.help,
         }
 
     def execute_from_commandline(self, argv, cmd=None):
@@ -271,13 +276,13 @@ class MultiTool(TermLogger):
         return self.call_command(argv[0], argv[1:])
 
     def validate_arguments(self, argv):
-        return argv and argv[0][0] != '-'
+        return argv and argv[0][0] != "-"
 
     def call_command(self, command, argv):
         try:
             return self.commands[command](*argv) or EX_OK
         except KeyError:
-            return self.error(f'Invalid command: {command}')
+            return self.error(f"Invalid command: {command}")
 
     def _handle_reserved_options(self, argv):
         argv = list(argv)  # don't modify callers argv.
@@ -289,7 +294,7 @@ class MultiTool(TermLogger):
     @splash
     @using_cluster
     def start(self, cluster):
-        self.note('> Starting nodes...')
+        self.note("> Starting nodes...")
         return int(any(cluster.start()))
 
     @splash
@@ -301,6 +306,7 @@ class MultiTool(TermLogger):
     @using_cluster_and_sig
     def stopwait(self, cluster, sig, **kwargs):
         return cluster.stopwait(sig=sig, **kwargs)
+
     stop_verify = stopwait  # compat
 
     @splash
@@ -310,7 +316,7 @@ class MultiTool(TermLogger):
 
     @using_cluster
     def names(self, cluster):
-        self.say('\n'.join(n.name for n in cluster))
+        self.say("\n".join(n.name for n in cluster))
 
     def get(self, wanted, *argv):
         try:
@@ -318,14 +324,13 @@ class MultiTool(TermLogger):
         except KeyError:
             return EX_FAILURE
         else:
-            return self.ok(' '.join(node.argv))
+            return self.ok(" ".join(node.argv))
 
     @using_cluster
     def show(self, cluster):
-        return self.ok('\n'.join(
-            ' '.join(node.argv_with_executable)
-            for node in cluster
-        ))
+        return self.ok(
+            "\n".join(" ".join(node.argv_with_executable) for node in cluster)
+        )
 
     @splash
     @using_cluster
@@ -333,23 +338,22 @@ class MultiTool(TermLogger):
         return cluster.kill()
 
     def expand(self, template, *argv):
-        return self.ok('\n'.join(
-            node.expander(template)
-            for node in self.cluster_from_argv(argv)
-        ))
+        return self.ok(
+            "\n".join(node.expander(template) for node in self.cluster_from_argv(argv))
+        )
 
     def help(self, *argv):
         self.say(__doc__)
 
     def _find_sig_argument(self, p, default=signal.SIGTERM):
-        args = p.args[len(p.values):]
+        args = p.args[len(p.values) :]
         for arg in reversed(args):
-            if len(arg) == 2 and arg[0] == '-':
+            if len(arg) == 2 and arg[0] == "-":
                 try:
                     return int(arg[1])
                 except ValueError:
                     pass
-            if arg[0] == '-':
+            if arg[0] == "-":
                 try:
                     return signals.signum(arg[1:])
                 except (AttributeError, TypeError):
@@ -393,79 +397,77 @@ class MultiTool(TermLogger):
         )
 
     def on_stopping_preamble(self, nodes):
-        self.note(self.colored.blue('> Stopping nodes...'))
+        self.note(self.colored.blue("> Stopping nodes..."))
 
     def on_send_signal(self, node, sig):
-        self.note('\t> {0.name}: {1} -> {0.pid}'.format(node, sig))
+        self.note("\t> {0.name}: {1} -> {0.pid}".format(node, sig))
 
     def on_still_waiting_for(self, nodes):
         num_left = len(nodes)
         if num_left:
-            self.note(self.colored.blue(
-                '> Waiting for {} {} -> {}...'.format(
-                    num_left, pluralize(num_left, 'node'),
-                    ', '.join(str(node.pid) for node in nodes)),
-            ), newline=False)
+            self.note(
+                self.colored.blue(
+                    "> Waiting for {} {} -> {}...".format(
+                        num_left,
+                        pluralize(num_left, "node"),
+                        ", ".join(str(node.pid) for node in nodes),
+                    ),
+                ),
+                newline=False,
+            )
 
     def on_still_waiting_progress(self, nodes):
-        self.note('.', newline=False)
+        self.note(".", newline=False)
 
     def on_still_waiting_end(self):
-        self.note('')
+        self.note("")
 
     def on_node_signal_dead(self, node):
-        self.note(
-            'Could not signal {0.name} ({0.pid}): No such process'.format(
-                node))
+        self.note("Could not signal {0.name} ({0.pid}): No such process".format(node))
 
     def on_node_start(self, node):
-        self.note(f'\t> {node.name}: ', newline=False)
+        self.note(f"\t> {node.name}: ", newline=False)
 
     def on_node_restart(self, node):
-        self.note(self.colored.blue(
-            f'> Restarting node {node.name}: '), newline=False)
+        self.note(self.colored.blue(f"> Restarting node {node.name}: "), newline=False)
 
     def on_node_down(self, node):
-        self.note(f'> {node.name}: {self.DOWN}')
+        self.note(f"> {node.name}: {self.DOWN}")
 
     def on_node_shutdown_ok(self, node):
-        self.note(f'\n\t> {node.name}: {self.OK}')
+        self.note(f"\n\t> {node.name}: {self.OK}")
 
     def on_node_status(self, node, retval):
         self.note(retval and self.FAILED or self.OK)
 
     def on_node_signal(self, node, sig):
-        self.note('Sending {sig} to node {0.name} ({0.pid})'.format(
-            node, sig=sig))
+        self.note("Sending {sig} to node {0.name} ({0.pid})".format(node, sig=sig))
 
     def on_child_spawn(self, node, argstr, env):
-        self.info(f'  {argstr}')
+        self.info(f"  {argstr}")
 
     def on_child_signalled(self, node, signum):
-        self.note(f'* Child was terminated by signal {signum}')
+        self.note(f"* Child was terminated by signal {signum}")
 
     def on_child_failure(self, node, retcode):
-        self.note(f'* Child terminated with exit code {retcode}')
+        self.note(f"* Child terminated with exit code {retcode}")
 
     @cached_property
     def OK(self):
-        return str(self.colored.green('OK'))
+        return str(self.colored.green("OK"))
 
     @cached_property
     def FAILED(self):
-        return str(self.colored.red('FAILED'))
+        return str(self.colored.red("FAILED"))
 
     @cached_property
     def DOWN(self):
-        return str(self.colored.magenta('DOWN'))
+        return str(self.colored.magenta("DOWN"))
 
 
 @click.command(
     cls=CeleryCommand,
-    context_settings={
-        'allow_extra_args': True,
-        'ignore_unknown_options': True
-    }
+    context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
 )
 @click.pass_context
 @handle_preload_options
@@ -476,5 +478,5 @@ def multi(ctx):
     # Since in 5.0 the --app option is global only we
     # rearrange the arguments so that the MultiTool will parse them correctly.
     args = sys.argv[1:]
-    args = args[args.index('multi'):] + args[:args.index('multi')]
+    args = args[args.index("multi") :] + args[: args.index("multi")]
     return cmd.execute_from_commandline(args)

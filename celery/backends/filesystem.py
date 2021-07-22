@@ -10,9 +10,9 @@ from celery.exceptions import ImproperlyConfigured
 
 default_encoding = locale.getpreferredencoding(False)
 
-E_NO_PATH_SET = 'You need to configure a path for the file-system backend'
+E_NO_PATH_SET = "You need to configure a path for the file-system backend"
 E_PATH_NON_CONFORMING_SCHEME = (
-    'A path for the file-system backend should conform to the file URI scheme'
+    "A path for the file-system backend should conform to the file URI scheme"
 )
 E_PATH_INVALID = """\
 The configured path for the file-system backend does not
@@ -32,8 +32,16 @@ class FilesystemBackend(KeyValueStoreBackend):
         encoding (str): encoding used on the file-system
     """
 
-    def __init__(self, url=None, open=open, unlink=os.unlink, sep=os.sep,
-                 encoding=default_encoding, *args, **kwargs):
+    def __init__(
+        self,
+        url=None,
+        open=open,
+        unlink=os.unlink,
+        sep=os.sep,
+        encoding=default_encoding,
+        *args,
+        **kwargs
+    ):
         super().__init__(*args, **kwargs)
         self.url = url
         path = self._find_path(url)
@@ -46,26 +54,25 @@ class FilesystemBackend(KeyValueStoreBackend):
         self.unlink = unlink
 
         # Lets verify that we've everything setup right
-        self._do_directory_test(b'.fs-backend-' + uuid().encode(encoding))
+        self._do_directory_test(b".fs-backend-" + uuid().encode(encoding))
 
     def __reduce__(self, args=(), kwargs={}):
-        kwargs.update(
-            dict(url=self.url))
+        kwargs.update(dict(url=self.url))
         return super().__reduce__(args, kwargs)
 
     def _find_path(self, url):
         if not url:
             raise ImproperlyConfigured(E_NO_PATH_SET)
-        if url.startswith('file://localhost/'):
+        if url.startswith("file://localhost/"):
             return url[16:]
-        if url.startswith('file://'):
+        if url.startswith("file://"):
             return url[7:]
         raise ImproperlyConfigured(E_PATH_NON_CONFORMING_SCHEME)
 
     def _do_directory_test(self, key):
         try:
-            self.set(key, b'test value')
-            assert self.get(key) == b'test value'
+            self.set(key, b"test value")
+            assert self.get(key) == b"test value"
             self.delete(key)
         except OSError:
             raise ImproperlyConfigured(E_PATH_INVALID)
@@ -75,13 +82,13 @@ class FilesystemBackend(KeyValueStoreBackend):
 
     def get(self, key):
         try:
-            with self.open(self._filename(key), 'rb') as infile:
+            with self.open(self._filename(key), "rb") as infile:
                 return infile.read()
         except FileNotFoundError:
             pass
 
     def set(self, key, value):
-        with self.open(self._filename(key), 'wb') as outfile:
+        with self.open(self._filename(key), "wb") as outfile:
             outfile.write(ensure_bytes(value))
 
     def mget(self, keys):

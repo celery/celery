@@ -8,7 +8,7 @@ from celery.utils.log import get_logger
 
 from . import state
 
-__all__ = ('asynloop', 'synloop')
+__all__ = ("asynloop", "synloop")
 
 # pylint: disable=redefined-outer-name
 # We cache globals and attribute lookups, so disable this warning.
@@ -20,7 +20,7 @@ def _quick_drain(connection, timeout=0.1):
     try:
         connection.drain_events(timeout=timeout)
     except Exception as exc:  # pylint: disable=broad-except
-        exc_errno = getattr(exc, 'errno', None)
+        exc_errno = getattr(exc, "errno", None)
         if exc_errno is not None and exc_errno != errno.EAGAIN:
             raise
 
@@ -33,8 +33,9 @@ def _enable_amqheartbeats(timer, connection, rate=2.0):
             timer.call_repeatedly(heartbeat / rate, tick, (rate,))
 
 
-def asynloop(obj, connection, consumer, blueprint, hub, qos,
-             heartbeat, clock, hbrate=2.0):
+def asynloop(
+    obj, connection, consumer, blueprint, hub, qos, heartbeat, clock, hbrate=2.0
+):
     """Non-blocking event loop."""
     RUN = bootsteps.RUN
     update_qos = qos.update
@@ -54,12 +55,12 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     # but this will only work the first time we start, as
     # maxtasksperchild will mess up metrics.
     if not obj.restart_count and not obj.pool.did_start_ok():
-        raise WorkerLostError('Could not start worker processes')
+        raise WorkerLostError("Could not start worker processes")
 
     # consumer.consume() may have prefetched up to our
     # limit - drain an event so we're in a clean state
     # prior to starting our event loop.
-    if connection.transport.driver_type == 'amqp':
+    if connection.transport.driver_type == "amqp":
         hub.call_soon(_quick_drain, connection)
 
     # FIXME: Use loop.run_forever
@@ -85,17 +86,26 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
         try:
             hub.reset()
         except Exception as exc:  # pylint: disable=broad-except
-            logger.exception(
-                'Error cleaning up after event loop: %r', exc)
+            logger.exception("Error cleaning up after event loop: %r", exc)
 
 
-def synloop(obj, connection, consumer, blueprint, hub, qos,
-            heartbeat, clock, hbrate=2.0, **kwargs):
+def synloop(
+    obj,
+    connection,
+    consumer,
+    blueprint,
+    hub,
+    qos,
+    heartbeat,
+    clock,
+    hbrate=2.0,
+    **kwargs
+):
     """Fallback blocking event loop for transports that doesn't support AIO."""
     RUN = bootsteps.RUN
     on_task_received = obj.create_task_handler()
     perform_pending_operations = obj.perform_pending_operations
-    if getattr(obj.pool, 'is_green', False):
+    if getattr(obj.pool, "is_green", False):
         _enable_amqheartbeats(obj.timer, connection, rate=hbrate)
     consumer.on_message = on_task_received
     consumer.consume()

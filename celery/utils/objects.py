@@ -1,7 +1,7 @@
 """Object related utilities, including introspection, etc."""
 from functools import reduce
 
-__all__ = ('Bunch', 'FallbackContext', 'getitem_property', 'mro_lookup')
+__all__ = ("Bunch", "FallbackContext", "getitem_property", "mro_lookup")
 
 
 class Bunch:
@@ -125,13 +125,12 @@ class getitem_property:
     """
 
     def __init__(self, keypath, doc=None):
-        path, _, self.key = keypath.rpartition('.')
-        self.path = path.split('.') if path else None
+        path, _, self.key = keypath.rpartition(".")
+        self.path = path.split(".") if path else None
         self.__doc__ = doc
 
     def _path(self, obj):
-        return (reduce(lambda d, k: d[k], [obj] + self.path) if self.path
-                else obj)
+        return reduce(lambda d, k: d[k], [obj] + self.path) if self.path else obj
 
     def __get__(self, obj, type=None):
         if obj is None:

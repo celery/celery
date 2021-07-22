@@ -4,7 +4,7 @@ from kombu.common import ignore_errors
 from celery import bootsteps
 from celery.utils.log import get_logger
 
-__all__ = ('Connection',)
+__all__ = ("Connection",)
 
 logger = get_logger(__name__)
 info = logger.info
@@ -19,7 +19,7 @@ class Connection(bootsteps.StartStopStep):
 
     def start(self, c):
         c.connection = c.connect()
-        info('Connected to %s', c.connection.as_uri())
+        info("Connected to %s", c.connection.as_uri())
 
     def shutdown(self, c):
         # We must set self.connection to None here, so
@@ -29,8 +29,8 @@ class Connection(bootsteps.StartStopStep):
             ignore_errors(connection, connection.close)
 
     def info(self, c):
-        params = 'N/A'
+        params = "N/A"
         if c.connection:
             params = c.connection.info()
-            params.pop('password', None)  # don't send password.
-        return {'broker': params}
+            params.pop("password", None)  # don't send password.
+        return {"broker": params}

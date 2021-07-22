@@ -14,7 +14,7 @@ except ImportError:
     botocore = None
 
 
-__all__ = ('S3Backend',)
+__all__ = ("S3Backend",)
 
 
 class S3Backend(KeyValueStoreBackend):
@@ -32,21 +32,20 @@ class S3Backend(KeyValueStoreBackend):
         super().__init__(**kwargs)
 
         if not boto3 or not botocore:
-            raise ImproperlyConfigured('You must install boto3'
-                                       'to use s3 backend')
+            raise ImproperlyConfigured("You must install boto3" "to use s3 backend")
         conf = self.app.conf
 
-        self.endpoint_url = conf.get('s3_endpoint_url', None)
-        self.aws_region = conf.get('s3_region', None)
+        self.endpoint_url = conf.get("s3_endpoint_url", None)
+        self.aws_region = conf.get("s3_region", None)
 
-        self.aws_access_key_id = conf.get('s3_access_key_id', None)
-        self.aws_secret_access_key = conf.get('s3_secret_access_key', None)
+        self.aws_access_key_id = conf.get("s3_access_key_id", None)
+        self.aws_secret_access_key = conf.get("s3_secret_access_key", None)
 
-        self.bucket_name = conf.get('s3_bucket', None)
+        self.bucket_name = conf.get("s3_bucket", None)
         if not self.bucket_name:
-            raise ImproperlyConfigured('Missing bucket name')
+            raise ImproperlyConfigured("Missing bucket name")
 
-        self.base_path = conf.get('s3_base_path', None)
+        self.base_path = conf.get("s3_base_path", None)
 
         self._s3_resource = self._connect_to_s3()
 
@@ -59,10 +58,10 @@ class S3Backend(KeyValueStoreBackend):
         s3_object = self._get_s3_object(key)
         try:
             s3_object.load()
-            data = s3_object.get()['Body'].read()
-            return data if self.content_encoding == 'binary' else data.decode('utf-8')
+            data = s3_object.get()["Body"].read()
+            return data if self.content_encoding == "binary" else data.decode("utf-8")
         except botocore.exceptions.ClientError as error:
-            if error.response['Error']['Code'] == "404":
+            if error.response["Error"]["Code"] == "404":
                 return None
             raise error
 
@@ -80,8 +79,8 @@ class S3Backend(KeyValueStoreBackend):
         session = boto3.Session(
             aws_access_key_id=self.aws_access_key_id,
             aws_secret_access_key=self.aws_secret_access_key,
-            region_name=self.aws_region
+            region_name=self.aws_region,
         )
         if session.get_credentials() is None:
-            raise ImproperlyConfigured('Missing aws s3 creds')
-        return session.resource('s3', endpoint_url=self.endpoint_url)
+            raise ImproperlyConfigured("Missing aws s3 creds")
+        return session.resource("s3", endpoint_url=self.endpoint_url)

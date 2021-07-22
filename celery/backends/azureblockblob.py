@@ -13,8 +13,9 @@ try:
     from azure.storage.blob import BlockBlobService
     from azure.storage.common.retry import ExponentialRetry
 except ImportError:  # pragma: no cover
-    azurestorage = BlockBlobService = ExponentialRetry = \
-        AzureMissingResourceHttpError = None  # noqa
+    azurestorage = (
+        BlockBlobService
+    ) = ExponentialRetry = AzureMissingResourceHttpError = None  # noqa
 
 __all__ = ("AzureBlockBlobBackend",)
 
@@ -24,44 +25,46 @@ LOGGER = get_logger(__name__)
 class AzureBlockBlobBackend(KeyValueStoreBackend):
     """Azure Storage Block Blob backend for Celery."""
 
-    def __init__(self,
-                 url=None,
-                 container_name=None,
-                 retry_initial_backoff_sec=None,
-                 retry_increment_base=None,
-                 retry_max_attempts=None,
-                 *args,
-                 **kwargs):
+    def __init__(
+        self,
+        url=None,
+        container_name=None,
+        retry_initial_backoff_sec=None,
+        retry_increment_base=None,
+        retry_max_attempts=None,
+        *args,
+        **kwargs
+    ):
         super().__init__(*args, **kwargs)
 
         if azurestorage is None:
             raise ImproperlyConfigured(
                 "You need to install the azure-storage library to use the "
-                "AzureBlockBlob backend")
+                "AzureBlockBlob backend"
+            )
 
         conf = self.app.conf
 
         self._connection_string = self._parse_url(url)
 
-        self._container_name = (
-            container_name or
-            conf["azureblockblob_container_name"])
+        self._container_name = container_name or conf["azureblockblob_container_name"]
 
         self._retry_initial_backoff_sec = (
-            retry_initial_backoff_sec or
-            conf["azureblockblob_retry_initial_backoff_sec"])
+            retry_initial_backoff_sec
+            or conf["azureblockblob_retry_initial_backoff_sec"]
+        )
 
         self._retry_increment_base = (
-            retry_increment_base or
-            conf["azureblockblob_retry_increment_base"])
+            retry_increment_base or conf["azureblockblob_retry_increment_base"]
+        )
 
         self._retry_max_attempts = (
-            retry_max_attempts or
-            conf["azureblockblob_retry_max_attempts"])
+            retry_max_attempts or conf["azureblockblob_retry_max_attempts"]
+        )
 
     @classmethod
     def _parse_url(cls, url, prefix="azureblockblob://"):
-        connection_string = url[len(prefix):]
+        connection_string = url[len(prefix) :]
         if not connection_string:
             raise ImproperlyConfigured("Invalid URL")
 
@@ -78,16 +81,17 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
         client = BlockBlobService(connection_string=self._connection_string)
 
         created = client.create_container(
-            container_name=self._container_name, fail_on_exist=False)
+            container_name=self._container_name, fail_on_exist=False
+        )
 
         if created:
-            LOGGER.info("Created Azure Blob Storage container %s",
-                        self._container_name)
+            LOGGER.info("Created Azure Blob Storage container %s", self._container_name)
 
         client.retry = ExponentialRetry(
             initial_backoff=self._retry_initial_backoff_sec,
             increment_base=self._retry_increment_base,
-            max_attempts=self._retry_max_attempts).retry
+            max_attempts=self._retry_max_attempts,
+        ).retry
 
         return client
 
@@ -99,12 +103,10 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
 
         """
         key = bytes_to_str(key)
-        LOGGER.debug("Getting Azure Block Blob %s/%s",
-                     self._container_name, key)
+        LOGGER.debug("Getting Azure Block Blob %s/%s", self._container_name, key)
 
         try:
-            return self._client.get_blob_to_text(
-                self._container_name, key).content
+            return self._client.get_blob_to_text(self._container_name, key).content
         except AzureMissingResourceHttpError:
             return None
 
@@ -117,11 +119,9 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
 
         """
         key = bytes_to_str(key)
-        LOGGER.debug("Creating Azure Block Blob at %s/%s",
-                     self._container_name, key)
+        LOGGER.debug("Creating Azure Block Blob at %s/%s", self._container_name, key)
 
-        return self._client.create_blob_from_text(
-            self._container_name, key, value)
+        return self._client.create_blob_from_text(self._container_name, key, value)
 
     def mget(self, keys):
         """Read all the values for the provided keys.
@@ -140,7 +140,6 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
 
         """
         key = bytes_to_str(key)
-        LOGGER.debug("Deleting Azure Block Blob at %s/%s",
-                     self._container_name, key)
+        LOGGER.debug("Deleting Azure Block Blob at %s/%s", self._container_name, key)
 
         self._client.delete_blob(self._container_name, key)

@@ -15,13 +15,12 @@ try:
 except ImportError:
     couchbase = None  # noqa
 
-COUCHBASE_BUCKET = 'celery_bucket'
+COUCHBASE_BUCKET = "celery_bucket"
 
-pytest.importorskip('couchbase')
+pytest.importorskip("couchbase")
 
 
 class test_CouchbaseBackend:
-
     def setup(self):
         self.backend = CouchbaseBackend(app=self.app)
 
@@ -43,7 +42,7 @@ class test_CouchbaseBackend:
         CouchbaseBackend(app=self.app)
 
     def test_get_connection_connection_exists(self):
-        with patch('couchbase.cluster.Cluster') as mock_Cluster:
+        with patch("couchbase.cluster.Cluster") as mock_Cluster:
             self.backend._connection = sentinel._connection
 
             connection = self.backend._get_connection()
@@ -58,8 +57,8 @@ class test_CouchbaseBackend:
         mocked_get = x._connection.get = Mock()
         mocked_get.return_value.content = sentinel.retval
         # should return None
-        assert x.get('1f3fab') == sentinel.retval
-        x._connection.get.assert_called_once_with('1f3fab')
+        assert x.get("1f3fab") == sentinel.retval
+        x._connection.get.assert_called_once_with("1f3fab")
 
     def test_set_no_expires(self):
         self.app.conf.couchbase_backend_settings = None
@@ -86,38 +85,39 @@ class test_CouchbaseBackend:
         mocked_delete = x._connection.remove = Mock()
         mocked_delete.return_value = None
         # should return None
-        assert x.delete('1f3fab') is None
-        x._connection.remove.assert_called_once_with('1f3fab')
+        assert x.delete("1f3fab") is None
+        x._connection.remove.assert_called_once_with("1f3fab")
 
     def test_config_params(self):
         self.app.conf.couchbase_backend_settings = {
-            'bucket': 'mycoolbucket',
-            'host': ['here.host.com', 'there.host.com'],
-            'username': 'johndoe',
-            'password': 'mysecret',
-            'port': '1234',
+            "bucket": "mycoolbucket",
+            "host": ["here.host.com", "there.host.com"],
+            "username": "johndoe",
+            "password": "mysecret",
+            "port": "1234",
         }
         x = CouchbaseBackend(app=self.app)
-        assert x.bucket == 'mycoolbucket'
-        assert x.host == ['here.host.com', 'there.host.com']
-        assert x.username == 'johndoe'
-        assert x.password == 'mysecret'
+        assert x.bucket == "mycoolbucket"
+        assert x.host == ["here.host.com", "there.host.com"]
+        assert x.username == "johndoe"
+        assert x.password == "mysecret"
         assert x.port == 1234
 
-    def test_backend_by_url(self, url='couchbase://myhost/mycoolbucket'):
+    def test_backend_by_url(self, url="couchbase://myhost/mycoolbucket"):
         from celery.backends.couchbase import CouchbaseBackend
+
         backend, url_ = backends.by_url(url, self.app.loader)
         assert backend is CouchbaseBackend
         assert url_ == url
 
     def test_backend_params_by_url(self):
-        url = 'couchbase://johndoe:mysecret@myhost:123/mycoolbucket'
+        url = "couchbase://johndoe:mysecret@myhost:123/mycoolbucket"
         with self.Celery(backend=url) as app:
             x = app.backend
-            assert x.bucket == 'mycoolbucket'
-            assert x.host == 'myhost'
-            assert x.username == 'johndoe'
-            assert x.password == 'mysecret'
+            assert x.bucket == "mycoolbucket"
+            assert x.host == "myhost"
+            assert x.username == "johndoe"
+            assert x.password == "mysecret"
             assert x.port == 123
 
     def test_expires_defaults_to_config(self):

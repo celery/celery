@@ -10,7 +10,7 @@ from celery.worker import pidbox
 
 from .tasks import Tasks
 
-__all__ = ('Control',)
+__all__ = ("Control",)
 
 logger = get_logger(__name__)
 
@@ -29,5 +29,7 @@ class Control(bootsteps.StartStopStep):
         super().__init__(c, **kwargs)
 
     def include_if(self, c):
-        return (c.app.conf.worker_enable_remote_control and
-                c.conninfo.supports_exchange_type('fanout'))
+        return (
+            c.app.conf.worker_enable_remote_control
+            and c.conninfo.supports_exchange_type("fanout")
+        )

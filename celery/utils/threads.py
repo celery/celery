@@ -25,11 +25,15 @@ except ImportError:  # pragma: no cover
 
 
 __all__ = (
-    'bgThread', 'Local', 'LocalStack', 'LocalManager',
-    'get_ident', 'default_socket_timeout',
+    "bgThread",
+    "Local",
+    "LocalStack",
+    "LocalManager",
+    "get_ident",
+    "default_socket_timeout",
 )
 
-USE_FAST_LOCALS = os.environ.get('USE_FAST_LOCALS')
+USE_FAST_LOCALS = os.environ.get("USE_FAST_LOCALS")
 
 
 @contextmanager
@@ -67,7 +71,7 @@ class bgThread(threading.Thread):
                     body()
                 except Exception as exc:  # pylint: disable=broad-except
                     try:
-                        self.on_crash('{0!r} crashed: {1!r}', self.name, exc)
+                        self.on_crash("{0!r} crashed: {1!r}", self.name, exc)
                         self._set_stopped()
                     finally:
                         sys.stderr.flush()
@@ -115,11 +119,11 @@ def release_local(local):
 class Local:
     """Local object."""
 
-    __slots__ = ('__storage__', '__ident_func__')
+    __slots__ = ("__storage__", "__ident_func__")
 
     def __init__(self):
-        object.__setattr__(self, '__storage__', {})
-        object.__setattr__(self, '__ident_func__', get_ident)
+        object.__setattr__(self, "__storage__", {})
+        object.__setattr__(self, "__ident_func__", get_ident)
 
     def __iter__(self):
         return iter(self.__storage__.items())
@@ -189,7 +193,8 @@ class _LocalStack:
         return self._local.__ident_func__
 
     def _set__ident_func__(self, value):
-        object.__setattr__(self._local, '__ident_func__', value)
+        object.__setattr__(self._local, "__ident_func__", value)
+
     __ident_func__ = property(_get__ident_func__, _set__ident_func__)
     del _get__ident_func__, _set__ident_func__
 
@@ -197,13 +202,14 @@ class _LocalStack:
         def _lookup():
             rv = self.top
             if rv is None:
-                raise RuntimeError('object unbound')
+                raise RuntimeError("object unbound")
             return rv
+
         return Proxy(_lookup)
 
     def push(self, obj):
         """Push a new item to the stack."""
-        rv = getattr(self._local, 'stack', None)
+        rv = getattr(self._local, "stack", None)
         if rv is None:
             # pylint: disable=assigning-non-slot
             # This attribute is defined now.
@@ -217,7 +223,7 @@ class _LocalStack:
         Note:
             Will return the old value or `None` if the stack was already empty.
         """
-        stack = getattr(self._local, 'stack', None)
+        stack = getattr(self._local, "stack", None)
         if stack is None:
             return None
         elif len(stack) == 1:
@@ -227,14 +233,14 @@ class _LocalStack:
             return stack.pop()
 
     def __len__(self):
-        stack = getattr(self._local, 'stack', None)
+        stack = getattr(self._local, "stack", None)
         return len(stack) if stack else 0
 
     @property
     def stack(self):
         # get_current_worker_task uses this to find
         # the original task that was executed by the worker.
-        stack = getattr(self._local, 'stack', None)
+        stack = getattr(self._local, "stack", None)
         if stack is not None:
             return stack
         return []
@@ -275,7 +281,7 @@ class LocalManager:
         if ident_func is not None:
             self.ident_func = ident_func
             for local in self.locals:
-                object.__setattr__(local, '__ident_func__', ident_func)
+                object.__setattr__(local, "__ident_func__", ident_func)
         else:
             self.ident_func = get_ident
 
@@ -298,12 +304,10 @@ class LocalManager:
             release_local(local)
 
     def __repr__(self):
-        return '<{} storages: {}>'.format(
-            self.__class__.__name__, len(self.locals))
+        return "<{} storages: {}>".format(self.__class__.__name__, len(self.locals))
 
 
 class _FastLocalStack(threading.local):
-
     def __init__(self):
         self.stack = []
         self.push = self.stack.append

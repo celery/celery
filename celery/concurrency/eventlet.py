@@ -8,28 +8,31 @@ from celery import signals  # noqa
 
 from . import base  # noqa
 
-__all__ = ('TaskPool',)
+__all__ = ("TaskPool",)
 
 W_RACE = """\
 Celery module with %s imported before eventlet patched\
 """
-RACE_MODS = ('billiard.', 'celery.', 'kombu.')
+RACE_MODS = ("billiard.", "celery.", "kombu.")
 
 
 #: Warn if we couldn't patch early enough,
 #: and thread/socket depending celery modules have already been loaded.
 for mod in (mod for mod in sys.modules if mod.startswith(RACE_MODS)):
-    for side in ('thread', 'threading', 'socket'):  # pragma: no cover
+    for side in ("thread", "threading", "socket"):  # pragma: no cover
         if getattr(mod, side, None):
             import warnings
+
             warnings.warn(RuntimeWarning(W_RACE % side))
 
 
-def apply_target(target, args=(), kwargs=None, callback=None,
-                 accept_callback=None, getpid=None):
+def apply_target(
+    target, args=(), kwargs=None, callback=None, accept_callback=None, getpid=None
+):
     kwargs = {} if not kwargs else kwargs
-    return base.apply_target(target, args, kwargs, callback, accept_callback,
-                             pid=getpid())
+    return base.apply_target(
+        target, args, kwargs, callback, accept_callback, pid=getpid()
+    )
 
 
 class Timer(_timer.Timer):
@@ -38,6 +41,7 @@ class Timer(_timer.Timer):
     def __init__(self, *args, **kwargs):
         from eventlet.greenthread import spawn_after
         from greenlet import GreenletExit
+
         super().__init__(*args, **kwargs)
 
         self.GreenletExit = GreenletExit
@@ -98,6 +102,7 @@ class TaskPool(base.BasePool):
     def __init__(self, *args, **kwargs):
         from eventlet import greenthread
         from eventlet.greenpool import GreenPool
+
         self.Pool = GreenPool
         self.getcurrent = greenthread.getcurrent
         self.getpid = lambda: id(greenthread.getcurrent())
@@ -117,14 +122,18 @@ class TaskPool(base.BasePool):
             self._pool.waitall()
         signals.eventlet_pool_postshutdown.send(sender=self)
 
-    def on_apply(self, target, args=None, kwargs=None, callback=None,
-                 accept_callback=None, **_):
+    def on_apply(
+        self, target, args=None, kwargs=None, callback=None, accept_callback=None, **_
+    ):
         self._quick_apply_sig(
-            sender=self, target=target, args=args, kwargs=kwargs,
+            sender=self,
+            target=target,
+            args=args,
+            kwargs=kwargs,
         )
-        self._quick_put(apply_target, target, args, kwargs,
-                        callback, accept_callback,
-                        self.getpid)
+        self._quick_put(
+            apply_target, target, args, kwargs, callback, accept_callback, self.getpid
+        )
 
     def grow(self, n=1):
         limit = self.limit + n
@@ -138,9 +147,11 @@ class TaskPool(base.BasePool):
 
     def _get_info(self):
         info = super()._get_info()
-        info.update({
-            'max-concurrency': self.limit,
-            'free-threads': self._pool.free(),
-            'running-threads': self._pool.running(),
-        })
+        info.update(
+            {
+                "max-concurrency": self.limit,
+                "free-threads": self._pool.free(),
+                "running-threads": self._pool.running(),
+            }
+        )
         return info

@@ -10,6 +10,13 @@ from .mingle import Mingle
 from .tasks import Tasks
 
 __all__ = (
-    'Consumer', 'Agent', 'Connection', 'Control',
-    'Events', 'Gossip', 'Heart', 'Mingle', 'Tasks',
+    "Consumer",
+    "Agent",
+    "Connection",
+    "Control",
+    "Events",
+    "Gossip",
+    "Heart",
+    "Mingle",
+    "Tasks",
 )

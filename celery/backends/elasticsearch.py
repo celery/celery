@@ -14,7 +14,7 @@ try:
 except ImportError:  # pragma: no cover
     elasticsearch = None  # noqa
 
-__all__ = ('ElasticsearchBackend',)
+__all__ = ("ElasticsearchBackend",)
 
 E_LIB_MISSING = """\
 You need to install the elasticsearch library to use the Elasticsearch \
@@ -30,10 +30,10 @@ class ElasticsearchBackend(KeyValueStoreBackend):
             if module :pypi:`elasticsearch` is not available.
     """
 
-    index = 'celery'
-    doc_type = 'backend'
-    scheme = 'http'
-    host = 'localhost'
+    index = "celery"
+    doc_type = "backend"
+    scheme = "http"
+    host = "localhost"
     port = 9200
     username = None
     password = None
@@ -53,11 +53,11 @@ class ElasticsearchBackend(KeyValueStoreBackend):
 
         if url:
             scheme, host, port, username, password, path, _ = _parse_url(url)  # noqa
-            if scheme == 'elasticsearch':
+            if scheme == "elasticsearch":
                 scheme = None
             if path:
-                path = path.strip('/')
-                index, _, doc_type = path.partition('/')
+                path = path.strip("/")
+                index, _, doc_type = path.partition("/")
 
         self.index = index or self.index
         self.doc_type = doc_type or self.doc_type
@@ -68,18 +68,18 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         self.password = password or self.password
 
         self.es_retry_on_timeout = (
-            _get('elasticsearch_retry_on_timeout') or self.es_retry_on_timeout
+            _get("elasticsearch_retry_on_timeout") or self.es_retry_on_timeout
         )
 
-        es_timeout = _get('elasticsearch_timeout')
+        es_timeout = _get("elasticsearch_timeout")
         if es_timeout is not None:
             self.es_timeout = es_timeout
 
-        es_max_retries = _get('elasticsearch_max_retries')
+        es_max_retries = _get("elasticsearch_max_retries")
         if es_max_retries is not None:
             self.es_max_retries = es_max_retries
 
-        self.es_save_meta_as_text = _get('elasticsearch_save_meta_as_text', True)
+        self.es_save_meta_as_text = _get("elasticsearch_save_meta_as_text", True)
         self._server = None
 
     def exception_safe_to_retry(self, exc):
@@ -92,7 +92,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
             # 503: Service Unavailable
             # 504: Gateway Timeout
             # N/A: Low level exception (i.e. socket exception)
-            if exc.status_code in {401, 409, 429, 500, 502, 503, 504, 'N/A'}:
+            if exc.status_code in {401, 409, 429, 500, 502, 503, 504, "N/A"}:
                 return True
         return False
 
@@ -100,8 +100,8 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         try:
             res = self._get(key)
             try:
-                if res['found']:
-                    return res['_source']['result']
+                if res["found"]:
+                    return res["_source"]["result"]
             except (TypeError, KeyError):
                 pass
         except elasticsearch.exceptions.NotFoundError:
@@ -116,10 +116,8 @@ class ElasticsearchBackend(KeyValueStoreBackend):
 
     def _set_with_state(self, key, value, state):
         body = {
-            'result': value,
-            '@timestamp': '{}Z'.format(
-                datetime.utcnow().isoformat()[:-3]
-            ),
+            "result": value,
+            "@timestamp": "{}Z".format(datetime.utcnow().isoformat()[:-3]),
         }
         try:
             self._index(
@@ -140,8 +138,8 @@ class ElasticsearchBackend(KeyValueStoreBackend):
             index=self.index,
             doc_type=self.doc_type,
             body=body,
-            params={'op_type': 'create'},
-            **kwargs
+            params={"op_type": "create"},
+            **kwargs,
         )
 
     def _update(self, id, body, state, **kwargs):
@@ -158,43 +156,48 @@ class ElasticsearchBackend(KeyValueStoreBackend):
 
         try:
             res_get = self._get(key=id)
-            if not res_get.get('found'):
+            if not res_get.get("found"):
                 return self._index(id, body, **kwargs)
             # document disappeared between index and get calls.
         except elasticsearch.exceptions.NotFoundError:
             return self._index(id, body, **kwargs)
 
         try:
-            meta_present_on_backend = self.decode_result(res_get['_source']['result'])
+            meta_present_on_backend = self.decode_result(res_get["_source"]["result"])
         except (TypeError, KeyError):
             pass
         else:
-            if meta_present_on_backend['status'] == states.SUCCESS:
+            if meta_present_on_backend["status"] == states.SUCCESS:
                 # if stored state is already in success, do nothing
-                return {'result': 'noop'}
-            elif meta_present_on_backend['status'] in states.READY_STATES and state in states.UNREADY_STATES:
+                return {"result": "noop"}
+            elif (
+                meta_present_on_backend["status"] in states.READY_STATES
+                and state in states.UNREADY_STATES
+            ):
                 # if stored state is in ready state and current not, do nothing
-                return {'result': 'noop'}
+                return {"result": "noop"}
 
         # get current sequence number and primary term
         # https://www.elastic.co/guide/en/elasticsearch/reference/current/optimistic-concurrency-control.html
-        seq_no = res_get.get('_seq_no', 1)
-        prim_term = res_get.get('_primary_term', 1)
+        seq_no = res_get.get("_seq_no", 1)
+        prim_term = res_get.get("_primary_term", 1)
 
         # try to update document with current seq_no and primary_term
         res = self.server.update(
             id=bytes_to_str(id),
             index=self.index,
             doc_type=self.doc_type,
-            body={'doc': body},
-            params={'if_primary_term': prim_term, 'if_seq_no': seq_no},
-            **kwargs
+            body={"doc": body},
+            params={"if_primary_term": prim_term, "if_seq_no": seq_no},
+            **kwargs,
         )
         # result is elastic search update query result
         # noop = query did not update any document
         # updated = at least one document got updated
-        if res['result'] == 'noop':
-            raise elasticsearch.exceptions.ConflictError(409, 'conflicting update occurred concurrently', {})
+        if res["result"] == "noop":
+            raise elasticsearch.exceptions.ConflictError(
+                409, "conflicting update occurred concurrently", {}
+            )
         return res
 
     def encode(self, data):
@@ -218,7 +221,9 @@ class ElasticsearchBackend(KeyValueStoreBackend):
             if payload.get("result"):
                 payload["result"] = KeyValueStoreBackend.decode(self, payload["result"])
             if payload.get("traceback"):
-                payload["traceback"] = KeyValueStoreBackend.decode(self, payload["traceback"])
+                payload["traceback"] = KeyValueStoreBackend.decode(
+                    self, payload["traceback"]
+                )
             return payload
 
     def mget(self, keys):
@@ -233,7 +238,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         if self.username and self.password:
             http_auth = (self.username, self.password)
         return elasticsearch.Elasticsearch(
-            f'{self.host}:{self.port}',
+            f"{self.host}:{self.port}",
             retry_on_timeout=self.es_retry_on_timeout,
             max_retries=self.es_max_retries,
             timeout=self.es_timeout,

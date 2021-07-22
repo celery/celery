@@ -35,17 +35,18 @@ except ImportError:
 
 # http://daringfireball.net/2009/11/liberal_regex_for_matching_urls
 url_regex = re.compile(
-    r'\b(([\w-]+://?|www[.])[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))')
+    r"\b(([\w-]+://?|www[.])[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))"
+)
 
 
 def domain(url):
     """Return the domain part of a URL."""
-    return urlsplit(url)[1].split(':')[0]
+    return urlsplit(url)[1].split(":")[0]
 
 
-@task(ignore_result=True, serializer='pickle', compression='zlib')
+@task(ignore_result=True, serializer="pickle", compression="zlib")
 def crawl(url, seen=None):
-    print(f'crawling: {url}')
+    print(f"crawling: {url}")
     if not seen:
         seen = BloomFilter(capacity=50000, error_rate=0.0001)
 

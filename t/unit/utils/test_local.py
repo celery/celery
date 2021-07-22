@@ -6,41 +6,39 @@ from celery.local import PromiseProxy, Proxy, maybe_evaluate, try_import
 
 
 class test_try_import:
-
     def test_imports(self):
         assert try_import(__name__)
 
     def test_when_default(self):
         default = object()
-        assert try_import('foobar.awqewqe.asdwqewq', default) is default
+        assert try_import("foobar.awqewqe.asdwqewq", default) is default
 
 
 class test_Proxy:
-
     def test_std_class_attributes(self):
-        assert Proxy.__name__ == 'Proxy'
-        assert Proxy.__module__ == 'celery.local'
+        assert Proxy.__name__ == "Proxy"
+        assert Proxy.__module__ == "celery.local"
         assert isinstance(Proxy.__doc__, str)
 
     def test_doc(self):
         def real():
             pass
-        x = Proxy(real, __doc__='foo')
-        assert x.__doc__ == 'foo'
+
+        x = Proxy(real, __doc__="foo")
+        assert x.__doc__ == "foo"
 
     def test_name(self):
-
         def real():
             """real function"""
-            return 'REAL'
+            return "REAL"
 
-        x = Proxy(lambda: real, name='xyz')
-        assert x.__name__ == 'xyz'
+        x = Proxy(lambda: real, name="xyz")
+        assert x.__name__ == "xyz"
 
         y = Proxy(lambda: real)
-        assert y.__name__ == 'real'
+        assert y.__name__ == "real"
 
-        assert x.__doc__ == 'real function'
+        assert x.__doc__ == "real function"
 
         assert x.__class__ == type(real)
         assert x.__dict__ == real.__dict__
@@ -49,22 +47,20 @@ class test_Proxy:
 
     def test_get_current_local(self):
         x = Proxy(lambda: 10)
-        object.__setattr__(x, '_Proxy_local', Mock())
+        object.__setattr__(x, "_Proxy_local", Mock())
         assert x._get_current_object()
 
     def test_bool(self):
-
         class X:
-
             def __bool__(self):
                 return False
+
             __nonzero__ = __bool__
 
         x = Proxy(lambda: X())
         assert not x
 
     def test_slots(self):
-
         class X:
             __slots__ = ()
 
@@ -73,56 +69,53 @@ class test_Proxy:
             x.__dict__
 
     def test_dir(self):
-
         class X:
-
             def __dir__(self):
-                return ['a', 'b', 'c']
+                return ["a", "b", "c"]
 
         x = Proxy(lambda: X())
-        assert dir(x) == ['a', 'b', 'c']
+        assert dir(x) == ["a", "b", "c"]
 
         class Y:
-
             def __dir__(self):
                 raise RuntimeError()
+
         y = Proxy(lambda: Y())
         assert dir(y) == []
 
     def test_getsetdel_attr(self):
-
         class X:
             a = 1
             b = 2
             c = 3
 
             def __dir__(self):
-                return ['a', 'b', 'c']
+                return ["a", "b", "c"]
 
         v = X()
 
         x = Proxy(lambda: v)
-        assert x.__members__ == ['a', 'b', 'c']
+        assert x.__members__ == ["a", "b", "c"]
         assert x.a == 1
         assert x.b == 2
         assert x.c == 3
 
-        setattr(x, 'a', 10)
+        setattr(x, "a", 10)
         assert x.a == 10
 
-        del(x.a)
+        del x.a
         assert x.a == 1
 
     def test_dictproxy(self):
         v = {}
         x = Proxy(lambda: v)
-        x['foo'] = 42
-        assert x['foo'] == 42
+        x["foo"] = 42
+        assert x["foo"] == 42
         assert len(x) == 1
-        assert 'foo' in x
-        del(x['foo'])
+        assert "foo" in x
+        del x["foo"]
         with pytest.raises(KeyError):
-            x['foo']
+            x["foo"]
         assert iter(x)
 
     def test_listproxy(self):
@@ -132,7 +125,7 @@ class test_Proxy:
         x.extend([2, 3, 4])
         assert x[0] == 1
         assert x[:-1] == [1, 2, 3]
-        del(x[-1])
+        del x[-1]
         assert x[:-1] == [1, 2]
         x[0] = 10
         assert x[0] == 10
@@ -140,13 +133,11 @@ class test_Proxy:
         assert len(x) == 3
         assert iter(x)
         x[0:2] = [1, 2]
-        del(x[0:2])
+        del x[0:2]
         assert str(x)
 
     def test_complex_cast(self):
-
         class O:
-
             def __complex__(self):
                 return complex(10.333)
 
@@ -154,9 +145,7 @@ class test_Proxy:
         assert o.__complex__() == complex(10.333)
 
     def test_index(self):
-
         class O:
-
             def __index__(self):
                 return 1
 
@@ -164,9 +153,7 @@ class test_Proxy:
         assert o.__index__() == 1
 
     def test_coerce(self):
-
         class O:
-
             def __coerce__(self, other):
                 return self, other
 
@@ -243,25 +230,20 @@ class test_Proxy:
         assert oct(x)
 
     def test_hash(self):
-
         class X:
-
             def __hash__(self):
                 return 1234
 
         assert hash(Proxy(lambda: X())) == 1234
 
     def test_call(self):
-
         class X:
-
             def __call__(self):
                 return 1234
 
         assert Proxy(lambda: X())() == 1234
 
     def test_context(self):
-
         class X:
             entered = exited = False
 
@@ -280,9 +262,7 @@ class test_Proxy:
         assert x.exited
 
     def test_reduce(self):
-
         class X:
-
             def __reduce__(self):
                 return 123
 
@@ -291,9 +271,7 @@ class test_Proxy:
 
 
 class test_PromiseProxy:
-
     def test_only_evaluated_once(self):
-
         class X:
             attr = 123
             evals = 0
@@ -307,20 +285,20 @@ class test_PromiseProxy:
         assert X.evals == 1
 
     def test_callbacks(self):
-        source = Mock(name='source')
+        source = Mock(name="source")
         p = PromiseProxy(source)
-        cbA = Mock(name='cbA')
-        cbB = Mock(name='cbB')
-        cbC = Mock(name='cbC')
+        cbA = Mock(name="cbA")
+        cbB = Mock(name="cbB")
+        cbC = Mock(name="cbC")
         p.__then__(cbA, p)
         p.__then__(cbB, p)
         assert not p.__evaluated__()
-        assert object.__getattribute__(p, '__pending__')
+        assert object.__getattribute__(p, "__pending__")
 
         assert repr(p)
         assert p.__evaluated__()
         with pytest.raises(AttributeError):
-            object.__getattribute__(p, '__pending__')
+            object.__getattribute__(p, "__pending__")
         cbA.assert_called_with(p)
         cbB.assert_called_with(p)
 
@@ -329,7 +307,7 @@ class test_PromiseProxy:
         cbC.assert_called_with(p)
 
         with pytest.raises(AttributeError):
-            object.__getattribute__(p, '__pending__')
+            object.__getattribute__(p, "__pending__")
 
     def test_maybe_evaluate(self):
         x = PromiseProxy(lambda: 30)

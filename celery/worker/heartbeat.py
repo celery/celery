@@ -8,7 +8,7 @@ from celery.utils.sysinfo import load_average
 
 from .state import SOFTWARE_INFO, active_requests, all_total_count
 
-__all__ = ('Heart',)
+__all__ = ("Heart",)
 
 
 class Heart:
@@ -34,23 +34,29 @@ class Heart:
 
         # Only send heartbeat_sent signal if it has receivers.
         self._send_sent_signal = (
-            heartbeat_sent.send if heartbeat_sent.receivers else None)
+            heartbeat_sent.send if heartbeat_sent.receivers else None
+        )
 
     def _send(self, event, retry=True):
         if self._send_sent_signal is not None:
             self._send_sent_signal(sender=self)
-        return self.eventer.send(event, freq=self.interval,
-                                 active=len(active_requests),
-                                 processed=all_total_count[0],
-                                 loadavg=load_average(),
-                                 retry=retry,
-                                 **SOFTWARE_INFO)
+        return self.eventer.send(
+            event,
+            freq=self.interval,
+            active=len(active_requests),
+            processed=all_total_count[0],
+            loadavg=load_average(),
+            retry=retry,
+            **SOFTWARE_INFO
+        )
 
     def start(self):
         if self.eventer.enabled:
-            self._send('worker-online')
+            self._send("worker-online")
             self.tref = self.timer.call_repeatedly(
-                self.interval, self._send, ('worker-heartbeat',),
+                self.interval,
+                self._send,
+                ("worker-heartbeat",),
             )
 
     def stop(self):
@@ -58,4 +64,4 @@ class Heart:
             self.timer.cancel(self.tref)
             self.tref = None
         if self.eventer.enabled:
-            self._send('worker-offline', retry=False)
+            self._send("worker-offline", retry=False)

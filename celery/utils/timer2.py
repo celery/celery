@@ -15,9 +15,9 @@ from kombu.asynchronous.timer import Entry
 from kombu.asynchronous.timer import Timer as Schedule
 from kombu.asynchronous.timer import logger, to_timestamp
 
-TIMER_DEBUG = os.environ.get('TIMER_DEBUG')
+TIMER_DEBUG = os.environ.get("TIMER_DEBUG")
 
-__all__ = ('Entry', 'Schedule', 'Timer', 'to_timestamp')
+__all__ = ("Entry", "Schedule", "Timer", "to_timestamp")
 
 
 class Timer(threading.Thread):
@@ -36,16 +36,26 @@ class Timer(threading.Thread):
     _timer_count = count(1)
 
     if TIMER_DEBUG:  # pragma: no cover
+
         def start(self, *args, **kwargs):
             import traceback
-            print('- Timer starting')
+
+            print("- Timer starting")
             traceback.print_stack()
             super().start(*args, **kwargs)
 
-    def __init__(self, schedule=None, on_error=None, on_tick=None,
-                 on_start=None, max_interval=None, **kwargs):
-        self.schedule = schedule or self.Schedule(on_error=on_error,
-                                                  max_interval=max_interval)
+    def __init__(
+        self,
+        schedule=None,
+        on_error=None,
+        on_tick=None,
+        on_start=None,
+        max_interval=None,
+        **kwargs
+    ):
+        self.schedule = schedule or self.Schedule(
+            on_error=on_error, max_interval=max_interval
+        )
         self.on_start = on_start
         self.on_tick = on_tick or self.on_tick
         threading.Thread.__init__(self)
@@ -54,7 +64,7 @@ class Timer(threading.Thread):
         self.mutex = threading.Lock()
         self.not_empty = threading.Condition(self.mutex)
         self.daemon = True
-        self.name = 'Timer-{}'.format(next(self._timer_count))
+        self.name = "Timer-{}".format(next(self._timer_count))
 
     def _next_entry(self):
         with self.not_empty:
@@ -64,6 +74,7 @@ class Timer(threading.Thread):
                     self.not_empty.wait(1.0)
                 return delay
         return self.schedule.apply_entry(entry)
+
     __next__ = next = _next_entry  # for 2to3
 
     def run(self):
@@ -86,7 +97,7 @@ class Timer(threading.Thread):
                 # so gc collected built-in modules.
                 pass
         except Exception as exc:
-            logger.error('Thread Timer crashed: %r', exc, exc_info=True)
+            logger.error("Thread Timer crashed: %r", exc, exc_info=True)
             sys.stderr.flush()
             os._exit(1)
 
@@ -111,19 +122,19 @@ class Timer(threading.Thread):
             return entry
 
     def enter(self, entry, eta, priority=None):
-        return self._do_enter('enter_at', entry, eta, priority=priority)
+        return self._do_enter("enter_at", entry, eta, priority=priority)
 
     def call_at(self, *args, **kwargs):
-        return self._do_enter('call_at', *args, **kwargs)
+        return self._do_enter("call_at", *args, **kwargs)
 
     def enter_after(self, *args, **kwargs):
-        return self._do_enter('enter_after', *args, **kwargs)
+        return self._do_enter("enter_after", *args, **kwargs)
 
     def call_after(self, *args, **kwargs):
-        return self._do_enter('call_after', *args, **kwargs)
+        return self._do_enter("call_after", *args, **kwargs)
 
     def call_repeatedly(self, *args, **kwargs):
-        return self._do_enter('call_repeatedly', *args, **kwargs)
+        return self._do_enter("call_repeatedly", *args, **kwargs)
 
     def exit_after(self, secs, priority=10):
         self.call_after(secs, sys.exit, priority)
@@ -143,6 +154,7 @@ class Timer(threading.Thread):
     def __bool__(self):
         """``bool(timer)``."""
         return True
+
     __nonzero__ = __bool__
 
     @property

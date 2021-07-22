@@ -9,7 +9,7 @@ from celery.exceptions import ImproperlyConfigured
 
 MODULE_TO_MOCK = "celery.backends.cosmosdbsql"
 
-pytest.importorskip('pydocumentdb')
+pytest.importorskip("pydocumentdb")
 
 
 class test_DocumentDBBackend:
@@ -28,32 +28,30 @@ class test_DocumentDBBackend:
 
     def test_bad_connection_url(self):
         with pytest.raises(ImproperlyConfigured):
-            CosmosDBSQLBackend._parse_url(
-                "cosmosdbsql://:key@")
+            CosmosDBSQLBackend._parse_url("cosmosdbsql://:key@")
 
         with pytest.raises(ImproperlyConfigured):
-            CosmosDBSQLBackend._parse_url(
-                "cosmosdbsql://:@host")
+            CosmosDBSQLBackend._parse_url("cosmosdbsql://:@host")
 
         with pytest.raises(ImproperlyConfigured):
-            CosmosDBSQLBackend._parse_url(
-                "cosmosdbsql://corrupted")
+            CosmosDBSQLBackend._parse_url("cosmosdbsql://corrupted")
 
     def test_default_connection_url(self):
-        endpoint, password = CosmosDBSQLBackend._parse_url(
-            "cosmosdbsql://:key@host")
+        endpoint, password = CosmosDBSQLBackend._parse_url("cosmosdbsql://:key@host")
 
         assert password == "key"
         assert endpoint == "https://host:443"
 
         endpoint, password = CosmosDBSQLBackend._parse_url(
-            "cosmosdbsql://:key@host:443")
+            "cosmosdbsql://:key@host:443"
+        )
 
         assert password == "key"
         assert endpoint == "https://host:443"
 
         endpoint, password = CosmosDBSQLBackend._parse_url(
-            "cosmosdbsql://:key@host:8080")
+            "cosmosdbsql://:key@host:8080"
+        )
 
         assert password == "key"
         assert endpoint == "http://host:8080"
@@ -70,8 +68,9 @@ class test_DocumentDBBackend:
 
     def test_bad_consistency_level(self):
         with pytest.raises(ImproperlyConfigured):
-            CosmosDBSQLBackend(app=self.app, url=self.url,
-                               consistency_level="DoesNotExist")
+            CosmosDBSQLBackend(
+                app=self.app, url=self.url, consistency_level="DoesNotExist"
+            )
 
     @patch(MODULE_TO_MOCK + ".DocumentClient")
     def test_create_client(self, mock_factory):
@@ -96,14 +95,19 @@ class test_DocumentDBBackend:
         self.backend.get(b"mykey")
 
         mock_client.ReadDocument.assert_has_calls(
-            [call("dbs/celerydb/colls/celerycol/docs/mykey",
-                  {"partitionKey": "mykey"}),
-             call().get("value")])
+            [
+                call(
+                    "dbs/celerydb/colls/celerycol/docs/mykey", {"partitionKey": "mykey"}
+                ),
+                call().get("value"),
+            ]
+        )
 
     @patch(MODULE_TO_MOCK + ".CosmosDBSQLBackend._client")
     def test_get_missing(self, mock_client):
-        mock_client.ReadDocument.side_effect = \
-            cosmosdbsql.HTTPFailure(cosmosdbsql.ERROR_NOT_FOUND)
+        mock_client.ReadDocument.side_effect = cosmosdbsql.HTTPFailure(
+            cosmosdbsql.ERROR_NOT_FOUND
+        )
 
         assert self.backend.get(b"mykey") is None
 
@@ -114,7 +118,8 @@ class test_DocumentDBBackend:
         mock_client.CreateDocument.assert_called_once_with(
             "dbs/celerydb/colls/celerycol",
             {"id": "mykey", "value": "myvalue"},
-            {"partitionKey": "mykey"})
+            {"partitionKey": "mykey"},
+        )
 
     @patch(MODULE_TO_MOCK + ".CosmosDBSQLBackend._client")
     def test_mget(self, mock_client):
@@ -123,17 +128,24 @@ class test_DocumentDBBackend:
         self.backend.mget(keys)
 
         mock_client.ReadDocument.assert_has_calls(
-            [call("dbs/celerydb/colls/celerycol/docs/mykey1",
-                  {"partitionKey": "mykey1"}),
-             call().get("value"),
-             call("dbs/celerydb/colls/celerycol/docs/mykey2",
-                  {"partitionKey": "mykey2"}),
-             call().get("value")])
+            [
+                call(
+                    "dbs/celerydb/colls/celerycol/docs/mykey1",
+                    {"partitionKey": "mykey1"},
+                ),
+                call().get("value"),
+                call(
+                    "dbs/celerydb/colls/celerycol/docs/mykey2",
+                    {"partitionKey": "mykey2"},
+                ),
+                call().get("value"),
+            ]
+        )
 
     @patch(MODULE_TO_MOCK + ".CosmosDBSQLBackend._client")
     def test_delete(self, mock_client):
         self.backend.delete(b"mykey")
 
         mock_client.DeleteDocument.assert_called_once_with(
-            "dbs/celerydb/colls/celerycol/docs/mykey",
-            {"partitionKey": "mykey"})
+            "dbs/celerydb/colls/celerycol/docs/mykey", {"partitionKey": "mykey"}
+        )

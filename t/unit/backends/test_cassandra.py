@@ -10,27 +10,27 @@ from celery.exceptions import ImproperlyConfigured
 from celery.utils.objects import Bunch
 
 CASSANDRA_MODULES = [
-    'cassandra',
-    'cassandra.auth',
-    'cassandra.cluster',
-    'cassandra.query',
+    "cassandra",
+    "cassandra.auth",
+    "cassandra.cluster",
+    "cassandra.query",
 ]
 
 
 @mock.module(*CASSANDRA_MODULES)
 class test_CassandraBackend:
-
     def setup(self):
         self.app.conf.update(
-            cassandra_servers=['example.com'],
-            cassandra_keyspace='celery',
-            cassandra_table='task_results',
+            cassandra_servers=["example.com"],
+            cassandra_keyspace="celery",
+            cassandra_table="task_results",
         )
 
     def test_init_no_cassandra(self, *modules):
         # should raise ImproperlyConfigured when no python-driver
         # installed.
         from celery.backends import cassandra as mod
+
         prev, mod.cassandra = mod.cassandra, None
         try:
             with pytest.raises(ImproperlyConfigured):
@@ -40,55 +40,59 @@ class test_CassandraBackend:
 
     def test_init_with_and_without_LOCAL_QUROM(self, *modules):
         from celery.backends import cassandra as mod
+
         mod.cassandra = Mock()
 
         cons = mod.cassandra.ConsistencyLevel = Bunch(
-            LOCAL_QUORUM='foo',
+            LOCAL_QUORUM="foo",
         )
 
-        self.app.conf.cassandra_read_consistency = 'LOCAL_FOO'
-        self.app.conf.cassandra_write_consistency = 'LOCAL_FOO'
+        self.app.conf.cassandra_read_consistency = "LOCAL_FOO"
+        self.app.conf.cassandra_write_consistency = "LOCAL_FOO"
 
         mod.CassandraBackend(app=self.app)
-        cons.LOCAL_FOO = 'bar'
+        cons.LOCAL_FOO = "bar"
         mod.CassandraBackend(app=self.app)
 
         # no servers raises ImproperlyConfigured
         with pytest.raises(ImproperlyConfigured):
             self.app.conf.cassandra_servers = None
             mod.CassandraBackend(
-                app=self.app, keyspace='b', column_family='c',
+                app=self.app,
+                keyspace="b",
+                column_family="c",
             )
 
-    @pytest.mark.usefixtures('depends_on_current_app')
+    @pytest.mark.usefixtures("depends_on_current_app")
     def test_reduce(self, *modules):
         from celery.backends.cassandra import CassandraBackend
+
         assert loads(dumps(CassandraBackend(app=self.app)))
 
     def test_get_task_meta_for(self, *modules):
         from celery.backends import cassandra as mod
+
         mod.cassandra = Mock()
 
         x = mod.CassandraBackend(app=self.app)
         session = x._session = Mock()
         execute = session.execute = Mock()
         result_set = Mock()
-        result_set.one.return_value = [
-            states.SUCCESS, '1', datetime.now(), b'', b''
-        ]
+        result_set.one.return_value = [states.SUCCESS, "1", datetime.now(), b"", b""]
         execute.return_value = result_set
         x.decode = Mock()
-        meta = x._get_task_meta_for('task_id')
-        assert meta['status'] == states.SUCCESS
+        meta = x._get_task_meta_for("task_id")
+        assert meta["status"] == states.SUCCESS
 
         result_set.one.return_value = []
         x._session.execute.return_value = result_set
-        meta = x._get_task_meta_for('task_id')
-        assert meta['status'] == states.PENDING
+        meta = x._get_task_meta_for("task_id")
+        assert meta["status"] == states.PENDING
 
     def test_as_uri(self):
         # Just ensure as_uri works properly
         from celery.backends import cassandra as mod
+
         mod.cassandra = Mock()
 
         x = mod.CassandraBackend(app=self.app)
@@ -97,12 +101,13 @@ class test_CassandraBackend:
 
     def test_store_result(self, *modules):
         from celery.backends import cassandra as mod
+
         mod.cassandra = Mock()
 
         x = mod.CassandraBackend(app=self.app)
         session = x._session = Mock()
         session.execute = Mock()
-        x._store_result('task_id', 'result', states.SUCCESS)
+        x._store_result("task_id", "result", states.SUCCESS)
 
     def test_timeouting_cluster(self):
         # Tests behavior when Cluster.connect raises
@@ -130,7 +135,7 @@ class test_CassandraBackend:
         x = mod.CassandraBackend(app=self.app)
 
         with pytest.raises(OTOExc):
-            x._store_result('task_id', 'result', states.SUCCESS)
+            x._store_result("task_id", "result", states.SUCCESS)
         assert x._cluster is None
         assert x._session is None
 
@@ -150,7 +155,6 @@ class test_CassandraBackend:
                 raise OTOExc()
 
         class DummyCluster:
-
             def __init__(self, *args, **kwargs):
                 pass
 
@@ -171,7 +175,6 @@ class test_CassandraBackend:
         from celery.backends import cassandra as mod
 
         class DummyCluster:
-
             def __init__(self, *args, **kwargs):
                 pass
 
@@ -203,17 +206,13 @@ class test_CassandraBackend:
         mod.cassandra.auth = DummyAuth
 
         # Valid auth_provider
-        self.app.conf.cassandra_auth_provider = 'ValidAuthProvider'
-        self.app.conf.cassandra_auth_kwargs = {
-            'username': 'stuff'
-        }
+        self.app.conf.cassandra_auth_provider = "ValidAuthProvider"
+        self.app.conf.cassandra_auth_kwargs = {"username": "stuff"}
         mod.CassandraBackend(app=self.app)
 
         # Invalid auth_provider
-        self.app.conf.cassandra_auth_provider = 'SpiderManAuth'
-        self.app.conf.cassandra_auth_kwargs = {
-            'username': 'Jack'
-        }
+        self.app.conf.cassandra_auth_provider = "SpiderManAuth"
+        self.app.conf.cassandra_auth_kwargs = {"username": "Jack"}
         with pytest.raises(ImproperlyConfigured):
             mod.CassandraBackend(app=self.app)
 
@@ -224,7 +223,7 @@ class test_CassandraBackend:
         mod.cassandra = Mock()
         # Valid options
         self.app.conf.cassandra_options = {
-            'cql_version': '3.2.1',
-            'protocol_version': 3
+            "cql_version": "3.2.1",
+            "protocol_version": 3,
         }
         mod.CassandraBackend(app=self.app)

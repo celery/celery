@@ -16,24 +16,25 @@ from celery.utils.log import get_logger
 from celery.utils.time import rate
 from celery.utils.timer2 import Timer
 
-__all__ = ('Polaroid', 'evcam')
+__all__ = ("Polaroid", "evcam")
 
-logger = get_logger('celery.evcam')
+logger = get_logger("celery.evcam")
 
 
 class Polaroid:
     """Record event snapshots."""
 
     timer = None
-    shutter_signal = Signal(name='shutter_signal', providing_args={'state'})
-    cleanup_signal = Signal(name='cleanup_signal')
+    shutter_signal = Signal(name="shutter_signal", providing_args={"state"})
+    cleanup_signal = Signal(name="cleanup_signal")
     clear_after = False
 
     _tref = None
     _ctref = None
 
-    def __init__(self, state, freq=1.0, maxrate=None,
-                 cleanup_freq=3600.0, timer=None, app=None):
+    def __init__(
+        self, state, freq=1.0, maxrate=None, cleanup_freq=3600.0, timer=None, app=None
+    ):
         self.app = app_or_default(app)
         self.state = state
         self.freq = freq
@@ -45,7 +46,8 @@ class Polaroid:
     def install(self):
         self._tref = self.timer.call_repeatedly(self.freq, self.capture)
         self._ctref = self.timer.call_repeatedly(
-            self.cleanup_freq, self.cleanup,
+            self.cleanup_freq,
+            self.cleanup,
         )
 
     def on_shutter(self, state):
@@ -55,13 +57,13 @@ class Polaroid:
         pass
 
     def cleanup(self):
-        logger.debug('Cleanup: Running...')
+        logger.debug("Cleanup: Running...")
         self.cleanup_signal.send(sender=self.state)
         self.on_cleanup()
 
     def shutter(self):
         if self.maxrate is None or self.maxrate.can_consume():
-            logger.debug('Shutter: %s', self.state)
+            logger.debug("Shutter: %s", self.state)
             self.shutter_signal.send(sender=self.state)
             self.on_shutter(self.state)
 
@@ -83,9 +85,17 @@ class Polaroid:
         self.cancel()
 
 
-def evcam(camera, freq=1.0, maxrate=None, loglevel=0,
-          logfile=None, pidfile=None, timer=None, app=None,
-          **kwargs):
+def evcam(
+    camera,
+    freq=1.0,
+    maxrate=None,
+    loglevel=0,
+    logfile=None,
+    pidfile=None,
+    timer=None,
+    app=None,
+    **kwargs,
+):
     """Start snapshot recorder."""
     app = app_or_default(app)
 
@@ -94,13 +104,12 @@ def evcam(camera, freq=1.0, maxrate=None, loglevel=0,
 
     app.log.setup_logging_subsystem(loglevel, logfile)
 
-    print(f'-> evcam: Taking snapshots with {camera} (every {freq} secs.)')
+    print(f"-> evcam: Taking snapshots with {camera} (every {freq} secs.)")
     state = app.events.State()
-    cam = instantiate(camera, state, app=app, freq=freq,
-                      maxrate=maxrate, timer=timer)
+    cam = instantiate(camera, state, app=app, freq=freq, maxrate=maxrate, timer=timer)
     cam.install()
     conn = app.connection_for_read()
-    recv = app.events.Receiver(conn, handlers={'*': state.event})
+    recv = app.events.Receiver(conn, handlers={"*": state.event})
     try:
         try:
             recv.capture(limit=None)

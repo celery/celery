@@ -9,7 +9,7 @@ from celery.exceptions import ImproperlyConfigured
 
 MODULE_TO_MOCK = "celery.backends.azureblockblob"
 
-pytest.importorskip('azure.storage.blob')
+pytest.importorskip("azure.storage.blob")
 
 
 class test_AzureBlockBlobBackend:
@@ -19,11 +19,10 @@ class test_AzureBlockBlobBackend:
             "DefaultEndpointsProtocol=protocol;"
             "AccountName=name;"
             "AccountKey=key;"
-            "EndpointSuffix=suffix")
+            "EndpointSuffix=suffix"
+        )
 
-        self.backend = AzureBlockBlobBackend(
-            app=self.app,
-            url=self.url)
+        self.backend = AzureBlockBlobBackend(app=self.app, url=self.url)
 
     def test_missing_third_party_sdk(self):
         azurestorage = azureblockblob.azurestorage
@@ -60,13 +59,13 @@ class test_AzureBlockBlobBackend:
     def test_get(self, mock_client):
         self.backend.get(b"mykey")
 
-        mock_client.get_blob_to_text.assert_called_once_with(
-            "celery", "mykey")
+        mock_client.get_blob_to_text.assert_called_once_with("celery", "mykey")
 
     @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._client")
     def test_get_missing(self, mock_client):
-        mock_client.get_blob_to_text.side_effect = \
+        mock_client.get_blob_to_text.side_effect = (
             azureblockblob.AzureMissingResourceHttpError("Missing", 404)
+        )
 
         assert self.backend.get(b"mykey") is None
 
@@ -75,7 +74,8 @@ class test_AzureBlockBlobBackend:
         self.backend._set_with_state(b"mykey", "myvalue", states.SUCCESS)
 
         mock_client.create_blob_from_text.assert_called_once_with(
-            "celery", "mykey", "myvalue")
+            "celery", "mykey", "myvalue"
+        )
 
     @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._client")
     def test_mget(self, mock_client):
@@ -84,12 +84,11 @@ class test_AzureBlockBlobBackend:
         self.backend.mget(keys)
 
         mock_client.get_blob_to_text.assert_has_calls(
-            [call("celery", "mykey1"),
-             call("celery", "mykey2")])
+            [call("celery", "mykey1"), call("celery", "mykey2")]
+        )
 
     @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._client")
     def test_delete(self, mock_client):
         self.backend.delete(b"mykey")
 
-        mock_client.delete_blob.assert_called_once_with(
-            "celery", "mykey")
+        mock_client.delete_blob.assert_called_once_with("celery", "mykey")

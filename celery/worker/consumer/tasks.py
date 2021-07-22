@@ -6,7 +6,7 @@ from celery.utils.log import get_logger
 
 from .mingle import Mingle
 
-__all__ = ('Tasks',)
+__all__ = ("Tasks",)
 
 logger = get_logger(__name__)
 debug = logger.debug
@@ -32,11 +32,14 @@ class Tasks(bootsteps.StartStopStep):
 
         # set initial prefetch count
         c.connection.default_channel.basic_qos(
-            0, c.initial_prefetch_count, qos_global,
+            0,
+            c.initial_prefetch_count,
+            qos_global,
         )
 
         c.task_consumer = c.app.amqp.TaskConsumer(
-            c.connection, on_decode_error=c.on_decode_error,
+            c.connection,
+            on_decode_error=c.on_decode_error,
         )
 
         def set_prefetch_count(prefetch_count):
@@ -44,22 +47,23 @@ class Tasks(bootsteps.StartStopStep):
                 prefetch_count=prefetch_count,
                 apply_global=qos_global,
             )
+
         c.qos = QoS(set_prefetch_count, c.initial_prefetch_count)
 
     def stop(self, c):
         """Stop task consumer."""
         if c.task_consumer:
-            debug('Canceling task consumer...')
+            debug("Canceling task consumer...")
             ignore_errors(c, c.task_consumer.cancel)
 
     def shutdown(self, c):
         """Shutdown task consumer."""
         if c.task_consumer:
             self.stop(c)
-            debug('Closing consumer channel...')
+            debug("Closing consumer channel...")
             ignore_errors(c, c.task_consumer.close)
             c.task_consumer = None
 
     def info(self, c):
         """Return task consumer info."""
-        return {'prefetch_count': c.qos.value if c.qos else 'N/A'}
+        return {"prefetch_count": c.qos.value if c.qos else "N/A"}

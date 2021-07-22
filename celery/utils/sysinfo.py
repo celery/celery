@@ -4,13 +4,14 @@ from math import ceil
 
 from kombu.utils.objects import cached_property
 
-__all__ = ('load_average', 'df')
+__all__ = ("load_average", "df")
 
 
-if hasattr(os, 'getloadavg'):
+if hasattr(os, "getloadavg"):
 
     def _load_average():
         return tuple(ceil(l * 1e2) / 1e2 for l in os.getloadavg())
+
 
 else:  # pragma: no cover
     # Windows doesn't have getloadavg

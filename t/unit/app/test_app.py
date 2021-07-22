@@ -26,7 +26,7 @@ from celery.utils.objects import Bunch
 from celery.utils.serialization import pickle
 from celery.utils.time import localize, timezone, to_utc
 
-THIS_IS_A_KEY = 'this is a value'
+THIS_IS_A_KEY = "this is a value"
 
 
 class ObjectConfig:
@@ -35,7 +35,7 @@ class ObjectConfig:
 
 
 object_config = ObjectConfig()
-dict_config = {'FOO': 10, 'BAR': 20}
+dict_config = {"FOO": 10, "BAR": 20}
 
 
 class ObjectConfig2:
@@ -47,7 +47,6 @@ class ObjectConfig2:
 
 
 class test_module:
-
     def test_default_app(self):
         assert _app.default_app == _state.default_app
 
@@ -56,9 +55,8 @@ class test_module:
 
 
 class test_task_join_will_block:
-
     def test_task_join_will_block(self, patching):
-        patching('celery._state._task_join_will_block', 0)
+        patching("celery._state._task_join_will_block", 0)
         assert _state._task_join_will_block == 0
         _state._set_task_join_will_block(True)
         assert _state._task_join_will_block is True
@@ -69,13 +67,12 @@ class test_task_join_will_block:
 
 
 class test_App:
-
     def setup(self):
         self.app.add_defaults(deepcopy(self.CELERY_TEST_CONFIG))
 
     def test_now(self):
-        timezone_setting_value = 'US/Eastern'
-        tz_utc = timezone.get_timezone('UTC')
+        timezone_setting_value = "US/Eastern"
+        tz_utc = timezone.get_timezone("UTC")
         tz_us_eastern = timezone.get_timezone(timezone_setting_value)
 
         now = to_utc(datetime.utcnow())
@@ -104,21 +101,23 @@ class test_App:
         assert self.app.timezone == tz_us_eastern
         assert app_now.tzinfo.zone == tz_us_eastern.zone
 
-    @patch('celery.app.base.set_default_app')
+    @patch("celery.app.base.set_default_app")
     def test_set_default(self, set_default_app):
         self.app.set_default()
         set_default_app.assert_called_with(self.app)
 
-    @patch('celery.security.setup_security')
+    @patch("celery.security.setup_security")
     def test_setup_security(self, setup_security):
         self.app.setup_security(
-            {'json'}, 'key', 'cert', 'store', 'digest', 'serializer')
+            {"json"}, "key", "cert", "store", "digest", "serializer"
+        )
         setup_security.assert_called_with(
-            {'json'}, 'key', 'cert', 'store', 'digest', 'serializer',
-            app=self.app)
+            {"json"}, "key", "cert", "store", "digest", "serializer", app=self.app
+        )
 
     def test_task_autofinalize_disabled(self):
-        with self.Celery('xyzibari', autofinalize=False) as app:
+        with self.Celery("xyzibari", autofinalize=False) as app:
+
             @app.task
             def ttafd():
                 return 42
@@ -126,7 +125,8 @@ class test_App:
             with pytest.raises(RuntimeError):
                 ttafd()
 
-        with self.Celery('xyzibari', autofinalize=False) as app:
+        with self.Celery("xyzibari", autofinalize=False) as app:
+
             @app.task
             def ttafd2():
                 return 42
@@ -135,37 +135,38 @@ class test_App:
             assert ttafd2() == 42
 
     def test_registry_autofinalize_disabled(self):
-        with self.Celery('xyzibari', autofinalize=False) as app:
+        with self.Celery("xyzibari", autofinalize=False) as app:
             with pytest.raises(RuntimeError):
-                app.tasks['celery.chain']
+                app.tasks["celery.chain"]
             app.finalize()
-            assert app.tasks['celery.chain']
+            assert app.tasks["celery.chain"]
 
     def test_task(self):
-        with self.Celery('foozibari') as app:
+        with self.Celery("foozibari") as app:
 
             def fun():
                 pass
 
-            fun.__module__ = '__main__'
+            fun.__module__ = "__main__"
             task = app.task(fun)
-            assert task.name == app.main + '.fun'
+            assert task.name == app.main + ".fun"
 
     def test_task_too_many_args(self):
         with pytest.raises(TypeError):
-            self.app.task(Mock(name='fun'), True)
+            self.app.task(Mock(name="fun"), True)
         with pytest.raises(TypeError):
-            self.app.task(Mock(name='fun'), True, 1, 2)
+            self.app.task(Mock(name="fun"), True, 1, 2)
 
     def test_with_config_source(self):
         with self.Celery(config_source=ObjectConfig) as app:
             assert app.conf.FOO == 1
             assert app.conf.BAR == 2
 
-    @pytest.mark.usefixtures('depends_on_current_app')
+    @pytest.mark.usefixtures("depends_on_current_app")
     def test_task_windows_execv(self):
         prev, _appbase.USING_EXECV = _appbase.USING_EXECV, True
         try:
+
             @self.app.task(shared=False)
             def foo():
                 pass
@@ -178,13 +179,14 @@ class test_App:
 
     def test_task_takes_no_args(self):
         with pytest.raises(TypeError):
+
             @self.app.task(1)
             def foo():
                 pass
 
     def test_add_defaults(self):
         assert not self.app.configured
-        _conf = {'foo': 300}
+        _conf = {"foo": 300}
 
         def conf():
             return _conf
@@ -202,9 +204,9 @@ class test_App:
             appr.conf.foo
 
         # add more defaults after configured
-        conf2 = {'foo': 'BAR'}
+        conf2 = {"foo": "BAR"}
         self.app.add_defaults(conf2)
-        assert self.app.conf.foo == 'BAR'
+        assert self.app.conf.foo == "BAR"
 
         assert _conf in self.app.conf.defaults
         assert conf2 in self.app.conf.defaults
@@ -224,32 +226,38 @@ class test_App:
         self.app.loader.autodiscover_tasks = Mock()
         self.app.autodiscover_tasks([], force=True)
         self.app.loader.autodiscover_tasks.assert_called_with(
-            [], 'tasks',
+            [],
+            "tasks",
         )
 
     def test_autodiscover_tasks_force(self):
         self.app.loader.autodiscover_tasks = Mock()
-        self.app.autodiscover_tasks(['proj.A', 'proj.B'], force=True)
+        self.app.autodiscover_tasks(["proj.A", "proj.B"], force=True)
         self.app.loader.autodiscover_tasks.assert_called_with(
-            ['proj.A', 'proj.B'], 'tasks',
+            ["proj.A", "proj.B"],
+            "tasks",
         )
         self.app.loader.autodiscover_tasks = Mock()
 
         def lazy_list():
-            return ['proj.A', 'proj.B']
+            return ["proj.A", "proj.B"]
+
         self.app.autodiscover_tasks(
             lazy_list,
-            related_name='george',
+            related_name="george",
             force=True,
         )
         self.app.loader.autodiscover_tasks.assert_called_with(
-            ['proj.A', 'proj.B'], 'george',
+            ["proj.A", "proj.B"],
+            "george",
         )
 
     def test_autodiscover_tasks_lazy(self):
-        with patch('celery.signals.import_modules') as import_modules:
+        with patch("celery.signals.import_modules") as import_modules:
+
             def lazy_list():
                 return [1, 2, 3]
+
             self.app.autodiscover_tasks(lazy_list)
             import_modules.connect.assert_called()
             prom = import_modules.connect.call_args[0][0]
@@ -258,137 +266,143 @@ class test_App:
             assert prom.args[0](), [1, 2 == 3]
 
     def test_autodiscover_tasks__no_packages(self):
-        fixup1 = Mock(name='fixup')
-        fixup2 = Mock(name='fixup')
-        self.app._autodiscover_tasks_from_names = Mock(name='auto')
+        fixup1 = Mock(name="fixup")
+        fixup2 = Mock(name="fixup")
+        self.app._autodiscover_tasks_from_names = Mock(name="auto")
         self.app._fixups = [fixup1, fixup2]
-        fixup1.autodiscover_tasks.return_value = ['A', 'B', 'C']
-        fixup2.autodiscover_tasks.return_value = ['D', 'E', 'F']
+        fixup1.autodiscover_tasks.return_value = ["A", "B", "C"]
+        fixup2.autodiscover_tasks.return_value = ["D", "E", "F"]
         self.app.autodiscover_tasks(force=True)
         self.app._autodiscover_tasks_from_names.assert_called_with(
-            ['A', 'B', 'C', 'D', 'E', 'F'], related_name='tasks',
+            ["A", "B", "C", "D", "E", "F"],
+            related_name="tasks",
         )
 
     def test_with_broker(self, patching):
-        patching.setenv('CELERY_BROKER_URL', '')
-        with self.Celery(broker='foo://baribaz') as app:
-            assert app.conf.broker_url == 'foo://baribaz'
+        patching.setenv("CELERY_BROKER_URL", "")
+        with self.Celery(broker="foo://baribaz") as app:
+            assert app.conf.broker_url == "foo://baribaz"
 
     def test_pending_confugration__kwargs(self):
-        with self.Celery(foo='bar') as app:
-            assert app.conf.foo == 'bar'
+        with self.Celery(foo="bar") as app:
+            assert app.conf.foo == "bar"
 
     def test_pending_configuration__setattr(self):
-        with self.Celery(broker='foo://bar') as app:
+        with self.Celery(broker="foo://bar") as app:
             app.conf.task_default_delivery_mode = 44
-            app.conf.worker_agent = 'foo:Bar'
+            app.conf.worker_agent = "foo:Bar"
             assert not app.configured
-            assert app.conf.worker_agent == 'foo:Bar'
-            assert app.conf.broker_url == 'foo://bar'
-            assert app._preconf['worker_agent'] == 'foo:Bar'
+            assert app.conf.worker_agent == "foo:Bar"
+            assert app.conf.broker_url == "foo://bar"
+            assert app._preconf["worker_agent"] == "foo:Bar"
 
             assert app.configured
             reapp = pickle.loads(pickle.dumps(app))
-            assert reapp._preconf['worker_agent'] == 'foo:Bar'
+            assert reapp._preconf["worker_agent"] == "foo:Bar"
             assert not reapp.configured
-            assert reapp.conf.worker_agent == 'foo:Bar'
+            assert reapp.conf.worker_agent == "foo:Bar"
             assert reapp.configured
-            assert reapp.conf.broker_url == 'foo://bar'
-            assert reapp._preconf['worker_agent'] == 'foo:Bar'
+            assert reapp.conf.broker_url == "foo://bar"
+            assert reapp._preconf["worker_agent"] == "foo:Bar"
 
     def test_pending_configuration__update(self):
-        with self.Celery(broker='foo://bar') as app:
+        with self.Celery(broker="foo://bar") as app:
             app.conf.update(
                 task_default_delivery_mode=44,
-                worker_agent='foo:Bar',
+                worker_agent="foo:Bar",
             )
             assert not app.configured
-            assert app.conf.worker_agent == 'foo:Bar'
-            assert app.conf.broker_url == 'foo://bar'
-            assert app._preconf['worker_agent'] == 'foo:Bar'
+            assert app.conf.worker_agent == "foo:Bar"
+            assert app.conf.broker_url == "foo://bar"
+            assert app._preconf["worker_agent"] == "foo:Bar"
 
     def test_pending_configuration__compat_settings(self):
-        with self.Celery(broker='foo://bar', backend='foo') as app:
+        with self.Celery(broker="foo://bar", backend="foo") as app:
             app.conf.update(
                 CELERY_ALWAYS_EAGER=4,
                 CELERY_DEFAULT_DELIVERY_MODE=63,
-                CELERYD_AGENT='foo:Barz',
+                CELERYD_AGENT="foo:Barz",
             )
             assert app.conf.task_always_eager == 4
             assert app.conf.task_default_delivery_mode == 63
-            assert app.conf.worker_agent == 'foo:Barz'
-            assert app.conf.broker_url == 'foo://bar'
-            assert app.conf.result_backend == 'foo'
+            assert app.conf.worker_agent == "foo:Barz"
+            assert app.conf.broker_url == "foo://bar"
+            assert app.conf.result_backend == "foo"
 
     def test_pending_configuration__compat_settings_mixing(self):
-        with self.Celery(broker='foo://bar', backend='foo') as app:
+        with self.Celery(broker="foo://bar", backend="foo") as app:
             app.conf.update(
                 CELERY_ALWAYS_EAGER=4,
                 CELERY_DEFAULT_DELIVERY_MODE=63,
-                CELERYD_AGENT='foo:Barz',
-                worker_consumer='foo:Fooz',
+                CELERYD_AGENT="foo:Barz",
+                worker_consumer="foo:Fooz",
             )
             with pytest.raises(ImproperlyConfigured):
                 assert app.conf.task_always_eager == 4
 
     def test_pending_configuration__django_settings(self):
-        with self.Celery(broker='foo://bar', backend='foo') as app:
-            app.config_from_object(DictAttribute(Bunch(
-                CELERY_TASK_ALWAYS_EAGER=4,
-                CELERY_TASK_DEFAULT_DELIVERY_MODE=63,
-                CELERY_WORKER_AGENT='foo:Barz',
-                CELERY_RESULT_SERIALIZER='pickle',
-            )), namespace='CELERY')
-            assert app.conf.result_serializer == 'pickle'
-            assert app.conf.CELERY_RESULT_SERIALIZER == 'pickle'
+        with self.Celery(broker="foo://bar", backend="foo") as app:
+            app.config_from_object(
+                DictAttribute(
+                    Bunch(
+                        CELERY_TASK_ALWAYS_EAGER=4,
+                        CELERY_TASK_DEFAULT_DELIVERY_MODE=63,
+                        CELERY_WORKER_AGENT="foo:Barz",
+                        CELERY_RESULT_SERIALIZER="pickle",
+                    )
+                ),
+                namespace="CELERY",
+            )
+            assert app.conf.result_serializer == "pickle"
+            assert app.conf.CELERY_RESULT_SERIALIZER == "pickle"
             assert app.conf.task_always_eager == 4
             assert app.conf.task_default_delivery_mode == 63
-            assert app.conf.worker_agent == 'foo:Barz'
-            assert app.conf.broker_url == 'foo://bar'
-            assert app.conf.result_backend == 'foo'
+            assert app.conf.worker_agent == "foo:Barz"
+            assert app.conf.broker_url == "foo://bar"
+            assert app.conf.result_backend == "foo"
 
     def test_pending_configuration__compat_settings_mixing_new(self):
-        with self.Celery(broker='foo://bar', backend='foo') as app:
+        with self.Celery(broker="foo://bar", backend="foo") as app:
             app.conf.update(
                 task_always_eager=4,
                 task_default_delivery_mode=63,
-                worker_agent='foo:Barz',
-                CELERYD_CONSUMER='foo:Fooz',
-                CELERYD_AUTOSCALER='foo:Xuzzy',
+                worker_agent="foo:Barz",
+                CELERYD_CONSUMER="foo:Fooz",
+                CELERYD_AUTOSCALER="foo:Xuzzy",
             )
             with pytest.raises(ImproperlyConfigured):
-                assert app.conf.worker_consumer == 'foo:Fooz'
+                assert app.conf.worker_consumer == "foo:Fooz"
 
     def test_pending_configuration__compat_settings_mixing_alt(self):
-        with self.Celery(broker='foo://bar', backend='foo') as app:
+        with self.Celery(broker="foo://bar", backend="foo") as app:
             app.conf.update(
                 task_always_eager=4,
                 task_default_delivery_mode=63,
-                worker_agent='foo:Barz',
-                CELERYD_CONSUMER='foo:Fooz',
-                worker_consumer='foo:Fooz',
-                CELERYD_AUTOSCALER='foo:Xuzzy',
-                worker_autoscaler='foo:Xuzzy'
+                worker_agent="foo:Barz",
+                CELERYD_CONSUMER="foo:Fooz",
+                worker_consumer="foo:Fooz",
+                CELERYD_AUTOSCALER="foo:Xuzzy",
+                worker_autoscaler="foo:Xuzzy",
             )
 
     def test_pending_configuration__setdefault(self):
-        with self.Celery(broker='foo://bar') as app:
+        with self.Celery(broker="foo://bar") as app:
             assert not app.configured
-            app.conf.setdefault('worker_agent', 'foo:Bar')
+            app.conf.setdefault("worker_agent", "foo:Bar")
             assert not app.configured
 
     def test_pending_configuration__iter(self):
-        with self.Celery(broker='foo://bar') as app:
-            app.conf.worker_agent = 'foo:Bar'
+        with self.Celery(broker="foo://bar") as app:
+            app.conf.worker_agent = "foo:Bar"
             assert not app.configured
             assert list(app.conf.keys())
             assert app.configured
-            assert 'worker_agent' in app.conf
+            assert "worker_agent" in app.conf
             assert dict(app.conf)
 
     def test_pending_configuration__raises_ImproperlyConfigured(self):
         with self.Celery(set_as_current=False) as app:
-            app.conf.worker_agent = 'foo://bar'
+            app.conf.worker_agent = "foo://bar"
             app.conf.task_default_delivery_mode = 44
             app.conf.CELERY_ALWAYS_EAGER = 5
             with pytest.raises(ImproperlyConfigured):
@@ -398,35 +412,35 @@ class test_App:
             assert not self.app.conf.task_always_eager
 
     def test_pending_configuration__ssl_settings(self):
-        with self.Celery(broker='foo://bar',
-                         broker_use_ssl={
-                             'ssl_cert_reqs': ssl.CERT_REQUIRED,
-                             'ssl_ca_certs': '/path/to/ca.crt',
-                             'ssl_certfile': '/path/to/client.crt',
-                             'ssl_keyfile': '/path/to/client.key'},
-                         redis_backend_use_ssl={
-                             'ssl_cert_reqs': ssl.CERT_REQUIRED,
-                             'ssl_ca_certs': '/path/to/ca.crt',
-                             'ssl_certfile': '/path/to/client.crt',
-                             'ssl_keyfile': '/path/to/client.key'}) as app:
+        with self.Celery(
+            broker="foo://bar",
+            broker_use_ssl={
+                "ssl_cert_reqs": ssl.CERT_REQUIRED,
+                "ssl_ca_certs": "/path/to/ca.crt",
+                "ssl_certfile": "/path/to/client.crt",
+                "ssl_keyfile": "/path/to/client.key",
+            },
+            redis_backend_use_ssl={
+                "ssl_cert_reqs": ssl.CERT_REQUIRED,
+                "ssl_ca_certs": "/path/to/ca.crt",
+                "ssl_certfile": "/path/to/client.crt",
+                "ssl_keyfile": "/path/to/client.key",
+            },
+        ) as app:
             assert not app.configured
-            assert app.conf.broker_url == 'foo://bar'
-            assert app.conf.broker_use_ssl['ssl_certfile'] == \
-                '/path/to/client.crt'
-            assert app.conf.broker_use_ssl['ssl_keyfile'] == \
-                '/path/to/client.key'
-            assert app.conf.broker_use_ssl['ssl_ca_certs'] == \
-                '/path/to/ca.crt'
-            assert app.conf.broker_use_ssl['ssl_cert_reqs'] == \
-                ssl.CERT_REQUIRED
-            assert app.conf.redis_backend_use_ssl['ssl_certfile'] == \
-                '/path/to/client.crt'
-            assert app.conf.redis_backend_use_ssl['ssl_keyfile'] == \
-                '/path/to/client.key'
-            assert app.conf.redis_backend_use_ssl['ssl_ca_certs'] == \
-                '/path/to/ca.crt'
-            assert app.conf.redis_backend_use_ssl['ssl_cert_reqs'] == \
-                ssl.CERT_REQUIRED
+            assert app.conf.broker_url == "foo://bar"
+            assert app.conf.broker_use_ssl["ssl_certfile"] == "/path/to/client.crt"
+            assert app.conf.broker_use_ssl["ssl_keyfile"] == "/path/to/client.key"
+            assert app.conf.broker_use_ssl["ssl_ca_certs"] == "/path/to/ca.crt"
+            assert app.conf.broker_use_ssl["ssl_cert_reqs"] == ssl.CERT_REQUIRED
+            assert (
+                app.conf.redis_backend_use_ssl["ssl_certfile"] == "/path/to/client.crt"
+            )
+            assert (
+                app.conf.redis_backend_use_ssl["ssl_keyfile"] == "/path/to/client.key"
+            )
+            assert app.conf.redis_backend_use_ssl["ssl_ca_certs"] == "/path/to/ca.crt"
+            assert app.conf.redis_backend_use_ssl["ssl_cert_reqs"] == ssl.CERT_REQUIRED
 
     def test_repr(self):
         assert repr(self.app)
@@ -436,8 +450,8 @@ class test_App:
             assert app2.tasks is self.app.tasks
 
     def test_include_argument(self):
-        with self.Celery(include=('foo', 'bar.foo')) as app:
-            assert app.conf.include, ('foo' == 'bar.foo')
+        with self.Celery(include=("foo", "bar.foo")) as app:
+            assert app.conf.include, "foo" == "bar.foo"
 
     def test_set_as_current(self):
         current = _state._tls.current_app
@@ -459,10 +473,12 @@ class test_App:
             _state._task_stack.pop()
 
     def test_task_not_shared(self):
-        with patch('celery.app.base.connect_on_app_finalize') as sh:
+        with patch("celery.app.base.connect_on_app_finalize") as sh:
+
             @self.app.task(shared=False)
             def foo():
                 pass
+
             sh.assert_not_called()
 
     def test_task_compat_with_filter(self):
@@ -476,6 +492,7 @@ class test_App:
             @app.task(filter=filter, shared=False)
             def foo():
                 pass
+
             check.assert_called_with(foo)
 
     def test_task_with_filter(self):
@@ -491,19 +508,21 @@ class test_App:
             @app.task(filter=filter, shared=False)
             def foo():
                 pass
+
             check.assert_called_with(foo)
 
     def test_task_sets_main_name_MP_MAIN_FILE(self):
         from celery.utils import imports as _imports
+
         _imports.MP_MAIN_FILE = __file__
         try:
-            with self.Celery('xuzzy') as app:
+            with self.Celery("xuzzy") as app:
 
                 @app.task
                 def foo():
                     pass
 
-                assert foo.name == 'xuzzy.foo'
+                assert foo.name == "xuzzy.foo"
         finally:
             _imports.MP_MAIN_FILE = None
 
@@ -511,32 +530,33 @@ class test_App:
         import typing
 
         with self.Celery() as app:
+
             @app.task
             def foo(parameter: int) -> None:
                 pass
 
-            assert typing.get_type_hints(foo) == {'parameter': int, 'return': type(None)}
+            assert typing.get_type_hints(foo) == {
+                "parameter": int,
+                "return": type(None),
+            }
 
     def test_annotate_decorator(self):
         from celery.app.task import Task
 
         class adX(Task):
-
             def run(self, y, z, x):
                 return y, z, x
 
         check = Mock()
 
         def deco(fun):
-
             def _inner(*args, **kwargs):
                 check(*args, **kwargs)
                 return fun(*args, **kwargs)
+
             return _inner
 
-        self.app.conf.task_annotations = {
-            adX.name: {'@__call__': deco}
-        }
+        self.app.conf.task_annotations = {adX.name: {"@__call__": deco}}
         adX.bind(self.app)
         assert adX.app is self.app
 
@@ -570,8 +590,7 @@ class test_App:
             _task_stack.pop()
 
     def test_pickle_app(self):
-        changes = {'THE_FOO_BAR': 'bars',
-                   'THE_MII_MAR': 'jars'}
+        changes = {"THE_FOO_BAR": "bars", "THE_MII_MAR": "jars"}
         self.app.conf.update(changes)
         saved = pickle.dumps(self.app)
         assert len(saved) < 2048
@@ -595,9 +614,9 @@ class test_App:
     #         worker_bin.worker = prev
 
     def test_config_from_envvar(self):
-        os.environ['CELERYTEST_CONFIG_OBJECT'] = 't.unit.app.test_app'
-        self.app.config_from_envvar('CELERYTEST_CONFIG_OBJECT')
-        assert self.app.conf.THIS_IS_A_KEY == 'this is a value'
+        os.environ["CELERYTEST_CONFIG_OBJECT"] = "t.unit.app.test_app"
+        self.app.config_from_envvar("CELERYTEST_CONFIG_OBJECT")
+        assert self.app.conf.THIS_IS_A_KEY == "this is a value"
 
     def assert_config2(self):
         assert self.app.conf.LEAVE_FOR_WORK
@@ -621,7 +640,6 @@ class test_App:
         self.assert_config2()
 
     def test_config_from_object__compat(self):
-
         class Config:
             CELERY_ALWAYS_EAGER = 44
             CELERY_DEFAULT_DELIVERY_MODE = 30
@@ -631,10 +649,9 @@ class test_App:
         assert self.app.conf.task_always_eager == 44
         assert self.app.conf.CELERY_ALWAYS_EAGER == 44
         assert not self.app.conf.task_publish_retry
-        assert self.app.conf.task_default_routing_key == 'testcelery'
+        assert self.app.conf.task_default_routing_key == "testcelery"
 
     def test_config_from_object__supports_old_names(self):
-
         class Config:
             task_always_eager = 45
             task_default_delivery_mode = 301
@@ -644,76 +661,73 @@ class test_App:
         assert self.app.conf.task_always_eager == 45
         assert self.app.conf.CELERY_DEFAULT_DELIVERY_MODE == 301
         assert self.app.conf.task_default_delivery_mode == 301
-        assert self.app.conf.task_default_routing_key == 'testcelery'
+        assert self.app.conf.task_default_routing_key == "testcelery"
 
     def test_config_from_object__namespace_uppercase(self):
-
         class Config:
             CELERY_TASK_ALWAYS_EAGER = 44
             CELERY_TASK_DEFAULT_DELIVERY_MODE = 301
 
-        self.app.config_from_object(Config(), namespace='CELERY')
+        self.app.config_from_object(Config(), namespace="CELERY")
         assert self.app.conf.task_always_eager == 44
 
     def test_config_from_object__namespace_lowercase(self):
-
         class Config:
             celery_task_always_eager = 44
             celery_task_default_delivery_mode = 301
 
-        self.app.config_from_object(Config(), namespace='celery')
+        self.app.config_from_object(Config(), namespace="celery")
         assert self.app.conf.task_always_eager == 44
 
     def test_config_from_object__mixing_new_and_old(self):
-
         class Config:
             task_always_eager = 44
-            worker_agent = 'foo:Agent'
-            worker_consumer = 'foo:Consumer'
-            beat_schedule = '/foo/schedule'
+            worker_agent = "foo:Agent"
+            worker_consumer = "foo:Consumer"
+            beat_schedule = "/foo/schedule"
             CELERY_DEFAULT_DELIVERY_MODE = 301
 
         with pytest.raises(ImproperlyConfigured) as exc:
             self.app.config_from_object(Config(), force=True)
-            assert exc.args[0].startswith('CELERY_DEFAULT_DELIVERY_MODE')
-            assert 'task_default_delivery_mode' in exc.args[0]
+            assert exc.args[0].startswith("CELERY_DEFAULT_DELIVERY_MODE")
+            assert "task_default_delivery_mode" in exc.args[0]
 
     def test_config_from_object__mixing_old_and_new(self):
-
         class Config:
             CELERY_ALWAYS_EAGER = 46
-            CELERYD_AGENT = 'foo:Agent'
-            CELERYD_CONSUMER = 'foo:Consumer'
-            CELERYBEAT_SCHEDULE = '/foo/schedule'
+            CELERYD_AGENT = "foo:Agent"
+            CELERYD_CONSUMER = "foo:Consumer"
+            CELERYBEAT_SCHEDULE = "/foo/schedule"
             task_default_delivery_mode = 301
 
         with pytest.raises(ImproperlyConfigured) as exc:
             self.app.config_from_object(Config(), force=True)
-            assert exc.args[0].startswith('task_default_delivery_mode')
-            assert 'CELERY_DEFAULT_DELIVERY_MODE' in exc.args[0]
+            assert exc.args[0].startswith("task_default_delivery_mode")
+            assert "CELERY_DEFAULT_DELIVERY_MODE" in exc.args[0]
 
     def test_config_from_cmdline(self):
-        cmdline = ['task_always_eager=no',
-                   'result_backend=/dev/null',
-                   'worker_prefetch_multiplier=368',
-                   '.foobarstring=(string)300',
-                   '.foobarint=(int)300',
-                   'database_engine_options=(dict){"foo": "bar"}']
-        self.app.config_from_cmdline(cmdline, namespace='worker')
+        cmdline = [
+            "task_always_eager=no",
+            "result_backend=/dev/null",
+            "worker_prefetch_multiplier=368",
+            ".foobarstring=(string)300",
+            ".foobarint=(int)300",
+            'database_engine_options=(dict){"foo": "bar"}',
+        ]
+        self.app.config_from_cmdline(cmdline, namespace="worker")
         assert not self.app.conf.task_always_eager
-        assert self.app.conf.result_backend == '/dev/null'
+        assert self.app.conf.result_backend == "/dev/null"
         assert self.app.conf.worker_prefetch_multiplier == 368
-        assert self.app.conf.worker_foobarstring == '300'
+        assert self.app.conf.worker_foobarstring == "300"
         assert self.app.conf.worker_foobarint == 300
-        assert self.app.conf.database_engine_options == {'foo': 'bar'}
+        assert self.app.conf.database_engine_options == {"foo": "bar"}
 
     def test_setting__broker_transport_options(self):
 
-        _args = {'foo': 'bar', 'spam': 'baz'}
+        _args = {"foo": "bar", "spam": "baz"}
 
         self.app.config_from_object(Bunch())
-        assert self.app.conf.broker_transport_options == \
-            {'polling_interval': 0.1}
+        assert self.app.conf.broker_transport_options == {"polling_interval": 0.1}
 
         self.app.config_from_object(Bunch(broker_transport_options=_args))
         assert self.app.conf.broker_transport_options == _args
@@ -730,9 +744,9 @@ class test_App:
         x = self.app.Worker
         assert x.app is self.app
 
-    @pytest.mark.usefixtures('depends_on_current_app')
+    @pytest.mark.usefixtures("depends_on_current_app")
     def test_AsyncResult(self):
-        x = self.app.AsyncResult('1')
+        x = self.app.AsyncResult("1")
         assert x.app is self.app
         r = loads(dumps(x))
         # not set as current, so ends up as default app after reduce
@@ -745,7 +759,7 @@ class test_App:
         appid = id(app1)
         assert app1 in _state._get_active_apps()
         app1.close()
-        del(app1)
+        del app1
 
         gc.collect()
 
@@ -753,43 +767,58 @@ class test_App:
         with pytest.raises(StopIteration):
             next(app for app in _state._get_active_apps() if id(app) == appid)
 
-    def test_config_from_envvar_more(self, key='CELERY_HARNESS_CFG1'):
+    def test_config_from_envvar_more(self, key="CELERY_HARNESS_CFG1"):
         assert not self.app.config_from_envvar(
-            'HDSAJIHWIQHEWQU', force=True, silent=True)
+            "HDSAJIHWIQHEWQU", force=True, silent=True
+        )
         with pytest.raises(ImproperlyConfigured):
             self.app.config_from_envvar(
-                'HDSAJIHWIQHEWQU', force=True, silent=False,
+                "HDSAJIHWIQHEWQU",
+                force=True,
+                silent=False,
             )
-        os.environ[key] = __name__ + '.object_config'
+        os.environ[key] = __name__ + ".object_config"
         assert self.app.config_from_envvar(key, force=True)
-        assert self.app.conf['FOO'] == 1
-        assert self.app.conf['BAR'] == 2
+        assert self.app.conf["FOO"] == 1
+        assert self.app.conf["BAR"] == 2
 
-        os.environ[key] = 'unknown_asdwqe.asdwqewqe'
+        os.environ[key] = "unknown_asdwqe.asdwqewqe"
         with pytest.raises(ImportError):
             self.app.config_from_envvar(key, silent=False)
         assert not self.app.config_from_envvar(key, force=True, silent=True)
 
-        os.environ[key] = __name__ + '.dict_config'
+        os.environ[key] = __name__ + ".dict_config"
         assert self.app.config_from_envvar(key, force=True)
-        assert self.app.conf['FOO'] == 10
-        assert self.app.conf['BAR'] == 20
+        assert self.app.conf["FOO"] == 10
+        assert self.app.conf["BAR"] == 20
 
-    @pytest.mark.parametrize('url,expected_fields', [
-        ('pyamqp://', {
-            'hostname': 'localhost',
-            'userid': 'guest',
-            'password': 'guest',
-            'virtual_host': '/',
-        }),
-        ('pyamqp://:1978/foo', {
-            'port': 1978,
-            'virtual_host': 'foo',
-        }),
-        ('pyamqp:////value', {
-            'virtual_host': '/value',
-        })
-    ])
+    @pytest.mark.parametrize(
+        "url,expected_fields",
+        [
+            (
+                "pyamqp://",
+                {
+                    "hostname": "localhost",
+                    "userid": "guest",
+                    "password": "guest",
+                    "virtual_host": "/",
+                },
+            ),
+            (
+                "pyamqp://:1978/foo",
+                {
+                    "port": 1978,
+                    "virtual_host": "foo",
+                },
+            ),
+            (
+                "pyamqp:////value",
+                {
+                    "virtual_host": "/value",
+                },
+            ),
+        ],
+    )
     def test_amqp_get_broker_info(self, url, expected_fields):
         info = self.app.connection(url).info()
         for key, expected_value in expected_fields.items():
@@ -798,47 +827,49 @@ class test_App:
     def test_amqp_failover_strategy_selection(self):
         # Test passing in a string and make sure the string
         # gets there untouched
-        self.app.conf.broker_failover_strategy = 'foo-bar'
-        assert self.app.connection('amqp:////value') \
-                       .failover_strategy == 'foo-bar'
+        self.app.conf.broker_failover_strategy = "foo-bar"
+        assert self.app.connection("amqp:////value").failover_strategy == "foo-bar"
 
         # Try passing in None
         self.app.conf.broker_failover_strategy = None
-        assert self.app.connection('amqp:////value') \
-                       .failover_strategy == itertools.cycle
+        assert (
+            self.app.connection("amqp:////value").failover_strategy == itertools.cycle
+        )
 
         # Test passing in a method
         def my_failover_strategy(it):
             yield True
 
         self.app.conf.broker_failover_strategy = my_failover_strategy
-        assert self.app.connection('amqp:////value') \
-                       .failover_strategy == my_failover_strategy
+        assert (
+            self.app.connection("amqp:////value").failover_strategy
+            == my_failover_strategy
+        )
 
     def test_after_fork(self):
         self.app._pool = Mock()
-        self.app.on_after_fork = Mock(name='on_after_fork')
+        self.app.on_after_fork = Mock(name="on_after_fork")
         self.app._after_fork()
         assert self.app._pool is None
         self.app.on_after_fork.send.assert_called_with(sender=self.app)
         self.app._after_fork()
 
     def test_global_after_fork(self):
-        self.app._after_fork = Mock(name='_after_fork')
+        self.app._after_fork = Mock(name="_after_fork")
         _appbase._after_fork_cleanup_app(self.app)
         self.app._after_fork.assert_called_with()
 
-    @patch('celery.app.base.logger')
+    @patch("celery.app.base.logger")
     def test_after_fork_cleanup_app__raises(self, logger):
-        self.app._after_fork = Mock(name='_after_fork')
+        self.app._after_fork = Mock(name="_after_fork")
         exc = self.app._after_fork.side_effect = KeyError()
         _appbase._after_fork_cleanup_app(self.app)
         logger.info.assert_called_with(
-            'after forker raised exception: %r', exc, exc_info=1)
+            "after forker raised exception: %r", exc, exc_info=1
+        )
 
     def test_ensure_after_fork__no_multiprocessing(self):
-        prev, _appbase.register_after_fork = (
-            _appbase.register_after_fork, None)
+        prev, _appbase.register_after_fork = (_appbase.register_after_fork, None)
         try:
             self.app._after_fork_registered = False
             self.app._ensure_after_fork()
@@ -850,7 +881,7 @@ class test_App:
         assert self.app._canvas.Signature
 
     def test_signature(self):
-        sig = self.app.signature('foo', (1, 2))
+        sig = self.app.signature("foo", (1, 2))
         assert sig.app is self.app
 
     def test_timezone__none_set(self):
@@ -870,19 +901,18 @@ class test_App:
         del self.app.timezone
         assert self.app.uses_utc_timezone() is False
 
-        self.app.conf.timezone = 'US/Eastern'
+        self.app.conf.timezone = "US/Eastern"
         del self.app.timezone
         assert self.app.uses_utc_timezone() is False
 
-        self.app.conf.timezone = 'UTC'
+        self.app.conf.timezone = "UTC"
         del self.app.timezone
         assert self.app.uses_utc_timezone() is True
 
     def test_compat_on_configure(self):
-        _on_configure = Mock(name='on_configure')
+        _on_configure = Mock(name="on_configure")
 
         class CompatApp(Celery):
-
             def on_configure(self, *args, **kwargs):
                 # on pypy3 if named on_configure the class function
                 # will be called, instead of the mock defined above,
@@ -896,26 +926,28 @@ class test_App:
             _on_configure.assert_called_with()
 
     def test_add_periodic_task(self):
-
         @self.app.task
         def add(x, y):
             pass
+
         assert not self.app.configured
         self.app.add_periodic_task(
-            10, self.app.signature('add', (2, 2)),
-            name='add1', expires=3,
+            10,
+            self.app.signature("add", (2, 2)),
+            name="add1",
+            expires=3,
         )
         assert self.app._pending_periodic_tasks
         assert not self.app.configured
 
         sig2 = add.s(4, 4)
         assert self.app.configured
-        self.app.add_periodic_task(20, sig2, name='add2', expires=4)
-        assert 'add1' in self.app.conf.beat_schedule
-        assert 'add2' in self.app.conf.beat_schedule
+        self.app.add_periodic_task(20, sig2, name="add2", expires=4)
+        assert "add1" in self.app.conf.beat_schedule
+        assert "add2" in self.app.conf.beat_schedule
 
     def test_pool_no_multiprocessing(self):
-        with mock.mask_modules('multiprocessing.util'):
+        with mock.mask_modules("multiprocessing.util"):
             pool = self.app.pool
             assert pool is self.app._pool
 
@@ -923,20 +955,18 @@ class test_App:
         assert self.app.bugreport()
 
     def test_send_task__connection_provided(self):
-        connection = Mock(name='connection')
-        router = Mock(name='router')
+        connection = Mock(name="connection")
+        router = Mock(name="router")
         router.route.return_value = {}
-        self.app.amqp = Mock(name='amqp')
-        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
-        self.app.send_task('foo', (1, 2), connection=connection, router=router)
-        self.app.amqp.Producer.assert_called_with(
-            connection, auto_declare=False)
+        self.app.amqp = Mock(name="amqp")
+        self.app.amqp.Producer.attach_mock(ContextMock(), "return_value")
+        self.app.send_task("foo", (1, 2), connection=connection, router=router)
+        self.app.amqp.Producer.assert_called_with(connection, auto_declare=False)
         self.app.amqp.send_task_message.assert_called_with(
-            self.app.amqp.Producer(), 'foo',
-            self.app.amqp.create_task_message())
+            self.app.amqp.Producer(), "foo", self.app.amqp.create_task_message()
+        )
 
     def test_send_task_sent_event(self):
-
         class Dispatcher:
             sent = []
 
@@ -946,44 +976,55 @@ class test_App:
         conn = self.app.connection()
         chan = conn.channel()
         try:
-            for e in ('foo_exchange', 'moo_exchange', 'bar_exchange'):
-                chan.exchange_declare(e, 'direct', durable=True)
+            for e in ("foo_exchange", "moo_exchange", "bar_exchange"):
+                chan.exchange_declare(e, "direct", durable=True)
                 chan.queue_declare(e, durable=True)
                 chan.queue_bind(e, e, e)
         finally:
             chan.close()
-        assert conn.transport_cls == 'memory'
+        assert conn.transport_cls == "memory"
 
         message = self.app.amqp.create_task_message(
-            'id', 'footask', (), {}, create_sent_event=True,
+            "id",
+            "footask",
+            (),
+            {},
+            create_sent_event=True,
         )
 
         prod = self.app.amqp.Producer(conn)
         dispatcher = Dispatcher()
         self.app.amqp.send_task_message(
-            prod, 'footask', message,
-            exchange='moo_exchange', routing_key='moo_exchange',
+            prod,
+            "footask",
+            message,
+            exchange="moo_exchange",
+            routing_key="moo_exchange",
             event_dispatcher=dispatcher,
         )
         assert dispatcher.sent
-        assert dispatcher.sent[0][0] == 'task-sent'
+        assert dispatcher.sent[0][0] == "task-sent"
         self.app.amqp.send_task_message(
-            prod, 'footask', message, event_dispatcher=dispatcher,
-            exchange='bar_exchange', routing_key='bar_exchange',
+            prod,
+            "footask",
+            message,
+            event_dispatcher=dispatcher,
+            exchange="bar_exchange",
+            routing_key="bar_exchange",
         )
 
     def test_select_queues(self):
-        self.app.amqp = Mock(name='amqp')
-        self.app.select_queues({'foo', 'bar'})
-        self.app.amqp.queues.select.assert_called_with({'foo', 'bar'})
+        self.app.amqp = Mock(name="amqp")
+        self.app.select_queues({"foo", "bar"})
+        self.app.amqp.queues.select.assert_called_with({"foo", "bar"})
 
     def test_Beat(self):
         from celery.apps.beat import Beat
+
         beat = self.app.Beat()
         assert isinstance(beat, Beat)
 
     def test_registry_cls(self):
-
         class TaskRegistry(self.app.registry_cls):
             pass
 
@@ -1006,6 +1047,7 @@ class test_App:
         main_oid = self.app.oid
         uuid.UUID(main_oid)
         from concurrent.futures import ThreadPoolExecutor
+
         with ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(lambda: self.app.oid)
         thread_oid = future.result()
@@ -1032,6 +1074,7 @@ class test_App:
         # Test that app.bakend returns the new backend for each thread
         main_backend = self.app.backend
         from concurrent.futures import ThreadPoolExecutor
+
         with ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(lambda: self.app.backend)
         thread_backend = future.result()
@@ -1044,6 +1087,7 @@ class test_App:
         main_oid = self.app.thread_oid
         uuid.UUID(main_oid)
         from concurrent.futures import ThreadPoolExecutor
+
         with ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(lambda: self.app.thread_oid)
         thread_oid = future.result()
@@ -1052,18 +1096,16 @@ class test_App:
 
 
 class test_defaults:
-
     def test_strtobool(self):
-        for s in ('false', 'no', '0'):
+        for s in ("false", "no", "0"):
             assert not defaults.strtobool(s)
-        for s in ('true', 'yes', '1'):
+        for s in ("true", "yes", "1"):
             assert defaults.strtobool(s)
         with pytest.raises(TypeError):
-            defaults.strtobool('unsure')
+            defaults.strtobool("unsure")
 
 
 class test_debugging_utils:
-
     def test_enable_disable_trace(self):
         try:
             _app.enable_trace()
@@ -1075,35 +1117,33 @@ class test_debugging_utils:
 
 
 class test_pyimplementation:
-
     def test_platform_python_implementation(self):
-        with mock.platform_pyimp(lambda: 'Xython'):
-            assert pyimplementation() == 'Xython'
+        with mock.platform_pyimp(lambda: "Xython"):
+            assert pyimplementation() == "Xython"
 
     def test_platform_jython(self):
         with mock.platform_pyimp():
-            with mock.sys_platform('java 1.6.51'):
-                assert 'Jython' in pyimplementation()
+            with mock.sys_platform("java 1.6.51"):
+                assert "Jython" in pyimplementation()
 
     def test_platform_pypy(self):
         with mock.platform_pyimp():
-            with mock.sys_platform('darwin'):
+            with mock.sys_platform("darwin"):
                 with mock.pypy_version((1, 4, 3)):
-                    assert 'PyPy' in pyimplementation()
-                with mock.pypy_version((1, 4, 3, 'a4')):
-                    assert 'PyPy' in pyimplementation()
+                    assert "PyPy" in pyimplementation()
+                with mock.pypy_version((1, 4, 3, "a4")):
+                    assert "PyPy" in pyimplementation()
 
     def test_platform_fallback(self):
         with mock.platform_pyimp():
-            with mock.sys_platform('darwin'):
+            with mock.sys_platform("darwin"):
                 with mock.pypy_version():
-                    assert 'CPython' == pyimplementation()
+                    assert "CPython" == pyimplementation()
 
 
 class test_shared_task:
-
     def test_registers_to_all_apps(self):
-        with self.Celery('xproj', set_as_current=True) as xproj:
+        with self.Celery("xproj", set_as_current=True) as xproj:
             xproj.finalize()
 
             @shared_task
@@ -1118,7 +1158,7 @@ class test_shared_task:
             assert bar.app is xproj
             assert foo._get_current_object()
 
-            with self.Celery('yproj', set_as_current=True) as yproj:
+            with self.Celery("yproj", set_as_current=True) as yproj:
                 assert foo.app is yproj
                 assert bar.app is yproj
 

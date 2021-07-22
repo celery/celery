@@ -5,7 +5,7 @@ from celery import signals
 
 from .base import BasePool, apply_target
 
-__all__ = ('TaskPool',)
+__all__ = ("TaskPool",)
 
 
 class TaskPool(BasePool):
@@ -21,9 +21,9 @@ class TaskPool(BasePool):
 
     def _get_info(self):
         return {
-            'max-concurrency': 1,
-            'processes': [os.getpid()],
-            'max-tasks-per-child': None,
-            'put-guarded-by-semaphore': True,
-            'timeouts': (),
+            "max-concurrency": 1,
+            "processes": [os.getpid()],
+            "max-tasks-per-child": None,
+            "put-guarded-by-semaphore": True,
+            "timeouts": (),
         }

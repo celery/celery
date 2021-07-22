@@ -12,78 +12,80 @@ from celery.exceptions import WorkerShutdown, WorkerTerminate
 
 
 class test_BasePool:
-
     def test_apply_target(self):
 
         scratch = {}
         counter = count(0)
 
         def gen_callback(name, retval=None):
-
             def callback(*args):
                 scratch[name] = (next(counter), args)
                 return retval
 
             return callback
 
-        apply_target(gen_callback('target', 42),
-                     args=(8, 16),
-                     callback=gen_callback('callback'),
-                     accept_callback=gen_callback('accept_callback'))
+        apply_target(
+            gen_callback("target", 42),
+            args=(8, 16),
+            callback=gen_callback("callback"),
+            accept_callback=gen_callback("accept_callback"),
+        )
 
-        assert scratch['target'] == (1, (8, 16))
-        assert scratch['callback'] == (2, (42,))
-        pa1 = scratch['accept_callback']
+        assert scratch["target"] == (1, (8, 16))
+        assert scratch["callback"] == (2, (42,))
+        pa1 = scratch["accept_callback"]
         assert pa1[0] == 0
         assert pa1[1][0] == os.getpid()
         assert pa1[1][1]
 
         # No accept callback
         scratch.clear()
-        apply_target(gen_callback('target', 42),
-                     args=(8, 16),
-                     callback=gen_callback('callback'),
-                     accept_callback=None)
+        apply_target(
+            gen_callback("target", 42),
+            args=(8, 16),
+            callback=gen_callback("callback"),
+            accept_callback=None,
+        )
         assert scratch == {
-            'target': (3, (8, 16)),
-            'callback': (4, (42,)),
+            "target": (3, (8, 16)),
+            "callback": (4, (42,)),
         }
 
     def test_apply_target__propagate(self):
-        target = Mock(name='target')
+        target = Mock(name="target")
         target.side_effect = KeyError()
         with pytest.raises(KeyError):
             apply_target(target, propagate=(KeyError,))
 
     def test_apply_target__raises(self):
-        target = Mock(name='target')
+        target = Mock(name="target")
         target.side_effect = KeyError()
         with pytest.raises(KeyError):
             apply_target(target)
 
     def test_apply_target__raises_WorkerShutdown(self):
-        target = Mock(name='target')
+        target = Mock(name="target")
         target.side_effect = WorkerShutdown()
         with pytest.raises(WorkerShutdown):
             apply_target(target)
 
     def test_apply_target__raises_WorkerTerminate(self):
-        target = Mock(name='target')
+        target = Mock(name="target")
         target.side_effect = WorkerTerminate()
         with pytest.raises(WorkerTerminate):
             apply_target(target)
 
     def test_apply_target__raises_BaseException(self):
-        target = Mock(name='target')
-        callback = Mock(name='callback')
+        target = Mock(name="target")
+        callback = Mock(name="callback")
         target.side_effect = BaseException()
         apply_target(target, callback=callback)
         callback.assert_called()
 
-    @patch('celery.concurrency.base.reraise')
+    @patch("celery.concurrency.base.reraise")
     def test_apply_target__raises_BaseException_raises_else(self, reraise):
-        target = Mock(name='target')
-        callback = Mock(name='callback')
+        target = Mock(name="target")
+        callback = Mock(name="callback")
         reraise.side_effect = KeyError()
         target.side_effect = BaseException()
         with pytest.raises(KeyError):
@@ -109,7 +111,7 @@ class test_BasePool:
 
     def test_interface_info(self):
         assert BasePool(10).info == {
-            'max-concurrency': 10,
+            "max-concurrency": 10,
         }
 
     def test_interface_flush(self):
@@ -158,28 +160,27 @@ class test_BasePool:
 
 
 class test_get_available_pool_names:
-
     def test_no_concurrent_futures__returns_no_threads_pool_name(self):
         expected_pool_names = (
-            'prefork',
-            'eventlet',
-            'gevent',
-            'solo',
-            'processes',
+            "prefork",
+            "eventlet",
+            "gevent",
+            "solo",
+            "processes",
         )
-        with patch.dict(sys.modules, {'concurrent.futures': None}):
+        with patch.dict(sys.modules, {"concurrent.futures": None}):
             importlib.reload(concurrency)
             assert concurrency.get_available_pool_names() == expected_pool_names
 
     def test_concurrent_futures__returns_threads_pool_name(self):
         expected_pool_names = (
-            'prefork',
-            'eventlet',
-            'gevent',
-            'solo',
-            'processes',
-            'threads',
+            "prefork",
+            "eventlet",
+            "gevent",
+            "solo",
+            "processes",
+            "threads",
         )
-        with patch.dict(sys.modules, {'concurrent.futures': Mock()}):
+        with patch.dict(sys.modules, {"concurrent.futures": Mock()}):
             importlib.reload(concurrency)
             assert concurrency.get_available_pool_names() == expected_pool_names

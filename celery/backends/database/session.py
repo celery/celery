@@ -12,7 +12,7 @@ from celery.utils.time import get_exponential_backoff_interval
 
 ResultModelBase = declarative_base()
 
-__all__ = ('SessionManager',)
+__all__ = ("SessionManager",)
 
 PREPARE_MODELS_MAX_RETRIES = 10
 
@@ -43,8 +43,7 @@ class SessionManager:
                 engine = self._engines[dburi] = create_engine(dburi, **kwargs)
                 return engine
         else:
-            kwargs = {k: v for k, v in kwargs.items() if
-                      not k.startswith('pool')}
+            kwargs = {k: v for k, v in kwargs.items() if not k.startswith("pool")}
             return create_engine(dburi, poolclass=NullPool, **kwargs)
 
     def create_session(self, dburi, short_lived_sessions=False, **kwargs):

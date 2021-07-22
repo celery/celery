@@ -4,7 +4,7 @@ import time
 
 from celery.utils.dispatch import Signal
 
-if sys.platform.startswith('java'):
+if sys.platform.startswith("java"):
 
     def garbage_collect():
         # Some JVM GCs will execute finalizers in a different thread, meaning
@@ -13,12 +13,15 @@ if sys.platform.startswith('java'):
         gc.collect()
         time.sleep(0.1)
 
-elif hasattr(sys, 'pypy_version_info'):
+
+elif hasattr(sys, "pypy_version_info"):
 
     def garbage_collect():  # noqa
         # Collecting weakreferences can take two collections on PyPy.
         gc.collect()
         gc.collect()
+
+
 else:
 
     def garbage_collect():  # noqa
@@ -30,7 +33,6 @@ def receiver_1_arg(val, **kwargs):
 
 
 class Callable:
-
     def __call__(self, val, **kwargs):
         return val
 
@@ -38,7 +40,7 @@ class Callable:
         return val
 
 
-a_signal = Signal(providing_args=['val'], use_caching=False)
+a_signal = Signal(providing_args=["val"], use_caching=False)
 
 
 class test_Signal:
@@ -52,8 +54,8 @@ class test_Signal:
     def test_exact(self):
         a_signal.connect(receiver_1_arg, sender=self)
         try:
-            expected = [(receiver_1_arg, 'test')]
-            result = a_signal.send(sender=self, val='test')
+            expected = [(receiver_1_arg, "test")]
+            result = a_signal.send(sender=self, val="test")
             assert result == expected
         finally:
             a_signal.disconnect(receiver_1_arg, sender=self)
@@ -62,8 +64,8 @@ class test_Signal:
     def test_ignored_sender(self):
         a_signal.connect(receiver_1_arg)
         try:
-            expected = [(receiver_1_arg, 'test')]
-            result = a_signal.send(sender=self, val='test')
+            expected = [(receiver_1_arg, "test")]
+            result = a_signal.send(sender=self, val="test")
             assert result == expected
         finally:
             a_signal.disconnect(receiver_1_arg)
@@ -75,7 +77,7 @@ class test_Signal:
         expected = []
         del a
         garbage_collect()
-        result = a_signal.send(sender=self, val='test')
+        result = a_signal.send(sender=self, val="test")
         assert result == expected
         self._testIsClean(a_signal)
 
@@ -89,7 +91,7 @@ class test_Signal:
             a_signal.connect(a)
             a_signal.connect(a)
             a_signal.connect(a)
-            result = a_signal.send(sender=self, val='test')
+            result = a_signal.send(sender=self, val="test")
             assert len(result) == 1
             assert len(a_signal.receivers) == 1
         finally:
@@ -99,29 +101,27 @@ class test_Signal:
             self._testIsClean(a_signal)
 
     def test_uid_registration(self):
-
         def uid_based_receiver_1(**kwargs):
             pass
 
         def uid_based_receiver_2(**kwargs):
             pass
 
-        a_signal.connect(uid_based_receiver_1, dispatch_uid='uid')
+        a_signal.connect(uid_based_receiver_1, dispatch_uid="uid")
         try:
-            a_signal.connect(uid_based_receiver_2, dispatch_uid='uid')
+            a_signal.connect(uid_based_receiver_2, dispatch_uid="uid")
             assert len(a_signal.receivers) == 1
         finally:
-            a_signal.disconnect(dispatch_uid='uid')
+            a_signal.disconnect(dispatch_uid="uid")
         self._testIsClean(a_signal)
 
     def test_robust(self):
-
         def fails(val, **kwargs):
-            raise ValueError('this')
+            raise ValueError("this")
 
         a_signal.connect(fails)
         try:
-            a_signal.send(sender=self, val='test')
+            a_signal.send(sender=self, val="test")
         finally:
             a_signal.disconnect(fails)
         self._testIsClean(a_signal)
@@ -144,30 +144,28 @@ class test_Signal:
         self._testIsClean(a_signal)
 
     def test_retry(self):
-
         class non_local:
             counter = 1
 
         def succeeds_eventually(val, **kwargs):
             non_local.counter += 1
             if non_local.counter < 3:
-                raise ValueError('this')
+                raise ValueError("this")
 
             return val
 
         a_signal.connect(succeeds_eventually, sender=self, retry=True)
         try:
-            result = a_signal.send(sender=self, val='test')
+            result = a_signal.send(sender=self, val="test")
             assert non_local.counter == 3
-            assert result[0][1] == 'test'
+            assert result[0][1] == "test"
         finally:
             a_signal.disconnect(succeeds_eventually, sender=self)
         self._testIsClean(a_signal)
 
     def test_retry_with_dispatch_uid(self):
-        uid = 'abc123'
-        a_signal.connect(receiver_1_arg, sender=self, retry=True,
-                         dispatch_uid=uid)
+        uid = "abc123"
+        a_signal.connect(receiver_1_arg, sender=self, retry=True, dispatch_uid=uid)
         assert a_signal.receivers[0][0][0] == uid
         a_signal.disconnect(receiver_1_arg, sender=self, dispatch_uid=uid)
         self._testIsClean(a_signal)
@@ -175,9 +173,9 @@ class test_Signal:
     def test_boundmethod(self):
         a = Callable()
         a_signal.connect(a.a, sender=self)
-        expected = [(a.a, 'test')]
+        expected = [(a.a, "test")]
         garbage_collect()
-        result = a_signal.send(sender=self, val='test')
+        result = a_signal.send(sender=self, val="test")
         assert result == expected
         del a, result, expected
         garbage_collect()

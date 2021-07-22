@@ -52,48 +52,61 @@ Error Hierarchy
 
 import numbers
 
-from billiard.exceptions import (SoftTimeLimitExceeded, Terminated,
-                                 TimeLimitExceeded, WorkerLostError)
+from billiard.exceptions import (
+    SoftTimeLimitExceeded,
+    Terminated,
+    TimeLimitExceeded,
+    WorkerLostError,
+)
 from click import ClickException
 from kombu.exceptions import OperationalError
 
 __all__ = (
-    'reraise',
+    "reraise",
     # Warnings
-    'CeleryWarning',
-    'AlwaysEagerIgnored', 'DuplicateNodenameWarning',
-    'FixupWarning', 'NotConfigured',
-
+    "CeleryWarning",
+    "AlwaysEagerIgnored",
+    "DuplicateNodenameWarning",
+    "FixupWarning",
+    "NotConfigured",
     # Core errors
-    'CeleryError',
-    'ImproperlyConfigured', 'SecurityError',
-
+    "CeleryError",
+    "ImproperlyConfigured",
+    "SecurityError",
     # Kombu (messaging) errors.
-    'OperationalError',
-
+    "OperationalError",
     # Task semi-predicates
-    'TaskPredicate', 'Ignore', 'Reject', 'Retry',
-
+    "TaskPredicate",
+    "Ignore",
+    "Reject",
+    "Retry",
     # Task related errors.
-    'TaskError', 'QueueNotFound', 'IncompleteStream',
-    'NotRegistered', 'AlreadyRegistered', 'TimeoutError',
-    'MaxRetriesExceededError', 'TaskRevokedError',
-    'InvalidTaskError', 'ChordError',
-
+    "TaskError",
+    "QueueNotFound",
+    "IncompleteStream",
+    "NotRegistered",
+    "AlreadyRegistered",
+    "TimeoutError",
+    "MaxRetriesExceededError",
+    "TaskRevokedError",
+    "InvalidTaskError",
+    "ChordError",
     # Backend related errors.
-    'BackendError', 'BackendGetMetaError', 'BackendStoreError',
-
+    "BackendError",
+    "BackendGetMetaError",
+    "BackendStoreError",
     # Billiard task errors.
-    'SoftTimeLimitExceeded', 'TimeLimitExceeded',
-    'WorkerLostError', 'Terminated',
-
+    "SoftTimeLimitExceeded",
+    "TimeLimitExceeded",
+    "WorkerLostError",
+    "Terminated",
     # Deprecation warnings (forcing Python to emit them).
-    'CPendingDeprecationWarning', 'CDeprecationWarning',
-
+    "CPendingDeprecationWarning",
+    "CDeprecationWarning",
     # Worker shutdown semi-predicates (inherits from SystemExit).
-    'WorkerShutdown', 'WorkerTerminate',
-
-    'CeleryCommandException',
+    "WorkerShutdown",
+    "WorkerTerminate",
+    "CeleryCommandException",
 )
 
 UNREGISTERED_FMT = """\
@@ -149,9 +162,11 @@ class Retry(TaskPredicate):
     #: :class:`~datetime.datetime`.
     when = None
 
-    def __init__(self, message=None, exc=None, when=None, is_eager=False,
-                 sig=None, **kwargs):
+    def __init__(
+        self, message=None, exc=None, when=None, is_eager=False, sig=None, **kwargs
+    ):
         from kombu.utils.encoding import safe_repr
+
         self.message = message
         if isinstance(exc, str):
             self.exc, self.excs = None, exc
@@ -164,15 +179,15 @@ class Retry(TaskPredicate):
 
     def humanize(self):
         if isinstance(self.when, numbers.Number):
-            return f'in {self.when}s'
-        return f'at {self.when}'
+            return f"in {self.when}s"
+        return f"at {self.when}"
 
     def __str__(self):
         if self.message:
             return self.message
         if self.excs:
-            return f'Retry {self.humanize()}: {self.excs}'
-        return f'Retry {self.humanize()}'
+            return f"Retry {self.humanize()}: {self.excs}"
+        return f"Retry {self.humanize()}"
 
     def __reduce__(self):
         return self.__class__, (self.message, self.excs, self.when)
@@ -194,7 +209,7 @@ class Reject(TaskPredicate):
         super().__init__(reason, requeue)
 
     def __repr__(self):
-        return f'reject requeue={self.requeue}: {self.reason}'
+        return f"reject requeue={self.requeue}: {self.reason}"
 
 
 class ImproperlyConfigured(CeleryError):
@@ -226,6 +241,7 @@ class NotRegistered(KeyError, TaskError):
 
 class AlreadyRegistered(TaskError):
     """The task is already registered."""
+
     # XXX Unused
 
 
@@ -281,7 +297,7 @@ class BackendGetMetaError(BackendError):
     """An issue reading from the backend."""
 
     def __init__(self, *args, **kwargs):
-        self.task_id = kwargs.get('task_id', "")
+        self.task_id = kwargs.get("task_id", "")
 
     def __repr__(self):
         return super().__repr__() + " task_id:" + self.task_id
@@ -291,15 +307,14 @@ class BackendStoreError(BackendError):
     """An issue writing from the backend."""
 
     def __init__(self, *args, **kwargs):
-        self.state = kwargs.get('state', "")
-        self.task_id = kwargs.get('task_id', "")
+        self.state = kwargs.get("state", "")
+        self.task_id = kwargs.get("task_id", "")
 
     def __repr__(self):
         return super().__repr__() + " state:" + self.state + " task_id:" + self.task_id
 
 
 class CeleryCommandException(ClickException):
-
     def __init__(self, message, exit_code):
         super().__init__(message=message)
         self.exit_code = exit_code

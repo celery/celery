@@ -9,10 +9,10 @@ This prepares and performs the annotations in the
 from celery.utils.functional import firstmethod, mlazy
 from celery.utils.imports import instantiate
 
-_first_match = firstmethod('annotate')
-_first_match_any = firstmethod('annotate_any')
+_first_match = firstmethod("annotate")
+_first_match_any = firstmethod("annotate_any")
 
-__all__ = ('MapAnnotation', 'prepare', 'resolve_all')
+__all__ = ("MapAnnotation", "prepare", "resolve_all")
 
 
 class MapAnnotation(dict):
@@ -20,7 +20,7 @@ class MapAnnotation(dict):
 
     def annotate_any(self):
         try:
-            return dict(self['*'])
+            return dict(self["*"])
         except KeyError:
             pass
 
@@ -33,6 +33,7 @@ class MapAnnotation(dict):
 
 def prepare(annotations):
     """Expand the :setting:`task_annotations` setting."""
+
     def expand_annotation(annotation):
         if isinstance(annotation, dict):
             return MapAnnotation(annotation)

@@ -4,7 +4,7 @@ import time
 import pytest
 from billiard.einfo import ExceptionInfo
 
-pytest.importorskip('multiprocessing')
+pytest.importorskip("multiprocessing")
 
 
 def do_something(i):
@@ -17,15 +17,15 @@ def long_something():
 
 def raise_something(i):
     try:
-        raise KeyError('FOO EXCEPTION')
+        raise KeyError("FOO EXCEPTION")
     except KeyError:
         return ExceptionInfo()
 
 
 class test_TaskPool:
-
     def setup(self):
         from celery.concurrency.prefork import TaskPool
+
         self.TaskPool = TaskPool
 
     def test_attrs(self):
@@ -42,7 +42,7 @@ class test_TaskPool:
         def mycallback(ret_value):
             process = next(proc_counter)
             scratchpad[process] = {}
-            scratchpad[process]['ret_value'] = ret_value
+            scratchpad[process]["ret_value"] = ret_value
 
         myerrback = mycallback
 
@@ -52,21 +52,21 @@ class test_TaskPool:
 
         assert res.get() == 100
         time.sleep(0.5)
-        assert scratchpad.get(0)['ret_value'] == 100
+        assert scratchpad.get(0)["ret_value"] == 100
 
         assert isinstance(res2.get(), ExceptionInfo)
         assert scratchpad.get(1)
         time.sleep(1)
-        assert isinstance(scratchpad[1]['ret_value'], ExceptionInfo)
-        assert scratchpad[1]['ret_value'].exception.args == ('FOO EXCEPTION',)
+        assert isinstance(scratchpad[1]["ret_value"], ExceptionInfo)
+        assert scratchpad[1]["ret_value"].exception.args == ("FOO EXCEPTION",)
 
         assert res3.get() == 400
         time.sleep(0.5)
-        assert scratchpad.get(2)['ret_value'] == 400
+        assert scratchpad.get(2)["ret_value"] == 400
 
         res3 = p.apply_async(do_something, args=[30], callback=mycallback)
 
         assert res3.get() == 900
         time.sleep(0.5)
-        assert scratchpad.get(3)['ret_value'] == 900
+        assert scratchpad.get(3)["ret_value"] == 900
         p.stop()

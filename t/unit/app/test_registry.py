@@ -8,32 +8,31 @@ def returns():
     return 1
 
 
-@pytest.mark.usefixtures('depends_on_current_app')
+@pytest.mark.usefixtures("depends_on_current_app")
 class test_unpickle_task:
-
     def test_unpickle_v1(self, app):
-        app.tasks['txfoo'] = 'bar'
-        assert _unpickle_task('txfoo') == 'bar'
+        app.tasks["txfoo"] = "bar"
+        assert _unpickle_task("txfoo") == "bar"
 
     def test_unpickle_v2(self, app):
-        app.tasks['txfoo1'] = 'bar1'
-        assert _unpickle_task_v2('txfoo1') == 'bar1'
-        assert _unpickle_task_v2('txfoo1', module='celery') == 'bar1'
+        app.tasks["txfoo1"] = "bar1"
+        assert _unpickle_task_v2("txfoo1") == "bar1"
+        assert _unpickle_task_v2("txfoo1", module="celery") == "bar1"
 
 
 class test_TaskRegistry:
-
     def setup(self):
-        self.mytask = self.app.task(name='A', shared=False)(returns)
-        self.missing_name_task = self.app.task(
-            name=None, shared=False)(returns)
+        self.mytask = self.app.task(name="A", shared=False)(returns)
+        self.missing_name_task = self.app.task(name=None, shared=False)(returns)
         self.missing_name_task.name = None  # name is overridden with path
         self.myperiodic = self.app.task(
-            name='B', shared=False, type='periodic',
+            name="B",
+            shared=False,
+            type="periodic",
         )(returns)
 
     def test_NotRegistered_str(self):
-        assert repr(self.app.tasks.NotRegistered('tasks.add'))
+        assert repr(self.app.tasks.NotRegistered("tasks.add"))
 
     def assert_register_unregister_cls(self, r, task):
         r.unregister(task)
