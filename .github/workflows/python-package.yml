@@ -20,15 +20,24 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         python-version: ['3.6', '3.7', '3.8', '3.9', '3.10.0-beta.4', 'pypy3']
+        os: ["ubuntu-20.04", "windows-2019"]
+        exclude:
+          - os: windows-2019
+            python-version: "pypy3"
+          - os: windows-2019
+            python-version: "3.10.0-beta.4"
+          - os: windows-2019
+            python-version: "3.9"
     continue-on-error: ${{ startsWith(matrix.python-version, '3.10.0-beta.') }}
 
     steps:
     - name: Install apt packages
+      if: startsWith(matrix.os, 'ubuntu-')
       run: |
         sudo apt update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev gnutls-dev httping expect libmemcached-dev
     - uses: actions/checkout@v2
@@ -46,9 +55,9 @@ jobs:
       with:
         path: ${{ steps.pip-cache.outputs.dir }}
         key:
-          ${{ matrix.python-version }}-v1-${{ hashFiles('**/setup.py') }}
+          ${{ matrix.python-version }}-${{matrix.os}}-${{ hashFiles('**/setup.py') }}
         restore-keys: |
-          ${{ matrix.python-version }}-v1-
+          ${{ matrix.python-version }}-${{matrix.os}}
 
     - name: Install tox
       run: python -m pip install tox tox-gh-actions
