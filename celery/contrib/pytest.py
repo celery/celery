@@ -1,9 +1,13 @@
 """Fixtures and testing utilities for :pypi:`pytest <pytest>`."""
 import os
 from contextlib import contextmanager
+from typing import Any, Mapping, Sequence, Union
 
 import pytest
 
+from celery import Celery
+
+from ..worker import WorkController
 from .testing import worker
 from .testing.app import TestApp, setup_default_app
 

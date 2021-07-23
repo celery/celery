@@ -581,6 +581,14 @@ def _setuid(uid, gid):
             'non-root user able to restore privileges after setuid.')
 
 
+if hasattr(_signal, 'setitimer'):
+    def _arm_alarm(seconds):
+        _signal.setitimer(_signal.ITIMER_REAL, seconds)
+else:
+    def _arm_alarm(seconds):
+        _signal.alarm(math.ceil(seconds))
+
+
 class Signals:
     """Convenience interface to :mod:`signals`.
 
@@ -619,21 +627,8 @@ class Signals:
     ignored = _signal.SIG_IGN
     default = _signal.SIG_DFL
 
-    if hasattr(_signal, 'setitimer'):
-
-        def arm_alarm(self, seconds):
-            _signal.setitimer(_signal.ITIMER_REAL, seconds)
-    else:  # pragma: no cover
-        try:
-            from itimer import alarm as _itimer_alarm
-        except ImportError:
-
-            def arm_alarm(self, seconds):
-                _signal.alarm(math.ceil(seconds))
-        else:  # pragma: no cover
-
-            def arm_alarm(self, seconds):
-                return _itimer_alarm(seconds)
+    def arm_alarm(self, seconds):
+        return _arm_alarm(seconds)
 
     def reset_alarm(self):
         return _signal.alarm(0)
