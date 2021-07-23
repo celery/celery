@@ -22,6 +22,7 @@ from decimal import Decimal
 from itertools import islice
 from operator import itemgetter
 from time import time
+from typing import Mapping
 from weakref import WeakSet, ref
 
 from kombu.clocks import timetuple
@@ -429,15 +430,13 @@ class State:
         self._tasks_to_resolve = {}
         self.rebuild_taskheap()
 
-        # type: Mapping[TaskName, WeakSet[Task]]
         self.tasks_by_type = CallableDefaultdict(
-            self._tasks_by_type, WeakSet)
+            self._tasks_by_type, WeakSet)  # type: Mapping[str, WeakSet[Task]]
         self.tasks_by_type.update(
             _deserialize_Task_WeakSet_Mapping(tasks_by_type, self.tasks))
 
-        # type: Mapping[Hostname, WeakSet[Task]]
         self.tasks_by_worker = CallableDefaultdict(
-            self._tasks_by_worker, WeakSet)
+            self._tasks_by_worker, WeakSet)  # type: Mapping[str, WeakSet[Task]]
         self.tasks_by_worker.update(
             _deserialize_Task_WeakSet_Mapping(tasks_by_worker, self.tasks))
 

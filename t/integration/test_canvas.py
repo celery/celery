@@ -1538,7 +1538,7 @@ class test_chord:
             res.children[0].children[0].result
         ).result
         failed_task_id = uuid_patt.search(str(callback_chord_exc))
-        assert (failed_task_id is not None), "No task ID in %r" % callback_exc
+        assert (failed_task_id is not None), "No task ID in %r" % callback_chord_exc
         failed_task_id = failed_task_id.group()
 
         # Use new group_id result metadata to get group ID.

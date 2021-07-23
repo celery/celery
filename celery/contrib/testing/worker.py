@@ -2,8 +2,10 @@
 import os
 import threading
 from contextlib import contextmanager
+from typing import Any, Iterable, Union
 
-from celery import worker
+import celery.worker.consumer
+from celery import Celery, worker
 from celery.result import _set_task_join_will_block, allow_join_result
 from celery.utils.dispatch import Signal
 from celery.utils.nodenames import anon_nodename
