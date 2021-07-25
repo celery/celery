@@ -1,3 +1,7 @@
+ci:
+  skip:
+    - poetry-lock
+
 repos:
   - repo: https://github.com/asottile/pyupgrade
     rev: v2.22.0
@@ -27,3 +31,12 @@ repos:
     rev: 5.9.2
     hooks:
       - id: isort
+
+
+  - repo: https://github.com/Cielquan/mirrors-poetry
+    rev: 1.1.7
+    hooks:
+      - id: poetry-check
+      - id: poetry-lock
+        args: ["--no-update"]
+      - id: poetry-export
