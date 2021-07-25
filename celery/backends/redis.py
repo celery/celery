@@ -7,7 +7,7 @@ from urllib.parse import unquote
 
 from kombu.utils.functional import retry_over_time
 from kombu.utils.objects import cached_property
-from kombu.utils.url import _parse_url
+from kombu.utils.url import _parse_url, maybe_sanitize_url
 
 from celery import states
 from celery._state import task_join_will_block
@@ -26,8 +26,8 @@ try:
     import redis.connection
     from kombu.transport.redis import get_redis_error_classes
 except ImportError:  # pragma: no cover
-    redis = None  # noqa
-    get_redis_error_classes = None  # noqa
+    redis = None
+    get_redis_error_classes = None
 
 try:
     import redis.sentinel
@@ -219,6 +219,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         socket_connect_timeout = _get('redis_socket_connect_timeout')
         retry_on_timeout = _get('redis_retry_on_timeout')
         socket_keepalive = _get('redis_socket_keepalive')
+        health_check_interval = _get('redis_backend_health_check_interval')
 
         self.connparams = {
             'host': _get('redis_host') or 'localhost',
@@ -231,6 +232,20 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             'socket_connect_timeout':
                 socket_connect_timeout and float(socket_connect_timeout),
         }
+
+        username = _get('redis_username')
+        if username:
+            # We're extra careful to avoid including this configuration value
+            # if it wasn't specified since older versions of py-redis
+            # don't support specifying a username.
+            # Only Redis>6.0 supports username/password authentication.
+
+            # TODO: Include this in connparams' definition once we drop
+            #       support for py-redis<3.4.0.
+            self.connparams['username'] = username
+
+        if health_check_interval:
+            self.connparams["health_check_interval"] = health_check_interval
 
         # absent in redis.connection.UnixDomainSocketConnection
         if socket_keepalive:
@@ -281,11 +296,11 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         )
 
     def _params_from_url(self, url, defaults):
-        scheme, host, port, _, password, path, query = _parse_url(url)
+        scheme, host, port, username, password, path, query = _parse_url(url)
         connparams = dict(
             defaults, **dictfilter({
-                'host': host, 'port': port, 'password': password,
-                'db': query.pop('virtual_host', None)})
+                'host': host, 'port': port, 'username': username,
+                'password': password, 'db': query.pop('virtual_host', None)})
         )
 
         if scheme == 'socket':
@@ -568,9 +583,11 @@ if getattr(redis, "sentinel", None):
         """
 
 
-
 class SentinelBackend(RedisBackend):
     """Redis sentinel task result store."""
+
+    # URL looks like `sentinel://0.0.0.0:26347/3;sentinel://0.0.0.0:26348/3`
+    _SERVER_URI_SEPARATOR = ";"
 
     sentinel = getattr(redis, "sentinel", None)
     connection_class_ssl = SentinelManagedSSLConnection if sentinel else None
@@ -581,9 +598,28 @@ class SentinelBackend(RedisBackend):
 
         super().__init__(*args, **kwargs)
 
+    def as_uri(self, include_password=False):
+        """Return the server addresses as URIs, sanitizing the password or not."""
+        # Allow superclass to do work if we don't need to force sanitization
+        if include_password:
+            return super().as_uri(
+                include_password=include_password,
+            )
+        # Otherwise we need to ensure that all components get sanitized rather
+        # by passing them one by one to the `kombu` helper
+        uri_chunks = (
+            maybe_sanitize_url(chunk)
+            for chunk in (self.url or "").split(self._SERVER_URI_SEPARATOR)
+        )
+        # Similar to the superclass, strip the trailing slash from URIs with
+        # all components empty other than the scheme
+        return self._SERVER_URI_SEPARATOR.join(
+            uri[:-1] if uri.endswith(":///") else uri
+            for uri in uri_chunks
+        )
+
     def _params_from_url(self, url, defaults):
-        # URL looks like sentinel://0.0.0.0:26347/3;sentinel://0.0.0.0:26348/3.
-        chunks = url.split(";")
+        chunks = url.split(self._SERVER_URI_SEPARATOR)
         connparams = dict(defaults, hosts=[])
         for chunk in chunks:
             data = super()._params_from_url(

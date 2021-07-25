@@ -274,8 +274,10 @@ class Celery:
         self.__autoset('broker_url', broker)
         self.__autoset('result_backend', backend)
         self.__autoset('include', include)
-        self.__autoset('broker_use_ssl', kwargs.get('broker_use_ssl'))
-        self.__autoset('redis_backend_use_ssl', kwargs.get('redis_backend_use_ssl'))
+
+        for key, value in kwargs.items():
+            self.__autoset(key, value)
+
         self._conf = Settings(
             PendingConfiguration(
                 self._preconf, self._finalize_pending_conf),
@@ -354,9 +356,16 @@ class Celery:
         _deregister_app(self)
 
     def start(self, argv=None):
+        """Run :program:`celery` using `argv`.
+
+        Uses :data:`sys.argv` if `argv` is not specified.
+        """
         from celery.bin.celery import celery
 
         celery.params[0].default = self
+
+        if argv is None:
+            argv = sys.argv
 
         try:
             celery.main(args=argv, standalone_mode=False)
@@ -366,6 +375,10 @@ class Celery:
             celery.params[0].default = None
 
     def worker_main(self, argv=None):
+        """Run :program:`celery worker` using `argv`.
+
+        Uses :data:`sys.argv` if `argv` is not specified.
+        """
         if argv is None:
             argv = sys.argv
 
@@ -716,7 +729,7 @@ class Celery:
                 'task_always_eager has no effect on send_task',
             ), stacklevel=2)
 
-        ignored_result = options.pop('ignore_result', False)
+        ignore_result = options.pop('ignore_result', False)
         options = router.route(
             options, route_name or name, args, kwargs, task_type)
 
@@ -739,6 +752,7 @@ class Celery:
             reply_to or self.thread_oid, time_limit, soft_time_limit,
             self.conf.task_send_sent_event,
             root_id, parent_id, shadow, chain,
+            ignore_result=ignore_result,
             argsrepr=options.get('argsrepr'),
             kwargsrepr=options.get('kwargsrepr'),
         )
@@ -748,14 +762,14 @@ class Celery:
 
         with self.producer_or_acquire(producer) as P:
             with P.connection._reraise_as_library_errors():
-                if not ignored_result:
+                if not ignore_result:
                     self.backend.on_task_call(P, task_id)
                 amqp.send_task_message(P, name, message, **options)
         result = (result_cls or self.AsyncResult)(task_id)
         # We avoid using the constructor since a custom result class
         # can be used, in which case the constructor may still use
         # the old signature.
-        result.ignored = ignored_result
+        result.ignored = ignore_result
 
         if add_to_parent:
             if not have_parent:
@@ -1058,7 +1072,7 @@ class Celery:
         self.close()
 
     def __repr__(self):
-        return '<{} {}>'.format(type(self).__name__, appstr(self))
+        return f'<{type(self).__name__} {appstr(self)}>'
 
     def __reduce__(self):
         if self._using_v1_reduce:
@@ -1225,7 +1239,7 @@ class Celery:
         return self._conf
 
     @conf.setter
-    def conf(self, d):  # noqa
+    def conf(self, d):
         self._conf = d
 
     @cached_property
@@ -1287,4 +1301,4 @@ class Celery:
         return timezone.get_timezone(conf.timezone)
 
 
-App = Celery  # noqa: E305 XXX compat
+App = Celery  # XXX compat

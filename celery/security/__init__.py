@@ -5,7 +5,7 @@ from kombu.serialization import registry
 
 from celery.exceptions import ImproperlyConfigured
 
-from .serialization import register_auth  # noqa: need cryptography first
+from .serialization import register_auth  # : need cryptography first
 
 CRYPTOGRAPHY_NOT_INSTALLED = """\
 You need to install the cryptography library to use the auth serializer.

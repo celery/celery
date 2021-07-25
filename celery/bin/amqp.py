@@ -26,6 +26,10 @@ class AMQPContext:
         self.channel = None
         self.reconnect()
 
+    @property
+    def app(self):
+        return self.cli_context.app
+
     def respond(self, retval):
         if isinstance(retval, str):
             self.cli_context.echo(retval)

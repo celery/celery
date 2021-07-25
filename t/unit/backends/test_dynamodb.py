@@ -13,7 +13,7 @@ pytest.importorskip('boto3')
 
 class test_DynamoDBBackend:
     def setup(self):
-        self._static_timestamp = Decimal(1483425566.52)  # noqa
+        self._static_timestamp = Decimal(1483425566.52)
         self.app.conf.result_backend = 'dynamodb://'
 
     @property

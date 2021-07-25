@@ -11,7 +11,7 @@ from kombu.utils.uuid import uuid
 
 from celery.utils.collections import AttributeDict
 from celery.utils.timer2 import Timer
-from celery.worker import WorkController as _WC  # noqa
+from celery.worker import WorkController as _WC
 from celery.worker import consumer, control
 from celery.worker import state as worker_state
 from celery.worker.pidbox import Pidbox, gPidbox
@@ -295,6 +295,20 @@ class test_ControlPanel:
         worker_state.active_requests.add(r)
         try:
             assert self.panel.handle('dump_active')
+        finally:
+            worker_state.active_requests.discard(r)
+
+    def test_active_safe(self):
+        kwargsrepr = '<anything>'
+        r = Request(
+            self.TaskMessage(self.mytask.name, id='do re mi',
+                             kwargsrepr=kwargsrepr),
+            app=self.app,
+        )
+        worker_state.active_requests.add(r)
+        try:
+            active_resp = self.panel.handle('dump_active', {'safe': True})
+            assert active_resp[0]['kwargs'] == kwargsrepr
         finally:
             worker_state.active_requests.discard(r)
 

@@ -59,7 +59,7 @@ class RouteCase:
         if args is None:
             args = []
         assert router.route(options, name, args, kwargs)[
-                   'queue'].name == queue
+            'queue'].name == queue
 
     def assert_routes_to_default_queue(self, router, name, *args, **kwargs):
         self.assert_routes_to_queue(

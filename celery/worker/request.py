@@ -50,11 +50,12 @@ def __optimize__():
     _does_info = logger.isEnabledFor(logging.INFO)
 
 
-__optimize__()  # noqa: E305
+__optimize__()
 
 # Localize
 tz_or_local = timezone.tz_or_local
 send_revoked = signals.task_revoked.send
+send_retry = signals.task_retry.send
 
 task_accepted = state.task_accepted
 task_ready = state.task_ready
@@ -69,6 +70,7 @@ class Request:
     worker_pid = None
     time_limits = (None, None)
     _already_revoked = False
+    _already_cancelled = False
     _terminate_on_ack = None
     _apply_result = None
     _tzlocal = None
@@ -120,6 +122,7 @@ class Request:
         self._eventer = eventer
         self._connection_errors = connection_errors or ()
         self._task = task or self._app.tasks[self._type]
+        self._ignore_result = self._request_dict.get('ignore_result', False)
 
         # timezone means the message is timezone-aware, and the only timezone
         # supported at this point is UTC.
@@ -241,6 +244,10 @@ class Request:
         return self._hostname
 
     @property
+    def ignore_result(self):
+        return self._ignore_result
+
+    @property
     def eventer(self):
         return self._eventer
 
@@ -284,7 +291,7 @@ class Request:
         # XXX compat
         return self.id
 
-    @task_id.setter  # noqa
+    @task_id.setter
     def task_id(self, value):
         self.id = value
 
@@ -293,7 +300,7 @@ class Request:
         # XXX compat
         return self.name
 
-    @task_name.setter  # noqa
+    @task_name.setter
     def task_name(self, value):
         self.name = value
 
@@ -394,6 +401,30 @@ class Request:
             if obj is not None:
                 obj.terminate(signal)
 
+    def cancel(self, pool, signal=None):
+        signal = _signals.signum(signal or TERM_SIGNAME)
+        if self.time_start:
+            pool.terminate_job(self.worker_pid, signal)
+            self._announce_cancelled()
+
+        if self._apply_result is not None:
+            obj = self._apply_result()  # is a weakref
+            if obj is not None:
+                obj.terminate(signal)
+
+    def _announce_cancelled(self):
+        task_ready(self)
+        self.send_event('task-cancelled')
+        reason = 'cancelled by Celery'
+        exc = Retry(message=reason)
+        self.task.backend.mark_as_retry(self.id,
+                                        exc,
+                                        request=self._context)
+
+        self.task.on_retry(exc, self.id, self.args, self.kwargs, None)
+        self._already_cancelled = True
+        send_retry(self.task, request=self._context, einfo=None)
+
     def _announce_revoked(self, reason, terminated, signum, expired):
         task_ready(self)
         self.send_event('task-revoked',
@@ -466,7 +497,7 @@ class Request:
             if isinstance(retval.exception, (SystemExit, KeyboardInterrupt)):
                 raise retval.exception
             return self.on_failure(retval, return_ok=True)
-        task_ready(self)
+        task_ready(self, successful=True)
 
         if self.task.acks_late:
             self.acknowledge()
@@ -487,7 +518,24 @@ class Request:
         task_ready(self)
         exc = exc_info.exception
 
-        if isinstance(exc, MemoryError):
+        is_terminated = isinstance(exc, Terminated)
+        if is_terminated:
+            # If the task was terminated and the task was not cancelled due
+            # to a connection loss, it is revoked.
+
+            # We always cancel the tasks inside the master process.
+            # If the request was cancelled, it was not revoked and there's
+            # nothing to be done.
+            # According to the comment below, we need to check if the task
+            # is already revoked and if it wasn't, we should announce that
+            # it was.
+            if not self._already_cancelled and not self._already_revoked:
+                # This is a special case where the process
+                # would not have had time to write the result.
+                self._announce_revoked(
+                    'terminated', True, str(exc), False)
+            return
+        elif isinstance(exc, MemoryError):
             raise MemoryError(f'Process got: {exc}')
         elif isinstance(exc, Reject):
             return self.reject(requeue=exc.requeue)
@@ -498,10 +546,11 @@ class Request:
 
         # (acks_late) acknowledge after result stored.
         requeue = False
+        is_worker_lost = isinstance(exc, WorkerLostError)
         if self.task.acks_late:
             reject = (
                 self.task.reject_on_worker_lost and
-                isinstance(exc, WorkerLostError)
+                is_worker_lost
             )
             ack = self.task.acks_on_failure_or_timeout
             if reject:
@@ -515,13 +564,9 @@ class Request:
                 # need to be removed from prefetched local queue
                 self.reject(requeue=False)
 
-        # These are special cases where the process would not have had time
+        # This is a special case where the process would not have had time
         # to write the result.
-        if isinstance(exc, Terminated):
-            self._announce_revoked(
-                'terminated', True, str(exc), False)
-            send_failed_event = False  # already sent revoked event
-        elif not requeue and (isinstance(exc, WorkerLostError) or not return_ok):
+        if not requeue and (is_worker_lost or not return_ok):
             # only mark as failure if task has not been requeued
             self.task.backend.mark_as_failure(
                 self.id, exc, request=self._context,
@@ -555,8 +600,8 @@ class Request:
         return {
             'id': self.id,
             'name': self.name,
-            'args': self._args,
-            'kwargs': self._kwargs,
+            'args': self._args if not safe else self._argsrepr,
+            'kwargs': self._kwargs if not safe else self._kwargsrepr,
             'type': self._type,
             'hostname': self._hostname,
             'time_start': self.time_start,
@@ -574,7 +619,7 @@ class Request:
             self.humaninfo(),
             f' ETA:[{self._eta}]' if self._eta else '',
             f' expires:[{self._expires}]' if self._expires else '',
-        ])
+        ]).strip()
 
     def __repr__(self):
         """``repr(self)``."""

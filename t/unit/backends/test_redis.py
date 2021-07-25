@@ -340,6 +340,20 @@ class test_RedisBackend(basetest_RedisBackend):
         with pytest.raises(ImproperlyConfigured):
             self.Backend(app=self.app)
 
+    def test_username_password_from_redis_conf(self):
+        self.app.conf.redis_password = 'password'
+        x = self.Backend(app=self.app)
+
+        assert x.connparams
+        assert 'username' not in x.connparams
+        assert x.connparams['password'] == 'password'
+        self.app.conf.redis_username = 'username'
+        x = self.Backend(app=self.app)
+
+        assert x.connparams
+        assert x.connparams['username'] == 'username'
+        assert x.connparams['password'] == 'password'
+
     def test_url(self):
         self.app.conf.redis_socket_timeout = 30.0
         self.app.conf.redis_socket_connect_timeout = 100.0
@@ -350,6 +364,19 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['host'] == 'vandelay.com'
         assert x.connparams['db'] == 1
         assert x.connparams['port'] == 123
+        assert x.connparams['password'] == 'bosco'
+        assert x.connparams['socket_timeout'] == 30.0
+        assert x.connparams['socket_connect_timeout'] == 100.0
+        assert 'username' not in x.connparams
+
+        x = self.Backend(
+            'redis://username:bosco@vandelay.com:123//1', app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert x.connparams['username'] == 'username'
         assert x.connparams['password'] == 'bosco'
         assert x.connparams['socket_timeout'] == 30.0
         assert x.connparams['socket_connect_timeout'] == 100.0
@@ -417,6 +444,54 @@ class test_RedisBackend(basetest_RedisBackend):
 
         from redis.connection import SSLConnection
         assert x.connparams['connection_class'] is SSLConnection
+
+    def test_backend_health_check_interval_ssl(self):
+        pytest.importorskip('redis')
+
+        self.app.conf.redis_backend_use_ssl = {
+            'ssl_cert_reqs': ssl.CERT_REQUIRED,
+            'ssl_ca_certs': '/path/to/ca.crt',
+            'ssl_certfile': '/path/to/client.crt',
+            'ssl_keyfile': '/path/to/client.key',
+        }
+        self.app.conf.redis_backend_health_check_interval = 10
+        x = self.Backend(
+            'rediss://:bosco@vandelay.com:123//1', app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert x.connparams['password'] == 'bosco'
+        assert x.connparams['health_check_interval'] == 10
+
+        from redis.connection import SSLConnection
+        assert x.connparams['connection_class'] is SSLConnection
+
+    def test_backend_health_check_interval(self):
+        pytest.importorskip('redis')
+
+        self.app.conf.redis_backend_health_check_interval = 10
+        x = self.Backend(
+            'redis://vandelay.com:123//1', app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert x.connparams['health_check_interval'] == 10
+
+    def test_backend_health_check_interval_not_set(self):
+        pytest.importorskip('redis')
+
+        x = self.Backend(
+            'redis://vandelay.com:123//1', app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert "health_check_interval" not in x.connparams
 
     @pytest.mark.parametrize('cert_str', [
         "required",
@@ -1127,6 +1202,16 @@ class test_SentinelBackend:
         expected_dbs = [1, 1]
         found_dbs = [cp['db'] for cp in x.connparams['hosts']]
         assert found_dbs == expected_dbs
+
+        # By default passwords should be sanitized
+        display_url = x.as_uri()
+        assert "test" not in display_url
+        # We can choose not to sanitize with the `include_password` argument
+        unsanitized_display_url = x.as_uri(include_password=True)
+        assert unsanitized_display_url == x.url
+        # or to explicitly sanitize
+        forcibly_sanitized_display_url = x.as_uri(include_password=False)
+        assert forcibly_sanitized_display_url == display_url
 
     def test_get_sentinel_instance(self):
         x = self.Backend(

@@ -217,10 +217,17 @@ def retry_once_priority(self, *args, expires=60.0, max_retries=1,
 
 
 @shared_task
-def redis_echo(message):
+def redis_echo(message, redis_key="redis-echo"):
     """Task that appends the message to a redis list."""
     redis_connection = get_redis_connection()
-    redis_connection.rpush('redis-echo', message)
+    redis_connection.rpush(redis_key, message)
+
+
+@shared_task
+def redis_count(redis_key="redis-count"):
+    """Task that increments a specified or well-known redis key."""
+    redis_connection = get_redis_connection()
+    redis_connection.incr(redis_key)
 
 
 @shared_task(bind=True)
@@ -288,9 +295,10 @@ def fail(*args):
     raise ExpectedException(*args)
 
 
-@shared_task
-def chord_error(*args):
-    return args
+@shared_task(bind=True)
+def fail_replaced(self, *args):
+    """Replace this task with one which raises ExpectedException."""
+    raise self.replace(fail.si(*args))
 
 
 @shared_task(bind=True)
@@ -372,3 +380,15 @@ def rebuild_signature(sig_dict):
         if isinstance(sig, chord):
             _recurse(sig.body)
     _recurse(sig_obj)
+
+
+@shared_task
+def errback_old_style(request_id):
+    redis_count(request_id)
+    return request_id
+
+
+@shared_task
+def errback_new_style(request, exc, tb):
+    redis_count(request.id)
+    return request.id

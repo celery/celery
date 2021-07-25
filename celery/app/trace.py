@@ -20,7 +20,9 @@ from celery import current_app, group, signals, states
 from celery._state import _task_stack
 from celery.app.task import Context
 from celery.app.task import Task as BaseTask
-from celery.exceptions import Ignore, InvalidTaskError, Reject, Retry
+from celery.exceptions import (BackendGetMetaError, Ignore, InvalidTaskError,
+                               Reject, Retry)
+from celery.result import AsyncResult
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.objects import mro_lookup
@@ -46,7 +48,14 @@ __all__ = (
     'setup_worker_optimizations', 'reset_worker_optimizations',
 )
 
+from celery.worker.state import successful_requests
+
 logger = get_logger(__name__)
+
+#: Format string used to log task receipt.
+LOG_RECEIVED = """\
+Task %(name)s[%(id)s] received\
+"""
 
 #: Format string used to log task success.
 LOG_SUCCESS = """\
@@ -307,7 +316,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         :keyword request: Request dict.
 
     """
-    # noqa: C901
+
     # pylint: disable=too-many-statements
 
     # If the task doesn't define a custom __call__ method
@@ -316,7 +325,6 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     fun = task if task_has_custom(task, '__call__') else task.run
 
     loader = loader or app.loader
-    backend = task.backend
     ignore_result = task.ignore_result
     track_started = task.track_started
     track_started = not eager and (task.track_started and not ignore_result)
@@ -326,6 +334,10 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         publish_result = True
     else:
         publish_result = not eager and not ignore_result
+
+    deduplicate_successful_tasks = ((app.conf.task_acks_late or task.acks_late)
+                                    and app.conf.worker_deduplicate_successful_tasks
+                                    and app.backend.persistent)
 
     hostname = hostname or gethostname()
     inherit_parent_priority = app.conf.task_inherit_parent_priority
@@ -339,10 +351,6 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         task_on_success = task.on_success
     if task_has_custom(task, 'after_return'):
         task_after_return = task.after_return
-
-    store_result = backend.store_result
-    mark_as_done = backend.mark_as_done
-    backend_cleanup = backend.process_cleanup
 
     pid = os.getpid()
 
@@ -391,9 +399,31 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
             except AttributeError:
                 raise InvalidTaskError(
                     'Task keyword arguments is not a mapping')
-            push_task(task)
+
             task_request = Context(request or {}, args=args,
                                    called_directly=False, kwargs=kwargs)
+
+            redelivered = (task_request.delivery_info
+                           and task_request.delivery_info.get('redelivered', False))
+            if deduplicate_successful_tasks and redelivered:
+                if task_request.id in successful_requests:
+                    return trace_ok_t(R, I, T, Rstr)
+                r = AsyncResult(task_request.id, app=app)
+
+                try:
+                    state = r.state
+                except BackendGetMetaError:
+                    pass
+                else:
+                    if state == SUCCESS:
+                        info(LOG_IGNORED, {
+                            'id': task_request.id,
+                            'name': get_task_name(task_request, name),
+                            'description': 'Task already completed successfully.'
+                        })
+                        return trace_ok_t(R, I, T, Rstr)
+
+            push_task(task)
             root_id = task_request.root_id or uuid
             task_priority = task_request.delivery_info.get('priority') if \
                 inherit_parent_priority else None
@@ -405,7 +435,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                 args=args, kwargs=kwargs)
                 loader_task_init(uuid, task)
                 if track_started:
-                    store_result(
+                    task.backend.store_result(
                         uuid, {'pid': pid, 'hostname': hostname}, STARTED,
                         request=task_request,
                     )
@@ -479,7 +509,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                 parent_id=uuid, root_id=root_id,
                                 priority=task_priority
                             )
-                        mark_as_done(
+                        task.backend.mark_as_done(
                             uuid, retval, task_request, publish_result,
                         )
                     except EncodeError as exc:
@@ -516,7 +546,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     pop_request()
                     if not eager:
                         try:
-                            backend_cleanup()
+                            task.backend.process_cleanup()
                             loader_cleanup()
                         except (KeyboardInterrupt, SystemExit, MemoryError):
                             raise

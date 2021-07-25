@@ -180,10 +180,10 @@ class Retry(TaskPredicate):
         return f'Retry {self.humanize()}'
 
     def __reduce__(self):
-        return self.__class__, (self.message, self.excs, self.when)
+        return self.__class__, (self.message, self.exc, self.when)
 
 
-RetryTaskError = Retry  # noqa: E305 XXX compat
+RetryTaskError = Retry  # XXX compat
 
 
 class Ignore(TaskPredicate):
@@ -271,7 +271,7 @@ class WorkerTerminate(SystemExit):
     """Signals that the worker should terminate immediately."""
 
 
-SystemTerminate = WorkerTerminate  # noqa: E305 XXX compat
+SystemTerminate = WorkerTerminate  # XXX compat
 
 
 class WorkerShutdown(SystemExit):
@@ -304,6 +304,7 @@ class BackendStoreError(BackendError):
 
 
 class CeleryCommandException(ClickException):
+    """A general command exception which stores an exit code."""
 
     def __init__(self, message, exit_code):
         super().__init__(message=message)

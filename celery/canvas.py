@@ -642,7 +642,8 @@ class _chain(Signature):
 
     def run(self, args=None, kwargs=None, group_id=None, chord=None,
             task_id=None, link=None, link_error=None, publisher=None,
-            producer=None, root_id=None, parent_id=None, app=None, **options):
+            producer=None, root_id=None, parent_id=None, app=None,
+            group_index=None, **options):
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
         args = args if args else ()
@@ -656,7 +657,7 @@ class _chain(Signature):
 
         tasks, results_from_prepare = self.prepare_steps(
             args, kwargs, self.tasks, root_id, parent_id, link_error, app,
-            task_id, group_id, chord,
+            task_id, group_id, chord, group_index=group_index,
         )
 
         if results_from_prepare:
@@ -1122,19 +1123,25 @@ class group(Signature):
             task.set_immutable(immutable)
 
     def link(self, sig):
-        # Simply link to first task
+        # Simply link to first task. Doing this is slightly misleading because
+        # the callback may be executed before all children in the group are
+        # completed and also if any children other than the first one fail.
+        #
+        # The callback signature is cloned and made immutable since it the
+        # first task isn't actually capable of passing the return values of its
+        # siblings to the callback task.
         sig = sig.clone().set(immutable=True)
         return self.tasks[0].link(sig)
 
     def link_error(self, sig):
-        try:
-            sig = sig.clone().set(immutable=True)
-        except AttributeError:
-            # See issue #5265.  I don't use isinstance because current tests
-            # pass a Mock object as argument.
-            sig['immutable'] = True
-            sig = Signature.from_dict(sig)
-        return self.tasks[0].link_error(sig)
+        # Any child task might error so we need to ensure that they are all
+        # capable of calling the linked error signature. This opens the
+        # possibility that the task is called more than once but that's better
+        # than it not being called at all.
+        #
+        # We return a concretised tuple of the signatures actually applied to
+        # each child task signature, of which there might be none!
+        return tuple(child_task.link_error(sig) for child_task in self.tasks)
 
     def _prepared(self, tasks, partial_args, group_id, root_id, app,
                   CallableSignature=abstract.CallableSignature,
@@ -1170,21 +1177,25 @@ class group(Signature):
             # we are able to tell when we are at the end by checking if
             # next_task is None.  This enables us to set the chord size
             # without burning through the entire generator.  See #3021.
+            chord_size = 0
             for task_index, (current_task, next_task) in enumerate(
                 lookahead(tasks)
             ):
+                # We expect that each task must be part of the same group which
+                # seems sensible enough. If that's somehow not the case we'll
+                # end up messing up chord counts and there are all sorts of
+                # awful race conditions to think about. We'll hope it's not!
                 sig, res, group_id = current_task
-                _chord = sig.options.get("chord") or chord
-                if _chord is not None and next_task is None:
-                    chord_size = task_index + 1
-                    if isinstance(sig, _chain):
-                        if sig.tasks[-1].subtask_type == 'chord':
-                            chord_size = sig.tasks[-1].__length_hint__()
-                        else:
-                            chord_size = task_index + len(sig.tasks[-1])
+                chord_obj = chord if chord is not None else sig.options.get("chord")
+                # We need to check the chord size of each contributing task so
+                # that when we get to the final one, we can correctly set the
+                # size in the backend and the chord can be sensible completed.
+                chord_size += _chord._descend(sig)
+                if chord_obj is not None and next_task is None:
+                    # Per above, sanity check that we only saw one group
                     app.backend.set_chord_size(group_id, chord_size)
                 sig.apply_async(producer=producer, add_to_parent=False,
-                                chord=_chord, args=args, kwargs=kwargs,
+                                chord=chord_obj, args=args, kwargs=kwargs,
                                 **options)
                 # adding callback to result, such that it will gradually
                 # fulfill the barrier.
@@ -1242,8 +1253,10 @@ class group(Signature):
 
     def freeze(self, _id=None, group_id=None, chord=None,
                root_id=None, parent_id=None, group_index=None):
-        return self.app.GroupResult(*self._freeze_group_tasks(_id=_id, group_id=group_id,
-                                                              chord=chord, root_id=root_id, parent_id=parent_id, group_index=group_index))
+        return self.app.GroupResult(*self._freeze_group_tasks(
+            _id=_id, group_id=group_id,
+            chord=chord, root_id=root_id, parent_id=parent_id, group_index=group_index
+        ))
 
     _freeze = freeze
 
@@ -1296,8 +1309,8 @@ class group(Signature):
         return app if app is not None else current_app
 
 
-@Signature.register_type()
-class chord(Signature):
+@Signature.register_type(name="chord")
+class _chord(Signature):
     r"""Barrier synchronization primitive.
 
     A chord consists of a header and a body.
@@ -1415,20 +1428,27 @@ class chord(Signature):
         )
 
     @classmethod
-    def __descend(cls, sig_obj):
+    def _descend(cls, sig_obj):
         # Sometimes serialized signatures might make their way here
         if not isinstance(sig_obj, Signature) and isinstance(sig_obj, dict):
             sig_obj = Signature.from_dict(sig_obj)
         if isinstance(sig_obj, group):
             # Each task in a group counts toward this chord
             subtasks = getattr(sig_obj.tasks, "tasks", sig_obj.tasks)
-            return sum(cls.__descend(task) for task in subtasks)
+            return sum(cls._descend(task) for task in subtasks)
         elif isinstance(sig_obj, _chain):
-            # The last element in a chain counts toward this chord
-            return cls.__descend(sig_obj.tasks[-1])
+            # The last non-empty element in a chain counts toward this chord
+            for child_sig in sig_obj.tasks[-1::-1]:
+                child_size = cls._descend(child_sig)
+                if child_size > 0:
+                    return child_size
+            else:
+                # We have to just hope this chain is part of some encapsulating
+                # signature which is valid and can fire the chord body
+                return 0
         elif isinstance(sig_obj, chord):
             # The child chord's body counts toward this chord
-            return cls.__descend(sig_obj.body)
+            return cls._descend(sig_obj.body)
         elif isinstance(sig_obj, Signature):
             # Each simple signature counts as 1 completion for this chord
             return 1
@@ -1437,7 +1457,7 @@ class chord(Signature):
 
     def __length_hint__(self):
         tasks = getattr(self.tasks, "tasks", self.tasks)
-        return sum(self.__descend(task) for task in tasks)
+        return sum(self._descend(task) for task in tasks)
 
     def run(self, header, body, partial_args, app=None, interval=None,
             countdown=1, max_retries=None, eager=False,
@@ -1537,6 +1557,11 @@ class chord(Signature):
     body = getitem_property('kwargs.body', 'Body task of chord.')
 
 
+# Add a back-compat alias for the previous `chord` class name which conflicts
+# with keyword arguments elsewhere in this file
+chord = _chord
+
+
 def signature(varies, *args, **kwargs):
     """Create new signature.
 
@@ -1554,7 +1579,7 @@ def signature(varies, *args, **kwargs):
     return Signature(varies, *args, **kwargs)
 
 
-subtask = signature  # noqa: E305 XXX compat
+subtask = signature  # XXX compat
 
 
 def maybe_signature(d, app=None, clone=False):
@@ -1584,4 +1609,4 @@ def maybe_signature(d, app=None, clone=False):
     return d
 
 
-maybe_subtask = maybe_signature  # noqa: E305 XXX compat
+maybe_subtask = maybe_signature  # XXX compat

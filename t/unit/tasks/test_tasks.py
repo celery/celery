@@ -1,7 +1,7 @@
 import socket
 import tempfile
 from datetime import datetime, timedelta
-from unittest.mock import ANY, MagicMock, Mock, patch
+from unittest.mock import ANY, MagicMock, Mock, patch, sentinel
 
 import pytest
 from case import ContextMock
@@ -572,7 +572,7 @@ class test_task_retries(TasksCase):
 
         assert task.iterations == 4
         retry_call_countdowns = [
-            call[1]['countdown'] for call in fake_retry.call_args_list
+            call_[1]['countdown'] for call_ in fake_retry.call_args_list
         ]
         assert retry_call_countdowns == [1, 2, 4, 8]
 
@@ -587,7 +587,7 @@ class test_task_retries(TasksCase):
 
         assert task.iterations == 4
         retry_call_countdowns = [
-            call[1]['countdown'] for call in fake_retry.call_args_list
+            call_[1]['countdown'] for call_ in fake_retry.call_args_list
         ]
         assert retry_call_countdowns == [0, 1, 3, 7]
 
@@ -619,7 +619,7 @@ class test_task_retries(TasksCase):
 
         assert task.iterations == 6
         retry_call_countdowns = [
-            call[1]['countdown'] for call in fake_retry.call_args_list
+            call_[1]['countdown'] for call_ in fake_retry.call_args_list
         ]
         assert retry_call_countdowns == [1, 2, 4, 8, 16, 32]
 
@@ -638,7 +638,7 @@ class test_task_retries(TasksCase):
 
         assert task.iterations == 6
         retry_call_countdowns = [
-            call[1]['countdown'] for call in fake_retry.call_args_list
+            call_[1]['countdown'] for call_ in fake_retry.call_args_list
         ]
         assert retry_call_countdowns == [1, 2, 4, 8, 16, 32]
 
@@ -650,7 +650,7 @@ class test_task_retries(TasksCase):
 
         assert task.iterations == 6
         retry_call_countdowns = [
-            call[1]['countdown'] for call in fake_retry.call_args_list
+            call_[1]['countdown'] for call_ in fake_retry.call_args_list
         ]
         assert retry_call_countdowns == [1, 2, 4, 8, 16, 16]
 
@@ -662,7 +662,7 @@ class test_task_retries(TasksCase):
 
         assert task.iterations == 6
         retry_call_countdowns = [
-            call[1]['countdown'] for call in fake_retry.call_args_list
+            call_[1]['countdown'] for call_ in fake_retry.call_args_list
         ]
         assert retry_call_countdowns == [1, 2, 4, 8, 16, 32]
 
@@ -675,7 +675,7 @@ class test_task_retries(TasksCase):
 
         assert task.iterations == 6
         retry_call_countdowns = [
-            call[1]['countdown'] for call in fake_retry.call_args_list
+            call_[1]['countdown'] for call_ in fake_retry.call_args_list
         ]
         assert retry_call_countdowns == [0, 1, 3, 7, 15, 31]
 
@@ -992,10 +992,12 @@ class test_tasks(TasksCase):
             retry=True, retry_policy=self.app.conf.task_publish_retry_policy)
 
     def test_replace(self):
-        sig1 = Mock(name='sig1')
+        sig1 = MagicMock(name='sig1')
         sig1.options = {}
+        self.mytask.request.id = sentinel.request_id
         with pytest.raises(Ignore):
             self.mytask.replace(sig1)
+        sig1.freeze.assert_called_once_with(self.mytask.request.id)
 
     def test_replace_with_chord(self):
         sig1 = Mock(name='sig1')
@@ -1003,7 +1005,6 @@ class test_tasks(TasksCase):
         with pytest.raises(ImproperlyConfigured):
             self.mytask.replace(sig1)
 
-    @pytest.mark.usefixtures('depends_on_current_app')
     def test_replace_callback(self):
         c = group([self.mytask.s()], app=self.app)
         c.freeze = Mock(name='freeze')
@@ -1011,29 +1012,23 @@ class test_tasks(TasksCase):
         self.mytask.request.id = 'id'
         self.mytask.request.group = 'group'
         self.mytask.request.root_id = 'root_id'
-        self.mytask.request.callbacks = 'callbacks'
-        self.mytask.request.errbacks = 'errbacks'
+        self.mytask.request.callbacks = callbacks = 'callbacks'
+        self.mytask.request.errbacks = errbacks = 'errbacks'
 
-        class JsonMagicMock(MagicMock):
-            parent = None
-
-            def __json__(self):
-                return 'whatever'
-
-            def reprcall(self, *args, **kwargs):
-                return 'whatever2'
-
-        mocked_signature = JsonMagicMock(name='s')
-        accumulate_mock = JsonMagicMock(name='accumulate', s=mocked_signature)
-        self.mytask.app.tasks['celery.accumulate'] = accumulate_mock
-
-        try:
-            self.mytask.replace(c)
-        except Ignore:
-            mocked_signature.return_value.set.assert_called_with(
-                link='callbacks',
-                link_error='errbacks',
-            )
+        # Replacement groups get uplifted to chords so that we can accumulate
+        # the results and link call/errbacks - patch the appropriate `chord`
+        # methods so we can validate this behaviour
+        with patch(
+            "celery.canvas.chord.link"
+        ) as mock_chord_link, patch(
+            "celery.canvas.chord.link_error"
+        ) as mock_chord_link_error:
+            with pytest.raises(Ignore):
+                self.mytask.replace(c)
+        # Confirm that the call/errbacks on the original signature are linked
+        # to the replacement signature as expected
+        mock_chord_link.assert_called_once_with(callbacks)
+        mock_chord_link_error.assert_called_once_with(errbacks)
 
     def test_replace_group(self):
         c = group([self.mytask.s()], app=self.app)
@@ -1289,17 +1284,20 @@ class test_apply_task(TasksCase):
             f.get()
 
     def test_apply_simulates_delivery_info(self):
-        self.task_check_request_context.request_stack.push = Mock()
+        task_to_apply = self.task_check_request_context
+        with patch.object(
+            task_to_apply.request_stack, "push",
+            wraps=task_to_apply.request_stack.push,
+        ) as mock_push:
+            task_to_apply.apply(
+                priority=4,
+                routing_key='myroutingkey',
+                exchange='myexchange',
+            )
 
-        self.task_check_request_context.apply(
-            priority=4,
-            routing_key='myroutingkey',
-            exchange='myexchange',
-        )
+        mock_push.assert_called_once()
 
-        self.task_check_request_context.request_stack.push.assert_called_once()
-
-        request = self.task_check_request_context.request_stack.push.call_args[0][0]
+        request = mock_push.call_args[0][0]
 
         assert request.delivery_info == {
             'is_eager': True,

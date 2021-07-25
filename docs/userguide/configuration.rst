@@ -107,6 +107,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_REDIS_DB``                        :setting:`redis_db`
 ``CELERY_REDIS_HOST``                      :setting:`redis_host`
 ``CELERY_REDIS_MAX_CONNECTIONS``           :setting:`redis_max_connections`
+``CELERY_REDIS_USERNAME``                  :setting:`redis_username`
 ``CELERY_REDIS_PASSWORD``                  :setting:`redis_password`
 ``CELERY_REDIS_PORT``                      :setting:`redis_port`
 ``CELERY_REDIS_BACKEND_USE_SSL``           :setting:`redis_backend_use_ssl`
@@ -1127,7 +1128,7 @@ Configuring the backend URL
 This backend requires the :setting:`result_backend`
 setting to be set to a Redis or `Redis over TLS`_ URL::
 
-    result_backend = 'redis://:password@host:port/db'
+    result_backend = 'redis://username:password@host:port/db'
 
 .. _`Redis over TLS`:
     https://www.iana.org/assignments/uri-schemes/prov/rediss
@@ -1142,7 +1143,7 @@ is the same as::
 
 Use the ``rediss://`` protocol to connect to redis over TLS::
 
-    result_backend = 'rediss://:password@host:port/db?ssl_cert_reqs=required'
+    result_backend = 'rediss://username:password@host:port/db?ssl_cert_reqs=required'
 
 Note that the ``ssl_cert_reqs`` string should be one of ``required``,
 ``optional``, or ``none`` (though, for backwards compatibility, the string
@@ -1153,6 +1154,20 @@ If a Unix socket connection should be used, the URL needs to be in the format:::
     result_backend = 'socket:///path/to/redis.sock'
 
 The fields of the URL are defined as follows:
+
+#. ``username``
+
+    .. versionadded:: 5.1.0
+
+    Username used to connect to the database.
+
+    Note that this is only supported in Redis>=6.0 and with py-redis>=3.4.0
+    installed.
+
+    If you use an older database version or an older client version
+    you can omit the username::
+
+        result_backend = 'redis://:password@host:port/db'
 
 #. ``password``
 
@@ -1184,6 +1199,22 @@ When using a TLS connection (protocol is ``rediss://``), you may pass in all val
 Note that the ``ssl_cert_reqs`` string should be one of ``required``,
 ``optional``, or ``none`` (though, for backwards compatibility, the string
 may also be one of ``CERT_REQUIRED``, ``CERT_OPTIONAL``, ``CERT_NONE``).
+
+
+.. setting:: redis_backend_health_check_interval
+
+.. versionadded:: 5.1.0
+
+``redis_backend_health_check_interval``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: Not configured
+
+The Redis backend supports health checks.  This value must be
+set as an integer whose value is the number of seconds between
+health checks.  If a ConnectionError or a TimeoutError is
+encountered during the health check, the connection will be
+re-established and the command retried exactly once.
 
 .. setting:: redis_backend_use_ssl
 
@@ -2585,6 +2616,33 @@ to have different import categories.
 The modules in this setting are imported after the modules in
 :setting:`imports`.
 
+.. setting:: worker_deduplicate_successful_tasks
+
+``worker_deduplicate_successful_tasks``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.1
+
+Default: False
+
+Before each task execution, instruct the worker to check if this task is
+a duplicate message.
+
+Deduplication occurs only with tasks that have the same identifier,
+enabled late acknowledgment, were redelivered by the message broker
+and their state is ``SUCCESS`` in the result backend.
+
+To avoid overflowing the result backend with queries, a local cache of
+successfully executed tasks is checked before querying the result backend
+in case the task was already successfully executed by the same worker that
+received the task.
+
+This cache can be made persistent by setting the :setting:`worker_state_db`
+setting.
+
+If the result backend is not persistent (the RPC backend, for example),
+this setting is ignored.
+
 .. _conf-concurrency:
 
 .. setting:: worker_concurrency
@@ -2718,6 +2776,36 @@ Specify if remote control of the workers is enabled.
 Default: 4.0.
 
 The timeout in seconds (int/float) when waiting for a new worker process to start up.
+
+.. setting:: worker_cancel_long_running_tasks_on_connection_loss
+
+``worker_cancel_long_running_tasks_on_connection_loss``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.1
+
+Default: Disabled by default.
+
+Kill all long-running tasks with late acknowledgment enabled on connection loss.
+
+Tasks which have not been acknowledged before the connection loss cannot do so
+anymore since their channel is gone and the task is redelivered back to the queue.
+This is why tasks with late acknowledged enabled must be idempotent as they may be executed more than once.
+In this case, the task is being executed twice per connection loss (and sometimes in parallel in other workers).
+
+When turning this option on, those tasks which have not been completed are
+cancelled and their execution is terminated.
+Tasks which have completed in any way before the connection loss
+are recorded as such in the result backend as long as :setting:`task_ignore_result` is not enabled.
+
+.. warning::
+
+    This feature was introduced as a future breaking change.
+    If it is turned off, Celery will emit a warning message.
+
+    In Celery 6.0, the :setting:`worker_cancel_long_running_tasks_on_connection_loss`
+    will be set to ``True`` by default as the current behavior leads to more
+    problems than it solves.
 
 .. _conf-events:
 
@@ -2918,7 +3006,7 @@ Default:
 .. code-block:: text
 
     "[%(asctime)s: %(levelname)s/%(processName)s]
-        [%(task_name)s(%(task_id)s)] %(message)s"
+        %(task_name)s[%(task_id)s]: %(message)s"
 
 The format to use for log messages logged in tasks.
 

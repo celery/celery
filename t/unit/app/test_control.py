@@ -95,7 +95,11 @@ class test_inspect:
 
     def test_active(self):
         self.inspect.active()
-        self.assert_broadcast_called('active')
+        self.assert_broadcast_called('active', safe=None)
+
+    def test_active_safe(self):
+        self.inspect.active(safe=True)
+        self.assert_broadcast_called('active', safe=True)
 
     def test_clock(self):
         self.inspect.clock()
@@ -240,6 +244,12 @@ class test_Control:
                                         _options=None, **args):
         self.app.control.broadcast.assert_called_with(
             name, destination=destination, arguments=args, **_options or {})
+
+    def test_serializer(self):
+        self.app.conf['task_serializer'] = 'test'
+        self.app.conf['accept_content'] = ['test']
+        assert control.Control(self.app).mailbox.serializer == 'test'
+        assert control.Control(self.app).mailbox.accept == ['test']
 
     def test_purge(self):
         self.app.amqp.TaskConsumer = Mock(name='TaskConsumer')

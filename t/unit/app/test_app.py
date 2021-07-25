@@ -274,6 +274,10 @@ class test_App:
         with self.Celery(broker='foo://baribaz') as app:
             assert app.conf.broker_url == 'foo://baribaz'
 
+    def test_pending_confugration__kwargs(self):
+        with self.Celery(foo='bar') as app:
+            assert app.conf.foo == 'bar'
+
     def test_pending_configuration__setattr(self):
         with self.Celery(broker='foo://bar') as app:
             app.conf.task_default_delivery_mode = 44
@@ -575,20 +579,12 @@ class test_App:
         for key, value in changes.items():
             assert restored.conf[key] == value
 
-    # def test_worker_main(self):
-    #     from celery.bin import worker as worker_bin
-    #
-    #     class worker(worker_bin.worker):
-    #
-    #         def execute_from_commandline(self, argv):
-    #             return argv
-    #
-    #     prev, worker_bin.worker = worker_bin.worker, worker
-    #     try:
-    #         ret = self.app.worker_main(argv=['--version'])
-    #         assert ret == ['--version']
-    #     finally:
-    #         worker_bin.worker = prev
+    @patch('celery.bin.celery.celery')
+    def test_worker_main(self, mocked_celery):
+        self.app.worker_main(argv=['worker', '--help'])
+
+        mocked_celery.main.assert_called_with(
+            args=['worker', '--help'], standalone_mode=False)
 
     def test_config_from_envvar(self):
         os.environ['CELERYTEST_CONFIG_OBJECT'] = 't.unit.app.test_app'
@@ -770,6 +766,11 @@ class test_App:
         assert self.app.config_from_envvar(key, force=True)
         assert self.app.conf['FOO'] == 10
         assert self.app.conf['BAR'] == 20
+
+    @patch('celery.bin.celery.celery')
+    def test_start(self, mocked_celery):
+        self.app.start()
+        mocked_celery.main.assert_called()
 
     @pytest.mark.parametrize('url,expected_fields', [
         ('pyamqp://', {

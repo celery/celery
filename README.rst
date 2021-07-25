@@ -2,8 +2,8 @@
 
 |build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 5.0.5 (singularity)
-:Web: http://celeryproject.org/
+:Version: 5.1.2 (sun-harmonics)
+:Web: https://docs.celeryproject.org/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
 :Keywords: task, queue, job, async, rabbitmq, amqp, redis,
@@ -57,9 +57,9 @@ in such a way that the client enqueues an URL to be requested by a worker.
 What do I need?
 ===============
 
-Celery version 5.0.5 runs on,
+Celery version 5.1.2 runs on,
 
-- Python (3.6, 3.7, 3.8)
+- Python (3.6, 3.7, 3.8, 3.9)
 - PyPy3.6 (7.6)
 
 
@@ -89,7 +89,7 @@ Get Started
 ===========
 
 If this is the first time you're trying to use Celery, or you're
-new to Celery 5.0.5 coming from previous versions then you should read our
+new to Celery 5.0.5 or 5.1.2 coming from previous versions then you should read our
 getting started tutorials:
 
 - `First steps with Celery`_
@@ -105,6 +105,8 @@ getting started tutorials:
 
 .. _`Next steps`:
     http://docs.celeryproject.org/en/latest/getting-started/next-steps.html
+    
+ You can also get started with Celery by using a hosted broker transport CloudAMQP. The largest hosting provider of RabbitMQ is a proud sponsor of Celery.
 
 Celery is...
 =============
@@ -117,7 +119,7 @@ Celery is...
     like at our `mailing-list`_, or the IRC channel.
 
     Here's one of the simplest applications you can make:
-    
+
     .. code-block:: python
 
         from celery import Celery
@@ -419,10 +421,10 @@ please join the `celery-users`_ mailing list.
 IRC
 ---
 
-Come chat with us on IRC. The **#celery** channel is located at the `Freenode`_
-network.
+Come chat with us on IRC. The **#celery** channel is located at the
+`Libera Chat`_ network.
 
-.. _`Freenode`: https://freenode.net
+.. _`Libera Chat`: https://libera.chat/
 
 .. _bug-tracker:
 
@@ -500,9 +502,9 @@ file in the top distribution directory for the full license text.
 
 .. # vim: syntax=rst expandtab tabstop=4 shiftwidth=4 shiftround
 
-.. |build-status| image:: https://api.travis-ci.com/celery/celery.png?branch=master
+.. |build-status| image:: https://github.com/celery/celery/actions/workflows/python-package.yml/badge.svg
     :alt: Build status
-    :target: https://travis-ci.com/celery/celery
+    :target: https://github.com/celery/celery/actions/workflows/python-package.yml
 
 .. |coverage| image:: https://codecov.io/github/celery/celery/coverage.svg?branch=master
     :target: https://codecov.io/github/celery/celery?branch=master

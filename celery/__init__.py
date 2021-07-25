@@ -13,11 +13,11 @@ import sys
 from collections import namedtuple
 
 # Lazy loading
-from . import local  # noqa
+from . import local
 
-SERIES = 'singularity'
+SERIES = 'sun-harmonics'
 
-__version__ = '5.0.5'
+__version__ = '5.1.2'
 __author__ = 'Ask Solem'
 __contact__ = 'auvipy@gmail.com'
 __homepage__ = 'http://celeryproject.org'
@@ -65,15 +65,15 @@ if os.environ.get('C_IMPDEBUG'):  # pragma: no cover
 STATICA_HACK = True
 globals()['kcah_acitats'[::-1].upper()] = False
 if STATICA_HACK:  # pragma: no cover
-    from celery._state import current_app, current_task  # noqa
-    from celery.app import shared_task  # noqa
-    from celery.app.base import Celery  # noqa
-    from celery.app.task import Task  # noqa
-    from celery.app.utils import bugreport  # noqa
+    from celery._state import current_app, current_task
+    from celery.app import shared_task
+    from celery.app.base import Celery
+    from celery.app.task import Task
+    from celery.app.utils import bugreport
     from celery.canvas import (chain, chord, chunks, group,  # noqa
                                maybe_signature, signature, subtask, xmap,
                                xstarmap)
-    from celery.utils import uuid  # noqa
+    from celery.utils import uuid
 
 # Eventlet/gevent patching must happen before importing
 # anything else, so these tools must be at top-level.
@@ -142,7 +142,8 @@ def maybe_patch_concurrency(argv=None, short_opts=None,
 
         # set up eventlet/gevent environments ASAP
         from celery import concurrency
-        concurrency.get_implementation(pool)
+        if pool in concurrency.get_available_pool_names():
+            concurrency.get_implementation(pool)
 
 
 # this just creates a new module, that imports stuff on first attribute

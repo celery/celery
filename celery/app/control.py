@@ -136,17 +136,17 @@ class Inspect:
     def active(self, safe=None):
         """Return list of tasks currently executed by workers.
 
+        Arguments:
+            safe (Boolean): Set to True to disable deserialization.
+
         Returns:
             Dict: Dictionary ``{HOSTNAME: [TASK_INFO,...]}``.
 
         See Also:
             For ``TASK_INFO`` details see :func:`query_task` return value.
 
-        Note:
-            ``safe`` is ignored since 4.0 as no objects will need
-            serialization now that we have argsrepr/kwargsrepr.
         """
-        return self._request('active')
+        return self._request('active', safe=safe)
 
     def scheduled(self, safe=None):
         """Return list of scheduled tasks with details.
@@ -431,7 +431,8 @@ class Control:
         self.mailbox = self.Mailbox(
             app.conf.control_exchange,
             type='fanout',
-            accept=['json'],
+            accept=app.conf.accept_content,
+            serializer=app.conf.task_serializer,
             producer_pool=lazy(lambda: self.app.amqp.producer_pool),
             queue_ttl=app.conf.control_queue_ttl,
             reply_queue_ttl=app.conf.control_queue_ttl,

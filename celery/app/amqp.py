@@ -284,7 +284,7 @@ class AMQP:
                    time_limit=None, soft_time_limit=None,
                    create_sent_event=False, root_id=None, parent_id=None,
                    shadow=None, chain=None, now=None, timezone=None,
-                   origin=None, argsrepr=None, kwargsrepr=None):
+                   origin=None, ignore_result=False, argsrepr=None, kwargsrepr=None):
         args = args or ()
         kwargs = kwargs or {}
         if not isinstance(args, (list, tuple)):
@@ -316,13 +316,6 @@ class AMQP:
         if kwargsrepr is None:
             kwargsrepr = saferepr(kwargs, self.kwargsrepr_maxsize)
 
-        if callbacks:
-            callbacks = [utf8dict(callback) for callback in callbacks]
-        if errbacks:
-            errbacks = [utf8dict(errback) for errback in errbacks]
-        if chord:
-            chord = utf8dict(chord)
-
         if not root_id:  # empty root_id defaults to task_id
             root_id = task_id
 
@@ -342,7 +335,8 @@ class AMQP:
                 'parent_id': parent_id,
                 'argsrepr': argsrepr,
                 'kwargsrepr': kwargsrepr,
-                'origin': origin or anon_nodename()
+                'origin': origin or anon_nodename(),
+                'ignore_result': ignore_result,
             },
             properties={
                 'correlation_id': task_id,
@@ -394,13 +388,6 @@ class AMQP:
             expires = now + timedelta(seconds=expires)
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
-
-        if callbacks:
-            callbacks = [utf8dict(callback) for callback in callbacks]
-        if errbacks:
-            errbacks = [utf8dict(errback) for errback in errbacks]
-        if chord:
-            chord = utf8dict(chord)
 
         return task_message(
             headers={},
@@ -571,7 +558,7 @@ class AMQP:
         """Queue name⇒ declaration mapping."""
         return self.Queues(self.app.conf.task_queues)
 
-    @queues.setter  # noqa
+    @queues.setter
     def queues(self, queues):
         return self.Queues(queues)
 

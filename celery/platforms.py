@@ -6,7 +6,6 @@ users, groups, and so on.
 
 import atexit
 import errno
-import grp
 import math
 import numbers
 import os
@@ -237,7 +236,7 @@ class Pidfile:
             rfh.close()
 
 
-PIDFile = Pidfile  # noqa: E305 XXX compat alias
+PIDFile = Pidfile  # XXX compat alias
 
 
 def create_pidlock(pidfile):
@@ -582,6 +581,14 @@ def _setuid(uid, gid):
             'non-root user able to restore privileges after setuid.')
 
 
+if hasattr(_signal, 'setitimer'):
+    def _arm_alarm(seconds):
+        _signal.setitimer(_signal.ITIMER_REAL, seconds)
+else:
+    def _arm_alarm(seconds):
+        _signal.alarm(math.ceil(seconds))
+
+
 class Signals:
     """Convenience interface to :mod:`signals`.
 
@@ -620,21 +627,8 @@ class Signals:
     ignored = _signal.SIG_IGN
     default = _signal.SIG_DFL
 
-    if hasattr(_signal, 'setitimer'):
-
-        def arm_alarm(self, seconds):
-            _signal.setitimer(_signal.ITIMER_REAL, seconds)
-    else:  # pragma: no cover
-        try:
-            from itimer import alarm as _itimer_alarm  # noqa
-        except ImportError:
-
-            def arm_alarm(self, seconds):  # noqa
-                _signal.alarm(math.ceil(seconds))
-        else:  # pragma: no cover
-
-            def arm_alarm(self, seconds):  # noqa
-                return _itimer_alarm(seconds)  # noqa
+    def arm_alarm(self, seconds):
+        return _arm_alarm(seconds)
 
     def reset_alarm(self):
         return _signal.alarm(0)
@@ -732,7 +726,7 @@ if os.environ.get('NOSETPS'):  # pragma: no cover
         """Disabled feature."""
 else:
 
-    def set_mp_process_title(progname, info=None, hostname=None):  # noqa
+    def set_mp_process_title(progname, info=None, hostname=None):
         """Set the :command:`ps` name from the current process name.
 
         Only works if :pypi:`setproctitle` is installed.
@@ -780,6 +774,8 @@ def ignore_errno(*errnos, **kwargs):
 
 
 def check_privileges(accept_content):
+    if grp is None or pwd is None:
+        return
     pickle_or_serialize = ('pickle' in accept_content
                            or 'application/group-python-serialize' in accept_content)
 

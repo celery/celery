@@ -432,7 +432,7 @@ You can also use systemd-tmpfiles in order to create working directories (for lo
 
 .. code-block:: bash
 
-  d /var/run/celery 0755 celery celery -
+  d /run/celery 0755 celery celery -
   d /var/log/celery 0755 celery celery -
 
 
