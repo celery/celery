@@ -26,79 +26,17 @@ keywords = ["task", "job", "queue", "distributed", "messaging", "actor"]
 license = "BSD"
 name = "celery"
 readme = "README.rst"
-version = "5.0.5"
+version = "5.2"
 
 [tool.poetry.dependencies]
-azure-storage-blob = {version = "==12.6.0", optional = true}
-billiard = "<4.0,>=3.6.3.0"
-boto3 = {version = ">=1.9.125,>=1.9.178", optional = true}
-brotli = {version = ">=1.0.0", optional = true}
-brotlipy = {version = ">=0.7.0", optional = true}
-cassandra-driver = {version = "<3.21.0", optional = true}
-click = "<8.0,>=7.0"
-click-didyoumean = ">=0.0.3"
-click-plugins = ">=1.1.1"
-click-repl = ">=0.1.6"
-couchbase = {version = ">=3.0.0", optional = true}
-cryptography = {optional = true, version = "*"}
-django = {version = ">=1.11", optional = true}
-elasticsearch = {optional = true, version = "*"}
-ephem = {optional = true, version = "*"}
-eventlet = {version = ">=0.26.1", optional = true}
-gevent = {version = ">=1.0.0", optional = true}
-kazoo = {version = ">=1.3.1", optional = true}
-kombu = "<6.0,>=5.0.0"
-librabbitmq = {version = ">=1.5.0", optional = true}
-msgpack = {optional = true, version = "*"}
-pyarango = {version = ">=1.3.2", optional = true}
-pycouchdb = {optional = true, version = "*"}
-pycurl = {version = "==7.43.0.5", optional = true}
-pydocumentdb = {version = "==2.3.2", optional = true}
-pylibmc = {optional = true, version = "*"}
-pymongo = {version = ">=3.3.0", extras = ["srv"], optional = true}
-pyro4 = {optional = true, version = "*"}
-pytest-celery = {optional = true, version = "*"}
 python = ">=3.6"
-python-consul2 = {optional = true, version = "*"}
-python-memcached = {optional = true, version = "*"}
-pytz = ">dev"
-pyyaml = {version = ">=3.10", optional = true}
-redis = {version = ">=3.2.0", optional = true}
-softlayer-messaging = {version = ">=1.0.3", optional = true}
-sqlalchemy = {optional = true, version = "*"}
-tblib = {version = ">=1.3.0,>=1.5.0", optional = true, python = "<3.8.0"}
-vine = "<6.0,>=5.0.0"
-zstandard = {optional = true, version = "*"}
-
+pytz = "^2021.1"
+billiard = "^3.6.4"
+kombu = "^5.1.0"
+vine = "^5.0.0"
+click = "^8.0.1"
+click-didyoumean = "^0.0.3"
+click-repl = "^0.2.0"
+click-plugins = "^1.1.1"
+setuptools = "^57.4.0"
 [tool.poetry.extras]
-arangodb = ["pyarango"]
-auth = ["cryptography"]
-azureblockblob = ["azure-storage-blob"]
-brotli = ["brotli", "brotlipy"]
-cassandra = ["cassandra-driver"]
-consul = ["python-consul2"]
-cosmosdbsql = ["pydocumentdb"]
-couchbase = ["couchbase"]
-couchdb = ["pycouchdb"]
-django = ["django"]
-dynamodb = ["boto3"]
-elasticsearch = ["elasticsearch"]
-eventlet = ["eventlet"]
-gevent = ["gevent"]
-librabbitmq = ["librabbitmq"]
-memcache = ["pylibmc"]
-mongodb = ["pymongo"]
-msgpack = ["msgpack"]
-pymemcache = ["python-memcached"]
-pyro = ["pyro4"]
-pytest = ["pytest-celery"]
-redis = ["redis"]
-s3 = ["boto3"]
-slmq = ["softlayer-messaging"]
-solar = ["ephem"]
-sqlalchemy = ["sqlalchemy"]
-sqs = ["boto3", "pycurl"]
-tblib = ["tblib"]
-yaml = ["pyyaml"]
-zookeeper = ["kazoo"]
-zstd = ["zstandard"]
