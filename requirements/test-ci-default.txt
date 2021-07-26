@@ -22,5 +22,5 @@
 # SQS dependencies other than boto
 pycurl @ https://graingert.co.uk/celery-wheelhouse/files/pycurl-7.43.0.5-cp39-cp39-win_amd64.whl ; platform_system == "Windows" and python_version ~='3.9.0' and platform_python_implementation == 'CPython'
 pycurl @ https://graingert.co.uk/celery-wheelhouse/files/pycurl-7.43.0.5-cp310-cp310-win_amd64.whl ; platform_system == "Windows" and python_version ~='3.10.0' and platform_python_implementation == 'CPython'
-pycurl @ https://graingert.co.uk/celery-wheelhouse/files/pycurl-7.43.0.5-pp37-pypy37_pp73-win_amd64.whl ; platform_sytem == "Windows" and python_version ~='3.7.0' and platform_python_implementation == 'PyPy'
+pycurl @ https://graingert.co.uk/celery-wheelhouse/files/pycurl-7.43.0.5-pp37-pypy37_pp73-win_amd64.whl ; platform_system == "Windows" and python_version ~='3.7.0' and platform_python_implementation == 'PyPy'
 pycurl==7.43.0.5 ; platform_system != "Windows" or (python_version <'3.9' and platform_python_implementation == 'CPython')
