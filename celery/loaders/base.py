@@ -126,6 +126,8 @@ class BaseLoader:
                     return False
                 raise
         self._conf = force_mapping(obj)
+        if self._conf.get('override_backends') is not None:
+            self.override_backends = self._conf['override_backends']
         return True
 
     def _smart_import(self, path, imp=None):
