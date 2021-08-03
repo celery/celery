@@ -434,7 +434,7 @@ Time Limits
 
 .. versionadded:: 2.0
 
-:pool support: *prefork/gevent*
+:pool support: *prefork/gevent (see note below)*
 
 .. sidebar:: Soft, or hard?
 
@@ -473,6 +473,11 @@ Time limits can also be set using the :setting:`task_time_limit` /
 
     Time limits don't currently work on platforms that don't support
     the :sig:`SIGUSR1` signal.
+
+.. note::
+
+    The gevent pool does not implement soft time limits. Additionally,
+    it will not enforce the hard time limit if the task is blocking.
 
 
 Changing time limits at run-time
