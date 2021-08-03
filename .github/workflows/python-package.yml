@@ -26,6 +26,11 @@ jobs:
       matrix:
         python-version: ['3.6', '3.7', '3.8', '3.9', '3.10.0-beta.4', 'pypy-3.6', 'pypy-3.7']
         os: ["ubuntu-20.04", "windows-2019"]
+        exclude:
+          - os: windows-2019
+            python-version: 'pypy-3.7'
+          - os: windows-2019
+            python-version: 'pypy-3.6'
     continue-on-error: ${{ startsWith(matrix.python-version, '3.10.0-beta.') }}
 
     steps:
@@ -58,10 +63,7 @@ jobs:
         Run tox for
         "${{ matrix.python-version }}-unit"
       timeout-minutes: 15
-      env:
-        CRYPTOGRAPHY_DONT_BUILD_RUST: ${{ startsWith(matrix.python-version, 'pypy') && startsWith(matrix.os, 'windows-') && 1 }}
       run: |
-        echo $CRYPTOGRAPHY_DONT_BUILD_RUST
         tox --verbose --verbose
 
     - uses: codecov/codecov-action@v1
