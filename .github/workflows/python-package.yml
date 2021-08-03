@@ -33,8 +33,6 @@ jobs:
             python-version: 'pypy-3.6'
           - os: windows-2019
             python-version: "3.10.0-beta.4"
-          - os: windows-2019
-            python-version: "3.9"
     continue-on-error: ${{ startsWith(matrix.python-version, '3.10.0-beta.') }}
 
     steps:
