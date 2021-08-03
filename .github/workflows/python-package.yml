@@ -59,8 +59,8 @@ jobs:
         "${{ matrix.python-version }}-unit"
       timeout-minutes: 15
       env:
-        CRYPTOGRAPHY_DONT_BUILD_RUST: ${{ 1 && startsWith(matrix.python-version, 'pypy') && startsWith(matrix.os, 'windows-') }}
-      run: >
+        CRYPTOGRAPHY_DONT_BUILD_RUST: ${{ startsWith(matrix.python-version, 'pypy') && startsWith(matrix.os, 'windows-') && 1 }}
+      run: |
         echo $CRYPTOGRAPHY_DONT_BUILD_RUST
         tox --verbose --verbose
 
