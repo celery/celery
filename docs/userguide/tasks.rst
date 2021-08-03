@@ -64,11 +64,12 @@ consider enabling the :setting:`task_reject_on_worker_lost` setting.
     the process by force so only use them to detect cases where you haven't
     used manual timeouts yet.
 
-    The default prefork pool scheduler is not friendly to long-running tasks,
-    so if you have tasks that run for minutes/hours make sure you enable
-    the :option:`-Ofair <celery worker -O>` command-line argument to
-    the :program:`celery worker`. See :ref:`optimizing-prefetch-limit` for more
-    information, and for the best performance route long-running and
+    In previous versions, the default prefork pool scheduler was not friendly
+    to long-running tasks, so if you had tasks that ran for minutes/hours, it
+    was advised to enable the :option:`-Ofair <celery worker -O>` command-line
+    argument to the :program:`celery worker`. However, as of version 4.0, 
+    -Ofair is now the default scheduling strategy. See :ref:`optimizing-prefetch-limit`
+    for more information, and for the best performance route long-running and
     short-running tasks to dedicated workers (:ref:`routing-automatic`).
 
     If your worker hangs then please investigate what tasks are running

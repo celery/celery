@@ -190,7 +190,7 @@ class Backend:
                 # elements of the chain. This is only truly important so
                 # that the last chain element which controls completion of
                 # the chain itself is marked as completed to avoid stalls.
-                if self.store_result and state in states.PROPAGATE_STATES:
+                if store_result and state in states.PROPAGATE_STATES:
                     try:
                         chained_task_id = chain_elem_opts['task_id']
                     except KeyError:
