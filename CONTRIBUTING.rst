@@ -710,6 +710,20 @@ After building succeeds, the documentation is available at :file:`_build/html`.
 
 .. _contributing-verify:
 
+Build the documentation using Docker
+------------------------------------
+
+Build the documentation by running:
+
+.. code-block:: console
+
+    $ docker-compose -f docker/docker-compose.yml up --build docs
+
+The service will start a local docs server at ``:7000``. The server is using
+``sphinx-autobuild`` with the ``--watch`` option enabled, so you can live
+edit the documentation. Check the additional options and configs in
+:file:`docker/docker-compose.yml`
+
 Verifying your contribution
 ---------------------------
 
