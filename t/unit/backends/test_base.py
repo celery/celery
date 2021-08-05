@@ -208,6 +208,16 @@ class test_BaseBackend_interface:
         called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
         assert called_kwargs['queue'] == 'testcelery'
 
+        routing_queue = Mock()
+        routing_queue.name = "routing_queue"
+        self.app.amqp.router.route = Mock(return_value={
+            "queue": routing_queue
+        })
+        self.b.apply_chord(header_result_args, body)
+        assert self.app.amqp.router.route.call_args[0][1] == body.name
+        called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
+        assert called_kwargs["queue"] == "routing_queue"
+
         self.b.apply_chord(header_result_args, body.set(queue='test_queue'))
         called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
         assert called_kwargs['queue'] == 'test_queue'
@@ -228,7 +238,7 @@ class test_BaseBackend_interface:
             callback_different_app_signature = self.app.signature('callback_different_app')
             self.b.apply_chord(header_result_args, callback_different_app_signature)
             called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
-            assert called_kwargs['queue'] == 'testcelery'
+            assert called_kwargs['queue'] == 'routing_queue'
 
             callback_different_app_signature.set(queue='test_queue_three')
             self.b.apply_chord(header_result_args, callback_different_app_signature)
