@@ -274,7 +274,11 @@ class test_App:
         with self.Celery(broker='foo://baribaz') as app:
             assert app.conf.broker_url == 'foo://baribaz'
 
-    def test_pending_confugration__kwargs(self):
+    def test_pending_configuration_non_true__kwargs(self):
+        with self.Celery(task_create_missing_queues=False) as app:
+            assert app.conf.task_create_missing_queues is False
+
+    def test_pending_configuration__kwargs(self):
         with self.Celery(foo='bar') as app:
             assert app.conf.foo == 'bar'
 

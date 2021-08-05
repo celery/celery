@@ -323,7 +323,7 @@ class Celery:
         """Optional callback called at init."""
 
     def __autoset(self, key, value):
-        if value:
+        if value is not None:
             self._preconf[key] = value
             self._preconf_set_by_auto.add(key)
 
