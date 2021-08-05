@@ -206,7 +206,7 @@ class test_BaseBackend_interface:
 
         self.b.apply_chord(header_result_args, body)
         called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
-        assert called_kwargs['queue'] is None
+        assert called_kwargs['queue'] == 'testcelery'
 
         self.b.apply_chord(header_result_args, body.set(queue='test_queue'))
         called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
@@ -228,7 +228,7 @@ class test_BaseBackend_interface:
             callback_different_app_signature = self.app.signature('callback_different_app')
             self.b.apply_chord(header_result_args, callback_different_app_signature)
             called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
-            assert called_kwargs['queue'] is None
+            assert called_kwargs['queue'] == 'testcelery'
 
             callback_different_app_signature.set(queue='test_queue_three')
             self.b.apply_chord(header_result_args, callback_different_app_signature)
