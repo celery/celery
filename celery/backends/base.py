@@ -185,29 +185,35 @@ class Backend:
             except (AttributeError, TypeError):
                 chain_data = tuple()
             for chain_elem in chain_data:
-                chain_elem_opts = chain_elem['options']
+                # Reconstruct a `Context` object for the chained task which has
+                # enough information to for backends to work with
+                chain_elem_ctx = Context(chain_elem)
+                chain_elem_ctx.update(chain_elem_ctx.options)
+                chain_elem_ctx.id = chain_elem_ctx.options.get('task_id')
+                chain_elem_ctx.group = chain_elem_ctx.options.get('group_id')
                 # If the state should be propagated, we'll do so for all
                 # elements of the chain. This is only truly important so
                 # that the last chain element which controls completion of
                 # the chain itself is marked as completed to avoid stalls.
-                if store_result and state in states.PROPAGATE_STATES:
-                    try:
-                        chained_task_id = chain_elem_opts['task_id']
-                    except KeyError:
-                        pass
-                    else:
-                        self.store_result(
-                            chained_task_id, exc, state,
-                            traceback=traceback, request=chain_elem
-                        )
+                #
+                # Some chained elements may be complex signatures and have no
+                # task ID of their own, so we skip them hoping that not
+                # descending through them is OK. If the last chain element is
+                # complex, we assume it must have been uplifted to a chord by
+                # the canvas code and therefore the condition below will ensure
+                # that we mark something as being complete as avoid stalling.
+                if (
+                    store_result and state in states.PROPAGATE_STATES and
+                    chain_elem_ctx.task_id is not None
+                ):
+                    self.store_result(
+                        chain_elem_ctx.task_id, exc, state,
+                        traceback=traceback, request=chain_elem_ctx,
+                    )
                 # If the chain element is a member of a chord, we also need
                 # to call `on_chord_part_return()` as well to avoid stalls.
-                if 'chord' in chain_elem_opts:
-                    failed_ctx = Context(chain_elem)
-                    failed_ctx.update(failed_ctx.options)
-                    failed_ctx.id = failed_ctx.options['task_id']
-                    failed_ctx.group = failed_ctx.options['group_id']
-                    self.on_chord_part_return(failed_ctx, state, exc)
+                if 'chord' in chain_elem_ctx.options:
+                    self.on_chord_part_return(chain_elem_ctx, state, exc)
             # And finally we'll fire any errbacks
             if call_errbacks and request.errbacks:
                 self._call_task_errbacks(request, exc, traceback)
