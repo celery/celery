@@ -274,21 +274,33 @@ To start scheduling tasks based on priorities you need to configure queue_order_
 The priority support is implemented by creating n lists for each queue.
 This means that even though there are 10 (0-9) priority levels, these are
 consolidated into 4 levels by default to save resources. This means that a
-queue named celery will really be split into 4 queues:
+queue named celery will really be split into 4 queues.
+
+The highest priority queue will be named celery, and the the other queues will
+have a separator (by default `\x06\x16`) and their priority number appended to
+the queue name.
 
 .. code-block:: python
 
-    ['celery0', 'celery3', 'celery6', 'celery9']
+    ['celery', 'celery\x06\x163', 'celery\x06\x166', 'celery\x06\x169']
 
 
-If you want more priority levels you can set the priority_steps transport option:
+If you want more priority levels or a different separator you can set the
+priority_steps and sep transport options:
 
 .. code-block:: python
 
     app.conf.broker_transport_options = {
         'priority_steps': list(range(10)),
+        'sep': ':',
         'queue_order_strategy': 'priority',
     }
+
+The config above will give you these queue names:
+
+.. code-block:: python
+
+    ['celery', 'celery:1', 'celery:2', 'celery:3', 'celery:4', 'celery:5', 'celery:6', 'celery:7', 'celery:8', 'celery:9']
 
 
 That said, note that this will never be as good as priorities implemented at the
