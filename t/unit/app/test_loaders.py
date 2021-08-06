@@ -69,9 +69,12 @@ class test_LoaderBase:
         m.assert_called_with()
 
     def test_config_from_object_module(self):
-        self.loader.import_from_cwd = Mock()
+        self.loader.import_from_cwd = Mock(return_value={
+            "override_backends": {"db": "custom.backend.module"},
+        })
         self.loader.config_from_object('module_name')
         self.loader.import_from_cwd.assert_called_with('module_name')
+        assert self.loader.override_backends == {"db": "custom.backend.module"}
 
     def test_conf_property(self):
         assert self.loader.conf['foo'] == 'bar'
