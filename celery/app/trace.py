@@ -527,6 +527,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                 'name': get_task_name(task_request, name),
                                 'return_value': Rstr,
                                 'runtime': T,
+                                'args': safe_repr(args),
+                                'kwargs': safe_repr(kwargs),
                             })
 
                 # -* POST *-
