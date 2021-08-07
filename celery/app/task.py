@@ -881,7 +881,7 @@ class Task:
         .. versionadded:: 4.0
 
         Arguments:
-            sig (~@Signature): signature to replace with.
+            sig (Signature): signature to replace with.
 
         Raises:
             ~@Ignore: This is always raised when called in asynchronous context.
@@ -941,7 +941,7 @@ class Task:
         Currently only supported by the Redis result backend.
 
         Arguments:
-            sig (~@Signature): Signature to extend chord with.
+            sig (Signature): Signature to extend chord with.
             lazy (bool): If enabled the new task won't actually be called,
                 and ``sig.delay()`` must be called manually.
         """

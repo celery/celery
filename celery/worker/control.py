@@ -187,7 +187,7 @@ def rate_limit(state, task_name, rate_limit, **kwargs):
     """Tell worker(s) to modify the rate limit for a task by type.
 
     See Also:
-        :attr:`celery.task.base.Task.rate_limit`.
+        :attr:`celery.app.task.Task.rate_limit`.
 
     Arguments:
         task_name (str): Type of task to set rate limit for.

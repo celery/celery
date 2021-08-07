@@ -27,10 +27,8 @@ globals().update(conf.build_config(
     },
     apicheck_ignore_modules=[
         'celery.__main__',
-        'celery.task',
         'celery.contrib.testing',
         'celery.contrib.testing.tasks',
-        'celery.task.base',
         'celery.bin',
         'celery.bin.celeryd_detach',
         'celery.contrib',

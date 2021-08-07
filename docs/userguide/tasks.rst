@@ -92,7 +92,7 @@ Basics
 ======
 
 You can easily create a task from any callable by using
-the :meth:`~@task` decorator:
+the :meth:`@task` decorator:
 
 .. code-block:: python
 
@@ -743,7 +743,7 @@ Sometimes you just want to retry a task whenever a particular exception
 is raised.
 
 Fortunately, you can tell Celery to automatically retry a task using
-`autoretry_for` argument in the :meth:`~@Celery.task` decorator:
+`autoretry_for` argument in the :meth:`@task` decorator:
 
 .. code-block:: python
 
@@ -754,7 +754,7 @@ Fortunately, you can tell Celery to automatically retry a task using
         return twitter.refresh_timeline(user)
 
 If you want to specify custom arguments for an internal :meth:`~@Task.retry`
-call, pass `retry_kwargs` argument to :meth:`~@Celery.task` decorator:
+call, pass `retry_kwargs` argument to :meth:`@task` decorator:
 
 .. code-block:: python
 
