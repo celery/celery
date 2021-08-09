@@ -164,6 +164,4 @@ jobs:
       timeout-minutes: 20
       run: >
         tox --verbose --verbose -e
-        "${{ matrix.python-version }}-integration
--${{ matrix.toxenv }}"
-        -- -vv
+        "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -- -vv
