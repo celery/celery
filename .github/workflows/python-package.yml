@@ -96,7 +96,7 @@ jobs:
 
     # XXX: We should set this to some reasonable maximum prior to merge. The
     # default 6 hour timeout is far too long.
-    timeout-minutes: 30
+    timeout-minutes: 240
 
     runs-on: ubuntu-20.04
     strategy:
