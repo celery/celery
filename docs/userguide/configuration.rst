@@ -2016,14 +2016,52 @@ without any further configuration. For larger clusters you could use NFS,
 Consul K/V store backend settings
 ---------------------------------
 
-The Consul backend can be configured using a URL, for example:
+.. note::
+
+    The Consul backend requires the :pypi:`python-consul2` library:
+
+    To install this package use :command:`pip`:
+
+    .. code-block:: console
+
+        $ pip install python-consul2
+
+The Consul backend can be configured using a URL, for example::
 
     CELERY_RESULT_BACKEND = 'consul://localhost:8500/'
 
-The backend will storage results in the K/V store of Consul
-as individual keys.
+or::
 
-The backend supports auto expire of results using TTLs in Consul.
+    result_backend = 'consul://localhost:8500/'
+
+The backend will store results in the K/V store of Consul
+as individual keys. The backend supports auto expire of results using TTLs in
+Consul. The full syntax of the URL is::
+
+    consul://host:port[?one_client=1]
+
+The URL is formed out of the following parts:
+
+* ``host``
+
+    Host name of the Consul server.
+
+* ``port``
+
+    The port the Consul server is listening to.
+
+* ``one_client``
+
+    By default, for correctness, the backend uses a separate client connection
+    per operation. In cases of extreme load, the rate of creation of new
+    connections can cause HTTP 429 "too many connections" error responses from
+    the Consul server when under load. The recommended way to handle this is to
+    enable retries in ``python-consul2`` using the patch at
+    https://github.com/poppyred/python-consul2/pull/31.
+
+    Alternatively, if ``one_client`` is set, a single client connection will be
+    used for all operations instead. This should eliminate the HTTP 429 errors,
+    but the storage of results in the backend can become unreliable.
 
 .. _conf-messaging:
 
