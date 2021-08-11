@@ -17,7 +17,7 @@ from . import local
 
 SERIES = 'sun-harmonics'
 
-__version__ = '5.1.2'
+__version__ = '5.2.0b1'
 __author__ = 'Ask Solem'
 __contact__ = 'auvipy@gmail.com'
 __homepage__ = 'http://celeryproject.org'
