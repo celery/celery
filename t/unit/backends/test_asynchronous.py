@@ -143,8 +143,8 @@ class DrainerTests:
 
 
 @pytest.mark.skipif(
-    sys.version_info >= (3, 9) and sys.platform == "win32",
-    reason="hangs forever intermittentlhy on windows",
+    sys.platform == "win32",
+    reason="hangs forever intermittently on windows"
 )
 class test_EventletDrainer(DrainerTests):
     @pytest.fixture(autouse=True)
