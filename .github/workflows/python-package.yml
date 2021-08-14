@@ -59,7 +59,7 @@ jobs:
     - name: >
         Run tox for
         "${{ matrix.python-version }}-unit"
-      timeout-minutes: 15
+      timeout-minutes: 20
       run: |
         tox --verbose --verbose
 
