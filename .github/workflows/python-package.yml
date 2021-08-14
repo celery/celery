@@ -24,16 +24,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10.0-beta.4', 'pypy-3.6', 'pypy-3.7']
+        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10.0-rc.1', 'pypy-3.6', 'pypy-3.7']
         os: ["ubuntu-20.04", "windows-2019"]
         exclude:
           - os: windows-2019
-            python-version: 'pypy-3.7'
-          - os: windows-2019
             python-version: 'pypy-3.6'
-          - os: windows-2019
-            python-version: "3.10.0-beta.4"
-    continue-on-error: ${{ startsWith(matrix.python-version, '3.10.0-beta.') }}
 
     steps:
     - name: Install apt packages
@@ -64,8 +59,8 @@ jobs:
     - name: >
         Run tox for
         "${{ matrix.python-version }}-unit"
-      timeout-minutes: 15
-      run: >
+      timeout-minutes: 20
+      run: |
         tox --verbose --verbose
 
     - uses: codecov/codecov-action@v1
