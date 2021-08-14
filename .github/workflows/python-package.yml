@@ -28,10 +28,6 @@ jobs:
         os: ["ubuntu-20.04", "windows-2019"]
         exclude:
           - os: windows-2019
-            python-version: 'pypy-3.7'
-          - os: windows-2019
-            python-version: 'pypy-3.6'
-          - os: windows-2019
             python-version: "3.10.0-beta.4"
     continue-on-error: ${{ startsWith(matrix.python-version, '3.10.0-beta.') }}
 
