@@ -646,6 +646,12 @@ class Backend:
             body_type = None
 
         queue = body.options.get('queue', getattr(body_type, 'queue', None))
+
+        if queue is None:
+            # fallback to default routing if queue name was not
+            # explicitly passed to body callback
+            queue = self.app.amqp.router.route(kwargs, body.name)['queue'].name
+
         priority = body.options.get('priority', getattr(body_type, 'priority', 0))
         self.app.tasks['celery.chord_unlock'].apply_async(
             (header_result.id, body,), kwargs,
