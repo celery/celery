@@ -2,9 +2,10 @@ import sys
 from unittest.mock import Mock, patch
 
 import pytest
+from celery.concurrency.eventlet import TaskPool, Timer, apply_target
+from greenlet import GreenletExit
 
 import t.skip
-from celery.concurrency.eventlet import TaskPool, Timer, apply_target
 
 eventlet_modules = (
     'eventlet',
@@ -101,6 +102,7 @@ class test_TaskPool(EventletCase):
         x.on_apply(Mock())
         x._pool = None
         x.on_stop()
+        assert len(x._pool_map.keys()) == 1
         assert x.getpid()
 
     @patch('celery.concurrency.eventlet.base')
@@ -130,3 +132,37 @@ class test_TaskPool(EventletCase):
             'free-threads': x._pool.free(),
             'running-threads': x._pool.running(),
         }
+
+    def test_terminate_job(self):
+        func = Mock()
+        pool = TaskPool(10)
+        pool.on_start()
+        pool.on_apply(func)
+
+        assert len(pool._pool_map.keys()) == 1
+        pid = list(pool._pool_map.keys())[0]
+        task = pool._pool_map[pid]
+
+        pool.terminate_job(pid)
+        task.link.assert_called_once()
+        task.kill.assert_called_once()
+
+    def test_make_killable_target(self):
+        def valid_target():
+            return "some result..."
+
+        def terminating_target():
+            raise GreenletExit()
+
+        def failing_target():
+            raise RuntimeError("some error")
+
+        assert TaskPool._make_killable_target(valid_target)() == "some result..."
+        assert TaskPool._make_killable_target(terminating_target)() == (False, None, None)
+        with pytest.raises(RuntimeError):
+            TaskPool._make_killable_target(failing_target)()
+
+    def test_cleanup_after_job_finish(self):
+        testMap = {'1': None}
+        TaskPool._cleanup_after_job_finish(None, testMap, '1')
+        assert len(testMap) == 0
