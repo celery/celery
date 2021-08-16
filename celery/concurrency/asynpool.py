@@ -35,7 +35,6 @@ from kombu.utils.eventio import SELECT_BAD_FD
 from kombu.utils.functional import fxrange
 from vine import promise
 
-from celery import current_app
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.worker import state as worker_state
@@ -509,7 +508,7 @@ class AsynPool(_pool.Pool):
         self.handle_result_event = self._result_handler.handle_event
         self._create_timelimit_handlers(hub)
         self._create_process_handlers(hub)
-        self._create_write_handlers(hub, dumps=serializer_registry._encoders[current_app.conf.task_serializer][-1])
+        self._create_write_handlers(hub, dumps=serializer_registry._encoders[self._initargs[0].conf.task_serializer][-1])
 
         # Add handler for when a process exits (calls maintain_pool)
         [self._track_child_process(w, hub) for w in self._pool]
