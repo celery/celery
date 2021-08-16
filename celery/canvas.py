@@ -481,6 +481,8 @@ class Signature(dict):
     def __json__(self):
         return dict(self)
 
+    __yaml__ = __json__
+
     def __repr__(self):
         return self.reprcall()
 
