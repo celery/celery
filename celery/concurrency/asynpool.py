@@ -30,7 +30,8 @@ from billiard.compat import buf_t, isblocking, setblocking
 from billiard.pool import ACK, NACK, RUN, TERMINATE, WorkersJoined
 from billiard.queues import _SimpleQueue
 from kombu.asynchronous import ERR, WRITE
-from kombu.serialization import pickle as _pickle, registry as serializer_registry
+from kombu.serialization import pickle as _pickle
+from kombu.serialization import registry as serializer_registry
 from kombu.utils.eventio import SELECT_BAD_FD
 from kombu.utils.functional import fxrange
 from vine import promise
