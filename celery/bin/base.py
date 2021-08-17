@@ -1,5 +1,6 @@
 """Click customizations for Celery."""
 import json
+import numbers
 from collections import OrderedDict
 from functools import update_wrapper
 from pprint import pformat
@@ -242,6 +243,9 @@ class LogLevel(click.Choice):
         super().__init__(('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL', 'FATAL'))
 
     def convert(self, value, param, ctx):
+        if isinstance(value, numbers.Integral):
+            return value
+
         value = value.upper()
         value = super().convert(value, param, ctx)
         return mlevel(value)
