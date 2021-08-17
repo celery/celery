@@ -91,7 +91,7 @@ class test_Signature(CanvasCase):
         assert fun(*args) == x
 
     def test_replace(self):
-        x = Signature('TASK', ('A'), {})
+        x = Signature('TASK', ('A',), {})
         assert x.replace(args=('B',)).args == ('B',)
         assert x.replace(kwargs={'FOO': 'BAR'}).kwargs == {
             'FOO': 'BAR',

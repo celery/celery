@@ -1020,6 +1020,11 @@ class test_tasks(TasksCase):
         with pytest.raises(Ignore):
             self.mytask.replace(sig1)
         sig1.freeze.assert_called_once_with(self.mytask.request.id)
+        sig1.set.assert_called_once_with(replaced_task_nesting=1,
+                                         chord=ANY,
+                                         group_id=ANY,
+                                         group_index=ANY,
+                                         root_id=ANY)
 
     def test_replace_with_chord(self):
         sig1 = Mock(name='sig1')
