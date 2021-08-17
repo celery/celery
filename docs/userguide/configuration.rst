@@ -3152,6 +3152,15 @@ Name of the pool class used by the worker.
 
 .. setting:: worker_pool_restarts
 
+``worker_pool_serializer``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: pickle.
+
+If pool is ``"prefork"`` (``celery.concurrency.prefork:TaskPool``) what seralizer to use
+
+.. setting:: worker_pool_serializer
+
 ``worker_pool_restarts``
 ~~~~~~~~~~~~~~~~~~~~~~~~
 

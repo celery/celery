@@ -45,6 +45,7 @@ from celery.worker import state as worker_state
 
 try:
     from _billiard import read as __read__
+
     readcanbuf = True
 
 except ImportError:  # pragma: no cover
@@ -55,7 +56,10 @@ except ImportError:  # pragma: no cover
         if n != 0:
             buf.write(chunk)
         return n
+
+
     readcanbuf = False
+
 
     def unpack_from(fmt, iobuf, unpack=unpack):  # noqa
         return unpack(fmt, iobuf.getvalue())  # <-- BytesIO
@@ -200,12 +204,14 @@ def iterate_file_descriptors_safely(fds_iter, source_data,
     for the current fd object in the iteration (for some callers).
     :**kwargs to pass through to the hub method (no substitutions needed)
     """
+
     def _meta_fd_argument_maker():
         # uses the current iterations value for fd
         call_args = args
         if "*fd*" in call_args:
             call_args = [fd if arg == "*fd*" else arg for arg in args]
         return call_args
+
     # Track stale FDs for cleanup possibility
     stale_fds = []
     for fd in fds_iter:
@@ -330,6 +336,7 @@ class ResultHandler(_pool.ResultHandler):
                 remove_reader(fileno)
             else:
                 add_reader(fileno, it)
+
         return on_result_readable
 
     def register_with_event_loop(self, hub):
@@ -460,6 +467,8 @@ class AsynPool(_pool.Pool):
 
         super().__init__(processes, *args, **kwargs)
 
+        self._serializer = self._initargs[0].conf.worker_pool_serializer
+
         for proc in self._pool:
             # create initial mappings, these will be updated
             # as processes are recycled, or found lost elsewhere.
@@ -509,8 +518,7 @@ class AsynPool(_pool.Pool):
         self.handle_result_event = self._result_handler.handle_event
         self._create_timelimit_handlers(hub)
         self._create_process_handlers(hub)
-        self._create_write_handlers(hub,
-                                    dumps=serializer_registry._encoders[self._initargs[0].conf.task_serializer][-1])
+        self._create_write_handlers(hub, dumps=serializer_registry._encoders[self._serializer][-1])
 
         # Add handler for when a process exits (calls maintain_pool)
         [self._track_child_process(w, hub) for w in self._pool]
@@ -541,6 +549,7 @@ class AsynPool(_pool.Pool):
                 trefs[R._job] = call_later(
                     hard, self._on_hard_timeout, R._job,
                 )
+
         self.on_timeout_set = on_timeout_set
 
         def _discard_tref(job):
@@ -550,10 +559,12 @@ class AsynPool(_pool.Pool):
                 del tref
             except (KeyError, AttributeError):
                 pass  # out of scope
+
         self._discard_tref = _discard_tref
 
         def on_timeout_cancel(R):
             _discard_tref(R._job)
+
         self.on_timeout_cancel = on_timeout_cancel
 
     def _on_soft_timeout(self, job, soft, hard, hub):
@@ -606,7 +617,7 @@ class AsynPool(_pool.Pool):
         def verify_process_alive(proc):
             proc = proc()  # is a weakref
             if (proc is not None and proc._is_alive() and
-                    proc in waiting_to_start):
+                proc in waiting_to_start):
                 assert proc.outqR_fd in fileno_to_outq
                 assert fileno_to_outq[proc.outqR_fd] is proc
                 assert proc.outqR_fd in hub.readers
@@ -692,6 +703,7 @@ class AsynPool(_pool.Pool):
             if proc.synqW_fd:
                 self._active_writes.discard(proc.synqW_fd)
                 remove_reader(proc.synq._writer)
+
         self.on_process_down = on_process_down
 
     def _create_write_handlers(self, hub,
@@ -726,7 +738,7 @@ class AsynPool(_pool.Pool):
         def _put_back(job, _time=time.time):
             # puts back at the end of the queue
             if job._terminated is not None or \
-                    job.correlation_id in revoked_tasks:
+                job.correlation_id in revoked_tasks:
                 if not job._accepted:
                     job._ack(None, _time(), getpid(), None)
                 job._set_terminated(job._terminated)
@@ -735,6 +747,7 @@ class AsynPool(_pool.Pool):
                 # but this happens rarely and is here to protect against races.
                 if job not in outbound:
                     outbound.appendleft(job)
+
         self._put_back = _put_back
 
         # called for every event loop iteration, and if there
@@ -766,6 +779,7 @@ class AsynPool(_pool.Pool):
             else:
                 iterate_file_descriptors_safely(
                     inactive, all_inqueues, hub_remove)
+
         self.on_poll_start = on_poll_start
 
         def on_inqueue_close(fd, proc):
@@ -779,6 +793,7 @@ class AsynPool(_pool.Pool):
                     all_inqueues.discard(fd)
             except KeyError:
                 pass
+
         self.on_inqueue_close = on_inqueue_close
         self.hub_remove = hub_remove
 
@@ -830,7 +845,8 @@ class AsynPool(_pool.Pool):
                         try:
                             # keep track of what process the write operation
                             # was scheduled for.
-                            proc = job._scheduled_for = fileno_to_inq[ready_fd]
+                            proc = job._scheduled_for = fileno_to_inq[
+                                ready_fd]
                         except KeyError:
                             # write was scheduled for this fd but the process
                             # has since exited and the message must be sent to
@@ -853,6 +869,7 @@ class AsynPool(_pool.Pool):
                                 raise
                         else:
                             add_writer(ready_fd, cor)
+
         hub.consolidate_callback = schedule_writes
 
         def send_job(tup):
@@ -865,11 +882,13 @@ class AsynPool(_pool.Pool):
             job = get_job(tup[1][0])
             job._payload = buf_t(header), buf_t(body), body_size
             put_message(job)
+
         self._quick_put = send_job
 
         def on_not_recovering(proc, fd, job, exc):
             logger.exception(
-                'Process inqueue damaged: %r %r: %r', proc, proc.exitcode, exc)
+                'Process inqueue damaged: %r %r: %r', proc, proc.exitcode,
+                exc)
             if proc._is_alive():
                 proc.terminate()
             hub.remove(fd)
@@ -936,6 +955,7 @@ class AsynPool(_pool.Pool):
             mark_write_fd_as_active(fd)
             callback.args = (cor,)
             add_writer(fd, cor)
+
         self.send_ack = send_ack
 
         def _write_ack(fd, ack, callback=None):
@@ -1013,7 +1033,7 @@ class AsynPool(_pool.Pool):
                     writers = list(self._active_writers)
                     for gen in writers:
                         if (gen.__name__ == '_write_job' and
-                                gen_not_started(gen)):
+                            gen_not_started(gen)):
                             # hasn't started writing the job so can
                             # discard the task, but we must also remove
                             # it from the Pool._cache.
