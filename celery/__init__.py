@@ -17,7 +17,7 @@ from . import local
 
 SERIES = 'dawn-chorus'
 
-__version__ = '5.2.0b1'
+__version__ = '5.2.0b2'
 __author__ = 'Ask Solem'
 __contact__ = 'auvipy@gmail.com'
 __homepage__ = 'http://celeryproject.org'
