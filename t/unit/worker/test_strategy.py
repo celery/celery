@@ -191,7 +191,7 @@ class test_default_strategy_proto2:
             C()
         for record in caplog.records:
             if record.msg == custom_fmt:
-                assert set(record.args) == {"id", "name"}
+                assert set(record.args) == {"id", "name", "kwargs", "args"}
                 break
         else:
             raise ValueError("Expected message not in captured log records")
