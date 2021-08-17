@@ -10,28 +10,43 @@ try:
 except ImportError:  # pragma: no cover
     Timeout = None  # noqa
 
-__all__ = ('TaskPool',)
+__all__ = ("TaskPool",)
 
 # pylint: disable=redefined-outer-name
 # We cache globals and attribute lookups, so disable this warning.
 
 
-def apply_timeout(target, args=(), kwargs=None, callback=None,
-                  accept_callback=None, pid=None, timeout=None,
-                  timeout_callback=None, Timeout=Timeout,
-                  apply_target=base.apply_target, **rest):
+def apply_timeout(
+    target,
+    args=(),
+    kwargs=None,
+    callback=None,
+    accept_callback=None,
+    pid=None,
+    timeout=None,
+    timeout_callback=None,
+    Timeout=Timeout,
+    apply_target=base.apply_target,
+    **rest
+):
     kwargs = {} if not kwargs else kwargs
     try:
         with Timeout(timeout):
-            return apply_target(target, args, kwargs, callback,
-                                accept_callback, pid,
-                                propagate=(Timeout,), **rest)
+            return apply_target(
+                target,
+                args,
+                kwargs,
+                callback,
+                accept_callback,
+                pid,
+                propagate=(Timeout,),
+                **rest
+            )
     except Timeout:
         return timeout_callback(False, timeout)
 
 
 class Timer(_timer.Timer):
-
     def __init__(self, *args, **kwargs):
         from gevent import Greenlet, GreenletExit
 
@@ -87,9 +102,10 @@ class TaskPool(base.BasePool):
     def __init__(self, *args, **kwargs):
         from gevent import spawn_raw
         from gevent.pool import Pool
+
         self.Pool = Pool
         self.spawn_n = spawn_raw
-        self.timeout = kwargs.get('timeout')
+        self.timeout = kwargs.get("timeout")
         super().__init__(*args, **kwargs)
 
     def on_start(self):
@@ -100,14 +116,29 @@ class TaskPool(base.BasePool):
         if self._pool is not None:
             self._pool.join()
 
-    def on_apply(self, target, args=None, kwargs=None, callback=None,
-                 accept_callback=None, timeout=None,
-                 timeout_callback=None, apply_target=base.apply_target, **_):
+    def on_apply(
+        self,
+        target,
+        args=None,
+        kwargs=None,
+        callback=None,
+        accept_callback=None,
+        timeout=None,
+        timeout_callback=None,
+        apply_target=base.apply_target,
+        **_
+    ):
         timeout = self.timeout if timeout is None else timeout
-        return self._quick_put(apply_timeout if timeout else apply_target,
-                               target, args, kwargs, callback, accept_callback,
-                               timeout=timeout,
-                               timeout_callback=timeout_callback)
+        return self._quick_put(
+            apply_timeout if timeout else apply_target,
+            target,
+            args,
+            kwargs,
+            callback,
+            accept_callback,
+            timeout=timeout,
+            timeout_callback=timeout_callback,
+        )
 
     def grow(self, n=1):
         self._pool._semaphore.counter += n

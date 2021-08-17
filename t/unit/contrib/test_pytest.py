@@ -24,7 +24,7 @@ def test_pytest_celery_marker_registration(testdir):
         """
     )
 
-    result = testdir.runpytest('-q')
+    result = testdir.runpytest("-q")
     with pytest.raises((ValueError, Failed)):
         result.stdout.fnmatch_lines_random(
             "*PytestUnknownMarkWarning: Unknown pytest.mark.celery*"

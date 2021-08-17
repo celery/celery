@@ -10,7 +10,6 @@ from .case import SecurityCase
 
 
 class test_PrivateKey(SecurityCase):
-
     def test_valid_private_key(self):
         PrivateKey(KEY1)
         PrivateKey(KEY2)
@@ -19,9 +18,9 @@ class test_PrivateKey(SecurityCase):
         with pytest.raises((SecurityError, TypeError)):
             PrivateKey(None)
         with pytest.raises(SecurityError):
-            PrivateKey('')
+            PrivateKey("")
         with pytest.raises(SecurityError):
-            PrivateKey('foo')
+            PrivateKey("foo")
         with pytest.raises(SecurityError):
             PrivateKey(KEY1[:20] + KEY1[21:])
         with pytest.raises(SecurityError):
@@ -29,6 +28,6 @@ class test_PrivateKey(SecurityCase):
 
     def test_sign(self):
         pkey = PrivateKey(KEY1)
-        pkey.sign(ensure_bytes('test'), get_digest_algorithm())
+        pkey.sign(ensure_bytes("test"), get_digest_algorithm())
         with pytest.raises(AttributeError):
-            pkey.sign(ensure_bytes('test'), get_digest_algorithm('unknown'))
+            pkey.sign(ensure_bytes("test"), get_digest_algorithm("unknown"))

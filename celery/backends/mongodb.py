@@ -13,23 +13,24 @@ from .base import BaseBackend
 try:
     import pymongo
 except ImportError:  # pragma: no cover
-    pymongo = None   # noqa
+    pymongo = None  # noqa
 
 if pymongo:
     try:
         from bson.binary import Binary
-    except ImportError:                     # pragma: no cover
+    except ImportError:  # pragma: no cover
         from pymongo.binary import Binary  # noqa
     from pymongo.errors import InvalidDocument  # noqa
-else:                                       # pragma: no cover
-    Binary = None                           # noqa
+else:  # pragma: no cover
+    Binary = None  # noqa
 
-    class InvalidDocument(Exception):       # noqa
+    class InvalidDocument(Exception):  # noqa
         pass
 
-__all__ = ('MongoBackend',)
 
-BINARY_CODECS = frozenset(['pickle', 'msgpack'])
+__all__ = ("MongoBackend",)
+
+BINARY_CODECS = frozenset(["pickle", "msgpack"])
 
 
 class MongoBackend(BaseBackend):
@@ -41,13 +42,13 @@ class MongoBackend(BaseBackend):
     """
 
     mongo_host = None
-    host = 'localhost'
+    host = "localhost"
     port = 27017
     user = None
     password = None
-    database_name = 'celery'
-    taskmeta_collection = 'celery_taskmeta'
-    groupmeta_collection = 'celery_groupmeta'
+    database_name = "celery"
+    taskmeta_collection = "celery_taskmeta"
+    groupmeta_collection = "celery_groupmeta"
     max_pool_size = 10
     options = None
 
@@ -62,8 +63,8 @@ class MongoBackend(BaseBackend):
 
         if not pymongo:
             raise ImproperlyConfigured(
-                'You need to install the pymongo library to use the '
-                'MongoDB backend.')
+                "You need to install the pymongo library to use the " "MongoDB backend."
+            )
 
         # Set option defaults
         for key, value in self._prepare_client_options().items():
@@ -75,63 +76,63 @@ class MongoBackend(BaseBackend):
 
             uri_data = pymongo.uri_parser.parse_uri(self.url)
             # build the hosts list to create a mongo connection
-            hostslist = [
-                f'{x[0]}:{x[1]}' for x in uri_data['nodelist']
-            ]
-            self.user = uri_data['username']
-            self.password = uri_data['password']
+            hostslist = [f"{x[0]}:{x[1]}" for x in uri_data["nodelist"]]
+            self.user = uri_data["username"]
+            self.password = uri_data["password"]
             self.mongo_host = hostslist
-            if uri_data['database']:
+            if uri_data["database"]:
                 # if no database is provided in the uri, use default
-                self.database_name = uri_data['database']
+                self.database_name = uri_data["database"]
 
-            self.options.update(uri_data['options'])
+            self.options.update(uri_data["options"])
 
         # update conf with specific settings
-        config = self.app.conf.get('mongodb_backend_settings')
+        config = self.app.conf.get("mongodb_backend_settings")
         if config is not None:
             if not isinstance(config, dict):
                 raise ImproperlyConfigured(
-                    'MongoDB backend settings should be grouped in a dict')
+                    "MongoDB backend settings should be grouped in a dict"
+                )
             config = dict(config)  # don't modify original
 
-            if 'host' in config or 'port' in config:
+            if "host" in config or "port" in config:
                 # these should take over uri conf
                 self.mongo_host = None
 
-            self.host = config.pop('host', self.host)
-            self.port = config.pop('port', self.port)
-            self.mongo_host = config.pop('mongo_host', self.mongo_host)
-            self.user = config.pop('user', self.user)
-            self.password = config.pop('password', self.password)
-            self.database_name = config.pop('database', self.database_name)
+            self.host = config.pop("host", self.host)
+            self.port = config.pop("port", self.port)
+            self.mongo_host = config.pop("mongo_host", self.mongo_host)
+            self.user = config.pop("user", self.user)
+            self.password = config.pop("password", self.password)
+            self.database_name = config.pop("database", self.database_name)
             self.taskmeta_collection = config.pop(
-                'taskmeta_collection', self.taskmeta_collection,
+                "taskmeta_collection",
+                self.taskmeta_collection,
             )
             self.groupmeta_collection = config.pop(
-                'groupmeta_collection', self.groupmeta_collection,
+                "groupmeta_collection",
+                self.groupmeta_collection,
             )
 
-            self.options.update(config.pop('options', {}))
+            self.options.update(config.pop("options", {}))
             self.options.update(config)
 
     @staticmethod
     def _ensure_mongodb_uri_compliance(url):
         parsed_url = urlparse(url)
-        if not parsed_url.scheme.startswith('mongodb'):
-            url = f'mongodb+{url}'
+        if not parsed_url.scheme.startswith("mongodb"):
+            url = f"mongodb+{url}"
 
-        if url == 'mongodb://':
-            url += 'localhost'
+        if url == "mongodb://":
+            url += "localhost"
 
         return url
 
     def _prepare_client_options(self):
         if pymongo.version_tuple >= (3,):
-            return {'maxPoolSize': self.max_pool_size}
+            return {"maxPoolSize": self.max_pool_size}
         else:  # pragma: no cover
-            return {'max_pool_size': self.max_pool_size,
-                    'auto_start_request': False}
+            return {"max_pool_size": self.max_pool_size, "auto_start_request": False}
 
     def _get_connection(self):
         """Connect to the MongoDB server."""
@@ -147,23 +148,22 @@ class MongoBackend(BaseBackend):
                 # This enables the use of replica sets and sharding.
                 # See pymongo.Connection() for more info.
                 host = self.host
-                if isinstance(host, str) \
-                   and not host.startswith('mongodb://'):
-                    host = f'mongodb://{host}:{self.port}'
+                if isinstance(host, str) and not host.startswith("mongodb://"):
+                    host = f"mongodb://{host}:{self.port}"
             # don't change self.options
             conf = dict(self.options)
-            conf['host'] = host
+            conf["host"] = host
             if self.user:
-                conf['username'] = self.user
+                conf["username"] = self.user
             if self.password:
-                conf['password'] = self.password
+                conf["password"] = self.password
 
             self._connection = MongoClient(**conf)
 
         return self._connection
 
     def encode(self, data):
-        if self.serializer == 'bson':
+        if self.serializer == "bson":
             # mongodb handles serialization
             return data
         payload = super().encode(data)
@@ -174,20 +174,25 @@ class MongoBackend(BaseBackend):
         return payload
 
     def decode(self, data):
-        if self.serializer == 'bson':
+        if self.serializer == "bson":
             return data
         return super().decode(data)
 
-    def _store_result(self, task_id, result, state,
-                      traceback=None, request=None, **kwargs):
+    def _store_result(
+        self, task_id, result, state, traceback=None, request=None, **kwargs
+    ):
         """Store return value and state of an executed task."""
-        meta = self._get_result_meta(result=self.encode(result), state=state,
-                                     traceback=traceback, request=request)
+        meta = self._get_result_meta(
+            result=self.encode(result),
+            state=state,
+            traceback=traceback,
+            request=request,
+        )
         # Add the _id for mongodb
-        meta['_id'] = task_id
+        meta["_id"] = task_id
 
         try:
-            self.collection.replace_one({'_id': task_id}, meta, upsert=True)
+            self.collection.replace_one({"_id": task_id}, meta, upsert=True)
         except InvalidDocument as exc:
             raise EncodeError(exc)
 
@@ -195,44 +200,45 @@ class MongoBackend(BaseBackend):
 
     def _get_task_meta_for(self, task_id):
         """Get task meta-data for a task by id."""
-        obj = self.collection.find_one({'_id': task_id})
+        obj = self.collection.find_one({"_id": task_id})
         if obj:
-            return self.meta_from_decoded({
-                'task_id': obj['_id'],
-                'status': obj['status'],
-                'result': self.decode(obj['result']),
-                'date_done': obj['date_done'],
-                'traceback': self.decode(obj['traceback']),
-                'children': self.decode(obj['children']),
-            })
-        return {'status': states.PENDING, 'result': None}
+            return self.meta_from_decoded(
+                {
+                    "task_id": obj["_id"],
+                    "status": obj["status"],
+                    "result": self.decode(obj["result"]),
+                    "date_done": obj["date_done"],
+                    "traceback": self.decode(obj["traceback"]),
+                    "children": self.decode(obj["children"]),
+                }
+            )
+        return {"status": states.PENDING, "result": None}
 
     def _save_group(self, group_id, result):
         """Save the group result."""
         meta = {
-            '_id': group_id,
-            'result': self.encode([i.id for i in result]),
-            'date_done': datetime.utcnow(),
+            "_id": group_id,
+            "result": self.encode([i.id for i in result]),
+            "date_done": datetime.utcnow(),
         }
-        self.group_collection.replace_one({'_id': group_id}, meta, upsert=True)
+        self.group_collection.replace_one({"_id": group_id}, meta, upsert=True)
         return result
 
     def _restore_group(self, group_id):
         """Get the result for a group by id."""
-        obj = self.group_collection.find_one({'_id': group_id})
+        obj = self.group_collection.find_one({"_id": group_id})
         if obj:
             return {
-                'task_id': obj['_id'],
-                'date_done': obj['date_done'],
-                'result': [
-                    self.app.AsyncResult(task)
-                    for task in self.decode(obj['result'])
+                "task_id": obj["_id"],
+                "date_done": obj["date_done"],
+                "result": [
+                    self.app.AsyncResult(task) for task in self.decode(obj["result"])
                 ],
             }
 
     def _delete_group(self, group_id):
         """Delete a group by id."""
-        self.group_collection.delete_one({'_id': group_id})
+        self.group_collection.delete_one({"_id": group_id})
 
     def _forget(self, task_id):
         """Remove result from MongoDB.
@@ -244,7 +250,7 @@ class MongoBackend(BaseBackend):
         # By using safe=True, this will wait until it receives a response from
         # the server.  Likewise, it will raise an OperationsError if the
         # response was unable to be completed.
-        self.collection.delete_one({'_id': task_id})
+        self.collection.delete_one({"_id": task_id})
 
     def cleanup(self):
         """Delete expired meta-data."""
@@ -252,28 +258,25 @@ class MongoBackend(BaseBackend):
             return
 
         self.collection.delete_many(
-            {'date_done': {'$lt': self.app.now() - self.expires_delta}},
+            {"date_done": {"$lt": self.app.now() - self.expires_delta}},
         )
         self.group_collection.delete_many(
-            {'date_done': {'$lt': self.app.now() - self.expires_delta}},
+            {"date_done": {"$lt": self.app.now() - self.expires_delta}},
         )
 
     def __reduce__(self, args=(), kwargs=None):
         kwargs = {} if not kwargs else kwargs
         return super().__reduce__(
-            args, dict(kwargs, expires=self.expires, url=self.url))
+            args, dict(kwargs, expires=self.expires, url=self.url)
+        )
 
     def _get_database(self):
         conn = self._get_connection()
         db = conn[self.database_name]
         if self.user and self.password:
-            source = self.options.get(
-                'authsource',
-                self.database_name or 'admin'
-            )
+            source = self.options.get("authsource", self.database_name or "admin")
             if not db.authenticate(self.user, self.password, source=source):
-                raise ImproperlyConfigured(
-                    'Invalid MongoDB username or password.')
+                raise ImproperlyConfigured("Invalid MongoDB username or password.")
         return db
 
     @cached_property
@@ -291,7 +294,7 @@ class MongoBackend(BaseBackend):
 
         # Ensure an index on date_done is there, if not process the index
         # in the background.  Once completed cleanup will be much faster
-        collection.create_index('date_done', background=True)
+        collection.create_index("date_done", background=True)
         return collection
 
     @cached_property
@@ -301,7 +304,7 @@ class MongoBackend(BaseBackend):
 
         # Ensure an index on date_done is there, if not process the index
         # in the background.  Once completed cleanup will be much faster
-        collection.create_index('date_done', background=True)
+        collection.create_index("date_done", background=True)
         return collection
 
     @cached_property
@@ -315,12 +318,12 @@ class MongoBackend(BaseBackend):
             include_password (bool): Password censored if disabled.
         """
         if not self.url:
-            return 'mongodb://'
+            return "mongodb://"
         if include_password:
             return self.url
 
-        if ',' not in self.url:
+        if "," not in self.url:
             return maybe_sanitize_url(self.url)
 
-        uri1, remainder = self.url.split(',', 1)
-        return ','.join([maybe_sanitize_url(uri1), remainder])
+        uri1, remainder = self.url.split(",", 1)
+        return ",".join([maybe_sanitize_url(uri1), remainder])

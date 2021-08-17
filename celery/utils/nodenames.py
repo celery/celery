@@ -9,22 +9,27 @@ from .functional import memoize
 from .text import simple_format
 
 #: Exchange for worker direct queues.
-WORKER_DIRECT_EXCHANGE = Exchange('C.dq2')
+WORKER_DIRECT_EXCHANGE = Exchange("C.dq2")
 
 #: Format for worker direct queue names.
-WORKER_DIRECT_QUEUE_FORMAT = '{hostname}.dq2'
+WORKER_DIRECT_QUEUE_FORMAT = "{hostname}.dq2"
 
 #: Separator for worker node name and hostname.
-NODENAME_SEP = '@'
+NODENAME_SEP = "@"
 
-NODENAME_DEFAULT = 'celery'
+NODENAME_DEFAULT = "celery"
 
 gethostname = memoize(1, Cache=dict)(socket.gethostname)
 
 __all__ = (
-    'worker_direct', 'gethostname', 'nodename',
-    'anon_nodename', 'nodesplit', 'default_nodename',
-    'node_format', 'host_format',
+    "worker_direct",
+    "gethostname",
+    "nodename",
+    "anon_nodename",
+    "nodesplit",
+    "default_nodename",
+    "node_format",
+    "host_format",
 )
 
 
@@ -51,13 +56,12 @@ def nodename(name, hostname):
     return NODENAME_SEP.join((name, hostname))
 
 
-def anon_nodename(hostname=None, prefix='gen'):
+def anon_nodename(hostname=None, prefix="gen"):
     """Return the nodename for this process (not a worker).
 
     This is used for e.g. the origin task message field.
     """
-    return nodename(''.join([prefix, str(os.getpid())]),
-                    hostname or gethostname())
+    return nodename("".join([prefix, str(os.getpid())]), hostname or gethostname())
 
 
 def nodesplit(name):
@@ -70,33 +74,39 @@ def nodesplit(name):
 
 def default_nodename(hostname):
     """Return the default nodename for this process."""
-    name, host = nodesplit(hostname or '')
+    name, host = nodesplit(hostname or "")
     return nodename(name or NODENAME_DEFAULT, host or gethostname())
 
 
 def node_format(s, name, **extra):
     """Format worker node name (name@host.com)."""
     shortname, host = nodesplit(name)
-    return host_format(
-        s, host, shortname or NODENAME_DEFAULT, p=name, **extra)
+    return host_format(s, host, shortname or NODENAME_DEFAULT, p=name, **extra)
 
 
-def _fmt_process_index(prefix='', default='0'):
+def _fmt_process_index(prefix="", default="0"):
     from .log import current_process_index
+
     index = current_process_index()
-    return f'{prefix}{index}' if index else default
+    return f"{prefix}{index}" if index else default
 
 
-_fmt_process_index_with_prefix = partial(_fmt_process_index, '-', '')
+_fmt_process_index_with_prefix = partial(_fmt_process_index, "-", "")
 
 
 def host_format(s, host=None, name=None, **extra):
     """Format host %x abbreviations."""
     host = host or gethostname()
-    hname, _, domain = host.partition('.')
+    hname, _, domain = host.partition(".")
     name = name or hname
-    keys = dict({
-        'h': host, 'n': name, 'd': domain,
-        'i': _fmt_process_index, 'I': _fmt_process_index_with_prefix,
-    }, **extra)
+    keys = dict(
+        {
+            "h": host,
+            "n": name,
+            "d": domain,
+            "i": _fmt_process_index,
+            "I": _fmt_process_index_with_prefix,
+        },
+        **extra,
+    )
     return simple_format(s, keys)

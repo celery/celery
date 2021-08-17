@@ -12,12 +12,19 @@ from kombu.utils.imports import symbol_by_name
 #: We use it to find out the name of the original ``__main__``
 #: module, so that we can properly rewrite the name of the
 #: task to be that of ``App.main``.
-MP_MAIN_FILE = os.environ.get('MP_MAIN_FILE')
+MP_MAIN_FILE = os.environ.get("MP_MAIN_FILE")
 
 __all__ = (
-    'NotAPackage', 'qualname', 'instantiate', 'symbol_by_name',
-    'cwd_in_path', 'find_module', 'import_from_cwd',
-    'reload_from_cwd', 'module_file', 'gen_task_name',
+    "NotAPackage",
+    "qualname",
+    "instantiate",
+    "symbol_by_name",
+    "cwd_in_path",
+    "find_module",
+    "import_from_cwd",
+    "reload_from_cwd",
+    "module_file",
+    "gen_task_name",
 )
 
 
@@ -27,11 +34,11 @@ class NotAPackage(Exception):
 
 def qualname(obj):
     """Return object name."""
-    if not hasattr(obj, '__name__') and hasattr(obj, '__class__'):
+    if not hasattr(obj, "__name__") and hasattr(obj, "__class__"):
         obj = obj.__class__
-    q = getattr(obj, '__qualname__', None)
-    if '.' not in q:
-        q = '.'.join((obj.__module__, q))
+    q = getattr(obj, "__qualname__", None)
+    if "." not in q:
+        q = ".".join((obj.__module__, q))
     return q
 
 
@@ -71,10 +78,10 @@ def find_module(module, path=None, imp=None):
         except ImportError:
             # Raise a more specific error if the problem is that one of the
             # dot-separated segments of the module name is not a package.
-            if '.' in module:
-                parts = module.split('.')
+            if "." in module:
+                parts = module.split(".")
                 for i, part in enumerate(parts[:-1]):
-                    package = '.'.join(parts[:i + 1])
+                    package = ".".join(parts[: i + 1])
                     try:
                         mpart = imp(package)
                     except ImportError:
@@ -111,12 +118,12 @@ def reload_from_cwd(module, reloader=None):
 def module_file(module):
     """Return the correct original file name of a module."""
     name = module.__file__
-    return name[:-1] if name.endswith('.pyc') else name
+    return name[:-1] if name.endswith(".pyc") else name
 
 
 def gen_task_name(app, name, module_name):
     """Generate task name from name/module pair."""
-    module_name = module_name or '__main__'
+    module_name = module_name or "__main__"
     try:
         module = sys.modules[module_name]
     except KeyError:
@@ -130,10 +137,10 @@ def gen_task_name(app, name, module_name):
         # - to match App.main.
         if MP_MAIN_FILE and module.__file__ == MP_MAIN_FILE:
             # - see comment about :envvar:`MP_MAIN_FILE` above.
-            module_name = '__main__'
-    if module_name == '__main__' and app.main:
-        return '.'.join([app.main, name])
-    return '.'.join(p for p in (module_name, name) if p)
+            module_name = "__main__"
+    if module_name == "__main__" and app.main:
+        return ".".join([app.main, name])
+    return ".".join(p for p in (module_name, name) if p)
 
 
 def load_extension_class_names(namespace):
@@ -143,7 +150,7 @@ def load_extension_class_names(namespace):
         return
 
     for ep in iter_entry_points(namespace):
-        yield ep.name, ':'.join([ep.module_name, ep.attrs[0]])
+        yield ep.name, ":".join([ep.module_name, ep.attrs[0]])
 
 
 def load_extension_classes(namespace):
@@ -151,7 +158,6 @@ def load_extension_classes(namespace):
         try:
             cls = symbol_by_name(class_name)
         except (ImportError, SyntaxError) as exc:
-            warnings.warn(
-                f'Cannot load {namespace} extension {class_name!r}: {exc!r}')
+            warnings.warn(f"Cannot load {namespace} extension {class_name!r}: {exc!r}")
         else:
             yield name, cls

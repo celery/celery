@@ -49,19 +49,23 @@ from pdb import Pdb
 from billiard.process import current_process
 
 __all__ = (
-    'CELERY_RDB_HOST', 'CELERY_RDB_PORT', 'DEFAULT_PORT',
-    'Rdb', 'debugger', 'set_trace',
+    "CELERY_RDB_HOST",
+    "CELERY_RDB_PORT",
+    "DEFAULT_PORT",
+    "Rdb",
+    "debugger",
+    "set_trace",
 )
 
 DEFAULT_PORT = 6899
 
-CELERY_RDB_HOST = os.environ.get('CELERY_RDB_HOST') or '127.0.0.1'
-CELERY_RDB_PORT = int(os.environ.get('CELERY_RDB_PORT') or DEFAULT_PORT)
+CELERY_RDB_HOST = os.environ.get("CELERY_RDB_HOST") or "127.0.0.1"
+CELERY_RDB_PORT = int(os.environ.get("CELERY_RDB_PORT") or DEFAULT_PORT)
 
 #: Holds the currently active debugger.
 _current = [None]
 
-_frame = getattr(sys, '_getframe')
+_frame = getattr(sys, "_getframe")
 
 NO_AVAILABLE_PORT = """\
 {self.ident}: Couldn't find an available port.
@@ -77,45 +81,53 @@ Type `exit` in session to continue.
 {self.ident}: Waiting for client...
 """
 
-SESSION_STARTED = '{self.ident}: Now in session with {self.remote_addr}.'
-SESSION_ENDED = '{self.ident}: Session with {self.remote_addr} ended.'
+SESSION_STARTED = "{self.ident}: Now in session with {self.remote_addr}."
+SESSION_ENDED = "{self.ident}: Session with {self.remote_addr} ended."
 
 
 class Rdb(Pdb):
     """Remote debugger."""
 
-    me = 'Remote Debugger'
+    me = "Remote Debugger"
     _prev_outs = None
     _sock = None
 
-    def __init__(self, host=CELERY_RDB_HOST, port=CELERY_RDB_PORT,
-                 port_search_limit=100, port_skew=+0, out=sys.stdout):
+    def __init__(
+        self,
+        host=CELERY_RDB_HOST,
+        port=CELERY_RDB_PORT,
+        port_search_limit=100,
+        port_skew=+0,
+        out=sys.stdout,
+    ):
         self.active = True
         self.out = out
 
         self._prev_handles = sys.stdin, sys.stdout
 
         self._sock, this_port = self.get_avail_port(
-            host, port, port_search_limit, port_skew,
+            host,
+            port,
+            port_search_limit,
+            port_skew,
         )
         self._sock.setblocking(1)
         self._sock.listen(1)
-        self.ident = f'{self.me}:{this_port}'
+        self.ident = f"{self.me}:{this_port}"
         self.host = host
         self.port = this_port
         self.say(BANNER.format(self=self))
 
         self._client, address = self._sock.accept()
         self._client.setblocking(1)
-        self.remote_addr = ':'.join(str(v) for v in address)
+        self.remote_addr = ":".join(str(v) for v in address)
         self.say(SESSION_STARTED.format(self=self))
-        self._handle = sys.stdin = sys.stdout = self._client.makefile('rw')
-        Pdb.__init__(self, completekey='tab',
-                     stdin=self._handle, stdout=self._handle)
+        self._handle = sys.stdin = sys.stdout = self._client.makefile("rw")
+        Pdb.__init__(self, completekey="tab", stdin=self._handle, stdout=self._handle)
 
     def get_avail_port(self, host, port, search_limit=100, skew=+0):
         try:
-            _, skew = current_process().name.split('-')
+            _, skew = current_process().name.split("-")
             skew = int(skew)
         except ValueError:
             pass
@@ -160,12 +172,14 @@ class Rdb(Pdb):
         self._close_session()
         self.set_continue()
         return 1
+
     do_c = do_cont = do_continue
 
     def do_quit(self, arg):
         self._close_session()
         self.set_quit()
         return 1
+
     do_q = do_exit = do_quit
 
     def set_quit(self):

@@ -26,10 +26,11 @@ class Receipt:
 class ProducerPool:
     """Usage::
 
-        >>> app = Celery(broker='amqp://')
-        >>> ProducerPool(app)
+    >>> app = Celery(broker='amqp://')
+    >>> ProducerPool(app)
 
     """
+
     Receipt = Receipt
 
     def __init__(self, app, size=20):
@@ -47,9 +48,7 @@ class ProducerPool:
         return receipt
 
     def _run(self):
-        self._producers = [
-            spawn_n(self._producer) for _ in range(self.size)
-        ]
+        self._producers = [spawn_n(self._producer) for _ in range(self.size)]
 
     def _producer(self):
         inqueue = self.inqueue
@@ -57,7 +56,5 @@ class ProducerPool:
         with self.app.producer_or_acquire() as producer:
             while 1:
                 task, args, kwargs, options, receipt = inqueue.get()
-                result = task.apply_async(args, kwargs,
-                                          producer=producer,
-                                          **options)
+                result = task.apply_async(args, kwargs, producer=producer, **options)
                 receipt.finished(result)

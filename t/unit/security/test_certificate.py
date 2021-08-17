@@ -13,7 +13,6 @@ from .case import SecurityCase
 
 
 class test_Certificate(SecurityCase):
-
     def test_valid_certificate(self):
         Certificate(CERT1)
         Certificate(CERT2)
@@ -22,22 +21,22 @@ class test_Certificate(SecurityCase):
         with pytest.raises((SecurityError, TypeError)):
             Certificate(None)
         with pytest.raises(SecurityError):
-            Certificate('')
+            Certificate("")
         with pytest.raises(SecurityError):
-            Certificate('foo')
+            Certificate("foo")
         with pytest.raises(SecurityError):
             Certificate(CERT1[:20] + CERT1[21:])
         with pytest.raises(SecurityError):
             Certificate(KEY1)
 
-    @pytest.mark.skip('TODO: cert expired')
+    @pytest.mark.skip("TODO: cert expired")
     def test_has_expired(self):
         assert not Certificate(CERT1).has_expired()
 
     def test_has_expired_mock(self):
         x = Certificate(CERT1)
 
-        x._cert = Mock(name='cert')
+        x._cert = Mock(name="cert")
         time_after = datetime.datetime.now() + datetime.timedelta(days=-1)
         x._cert.not_valid_after = time_after
 
@@ -46,7 +45,7 @@ class test_Certificate(SecurityCase):
     def test_has_not_expired_mock(self):
         x = Certificate(CERT1)
 
-        x._cert = Mock(name='cert')
+        x._cert = Mock(name="cert")
         time_after = datetime.datetime.now() + datetime.timedelta(days=1)
         x._cert.not_valid_after = time_after
 
@@ -54,7 +53,6 @@ class test_Certificate(SecurityCase):
 
 
 class test_CertStore(SecurityCase):
-
     def test_itercerts(self):
         cert1 = Certificate(CERT1)
         cert2 = Certificate(CERT2)
@@ -75,28 +73,27 @@ class test_CertStore(SecurityCase):
 
 
 class test_FSCertStore(SecurityCase):
-
-    @patch('os.path.isdir')
-    @patch('glob.glob')
-    @patch('celery.security.certificate.Certificate')
+    @patch("os.path.isdir")
+    @patch("glob.glob")
+    @patch("celery.security.certificate.Certificate")
     def test_init(self, Certificate, glob, isdir):
         cert = Certificate.return_value = Mock()
         cert.has_expired.return_value = False
         isdir.return_value = True
-        glob.return_value = ['foo.cert']
+        glob.return_value = ["foo.cert"]
         with mock.open():
             cert.get_id.return_value = 1
 
-            path = os.path.join('var', 'certs')
+            path = os.path.join("var", "certs")
             x = FSCertStore(path)
             assert 1 in x._certs
-            glob.assert_called_with(os.path.join(path, '*'))
+            glob.assert_called_with(os.path.join(path, "*"))
 
             # they both end up with the same id
-            glob.return_value = ['foo.cert', 'bar.cert']
+            glob.return_value = ["foo.cert", "bar.cert"]
             with pytest.raises(SecurityError):
                 x = FSCertStore(path)
-            glob.return_value = ['foo.cert']
+            glob.return_value = ["foo.cert"]
 
             cert.has_expired.return_value = True
             with pytest.raises(SecurityError):

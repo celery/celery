@@ -20,18 +20,18 @@ from celery.utils.threads import bgThread
 from . import state
 from .components import Pool
 
-__all__ = ('Autoscaler', 'WorkerComponent')
+__all__ = ("Autoscaler", "WorkerComponent")
 
 logger = get_logger(__name__)
 debug, info, error = logger.debug, logger.info, logger.error
 
-AUTOSCALE_KEEPALIVE = float(os.environ.get('AUTOSCALE_KEEPALIVE', 30))
+AUTOSCALE_KEEPALIVE = float(os.environ.get("AUTOSCALE_KEEPALIVE", 30))
 
 
 class WorkerComponent(bootsteps.StartStopStep):
     """Bootstep that starts the autoscaler thread/timer in the worker."""
 
-    label = 'Autoscaler'
+    label = "Autoscaler"
     conditional = True
     requires = (Pool,)
 
@@ -42,28 +42,38 @@ class WorkerComponent(bootsteps.StartStopStep):
     def create(self, w):
         scaler = w.autoscaler = self.instantiate(
             w.autoscaler_cls,
-            w.pool, w.max_concurrency, w.min_concurrency,
-            worker=w, mutex=DummyLock() if w.use_eventloop else None,
+            w.pool,
+            w.max_concurrency,
+            w.min_concurrency,
+            worker=w,
+            mutex=DummyLock() if w.use_eventloop else None,
         )
         return scaler if not w.use_eventloop else None
 
     def register_with_event_loop(self, w, hub):
         w.consumer.on_task_message.add(w.autoscaler.maybe_scale)
         hub.call_repeatedly(
-            w.autoscaler.keepalive, w.autoscaler.maybe_scale,
+            w.autoscaler.keepalive,
+            w.autoscaler.maybe_scale,
         )
 
     def info(self, w):
         """Return `Autoscaler` info."""
-        return {'autoscaler': w.autoscaler.info()}
+        return {"autoscaler": w.autoscaler.info()}
 
 
 class Autoscaler(bgThread):
     """Background thread to autoscale pool workers."""
 
-    def __init__(self, pool, max_concurrency,
-                 min_concurrency=0, worker=None,
-                 keepalive=AUTOSCALE_KEEPALIVE, mutex=None):
+    def __init__(
+        self,
+        pool,
+        max_concurrency,
+        min_concurrency=0,
+        worker=None,
+        keepalive=AUTOSCALE_KEEPALIVE,
+        mutex=None,
+    ):
         super().__init__()
         self.pool = pool
         self.mutex = mutex or threading.Lock()
@@ -73,7 +83,7 @@ class Autoscaler(bgThread):
         self._last_scale_up = None
         self.worker = worker
 
-        assert self.keepalive, 'cannot scale down too fast.'
+        assert self.keepalive, "cannot scale down too fast."
 
     def body(self):
         with self.mutex:
@@ -113,36 +123,33 @@ class Autoscaler(bgThread):
         return self._grow(n)
 
     def scale_down(self, n):
-        if self._last_scale_up and (
-                monotonic() - self._last_scale_up > self.keepalive):
+        if self._last_scale_up and (monotonic() - self._last_scale_up > self.keepalive):
             return self._shrink(n)
 
     def _grow(self, n):
-        info('Scaling up %s processes.', n)
+        info("Scaling up %s processes.", n)
         self.pool.grow(n)
 
     def _shrink(self, n):
-        info('Scaling down %s processes.', n)
+        info("Scaling down %s processes.", n)
         try:
             self.pool.shrink(n)
         except ValueError:
             debug("Autoscaler won't scale down: all processes busy.")
         except Exception as exc:
-            error('Autoscaler: scale_down: %r', exc, exc_info=True)
+            error("Autoscaler: scale_down: %r", exc, exc_info=True)
 
     def _update_consumer_prefetch_count(self, new_max):
         diff = new_max - self.max_concurrency
         if diff:
-            self.worker.consumer._update_prefetch_count(
-                diff
-            )
+            self.worker.consumer._update_prefetch_count(diff)
 
     def info(self):
         return {
-            'max': self.max_concurrency,
-            'min': self.min_concurrency,
-            'current': self.processes,
-            'qty': self.qty,
+            "max": self.max_concurrency,
+            "min": self.min_concurrency,
+            "current": self.processes,
+            "qty": self.qty,
         }
 
     @property

@@ -21,7 +21,7 @@ import os
 # setting points here.
 from django.core.wsgi import get_wsgi_application  # noqa
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'proj.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "proj.settings")
 
 application = get_wsgi_application()
 

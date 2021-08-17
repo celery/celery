@@ -13,30 +13,28 @@ from .tasks import add
 
 
 class test_security:
-
-    @pytest.fixture(autouse=True, scope='class')
+    @pytest.fixture(autouse=True, scope="class")
     def class_certs(self, request):
         self.tmpdir = tempfile.mkdtemp()
-        self.key_name = 'worker.key'
-        self.cert_name = 'worker.pem'
+        self.key_name = "worker.key"
+        self.cert_name = "worker.pem"
 
         key = self.gen_private_key()
-        cert = self.gen_certificate(key=key,
-                                    common_name='celery cecurity integration')
+        cert = self.gen_certificate(key=key, common_name="celery cecurity integration")
 
         pem_key = key.private_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=serialization.NoEncryption()
+            encryption_algorithm=serialization.NoEncryption(),
         )
 
         pem_cert = cert.public_bytes(
             encoding=serialization.Encoding.PEM,
         )
 
-        with open(self.tmpdir + '/' + self.key_name, 'wb') as key:
+        with open(self.tmpdir + "/" + self.key_name, "wb") as key:
             key.write(pem_key)
-        with open(self.tmpdir + '/' + self.cert_name, 'wb') as cert:
+        with open(self.tmpdir + "/" + self.cert_name, "wb") as cert:
             cert.write(pem_cert)
 
         request.cls.tmpdir = self.tmpdir
@@ -45,20 +43,20 @@ class test_security:
 
         yield
 
-        os.remove(self.tmpdir + '/' + self.key_name)
-        os.remove(self.tmpdir + '/' + self.cert_name)
+        os.remove(self.tmpdir + "/" + self.key_name)
+        os.remove(self.tmpdir + "/" + self.cert_name)
         os.rmdir(self.tmpdir)
 
     @pytest.fixture(autouse=True)
     def _prepare_setup(self, manager):
         manager.app.conf.update(
-            security_key=f'{self.tmpdir}/{self.key_name}',
-            security_certificate=f'{self.tmpdir}/{self.cert_name}',
-            security_cert_store=f'{self.tmpdir}/*.pem',
-            task_serializer='auth',
-            event_serializer='auth',
-            accept_content=['auth'],
-            result_accept_content=['json']
+            security_key=f"{self.tmpdir}/{self.key_name}",
+            security_certificate=f"{self.tmpdir}/{self.cert_name}",
+            security_cert_store=f"{self.tmpdir}/*.pem",
+            task_serializer="auth",
+            event_serializer="auth",
+            accept_content=["auth"],
+            result_accept_content=["json"],
         )
 
         manager.app.setup_security()
@@ -76,31 +74,30 @@ class test_security:
 
         now = datetime.datetime.utcnow()
 
-        certificate = x509.CertificateBuilder().subject_name(
-            x509.Name([
-                x509.NameAttribute(NameOID.COMMON_NAME, common_name),
-            ])
-        ).issuer_name(
-            x509.Name([
-                x509.NameAttribute(
-                    NameOID.COMMON_NAME,
-                    issuer or common_name
+        certificate = (
+            x509.CertificateBuilder()
+            .subject_name(
+                x509.Name(
+                    [
+                        x509.NameAttribute(NameOID.COMMON_NAME, common_name),
+                    ]
                 )
-            ])
-        ).not_valid_before(
-            now
-        ).not_valid_after(
-            now + datetime.timedelta(seconds=86400)
-        ).serial_number(
-            x509.random_serial_number()
-        ).public_key(
-            key.public_key()
-        ).add_extension(
-            x509.BasicConstraints(ca=True, path_length=0), critical=True
-        ).sign(
-            private_key=sign_key or key,
-            algorithm=hashes.SHA256(),
-            backend=default_backend()
+            )
+            .issuer_name(
+                x509.Name(
+                    [x509.NameAttribute(NameOID.COMMON_NAME, issuer or common_name)]
+                )
+            )
+            .not_valid_before(now)
+            .not_valid_after(now + datetime.timedelta(seconds=86400))
+            .serial_number(x509.random_serial_number())
+            .public_key(key.public_key())
+            .add_extension(x509.BasicConstraints(ca=True, path_length=0), critical=True)
+            .sign(
+                private_key=sign_key or key,
+                algorithm=hashes.SHA256(),
+                backend=default_backend(),
+            )
         )
         return certificate
 

@@ -31,27 +31,24 @@ def add(x, y):
 
 @task()
 def make_request(id, url):
-    print(f'-get: {url!r}')
+    print(f"-get: {url!r}")
     return url
 
 
 @task()
 def B_callback(urls, id):
-    print(f'-batch {id} done')
+    print(f"-batch {id} done")
     return urls
 
 
 @task()
 def B(id):
-    return chord(
-        make_request.s(id, f'{id} {i!r}')
-        for i in range(10)
-    )(B_callback.s(id))
+    return chord(make_request.s(id, f"{id} {i!r}") for i in range(10))(B_callback.s(id))
 
 
 @task()
 def A():
-    return group(B.s(c) for c in 'ABCDEFGH').apply_async()
+    return group(B.s(c) for c in "ABCDEFGH").apply_async()
 
 
 def joinall(R, timeout=None, propagate=True):
@@ -74,30 +71,29 @@ def joinall(R, timeout=None, propagate=True):
 
 
 @task()
-def unlock_graph(result, callback,
-                 interval=1, propagate=False, max_retries=None):
+def unlock_graph(result, callback, interval=1, propagate=False, max_retries=None):
     if result.ready():
         second_level_res = result.get()
         if second_level_res.ready():
             with allow_join_result():
-                signature(callback).delay(list(joinall(
-                    second_level_res, propagate=propagate)))
+                signature(callback).delay(
+                    list(joinall(second_level_res, propagate=propagate))
+                )
     else:
         unlock_graph.retry(countdown=interval, max_retries=max_retries)
 
 
 @task()
 def A_callback(res):
-    print(f'-everything done: {res!r}')
+    print(f"-everything done: {res!r}")
     return res
 
 
 class chord2:
-
     def __init__(self, tasks, **options):
         self.tasks = tasks
         self.options = options
 
     def __call__(self, body, **options):
-        body.options.setdefault('task_id', uuid())
+        body.options.setdefault("task_id", uuid())
         unlock_graph.apply_async()

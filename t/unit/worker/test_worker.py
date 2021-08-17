@@ -22,9 +22,13 @@ from kombu.utils.uuid import uuid
 import t.skip
 from celery.bootsteps import CLOSE, RUN, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
-from celery.exceptions import (ImproperlyConfigured, InvalidTaskError,
-                               TaskRevokedError, WorkerShutdown,
-                               WorkerTerminate)
+from celery.exceptions import (
+    ImproperlyConfigured,
+    InvalidTaskError,
+    TaskRevokedError,
+    WorkerShutdown,
+    WorkerTerminate,
+)
 from celery.platforms import EX_FAILURE
 from celery.utils.nodenames import worker_direct
 from celery.utils.serialization import pickle
@@ -38,17 +42,17 @@ from celery.worker.request import Request
 
 def MockStep(step=None):
     if step is None:
-        step = Mock(name='step')
+        step = Mock(name="step")
     else:
-        step.blueprint = Mock(name='step.blueprint')
-    step.blueprint.name = 'MockNS'
-    step.name = f'MockStep({id(step)})'
+        step.blueprint = Mock(name="step.blueprint")
+    step.blueprint.name = "MockNS"
+    step.name = f"MockStep({id(step)})"
     return step
 
 
 def mock_event_dispatcher():
-    evd = Mock(name='event_dispatcher')
-    evd.groups = ['worker']
+    evd = Mock(name="event_dispatcher")
+    evd.groups = ["worker"]
     evd._outbound_buffer = deque()
     return evd
 
@@ -58,27 +62,27 @@ def find_step(obj, typ):
 
 
 def create_message(channel, **data):
-    data.setdefault('id', uuid())
-    m = Message(body=pickle.dumps(dict(**data)),
-                channel=channel,
-                content_type='application/x-python-serialize',
-                content_encoding='binary',
-                delivery_info={'consumer_tag': 'mock'})
-    m.accept = ['application/x-python-serialize']
+    data.setdefault("id", uuid())
+    m = Message(
+        body=pickle.dumps(dict(**data)),
+        channel=channel,
+        content_type="application/x-python-serialize",
+        content_encoding="binary",
+        delivery_info={"consumer_tag": "mock"},
+    )
+    m.accept = ["application/x-python-serialize"]
     return m
 
 
 class ConsumerCase:
-
     def create_task_message(self, channel, *args, **kwargs):
         m = self.TaskMessage(*args, **kwargs)
         m.channel = channel
-        m.delivery_info = {'consumer_tag': 'mock'}
+        m.delivery_info = {"consumer_tag": "mock"}
         return m
 
 
 class test_Consumer(ConsumerCase):
-
     def setup(self):
         self.buffer = FastQueue()
         self.timer = Timer()
@@ -86,16 +90,25 @@ class test_Consumer(ConsumerCase):
         @self.app.task(shared=False)
         def foo_task(x, y, z):
             return x * y * z
+
         self.foo_task = foo_task
 
     def teardown(self):
         self.timer.stop()
 
-    def LoopConsumer(self, buffer=None, controller=None, timer=None, app=None,
-                     without_mingle=True, without_gossip=True,
-                     without_heartbeat=True, **kwargs):
+    def LoopConsumer(
+        self,
+        buffer=None,
+        controller=None,
+        timer=None,
+        app=None,
+        without_mingle=True,
+        without_gossip=True,
+        without_heartbeat=True,
+        **kwargs,
+    ):
         if controller is None:
-            controller = Mock(name='.controller')
+            controller = Mock(name=".controller")
         buffer = buffer if buffer is not None else self.buffer.put
         timer = timer if timer is not None else self.timer
         app = app if app is not None else self.app
@@ -107,31 +120,31 @@ class test_Consumer(ConsumerCase):
             without_mingle=without_mingle,
             without_gossip=without_gossip,
             without_heartbeat=without_heartbeat,
-            **kwargs
+            **kwargs,
         )
-        c.task_consumer = Mock(name='.task_consumer')
+        c.task_consumer = Mock(name=".task_consumer")
         c.qos = QoS(c.task_consumer.qos, 10)
-        c.connection = Mock(name='.connection')
+        c.connection = Mock(name=".connection")
         c.controller = c.app.WorkController()
-        c.heart = Mock(name='.heart')
+        c.heart = Mock(name=".heart")
         c.controller.consumer = c
-        c.pool = c.controller.pool = Mock(name='.controller.pool')
-        c.node = Mock(name='.node')
+        c.pool = c.controller.pool = Mock(name=".controller.pool")
+        c.node = Mock(name=".node")
         c.event_dispatcher = mock_event_dispatcher()
         return c
 
     def NoopConsumer(self, *args, **kwargs):
         c = self.LoopConsumer(*args, **kwargs)
-        c.loop = Mock(name='.loop')
+        c.loop = Mock(name=".loop")
         return c
 
     def test_info(self):
         c = self.NoopConsumer()
-        c.connection.info.return_value = {'foo': 'bar'}
+        c.connection.info.return_value = {"foo": "bar"}
         c.controller.pool.info.return_value = [Mock(), Mock()]
         info = c.controller.stats()
-        assert info['prefetch_count'] == 10
-        assert info['broker']
+        assert info["prefetch_count"] == 10
+        assert info["broker"]
 
     def test_start_when_closed(self):
         c = self.NoopConsumer()
@@ -185,27 +198,29 @@ class test_Consumer(ConsumerCase):
         event_dispatcher.close.assert_called()
         heart.stop.assert_called_with()
 
-    @patch('celery.worker.consumer.consumer.warn')
+    @patch("celery.worker.consumer.consumer.warn")
     def test_receive_message_unknown(self, warn):
         c = self.LoopConsumer()
         c.blueprint.state = RUN
         c.steps.pop()
-        channel = Mock(name='.channeol')
-        m = create_message(channel, unknown={'baz': '!!!'})
+        channel = Mock(name=".channeol")
+        m = create_message(channel, unknown={"baz": "!!!"})
 
         callback = self._get_on_message(c)
         callback(m)
         warn.assert_called()
 
-    @patch('celery.worker.strategy.to_timestamp')
+    @patch("celery.worker.strategy.to_timestamp")
     def test_receive_message_eta_OverflowError(self, to_timestamp):
         to_timestamp.side_effect = OverflowError()
         c = self.LoopConsumer()
         c.blueprint.state = RUN
         c.steps.pop()
         m = self.create_task_message(
-            Mock(), self.foo_task.name,
-            args=('2, 2'), kwargs={},
+            Mock(),
+            self.foo_task.name,
+            args=("2, 2"),
+            kwargs={},
             eta=datetime.now().isoformat(),
         )
         c.update_strategies()
@@ -213,34 +228,34 @@ class test_Consumer(ConsumerCase):
         callback(m)
         assert m.acknowledged
 
-    @patch('celery.worker.consumer.consumer.error')
+    @patch("celery.worker.consumer.consumer.error")
     def test_receive_message_InvalidTaskError(self, error):
         c = self.LoopConsumer()
         c.blueprint.state = RUN
         c.steps.pop()
         m = self.create_task_message(
-            Mock(), self.foo_task.name,
-            args=(1, 2), kwargs='foobarbaz', id=1)
+            Mock(), self.foo_task.name, args=(1, 2), kwargs="foobarbaz", id=1
+        )
         c.update_strategies()
-        strat = c.strategies[self.foo_task.name] = Mock(name='strategy')
+        strat = c.strategies[self.foo_task.name] = Mock(name="strategy")
         strat.side_effect = InvalidTaskError()
 
         callback = self._get_on_message(c)
         callback(m)
         error.assert_called()
-        assert 'Received invalid task message' in error.call_args[0][0]
+        assert "Received invalid task message" in error.call_args[0][0]
 
-    @patch('celery.worker.consumer.consumer.crit')
+    @patch("celery.worker.consumer.consumer.crit")
     def test_on_decode_error(self, crit):
         c = self.LoopConsumer()
 
         class MockMessage(Mock):
-            content_type = 'application/x-msgpack'
-            content_encoding = 'binary'
-            body = 'foobarbaz'
+            content_type = "application/x-msgpack"
+            content_encoding = "binary"
+            body = "foobarbaz"
 
         message = MockMessage()
-        c.on_decode_error(message, KeyError('foo'))
+        c.on_decode_error(message, KeyError("foo"))
         assert message.ack.call_count
         assert "Can't decode message body" in crit.call_args[0][0]
 
@@ -249,7 +264,7 @@ class test_Consumer(ConsumerCase):
             c.qos = Mock()
         c.task_consumer = Mock()
         c.event_dispatcher = mock_event_dispatcher()
-        c.connection = Mock(name='.connection')
+        c.connection = Mock(name=".connection")
         c.connection.get_heartbeat_interval.return_value = 0
         c.connection.drain_events.side_effect = WorkerShutdown()
 
@@ -262,8 +277,10 @@ class test_Consumer(ConsumerCase):
         c = self.LoopConsumer()
         c.blueprint.state = RUN
         m = self.create_task_message(
-            Mock(), self.foo_task.name,
-            args=[2, 4, 8], kwargs={},
+            Mock(),
+            self.foo_task.name,
+            args=[2, 4, 8],
+            kwargs={},
         )
         c.update_strategies()
         callback = self._get_on_message(c)
@@ -277,8 +294,8 @@ class test_Consumer(ConsumerCase):
 
     def test_start_channel_error(self):
         def loop_side_effect():
-            yield KeyError('foo')
-            yield SyntaxError('bar')
+            yield KeyError("foo")
+            yield SyntaxError("bar")
 
         c = self.NoopConsumer(task_events=False, pool=BasePool())
         c.loop.side_effect = loop_side_effect()
@@ -291,8 +308,9 @@ class test_Consumer(ConsumerCase):
 
     def test_start_connection_error(self):
         def loop_side_effect():
-            yield KeyError('foo')
-            yield SyntaxError('bar')
+            yield KeyError("foo")
+            yield SyntaxError("bar")
+
         c = self.NoopConsumer(task_events=False, pool=BasePool())
         c.loop.side_effect = loop_side_effect()
         c.connection_errors = (KeyError,)
@@ -303,7 +321,6 @@ class test_Consumer(ConsumerCase):
             c.timer and c.timer.stop()
 
     def test_loop_ignores_socket_timeout(self):
-
         class Connection(self.app.connection_for_read().__class__):
             obj = None
 
@@ -318,13 +335,12 @@ class test_Consumer(ConsumerCase):
         c.loop(*c.loop_args())
 
     def test_loop_when_socket_error(self):
-
         class Connection(self.app.connection_for_read().__class__):
             obj = None
 
             def drain_events(self, **kwargs):
                 self.obj.connection = None
-                raise OSError('foo')
+                raise OSError("foo")
 
         c = self.LoopConsumer()
         c.blueprint.state = RUN
@@ -339,7 +355,6 @@ class test_Consumer(ConsumerCase):
         c.loop(*c.loop_args())
 
     def test_loop(self):
-
         class Connection(self.app.connection_for_read().__class__):
             obj = None
 
@@ -370,18 +385,21 @@ class test_Consumer(ConsumerCase):
 
     def test_ignore_errors(self):
         c = self.NoopConsumer()
-        c.connection_errors = (AttributeError, KeyError,)
+        c.connection_errors = (
+            AttributeError,
+            KeyError,
+        )
         c.channel_errors = (SyntaxError,)
-        ignore_errors(c, Mock(side_effect=AttributeError('foo')))
-        ignore_errors(c, Mock(side_effect=KeyError('foo')))
-        ignore_errors(c, Mock(side_effect=SyntaxError('foo')))
+        ignore_errors(c, Mock(side_effect=AttributeError("foo")))
+        ignore_errors(c, Mock(side_effect=KeyError("foo")))
+        ignore_errors(c, Mock(side_effect=SyntaxError("foo")))
         with pytest.raises(IndexError):
-            ignore_errors(c, Mock(side_effect=IndexError('foo')))
+            ignore_errors(c, Mock(side_effect=IndexError("foo")))
 
     def test_apply_eta_task(self):
         c = self.NoopConsumer()
         c.qos = QoS(None, 10)
-        task = Mock(name='task', id='1234213')
+        task = Mock(name="task", id="1234213")
         qos = c.qos.value
         c.apply_eta_task(task)
         assert task in state.reserved_requests
@@ -393,9 +411,11 @@ class test_Consumer(ConsumerCase):
         c.blueprint.state = RUN
         c.steps.pop()
         m = self.create_task_message(
-            Mock(), self.foo_task.name,
+            Mock(),
+            self.foo_task.name,
             eta=(datetime.now() + timedelta(days=1)).isoformat(),
-            args=[2, 4, 8], kwargs={},
+            args=[2, 4, 8],
+            kwargs={},
         )
 
         c.qos = QoS(c.task_consumer.qos, 1)
@@ -422,29 +442,32 @@ class test_Consumer(ConsumerCase):
         con.node = Mock()
         con.reset = Mock()
 
-        con.on_message('foo', 'bar')
-        con.node.handle_message.assert_called_with('foo', 'bar')
+        con.on_message("foo", "bar")
+        con.node.handle_message.assert_called_with("foo", "bar")
 
         con.node = Mock()
-        con.node.handle_message.side_effect = KeyError('foo')
-        con.on_message('foo', 'bar')
-        con.node.handle_message.assert_called_with('foo', 'bar')
+        con.node.handle_message.side_effect = KeyError("foo")
+        con.on_message("foo", "bar")
+        con.node.handle_message.assert_called_with("foo", "bar")
 
         con.node = Mock()
-        con.node.handle_message.side_effect = ValueError('foo')
-        con.on_message('foo', 'bar')
-        con.node.handle_message.assert_called_with('foo', 'bar')
+        con.node.handle_message.side_effect = ValueError("foo")
+        con.on_message("foo", "bar")
+        con.node.handle_message.assert_called_with("foo", "bar")
         con.reset.assert_called()
 
     def test_revoke(self):
         c = self.LoopConsumer()
         c.blueprint.state = RUN
         c.steps.pop()
-        channel = Mock(name='channel')
+        channel = Mock(name="channel")
         id = uuid()
         t = self.create_task_message(
-            channel, self.foo_task.name,
-            args=[2, 4, 8], kwargs={}, id=id,
+            channel,
+            self.foo_task.name,
+            args=[2, 4, 8],
+            kwargs={},
+            id=id,
         )
 
         state.revoked.add(id)
@@ -457,9 +480,12 @@ class test_Consumer(ConsumerCase):
         c = self.LoopConsumer()
         c.blueprint.state = RUN
         c.steps.pop()
-        channel = Mock(name='channel')
+        channel = Mock(name="channel")
         m = self.create_task_message(
-            channel, 'x.X.31x', args=[2, 4, 8], kwargs={},
+            channel,
+            "x.X.31x",
+            args=[2, 4, 8],
+            kwargs={},
         )
 
         callback = self._get_on_message(c)
@@ -468,22 +494,24 @@ class test_Consumer(ConsumerCase):
             self.buffer.get_nowait()
         assert self.timer.empty()
 
-    @patch('celery.worker.consumer.consumer.warn')
-    @patch('celery.worker.consumer.consumer.logger')
+    @patch("celery.worker.consumer.consumer.warn")
+    @patch("celery.worker.consumer.consumer.logger")
     def test_receieve_message_ack_raises(self, logger, warn):
         c = self.LoopConsumer()
         c.blueprint.state = RUN
-        channel = Mock(name='channel')
+        channel = Mock(name="channel")
         m = self.create_task_message(
-            channel, self.foo_task.name,
-            args=[2, 4, 8], kwargs={},
+            channel,
+            self.foo_task.name,
+            args=[2, 4, 8],
+            kwargs={},
         )
         m.headers = None
 
         c.update_strategies()
         c.connection_errors = (socket.error,)
         m.reject = Mock()
-        m.reject.side_effect = socket.error('foo')
+        m.reject.side_effect = socket.error("foo")
         callback = self._get_on_message(c)
         assert not callback(m)
         warn.assert_called()
@@ -493,52 +521,56 @@ class test_Consumer(ConsumerCase):
         m.reject_log_error.assert_called_with(logger, c.connection_errors)
 
     def test_receive_message_eta(self):
-        if os.environ.get('C_DEBUG_TEST'):
+        if os.environ.get("C_DEBUG_TEST"):
             pp = partial(print, file=sys.__stderr__)
         else:
+
             def pp(*args, **kwargs):
                 pass
-        pp('TEST RECEIVE MESSAGE ETA')
-        pp('+CREATE MYKOMBUCONSUMER')
+
+        pp("TEST RECEIVE MESSAGE ETA")
+        pp("+CREATE MYKOMBUCONSUMER")
         c = self.LoopConsumer()
-        pp('-CREATE MYKOMBUCONSUMER')
+        pp("-CREATE MYKOMBUCONSUMER")
         c.steps.pop()
-        channel = Mock(name='channel')
-        pp('+ CREATE MESSAGE')
+        channel = Mock(name="channel")
+        pp("+ CREATE MESSAGE")
         m = self.create_task_message(
-            channel, self.foo_task.name,
-            args=[2, 4, 8], kwargs={},
+            channel,
+            self.foo_task.name,
+            args=[2, 4, 8],
+            kwargs={},
             eta=(datetime.now() + timedelta(days=1)).isoformat(),
         )
-        pp('- CREATE MESSAGE')
+        pp("- CREATE MESSAGE")
 
         try:
-            pp('+ BLUEPRINT START 1')
+            pp("+ BLUEPRINT START 1")
             c.blueprint.start(c)
-            pp('- BLUEPRINT START 1')
+            pp("- BLUEPRINT START 1")
             p = c.app.conf.broker_connection_retry
             c.app.conf.broker_connection_retry = False
-            pp('+ BLUEPRINT START 2')
+            pp("+ BLUEPRINT START 2")
             c.blueprint.start(c)
-            pp('- BLUEPRINT START 2')
+            pp("- BLUEPRINT START 2")
             c.app.conf.broker_connection_retry = p
-            pp('+ BLUEPRINT RESTART')
+            pp("+ BLUEPRINT RESTART")
             c.blueprint.restart(c)
-            pp('- BLUEPRINT RESTART')
-            pp('+ GET ON MESSAGE')
+            pp("- BLUEPRINT RESTART")
+            pp("+ GET ON MESSAGE")
             callback = self._get_on_message(c)
-            pp('- GET ON MESSAGE')
-            pp('+ CALLBACK')
+            pp("- GET ON MESSAGE")
+            pp("+ CALLBACK")
             callback(m)
-            pp('- CALLBACK')
+            pp("- CALLBACK")
         finally:
-            pp('+ STOP TIMER')
+            pp("+ STOP TIMER")
             c.timer.stop()
-            pp('- STOP TIMER')
+            pp("- STOP TIMER")
             try:
-                pp('+ JOIN TIMER')
+                pp("+ JOIN TIMER")
                 c.timer.join()
-                pp('- JOIN TIMER')
+                pp("- JOIN TIMER")
             except RuntimeError:
                 pass
 
@@ -557,7 +589,7 @@ class test_Consumer(ConsumerCase):
         con = find_step(c, consumer.Control).box
         con.node = Mock()
         chan = con.node.channel = Mock()
-        chan.close.side_effect = socket.error('foo')
+        chan.close.side_effect = socket.error("foo")
         c.connection_errors = (socket.error,)
         con.reset()
         chan.close.assert_called_with()
@@ -576,7 +608,6 @@ class test_Consumer(ConsumerCase):
         controller = find_step(c, consumer.Control)
 
         class BConsumer(Mock):
-
             def __enter__(self):
                 self.consume()
                 return self
@@ -606,7 +637,7 @@ class test_Consumer(ConsumerCase):
                 return Mock()
 
             def as_uri(self):
-                return 'dummy://'
+                return "dummy://"
 
             def drain_events(self, **kwargs):
                 if not self.calls:
@@ -629,13 +660,13 @@ class test_Consumer(ConsumerCase):
         assert c.connection is None
         assert connections[0].closed
 
-    @patch('kombu.connection.Connection._establish_connection')
-    @patch('kombu.utils.functional.sleep')
+    @patch("kombu.connection.Connection._establish_connection")
+    @patch("kombu.utils.functional.sleep")
     def test_connect_errback(self, sleep, connect):
         def connect_side_effect():
             yield Mock()
             while True:
-                yield ChannelError('error')
+                yield ChannelError("error")
 
         c = self.NoopConsumer()
         Transport.connection_errors = (ChannelError,)
@@ -652,7 +683,6 @@ class test_Consumer(ConsumerCase):
         cont.stop(c)
 
     def test_start__loop(self):
-
         class _QoS:
             prev = 3
             value = 4
@@ -660,7 +690,7 @@ class test_Consumer(ConsumerCase):
             def update(self):
                 self.prev = self.value
 
-        init_callback = Mock(name='init_callback')
+        init_callback = Mock(name="init_callback")
         c = self.NoopConsumer(init_callback=init_callback)
         c.qos = _QoS()
         c.connection = Connection(self.app.conf.broker_url)
@@ -672,7 +702,7 @@ class test_Consumer(ConsumerCase):
             if c.qos.prev != c.qos.value:
                 c.qos.update()
             if c.iterations >= 2:
-                raise KeyError('foo')
+                raise KeyError("foo")
 
         c.loop = raises_KeyError
         with pytest.raises(KeyError):
@@ -685,7 +715,7 @@ class test_Consumer(ConsumerCase):
         c.qos = _QoS()
         c.connection = Connection(self.app.conf.broker_url)
         c.connection.get_heartbeat_interval = Mock(return_value=None)
-        c.loop = Mock(side_effect=socket.error('foo'))
+        c.loop = Mock(side_effect=socket.error("foo"))
         with pytest.raises(socket.error):
             c.start()
         c.loop.assert_called()
@@ -697,7 +727,6 @@ class test_Consumer(ConsumerCase):
 
 
 class test_WorkController(ConsumerCase):
-
     def setup(self):
         self.worker = self.create_worker()
         self._logger = worker_module.logger
@@ -708,6 +737,7 @@ class test_WorkController(ConsumerCase):
         @self.app.task(shared=False)
         def foo_task(x, y, z):
             return x * y * z
+
         self.foo_task = foo_task
 
     def teardown(self):
@@ -724,38 +754,41 @@ class test_WorkController(ConsumerCase):
 
     def test_setup_queues_worker_direct(self):
         self.app.conf.worker_direct = True
-        self.app.amqp.__dict__['queues'] = Mock()
+        self.app.amqp.__dict__["queues"] = Mock()
         self.worker.setup_queues({})
         self.app.amqp.queues.select_add.assert_called_with(
             worker_direct(self.worker.hostname),
         )
 
     def test_setup_queues__missing_queue(self):
-        self.app.amqp.queues.select = Mock(name='select')
-        self.app.amqp.queues.deselect = Mock(name='deselect')
+        self.app.amqp.queues.select = Mock(name="select")
+        self.app.amqp.queues.deselect = Mock(name="deselect")
         self.app.amqp.queues.select.side_effect = KeyError()
         self.app.amqp.queues.deselect.side_effect = KeyError()
         with pytest.raises(ImproperlyConfigured):
-            self.worker.setup_queues('x,y', exclude='foo,bar')
-        self.app.amqp.queues.select = Mock(name='select')
+            self.worker.setup_queues("x,y", exclude="foo,bar")
+        self.app.amqp.queues.select = Mock(name="select")
         with pytest.raises(ImproperlyConfigured):
-            self.worker.setup_queues('x,y', exclude='foo,bar')
+            self.worker.setup_queues("x,y", exclude="foo,bar")
 
     def test_send_worker_shutdown(self):
-        with patch('celery.signals.worker_shutdown') as ws:
+        with patch("celery.signals.worker_shutdown") as ws:
             self.worker._send_worker_shutdown()
             ws.send.assert_called_with(sender=self.worker)
 
-    @pytest.mark.skip('TODO: unstable test')
+    @pytest.mark.skip("TODO: unstable test")
     def test_process_shutdown_on_worker_shutdown(self):
         from celery.concurrency.asynpool import Worker
         from celery.concurrency.prefork import process_destructor
-        with patch('celery.signals.worker_process_shutdown') as ws:
-            with patch('os._exit') as _exit:
+
+        with patch("celery.signals.worker_process_shutdown") as ws:
+            with patch("os._exit") as _exit:
                 worker = Worker(None, None, on_exit=process_destructor)
                 worker._do_exit(22, 3.1415926)
                 ws.send.assert_called_with(
-                    sender=None, pid=22, exitcode=3.1415926,
+                    sender=None,
+                    pid=22,
+                    exitcode=3.1415926,
                 )
                 _exit.assert_called_with(3.1415926)
 
@@ -766,17 +799,17 @@ class test_WorkController(ConsumerCase):
         self.worker._process_task(req)
         self.worker._quick_release.assert_called_with()
 
-        delattr(self.worker, '_quick_release')
+        delattr(self.worker, "_quick_release")
         self.worker._process_task(req)
 
     def test_shutdown_no_blueprint(self):
         self.worker.blueprint = None
         self.worker._shutdown()
 
-    @patch('celery.worker.worker.create_pidlock')
+    @patch("celery.worker.worker.create_pidlock")
     def test_use_pidfile(self, create_pidlock):
         create_pidlock.return_value = Mock()
-        worker = self.create_worker(pidfile='pidfilelockfilepid')
+        worker = self.create_worker(pidfile="pidfilelockfilepid")
         worker.steps = []
         worker.start()
         create_pidlock.assert_called()
@@ -798,8 +831,9 @@ class test_WorkController(ConsumerCase):
 
     def test_with_autoscaler(self):
         worker = self.create_worker(
-            autoscale=[10, 3], send_events=False,
-            timer_cls='celery.utils.timer2.Timer',
+            autoscale=[10, 3],
+            send_events=False,
+            timer_cls="celery.utils.timer2.Timer",
         )
         assert worker.autoscaler
 
@@ -808,8 +842,9 @@ class test_WorkController(ConsumerCase):
     def test_with_autoscaler_file_descriptor_safety(self):
         # Given: a test celery worker instance with auto scaling
         worker = self.create_worker(
-            autoscale=[10, 5], use_eventloop=True,
-            timer_cls='celery.utils.timer2.Timer',
+            autoscale=[10, 5],
+            use_eventloop=True,
+            timer_cls="celery.utils.timer2.Timer",
             threads=False,
         )
         # Given: This test requires a QoS defined on the worker consumer
@@ -829,7 +864,7 @@ class test_WorkController(ConsumerCase):
         worker.pool.register_with_event_loop(hub)
 
         # Create some mock queue message and read from them
-        _keep = [Mock(name=f'req{i}') for i in range(20)]
+        _keep = [Mock(name=f"req{i}") for i in range(20)]
         [state.task_reserved(m) for m in _keep]
         auto_scaler.body()
 
@@ -857,8 +892,9 @@ class test_WorkController(ConsumerCase):
     def test_with_file_descriptor_safety(self):
         # Given: a test celery worker instance
         worker = self.create_worker(
-            autoscale=[10, 5], use_eventloop=True,
-            timer_cls='celery.utils.timer2.Timer',
+            autoscale=[10, 5],
+            use_eventloop=True,
+            timer_cls="celery.utils.timer2.Timer",
             threads=False,
         )
 
@@ -928,11 +964,11 @@ class test_WorkController(ConsumerCase):
         worker = self.app.WorkController(concurrency=1, loglevel=0)
 
         try:
-            raise KeyError('foo')
+            raise KeyError("foo")
         except KeyError as exc:
             components.Timer(worker).on_timer_error(exc)
             msg, args = self.comp_logger.error.call_args[0]
-            assert 'KeyError' in msg % args
+            assert "KeyError" in msg % args
 
     def test_on_timer_tick(self):
         worker = self.app.WorkController(concurrency=1, loglevel=10)
@@ -941,15 +977,17 @@ class test_WorkController(ConsumerCase):
         xargs = self.comp_logger.debug.call_args[0]
         fmt, arg = xargs[0], xargs[1]
         assert arg == 30.0
-        assert 'Next ETA %s secs' in fmt
+        assert "Next ETA %s secs" in fmt
 
     def test_process_task(self):
         worker = self.worker
         worker.pool = Mock()
         channel = Mock()
         m = self.create_task_message(
-            channel, self.foo_task.name,
-            args=[4, 8, 10], kwargs={},
+            channel,
+            self.foo_task.name,
+            args=[4, 8, 10],
+            kwargs={},
         )
         task = Request(m, app=self.app)
         worker._process_task(task)
@@ -959,11 +997,13 @@ class test_WorkController(ConsumerCase):
     def test_process_task_raise_base(self):
         worker = self.worker
         worker.pool = Mock()
-        worker.pool.apply_async.side_effect = KeyboardInterrupt('Ctrl+C')
+        worker.pool.apply_async.side_effect = KeyboardInterrupt("Ctrl+C")
         channel = Mock()
         m = self.create_task_message(
-            channel, self.foo_task.name,
-            args=[4, 8, 10], kwargs={},
+            channel,
+            self.foo_task.name,
+            args=[4, 8, 10],
+            kwargs={},
         )
         task = Request(m, app=self.app)
         worker.steps = []
@@ -977,8 +1017,10 @@ class test_WorkController(ConsumerCase):
         worker.pool.apply_async.side_effect = WorkerTerminate()
         channel = Mock()
         m = self.create_task_message(
-            channel, self.foo_task.name,
-            args=[4, 8, 10], kwargs={},
+            channel,
+            self.foo_task.name,
+            args=[4, 8, 10],
+            kwargs={},
         )
         task = Request(m, app=self.app)
         worker.steps = []
@@ -989,11 +1031,13 @@ class test_WorkController(ConsumerCase):
     def test_process_task_raise_regular(self):
         worker = self.worker
         worker.pool = Mock()
-        worker.pool.apply_async.side_effect = KeyError('some exception')
+        worker.pool.apply_async.side_effect = KeyError("some exception")
         channel = Mock()
         m = self.create_task_message(
-            channel, self.foo_task.name,
-            args=[4, 8, 10], kwargs={},
+            channel,
+            self.foo_task.name,
+            args=[4, 8, 10],
+            kwargs={},
         )
         task = Request(m, app=self.app)
         with pytest.raises(KeyError):
@@ -1021,11 +1065,12 @@ class test_WorkController(ConsumerCase):
 
     def test_statedb(self):
         from celery.worker import state
+
         Persistent = state.Persistent
 
         state.Persistent = Mock()
         try:
-            worker = self.create_worker(statedb='statefilename')
+            worker = self.create_worker(statedb="statefilename")
             assert worker._persistence
         finally:
             state.Persistent = Persistent
@@ -1050,9 +1095,10 @@ class test_WorkController(ConsumerCase):
 
     def test_rusage__no_resource(self):
         from celery.worker import worker
+
         prev, worker.resource = worker.resource, None
         try:
-            self.worker.pool = Mock(name='pool')
+            self.worker.pool = Mock(name="pool")
             with pytest.raises(NotImplementedError):
                 self.worker.rusage()
             self.worker.stats()
@@ -1097,20 +1143,22 @@ class test_WorkController(ConsumerCase):
 
     def test_start__KeyboardInterrupt(self):
         worker = self.worker
-        worker.blueprint = Mock(name='blueprint')
+        worker.blueprint = Mock(name="blueprint")
         worker.blueprint.start.side_effect = KeyboardInterrupt()
-        worker.stop = Mock(name='stop')
+        worker.stop = Mock(name="stop")
         worker.start()
         worker.stop.assert_called_with(exitcode=EX_FAILURE)
 
     def test_register_with_event_loop(self):
         worker = self.worker
-        hub = Mock(name='hub')
-        worker.blueprint = Mock(name='blueprint')
+        hub = Mock(name="hub")
+        worker.blueprint = Mock(name="blueprint")
         worker.register_with_event_loop(hub)
         worker.blueprint.send_all.assert_called_with(
-            worker, 'register_with_event_loop', args=(hub,),
-            description='hub.register',
+            worker,
+            "register_with_event_loop",
+            args=(hub,),
+            description="hub.register",
         )
 
     def test_step_raises(self):
@@ -1164,6 +1212,7 @@ class test_WorkController(ConsumerCase):
 
     def test_Pool_create(self):
         from kombu.asynchronous.semaphore import LaxBoundedSemaphore
+
         w = Mock()
         w._conninfo.connection_errors = w._conninfo.channel_errors = ()
         w.hub = Mock()
@@ -1190,7 +1239,7 @@ class test_WorkController(ConsumerCase):
         pool = components.Pool(w)
         pool.create(w)
         pool.register_with_event_loop(w, w.hub)
-        if sys.platform != 'win32':
+        if sys.platform != "win32":
             assert isinstance(w.semaphore, LaxBoundedSemaphore)
             P = w.pool
             P.start()

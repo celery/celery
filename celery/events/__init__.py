@@ -10,6 +10,10 @@ from .event import Event, event_exchange, get_exchange, group_from
 from .receiver import EventReceiver
 
 __all__ = (
-    'Event', 'EventDispatcher', 'EventReceiver',
-    'event_exchange', 'get_exchange', 'group_from',
+    "Event",
+    "EventDispatcher",
+    "EventReceiver",
+    "event_exchange",
+    "get_exchange",
+    "group_from",
 )

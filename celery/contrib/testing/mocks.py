@@ -18,7 +18,7 @@ def TaskMessage(
     chain=None,  # type: Sequence[Signature]
     shadow=None,  # type: str
     utc=None,  # type: bool
-    **options  # type: Any
+    **options,  # type: Any
 ):
     # type: (...) -> Any
     """Create task message in protocol 2 format."""
@@ -26,17 +26,19 @@ def TaskMessage(
     from kombu.serialization import dumps
 
     from celery import uuid
+
     id = id or uuid()
-    message = Mock(name=f'TaskMessage-{id}')
+    message = Mock(name=f"TaskMessage-{id}")
     message.headers = {
-        'id': id,
-        'task': name,
-        'shadow': shadow,
+        "id": id,
+        "task": name,
+        "shadow": shadow,
     }
-    embed = {'callbacks': callbacks, 'errbacks': errbacks, 'chain': chain}
+    embed = {"callbacks": callbacks, "errbacks": errbacks, "chain": chain}
     message.headers.update(options)
     message.content_type, message.content_encoding, message.body = dumps(
-        (args, kwargs, embed), serializer='json',
+        (args, kwargs, embed),
+        serializer="json",
     )
     message.payload = (args, kwargs, embed)
     return message
@@ -50,7 +52,7 @@ def TaskMessage1(
     callbacks=None,  # type: Sequence[Signature]
     errbacks=None,  # type: Sequence[Signature]
     chain=None,  # type: Squence[Signature]
-    **options  # type: Any
+    **options,  # type: Any
 ):
     # type: (...) -> Any
     """Create task message in protocol 1 format."""
@@ -58,16 +60,17 @@ def TaskMessage1(
     from kombu.serialization import dumps
 
     from celery import uuid
+
     id = id or uuid()
-    message = Mock(name=f'TaskMessage-{id}')
+    message = Mock(name=f"TaskMessage-{id}")
     message.headers = {}
     message.payload = {
-        'task': name,
-        'id': id,
-        'args': args,
-        'kwargs': kwargs,
-        'callbacks': callbacks,
-        'errbacks': errbacks,
+        "task": name,
+        "id": id,
+        "args": args,
+        "kwargs": kwargs,
+        "callbacks": callbacks,
+        "errbacks": errbacks,
     }
     message.payload.update(options)
     message.content_type, message.content_encoding, message.body = dumps(
@@ -85,27 +88,29 @@ def task_message_from_sig(app, sig, utc=True, TaskMessage=TaskMessage):
         >>> amqp_client.basic_publish(m, exchange='ex', routing_key='rkey')
     """
     sig.freeze()
-    callbacks = sig.options.pop('link', None)
-    errbacks = sig.options.pop('link_error', None)
-    countdown = sig.options.pop('countdown', None)
+    callbacks = sig.options.pop("link", None)
+    errbacks = sig.options.pop("link_error", None)
+    countdown = sig.options.pop("countdown", None)
     if countdown:
         eta = app.now() + timedelta(seconds=countdown)
     else:
-        eta = sig.options.pop('eta', None)
+        eta = sig.options.pop("eta", None)
     if eta and isinstance(eta, datetime):
         eta = eta.isoformat()
-    expires = sig.options.pop('expires', None)
+    expires = sig.options.pop("expires", None)
     if expires and isinstance(expires, numbers.Real):
         expires = app.now() + timedelta(seconds=expires)
     if expires and isinstance(expires, datetime):
         expires = expires.isoformat()
     return TaskMessage(
-        sig.task, id=sig.id, args=sig.args,
+        sig.task,
+        id=sig.id,
+        args=sig.args,
         kwargs=sig.kwargs,
         callbacks=[dict(s) for s in callbacks] if callbacks else None,
         errbacks=[dict(s) for s in errbacks] if errbacks else None,
         eta=eta,
         expires=expires,
         utc=utc,
-        **sig.options
+        **sig.options,
     )

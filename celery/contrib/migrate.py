@@ -12,10 +12,20 @@ from celery.utils.nodenames import worker_direct
 from celery.utils.text import str_to_list
 
 __all__ = (
-    'StopFiltering', 'State', 'republish', 'migrate_task',
-    'migrate_tasks', 'move', 'task_id_eq', 'task_id_in',
-    'start_filter', 'move_task_by_id', 'move_by_idmap',
-    'move_by_taskmap', 'move_direct', 'move_direct_by_id',
+    "StopFiltering",
+    "State",
+    "republish",
+    "migrate_task",
+    "migrate_tasks",
+    "move",
+    "task_id_eq",
+    "task_id_in",
+    "start_filter",
+    "move_task_by_id",
+    "move_by_idmap",
+    "move_by_taskmap",
+    "move_direct",
+    "move_direct_by_id",
 )
 
 MOVING_PROGRESS_FMT = """\
@@ -38,61 +48,71 @@ class State:
     @property
     def strtotal(self):
         if not self.total_apx:
-            return '?'
+            return "?"
         return str(self.total_apx)
 
     def __repr__(self):
         if self.filtered:
-            return f'^{self.filtered}'
-        return f'{self.count}/{self.strtotal}'
+            return f"^{self.filtered}"
+        return f"{self.count}/{self.strtotal}"
 
 
-def republish(producer, message, exchange=None, routing_key=None,
-              remove_props=None):
+def republish(producer, message, exchange=None, routing_key=None, remove_props=None):
     """Republish message."""
     if not remove_props:
-        remove_props = ['application_headers', 'content_type',
-                        'content_encoding', 'headers']
+        remove_props = [
+            "application_headers",
+            "content_type",
+            "content_encoding",
+            "headers",
+        ]
     body = ensure_bytes(message.body)  # use raw message body.
-    info, headers, props = (message.delivery_info,
-                            message.headers, message.properties)
-    exchange = info['exchange'] if exchange is None else exchange
-    routing_key = info['routing_key'] if routing_key is None else routing_key
+    info, headers, props = (message.delivery_info, message.headers, message.properties)
+    exchange = info["exchange"] if exchange is None else exchange
+    routing_key = info["routing_key"] if routing_key is None else routing_key
     ctype, enc = message.content_type, message.content_encoding
     # remove compression header, as this will be inserted again
     # when the message is recompressed.
-    compression = headers.pop('compression', None)
+    compression = headers.pop("compression", None)
 
     for key in remove_props:
         props.pop(key, None)
 
-    producer.publish(ensure_bytes(body), exchange=exchange,
-                     routing_key=routing_key, compression=compression,
-                     headers=headers, content_type=ctype,
-                     content_encoding=enc, **props)
+    producer.publish(
+        ensure_bytes(body),
+        exchange=exchange,
+        routing_key=routing_key,
+        compression=compression,
+        headers=headers,
+        content_type=ctype,
+        content_encoding=enc,
+        **props,
+    )
 
 
 def migrate_task(producer, body_, message, queues=None):
     """Migrate single task message."""
     info = message.delivery_info
     queues = {} if queues is None else queues
-    republish(producer, message,
-              exchange=queues.get(info['exchange']),
-              routing_key=queues.get(info['routing_key']))
+    republish(
+        producer,
+        message,
+        exchange=queues.get(info["exchange"]),
+        routing_key=queues.get(info["routing_key"]),
+    )
 
 
 def filter_callback(callback, tasks):
-
     def filtered(body, message):
-        if tasks and body['task'] not in tasks:
+        if tasks and body["task"] not in tasks:
             return
 
         return callback(body, message)
+
     return filtered
 
 
-def migrate_tasks(source, dest, migrate=migrate_task, app=None,
-                  queues=None, **kwargs):
+def migrate_tasks(source, dest, migrate=migrate_task, app=None, queues=None, **kwargs):
     """Migrate tasks from one broker to another."""
     app = app_or_default(app)
     queues = prepare_queues(queues)
@@ -103,14 +123,14 @@ def migrate_tasks(source, dest, migrate=migrate_task, app=None,
         new_queue = queue(producer.channel)
         new_queue.name = queues.get(queue.name, queue.name)
         if new_queue.routing_key == queue.name:
-            new_queue.routing_key = queues.get(queue.name,
-                                               new_queue.routing_key)
+            new_queue.routing_key = queues.get(queue.name, new_queue.routing_key)
         if new_queue.exchange.name == queue.name:
             new_queue.exchange.name = queues.get(queue.name, queue.name)
         new_queue.declare()
 
-    return start_filter(app, source, migrate, queues=queues,
-                        on_declare_queue=on_declare_queue, **kwargs)
+    return start_filter(
+        app, source, migrate, queues=queues, on_declare_queue=on_declare_queue, **kwargs
+    )
 
 
 def _maybe_queue(app, q):
@@ -119,9 +139,18 @@ def _maybe_queue(app, q):
     return q
 
 
-def move(predicate, connection=None, exchange=None, routing_key=None,
-         source=None, app=None, callback=None, limit=None, transform=None,
-         **kwargs):
+def move(
+    predicate,
+    connection=None,
+    exchange=None,
+    routing_key=None,
+    source=None,
+    app=None,
+    callback=None,
+    limit=None,
+    transform=None,
+    **kwargs,
+):
     """Find tasks by filtering them and move the tasks to a new queue.
 
     Arguments:
@@ -197,8 +226,7 @@ def move(predicate, connection=None, exchange=None, routing_key=None,
                     ex, rk = ret.exchange.name, ret.routing_key
                 else:
                     ex, rk = expand_dest(ret, exchange, routing_key)
-                republish(producer, message,
-                          exchange=ex, routing_key=rk)
+                republish(producer, message, exchange=ex, routing_key=rk)
                 message.ack()
 
                 state.filtered += 1
@@ -220,32 +248,43 @@ def expand_dest(ret, exchange, routing_key):
 
 def task_id_eq(task_id, body, message):
     """Return true if task id equals task_id'."""
-    return body['id'] == task_id
+    return body["id"] == task_id
 
 
 def task_id_in(ids, body, message):
     """Return true if task id is member of set ids'."""
-    return body['id'] in ids
+    return body["id"] in ids
 
 
 def prepare_queues(queues):
     if isinstance(queues, str):
-        queues = queues.split(',')
+        queues = queues.split(",")
     if isinstance(queues, list):
-        queues = dict(tuple(islice(cycle(q.split(':')), None, 2))
-                      for q in queues)
+        queues = dict(tuple(islice(cycle(q.split(":")), None, 2)) for q in queues)
     if queues is None:
         queues = {}
     return queues
 
 
 class Filterer:
-
-    def __init__(self, app, conn, filter,
-                 limit=None, timeout=1.0,
-                 ack_messages=False, tasks=None, queues=None,
-                 callback=None, forever=False, on_declare_queue=None,
-                 consume_from=None, state=None, accept=None, **kwargs):
+    def __init__(
+        self,
+        app,
+        conn,
+        filter,
+        limit=None,
+        timeout=1.0,
+        ack_messages=False,
+        tasks=None,
+        queues=None,
+        callback=None,
+        forever=False,
+        on_declare_queue=None,
+        consume_from=None,
+        state=None,
+        accept=None,
+        **kwargs,
+    ):
         self.app = app
         self.conn = conn
         self.filter = filter
@@ -258,8 +297,7 @@ class Filterer:
         self.forever = forever
         self.on_declare_queue = on_declare_queue
         self.consume_from = [
-            _maybe_queue(self.app, q)
-            for q in consume_from or list(self.queues)
+            _maybe_queue(self.app, q) for q in consume_from or list(self.queues)
         ]
         self.state = state or State()
         self.accept = accept
@@ -268,9 +306,11 @@ class Filterer:
         # start migrating messages.
         with self.prepare_consumer(self.create_consumer()):
             try:
-                for _ in eventloop(self.conn,  # pragma: no cover
-                                   timeout=self.timeout,
-                                   ignore_timeouts=self.forever):
+                for _ in eventloop(
+                    self.conn,  # pragma: no cover
+                    timeout=self.timeout,
+                    ignore_timeouts=self.forever,
+                ):
                     pass
             except socket.timeout:
                 pass
@@ -321,21 +361,35 @@ class Filterer:
             if self.on_declare_queue is not None:
                 self.on_declare_queue(queue)
             try:
-                _, mcount, _ = queue(
-                    consumer.channel).queue_declare(passive=True)
+                _, mcount, _ = queue(consumer.channel).queue_declare(passive=True)
                 if mcount:
                     self.state.total_apx += mcount
             except self.conn.channel_errors:
                 pass
 
 
-def start_filter(app, conn, filter, limit=None, timeout=1.0,
-                 ack_messages=False, tasks=None, queues=None,
-                 callback=None, forever=False, on_declare_queue=None,
-                 consume_from=None, state=None, accept=None, **kwargs):
+def start_filter(
+    app,
+    conn,
+    filter,
+    limit=None,
+    timeout=1.0,
+    ack_messages=False,
+    tasks=None,
+    queues=None,
+    callback=None,
+    forever=False,
+    on_declare_queue=None,
+    consume_from=None,
+    state=None,
+    accept=None,
+    **kwargs,
+):
     """Filter tasks."""
     return Filterer(
-        app, conn, filter,
+        app,
+        conn,
+        filter,
         limit=limit,
         timeout=timeout,
         ack_messages=ack_messages,
@@ -347,7 +401,8 @@ def start_filter(app, conn, filter, limit=None, timeout=1.0,
         consume_from=consume_from,
         state=state,
         accept=accept,
-        **kwargs).start()
+        **kwargs,
+    ).start()
 
 
 def move_task_by_id(task_id, dest, **kwargs):
@@ -376,8 +431,9 @@ def move_by_idmap(map, **kwargs):
         ...     '3a2b140d-7db1-41ba-ac90-c36a0ef4ab1f': Queue('name')},
         ...   queues=['hipri'])
     """
+
     def task_id_in_map(body, message):
-        return map.get(message.properties['correlation_id'])
+        return map.get(message.properties["correlation_id"])
 
     # adding the limit means that we don't have to consume any more
     # when we've found everything.
@@ -395,8 +451,9 @@ def move_by_taskmap(map, **kwargs):
         ...     'tasks.mul': Queue('name'),
         ... })
     """
+
     def task_name_in_map(body, message):
-        return map.get(body['task'])  # <- name of task
+        return map.get(body["task"])  # <- name of task
 
     return move(task_name_in_map, **kwargs)
 

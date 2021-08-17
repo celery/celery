@@ -8,19 +8,19 @@ from celery.result import _set_task_join_will_block, allow_join_result
 from celery.utils.dispatch import Signal
 from celery.utils.nodenames import anon_nodename
 
-WORKER_LOGLEVEL = os.environ.get('WORKER_LOGLEVEL', 'error')
+WORKER_LOGLEVEL = os.environ.get("WORKER_LOGLEVEL", "error")
 
 test_worker_starting = Signal(
-    name='test_worker_starting',
+    name="test_worker_starting",
     providing_args={},
 )
 test_worker_started = Signal(
-    name='test_worker_started',
-    providing_args={'worker', 'consumer'},
+    name="test_worker_started",
+    providing_args={"worker", "consumer"},
 )
 test_worker_stopped = Signal(
-    name='test_worker_stopped',
-    providing_args={'worker'},
+    name="test_worker_stopped",
+    providing_args={"worker"},
 )
 
 
@@ -36,8 +36,7 @@ class TestWorkController(worker.WorkController):
         # type: (celery.worker.consumer.Consumer) -> None
         """Callback called when the Consumer blueprint is fully started."""
         self._on_started.set()
-        test_worker_started.send(
-            sender=self.app, worker=self, consumer=consumer)
+        test_worker_started.send(sender=self.app, worker=self, consumer=consumer)
 
     def ensure_started(self):
         # type: () -> None
@@ -54,7 +53,7 @@ class TestWorkController(worker.WorkController):
 def start_worker(
     app,  # type: Celery
     concurrency=1,  # type: int
-    pool='solo',  # type: str
+    pool="solo",  # type: str
     loglevel=WORKER_LOGLEVEL,  # type: Union[str, int]
     logfile=None,  # type: str
     perform_ping_check=True,  # type: bool
@@ -69,31 +68,36 @@ def start_worker(
     """
     test_worker_starting.send(sender=app)
 
-    with _start_worker_thread(app,
-                              concurrency=concurrency,
-                              pool=pool,
-                              loglevel=loglevel,
-                              logfile=logfile,
-                              perform_ping_check=perform_ping_check,
-                              **kwargs) as worker:
+    with _start_worker_thread(
+        app,
+        concurrency=concurrency,
+        pool=pool,
+        loglevel=loglevel,
+        logfile=logfile,
+        perform_ping_check=perform_ping_check,
+        **kwargs
+    ) as worker:
         if perform_ping_check:
             from .tasks import ping
+
             with allow_join_result():
-                assert ping.delay().get(timeout=ping_task_timeout) == 'pong'
+                assert ping.delay().get(timeout=ping_task_timeout) == "pong"
 
         yield worker
     test_worker_stopped.send(sender=app, worker=worker)
 
 
 @contextmanager
-def _start_worker_thread(app,
-                         concurrency=1,
-                         pool='solo',
-                         loglevel=WORKER_LOGLEVEL,
-                         logfile=None,
-                         WorkController=TestWorkController,
-                         perform_ping_check=True,
-                         **kwargs):
+def _start_worker_thread(
+    app,
+    concurrency=1,
+    pool="solo",
+    loglevel=WORKER_LOGLEVEL,
+    logfile=None,
+    WorkController=TestWorkController,
+    perform_ping_check=True,
+    **kwargs
+):
     # type: (Celery, int, str, Union[str, int], str, Any, **Any) -> Iterable
     """Start Celery worker in a thread.
 
@@ -102,9 +106,9 @@ def _start_worker_thread(app,
     """
     setup_app_for_worker(app, loglevel, logfile)
     if perform_ping_check:
-        assert 'celery.ping' in app.tasks
+        assert "celery.ping" in app.tasks
     # Make sure we can connect to the broker
-    with app.connection(hostname=os.environ.get('TEST_BROKER')) as conn:
+    with app.connection(hostname=os.environ.get("TEST_BROKER")) as conn:
         conn.default_channel.queue_declare
 
     worker = WorkController(
@@ -119,7 +123,8 @@ def _start_worker_thread(app,
         without_heartbeat=True,
         without_mingle=True,
         without_gossip=True,
-        **kwargs)
+        **kwargs
+    )
 
     t = threading.Thread(target=worker.start)
     t.start()
@@ -129,18 +134,16 @@ def _start_worker_thread(app,
     yield worker
 
     from celery.worker import state
+
     state.should_terminate = 0
     t.join(10)
     state.should_terminate = None
 
 
 @contextmanager
-def _start_worker_process(app,
-                          concurrency=1,
-                          pool='solo',
-                          loglevel=WORKER_LOGLEVEL,
-                          logfile=None,
-                          **kwargs):
+def _start_worker_process(
+    app, concurrency=1, pool="solo", loglevel=WORKER_LOGLEVEL, logfile=None, **kwargs
+):
     # type (Celery, int, str, Union[int, str], str, **Any) -> Iterable
     """Start worker in separate process.
 
@@ -150,7 +153,7 @@ def _start_worker_process(app,
     from celery.apps.multi import Cluster, Node
 
     app.set_current()
-    cluster = Cluster([Node('testworker1@%h')])
+    cluster = Cluster([Node("testworker1@%h")])
     cluster.start()
     yield
     cluster.stopwait()

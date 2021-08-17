@@ -17,7 +17,6 @@ from celery.worker.consumer.tasks import Tasks
 
 
 class test_Consumer:
-
     def get_consumer(self, no_hub=False, **kwargs):
         consumer = Consumer(
             on_task_request=Mock(),
@@ -29,10 +28,13 @@ class test_Consumer:
             hub=None if no_hub else Mock(),
             **kwargs
         )
-        consumer.blueprint = Mock(name='blueprint')
-        consumer._restart_state = Mock(name='_restart_state')
+        consumer.blueprint = Mock(name="blueprint")
+        consumer._restart_state = Mock(name="_restart_state")
         consumer.connection = _amqp_connection()
-        consumer.connection_errors = (socket.error, OSError,)
+        consumer.connection_errors = (
+            socket.error,
+            OSError,
+        )
         consumer.conninfo = consumer.connection
         return consumer
 
@@ -41,7 +43,7 @@ class test_Consumer:
 
     def test_taskbuckets_defaultdict(self):
         c = self.get_consumer()
-        assert c.task_buckets['fooxasdwx.wewe'] is None
+        assert c.task_buckets["fooxasdwx.wewe"] is None
 
     def test_sets_heartbeat(self):
         c = self.get_consumer(amqheartbeat=10)
@@ -51,24 +53,24 @@ class test_Consumer:
         assert c.amqheartbeat == 20
 
     def test_gevent_bug_disables_connection_timeout(self):
-        with patch('celery.worker.consumer.consumer._detect_environment') as d:
-            d.return_value = 'gevent'
+        with patch("celery.worker.consumer.consumer._detect_environment") as d:
+            d.return_value = "gevent"
             self.app.conf.broker_connection_timeout = 33.33
             self.get_consumer()
             assert self.app.conf.broker_connection_timeout is None
 
     def test_limit_moved_to_pool(self):
-        with patch('celery.worker.consumer.consumer.task_reserved') as reserv:
+        with patch("celery.worker.consumer.consumer.task_reserved") as reserv:
             c = self.get_consumer()
-            c.on_task_request = Mock(name='on_task_request')
-            request = Mock(name='request')
+            c.on_task_request = Mock(name="on_task_request")
+            request = Mock(name="request")
             c._limit_move_to_pool(request)
             reserv.assert_called_with(request)
             c.on_task_request.assert_called_with(request)
 
     def test_update_prefetch_count(self):
         c = self.get_consumer()
-        c._update_qos_eventually = Mock(name='update_qos')
+        c._update_qos_eventually = Mock(name="update_qos")
         c.initial_prefetch_count = None
         c.pool.num_processes = None
         c.prefetch_multiplier = 10
@@ -83,7 +85,7 @@ class test_Consumer:
         c = self.get_consumer()
         c.event_dispatcher = None
         c._flush_events()
-        c.event_dispatcher = Mock(name='evd')
+        c.event_dispatcher = Mock(name="evd")
         c._flush_events()
         c.event_dispatcher.flush.assert_called_with()
 
@@ -91,7 +93,7 @@ class test_Consumer:
         c = self.get_consumer()
         c.hub = None
         c.on_send_event_buffered()
-        c.hub = Mock(name='hub')
+        c.hub = Mock(name="hub")
         c.on_send_event_buffered()
         c.hub._ready.add.assert_called_with(c._flush_events)
 
@@ -106,7 +108,7 @@ class test_Consumer:
         bucket.contents = deque()
 
         with patch(
-            'celery.worker.consumer.consumer.Consumer._limit_move_to_pool'
+            "celery.worker.consumer.consumer.Consumer._limit_move_to_pool"
         ) as reserv:
             bucket.contents.append((request, 3))
             c._schedule_bucket_request(bucket)
@@ -122,7 +124,9 @@ class test_Consumer:
         assert c._limit_order == limit_order + 1
         bucket.can_consume.assert_called_with(4)
         c.timer.call_after.assert_called_with(
-            3.33, c._schedule_bucket_request, (bucket,),
+            3.33,
+            c._schedule_bucket_request,
+            (bucket,),
             priority=c._limit_order,
         )
         bucket.expected_time.assert_called_with(4)
@@ -139,7 +143,7 @@ class test_Consumer:
         request = Mock()
 
         with patch(
-            'celery.worker.consumer.consumer.Consumer._schedule_bucket_request'
+            "celery.worker.consumer.consumer.Consumer._schedule_bucket_request"
         ) as reserv:
             c._limit_task(request, bucket, 1)
             bucket.add.assert_called_with((request, 1))
@@ -152,7 +156,7 @@ class test_Consumer:
         request = Mock()
 
         with patch(
-            'celery.worker.consumer.consumer.Consumer._schedule_bucket_request'
+            "celery.worker.consumer.consumer.Consumer._schedule_bucket_request"
         ) as reserv:
             c._limit_post_eta(request, bucket, 1)
             c.qos.decrement_eventually.assert_called_with()
@@ -173,10 +177,11 @@ class test_Consumer:
         def se(*args, **kwargs):
             c.blueprint.state = CLOSE
             raise RestartFreqExceeded()
+
         c._restart_state.step.side_effect = se
         c.blueprint.start.side_effect = socket.error()
 
-        with patch('celery.worker.consumer.consumer.sleep') as sleep:
+        with patch("celery.worker.consumer.consumer.sleep") as sleep:
             c.start()
             sleep.assert_called_with(1)
 
@@ -189,7 +194,7 @@ class test_Consumer:
             c.blueprint.state = CLOSE
 
         c.blueprint.start.side_effect = bp_start
-        with patch('celery.worker.consumer.consumer.sleep'):
+        with patch("celery.worker.consumer.consumer.sleep"):
             c.start()
 
         c.blueprint.start.assert_called_once_with(c)
@@ -204,7 +209,7 @@ class test_Consumer:
 
         c.blueprint.start.side_effect = bp_start
 
-        with patch('celery.worker.consumer.consumer.sleep'):
+        with patch("celery.worker.consumer.consumer.sleep"):
             c.start()
 
         c.blueprint.start.assert_called_once_with(c)
@@ -219,6 +224,7 @@ class test_Consumer:
     def _closer(self, c):
         def se(*args, **kwargs):
             c.blueprint.state = CLOSE
+
         return se
 
     def test_collects_at_restart(self):
@@ -231,10 +237,10 @@ class test_Consumer:
 
     def test_register_with_event_loop(self):
         c = self.get_consumer()
-        c.register_with_event_loop(Mock(name='loop'))
+        c.register_with_event_loop(Mock(name="loop"))
 
     def test_on_close_clears_semaphore_timer_and_reqs(self):
-        with patch('celery.worker.consumer.consumer.reserved_requests') as res:
+        with patch("celery.worker.consumer.consumer.reserved_requests") as res:
             c = self.get_consumer()
             c.on_close()
             c.controller.semaphore.clear.assert_called_with()
@@ -256,7 +262,7 @@ class test_Consumer:
         errback = conn.ensure_connection.call_args[0][0]
         errback(Mock(), 0)
 
-    @patch('celery.worker.consumer.consumer.error')
+    @patch("celery.worker.consumer.consumer.error")
     def test_connect_error_handler_progress(self, error):
         self.app.conf.broker_connection_retry = True
         self.app.conf.broker_connection_max_retries = 3
@@ -266,21 +272,20 @@ class test_Consumer:
         assert c.connect()
         errback = conn.ensure_connection.call_args[0][0]
         errback(Mock(), 2)
-        assert error.call_args[0][3] == 'Trying again in 2.00 seconds... (1/3)'
+        assert error.call_args[0][3] == "Trying again in 2.00 seconds... (1/3)"
         errback(Mock(), 4)
-        assert error.call_args[0][3] == 'Trying again in 4.00 seconds... (2/3)'
+        assert error.call_args[0][3] == "Trying again in 4.00 seconds... (2/3)"
         errback(Mock(), 6)
-        assert error.call_args[0][3] == 'Trying again in 6.00 seconds... (3/3)'
+        assert error.call_args[0][3] == "Trying again in 6.00 seconds... (3/3)"
 
 
 class test_Heart:
-
     def test_start(self):
         c = Mock()
         c.timer = Mock()
         c.event_dispatcher = Mock()
 
-        with patch('celery.worker.heartbeat.Heart') as hcls:
+        with patch("celery.worker.heartbeat.Heart") as hcls:
             h = Heart(c)
             assert h.enabled
             assert h.heartbeat_interval is None
@@ -288,8 +293,7 @@ class test_Heart:
 
             h.start(c)
             assert c.heart
-            hcls.assert_called_with(c.timer, c.event_dispatcher,
-                                    h.heartbeat_interval)
+            hcls.assert_called_with(c.timer, c.event_dispatcher, h.heartbeat_interval)
             c.heart.start.assert_called_with()
 
     def test_start_heartbeat_interval(self):
@@ -297,7 +301,7 @@ class test_Heart:
         c.timer = Mock()
         c.event_dispatcher = Mock()
 
-        with patch('celery.worker.heartbeat.Heart') as hcls:
+        with patch("celery.worker.heartbeat.Heart") as hcls:
             h = Heart(c, False, 20)
             assert h.enabled
             assert h.heartbeat_interval == 20
@@ -305,13 +309,11 @@ class test_Heart:
 
             h.start(c)
             assert c.heart
-            hcls.assert_called_with(c.timer, c.event_dispatcher,
-                                    h.heartbeat_interval)
+            hcls.assert_called_with(c.timer, c.event_dispatcher, h.heartbeat_interval)
             c.heart.start.assert_called_with()
 
 
 class test_Tasks:
-
     def test_stop(self):
         c = Mock()
         tasks = Tasks(c)
@@ -328,18 +330,16 @@ class test_Tasks:
 
 
 class test_Agent:
-
     def test_start(self):
         c = Mock()
         agent = Agent(c)
         agent.instantiate = Mock()
-        agent.agent_cls = 'foo:Agent'
+        agent.agent_cls = "foo:Agent"
         assert agent.create(c) is not None
         agent.instantiate.assert_called_with(agent.agent_cls, c.connection)
 
 
 class test_Mingle:
-
     def test_start_no_replies(self):
         c = Mock()
         c.app.connection_for_read = _amqp_connection()
@@ -356,22 +356,22 @@ class test_Mingle:
 
         Aig = LimitedSet()
         Big = LimitedSet()
-        Aig.add('Aig-1')
-        Aig.add('Aig-2')
-        Big.add('Big-1')
+        Aig.add("Aig-1")
+        Aig.add("Aig-2")
+        Big.add("Big-1")
 
         I = c.app.control.inspect.return_value = Mock()
         I.hello.return_value = {
-            'A@example.com': {
-                'clock': 312,
-                'revoked': Aig._data,
+            "A@example.com": {
+                "clock": 312,
+                "revoked": Aig._data,
             },
-            'B@example.com': {
-                'clock': 29,
-                'revoked': Big._data,
+            "B@example.com": {
+                "clock": 29,
+                "revoked": Big._data,
             },
-            'C@example.com': {
-                'error': 'unknown method',
+            "C@example.com": {
+                "error": "unknown method",
             },
         }
 
@@ -379,23 +379,26 @@ class test_Mingle:
 
         mingle.start(c)
         I.hello.assert_called_with(c.hostname, our_revoked._data)
-        c.app.clock.adjust.assert_has_calls([
-            call(312), call(29),
-        ], any_order=True)
-        assert 'Aig-1' in our_revoked
-        assert 'Aig-2' in our_revoked
-        assert 'Big-1' in our_revoked
+        c.app.clock.adjust.assert_has_calls(
+            [
+                call(312),
+                call(29),
+            ],
+            any_order=True,
+        )
+        assert "Aig-1" in our_revoked
+        assert "Aig-2" in our_revoked
+        assert "Big-1" in our_revoked
 
 
 def _amqp_connection():
-    connection = ContextMock(name='Connection')
-    connection.return_value = ContextMock(name='connection')
-    connection.return_value.transport.driver_type = 'amqp'
+    connection = ContextMock(name="Connection")
+    connection.return_value = ContextMock(name="connection")
+    connection.return_value.transport.driver_type = "amqp"
     return connection
 
 
 class test_Gossip:
-
     def test_init(self):
         c = self.Consumer()
         c.app.connection_for_read = _amqp_connection()
@@ -407,16 +410,16 @@ class test_Gossip:
         c = self.Consumer()
         c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
-        on_node_join = Mock(name='on_node_join')
-        on_node_join2 = Mock(name='on_node_join2')
-        on_node_leave = Mock(name='on_node_leave')
-        on_node_lost = Mock(name='on.node_lost')
+        on_node_join = Mock(name="on_node_join")
+        on_node_join2 = Mock(name="on_node_join2")
+        on_node_leave = Mock(name="on_node_leave")
+        on_node_lost = Mock(name="on.node_lost")
         g.on.node_join.add(on_node_join)
         g.on.node_join.add(on_node_join2)
         g.on.node_leave.add(on_node_leave)
         g.on.node_lost.add(on_node_lost)
 
-        worker = Mock(name='worker')
+        worker = Mock(name="worker")
         g.on_node_join(worker)
         on_node_join.assert_called_with(worker)
         on_node_join2.assert_called_with(worker)
@@ -430,10 +433,14 @@ class test_Gossip:
         c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         g.start(c)
-        g.election('id', 'topic', 'action')
-        assert g.consensus_replies['id'] == []
+        g.election("id", "topic", "action")
+        assert g.consensus_replies["id"] == []
         g.dispatcher.send.assert_called_with(
-            'worker-elect', id='id', topic='topic', cver=1, action='action',
+            "worker-elect",
+            id="id",
+            topic="topic",
+            cver=1,
+            action="action",
         )
 
     def test_call_task(self):
@@ -441,28 +448,35 @@ class test_Gossip:
         c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         g.start(c)
-        signature = g.app.signature = Mock(name='app.signature')
+        signature = g.app.signature = Mock(name="app.signature")
         task = Mock()
         g.call_task(task)
         signature.assert_called_with(task)
         signature.return_value.apply_async.assert_called_with()
 
         signature.return_value.apply_async.side_effect = MemoryError()
-        with patch('celery.worker.consumer.gossip.logger') as logger:
+        with patch("celery.worker.consumer.gossip.logger") as logger:
             g.call_task(task)
             logger.exception.assert_called()
 
-    def Event(self, id='id', clock=312,
-              hostname='foo@example.com', pid=4312,
-              topic='topic', action='action', cver=1):
+    def Event(
+        self,
+        id="id",
+        clock=312,
+        hostname="foo@example.com",
+        pid=4312,
+        topic="topic",
+        action="action",
+        cver=1,
+    ):
         return {
-            'id': id,
-            'clock': clock,
-            'hostname': hostname,
-            'pid': pid,
-            'topic': topic,
-            'action': action,
-            'cver': cver,
+            "id": id,
+            "clock": clock,
+            "hostname": hostname,
+            "pid": pid,
+            "topic": topic,
+            "action": action,
+            "cver": cver,
         }
 
     def test_on_elect(self):
@@ -471,18 +485,18 @@ class test_Gossip:
         g = Gossip(c)
         g.start(c)
 
-        event = self.Event('id1')
+        event = self.Event("id1")
         g.on_elect(event)
-        in_heap = g.consensus_requests['id1']
+        in_heap = g.consensus_requests["id1"]
         assert in_heap
-        g.dispatcher.send.assert_called_with('worker-elect-ack', id='id1')
+        g.dispatcher.send.assert_called_with("worker-elect-ack", id="id1")
 
-        event.pop('clock')
-        with patch('celery.worker.consumer.gossip.logger') as logger:
+        event.pop("clock")
+        with patch("celery.worker.consumer.gossip.logger") as logger:
             g.on_elect(event)
             logger.exception.assert_called()
 
-    def Consumer(self, hostname='foo@x.com', pid=4312):
+    def Consumer(self, hostname="foo@x.com", pid=4312):
         c = Mock()
         c.app.connection = _amqp_connection()
         c.hostname = hostname
@@ -492,53 +506,55 @@ class test_Gossip:
     def setup_election(self, g, c):
         g.start(c)
         g.clock = self.app.clock
-        assert 'idx' not in g.consensus_replies
-        assert g.on_elect_ack({'id': 'idx'}) is None
+        assert "idx" not in g.consensus_replies
+        assert g.on_elect_ack({"id": "idx"}) is None
 
         g.state.alive_workers.return_value = [
-            'foo@x.com', 'bar@x.com', 'baz@x.com',
+            "foo@x.com",
+            "bar@x.com",
+            "baz@x.com",
         ]
-        g.consensus_replies['id1'] = []
-        g.consensus_requests['id1'] = []
-        e1 = self.Event('id1', 1, 'foo@x.com')
-        e2 = self.Event('id1', 2, 'bar@x.com')
-        e3 = self.Event('id1', 3, 'baz@x.com')
+        g.consensus_replies["id1"] = []
+        g.consensus_requests["id1"] = []
+        e1 = self.Event("id1", 1, "foo@x.com")
+        e2 = self.Event("id1", 2, "bar@x.com")
+        e3 = self.Event("id1", 3, "baz@x.com")
         g.on_elect(e1)
         g.on_elect(e2)
         g.on_elect(e3)
-        assert len(g.consensus_requests['id1']) == 3
+        assert len(g.consensus_requests["id1"]) == 3
 
-        with patch('celery.worker.consumer.gossip.info'):
+        with patch("celery.worker.consumer.gossip.info"):
             g.on_elect_ack(e1)
-            assert len(g.consensus_replies['id1']) == 1
+            assert len(g.consensus_replies["id1"]) == 1
             g.on_elect_ack(e2)
-            assert len(g.consensus_replies['id1']) == 2
+            assert len(g.consensus_replies["id1"]) == 2
             g.on_elect_ack(e3)
             with pytest.raises(KeyError):
-                g.consensus_replies['id1']
+                g.consensus_replies["id1"]
 
     def test_on_elect_ack_win(self):
-        c = self.Consumer(hostname='foo@x.com')  # I will win
+        c = self.Consumer(hostname="foo@x.com")  # I will win
         c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
-        handler = g.election_handlers['topic'] = Mock()
+        handler = g.election_handlers["topic"] = Mock()
         self.setup_election(g, c)
-        handler.assert_called_with('action')
+        handler.assert_called_with("action")
 
     def test_on_elect_ack_lose(self):
-        c = self.Consumer(hostname='bar@x.com')  # I will lose
+        c = self.Consumer(hostname="bar@x.com")  # I will lose
         c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
-        handler = g.election_handlers['topic'] = Mock()
+        handler = g.election_handlers["topic"] = Mock()
         self.setup_election(g, c)
         handler.assert_not_called()
 
     def test_on_elect_ack_win_but_no_action(self):
-        c = self.Consumer(hostname='foo@x.com')  # I will win
+        c = self.Consumer(hostname="foo@x.com")  # I will win
         c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         g.election_handlers = {}
-        with patch('celery.worker.consumer.gossip.logger') as logger:
+        with patch("celery.worker.consumer.gossip.logger") as logger:
             self.setup_election(g, c)
             logger.exception.assert_called()
 
@@ -546,25 +562,25 @@ class test_Gossip:
         c = self.Consumer()
         c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
-        with patch('celery.worker.consumer.gossip.debug') as debug:
+        with patch("celery.worker.consumer.gossip.debug") as debug:
             g.on_node_join(c)
-            debug.assert_called_with('%s joined the party', 'foo@x.com')
+            debug.assert_called_with("%s joined the party", "foo@x.com")
 
     def test_on_node_leave(self):
         c = self.Consumer()
         c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
-        with patch('celery.worker.consumer.gossip.debug') as debug:
+        with patch("celery.worker.consumer.gossip.debug") as debug:
             g.on_node_leave(c)
-            debug.assert_called_with('%s left', 'foo@x.com')
+            debug.assert_called_with("%s left", "foo@x.com")
 
     def test_on_node_lost(self):
         c = self.Consumer()
         c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
-        with patch('celery.worker.consumer.gossip.info') as info:
+        with patch("celery.worker.consumer.gossip.info") as info:
             g.on_node_lost(c)
-            info.assert_called_with('missed heartbeat from %s', 'foo@x.com')
+            info.assert_called_with("missed heartbeat from %s", "foo@x.com")
 
     def test_register_timer(self):
         c = self.Consumer()
@@ -583,25 +599,25 @@ class test_Gossip:
         g.on_node_lost = Mock()
         state = g.state = Mock()
         worker = Mock()
-        state.workers = {'foo': worker}
+        state.workers = {"foo": worker}
         worker.alive = True
-        worker.hostname = 'foo'
+        worker.hostname = "foo"
         g.periodic()
 
         worker.alive = False
         g.periodic()
         g.on_node_lost.assert_called_with(worker)
         with pytest.raises(KeyError):
-            state.workers['foo']
+            state.workers["foo"]
 
     def test_on_message__task(self):
         c = self.Consumer()
         c.app.connection_for_read = _amqp_connection()
         g = Gossip(c)
         assert g.enabled
-        message = Mock(name='message')
-        message.delivery_info = {'routing_key': 'task.failed'}
-        g.on_message(Mock(name='prepare'), message)
+        message = Mock(name="message")
+        message.delivery_info = {"routing_key": "task.failed"}
+        g.on_message(Mock(name="prepare"), message)
 
     def test_on_message(self):
         c = self.Consumer()
@@ -609,7 +625,7 @@ class test_Gossip:
         g = Gossip(c)
         assert g.enabled
         prepare = Mock()
-        prepare.return_value = 'worker-online', {}
+        prepare.return_value = "worker-online", {}
         c.app.events.State.assert_called_with(
             on_node_join=g.on_node_join,
             on_node_leave=g.on_node_leave,
@@ -621,25 +637,25 @@ class test_Gossip:
         g.on_node_leave = Mock()
         g.update_state.return_value = worker, 1
         message = Mock()
-        message.delivery_info = {'routing_key': 'worker-online'}
-        message.headers = {'hostname': 'other'}
+        message.delivery_info = {"routing_key": "worker-online"}
+        message.headers = {"hostname": "other"}
 
-        handler = g.event_handlers['worker-online'] = Mock()
+        handler = g.event_handlers["worker-online"] = Mock()
         g.on_message(prepare, message)
         handler.assert_called_with(message.payload)
         g.event_handlers = {}
 
         g.on_message(prepare, message)
 
-        message.delivery_info = {'routing_key': 'worker-offline'}
-        prepare.return_value = 'worker-offline', {}
+        message.delivery_info = {"routing_key": "worker-offline"}
+        prepare.return_value = "worker-offline", {}
         g.on_message(prepare, message)
 
-        message.delivery_info = {'routing_key': 'worker-baz'}
-        prepare.return_value = 'worker-baz', {}
+        message.delivery_info = {"routing_key": "worker-baz"}
+        prepare.return_value = "worker-baz", {}
         g.update_state.return_value = worker, 0
         g.on_message(prepare, message)
 
-        message.headers = {'hostname': g.hostname}
+        message.headers = {"hostname": g.hostname}
         g.on_message(prepare, message)
         g.clock.forward.assert_called_with()

@@ -8,12 +8,12 @@ from celery.utils.serialization import strtobool
 
 from .base import BaseLoader
 
-__all__ = ('Loader', 'DEFAULT_CONFIG_MODULE')
+__all__ = ("Loader", "DEFAULT_CONFIG_MODULE")
 
-DEFAULT_CONFIG_MODULE = 'celeryconfig'
+DEFAULT_CONFIG_MODULE = "celeryconfig"
 
 #: Warns if configuration file is missing if :envvar:`C_WNOCONF` is set.
-C_WNOCONF = strtobool(os.environ.get('C_WNOCONF', False))
+C_WNOCONF = strtobool(os.environ.get("C_WNOCONF", False))
 
 
 class Loader(BaseLoader):
@@ -24,18 +24,20 @@ class Loader(BaseLoader):
 
     def read_configuration(self, fail_silently=True):
         """Read configuration from :file:`celeryconfig.py`."""
-        configname = os.environ.get('CELERY_CONFIG_MODULE',
-                                    DEFAULT_CONFIG_MODULE)
+        configname = os.environ.get("CELERY_CONFIG_MODULE", DEFAULT_CONFIG_MODULE)
         try:
             usercfg = self._import_config_module(configname)
         except ImportError:
             if not fail_silently:
                 raise
             # billiard sets this if forked using execv
-            if C_WNOCONF and not os.environ.get('FORKED_BY_MULTIPROCESSING'):
-                warnings.warn(NotConfigured(
-                    'No {module} module found! Please make sure it exists and '
-                    'is available to Python.'.format(module=configname)))
+            if C_WNOCONF and not os.environ.get("FORKED_BY_MULTIPROCESSING"):
+                warnings.warn(
+                    NotConfigured(
+                        "No {module} module found! Please make sure it exists and "
+                        "is available to Python.".format(module=configname)
+                    )
+                )
             return self.setup_settings({})
         else:
             self.configured = True

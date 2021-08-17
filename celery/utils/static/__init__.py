@@ -11,4 +11,4 @@ def get_file(*args):
 def logo():
     # type: () -> bytes
     """Celery logo image."""
-    return get_file('celery_128.png')
+    return get_file("celery_128.png")

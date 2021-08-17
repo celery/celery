@@ -11,7 +11,7 @@ try:
 except ImportError:
     pycouchdb = None  # noqa
 
-__all__ = ('CouchBackend',)
+__all__ = ("CouchBackend",)
 
 ERR_LIB_MISSING = """\
 You need to install the pycouchdb library to use the CouchDB result backend\
@@ -26,9 +26,9 @@ class CouchBackend(KeyValueStoreBackend):
             if module :pypi:`pycouchdb` is not available.
     """
 
-    container = 'default'
-    scheme = 'http'
-    host = 'localhost'
+    container = "default"
+    scheme = "http"
+    host = "localhost"
     port = 5984
     username = None
     password = None
@@ -43,7 +43,7 @@ class CouchBackend(KeyValueStoreBackend):
         uscheme = uhost = uport = uname = upass = ucontainer = None
         if url:
             _, uhost, uport, uname, upass, ucontainer, _ = _parse_url(url)  # noqa
-            ucontainer = ucontainer.strip('/') if ucontainer else None
+            ucontainer = ucontainer.strip("/") if ucontainer else None
 
         self.scheme = uscheme or self.scheme
         self.host = uhost or self.host
@@ -57,10 +57,10 @@ class CouchBackend(KeyValueStoreBackend):
     def _get_connection(self):
         """Connect to the CouchDB server."""
         if self.username and self.password:
-            conn_string = f'{self.scheme}://{self.username}:{self.password}@{self.host}:{self.port}'
-            server = pycouchdb.Server(conn_string, authmethod='basic')
+            conn_string = f"{self.scheme}://{self.username}:{self.password}@{self.host}:{self.port}"
+            server = pycouchdb.Server(conn_string, authmethod="basic")
         else:
-            conn_string = f'{self.scheme}://{self.host}:{self.port}'
+            conn_string = f"{self.scheme}://{self.host}:{self.port}"
             server = pycouchdb.Server(conn_string)
 
         try:
@@ -76,19 +76,19 @@ class CouchBackend(KeyValueStoreBackend):
 
     def get(self, key):
         try:
-            return self.connection.get(key)['value']
+            return self.connection.get(key)["value"]
         except pycouchdb.exceptions.NotFound:
             return None
 
     def set(self, key, value):
         key = bytes_to_str(key)
-        data = {'_id': key, 'value': value}
+        data = {"_id": key, "value": value}
         try:
             self.connection.save(data)
         except pycouchdb.exceptions.Conflict:
             # document already exists, update it
             data = self.connection.get(key)
-            data['value'] = value
+            data["value"] = value
             self.connection.save(data)
 
     def mget(self, keys):

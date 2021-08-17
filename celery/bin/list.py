@@ -28,11 +28,12 @@ def bindings(ctx):
         try:
             bindings = conn.manager.get_bindings()
         except NotImplementedError:
-            raise click.UsageError('Your transport cannot list bindings.')
+            raise click.UsageError("Your transport cannot list bindings.")
 
         def fmt(q, e, r):
-            ctx.obj.echo(f'{q:<28} {e:<28} {r}')
-        fmt('Queue', 'Exchange', 'Routing Key')
-        fmt('-' * 16, '-' * 16, '-' * 16)
+            ctx.obj.echo(f"{q:<28} {e:<28} {r}")
+
+        fmt("Queue", "Exchange", "Routing Key")
+        fmt("-" * 16, "-" * 16, "-" * 16)
         for b in bindings:
-            fmt(b['destination'], b['source'], b['routing_key'])
+            fmt(b["destination"], b["source"], b["routing_key"])

@@ -1,22 +1,25 @@
 """The ``celery result`` program, used to inspect task results."""
 import click
 
-from celery.bin.base import (CeleryCommand, CeleryOption,
-                             handle_preload_options)
+from celery.bin.base import CeleryCommand, CeleryOption, handle_preload_options
 
 
 @click.command(cls=CeleryCommand)
-@click.argument('task_id')
-@click.option('-t',
-              '--task',
-              cls=CeleryOption,
-              help_group='Result Options',
-              help="Name of task (if custom backend).")
-@click.option('--traceback',
-              cls=CeleryOption,
-              is_flag=True,
-              help_group='Result Options',
-              help="Show traceback instead.")
+@click.argument("task_id")
+@click.option(
+    "-t",
+    "--task",
+    cls=CeleryOption,
+    help_group="Result Options",
+    help="Name of task (if custom backend).",
+)
+@click.option(
+    "--traceback",
+    cls=CeleryOption,
+    is_flag=True,
+    help_group="Result Options",
+    help="Show traceback instead.",
+)
 @click.pass_context
 @handle_preload_options
 def result(ctx, task_id, task, traceback):

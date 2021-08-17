@@ -12,18 +12,17 @@ from celery.exceptions import SecurityError
 
 from .utils import reraise_errors
 
-__all__ = ('Certificate', 'CertStore', 'FSCertStore')
+__all__ = ("Certificate", "CertStore", "FSCertStore")
 
 
 class Certificate:
     """X.509 certificate."""
 
     def __init__(self, cert):
-        with reraise_errors(
-            'Invalid certificate: {0!r}', errors=(ValueError,)
-        ):
+        with reraise_errors("Invalid certificate: {0!r}", errors=(ValueError,)):
             self._cert = load_pem_x509_certificate(
-                ensure_bytes(cert), backend=default_backend())
+                ensure_bytes(cert), backend=default_backend()
+            )
 
     def has_expired(self):
         """Check if the certificate has expired."""
@@ -39,22 +38,21 @@ class Certificate:
 
     def get_issuer(self):
         """Return issuer (CA) as a string."""
-        return ' '.join(x.value for x in self._cert.issuer)
+        return " ".join(x.value for x in self._cert.issuer)
 
     def get_id(self):
         """Serial number/issuer pair uniquely identifies a certificate."""
-        return f'{self.get_issuer()} {self.get_serial_number()}'
+        return f"{self.get_issuer()} {self.get_serial_number()}"
 
     def verify(self, data, signature, digest):
         """Verify signature for string containing data."""
-        with reraise_errors('Bad signature: {0!r}'):
+        with reraise_errors("Bad signature: {0!r}"):
 
             padd = padding.PSS(
-                mgf=padding.MGF1(digest),
-                salt_length=padding.PSS.MAX_LENGTH)
+                mgf=padding.MGF1(digest), salt_length=padding.PSS.MAX_LENGTH
+            )
 
-            self.get_pubkey().verify(signature,
-                                     ensure_bytes(data), padd, digest)
+            self.get_pubkey().verify(signature, ensure_bytes(data), padd, digest)
 
 
 class CertStore:
@@ -72,12 +70,12 @@ class CertStore:
         try:
             return self._certs[bytes_to_str(id)]
         except KeyError:
-            raise SecurityError(f'Unknown certificate: {id!r}')
+            raise SecurityError(f"Unknown certificate: {id!r}")
 
     def add_cert(self, cert):
         cert_id = bytes_to_str(cert.get_id())
         if cert_id in self._certs:
-            raise SecurityError(f'Duplicate certificate: {id!r}')
+            raise SecurityError(f"Duplicate certificate: {id!r}")
         self._certs[cert_id] = cert
 
 
@@ -87,11 +85,10 @@ class FSCertStore(CertStore):
     def __init__(self, path):
         CertStore.__init__(self)
         if os.path.isdir(path):
-            path = os.path.join(path, '*')
+            path = os.path.join(path, "*")
         for p in glob.glob(path):
             with open(p) as f:
                 cert = Certificate(f.read())
                 if cert.has_expired():
-                    raise SecurityError(
-                        f'Expired certificate: {cert.get_id()!r}')
+                    raise SecurityError(f"Expired certificate: {cert.get_id()!r}")
                 self.add_cert(cert)

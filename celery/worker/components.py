@@ -13,9 +13,9 @@ from celery.exceptions import ImproperlyConfigured
 from celery.platforms import IS_WINDOWS
 from celery.utils.log import worker_logger as logger
 
-__all__ = ('Timer', 'Hub', 'Pool', 'Beat', 'StateDB', 'Consumer')
+__all__ = ("Timer", "Hub", "Pool", "Beat", "StateDB", "Consumer")
 
-GREEN_POOLS = {'eventlet', 'gevent'}
+GREEN_POOLS = {"eventlet", "gevent"}
 
 ERR_B_GREEN = """\
 -B option doesn't work with eventlet/gevent pools: \
@@ -41,16 +41,18 @@ class Timer(bootsteps.Step):
                 # Default Timer is set by the pool, as for example, the
                 # eventlet pool needs a custom timer implementation.
                 w.timer_cls = w.pool_cls.Timer
-            w.timer = self.instantiate(w.timer_cls,
-                                       max_interval=w.timer_precision,
-                                       on_error=self.on_timer_error,
-                                       on_tick=self.on_timer_tick)
+            w.timer = self.instantiate(
+                w.timer_cls,
+                max_interval=w.timer_precision,
+                on_error=self.on_timer_error,
+                on_tick=self.on_timer_tick,
+            )
 
     def on_timer_error(self, exc):
-        logger.error('Timer error: %r', exc, exc_info=True)
+        logger.error("Timer error: %r", exc, exc_info=True)
 
     def on_timer_tick(self, delay):
-        logger.debug('Timer wake-up! Next ETA %s secs.', delay)
+        logger.debug("Timer wake-up! Next ETA %s secs.", delay)
 
 
 class Hub(bootsteps.StartStopStep):
@@ -68,9 +70,8 @@ class Hub(bootsteps.StartStopStep):
     def create(self, w):
         w.hub = get_event_loop()
         if w.hub is None:
-            required_hub = getattr(w._conninfo, 'requires_hub', None)
-            w.hub = set_event_loop((
-                required_hub if required_hub else _Hub)(w.timer))
+            required_hub = getattr(w._conninfo, "requires_hub", None)
+            w.hub = set_event_loop((required_hub if required_hub else _Hub)(w.timer))
         self._patch_thread_primitives(w)
         return self
 
@@ -117,7 +118,7 @@ class Pool(bootsteps.StartStopStep):
         w.min_concurrency = w.concurrency
         self.optimization = w.optimization
         if isinstance(autoscale, str):
-            max_c, _, min_c = autoscale.partition(',')
+            max_c, _, min_c = autoscale.partition(",")
             autoscale = [int(max_c), min_c and int(min_c) or 0]
         w.autoscale = autoscale
         if w.autoscale:
@@ -149,7 +150,8 @@ class Pool(bootsteps.StartStopStep):
                 w.process_task = w._process_task_sem
         allow_restart = w.pool_restarts
         pool = w.pool = self.instantiate(
-            w.pool_cls, w.min_concurrency,
+            w.pool_cls,
+            w.min_concurrency,
             initargs=(w.app, w.hostname),
             maxtasksperchild=w.max_tasks_per_child,
             max_memory_per_child=w.max_memory_per_child,
@@ -169,7 +171,7 @@ class Pool(bootsteps.StartStopStep):
         return pool
 
     def info(self, w):
-        return {'pool': w.pool.info if w.pool else 'N/A'}
+        return {"pool": w.pool.info if w.pool else "N/A"}
 
     def register_with_event_loop(self, w, hub):
         w.pool.register_with_event_loop(hub)
@@ -181,7 +183,7 @@ class Beat(bootsteps.StartStopStep):
     Enabled when the ``beat`` argument is set.
     """
 
-    label = 'Beat'
+    label = "Beat"
     conditional = True
 
     def __init__(self, w, beat=False, **kwargs):
@@ -191,11 +193,12 @@ class Beat(bootsteps.StartStopStep):
 
     def create(self, w):
         from celery.beat import EmbeddedService
-        if w.pool_cls.__module__.endswith(('gevent', 'eventlet')):
+
+        if w.pool_cls.__module__.endswith(("gevent", "eventlet")):
             raise ImproperlyConfigured(ERR_B_GREEN)
-        b = w.beat = EmbeddedService(w.app,
-                                     schedule_filename=w.schedule_filename,
-                                     scheduler_cls=w.scheduler)
+        b = w.beat = EmbeddedService(
+            w.app, schedule_filename=w.schedule_filename, scheduler_cls=w.scheduler
+        )
         return b
 
 
@@ -223,7 +226,8 @@ class Consumer(bootsteps.StartStopStep):
         else:
             prefetch_count = w.concurrency * w.prefetch_multiplier
         c = w.consumer = self.instantiate(
-            w.consumer_cls, w.process_task,
+            w.consumer_cls,
+            w.process_task,
             hostname=w.hostname,
             task_events=w.task_events,
             init_callback=w.ready_callback,

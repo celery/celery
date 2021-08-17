@@ -5,14 +5,17 @@
 # too much (e.g., for eventlet patching)
 from kombu.utils.imports import symbol_by_name
 
-__all__ = ('get_implementation', 'get_available_pool_names',)
+__all__ = (
+    "get_implementation",
+    "get_available_pool_names",
+)
 
 ALIASES = {
-    'prefork': 'celery.concurrency.prefork:TaskPool',
-    'eventlet': 'celery.concurrency.eventlet:TaskPool',
-    'gevent': 'celery.concurrency.gevent:TaskPool',
-    'solo': 'celery.concurrency.solo:TaskPool',
-    'processes': 'celery.concurrency.prefork:TaskPool',  # XXX compat alias
+    "prefork": "celery.concurrency.prefork:TaskPool",
+    "eventlet": "celery.concurrency.eventlet:TaskPool",
+    "gevent": "celery.concurrency.gevent:TaskPool",
+    "solo": "celery.concurrency.solo:TaskPool",
+    "processes": "celery.concurrency.prefork:TaskPool",  # XXX compat alias
 }
 
 try:
@@ -20,7 +23,7 @@ try:
 except ImportError:
     pass
 else:
-    ALIASES['threads'] = 'celery.concurrency.thread:TaskPool'
+    ALIASES["threads"] = "celery.concurrency.thread:TaskPool"
 
 
 def get_implementation(cls):

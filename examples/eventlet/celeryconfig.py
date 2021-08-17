@@ -7,9 +7,9 @@ sys.path.insert(0, os.getcwd())
 # Never use the worker_pool setting as that'll patch
 # the worker too late.
 
-broker_url = 'amqp://guest:guest@localhost:5672//'
+broker_url = "amqp://guest:guest@localhost:5672//"
 worker_disable_rate_limits = True
-result_backend = 'amqp'
+result_backend = "amqp"
 result_expires = 30 * 60
 
-imports = ('tasks', 'webcrawler')
+imports = ("tasks", "webcrawler")

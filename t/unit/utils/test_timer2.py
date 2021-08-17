@@ -6,7 +6,6 @@ from celery.utils import timer2 as timer2
 
 
 class test_Timer:
-
     def test_enter_after(self):
         t = timer2.Timer()
         try:
@@ -19,7 +18,7 @@ class test_Timer:
             mss = 0
             while not done[0]:
                 if mss >= 2.0:
-                    raise Exception('test timed out')
+                    raise Exception("test timed out")
                 time.sleep(0.1)
                 mss += 0.1
         finally:
@@ -43,7 +42,7 @@ class test_Timer:
         t.on_start.assert_called_with(t)
         t.start.assert_called_with()
 
-    @patch('celery.utils.timer2.sleep')
+    @patch("celery.utils.timer2.sleep")
     def test_on_tick(self, sleep):
         def next_entry_side_effect():
             # side effect simulating following scenario:
@@ -53,16 +52,14 @@ class test_Timer:
             while True:
                 yield t._is_shutdown.set()
 
-        on_tick = Mock(name='on_tick')
+        on_tick = Mock(name="on_tick")
         t = timer2.Timer(on_tick=on_tick)
-        t._next_entry = Mock(
-            name='_next_entry', side_effect=next_entry_side_effect()
-        )
+        t._next_entry = Mock(name="_next_entry", side_effect=next_entry_side_effect())
         t.run()
         sleep.assert_called_with(3.33)
         on_tick.assert_has_calls([call(3.33), call(3.33), call(3.33)])
 
-    @patch('os._exit')
+    @patch("os._exit")
     def test_thread_crash(self, _exit):
         t = timer2.Timer()
         t._next_entry = Mock()
@@ -84,13 +81,13 @@ class test_Timer:
         t._do_enter = Mock()
         e = Mock()
         t.enter(e, 13, 0)
-        t._do_enter.assert_called_with('enter_at', e, 13, priority=0)
+        t._do_enter.assert_called_with("enter_at", e, 13, priority=0)
 
     def test_test_enter_after(self):
         t = timer2.Timer()
         t._do_enter = Mock()
         t.enter_after()
-        t._do_enter.assert_called_with('enter_after')
+        t._do_enter.assert_called_with("enter_after")
 
     def test_cancel(self):
         t = timer2.Timer()

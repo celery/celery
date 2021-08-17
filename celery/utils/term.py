@@ -8,24 +8,24 @@ from functools import reduce
 
 from celery.platforms import isatty
 
-__all__ = ('colored',)
+__all__ = ("colored",)
 
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
-OP_SEQ = '\033[%dm'
-RESET_SEQ = '\033[0m'
-COLOR_SEQ = '\033[1;%dm'
+OP_SEQ = "\033[%dm"
+RESET_SEQ = "\033[0m"
+COLOR_SEQ = "\033[1;%dm"
 
-IS_WINDOWS = platform.system() == 'Windows'
+IS_WINDOWS = platform.system() == "Windows"
 
-ITERM_PROFILE = os.environ.get('ITERM_PROFILE')
-TERM = os.environ.get('TERM')
-TERM_IS_SCREEN = TERM and TERM.startswith('screen')
+ITERM_PROFILE = os.environ.get("ITERM_PROFILE")
+TERM = os.environ.get("TERM")
+TERM_IS_SCREEN = TERM and TERM.startswith("screen")
 
 # tmux requires unrecognized OSC sequences to be wrapped with DCS tmux;
 # <sequence> ST, and for all ESCs in <sequence> to be replaced with ESC ESC.
 # It only accepts ESC backslash for ST.
-_IMG_PRE = '\033Ptmux;\033\033]' if TERM_IS_SCREEN else '\033]'
-_IMG_POST = '\a\033\\' if TERM_IS_SCREEN else '\a'
+_IMG_PRE = "\033Ptmux;\033\033]" if TERM_IS_SCREEN else "\033]"
+_IMG_POST = "\a\033\\" if TERM_IS_SCREEN else "\a"
 
 
 def fg(s):
@@ -45,17 +45,17 @@ class colored:
 
     def __init__(self, *s, **kwargs):
         self.s = s
-        self.enabled = not IS_WINDOWS and kwargs.get('enabled', True)
-        self.op = kwargs.get('op', '')
+        self.enabled = not IS_WINDOWS and kwargs.get("enabled", True)
+        self.op = kwargs.get("op", "")
         self.names = {
-            'black': self.black,
-            'red': self.red,
-            'green': self.green,
-            'yellow': self.yellow,
-            'blue': self.blue,
-            'magenta': self.magenta,
-            'cyan': self.cyan,
-            'white': self.white,
+            "black": self.black,
+            "red": self.red,
+            "green": self.green,
+            "yellow": self.yellow,
+            "blue": self.blue,
+            "magenta": self.magenta,
+            "cyan": self.cyan,
+            "white": self.white,
         }
 
     def _add(self, a, b):
@@ -71,24 +71,24 @@ class colored:
         except AttributeError:
             B = str(b)
 
-        return ''.join((str(A), str(B)))
+        return "".join((str(A), str(B)))
 
     def no_color(self):
         if self.s:
             return str(reduce(self._fold_no_color, self.s))
-        return ''
+        return ""
 
     def embed(self):
-        prefix = ''
+        prefix = ""
         if self.enabled:
             prefix = self.op
-        return ''.join((str(prefix), str(reduce(self._add, self.s))))
+        return "".join((str(prefix), str(reduce(self._add, self.s))))
 
     def __str__(self):
-        suffix = ''
+        suffix = ""
         if self.enabled:
             suffix = RESET_SEQ
-        return str(''.join((self.embed(), str(suffix))))
+        return str("".join((self.embed(), str(suffix))))
 
     def node(self, s, op):
         return self.__class__(enabled=self.enabled, op=op, *s)
@@ -157,7 +157,7 @@ class colored:
         return self.node(s, fg(40 + WHITE))
 
     def reset(self, *s):
-        return self.node(s or [''], RESET_SEQ)
+        return self.node(s or [""], RESET_SEQ)
 
     def __add__(self, other):
         return str(self) + str(other)
@@ -168,12 +168,16 @@ def supports_images():
 
 
 def _read_as_base64(path):
-    with codecs.open(path, mode='rb') as fh:
+    with codecs.open(path, mode="rb") as fh:
         encoded = base64.b64encode(fh.read())
-        return encoded if type(encoded) == 'str' else encoded.decode('ascii')
+        return encoded if type(encoded) == "str" else encoded.decode("ascii")
 
 
 def imgcat(path, inline=1, preserve_aspect_ratio=0, **kwargs):
-    return '\n%s1337;File=inline=%d;preserveAspectRatio=%d:%s%s' % (
-        _IMG_PRE, inline, preserve_aspect_ratio,
-        _read_as_base64(path), _IMG_POST)
+    return "\n%s1337;File=inline=%d;preserveAspectRatio=%d:%s%s" % (
+        _IMG_PRE,
+        inline,
+        preserve_aspect_ratio,
+        _read_as_base64(path),
+        _IMG_POST,
+    )

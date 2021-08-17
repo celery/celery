@@ -9,8 +9,13 @@ from kombu.utils.uuid import uuid
 from celery import current_app, group, states
 from celery._state import _task_stack
 from celery.canvas import _chain, signature
-from celery.exceptions import (Ignore, ImproperlyConfigured,
-                               MaxRetriesExceededError, Reject, Retry)
+from celery.exceptions import (
+    Ignore,
+    ImproperlyConfigured,
+    MaxRetriesExceededError,
+    Reject,
+    Retry,
+)
 from celery.local import class_property
 from celery.result import EagerResult, denied_join_result
 from celery.utils import abstract
@@ -23,37 +28,47 @@ from .annotations import resolve_all as resolve_all_annotations
 from .registry import _unpickle_task_v2
 from .utils import appstr
 
-__all__ = ('Context', 'Task')
+__all__ = ("Context", "Task")
 
 #: extracts attributes related to publishing a message from an object.
 extract_exec_options = mattrgetter(
-    'queue', 'routing_key', 'exchange', 'priority', 'expires',
-    'serializer', 'delivery_mode', 'compression', 'time_limit',
-    'soft_time_limit', 'immediate', 'mandatory',  # imm+man is deprecated
+    "queue",
+    "routing_key",
+    "exchange",
+    "priority",
+    "expires",
+    "serializer",
+    "delivery_mode",
+    "compression",
+    "time_limit",
+    "soft_time_limit",
+    "immediate",
+    "mandatory",  # imm+man is deprecated
 )
 
 # We take __repr__ very seriously around here ;)
-R_BOUND_TASK = '<class {0.__name__} of {app}{flags}>'
-R_UNBOUND_TASK = '<unbound {0.__name__}{flags}>'
-R_INSTANCE = '<@task: {0.name} of {app}{flags}>'
+R_BOUND_TASK = "<class {0.__name__} of {app}{flags}>"
+R_UNBOUND_TASK = "<unbound {0.__name__}{flags}>"
+R_INSTANCE = "<@task: {0.name} of {app}{flags}>"
 
 #: Here for backwards compatibility as tasks no longer use a custom meta-class.
 TaskType = type
 
 
-def _strflags(flags, default=''):
+def _strflags(flags, default=""):
     if flags:
-        return ' ({})'.format(', '.join(flags))
+        return " ({})".format(", ".join(flags))
     return default
 
 
 def _reprtask(task, fmt=None, flags=None):
     flags = list(flags) if flags is not None else []
-    flags.append('v2 compatible') if task.__v2_compat__ else None
+    flags.append("v2 compatible") if task.__v2_compat__ else None
     if not fmt:
         fmt = R_BOUND_TASK if task._app else R_UNBOUND_TASK
     return fmt.format(
-        task, flags=_strflags(flags),
+        task,
+        flags=_strflags(flags),
         app=appstr(task._app) if task._app else None,
     )
 
@@ -77,7 +92,7 @@ class Context:
     root_id = None
     parent_id = None
     correlation_id = None
-    taskset = None   # compat alias to group
+    taskset = None  # compat alias to group
     group = None
     group_index = None
     chord = None
@@ -88,7 +103,7 @@ class Context:
     errbacks = None
     timelimit = None
     origin = None
-    _children = None   # see property
+    _children = None  # see property
     _protected = 0
 
     def __init__(self, *args, **kwargs):
@@ -104,27 +119,27 @@ class Context:
         return getattr(self, key, default)
 
     def __repr__(self):
-        return '<Context: {!r}>'.format(vars(self))
+        return "<Context: {!r}>".format(vars(self))
 
     def as_execution_options(self):
         limit_hard, limit_soft = self.timelimit or (None, None)
         return {
-            'task_id': self.id,
-            'root_id': self.root_id,
-            'parent_id': self.parent_id,
-            'group_id': self.group,
-            'group_index': self.group_index,
-            'chord': self.chord,
-            'chain': self.chain,
-            'link': self.callbacks,
-            'link_error': self.errbacks,
-            'expires': self.expires,
-            'soft_time_limit': limit_soft,
-            'time_limit': limit_hard,
-            'headers': self.headers,
-            'retries': self.retries,
-            'reply_to': self.reply_to,
-            'origin': self.origin,
+            "task_id": self.id,
+            "root_id": self.root_id,
+            "parent_id": self.parent_id,
+            "group_id": self.group,
+            "group_index": self.group_index,
+            "chord": self.chord,
+            "chain": self.chain,
+            "link": self.callbacks,
+            "link_error": self.errbacks,
+            "expires": self.expires,
+            "soft_time_limit": limit_soft,
+            "time_limit": limit_hard,
+            "headers": self.headers,
+            "retries": self.retries,
+            "reply_to": self.reply_to,
+            "origin": self.origin,
         }
 
     @property
@@ -152,10 +167,10 @@ class Task:
     OperationalError = OperationalError
 
     #: Execution strategy used, or the qualified name of one.
-    Strategy = 'celery.worker.strategy:default'
+    Strategy = "celery.worker.strategy:default"
 
     #: Request class used, or the qualified name of one.
-    Request = 'celery.worker.request:Request'
+    Request = "celery.worker.request:Request"
 
     #: The application instance associated with this task class.
     _app = None
@@ -301,15 +316,15 @@ class Task:
     __bound__ = False
 
     from_config = (
-        ('serializer', 'task_serializer'),
-        ('rate_limit', 'task_default_rate_limit'),
-        ('priority', 'task_default_priority'),
-        ('track_started', 'task_track_started'),
-        ('acks_late', 'task_acks_late'),
-        ('acks_on_failure_or_timeout', 'task_acks_on_failure_or_timeout'),
-        ('reject_on_worker_lost', 'task_reject_on_worker_lost'),
-        ('ignore_result', 'task_ignore_result'),
-        ('store_errors_even_if_ignored', 'task_store_errors_even_if_ignored'),
+        ("serializer", "task_serializer"),
+        ("rate_limit", "task_default_rate_limit"),
+        ("priority", "task_default_priority"),
+        ("track_started", "task_track_started"),
+        ("acks_late", "task_acks_late"),
+        ("acks_on_failure_or_timeout", "task_acks_on_failure_or_timeout"),
+        ("reject_on_worker_lost", "task_reject_on_worker_lost"),
+        ("ignore_result", "task_ignore_result"),
+        ("store_errors_even_if_ignored", "task_store_errors_even_if_ignored"),
     )
 
     _backend = None  # set by backend property.
@@ -336,6 +351,7 @@ class Task:
             cls.annotate()
 
             from celery.utils.threads import LocalStack
+
             cls.request_stack = LocalStack()
 
         # PeriodicTask uses this to add itself to the PeriodicTask schedule.
@@ -361,13 +377,14 @@ class Task:
             # if Task.app is set (on the class), so must bind on use.
             cls.bind(cls._app)
         return cls._app
+
     app = class_property(_get_app, bind)
 
     @classmethod
     def annotate(cls):
         for d in resolve_all_annotations(cls.app.annotations, cls):
             for key, value in d.items():
-                if key.startswith('@'):
+                if key.startswith("@"):
                     cls.add_around(key[1:], value)
                 else:
                     setattr(cls, key, value)
@@ -375,7 +392,7 @@ class Task:
     @classmethod
     def add_around(cls, attr, around):
         orig = getattr(cls, attr)
-        if getattr(orig, '__wrapped__', None):
+        if getattr(orig, "__wrapped__", None):
             orig = orig.__wrapped__
         meth = around(orig)
         meth.__wrapped__ = orig
@@ -402,7 +419,7 @@ class Task:
 
     def run(self, *args, **kwargs):
         """The body of the task executed by workers."""
-        raise NotImplementedError('Tasks must define the run method.')
+        raise NotImplementedError("Tasks must define the run method.")
 
     def start_strategy(self, app, consumer, **kwargs):
         return instantiate(self.Strategy, self, app, consumer, **kwargs)
@@ -420,8 +437,17 @@ class Task:
         """
         return self.apply_async(args, kwargs)
 
-    def apply_async(self, args=None, kwargs=None, task_id=None, producer=None,
-                    link=None, link_error=None, shadow=None, **options):
+    def apply_async(
+        self,
+        args=None,
+        kwargs=None,
+        task_id=None,
+        producer=None,
+        link=None,
+        link_error=None,
+        shadow=None,
+        **options
+    ):
         """Apply tasks asynchronously by sending a message.
 
         Arguments:
@@ -533,14 +559,14 @@ class Task:
         preopts = self._get_exec_options()
         options = dict(preopts, **options) if options else preopts
 
-        options.setdefault('ignore_result', self.ignore_result)
+        options.setdefault("ignore_result", self.ignore_result)
         if self.priority:
-            options.setdefault('priority', self.priority)
+            options.setdefault("priority", self.priority)
 
         app = self._get_app()
         if app.conf.task_always_eager:
             with app.producer_or_acquire(producer) as eager_producer:
-                serializer = options.get('serializer')
+                serializer = options.get("serializer")
                 if serializer is None:
                     if eager_producer.serializer:
                         serializer = eager_producer.serializer
@@ -548,20 +574,33 @@ class Task:
                         serializer = app.conf.task_serializer
                 body = args, kwargs
                 content_type, content_encoding, data = serialization.dumps(
-                    body, serializer,
+                    body,
+                    serializer,
                 )
                 args, kwargs = serialization.loads(
-                    data, content_type, content_encoding,
-                    accept=[content_type]
+                    data, content_type, content_encoding, accept=[content_type]
                 )
             with denied_join_result():
-                return self.apply(args, kwargs, task_id=task_id or uuid(),
-                                  link=link, link_error=link_error, **options)
+                return self.apply(
+                    args,
+                    kwargs,
+                    task_id=task_id or uuid(),
+                    link=link,
+                    link_error=link_error,
+                    **options
+                )
         else:
             return app.send_task(
-                self.name, args, kwargs, task_id=task_id, producer=producer,
-                link=link, link_error=link_error, result_cls=self.AsyncResult,
-                shadow=shadow, task_type=self,
+                self.name,
+                args,
+                kwargs,
+                task_id=task_id,
+                producer=producer,
+                link=link,
+                link_error=link_error,
+                result_cls=self.AsyncResult,
+                shadow=shadow,
+                task_type=self,
                 **options
             )
 
@@ -586,33 +625,42 @@ class Task:
             options (Dict): Task execution options.
         """
 
-    def signature_from_request(self, request=None, args=None, kwargs=None,
-                               queue=None, **extra_options):
+    def signature_from_request(
+        self, request=None, args=None, kwargs=None, queue=None, **extra_options
+    ):
         request = self.request if request is None else request
         args = request.args if args is None else args
         kwargs = request.kwargs if kwargs is None else kwargs
         options = request.as_execution_options()
         delivery_info = request.delivery_info or {}
-        priority = delivery_info.get('priority')
+        priority = delivery_info.get("priority")
         if priority is not None:
-            options['priority'] = priority
+            options["priority"] = priority
         if queue:
-            options['queue'] = queue
+            options["queue"] = queue
         else:
-            exchange = delivery_info.get('exchange')
-            routing_key = delivery_info.get('routing_key')
-            if exchange == '' and routing_key:
+            exchange = delivery_info.get("exchange")
+            routing_key = delivery_info.get("routing_key")
+            if exchange == "" and routing_key:
                 # sent to anon-exchange
-                options['queue'] = routing_key
+                options["queue"] = routing_key
             else:
                 options.update(delivery_info)
-        return self.signature(
-            args, kwargs, options, type=self, **extra_options
-        )
+        return self.signature(args, kwargs, options, type=self, **extra_options)
+
     subtask_from_request = signature_from_request  # XXX compat
 
-    def retry(self, args=None, kwargs=None, exc=None, throw=True,
-              eta=None, countdown=None, max_retries=None, **options):
+    def retry(
+        self,
+        args=None,
+        kwargs=None,
+        exc=None,
+        throw=True,
+        eta=None,
+        countdown=None,
+        max_retries=None,
+        **options
+    ):
         """Retry the task, adding it to the back of the queue.
 
         Example:
@@ -684,15 +732,19 @@ class Task:
         if request.called_directly:
             # raises orig stack if PyErr_Occurred,
             # and augments with exc' if that argument is defined.
-            raise_with_context(exc or Retry('Task can be retried', None))
+            raise_with_context(exc or Retry("Task can be retried", None))
 
         if not eta and countdown is None:
             countdown = self.default_retry_delay
 
         is_eager = request.is_eager
         S = self.signature_from_request(
-            request, args, kwargs,
-            countdown=countdown, eta=eta, retries=retries,
+            request,
+            args,
+            kwargs,
+            countdown=countdown,
+            eta=eta,
+            retries=retries,
             **options
         )
 
@@ -704,7 +756,9 @@ class Task:
             raise self.MaxRetriesExceededError(
                 "Can't retry {}[{}] args:{} kwargs:{}".format(
                     self.name, request.id, S.args, S.kwargs
-                ), task_args=S.args, task_kwargs=S.kwargs
+                ),
+                task_args=S.args,
+                task_kwargs=S.kwargs,
             )
 
         ret = Retry(exc=exc, when=eta or countdown, is_eager=is_eager, sig=S)
@@ -724,10 +778,20 @@ class Task:
             raise ret
         return ret
 
-    def apply(self, args=None, kwargs=None,
-              link=None, link_error=None,
-              task_id=None, retries=None, throw=None,
-              logfile=None, loglevel=None, headers=None, **options):
+    def apply(
+        self,
+        args=None,
+        kwargs=None,
+        link=None,
+        link_error=None,
+        task_id=None,
+        retries=None,
+        throw=None,
+        logfile=None,
+        loglevel=None,
+        headers=None,
+        **options
+    ):
         """Execute this task locally, by blocking until the task returns.
 
         Arguments:
@@ -754,21 +818,24 @@ class Task:
         task = app._tasks[self.name]
 
         request = {
-            'id': task_id,
-            'retries': retries,
-            'is_eager': True,
-            'logfile': logfile,
-            'loglevel': loglevel or 0,
-            'hostname': gethostname(),
-            'callbacks': maybe_list(link),
-            'errbacks': maybe_list(link_error),
-            'headers': headers,
-            'delivery_info': {'is_eager': True},
+            "id": task_id,
+            "retries": retries,
+            "is_eager": True,
+            "logfile": logfile,
+            "loglevel": loglevel or 0,
+            "hostname": gethostname(),
+            "callbacks": maybe_list(link),
+            "errbacks": maybe_list(link_error),
+            "headers": headers,
+            "delivery_info": {"is_eager": True},
         }
         tb = None
         tracer = build_tracer(
-            task.name, task, eager=True,
-            propagate=throw, app=self._get_app(),
+            task.name,
+            task,
+            eager=True,
+            propagate=throw,
+            app=self._get_app(),
         )
         ret = tracer(task_id, args, kwargs, request)
         retval = ret.retval
@@ -785,8 +852,9 @@ class Task:
         Arguments:
             task_id (str): Task id to get result for.
         """
-        return self._get_app().AsyncResult(task_id, backend=self.backend,
-                                           task_name=self.name, **kwargs)
+        return self._get_app().AsyncResult(
+            task_id, backend=self.backend, task_name=self.name, **kwargs
+        )
 
     def signature(self, args=None, *starargs, **starkwargs):
         """Create signature.
@@ -796,8 +864,9 @@ class Task:
                 this task, wrapping arguments and execution options
                 for a single task invocation.
         """
-        starkwargs.setdefault('app', self.app)
+        starkwargs.setdefault("app", self.app)
         return signature(self, args, *starargs, **starkwargs)
+
     subtask = signature
 
     def s(self, *args, **kwargs):
@@ -817,16 +886,19 @@ class Task:
     def chunks(self, it, n):
         """Create a :class:`~celery.canvas.chunks` task for this task."""
         from celery import chunks
+
         return chunks(self.s(), it, n, app=self.app)
 
     def map(self, it):
         """Create a :class:`~celery.canvas.xmap` task from ``it``."""
         from celery import xmap
+
         return xmap(self.s(), it, app=self.app)
 
     def starmap(self, it):
         """Create a :class:`~celery.canvas.xstarmap` task from ``it``."""
         from celery import xstarmap
+
         return xstarmap(self.s(), it, app=self.app)
 
     def send_event(self, type_, retry=True, retry_policy=None, **fields):
@@ -852,8 +924,8 @@ class Task:
             retry_policy = self.app.conf.task_publish_retry_policy
         with self.app.events.default_dispatcher(hostname=req.hostname) as d:
             return d.send(
-                type_,
-                uuid=req.id, retry=retry, retry_policy=retry_policy, **fields)
+                type_, uuid=req.id, retry=retry, retry_policy=retry_policy, **fields
+            )
 
     def replace(self, sig):
         """Replace this task, with a new task inheriting the task id.
@@ -872,21 +944,23 @@ class Task:
             to the reader that the task won't continue after being replaced.
         """
         chord = self.request.chord
-        if 'chord' in sig.options:
+        if "chord" in sig.options:
             raise ImproperlyConfigured(
                 "A signature replacing a task must not be part of a chord"
             )
 
         if isinstance(sig, group):
-            sig |= self.app.tasks['celery.accumulate'].s(index=0).set(
-                link=self.request.callbacks,
-                link_error=self.request.errbacks,
+            sig |= (
+                self.app.tasks["celery.accumulate"]
+                .s(index=0)
+                .set(
+                    link=self.request.callbacks,
+                    link_error=self.request.errbacks,
+                )
             )
         elif isinstance(sig, _chain):
             if not sig.tasks:
-                raise ImproperlyConfigured(
-                    "Cannot replace with an empty chain"
-                )
+                raise ImproperlyConfigured("Cannot replace with an empty chain")
 
         if self.request.chain:
             # We need to freeze the new signature with the current task's ID to
@@ -915,7 +989,7 @@ class Task:
             return sig.apply().get()
         else:
             sig.delay()
-            raise Ignore('Replaced by new task')
+            raise Ignore("Replaced by new task")
 
     def add_to_chord(self, sig, lazy=False):
         """Add signature to the chord the current task is a member of.
@@ -930,7 +1004,7 @@ class Task:
                 and ``sig.delay()`` must be called manually.
         """
         if not self.request.chord:
-            raise ValueError('Current task is not member of any chord')
+            raise ValueError("Current task is not member of any chord")
         sig.set(
             group_id=self.request.group,
             group_index=self.request.group_index,
@@ -1041,6 +1115,7 @@ class Task:
                 self._default_request = Context()
             return self._default_request
         return req
+
     request = property(_get_request)
 
     def _get_exec_options(self):

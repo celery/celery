@@ -13,14 +13,23 @@ from celery.utils import timer2
 from celery.utils.log import get_logger
 from celery.utils.text import truncate
 
-__all__ = ('BasePool', 'apply_target')
+__all__ = ("BasePool", "apply_target")
 
-logger = get_logger('celery.pool')
+logger = get_logger("celery.pool")
 
 
-def apply_target(target, args=(), kwargs=None, callback=None,
-                 accept_callback=None, pid=None, getpid=os.getpid,
-                 propagate=(), monotonic=time.monotonic, **_):
+def apply_target(
+    target,
+    args=(),
+    kwargs=None,
+    callback=None,
+    accept_callback=None,
+    pid=None,
+    getpid=os.getpid,
+    propagate=(),
+    monotonic=time.monotonic,
+    **_,
+):
     """Apply function within pool context."""
     kwargs = {} if not kwargs else kwargs
     if accept_callback:
@@ -35,8 +44,7 @@ def apply_target(target, args=(), kwargs=None, callback=None,
         raise
     except BaseException as exc:
         try:
-            reraise(WorkerLostError, WorkerLostError(repr(exc)),
-                    sys.exc_info()[2])
+            reraise(WorkerLostError, WorkerLostError(repr(exc)), sys.exc_info()[2])
         except WorkerLostError:
             callback(ExceptionInfo())
     else:
@@ -69,8 +77,15 @@ class BasePool:
     task_join_will_block = True
     body_can_be_buffer = False
 
-    def __init__(self, limit=None, putlocks=True, forking_enable=True,
-                 callbacks_propagate=(), app=None, **options):
+    def __init__(
+        self,
+        limit=None,
+        putlocks=True,
+        forking_enable=True,
+        callbacks_propagate=(),
+        app=None,
+        **options,
+    ):
         self.limit = limit
         self.putlocks = putlocks
         self.options = options
@@ -109,12 +124,10 @@ class BasePool:
         pass
 
     def terminate_job(self, pid, signal=None):
-        raise NotImplementedError(
-            f'{type(self)} does not implement kill_job')
+        raise NotImplementedError(f"{type(self)} does not implement kill_job")
 
     def restart(self):
-        raise NotImplementedError(
-            f'{type(self)} does not implement restart')
+        raise NotImplementedError(f"{type(self)} does not implement restart")
 
     def stop(self):
         self.on_stop()
@@ -145,18 +158,25 @@ class BasePool:
         kwargs = {} if not kwargs else kwargs
         args = [] if not args else args
         if self._does_debug:
-            logger.debug('TaskPool: Apply %s (args:%s kwargs:%s)',
-                         target, truncate(safe_repr(args), 1024),
-                         truncate(safe_repr(kwargs), 1024))
+            logger.debug(
+                "TaskPool: Apply %s (args:%s kwargs:%s)",
+                target,
+                truncate(safe_repr(args), 1024),
+                truncate(safe_repr(kwargs), 1024),
+            )
 
-        return self.on_apply(target, args, kwargs,
-                             waitforslot=self.putlocks,
-                             callbacks_propagate=self.callbacks_propagate,
-                             **options)
+        return self.on_apply(
+            target,
+            args,
+            kwargs,
+            waitforslot=self.putlocks,
+            callbacks_propagate=self.callbacks_propagate,
+            **options,
+        )
 
     def _get_info(self):
         return {
-            'max-concurrency': self.limit,
+            "max-concurrency": self.limit,
         }
 
     @property

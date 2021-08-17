@@ -2,7 +2,7 @@
 from abc import ABCMeta, abstractmethod
 from collections.abc import Callable
 
-__all__ = ('CallableTask', 'CallableSignature')
+__all__ = ("CallableTask", "CallableSignature")
 
 
 def _hasattr(C, attr):
@@ -15,8 +15,8 @@ class _AbstractClass(metaclass=ABCMeta):
     @classmethod
     def _subclasshook_using(cls, parent, C):
         return (
-            cls is parent and
-            all(_hasattr(C, attr) for attr in cls.__required_attributes__)
+            cls is parent
+            and all(_hasattr(C, attr) for attr in cls.__required_attributes__)
         ) or NotImplemented
 
     @classmethod
@@ -29,9 +29,13 @@ class _AbstractClass(metaclass=ABCMeta):
 class CallableTask(_AbstractClass, Callable):  # pragma: no cover
     """Task interface."""
 
-    __required_attributes__ = frozenset({
-        'delay', 'apply_async', 'apply',
-    })
+    __required_attributes__ = frozenset(
+        {
+            "delay",
+            "apply_async",
+            "apply",
+        }
+    )
 
     @abstractmethod
     def delay(self, *args, **kwargs):
@@ -53,9 +57,16 @@ class CallableTask(_AbstractClass, Callable):  # pragma: no cover
 class CallableSignature(CallableTask):  # pragma: no cover
     """Celery Signature interface."""
 
-    __required_attributes__ = frozenset({
-        'clone', 'freeze', 'set', 'link', 'link_error', '__or__',
-    })
+    __required_attributes__ = frozenset(
+        {
+            "clone",
+            "freeze",
+            "set",
+            "link",
+            "link_error",
+            "__or__",
+        }
+    )
 
     @property
     @abstractmethod
@@ -117,8 +128,9 @@ class CallableSignature(CallableTask):  # pragma: no cover
         pass
 
     @abstractmethod
-    def freeze(self, id=None, group_id=None, chord=None, root_id=None,
-               group_index=None):
+    def freeze(
+        self, id=None, group_id=None, chord=None, root_id=None, group_index=None
+    ):
         pass
 
     @abstractmethod

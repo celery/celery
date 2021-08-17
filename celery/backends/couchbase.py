@@ -13,7 +13,7 @@ try:
 except ImportError:
     Cluster = PasswordAuthenticator = ClusterOptions = None
 
-__all__ = ('CouchbaseBackend',)
+__all__ = ("CouchbaseBackend",)
 
 
 class CouchbaseBackend(KeyValueStoreBackend):
@@ -24,8 +24,8 @@ class CouchbaseBackend(KeyValueStoreBackend):
             if module :pypi:`couchbase` is not available.
     """
 
-    bucket = 'default'
-    host = 'localhost'
+    bucket = "default"
+    host = "localhost"
     port = 8091
     username = None
     password = None
@@ -38,35 +38,35 @@ class CouchbaseBackend(KeyValueStoreBackend):
     key_t = str
 
     def __init__(self, url=None, *args, **kwargs):
-        kwargs.setdefault('expires_type', int)
+        kwargs.setdefault("expires_type", int)
         super().__init__(*args, **kwargs)
         self.url = url
 
         if Cluster is None:
             raise ImproperlyConfigured(
-                'You need to install the couchbase library to use the '
-                'Couchbase backend.',
+                "You need to install the couchbase library to use the "
+                "Couchbase backend.",
             )
 
         uhost = uport = uname = upass = ubucket = None
         if url:
             _, uhost, uport, uname, upass, ubucket, _ = _parse_url(url)
-            ubucket = ubucket.strip('/') if ubucket else None
+            ubucket = ubucket.strip("/") if ubucket else None
 
-        config = self.app.conf.get('couchbase_backend_settings', None)
+        config = self.app.conf.get("couchbase_backend_settings", None)
         if config is not None:
             if not isinstance(config, dict):
                 raise ImproperlyConfigured(
-                    'Couchbase backend settings should be grouped in a dict',
+                    "Couchbase backend settings should be grouped in a dict",
                 )
         else:
             config = {}
 
-        self.host = uhost or config.get('host', self.host)
-        self.port = int(uport or config.get('port', self.port))
-        self.bucket = ubucket or config.get('bucket', self.bucket)
-        self.username = uname or config.get('username', self.username)
-        self.password = upass or config.get('password', self.password)
+        self.host = uhost or config.get("host", self.host)
+        self.port = int(uport or config.get("port", self.port))
+        self.bucket = ubucket or config.get("bucket", self.bucket)
+        self.username = uname or config.get("username", self.username)
+        self.password = upass or config.get("password", self.password)
 
         self._connection = None
 

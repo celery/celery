@@ -13,7 +13,7 @@ from celery.utils.time import timezone
 from .request import create_request_cls
 from .state import task_reserved
 
-__all__ = ('default',)
+__all__ = ("default",)
 
 logger = get_logger(__name__)
 
@@ -24,42 +24,42 @@ logger = get_logger(__name__)
 def hybrid_to_proto2(message, body):
     """Create a fresh protocol 2 message from a hybrid protocol 1/2 message."""
     try:
-        args, kwargs = body.get('args', ()), body.get('kwargs', {})
+        args, kwargs = body.get("args", ()), body.get("kwargs", {})
         kwargs.items  # pylint: disable=pointless-statement
     except KeyError:
-        raise InvalidTaskError('Message does not have args/kwargs')
+        raise InvalidTaskError("Message does not have args/kwargs")
     except AttributeError:
         raise InvalidTaskError(
-            'Task keyword arguments must be a mapping',
+            "Task keyword arguments must be a mapping",
         )
 
     headers = {
-        'lang': body.get('lang'),
-        'task': body.get('task'),
-        'id': body.get('id'),
-        'root_id': body.get('root_id'),
-        'parent_id': body.get('parent_id'),
-        'group': body.get('group'),
-        'meth': body.get('meth'),
-        'shadow': body.get('shadow'),
-        'eta': body.get('eta'),
-        'expires': body.get('expires'),
-        'retries': body.get('retries', 0),
-        'timelimit': body.get('timelimit', (None, None)),
-        'argsrepr': body.get('argsrepr'),
-        'kwargsrepr': body.get('kwargsrepr'),
-        'origin': body.get('origin'),
+        "lang": body.get("lang"),
+        "task": body.get("task"),
+        "id": body.get("id"),
+        "root_id": body.get("root_id"),
+        "parent_id": body.get("parent_id"),
+        "group": body.get("group"),
+        "meth": body.get("meth"),
+        "shadow": body.get("shadow"),
+        "eta": body.get("eta"),
+        "expires": body.get("expires"),
+        "retries": body.get("retries", 0),
+        "timelimit": body.get("timelimit", (None, None)),
+        "argsrepr": body.get("argsrepr"),
+        "kwargsrepr": body.get("kwargsrepr"),
+        "origin": body.get("origin"),
     }
     headers.update(message.headers or {})
 
     embed = {
-        'callbacks': body.get('callbacks'),
-        'errbacks': body.get('errbacks'),
-        'chord': body.get('chord'),
-        'chain': None,
+        "callbacks": body.get("callbacks"),
+        "errbacks": body.get("errbacks"),
+        "chord": body.get("chord"),
+        "chain": None,
     }
 
-    return (args, kwargs, embed), headers, True, body.get('utc', True)
+    return (args, kwargs, embed), headers, True, body.get("utc", True)
 
 
 def proto1_to_proto2(message, body):
@@ -69,13 +69,13 @@ def proto1_to_proto2(message, body):
         Tuple: of ``(body, headers, already_decoded_status, utc)``
     """
     try:
-        args, kwargs = body.get('args', ()), body.get('kwargs', {})
+        args, kwargs = body.get("args", ()), body.get("kwargs", {})
         kwargs.items  # pylint: disable=pointless-statement
     except KeyError:
-        raise InvalidTaskError('Message does not have args/kwargs')
+        raise InvalidTaskError("Message does not have args/kwargs")
     except AttributeError:
         raise InvalidTaskError(
-            'Task keyword arguments must be a mapping',
+            "Task keyword arguments must be a mapping",
         )
     body.update(
         argsrepr=saferepr(args),
@@ -83,22 +83,29 @@ def proto1_to_proto2(message, body):
         headers=message.headers,
     )
     try:
-        body['group'] = body['taskset']
+        body["group"] = body["taskset"]
     except KeyError:
         pass
     embed = {
-        'callbacks': body.get('callbacks'),
-        'errbacks': body.get('errbacks'),
-        'chord': body.get('chord'),
-        'chain': None,
+        "callbacks": body.get("callbacks"),
+        "errbacks": body.get("errbacks"),
+        "chord": body.get("chord"),
+        "chain": None,
     }
-    return (args, kwargs, embed), body, True, body.get('utc', True)
+    return (args, kwargs, embed), body, True, body.get("utc", True)
 
 
-def default(task, app, consumer,
-            info=logger.info, error=logger.error, task_reserved=task_reserved,
-            to_system_tz=timezone.to_system, bytes=bytes,
-            proto1_to_proto2=proto1_to_proto2):
+def default(
+    task,
+    app,
+    consumer,
+    info=logger.info,
+    error=logger.error,
+    task_reserved=task_reserved,
+    to_system_tz=timezone.to_system,
+    bytes=bytes,
+    proto1_to_proto2=proto1_to_proto2,
+):
     """Default task execution strategy.
 
     Note:
@@ -128,27 +135,38 @@ def default(task, app, consumer,
 
     revoked_tasks = consumer.controller.state.revoked
 
-    def task_message_handler(message, body, ack, reject, callbacks,
-                             to_timestamp=to_timestamp):
-        if body is None and 'args' not in message.payload:
+    def task_message_handler(
+        message, body, ack, reject, callbacks, to_timestamp=to_timestamp
+    ):
+        if body is None and "args" not in message.payload:
             body, headers, decoded, utc = (
-                message.body, message.headers, False, app.uses_utc_timezone(),
+                message.body,
+                message.headers,
+                False,
+                app.uses_utc_timezone(),
             )
         else:
-            if 'args' in message.payload:
-                body, headers, decoded, utc = hybrid_to_proto2(message,
-                                                               message.payload)
+            if "args" in message.payload:
+                body, headers, decoded, utc = hybrid_to_proto2(message, message.payload)
             else:
                 body, headers, decoded, utc = proto1_to_proto2(message, body)
 
         req = Req(
             message,
-            on_ack=ack, on_reject=reject, app=app, hostname=hostname,
-            eventer=eventer, task=task, connection_errors=connection_errors,
-            body=body, headers=headers, decoded=decoded, utc=utc,
+            on_ack=ack,
+            on_reject=reject,
+            app=app,
+            hostname=hostname,
+            eventer=eventer,
+            task=task,
+            connection_errors=connection_errors,
+            body=body,
+            headers=headers,
+            decoded=decoded,
+            utc=utc,
         )
         if _does_info:
-            info('Received task: %s', req)
+            info("Received task: %s", req)
         if (req.expires or req.id in revoked_tasks) and req.revoked():
             return
 
@@ -156,11 +174,14 @@ def default(task, app, consumer,
 
         if task_sends_events:
             send_event(
-                'task-received',
-                uuid=req.id, name=req.name,
-                args=req.argsrepr, kwargs=req.kwargsrepr,
-                root_id=req.root_id, parent_id=req.parent_id,
-                retries=req.request_dict.get('retries', 0),
+                "task-received",
+                uuid=req.id,
+                name=req.name,
+                args=req.argsrepr,
+                kwargs=req.kwargsrepr,
+                root_id=req.root_id,
+                parent_id=req.parent_id,
+                retries=req.request_dict.get("retries", 0),
                 eta=req.eta and req.eta.isoformat(),
                 expires=req.expires and req.expires.isoformat(),
             )
@@ -174,16 +195,20 @@ def default(task, app, consumer,
                 else:
                     eta = to_timestamp(req.eta, app.timezone)
             except (OverflowError, ValueError) as exc:
-                error("Couldn't convert ETA %r to timestamp: %r. Task: %r",
-                      req.eta, exc, req.info(safe=True), exc_info=True)
+                error(
+                    "Couldn't convert ETA %r to timestamp: %r. Task: %r",
+                    req.eta,
+                    exc,
+                    req.info(safe=True),
+                    exc_info=True,
+                )
                 req.reject(requeue=False)
         if rate_limits_enabled:
             bucket = get_bucket(task.name)
 
         if eta and bucket:
             consumer.qos.increment_eventually()
-            return call_at(eta, limit_post_eta, (req, bucket, 1),
-                           priority=6)
+            return call_at(eta, limit_post_eta, (req, bucket, 1), priority=6)
         if eta:
             consumer.qos.increment_eventually()
             call_at(eta, apply_eta_task, (req,), priority=6)
@@ -195,4 +220,5 @@ def default(task, app, consumer,
         if callbacks:
             [callback(req) for callback in callbacks]
         handle(req)
+
     return task_message_handler

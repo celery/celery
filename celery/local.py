@@ -12,7 +12,7 @@ from functools import reduce
 from importlib import import_module
 from types import ModuleType
 
-__all__ = ('Proxy', 'PromiseProxy', 'try_import', 'maybe_evaluate')
+__all__ = ("Proxy", "PromiseProxy", "try_import", "maybe_evaluate")
 
 __module__ = __name__  # used by Proxy class body
 
@@ -32,9 +32,14 @@ def _default_cls_attr(name, type_, cls_value):
     def __get__(self, obj, cls=None):
         return self.__getter(obj) if obj is not None else self
 
-    return type(name, (type_,), {
-        '__new__': __new__, '__get__': __get__,
-    })
+    return type(
+        name,
+        (type_,),
+        {
+            "__new__": __new__,
+            "__get__": __get__,
+        },
+    )
 
 
 def try_import(module, default=None):
@@ -52,37 +57,36 @@ class Proxy:
     """Proxy to another object."""
 
     # Code stolen from werkzeug.local.Proxy.
-    __slots__ = ('__local', '__args', '__kwargs', '__dict__')
+    __slots__ = ("__local", "__args", "__kwargs", "__dict__")
 
-    def __init__(self, local,
-                 args=None, kwargs=None, name=None, __doc__=None):
-        object.__setattr__(self, '_Proxy__local', local)
-        object.__setattr__(self, '_Proxy__args', args or ())
-        object.__setattr__(self, '_Proxy__kwargs', kwargs or {})
+    def __init__(self, local, args=None, kwargs=None, name=None, __doc__=None):
+        object.__setattr__(self, "_Proxy__local", local)
+        object.__setattr__(self, "_Proxy__args", args or ())
+        object.__setattr__(self, "_Proxy__kwargs", kwargs or {})
         if name is not None:
-            object.__setattr__(self, '__custom_name__', name)
+            object.__setattr__(self, "__custom_name__", name)
         if __doc__ is not None:
-            object.__setattr__(self, '__doc__', __doc__)
+            object.__setattr__(self, "__doc__", __doc__)
 
-    @_default_cls_attr('name', str, __name__)
+    @_default_cls_attr("name", str, __name__)
     def __name__(self):
         try:
             return self.__custom_name__
         except AttributeError:
             return self._get_current_object().__name__
 
-    @_default_cls_attr('qualname', str, __name__)
+    @_default_cls_attr("qualname", str, __name__)
     def __qualname__(self):
         try:
             return self.__custom_name__
         except AttributeError:
             return self._get_current_object().__qualname__
 
-    @_default_cls_attr('module', str, __module__)
+    @_default_cls_attr("module", str, __module__)
     def __module__(self):
         return self._get_current_object().__module__
 
-    @_default_cls_attr('doc', str, __doc__)
+    @_default_cls_attr("doc", str, __doc__)
     def __doc__(self):
         return self._get_current_object().__doc__
 
@@ -100,27 +104,27 @@ class Proxy:
         object behind the proxy at a time for performance reasons or because
         you want to pass the object into a different context.
         """
-        loc = object.__getattribute__(self, '_Proxy__local')
-        if not hasattr(loc, '__release_local__'):
+        loc = object.__getattribute__(self, "_Proxy__local")
+        if not hasattr(loc, "__release_local__"):
             return loc(*self.__args, **self.__kwargs)
         try:  # pragma: no cover
             # not sure what this is about
             return getattr(loc, self.__name__)
         except AttributeError:  # pragma: no cover
-            raise RuntimeError(f'no object bound to {self.__name__}')
+            raise RuntimeError(f"no object bound to {self.__name__}")
 
     @property
     def __dict__(self):
         try:
             return self._get_current_object().__dict__
         except RuntimeError:  # pragma: no cover
-            raise AttributeError('__dict__')
+            raise AttributeError("__dict__")
 
     def __repr__(self):
         try:
             obj = self._get_current_object()
         except RuntimeError:  # pragma: no cover
-            return f'<{self.__class__.__name__} unbound>'
+            return f"<{self.__class__.__name__} unbound>"
         return repr(obj)
 
     def __bool__(self):
@@ -138,7 +142,7 @@ class Proxy:
             return []
 
     def __getattr__(self, name):
-        if name == '__members__':
+        if name == "__members__":
             return dir(self._get_current_object())
         return getattr(self._get_current_object(), name)
 
@@ -294,11 +298,11 @@ class PromiseProxy(Proxy):
     promise will only evaluate it once.
     """
 
-    __slots__ = ('__pending__', '__weakref__')
+    __slots__ = ("__pending__", "__weakref__")
 
     def _get_current_object(self):
         try:
-            return object.__getattribute__(self, '__thing')
+            return object.__getattribute__(self, "__thing")
         except AttributeError:
             return self.__evaluate__()
 
@@ -306,18 +310,19 @@ class PromiseProxy(Proxy):
         if self.__evaluated__():
             return fun(*args, **kwargs)
         from collections import deque
+
         try:
-            pending = object.__getattribute__(self, '__pending__')
+            pending = object.__getattribute__(self, "__pending__")
         except AttributeError:
             pending = None
         if pending is None:
             pending = deque()
-            object.__setattr__(self, '__pending__', pending)
+            object.__setattr__(self, "__pending__", pending)
         pending.append((fun, args, kwargs))
 
     def __evaluated__(self):
         try:
-            object.__getattribute__(self, '__thing')
+            object.__getattribute__(self, "__thing")
         except AttributeError:
             return False
         return True
@@ -325,16 +330,13 @@ class PromiseProxy(Proxy):
     def __maybe_evaluate__(self):
         return self._get_current_object()
 
-    def __evaluate__(self,
-                     _clean=('_Proxy__local',
-                             '_Proxy__args',
-                             '_Proxy__kwargs')):
+    def __evaluate__(self, _clean=("_Proxy__local", "_Proxy__args", "_Proxy__kwargs")):
         try:
             thing = Proxy._get_current_object(self)
         except Exception:
             raise
         else:
-            object.__setattr__(self, '__thing', thing)
+            object.__setattr__(self, "__thing", thing)
             for attr in _clean:
                 try:
                     object.__delattr__(self, attr)
@@ -342,7 +344,7 @@ class PromiseProxy(Proxy):
                     # May mask errors so ignore
                     pass
             try:
-                pending = object.__getattribute__(self, '__pending__')
+                pending = object.__getattribute__(self, "__pending__")
             except AttributeError:
                 pass
             else:
@@ -352,7 +354,7 @@ class PromiseProxy(Proxy):
                         fun(*args, **kwargs)
                 finally:
                     try:
-                        object.__delattr__(self, '__pending__')
+                        object.__delattr__(self, "__pending__")
                     except AttributeError:  # pragma: no cover
                         pass
             return thing
@@ -380,7 +382,7 @@ MODULE_DEPRECATED = """
 The module %s is deprecated and will be removed in a future version.
 """
 
-DEFAULT_ATTRS = {'__file__', '__path__', '__doc__', '__all__'}
+DEFAULT_ATTRS = {"__file__", "__path__", "__doc__", "__all__"}
 
 
 # im_func is no longer available in Py3.
@@ -396,59 +398,60 @@ def getappattr(path):
 
     """
     from celery import current_app
+
     return current_app._rgetattr(path)
 
 
 def _compat_periodic_task_decorator(*args, **kwargs):
     from celery.task import periodic_task
+
     return periodic_task(*args, **kwargs)
 
 
 COMPAT_MODULES = {
-    'celery': {
-        'execute': {
-            'send_task': 'send_task',
+    "celery": {
+        "execute": {
+            "send_task": "send_task",
         },
-        'decorators': {
-            'task': 'task',
-            'periodic_task': _compat_periodic_task_decorator,
+        "decorators": {
+            "task": "task",
+            "periodic_task": _compat_periodic_task_decorator,
         },
-        'log': {
-            'get_default_logger': 'log.get_default_logger',
-            'setup_logger': 'log.setup_logger',
-            'setup_logging_subsystem': 'log.setup_logging_subsystem',
-            'redirect_stdouts_to_logger': 'log.redirect_stdouts_to_logger',
+        "log": {
+            "get_default_logger": "log.get_default_logger",
+            "setup_logger": "log.setup_logger",
+            "setup_logging_subsystem": "log.setup_logging_subsystem",
+            "redirect_stdouts_to_logger": "log.redirect_stdouts_to_logger",
         },
-        'messaging': {
-            'TaskConsumer': 'amqp.TaskConsumer',
-            'establish_connection': 'connection',
-            'get_consumer_set': 'amqp.TaskConsumer',
+        "messaging": {
+            "TaskConsumer": "amqp.TaskConsumer",
+            "establish_connection": "connection",
+            "get_consumer_set": "amqp.TaskConsumer",
         },
-        'registry': {
-            'tasks': 'tasks',
+        "registry": {
+            "tasks": "tasks",
         },
     },
-    'celery.task': {
-        'control': {
-            'broadcast': 'control.broadcast',
-            'rate_limit': 'control.rate_limit',
-            'time_limit': 'control.time_limit',
-            'ping': 'control.ping',
-            'revoke': 'control.revoke',
-            'discard_all': 'control.purge',
-            'inspect': 'control.inspect',
+    "celery.task": {
+        "control": {
+            "broadcast": "control.broadcast",
+            "rate_limit": "control.rate_limit",
+            "time_limit": "control.time_limit",
+            "ping": "control.ping",
+            "revoke": "control.revoke",
+            "discard_all": "control.purge",
+            "inspect": "control.inspect",
         },
-        'schedules': 'celery.schedules',
-        'chords': 'celery.canvas',
-    }
+        "schedules": "celery.schedules",
+        "chords": "celery.canvas",
+    },
 }
 
 #: We exclude these from dir(celery)
-DEPRECATED_ATTRS = set(COMPAT_MODULES['celery'].keys()) | {'subtask'}
+DEPRECATED_ATTRS = set(COMPAT_MODULES["celery"].keys()) | {"subtask"}
 
 
 class class_property:
-
     def __init__(self, getter=None, setter=None):
         if getter is not None and not isinstance(getter, classmethod):
             getter = classmethod(getter)
@@ -488,8 +491,7 @@ class LazyModule(ModuleType):
 
     def __getattr__(self, name):
         if name in self._object_origins:
-            module = __import__(self._object_origins[name], None, None,
-                                [name])
+            module = __import__(self._object_origins[name], None, None, [name])
             for item in self._all_by_module[module.__name__]:
                 setattr(self, item, getattr(module, item))
             return getattr(module, name)
@@ -501,7 +503,8 @@ class LazyModule(ModuleType):
 
     def __dir__(self):
         return [
-            attr for attr in set(self.__all__) | DEFAULT_ATTRS
+            attr
+            for attr in set(self.__all__) | DEFAULT_ATTRS
             if attr not in DEPRECATED_ATTRS
         ]
 
@@ -509,25 +512,26 @@ class LazyModule(ModuleType):
         return import_module, (self.__name__,)
 
 
-def create_module(name, attrs, cls_attrs=None, pkg=None,
-                  base=LazyModule, prepare_attr=None):
-    fqdn = '.'.join([pkg.__name__, name]) if pkg else name
+def create_module(
+    name, attrs, cls_attrs=None, pkg=None, base=LazyModule, prepare_attr=None
+):
+    fqdn = ".".join([pkg.__name__, name]) if pkg else name
     cls_attrs = {} if cls_attrs is None else cls_attrs
-    pkg, _, modname = name.rpartition('.')
-    cls_attrs['__module__'] = pkg
+    pkg, _, modname = name.rpartition(".")
+    cls_attrs["__module__"] = pkg
 
     attrs = {
         attr_name: (prepare_attr(attr) if prepare_attr else attr)
         for attr_name, attr in attrs.items()
     }
-    module = sys.modules[fqdn] = type(
-        modname, (base,), cls_attrs)(name)
+    module = sys.modules[fqdn] = type(modname, (base,), cls_attrs)(name)
     module.__dict__.update(attrs)
     return module
 
 
-def recreate_module(name, compat_modules=None, by_module=None, direct=None,
-                    base=LazyModule, **attrs):
+def recreate_module(
+    name, compat_modules=None, by_module=None, direct=None, base=LazyModule, **attrs
+):
     compat_modules = compat_modules or ()
     by_module = by_module or {}
     direct = direct or {}
@@ -535,20 +539,25 @@ def recreate_module(name, compat_modules=None, by_module=None, direct=None,
     origins = get_origins(by_module)
     compat_modules = COMPAT_MODULES.get(name, ())
 
-    _all = tuple(set(reduce(
-        operator.add,
-        [tuple(v) for v in [compat_modules, origins, direct, attrs]],
-    )))
+    _all = tuple(
+        set(
+            reduce(
+                operator.add,
+                [tuple(v) for v in [compat_modules, origins, direct, attrs]],
+            )
+        )
+    )
     cattrs = {
-        '_compat_modules': compat_modules,
-        '_all_by_module': by_module, '_direct': direct,
-        '_object_origins': origins,
-        '__all__': _all,
+        "_compat_modules": compat_modules,
+        "_all_by_module": by_module,
+        "_direct": direct,
+        "_object_origins": origins,
+        "__all__": _all,
     }
     new_module = create_module(name, attrs, cls_attrs=cattrs, base=base)
-    new_module.__dict__.update({
-        mod: get_compat_module(new_module, mod) for mod in compat_modules
-    })
+    new_module.__dict__.update(
+        {mod: get_compat_module(new_module, mod) for mod in compat_modules}
+    )
     return old_module, new_module
 
 
@@ -560,10 +569,10 @@ def get_compat_module(pkg, name):
 
     attrs = COMPAT_MODULES[pkg.__name__][name]
     if isinstance(attrs, str):
-        fqdn = '.'.join([pkg.__name__, name])
+        fqdn = ".".join([pkg.__name__, name])
         module = sys.modules[fqdn] = import_module(attrs)
         return module
-    attrs['__all__'] = list(attrs)
+    attrs["__all__"] = list(attrs)
     return create_module(name, dict(attrs), pkg=pkg, prepare_attr=prepare)
 
 

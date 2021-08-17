@@ -16,27 +16,37 @@ except ImportError:
     import pickle  # noqa
 
 __all__ = (
-    'UnpickleableExceptionWrapper', 'subclass_exception',
-    'find_pickleable_exception', 'create_exception_cls',
-    'get_pickleable_exception', 'get_pickleable_etype',
-    'get_pickled_exception', 'strtobool',
+    "UnpickleableExceptionWrapper",
+    "subclass_exception",
+    "find_pickleable_exception",
+    "create_exception_cls",
+    "get_pickleable_exception",
+    "get_pickleable_etype",
+    "get_pickled_exception",
+    "strtobool",
 )
 
 #: List of base classes we probably don't want to reduce to.
 unwanted_base_classes = (Exception, BaseException, object)
 
-STRTOBOOL_DEFAULT_TABLE = {'false': False, 'no': False, '0': False,
-                           'true': True, 'yes': True, '1': True,
-                           'on': True, 'off': False}
+STRTOBOOL_DEFAULT_TABLE = {
+    "false": False,
+    "no": False,
+    "0": False,
+    "true": True,
+    "yes": True,
+    "1": True,
+    "on": True,
+    "off": False,
+}
 
 
 def subclass_exception(name, parent, module):  # noqa
     """Create new exception class."""
-    return type(name, (parent,), {'__module__': module})
+    return type(name, (parent,), {"__module__": module})
 
 
-def find_pickleable_exception(exc, loads=pickle.loads,
-                              dumps=pickle.dumps):
+def find_pickleable_exception(exc, loads=pickle.loads, dumps=pickle.dumps):
     """Find first pickleable exception base class.
 
     With an exception instance, iterate over its super classes (by MRO)
@@ -55,7 +65,7 @@ def find_pickleable_exception(exc, loads=pickle.loads,
             (except :exc:`Exception` and parents), or if the exception is
             pickleable it will return :const:`None`.
     """
-    exc_args = getattr(exc, 'args', [])
+    exc_args = getattr(exc, "args", [])
     for supercls in itermro(exc.__class__, unwanted_base_classes):
         try:
             superexc = supercls(*exc_args)
@@ -133,22 +143,22 @@ class UnpickleableExceptionWrapper(Exception):
         self.exc_cls_name = exc_cls_name
         self.exc_args = safe_exc_args
         self.text = text
-        Exception.__init__(self, exc_module, exc_cls_name, safe_exc_args,
-                           text)
+        Exception.__init__(self, exc_module, exc_cls_name, safe_exc_args, text)
 
     def restore(self):
-        return create_exception_cls(self.exc_cls_name,
-                                    self.exc_module)(*self.exc_args)
+        return create_exception_cls(self.exc_cls_name, self.exc_module)(*self.exc_args)
 
     def __str__(self):
         return self.text
 
     @classmethod
     def from_exception(cls, exc):
-        return cls(exc.__class__.__module__,
-                   exc.__class__.__name__,
-                   getattr(exc, 'args', []),
-                   safe_repr(exc))
+        return cls(
+            exc.__class__.__module__,
+            exc.__class__.__name__,
+            getattr(exc, "args", []),
+            safe_repr(exc),
+        )
 
 
 def get_pickleable_exception(exc):
@@ -201,7 +211,7 @@ def strtobool(term, table=None):
         try:
             return table[term.lower()]
         except KeyError:
-            raise TypeError(f'Cannot coerce {term!r} to type bool')
+            raise TypeError(f"Cannot coerce {term!r} to type bool")
     return term
 
 
@@ -211,8 +221,8 @@ def _datetime_to_json(dt):
         r = dt.isoformat()
         if dt.microsecond:
             r = r[:23] + r[26:]
-        if r.endswith('+00:00'):
-            r = r[:-6] + 'Z'
+        if r.endswith("+00:00"):
+            r = r[:-6] + "Z"
         return r
     elif isinstance(dt, datetime.time):
         r = dt.isoformat()
@@ -223,15 +233,23 @@ def _datetime_to_json(dt):
         return dt.isoformat()
 
 
-def jsonify(obj,
-            builtin_types=(numbers.Real, str), key=None,
-            keyfilter=None,
-            unknown_type_filter=None):
+def jsonify(
+    obj,
+    builtin_types=(numbers.Real, str),
+    key=None,
+    keyfilter=None,
+    unknown_type_filter=None,
+):
     """Transform object making it suitable for json serialization."""
     from kombu.abstract import Object as KombuDictType
-    _jsonify = partial(jsonify, builtin_types=builtin_types, key=key,
-                       keyfilter=keyfilter,
-                       unknown_type_filter=unknown_type_filter)
+
+    _jsonify = partial(
+        jsonify,
+        builtin_types=builtin_types,
+        key=key,
+        keyfilter=keyfilter,
+        unknown_type_filter=unknown_type_filter,
+    )
 
     if isinstance(obj, KombuDictType):
         obj = obj.as_dict(recurse=True)
@@ -242,7 +260,8 @@ def jsonify(obj,
         return [_jsonify(v) for v in obj]
     elif isinstance(obj, dict):
         return {
-            k: _jsonify(v, key=k) for k, v in obj.items()
+            k: _jsonify(v, key=k)
+            for k, v in obj.items()
             if (keyfilter(k) if keyfilter else 1)
         }
     elif isinstance(obj, (datetime.date, datetime.time)):
@@ -251,9 +270,7 @@ def jsonify(obj,
         return str(obj)
     else:
         if unknown_type_filter is None:
-            raise ValueError(
-                f'Unsupported type: {type(obj)!r} {obj!r} (parent: {key})'
-            )
+            raise ValueError(f"Unsupported type: {type(obj)!r} {obj!r} (parent: {key})")
         return unknown_type_filter(obj)
 
 

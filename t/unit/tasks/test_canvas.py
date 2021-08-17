@@ -5,24 +5,36 @@ import pytest
 import pytest_subtests  # noqa: F401
 
 from celery._state import _task_stack
-from celery.canvas import (Signature, _chain, _maybe_group, chain, chord,
-                           chunks, group, maybe_signature, maybe_unroll_group,
-                           signature, xmap, xstarmap)
+from celery.canvas import (
+    Signature,
+    _chain,
+    _maybe_group,
+    chain,
+    chord,
+    chunks,
+    group,
+    maybe_signature,
+    maybe_unroll_group,
+    signature,
+    xmap,
+    xstarmap,
+)
 from celery.result import AsyncResult, EagerResult, GroupResult
 
-SIG = Signature({
-    'task': 'TASK',
-    'args': ('A1',),
-    'kwargs': {'K1': 'V1'},
-    'options': {'task_id': 'TASK_ID'},
-    'subtask_type': ''},
+SIG = Signature(
+    {
+        "task": "TASK",
+        "args": ("A1",),
+        "kwargs": {"K1": "V1"},
+        "options": {"task_id": "TASK_ID"},
+        "subtask_type": "",
+    },
 )
 
 
 class test_maybe_unroll_group:
-
     def test_when_no_len_and_no_length_hint(self):
-        g = MagicMock(name='group')
+        g = MagicMock(name="group")
         g.tasks.__len__.side_effect = TypeError()
         g.tasks.__length_hint__ = Mock()
         g.tasks.__length_hint__.return_value = 0
@@ -32,26 +44,27 @@ class test_maybe_unroll_group:
 
 
 class CanvasCase:
-
     def setup(self):
         @self.app.task(shared=False)
         def add(x, y):
             return x + y
+
         self.add = add
 
         @self.app.task(shared=False)
         def mul(x, y):
             return x * y
+
         self.mul = mul
 
         @self.app.task(shared=False)
         def div(x, y):
             return x / y
+
         self.div = div
 
 
 class test_Signature(CanvasCase):
-
     def test_getitem_property_class(self):
         assert Signature.task
         assert Signature.args
@@ -60,64 +73,65 @@ class test_Signature(CanvasCase):
         assert Signature.subtask_type
 
     def test_getitem_property(self):
-        assert SIG.task == 'TASK'
-        assert SIG.args == ('A1',)
-        assert SIG.kwargs == {'K1': 'V1'}
-        assert SIG.options == {'task_id': 'TASK_ID'}
-        assert SIG.subtask_type == ''
+        assert SIG.task == "TASK"
+        assert SIG.args == ("A1",)
+        assert SIG.kwargs == {"K1": "V1"}
+        assert SIG.options == {"task_id": "TASK_ID"}
+        assert SIG.subtask_type == ""
 
     def test_call(self):
-        x = Signature('foo', (1, 2), {'arg1': 33}, app=self.app)
-        x.type = Mock(name='type')
+        x = Signature("foo", (1, 2), {"arg1": 33}, app=self.app)
+        x.type = Mock(name="type")
         x(3, 4, arg2=66)
         x.type.assert_called_with(3, 4, 1, 2, arg1=33, arg2=66)
 
     def test_link_on_scalar(self):
-        x = Signature('TASK', link=Signature('B'))
-        assert x.options['link']
-        x.link(Signature('C'))
-        assert isinstance(x.options['link'], list)
-        assert Signature('B') in x.options['link']
-        assert Signature('C') in x.options['link']
+        x = Signature("TASK", link=Signature("B"))
+        assert x.options["link"]
+        x.link(Signature("C"))
+        assert isinstance(x.options["link"], list)
+        assert Signature("B") in x.options["link"]
+        assert Signature("C") in x.options["link"]
 
     def test_json(self):
-        x = Signature('TASK', link=Signature('B', app=self.app), app=self.app)
+        x = Signature("TASK", link=Signature("B", app=self.app), app=self.app)
         assert x.__json__() == dict(x)
 
-    @pytest.mark.usefixtures('depends_on_current_app')
+    @pytest.mark.usefixtures("depends_on_current_app")
     def test_reduce(self):
-        x = Signature('TASK', (2, 4), app=self.app)
+        x = Signature("TASK", (2, 4), app=self.app)
         fun, args = x.__reduce__()
         assert fun(*args) == x
 
     def test_replace(self):
-        x = Signature('TASK', ('A'), {})
-        assert x.replace(args=('B',)).args == ('B',)
-        assert x.replace(kwargs={'FOO': 'BAR'}).kwargs == {
-            'FOO': 'BAR',
+        x = Signature("TASK", ("A"), {})
+        assert x.replace(args=("B",)).args == ("B",)
+        assert x.replace(kwargs={"FOO": "BAR"}).kwargs == {
+            "FOO": "BAR",
         }
-        assert x.replace(options={'task_id': '123'}).options == {
-            'task_id': '123',
+        assert x.replace(options={"task_id": "123"}).options == {
+            "task_id": "123",
         }
 
     def test_set(self):
-        assert Signature('TASK', x=1).set(task_id='2').options == {
-            'x': 1, 'task_id': '2',
+        assert Signature("TASK", x=1).set(task_id="2").options == {
+            "x": 1,
+            "task_id": "2",
         }
 
     def test_link(self):
         x = signature(SIG)
         x.link(SIG)
         x.link(SIG)
-        assert SIG in x.options['link']
-        assert len(x.options['link']) == 1
+        assert SIG in x.options["link"]
+        assert len(x.options["link"]) == 1
 
     def test_link_error(self):
         x = signature(SIG)
         x.link_error(SIG)
         x.link_error(SIG)
-        assert SIG in x.options['link_error']
-        assert len(x.options['link_error']) == 1
+        assert SIG in x.options["link_error"]
+        assert len(x.options["link_error"]) == 1
 
     def test_flatten_links(self):
         tasks = [self.add.s(2, 2), self.mul.s(4), self.div.s(2)]
@@ -137,7 +151,7 @@ class test_Signature(CanvasCase):
             x | 10
         ax = self.add.s(2, 2) | (self.add.s(4) | self.add.s(8))
         assert isinstance(ax, _chain)
-        assert len(ax.tasks), 3 == 'consolidates chain to chain'
+        assert len(ax.tasks), 3 == "consolidates chain to chain"
 
     def test_INVERT(self):
         x = self.add.s(2, 2)
@@ -150,10 +164,10 @@ class test_Signature(CanvasCase):
 
     def test_merge_immutable(self):
         x = self.add.si(2, 2, foo=1)
-        args, kwargs, options = x._merge((4,), {'bar': 2}, {'task_id': 3})
+        args, kwargs, options = x._merge((4,), {"bar": 2}, {"task_id": 3})
         assert args == (2, 2)
-        assert kwargs == {'foo': 1}
-        assert options == {'task_id': 3}
+        assert kwargs == {"foo": 1}
+        assert options == {"task_id": 3}
 
     def test_merge_options__none(self):
         sig = self.add.si()
@@ -188,78 +202,79 @@ class test_Signature(CanvasCase):
 
     def test_election(self):
         x = self.add.s(2, 2)
-        x.freeze('foo')
+        x.freeze("foo")
         x.type.app.control = Mock()
         r = x.election()
         x.type.app.control.election.assert_called()
-        assert r.id == 'foo'
+        assert r.id == "foo"
 
     def test_AsyncResult_when_not_registered(self):
-        s = signature('xxx.not.registered', app=self.app)
+        s = signature("xxx.not.registered", app=self.app)
         assert s.AsyncResult
 
     def test_apply_async_when_not_registered(self):
-        s = signature('xxx.not.registered', app=self.app)
+        s = signature("xxx.not.registered", app=self.app)
         assert s._apply_async
 
     def test_keeping_link_error_on_chaining(self):
         x = self.add.s(2, 2) | self.mul.s(4)
         assert isinstance(x, _chain)
         x.link_error(SIG)
-        assert SIG in x.options['link_error']
+        assert SIG in x.options["link_error"]
 
         t = signature(SIG)
         z = x | t
         assert isinstance(z, _chain)
         assert t in z.tasks
-        assert not z.options.get('link_error')
-        assert SIG in z.tasks[0].options['link_error']
-        assert not z.tasks[2].options.get('link_error')
-        assert SIG in x.options['link_error']
+        assert not z.options.get("link_error")
+        assert SIG in z.tasks[0].options["link_error"]
+        assert not z.tasks[2].options.get("link_error")
+        assert SIG in x.options["link_error"]
         assert t not in x.tasks
-        assert not x.tasks[0].options.get('link_error')
+        assert not x.tasks[0].options.get("link_error")
 
         z = t | x
         assert isinstance(z, _chain)
         assert t in z.tasks
-        assert not z.options.get('link_error')
-        assert SIG in z.tasks[1].options['link_error']
-        assert not z.tasks[0].options.get('link_error')
-        assert SIG in x.options['link_error']
+        assert not z.options.get("link_error")
+        assert SIG in z.tasks[1].options["link_error"]
+        assert not z.tasks[0].options.get("link_error")
+        assert SIG in x.options["link_error"]
         assert t not in x.tasks
-        assert not x.tasks[0].options.get('link_error')
+        assert not x.tasks[0].options.get("link_error")
 
         y = self.add.s(4, 4) | self.div.s(2)
         assert isinstance(y, _chain)
 
         z = x | y
         assert isinstance(z, _chain)
-        assert not z.options.get('link_error')
-        assert SIG in z.tasks[0].options['link_error']
-        assert not z.tasks[2].options.get('link_error')
-        assert SIG in x.options['link_error']
-        assert not x.tasks[0].options.get('link_error')
+        assert not z.options.get("link_error")
+        assert SIG in z.tasks[0].options["link_error"]
+        assert not z.tasks[2].options.get("link_error")
+        assert SIG in x.options["link_error"]
+        assert not x.tasks[0].options.get("link_error")
 
         z = y | x
         assert isinstance(z, _chain)
-        assert not z.options.get('link_error')
-        assert SIG in z.tasks[3].options['link_error']
-        assert not z.tasks[1].options.get('link_error')
-        assert SIG in x.options['link_error']
-        assert not x.tasks[0].options.get('link_error')
+        assert not z.options.get("link_error")
+        assert SIG in z.tasks[3].options["link_error"]
+        assert not z.tasks[1].options.get("link_error")
+        assert SIG in x.options["link_error"]
+        assert not x.tasks[0].options.get("link_error")
 
 
 class test_xmap_xstarmap(CanvasCase):
-
     def test_apply(self):
-        for type, attr in [(xmap, 'map'), (xstarmap, 'starmap')]:
+        for type, attr in [(xmap, "map"), (xstarmap, "starmap")]:
             args = [(i, i) for i in range(10)]
             s = getattr(self.add, attr)(args)
             s.type = Mock()
 
             s.apply_async(foo=1)
             s.type.apply_async.assert_called_with(
-                (), {'task': self.add.s(), 'it': args}, foo=1,
+                (),
+                {"task": self.add.s(), "it": args},
+                foo=1,
                 route_name=self.add.name,
             )
 
@@ -268,7 +283,6 @@ class test_xmap_xstarmap(CanvasCase):
 
 
 class test_chunks(CanvasCase):
-
     def test_chunks(self):
         x = self.add.chunks(range(100), 10)
         assert dict(chunks.from_dict(dict(x), app=self.app)) == dict(x)
@@ -286,11 +300,10 @@ class test_chunks(CanvasCase):
         gr.apply_async.assert_called_with((), {}, route_name=self.add.name)
 
         self.app.conf.task_always_eager = True
-        chunks.apply_chunks(app=self.app, **x['kwargs'])
+        chunks.apply_chunks(app=self.app, **x["kwargs"])
 
 
 class test_chain(CanvasCase):
-
     def test_chain_of_chain_with_a_single_task(self):
         s = self.add.s(1, 1)
         assert chain([chain(s)]).tasks == list(chain(s).tasks)
@@ -303,7 +316,7 @@ class test_chain(CanvasCase):
 
     def test_repr(self):
         x = self.add.s(2, 2) | self.add.s(2)
-        assert repr(x) == f'{self.add.name}(2, 2) | add(2)'
+        assert repr(x) == f"{self.add.name}(2, 2) | add(2)"
 
     def test_apply_async(self):
         c = self.add.s(2, 2) | self.add.s(4) | self.add.s(8)
@@ -331,14 +344,17 @@ class test_chain(CanvasCase):
         deserialized = chain.from_dict(serialized)
         assert all(isinstance(task, Signature) for task in deserialized.tasks)
 
-    @pytest.mark.usefixtures('depends_on_current_app')
+    @pytest.mark.usefixtures("depends_on_current_app")
     def test_app_falls_back_to_default(self):
         from celery._state import current_app
+
         assert chain().app is current_app
 
     def test_handles_dicts(self):
         c = chain(
-            self.add.s(5, 5), dict(self.add.s(8)), app=self.app,
+            self.add.s(5, 5),
+            dict(self.add.s(8)),
+            app=self.app,
         )
         c.freeze()
         tasks, _ = c._frozen
@@ -353,11 +369,11 @@ class test_chain(CanvasCase):
 
     def test_group_to_chord(self):
         c = (
-            self.add.s(5) |
-            group([self.add.s(i, i) for i in range(5)], app=self.app) |
-            self.add.s(10) |
-            self.add.s(20) |
-            self.add.s(30)
+            self.add.s(5)
+            | group([self.add.s(i, i) for i in range(5)], app=self.app)
+            | self.add.s(10)
+            | self.add.s(20)
+            | self.add.s(30)
         )
         c._use_link = True
         tasks, results = c.prepare_steps((), {}, c.tasks)
@@ -379,10 +395,10 @@ class test_chain(CanvasCase):
 
     def test_group_to_chord__protocol_2__or(self):
         c = (
-            group([self.add.s(i, i) for i in range(5)], app=self.app) |
-            self.add.s(10) |
-            self.add.s(20) |
-            self.add.s(30)
+            group([self.add.s(i, i) for i in range(5)], app=self.app)
+            | self.add.s(10)
+            | self.add.s(20)
+            | self.add.s(30)
         )
         assert isinstance(c, chord)
 
@@ -391,7 +407,7 @@ class test_chain(CanvasCase):
             group([self.add.s(i, i) for i in range(5)], app=self.app),
             self.add.s(10),
             self.add.s(20),
-            self.add.s(30)
+            self.add.s(30),
         )
         assert isinstance(c, chord)
         assert isinstance(c.body, _chain)
@@ -403,9 +419,7 @@ class test_chain(CanvasCase):
         assert isinstance(tasks2[0], group)
 
     def test_apply_options(self):
-
         class static(Signature):
-
             def clone(self, *args, **kwargs):
                 return self
 
@@ -413,25 +427,24 @@ class test_chain(CanvasCase):
             return static(self.add, args, kwargs, type=self.add, app=self.app)
 
         c = s(2, 2) | s(4) | s(8)
-        r1 = c.apply_async(task_id='some_id')
-        assert r1.id == 'some_id'
+        r1 = c.apply_async(task_id="some_id")
+        assert r1.id == "some_id"
 
-        c.apply_async(group_id='some_group_id')
-        assert c.tasks[-1].options['group_id'] == 'some_group_id'
+        c.apply_async(group_id="some_group_id")
+        assert c.tasks[-1].options["group_id"] == "some_group_id"
 
-        c.apply_async(chord='some_chord_id')
-        assert c.tasks[-1].options['chord'] == 'some_chord_id'
+        c.apply_async(chord="some_chord_id")
+        assert c.tasks[-1].options["chord"] == "some_chord_id"
 
         c.apply_async(link=[s(32)])
-        assert c.tasks[-1].options['link'] == [s(32)]
+        assert c.tasks[-1].options["link"] == [s(32)]
 
-        c.apply_async(link_error=[s('error')])
+        c.apply_async(link_error=[s("error")])
         for task in c.tasks:
-            assert task.options['link_error'] == [s('error')]
+            assert task.options["link_error"] == [s("error")]
 
     def test_apply_options_none(self):
         class static(Signature):
-
             def clone(self, *args, **kwargs):
                 return self
 
@@ -442,10 +455,10 @@ class test_chain(CanvasCase):
         c = static(self.add, (2, 2), type=self.add, app=self.app, priority=5)
 
         c.apply_async(priority=4)
-        assert c.kwargs['priority'] == 4
+        assert c.kwargs["priority"] == 4
 
         c.apply_async(priority=None)
-        assert c.kwargs['priority'] == 5
+        assert c.kwargs["priority"] == 5
 
     def test_reverse(self):
         x = self.add.s(2, 2) | self.add.s(2)
@@ -487,7 +500,7 @@ class test_chain(CanvasCase):
 
     def test_kwargs_apply(self):
         x = chain(self.add.s(), self.add.s(8), self.add.s(10))
-        res = x.apply(kwargs={'x': 1, 'y': 1}).get()
+        res = x.apply(kwargs={"x": 1, "y": 1}).get()
         assert res == 20
 
     def test_single_expresion(self):
@@ -507,13 +520,13 @@ class test_chain(CanvasCase):
         x = self.add.s(2, 2) | self.add.s(4)
         x.apply_async = Mock()
         x(2, 2, foo=1)
-        x.apply_async.assert_called_with((2, 2), {'foo': 1})
+        x.apply_async.assert_called_with((2, 2), {"foo": 1})
 
     def test_from_dict_no_args__with_args(self):
         x = dict(self.add.s(2, 2) | self.add.s(4))
-        x['args'] = None
+        x["args"] = None
         assert isinstance(chain.from_dict(x), _chain)
-        x['args'] = (2,)
+        x["args"] = (2,)
         assert isinstance(chain.from_dict(x), _chain)
 
     def test_accepts_generator_argument(self):
@@ -522,10 +535,12 @@ class test_chain(CanvasCase):
         assert x.type
 
     def test_chord_sets_result_parent(self):
-        g = (self.add.s(0, 0) |
-             group(self.add.s(i, i) for i in range(1, 10)) |
-             self.add.s(2, 2) |
-             self.add.s(4, 4))
+        g = (
+            self.add.s(0, 0)
+            | group(self.add.s(i, i) for i in range(1, 10))
+            | self.add.s(2, 2)
+            | self.add.s(4, 4)
+        )
         res = g.freeze()
 
         assert isinstance(res, AsyncResult)
@@ -554,7 +569,7 @@ class test_chain(CanvasCase):
 
         assert x.apply().get() == 3
 
-    @pytest.mark.usefixtures('depends_on_current_app')
+    @pytest.mark.usefixtures("depends_on_current_app")
     def test_chain_single_child_result(self):
         child_sig = self.add.si(1, 1)
         chain_sig = chain(child_sig)
@@ -562,10 +577,13 @@ class test_chain(CanvasCase):
 
         with patch.object(
             # We want to get back the result of actually applying the task
-            child_sig, "apply_async",
+            child_sig,
+            "apply_async",
         ) as mock_apply, patch.object(
             # The child signature may be clone by `chain.prepare_steps()`
-            child_sig, "clone", return_value=child_sig,
+            child_sig,
+            "clone",
+            return_value=child_sig,
         ):
             res = chain_sig()
         # `_prepare_chain_from_options()` sets this `chain` kwarg with the
@@ -573,7 +591,7 @@ class test_chain(CanvasCase):
         mock_apply.assert_called_once_with(chain=[])
         assert res is mock_apply.return_value
 
-    @pytest.mark.usefixtures('depends_on_current_app')
+    @pytest.mark.usefixtures("depends_on_current_app")
     def test_chain_single_child_group_result(self):
         child_sig = self.add.si(1, 1)
         # The group will `clone()` the child during instantiation so mock it
@@ -585,10 +603,13 @@ class test_chain(CanvasCase):
 
         with patch.object(
             # We want to get back the result of actually applying the task
-            child_sig, "apply_async",
+            child_sig,
+            "apply_async",
         ) as mock_apply, patch.object(
             # The child signature may be clone by `chain.prepare_steps()`
-            child_sig, "clone", return_value=child_sig,
+            child_sig,
+            "clone",
+            return_value=child_sig,
         ):
             res = chain_sig()
         # `_prepare_chain_from_options()` sets this `chain` kwarg with the
@@ -598,7 +619,6 @@ class test_chain(CanvasCase):
 
 
 class test_group(CanvasCase):
-
     def test_repr(self):
         x = group([self.add.s(2, 2), self.add.s(4, 4)])
         assert repr(x)
@@ -645,20 +665,20 @@ class test_group(CanvasCase):
         g2.apply_async()
 
     def test_set_immutable(self):
-        g1 = group(Mock(name='t1'), Mock(name='t2'), app=self.app)
+        g1 = group(Mock(name="t1"), Mock(name="t2"), app=self.app)
         g1.set_immutable(True)
         for task in g1.tasks:
             task.set_immutable.assert_called_with(True)
 
     def test_link(self):
-        g1 = group(Mock(name='t1'), Mock(name='t2'), app=self.app)
-        sig = Mock(name='sig')
+        g1 = group(Mock(name="t1"), Mock(name="t2"), app=self.app)
+        sig = Mock(name="sig")
         g1.link(sig)
         g1.tasks[0].link.assert_called_with(sig.clone().set(immutable=True))
 
     def test_link_error(self):
-        g1 = group(Mock(name='t1'), Mock(name='t2'), app=self.app)
-        sig = Mock(name='sig')
+        g1 = group(Mock(name="t1"), Mock(name="t2"), app=self.app)
+        sig = Mock(name="sig")
         g1.link_error(sig)
         g1.tasks[0].link_error.assert_called_with(
             sig.clone().set(immutable=True),
@@ -689,9 +709,9 @@ class test_group(CanvasCase):
 
     def test_from_dict(self):
         x = group([self.add.s(2, 2), self.add.s(4, 4)])
-        x['args'] = (2, 2)
+        x["args"] = (2, 2)
         assert group.from_dict(dict(x))
-        x['args'] = None
+        x["args"] = None
         assert group.from_dict(dict(x))
 
     def test_from_dict_deep_deserialize(self):
@@ -699,8 +719,7 @@ class test_group(CanvasCase):
         serialized_group = json.loads(json.dumps(original_group))
         deserialized_group = group.from_dict(serialized_group)
         assert all(
-            isinstance(child_task, Signature)
-            for child_task in deserialized_group.tasks
+            isinstance(child_task, Signature) for child_task in deserialized_group.tasks
         )
 
     def test_from_dict_deeper_deserialize(self):
@@ -709,8 +728,7 @@ class test_group(CanvasCase):
         serialized_group = json.loads(json.dumps(outer_group))
         deserialized_group = group.from_dict(serialized_group)
         assert all(
-            isinstance(child_task, Signature)
-            for child_task in deserialized_group.tasks
+            isinstance(child_task, Signature) for child_task in deserialized_group.tasks
         )
         assert all(
             isinstance(grandchild_task, Signature)
@@ -729,7 +747,7 @@ class test_group(CanvasCase):
         g = group([self.add.s(i, i) for i in range(10)])
         g.skew(start=1, stop=10, step=1)
         for i, task in enumerate(g.tasks):
-            assert task.options['countdown'] == i + 1
+            assert task.options["countdown"] == i + 1
 
     def test_iter(self):
         g = group([self.add.s(i, i) for i in range(10)])
@@ -746,6 +764,7 @@ class test_group(CanvasCase):
     @staticmethod
     def helper_test_get_delay(result):
         import time
+
         t0 = time.time()
         while not result.ready():
             time.sleep(0.01)
@@ -759,15 +778,13 @@ class test_group(CanvasCase):
 
     def test_kwargs_apply(self):
         x = group([self.add.s(), self.add.s()])
-        res = x.apply(kwargs={'x': 1, 'y': 1}).get()
+        res = x.apply(kwargs={"x": 1, "y": 1}).get()
         assert res == [2, 2]
 
     def test_kwargs_apply_async(self):
         self.app.conf.task_always_eager = True
         x = group([self.add.s(), self.add.s()])
-        res = self.helper_test_get_delay(
-            x.apply_async(kwargs={'x': 1, 'y': 1})
-        )
+        res = self.helper_test_get_delay(x.apply_async(kwargs={"x": 1, "y": 1}))
         assert res == [2, 2]
 
     def test_kwargs_delay(self):
@@ -784,7 +801,6 @@ class test_group(CanvasCase):
 
 
 class test_chord(CanvasCase):
-
     def test_reverse(self):
         x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))
         assert isinstance(signature(x), chord)
@@ -793,23 +809,23 @@ class test_chord(CanvasCase):
     def test_clone_clones_body(self):
         x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))
         y = x.clone()
-        assert x.kwargs['body'] is not y.kwargs['body']
-        y.kwargs.pop('body')
+        assert x.kwargs["body"] is not y.kwargs["body"]
+        y.kwargs.pop("body")
         z = y.clone()
-        assert z.kwargs.get('body') is None
+        assert z.kwargs.get("body") is None
 
     def test_argument_is_group(self):
         x = chord(group(self.add.s(2, 2), self.add.s(4, 4), app=self.app))
         assert x.tasks
 
     def test_app_when_app(self):
-        app = Mock(name='app')
+        app = Mock(name="app")
         x = chord([self.add.s(4, 4)], app=app)
         assert x.app is app
 
     def test_app_when_app_in_task(self):
-        t1 = Mock(name='t1')
-        t2 = Mock(name='t2')
+        t1 = Mock(name="t1")
+        t2 = Mock(name="t2")
         x = chord([t1, self.add.s(4, 4)])
         assert x.app is x.tasks[0].app
         t1.app = None
@@ -820,10 +836,11 @@ class test_chord(CanvasCase):
         x = chord([], self.add.s(4, 4))
         assert x.app is self.add.app
 
-    @pytest.mark.usefixtures('depends_on_current_app')
+    @pytest.mark.usefixtures("depends_on_current_app")
     def test_app_fallback_to_current(self):
         from celery._state import current_app
-        t1 = Mock(name='t1')
+
+        t1 = Mock(name="t1")
         t1.app = t1._app = None
         x = chord([t1], body=t1)
         assert x.app is current_app
@@ -907,71 +924,45 @@ class test_chord(CanvasCase):
     # Nested groups in a chain only affect the chord size if they are the last
     # element in the chain - in that case each group element is counted
     def test_chord_size_nested_group_chain_group_head_single(self):
-        x = chord(
-            group(
-                [group(self.add.s()) | self.add.s()] * 42
-            ),
-            body=self.add.s()
-        )
+        x = chord(group([group(self.add.s()) | self.add.s()] * 42), body=self.add.s())
         assert x.__length_hint__() == 42
 
     def test_chord_size_nested_group_chain_group_head_many(self):
         x = chord(
-            group(
-                [group([self.add.s()] * 4) | self.add.s()] * 2
-            ),
-            body=self.add.s()
+            group([group([self.add.s()] * 4) | self.add.s()] * 2), body=self.add.s()
         )
         assert x.__length_hint__() == 2
 
     def test_chord_size_nested_group_chain_group_mid_single(self):
         x = chord(
-            group(
-                [self.add.s() | group(self.add.s()) | self.add.s()] * 42
-            ),
-            body=self.add.s()
+            group([self.add.s() | group(self.add.s()) | self.add.s()] * 42),
+            body=self.add.s(),
         )
         assert x.__length_hint__() == 42
 
     def test_chord_size_nested_group_chain_group_mid_many(self):
         x = chord(
-            group(
-                [self.add.s() | group([self.add.s()] * 4) | self.add.s()] * 2
-            ),
-            body=self.add.s()
+            group([self.add.s() | group([self.add.s()] * 4) | self.add.s()] * 2),
+            body=self.add.s(),
         )
         assert x.__length_hint__() == 2
 
     def test_chord_size_nested_group_chain_group_tail_single(self):
-        x = chord(
-            group(
-                [self.add.s() | group(self.add.s())] * 42
-            ),
-            body=self.add.s()
-        )
+        x = chord(group([self.add.s() | group(self.add.s())] * 42), body=self.add.s())
         assert x.__length_hint__() == 42
 
     def test_chord_size_nested_group_chain_group_tail_many(self):
         x = chord(
-            group(
-                [self.add.s() | group([self.add.s()] * 4)] * 2
-            ),
-            body=self.add.s()
+            group([self.add.s() | group([self.add.s()] * 4)] * 2), body=self.add.s()
         )
         assert x.__length_hint__() == 4 * 2
 
     def test_chord_size_nested_implicit_group_chain_group_tail_single(self):
-        x = chord(
-            [self.add.s() | group(self.add.s())] * 42,
-            body=self.add.s()
-        )
+        x = chord([self.add.s() | group(self.add.s())] * 42, body=self.add.s())
         assert x.__length_hint__() == 42
 
     def test_chord_size_nested_implicit_group_chain_group_tail_many(self):
-        x = chord(
-            [self.add.s() | group([self.add.s()] * 4)] * 2,
-            body=self.add.s()
-        )
+        x = chord([self.add.s() | group([self.add.s()] * 4)] * 2, body=self.add.s())
         assert x.__length_hint__() == 4 * 2
 
     def test_chord_size_deserialized_element_single(self):
@@ -985,7 +976,7 @@ class test_chord(CanvasCase):
         with patch(
             "celery.canvas.Signature.from_dict", return_value=child_sig
         ) as mock_from_dict:
-            assert chord_sig. __length_hint__() == 1
+            assert chord_sig.__length_hint__() == 1
         mock_from_dict.assert_called_once_with(deserialized_child_sig)
 
     def test_chord_size_deserialized_element_many(self):
@@ -999,22 +990,22 @@ class test_chord(CanvasCase):
         with patch(
             "celery.canvas.Signature.from_dict", return_value=child_sig
         ) as mock_from_dict:
-            assert chord_sig. __length_hint__() == 42
+            assert chord_sig.__length_hint__() == 42
         mock_from_dict.assert_has_calls([call(deserialized_child_sig)] * 42)
 
     def test_set_immutable(self):
-        x = chord([Mock(name='t1'), Mock(name='t2')], app=self.app)
+        x = chord([Mock(name="t1"), Mock(name="t2")], app=self.app)
         x.set_immutable(True)
 
     def test_links_to_body(self):
         x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))
         x.link(self.div.s(2))
-        assert not x.options.get('link')
-        assert x.kwargs['body'].options['link']
+        assert not x.options.get("link")
+        assert x.kwargs["body"].options["link"]
 
         x.link_error(self.div.s(2))
-        assert not x.options.get('link_error')
-        assert x.kwargs['body'].options['link_error']
+        assert not x.options.get("link_error")
+        assert x.kwargs["body"].options["link_error"]
 
         assert x.tasks
         assert x.body
@@ -1022,8 +1013,8 @@ class test_chord(CanvasCase):
     def test_repr(self):
         x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))
         assert repr(x)
-        x.kwargs['body'] = None
-        assert 'without body' in repr(x)
+        x.kwargs["body"] = None
+        assert "without body" in repr(x)
 
     def test_freeze_tasks_body_is_group(self, subtests):
         # Confirm that `group index` values counting up from 0 are set for
@@ -1122,14 +1113,11 @@ class test_chord(CanvasCase):
             msg="Validate chord header tasks are deserialized and unpacked"
         ):
             assert all(
-                isinstance(child_task, Signature)
-                and not isinstance(child_task, group)
+                isinstance(child_task, Signature) and not isinstance(child_task, group)
                 for child_task in deserialized_chord.tasks
             )
         # A body which is a group remains as it we passed in
-        with subtests.test(
-            msg="Validate chord body is deserialized and not unpacked"
-        ):
+        with subtests.test(msg="Validate chord body is deserialized and not unpacked"):
             assert isinstance(deserialized_chord.body, group)
             assert all(
                 isinstance(body_child_task, Signature)
@@ -1149,8 +1137,7 @@ class test_chord(CanvasCase):
             msg="Validate chord header tasks are deserialized and unpacked"
         ):
             assert all(
-                isinstance(child_task, group)
-                for child_task in deserialized_chord.tasks
+                isinstance(child_task, group) for child_task in deserialized_chord.tasks
             )
             assert all(
                 isinstance(grandchild_task, Signature)
@@ -1158,9 +1145,7 @@ class test_chord(CanvasCase):
                 for grandchild_task in child_task.tasks
             )
         # A body which is a group remains as it we passed in
-        with subtests.test(
-            msg="Validate chord body is deserialized and not unpacked"
-        ):
+        with subtests.test(msg="Validate chord body is deserialized and not unpacked"):
             assert isinstance(deserialized_chord.body, group)
             assert all(
                 isinstance(body_child_task, group)
@@ -1184,25 +1169,20 @@ class test_chord(CanvasCase):
             msg="Validate chord header tasks are deserialized and unpacked"
         ):
             assert all(
-                isinstance(child_task, Signature)
-                and not isinstance(child_task, chain)
+                isinstance(child_task, Signature) and not isinstance(child_task, chain)
                 for child_task in deserialized_chord.tasks
             )
         # A body which is a chain gets mutatated into the hidden `_chain` class
-        with subtests.test(
-            msg="Validate chord body is deserialized and not unpacked"
-        ):
+        with subtests.test(msg="Validate chord body is deserialized and not unpacked"):
             assert isinstance(deserialized_chord.body, _chain)
 
 
 class test_maybe_signature(CanvasCase):
-
     def test_is_None(self):
         assert maybe_signature(None, app=self.app) is None
 
     def test_is_dict(self):
-        assert isinstance(maybe_signature(dict(self.add.s()), app=self.app),
-                          Signature)
+        assert isinstance(maybe_signature(dict(self.add.s()), app=self.app), Signature)
 
     def test_when_sig(self):
         s = self.add.s()

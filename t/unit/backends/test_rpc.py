@@ -22,7 +22,6 @@ class test_RPCResultConsumer:
 
 
 class test_RPCBackend:
-
     def setup(self):
         self.b = RPCBackend(app=self.app)
 
@@ -38,6 +37,7 @@ class test_RPCBackend:
         # has different oid.
         oid = self.b.oid
         from concurrent.futures import ThreadPoolExecutor
+
         with ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(lambda: RPCBackend(app=self.app).oid)
         thread_oid = future.result()
@@ -47,7 +47,7 @@ class test_RPCBackend:
         assert thread_oid != oid
 
     def test_interface(self):
-        self.b.on_reply_declare('task_id')
+        self.b.on_reply_declare("task_id")
 
     def test_ensure_chords_allowed(self):
         with pytest.raises(NotImplementedError):
@@ -57,36 +57,39 @@ class test_RPCBackend:
         with pytest.raises(NotImplementedError):
             self.b.apply_chord(self.app.GroupResult(), None)
 
-    @pytest.mark.celery(result_backend='rpc')
+    @pytest.mark.celery(result_backend="rpc")
     def test_chord_raises_error(self):
         with pytest.raises(NotImplementedError):
             chord(self.add.s(i, i) for i in range(10))(self.add.s([2]))
 
-    @pytest.mark.celery(result_backend='rpc')
+    @pytest.mark.celery(result_backend="rpc")
     def test_chain_with_chord_raises_error(self):
         with pytest.raises(NotImplementedError):
-            (self.add.s(2, 2) |
-             group(self.add.s(2, 2),
-                   self.add.s(5, 6)) | self.add.s()).delay()
+            (
+                self.add.s(2, 2)
+                | group(self.add.s(2, 2), self.add.s(5, 6))
+                | self.add.s()
+            ).delay()
 
     def test_destination_for(self):
-        req = Mock(name='request')
-        req.reply_to = 'reply_to'
-        req.correlation_id = 'corid'
-        assert self.b.destination_for('task_id', req) == ('reply_to', 'corid')
+        req = Mock(name="request")
+        req.reply_to = "reply_to"
+        req.correlation_id = "corid"
+        assert self.b.destination_for("task_id", req) == ("reply_to", "corid")
         task = Mock()
         _task_stack.push(task)
         try:
-            task.request.reply_to = 'reply_to'
-            task.request.correlation_id = 'corid'
-            assert self.b.destination_for('task_id', None) == (
-                'reply_to', 'corid',
+            task.request.reply_to = "reply_to"
+            task.request.correlation_id = "corid"
+            assert self.b.destination_for("task_id", None) == (
+                "reply_to",
+                "corid",
             )
         finally:
             _task_stack.pop()
 
         with pytest.raises(RuntimeError):
-            self.b.destination_for('task_id', None)
+            self.b.destination_for("task_id", None)
 
     def test_binding(self):
         queue = self.b.binding
@@ -97,18 +100,18 @@ class test_RPCBackend:
         assert queue.auto_delete
 
     def test_create_binding(self):
-        assert self.b._create_binding('id') == self.b.binding
+        assert self.b._create_binding("id") == self.b.binding
 
     def test_on_task_call(self):
-        with patch('celery.backends.rpc.maybe_declare') as md:
+        with patch("celery.backends.rpc.maybe_declare") as md:
             with self.app.amqp.producer_pool.acquire() as prod:
-                self.b.on_task_call(prod, 'task_id'),
+                self.b.on_task_call(prod, "task_id"),
                 md.assert_called_with(
                     self.b.binding(prod.channel),
                     retry=True,
                 )
 
     def test_create_exchange(self):
-        ex = self.b._create_exchange('name')
+        ex = self.b._create_exchange("name")
         assert isinstance(ex, self.b.Exchange)
-        assert ex.name == ''
+        assert ex.name == ""

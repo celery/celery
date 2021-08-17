@@ -14,11 +14,10 @@ try:
 except ImportError:
     pyArango = None  # noqa
 
-pytest.importorskip('pyArango')
+pytest.importorskip("pyArango")
 
 
 class test_ArangoDbBackend:
-
     def setup(self):
         self.backend = ArangoDbBackend(app=self.app)
 
@@ -40,7 +39,7 @@ class test_ArangoDbBackend:
         ArangoDbBackend(app=self.app)
 
     def test_get_connection_connection_exists(self):
-        with patch('pyArango.connection.Connection') as mock_Connection:
+        with patch("pyArango.connection.Connection") as mock_Connection:
             self.backend._connection = sentinel._connection
 
             connection = self.backend._connection
@@ -53,40 +52,41 @@ class test_ArangoDbBackend:
         x = ArangoDbBackend(app=self.app)
         x.get = Mock()
         x.get.return_value = sentinel.retval
-        assert x.get('1f3fab') == sentinel.retval
-        x.get.assert_called_once_with('1f3fab')
+        assert x.get("1f3fab") == sentinel.retval
+        x.get.assert_called_once_with("1f3fab")
 
     def test_delete(self):
         self.app.conf.arangodb_backend_settings = {}
         x = ArangoDbBackend(app=self.app)
         x.delete = Mock()
         x.delete.return_value = None
-        assert x.delete('1f3fab') is None
+        assert x.delete("1f3fab") is None
 
     def test_config_params(self):
         self.app.conf.arangodb_backend_settings = {
-            'host': 'test.arangodb.com',
-            'port': '8529',
-            'username': 'johndoe',
-            'password': 'mysecret',
-            'database': 'celery_database',
-            'collection': 'celery_collection',
-            'http_protocol': 'https'
+            "host": "test.arangodb.com",
+            "port": "8529",
+            "username": "johndoe",
+            "password": "mysecret",
+            "database": "celery_database",
+            "collection": "celery_collection",
+            "http_protocol": "https",
         }
         x = ArangoDbBackend(app=self.app)
-        assert x.host == 'test.arangodb.com'
+        assert x.host == "test.arangodb.com"
         assert x.port == 8529
-        assert x.username == 'johndoe'
-        assert x.password == 'mysecret'
-        assert x.database == 'celery_database'
-        assert x.collection == 'celery_collection'
-        assert x.http_protocol == 'https'
-        assert x.arangodb_url == 'https://test.arangodb.com:8529'
+        assert x.username == "johndoe"
+        assert x.password == "mysecret"
+        assert x.database == "celery_database"
+        assert x.collection == "celery_collection"
+        assert x.http_protocol == "https"
+        assert x.arangodb_url == "https://test.arangodb.com:8529"
 
     def test_backend_by_url(
         self, url="arangodb://username:password@host:port/database/collection"
     ):
         from celery.backends.arangodb import ArangoDbBackend
+
         backend, url_ = backends.by_url(url, self.app.loader)
         assert backend is ArangoDbBackend
         assert url_ == url
@@ -98,28 +98,28 @@ class test_ArangoDbBackend:
         )
         with self.Celery(backend=url) as app:
             x = app.backend
-            assert x.host == 'test.arangodb.com'
+            assert x.host == "test.arangodb.com"
             assert x.port == 8529
-            assert x.username == 'johndoe'
-            assert x.password == 'mysecret'
-            assert x.database == 'celery_database'
-            assert x.collection == 'celery_collection'
-            assert x.http_protocol == 'http'
-            assert x.arangodb_url == 'http://test.arangodb.com:8529'
+            assert x.username == "johndoe"
+            assert x.password == "mysecret"
+            assert x.database == "celery_database"
+            assert x.collection == "celery_collection"
+            assert x.http_protocol == "http"
+            assert x.arangodb_url == "http://test.arangodb.com:8529"
 
     def test_backend_cleanup(self):
         now = datetime.datetime.utcnow()
         self.backend.app.now = Mock(return_value=now)
         self.backend._connection = {
-            'celery': Mock(),
+            "celery": Mock(),
         }
 
         self.backend.cleanup()
 
         expected_date = (now - self.backend.expires_delta).isoformat()
         expected_query = (
-            'FOR item IN celery '
+            "FOR item IN celery "
             'FILTER item.task.date_done < "{date}" '
-            'REMOVE item IN celery'
+            "REMOVE item IN celery"
         ).format(date=expected_date)
         self.backend.db.AQLQuery.assert_called_once_with(expected_query)

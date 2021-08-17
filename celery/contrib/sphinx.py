@@ -41,23 +41,23 @@ from celery.app.task import BaseTask
 class TaskDocumenter(FunctionDocumenter):
     """Document task definitions."""
 
-    objtype = 'task'
+    objtype = "task"
     member_order = 11
 
     @classmethod
     def can_document_member(cls, member, membername, isattr, parent):
-        return isinstance(member, BaseTask) and getattr(member, '__wrapped__')
+        return isinstance(member, BaseTask) and getattr(member, "__wrapped__")
 
     def format_args(self):
-        wrapped = getattr(self.object, '__wrapped__', None)
+        wrapped = getattr(self.object, "__wrapped__", None)
         if wrapped is not None:
             argspec = getfullargspec(wrapped)
-            if argspec[0] and argspec[0][0] in ('cls', 'self'):
+            if argspec[0] and argspec[0][0] in ("cls", "self"):
                 del argspec[0][0]
             fmt = formatargspec(*argspec)
-            fmt = fmt.replace('\\', '\\\\')
+            fmt = fmt.replace("\\", "\\\\")
             return fmt
-        return ''
+        return ""
 
     def document_members(self, all_members=False):
         pass
@@ -67,8 +67,8 @@ class TaskDocumenter(FunctionDocumenter):
         # given by *self.modname*. But since functions decorated with the @task
         # decorator are instances living in the celery.local, we have to check
         # the wrapped function instead.
-        wrapped = getattr(self.object, '__wrapped__', None)
-        if wrapped and getattr(wrapped, '__module__') == self.modname:
+        wrapped = getattr(self.object, "__wrapped__", None)
+        if wrapped and getattr(wrapped, "__module__") == self.modname:
             return True
         return super().check_module()
 
@@ -87,7 +87,7 @@ def autodoc_skip_member_handler(app, what, name, obj, skip, options):
     # trips up the logic in sphinx.ext.autodoc that is supposed to
     # suppress repetition of class documentation in an instance of the
     # class. This overrides that behavior.
-    if isinstance(obj, BaseTask) and getattr(obj, '__wrapped__'):
+    if isinstance(obj, BaseTask) and getattr(obj, "__wrapped__"):
         if skip:
             return False
     return None
@@ -95,12 +95,10 @@ def autodoc_skip_member_handler(app, what, name, obj, skip, options):
 
 def setup(app):
     """Setup Sphinx extension."""
-    app.setup_extension('sphinx.ext.autodoc')
+    app.setup_extension("sphinx.ext.autodoc")
     app.add_autodocumenter(TaskDocumenter)
-    app.add_directive_to_domain('py', 'task', TaskDirective)
-    app.add_config_value('celery_task_prefix', '(task)', True)
-    app.connect('autodoc-skip-member', autodoc_skip_member_handler)
+    app.add_directive_to_domain("py", "task", TaskDirective)
+    app.add_config_value("celery_task_prefix", "(task)", True)
+    app.connect("autodoc-skip-member", autodoc_skip_member_handler)
 
-    return {
-        'parallel_read_safe': True
-    }
+    return {"parallel_read_safe": True}

@@ -13,12 +13,11 @@ def passthru(x):
 
 
 class ChordCase:
-
     def setup(self):
-
         @self.app.task(shared=False)
         def add(x, y):
             return x + y
+
         self.add = add
 
 
@@ -35,23 +34,23 @@ class TSR(GroupResult):
                 if isinstance(value, Exception):
                     raise value
         return self.value
+
     join_native = join
 
     def _failed_join_report(self):
         for value in self.value:
             if isinstance(value, Exception):
-                yield EagerResult('some_id', value, 'FAILURE')
+                yield EagerResult("some_id", value, "FAILURE")
 
 
 class TSRNoReport(TSR):
-
     def _failed_join_report(self):
         return iter([])
 
 
 @contextmanager
 def patch_unlock_retry(app):
-    unlock = app.tasks['celery.chord_unlock']
+    unlock = app.tasks["celery.chord_unlock"]
     retry = Mock()
     retry.return_value = Retry()
     prev, unlock.retry = unlock.retry, retry
@@ -62,31 +61,35 @@ def patch_unlock_retry(app):
 
 
 class test_unlock_chord_task(ChordCase):
-
     def test_unlock_ready(self):
-
         class AlwaysReady(TSR):
             is_ready = True
             value = [2, 4, 8, 6]
 
         with self._chord_context(AlwaysReady) as (cb, retry, _):
             cb.type.apply_async.assert_called_with(
-                ([2, 4, 8, 6],), {}, task_id=cb.id,
+                ([2, 4, 8, 6],),
+                {},
+                task_id=cb.id,
             )
             # didn't retry
             assert not retry.call_count
 
     def test_deps_ready_fails(self):
-        GroupResult = Mock(name='GroupResult')
-        GroupResult.return_value.ready.side_effect = KeyError('foo')
-        unlock_chord = self.app.tasks['celery.chord_unlock']
+        GroupResult = Mock(name="GroupResult")
+        GroupResult.return_value.ready.side_effect = KeyError("foo")
+        unlock_chord = self.app.tasks["celery.chord_unlock"]
 
         with pytest.raises(KeyError):
-            unlock_chord('groupid', Mock(), result=[Mock()],
-                         GroupResult=GroupResult, result_from_tuple=Mock())
+            unlock_chord(
+                "groupid",
+                Mock(),
+                result=[Mock()],
+                GroupResult=GroupResult,
+                result_from_tuple=Mock(),
+            )
 
     def test_callback_fails(self):
-
         class AlwaysReady(TSR):
             is_ready = True
             value = [2, 4, 8, 6]
@@ -97,13 +100,12 @@ class test_unlock_chord_task(ChordCase):
         with self._chord_context(AlwaysReady, setup) as (cb, retry, fail):
             fail.assert_called()
             assert fail.call_args[0][0] == cb.id
-            assert isinstance(fail.call_args[1]['exc'], ChordError)
+            assert isinstance(fail.call_args[1]["exc"], ChordError)
 
     def test_unlock_ready_failed(self):
-
         class Failed(TSR):
             is_ready = True
-            value = [2, KeyError('foo'), 8, 6]
+            value = [2, KeyError("foo"), 8, 6]
 
         with self._chord_context(Failed) as (cb, retry, fail_current):
             cb.type.apply_async.assert_not_called()
@@ -111,47 +113,49 @@ class test_unlock_chord_task(ChordCase):
             assert not retry.call_count
             fail_current.assert_called()
             assert fail_current.call_args[0][0] == cb.id
-            assert isinstance(fail_current.call_args[1]['exc'], ChordError)
-            assert 'some_id' in str(fail_current.call_args[1]['exc'])
+            assert isinstance(fail_current.call_args[1]["exc"], ChordError)
+            assert "some_id" in str(fail_current.call_args[1]["exc"])
 
     def test_unlock_ready_failed_no_culprit(self):
         class Failed(TSRNoReport):
             is_ready = True
-            value = [2, KeyError('foo'), 8, 6]
+            value = [2, KeyError("foo"), 8, 6]
 
         with self._chord_context(Failed) as (cb, retry, fail_current):
             fail_current.assert_called()
             assert fail_current.call_args[0][0] == cb.id
-            assert isinstance(fail_current.call_args[1]['exc'], ChordError)
+            assert isinstance(fail_current.call_args[1]["exc"], ChordError)
 
     @contextmanager
     def _chord_context(self, ResultCls, setup=None, **kwargs):
         @self.app.task(shared=False)
         def callback(*args, **kwargs):
             pass
+
         self.app.finalize()
 
         pts, result.GroupResult = result.GroupResult, ResultCls
         callback.apply_async = Mock()
         callback_s = callback.s()
-        callback_s.id = 'callback_id'
+        callback_s.id = "callback_id"
         fail_current = self.app.backend.fail_from_current_stack = Mock()
         try:
             with patch_unlock_retry(self.app) as (unlock, retry):
                 signature, canvas.maybe_signature = (
-                    canvas.maybe_signature, passthru,
+                    canvas.maybe_signature,
+                    passthru,
                 )
                 if setup:
                     setup(callback)
                 try:
-                    assert self.app.tasks['celery.chord_unlock'] is unlock
+                    assert self.app.tasks["celery.chord_unlock"] is unlock
                     try:
                         unlock(
-                            'group_id', callback_s,
-                            result=[
-                                self.app.AsyncResult(r) for r in ['1', 2, 3]
-                            ],
-                            GroupResult=ResultCls, **kwargs
+                            "group_id",
+                            callback_s,
+                            result=[self.app.AsyncResult(r) for r in ["1", 2, 3]],
+                            GroupResult=ResultCls,
+                            **kwargs
                         )
                     except Retry:
                         pass
@@ -165,8 +169,11 @@ class test_unlock_chord_task(ChordCase):
         class NeverReady(TSR):
             is_ready = False
 
-        with self._chord_context(NeverReady, interval=10, max_retries=30) \
-                as (cb, retry, _):
+        with self._chord_context(NeverReady, interval=10, max_retries=30) as (
+            cb,
+            retry,
+            _,
+        ):
             cb.type.apply_async.assert_not_called()
             # did retry
             retry.assert_called_with(countdown=10, max_retries=30)
@@ -175,7 +182,10 @@ class test_unlock_chord_task(ChordCase):
         class NeverReady(TSR):
             is_ready = False
 
-        self.app.conf.result_chord_retry_interval, prev = 42, self.app.conf.result_chord_retry_interval
+        self.app.conf.result_chord_retry_interval, prev = (
+            42,
+            self.app.conf.result_chord_retry_interval,
+        )
         try:
             with self._chord_context(NeverReady, max_retries=30) as (cb, retry, _):
                 cb.type.apply_async.assert_not_called()
@@ -185,7 +195,7 @@ class test_unlock_chord_task(ChordCase):
             self.app.conf.result_chord_retry_interval = prev
 
     def test_is_in_registry(self):
-        assert 'celery.chord_unlock' in self.app.tasks
+        assert "celery.chord_unlock" in self.app.tasks
 
     def _test_unlock_join_timeout(self, timeout):
         class MockJoinResult(TSR):
@@ -215,11 +225,14 @@ class test_unlock_chord_task(ChordCase):
             return x * y
 
         from celery import chord
+
         ch = chord(group(mul.s(1, 1), mul.s(2, 2)), mul.s(), interval=10)
 
-        with patch.object(ch, 'run') as run:
+        with patch.object(ch, "run") as run:
             ch.apply_async()
-            run.assert_called_once_with(group(mul.s(1, 1), mul.s(2, 2)), mul.s(), (), task_id=None, interval=10)
+            run.assert_called_once_with(
+                group(mul.s(1, 1), mul.s(2, 2)), mul.s(), (), task_id=None, interval=10
+            )
 
     def test_unlock_with_chord_params_and_task_id(self):
         @self.app.task(shared=False)
@@ -227,9 +240,10 @@ class test_unlock_chord_task(ChordCase):
             return x * y
 
         from celery import chord
+
         ch = chord(group(mul.s(1, 1), mul.s(2, 2)), mul.s(), interval=10)
 
-        with patch.object(ch, 'run') as run:
+        with patch.object(ch, "run") as run:
             ch.apply_async(task_id=sentinel.task_id)
             run.assert_called_once_with(
                 group(mul.s(1, 1), mul.s(2, 2)),
@@ -241,7 +255,6 @@ class test_unlock_chord_task(ChordCase):
 
 
 class test_chord(ChordCase):
-
     def test_eager(self):
         from celery import chord
 
@@ -274,30 +287,30 @@ class test_chord(ChordCase):
             assert result.id
             # does not modify original signature
             with pytest.raises(KeyError):
-                body.options['task_id']
+                body.options["task_id"]
             chord.run.assert_called()
         finally:
             chord.run = prev
 
 
 class test_add_to_chord:
-
     def setup(self):
-
         @self.app.task(shared=False)
         def add(x, y):
             return x + y
+
         self.add = add
 
         @self.app.task(shared=False, bind=True)
         def adds(self, sig, lazy=False):
             return self.add_to_chord(sig, lazy)
+
         self.adds = adds
 
-    @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
+    @patch("celery.Celery.backend", new=PropertyMock(name="backend"))
     def test_add_to_chord(self):
         sig = self.add.s(2, 2)
-        sig.delay = Mock(name='sig.delay')
+        sig.delay = Mock(name="sig.delay")
         self.adds.request.group = uuid()
         self.adds.request.id = uuid()
 
@@ -308,35 +321,36 @@ class test_add_to_chord:
 
         res1 = self.adds.run(sig, True)
         assert res1 == sig
-        assert sig.options['task_id']
-        assert sig.options['group_id'] == self.adds.request.group
-        assert sig.options['chord'] == self.adds.request.chord
+        assert sig.options["task_id"]
+        assert sig.options["group_id"] == self.adds.request.group
+        assert sig.options["chord"] == self.adds.request.chord
         sig.delay.assert_not_called()
         self.app.backend.add_to_chord.assert_called_with(
-            self.adds.request.group, sig.freeze(),
+            self.adds.request.group,
+            sig.freeze(),
         )
 
         self.app.backend.reset_mock()
         sig2 = self.add.s(4, 4)
-        sig2.delay = Mock(name='sig2.delay')
+        sig2.delay = Mock(name="sig2.delay")
         res2 = self.adds.run(sig2)
         assert res2 == sig2.delay.return_value
-        assert sig2.options['task_id']
-        assert sig2.options['group_id'] == self.adds.request.group
-        assert sig2.options['chord'] == self.adds.request.chord
+        assert sig2.options["task_id"]
+        assert sig2.options["group_id"] == self.adds.request.group
+        assert sig2.options["chord"] == self.adds.request.chord
         sig2.delay.assert_called_with()
         self.app.backend.add_to_chord.assert_called_with(
-            self.adds.request.group, sig2.freeze(),
+            self.adds.request.group,
+            sig2.freeze(),
         )
 
 
 class test_Chord_task(ChordCase):
-
-    @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
+    @patch("celery.Celery.backend", new=PropertyMock(name="backend"))
     def test_run(self):
         self.app.backend.cleanup = Mock()
-        self.app.backend.cleanup.__name__ = 'cleanup'
-        Chord = self.app.tasks['celery.chord']
+        self.app.backend.cleanup.__name__ = "cleanup"
+        Chord = self.app.tasks["celery.chord"]
 
         body = self.add.signature()
         Chord(group(self.add.signature((i, i)) for i in range(5)), body)

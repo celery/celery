@@ -21,8 +21,12 @@ except ImportError:
     tblib = None
 
 __all__ = (
-    'ResultBase', 'AsyncResult', 'ResultSet',
-    'GroupResult', 'EagerResult', 'result_from_tuple',
+    "ResultBase",
+    "AsyncResult",
+    "ResultSet",
+    "GroupResult",
+    "EagerResult",
+    "result_from_tuple",
 )
 
 E_WOULDBLOCK = """\
@@ -84,12 +88,11 @@ class AsyncResult(ResultBase):
     #: The task result backend to use.
     backend = None
 
-    def __init__(self, id, backend=None,
-                 task_name=None,            # deprecated
-                 app=None, parent=None):
+    def __init__(
+        self, id, backend=None, task_name=None, app=None, parent=None  # deprecated
+    ):
         if id is None:
-            raise ValueError(
-                f'AsyncResult requires valid id, not {type(id)}')
+            raise ValueError(f"AsyncResult requires valid id, not {type(id)}")
         self.app = app_or_default(app or self.app)
         self.id = id
         self.backend = backend or self.app.backend
@@ -101,7 +104,7 @@ class AsyncResult(ResultBase):
     @property
     def ignored(self):
         """If True, task result retrieval is disabled."""
-        if hasattr(self, '_ignored'):
+        if hasattr(self, "_ignored"):
             return self._ignored
         return False
 
@@ -138,8 +141,9 @@ class AsyncResult(ResultBase):
             self.parent.forget()
         self.backend.forget(self.id)
 
-    def revoke(self, connection=None, terminate=False, signal=None,
-               wait=False, timeout=None):
+    def revoke(
+        self, connection=None, terminate=False, signal=None, wait=False, timeout=None
+    ):
         """Send revoke signal to all workers.
 
         Any worker receiving the task, or having reserved the
@@ -156,15 +160,29 @@ class AsyncResult(ResultBase):
             timeout (float): Time in seconds to wait for replies when
                 ``wait`` is enabled.
         """
-        self.app.control.revoke(self.id, connection=connection,
-                                terminate=terminate, signal=signal,
-                                reply=wait, timeout=timeout)
+        self.app.control.revoke(
+            self.id,
+            connection=connection,
+            terminate=terminate,
+            signal=signal,
+            reply=wait,
+            timeout=timeout,
+        )
 
-    def get(self, timeout=None, propagate=True, interval=0.5,
-            no_ack=True, follow_parents=True, callback=None, on_message=None,
-            on_interval=None, disable_sync_subtasks=True,
-            EXCEPTION_STATES=states.EXCEPTION_STATES,
-            PROPAGATE_STATES=states.PROPAGATE_STATES):
+    def get(
+        self,
+        timeout=None,
+        propagate=True,
+        interval=0.5,
+        no_ack=True,
+        follow_parents=True,
+        callback=None,
+        on_message=None,
+        on_interval=None,
+        disable_sync_subtasks=True,
+        EXCEPTION_STATES=states.EXCEPTION_STATES,
+        PROPAGATE_STATES=states.PROPAGATE_STATES,
+    ):
         """Wait until task is ready, and return its result.
 
         Warning:
@@ -221,7 +239,8 @@ class AsyncResult(ResultBase):
 
         self.backend.add_pending_result(self)
         return self.backend.wait_for_pending(
-            self, timeout=timeout,
+            self,
+            timeout=timeout,
             interval=interval,
             on_interval=_on_interval,
             no_ack=no_ack,
@@ -229,6 +248,7 @@ class AsyncResult(ResultBase):
             callback=callback,
             on_message=on_message,
         )
+
     wait = get  # deprecated alias to :meth:`get`.
 
     def _maybe_reraise_parent_error(self):
@@ -329,14 +349,14 @@ class AsyncResult(ResultBase):
 
     def maybe_throw(self, propagate=True, callback=None):
         cache = self._get_task_meta() if self._cache is None else self._cache
-        state, value, tb = (
-            cache['status'], cache['result'], cache.get('traceback'))
+        state, value, tb = (cache["status"], cache["result"], cache.get("traceback"))
         if state in states.PROPAGATE_STATES and propagate:
             self.throw(value, self._to_remote_traceback(tb))
         if callback is not None:
             callback(self.id, value)
         return value
-    maybe_reraise = maybe_throw   # XXX compat alias
+
+    maybe_reraise = maybe_throw  # XXX compat alias
 
     def _to_remote_traceback(self, tb):
         if tb and tblib is not None and self.app.conf.task_remote_tracebacks:
@@ -344,7 +364,7 @@ class AsyncResult(ResultBase):
 
     def build_graph(self, intermediate=False, formatter=None):
         graph = DependencyGraph(
-            formatter=formatter or GraphFormatter(root=self.id, shape='oval'),
+            formatter=formatter or GraphFormatter(root=self.id, shape="oval"),
         )
         for parent, node in self.iterdeps(intermediate=intermediate):
             graph.add_arc(node)
@@ -361,7 +381,7 @@ class AsyncResult(ResultBase):
         return hash(self.id)
 
     def __repr__(self):
-        return f'<{type(self).__name__}: {self.id}>'
+        return f"<{type(self).__name__}: {self.id}>"
 
     def __eq__(self, other):
         if isinstance(other, AsyncResult):
@@ -376,7 +396,11 @@ class AsyncResult(ResultBase):
 
     def __copy__(self):
         return self.__class__(
-            self.id, self.backend, None, self.app, self.parent,
+            self.id,
+            self.backend,
+            None,
+            self.app,
+            self.parent,
         )
 
     def __reduce__(self):
@@ -400,11 +424,11 @@ class AsyncResult(ResultBase):
 
     @property
     def children(self):
-        return self._get_task_meta().get('children')
+        return self._get_task_meta().get("children")
 
     def _maybe_set_cache(self, meta):
         if meta:
-            state = meta['status']
+            state = meta["status"]
             if state in states.READY_STATES:
                 d = self._set_cache(self.backend.meta_from_decoded(meta))
                 self.on_ready(self)
@@ -420,11 +444,9 @@ class AsyncResult(ResultBase):
         return iter([self._get_task_meta()])
 
     def _set_cache(self, d):
-        children = d.get('children')
+        children = d.get("children")
         if children:
-            d['children'] = [
-                result_from_tuple(child, self.app) for child in children
-            ]
+            d["children"] = [result_from_tuple(child, self.app) for child in children]
         self._cache = d
         return d
 
@@ -437,13 +459,14 @@ class AsyncResult(ResultBase):
             If the task raised an exception, this will be the exception
             instance.
         """
-        return self._get_task_meta()['result']
+        return self._get_task_meta()["result"]
+
     info = result
 
     @property
     def traceback(self):
         """Get the traceback of a failed task."""
-        return self._get_task_meta().get('traceback')
+        return self._get_task_meta().get("traceback")
 
     @property
     def state(self):
@@ -474,7 +497,8 @@ class AsyncResult(ResultBase):
                 The task executed successfully.  The :attr:`result` attribute
                 then contains the tasks return value.
         """
-        return self._get_task_meta()['status']
+        return self._get_task_meta()["status"]
+
     status = state  # XXX compat
 
     @property
@@ -488,35 +512,35 @@ class AsyncResult(ResultBase):
 
     @property
     def name(self):
-        return self._get_task_meta().get('name')
+        return self._get_task_meta().get("name")
 
     @property
     def args(self):
-        return self._get_task_meta().get('args')
+        return self._get_task_meta().get("args")
 
     @property
     def kwargs(self):
-        return self._get_task_meta().get('kwargs')
+        return self._get_task_meta().get("kwargs")
 
     @property
     def worker(self):
-        return self._get_task_meta().get('worker')
+        return self._get_task_meta().get("worker")
 
     @property
     def date_done(self):
         """UTC date and time."""
-        date_done = self._get_task_meta().get('date_done')
+        date_done = self._get_task_meta().get("date_done")
         if date_done and not isinstance(date_done, datetime.datetime):
             return parse_iso8601(date_done)
         return date_done
 
     @property
     def retries(self):
-        return self._get_task_meta().get('retries')
+        return self._get_task_meta().get("retries")
 
     @property
     def queue(self):
-        return self._get_task_meta().get('queue')
+        return self._get_task_meta().get("queue")
 
 
 @Thenable.register
@@ -606,6 +630,7 @@ class ResultSet(ResultBase):
     def maybe_throw(self, callback=None, propagate=True):
         for result in self.results:
             result.maybe_throw(callback=callback, propagate=propagate)
+
     maybe_reraise = maybe_throw  # XXX compat alias.
 
     def waiting(self):
@@ -638,8 +663,9 @@ class ResultSet(ResultBase):
         for result in self.results:
             result.forget()
 
-    def revoke(self, connection=None, terminate=False, signal=None,
-               wait=False, timeout=None):
+    def revoke(
+        self, connection=None, terminate=False, signal=None, wait=False, timeout=None
+    ):
         """Send revoke signal to all workers for all tasks in the set.
 
         Arguments:
@@ -653,9 +679,14 @@ class ResultSet(ResultBase):
             timeout (float): Time in seconds to wait for replies when
                 the ``wait`` argument is enabled.
         """
-        self.app.control.revoke([r.id for r in self.results],
-                                connection=connection, timeout=timeout,
-                                terminate=terminate, signal=signal, reply=wait)
+        self.app.control.revoke(
+            [r.id for r in self.results],
+            connection=connection,
+            timeout=timeout,
+            terminate=terminate,
+            signal=signal,
+            reply=wait,
+        )
 
     def __iter__(self):
         return iter(self.results)
@@ -664,9 +695,17 @@ class ResultSet(ResultBase):
         """`res[i] -> res.results[i]`."""
         return self.results[index]
 
-    def get(self, timeout=None, propagate=True, interval=0.5,
-            callback=None, no_ack=True, on_message=None,
-            disable_sync_subtasks=True, on_interval=None):
+    def get(
+        self,
+        timeout=None,
+        propagate=True,
+        interval=0.5,
+        callback=None,
+        no_ack=True,
+        on_message=None,
+        disable_sync_subtasks=True,
+        on_interval=None,
+    ):
         """See :meth:`join`.
 
         This is here for API compatibility with :class:`AsyncResult`,
@@ -674,15 +713,27 @@ class ResultSet(ResultBase):
         current result backend.
         """
         return (self.join_native if self.supports_native_join else self.join)(
-            timeout=timeout, propagate=propagate,
-            interval=interval, callback=callback, no_ack=no_ack,
-            on_message=on_message, disable_sync_subtasks=disable_sync_subtasks,
+            timeout=timeout,
+            propagate=propagate,
+            interval=interval,
+            callback=callback,
+            no_ack=no_ack,
+            on_message=on_message,
+            disable_sync_subtasks=disable_sync_subtasks,
             on_interval=on_interval,
         )
 
-    def join(self, timeout=None, propagate=True, interval=0.5,
-             callback=None, no_ack=True, on_message=None,
-             disable_sync_subtasks=True, on_interval=None):
+    def join(
+        self,
+        timeout=None,
+        propagate=True,
+        interval=0.5,
+        callback=None,
+        no_ack=True,
+        on_message=None,
+        disable_sync_subtasks=True,
+        on_interval=None,
+    ):
         """Gather the results of all tasks as a list in order.
 
         Note:
@@ -733,8 +784,7 @@ class ResultSet(ResultBase):
         remaining = None
 
         if on_message is not None:
-            raise ImproperlyConfigured(
-                'Backend does not support on_message callback')
+            raise ImproperlyConfigured("Backend does not support on_message callback")
 
         results = []
         for result in self.results:
@@ -742,10 +792,13 @@ class ResultSet(ResultBase):
             if timeout:
                 remaining = timeout - (time.monotonic() - time_start)
                 if remaining <= 0.0:
-                    raise TimeoutError('join operation timed out')
+                    raise TimeoutError("join operation timed out")
             value = result.get(
-                timeout=remaining, propagate=propagate,
-                interval=interval, no_ack=no_ack, on_interval=on_interval,
+                timeout=remaining,
+                propagate=propagate,
+                interval=interval,
+                no_ack=no_ack,
+                on_interval=on_interval,
                 disable_sync_subtasks=disable_sync_subtasks,
             )
             if callback:
@@ -757,8 +810,9 @@ class ResultSet(ResultBase):
     def then(self, callback, on_error=None, weak=False):
         return self.on_ready.then(callback, on_error)
 
-    def iter_native(self, timeout=None, interval=0.5, no_ack=True,
-                    on_message=None, on_interval=None):
+    def iter_native(
+        self, timeout=None, interval=0.5, no_ack=True, on_message=None, on_interval=None
+    ):
         """Backend optimized version of :meth:`iterate`.
 
         .. versionadded:: 2.2
@@ -771,14 +825,24 @@ class ResultSet(ResultBase):
         """
         return self.backend.iter_native(
             self,
-            timeout=timeout, interval=interval, no_ack=no_ack,
-            on_message=on_message, on_interval=on_interval,
+            timeout=timeout,
+            interval=interval,
+            no_ack=no_ack,
+            on_message=on_message,
+            on_interval=on_interval,
         )
 
-    def join_native(self, timeout=None, propagate=True,
-                    interval=0.5, callback=None, no_ack=True,
-                    on_message=None, on_interval=None,
-                    disable_sync_subtasks=True):
+    def join_native(
+        self,
+        timeout=None,
+        propagate=True,
+        interval=0.5,
+        callback=None,
+        no_ack=True,
+        on_message=None,
+        on_interval=None,
+        disable_sync_subtasks=True,
+    ):
         """Backend optimized version of :meth:`join`.
 
         .. versionadded:: 2.2
@@ -791,19 +855,22 @@ class ResultSet(ResultBase):
         """
         if disable_sync_subtasks:
             assert_will_not_block()
-        order_index = None if callback else {
-            result.id: i for i, result in enumerate(self.results)
-        }
+        order_index = (
+            None
+            if callback
+            else {result.id: i for i, result in enumerate(self.results)}
+        )
         acc = None if callback else [None for _ in range(len(self))]
-        for task_id, meta in self.iter_native(timeout, interval, no_ack,
-                                              on_message, on_interval):
+        for task_id, meta in self.iter_native(
+            timeout, interval, no_ack, on_message, on_interval
+        ):
             if isinstance(meta, list):
                 value = []
                 for children_result in meta:
                     value.append(children_result.get())
             else:
-                value = meta['result']
-                if propagate and meta['status'] in states.PROPAGATE_STATES:
+                value = meta["result"]
+                if propagate and meta["status"] in states.PROPAGATE_STATES:
                     raise value
             if callback:
                 callback(task_id, value)
@@ -812,14 +879,19 @@ class ResultSet(ResultBase):
         return acc
 
     def _iter_meta(self, **kwargs):
-        return (meta for _, meta in self.backend.get_many(
-            {r.id for r in self.results}, max_iterations=1, **kwargs
-        ))
+        return (
+            meta
+            for _, meta in self.backend.get_many(
+                {r.id for r in self.results}, max_iterations=1, **kwargs
+            )
+        )
 
     def _failed_join_report(self):
-        return (res for res in self.results
-                if res.backend.is_cached(res.id) and
-                res.state in states.PROPAGATE_STATES)
+        return (
+            res
+            for res in self.results
+            if res.backend.is_cached(res.id) and res.state in states.PROPAGATE_STATES
+        )
 
     def __len__(self):
         return len(self.results)
@@ -846,8 +918,11 @@ class ResultSet(ResultBase):
     @property
     def app(self):
         if self._app is None:
-            self._app = (self.results[0].app if self.results else
-                         current_app._get_current_object())
+            self._app = (
+                self.results[0].app
+                if self.results
+                else current_app._get_current_object()
+            )
         return self._app
 
     @app.setter
@@ -911,14 +986,15 @@ class GroupResult(ResultSet):
 
     def __bool__(self):
         return bool(self.id or self.results)
+
     __nonzero__ = __bool__  # Included for Py2 backwards compatibility
 
     def __eq__(self, other):
         if isinstance(other, GroupResult):
             return (
-                other.id == self.id and
-                other.results == self.results and
-                other.parent == self.parent
+                other.id == self.id
+                and other.results == self.results
+                and other.parent == self.parent
             )
         elif isinstance(other, str):
             return other == self.id
@@ -942,7 +1018,7 @@ class GroupResult(ResultSet):
     def as_tuple(self):
         return (
             (self.id, self.parent and self.parent.as_tuple()),
-            [r.as_tuple() for r in self.results]
+            [r.as_tuple() for r in self.results],
         )
 
     @property
@@ -952,9 +1028,7 @@ class GroupResult(ResultSet):
     @classmethod
     def restore(cls, id, backend=None, app=None):
         """Restore previously saved group result."""
-        app = app or (
-            cls.app if not isinstance(cls.app, property) else current_app
-        )
+        app = app or (cls.app if not isinstance(cls.app, property) else current_app)
         backend = backend or app.backend
         return backend.restore_group(id)
 
@@ -992,8 +1066,7 @@ class EagerResult(AsyncResult):
     def ready(self):
         return True
 
-    def get(self, timeout=None, propagate=True,
-            disable_sync_subtasks=True, **kwargs):
+    def get(self, timeout=None, propagate=True, disable_sync_subtasks=True, **kwargs):
         if disable_sync_subtasks:
             assert_will_not_block()
 
@@ -1001,9 +1074,11 @@ class EagerResult(AsyncResult):
             return self.result
         elif self.state in states.PROPAGATE_STATES:
             if propagate:
-                raise self.result if isinstance(
-                    self.result, Exception) else Exception(self.result)
+                raise self.result if isinstance(self.result, Exception) else Exception(
+                    self.result
+                )
             return self.result
+
     wait = get  # XXX Compat (remove 5.0)
 
     def forget(self):
@@ -1013,15 +1088,15 @@ class EagerResult(AsyncResult):
         self._state = states.REVOKED
 
     def __repr__(self):
-        return f'<EagerResult: {self.id}>'
+        return f"<EagerResult: {self.id}>"
 
     @property
     def _cache(self):
         return {
-            'task_id': self.id,
-            'result': self._result,
-            'status': self._state,
-            'traceback': self._traceback,
+            "task_id": self.id,
+            "result": self._result,
+            "status": self._state,
+            "traceback": self._traceback,
         }
 
     @property
@@ -1033,6 +1108,7 @@ class EagerResult(AsyncResult):
     def state(self):
         """The tasks state."""
         return self._state
+
     status = state
 
     @property
@@ -1059,7 +1135,8 @@ def result_from_tuple(r, app=None):
 
         if nodes is not None:
             return app.GroupResult(
-                id, [result_from_tuple(child, app) for child in nodes],
+                id,
+                [result_from_tuple(child, app) for child in nodes],
                 parent=parent,
             )
 

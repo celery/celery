@@ -7,10 +7,20 @@ from pprint import pformat
 from textwrap import fill
 
 __all__ = (
-    'abbr', 'abbrtask', 'dedent', 'dedent_initial',
-    'ensure_newlines', 'ensure_sep',
-    'fill_paragraphs', 'indent', 'join',
-    'pluralize', 'pretty', 'str_to_list', 'simple_format', 'truncate',
+    "abbr",
+    "abbrtask",
+    "dedent",
+    "dedent_initial",
+    "ensure_newlines",
+    "ensure_sep",
+    "fill_paragraphs",
+    "indent",
+    "join",
+    "pluralize",
+    "pretty",
+    "str_to_list",
+    "simple_format",
+    "truncate",
 )
 
 UNKNOWN_SIMPLE_FORMAT_KEY = """
@@ -19,36 +29,36 @@ Possible causes: Did you forget to escape the expand sign (use '%%{0!r}'),
 or did you escape and the value was expanded twice? (%%N -> %N -> %hostname)?
 """.strip()
 
-RE_FORMAT = re.compile(r'%(\w)')
+RE_FORMAT = re.compile(r"%(\w)")
 
 
 def str_to_list(s):
     # type: (str) -> List[str]
     """Convert string to list."""
     if isinstance(s, str):
-        return s.split(',')
+        return s.split(",")
     return s
 
 
 def dedent_initial(s, n=4):
     # type: (str, int) -> str
     """Remove identation from first line of text."""
-    return s[n:] if s[:n] == ' ' * n else s
+    return s[n:] if s[:n] == " " * n else s
 
 
-def dedent(s, n=4, sep='\n'):
+def dedent(s, n=4, sep="\n"):
     # type: (str, int, str) -> str
     """Remove identation."""
     return sep.join(dedent_initial(l) for l in s.splitlines())
 
 
-def fill_paragraphs(s, width, sep='\n'):
+def fill_paragraphs(s, width, sep="\n"):
     # type: (str, int, str) -> str
     """Fill paragraphs with newlines (or custom separator)."""
     return sep.join(fill(p, width) for p in s.split(sep))
 
 
-def join(l, sep='\n'):
+def join(l, sep="\n"):
     # type: (str, str) -> str
     """Concatenate list of strings."""
     return sep.join(v for v in l if v)
@@ -60,16 +70,16 @@ def ensure_sep(sep, s, n=2):
     return s + sep * (n - s.count(sep))
 
 
-ensure_newlines = partial(ensure_sep, '\n')
+ensure_newlines = partial(ensure_sep, "\n")
 
 
-def abbr(S, max, ellipsis='...'):
+def abbr(S, max, ellipsis="..."):
     # type: (str, int, str) -> str
     """Abbreviate word."""
     if S is None:
-        return '???'
+        return "???"
     if len(S) > max:
-        return ellipsis and (S[:max - len(ellipsis)] + ellipsis) or S[:max]
+        return ellipsis and (S[: max - len(ellipsis)] + ellipsis) or S[:max]
     return S
 
 
@@ -77,29 +87,29 @@ def abbrtask(S, max):
     # type: (str, int) -> str
     """Abbreviate task name."""
     if S is None:
-        return '???'
+        return "???"
     if len(S) > max:
-        module, _, cls = S.rpartition('.')
+        module, _, cls = S.rpartition(".")
         module = abbr(module, max - len(cls) - 3, False)
-        return module + '[.]' + cls
+        return module + "[.]" + cls
     return S
 
 
-def indent(t, indent=0, sep='\n'):
+def indent(t, indent=0, sep="\n"):
     # type: (str, int, str) -> str
     """Indent text."""
-    return sep.join(' ' * indent + p for p in t.split(sep))
+    return sep.join(" " * indent + p for p in t.split(sep))
 
 
-def truncate(s, maxlen=128, suffix='...'):
+def truncate(s, maxlen=128, suffix="..."):
     # type: (str, int, str) -> str
     """Truncate text to a maximum number of characters."""
     if maxlen and len(s) >= maxlen:
-        return s[:maxlen].rsplit(' ', 1)[0] + suffix
+        return s[:maxlen].rsplit(" ", 1)[0] + suffix
     return s
 
 
-def pluralize(n, text, suffix='s'):
+def pluralize(n, text, suffix="s"):
     # type: (int, str, str) -> str
     """Pluralize term when n is greater than one."""
     if n != 1:
@@ -107,14 +117,16 @@ def pluralize(n, text, suffix='s'):
     return text
 
 
-def pretty(value, width=80, nl_width=80, sep='\n', **kw):
+def pretty(value, width=80, nl_width=80, sep="\n", **kw):
     # type: (str, int, int, str, **Any) -> str
     """Format value for printing to console."""
     if isinstance(value, dict):
-        return '{{{0} {1}'.format(sep, pformat(value, 4, nl_width)[1:])
+        return "{{{0} {1}".format(sep, pformat(value, 4, nl_width)[1:])
     elif isinstance(value, tuple):
-        return '{}{}{}'.format(
-            sep, ' ' * 4, pformat(value, width=nl_width, **kw),
+        return "{}{}{}".format(
+            sep,
+            " " * 4,
+            pformat(value, width=nl_width, **kw),
         )
     else:
         return pformat(value, width=width, **kw)
@@ -125,11 +137,11 @@ def match_case(s, other):
     return s.upper() if other.isupper() else s.lower()
 
 
-def simple_format(s, keys, pattern=RE_FORMAT, expand=r'\1'):
+def simple_format(s, keys, pattern=RE_FORMAT, expand=r"\1"):
     # type: (str, Mapping[str, str], Pattern, str) -> str
     """Format string, expanding abbreviations in keys'."""
     if s:
-        keys.setdefault('%', '%')
+        keys.setdefault("%", "%")
 
         def resolve(match):
             key = match.expand(expand)
@@ -157,7 +169,7 @@ def remove_repeating_from_task(task_name, s):
     """
     # This is used by e.g. repr(chain), to remove repeating module names.
     #  - extract the module part of the task name
-    module = str(task_name).rpartition('.')[0] + '.'
+    module = str(task_name).rpartition(".")[0] + "."
     return remove_repeating(module, s)
 
 
@@ -181,12 +193,14 @@ def remove_repeating(substr, s):
     # find the first occurrence of substr in the string.
     index = s.find(substr)
     if index >= 0:
-        return ''.join([
-            # leave the first occurrence of substr untouched.
-            s[:index + len(substr)],
-            # strip seen substr from the rest of the string.
-            s[index + len(substr):].replace(substr, ''),
-        ])
+        return "".join(
+            [
+                # leave the first occurrence of substr untouched.
+                s[: index + len(substr)],
+                # strip seen substr from the rest of the string.
+                s[index + len(substr) :].replace(substr, ""),
+            ]
+        )
     return s
 
 

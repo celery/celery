@@ -7,7 +7,6 @@ from celery.utils.functional import noop
 
 
 class test_solo_TaskPool:
-
     def test_on_start(self):
         x = solo.TaskPool()
         x.on_start()
