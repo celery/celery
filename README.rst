@@ -2,7 +2,7 @@
 
 |build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 5.2.0b1 (sun-harmonics)
+:Version: 5.2.0b1 (dawn-chorus)
 :Web: https://docs.celeryproject.org/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -105,7 +105,7 @@ getting started tutorials:
 
 .. _`Next steps`:
     http://docs.celeryproject.org/en/latest/getting-started/next-steps.html
-    
+
  You can also get started with Celery by using a hosted broker transport CloudAMQP. The largest hosting provider of RabbitMQ is a proud sponsor of Celery.
 
 Celery is...

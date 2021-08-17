@@ -15,7 +15,7 @@ from collections import namedtuple
 # Lazy loading
 from . import local
 
-SERIES = 'sun-harmonics'
+SERIES = 'dawn-chorus'
 
 __version__ = '5.2.0b1'
 __author__ = 'Ask Solem'
