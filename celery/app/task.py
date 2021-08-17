@@ -85,6 +85,7 @@ class Context:
     loglevel = None
     origin = None
     parent_id = None
+    properties = None
     retries = 0
     reply_to = None
     root_id = None

@@ -281,5 +281,6 @@ Frazer McLean, 2020/09/29
 Henrik Bruåsdal, 2020/11/29
 Tom Wojcik, 2021/01/24
 Ruaridh Williamson, 2021/03/09
+Garry Lawrence, 2021/06/19
 Patrick Zhang, 2017/08/19
 Konstantin Kochin, 2021/07/11

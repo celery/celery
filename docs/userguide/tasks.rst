@@ -372,6 +372,11 @@ The request defines the following attributes:
         current task.  If using version one of the task protocol the chain
         tasks will be in ``request.callbacks`` instead.
 
+.. versionadded:: 5.2
+
+:properties: Mapping of message properties received with this task message
+             (may be :const:`None` or :const:`{}`)
+
 Example
 -------
 
