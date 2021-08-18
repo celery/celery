@@ -324,7 +324,7 @@ Commands
 
 ``revoke``: Revoking tasks
 --------------------------
-:pool support: all, terminate only supported by prefork
+:pool support: all, terminate only supported by prefork and eventlet
 :broker support: *amqp, redis*
 :command: :program:`celery -A proj control revoke <task_id>`
 
