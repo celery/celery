@@ -3153,7 +3153,7 @@ Name of the pool class used by the worker.
 .. setting:: worker_pool_serializer
 
 ``worker_pool_serializer``
-~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Default: pickle.
 
