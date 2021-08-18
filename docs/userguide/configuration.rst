@@ -3150,7 +3150,7 @@ Name of the pool class used by the worker.
     :program:`celery worker` instead, to ensure the monkey patches
     aren't applied too late, causing things to break in strange ways.
 
-.. setting:: worker_pool_restarts
+.. setting:: worker_pool_serializer
 
 ``worker_pool_serializer``
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3159,7 +3159,7 @@ Default: pickle.
 
 If pool is ``"prefork"`` (``celery.concurrency.prefork:TaskPool``) what seralizer to use
 
-.. setting:: worker_pool_serializer
+.. setting:: worker_pool_restarts
 
 ``worker_pool_restarts``
 ~~~~~~~~~~~~~~~~~~~~~~~~
