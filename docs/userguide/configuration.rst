@@ -3157,7 +3157,7 @@ Name of the pool class used by the worker.
 
 Default: pickle.
 
-If pool is ``"prefork"`` (``celery.concurrency.prefork:TaskPool``) what seralizer to use
+If pool is ``"prefork"`` (``celery.concurrency.prefork:TaskPool``) and it isn't using threads, what serializer to use for the process communication.
 
 .. setting:: worker_pool_restarts
 
