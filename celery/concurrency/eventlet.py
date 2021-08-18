@@ -109,7 +109,7 @@ class TaskPool(base.BasePool):
 
     def on_start(self):
         self._pool = self.Pool(self.limit)
-        self._pool_map = dict()
+        self._pool_map = {}
         signals.eventlet_pool_started.send(sender=self)
         self._quick_put = self._pool.spawn
         self._quick_apply_sig = signals.eventlet_pool_apply.send
