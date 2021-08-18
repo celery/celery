@@ -141,11 +141,11 @@ class test_TaskPool(EventletCase):
 
         assert len(pool._pool_map.keys()) == 1
         pid = list(pool._pool_map.keys())[0]
-        task = pool._pool_map[pid]
+        greenlet = pool._pool_map[pid]
 
         pool.terminate_job(pid)
-        task.link.assert_called_once()
-        task.kill.assert_called_once()
+        greenlet.link.assert_called_once()
+        greenlet.kill.assert_called_once()
 
     def test_make_killable_target(self):
         def valid_target():
@@ -154,13 +154,8 @@ class test_TaskPool(EventletCase):
         def terminating_target():
             raise GreenletExit()
 
-        def failing_target():
-            raise RuntimeError("some error")
-
         assert TaskPool._make_killable_target(valid_target)() == "some result..."
         assert TaskPool._make_killable_target(terminating_target)() == (False, None, None)
-        with pytest.raises(RuntimeError):
-            TaskPool._make_killable_target(failing_target)()
 
     def test_cleanup_after_job_finish(self):
         testMap = {'1': None}
