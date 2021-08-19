@@ -108,6 +108,15 @@ class test_FilesystemBackend:
         time.sleep(day_length)  # let FS mark some difference in mtimes
         for tid in today_task_ids:
             tb.mark_as_done(tid, 42)
+        with patch.object(tb, 'expires', 0):
+            tb.cleanup()
+        # test that zero expiration time prevents any cleanup
+        filenames = set(os.listdir(tb.path))
+        assert all(
+            tb.get_key_for_task(tid) in filenames
+            for tid in yesterday_task_ids + today_task_ids
+        )
+        # test that non-zero expiration time enables cleanup by file mtime
         with patch.object(tb, 'expires', day_length):
             tb.cleanup()
         filenames = set(os.listdir(tb.path))
