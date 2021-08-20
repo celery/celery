@@ -103,10 +103,11 @@ class FilesystemBackend(KeyValueStoreBackend):
         epoch = datetime(1970, 1, 1, tzinfo=self.app.timezone)
         now_ts = (self.app.now() - epoch).total_seconds()
         cutoff_ts = now_ts - self.expires
-        for dir_entry in os.scandir(self.path):
+        for filename in os.listdir(self.path):
             for prefix in (self.task_keyprefix, self.group_keyprefix,
                            self.chord_keyprefix):
-                if dir_entry.name.startswith(prefix):
-                    if dir_entry.stat().st_mtime < cutoff_ts:
-                        self.unlink(dir_entry.path)
+                if filename.startswith(prefix):
+                    path = os.path.join(self.path, filename)
+                    if os.stat(path).st_mtime < cutoff_ts:
+                        self.unlink(path)
                     break
