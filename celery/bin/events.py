@@ -4,13 +4,14 @@ from functools import partial
 
 import click
 
-from celery.bin.base import LOG_LEVEL, CeleryDaemonCommand, CeleryOption
+from celery.bin.base import (LOG_LEVEL, CeleryDaemonCommand, CeleryOption,
+                             handle_preload_options)
 from celery.platforms import detached, set_process_title, strargv
 
 
 def _set_process_status(prog, info=''):
     prog = '{}:{}'.format('celery events', prog)
-    info = '{} {}'.format(info, strargv(sys.argv))
+    info = f'{info} {strargv(sys.argv)}'
     return set_process_title(prog, info=info)
 
 
@@ -78,6 +79,7 @@ def _run_evtop(app):
               help_group="Snapshot",
               help="Logging level.")
 @click.pass_context
+@handle_preload_options
 def events(ctx, dump, camera, detach, frequency, maxrate, loglevel, **kwargs):
     """Event-stream utilities."""
     app = ctx.obj.app

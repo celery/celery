@@ -2,6 +2,7 @@ import gc
 import itertools
 import os
 import ssl
+import uuid
 from copy import deepcopy
 from datetime import datetime, timedelta
 from pickle import dumps, loads
@@ -16,6 +17,7 @@ from celery import app as _app
 from celery import current_app, shared_task
 from celery.app import base as _appbase
 from celery.app import defaults
+from celery.backends.base import Backend
 from celery.exceptions import ImproperlyConfigured
 from celery.loaders.base import unconfigured
 from celery.platforms import pyimplementation
@@ -271,6 +273,14 @@ class test_App:
         patching.setenv('CELERY_BROKER_URL', '')
         with self.Celery(broker='foo://baribaz') as app:
             assert app.conf.broker_url == 'foo://baribaz'
+
+    def test_pending_configuration_non_true__kwargs(self):
+        with self.Celery(task_create_missing_queues=False) as app:
+            assert app.conf.task_create_missing_queues is False
+
+    def test_pending_configuration__kwargs(self):
+        with self.Celery(foo='bar') as app:
+            assert app.conf.foo == 'bar'
 
     def test_pending_configuration__setattr(self):
         with self.Celery(broker='foo://bar') as app:
@@ -573,20 +583,12 @@ class test_App:
         for key, value in changes.items():
             assert restored.conf[key] == value
 
-    # def test_worker_main(self):
-    #     from celery.bin import worker as worker_bin
-    #
-    #     class worker(worker_bin.worker):
-    #
-    #         def execute_from_commandline(self, argv):
-    #             return argv
-    #
-    #     prev, worker_bin.worker = worker_bin.worker, worker
-    #     try:
-    #         ret = self.app.worker_main(argv=['--version'])
-    #         assert ret == ['--version']
-    #     finally:
-    #         worker_bin.worker = prev
+    @patch('celery.bin.celery.celery')
+    def test_worker_main(self, mocked_celery):
+        self.app.worker_main(argv=['worker', '--help'])
+
+        mocked_celery.main.assert_called_with(
+            args=['worker', '--help'], standalone_mode=False)
 
     def test_config_from_envvar(self):
         os.environ['CELERYTEST_CONFIG_OBJECT'] = 't.unit.app.test_app'
@@ -768,6 +770,11 @@ class test_App:
         assert self.app.config_from_envvar(key, force=True)
         assert self.app.conf['FOO'] == 10
         assert self.app.conf['BAR'] == 20
+
+    @patch('celery.bin.celery.celery')
+    def test_start(self, mocked_celery):
+        self.app.start()
+        mocked_celery.main.assert_called()
 
     @pytest.mark.parametrize('url,expected_fields', [
         ('pyamqp://', {
@@ -986,6 +993,63 @@ class test_App:
 
         app = CustomCelery(set_as_current=False)
         assert isinstance(app.tasks, TaskRegistry)
+
+    def test_oid(self):
+        # Test that oid is global value.
+        oid1 = self.app.oid
+        oid2 = self.app.oid
+        uuid.UUID(oid1)
+        uuid.UUID(oid2)
+        assert oid1 == oid2
+
+    def test_global_oid(self):
+        # Test that oid is global value also within threads
+        main_oid = self.app.oid
+        uuid.UUID(main_oid)
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(lambda: self.app.oid)
+        thread_oid = future.result()
+        uuid.UUID(thread_oid)
+        assert main_oid == thread_oid
+
+    def test_thread_oid(self):
+        # Test that thread_oid is global value in single thread.
+        oid1 = self.app.thread_oid
+        oid2 = self.app.thread_oid
+        uuid.UUID(oid1)
+        uuid.UUID(oid2)
+        assert oid1 == oid2
+
+    def test_backend(self):
+        # Test that app.bakend returns the same backend in single thread
+        backend1 = self.app.backend
+        backend2 = self.app.backend
+        assert isinstance(backend1, Backend)
+        assert isinstance(backend2, Backend)
+        assert backend1 is backend2
+
+    def test_thread_backend(self):
+        # Test that app.bakend returns the new backend for each thread
+        main_backend = self.app.backend
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(lambda: self.app.backend)
+        thread_backend = future.result()
+        assert isinstance(main_backend, Backend)
+        assert isinstance(thread_backend, Backend)
+        assert main_backend is not thread_backend
+
+    def test_thread_oid_is_local(self):
+        # Test that thread_oid is local to thread.
+        main_oid = self.app.thread_oid
+        uuid.UUID(main_oid)
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(lambda: self.app.thread_oid)
+        thread_oid = future.result()
+        uuid.UUID(thread_oid)
+        assert main_oid != thread_oid
 
 
 class test_defaults:

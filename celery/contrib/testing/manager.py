@@ -4,12 +4,13 @@ import sys
 from collections import defaultdict
 from functools import partial
 from itertools import count
+from typing import Any, Callable, Dict, Sequence, TextIO, Tuple
 
 from kombu.utils.functional import retry_over_time
 
 from celery import states
 from celery.exceptions import TimeoutError
-from celery.result import ResultSet
+from celery.result import AsyncResult, ResultSet
 from celery.utils.text import truncate
 from celery.utils.time import humanize_seconds as _humanize_seconds
 

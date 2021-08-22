@@ -2,7 +2,8 @@
 import click
 from kombu import Connection
 
-from celery.bin.base import CeleryCommand, CeleryOption
+from celery.bin.base import (CeleryCommand, CeleryOption,
+                             handle_preload_options)
 from celery.contrib.migrate import migrate_tasks
 
 
@@ -44,6 +45,7 @@ from celery.contrib.migrate import migrate_tasks
               help_group='Migration Options',
               help='Continually migrate tasks until killed.')
 @click.pass_context
+@handle_preload_options
 def migrate(ctx, source, destination, **kwargs):
     """Migrate tasks from one broker to another.
 

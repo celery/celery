@@ -10,7 +10,7 @@ globals().update(conf.build_config(
     github_project='celery/celery',
     author='Ask Solem & contributors',
     author_name='Ask Solem',
-    copyright='2009-2018',
+    copyright='2009-2021',
     publisher='Celery Project',
     html_logo='images/celery_512.png',
     html_favicon='images/favicon.ico',
@@ -23,13 +23,12 @@ globals().update(conf.build_config(
     ],
     extra_intersphinx_mapping={
         'cyanide': ('https://cyanide.readthedocs.io/en/latest', None),
+        'click': ('https://click.palletsprojects.com/en/7.x/', None),
     },
     apicheck_ignore_modules=[
         'celery.__main__',
-        'celery.task',
         'celery.contrib.testing',
         'celery.contrib.testing.tasks',
-        'celery.task.base',
         'celery.bin',
         'celery.bin.celeryd_detach',
         'celery.contrib',

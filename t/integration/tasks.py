@@ -16,7 +16,30 @@ def identity(x):
 
 
 @shared_task
-def add(x, y):
+def add(x, y, z=None):
+    """Add two or three numbers."""
+    if z:
+        return x + y + z
+    else:
+        return x + y
+
+
+@shared_task
+def write_to_file_and_return_int(file_name, i):
+    with open(file_name, mode='a', buffering=1) as file_handle:
+        file_handle.write(str(i)+'\n')
+
+    return i
+
+
+@shared_task(typing=False)
+def add_not_typed(x, y):
+    """Add two numbers, but don't check arguments"""
+    return x + y
+
+
+@shared_task(ignore_result=True)
+def add_ignore_result(x, y):
     """Add two numbers."""
     return x + y
 
@@ -25,12 +48,6 @@ def add(x, y):
 def raise_error(*args):
     """Deliberately raise an error."""
     raise ValueError("deliberate error")
-
-
-@shared_task(ignore_result=True)
-def add_ignore_result(x, y):
-    """Add two numbers."""
-    return x + y
 
 
 @shared_task
@@ -162,6 +179,24 @@ def collect_ids(self, res, i):
     return res, (self.request.root_id, self.request.parent_id, i)
 
 
+@shared_task(bind=True, default_retry_delay=1)
+def retry(self, return_value=None):
+    """Task simulating multiple retries.
+
+    When return_value is provided, the task after retries returns
+    the result. Otherwise it fails.
+    """
+    if return_value:
+        attempt = getattr(self, 'attempt', 0)
+        print('attempt', attempt)
+        if attempt >= 3:
+            delattr(self, 'attempt')
+            return return_value
+        self.attempt = attempt + 1
+
+    raise self.retry(exc=ExpectedException(), countdown=5)
+
+
 @shared_task(bind=True, expires=60.0, max_retries=1)
 def retry_once(self, *args, expires=60.0, max_retries=1, countdown=0.1):
     """Task that fails and is retried. Returns the number of retries."""
@@ -182,10 +217,17 @@ def retry_once_priority(self, *args, expires=60.0, max_retries=1,
 
 
 @shared_task
-def redis_echo(message):
+def redis_echo(message, redis_key="redis-echo"):
     """Task that appends the message to a redis list."""
     redis_connection = get_redis_connection()
-    redis_connection.rpush('redis-echo', message)
+    redis_connection.rpush(redis_key, message)
+
+
+@shared_task
+def redis_count(redis_key="redis-count"):
+    """Task that increments a specified or well-known redis key."""
+    redis_connection = get_redis_connection()
+    redis_connection.incr(redis_key)
 
 
 @shared_task(bind=True)
@@ -253,14 +295,20 @@ def fail(*args):
     raise ExpectedException(*args)
 
 
-@shared_task
-def chord_error(*args):
-    return args
+@shared_task(bind=True)
+def fail_replaced(self, *args):
+    """Replace this task with one which raises ExpectedException."""
+    raise self.replace(fail.si(*args))
 
 
 @shared_task(bind=True)
 def return_priority(self, *_args):
     return "Priority: %s" % self.request.delivery_info['priority']
+
+
+@shared_task(bind=True)
+def return_properties(self):
+    return self.request.properties
 
 
 class ClassBasedAutoRetryTask(Task):
@@ -328,7 +376,7 @@ def rebuild_signature(sig_dict):
 
     def _recurse(sig):
         if not isinstance(sig, Signature):
-            raise TypeError("{!r} is not a signature object".format(sig))
+            raise TypeError(f"{sig!r} is not a signature object")
         # Most canvas types have a `tasks` attribute
         if isinstance(sig, (chain, group, chord)):
             for task in sig.tasks:
@@ -337,3 +385,15 @@ def rebuild_signature(sig_dict):
         if isinstance(sig, chord):
             _recurse(sig.body)
     _recurse(sig_obj)
+
+
+@shared_task
+def errback_old_style(request_id):
+    redis_count(request_id)
+    return request_id
+
+
+@shared_task
+def errback_new_style(request, exc, tb):
+    redis_count(request.id)
+    return request.id

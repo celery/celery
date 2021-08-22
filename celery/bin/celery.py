@@ -1,11 +1,14 @@
 """Celery Command Line Interface."""
 import os
+import pathlib
 import traceback
 
 import click
 import click.exceptions
 from click.types import ParamType
 from click_didyoumean import DYMGroup
+from click_plugins import with_plugins
+from pkg_resources import iter_entry_points
 
 from celery import VERSION_BANNER
 from celery.app.utils import find_app
@@ -68,6 +71,7 @@ class App(ParamType):
 APP = App()
 
 
+@with_plugins(iter_entry_points('celery.commands'))
 @click.group(cls=DYMGroup, invoke_without_command=True)
 @click.option('-A',
               '--app',
@@ -94,6 +98,9 @@ APP = App()
               help_group="Global Options")
 @click.option('--workdir',
               cls=CeleryOption,
+              type=pathlib.Path,
+              callback=lambda _, __, wd: os.chdir(wd) if wd else None,
+              is_eager=True,
               help_group="Global Options")
 @click.option('-C',
               '--no-color',
@@ -121,8 +128,6 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir,
         click.echo(ctx.get_help())
         ctx.exit()
 
-    if workdir:
-        os.chdir(workdir)
     if loader:
         # Default app takes loader from this env (Issue #1066).
         os.environ['CELERY_LOADER'] = loader
@@ -139,6 +144,9 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir,
     worker.params.extend(ctx.obj.app.user_options.get('worker', []))
     beat.params.extend(ctx.obj.app.user_options.get('beat', []))
     events.params.extend(ctx.obj.app.user_options.get('events', []))
+
+    for command in celery.commands.values():
+        command.params.extend(ctx.obj.app.user_options.get('preload', []))
 
 
 @celery.command(cls=CeleryCommand)

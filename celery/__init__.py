@@ -1,5 +1,5 @@
 """Distributed Task Queue."""
-# :copyright: (c) 2016-20206 Asif Saif Uddin, celery core and individual
+# :copyright: (c) 2016-2026 Asif Saif Uddin, celery core and individual
 #                 contributors, All rights reserved.
 # :copyright: (c) 2015-2016 Ask Solem.  All rights reserved.
 # :copyright: (c) 2012-2014 GoPivotal, Inc., All rights reserved.
@@ -13,11 +13,11 @@ import sys
 from collections import namedtuple
 
 # Lazy loading
-from . import local  # noqa
+from . import local
 
-SERIES = 'singularity'
+SERIES = 'dawn-chorus'
 
-__version__ = '5.0.2'
+__version__ = '5.2.0b2'
 __author__ = 'Ask Solem'
 __contact__ = 'auvipy@gmail.com'
 __homepage__ = 'http://celeryproject.org'
@@ -27,7 +27,7 @@ __keywords__ = 'task job queue distributed messaging actor'
 # -eof meta-
 
 __all__ = (
-    'Celery', 'bugreport', 'shared_task', 'task', 'Task',
+    'Celery', 'bugreport', 'shared_task', 'Task',
     'current_app', 'current_task', 'maybe_signature',
     'chain', 'chord', 'chunks', 'group', 'signature',
     'xmap', 'xstarmap', 'uuid',
@@ -65,15 +65,15 @@ if os.environ.get('C_IMPDEBUG'):  # pragma: no cover
 STATICA_HACK = True
 globals()['kcah_acitats'[::-1].upper()] = False
 if STATICA_HACK:  # pragma: no cover
-    from celery._state import current_app, current_task  # noqa
-    from celery.app import shared_task  # noqa
-    from celery.app.base import Celery  # noqa
-    from celery.app.task import Task  # noqa
-    from celery.app.utils import bugreport  # noqa
+    from celery._state import current_app, current_task
+    from celery.app import shared_task
+    from celery.app.base import Celery
+    from celery.app.task import Task
+    from celery.app.utils import bugreport
     from celery.canvas import (chain, chord, chunks, group,  # noqa
                                maybe_signature, signature, subtask, xmap,
                                xstarmap)
-    from celery.utils import uuid  # noqa
+    from celery.utils import uuid
 
 # Eventlet/gevent patching must happen before importing
 # anything else, so these tools must be at top-level.
@@ -142,7 +142,8 @@ def maybe_patch_concurrency(argv=None, short_opts=None,
 
         # set up eventlet/gevent environments ASAP
         from celery import concurrency
-        concurrency.get_implementation(pool)
+        if pool in concurrency.get_available_pool_names():
+            concurrency.get_implementation(pool)
 
 
 # this just creates a new module, that imports stuff on first attribute
@@ -160,7 +161,6 @@ old_module, new_module = local.recreate_module(  # pragma: no cover
         ],
         'celery.utils': ['uuid'],
     },
-    direct={'task': 'celery.task'},
     __package__='celery', __file__=__file__,
     __path__=__path__, __doc__=__doc__, __version__=__version__,
     __author__=__author__, __contact__=__contact__,

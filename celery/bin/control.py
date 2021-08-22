@@ -4,7 +4,9 @@ from functools import partial
 import click
 from kombu.utils.json import dumps
 
-from celery.bin.base import COMMA_SEPARATED_LIST, CeleryCommand, CeleryOption
+from celery.bin.base import (COMMA_SEPARATED_LIST, CeleryCommand,
+                             CeleryOption, handle_preload_options)
+from celery.exceptions import CeleryCommandException
 from celery.platforms import EX_UNAVAILABLE
 from celery.utils import text
 from celery.worker.control import Panel
@@ -71,6 +73,7 @@ def _compile_arguments(action, args):
               help_group='Remote Control Options',
               help='Use json as output format.')
 @click.pass_context
+@handle_preload_options
 def status(ctx, timeout, destination, json, **kwargs):
     """Show list of workers that are online."""
     callback = None if json else partial(_say_remote_command_reply, ctx)
@@ -79,8 +82,10 @@ def status(ctx, timeout, destination, json, **kwargs):
                                           callback=callback).ping()
 
     if not replies:
-        ctx.obj.echo('No nodes replied within time constraint')
-        return EX_UNAVAILABLE
+        raise CeleryCommandException(
+            message='No nodes replied within time constraint',
+            exit_code=EX_UNAVAILABLE
+        )
 
     if json:
         ctx.obj.echo(dumps(replies))
@@ -90,7 +95,8 @@ def status(ctx, timeout, destination, json, **kwargs):
             nodecount, text.pluralize(nodecount, 'node')))
 
 
-@click.command(cls=CeleryCommand)
+@click.command(cls=CeleryCommand,
+               context_settings={'allow_extra_args': True})
 @click.argument("action", type=click.Choice([
     name for name, info in Panel.meta.items()
     if info.type == 'inspect' and info.visible
@@ -115,6 +121,7 @@ def status(ctx, timeout, destination, json, **kwargs):
               help_group='Remote Control Options',
               help='Use json as output format.')
 @click.pass_context
+@handle_preload_options
 def inspect(ctx, action, timeout, destination, json, **kwargs):
     """Inspect the worker at runtime.
 
@@ -122,16 +129,23 @@ def inspect(ctx, action, timeout, destination, json, **kwargs):
     """
     callback = None if json else partial(_say_remote_command_reply, ctx,
                                          show_reply=True)
-    replies = ctx.obj.app.control.inspect(timeout=timeout,
+    arguments = _compile_arguments(action, ctx.args)
+    inspect = ctx.obj.app.control.inspect(timeout=timeout,
                                           destination=destination,
-                                          callback=callback)._request(action)
+                                          callback=callback)
+    replies = inspect._request(action,
+                               **arguments)
 
     if not replies:
-        ctx.obj.echo('No nodes replied within time constraint')
-        return EX_UNAVAILABLE
+        raise CeleryCommandException(
+            message='No nodes replied within time constraint',
+            exit_code=EX_UNAVAILABLE
+        )
 
     if json:
         ctx.obj.echo(dumps(replies))
+        return
+
     nodecount = len(replies)
     if not ctx.obj.quiet:
         ctx.obj.echo('\n{} {} online.'.format(
@@ -164,6 +178,7 @@ def inspect(ctx, action, timeout, destination, json, **kwargs):
               help_group='Remote Control Options',
               help='Use json as output format.')
 @click.pass_context
+@handle_preload_options
 def control(ctx, action, timeout, destination, json):
     """Workers remote control.
 
@@ -180,8 +195,10 @@ def control(ctx, action, timeout, destination, json):
                                             arguments=arguments)
 
     if not replies:
-        ctx.obj.echo('No nodes replied within time constraint')
-        return EX_UNAVAILABLE
+        raise CeleryCommandException(
+            message='No nodes replied within time constraint',
+            exit_code=EX_UNAVAILABLE
+        )
 
     if json:
         ctx.obj.echo(dumps(replies))

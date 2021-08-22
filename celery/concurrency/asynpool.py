@@ -16,12 +16,12 @@ import errno
 import gc
 import os
 import select
-import sys
 import time
 from collections import Counter, deque, namedtuple
 from io import BytesIO
 from numbers import Integral
 from pickle import HIGHEST_PROTOCOL
+from struct import pack, unpack, unpack_from
 from time import sleep
 from weakref import WeakValueDictionary, ref
 
@@ -35,7 +35,6 @@ from kombu.utils.eventio import SELECT_BAD_FD
 from kombu.utils.functional import fxrange
 from vine import promise
 
-from celery.platforms import pack, unpack, unpack_from
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.worker import state as worker_state
@@ -47,21 +46,15 @@ try:
     from _billiard import read as __read__
     readcanbuf = True
 
-    # unpack_from supports memoryview in 2.7.6 and 3.3+
-    if sys.version_info[0] == 2 and sys.version_info < (2, 7, 6):
-
-        def unpack_from(fmt, view, _unpack_from=unpack_from):  # noqa
-            return _unpack_from(fmt, view.tobytes())  # <- memoryview
-
 except ImportError:  # pragma: no cover
 
-    def __read__(fd, buf, size, read=os.read):  # noqa
+    def __read__(fd, buf, size, read=os.read):
         chunk = read(fd, size)
         n = len(chunk)
         if n != 0:
             buf.write(chunk)
         return n
-    readcanbuf = False  # noqa
+    readcanbuf = False
 
     def unpack_from(fmt, iobuf, unpack=unpack):  # noqa
         return unpack(fmt, iobuf.getvalue())  # <-- BytesIO
@@ -985,10 +978,14 @@ class AsynPool(_pool.Pool):
     def flush(self):
         if self._state == TERMINATE:
             return
-        # cancel all tasks that haven't been accepted so that NACK is sent.
-        for job in self._cache.values():
+        # cancel all tasks that haven't been accepted so that NACK is sent
+        # if synack is enabled.
+        for job in tuple(self._cache.values()):
             if not job._accepted:
-                job._cancel()
+                if self.synack:
+                    job._cancel()
+                else:
+                    job.discard()
 
         # clear the outgoing buffer as the tasks will be redelivered by
         # the broker anyway.

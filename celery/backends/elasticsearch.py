@@ -12,7 +12,7 @@ from .base import KeyValueStoreBackend
 try:
     import elasticsearch
 except ImportError:  # pragma: no cover
-    elasticsearch = None  # noqa
+    elasticsearch = None
 
 __all__ = ('ElasticsearchBackend',)
 
@@ -52,7 +52,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         index = doc_type = scheme = host = port = username = password = None
 
         if url:
-            scheme, host, port, username, password, path, _ = _parse_url(url)  # noqa
+            scheme, host, port, username, password, path, _ = _parse_url(url)
             if scheme == 'elasticsearch':
                 scheme = None
             if path:

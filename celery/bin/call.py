@@ -1,22 +1,24 @@
 """The ``celery call`` program used to send tasks from the command-line."""
 import click
 
-from celery.bin.base import (ISO8601, ISO8601_OR_FLOAT, JSON, CeleryCommand,
-                             CeleryOption)
+from celery.bin.base import (ISO8601, ISO8601_OR_FLOAT, JSON_ARRAY,
+                             JSON_OBJECT, CeleryCommand, CeleryOption,
+                             handle_preload_options)
 
 
+@click.command(cls=CeleryCommand)
 @click.argument('name')
 @click.option('-a',
               '--args',
               cls=CeleryOption,
-              type=JSON,
+              type=JSON_ARRAY,
               default='[]',
               help_group="Calling Options",
               help="Positional arguments.")
 @click.option('-k',
               '--kwargs',
               cls=CeleryOption,
-              type=JSON,
+              type=JSON_OBJECT,
               default='{}',
               help_group="Calling Options",
               help="Keyword arguments.")
@@ -52,8 +54,8 @@ from celery.bin.base import (ISO8601, ISO8601_OR_FLOAT, JSON, CeleryCommand,
               cls=CeleryOption,
               help_group="Routing Options",
               help="custom routing key.")
-@click.command(cls=CeleryCommand)
 @click.pass_context
+@handle_preload_options
 def call(ctx, name, args, kwargs, eta, countdown, expires, serializer, queue, exchange, routing_key):
     """Call a task by name."""
     task_id = ctx.obj.app.send_task(

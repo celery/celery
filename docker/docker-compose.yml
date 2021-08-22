@@ -36,4 +36,15 @@ services:
     image: dwmkerr/dynamodb:38
 
   azurite:
-    image: arafato/azurite:2.6.5
+    image: mcr.microsoft.com/azure-storage/azurite:3.10.0
+
+  docs:
+    image: celery/docs
+    build:
+      context: ..
+      dockerfile: docker/docs/Dockerfile
+    volumes:
+        - ../docs:/docs:z
+    ports:
+      - "7000:7000"
+    command: /start-docs

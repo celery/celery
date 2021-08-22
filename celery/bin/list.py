@@ -1,11 +1,13 @@
 """The ``celery list bindings`` command, used to inspect queue bindings."""
 import click
 
-from celery.bin.base import CeleryCommand
+from celery.bin.base import CeleryCommand, handle_preload_options
 
 
 @click.group(name="list")
-def list_():
+@click.pass_context
+@handle_preload_options
+def list_(ctx):
     """Get info from broker.
 
     Note:

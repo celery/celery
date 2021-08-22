@@ -21,7 +21,6 @@ def test_sphinx():
     app = TestApp(srcdir=SRCDIR, confdir=SRCDIR)
     app.build()
     contents = open(os.path.join(app.outdir, 'contents.html'),
-                    mode='r',
                     encoding='utf-8').read()
     assert 'This is a sample Task' in contents
     assert 'This is a sample Shared Task' in contents

@@ -38,7 +38,7 @@ from . import state
 try:
     import resource
 except ImportError:  # pragma: no cover
-    resource = None  # noqa
+    resource = None
 
 
 __all__ = ('WorkController',)

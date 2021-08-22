@@ -1,4 +1,5 @@
-from unittest.mock import Mock, patch
+from unittest.mock import ANY, Mock, PropertyMock, patch
+from uuid import uuid4
 
 import pytest
 from billiard.einfo import ExceptionInfo
@@ -6,23 +7,27 @@ from kombu.exceptions import EncodeError
 
 from celery import group, signals, states, uuid
 from celery.app.task import Context
-from celery.app.trace import (TraceInfo, _fast_trace_task, _trace_task_ret,
-                              build_tracer, get_log_policy, get_task_name,
+from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task,
+                              get_log_policy, get_task_name,
                               log_policy_expected, log_policy_ignore,
                               log_policy_internal, log_policy_reject,
                               log_policy_unexpected,
                               reset_worker_optimizations,
                               setup_worker_optimizations, trace_task,
-                              traceback_clear)
+                              trace_task_ret, traceback_clear)
 from celery.backends.base import BaseDictBackend
-from celery.exceptions import Ignore, Reject, Retry
+from celery.backends.cache import CacheBackend
+from celery.exceptions import BackendGetMetaError, Ignore, Reject, Retry
+from celery.states import PENDING
+from celery.worker.state import successful_requests
 
 
 def trace(
-    app, task, args=(), kwargs={}, propagate=False, eager=True, request=None, **opts
+    app, task, args=(), kwargs={}, propagate=False,
+    eager=True, request=None, task_id='id-1', **opts
 ):
     t = build_tracer(task.name, task, eager=eager, propagate=propagate, app=app, **opts)
-    ret = t('id-1', args, kwargs, request)
+    ret = t(task_id, args, kwargs, request)
     return ret.retval, ret.info
 
 
@@ -148,6 +153,75 @@ class test_trace(TraceCase):
         with pytest.raises(MemoryError):
             self.trace(add, (2, 2), {}, eager=False)
 
+    def test_eager_task_does_not_store_result_even_if_not_ignore_result(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        add.backend = Mock(name='backend')
+        add.ignore_result = False
+
+        self.trace(add, (2, 2), {}, eager=True)
+
+        add.backend.mark_as_done.assert_called_once_with(
+            'id-1',     # task_id
+            4,          # result
+            ANY,        # request
+            False       # store_result
+        )
+
+    def test_eager_task_does_not_call_store_result(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        backend = BaseDictBackend(app=self.app)
+        backend.store_result = Mock()
+        add.backend = backend
+        add.ignore_result = False
+
+        self.trace(add, (2, 2), {}, eager=True)
+
+        add.backend.store_result.assert_not_called()
+
+    def test_eager_task_will_store_result_if_proper_setting_is_set(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        add.backend = Mock(name='backend')
+        add.store_eager_result = True
+        add.ignore_result = False
+
+        self.trace(add, (2, 2), {}, eager=True)
+
+        add.backend.mark_as_done.assert_called_once_with(
+            'id-1',     # task_id
+            4,          # result
+            ANY,        # request
+            True        # store_result
+        )
+
+    def test_eager_task_with_setting_will_call_store_result(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        backend = BaseDictBackend(app=self.app)
+        backend.store_result = Mock()
+        add.backend = backend
+        add.store_eager_result = True
+        add.ignore_result = False
+
+        self.trace(add, (2, 2), {}, eager=True)
+
+        add.backend.store_result.assert_called_once_with(
+            'id-1',
+            4,
+            states.SUCCESS,
+            request=ANY
+        )
+
     def test_when_backend_raises_exception(self):
         @self.app.task(shared=False)
         def add(x, y):
@@ -176,42 +250,33 @@ class test_trace(TraceCase):
         except KeyError as exc:
             traceback_clear(exc)
 
-            if sys.version_info >= (3, 5, 0):
-                tb_ = exc.__traceback__
-                while tb_ is not None:
-                    if str(tb_.tb_frame.__repr__) == frame_list[0]:
-                        assert len(tb_.tb_frame.f_locals) == 0
-                    tb_ = tb_.tb_next
-            elif (2, 7, 0) <= sys.version_info < (3, 0, 0):
-                sys.exc_clear.assert_called()
+            tb_ = exc.__traceback__
+            while tb_ is not None:
+                if str(tb_.tb_frame.__repr__) == frame_list[0]:
+                    assert len(tb_.tb_frame.f_locals) == 0
+                tb_ = tb_.tb_next
 
         try:
             raise_dummy()
         except KeyError as exc:
             traceback_clear()
 
-            if sys.version_info >= (3, 5, 0):
-                tb_ = exc.__traceback__
-                while tb_ is not None:
-                    if str(tb_.tb_frame.__repr__) == frame_list[0]:
-                        assert len(tb_.tb_frame.f_locals) == 0
-                    tb_ = tb_.tb_next
-            elif (2, 7, 0) <= sys.version_info < (3, 0, 0):
-                sys.exc_clear.assert_called()
+            tb_ = exc.__traceback__
+            while tb_ is not None:
+                if str(tb_.tb_frame.__repr__) == frame_list[0]:
+                    assert len(tb_.tb_frame.f_locals) == 0
+                tb_ = tb_.tb_next
 
         try:
             raise_dummy()
         except KeyError as exc:
             traceback_clear(str(exc))
 
-            if sys.version_info >= (3, 5, 0):
-                tb_ = exc.__traceback__
-                while tb_ is not None:
-                    if str(tb_.tb_frame.__repr__) == frame_list[0]:
-                        assert len(tb_.tb_frame.f_locals) == 0
-                    tb_ = tb_.tb_next
-            elif (2, 7, 0) <= sys.version_info < (3, 0, 0):
-                sys.exc_clear.assert_called()
+            tb_ = exc.__traceback__
+            while tb_ is not None:
+                if str(tb_.tb_frame.__repr__) == frame_list[0]:
+                    assert len(tb_.tb_frame.f_locals) == 0
+                tb_ = tb_.tb_next
 
     @patch('celery.app.trace.traceback_clear')
     def test_when_Ignore(self, mock_traceback_clear):
@@ -345,7 +410,7 @@ class test_trace(TraceCase):
         mock_traceback_clear.assert_called()
 
     def test_trace_task_ret__no_content_type(self):
-        _trace_task_ret(
+        trace_task_ret(
             self.add.name, 'id1', {}, ((2, 2), {}, {}), None, None, app=self.app,
         )
 
@@ -353,7 +418,7 @@ class test_trace(TraceCase):
         self.app.tasks[self.add.name].__trace__ = build_tracer(
             self.add.name, self.add, app=self.app,
         )
-        _fast_trace_task(
+        fast_trace_task(
             self.add.name,
             'id1',
             {},
@@ -406,6 +471,95 @@ class test_trace(TraceCase):
         assert info is not None
         assert isinstance(ret, ExceptionInfo)
 
+    def test_deduplicate_successful_tasks__deduplication(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        backend = CacheBackend(app=self.app, backend='memory')
+        add.backend = backend
+        add.store_eager_result = True
+        add.ignore_result = False
+        add.acks_late = True
+
+        self.app.conf.worker_deduplicate_successful_tasks = True
+        task_id = str(uuid4())
+        request = {'id': task_id, 'delivery_info': {'redelivered': True}}
+
+        assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (2, None)
+        assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (None, None)
+
+        self.app.conf.worker_deduplicate_successful_tasks = False
+
+    def test_deduplicate_successful_tasks__no_deduplication(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        backend = CacheBackend(app=self.app, backend='memory')
+        add.backend = backend
+        add.store_eager_result = True
+        add.ignore_result = False
+        add.acks_late = True
+
+        self.app.conf.worker_deduplicate_successful_tasks = True
+        task_id = str(uuid4())
+        request = {'id': task_id, 'delivery_info': {'redelivered': True}}
+
+        with patch('celery.app.trace.AsyncResult') as async_result_mock:
+            async_result_mock().state.return_value = PENDING
+            assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (2, None)
+            assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (2, None)
+
+        self.app.conf.worker_deduplicate_successful_tasks = False
+
+    def test_deduplicate_successful_tasks__result_not_found(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        backend = CacheBackend(app=self.app, backend='memory')
+        add.backend = backend
+        add.store_eager_result = True
+        add.ignore_result = False
+        add.acks_late = True
+
+        self.app.conf.worker_deduplicate_successful_tasks = True
+        task_id = str(uuid4())
+        request = {'id': task_id, 'delivery_info': {'redelivered': True}}
+
+        with patch('celery.app.trace.AsyncResult') as async_result_mock:
+            assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (2, None)
+            state_property = PropertyMock(side_effect=BackendGetMetaError)
+            type(async_result_mock()).state = state_property
+            assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (2, None)
+
+        self.app.conf.worker_deduplicate_successful_tasks = False
+
+    def test_deduplicate_successful_tasks__cached_request(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        backend = CacheBackend(app=self.app, backend='memory')
+        add.backend = backend
+        add.store_eager_result = True
+        add.ignore_result = False
+        add.acks_late = True
+
+        self.app.conf.worker_deduplicate_successful_tasks = True
+
+        task_id = str(uuid4())
+        request = {'id': task_id, 'delivery_info': {'redelivered': True}}
+
+        successful_requests.add(task_id)
+
+        assert trace(self.app, add, (1, 1), task_id=task_id,
+                     request=request) == (None, None)
+
+        successful_requests.clear()
+        self.app.conf.worker_deduplicate_successful_tasks = False
+
 
 class test_TraceInfo(TraceCase):
     class TI(TraceInfo):
@@ -419,6 +573,32 @@ class test_TraceInfo(TraceCase):
             self.add_cast,
             self.add_cast.request,
             store_errors=self.add_cast.store_errors_even_if_ignored,
+            call_errbacks=True,
+        )
+
+    def test_handle_error_state_for_eager_task(self):
+        x = self.TI(states.FAILURE)
+        x.handle_failure = Mock()
+
+        x.handle_error_state(self.add, self.add.request, eager=True)
+        x.handle_failure.assert_called_once_with(
+            self.add,
+            self.add.request,
+            store_errors=False,
+            call_errbacks=True,
+        )
+
+    def test_handle_error_for_eager_saved_to_backend(self):
+        x = self.TI(states.FAILURE)
+        x.handle_failure = Mock()
+
+        self.add.store_eager_result = True
+
+        x.handle_error_state(self.add, self.add.request, eager=True)
+        x.handle_failure.assert_called_with(
+            self.add,
+            self.add.request,
+            store_errors=True,
             call_errbacks=True,
         )
 
@@ -444,4 +624,4 @@ class test_stackprotection:
 
             assert foo(1).called_directly
         finally:
-            reset_worker_optimizations()
+            reset_worker_optimizations(self.app)

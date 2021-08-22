@@ -103,8 +103,6 @@ class test_ColorFormatter:
             raise Exception()
         except Exception:
             assert x.formatException(sys.exc_info())
-        if sys.version_info[0] == 2:
-            safe_str.assert_called()
 
     @patch('logging.Formatter.format')
     def test_format_object(self, _format):
@@ -222,9 +220,7 @@ class test_default_logger:
     @patch('os.fstat')
     def test_setup_logger_no_handlers_file(self, *args):
         tempfile = mktemp(suffix='unittest', prefix='celery')
-        _open = ('builtins.open' if sys.version_info[0] == 3
-                 else '__builtin__.open')
-        with patch(_open) as osopen:
+        with patch('builtins.open') as osopen:
             with mock.restore_logging():
                 files = defaultdict(StringIO)
 
@@ -272,8 +268,11 @@ class test_default_logger:
             p.write('foo')
             assert 'foo' not in sio.getvalue()
             p.closed = False
-            p.write('foo')
-            assert 'foo' in sio.getvalue()
+            p.write('\n')
+            assert sio.getvalue() == ''
+            write_res = p.write('foo ')
+            assert sio.getvalue() == 'foo \n'
+            assert write_res == 4
             lines = ['baz', 'xuzzy']
             p.writelines(lines)
             for line in lines:
@@ -294,7 +293,7 @@ class test_default_logger:
         p = LoggingProxy(logger, loglevel=logging.ERROR)
         p._thread.recurse_protection = True
         try:
-            assert p.write('FOOFO') is None
+            assert p.write('FOOFO') == 0
         finally:
             p._thread.recurse_protection = False
 

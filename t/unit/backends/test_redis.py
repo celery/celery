@@ -12,7 +12,9 @@ from case import ContextMock, mock
 
 from celery import signature, states, uuid
 from celery.canvas import Signature
-from celery.exceptions import ChordError, ImproperlyConfigured
+from celery.exceptions import (BackendStoreError, ChordError,
+                               ImproperlyConfigured)
+from celery.result import AsyncResult, GroupResult
 from celery.utils.collections import AttributeDict
 
 
@@ -295,7 +297,7 @@ class basetest_RedisBackend:
         self.app.tasks['foobarbaz'] = task
         task.request.chord = signature(task)
         task.request.id = tid
-        task.request.chord['chord_size'] = 10
+        self.b.set_chord_size(group_id, 10)
         task.request.group = group_id
         task.request.group_index = i
         return task
@@ -305,7 +307,8 @@ class basetest_RedisBackend:
         with patch('celery.backends.redis.maybe_signature') as ms:
             request = Mock(name='request')
             request.id = 'id1'
-            request.group = 'gid1'
+            group_id = 'gid1'
+            request.group = group_id
             request.group_index = None
             tasks = [
                 self.create_task(i, group_id=request.group)
@@ -313,7 +316,7 @@ class basetest_RedisBackend:
             ]
             callback = ms.return_value = Signature('add')
             callback.id = 'id1'
-            callback['chord_size'] = size
+            self.b.set_chord_size(group_id, size)
             callback.delay = Mock(name='callback.delay')
             yield tasks, request, callback
 
@@ -337,6 +340,20 @@ class test_RedisBackend(basetest_RedisBackend):
         with pytest.raises(ImproperlyConfigured):
             self.Backend(app=self.app)
 
+    def test_username_password_from_redis_conf(self):
+        self.app.conf.redis_password = 'password'
+        x = self.Backend(app=self.app)
+
+        assert x.connparams
+        assert 'username' not in x.connparams
+        assert x.connparams['password'] == 'password'
+        self.app.conf.redis_username = 'username'
+        x = self.Backend(app=self.app)
+
+        assert x.connparams
+        assert x.connparams['username'] == 'username'
+        assert x.connparams['password'] == 'password'
+
     def test_url(self):
         self.app.conf.redis_socket_timeout = 30.0
         self.app.conf.redis_socket_connect_timeout = 100.0
@@ -347,6 +364,19 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['host'] == 'vandelay.com'
         assert x.connparams['db'] == 1
         assert x.connparams['port'] == 123
+        assert x.connparams['password'] == 'bosco'
+        assert x.connparams['socket_timeout'] == 30.0
+        assert x.connparams['socket_connect_timeout'] == 100.0
+        assert 'username' not in x.connparams
+
+        x = self.Backend(
+            'redis://username:bosco@vandelay.com:123//1', app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert x.connparams['username'] == 'username'
         assert x.connparams['password'] == 'bosco'
         assert x.connparams['socket_timeout'] == 30.0
         assert x.connparams['socket_connect_timeout'] == 100.0
@@ -414,6 +444,54 @@ class test_RedisBackend(basetest_RedisBackend):
 
         from redis.connection import SSLConnection
         assert x.connparams['connection_class'] is SSLConnection
+
+    def test_backend_health_check_interval_ssl(self):
+        pytest.importorskip('redis')
+
+        self.app.conf.redis_backend_use_ssl = {
+            'ssl_cert_reqs': ssl.CERT_REQUIRED,
+            'ssl_ca_certs': '/path/to/ca.crt',
+            'ssl_certfile': '/path/to/client.crt',
+            'ssl_keyfile': '/path/to/client.key',
+        }
+        self.app.conf.redis_backend_health_check_interval = 10
+        x = self.Backend(
+            'rediss://:bosco@vandelay.com:123//1', app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert x.connparams['password'] == 'bosco'
+        assert x.connparams['health_check_interval'] == 10
+
+        from redis.connection import SSLConnection
+        assert x.connparams['connection_class'] is SSLConnection
+
+    def test_backend_health_check_interval(self):
+        pytest.importorskip('redis')
+
+        self.app.conf.redis_backend_health_check_interval = 10
+        x = self.Backend(
+            'redis://vandelay.com:123//1', app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert x.connparams['health_check_interval'] == 10
+
+    def test_backend_health_check_interval_not_set(self):
+        pytest.importorskip('redis')
+
+        x = self.Backend(
+            'redis://vandelay.com:123//1', app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert "health_check_interval" not in x.connparams
 
     @pytest.mark.parametrize('cert_str', [
         "required",
@@ -590,11 +668,11 @@ class test_RedisBackend(basetest_RedisBackend):
 
     def test_apply_chord(self, unlock='celery.chord_unlock'):
         self.app.tasks[unlock] = Mock()
-        header_result = self.app.GroupResult(
+        header_result_args = (
             uuid(),
             [self.app.AsyncResult(x) for x in range(3)],
         )
-        self.b.apply_chord(header_result, None)
+        self.b.apply_chord(header_result_args, None)
         assert self.app.tasks[unlock].apply_async.call_count == 0
 
     def test_unpack_chord_result(self):
@@ -639,6 +717,12 @@ class test_RedisBackend(basetest_RedisBackend):
         b.add_to_chord(gid, 'sig')
         b.client.incr.assert_called_with(b.get_key_for_group(gid, '.t'), 1)
 
+    def test_set_chord_size(self):
+        b = self.Backend('redis://', app=self.app)
+        gid = uuid()
+        b.set_chord_size(gid, 10)
+        b.client.set.assert_called_with(b.get_key_for_group(gid, '.s'), 10)
+
     def test_expires_is_None(self):
         b = self.Backend(expires=None, app=self.app)
         assert b.expires == self.app.conf.result_expires.total_seconds()
@@ -675,6 +759,10 @@ class test_RedisBackend(basetest_RedisBackend):
             key, 512,
         )
 
+    def test_set_raises_error_on_large_value(self):
+        with pytest.raises(BackendStoreError):
+            self.b.set('key', 'x' * (self.b._MAX_STR_VALUE_SIZE + 1))
+
 
 class test_RedisBackend_chords_simple(basetest_RedisBackend):
     @pytest.fixture(scope="class", autouse=True)
@@ -695,9 +783,10 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
         assert self.b.client.zrangebyscore.call_count
         jkey = self.b.get_key_for_group('group_id', '.j')
         tkey = self.b.get_key_for_group('group_id', '.t')
-        self.b.client.delete.assert_has_calls([call(jkey), call(tkey)])
+        skey = self.b.get_key_for_group('group_id', '.s')
+        self.b.client.delete.assert_has_calls([call(jkey), call(tkey), call(skey)])
         self.b.client.expire.assert_has_calls([
-            call(jkey, 86400), call(tkey, 86400),
+            call(jkey, 86400), call(tkey, 86400), call(skey, 86400),
         ])
 
     def test_on_chord_part_return__unordered(self):
@@ -744,6 +833,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
         old_expires = self.b.expires
         self.b.expires = None
         tasks = [self.create_task(i) for i in range(10)]
+        self.b.set_chord_size('group_id', 10)
 
         for i in range(10):
             self.b.on_chord_part_return(tasks[i].request, states.SUCCESS, i)
@@ -884,8 +974,8 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
             raise_on_second_call(self.b.client.pipeline, ChordError())
-            self.b.client.pipeline.return_value.zadd().zcount().get().expire(
-            ).expire().execute.return_value = (1, 1, 0, 4, 5)
+            self.b.client.pipeline.return_value.zadd().zcount().get().get().expire(
+            ).expire().expire().execute.return_value = (1, 1, 0, b'1', 4, 5, 6)
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
@@ -900,8 +990,8 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
             raise_on_second_call(self.b.client.pipeline, ChordError())
-            self.b.client.pipeline.return_value.rpush().llen().get().expire(
-            ).expire().execute.return_value = (1, 1, 0, 4, 5)
+            self.b.client.pipeline.return_value.rpush().llen().get().get().expire(
+            ).expire().expire().execute.return_value = (1, 1, 0, b'1', 4, 5, 6)
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
@@ -916,8 +1006,8 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
             raise_on_second_call(self.b.client.pipeline, ChordError())
-            self.b.client.pipeline.return_value.zadd().zcount().get().expire(
-            ).expire().execute.return_value = (1, 1, 0, 4, 5)
+            self.b.client.pipeline.return_value.zadd().zcount().get().get().expire(
+            ).expire().expire().execute.return_value = (1, 1, 0, b'1', 4, 5, 6)
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
@@ -928,8 +1018,8 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
             raise_on_second_call(self.b.client.pipeline, RuntimeError())
-            self.b.client.pipeline.return_value.zadd().zcount().get().expire(
-            ).expire().execute.return_value = (1, 1, 0, 4, 5)
+            self.b.client.pipeline.return_value.zadd().zcount().get().get().expire(
+            ).expire().expire().execute.return_value = (1, 1, 0, b'1', 4, 5, 6)
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
@@ -944,8 +1034,8 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
             raise_on_second_call(self.b.client.pipeline, RuntimeError())
-            self.b.client.pipeline.return_value.rpush().llen().get().expire(
-            ).expire().execute.return_value = (1, 1, 0, 4, 5)
+            self.b.client.pipeline.return_value.rpush().llen().get().get().expire(
+            ).expire().expire().execute.return_value = (1, 1, 0, b'1', 4, 5, 6)
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
@@ -960,8 +1050,8 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
             raise_on_second_call(self.b.client.pipeline, RuntimeError())
-            self.b.client.pipeline.return_value.zadd().zcount().get().expire(
-            ).expire().execute.return_value = (1, 1, 0, 4, 5)
+            self.b.client.pipeline.return_value.zadd().zcount().get().get().expire(
+            ).expire().expire().execute.return_value = (1, 1, 0, b'1', 4, 5, 6)
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
@@ -975,42 +1065,49 @@ class test_RedisBackend_chords_complex(basetest_RedisBackend):
         with patch("celery.result.GroupResult.restore") as p:
             yield p
 
-    def test_apply_chord_complex_header(self):
-        mock_header_result = Mock()
+    @pytest.mark.parametrize(['results', 'assert_save_called'], [
         # No results in the header at all - won't call `save()`
-        mock_header_result.results = tuple()
-        self.b.apply_chord(mock_header_result, None)
-        mock_header_result.save.assert_not_called()
-        mock_header_result.save.reset_mock()
-        # A single simple result in the header - won't call `save()`
-        mock_header_result.results = (self.app.AsyncResult("foo"), )
-        self.b.apply_chord(mock_header_result, None)
-        mock_header_result.save.assert_not_called()
-        mock_header_result.save.reset_mock()
+        (tuple(), False),
+        # Simple results in the header - won't call `save()`
+        ((AsyncResult("foo"), ), False),
         # Many simple results in the header - won't call `save()`
-        mock_header_result.results = (self.app.AsyncResult("foo"), ) * 42
-        self.b.apply_chord(mock_header_result, None)
-        mock_header_result.save.assert_not_called()
-        mock_header_result.save.reset_mock()
+        ((AsyncResult("foo"), ) * 42, False),
         # A single complex result in the header - will call `save()`
-        mock_header_result.results = (self.app.GroupResult("foo"), )
-        self.b.apply_chord(mock_header_result, None)
-        mock_header_result.save.assert_called_once_with(backend=self.b)
-        mock_header_result.save.reset_mock()
+        ((GroupResult("foo", []),), True),
         # Many complex results in the header - will call `save()`
-        mock_header_result.results = (self.app.GroupResult("foo"), ) * 42
-        self.b.apply_chord(mock_header_result, None)
-        mock_header_result.save.assert_called_once_with(backend=self.b)
-        mock_header_result.save.reset_mock()
+        ((GroupResult("foo"), ) * 42, True),
         # Mixed simple and complex results in the header - will call `save()`
-        mock_header_result.results = itertools.islice(
+        (itertools.islice(
             itertools.cycle((
-                self.app.AsyncResult("foo"), self.app.GroupResult("foo"),
+                AsyncResult("foo"), GroupResult("foo"),
             )), 42,
-        )
-        self.b.apply_chord(mock_header_result, None)
-        mock_header_result.save.assert_called_once_with(backend=self.b)
-        mock_header_result.save.reset_mock()
+        ), True),
+    ])
+    def test_apply_chord_complex_header(self, results, assert_save_called):
+        mock_group_result = Mock()
+        mock_group_result.return_value.results = results
+        self.app.GroupResult = mock_group_result
+        header_result_args = ("gid11", results)
+        self.b.apply_chord(header_result_args, None)
+        if assert_save_called:
+            mock_group_result.return_value.save.assert_called_once_with(backend=self.b)
+        else:
+            mock_group_result.return_value.save.assert_not_called()
+
+    def test_on_chord_part_return_timeout(self, complex_header_result):
+        tasks = [self.create_task(i) for i in range(10)]
+        random.shuffle(tasks)
+        try:
+            self.app.conf.result_chord_join_timeout += 1.0
+            for task, result_val in zip(tasks, itertools.cycle((42, ))):
+                self.b.on_chord_part_return(
+                    task.request, states.SUCCESS, result_val,
+                )
+        finally:
+            self.app.conf.result_chord_join_timeout -= 1.0
+
+        join_func = complex_header_result.return_value.join_native
+        join_func.assert_called_once_with(timeout=4.0, propagate=True)
 
     @pytest.mark.parametrize("supports_native_join", (True, False))
     def test_on_chord_part_return(
@@ -1106,6 +1203,16 @@ class test_SentinelBackend:
         found_dbs = [cp['db'] for cp in x.connparams['hosts']]
         assert found_dbs == expected_dbs
 
+        # By default passwords should be sanitized
+        display_url = x.as_uri()
+        assert "test" not in display_url
+        # We can choose not to sanitize with the `include_password` argument
+        unsanitized_display_url = x.as_uri(include_password=True)
+        assert unsanitized_display_url == x.url
+        # or to explicitly sanitize
+        forcibly_sanitized_display_url = x.as_uri(include_password=False)
+        assert forcibly_sanitized_display_url == display_url
+
     def test_get_sentinel_instance(self):
         x = self.Backend(
             'sentinel://:test@github.com:123/1;'
@@ -1126,3 +1233,34 @@ class test_SentinelBackend:
         )
         pool = x._get_pool(**x.connparams)
         assert pool
+
+    def test_backend_ssl(self):
+        pytest.importorskip('redis')
+
+        from celery.backends.redis import SentinelBackend
+        self.app.conf.redis_backend_use_ssl = {
+            'ssl_cert_reqs': "CERT_REQUIRED",
+            'ssl_ca_certs': '/path/to/ca.crt',
+            'ssl_certfile': '/path/to/client.crt',
+            'ssl_keyfile': '/path/to/client.key',
+        }
+        self.app.conf.redis_socket_timeout = 30.0
+        self.app.conf.redis_socket_connect_timeout = 100.0
+        x = SentinelBackend(
+            'sentinel://:bosco@vandelay.com:123//1', app=self.app,
+        )
+        assert x.connparams
+        assert len(x.connparams['hosts']) == 1
+        assert x.connparams['hosts'][0]['host'] == 'vandelay.com'
+        assert x.connparams['hosts'][0]['db'] == 1
+        assert x.connparams['hosts'][0]['port'] == 123
+        assert x.connparams['hosts'][0]['password'] == 'bosco'
+        assert x.connparams['socket_timeout'] == 30.0
+        assert x.connparams['socket_connect_timeout'] == 100.0
+        assert x.connparams['ssl_cert_reqs'] == ssl.CERT_REQUIRED
+        assert x.connparams['ssl_ca_certs'] == '/path/to/ca.crt'
+        assert x.connparams['ssl_certfile'] == '/path/to/client.crt'
+        assert x.connparams['ssl_keyfile'] == '/path/to/client.key'
+
+        from celery.backends.redis import SentinelManagedSSLConnection
+        assert x.connparams['connection_class'] is SentinelManagedSSLConnection

@@ -1,5 +1,4 @@
 """Custom maps, sets, sequences, and other data structures."""
-import sys
 import time
 from collections import OrderedDict as _OrderedDict
 from collections import deque
@@ -8,6 +7,7 @@ from collections.abc import (Callable, Mapping, MutableMapping, MutableSet,
 from heapq import heapify, heappop, heappush
 from itertools import chain, count
 from queue import Empty
+from typing import Any, Dict, Iterable, List
 
 from .functional import first, uniq
 from .text import match_case
@@ -21,9 +21,9 @@ except ImportError:
 try:
     from django.utils.functional import LazyObject, LazySettings
 except ImportError:
-    class LazyObject:  # noqa
+    class LazyObject:
         pass
-    LazySettings = LazyObject  # noqa
+    LazySettings = LazyObject
 
 __all__ = (
     'AttributeDictMixin', 'AttributeDict', 'BufferMap', 'ChainMap',
@@ -193,26 +193,12 @@ class DictAttribute:
             yield getattr(self.obj, key)
     itervalues = _iterate_values
 
-    if sys.version_info[0] == 3:  # pragma: no cover
-        items = _iterate_items
-        keys = _iterate_keys
-        values = _iterate_values
-    else:
-
-        def keys(self):
-            # type: () -> List[Any]
-            return list(self)
-
-        def items(self):
-            # type: () -> List[Tuple[Any, Any]]
-            return list(self._iterate_items())
-
-        def values(self):
-            # type: () -> List[Any]
-            return list(self._iterate_values())
+    items = _iterate_items
+    keys = _iterate_keys
+    values = _iterate_values
 
 
-MutableMapping.register(DictAttribute)  # noqa: E305
+MutableMapping.register(DictAttribute)
 
 
 class ChainMap(MutableMapping):
@@ -340,7 +326,7 @@ class ChainMap(MutableMapping):
         # changes take precedence.
         # pylint: disable=bad-reversed-sequence
         #   Someone should teach pylint about properties.
-        return chain(*[op(d) for d in reversed(self.maps)])
+        return chain(*(op(d) for d in reversed(self.maps)))
 
     def _iterate_keys(self):
         # type: () -> Iterable
@@ -360,23 +346,9 @@ class ChainMap(MutableMapping):
     def bind_to(self, callback):
         self._observers.append(callback)
 
-    if sys.version_info[0] == 3:  # pragma: no cover
-        keys = _iterate_keys
-        items = _iterate_items
-        values = _iterate_values
-
-    else:  # noqa
-        def keys(self):
-            # type: () -> List[Any]
-            return list(self._iterate_keys())
-
-        def items(self):
-            # type: () -> List[Tuple[Any, Any]]
-            return list(self._iterate_items())
-
-        def values(self):
-            # type: () -> List[Any]
-            return list(self._iterate_values())
+    keys = _iterate_keys
+    items = _iterate_items
+    values = _iterate_values
 
 
 class ConfigurationView(ChainMap, AttributeDictMixin):
@@ -696,7 +668,7 @@ class LimitedSet:
         return len(self._heap) * 100 / max(len(self._data), 1) - 100
 
 
-MutableSet.register(LimitedSet)  # noqa: E305
+MutableSet.register(LimitedSet)
 
 
 class Evictable:
@@ -797,7 +769,7 @@ class Messagebuffer(Evictable):
         return len(self)
 
 
-Sequence.register(Messagebuffer)  # noqa: E305
+Sequence.register(Messagebuffer)
 
 
 class BufferMap(OrderedDict, Evictable):

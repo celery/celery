@@ -5,7 +5,7 @@ from fileinput import FileInput
 
 import click
 
-from celery.bin.base import CeleryCommand
+from celery.bin.base import CeleryCommand, handle_preload_options
 
 __all__ = ('logtool',)
 
@@ -111,7 +111,9 @@ class Audit:
 
 
 @click.group()
-def logtool():
+@click.pass_context
+@handle_preload_options
+def logtool(ctx):
     """The ``celery logtool`` command."""
 
 

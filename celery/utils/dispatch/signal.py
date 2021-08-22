@@ -254,9 +254,9 @@ class Signal:  # pragma: no cover
     def send(self, sender, **named):
         """Send signal from sender to all connected receivers.
 
-        If any receiver raises an error, the error propagates back through
-        send, terminating the dispatch loop, so it is quite possible to not
-        have all receivers called if a raises an error.
+        If any receiver raises an error, the exception is returned as the
+        corresponding response. (This is different from the "send" in
+        Django signals. In Celery "send" and "send_robust" do the same thing.)
 
         Arguments:
             sender (Any): The sender of the signal.

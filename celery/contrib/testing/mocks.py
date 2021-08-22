@@ -1,6 +1,10 @@
 """Useful mocks for unit testing."""
 import numbers
 from datetime import datetime, timedelta
+from typing import Any, Mapping, Sequence
+
+from celery import Celery
+from celery.canvas import Signature
 
 try:
     from case import Mock
@@ -49,7 +53,7 @@ def TaskMessage1(
     kwargs=None,  # type: Mapping
     callbacks=None,  # type: Sequence[Signature]
     errbacks=None,  # type: Sequence[Signature]
-    chain=None,  # type: Squence[Signature]
+    chain=None,  # type: Sequence[Signature]
     **options  # type: Any
 ):
     # type: (...) -> Any

@@ -59,6 +59,9 @@ class _MockBackend:
     def wait_for_pending(self, *args, **kwargs):
         return True
 
+    def remove_pending_result(self, *args, **kwargs):
+        return True
+
 
 class test_AsyncResult:
 
@@ -708,19 +711,19 @@ class test_GroupResult:
                 ]),
             ]),
         ])
-        ts.app.backend = backend
 
-        vals = ts.get()
-        assert vals == [
-            '1.1',
-            [
-                '2.1',
+        with patch('celery.Celery.backend', new=backend):
+            vals = ts.get()
+            assert vals == [
+                '1.1',
                 [
-                    '3.1',
-                    '3.2',
-                ]
-            ],
-        ]
+                    '2.1',
+                    [
+                        '3.1',
+                        '3.2',
+                    ]
+                ],
+            ]
 
     def test_getitem(self):
         subs = [MockAsyncResultSuccess(uuid(), app=self.app),
@@ -771,15 +774,16 @@ class test_GroupResult:
         results = [self.app.AsyncResult(uuid(), backend=backend)
                    for i in range(10)]
         ts = self.app.GroupResult(uuid(), results)
-        ts.app.backend = backend
-        backend.ids = [result.id for result in results]
-        res = ts.join_native()
-        assert res == list(range(10))
-        callback = Mock(name='callback')
-        assert not ts.join_native(callback=callback)
-        callback.assert_has_calls([
-            call(r.id, i) for i, r in enumerate(ts.results)
-        ])
+
+        with patch('celery.Celery.backend', new=backend):
+            backend.ids = [result.id for result in results]
+            res = ts.join_native()
+            assert res == list(range(10))
+            callback = Mock(name='callback')
+            assert not ts.join_native(callback=callback)
+            callback.assert_has_calls([
+                call(r.id, i) for i, r in enumerate(ts.results)
+            ])
 
     def test_join_native_raises(self):
         ts = self.app.GroupResult(uuid(), [self.app.AsyncResult(uuid())])
@@ -813,9 +817,9 @@ class test_GroupResult:
         results = [self.app.AsyncResult(uuid(), backend=backend)
                    for i in range(10)]
         ts = self.app.GroupResult(uuid(), results)
-        ts.app.backend = backend
-        backend.ids = [result.id for result in results]
-        assert len(list(ts.iter_native())) == 10
+        with patch('celery.Celery.backend', new=backend):
+            backend.ids = [result.id for result in results]
+            assert len(list(ts.iter_native())) == 10
 
     def test_join_timeout(self):
         ar = MockAsyncResultSuccess(uuid(), app=self.app)

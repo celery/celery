@@ -11,7 +11,6 @@ import numbers
 import os
 import platform as _platform
 import signal as _signal
-import struct
 import sys
 import warnings
 from collections import namedtuple
@@ -22,7 +21,7 @@ from billiard.compat import close_open_fds, get_fdmax
 from kombu.utils.compat import maybe_fileno
 from kombu.utils.encoding import safe_str
 
-from .exceptions import SecurityError, reraise
+from .exceptions import SecurityError, SecurityWarning, reraise
 from .local import try_import
 
 try:
@@ -67,8 +66,6 @@ Seems we're already running? (pid: {1})"""
 
 _range = namedtuple('_range', ('start', 'stop'))
 
-C_FORCE_ROOT = os.environ.get('C_FORCE_ROOT', False)
-
 ROOT_DISALLOWED = """\
 Running a worker with superuser privileges when the
 worker accepts messages serialized with pickle is a very bad idea!
@@ -86,6 +83,11 @@ absolutely not recommended!
 Please specify a different user using the --uid option.
 
 User information: uid={uid} euid={euid} gid={gid} egid={egid}
+"""
+
+ASSUMING_ROOT = """\
+An entry for the specified gid or egid was not found.
+We're assuming this is a potential security issue.
 """
 
 SIGNAMES = {
@@ -147,6 +149,7 @@ class Pidfile:
         except OSError as exc:
             reraise(LockFailed, LockFailed(str(exc)), sys.exc_info()[2])
         return self
+
     __enter__ = acquire
 
     def is_locked(self):
@@ -156,6 +159,7 @@ class Pidfile:
     def release(self, *args):
         """Release lock."""
         self.remove()
+
     __exit__ = release
 
     def read_pid(self):
@@ -232,7 +236,7 @@ class Pidfile:
             rfh.close()
 
 
-PIDFile = Pidfile  # noqa: E305 XXX compat alias
+PIDFile = Pidfile  # XXX compat alias
 
 
 def create_pidlock(pidfile):
@@ -347,17 +351,19 @@ class DaemonContext:
                     mputil._run_after_forkers()
 
             self._is_open = True
+
     __enter__ = open
 
     def close(self, *args):
         if self._is_open:
             self._is_open = False
+
     __exit__ = close
 
     def _detach(self):
-        if os.fork() == 0:      # first child
-            os.setsid()         # create new session
-            if os.fork() > 0:   # pragma: no cover
+        if os.fork() == 0:  # first child
+            os.setsid()  # create new session
+            if os.fork() > 0:  # pragma: no cover
                 # second child
                 os._exit(0)
         else:
@@ -464,7 +470,7 @@ def _setgroups_hack(groups):
     while 1:
         try:
             return os.setgroups(groups)
-        except ValueError:   # error from Python's check.
+        except ValueError:  # error from Python's check.
             if len(groups) <= 1:
                 raise
             groups[:] = groups[:-1]
@@ -575,6 +581,14 @@ def _setuid(uid, gid):
             'non-root user able to restore privileges after setuid.')
 
 
+if hasattr(_signal, 'setitimer'):
+    def _arm_alarm(seconds):
+        _signal.setitimer(_signal.ITIMER_REAL, seconds)
+else:
+    def _arm_alarm(seconds):
+        _signal.alarm(math.ceil(seconds))
+
+
 class Signals:
     """Convenience interface to :mod:`signals`.
 
@@ -613,21 +627,8 @@ class Signals:
     ignored = _signal.SIG_IGN
     default = _signal.SIG_DFL
 
-    if hasattr(_signal, 'setitimer'):
-
-        def arm_alarm(self, seconds):
-            _signal.setitimer(_signal.ITIMER_REAL, seconds)
-    else:  # pragma: no cover
-        try:
-            from itimer import alarm as _itimer_alarm  # noqa
-        except ImportError:
-
-            def arm_alarm(self, seconds):  # noqa
-                _signal.alarm(math.ceil(seconds))
-        else:  # pragma: no cover
-
-            def arm_alarm(self, seconds):      # noqa
-                return _itimer_alarm(seconds)  # noqa
+    def arm_alarm(self, seconds):
+        return _arm_alarm(seconds)
 
     def reset_alarm(self):
         return _signal.alarm(0)
@@ -689,10 +690,10 @@ class Signals:
 
 
 signals = Signals()
-get_signal = signals.signum                   # compat
+get_signal = signals.signum  # compat
 install_signal_handler = signals.__setitem__  # compat
-reset_signal = signals.reset                  # compat
-ignore_signal = signals.ignore                # compat
+reset_signal = signals.reset  # compat
+ignore_signal = signals.ignore  # compat
 
 
 def signal_name(signum):
@@ -725,7 +726,7 @@ if os.environ.get('NOSETPS'):  # pragma: no cover
         """Disabled feature."""
 else:
 
-    def set_mp_process_title(progname, info=None, hostname=None):  # noqa
+    def set_mp_process_title(progname, info=None, hostname=None):
         """Set the :command:`ps` name from the current process name.
 
         Only works if :pypi:`setproctitle` is installed.
@@ -773,6 +774,11 @@ def ignore_errno(*errnos, **kwargs):
 
 
 def check_privileges(accept_content):
+    if grp is None or pwd is None:
+        return
+    pickle_or_serialize = ('pickle' in accept_content
+                           or 'application/group-python-serialize' in accept_content)
+
     uid = os.getuid() if hasattr(os, 'getuid') else 65535
     gid = os.getgid() if hasattr(os, 'getgid') else 65535
     euid = os.geteuid() if hasattr(os, 'geteuid') else 65535
@@ -780,38 +786,46 @@ def check_privileges(accept_content):
 
     if hasattr(os, 'fchown'):
         if not all(hasattr(os, attr)
-                   for attr in ['getuid', 'getgid', 'geteuid', 'getegid']):
+                   for attr in ('getuid', 'getgid', 'geteuid', 'getegid')):
             raise SecurityError('suspicious platform, contact support')
 
-    if not uid or not gid or not euid or not egid:
-        if ('pickle' in accept_content or
-                'application/x-python-serialize' in accept_content):
-            if not C_FORCE_ROOT:
-                try:
-                    print(ROOT_DISALLOWED.format(
-                        uid=uid, euid=euid, gid=gid, egid=egid,
-                    ), file=sys.stderr)
-                finally:
-                    sys.stderr.flush()
-                    os._exit(1)
-        warnings.warn(RuntimeWarning(ROOT_DISCOURAGED.format(
+    # Get the group database entry for the current user's group and effective
+    # group id using grp.getgrgid() method
+    # We must handle the case where either the gid or the egid are not found.
+    try:
+        gid_entry = grp.getgrgid(gid)
+        egid_entry = grp.getgrgid(egid)
+    except KeyError:
+        warnings.warn(SecurityWarning(ASSUMING_ROOT))
+        _warn_or_raise_security_error(egid, euid, gid, uid,
+                                      pickle_or_serialize)
+        return
+
+    # Get the group and effective group name based on gid
+    gid_grp_name = gid_entry[0]
+    egid_grp_name = egid_entry[0]
+
+    # Create lists to use in validation step later.
+    gids_in_use = (gid_grp_name, egid_grp_name)
+    groups_with_security_risk = ('sudo', 'wheel')
+
+    is_root = uid == 0 or euid == 0
+    # Confirm that the gid and egid are not one that
+    # can be used to escalate privileges.
+    if is_root or any(group in gids_in_use
+                      for group in groups_with_security_risk):
+        _warn_or_raise_security_error(egid, euid, gid, uid,
+                                      pickle_or_serialize)
+
+
+def _warn_or_raise_security_error(egid, euid, gid, uid, pickle_or_serialize):
+    c_force_root = os.environ.get('C_FORCE_ROOT', False)
+
+    if pickle_or_serialize and not c_force_root:
+        raise SecurityError(ROOT_DISALLOWED.format(
             uid=uid, euid=euid, gid=gid, egid=egid,
-        )))
+        ))
 
-
-if sys.version_info < (2, 7, 7):  # pragma: no cover
-    import functools
-
-    def _to_bytes_arg(fun):
-        @functools.wraps(fun)
-        def _inner(s, *args, **kwargs):
-            return fun(s.encode(), *args, **kwargs)
-        return _inner
-
-    pack = _to_bytes_arg(struct.pack)
-    unpack = _to_bytes_arg(struct.unpack)
-    unpack_from = _to_bytes_arg(struct.unpack_from)
-else:
-    pack = struct.pack
-    unpack = struct.unpack
-    unpack_from = struct.unpack_from
+    warnings.warn(SecurityWarning(ROOT_DISCOURAGED.format(
+        uid=uid, euid=euid, gid=gid, egid=egid,
+    )))

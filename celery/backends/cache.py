@@ -20,6 +20,10 @@ The cache backend {0!r} is unknown,
 Please use one of the following backends instead: {1}\
 """
 
+# Global shared in-memory cache for in-memory cache client
+# This is to share cache between threads
+_DUMMY_CLIENT_CACHE = LRUCache(limit=5000)
+
 
 def import_best_memcache():
     if _imp[0] is None:
@@ -29,7 +33,7 @@ def import_best_memcache():
             is_pylibmc = True
         except ImportError:
             try:
-                import memcache  # noqa
+                import memcache
             except ImportError:
                 raise ImproperlyConfigured(REQUIRES_BACKEND)
         _imp[0] = (is_pylibmc, memcache, memcache_key_t)
@@ -43,7 +47,7 @@ def get_best_memcache(*args, **kwargs):
     Client = _Client = memcache.Client
 
     if not is_pylibmc:
-        def Client(*args, **kwargs):  # noqa
+        def Client(*args, **kwargs):
             kwargs.pop('behaviors', None)
             return _Client(*args, **kwargs)
 
@@ -53,7 +57,7 @@ def get_best_memcache(*args, **kwargs):
 class DummyClient:
 
     def __init__(self, *args, **kwargs):
-        self.cache = LRUCache(limit=5000)
+        self.cache = _DUMMY_CLIENT_CACHE
 
     def get(self, key, *args, **kwargs):
         return self.cache.get(key)
@@ -124,11 +128,11 @@ class CacheBackend(KeyValueStoreBackend):
     def delete(self, key):
         return self.client.delete(key)
 
-    def _apply_chord_incr(self, header_result, body, **kwargs):
-        chord_key = self.get_key_for_chord(header_result.id)
+    def _apply_chord_incr(self, header_result_args, body, **kwargs):
+        chord_key = self.get_key_for_chord(header_result_args[0])
         self.client.set(chord_key, 0, time=self.expires)
         return super()._apply_chord_incr(
-            header_result, body, **kwargs)
+            header_result_args, body, **kwargs)
 
     def incr(self, key):
         return self.client.incr(key)

@@ -27,7 +27,7 @@ __all__ = (
 )
 
 try:
-    WindowsError = WindowsError  # noqa
+    WindowsError = WindowsError
 except NameError:
 
     class WindowsError(Exception):

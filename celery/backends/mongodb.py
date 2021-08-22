@@ -13,18 +13,18 @@ from .base import BaseBackend
 try:
     import pymongo
 except ImportError:  # pragma: no cover
-    pymongo = None   # noqa
+    pymongo = None
 
 if pymongo:
     try:
         from bson.binary import Binary
     except ImportError:                     # pragma: no cover
-        from pymongo.binary import Binary  # noqa
-    from pymongo.errors import InvalidDocument  # noqa
+        from pymongo.binary import Binary
+    from pymongo.errors import InvalidDocument
 else:                                       # pragma: no cover
-    Binary = None                           # noqa
+    Binary = None
 
-    class InvalidDocument(Exception):       # noqa
+    class InvalidDocument(Exception):
         pass
 
 __all__ = ('MongoBackend',)
@@ -202,8 +202,8 @@ class MongoBackend(BaseBackend):
                 'status': obj['status'],
                 'result': self.decode(obj['result']),
                 'date_done': obj['date_done'],
-                'traceback': self.decode(obj['traceback']),
-                'children': self.decode(obj['children']),
+                'traceback': obj['traceback'],
+                'children': obj['children'],
             })
         return {'status': states.PENDING, 'result': None}
 
@@ -248,6 +248,9 @@ class MongoBackend(BaseBackend):
 
     def cleanup(self):
         """Delete expired meta-data."""
+        if not self.expires:
+            return
+
         self.collection.delete_many(
             {'date_done': {'$lt': self.app.now() - self.expires_delta}},
         )

@@ -1,3 +1,4 @@
+import uuid
 from unittest.mock import Mock, patch
 
 import pytest
@@ -28,8 +29,22 @@ class test_RPCBackend:
     def test_oid(self):
         oid = self.b.oid
         oid2 = self.b.oid
+        assert uuid.UUID(oid)
         assert oid == oid2
-        assert oid == self.app.oid
+        assert oid == self.app.thread_oid
+
+    def test_oid_threads(self):
+        # Verify that two RPC backends executed in different threads
+        # has different oid.
+        oid = self.b.oid
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(lambda: RPCBackend(app=self.app).oid)
+        thread_oid = future.result()
+        assert uuid.UUID(oid)
+        assert uuid.UUID(thread_oid)
+        assert oid == self.app.thread_oid
+        assert thread_oid != oid
 
     def test_interface(self):
         self.b.on_reply_declare('task_id')

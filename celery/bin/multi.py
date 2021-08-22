@@ -67,7 +67,7 @@ Examples
     $ celery multi show 10 -l INFO -Q:1-3 images,video -Q:4,5 data
         -Q default -L:4,5 DEBUG
 
-    $ # Additional options are added to each celery worker' comamnd,
+    $ # Additional options are added to each celery worker's command,
     $ # but you can also modify the options for ranges of, or specific workers
 
     $ # 3 workers: Two with 3 processes, and one with 10 processes.
@@ -108,7 +108,7 @@ from kombu.utils.objects import cached_property
 
 from celery import VERSION_BANNER
 from celery.apps.multi import Cluster, MultiParser, NamespacedOptionParser
-from celery.bin.base import CeleryCommand
+from celery.bin.base import CeleryCommand, handle_preload_options
 from celery.platforms import EX_FAILURE, EX_OK, signals
 from celery.utils import term
 from celery.utils.text import pluralize
@@ -468,6 +468,7 @@ class MultiTool(TermLogger):
     }
 )
 @click.pass_context
+@handle_preload_options
 def multi(ctx):
     """Start multiple worker instances."""
     cmd = MultiTool(quiet=ctx.obj.quiet, no_color=ctx.obj.no_color)

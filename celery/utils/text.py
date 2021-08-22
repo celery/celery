@@ -5,6 +5,7 @@ from collections.abc import Callable
 from functools import partial
 from pprint import pformat
 from textwrap import fill
+from typing import Any, List, Mapping, Pattern
 
 __all__ = (
     'abbr', 'abbrtask', 'dedent', 'dedent_initial',
@@ -111,7 +112,7 @@ def pretty(value, width=80, nl_width=80, sep='\n', **kw):
     # type: (str, int, int, str, **Any) -> str
     """Format value for printing to console."""
     if isinstance(value, dict):
-        return '{{{0} {1}'.format(sep, pformat(value, 4, nl_width)[1:])
+        return f'{{{sep} {pformat(value, 4, nl_width)[1:]}'
     elif isinstance(value, tuple):
         return '{}{}{}'.format(
             sep, ' ' * 4, pformat(value, width=nl_width, **kw),

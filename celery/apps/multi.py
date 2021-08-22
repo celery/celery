@@ -242,7 +242,7 @@ class Node:
         raise KeyError(alt[0])
 
     def __repr__(self):
-        return '<{name}: {0.name}>'.format(self, name=type(self).__name__)
+        return f'<{type(self).__name__}: {self.name}>'
 
     @cached_property
     def pidfile(self):

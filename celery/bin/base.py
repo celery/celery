@@ -1,6 +1,8 @@
 """Click customizations for Celery."""
 import json
+import numbers
 from collections import OrderedDict
+from functools import update_wrapper
 from pprint import pformat
 
 import click
@@ -8,6 +10,7 @@ from click import ParamType
 from kombu.utils.objects import cached_property
 
 from celery._state import get_current_app
+from celery.signals import user_preload_options
 from celery.utils import text
 from celery.utils.log import mlevel
 from celery.utils.time import maybe_iso8601
@@ -113,13 +116,33 @@ class CLIContext:
             self.echo(body)
 
 
+def handle_preload_options(f):
+    """Extract preload options and return a wrapped callable."""
+    def caller(ctx, *args, **kwargs):
+        app = ctx.obj.app
+
+        preload_options = [o.name for o in app.user_options.get('preload', [])]
+
+        if preload_options:
+            user_options = {
+                preload_option: kwargs[preload_option]
+                for preload_option in preload_options
+            }
+
+            user_preload_options.send(sender=f, app=app, options=user_options)
+
+        return f(ctx, *args, **kwargs)
+
+    return update_wrapper(caller, f)
+
+
 class CeleryOption(click.Option):
     """Customized option for Celery."""
 
-    def get_default(self, ctx):
+    def get_default(self, ctx, *args, **kwargs):
         if self.default_value_from_context:
             self.default = ctx.obj[self.default_value_from_context]
-        return super().get_default(ctx)
+        return super().get_default(ctx, *args, **kwargs)
 
     def __init__(self, *args, **kwargs):
         """Initialize a Celery option."""
@@ -171,16 +194,44 @@ class CommaSeparatedList(ParamType):
         return text.str_to_list(value)
 
 
-class Json(ParamType):
-    """JSON formatted argument."""
+class JsonArray(ParamType):
+    """JSON formatted array argument."""
 
-    name = "json"
+    name = "json array"
 
     def convert(self, value, param, ctx):
+        if isinstance(value, list):
+            return value
+
         try:
-            return json.loads(value)
+            v = json.loads(value)
         except ValueError as e:
             self.fail(str(e))
+
+        if not isinstance(v, list):
+            self.fail(f"{value} was not an array")
+
+        return v
+
+
+class JsonObject(ParamType):
+    """JSON formatted object argument."""
+
+    name = "json object"
+
+    def convert(self, value, param, ctx):
+        if isinstance(value, dict):
+            return value
+
+        try:
+            v = json.loads(value)
+        except ValueError as e:
+            self.fail(str(e))
+
+        if not isinstance(v, dict):
+            self.fail(f"{value} was not an object")
+
+        return v
 
 
 class ISO8601DateTime(ParamType):
@@ -220,12 +271,16 @@ class LogLevel(click.Choice):
         super().__init__(('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL', 'FATAL'))
 
     def convert(self, value, param, ctx):
+        if isinstance(value, numbers.Integral):
+            return value
+
         value = value.upper()
         value = super().convert(value, param, ctx)
         return mlevel(value)
 
 
-JSON = Json()
+JSON_ARRAY = JsonArray()
+JSON_OBJECT = JsonObject()
 ISO8601 = ISO8601DateTime()
 ISO8601_OR_FLOAT = ISO8601DateTimeOrFloat()
 LOG_LEVEL = LogLevel()

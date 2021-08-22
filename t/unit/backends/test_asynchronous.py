@@ -1,5 +1,6 @@
 import os
 import socket
+import sys
 import threading
 import time
 from unittest.mock import Mock, patch
@@ -12,6 +13,7 @@ from celery.backends.base import Backend
 from celery.utils import cached_property
 
 pytest.importorskip('gevent')
+pytest.importorskip('eventlet')
 
 
 @pytest.fixture(autouse=True)
@@ -140,6 +142,10 @@ class DrainerTests:
         assert on_interval.call_count < 20, 'Should have limited number of calls to on_interval'
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="hangs forever intermittently on windows"
+)
 class test_EventletDrainer(DrainerTests):
     @pytest.fixture(autouse=True)
     def setup_drainer(self):

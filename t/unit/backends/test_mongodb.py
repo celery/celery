@@ -1,5 +1,4 @@
 import datetime
-import sys
 from pickle import dumps, loads
 from unittest.mock import ANY, MagicMock, Mock, patch, sentinel
 
@@ -46,7 +45,6 @@ class test_MongoBackend:
         self.patching('celery.backends.mongodb.MongoBackend.encode')
         self.patching('celery.backends.mongodb.MongoBackend.decode')
         self.patching('celery.backends.mongodb.Binary')
-        self.patching('datetime.datetime')
         self.backend = MongoBackend(app=self.app, url=self.default_url)
 
     def test_init_no_mongodb(self, patching):
@@ -485,6 +483,12 @@ class test_MongoBackend:
         mock_get_database.assert_called_once_with()
         mock_collection.delete_many.assert_called()
 
+        self.backend.collections = mock_collection = Mock()
+        self.backend.expires = None
+
+        self.backend.cleanup()
+        mock_collection.delete_many.assert_not_called()
+
     def test_get_database_authfailure(self):
         x = MongoBackend(app=self.app)
         x._get_connection = Mock()
@@ -653,10 +657,20 @@ class test_MongoBackend_store_get_result:
         backend = mongo_backend_factory(serializer=serializer)
         backend.store_result(TASK_ID, result, 'SUCCESS')
         recovered = backend.get_result(TASK_ID)
-        if sys.version_info.major == 2 and isinstance(recovered, str):
-            result_type = str  # workaround for python 2 compatibility and `unicode_literals`
         assert type(recovered) == result_type
         assert recovered == result
+
+    @pytest.mark.parametrize("serializer",
+                             ["bson", "pickle", "yaml", "json", "msgpack"])
+    def test_encode_chain_results(self, mongo_backend_factory, serializer):
+        backend = mongo_backend_factory(serializer=serializer)
+        mock_request = MagicMock(spec=['children'])
+        children = [self.app.AsyncResult(uuid()) for i in range(10)]
+        mock_request.children = children
+        backend.store_result(TASK_ID, 0, 'SUCCESS', request=mock_request)
+        recovered = backend.get_children(TASK_ID)
+        def tuple_to_list(t): return [list(t[0]), t[1]]
+        assert recovered == [tuple_to_list(c.as_tuple()) for c in children]
 
     @pytest.mark.parametrize("serializer",
                              ["bson", "pickle", "yaml", "json", "msgpack"])
@@ -664,7 +678,8 @@ class test_MongoBackend_store_get_result:
                                             serializer):
         backend = mongo_backend_factory(serializer=serializer)
         exception = Exception("Basic Exception")
-        backend.store_result(TASK_ID, exception, 'FAILURE')
+        traceback = 'Traceback:\n  Exception: Basic Exception\n'
+        backend.store_result(TASK_ID, exception, 'FAILURE', traceback)
         recovered = backend.get_result(TASK_ID)
         assert type(recovered) == type(exception)
         assert recovered.args == exception.args
