@@ -14,7 +14,7 @@ Usage::
 
    cd examples/security
 
-   (window1)$ python mysecureapp.py worker -l info
+   (window1)$ python mysecureapp.py worker -l INFO
 
    (window2)$ cd examples/security
    (window2)$ python
@@ -24,7 +24,6 @@ Usage::
 
 
 """
-from __future__ import absolute_import, unicode_literals
 
 from celery import Celery
 

@@ -1,23 +1,32 @@
-# -*- coding: utf-8 -*-
 """SQLAlchemy session."""
-from __future__ import absolute_import, unicode_literals
+import time
 
 from kombu.utils.compat import register_after_fork
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.exc import DatabaseError
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
+
+from celery.utils.time import get_exponential_backoff_interval
+
+try:
+    from sqlalchemy.orm import declarative_base
+except ImportError:
+    # TODO: Remove this once we drop support for SQLAlchemy < 1.4.
+    from sqlalchemy.ext.declarative import declarative_base
 
 ResultModelBase = declarative_base()
 
 __all__ = ('SessionManager',)
+
+PREPARE_MODELS_MAX_RETRIES = 10
 
 
 def _after_fork_cleanup_session(session):
     session._after_fork()
 
 
-class SessionManager(object):
+class SessionManager:
     """Manage SQLAlchemy sessions."""
 
     def __init__(self):
@@ -39,8 +48,8 @@ class SessionManager(object):
                 engine = self._engines[dburi] = create_engine(dburi, **kwargs)
                 return engine
         else:
-            kwargs = dict([(k, v) for k, v in kwargs.items() if
-                           not k.startswith('pool')])
+            kwargs = {k: v for k, v in kwargs.items() if
+                      not k.startswith('pool')}
             return create_engine(dburi, poolclass=NullPool, **kwargs)
 
     def create_session(self, dburi, short_lived_sessions=False, **kwargs):
@@ -53,7 +62,25 @@ class SessionManager(object):
 
     def prepare_models(self, engine):
         if not self.prepared:
-            ResultModelBase.metadata.create_all(engine)
+            # SQLAlchemy will check if the items exist before trying to
+            # create them, which is a race condition. If it raises an error
+            # in one iteration, the next may pass all the existence checks
+            # and the call will succeed.
+            retries = 0
+            while True:
+                try:
+                    ResultModelBase.metadata.create_all(engine)
+                except DatabaseError:
+                    if retries < PREPARE_MODELS_MAX_RETRIES:
+                        sleep_amount_ms = get_exponential_backoff_interval(
+                            10, retries, 1000, True
+                        )
+                        time.sleep(sleep_amount_ms / 1000)
+                        retries += 1
+                    else:
+                        raise
+                else:
+                    break
             self.prepared = True
 
     def session_factory(self, dburi, **kwargs):

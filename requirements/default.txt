@@ -1,5 +1,9 @@
 pytz>dev
-billiard>=3.6.3.0,<4.0
-future>=0.18.0
-kombu>=4.6.10,<4.7
-vine==1.3.0
+billiard>=3.6.4.0,<4.0
+kombu>=5.1.0,<6.0
+vine>=5.0.0,<6.0
+click>=8.0,<9.0
+click-didyoumean>=0.0.3
+click-repl>=0.2.0
+click-plugins>=1.1.1
+setuptools

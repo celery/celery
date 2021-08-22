@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-
 """The ``RPC`` result backend for AMQP brokers.
 
 RPC-style result backend, using reply-to and one queue per client.
 """
-from __future__ import absolute_import, unicode_literals
-
 import time
 
 import kombu
@@ -14,7 +11,6 @@ from kombu.utils.objects import cached_property
 
 from celery import states
 from celery._state import current_task, task_join_will_block
-from celery.five import items, range
 
 from . import base
 from .asynchronous import AsyncBackendMixin, BaseResultConsumer
@@ -46,7 +42,7 @@ class ResultConsumer(BaseResultConsumer):
     _consumer = None
 
     def __init__(self, *args, **kwargs):
-        super(ResultConsumer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._create_binding = self.backend._create_binding
 
     def start(self, initial_task_id, no_ack=True, **kwargs):
@@ -122,7 +118,7 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
 
     def __init__(self, app, connection=None, exchange=None, exchange_type=None,
                  persistent=None, serializer=None, auto_delete=True, **kwargs):
-        super(RPCBackend, self).__init__(app, **kwargs)
+        super().__init__(app, **kwargs)
         conf = self.app.conf
         self._connection = connection
         self._out_of_band = {}
@@ -179,7 +175,7 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
             request = request or current_task.request
         except AttributeError:
             raise RuntimeError(
-                'RPC backend missing task request for {0!r}'.format(task_id))
+                f'RPC backend missing task request for {task_id!r}')
         return request.reply_to, request.correlation_id or task_id
 
     def on_reply_declare(self, task_id):
@@ -251,7 +247,7 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
                 prev = None
 
         latest = latest_by_id.pop(task_id, None)
-        for tid, msg in items(latest_by_id):
+        for tid, msg in latest_by_id.items():
             self.on_out_of_band_result(tid, msg)
 
         if latest:
@@ -320,7 +316,7 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
 
     def __reduce__(self, args=(), kwargs=None):
         kwargs = {} if not kwargs else kwargs
-        return super(RPCBackend, self).__reduce__(args, dict(
+        return super().__reduce__(args, dict(
             kwargs,
             connection=self._connection,
             exchange=self.exchange.name,
@@ -342,5 +338,5 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
 
     @cached_property
     def oid(self):
-        # cached here is the app OID: name of queue we receive results on.
-        return self.app.oid
+        # cached here is the app thread OID: name of queue we receive results on.
+        return self.app.thread_oid

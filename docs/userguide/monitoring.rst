@@ -33,7 +33,7 @@ To list all the commands available do:
 
 .. code-block:: console
 
-    $ celery help
+    $ celery --help
 
 or to get help for a specific command do:
 

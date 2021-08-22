@@ -1,13 +1,9 @@
-# -*- coding: utf-8 -*-
 """Backend selection."""
-from __future__ import absolute_import, unicode_literals
-
 import sys
 import types
 
 from celery._state import current_app
-from celery.exceptions import ImproperlyConfigured
-from celery.five import reraise
+from celery.exceptions import ImproperlyConfigured, reraise
 from celery.utils.imports import load_extension_class_names, symbol_by_name
 
 __all__ = ('by_name', 'by_url')

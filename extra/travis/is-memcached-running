@@ -1,0 +1,11 @@
+#!/usr/bin/expect -f
+# based on https://stackoverflow.com/a/17265696/833093
+
+set destination [lindex $argv 0]
+set port [lindex $argv 1]
+
+spawn nc $destination $port
+send stats\r
+expect "END"
+send quit\r
+expect eof

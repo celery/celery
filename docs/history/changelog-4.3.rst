@@ -8,6 +8,16 @@ This document contains change notes for bugfix releases in
 the 4.3.x series, please see :ref:`whatsnew-4.3` for
 an overview of what's new in Celery 4.3.
 
+4.3.1
+=====
+
+:release-date: 2020-09-10 1:00 P.M UTC+3:00
+:release-by: Omer Katz
+
+- Limit vine version to be below 5.0.0.
+
+  Contributed by **Omer Katz**
+
 4.3.0
 =====
 :release-date: 2019-03-31 7:00 P.M UTC+3:00

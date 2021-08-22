@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Logging configuration.
 
 The Celery instances logging section: ``Celery.log``.
@@ -7,18 +6,17 @@ Sets up logging for the worker and other programs,
 redirects standard outs, colors log output, patches logging
 related compatibility fixes, and so on.
 """
-from __future__ import absolute_import, unicode_literals
-
 import logging
 import os
 import sys
+import warnings
 from logging.handlers import WatchedFileHandler
 
 from kombu.utils.encoding import set_default_encoding_file
 
 from celery import signals
 from celery._state import get_current_task
-from celery.five import string_t
+from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
 from celery.local import class_property
 from celery.platforms import isatty
 from celery.utils.log import (ColorFormatter, LoggingProxy, get_logger,
@@ -46,7 +44,7 @@ class TaskFormatter(ColorFormatter):
         return ColorFormatter.format(self, record)
 
 
-class Logging(object):
+class Logging:
     """Application logging setup (app.log)."""
 
     #: The logging subsystem is only configured once per process.
@@ -74,6 +72,9 @@ class Logging(object):
             CELERY_LOG_LEVEL=str(loglevel) if loglevel else '',
             CELERY_LOG_FILE=str(logfile) if logfile else '',
         )
+        warnings.filterwarnings('always', category=CDeprecationWarning)
+        warnings.filterwarnings('always', category=CPendingDeprecationWarning)
+        logging.captureWarnings(True)
         return handled
 
     def redirect_stdouts(self, loglevel=None, name='celery.redirected'):
@@ -140,7 +141,7 @@ class Logging(object):
 
         # This is a hack for multiprocessing's fork+exec, so that
         # logging before Process.run works.
-        logfile_name = logfile if isinstance(logfile, string_t) else ''
+        logfile_name = logfile if isinstance(logfile, str) else ''
         os.environ.update(_MP_FORK_LOGLEVEL_=str(loglevel),
                           _MP_FORK_LOGFILE_=logfile_name,
                           _MP_FORK_LOGFORMAT_=format)
@@ -225,7 +226,7 @@ class Logging(object):
         logfile = sys.__stderr__ if logfile is None else logfile
         if hasattr(logfile, 'write'):
             return logging.StreamHandler(logfile)
-        return WatchedFileHandler(logfile)
+        return WatchedFileHandler(logfile, encoding='utf-8')
 
     def _has_handler(self, logger):
         return any(
@@ -237,11 +238,6 @@ class Logging(object):
         return self._has_handler(logger) and not getattr(
             logger, '_rudimentary_setup', False)
 
-    def setup_logger(self, name='celery', *args, **kwargs):
-        """Deprecated: No longer used."""
-        self.setup_logging_subsystem(*args, **kwargs)
-        return logging.root
-
     def get_default_logger(self, name='celery', **kwargs):
         return get_logger(name)
 
@@ -249,6 +245,6 @@ class Logging(object):
     def already_setup(self):
         return self._setup
 
-    @already_setup.setter  # noqa
+    @already_setup.setter
     def already_setup(self, was_setup):
         self._setup = was_setup

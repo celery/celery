@@ -10,6 +10,7 @@
 .. toctree::
     :maxdepth: 1
 
+    cli
     celery
     celery.app
     celery.app.task
@@ -22,6 +23,7 @@
     celery.app.events
     celery.app.log
     celery.app.utils
+    celery.app.autoretry
     celery.bootsteps
     celery.result
     celery.schedules

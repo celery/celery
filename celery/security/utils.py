@@ -1,15 +1,11 @@
-# -*- coding: utf-8 -*-
 """Utilities used by the message signing serializer."""
-from __future__ import absolute_import, unicode_literals
-
 import sys
 from contextlib import contextmanager
 
 import cryptography.exceptions
 from cryptography.hazmat.primitives import hashes
 
-from celery.exceptions import SecurityError
-from celery.five import reraise
+from celery.exceptions import SecurityError, reraise
 
 __all__ = ('get_digest_algorithm', 'reraise_errors',)
 

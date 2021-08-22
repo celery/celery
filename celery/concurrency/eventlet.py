@@ -1,15 +1,13 @@
-# -*- coding: utf-8 -*-
 """Eventlet execution pool."""
-from __future__ import absolute_import, unicode_literals
-
 import sys
+from time import monotonic
 
-from kombu.asynchronous import timer as _timer  # noqa
-from kombu.five import monotonic
+from greenlet import GreenletExit
+from kombu.asynchronous import timer as _timer
 
-from celery import signals  # noqa
+from celery import signals
 
-from . import base  # noqa
+from . import base
 
 __all__ = ('TaskPool',)
 
@@ -41,7 +39,7 @@ class Timer(_timer.Timer):
     def __init__(self, *args, **kwargs):
         from eventlet.greenthread import spawn_after
         from greenlet import GreenletExit
-        super(Timer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.GreenletExit = GreenletExit
         self._spawn_after = spawn_after
@@ -96,6 +94,7 @@ class TaskPool(base.BasePool):
     is_green = True
     task_join_will_block = False
     _pool = None
+    _pool_map = None
     _quick_put = None
 
     def __init__(self, *args, **kwargs):
@@ -106,12 +105,13 @@ class TaskPool(base.BasePool):
         self.getpid = lambda: id(greenthread.getcurrent())
         self.spawn_n = greenthread.spawn_n
 
-        super(TaskPool, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def on_start(self):
         self._pool = self.Pool(self.limit)
+        self._pool_map = {}
         signals.eventlet_pool_started.send(sender=self)
-        self._quick_put = self._pool.spawn_n
+        self._quick_put = self._pool.spawn
         self._quick_apply_sig = signals.eventlet_pool_apply.send
 
     def on_stop(self):
@@ -122,12 +122,17 @@ class TaskPool(base.BasePool):
 
     def on_apply(self, target, args=None, kwargs=None, callback=None,
                  accept_callback=None, **_):
-        self._quick_apply_sig(
-            sender=self, target=target, args=args, kwargs=kwargs,
+        target = TaskPool._make_killable_target(target)
+        self._quick_apply_sig(sender=self, target=target, args=args, kwargs=kwargs,)
+        greenlet = self._quick_put(
+            apply_target,
+            target, args,
+            kwargs,
+            callback,
+            accept_callback,
+            self.getpid
         )
-        self._quick_put(apply_target, target, args, kwargs,
-                        callback, accept_callback,
-                        self.getpid)
+        self._add_to_pool_map(id(greenlet), greenlet)
 
     def grow(self, n=1):
         limit = self.limit + n
@@ -139,11 +144,38 @@ class TaskPool(base.BasePool):
         self._pool.resize(limit)
         self.limit = limit
 
+    def terminate_job(self, pid, signal=None):
+        if pid in self._pool_map.keys():
+            greenlet = self._pool_map[pid]
+            greenlet.kill()
+            greenlet.wait()
+
     def _get_info(self):
-        info = super(TaskPool, self)._get_info()
+        info = super()._get_info()
         info.update({
             'max-concurrency': self.limit,
             'free-threads': self._pool.free(),
             'running-threads': self._pool.running(),
         })
         return info
+
+    @staticmethod
+    def _make_killable_target(target):
+        def killable_target(*args, **kwargs):
+            try:
+                return target(*args, **kwargs)
+            except GreenletExit:
+                return (False, None, None)
+        return killable_target
+
+    def _add_to_pool_map(self, pid, greenlet):
+        self._pool_map[pid] = greenlet
+        greenlet.link(
+            TaskPool._cleanup_after_job_finish,
+            self._pool_map,
+            pid
+        )
+
+    @staticmethod
+    def _cleanup_after_job_finish(greenlet, pool_map, pid):
+        del pool_map[pid]

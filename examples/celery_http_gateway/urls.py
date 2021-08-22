@@ -1,9 +1,6 @@
-from __future__ import absolute_import, unicode_literals
-
+from celery_http_gateway.tasks import hello_world
 from django.conf.urls.defaults import (handler404, handler500,  # noqa
                                        include, patterns, url)
-
-from celery_http_gateway.tasks import hello_world
 from djcelery import views as celery_views
 
 # Uncomment the next two lines to enable the admin:

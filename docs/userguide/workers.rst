@@ -23,7 +23,7 @@ You can start the worker in the foreground by executing the command:
 
 .. code-block:: console
 
-    $ celery -A proj worker -l info
+    $ celery -A proj worker -l INFO
 
 For a full list of available command-line options see
 :mod:`~celery.bin.worker`, or simply do:
@@ -108,7 +108,7 @@ is by using `celery multi`:
 
 .. code-block:: console
 
-    $ celery multi start 1 -A proj -l info -c4 --pidfile=/var/run/celery/%n.pid
+    $ celery multi start 1 -A proj -l INFO -c4 --pidfile=/var/run/celery/%n.pid
     $ celery multi restart 1 --pidfile=/var/run/celery/%n.pid
 
 For production deployments you should be using init-scripts or a process
@@ -324,7 +324,7 @@ Commands
 
 ``revoke``: Revoking tasks
 --------------------------
-:pool support: all, terminate only supported by prefork
+:pool support: all, terminate only supported by prefork and eventlet
 :broker support: *amqp, redis*
 :command: :program:`celery -A proj control revoke <task_id>`
 
@@ -410,7 +410,7 @@ argument to :program:`celery worker`:
 
 .. code-block:: console
 
-    $ celery -A proj worker -l info --statedb=/var/run/celery/worker.state
+    $ celery -A proj worker -l INFO --statedb=/var/run/celery/worker.state
 
 or if you use :program:`celery multi` you want to create one file per
 worker instance so use the `%n` format to expand the current node
@@ -418,7 +418,7 @@ name:
 
 .. code-block:: console
 
-    celery multi start 2 -l info --statedb=/var/run/celery/%n.state
+    celery multi start 2 -l INFO --statedb=/var/run/celery/%n.state
 
 
 See also :ref:`worker-files`
@@ -434,7 +434,7 @@ Time Limits
 
 .. versionadded:: 2.0
 
-:pool support: *prefork/gevent*
+:pool support: *prefork/gevent (see note below)*
 
 .. sidebar:: Soft, or hard?
 
@@ -473,6 +473,11 @@ Time limits can also be set using the :setting:`task_time_limit` /
 
     Time limits don't currently work on platforms that don't support
     the :sig:`SIGUSR1` signal.
+
+.. note::
+
+    The gevent pool does not implement soft time limits. Additionally,
+    it will not enforce the hard time limit if the task is blocking.
 
 
 Changing time limits at run-time
@@ -611,7 +616,7 @@ separated list of queues to the :option:`-Q <celery worker -Q>` option:
 
 .. code-block:: console
 
-    $ celery -A proj worker -l info -Q foo,bar,baz
+    $ celery -A proj worker -l INFO -Q foo,bar,baz
 
 If the queue name is defined in :setting:`task_queues` it will use that
 configuration, but if it's not defined in the list of queues Celery will
@@ -732,7 +737,7 @@ to specify the workers that should reply to the request:
 
 
 This can also be done programmatically by using the
-:meth:`@control.inspect.active_queues` method:
+:meth:`~celery.app.control.Inspect.active_queues` method:
 
 .. code-block:: pycon
 
@@ -771,7 +776,7 @@ Dump of registered tasks
 ------------------------
 
 You can get a list of tasks registered in the worker using the
-:meth:`~@control.inspect.registered`:
+:meth:`~celery.app.control.Inspect.registered`:
 
 .. code-block:: pycon
 
@@ -785,7 +790,7 @@ Dump of currently executing tasks
 ---------------------------------
 
 You can get a list of active tasks using
-:meth:`~@control.inspect.active`:
+:meth:`~celery.app.control.Inspect.active`:
 
 .. code-block:: pycon
 
@@ -802,7 +807,7 @@ Dump of scheduled (ETA) tasks
 -----------------------------
 
 You can get a list of tasks waiting to be scheduled by using
-:meth:`~@control.inspect.scheduled`:
+:meth:`~celery.app.control.Inspect.scheduled`:
 
 .. code-block:: pycon
 
@@ -834,7 +839,7 @@ Reserved tasks are tasks that have been received, but are still waiting to be
 executed.
 
 You can get a list of these using
-:meth:`~@control.inspect.reserved`:
+:meth:`~celery.app.control.Inspect.reserved`:
 
 .. code-block:: pycon
 
@@ -852,201 +857,14 @@ Statistics
 ----------
 
 The remote control command ``inspect stats`` (or
-:meth:`~@control.inspect.stats`) will give you a long list of useful (or not
+:meth:`~celery.app.control.Inspect.stats`) will give you a long list of useful (or not
 so useful) statistics about the worker:
 
 .. code-block:: console
 
     $ celery -A proj inspect stats
 
-The output will include the following fields:
-
-- ``broker``
-
-    Section for broker information.
-
-    * ``connect_timeout``
-
-        Timeout in seconds (int/float) for establishing a new connection.
-
-    * ``heartbeat``
-
-        Current heartbeat value (set by client).
-
-    * ``hostname``
-
-        Node name of the remote broker.
-
-    * ``insist``
-
-        No longer used.
-
-    * ``login_method``
-
-        Login method used to connect to the broker.
-
-    * ``port``
-
-        Port of the remote broker.
-
-    * ``ssl``
-
-        SSL enabled/disabled.
-
-    * ``transport``
-
-        Name of transport used (e.g., ``amqp`` or ``redis``)
-
-    * ``transport_options``
-
-        Options passed to transport.
-
-    * ``uri_prefix``
-
-        Some transports expects the host name to be a URL.
-
-        .. code-block:: text
-
-            redis+socket:///tmp/redis.sock
-
-        In this example the URI-prefix will be ``redis``.
-
-    * ``userid``
-
-        User id used to connect to the broker with.
-
-    * ``virtual_host``
-
-        Virtual host used.
-
-- ``clock``
-
-    Value of the workers logical clock. This is a positive integer and should
-    be increasing every time you receive statistics.
-
-- ``uptime``
-
-    Numbers of seconds since the worker controller was started
-
-- ``pid``
-
-    Process id of the worker instance (Main process).
-
-- ``pool``
-
-    Pool-specific section.
-
-    * ``max-concurrency``
-
-        Max number of processes/threads/green threads.
-
-    * ``max-tasks-per-child``
-
-        Max number of tasks a thread may execute before being recycled.
-
-    * ``processes``
-
-        List of PIDs (or thread-id's).
-
-    * ``put-guarded-by-semaphore``
-
-        Internal
-
-    * ``timeouts``
-
-        Default values for time limits.
-
-    * ``writes``
-
-        Specific to the prefork pool, this shows the distribution of writes
-        to each process in the pool when using async I/O.
-
-- ``prefetch_count``
-
-    Current prefetch count value for the task consumer.
-
-- ``rusage``
-
-    System usage statistics. The fields available may be different
-    on your platform.
-
-    From :manpage:`getrusage(2)`:
-
-    * ``stime``
-
-        Time spent in operating system code on behalf of this process.
-
-    * ``utime``
-
-        Time spent executing user instructions.
-
-    * ``maxrss``
-
-        The maximum resident size used by this process (in kilobytes).
-
-    * ``idrss``
-
-        Amount of non-shared memory used for data (in kilobytes times ticks of
-        execution)
-
-    * ``isrss``
-
-        Amount of non-shared memory used for stack space (in kilobytes times
-        ticks of execution)
-
-    * ``ixrss``
-
-        Amount of memory shared with other processes (in kilobytes times
-        ticks of execution).
-
-    * ``inblock``
-
-        Number of times the file system had to read from the disk on behalf of
-        this process.
-
-    * ``oublock``
-
-        Number of times the file system has to write to disk on behalf of
-        this process.
-
-    * ``majflt``
-
-        Number of page faults that were serviced by doing I/O.
-
-    * ``minflt``
-
-        Number of page faults that were serviced without doing I/O.
-
-    * ``msgrcv``
-
-        Number of IPC messages received.
-
-    * ``msgsnd``
-
-        Number of IPC messages sent.
-
-    * ``nvcsw``
-
-        Number of times this process voluntarily invoked a context switch.
-
-    * ``nivcsw``
-
-        Number of times an involuntary context switch took place.
-
-    * ``nsignals``
-
-        Number of signals received.
-
-    * ``nswap``
-
-        The number of times this process was swapped entirely out of memory.
-
-
-- ``total``
-
-    Map of task names and the total number of tasks with that type
-    the worker has accepted since start-up.
-
+For the output details, consult the reference documentation of :meth:`~celery.app.control.Inspect.stats`.
 
 Additional Commands
 ===================

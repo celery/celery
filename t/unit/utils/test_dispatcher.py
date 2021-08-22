@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import gc
 import sys
 import time
@@ -17,13 +15,13 @@ if sys.platform.startswith('java'):
 
 elif hasattr(sys, 'pypy_version_info'):
 
-    def garbage_collect():  # noqa
+    def garbage_collect():
         # Collecting weakreferences can take two collections on PyPy.
         gc.collect()
         gc.collect()
 else:
 
-    def garbage_collect():  # noqa
+    def garbage_collect():
         gc.collect()
 
 
@@ -31,7 +29,7 @@ def receiver_1_arg(val, **kwargs):
     return val
 
 
-class Callable(object):
+class Callable:
 
     def __call__(self, val, **kwargs):
         return val

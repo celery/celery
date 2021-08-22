@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Private keys for the security serializer."""
-from __future__ import absolute_import, unicode_literals
-
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import padding
@@ -12,7 +9,7 @@ from .utils import reraise_errors
 __all__ = ('PrivateKey',)
 
 
-class PrivateKey(object):
+class PrivateKey:
     """Represents a private key."""
 
     def __init__(self, key, password=None):

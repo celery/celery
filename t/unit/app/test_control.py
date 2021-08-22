@@ -1,12 +1,10 @@
-from __future__ import absolute_import, unicode_literals
+from unittest.mock import Mock
 
 import pytest
-from case import Mock
 
 from celery import uuid
 from celery.app import control
 from celery.exceptions import DuplicateNodenameWarning
-from celery.five import items
 from celery.utils.collections import LimitedSet
 
 
@@ -14,7 +12,7 @@ def _info_for_commandclass(type_):
     from celery.worker.control import Panel
     return [
         (name, info)
-        for name, info in items(Panel.meta)
+        for name, info in Panel.meta.items()
         if info.type == type_
     ]
 
@@ -46,7 +44,7 @@ class test_flatten_reply:
         with pytest.warns(DuplicateNodenameWarning) as w:
             nodes = control.flatten_reply(reply)
 
-        assert 'Received multiple replies from node name: {0}.'.format(
+        assert 'Received multiple replies from node name: {}.'.format(
             next(iter(reply[0]))) in str(w[0].message.args[0])
         assert 'foo@example.com' in nodes
         assert 'bar@example.com' in nodes
@@ -97,7 +95,11 @@ class test_inspect:
 
     def test_active(self):
         self.inspect.active()
-        self.assert_broadcast_called('active')
+        self.assert_broadcast_called('active', safe=None)
+
+    def test_active_safe(self):
+        self.inspect.active(safe=True)
+        self.assert_broadcast_called('active', safe=True)
 
     def test_clock(self):
         self.inspect.clock()
@@ -119,7 +121,7 @@ class test_inspect:
     def test_hello__with_revoked(self):
         revoked = LimitedSet(100)
         for i in range(100):
-            revoked.add('id{0}'.format(i))
+            revoked.add(f'id{i}')
         self.inspect.hello('george@vandelay.com', revoked=revoked._data)
         self.assert_broadcast_called(
             'hello', from_node='george@vandelay.com', revoked=revoked._data)
@@ -242,6 +244,12 @@ class test_Control:
                                         _options=None, **args):
         self.app.control.broadcast.assert_called_with(
             name, destination=destination, arguments=args, **_options or {})
+
+    def test_serializer(self):
+        self.app.conf['task_serializer'] = 'test'
+        self.app.conf['accept_content'] = ['test']
+        assert control.Control(self.app).mailbox.serializer == 'test'
+        assert control.Control(self.app).mailbox.accept == ['test']
 
     def test_purge(self):
         self.app.amqp.TaskConsumer = Mock(name='TaskConsumer')

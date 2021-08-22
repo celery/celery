@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Task implementation: request context and the task base class."""
-from __future__ import absolute_import, unicode_literals
-
 import sys
 
 from billiard.einfo import ExceptionInfo
@@ -9,12 +6,11 @@ from kombu import serialization
 from kombu.exceptions import OperationalError
 from kombu.utils.uuid import uuid
 
-from celery import current_app, group, states
+from celery import current_app, states
 from celery._state import _task_stack
-from celery.canvas import signature
+from celery.canvas import _chain, group, signature
 from celery.exceptions import (Ignore, ImproperlyConfigured,
                                MaxRetriesExceededError, Reject, Retry)
-from celery.five import items, python_2_unicode_compatible
 from celery.local import class_property
 from celery.result import EagerResult, denied_join_result
 from celery.utils import abstract
@@ -22,6 +18,7 @@ from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
 from celery.utils.nodenames import gethostname
 from celery.utils.serialization import raise_with_context
+
 from .annotations import resolve_all as resolve_all_annotations
 from .registry import _unpickle_task_v2
 from .utils import appstr
@@ -46,7 +43,7 @@ TaskType = type
 
 def _strflags(flags, default=''):
     if flags:
-        return ' ({0})'.format(', '.join(flags))
+        return ' ({})'.format(', '.join(flags))
     return default
 
 
@@ -61,38 +58,41 @@ def _reprtask(task, fmt=None, flags=None):
     )
 
 
-@python_2_unicode_compatible
-class Context(object):
+class Context:
     """Task request variables (Task.request)."""
 
-    logfile = None
-    loglevel = None
-    hostname = None
-    id = None
-    args = None
-    kwargs = None
-    retries = 0
-    eta = None
-    expires = None
-    is_eager = False
-    headers = None
-    delivery_info = None
-    reply_to = None
-    root_id = None
-    parent_id = None
-    correlation_id = None
-    taskset = None   # compat alias to group
-    group = None
-    chord = None
-    chain = None
-    utc = None
-    called_directly = True
-    callbacks = None
-    errbacks = None
-    timelimit = None
-    origin = None
     _children = None   # see property
     _protected = 0
+    args = None
+    callbacks = None
+    called_directly = True
+    chain = None
+    chord = None
+    correlation_id = None
+    delivery_info = None
+    errbacks = None
+    eta = None
+    expires = None
+    group = None
+    group_index = None
+    headers = None
+    hostname = None
+    id = None
+    ignore_result = False
+    is_eager = False
+    kwargs = None
+    logfile = None
+    loglevel = None
+    origin = None
+    parent_id = None
+    properties = None
+    retries = 0
+    reply_to = None
+    root_id = None
+    shadow = None
+    taskset = None   # compat alias to group
+    timelimit = None
+    utc = None
 
     def __init__(self, *args, **kwargs):
         self.update(*args, **kwargs)
@@ -107,7 +107,7 @@ class Context(object):
         return getattr(self, key, default)
 
     def __repr__(self):
-        return '<Context: {0!r}>'.format(vars(self))
+        return f'<Context: {vars(self)!r}>'
 
     def as_execution_options(self):
         limit_hard, limit_soft = self.timelimit or (None, None)
@@ -116,6 +116,8 @@ class Context(object):
             'root_id': self.root_id,
             'parent_id': self.parent_id,
             'group_id': self.group,
+            'group_index': self.group_index,
+            'shadow': self.shadow,
             'chord': self.chord,
             'chain': self.chain,
             'link': self.callbacks,
@@ -138,8 +140,7 @@ class Context(object):
 
 
 @abstract.CallableTask.register
-@python_2_unicode_compatible
-class Task(object):
+class Task:
     """Task base class.
 
     Note:
@@ -221,9 +222,6 @@ class Task(object):
 
     #: The result store backend used for this task.
     backend = None
-
-    #: If disabled this task won't be registered automatically.
-    autoregister = True
 
     #: If enabled the task will report its status as 'started' when the task
     #: is executed by a worker.  Disabled by default as the normal behavior
@@ -312,6 +310,7 @@ class Task(object):
         ('acks_on_failure_or_timeout', 'task_acks_on_failure_or_timeout'),
         ('reject_on_worker_lost', 'task_reject_on_worker_lost'),
         ('ignore_result', 'task_ignore_result'),
+        ('store_eager_result', 'task_store_eager_result'),
         ('store_errors_even_if_ignored', 'task_store_errors_even_if_ignored'),
     )
 
@@ -369,7 +368,7 @@ class Task(object):
     @classmethod
     def annotate(cls):
         for d in resolve_all_annotations(cls.app.annotations, cls):
-            for key, value in items(d):
+            for key, value in d.items():
                 if key.startswith('@'):
                     cls.add_around(key[1:], value)
                 else:
@@ -458,6 +457,11 @@ class Task(object):
             retry_policy (Mapping): Override the retry policy used.
                 See the :setting:`task_publish_retry_policy` setting.
 
+            time_limit (int): If set, overrides the default time limit.
+
+            soft_time_limit (int): If set, overrides the default soft
+                time limit.
+
             queue (str, kombu.Queue): The queue to route the task to.
                 This must be a key present in :setting:`task_queues`, or
                 :setting:`task_create_missing_queues` must be
@@ -501,6 +505,11 @@ class Task(object):
                 will be appended to the parent tasks ``request.children``
                 attribute.  Trailing can also be disabled by default using the
                 :attr:`trail` attribute
+
+            ignore_result (bool): If set to `False` (default) the result
+                of a task will be stored in the backend. If set to `True`
+                the result will not be stored. This can also be set
+                using the :attr:`ignore_result` in the `app.task` decorator.
 
             publisher (kombu.Producer): Deprecated alias to ``producer``.
 
@@ -678,6 +687,8 @@ class Task(object):
         """
         request = self.request
         retries = request.retries + 1
+        if max_retries is not None:
+            self.override_max_retries = max_retries
         max_retries = self.max_retries if max_retries is None else max_retries
 
         # Not in worker or emulated by (apply/always_eager),
@@ -703,7 +714,7 @@ class Task(object):
                 # the exc' argument provided (raise exc from orig)
                 raise_with_context(exc)
             raise self.MaxRetriesExceededError(
-                "Can't retry {0}[{1}] args:{2} kwargs:{3}".format(
+                "Can't retry {}[{}] args:{} kwargs:{}".format(
                     self.name, request.id, S.args, S.kwargs
                 ), task_args=S.args, task_kwargs=S.kwargs
             )
@@ -764,7 +775,13 @@ class Task(object):
             'callbacks': maybe_list(link),
             'errbacks': maybe_list(link_error),
             'headers': headers,
-            'delivery_info': {'is_eager': True},
+            'ignore_result': options.get('ignore_result', False),
+            'delivery_info': {
+                'is_eager': True,
+                'exchange': options.get('exchange'),
+                'routing_key': options.get('routing_key'),
+                'priority': options.get('priority'),
+            },
         }
         tb = None
         tracer = build_tracer(
@@ -865,7 +882,7 @@ class Task(object):
         .. versionadded:: 4.0
 
         Arguments:
-            sig (~@Signature): signature to replace with.
+            sig (Signature): signature to replace with.
 
         Raises:
             ~@Ignore: This is always raised when called in asynchronous context.
@@ -877,24 +894,40 @@ class Task(object):
             raise ImproperlyConfigured(
                 "A signature replacing a task must not be part of a chord"
             )
+        if isinstance(sig, _chain) and not getattr(sig, "tasks", True):
+            raise ImproperlyConfigured("Cannot replace with an empty chain")
 
+        # Ensure callbacks or errbacks from the replaced signature are retained
         if isinstance(sig, group):
-            sig |= self.app.tasks['celery.accumulate'].s(index=0).set(
-                link=self.request.callbacks,
-                link_error=self.request.errbacks,
-            )
-
-        if self.request.chain:
-            for t in reversed(self.request.chain):
-                sig |= signature(t, app=self.app)
-
+            # Groups get uplifted to a chord so that we can link onto the body
+            sig |= self.app.tasks['celery.accumulate'].s(index=0)
+        for callback in maybe_list(self.request.callbacks) or []:
+            sig.link(callback)
+        for errback in maybe_list(self.request.errbacks) or []:
+            sig.link_error(errback)
+        # If the replacement signature is a chain, we need to push callbacks
+        # down to the final task so they run at the right time even if we
+        # proceed to link further tasks from the original request below
+        if isinstance(sig, _chain) and "link" in sig.options:
+            final_task_links = sig.tasks[-1].options.setdefault("link", [])
+            final_task_links.extend(maybe_list(sig.options["link"]))
+        # We need to freeze the replacement signature with the current task's
+        # ID to ensure that we don't disassociate it from the existing task IDs
+        # which would break previously constructed results objects.
+        sig.freeze(self.request.id)
+        # Ensure the important options from the original signature are retained
         sig.set(
             chord=chord,
             group_id=self.request.group,
+            group_index=self.request.group_index,
             root_id=self.request.root_id,
         )
-        sig.freeze(self.request.id)
-
+        # If the task being replaced is part of a chain, we need to re-create
+        # it with the replacement signature - these subsequent tasks will
+        # retain their original task IDs as well
+        for t in reversed(self.request.chain or []):
+            sig |= signature(t, app=self.app)
+        # Finally, either apply or delay the new signature!
         if self.request.is_eager:
             return sig.apply().get()
         else:
@@ -909,7 +942,7 @@ class Task(object):
         Currently only supported by the Redis result backend.
 
         Arguments:
-            sig (~@Signature): Signature to extend chord with.
+            sig (Signature): Signature to extend chord with.
             lazy (bool): If enabled the new task won't actually be called,
                 and ``sig.delay()`` must be called manually.
         """
@@ -917,6 +950,7 @@ class Task(object):
             raise ValueError('Current task is not member of any chord')
         sig.set(
             group_id=self.request.group,
+            group_index=self.request.group_index,
             chord=self.request.chord,
             root_id=self.request.root_id,
         )
@@ -935,7 +969,8 @@ class Task(object):
         """
         if task_id is None:
             task_id = self.request.id
-        self.backend.store_result(task_id, meta, state, request=self.request, **kwargs)
+        self.backend.store_result(
+            task_id, meta, state, request=self.request, **kwargs)
 
     def on_success(self, retval, task_id, args, kwargs):
         """Success handler.
@@ -1039,7 +1074,7 @@ class Task(object):
         return backend
 
     @backend.setter
-    def backend(self, value):  # noqa
+    def backend(self, value):
         self._backend = value
 
     @property
@@ -1047,4 +1082,4 @@ class Task(object):
         return self.__class__.__name__
 
 
-BaseTask = Task  # noqa: E305 XXX compat alias
+BaseTask = Task  # XXX compat alias

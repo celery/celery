@@ -1,21 +1,16 @@
-# -*- coding: utf-8 -*-
 """Database models used by the SQLAlchemy result store backend."""
-from __future__ import absolute_import, unicode_literals
-
 from datetime import datetime
 
 import sqlalchemy as sa
 from sqlalchemy.types import PickleType
 
 from celery import states
-from celery.five import python_2_unicode_compatible
 
 from .session import ResultModelBase
 
 __all__ = ('Task', 'TaskExtended', 'TaskSet')
 
 
-@python_2_unicode_compatible
 class Task(ResultModelBase):
     """Task result/status."""
 
@@ -67,7 +62,7 @@ class TaskExtended(Task):
     queue = sa.Column(sa.String(155), nullable=True)
 
     def to_dict(self):
-        task_dict = super(TaskExtended, self).to_dict()
+        task_dict = super().to_dict()
         task_dict.update({
             'name': self.name,
             'args': self.args,
@@ -79,7 +74,6 @@ class TaskExtended(Task):
         return task_dict
 
 
-@python_2_unicode_compatible
 class TaskSet(ResultModelBase):
     """TaskSet result."""
 
@@ -105,7 +99,7 @@ class TaskSet(ResultModelBase):
         }
 
     def __repr__(self):
-        return '<TaskSet: {0.taskset_id}>'.format(self)
+        return f'<TaskSet: {self.taskset_id}>'
 
     @classmethod
     def configure(cls, schema=None, name=None):

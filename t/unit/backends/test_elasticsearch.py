@@ -1,11 +1,11 @@
-from __future__ import absolute_import, unicode_literals
+import datetime
+from unittest.mock import Mock, call, patch, sentinel
 
 import pytest
 from billiard.einfo import ExceptionInfo
-from case import Mock, patch, sentinel, skip, call
-from celery import states
-import datetime
 from kombu.utils.encoding import bytes_to_str
+
+from celery import states
 
 try:
     from elasticsearch import exceptions
@@ -17,8 +17,18 @@ from celery.backends import elasticsearch as module
 from celery.backends.elasticsearch import ElasticsearchBackend
 from celery.exceptions import ImproperlyConfigured
 
+_RESULT_RETRY = (
+    '{"status":"RETRY","result":'
+    '{"exc_type":"Exception","exc_message":["failed"],"exc_module":"builtins"}}'
+)
+_RESULT_FAILURE = (
+    '{"status":"FAILURE","result":'
+    '{"exc_type":"Exception","exc_message":["failed"],"exc_module":"builtins"}}'
+)
 
-@skip.unless_module('elasticsearch')
+pytest.importorskip('elasticsearch')
+
+
 class test_ElasticsearchBackend:
 
     def setup(self):
@@ -115,9 +125,7 @@ class test_ElasticsearchBackend:
 
         x._server.get.return_value = {
             'found': True,
-            '_source': {
-                'result': """{"status":"RETRY","result":{"exc_type":"Exception","exc_message":["failed"],"exc_module":"builtins"}}"""
-            },
+            '_source': {"result": _RESULT_RETRY},
             '_seq_no': 2,
             '_primary_term': 1,
         }
@@ -157,9 +165,7 @@ class test_ElasticsearchBackend:
 
         x._server.get.return_value = {
             'found': True,
-            '_source': {
-                'result': """{"status":"RETRY","result":{"exc_type":"Exception","exc_message":["failed"],"exc_module":"builtins"}}"""
-            },
+            '_source': {"result": _RESULT_RETRY},
             '_seq_no': 2,
             '_primary_term': 1,
         }
@@ -204,9 +210,7 @@ class test_ElasticsearchBackend:
 
         x._server.get.return_value = {
             'found': True,
-            '_source': {
-                'result': """{"status":"FAILURE","result":{"exc_type":"Exception","exc_message":["failed"],"exc_module":"builtins"}}"""
-            },
+            '_source': {"result": _RESULT_FAILURE},
             '_seq_no': 2,
             '_primary_term': 1,
         }
@@ -282,9 +286,7 @@ class test_ElasticsearchBackend:
 
         x._server.get.return_value = {
             'found': True,
-            '_source': {
-                'result': """{"status":"FAILURE","result":{"exc_type":"Exception","exc_message":["failed"],"exc_module":"builtins"}}"""
-            },
+            '_source': {"result": _RESULT_FAILURE},
             '_seq_no': 2,
             '_primary_term': 1,
         }
@@ -315,6 +317,33 @@ class test_ElasticsearchBackend:
         base_datetime_mock.utcnow.return_value = expected_done_dt
 
         self.app.conf.result_backend_always_retry, prev = True, self.app.conf.result_backend_always_retry
+        x_server_get_side_effect = [
+            {
+                'found': True,
+                '_source': {'result': _RESULT_RETRY},
+                '_seq_no': 2,
+                '_primary_term': 1,
+            },
+            {
+                'found': True,
+                '_source': {'result': _RESULT_RETRY},
+                '_seq_no': 2,
+                '_primary_term': 1,
+            },
+            {
+                'found': True,
+                '_source': {'result': _RESULT_FAILURE},
+                '_seq_no': 3,
+                '_primary_term': 1,
+            },
+            {
+                'found': True,
+                '_source': {'result': _RESULT_FAILURE},
+                '_seq_no': 3,
+                '_primary_term': 1,
+            },
+        ]
+
         try:
             x = ElasticsearchBackend(app=self.app)
 
@@ -326,42 +355,7 @@ class test_ElasticsearchBackend:
             x._sleep = sleep_mock
             x._server = Mock()
             x._server.index.side_effect = exceptions.ConflictError(409, "concurrent update", {})
-
-            x._server.get.side_effect = [
-                {
-                    'found': True,
-                    '_source': {
-                        'result': """{"status":"RETRY","result":{"exc_type":"Exception","exc_message":["failed"],"exc_module":"builtins"}}"""
-                    },
-                    '_seq_no': 2,
-                    '_primary_term': 1,
-                },
-                {
-                    'found': True,
-                    '_source': {
-                        'result': """{"status":"RETRY","result":{"exc_type":"Exception","exc_message":["failed"],"exc_module":"builtins"}}"""
-                    },
-                    '_seq_no': 2,
-                    '_primary_term': 1,
-                },
-                {
-                    'found': True,
-                    '_source': {
-                        'result': """{"status":"FAILURE","result":{"exc_type":"Exception","exc_message":["failed"],"exc_module":"builtins"}}"""
-                    },
-                    '_seq_no': 3,
-                    '_primary_term': 1,
-                },
-                {
-                    'found': True,
-                    '_source': {
-                        'result': """{"status":"FAILURE","result":{"exc_type":"Exception","exc_message":["failed"],"exc_module":"builtins"}}"""
-                    },
-                    '_seq_no': 3,
-                    '_primary_term': 1,
-                },
-            ]
-
+            x._server.get.side_effect = x_server_get_side_effect
             x._server.update.side_effect = [
                 {'result': 'noop'},
                 {'result': 'updated'}
@@ -453,9 +447,7 @@ class test_ElasticsearchBackend:
             x._server.get.side_effect = [
                 {
                     'found': True,
-                    '_source': {
-                        'result': """{"status":"RETRY","result":{"exc_type":"Exception","exc_message":["failed"],"exc_module":"builtins"}}"""
-                    },
+                    '_source': {"result": _RESULT_RETRY},
                     '_seq_no': 2,
                     '_primary_term': 1,
                 },
@@ -526,9 +518,7 @@ class test_ElasticsearchBackend:
             x._server.get.side_effect = [
                 {
                     'found': True,
-                    '_source': {
-                        'result': """{"status":"RETRY","result":{"exc_type":"Exception","exc_message":["failed"],"exc_module":"builtins"}}"""
-                    },
+                    '_source': {'result': _RESULT_RETRY},
                     '_seq_no': 2,
                     '_primary_term': 1,
                 },
@@ -768,7 +758,12 @@ class test_ElasticsearchBackend:
                 raise Exception("failed")
             except Exception as exc:
                 einfo = ExceptionInfo()
-                result_meta = x._get_result_meta(x.encode_result(exc, states.FAILURE), states.FAILURE, einfo.traceback, None)
+                result_meta = x._get_result_meta(
+                    x.encode_result(exc, states.FAILURE),
+                    states.FAILURE,
+                    einfo.traceback,
+                    None,
+                )
                 assert x.encode(result_meta) == result_meta
         finally:
             self.app.conf.elasticsearch_save_meta_as_text = prev
@@ -810,7 +805,12 @@ class test_ElasticsearchBackend:
                 raise Exception("failed")
             except Exception as exc:
                 einfo = ExceptionInfo()
-                result_meta = x._get_result_meta(x.encode_result(exc, states.FAILURE), states.FAILURE, einfo.traceback, None)
+                result_meta = x._get_result_meta(
+                    x.encode_result(exc, states.FAILURE),
+                    states.FAILURE,
+                    einfo.traceback,
+                    None,
+                )
                 assert x.decode(x.encode(result_meta)) == result_meta
         finally:
             self.app.conf.elasticsearch_save_meta_as_text = prev

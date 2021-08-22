@@ -1,13 +1,10 @@
-# -*- coding: utf-8 -*-
 """Object related utilities, including introspection, etc."""
-from __future__ import absolute_import, unicode_literals
-
 from functools import reduce
 
 __all__ = ('Bunch', 'FallbackContext', 'getitem_property', 'mro_lookup')
 
 
-class Bunch(object):
+class Bunch:
     """Object that enables you to modify attributes."""
 
     def __init__(self, **kwargs):
@@ -46,7 +43,7 @@ def mro_lookup(cls, attr, stop=None, monkey_patched=None):
             return node
 
 
-class FallbackContext(object):
+class FallbackContext:
     """Context workaround.
 
     The built-in ``@contextmanager`` utility does not work well
@@ -94,7 +91,7 @@ class FallbackContext(object):
             return self._context.__exit__(*exc_info)
 
 
-class getitem_property(object):
+class getitem_property:
     """Attribute -> dict key descriptor.
 
     The target object must support ``__getitem__``,

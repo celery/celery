@@ -1,11 +1,10 @@
-from __future__ import absolute_import, unicode_literals
+from unittest.mock import Mock, patch
 
 import pytest
-from case import ContextMock, Mock, patch
+from case import ContextMock
 
 from celery import chord, group
 from celery.app import builtins
-from celery.five import range
 from celery.utils.functional import pass1
 
 

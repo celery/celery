@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Internal state.
 
 This is an internal module containing thread state
@@ -6,7 +5,6 @@ like the ``current_app``, and ``current_task``.
 
 This module shouldn't be used directly.
 """
-from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import sys
@@ -111,9 +109,9 @@ if os.environ.get('C_STRICT_APP'):  # pragma: no cover
         """Return the current app."""
         raise RuntimeError('USES CURRENT APP')
 elif os.environ.get('C_WARN_APP'):  # pragma: no cover
-    def get_current_app():  # noqa
+    def get_current_app():
         import traceback
-        print('-- USES CURRENT_APP', file=sys.stderr)  # noqa+
+        print('-- USES CURRENT_APP', file=sys.stderr)  # +
         traceback.print_stack(file=sys.stderr)
         return _get_current_app()
 else:
@@ -170,12 +168,12 @@ def _app_or_default_trace(app=None):  # pragma: no cover
         current_process = None
     if app is None:
         if getattr(_tls, 'current_app', None):
-            print('-- RETURNING TO CURRENT APP --')  # noqa+
+            print('-- RETURNING TO CURRENT APP --')  # +
             print_stack()
             return _tls.current_app
         if not current_process or current_process()._name == 'MainProcess':
             raise Exception('DEFAULT APP')
-        print('-- RETURNING TO DEFAULT APP --')      # noqa+
+        print('-- RETURNING TO DEFAULT APP --')      # +
         print_stack()
         return default_app
     return app

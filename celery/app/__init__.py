@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Celery Application."""
-from __future__ import absolute_import, print_function, unicode_literals
-
 from celery import _state
 from celery._state import (app_or_default, disable_trace, enable_trace,
                            pop_current_task, push_current_task)

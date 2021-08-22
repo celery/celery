@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """System information utilities."""
-from __future__ import absolute_import, unicode_literals
-
 import os
 from math import ceil
 
@@ -17,7 +14,7 @@ if hasattr(os, 'getloadavg'):
 
 else:  # pragma: no cover
     # Windows doesn't have getloadavg
-    def _load_average():  # noqa
+    def _load_average():
         return (0.0, 0.0, 0.0)
 
 
@@ -26,7 +23,7 @@ def load_average():
     return _load_average()
 
 
-class df(object):
+class df:
     """Disk information."""
 
     def __init__(self, path):

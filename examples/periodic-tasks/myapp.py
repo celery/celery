@@ -3,10 +3,10 @@
 Usage::
 
    # The worker service reacts to messages by executing tasks.
-   (window1)$ python myapp.py worker -l info
+   (window1)$ python myapp.py worker -l INFO
 
    # The beat service sends messages at scheduled intervals.
-   (window2)$ python myapp.py beat -l info
+   (window2)$ python myapp.py beat -l INFO
 
    # XXX To diagnose problems use -l debug:
    (window2)$ python myapp.py beat -l debug
@@ -18,16 +18,15 @@ Usage::
 You can also specify the app to use with the `celery` command,
 using the `-A` / `--app` option::
 
-    $ celery -A myapp worker -l info
+    $ celery -A myapp worker -l INFO
 
 With the `-A myproj` argument the program will search for an app
 instance in the module ``myproj``.  You can also specify an explicit
 name using the fully qualified form::
 
-    $ celery -A myapp:app worker -l info
+    $ celery -A myapp:app worker -l INFO
 
 """
-from __future__ import absolute_import, print_function, unicode_literals
 
 from celery import Celery
 

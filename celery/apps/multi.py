@@ -1,12 +1,10 @@
 """Start/stop/manage workers."""
-from __future__ import absolute_import, unicode_literals
-
 import errno
 import os
 import shlex
 import signal
 import sys
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict, UserList, defaultdict
 from functools import partial
 from subprocess import Popen
 from time import sleep
@@ -14,7 +12,6 @@ from time import sleep
 from kombu.utils.encoding import from_utf8
 from kombu.utils.objects import cached_property
 
-from celery.five import UserList, items
 from celery.platforms import IS_WINDOWS, Pidfile, signal_name
 from celery.utils.nodenames import (gethostname, host_format, node_format,
                                     nodesplit)
@@ -36,9 +33,9 @@ def build_nodename(name, prefix, suffix):
         shortname, hostname = nodesplit(nodename)
         name = shortname
     else:
-        shortname = '%s%s' % (prefix, name)
+        shortname = f'{prefix}{name}'
         nodename = host_format(
-            '{0}@{1}'.format(shortname, hostname),
+            f'{shortname}@{hostname}',
         )
     return name, nodename, hostname
 
@@ -59,19 +56,19 @@ def format_opt(opt, value):
     if not value:
         return opt
     if opt.startswith('--'):
-        return '{0}={1}'.format(opt, value)
-    return '{0} {1}'.format(opt, value)
+        return f'{opt}={value}'
+    return f'{opt} {value}'
 
 
 def _kwargs_to_command_line(kwargs):
     return {
-        ('--{0}'.format(k.replace('_', '-'))
-         if len(k) > 1 else '-{0}'.format(k)): '{0}'.format(v)
-        for k, v in items(kwargs)
+        ('--{}'.format(k.replace('_', '-'))
+         if len(k) > 1 else f'-{k}'): f'{v}'
+        for k, v in kwargs.items()
     }
 
 
-class NamespacedOptionParser(object):
+class NamespacedOptionParser:
 
     def __init__(self, args):
         self.args = args
@@ -81,7 +78,7 @@ class NamespacedOptionParser(object):
         self.namespaces = defaultdict(lambda: OrderedDict())
 
     def parse(self):
-        rargs = list(self.args)
+        rargs = [arg for arg in self.args if arg]
         pos = 0
         while pos < len(rargs):
             arg = rargs[pos]
@@ -123,13 +120,13 @@ class NamespacedOptionParser(object):
         dest[prefix + name] = value
 
 
-class Node(object):
+class Node:
     """Represents a node in a cluster."""
 
     def __init__(self, name,
                  cmd=None, append=None, options=None, extra_args=None):
         self.name = name
-        self.cmd = cmd or '-m {0}'.format(celery_exe('worker', '--detach'))
+        self.cmd = cmd or f"-m {celery_exe('worker', '--detach')}"
         self.append = append
         self.extra_args = extra_args or ''
         self.options = self._annotate_with_default_opts(
@@ -153,7 +150,7 @@ class Node(object):
                 pass
         value = d.setdefault(alt[0], os.path.normpath(value))
         dir_path = os.path.dirname(value)
-        if not os.path.exists(dir_path):
+        if dir_path and not os.path.exists(dir_path):
             os.makedirs(dir_path)
         return value
 
@@ -163,10 +160,30 @@ class Node(object):
             self.name, shortname, hostname)
 
     def _prepare_argv(self):
+        cmd = self.expander(self.cmd).split(' ')
+        i = cmd.index('celery') + 1
+
+        options = self.options.copy()
+        for opt, value in self.options.items():
+            if opt in (
+                '-A', '--app',
+                '-b', '--broker',
+                '--result-backend',
+                '--loader',
+                '--config',
+                '--workdir',
+                '-C', '--no-color',
+                '-q', '--quiet',
+            ):
+                cmd.insert(i, format_opt(opt, self.expander(value)))
+
+                options.pop(opt)
+
+        cmd = [' '.join(cmd)]
         argv = tuple(
-            [self.expander(self.cmd)] +
+            cmd +
             [format_opt(opt, self.expander(value))
-             for opt, value in items(self.options)] +
+             for opt, value in options.items()] +
             [self.extra_args]
         )
         if self.append:
@@ -225,7 +242,7 @@ class Node(object):
         raise KeyError(alt[0])
 
     def __repr__(self):
-        return '<{name}: {0.name}>'.format(self, name=type(self).__name__)
+        return f'<{type(self).__name__}: {self.name}>'
 
     @cached_property
     def pidfile(self):
@@ -266,7 +283,7 @@ def maybe_call(fun, *args, **kwargs):
         fun(*args, **kwargs)
 
 
-class MultiParser(object):
+class MultiParser:
     Node = Node
 
     def __init__(self, cmd='celery worker',
@@ -318,18 +335,18 @@ class MultiParser(object):
     def _update_ns_opts(self, p, names):
         # Numbers in args always refers to the index in the list of names.
         # (e.g., `start foo bar baz -c:1` where 1 is foo, 2 is bar, and so on).
-        for ns_name, ns_opts in list(items(p.namespaces)):
+        for ns_name, ns_opts in list(p.namespaces.items()):
             if ns_name.isdigit():
                 ns_index = int(ns_name) - 1
                 if ns_index < 0:
-                    raise KeyError('Indexes start at 1 got: %r' % (ns_name,))
+                    raise KeyError(f'Indexes start at 1 got: {ns_name!r}')
                 try:
                     p.namespaces[names[ns_index]].update(ns_opts)
                 except IndexError:
-                    raise KeyError('No node at index %r' % (ns_name,))
+                    raise KeyError(f'No node at index {ns_name!r}')
 
     def _update_ns_ranges(self, p, ranges):
-        for ns_name, ns_opts in list(items(p.namespaces)):
+        for ns_name, ns_opts in list(p.namespaces.items()):
             if ',' in ns_name or (ranges and '-' in ns_name):
                 for subns in self._parse_ns_range(ns_name, ranges):
                     p.namespaces[subns].update(ns_opts)

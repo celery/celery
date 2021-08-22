@@ -1,10 +1,8 @@
-from __future__ import absolute_import, unicode_literals
-
 from datetime import datetime, timedelta, tzinfo
+from unittest.mock import Mock, patch
 
 import pytest
 import pytz
-from case import Mock, patch
 from pytz import AmbiguousTimeError
 
 from celery.utils.iso8601 import parse_iso8601
@@ -138,8 +136,9 @@ def test_remaining():
 
     """
     Case 3: DST check
-    Suppose start (which is last_run_time) is in EST while next_run is in EDT, then
-    check whether the `next_run` is actually the time specified in the start (i.e. there is not an hour diff due to DST).
+    Suppose start (which is last_run_time) is in EST while next_run is in EDT,
+    then check whether the `next_run` is actually the time specified in the
+    start (i.e. there is not an hour diff due to DST).
     In 2019, DST starts on March 10
     """
     start = eastern_tz.localize(datetime(month=3, day=9, year=2019, hour=10, minute=0))         # EST

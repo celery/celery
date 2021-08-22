@@ -1,12 +1,8 @@
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import sys
+import time
 
-from kombu.five import monotonic  # noqa
-
-from celery import Celery  # noqa
-from celery.five import range  # noqa
+from celery import Celery
 
 os.environ.update(
     NOSETPS='yes',
@@ -44,7 +40,7 @@ app.conf.update(
 
 
 def tdiff(then):
-    return monotonic() - then
+    return time.monotonic() - then
 
 
 @app.task(cur=0, time_start=None, queue='bench.worker', bare=True)
@@ -53,14 +49,14 @@ def it(_, n):
     # by previous runs, or the broker.
     i = it.cur
     if i and not i % 5000:
-        print('({0} so far: {1}s)'.format(i, tdiff(it.subt)), file=sys.stderr)
-        it.subt = monotonic()
+        print(f'({i} so far: {tdiff(it.subt)}s)', file=sys.stderr)
+        it.subt = time.monotonic()
     if not i:
-        it.subt = it.time_start = monotonic()
+        it.subt = it.time_start = time.monotonic()
     elif i > n - 2:
         total = tdiff(it.time_start)
-        print('({0} so far: {1}s)'.format(i, tdiff(it.subt)), file=sys.stderr)
-        print('-- process {0} tasks: {1}s total, {2} tasks/s'.format(
+        print(f'({i} so far: {tdiff(it.subt)}s)', file=sys.stderr)
+        print('-- process {} tasks: {}s total, {} tasks/s'.format(
             n, total, n / (total + .0),
         ))
         import os
@@ -69,11 +65,11 @@ def it(_, n):
 
 
 def bench_apply(n=DEFAULT_ITS):
-    time_start = monotonic()
+    time_start = time.monotonic()
     task = it._get_current_object()
     with app.producer_or_acquire() as producer:
         [task.apply_async((i, n), producer=producer) for i in range(n)]
-    print('-- apply {0} tasks: {1}s'.format(n, monotonic() - time_start))
+    print(f'-- apply {n} tasks: {time.monotonic() - time_start}s')
 
 
 def bench_work(n=DEFAULT_ITS, loglevel='CRITICAL'):
@@ -99,20 +95,15 @@ def bench_both(n=DEFAULT_ITS):
 def main(argv=sys.argv):
     n = DEFAULT_ITS
     if len(argv) < 2:
-        print('Usage: {0} [apply|work|both] [n=20k]'.format(
-            os.path.basename(argv[0]),
-        ))
+        print(f'Usage: {os.path.basename(argv[0])} [apply|work|both] [n=20k]')
         return sys.exit(1)
     try:
-        try:
-            n = int(argv[2])
-        except IndexError:
-            pass
-        return {'apply': bench_apply,
-                'work': bench_work,
-                'both': bench_both}[argv[1]](n=n)
-    except:
-        raise
+        n = int(argv[2])
+    except IndexError:
+        pass
+    return {'apply': bench_apply,
+            'work': bench_work,
+            'both': bench_both}[argv[1]](n=n)
 
 
 if __name__ == '__main__':

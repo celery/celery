@@ -1,13 +1,12 @@
-from __future__ import absolute_import, unicode_literals
-
 import errno
+import os
 import signal
 import sys
-import os
+from unittest.mock import Mock, call, patch
 
 import pytest
-from case import Mock, call, patch, skip
 
+import t.skip
 from celery.apps.multi import (Cluster, MultiParser, NamespacedOptionParser,
                                Node, format_opt)
 
@@ -70,7 +69,7 @@ class test_multi_args:
             '--', '.disable_rate_limits=1',
         ])
         p.parse()
-        it = multi_args(p, cmd='COMMAND', append='*AP*',
+        it = multi_args(p, cmd='celery multi', append='*AP*',
                         prefix='*P*', suffix='*S*')
         nodes = list(it)
 
@@ -86,78 +85,78 @@ class test_multi_args:
 
         assert_line_in(
             '*P*jerry@*S*',
-            ['COMMAND', '-n *P*jerry@*S*', '-Q bar',
+            ['celery multi', '-n *P*jerry@*S*', '-Q bar',
              '-c 5', '--flag', '--logfile=/var/log/celery/foo',
              '-- .disable_rate_limits=1', '*AP*'],
         )
         assert_line_in(
             '*P*elaine@*S*',
-            ['COMMAND', '-n *P*elaine@*S*', '-Q bar',
+            ['celery multi', '-n *P*elaine@*S*', '-Q bar',
              '-c 5', '--flag', '--logfile=/var/log/celery/foo',
              '-- .disable_rate_limits=1', '*AP*'],
         )
         assert_line_in(
             '*P*kramer@*S*',
-            ['COMMAND', '--loglevel=DEBUG', '-n *P*kramer@*S*',
+            ['celery multi', '--loglevel=DEBUG', '-n *P*kramer@*S*',
              '-Q bar', '--flag', '--logfile=/var/log/celery/foo',
              '-- .disable_rate_limits=1', '*AP*'],
         )
         expand = nodes[0].expander
         assert expand('%h') == '*P*jerry@*S*'
         assert expand('%n') == '*P*jerry'
-        nodes2 = list(multi_args(p, cmd='COMMAND', append='',
+        nodes2 = list(multi_args(p, cmd='celery multi', append='',
                                  prefix='*P*', suffix='*S*'))
         assert nodes2[0].argv[-1] == '-- .disable_rate_limits=1'
 
         p2 = NamespacedOptionParser(['10', '-c:1', '5'])
         p2.parse()
-        nodes3 = list(multi_args(p2, cmd='COMMAND'))
+        nodes3 = list(multi_args(p2, cmd='celery multi'))
 
         def _args(name, *args):
             return args + (
                 '--pidfile={}.pid'.format(os.path.join(os.path.normpath('/var/run/celery/'), name)),
                 '--logfile={}%I.log'.format(os.path.join(os.path.normpath('/var/log/celery/'), name)),
-                '--executable={0}'.format(sys.executable),
+                f'--executable={sys.executable}',
                 '',
             )
 
         assert len(nodes3) == 10
         assert nodes3[0].name == 'celery1@example.com'
         assert nodes3[0].argv == (
-            'COMMAND', '-c 5', '-n celery1@example.com') + _args('celery1')
+            'celery multi', '-c 5', '-n celery1@example.com') + _args('celery1')
         for i, worker in enumerate(nodes3[1:]):
             assert worker.name == 'celery%s@example.com' % (i + 2)
-            node_i = 'celery%s' % (i + 2,)
+            node_i = f'celery{i + 2}'
             assert worker.argv == (
-                'COMMAND',
-                '-n %s@example.com' % (node_i,)) + _args(node_i)
+                'celery multi',
+                f'-n {node_i}@example.com') + _args(node_i)
 
-        nodes4 = list(multi_args(p2, cmd='COMMAND', suffix='""'))
+        nodes4 = list(multi_args(p2, cmd='celery multi', suffix='""'))
         assert len(nodes4) == 10
         assert nodes4[0].name == 'celery1@'
         assert nodes4[0].argv == (
-            'COMMAND', '-c 5', '-n celery1@') + _args('celery1')
+            'celery multi', '-c 5', '-n celery1@') + _args('celery1')
 
         p3 = NamespacedOptionParser(['foo@', '-c:foo', '5'])
         p3.parse()
-        nodes5 = list(multi_args(p3, cmd='COMMAND', suffix='""'))
+        nodes5 = list(multi_args(p3, cmd='celery multi', suffix='""'))
         assert nodes5[0].name == 'foo@'
         assert nodes5[0].argv == (
-            'COMMAND', '-c 5', '-n foo@') + _args('foo')
+            'celery multi', '-c 5', '-n foo@') + _args('foo')
 
         p4 = NamespacedOptionParser(['foo', '-Q:1', 'test'])
         p4.parse()
-        nodes6 = list(multi_args(p4, cmd='COMMAND', suffix='""'))
+        nodes6 = list(multi_args(p4, cmd='celery multi', suffix='""'))
         assert nodes6[0].name == 'foo@'
         assert nodes6[0].argv == (
-            'COMMAND', '-Q test', '-n foo@') + _args('foo')
+            'celery multi', '-Q test', '-n foo@') + _args('foo')
 
         p5 = NamespacedOptionParser(['foo@bar', '-Q:1', 'test'])
         p5.parse()
-        nodes7 = list(multi_args(p5, cmd='COMMAND', suffix='""'))
+        nodes7 = list(multi_args(p5, cmd='celery multi', suffix='""'))
         assert nodes7[0].name == 'foo@bar'
         assert nodes7[0].argv == (
-            'COMMAND', '-Q test', '-n foo@bar') + _args('foo')
+            'celery multi', '-Q test', '-n foo@bar') + _args('foo')
 
         p6 = NamespacedOptionParser(['foo@bar', '-Q:0', 'test'])
         p6.parse()
@@ -193,9 +192,8 @@ class test_Node:
                 max_tasks_per_child=30, A='foo', Q='q1,q2', O='fair',
             )
         assert sorted(n.argv) == sorted([
-            '-m celery worker --detach',
-            '-A foo',
-            '--executable={0}'.format(n.executable),
+            '-m celery -A foo worker --detach',
+            f'--executable={n.executable}',
             '-O fair',
             '-n foo@bar.com',
             '--logfile={}'.format(os.path.normpath('/var/log/celery/foo%I.log')),
@@ -385,7 +383,7 @@ class test_Cluster:
         for node in nodes:
             node.send.assert_called_with(15, self.cluster.on_node_signal_dead)
 
-    @skip.if_win32()
+    @t.skip.if_win32
     def test_kill(self):
         self.cluster.send_all = Mock(name='.send_all')
         self.cluster.kill()
@@ -407,7 +405,7 @@ class test_Cluster:
         assert node_0.name == 'foo@e.com'
         assert sorted(node_0.argv) == sorted([
             '',
-            '--executable={0}'.format(node_0.executable),
+            f'--executable={node_0.executable}',
             '--logfile={}'.format(os.path.normpath('/var/log/celery/foo%I.log')),
             '--pidfile={}'.format(os.path.normpath('/var/run/celery/foo.pid')),
             '-m celery worker --detach',
@@ -418,7 +416,7 @@ class test_Cluster:
         assert node_1.name == 'bar@e.com'
         assert sorted(node_1.argv) == sorted([
             '',
-            '--executable={0}'.format(node_1.executable),
+            f'--executable={node_1.executable}',
             '--logfile={}'.format(os.path.normpath('/var/log/celery/bar%I.log')),
             '--pidfile={}'.format(os.path.normpath('/var/run/celery/bar.pid')),
             '-m celery worker --detach',
@@ -430,7 +428,7 @@ class test_Cluster:
         nodes = p.getpids('celery worker')
 
     def prepare_pidfile_for_getpids(self, Pidfile):
-        class pids(object):
+        class pids:
 
             def __init__(self, path):
                 self.path = path

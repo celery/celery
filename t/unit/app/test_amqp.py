@@ -1,14 +1,11 @@
-from __future__ import absolute_import, unicode_literals
-
 from datetime import datetime, timedelta
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock
 from kombu import Exchange, Queue
 
 from celery import uuid
 from celery.app.amqp import Queues, utf8dict
-from celery.five import keys
 from celery.utils.time import to_utc
 
 
@@ -92,39 +89,17 @@ class test_Queues:
         q['foo'] = queue
         assert q['foo'].exchange == q.default_exchange
 
-    @pytest.mark.parametrize('ha_policy,qname,q,qargs,expected', [
-        (None, 'xyz', 'xyz', None, None),
-        (None, 'xyz', 'xyz', {'x-foo': 'bar'}, {'x-foo': 'bar'}),
-        ('all', 'foo', Queue('foo'), None, {'ha-mode': 'all'}),
-        ('all', 'xyx2',
-         Queue('xyx2', queue_arguments={'x-foo': 'bar'}),
-         None,
-         {'ha-mode': 'all', 'x-foo': 'bar'}),
-        (['A', 'B', 'C'], 'foo', Queue('foo'), None, {
-            'ha-mode': 'nodes',
-            'ha-params': ['A', 'B', 'C']}),
-    ])
-    def test_with_ha_policy(self, ha_policy, qname, q, qargs, expected):
-        queues = Queues(ha_policy=ha_policy, create_missing=False)
-        queues.add(q, queue_arguments=qargs)
-        assert queues[qname].queue_arguments == expected
-
     def test_select_add(self):
         q = Queues()
         q.select(['foo', 'bar'])
         q.select_add('baz')
-        assert sorted(keys(q._consume_from)) == ['bar', 'baz', 'foo']
+        assert sorted(q._consume_from.keys()) == ['bar', 'baz', 'foo']
 
     def test_deselect(self):
         q = Queues()
         q.select(['foo', 'bar'])
         q.deselect('bar')
-        assert sorted(keys(q._consume_from)) == ['foo']
-
-    def test_with_ha_policy_compat(self):
-        q = Queues(ha_policy='all')
-        q.add('bar')
-        assert q['bar'].queue_arguments == {'ha-mode': 'all'}
+        assert sorted(q._consume_from.keys()) == ['foo']
 
     def test_add_default_exchange(self):
         ex = Exchange('fff', 'fanout')
@@ -146,12 +121,6 @@ class test_Queues:
         ({'max_priority': 10},
          'moo', Queue('moo', queue_arguments=None),
          {'x-max-priority': 10}),
-        ({'ha_policy': 'all', 'max_priority': 5},
-         'bar', 'bar',
-         {'ha-mode': 'all', 'x-max-priority': 5}),
-        ({'ha_policy': 'all', 'max_priority': 5},
-         'xyx2', Queue('xyx2', queue_arguments={'x-max-priority': 2}),
-         {'ha-mode': 'all', 'x-max-priority': 2}),
         ({'max_priority': None},
          'foo2', 'foo2',
          None),
@@ -258,10 +227,6 @@ class test_AMQP:
         with pytest.raises(ValueError):
             self.app.amqp.as_task_v2(uuid(), 'foo', countdown=-1232132323123)
 
-    def test_Queues__with_ha_policy(self):
-        x = self.app.amqp.Queues({}, ha_policy='all')
-        assert x.ha_policy == 'all'
-
     def test_Queues__with_max_priority(self):
         x = self.app.amqp.Queues({}, max_priority=23)
         assert x.max_priority == 23
@@ -352,7 +317,6 @@ class test_AMQP:
         assert prod.publish.call_args[1]['delivery_mode'] == 33
 
     def test_send_task_message__with_receivers(self):
-        from case import patch
         mocked_receiver = ((Mock(), Mock()), Mock())
         with patch('celery.signals.task_sent.receivers', [mocked_receiver]):
             self.app.amqp.send_task_message(Mock(), 'foo', self.simple_message)

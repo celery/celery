@@ -4,8 +4,6 @@
 
 The actual commands are implemented in :mod:`celery.worker.control`.
 """
-from __future__ import absolute_import, unicode_literals
-
 from celery import bootsteps
 from celery.utils.log import get_logger
 from celery.worker import pidbox
@@ -28,7 +26,7 @@ class Control(bootsteps.StartStopStep):
         self.start = self.box.start
         self.stop = self.box.stop
         self.shutdown = self.box.shutdown
-        super(Control, self).__init__(c, **kwargs)
+        super().__init__(c, **kwargs)
 
     def include_if(self, c):
         return (c.app.conf.worker_enable_remote_control and

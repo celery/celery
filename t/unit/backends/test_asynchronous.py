@@ -1,15 +1,19 @@
 import os
 import socket
-import time
+import sys
 import threading
+import time
+from unittest.mock import Mock, patch
 
 import pytest
-from case import patch, skip, Mock
 from vine import promise
 
 from celery.backends.asynchronous import BaseResultConsumer
 from celery.backends.base import Backend
 from celery.utils import cached_property
+
+pytest.importorskip('gevent')
+pytest.importorskip('eventlet')
 
 
 @pytest.fixture(autouse=True)
@@ -18,7 +22,7 @@ def setup_eventlet():
     os.environ.update(EVENTLET_NO_GREENDNS='yes')
 
 
-class DrainerTests(object):
+class DrainerTests:
     """
     Base test class for the Default / Gevent / Eventlet drainers.
     """
@@ -120,7 +124,7 @@ class DrainerTests(object):
         self.teardown_thread(liveness_thread)
 
         assert p.ready, 'Should have terminated with promise being ready'
-        assert on_interval.call_count < liveness_mock.call_count, \
+        assert on_interval.call_count <= liveness_mock.call_count, \
             'Should have served liveness_mock while waiting for event'
 
     def test_drain_timeout(self):
@@ -138,7 +142,10 @@ class DrainerTests(object):
         assert on_interval.call_count < 20, 'Should have limited number of calls to on_interval'
 
 
-@skip.unless_module('eventlet')
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="hangs forever intermittently on windows"
+)
 class test_EventletDrainer(DrainerTests):
     @pytest.fixture(autouse=True)
     def setup_drainer(self):
@@ -185,7 +192,6 @@ class test_Drainer(DrainerTests):
         thread.join()
 
 
-@skip.unless_module('gevent')
 class test_GeventDrainer(DrainerTests):
     @pytest.fixture(autouse=True)
     def setup_drainer(self):

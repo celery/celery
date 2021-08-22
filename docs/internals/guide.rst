@@ -53,10 +53,10 @@ Naming
             pass
 
         # - "action" class (verb)
-        class UpdateTwitterStatus(object):    # BAD
+        class UpdateTwitterStatus:    # BAD
             pass
 
-        class update_twitter_status(object):    # GOOD
+        class update_twitter_status:    # GOOD
             pass
 
     .. note::
@@ -71,7 +71,7 @@ Naming
 
     .. code-block:: python
 
-        class Celery(object):
+        class Celery:
 
             def consumer_factory(self):     # BAD
                 ...
@@ -89,7 +89,7 @@ as this means that they can be set by either instantiation or inheritance.
 
 .. code-block:: python
 
-    class Producer(object):
+    class Producer:
         active = True
         serializer = 'json'
 
@@ -130,7 +130,7 @@ the exception class from the instance directly.
     class Empty(Exception):
         pass
 
-    class Queue(object):
+    class Queue:
         Empty = Empty
 
         def get(self):
@@ -157,7 +157,7 @@ saved us from many a monkey patch).
 
 .. code-block:: python
 
-    class Worker(object):
+    class Worker:
         Consumer = Consumer
 
         def __init__(self, connection, consumer_cls=None):

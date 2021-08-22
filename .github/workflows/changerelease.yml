@@ -1,0 +1,32 @@
+name: changerelease
+on:
+  workflow_dispatch: {}
+  push:
+    paths: [Changelog.rst]
+    branches: [master]
+    tags: ["*"]
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: docker://pandoc/core:2.14
+      with:
+        args: "Changelog.rst -f rst -t markdown -o CR_CHANGELOG.md"
+    - name: "Clean up markdown"
+      run: |
+        # https://stackoverflow.com/a/1252191/1110798
+        cat CR_CHANGELOG.md
+        sed -i -e ':a' -e 'N' -e '$!ba' -e 's/release-date\n\n:   /Release date: /g' CR_CHANGELOG.md
+        sed -i -e ':a' -e 'N' -e '$!ba' -e 's/release-by\n\n:   /Release by: /g' CR_CHANGELOG.md
+        cat CR_CHANGELOG.md
+    - uses: dropseed/changerelease@v1
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        changelog: CR_CHANGELOG.md
+        remote_changelog: false
+        limit: -1

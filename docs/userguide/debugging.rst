@@ -110,7 +110,7 @@ For example starting the worker with:
 
 .. code-block:: console
 
-    $ CELERY_RDBSIG=1 celery worker -l info
+    $ CELERY_RDBSIG=1 celery worker -l INFO
 
 You can start an rdb session for any of the worker processes by executing:
 

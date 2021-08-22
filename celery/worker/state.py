@@ -1,24 +1,21 @@
-# -*- coding: utf-8 -*-
 """Internal worker state (global).
 
 This includes the currently active and reserved tasks,
 statistics, and revoked tasks.
 """
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import platform
 import shelve
 import sys
 import weakref
 import zlib
+from collections import Counter
 
 from kombu.serialization import pickle, pickle_protocol
 from kombu.utils.objects import cached_property
 
 from celery import __version__
 from celery.exceptions import WorkerShutdown, WorkerTerminate
-from celery.five import Counter
 from celery.utils.collections import LimitedSet
 
 __all__ = (
@@ -37,9 +34,16 @@ SOFTWARE_INFO = {
 #: maximum number of revokes to keep in memory.
 REVOKES_MAX = 50000
 
+#: maximum number of successful tasks to keep in memory.
+SUCCESSFUL_MAX = 1000
+
 #: how many seconds a revoke will be active before
 #: being expired when the max limit has been exceeded.
 REVOKE_EXPIRES = 10800
+
+#: how many seconds a successful task will be cached in memory
+#: before being expired when the max limit has been exceeded.
+SUCCESSFUL_EXPIRES = 10800
 
 #: Mapping of reserved task_id->Request.
 requests = {}
@@ -49,6 +53,10 @@ reserved_requests = weakref.WeakSet()
 
 #: set of currently active :class:`~celery.worker.request.Request`'s.
 active_requests = weakref.WeakSet()
+
+#: A limited set of successful :class:`~celery.worker.request.Request`'s.
+successful_requests = LimitedSet(maxlen=SUCCESSFUL_MAX,
+                                 expires=SUCCESSFUL_EXPIRES)
 
 #: count of tasks accepted by the worker, sorted by type.
 total_count = Counter()
@@ -67,6 +75,7 @@ def reset_state():
     requests.clear()
     reserved_requests.clear()
     active_requests.clear()
+    successful_requests.clear()
     total_count.clear()
     all_total_count[:] = [0]
     revoked.clear()
@@ -101,10 +110,14 @@ def task_accepted(request,
 
 
 def task_ready(request,
+               successful=False,
                remove_request=requests.pop,
                discard_active_request=active_requests.discard,
                discard_reserved_request=reserved_requests.discard):
     """Update global state when a task is ready."""
+    if successful:
+        successful_requests.add(request.id)
+
     remove_request(request.id, None)
     discard_active_request(request)
     discard_reserved_request(request)
@@ -115,9 +128,10 @@ C_BENCH_EVERY = int(os.environ.get('C_BENCH_EVERY') or
                     os.environ.get('CELERY_BENCH_EVERY') or 1000)
 if C_BENCH:  # pragma: no cover
     import atexit
+    from time import monotonic
 
     from billiard.process import current_process
-    from celery.five import monotonic
+
     from celery.utils.debug import memdump, sample_mem
 
     all_count = 0
@@ -133,13 +147,13 @@ if C_BENCH:  # pragma: no cover
         @atexit.register
         def on_shutdown():
             if bench_first is not None and bench_last is not None:
-                print('- Time spent in benchmark: {0!r}'.format(
+                print('- Time spent in benchmark: {!r}'.format(
                     bench_last - bench_first))
-                print('- Avg: {0}'.format(
+                print('- Avg: {}'.format(
                     sum(bench_sample) / len(bench_sample)))
                 memdump()
 
-    def task_reserved(request):  # noqa
+    def task_reserved(request):
         """Called when a task is reserved by the worker."""
         global bench_start
         global bench_first
@@ -151,7 +165,7 @@ if C_BENCH:  # pragma: no cover
 
         return __reserved(request)
 
-    def task_ready(request):  # noqa
+    def task_ready(request):
         """Called when a task is completed."""
         global all_count
         global bench_start
@@ -160,8 +174,8 @@ if C_BENCH:  # pragma: no cover
         if not all_count % bench_every:
             now = monotonic()
             diff = now - bench_start
-            print('- Time spent processing {0} tasks (since first '
-                  'task received): ~{1:.4f}s\n'.format(bench_every, diff))
+            print('- Time spent processing {} tasks (since first '
+                  'task received): ~{:.4f}s\n'.format(bench_every, diff))
             sys.stdout.flush()
             bench_start = bench_last = now
             bench_sample.append(diff)
@@ -169,7 +183,7 @@ if C_BENCH:  # pragma: no cover
         return __ready(request)
 
 
-class Persistent(object):
+class Persistent:
     """Stores worker state between restarts.
 
     This is the persistent data stored by the worker when
@@ -219,22 +233,22 @@ class Persistent(object):
     def _sync_with(self, d):
         self._revoked_tasks.purge()
         d.update({
-            str('__proto__'): 3,
-            str('zrevoked'): self.compress(self._dumps(self._revoked_tasks)),
-            str('clock'): self.clock.forward() if self.clock else 0,
+            '__proto__': 3,
+            'zrevoked': self.compress(self._dumps(self._revoked_tasks)),
+            'clock': self.clock.forward() if self.clock else 0,
         })
         return d
 
     def _merge_clock(self, d):
         if self.clock:
-            d[str('clock')] = self.clock.adjust(d.get(str('clock')) or 0)
+            d['clock'] = self.clock.adjust(d.get('clock') or 0)
 
     def _merge_revoked(self, d):
         try:
-            self._merge_revoked_v3(d[str('zrevoked')])
+            self._merge_revoked_v3(d['zrevoked'])
         except KeyError:
             try:
-                self._merge_revoked_v2(d.pop(str('revoked')))
+                self._merge_revoked_v2(d.pop('revoked'))
             except KeyError:
                 pass
         # purge expired items at boot

@@ -74,7 +74,7 @@ The :program:`celery` program can be used to start the worker (you need to run t
 
 .. code-block:: console
 
-    $ celery -A proj worker -l info
+    $ celery -A proj worker -l INFO
 
 When the worker starts you should see a banner and some messages::
 
@@ -152,7 +152,7 @@ start one or more workers in the background:
 
 .. code-block:: console
 
-    $ celery multi start w1 -A proj -l info
+    $ celery multi start w1 -A proj -l INFO
     celery multi v4.0.0 (latentcall)
     > Starting nodes...
         > w1.halcyon.local: OK
@@ -161,7 +161,7 @@ You can restart it too:
 
 .. code-block:: console
 
-    $ celery  multi restart w1 -A proj -l info
+    $ celery  multi restart w1 -A proj -l INFO
     celery multi v4.0.0 (latentcall)
     > Stopping nodes...
         > w1.halcyon.local: TERM -> 64024
@@ -176,7 +176,7 @@ or stop it:
 
 .. code-block:: console
 
-    $ celery multi stop w1 -A proj -l info
+    $ celery multi stop w1 -A proj -l INFO
 
 The ``stop`` command is asynchronous so it won't wait for the
 worker to shutdown. You'll probably want to use the ``stopwait`` command
@@ -185,7 +185,7 @@ before exiting:
 
 .. code-block:: console
 
-    $ celery multi stopwait w1 -A proj -l info
+    $ celery multi stopwait w1 -A proj -l INFO
 
 .. note::
 
@@ -202,7 +202,7 @@ you're encouraged to put these in a dedicated directory:
 
     $ mkdir -p /var/run/celery
     $ mkdir -p /var/log/celery
-    $ celery multi start w1 -A proj -l info --pidfile=/var/run/celery/%n.pid \
+    $ celery multi start w1 -A proj -l INFO --pidfile=/var/run/celery/%n.pid \
                                             --logfile=/var/log/celery/%n%I.log
 
 With the multi command you can start multiple workers, and there's a powerful
@@ -211,7 +211,7 @@ for example:
 
 .. code-block:: console
 
-    $ celery multi start 10 -A proj -l info -Q:1-3 images,video -Q:4,5 data \
+    $ celery multi start 10 -A proj -l INFO -Q:1-3 images,video -Q:4,5 data \
         -Q default -L:4,5 debug
 
 For more examples see the :mod:`~celery.bin.multi` module in the API

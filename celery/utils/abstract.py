@@ -1,17 +1,6 @@
-# -*- coding: utf-8 -*-
 """Abstract classes."""
-from __future__ import absolute_import, unicode_literals
-
-from abc import ABCMeta, abstractmethod, abstractproperty
-
-from celery.five import with_metaclass
-
-try:
-    from collections.abc import Callable
-except ImportError:
-    # TODO: Remove this when we drop Python 2.7 support
-    from collections import Callable
-
+from abc import ABCMeta, abstractmethod
+from collections.abc import Callable
 
 __all__ = ('CallableTask', 'CallableSignature')
 
@@ -20,8 +9,7 @@ def _hasattr(C, attr):
     return any(attr in B.__dict__ for B in C.__mro__)
 
 
-@with_metaclass(ABCMeta)
-class _AbstractClass(object):
+class _AbstractClass(metaclass=ABCMeta):
     __required_attributes__ = frozenset()
 
     @classmethod
@@ -69,47 +57,58 @@ class CallableSignature(CallableTask):  # pragma: no cover
         'clone', 'freeze', 'set', 'link', 'link_error', '__or__',
     })
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def name(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def type(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def app(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def id(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def task(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def args(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def kwargs(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def options(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def subtask_type(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def chord_size(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def immutable(self):
         pass
 
@@ -118,7 +117,8 @@ class CallableSignature(CallableTask):  # pragma: no cover
         pass
 
     @abstractmethod
-    def freeze(self, id=None, group_id=None, chord=None, root_id=None):
+    def freeze(self, id=None, group_id=None, chord=None, root_id=None,
+               group_index=None):
         pass
 
     @abstractmethod

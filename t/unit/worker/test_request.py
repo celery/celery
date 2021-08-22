@@ -1,29 +1,25 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals
-
 import numbers
 import os
 import signal
 import socket
-import sys
 from datetime import datetime, timedelta
-from time import time
+from time import monotonic, time
+from unittest.mock import Mock, patch
 
 import pytest
 from billiard.einfo import ExceptionInfo
-from case import Mock, patch
-from kombu.utils.encoding import (default_encode, from_utf8, safe_repr,
-                                  safe_str)
+from kombu.utils.encoding import from_utf8, safe_repr, safe_str
 from kombu.utils.uuid import uuid
 
 from celery import states
-from celery.app.trace import (TraceInfo, _trace_task_ret, build_tracer,
+from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task,
                               mro_lookup, reset_worker_optimizations,
-                              setup_worker_optimizations, trace_task)
+                              setup_worker_optimizations, trace_task,
+                              trace_task_ret)
+from celery.backends.base import BaseDictBackend
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
                                TaskRevokedError, Terminated, WorkerLostError)
-from celery.five import monotonic
-from celery.signals import task_revoked
+from celery.signals import task_retry, task_revoked
 from celery.worker import request as module
 from celery.worker import strategy
 from celery.worker.request import Request, create_request_cls
@@ -39,16 +35,19 @@ class RequestCase:
         @self.app.task(shared=False)
         def add(x, y, **kw_):
             return x + y
+
         self.add = add
 
         @self.app.task(shared=False)
         def mytask(i, **kwargs):
             return i ** i
+
         self.mytask = mytask
 
         @self.app.task(shared=False)
         def mytask_raising(i):
             raise KeyError(i)
+
         self.mytask_raising = mytask_raising
 
     def xRequest(self, name=None, id=None, args=None, kwargs=None,
@@ -67,8 +66,7 @@ class RequestCase:
 class test_mro_lookup:
 
     def test_order(self):
-
-        class A(object):
+        class A:
             pass
 
         class B(A):
@@ -93,36 +91,14 @@ class test_mro_lookup:
         assert mro_lookup(D, 'x') is None
 
 
-def jail(app, task_id, name, args, kwargs):
+def jail(app, task_id, name, request_opts, args, kwargs):
     request = {'id': task_id}
+    request.update(request_opts)
     task = app.tasks[name]
     task.__trace__ = None  # rebuild
     return trace_task(
         task, task_id, args, kwargs, request=request, eager=False, app=app,
     ).retval
-
-
-@pytest.mark.skipif(sys.version_info[0] > 3, reason='Py2 only')
-class test_default_encode:
-
-    def test_jython(self):
-        prev, sys.platform = sys.platform, 'java 1.6.1'
-        try:
-            assert default_encode(b'foo') == b'foo'
-        finally:
-            sys.platform = prev
-
-    def test_cpython(self):
-        prev, sys.platform = sys.platform, 'darwin'
-        gfe, sys.getfilesystemencoding = (
-            sys.getfilesystemencoding,
-            lambda: 'utf-8',
-        )
-        try:
-            assert default_encode(b'foo') == b'foo'
-        finally:
-            sys.platform = prev
-            sys.getfilesystemencoding = gfe
 
 
 class test_Retry:
@@ -142,7 +118,7 @@ class test_trace_task(RequestCase):
         self.mytask.backend = Mock()
         self.mytask.backend.process_cleanup = Mock(side_effect=KeyError())
         tid = uuid()
-        ret = jail(self.app, tid, self.mytask.name, [2], {})
+        ret = jail(self.app, tid, self.mytask.name, {}, [2], {})
         assert ret == 4
         self.mytask.backend.mark_as_done.assert_called()
         assert 'Process cleanup failed' in _logger.error.call_args[0][0]
@@ -151,10 +127,10 @@ class test_trace_task(RequestCase):
         self.mytask.backend = Mock()
         self.mytask.backend.process_cleanup = Mock(side_effect=SystemExit())
         with pytest.raises(SystemExit):
-            jail(self.app, uuid(), self.mytask.name, [2], {})
+            jail(self.app, uuid(), self.mytask.name, {}, [2], {})
 
     def test_execute_jail_success(self):
-        ret = jail(self.app, uuid(), self.mytask.name, [2], {})
+        ret = jail(self.app, uuid(), self.mytask.name, {}, [2], {})
         assert ret == 4
 
     def test_marked_as_started(self):
@@ -163,34 +139,48 @@ class test_trace_task(RequestCase):
         def store_result(tid, meta, state, **kwargs):
             if state == states.STARTED:
                 _started.append(tid)
+
         self.mytask.backend.store_result = Mock(name='store_result')
         self.mytask.backend.store_result.side_effect = store_result
         self.mytask.track_started = True
 
         tid = uuid()
-        jail(self.app, tid, self.mytask.name, [2], {})
+        jail(self.app, tid, self.mytask.name, {}, [2], {})
         assert tid in _started
 
         self.mytask.ignore_result = True
         tid = uuid()
-        jail(self.app, tid, self.mytask.name, [2], {})
+        jail(self.app, tid, self.mytask.name, {}, [2], {})
         assert tid not in _started
 
     def test_execute_jail_failure(self):
         ret = jail(
-            self.app, uuid(), self.mytask_raising.name, [4], {},
+            self.app, uuid(), self.mytask_raising.name, {}, [4], {},
         )
         assert isinstance(ret, ExceptionInfo)
         assert ret.exception.args == (4,)
 
-    def test_execute_ignore_result(self):
-
+    def test_execute_task_ignore_result(self):
         @self.app.task(shared=False, ignore_result=True)
         def ignores_result(i):
             return i ** i
 
         task_id = uuid()
-        ret = jail(self.app, task_id, ignores_result.name, [4], {})
+        ret = jail(self.app, task_id, ignores_result.name, {}, [4], {})
+        assert ret == 256
+        assert not self.app.AsyncResult(task_id).ready()
+
+    def test_execute_request_ignore_result(self):
+
+        @self.app.task(shared=False)
+        def ignores_result(i):
+            return i ** i
+
+        task_id = uuid()
+        ret = jail(
+            self.app, task_id, ignores_result.name,
+            {'ignore_result': True}, [4], {}
+        )
         assert ret == 256
         assert not self.app.AsyncResult(task_id).ready()
 
@@ -235,20 +225,22 @@ class test_Request(RequestCase):
             self.add.s(**kwargs)).kwargs == kwargs
 
     def test_info_function(self):
-        import string
         import random
+        import string
         kwargs = {}
         for i in range(0, 2):
-            kwargs[str(i)] = ''.join(random.choice(string.ascii_lowercase) for i in range(1000))
+            kwargs[str(i)] = ''.join(
+                random.choice(string.ascii_lowercase) for i in range(1000))
         assert self.get_request(
-            self.add.s(**kwargs)).info(safe=True).get('kwargs') == kwargs
+            self.add.s(**kwargs)).info(safe=True).get('kwargs') == ''  # mock message doesn't populate kwargsrepr
         assert self.get_request(
             self.add.s(**kwargs)).info(safe=False).get('kwargs') == kwargs
         args = []
         for i in range(0, 2):
-            args.append(''.join(random.choice(string.ascii_lowercase) for i in range(1000)))
+            args.append(''.join(
+                random.choice(string.ascii_lowercase) for i in range(1000)))
         assert list(self.get_request(
-            self.add.s(*args)).info(safe=True).get('args')) == args
+            self.add.s(*args)).info(safe=True).get('args')) == []  # mock message doesn't populate argsrepr
         assert list(self.get_request(
             self.add.s(*args)).info(safe=False).get('args')) == args
 
@@ -347,7 +339,7 @@ class test_Request(RequestCase):
         einfo = None
         try:
             raise WorkerLostError()
-        except:
+        except WorkerLostError:
             einfo = ExceptionInfo(internal=True)
         req = self.get_request(self.add.s(2, 2))
         req.task.acks_late = True
@@ -361,7 +353,7 @@ class test_Request(RequestCase):
         einfo = None
         try:
             raise WorkerLostError()
-        except:
+        except WorkerLostError:
             einfo = ExceptionInfo(internal=True)
         req = self.get_request(self.add.s(2, 2))
         req.task.acks_late = True
@@ -406,7 +398,7 @@ class test_Request(RequestCase):
         job.eventer = Mock(name='.eventer')
         try:
             raise Retry('foo', KeyError('moofoobar'))
-        except:
+        except Retry:
             einfo = ExceptionInfo()
             job.on_failure(einfo)
             job.eventer.send.assert_called_with(
@@ -461,6 +453,23 @@ class test_Request(RequestCase):
             job.terminate(pool, signal='TERM')
             pool.terminate_job.assert_called_with(job.worker_pid, signum)
 
+    def test_cancel__pool_ref(self):
+        pool = Mock()
+        signum = signal.SIGTERM
+        job = self.get_request(self.mytask.s(1, f='x'))
+        job._apply_result = Mock(name='_apply_result')
+        with self.assert_signal_called(
+                task_retry, sender=job.task, request=job._context,
+                einfo=None):
+            job.time_start = monotonic()
+            job.worker_pid = 314
+            job.cancel(pool, signal='TERM')
+            job._apply_result().terminate.assert_called_with(signum)
+
+            job._apply_result = Mock(name='_apply_result2')
+            job._apply_result.return_value = None
+            job.cancel(pool, signal='TERM')
+
     def test_terminate__task_reserved(self):
         pool = Mock()
         job = self.get_request(self.mytask.s(1, f='x'))
@@ -469,6 +478,27 @@ class test_Request(RequestCase):
         pool.terminate_job.assert_not_called()
         assert job._terminate_on_ack == (pool, 15)
         job.terminate(pool, signal='TERM')
+
+    def test_cancel__task_started(self):
+        pool = Mock()
+        signum = signal.SIGTERM
+        job = self.get_request(self.mytask.s(1, f='x'))
+        job._apply_result = Mock(name='_apply_result')
+        with self.assert_signal_called(
+                task_retry, sender=job.task, request=job._context,
+                einfo=None):
+            job.time_start = monotonic()
+            job.worker_pid = 314
+            job.cancel(pool, signal='TERM')
+            job._apply_result().terminate.assert_called_with(signum)
+
+    def test_cancel__task_reserved(self):
+        pool = Mock()
+        job = self.get_request(self.mytask.s(1, f='x'))
+        job.time_start = None
+        job.cancel(pool, signal='TERM')
+        pool.terminate_job.assert_not_called()
+        assert job._terminate_on_ack is None
 
     def test_revoked_expires_expired(self):
         job = self.get_request(self.mytask.s(1, f='x').set(
@@ -679,7 +709,8 @@ class test_Request(RequestCase):
             job.on_failure(exc_info)
 
         assert job.acknowledged is True
-        job._on_reject.assert_called_with(req_logger, job.connection_errors, False)
+        job._on_reject.assert_called_with(req_logger, job.connection_errors,
+                                          False)
 
     def test_on_failure_acks_on_failure_or_timeout_enabled_for_task(self):
         job = self.xRequest()
@@ -720,6 +751,22 @@ class test_Request(RequestCase):
             exc_info = ExceptionInfo()
             job.on_failure(exc_info)
         assert job.acknowledged is True
+
+    def test_on_failure_task_cancelled(self):
+        job = self.xRequest()
+        job.eventer = Mock()
+        job.time_start = 1
+        job._already_cancelled = True
+
+        try:
+            raise Terminated()
+        except Terminated:
+            exc_info = ExceptionInfo()
+
+            job.on_failure(exc_info)
+
+        job.on_failure(exc_info)
+        assert not job.eventer.send.called
 
     def test_from_message_invalid_kwargs(self):
         m = self.TaskMessage(self.mytask.name, args=(), kwargs='foo')
@@ -789,9 +836,9 @@ class test_Request(RequestCase):
         assert self.mytask.backend.get_status(job.id) == states.PENDING
 
     def test_fast_trace_task(self):
-        from celery.app import trace
+        assert self.app.use_fast_trace_task is False
         setup_worker_optimizations(self.app)
-        assert trace.trace_task_ret is trace._fast_trace_task
+        assert self.app.use_fast_trace_task is True
         tid = uuid()
         message = self.TaskMessage(self.mytask.name, tid, args=[4])
         assert len(message.payload) == 3
@@ -800,7 +847,7 @@ class test_Request(RequestCase):
                 self.mytask.name, self.mytask, self.app.loader, 'test',
                 app=self.app,
             )
-            failed, res, runtime = trace.trace_task_ret(
+            failed, res, runtime = fast_trace_task(
                 self.mytask.name, tid, message.headers, message.body,
                 message.content_type, message.content_encoding)
             assert not failed
@@ -808,10 +855,10 @@ class test_Request(RequestCase):
             assert runtime is not None
             assert isinstance(runtime, numbers.Real)
         finally:
-            reset_worker_optimizations()
-            assert trace.trace_task_ret is trace._trace_task_ret
+            reset_worker_optimizations(self.app)
+            assert self.app.use_fast_trace_task is False
         delattr(self.mytask, '__trace__')
-        failed, res, runtime = trace.trace_task_ret(
+        failed, res, runtime = trace_task_ret(
             self.mytask.name, tid, message.headers, message.body,
             message.content_type, message.content_encoding, app=self.app,
         )
@@ -827,7 +874,7 @@ class test_Request(RequestCase):
         )
         tid = uuid()
         message = self.TaskMessage(self.mytask.name, tid, args=[4])
-        _, R, _ = _trace_task_ret(
+        _, R, _ = trace_task_ret(
             self.mytask.name, tid, message.headers,
             message.body, message.content_type,
             message.content_encoding, app=self.app,
@@ -841,7 +888,7 @@ class test_Request(RequestCase):
             pass
         tid = uuid()
         message = self.TaskMessage(self.mytask.name, tid, args=[4])
-        _, R, _ = _trace_task_ret(
+        _, R, _ = trace_task_ret(
             self.mytask.name, tid, message.headers,
             message.body, message.content_type,
             message.content_encoding, app=self.app,
@@ -939,6 +986,25 @@ class test_Request(RequestCase):
         assert meta['status'] == states.SUCCESS
         assert meta['result'] == 256
 
+    def test_execute_backend_error_acks_late(self):
+        """direct call to execute should reject task in case of internal failure."""
+        tid = uuid()
+        self.mytask.acks_late = True
+        job = self.xRequest(id=tid, args=[4], kwargs={})
+        job._on_reject = Mock()
+        job._on_ack = Mock()
+        self.mytask.backend = BaseDictBackend(app=self.app)
+        self.mytask.backend.mark_as_done = Mock()
+        self.mytask.backend.mark_as_done.side_effect = Exception()
+        self.mytask.backend.mark_as_failure = Mock()
+        self.mytask.backend.mark_as_failure.side_effect = Exception()
+
+        job.execute()
+
+        assert job.acknowledged
+        job._on_reject.assert_called_once()
+        job._on_ack.assert_not_called()
+
     def test_execute_success_no_kwargs(self):
 
         @self.app.task  # traverses coverage for decorator without parens
@@ -991,6 +1057,23 @@ class test_Request(RequestCase):
         p = Mock()
         job.execute_using_pool(p)
         p.apply_async.assert_called_once()
+        trace = p.apply_async.call_args[0][0]
+        assert trace == trace_task_ret
+        args = p.apply_async.call_args[1]['args']
+        assert args[0] == self.mytask.name
+        assert args[1] == tid
+        assert args[2] == job.request_dict
+        assert args[3] == job.message.body
+
+    def test_execute_using_pool_fast_trace_task(self):
+        self.app.use_fast_trace_task = True
+        tid = uuid()
+        job = self.xRequest(id=tid, args=[4])
+        p = Mock()
+        job.execute_using_pool(p)
+        p.apply_async.assert_called_once()
+        trace = p.apply_async.call_args[0][0]
+        assert trace == fast_trace_task
         args = p.apply_async.call_args[1]['args']
         assert args[0] == self.mytask.name
         assert args[1] == tid
@@ -1047,6 +1130,11 @@ class test_Request(RequestCase):
         job = self.xRequest(id=uuid(), group=gid)
         assert job.group == gid
 
+    def test_group_index(self):
+        group_index = 42
+        job = self.xRequest(id=uuid(), group_index=group_index)
+        assert job.group_index == group_index
+
 
 class test_create_request_class(RequestCase):
 
@@ -1058,7 +1146,8 @@ class test_create_request_class(RequestCase):
 
     def create_request_cls(self, **kwargs):
         return create_request_cls(
-            Request, self.task, self.pool, 'foo', self.eventer, **kwargs
+            Request, self.task, self.pool, 'foo', self.eventer, app=self.app,
+            **kwargs
         )
 
     def zRequest(self, Request=None, revoked_tasks=None, ref=None, **kwargs):
@@ -1137,12 +1226,32 @@ class test_create_request_class(RequestCase):
             job.execute_using_pool(self.pool)
 
     def test_execute_using_pool(self):
-        from celery.app.trace import trace_task_ret as trace
         weakref_ref = Mock(name='weakref.ref')
         job = self.zRequest(id=uuid(), revoked_tasks=set(), ref=weakref_ref)
         job.execute_using_pool(self.pool)
         self.pool.apply_async.assert_called_with(
-            trace,
+            trace_task_ret,
+            args=(job.type, job.id, job.request_dict, job.body,
+                  job.content_type, job.content_encoding),
+            accept_callback=job.on_accepted,
+            timeout_callback=job.on_timeout,
+            callback=job.on_success,
+            error_callback=job.on_failure,
+            soft_timeout=self.task.soft_time_limit,
+            timeout=self.task.time_limit,
+            correlation_id=job.id,
+        )
+        assert job._apply_result
+        weakref_ref.assert_called_with(self.pool.apply_async())
+        assert job._apply_result is weakref_ref()
+
+    def test_execute_using_pool_with_use_fast_trace_task(self):
+        self.app.use_fast_trace_task = True
+        weakref_ref = Mock(name='weakref.ref')
+        job = self.zRequest(id=uuid(), revoked_tasks=set(), ref=weakref_ref)
+        job.execute_using_pool(self.pool)
+        self.pool.apply_async.assert_called_with(
+            fast_trace_task,
             args=(job.type, job.id, job.request_dict, job.body,
                   job.content_type, job.content_encoding),
             accept_callback=job.on_accepted,
@@ -1158,7 +1267,6 @@ class test_create_request_class(RequestCase):
         assert job._apply_result is weakref_ref()
 
     def test_execute_using_pool_with_none_timelimit_header(self):
-        from celery.app.trace import trace_task_ret as trace
         weakref_ref = Mock(name='weakref.ref')
         job = self.zRequest(id=uuid(),
                             revoked_tasks=set(),
@@ -1166,7 +1274,7 @@ class test_create_request_class(RequestCase):
                             headers={'timelimit': None})
         job.execute_using_pool(self.pool)
         self.pool.apply_async.assert_called_with(
-            trace,
+            trace_task_ret,
             args=(job.type, job.id, job.request_dict, job.body,
                   job.content_type, job.content_encoding),
             accept_callback=job.on_accepted,
@@ -1183,8 +1291,8 @@ class test_create_request_class(RequestCase):
 
     def test_execute_using_pool__defaults_of_hybrid_to_proto2(self):
         weakref_ref = Mock(name='weakref.ref')
-        headers = strategy.hybrid_to_proto2('', {'id': uuid(),
-                                                 'task': self.mytask.name})[1]
+        headers = strategy.hybrid_to_proto2(Mock(headers=None), {'id': uuid(),
+                                                                 'task': self.mytask.name})[1]
         job = self.zRequest(revoked_tasks=set(), ref=weakref_ref, **headers)
         job.execute_using_pool(self.pool)
         assert job._apply_result

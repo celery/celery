@@ -1,20 +1,18 @@
-from __future__ import absolute_import, unicode_literals
-
 import sys
 import types
 from contextlib import contextmanager
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, mock, patch, skip
+from case import mock
 from kombu.utils.encoding import ensure_bytes, str_to_bytes
 
 from celery import signature, states, uuid
 from celery.backends.cache import CacheBackend, DummyClient, backends
 from celery.exceptions import ImproperlyConfigured
-from celery.five import PY3, bytes_if_py2, items, string, text_t
 
 
-class SomeClass(object):
+class SomeClass:
 
     def __init__(self, data):
         self.data = data
@@ -36,6 +34,16 @@ class test_CacheBackend:
         self.app.conf.cache_backend = None
         with pytest.raises(ImproperlyConfigured):
             CacheBackend(backend=None, app=self.app)
+
+    def test_memory_client_is_shared(self):
+        """This test verifies that memory:// backend state is shared over multiple threads"""
+        from threading import Thread
+        t = Thread(
+            target=lambda: CacheBackend(backend='memory://', app=self.app).set('test', 12345)
+        )
+        t.start()
+        t.join()
+        assert self.tb.client.get('test') == 12345
 
     def test_mark_as_done(self):
         assert self.tb.get_state(self.tid) == states.PENDING
@@ -63,12 +71,12 @@ class test_CacheBackend:
 
     def test_apply_chord(self):
         tb = CacheBackend(backend='memory://', app=self.app)
-        result = self.app.GroupResult(
+        result_args = (
             uuid(),
             [self.app.AsyncResult(uuid()) for _ in range(3)],
         )
-        tb.apply_chord(result, None)
-        assert self.app.GroupResult.restore(result.id, backend=tb) == result
+        tb.apply_chord(result_args, None)
+        assert self.app.GroupResult.restore(result_args[0], backend=tb) == self.app.GroupResult(*result_args)
 
     @patch('celery.result.GroupResult.restore')
     def test_on_chord_part_return(self, restore):
@@ -83,12 +91,12 @@ class test_CacheBackend:
         self.app.tasks['foobarbaz'] = task
         task.request.chord = signature(task)
 
-        result = self.app.GroupResult(
+        result_args = (
             uuid(),
             [self.app.AsyncResult(uuid()) for _ in range(3)],
         )
-        task.request.group = result.id
-        tb.apply_chord(result, None)
+        task.request.group = result_args[0]
+        tb.apply_chord(result_args, None)
 
         deps.join_native.assert_not_called()
         tb.on_chord_part_return(task.request, 'SUCCESS', 10)
@@ -134,8 +142,8 @@ class test_CacheBackend:
         b = CacheBackend(backend=backend, app=self.app)
         assert b.as_uri() == backend
 
-    @skip.unless_module('memcached', name='python-memcached')
     def test_regression_worker_startup_info(self):
+        pytest.importorskip('memcached')
         self.app.conf.result_backend = (
             'cache+memcached://127.0.0.1:11211;127.0.0.2:11211;127.0.0.3/'
         )
@@ -152,23 +160,20 @@ class MyMemcachedStringEncodingError(Exception):
 class MemcachedClient(DummyClient):
 
     def set(self, key, value, *args, **kwargs):
-        if PY3:
-            key_t, must_be, not_be, cod = bytes, 'string', 'bytes', 'decode'
-        else:
-            key_t, must_be, not_be, cod = text_t, 'bytes', 'string', 'encode'
+        key_t, must_be, not_be, cod = bytes, 'string', 'bytes', 'decode'
+
         if isinstance(key, key_t):
             raise MyMemcachedStringEncodingError(
-                'Keys must be {0}, not {1}.  Convert your '
-                'strings using mystring.{2}(charset)!'.format(
-                    must_be, not_be, cod))
-        return super(MemcachedClient, self).set(key, value, *args, **kwargs)
+                f'Keys must be {must_be}, not {not_be}.  Convert your '
+                f'strings using mystring.{cod}(charset)!')
+        return super().set(key, value, *args, **kwargs)
 
 
-class MockCacheMixin(object):
+class MockCacheMixin:
 
     @contextmanager
     def mock_memcache(self):
-        memcache = types.ModuleType(bytes_if_py2('memcache'))
+        memcache = types.ModuleType('memcache')
         memcache.Client = MemcachedClient
         memcache.Client.__module__ = memcache.__name__
         prev, sys.modules['memcache'] = sys.modules.get('memcache'), memcache
@@ -180,7 +185,7 @@ class MockCacheMixin(object):
 
     @contextmanager
     def mock_pylibmc(self):
-        pylibmc = types.ModuleType(bytes_if_py2('pylibmc'))
+        pylibmc = types.ModuleType('pylibmc')
         pylibmc.Client = MemcachedClient
         pylibmc.Client.__module__ = pylibmc.__name__
         prev = sys.modules.get('pylibmc')
@@ -230,7 +235,7 @@ class test_get_best_memcache(MockCacheMixin):
     def test_backends(self):
         from celery.backends.cache import backends
         with self.mock_memcache():
-            for name, fun in items(backends):
+            for name, fun in backends.items():
                 assert fun()
 
 
@@ -242,7 +247,7 @@ class test_memcache_key(MockCacheMixin):
                 with mock.mask_modules('pylibmc'):
                     from celery.backends import cache
                     cache._imp = [None]
-                    task_id, result = string(uuid()), 42
+                    task_id, result = str(uuid()), 42
                     b = cache.CacheBackend(backend='memcache', app=self.app)
                     b.store_result(task_id, result, state=states.SUCCESS)
                     assert b.get_result(task_id) == result
@@ -263,7 +268,7 @@ class test_memcache_key(MockCacheMixin):
             with self.mock_pylibmc():
                 from celery.backends import cache
                 cache._imp = [None]
-                task_id, result = string(uuid()), 42
+                task_id, result = str(uuid()), 42
                 b = cache.CacheBackend(backend='memcache', app=self.app)
                 b.store_result(task_id, result, state=states.SUCCESS)
                 assert b.get_result(task_id) == result

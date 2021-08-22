@@ -1,28 +1,14 @@
-# -*- coding: utf-8 -*-
 """Configuration introspection and defaults."""
-from __future__ import absolute_import, unicode_literals
-
-import sys
 from collections import deque, namedtuple
 from datetime import timedelta
 
-from celery.five import items, keys, python_2_unicode_compatible
 from celery.utils.functional import memoize
 from celery.utils.serialization import strtobool
 
 __all__ = ('Option', 'NAMESPACES', 'flatten', 'find')
 
-is_jython = sys.platform.startswith('java')
-is_pypy = hasattr(sys, 'pypy_version_info')
 
 DEFAULT_POOL = 'prefork'
-if is_jython:
-    DEFAULT_POOL = 'solo'
-elif is_pypy:
-    if sys.pypy_version_info[0:3] < (1, 5, 0):
-        DEFAULT_POOL = 'solo'
-    else:
-        DEFAULT_POOL = 'prefork'
 
 DEFAULT_ACCEPT_CONTENT = ['json']
 DEFAULT_PROCESS_LOG_FMT = """
@@ -43,18 +29,17 @@ searchresult = namedtuple('searchresult', ('namespace', 'key', 'type'))
 
 def Namespace(__old__=None, **options):
     if __old__ is not None:
-        for key, opt in items(options):
+        for key, opt in options.items():
             if not opt.old:
                 opt.old = {o.format(key) for o in __old__}
     return options
 
 
 def old_ns(ns):
-    return {'{0}_{{0}}'.format(ns)}
+    return {f'{ns}_{{0}}'}
 
 
-@python_2_unicode_compatible
-class Option(object):
+class Option:
     """Describes a Celery configuration option."""
 
     alt = None
@@ -67,15 +52,15 @@ class Option(object):
     def __init__(self, default=None, *args, **kwargs):
         self.default = default
         self.type = kwargs.get('type') or 'string'
-        for attr, value in items(kwargs):
+        for attr, value in kwargs.items():
             setattr(self, attr, value)
 
     def to_python(self, value):
         return self.typemap[self.type](value)
 
     def __repr__(self):
-        return '<Option: type->{0} default->{1!r}>'.format(self.type,
-                                                           self.default)
+        return '<Option: type->{} default->{!r}>'.format(self.type,
+                                                         self.default)
 
 
 NAMESPACES = Namespace(
@@ -147,6 +132,7 @@ NAMESPACES = Namespace(
         retry_initial_backoff_sec=Option(2, type='int'),
         retry_increment_base=Option(2, type='int'),
         retry_max_attempts=Option(3, type='int'),
+        base_path=Option('', type='string'),
     ),
     control=Namespace(
         queue_ttl=Option(300.0, type='float'),
@@ -190,6 +176,7 @@ NAMESPACES = Namespace(
         db=Option(type='int'),
         host=Option(type='string'),
         max_connections=Option(type='int'),
+        username=Option(type='string'),
         password=Option(type='string'),
         port=Option(type='int'),
         socket_timeout=Option(120.0, type='float'),
@@ -231,11 +218,6 @@ NAMESPACES = Namespace(
         timeout=Option(type='float'),
         save_meta_as_text=Option(True, type='bool'),
     ),
-    riak=Namespace(
-        __old__=old_ns('celery_riak'),
-
-        backend_settings=Option(type='dict'),
-    ),
     security=Namespace(
         __old__=old_ns('celery_security'),
 
@@ -275,6 +257,7 @@ NAMESPACES = Namespace(
             False, type='bool', old={'celery_eager_propagates_exceptions'},
         ),
         ignore_result=Option(False, type='bool'),
+        store_eager_result=Option(False, type='bool'),
         protocol=Option(2, type='int', old={'celery_task_protocol'}),
         publish_retry=Option(
             True, type='bool', old={'celery_task_publish_retry'},
@@ -287,7 +270,6 @@ NAMESPACES = Namespace(
             type='dict', old={'celery_task_publish_retry_policy'},
         ),
         queues=Option(type='dict'),
-        queue_ha_policy=Option(None, type='string'),
         queue_max_priority=Option(None, type='int'),
         reject_on_worker_lost=Option(type='bool'),
         remote_tracebacks=Option(False, type='bool'),
@@ -309,11 +291,17 @@ NAMESPACES = Namespace(
         __old__=OLD_NS_WORKER,
         agent=Option(None, type='string'),
         autoscaler=Option('celery.worker.autoscale:Autoscaler'),
-        concurrency=Option(0, type='int'),
+        cancel_long_running_tasks_on_connection_loss=Option(
+            False, type='bool'
+        ),
+        concurrency=Option(None, type='int'),
         consumer=Option('celery.worker.consumer:Consumer', type='string'),
         direct=Option(False, type='bool', old={'celery_worker_direct'}),
         disable_rate_limits=Option(
             False, type='bool', old={'celery_disable_rate_limits'},
+        ),
+        deduplicate_successful_tasks=Option(
+            False, type='bool'
         ),
         enable_remote_control=Option(
             True, type='bool', old={'celery_enable_remote_control'},
@@ -364,12 +352,11 @@ def flatten(d, root='', keyfilter=_flatten_keys):
     stack = deque([(root, d)])
     while stack:
         ns, options = stack.popleft()
-        for key, opt in items(options):
+        for key, opt in options.items():
             if isinstance(opt, dict):
                 stack.append((ns + key + '_', opt))
             else:
-                for ret in keyfilter(ns, key, opt):
-                    yield ret
+                yield from keyfilter(ns, key, opt)
 
 
 DEFAULTS = {
@@ -381,18 +368,18 @@ _TO_OLD_KEY = {new_key: old_key for old_key, new_key, _ in __compat}
 _TO_NEW_KEY = {old_key: new_key for old_key, new_key, _ in __compat}
 __compat = None
 
-SETTING_KEYS = set(keys(DEFAULTS))
-_OLD_SETTING_KEYS = set(keys(_TO_NEW_KEY))
+SETTING_KEYS = set(DEFAULTS.keys())
+_OLD_SETTING_KEYS = set(_TO_NEW_KEY.keys())
 
 
 def find_deprecated_settings(source):  # pragma: no cover
     from celery.utils import deprecated
     for name, opt in flatten(NAMESPACES):
         if (opt.deprecate_by or opt.remove_by) and getattr(source, name, None):
-            deprecated.warn(description='The {0!r} setting'.format(name),
+            deprecated.warn(description=f'The {name!r} setting',
                             deprecation=opt.deprecate_by,
                             removal=opt.remove_by,
-                            alternative='Use the {0.alt} instead'.format(opt))
+                            alternative=f'Use the {opt.alt} instead')
     return source
 
 
@@ -407,7 +394,7 @@ def find(name, namespace='celery'):
         )
     except KeyError:
         # - Try all the other namespaces.
-        for ns, opts in items(NAMESPACES):
+        for ns, opts in NAMESPACES.items():
             if ns.lower() == name.lower():
                 return searchresult(None, ns, opts)
             elif isinstance(opts, dict):

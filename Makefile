@@ -1,12 +1,11 @@
 PROJ=celery
 PGPIDENT="Celery Security Team"
 PYTHON=python
-PYTEST=py.test
+PYTEST=pytest
 GIT=git
 TOX=tox
 ICONV=iconv
 FLAKE8=flake8
-PYDOCSTYLE=pydocstyle
 PYROMA=pyroma
 FLAKEPLUS=flakeplus
 SPHINX2RST=sphinx2rst
@@ -42,7 +41,6 @@ help:
 	@echo "    flakes --------  - Check code for syntax and style errors."
 	@echo "      flakecheck     - Run flake8 on the source code."
 	@echo "      flakepluscheck - Run flakeplus on the source code."
-	@echo "      pep257check    - Run pep257 on the source code."
 	@echo "readme               - Regenerate README.rst file."
 	@echo "contrib              - Regenerate CONTRIBUTING.rst file"
 	@echo "clean-dist --------- - Clean all distribution build artifacts."
@@ -92,9 +90,6 @@ configcheck:
 flakecheck:
 	$(FLAKE8) "$(PROJ)" "$(TESTDIR)"
 
-pep257check:
-	$(PYDOCSTYLE) "$(PROJ)"
-
 flakediag:
 	-$(MAKE) flakecheck
 
@@ -104,7 +99,7 @@ flakepluscheck:
 flakeplusdiag:
 	-$(MAKE) flakepluscheck
 
-flakes: flakediag flakeplusdiag pep257check
+flakes: flakediag flakeplusdiag
 
 clean-readme:
 	-rm -f $(README)

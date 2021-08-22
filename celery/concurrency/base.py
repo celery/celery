@@ -1,17 +1,14 @@
-# -*- coding: utf-8 -*-
 """Base Execution Pool."""
-from __future__ import absolute_import, unicode_literals
-
 import logging
 import os
 import sys
+import time
 
 from billiard.einfo import ExceptionInfo
 from billiard.exceptions import WorkerLostError
 from kombu.utils.encoding import safe_repr
 
-from celery.exceptions import WorkerShutdown, WorkerTerminate
-from celery.five import monotonic, reraise
+from celery.exceptions import WorkerShutdown, WorkerTerminate, reraise
 from celery.utils import timer2
 from celery.utils.log import get_logger
 from celery.utils.text import truncate
@@ -23,7 +20,7 @@ logger = get_logger('celery.pool')
 
 def apply_target(target, args=(), kwargs=None, callback=None,
                  accept_callback=None, pid=None, getpid=os.getpid,
-                 propagate=(), monotonic=monotonic, **_):
+                 propagate=(), monotonic=time.monotonic, **_):
     """Apply function within pool context."""
     kwargs = {} if not kwargs else kwargs
     if accept_callback:
@@ -46,7 +43,7 @@ def apply_target(target, args=(), kwargs=None, callback=None,
         callback(ret)
 
 
-class BasePool(object):
+class BasePool:
     """Task pool."""
 
     RUN = 0x1
@@ -113,11 +110,11 @@ class BasePool(object):
 
     def terminate_job(self, pid, signal=None):
         raise NotImplementedError(
-            '{0} does not implement kill_job'.format(type(self)))
+            f'{type(self)} does not implement kill_job')
 
     def restart(self):
         raise NotImplementedError(
-            '{0} does not implement restart'.format(type(self)))
+            f'{type(self)} does not implement restart')
 
     def stop(self):
         self.on_stop()

@@ -1,134 +1,72 @@
-# -*- coding: utf-8 -*-
-"""The :program:`celery beat` command.
-
-.. program:: celery beat
-
-.. seealso::
-
-    See :ref:`preload-options` and :ref:`daemon-options`.
-
-.. cmdoption:: --detach
-
-    Detach and run in the background as a daemon.
-
-.. cmdoption:: -s, --schedule
-
-    Path to the schedule database.  Defaults to `celerybeat-schedule`.
-    The extension '.db' may be appended to the filename.
-    Default is {default}.
-
-.. cmdoption:: -S, --scheduler
-
-    Scheduler class to use.
-    Default is :class:`{default}`.
-
-.. cmdoption:: --max-interval
-
-    Max seconds to sleep between schedule iterations.
-
-.. cmdoption:: -f, --logfile
-
-    Path to log file.  If no logfile is specified, `stderr` is used.
-
-.. cmdoption:: -l, --loglevel
-
-    Logging level, choose between `DEBUG`, `INFO`, `WARNING`,
-    `ERROR`, `CRITICAL`, or `FATAL`.
-
-.. cmdoption:: --pidfile
-
-    File used to store the process pid. Defaults to `celerybeat.pid`.
-
-    The program won't start if this file already exists
-    and the pid is still alive.
-
-.. cmdoption:: --uid
-
-    User id, or user name of the user to run as after detaching.
-
-.. cmdoption:: --gid
-
-    Group id, or group name of the main group to change to after
-    detaching.
-
-.. cmdoption:: --umask
-
-    Effective umask (in octal) of the process after detaching.  Inherits
-    the umask of the parent process by default.
-
-.. cmdoption:: --workdir
-
-    Optional directory to change to after detaching.
-
-.. cmdoption:: --executable
-
-    Executable to use for the detached process.
-"""
-from __future__ import absolute_import, unicode_literals
-
+"""The :program:`celery beat` command."""
 from functools import partial
 
-from celery.bin.base import Command, daemon_options
+import click
+
+from celery.bin.base import (LOG_LEVEL, CeleryDaemonCommand, CeleryOption,
+                             handle_preload_options)
 from celery.platforms import detached, maybe_drop_privileges
 
-__all__ = ('beat',)
 
-HELP = __doc__
+@click.command(cls=CeleryDaemonCommand, context_settings={
+    'allow_extra_args': True
+})
+@click.option('--detach',
+              cls=CeleryOption,
+              is_flag=True,
+              default=False,
+              help_group="Beat Options",
+              help="Detach and run in the background as a daemon.")
+@click.option('-s',
+              '--schedule',
+              cls=CeleryOption,
+              callback=lambda ctx, _, value: value or ctx.obj.app.conf.beat_schedule_filename,
+              help_group="Beat Options",
+              help="Path to the schedule database."
+                   "  Defaults to `celerybeat-schedule`."
+                   "The extension '.db' may be appended to the filename.")
+@click.option('-S',
+              '--scheduler',
+              cls=CeleryOption,
+              callback=lambda ctx, _, value: value or ctx.obj.app.conf.beat_scheduler,
+              help_group="Beat Options",
+              help="Scheduler class to use.")
+@click.option('--max-interval',
+              cls=CeleryOption,
+              type=int,
+              help_group="Beat Options",
+              help="Max seconds to sleep between schedule iterations.")
+@click.option('-l',
+              '--loglevel',
+              default='WARNING',
+              cls=CeleryOption,
+              type=LOG_LEVEL,
+              help_group="Beat Options",
+              help="Logging level.")
+@click.pass_context
+@handle_preload_options
+def beat(ctx, detach=False, logfile=None, pidfile=None, uid=None,
+         gid=None, umask=None, workdir=None, **kwargs):
+    """Start the beat periodic task scheduler."""
+    app = ctx.obj.app
 
+    if ctx.args:
+        try:
+            app.config_from_cmdline(ctx.args)
+        except (KeyError, ValueError) as e:
+            # TODO: Improve the error messages
+            raise click.UsageError("Unable to parse extra configuration"
+                                   " from command line.\n"
+                                   f"Reason: {e}", ctx=ctx)
 
-class beat(Command):
-    """Start the beat periodic task scheduler.
+    if not detach:
+        maybe_drop_privileges(uid=uid, gid=gid)
 
-    Examples:
-        .. code-block:: console
+    beat = partial(app.Beat,
+                   logfile=logfile, pidfile=pidfile, **kwargs)
 
-            $ celery beat -l info
-            $ celery beat -s /var/run/celery/beat-schedule --detach
-            $ celery beat -S django
-
-    The last example requires the :pypi:`django-celery-beat` extension
-    package found on PyPI.
-    """
-
-    doc = HELP
-    enable_config_from_cmdline = True
-    supports_args = False
-
-    def run(self, detach=False, logfile=None, pidfile=None, uid=None,
-            gid=None, umask=None, workdir=None, **kwargs):
-        if not detach:
-            maybe_drop_privileges(uid=uid, gid=gid)
-        kwargs.pop('app', None)
-        beat = partial(self.app.Beat,
-                       logfile=logfile, pidfile=pidfile, **kwargs)
-
-        if detach:
-            with detached(logfile, pidfile, uid, gid, umask, workdir):
-                return beat().run()
-        else:
+    if detach:
+        with detached(logfile, pidfile, uid, gid, umask, workdir):
             return beat().run()
-
-    def add_arguments(self, parser):
-        c = self.app.conf
-        bopts = parser.add_argument_group('Beat Options')
-        bopts.add_argument('--detach', action='store_true', default=False)
-        bopts.add_argument(
-            '-s', '--schedule', default=c.beat_schedule_filename)
-        bopts.add_argument('--max-interval', type=float)
-        bopts.add_argument('-S', '--scheduler', default=c.beat_scheduler)
-        bopts.add_argument('-l', '--loglevel', default='WARN')
-
-        daemon_options(parser, default_pidfile='celerybeat.pid')
-
-        user_options = self.app.user_options['beat']
-        if user_options:
-            uopts = parser.add_argument_group('User Options')
-            self.add_compat_options(uopts, user_options)
-
-
-def main(app=None):
-    beat(app=app).execute_from_commandline()
-
-
-if __name__ == '__main__':      # pragma: no cover
-    main()
+    else:
+        return beat().run()

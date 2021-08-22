@@ -1,13 +1,11 @@
-# -*- coding: utf-8 -*-
 """Task execution strategy (optimization)."""
-from __future__ import absolute_import, unicode_literals
-
 import logging
 
 from kombu.asynchronous.timer import to_timestamp
-from kombu.five import buffer_t
+from kombu.utils.encoding import safe_repr
 
 from celery import signals
+from celery.app import trace as _app_trace
 from celery.exceptions import InvalidTaskError
 from celery.utils.imports import symbol_by_name
 from celery.utils.log import get_logger
@@ -54,6 +52,7 @@ def hybrid_to_proto2(message, body):
         'kwargsrepr': body.get('kwargsrepr'),
         'origin': body.get('origin'),
     }
+    headers.update(message.headers or {})
 
     embed = {
         'callbacks': body.get('callbacks'),
@@ -100,7 +99,7 @@ def proto1_to_proto2(message, body):
 
 def default(task, app, consumer,
             info=logger.info, error=logger.error, task_reserved=task_reserved,
-            to_system_tz=timezone.to_system, bytes=bytes, buffer_t=buffer_t,
+            to_system_tz=timezone.to_system, bytes=bytes,
             proto1_to_proto2=proto1_to_proto2):
     """Default task execution strategy.
 
@@ -126,9 +125,8 @@ def default(task, app, consumer,
     handle = consumer.on_task_request
     limit_task = consumer._limit_task
     limit_post_eta = consumer._limit_post_eta
-    body_can_be_buffer = consumer.pool.body_can_be_buffer
     Request = symbol_by_name(task.Request)
-    Req = create_request_cls(Request, task, consumer.pool, hostname, eventer)
+    Req = create_request_cls(Request, task, consumer.pool, hostname, eventer, app=app)
 
     revoked_tasks = consumer.controller.state.revoked
 
@@ -138,8 +136,6 @@ def default(task, app, consumer,
             body, headers, decoded, utc = (
                 message.body, message.headers, False, app.uses_utc_timezone(),
             )
-            if not body_can_be_buffer:
-                body = bytes(body) if isinstance(body, buffer_t) else body
         else:
             if 'args' in message.payload:
                 body, headers, decoded, utc = hybrid_to_proto2(message,
@@ -154,7 +150,15 @@ def default(task, app, consumer,
             body=body, headers=headers, decoded=decoded, utc=utc,
         )
         if _does_info:
-            info('Received task: %s', req)
+            # Similar to `app.trace.info()`, we pass the formatting args as the
+            # `extra` kwarg for custom log handlers
+            context = {
+                'id': req.id,
+                'name': req.name,
+                'args': safe_repr(req.args),
+                'kwargs': safe_repr(req.kwargs),
+            }
+            info(_app_trace.LOG_RECEIVED, context, extra={'data': context})
         if (req.expires or req.id in revoked_tasks) and req.revoked():
             return
 

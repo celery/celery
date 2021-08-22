@@ -1,18 +1,16 @@
 """Integration testing utilities."""
-from __future__ import absolute_import, print_function, unicode_literals
-
 import socket
 import sys
 from collections import defaultdict
 from functools import partial
 from itertools import count
+from typing import Any, Callable, Dict, Sequence, TextIO, Tuple
 
 from kombu.utils.functional import retry_over_time
 
 from celery import states
 from celery.exceptions import TimeoutError
-from celery.five import items
-from celery.result import ResultSet
+from celery.result import AsyncResult, ResultSet
 from celery.utils.text import truncate
 from celery.utils.time import humanize_seconds as _humanize_seconds
 
@@ -25,7 +23,7 @@ class Sentinel(Exception):
     """Signifies the end of something."""
 
 
-class ManagerMixin(object):
+class ManagerMixin:
     """Mixin that adds :class:`Manager` capabilities."""
 
     def _init_manager(self,
@@ -40,18 +38,28 @@ class ManagerMixin(object):
 
     def remark(self, s, sep='-'):
         # type: (str, str) -> None
-        print('{0}{1}'.format(sep, s), file=self.stdout)
+        print(f'{sep}{s}', file=self.stdout)
 
     def missing_results(self, r):
         # type: (Sequence[AsyncResult]) -> Sequence[str]
         return [res.id for res in r if res.id not in res.backend._cache]
 
-    def wait_for(self, fun, catch,
-                 desc='thing', args=(), kwargs=None, errback=None,
-                 max_retries=10, interval_start=0.1, interval_step=0.5,
-                 interval_max=5.0, emit_warning=False, **options):
-        # type: (Callable, Sequence[Any], str, Tuple, Dict, Callable,
-        #        int, float, float, float, bool, **Any) -> Any
+    def wait_for(
+        self,
+        fun,  # type: Callable
+        catch,  # type: Sequence[Any]
+        desc="thing",  # type: str
+        args=(),  # type: Tuple
+        kwargs=None,  # type: Dict
+        errback=None,  # type: Callable
+        max_retries=10,  # type: int
+        interval_start=0.1,  # type: float
+        interval_step=0.5,  # type: float
+        interval_max=5.0,  # type: float
+        emit_warning=False,  # type: bool
+        **options  # type: Any
+    ):
+        # type: (...) -> Any
         """Wait for event to happen.
 
         The `catch` argument specifies the exception that means the event
@@ -92,7 +100,7 @@ class ManagerMixin(object):
         except catch:
             pass
         else:
-            raise AssertionError('Should not have happened: {0}'.format(desc))
+            raise AssertionError(f'Should not have happened: {desc}')
 
     def retry_over_time(self, *args, **kwargs):
         return retry_over_time(*args, **kwargs)
@@ -114,25 +122,25 @@ class ManagerMixin(object):
             except (socket.timeout, TimeoutError) as exc:
                 waiting_for = self.missing_results(r)
                 self.remark(
-                    'Still waiting for {0}/{1}: [{2}]: {3!r}'.format(
+                    'Still waiting for {}/{}: [{}]: {!r}'.format(
                         len(r) - len(received), len(r),
                         truncate(', '.join(waiting_for)), exc), '!',
                 )
             except self.connerrors as exc:
-                self.remark('join: connection lost: {0!r}'.format(exc), '!')
+                self.remark(f'join: connection lost: {exc!r}', '!')
         raise AssertionError('Test failed: Missing task results')
 
     def inspect(self, timeout=3.0):
         return self.app.control.inspect(timeout=timeout)
 
     def query_tasks(self, ids, timeout=0.5):
-        for reply in items(self.inspect(timeout).query_task(*ids) or {}):
-            yield reply
+        tasks = self.inspect(timeout).query_task(*ids) or {}
+        yield from tasks.items()
 
     def query_task_states(self, ids, timeout=0.5):
         states = defaultdict(set)
         for hostname, reply in self.query_tasks(ids, timeout=timeout):
-            for task_id, (state, _) in items(reply):
+            for task_id, (state, _) in reply.items():
                 states[state].add(task_id)
         return states
 

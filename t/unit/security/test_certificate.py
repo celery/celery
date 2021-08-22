@@ -1,10 +1,9 @@
-from __future__ import absolute_import, unicode_literals
-
 import datetime
 import os
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, mock, patch, skip
+from case import mock
 
 from celery.exceptions import SecurityError
 from celery.security.certificate import Certificate, CertStore, FSCertStore
@@ -31,7 +30,7 @@ class test_Certificate(SecurityCase):
         with pytest.raises(SecurityError):
             Certificate(KEY1)
 
-    @skip.todo(reason='cert expired')
+    @pytest.mark.skip('TODO: cert expired')
     def test_has_expired(self):
         assert not Certificate(CERT1).has_expired()
 
@@ -39,7 +38,7 @@ class test_Certificate(SecurityCase):
         x = Certificate(CERT1)
 
         x._cert = Mock(name='cert')
-        time_after = datetime.datetime.now() + datetime.timedelta(days=-1)
+        time_after = datetime.datetime.utcnow() + datetime.timedelta(days=-1)
         x._cert.not_valid_after = time_after
 
         assert x.has_expired() is True
@@ -48,7 +47,7 @@ class test_Certificate(SecurityCase):
         x = Certificate(CERT1)
 
         x._cert = Mock(name='cert')
-        time_after = datetime.datetime.now() + datetime.timedelta(days=1)
+        time_after = datetime.datetime.utcnow() + datetime.timedelta(days=1)
         x._cert.not_valid_after = time_after
 
         assert x.has_expired() is False
