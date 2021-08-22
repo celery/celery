@@ -1440,6 +1440,16 @@ The default value is the class provided by Celery: ``'celery.app.task:Task'``.
 Handlers
 --------
 
+.. method:: before_start(self, task_id, args, kwargs)
+
+    Run by the worker before the task starts executing.
+
+    :param task_id: Unique id of the task to execute.
+    :param args: Original arguments for the executed task.
+    :param kwargs: Original keyword arguments for the executed task.
+
+    The return value of this handler is ignored.
+
 .. method:: after_return(self, status, retval, task_id, args, kwargs, einfo)
 
     Handler called after the task returns.
