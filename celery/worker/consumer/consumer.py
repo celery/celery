@@ -33,6 +33,7 @@ from celery.utils.time import humanize_seconds, rate
 from celery.worker import loops
 from celery.worker.state import (active_requests, maybe_shutdown,
                                  reserved_requests, task_reserved)
+from celery.exceptions import WorkerShutdown
 
 __all__ = ('Consumer', 'Evloop', 'dump_body')
 
@@ -588,7 +589,8 @@ class Consumer:
                         try:
                             return message.ack_log_error(logger, errors, multiple)
                         except BrokenPipeError:
-                            maybe_shutdown()
+                            logger.exception("Shutting down worker on BrokenPipError")
+                            raise WorkerShutdown(1)
 
                     strategy(
                         message, payload,
