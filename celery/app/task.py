@@ -977,8 +977,8 @@ class Task:
 
         Arguments:
             task_id (str): Unique id of the task to execute.
-            args (Tuple): Original arguments for the retried task.
-            kwargs (Dict): Original keyword arguments for the retried task.
+            args (Tuple): Original arguments for the task to execute.
+            kwargs (Dict): Original keyword arguments for the task to execute.
 
         Returns:
             None: The return value of this handler is ignored.

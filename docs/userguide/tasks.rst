@@ -1444,9 +1444,11 @@ Handlers
 
     Run by the worker before the task starts executing.
 
+    .. versionadded:: 5.2
+
     :param task_id: Unique id of the task to execute.
-    :param args: Original arguments for the executed task.
-    :param kwargs: Original keyword arguments for the executed task.
+    :param args: Original arguments for the task to execute.
+    :param kwargs: Original keyword arguments for the task to execute.
 
     The return value of this handler is ignored.
 
