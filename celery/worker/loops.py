@@ -26,7 +26,7 @@ def _quick_drain(connection, timeout=0.1):
 
 
 def _enable_amqheartbeats(timer, connection, rate=2.0):
-    heartbeat_error = [None]
+    heartbeat_error = None
 
     if not connection:
         return heartbeat_error
@@ -39,7 +39,7 @@ def _enable_amqheartbeats(timer, connection, rate=2.0):
         try:
             connection.heartbeat_check(rate)
         except Exception as e:
-            heartbeat_error[0] = e
+            heartbeat_error = e
 
     timer.call_repeatedly(heartbeat / rate, tick, (rate,))
     return heartbeat_error
@@ -109,7 +109,7 @@ def synloop(obj, connection, consumer, blueprint, hub, qos,
     RUN = bootsteps.RUN
     on_task_received = obj.create_task_handler()
     perform_pending_operations = obj.perform_pending_operations
-    heartbeat_error = [None]
+    heartbeat_error = None
     if getattr(obj.pool, 'is_green', False):
         heartbeat_error = _enable_amqheartbeats(obj.timer, connection, rate=hbrate)
     consumer.on_message = on_task_received
@@ -119,8 +119,8 @@ def synloop(obj, connection, consumer, blueprint, hub, qos,
 
     while blueprint.state == RUN and obj.connection:
         state.maybe_shutdown()
-        if heartbeat_error[0] is not None:
-            raise heartbeat_error[0]
+        if heartbeat_error:
+            raise heartbeat_error
         if qos.prev != qos.value:
             qos.update()
         try:
