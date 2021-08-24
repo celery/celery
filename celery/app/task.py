@@ -975,6 +975,8 @@ class Task:
     def before_start(self, task_id, args, kwargs):
         """Handler called before the task starts.
 
+        .. versionadded:: 5.2
+
         Arguments:
             task_id (str): Unique id of the task to execute.
             args (Tuple): Original arguments for the task to execute.
