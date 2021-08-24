@@ -435,6 +435,7 @@ class test_asynloop:
         x.connection.heartbeat_check = Mock(
             side_effect=RuntimeError("Heartbeat error")
         )
+
         def call_repeatedly(rate, fn, args):
             fn(*args)
 
@@ -503,7 +504,7 @@ class test_synloop:
 
         def call_repeatedly(rate, fn, args):
             fn(*args)
-        
+
         x.connection.heartbeat_check = Mock(
             name='heartbeat_check', side_effect=heartbeat_check
         )
