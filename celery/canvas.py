@@ -57,6 +57,15 @@ def task_name_from(task):
     return getattr(task, 'name', task)
 
 
+try:
+    from kombu.utils.yaml import register_yaml_decoder
+except ImportError:
+    # kombu < 5.2 or pyyaml not installed.
+    def register_yaml_decoder(klass):
+        return klass
+
+
+@register_yaml_decoder
 @abstract.CallableSignature.register
 class Signature(dict):
     """Task Signature.
