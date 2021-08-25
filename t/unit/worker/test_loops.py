@@ -158,7 +158,7 @@ class test_asynloop:
         asynloop(*x.args)
         x.consumer.consume.assert_called_with()
         x.obj.on_ready.assert_called_with()
-        last_call_args = x.hub.timer.call_repeatedly.call_args.args
+        last_call_args, _ = x.hub.timer.call_repeatedly.call_args
 
         assert last_call_args[0] == 10 / 2.0
         assert last_call_args[2] == (2.0,)
