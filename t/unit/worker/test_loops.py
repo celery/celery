@@ -158,9 +158,10 @@ class test_asynloop:
         asynloop(*x.args)
         x.consumer.consume.assert_called_with()
         x.obj.on_ready.assert_called_with()
-        x.hub.timer.call_repeatedly.assert_called_with(
-            10 / 2.0, x.connection.heartbeat_check, (2.0,),
-        )
+        last_call_args, _ = x.hub.timer.call_repeatedly.call_args
+
+        assert last_call_args[0] == 10 / 2.0
+        assert last_call_args[2] == (2.0,)
 
     def task_context(self, sig, **kwargs):
         x, on_task = get_task_callback(self.app, **kwargs)
@@ -429,6 +430,30 @@ class test_asynloop:
         asynloop(*x.args)
         poller.poll.assert_called()
 
+    def test_heartbeat_error(self):
+        x = X(self.app, heartbeat=10)
+        x.connection.heartbeat_check = Mock(
+            side_effect=RuntimeError("Heartbeat error")
+        )
+
+        def call_repeatedly(rate, fn, args):
+            fn(*args)
+
+        x.hub.timer.call_repeatedly = call_repeatedly
+        with pytest.raises(RuntimeError):
+            asynloop(*x.args)
+
+    def test_no_heartbeat_support(self):
+        x = X(self.app)
+        x.connection.supports_heartbeats = False
+        x.hub.timer.call_repeatedly = Mock(
+            name='x.hub.timer.call_repeatedly()'
+        )
+        x.hub.on_tick.add(x.closer(mod=2))
+        asynloop(*x.args)
+
+        x.hub.timer.call_repeatedly.assert_not_called()
+
 
 class test_synloop:
 
@@ -458,6 +483,49 @@ class test_synloop:
         x = X(self.app)
         x.close_then_error(x.connection.drain_events)
         assert synloop(*x.args) is None
+
+    def test_no_connection(self):
+        x = X(self.app)
+        x.connection = None
+        x.hub.timer.call_repeatedly = Mock(
+            name='x.hub.timer.call_repeatedly()'
+        )
+        x.blueprint.state = CLOSE
+        synloop(*x.args)
+
+        x.hub.timer.call_repeatedly.assert_not_called()
+
+    def test_heartbeat_error(self):
+        x = X(self.app, heartbeat=10)
+        x.obj.pool.is_green = True
+
+        def heartbeat_check(rate):
+            raise RuntimeError('Heartbeat error')
+
+        def call_repeatedly(rate, fn, args):
+            fn(*args)
+
+        x.connection.heartbeat_check = Mock(
+            name='heartbeat_check', side_effect=heartbeat_check
+        )
+        x.obj.timer.call_repeatedly = call_repeatedly
+        with pytest.raises(RuntimeError):
+            synloop(*x.args)
+
+    def test_no_heartbeat_support(self):
+        x = X(self.app)
+        x.connection.supports_heartbeats = False
+        x.obj.pool.is_green = True
+        x.obj.timer.call_repeatedly = Mock(
+            name='x.obj.timer.call_repeatedly()'
+        )
+
+        def drain_events(timeout):
+            x.blueprint.state = CLOSE
+        x.connection.drain_events.side_effect = drain_events
+        synloop(*x.args)
+
+        x.obj.timer.call_repeatedly.assert_not_called()
 
 
 class test_quick_drain:
