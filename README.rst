@@ -59,7 +59,7 @@ What do I need?
 
 Celery version 5.2.0b2 runs on,
 
-- Python (3.7, 3.8, 3.9, 3.10)
+- Python (3.7, 3.8, 3.9)
 - PyPy3.7 (7.3+)
 
 
