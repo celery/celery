@@ -26,9 +26,6 @@ jobs:
       matrix:
         python-version: ['3.7', '3.8', '3.9', '3.10.0-rc.1', 'pypy-3.7']
         os: ["ubuntu-20.04", "windows-2019"]
-        exclude:
-          - os: windows-2019
-            python-version: 'pypy-3.6'
 
     steps:
     - name: Install apt packages
