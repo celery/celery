@@ -83,7 +83,7 @@ class test_ArangoDbBackend:
         assert x.collection == 'celery_collection'
         assert x.http_protocol == 'https'
         assert x.arangodb_url == 'https://test.arangodb.com:8529'
-        assert x.verify == True
+        assert x.verify is True
 
     def test_backend_by_url(
         self, url="arangodb://username:password@host:port/database/collection"
@@ -108,7 +108,7 @@ class test_ArangoDbBackend:
             assert x.collection == 'celery_collection'
             assert x.http_protocol == 'http'
             assert x.arangodb_url == 'http://test.arangodb.com:8529'
-            assert x.verify == False
+            assert x.verify is False
 
     def test_backend_cleanup(self):
         now = datetime.datetime.utcnow()
