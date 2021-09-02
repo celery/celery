@@ -45,6 +45,11 @@ and is also supported on PyPy3.
 Preface
 =======
 
+.. note::
+
+    This release contains fixes for two (potentially severe) memory leaks.
+    We encourage our users to upgrade to this release as soon as possible.
+
 The 5.2.0 release is a new minor release for Celery.
 
 Releases in the 5.x series are codenamed after songs of `Jon Hopkins <https://en.wikipedia.org/wiki/Jon_Hopkins>`_.
@@ -150,6 +155,34 @@ The supported Python versions are:
 
 Important Notes
 ---------------
+
+Memory Leak Fixes
+~~~~~~~~~~~~~~~~~
+
+Two severe memory leaks have been fixed in this version:
+
+* :class:`celery.result.ResultSet` no longer holds a circular reference to itself.
+* The prefork pool no longer keeps messages in its cache forever when the master
+  process disconnects from the broker.
+
+The first memory leak occurs when you use :class:`celery.result.ResultSet`.
+Each instance held a promise which provides that instance as an argument to
+the promise's callable.
+This caused a circular reference which kept the ResultSet instance in memory
+forever since the GC couldn't evict it.
+The provided argument is now a :func:`weakref.proxy` of the ResultSet's
+instance.
+The memory leak mainly occurs when you use :class:`celery.result.GroupResult`
+since it inherits from :class:`celery.result.ResultSet` which doesn't get used
+that often.
+
+The second memory leak exists since the inception of the project.
+The prefork pool maintains a cache of the jobs it executes.
+When they are done, they are evicted from the cache.
+However, when Celery disconnects from the broker, we flush the pool
+and discard the jobs, expecting that they'll be cleared later once the worker
+acks them but that has never been the case.
+Instead, these jobs remain forever in memory.
 
 Kombu
 ~~~~~
