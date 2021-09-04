@@ -718,6 +718,7 @@ def set_pdeathsig(name):
             # We ignore when OS does not support set_pdeathsig
             pass
 
+
 def set_process_title(progname, info=None):
     """Set the :command:`ps` name for the currently running process.
 
