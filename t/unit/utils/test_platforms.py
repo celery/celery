@@ -18,9 +18,9 @@ from celery.platforms import (ASSUMING_ROOT, ROOT_DISALLOWED,
                               close_open_fds, create_pidlock, detached,
                               fd_by_path, get_fdmax, ignore_errno, initgroups,
                               isatty, maybe_drop_privileges, parse_gid,
-                              parse_uid, set_mp_process_title,
+                              parse_uid, set_mp_process_title, set_pdeathsig,
                               set_process_title, setgid, setgroups, setuid,
-                              signals, set_pdeathsig)
+                              signals)
 from celery.utils.text import WhateverIO
 
 try:

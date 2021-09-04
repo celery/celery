@@ -1,12 +1,12 @@
 import errno
 import os
-import socket
 import signal
+import socket
 from itertools import cycle
 from unittest.mock import Mock, patch
 
-from billiard.util import set_pdeathsig
 import pytest
+from billiard.util import set_pdeathsig
 from case import mock
 
 import t.skip
