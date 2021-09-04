@@ -20,7 +20,7 @@ from celery.platforms import (ASSUMING_ROOT, ROOT_DISALLOWED,
                               isatty, maybe_drop_privileges, parse_gid,
                               parse_uid, set_mp_process_title,
                               set_process_title, setgid, setgroups, setuid,
-                              signals)
+                              signals, set_pdeathsig)
 from celery.utils.text import WhateverIO
 
 try:
@@ -168,6 +168,18 @@ class test_Signals:
     def test_setitem_raises(self, set):
         set.side_effect = ValueError()
         signals['INT'] = lambda *a: a
+
+
+class test_set_pdeathsig:
+
+    def test_call(self):
+        set_pdeathsig('SIGKILL')
+
+    @t.skip.if_win32
+    def test_call_with_correct_parameter(self):
+        with patch('celery.platforms._set_pdeathsig') as _set_pdeathsig:
+            set_pdeathsig('SIGKILL')
+            _set_pdeathsig.assert_called_once_with(signal.SIGKILL)
 
 
 @t.skip.if_win32
