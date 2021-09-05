@@ -53,11 +53,18 @@ class MockResult:
         return self.value
 
 
+@patch('celery.platforms.set_mp_process_title')
 class test_process_initializer:
 
+    @staticmethod
+    def Loader(*args, **kwargs):
+        loader = Mock(*args, **kwargs)
+        loader.conf = {}
+        loader.override_backends = {}
+        return loader
+
     @patch('celery.platforms.signals')
-    @patch('celery.platforms.set_mp_process_title')
-    def test_process_initializer(self, set_mp_process_title, _signals):
+    def test_process_initializer(self, _signals, set_mp_process_title):
         with mock.restore_logging():
             from celery import signals
             from celery._state import _tls
@@ -67,13 +74,7 @@ class test_process_initializer:
             on_worker_process_init = Mock()
             signals.worker_process_init.connect(on_worker_process_init)
 
-            def Loader(*args, **kwargs):
-                loader = Mock(*args, **kwargs)
-                loader.conf = {}
-                loader.override_backends = {}
-                return loader
-
-            with self.Celery(loader=Loader) as app:
+            with self.Celery(loader=self.Loader) as app:
                 app.conf = AttributeDict(DEFAULTS)
                 process_initializer(app, 'awesome.worker.com')
                 _signals.ignore.assert_any_call(*WORKER_SIGIGNORE)
@@ -99,6 +100,19 @@ class test_process_initializer:
                     process_initializer(app, 'luke.worker.com')
                 finally:
                     os.environ.pop('CELERY_LOG_FILE', None)
+
+    @patch('celery.platforms.set_pdeathsig')
+    def test_pdeath_sig(self, _set_pdeathsig, set_mp_process_title):
+        with mock.restore_logging():
+            from celery import signals
+            on_worker_process_init = Mock()
+            signals.worker_process_init.connect(on_worker_process_init)
+            from celery.concurrency.prefork import process_initializer
+
+            with self.Celery(loader=self.Loader) as app:
+                app.conf = AttributeDict(DEFAULTS)
+                process_initializer(app, 'awesome.worker.com')
+            _set_pdeathsig.assert_called_once_with('SIGKILL')
 
 
 class test_process_destructor:

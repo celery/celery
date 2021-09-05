@@ -17,6 +17,7 @@ from collections import namedtuple
 from contextlib import contextmanager
 
 from billiard.compat import close_open_fds, get_fdmax
+from billiard.util import set_pdeathsig as _set_pdeathsig
 # fileno used to be in this module
 from kombu.utils.compat import maybe_fileno
 from kombu.utils.encoding import safe_str
@@ -706,6 +707,16 @@ def strargv(argv):
     if len(argv) > arg_start:
         return ' '.join(argv[arg_start:])
     return ''
+
+
+def set_pdeathsig(name):
+    """Sends signal ``name`` to process when parent process terminates."""
+    if signals.supported('SIGKILL'):
+        try:
+            _set_pdeathsig(signals.signum('SIGKILL'))
+        except OSError:
+            # We ignore when OS does not support set_pdeathsig
+            pass
 
 
 def set_process_title(progname, info=None):
