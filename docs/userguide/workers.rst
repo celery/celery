@@ -97,6 +97,11 @@ longer version:
 
     $ ps auxww | awk '/celery worker/ {print $2}' | xargs kill -9
 
+.. versionchanged:: 5.2
+    On Linux systems, Celery now supports sending :sig:`KILL` signal to all child processes
+    after worker termination. This is done via `PR_SET_PDEATHSIG` option of ``prctl(2)``.
+
+
 .. _worker-restarting:
 
 Restarting the worker
