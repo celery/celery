@@ -51,10 +51,10 @@ HEARTBEAT_EXPIRE_WINDOW = 200
 #: before we alert that clocks may be unsynchronized.
 HEARTBEAT_DRIFT_MAX = 16
 
-DRIFT_WARNING = """\
-Substantial drift from %s may mean clocks are out of sync.  Current drift is
-%s seconds.  [orig: %s recv: %s]
-"""
+DRIFT_WARNING = (
+    "Substantial drift from %s may mean clocks are out of sync.  Current drift is "
+    "%s seconds.  [orig: %s recv: %s]"
+)
 
 logger = get_logger(__name__)
 warn = logger.warning
