@@ -733,7 +733,15 @@ class Celery:
         options = router.route(
             options, route_name or name, args, kwargs, task_type)
         if expires is not None:
-            options["expiration"] = expires
+            if isinstance(expires, datetime.datetime):
+                expires_s = (expires - self.now()).total_seconds()
+            else:
+                expires_s = expires
+
+            if expires_s < 0:
+                expires_s = 0
+
+            options["expiration"] = expires_s
 
         if not root_id or not parent_id:
             parent = self.current_worker_task
