@@ -732,6 +732,8 @@ class Celery:
         ignore_result = options.pop('ignore_result', False)
         options = router.route(
             options, route_name or name, args, kwargs, task_type)
+        if expires is not None:
+            options["expiration"] = expires
 
         if not root_id or not parent_id:
             parent = self.current_worker_task
