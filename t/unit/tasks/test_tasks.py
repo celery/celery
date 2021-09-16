@@ -930,11 +930,33 @@ class test_tasks(TasksCase):
                 consumer, sresult, self.mytask.name, name='Elaine M. Benes',
             )
 
-            # With ETA.
+            # With ETA, absolute expires.
             presult2 = self.mytask.apply_async(
                 kwargs={'name': 'George Costanza'},
                 eta=self.now() + timedelta(days=1),
                 expires=self.now() + timedelta(days=2),
+            )
+            self.assert_next_task_data_equal(
+                consumer, presult2, self.mytask.name,
+                name='George Costanza', test_eta=True, test_expires=True,
+            )
+
+            # With ETA, absolute expires in the past.
+            presult2 = self.mytask.apply_async(
+                kwargs={'name': 'George Costanza'},
+                eta=self.now() + timedelta(days=1),
+                expires=self.now() - timedelta(days=2),
+            )
+            self.assert_next_task_data_equal(
+                consumer, presult2, self.mytask.name,
+                name='George Costanza', test_eta=True, test_expires=True,
+            )
+
+            # With ETA, relative expires.
+            presult2 = self.mytask.apply_async(
+                kwargs={'name': 'George Costanza'},
+                eta=self.now() + timedelta(days=1),
+                expires=2 * 24 * 60 * 60,
             )
             self.assert_next_task_data_equal(
                 consumer, presult2, self.mytask.name,
