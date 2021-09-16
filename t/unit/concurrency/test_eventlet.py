@@ -2,10 +2,13 @@ import sys
 from unittest.mock import Mock, patch
 
 import pytest
-from greenlet import GreenletExit
 
-import t.skip
-from celery.concurrency.eventlet import TaskPool, Timer, apply_target
+pytest.importorskip('eventlet')
+
+from greenlet import GreenletExit  # noqa
+
+import t.skip  # noqa
+from celery.concurrency.eventlet import TaskPool, Timer, apply_target  # noqa
 
 eventlet_modules = (
     'eventlet',
@@ -14,8 +17,6 @@ eventlet_modules = (
     'eventlet.greenpool',
     'greenlet',
 )
-
-pytest.importorskip('eventlet')
 
 
 @t.skip.if_pypy
