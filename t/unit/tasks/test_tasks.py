@@ -930,7 +930,7 @@ class test_tasks(TasksCase):
                 consumer, sresult, self.mytask.name, name='Elaine M. Benes',
             )
 
-            # With absolute ETA.
+            # With ETA, absolute expires.
             presult2 = self.mytask.apply_async(
                 kwargs={'name': 'George Costanza'},
                 eta=self.now() + timedelta(days=1),
@@ -941,7 +941,7 @@ class test_tasks(TasksCase):
                 name='George Costanza', test_eta=True, test_expires=True,
             )
 
-            # With relative ETA.
+            # With ETA, relative expires.
             presult2 = self.mytask.apply_async(
                 kwargs={'name': 'George Costanza'},
                 eta=self.now() + timedelta(days=1),
