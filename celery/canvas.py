@@ -1352,10 +1352,10 @@ class _chord(Signature):
     def __init__(self, header, body=None, task='celery.chord',
                  args=None, kwargs=None, app=None, **options):
         args = args if args else ()
-        kwargs = kwargs if kwargs else {}
+        kwargs = kwargs if kwargs else {'kwargs': {}}
         Signature.__init__(
             self, task, args,
-            {'kwargs': kwargs, 'header': _maybe_group(header, app),
+            {**kwargs, 'header': _maybe_group(header, app),
              'body': maybe_signature(body, app=app)}, app=app, **options
         )
         self.subtask_type = 'chord'
