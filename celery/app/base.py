@@ -739,6 +739,17 @@ class Celery:
                 expires_s = expires
 
             if expires_s < 0:
+                logger.warning(
+                    f"{task_id} has an expiration date in the past ({-expires_s}s ago).\n"
+                    "We assume this is intended and so we have set the "
+                    "expiration date to 0 instead.\n"
+                    "According to RabbitMQ's documentation:\n"
+                    "\"Setting the TTL to 0 causes messages to be expired upon "
+                    "reaching a queue unless they can be delivered to a "
+                    "consumer immediately.\"\n"
+                    "If this was unintended, please check the code which "
+                    "published this task."
+                )
                 expires_s = 0
 
             options["expiration"] = expires_s
