@@ -206,6 +206,7 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               '--task-events',
               '--events',
               is_flag=True,
+              default=None,
               cls=CeleryOption,
               help_group="Pool Options",
               help="Send task-related events that can be captured by monitors"
