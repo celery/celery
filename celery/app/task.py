@@ -88,6 +88,7 @@ class Context:
     properties = None
     retries = 0
     reply_to = None
+    replaced_task_nesting = 0
     root_id = None
     shadow = None
     taskset = None   # compat alias to group
@@ -128,6 +129,7 @@ class Context:
             'headers': self.headers,
             'retries': self.retries,
             'reply_to': self.reply_to,
+            'replaced_task_nesting': self.replaced_task_nesting,
             'origin': self.origin,
         }
 
@@ -916,11 +918,13 @@ class Task:
         # which would break previously constructed results objects.
         sig.freeze(self.request.id)
         # Ensure the important options from the original signature are retained
+        replaced_task_nesting = self.request.get('replaced_task_nesting', 0) + 1
         sig.set(
             chord=chord,
             group_id=self.request.group,
             group_index=self.request.group_index,
             root_id=self.request.root_id,
+            replaced_task_nesting=replaced_task_nesting
         )
         # If the task being replaced is part of a chain, we need to re-create
         # it with the replacement signature - these subsequent tasks will

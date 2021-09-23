@@ -312,6 +312,10 @@ class Request:
         return self._request_dict['reply_to']
 
     @property
+    def replaced_task_nesting(self):
+        return self._request_dict.get('replaced_task_nesting', 0)
+
+    @property
     def correlation_id(self):
         # used similarly to reply_to
         return self._request_dict['correlation_id']
