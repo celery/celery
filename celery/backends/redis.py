@@ -99,6 +99,7 @@ class ResultConsumer(BaseResultConsumer):
         super().on_after_fork()
 
     def _reconnect_pubsub(self):
+        self._pubsub.close()
         self._pubsub = None
         self.backend.client.connection_pool.reset()
         # task state might have changed when the connection was down so we
