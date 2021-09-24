@@ -61,7 +61,9 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
         the container is created if it doesn't yet exist.
 
         """
-        client = BlobServiceClient.from_connection_string(self._connection_string)
+        client = BlobServiceClient.from_connection_string(
+            self._connection_string, connection_timeout=5, read_timeout=10
+        )
 
         try:
             client.create_container(name=self._container_name)
