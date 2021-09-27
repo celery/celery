@@ -210,6 +210,12 @@ Kombu
 
 Starting from v5.2, the minimum required version is Kombu 5.2.0.
 
+Eventlet Workers Pool
+---------------------
+
+You can now terminate running revoked tasks while using the
+Eventlet Workers Pool.
+
 Important Notes From 5.0
 ------------------------
 
