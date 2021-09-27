@@ -98,7 +98,7 @@ class test_group(BuiltinsCase):
         )
         self.app.conf.task_always_eager = True
         self.task = builtins.add_group_task(self.app)
-        BuiltinsCase.setup(self)
+        super().setup()
 
     def test_apply_async_eager(self):
         self.task.apply = Mock(name='apply')
@@ -133,7 +133,7 @@ class test_group(BuiltinsCase):
 class test_chain(BuiltinsCase):
 
     def setup(self):
-        BuiltinsCase.setup(self)
+        super().setup()
         self.task = builtins.add_chain_task(self.app)
 
     def test_not_implemented(self):
@@ -145,7 +145,7 @@ class test_chord(BuiltinsCase):
 
     def setup(self):
         self.task = builtins.add_chord_task(self.app)
-        BuiltinsCase.setup(self)
+        super().setup()
 
     def test_apply_async(self):
         x = chord([self.add.s(i, i) for i in range(10)], body=self.xsum.s())

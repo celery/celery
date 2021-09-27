@@ -278,7 +278,7 @@ class test_custom_request_for_default_strategy(test_default_strategy_proto2):
 
         class MyRequest(Request):
             def __init__(self, *args, **kwargs):
-                Request.__init__(self, *args, **kwargs)
+                super().__init__(*args, **kwargs)
                 _MyRequest()
 
         class MyTask(Task):

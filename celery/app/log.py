@@ -41,7 +41,7 @@ class TaskFormatter(ColorFormatter):
         else:
             record.__dict__.setdefault('task_name', '???')
             record.__dict__.setdefault('task_id', '???')
-        return ColorFormatter.format(self, record)
+        return super().format(record)
 
 
 class Logging:

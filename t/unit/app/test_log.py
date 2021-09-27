@@ -338,7 +338,7 @@ class MockLogger(logging.Logger):
 
     def __init__(self, *args, **kwargs):
         self._records = []
-        logging.Logger.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def handle(self, record):
         self._records.append(record)

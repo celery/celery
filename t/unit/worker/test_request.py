@@ -1142,7 +1142,7 @@ class test_create_request_class(RequestCase):
         self.task = Mock(name='task')
         self.pool = Mock(name='pool')
         self.eventer = Mock(name='eventer')
-        RequestCase.setup(self)
+        super().setup()
 
     def create_request_cls(self, **kwargs):
         return create_request_cls(

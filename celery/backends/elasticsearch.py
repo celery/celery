@@ -199,10 +199,10 @@ class ElasticsearchBackend(KeyValueStoreBackend):
 
     def encode(self, data):
         if self.es_save_meta_as_text:
-            return KeyValueStoreBackend.encode(self, data)
+            return super().encode(data)
         else:
             if not isinstance(data, dict):
-                return KeyValueStoreBackend.encode(self, data)
+                return super().encode(data)
             if data.get("result"):
                 data["result"] = self._encode(data["result"])[2]
             if data.get("traceback"):
@@ -211,14 +211,14 @@ class ElasticsearchBackend(KeyValueStoreBackend):
 
     def decode(self, payload):
         if self.es_save_meta_as_text:
-            return KeyValueStoreBackend.decode(self, payload)
+            return super().decode(payload)
         else:
             if not isinstance(payload, dict):
-                return KeyValueStoreBackend.decode(self, payload)
+                return super().decode(payload)
             if payload.get("result"):
-                payload["result"] = KeyValueStoreBackend.decode(self, payload["result"])
+                payload["result"] = super().decode(payload["result"])
             if payload.get("traceback"):
-                payload["traceback"] = KeyValueStoreBackend.decode(self, payload["traceback"])
+                payload["traceback"] = super().decode(payload["traceback"])
             return payload
 
     def mget(self, keys):
