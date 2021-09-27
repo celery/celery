@@ -317,6 +317,20 @@ correctly:
     news_task = celery_app.signature('news.task.publish_news', task_id=str(uuid.uuid4()), immutable=True)
 
     my_chord = chain(movie_task,
-                     group(movie_task.set(task_id=str(uuid.uuid4())), movie_task.set(task_id=str(uuid.uuid4()))),
+                     group(movie_task.set(task_id=str(uuid.uuid4())),
+                           movie_task.set(task_id=str(uuid.uuid4()))),
                      news_task)
     my_chord.apply_async()  # <-- No longer raises an exception
+
+Consul Result Backend
+---------------------
+
+We now create a new client per request to Consul to avoid a bug in the Consul
+client.
+
+The Consul Result Backend now accepts a new
+:setting:`result_backend_transport_options` key: ``one_client``.
+You can opt out of this behavior by setting ``one_client`` to True.
+
+Please refer to the documentation of the backend if you're using the Consul
+backend to find out which behavior suites you.
