@@ -216,6 +216,14 @@ Eventlet Workers Pool
 You can now terminate running revoked tasks while using the
 Eventlet Workers Pool.
 
+Custom Task Classes
+-------------------
+
+We introduced a custom handler which will be executed before the task
+is started called ``before_start``.
+
+See :ref:`custom-task-cls-app-wide` for more details.
+
 Important Notes From 5.0
 ------------------------
 
