@@ -342,7 +342,7 @@ class KVBackend(KeyValueStoreBackend):
 class DictBackend(BaseBackend):
 
     def __init__(self, *args, **kwargs):
-        BaseBackend.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._data = {'can-delete': {'result': 'foo'}}
 
     def _restore_group(self, group_id):

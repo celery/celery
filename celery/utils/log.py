@@ -133,17 +133,17 @@ class ColorFormatter(logging.Formatter):
     }
 
     def __init__(self, fmt=None, use_color=True):
-        logging.Formatter.__init__(self, fmt)
+        super().__init__(fmt)
         self.use_color = use_color
 
     def formatException(self, ei):
         if ei and not isinstance(ei, tuple):
             ei = sys.exc_info()
-        r = logging.Formatter.formatException(self, ei)
+        r = super().formatException(ei)
         return r
 
     def format(self, record):
-        msg = logging.Formatter.format(self, record)
+        msg = super().format(record)
         color = self.colors.get(record.levelname)
 
         # reset exception info later for other handlers...
@@ -168,7 +168,7 @@ class ColorFormatter(logging.Formatter):
                     ),
                 )
                 try:
-                    return logging.Formatter.format(self, record)
+                    return super().format(record)
                 finally:
                     record.msg, record.exc_info = prev_msg, einfo
         else:

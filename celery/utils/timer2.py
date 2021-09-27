@@ -48,7 +48,7 @@ class Timer(threading.Thread):
                                                   max_interval=max_interval)
         self.on_start = on_start
         self.on_tick = on_tick or self.on_tick
-        threading.Thread.__init__(self)
+        super().__init__()
         # `_is_stopped` is likely to be an attribute on `Thread` objects so we
         # double underscore these names to avoid shadowing anything and
         # potentially getting confused by the superclass turning these into

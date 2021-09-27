@@ -485,7 +485,7 @@ class Signature(dict):
         return self.reprcall()
 
     def items(self):
-        for k, v in dict.items(self):
+        for k, v in super().items():
             yield k.decode() if isinstance(k, bytes) else k, v
 
     @property
@@ -600,8 +600,7 @@ class _chain(Signature):
     def __init__(self, *tasks, **options):
         tasks = (regen(tasks[0]) if len(tasks) == 1 and is_list(tasks[0])
                  else tasks)
-        Signature.__init__(
-            self, 'celery.chain', (), {'tasks': tasks}, **options
+        super().__init__('celery.chain', (), {'tasks': tasks}, **options
         )
         self._use_link = options.pop('use_link', None)
         self.subtask_type = 'chain'
@@ -613,7 +612,7 @@ class _chain(Signature):
 
     def clone(self, *args, **kwargs):
         to_signature = maybe_signature
-        signature = Signature.clone(self, *args, **kwargs)
+        signature = super().clone(*args, **kwargs)
         signature.kwargs['tasks'] = [
             to_signature(sig, app=self._app, clone=True)
             for sig in signature.kwargs['tasks']
@@ -903,8 +902,7 @@ class _basemap(Signature):
         return cls(*cls._unpack_args(d['kwargs']), app=app, **d['options'])
 
     def __init__(self, task, it, **options):
-        Signature.__init__(
-            self, self._task_name, (),
+        super().__init__(self._task_name, (),
             {'task': task, 'it': regen(it)}, immutable=True, **options
         )
 
@@ -957,8 +955,7 @@ class chunks(Signature):
         return chunks(*cls._unpack_args(d['kwargs']), app=app, **d['options'])
 
     def __init__(self, task, it, n, **options):
-        Signature.__init__(
-            self, 'celery.chunks', (),
+        super().__init__('celery.chunks', (),
             {'task': task, 'it': regen(it), 'n': n},
             immutable=True, **options
         )
@@ -1056,8 +1053,7 @@ class group(Signature):
                 tasks = [tasks.clone()]
             if not isinstance(tasks, _regen):
                 tasks = regen(tasks)
-        Signature.__init__(
-            self, 'celery.group', (), {'tasks': tasks}, **options
+        super().__init__('celery.group', (), {'tasks': tasks}, **options
         )
         self.subtask_type = 'group'
 
@@ -1353,8 +1349,7 @@ class _chord(Signature):
                  args=None, kwargs=None, app=None, **options):
         args = args if args else ()
         kwargs = kwargs if kwargs else {'kwargs': {}}
-        Signature.__init__(
-            self, task, args,
+        super().__init__(task, args,
             {**kwargs, 'header': _maybe_group(header, app),
              'body': maybe_signature(body, app=app)}, app=app, **options
         )
@@ -1500,7 +1495,7 @@ class _chord(Signature):
         return bodyres
 
     def clone(self, *args, **kwargs):
-        signature = Signature.clone(self, *args, **kwargs)
+        signature = super().clone(*args, **kwargs)
         # need to make copy of body
         try:
             signature.kwargs['body'] = maybe_signature(

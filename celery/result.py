@@ -884,11 +884,11 @@ class GroupResult(ResultSet):
     def __init__(self, id=None, results=None, parent=None, **kwargs):
         self.id = id
         self.parent = parent
-        ResultSet.__init__(self, results, **kwargs)
+        super().__init__(results, **kwargs)
 
     def _on_ready(self):
         self.backend.remove_pending_result(self)
-        ResultSet._on_ready(self)
+        super()._on_ready()
 
     def save(self, backend=None):
         """Save group-result for later retrieval using :meth:`restore`.
