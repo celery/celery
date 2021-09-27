@@ -29,7 +29,7 @@ While this version is **mostly** backward compatible with previous versions
 it's important that you read the following section as this release
 is a new major version.
 
-This version is officially supported on CPython 3.6, 3.7 & 3.8 & 3.9
+This version is officially supported on CPython 3.7 & 3.8 & 3.9
 and is also supported on PyPy3.
 
 .. _`website`: http://celeryproject.org/
@@ -47,8 +47,8 @@ Preface
 
 .. note::
 
-    This release contains fixes for two (potentially severe) memory leaks.
-    We encourage our users to upgrade to this release as soon as possible.
+    **This release contains fixes for two (potentially severe) memory leaks.
+    We encourage our users to upgrade to this release as soon as possible.**
 
 The 5.2.0 release is a new minor release for Celery.
 
@@ -133,7 +133,7 @@ this effort.
 After the migration is done, run your test suite with Celery 4 to ensure
 nothing has been broken.
 
-Step 5: Upgrade to Celery 5.1
+Step 5: Upgrade to Celery 5.2
 -----------------------------
 
 At this point you can upgrade your workers and clients with the new version.
@@ -153,11 +153,16 @@ The supported Python versions are:
 - CPython 3.9
 - PyPy3.7 7.3 (``pypy3``)
 
-Important Notes
----------------
+Experimental support
+~~~~~~~~~~~~~~~~~~~~
+
+Celery supports these Python versions provisionally as they are not production
+ready yet:
+
+- CPython 3.10
 
 Memory Leak Fixes
-~~~~~~~~~~~~~~~~~
+-----------------
 
 Two severe memory leaks have been fixed in this version:
 
@@ -178,14 +183,30 @@ that often.
 
 The second memory leak exists since the inception of the project.
 The prefork pool maintains a cache of the jobs it executes.
-When they are done, they are evicted from the cache.
+When they are complete, they are evicted from the cache.
 However, when Celery disconnects from the broker, we flush the pool
 and discard the jobs, expecting that they'll be cleared later once the worker
-acks them but that has never been the case.
+acknowledges them but that has never been the case.
 Instead, these jobs remain forever in memory.
+We now discard those jobs immediately while flushing.
+
+Dropped support for Python 3.6
+------------------------------
+
+Celery now requires Python 3.7 and above.
+
+Python 3.6 will reach EOL in December, 2021.
+In order to focus our efforts we have dropped support for Python 3.6 in
+this version.
+
+If you still require to run Celery using Python 3.6
+you can still use Celery 5.1.
+However we encourage you to upgrade to a supported Python version since
+no further security patches will be applied for Python 3.6 after
+the 23th of December, 2021.
 
 Kombu
-~~~~~
+-----
 
 Starting from v5.2, the minimum required version is Kombu 5.2.0.
 
@@ -277,3 +298,25 @@ older `azure-servicebus` versions.
 News
 ====
 
+Support for invoking chords of unregistered tasks
+-------------------------------------------------
+
+Previously if you attempted to publish a chord
+while providing a signature which wasn't registered in the Celery app publishing
+the chord as the body of the chord, an :exc:`celery.exceptions.NotRegistered`
+exception would be raised.
+
+From now on, you can publish these sort of chords and they would be executed
+correctly:
+
+.. code-block:: python
+
+    # movies.task.publish_movie is registered in the current app
+    movie_task = celery_app.signature('movies.task.publish_movie', task_id=str(uuid.uuid4()), immutable=True)
+    # news.task.publish_news is *not* registered in the current app
+    news_task = celery_app.signature('news.task.publish_news', task_id=str(uuid.uuid4()), immutable=True)
+
+    my_chord = chain(movie_task,
+                     group(movie_task.set(task_id=str(uuid.uuid4())), movie_task.set(task_id=str(uuid.uuid4()))),
+                     news_task)
+    my_chord.apply_async()  # <-- No longer raises an exception
