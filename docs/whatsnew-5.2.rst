@@ -348,3 +348,7 @@ You can opt out of this behavior by setting ``one_client`` to True.
 
 Please refer to the documentation of the backend if you're using the Consul
 backend to find out which behavior suites you.
+
+ArangoDB Result Backend
+-----------------------
+
