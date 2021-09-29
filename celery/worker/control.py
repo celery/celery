@@ -310,6 +310,8 @@ def hello(state, from_node, revoked=None, **kwargs):
         logger.info('sync with %s', from_node)
         if revoked:
             worker_state.revoked.update(revoked)
+        # Do not send expired items to the other worker.
+        worker_state.revoked.purge()
         return {
             'revoked': worker_state.revoked._data,
             'clock': state.app.clock.forward(),
