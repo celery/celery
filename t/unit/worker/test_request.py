@@ -171,7 +171,6 @@ class test_trace_task(RequestCase):
         assert not self.app.AsyncResult(task_id).ready()
 
     def test_execute_request_ignore_result(self):
-
         @self.app.task(shared=False)
         def ignores_result(i):
             return i ** i
@@ -232,7 +231,8 @@ class test_Request(RequestCase):
             kwargs[str(i)] = ''.join(
                 random.choice(string.ascii_lowercase) for i in range(1000))
         assert self.get_request(
-            self.add.s(**kwargs)).info(safe=True).get('kwargs') == ''  # mock message doesn't populate kwargsrepr
+            self.add.s(**kwargs)).info(safe=True).get(
+            'kwargs') == ''  # mock message doesn't populate kwargsrepr
         assert self.get_request(
             self.add.s(**kwargs)).info(safe=False).get('kwargs') == kwargs
         args = []
@@ -240,7 +240,8 @@ class test_Request(RequestCase):
             args.append(''.join(
                 random.choice(string.ascii_lowercase) for i in range(1000)))
         assert list(self.get_request(
-            self.add.s(*args)).info(safe=True).get('args')) == []  # mock message doesn't populate argsrepr
+            self.add.s(*args)).info(safe=True).get(
+            'args')) == []  # mock message doesn't populate argsrepr
         assert list(self.get_request(
             self.add.s(*args)).info(safe=False).get('args')) == args
 
@@ -336,32 +337,59 @@ class test_Request(RequestCase):
         )
 
     def test_on_failure_WorkerLostError_rejects_with_requeue(self):
-        einfo = None
         try:
             raise WorkerLostError()
         except WorkerLostError:
             einfo = ExceptionInfo(internal=True)
+
         req = self.get_request(self.add.s(2, 2))
         req.task.acks_late = True
         req.task.reject_on_worker_lost = True
         req.delivery_info['redelivered'] = False
+        req.task.backend = Mock()
+
         req.on_failure(einfo)
+
         req.on_reject.assert_called_with(
             req_logger, req.connection_errors, True)
+        req.task.backend.mark_as_failure.assert_not_called()
 
     def test_on_failure_WorkerLostError_redelivered_None(self):
-        einfo = None
         try:
             raise WorkerLostError()
         except WorkerLostError:
             einfo = ExceptionInfo(internal=True)
+
         req = self.get_request(self.add.s(2, 2))
         req.task.acks_late = True
         req.task.reject_on_worker_lost = True
         req.delivery_info['redelivered'] = None
+        req.task.backend = Mock()
+
         req.on_failure(einfo)
+
         req.on_reject.assert_called_with(
             req_logger, req.connection_errors, True)
+        req.task.backend.mark_as_failure.assert_not_called()
+
+    def test_on_failure_WorkerLostError_redelivered_True(self):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.acks_late = False
+        req.task.reject_on_worker_lost = True
+        req.delivery_info['redelivered'] = True
+        req.task.backend = Mock()
+
+        req.on_failure(einfo)
+
+        req.task.backend.mark_as_failure.assert_called_once_with(req.id,
+                                                                 einfo.exception,
+                                                                 request=req._context,
+                                                                 store_result=True)
 
     def test_tzlocal_is_cached(self):
         req = self.get_request(self.add.s(2, 2))
@@ -1292,7 +1320,8 @@ class test_create_request_class(RequestCase):
     def test_execute_using_pool__defaults_of_hybrid_to_proto2(self):
         weakref_ref = Mock(name='weakref.ref')
         headers = strategy.hybrid_to_proto2(Mock(headers=None), {'id': uuid(),
-                                                                 'task': self.mytask.name})[1]
+                                                                 'task': self.mytask.name})[
+            1]
         job = self.zRequest(revoked_tasks=set(), ref=weakref_ref, **headers)
         job.execute_using_pool(self.pool)
         assert job._apply_result
