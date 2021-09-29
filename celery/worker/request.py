@@ -579,6 +579,12 @@ class Request:
                 store_result=self.store_errors,
             )
 
+            signals.task_failure.send(sender=self.task, task_id=self.id,
+                                      exception=exc, args=self.args,
+                                      kwargs=self.kwargs,
+                                      traceback=exc_info.traceback,
+                                      einfo=exc_info)
+
         if send_failed_event:
             self.send_event(
                 'task-failed',

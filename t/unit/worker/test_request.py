@@ -19,7 +19,7 @@ from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task,
 from celery.backends.base import BaseDictBackend
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
                                TaskRevokedError, Terminated, WorkerLostError)
-from celery.signals import task_retry, task_revoked
+from celery.signals import task_failure, task_retry, task_revoked
 from celery.worker import request as module
 from celery.worker import strategy
 from celery.worker.request import Request, create_request_cls
@@ -384,7 +384,17 @@ class test_Request(RequestCase):
         req.delivery_info['redelivered'] = True
         req.task.backend = Mock()
 
-        req.on_failure(einfo)
+        with self.assert_signal_called(
+            task_failure,
+            sender=req.task,
+            task_id=req.id,
+            exception=einfo.exception,
+            args=req.args,
+            kwargs=req.kwargs,
+            traceback=einfo.traceback,
+            einfo=einfo
+        ):
+            req.on_failure(einfo)
 
         req.task.backend.mark_as_failure.assert_called_once_with(req.id,
                                                                  einfo.exception,
