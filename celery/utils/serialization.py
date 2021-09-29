@@ -134,7 +134,7 @@ class UnpickleableExceptionWrapper(Exception):
         self.exc_args = safe_exc_args
         self.text = text
         super().__init__(exc_module, exc_cls_name, safe_exc_args,
-                           text)
+                         text)
 
     def restore(self):
         return create_exception_cls(self.exc_cls_name,

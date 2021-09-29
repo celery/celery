@@ -601,7 +601,7 @@ class _chain(Signature):
         tasks = (regen(tasks[0]) if len(tasks) == 1 and is_list(tasks[0])
                  else tasks)
         super().__init__('celery.chain', (), {'tasks': tasks}, **options
-        )
+                         )
         self._use_link = options.pop('use_link', None)
         self.subtask_type = 'chain'
         self._frozen = None
@@ -903,8 +903,8 @@ class _basemap(Signature):
 
     def __init__(self, task, it, **options):
         super().__init__(self._task_name, (),
-            {'task': task, 'it': regen(it)}, immutable=True, **options
-        )
+                         {'task': task, 'it': regen(it)}, immutable=True, **options
+                         )
 
     def apply_async(self, args=None, kwargs=None, **opts):
         # need to evaluate generators
@@ -956,9 +956,9 @@ class chunks(Signature):
 
     def __init__(self, task, it, n, **options):
         super().__init__('celery.chunks', (),
-            {'task': task, 'it': regen(it), 'n': n},
-            immutable=True, **options
-        )
+                         {'task': task, 'it': regen(it), 'n': n},
+                         immutable=True, **options
+                         )
 
     def __call__(self, **options):
         return self.apply_async(**options)
@@ -1054,7 +1054,7 @@ class group(Signature):
             if not isinstance(tasks, _regen):
                 tasks = regen(tasks)
         super().__init__('celery.group', (), {'tasks': tasks}, **options
-        )
+                         )
         self.subtask_type = 'group'
 
     def __call__(self, *partial_args, **options):
@@ -1350,9 +1350,9 @@ class _chord(Signature):
         args = args if args else ()
         kwargs = kwargs if kwargs else {'kwargs': {}}
         super().__init__(task, args,
-            {**kwargs, 'header': _maybe_group(header, app),
-             'body': maybe_signature(body, app=app)}, app=app, **options
-        )
+                         {**kwargs, 'header': _maybe_group(header, app),
+                          'body': maybe_signature(body, app=app)}, app=app, **options
+                         )
         self.subtask_type = 'chord'
 
     def __call__(self, body=None, **options):

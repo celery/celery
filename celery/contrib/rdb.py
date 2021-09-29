@@ -111,7 +111,7 @@ class Rdb(Pdb):
         self.say(SESSION_STARTED.format(self=self))
         self._handle = sys.stdin = sys.stdout = self._client.makefile('rw')
         super().__init__(completekey='tab',
-                     stdin=self._handle, stdout=self._handle)
+                         stdin=self._handle, stdout=self._handle)
 
     def get_avail_port(self, host, port, search_limit=100, skew=+0):
         try:
