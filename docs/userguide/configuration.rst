@@ -1606,7 +1606,7 @@ The maximum number of retry attempts.
 
 Default: 20.
 
-Timeout in seconds for the azure block blob connection.
+Timeout in seconds for establishing the azure block blob connection.
 
 .. setting:: azureblockblob_read_timeout
 
