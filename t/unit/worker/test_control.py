@@ -1,5 +1,6 @@
 import socket
 import sys
+import time
 from collections import defaultdict
 from datetime import datetime, timedelta
 from queue import Queue as FastQueue
@@ -16,7 +17,7 @@ from celery.worker import consumer, control
 from celery.worker import state as worker_state
 from celery.worker.pidbox import Pidbox, gPidbox
 from celery.worker.request import Request
-from celery.worker.state import revoked
+from celery.worker.state import REVOKE_EXPIRES, revoked
 
 hostname = socket.gethostname()
 
@@ -191,6 +192,22 @@ class test_ControlPanel:
             assert x['clock'] == 315  # incremented
         finally:
             worker_state.revoked.discard('revoked1')
+
+    def test_hello_does_not_send_expired_revoked_items(self):
+        consumer = Consumer(self.app)
+        panel = self.create_panel(consumer=consumer)
+        panel.state.app.clock.value = 313
+        panel.state.hostname = 'elaine@vandelay.com'
+        # Add an expired revoked item to the revoked set.
+        worker_state.revoked.add(
+            'expired_in_past',
+            now=time.monotonic() - REVOKE_EXPIRES - 1
+        )
+        x = panel.handle('hello', {
+            'from_node': 'george@vandelay.com',
+            'revoked': {'1234', '4567', '891'}
+        })
+        assert 'expired_in_past' not in x['revoked']
 
     def test_conf(self):
         consumer = Consumer(self.app)
