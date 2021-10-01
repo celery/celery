@@ -323,7 +323,7 @@ class Celery:
         """Optional callback called at init."""
 
     def __autoset(self, key, value):
-        if value:
+        if value is not None:
             self._preconf[key] = value
             self._preconf_set_by_auto.add(key)
 
@@ -732,6 +732,27 @@ class Celery:
         ignore_result = options.pop('ignore_result', False)
         options = router.route(
             options, route_name or name, args, kwargs, task_type)
+        if expires is not None:
+            if isinstance(expires, datetime):
+                expires_s = (expires - self.now()).total_seconds()
+            else:
+                expires_s = expires
+
+            if expires_s < 0:
+                logger.warning(
+                    f"{task_id} has an expiration date in the past ({-expires_s}s ago).\n"
+                    "We assume this is intended and so we have set the "
+                    "expiration date to 0 instead.\n"
+                    "According to RabbitMQ's documentation:\n"
+                    "\"Setting the TTL to 0 causes messages to be expired upon "
+                    "reaching a queue unless they can be delivered to a "
+                    "consumer immediately.\"\n"
+                    "If this was unintended, please check the code which "
+                    "published this task."
+                )
+                expires_s = 0
+
+            options["expiration"] = expires_s
 
         if not root_id or not parent_id:
             parent = self.current_worker_task
@@ -1239,7 +1260,7 @@ class Celery:
         return self._conf
 
     @conf.setter
-    def conf(self, d):  # noqa
+    def conf(self, d):
         self._conf = d
 
     @cached_property
@@ -1301,4 +1322,4 @@ class Celery:
         return timezone.get_timezone(conf.timezone)
 
 
-App = Celery  # noqa: E305 XXX compat
+App = Celery  # XXX compat

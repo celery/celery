@@ -85,8 +85,10 @@ class Context:
     loglevel = None
     origin = None
     parent_id = None
+    properties = None
     retries = 0
     reply_to = None
+    replaced_task_nesting = 0
     root_id = None
     shadow = None
     taskset = None   # compat alias to group
@@ -127,6 +129,7 @@ class Context:
             'headers': self.headers,
             'retries': self.retries,
             'reply_to': self.reply_to,
+            'replaced_task_nesting': self.replaced_task_nesting,
             'origin': self.origin,
         }
 
@@ -881,7 +884,7 @@ class Task:
         .. versionadded:: 4.0
 
         Arguments:
-            sig (~@Signature): signature to replace with.
+            sig (Signature): signature to replace with.
 
         Raises:
             ~@Ignore: This is always raised when called in asynchronous context.
@@ -915,11 +918,13 @@ class Task:
         # which would break previously constructed results objects.
         sig.freeze(self.request.id)
         # Ensure the important options from the original signature are retained
+        replaced_task_nesting = self.request.get('replaced_task_nesting', 0) + 1
         sig.set(
             chord=chord,
             group_id=self.request.group,
             group_index=self.request.group_index,
             root_id=self.request.root_id,
+            replaced_task_nesting=replaced_task_nesting
         )
         # If the task being replaced is part of a chain, we need to re-create
         # it with the replacement signature - these subsequent tasks will
@@ -941,7 +946,7 @@ class Task:
         Currently only supported by the Redis result backend.
 
         Arguments:
-            sig (~@Signature): Signature to extend chord with.
+            sig (Signature): Signature to extend chord with.
             lazy (bool): If enabled the new task won't actually be called,
                 and ``sig.delay()`` must be called manually.
         """
@@ -970,6 +975,20 @@ class Task:
             task_id = self.request.id
         self.backend.store_result(
             task_id, meta, state, request=self.request, **kwargs)
+
+    def before_start(self, task_id, args, kwargs):
+        """Handler called before the task starts.
+
+        .. versionadded:: 5.2
+
+        Arguments:
+            task_id (str): Unique id of the task to execute.
+            args (Tuple): Original arguments for the task to execute.
+            kwargs (Dict): Original keyword arguments for the task to execute.
+
+        Returns:
+            None: The return value of this handler is ignored.
+        """
 
     def on_success(self, retval, task_id, args, kwargs):
         """Success handler.
@@ -1073,7 +1092,7 @@ class Task:
         return backend
 
     @backend.setter
-    def backend(self, value):  # noqa
+    def backend(self, value):
         self._backend = value
 
     @property
@@ -1081,4 +1100,4 @@ class Task:
         return self.__class__.__name__
 
 
-BaseTask = Task  # noqa: E305 XXX compat alias
+BaseTask = Task  # XXX compat alias

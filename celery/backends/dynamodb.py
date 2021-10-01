@@ -13,7 +13,7 @@ try:
     import boto3
     from botocore.exceptions import ClientError
 except ImportError:  # pragma: no cover
-    boto3 = ClientError = None  # noqa
+    boto3 = ClientError = None
 
 __all__ = ('DynamoDBBackend',)
 

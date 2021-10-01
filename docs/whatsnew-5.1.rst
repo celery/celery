@@ -357,7 +357,7 @@ Documentation: :setting:`worker_cancel_long_running_tasks_on_connection_loss`
 -----------------------------------------------------------------------
 
 `task.apply_async` now supports passing `ignore_result` which will act the same
-as using `@app.task(ignore_result=True)`.
+as using ``@app.task(ignore_result=True)``.
 
 Use a thread-safe implementation of `cached_property`
 -----------------------------------------------------
@@ -372,6 +372,7 @@ Tasks can now have required kwargs at any order
 Tasks can now be defined like this:
 
 .. code-block:: python
+
     from celery import shared_task
 
     @shared_task

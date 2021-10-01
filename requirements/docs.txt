@@ -6,3 +6,4 @@ sphinx-click==2.5.0
 -r test.txt
 -r deps/mock.txt
 -r extras/auth.txt
+-r extras/sphinxautobuild.txt

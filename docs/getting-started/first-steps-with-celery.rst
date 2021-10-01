@@ -141,7 +141,7 @@ This is only needed so that names can be automatically generated when the tasks 
 defined in the `__main__` module.
 
 The second argument is the broker keyword argument, specifying the URL of the
-message broker you want to use. Here using RabbitMQ (also the default option).
+message broker you want to use. Here we are using RabbitMQ (also the default option).
 
 See :ref:`celerytut-broker` above for more choices --
 for RabbitMQ you can use ``amqp://localhost``, or for Redis you can

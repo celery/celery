@@ -3,8 +3,12 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-import t.skip
-from celery.concurrency.eventlet import TaskPool, Timer, apply_target
+pytest.importorskip('eventlet')
+
+from greenlet import GreenletExit  # noqa
+
+import t.skip  # noqa
+from celery.concurrency.eventlet import TaskPool, Timer, apply_target  # noqa
 
 eventlet_modules = (
     'eventlet',
@@ -13,8 +17,6 @@ eventlet_modules = (
     'eventlet.greenpool',
     'greenlet',
 )
-
-pytest.importorskip('eventlet')
 
 
 @t.skip.if_pypy
@@ -101,6 +103,7 @@ class test_TaskPool(EventletCase):
         x.on_apply(Mock())
         x._pool = None
         x.on_stop()
+        assert len(x._pool_map.keys()) == 1
         assert x.getpid()
 
     @patch('celery.concurrency.eventlet.base')
@@ -130,3 +133,32 @@ class test_TaskPool(EventletCase):
             'free-threads': x._pool.free(),
             'running-threads': x._pool.running(),
         }
+
+    def test_terminate_job(self):
+        func = Mock()
+        pool = TaskPool(10)
+        pool.on_start()
+        pool.on_apply(func)
+
+        assert len(pool._pool_map.keys()) == 1
+        pid = list(pool._pool_map.keys())[0]
+        greenlet = pool._pool_map[pid]
+
+        pool.terminate_job(pid)
+        greenlet.link.assert_called_once()
+        greenlet.kill.assert_called_once()
+
+    def test_make_killable_target(self):
+        def valid_target():
+            return "some result..."
+
+        def terminating_target():
+            raise GreenletExit()
+
+        assert TaskPool._make_killable_target(valid_target)() == "some result..."
+        assert TaskPool._make_killable_target(terminating_target)() == (False, None, None)
+
+    def test_cleanup_after_job_finish(self):
+        testMap = {'1': None}
+        TaskPool._cleanup_after_job_finish(None, testMap, '1')
+        assert len(testMap) == 0

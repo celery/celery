@@ -930,11 +930,33 @@ class test_tasks(TasksCase):
                 consumer, sresult, self.mytask.name, name='Elaine M. Benes',
             )
 
-            # With ETA.
+            # With ETA, absolute expires.
             presult2 = self.mytask.apply_async(
                 kwargs={'name': 'George Costanza'},
                 eta=self.now() + timedelta(days=1),
                 expires=self.now() + timedelta(days=2),
+            )
+            self.assert_next_task_data_equal(
+                consumer, presult2, self.mytask.name,
+                name='George Costanza', test_eta=True, test_expires=True,
+            )
+
+            # With ETA, absolute expires in the past.
+            presult2 = self.mytask.apply_async(
+                kwargs={'name': 'George Costanza'},
+                eta=self.now() + timedelta(days=1),
+                expires=self.now() - timedelta(days=2),
+            )
+            self.assert_next_task_data_equal(
+                consumer, presult2, self.mytask.name,
+                name='George Costanza', test_eta=True, test_expires=True,
+            )
+
+            # With ETA, relative expires.
+            presult2 = self.mytask.apply_async(
+                kwargs={'name': 'George Costanza'},
+                eta=self.now() + timedelta(days=1),
+                expires=2 * 24 * 60 * 60,
             )
             self.assert_next_task_data_equal(
                 consumer, presult2, self.mytask.name,
@@ -998,6 +1020,11 @@ class test_tasks(TasksCase):
         with pytest.raises(Ignore):
             self.mytask.replace(sig1)
         sig1.freeze.assert_called_once_with(self.mytask.request.id)
+        sig1.set.assert_called_once_with(replaced_task_nesting=1,
+                                         chord=ANY,
+                                         group_id=ANY,
+                                         group_index=ANY,
+                                         root_id=ANY)
 
     def test_replace_with_chord(self):
         sig1 = Mock(name='sig1')

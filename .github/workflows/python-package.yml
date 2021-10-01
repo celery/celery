@@ -5,13 +5,13 @@ name: Celery
 
 on:
   push:
-    branches: [ master ]
+    branches: [ 'master', '5.0' ]
     paths:
         - '**.py'
         - '**.txt'
         - '.github/workflows/python-package.yml'
   pull_request:
-    branches: [ master ]
+    branches: [ 'master', '5.0' ]
     paths:
         - '**.py'
         - '**.txt'
@@ -20,14 +20,16 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.6', '3.7', '3.8', '3.9', 'pypy3']
+        python-version: ['3.7', '3.8', '3.9', '3.10.0-rc.2', 'pypy-3.7']
+        os: ["ubuntu-20.04", "windows-2019"]
 
     steps:
     - name: Install apt packages
+      if: startsWith(matrix.os, 'ubuntu-')
       run: |
         sudo apt update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev gnutls-dev httping expect libmemcached-dev
     - uses: actions/checkout@v2
@@ -45,19 +47,18 @@ jobs:
       with:
         path: ${{ steps.pip-cache.outputs.dir }}
         key:
-          ${{ matrix.python-version }}-v1-${{ hashFiles('**/setup.py') }}
+          ${{ matrix.python-version }}-${{matrix.os}}-${{ hashFiles('**/setup.py') }}
         restore-keys: |
-          ${{ matrix.python-version }}-v1-
+          ${{ matrix.python-version }}-${{matrix.os}}
 
     - name: Install tox
-      run: python -m pip install tox
+      run: python -m pip install tox tox-gh-actions
     - name: >
         Run tox for
         "${{ matrix.python-version }}-unit"
-      timeout-minutes: 15
-      run: >
-        tox --verbose --verbose -e
-        "${{ matrix.python-version }}-unit"
+      timeout-minutes: 20
+      run: |
+        tox --verbose --verbose
 
     - uses: codecov/codecov-action@v1
       with:
@@ -74,5 +75,5 @@ jobs:
       with: { python-version: 3.9 }
     - name: Install tox
       run: python -m pip install tox
-    - name: Lint with flake8
-      run: tox --verbose -e flake8
+    - name: Lint with pre-commit
+      run: tox --verbose -e lint

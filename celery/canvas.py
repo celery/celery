@@ -485,7 +485,7 @@ class Signature(dict):
         return self.reprcall()
 
     def items(self):
-        for k, v in dict.items(self):
+        for k, v in super().items():
             yield k.decode() if isinstance(k, bytes) else k, v
 
     @property
@@ -600,9 +600,8 @@ class _chain(Signature):
     def __init__(self, *tasks, **options):
         tasks = (regen(tasks[0]) if len(tasks) == 1 and is_list(tasks[0])
                  else tasks)
-        Signature.__init__(
-            self, 'celery.chain', (), {'tasks': tasks}, **options
-        )
+        super().__init__('celery.chain', (), {'tasks': tasks}, **options
+                         )
         self._use_link = options.pop('use_link', None)
         self.subtask_type = 'chain'
         self._frozen = None
@@ -613,7 +612,7 @@ class _chain(Signature):
 
     def clone(self, *args, **kwargs):
         to_signature = maybe_signature
-        signature = Signature.clone(self, *args, **kwargs)
+        signature = super().clone(*args, **kwargs)
         signature.kwargs['tasks'] = [
             to_signature(sig, app=self._app, clone=True)
             for sig in signature.kwargs['tasks']
@@ -903,10 +902,9 @@ class _basemap(Signature):
         return cls(*cls._unpack_args(d['kwargs']), app=app, **d['options'])
 
     def __init__(self, task, it, **options):
-        Signature.__init__(
-            self, self._task_name, (),
-            {'task': task, 'it': regen(it)}, immutable=True, **options
-        )
+        super().__init__(self._task_name, (),
+                         {'task': task, 'it': regen(it)}, immutable=True, **options
+                         )
 
     def apply_async(self, args=None, kwargs=None, **opts):
         # need to evaluate generators
@@ -957,11 +955,10 @@ class chunks(Signature):
         return chunks(*cls._unpack_args(d['kwargs']), app=app, **d['options'])
 
     def __init__(self, task, it, n, **options):
-        Signature.__init__(
-            self, 'celery.chunks', (),
-            {'task': task, 'it': regen(it), 'n': n},
-            immutable=True, **options
-        )
+        super().__init__('celery.chunks', (),
+                         {'task': task, 'it': regen(it), 'n': n},
+                         immutable=True, **options
+                         )
 
     def __call__(self, **options):
         return self.apply_async(**options)
@@ -1056,9 +1053,8 @@ class group(Signature):
                 tasks = [tasks.clone()]
             if not isinstance(tasks, _regen):
                 tasks = regen(tasks)
-        Signature.__init__(
-            self, 'celery.group', (), {'tasks': tasks}, **options
-        )
+        super().__init__('celery.group', (), {'tasks': tasks}, **options
+                         )
         self.subtask_type = 'group'
 
     def __call__(self, *partial_args, **options):
@@ -1352,12 +1348,11 @@ class _chord(Signature):
     def __init__(self, header, body=None, task='celery.chord',
                  args=None, kwargs=None, app=None, **options):
         args = args if args else ()
-        kwargs = kwargs if kwargs else {}
-        Signature.__init__(
-            self, task, args,
-            {'kwargs': kwargs, 'header': _maybe_group(header, app),
-             'body': maybe_signature(body, app=app)}, app=app, **options
-        )
+        kwargs = kwargs if kwargs else {'kwargs': {}}
+        super().__init__(task, args,
+                         {**kwargs, 'header': _maybe_group(header, app),
+                          'body': maybe_signature(body, app=app)}, app=app, **options
+                         )
         self.subtask_type = 'chord'
 
     def __call__(self, body=None, **options):
@@ -1500,7 +1495,7 @@ class _chord(Signature):
         return bodyres
 
     def clone(self, *args, **kwargs):
-        signature = Signature.clone(self, *args, **kwargs)
+        signature = super().clone(*args, **kwargs)
         # need to make copy of body
         try:
             signature.kwargs['body'] = maybe_signature(
@@ -1579,7 +1574,7 @@ def signature(varies, *args, **kwargs):
     return Signature(varies, *args, **kwargs)
 
 
-subtask = signature  # noqa: E305 XXX compat
+subtask = signature  # XXX compat
 
 
 def maybe_signature(d, app=None, clone=False):
@@ -1609,4 +1604,4 @@ def maybe_signature(d, app=None, clone=False):
     return d
 
 
-maybe_subtask = maybe_signature  # noqa: E305 XXX compat
+maybe_subtask = maybe_signature  # XXX compat

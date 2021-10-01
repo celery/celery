@@ -26,8 +26,8 @@ try:
     import redis.connection
     from kombu.transport.redis import get_redis_error_classes
 except ImportError:  # pragma: no cover
-    redis = None  # noqa
-    get_redis_error_classes = None  # noqa
+    redis = None
+    get_redis_error_classes = None
 
 try:
     import redis.sentinel

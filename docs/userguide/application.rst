@@ -360,28 +360,21 @@ Finalizing the object will:
 .. topic:: The "default app"
 
     Celery didn't always have applications, it used to be that
-    there was only a module-based API, and for backwards compatibility
-    the old API is still there until the release of Celery 5.0.
+    there was only a module-based API. A compatibility API was
+    available at the old location until the release of Celery 5.0,
+    but has been removed.
 
     Celery always creates a special app - the "default app",
     and this is used if no custom application has been instantiated.
 
-    The :mod:`celery.task` module is there to accommodate the old API,
-    and shouldn't be used if you use a custom app. You should
-    always use the methods on the app instance, not the module based API.
-
-    For example, the old Task base class enables many compatibility
-    features where some may be incompatible with newer features, such
-    as task methods:
+    The :mod:`celery.task` module is no longer available. Use the
+    methods on the app instance, not the module based API:
 
     .. code-block:: python
 
         from celery.task import Task   # << OLD Task base class.
 
         from celery import Task        # << NEW base class.
-
-    The new base class is recommended even if you use the old
-    module-based API.
 
 
 Breaking the chain
@@ -456,7 +449,7 @@ chain breaks:
 
     .. code-block:: python
 
-        from celery.task import Task
+        from celery import Task
         from celery.registry import tasks
 
         class Hello(Task):
@@ -475,16 +468,16 @@ chain breaks:
 
     .. code-block:: python
 
-        from celery.task import task
+        from celery import app
 
-        @task(queue='hipri')
+        @app.task(queue='hipri')
         def hello(to):
             return 'hello {0}'.format(to)
 
 Abstract Tasks
 ==============
 
-All tasks created using the :meth:`~@task` decorator
+All tasks created using the :meth:`@task` decorator
 will inherit from the application's base :attr:`~@Task` class.
 
 You can specify a different base class using the ``base`` argument:
@@ -513,7 +506,7 @@ class: :class:`celery.Task`.
 
     If you override the task's ``__call__`` method, then it's very important
     that you also call ``self.run`` to execute the body of the task.  Do not
-    call ``super().__call__``.  The ``__call__`` method of the neutral base 
+    call ``super().__call__``.  The ``__call__`` method of the neutral base
     class :class:`celery.Task` is only present for reference.  For optimization,
     this has been unrolled into ``celery.app.trace.build_tracer.trace_task``
     which calls ``run`` directly on the custom task class if no ``__call__``

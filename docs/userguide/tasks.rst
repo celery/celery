@@ -64,11 +64,12 @@ consider enabling the :setting:`task_reject_on_worker_lost` setting.
     the process by force so only use them to detect cases where you haven't
     used manual timeouts yet.
 
-    The default prefork pool scheduler is not friendly to long-running tasks,
-    so if you have tasks that run for minutes/hours make sure you enable
-    the :option:`-Ofair <celery worker -O>` command-line argument to
-    the :program:`celery worker`. See :ref:`optimizing-prefetch-limit` for more
-    information, and for the best performance route long-running and
+    In previous versions, the default prefork pool scheduler was not friendly
+    to long-running tasks, so if you had tasks that ran for minutes/hours, it
+    was advised to enable the :option:`-Ofair <celery worker -O>` command-line
+    argument to the :program:`celery worker`. However, as of version 4.0,
+    -Ofair is now the default scheduling strategy. See :ref:`optimizing-prefetch-limit`
+    for more information, and for the best performance route long-running and
     short-running tasks to dedicated workers (:ref:`routing-automatic`).
 
     If your worker hangs then please investigate what tasks are running
@@ -91,7 +92,7 @@ Basics
 ======
 
 You can easily create a task from any callable by using
-the :meth:`~@task` decorator:
+the :meth:`@task` decorator:
 
 .. code-block:: python
 
@@ -236,92 +237,6 @@ named :file:`tasks.py`:
     >>> add.name
     'tasks.add'
 
-.. _task-naming-relative-imports:
-
-Automatic naming and relative imports
--------------------------------------
-
-.. sidebar:: Absolute Imports
-
-    The best practice for developers targeting Python 2 is to add the
-    following to the top of **every module**:
-
-    .. code-block:: python
-
-        from __future__ import absolute_import
-
-    This will force you to always use absolute imports so you will
-    never have any problems with tasks using relative names.
-
-    Absolute imports are the default in Python 3 so you don't need this
-    if you target that version.
-
-Relative imports and automatic name generation don't go well together,
-so if you're using relative imports you should set the name explicitly.
-
-For example if the client imports the module ``"myapp.tasks"``
-as ``".tasks"``, and the worker imports the module as ``"myapp.tasks"``,
-the generated names won't match and an :exc:`~@NotRegistered` error will
-be raised by the worker.
-
-This is also the case when using Django and using ``project.myapp``-style
-naming in ``INSTALLED_APPS``:
-
-.. code-block:: python
-
-    INSTALLED_APPS = ['project.myapp']
-
-If you install the app under the name ``project.myapp`` then the
-tasks module will be imported as ``project.myapp.tasks``,
-so you must make sure you always import the tasks using the same name:
-
-.. code-block:: pycon
-
-    >>> from project.myapp.tasks import mytask   # << GOOD
-
-    >>> from myapp.tasks import mytask    # << BAD!!!
-
-The second example will cause the task to be named differently
-since the worker and the client imports the modules under different names:
-
-.. code-block:: pycon
-
-    >>> from project.myapp.tasks import mytask
-    >>> mytask.name
-    'project.myapp.tasks.mytask'
-
-    >>> from myapp.tasks import mytask
-    >>> mytask.name
-    'myapp.tasks.mytask'
-
-For this reason you must be consistent in how you
-import modules, and that is also a Python best practice.
-
-Similarly, you shouldn't use old-style relative imports:
-
-.. code-block:: python
-
-    from module import foo   # BAD!
-
-    from proj.module import foo  # GOOD!
-
-New-style relative imports are fine and can be used:
-
-.. code-block:: python
-
-    from .module import foo  # GOOD!
-
-If you want to use Celery with a project already using these patterns
-extensively and you don't have the time to refactor the existing code
-then you can consider specifying the names explicitly instead of relying
-on the automatic naming:
-
-.. code-block:: python
-
-    @app.task(name='proj.tasks.add')
-    def add(x, y):
-        return x + y
-
 .. _task-name-generator-info:
 
 Changing the automatic naming behavior
@@ -456,6 +371,14 @@ The request defines the following attributes:
         The last item in this list will be the next task to succeed the
         current task.  If using version one of the task protocol the chain
         tasks will be in ``request.callbacks`` instead.
+
+.. versionadded:: 5.2
+
+:properties: Mapping of message properties received with this task message
+             (may be :const:`None` or :const:`{}`)
+
+:replaced_task_nesting: How many times the task was replaced, if at all.
+                        (may be :const:`0`)
 
 Example
 -------
@@ -742,7 +665,7 @@ Sometimes you just want to retry a task whenever a particular exception
 is raised.
 
 Fortunately, you can tell Celery to automatically retry a task using
-`autoretry_for` argument in the :meth:`~@Celery.task` decorator:
+`autoretry_for` argument in the :meth:`@task` decorator:
 
 .. code-block:: python
 
@@ -753,7 +676,7 @@ Fortunately, you can tell Celery to automatically retry a task using
         return twitter.refresh_timeline(user)
 
 If you want to specify custom arguments for an internal :meth:`~@Task.retry`
-call, pass `retry_kwargs` argument to :meth:`~@Celery.task` decorator:
+call, pass `retry_kwargs` argument to :meth:`@task` decorator:
 
 .. code-block:: python
 
@@ -1519,6 +1442,18 @@ The default value is the class provided by Celery: ``'celery.app.task:Task'``.
 
 Handlers
 --------
+
+.. method:: before_start(self, task_id, args, kwargs)
+
+    Run by the worker before the task starts executing.
+
+    .. versionadded:: 5.2
+
+    :param task_id: Unique id of the task to execute.
+    :param args: Original arguments for the task to execute.
+    :param kwargs: Original keyword arguments for the task to execute.
+
+    The return value of this handler is ignored.
 
 .. method:: after_return(self, status, retval, task_id, args, kwargs, einfo)
 

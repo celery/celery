@@ -18,7 +18,7 @@ from celery.platforms import (ASSUMING_ROOT, ROOT_DISALLOWED,
                               close_open_fds, create_pidlock, detached,
                               fd_by_path, get_fdmax, ignore_errno, initgroups,
                               isatty, maybe_drop_privileges, parse_gid,
-                              parse_uid, set_mp_process_title,
+                              parse_uid, set_mp_process_title, set_pdeathsig,
                               set_process_title, setgid, setgroups, setuid,
                               signals)
 from celery.utils.text import WhateverIO
@@ -26,7 +26,7 @@ from celery.utils.text import WhateverIO
 try:
     import resource
 except ImportError:  # pragma: no cover
-    resource = None  # noqa
+    resource = None
 
 
 def test_isatty():
@@ -168,6 +168,18 @@ class test_Signals:
     def test_setitem_raises(self, set):
         set.side_effect = ValueError()
         signals['INT'] = lambda *a: a
+
+
+class test_set_pdeathsig:
+
+    def test_call(self):
+        set_pdeathsig('SIGKILL')
+
+    @t.skip.if_win32
+    def test_call_with_correct_parameter(self):
+        with patch('celery.platforms._set_pdeathsig') as _set_pdeathsig:
+            set_pdeathsig('SIGKILL')
+            _set_pdeathsig.assert_called_once_with(signal.SIGKILL)
 
 
 @t.skip.if_win32
@@ -825,10 +837,17 @@ class test_setgroups:
             getgroups.assert_called_with()
 
 
+fails_on_win32 = pytest.mark.xfail(
+    sys.platform == "win32",
+    reason="fails on py38+ windows",
+)
+
+
+@fails_on_win32
 @pytest.mark.parametrize('accept_content', [
     {'pickle'},
     {'application/group-python-serialize'},
-    {'pickle', 'application/group-python-serialize'}
+    {'pickle', 'application/group-python-serialize'},
 ])
 @patch('celery.platforms.os')
 def test_check_privileges_suspicious_platform(os_module, accept_content):
@@ -866,6 +885,7 @@ def test_check_privileges_no_fchown(os_module, accept_content, recwarn):
     assert len(recwarn) == 0
 
 
+@fails_on_win32
 @pytest.mark.parametrize('accept_content', [
     {'pickle'},
     {'application/group-python-serialize'},
@@ -886,6 +906,7 @@ def test_check_privileges_without_c_force_root(os_module, accept_content):
         check_privileges(accept_content)
 
 
+@fails_on_win32
 @pytest.mark.parametrize('accept_content', [
     {'pickle'},
     {'application/group-python-serialize'},
@@ -903,6 +924,7 @@ def test_check_privileges_with_c_force_root(os_module, accept_content):
         check_privileges(accept_content)
 
 
+@fails_on_win32
 @pytest.mark.parametrize(('accept_content', 'group_name'), [
     ({'pickle'}, 'sudo'),
     ({'application/group-python-serialize'}, 'sudo'),
@@ -931,6 +953,7 @@ def test_check_privileges_with_c_force_root_and_with_suspicious_group(
         check_privileges(accept_content)
 
 
+@fails_on_win32
 @pytest.mark.parametrize(('accept_content', 'group_name'), [
     ({'pickle'}, 'sudo'),
     ({'application/group-python-serialize'}, 'sudo'),
@@ -960,6 +983,7 @@ def test_check_privileges_without_c_force_root_and_with_suspicious_group(
         check_privileges(accept_content)
 
 
+@fails_on_win32
 @pytest.mark.parametrize('accept_content', [
     {'pickle'},
     {'application/group-python-serialize'},
@@ -988,6 +1012,7 @@ def test_check_privileges_with_c_force_root_and_no_group_entry(
     assert recwarn[1].message.args[0] == expected_message
 
 
+@fails_on_win32
 @pytest.mark.parametrize('accept_content', [
     {'pickle'},
     {'application/group-python-serialize'},

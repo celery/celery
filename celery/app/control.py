@@ -136,17 +136,17 @@ class Inspect:
     def active(self, safe=None):
         """Return list of tasks currently executed by workers.
 
+        Arguments:
+            safe (Boolean): Set to True to disable deserialization.
+
         Returns:
             Dict: Dictionary ``{HOSTNAME: [TASK_INFO,...]}``.
 
         See Also:
             For ``TASK_INFO`` details see :func:`query_task` return value.
 
-        Note:
-            ``safe`` is ignored since 4.0 as no objects will need
-            serialization now that we have argsrepr/kwargsrepr.
         """
-        return self._request('active')
+        return self._request('active', safe=safe)
 
     def scheduled(self, safe=None):
         """Return list of scheduled tasks with details.
@@ -536,7 +536,7 @@ class Control:
             task_name (str): Name of task to change rate limit for.
             rate_limit (int, str): The rate limit as tasks per second,
                 or a rate limit string (`'100/m'`, etc.
-                see :attr:`celery.task.base.Task.rate_limit` for
+                see :attr:`celery.app.task.Task.rate_limit` for
                 more information).
 
         See Also:

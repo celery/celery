@@ -127,7 +127,7 @@ class mScheduler(beat.Scheduler):
 
     def __init__(self, *args, **kwargs):
         self.sent = []
-        beat.Scheduler.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def send_task(self, name=None, args=None, kwargs=None, **options):
         self.sent.append({'name': name,
@@ -599,7 +599,7 @@ def create_persistent_scheduler_w_call_logging(shelv=None):
 
         def __init__(self, *args, **kwargs):
             self.sent = []
-            beat.PersistentScheduler.__init__(self, *args, **kwargs)
+            super().__init__(*args, **kwargs)
 
         def send_task(self, task=None, args=None, kwargs=None, **options):
             self.sent.append({'task': task,

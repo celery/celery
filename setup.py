@@ -139,7 +139,7 @@ class pytest(setuptools.command.test.test):
     user_options = [('pytest-args=', 'a', 'Arguments to pass to pytest')]
 
     def initialize_options(self):
-        setuptools.command.test.test.initialize_options(self)
+        super().initialize_options()
         self.pytest_args = []
 
     def run_tests(self):
@@ -163,7 +163,7 @@ setuptools.setup(
     license='BSD',
     platforms=['any'],
     install_requires=install_requires(),
-    python_requires=">=3.6,",
+    python_requires=">=3.7,",
     tests_require=reqs('test.txt'),
     extras_require=extras_require(),
     cmdclass={'test': pytest},
@@ -185,13 +185,14 @@ setuptools.setup(
         "License :: OSI Approved :: BSD License",
         "Topic :: System :: Distributed Computing",
         "Topic :: Software Development :: Object Brokering",
+        "Framework :: Celery",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
         "Operating System :: OS Independent"

@@ -15,13 +15,13 @@ if sys.platform.startswith('java'):
 
 elif hasattr(sys, 'pypy_version_info'):
 
-    def garbage_collect():  # noqa
+    def garbage_collect():
         # Collecting weakreferences can take two collections on PyPy.
         gc.collect()
         gc.collect()
 else:
 
-    def garbage_collect():  # noqa
+    def garbage_collect():
         gc.collect()
 
 

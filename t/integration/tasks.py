@@ -306,6 +306,11 @@ def return_priority(self, *_args):
     return "Priority: %s" % self.request.delivery_info['priority']
 
 
+@shared_task(bind=True)
+def return_properties(self):
+    return self.request.properties
+
+
 class ClassBasedAutoRetryTask(Task):
     name = 'auto_retry_class_task'
     autoretry_for = (ValueError,)

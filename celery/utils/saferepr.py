@@ -15,6 +15,8 @@ from decimal import Decimal
 from itertools import chain
 from numbers import Number
 from pprint import _recursion
+from typing import (Any, AnyStr, Callable, Dict, Iterator, List, Sequence,
+                    Set, Tuple)
 
 from .text import truncate
 
@@ -191,7 +193,7 @@ def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
 
 def _reprseq(val, lit_start, lit_end, builtin_type, chainer):
     # type: (Sequence, _literal, _literal, Any, Any) -> Tuple[Any, ...]
-    if type(val) is builtin_type:  # noqa
+    if type(val) is builtin_type:
         return lit_start, lit_end, chainer(val)
     return (
         _literal(f'{type(val).__name__}({lit_start.value}', False, +1),

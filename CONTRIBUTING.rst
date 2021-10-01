@@ -710,6 +710,20 @@ After building succeeds, the documentation is available at :file:`_build/html`.
 
 .. _contributing-verify:
 
+Build the documentation using Docker
+------------------------------------
+
+Build the documentation by running:
+
+.. code-block:: console
+
+    $ docker-compose -f docker/docker-compose.yml up --build docs
+
+The service will start a local docs server at ``:7000``. The server is using
+``sphinx-autobuild`` with the ``--watch`` option enabled, so you can live
+edit the documentation. Check the additional options and configs in
+:file:`docker/docker-compose.yml`
+
 Verifying your contribution
 ---------------------------
 
@@ -830,14 +844,13 @@ make it easier for the maintainers to accept your proposed changes:
       ``pytest -xv --cov=celery --cov-report=xml --cov-report term``.
       You can check the current test coverage here: https://codecov.io/gh/celery/celery
 
-- [ ] Run ``flake8`` against the code. The following commands are valid
+- [ ] Run ``pre-commit`` against the code. The following commands are valid
       and equivalent.:
 
       .. code-block:: console
 
-          $ flake8 -j 2 celery/ t/
-          $ make flakecheck
-          $ tox -e flake8
+          $ pre-commit run --all-files
+          $ tox -e lint
 
 - [ ]  Build api docs to make sure everything is OK. The following commands are valid
       and equivalent.:

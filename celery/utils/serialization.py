@@ -13,7 +13,7 @@ from kombu.utils.encoding import bytes_to_str, safe_repr, str_to_bytes
 try:
     import cPickle as pickle
 except ImportError:
-    import pickle  # noqa
+    import pickle
 
 __all__ = (
     'UnpickleableExceptionWrapper', 'subclass_exception',
@@ -30,7 +30,7 @@ STRTOBOOL_DEFAULT_TABLE = {'false': False, 'no': False, '0': False,
                            'on': True, 'off': False}
 
 
-def subclass_exception(name, parent, module):  # noqa
+def subclass_exception(name, parent, module):
     """Create new exception class."""
     return type(name, (parent,), {'__module__': module})
 
@@ -133,8 +133,8 @@ class UnpickleableExceptionWrapper(Exception):
         self.exc_cls_name = exc_cls_name
         self.exc_args = safe_exc_args
         self.text = text
-        Exception.__init__(self, exc_module, exc_cls_name, safe_exc_args,
-                           text)
+        super().__init__(exc_module, exc_cls_name, safe_exc_args,
+                         text)
 
     def restore(self):
         return create_exception_cls(self.exc_cls_name,

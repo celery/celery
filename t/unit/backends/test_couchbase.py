@@ -13,7 +13,7 @@ from celery.exceptions import ImproperlyConfigured
 try:
     import couchbase
 except ImportError:
-    couchbase = None  # noqa
+    couchbase = None
 
 COUCHBASE_BUCKET = 'celery_bucket'
 

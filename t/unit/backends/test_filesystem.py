@@ -1,6 +1,9 @@
 import os
 import pickle
+import sys
 import tempfile
+import time
+from unittest.mock import patch
 
 import pytest
 
@@ -92,3 +95,36 @@ class test_FilesystemBackend:
     def test_pickleable(self):
         tb = FilesystemBackend(app=self.app, url=self.url, serializer='pickle')
         assert pickle.loads(pickle.dumps(tb))
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason='Test can fail on '
+                        'Windows/FAT due to low granularity of st_mtime')
+    def test_cleanup(self):
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        yesterday_task_ids = [uuid() for i in range(10)]
+        today_task_ids = [uuid() for i in range(10)]
+        for tid in yesterday_task_ids:
+            tb.mark_as_done(tid, 42)
+        day_length = 0.2
+        time.sleep(day_length)  # let FS mark some difference in mtimes
+        for tid in today_task_ids:
+            tb.mark_as_done(tid, 42)
+        with patch.object(tb, 'expires', 0):
+            tb.cleanup()
+        # test that zero expiration time prevents any cleanup
+        filenames = set(os.listdir(tb.path))
+        assert all(
+            tb.get_key_for_task(tid) in filenames
+            for tid in yesterday_task_ids + today_task_ids
+        )
+        # test that non-zero expiration time enables cleanup by file mtime
+        with patch.object(tb, 'expires', day_length):
+            tb.cleanup()
+        filenames = set(os.listdir(tb.path))
+        assert not any(
+            tb.get_key_for_task(tid) in filenames
+            for tid in yesterday_task_ids
+        )
+        assert all(
+            tb.get_key_for_task(tid) in filenames
+            for tid in today_task_ids
+        )

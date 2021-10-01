@@ -9,7 +9,7 @@ from .base import KeyValueStoreBackend
 try:
     import pycouchdb
 except ImportError:
-    pycouchdb = None  # noqa
+    pycouchdb = None
 
 __all__ = ('CouchBackend',)
 
@@ -42,7 +42,7 @@ class CouchBackend(KeyValueStoreBackend):
 
         uscheme = uhost = uport = uname = upass = ucontainer = None
         if url:
-            _, uhost, uport, uname, upass, ucontainer, _ = _parse_url(url)  # noqa
+            _, uhost, uport, uname, upass, ucontainer, _ = _parse_url(url)
             ucontainer = ucontainer.strip('/') if ucontainer else None
 
         self.scheme = uscheme or self.scheme

@@ -50,7 +50,7 @@ def __optimize__():
     _does_info = logger.isEnabledFor(logging.INFO)
 
 
-__optimize__()  # noqa: E305
+__optimize__()
 
 # Localize
 tz_or_local = timezone.tz_or_local
@@ -93,7 +93,8 @@ class Request:
                  maybe_make_aware=maybe_make_aware,
                  maybe_iso8601=maybe_iso8601, **opts):
         self._message = message
-        self._request_dict = message.headers if headers is None else headers
+        self._request_dict = (message.headers.copy() if headers is None
+                              else headers.copy())
         self._body = message.body if body is None else body
         self._app = app
         self._utc = utc
@@ -157,6 +158,7 @@ class Request:
             'redelivered': delivery_info.get('redelivered'),
         }
         self._request_dict.update({
+            'properties': properties,
             'reply_to': properties.get('reply_to'),
             'correlation_id': properties.get('correlation_id'),
             'hostname': self._hostname,
@@ -291,7 +293,7 @@ class Request:
         # XXX compat
         return self.id
 
-    @task_id.setter  # noqa
+    @task_id.setter
     def task_id(self, value):
         self.id = value
 
@@ -300,7 +302,7 @@ class Request:
         # XXX compat
         return self.name
 
-    @task_name.setter  # noqa
+    @task_name.setter
     def task_name(self, value):
         self.name = value
 
@@ -308,6 +310,10 @@ class Request:
     def reply_to(self):
         # used by rpc backend when failures reported by parent process
         return self._request_dict['reply_to']
+
+    @property
+    def replaced_task_nesting(self):
+        return self._request_dict.get('replaced_task_nesting', 0)
 
     @property
     def correlation_id(self):
@@ -600,8 +606,8 @@ class Request:
         return {
             'id': self.id,
             'name': self.name,
-            'args': self._args,
-            'kwargs': self._kwargs,
+            'args': self._args if not safe else self._argsrepr,
+            'kwargs': self._kwargs if not safe else self._kwargsrepr,
             'type': self._type,
             'hostname': self._hostname,
             'time_start': self.time_start,

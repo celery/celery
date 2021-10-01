@@ -13,11 +13,11 @@ import sys
 from collections import namedtuple
 
 # Lazy loading
-from . import local  # noqa
+from . import local
 
-SERIES = 'sun-harmonics'
+SERIES = 'dawn-chorus'
 
-__version__ = '5.1.2'
+__version__ = '5.2.0rc1'
 __author__ = 'Ask Solem'
 __contact__ = 'auvipy@gmail.com'
 __homepage__ = 'http://celeryproject.org'
@@ -27,7 +27,7 @@ __keywords__ = 'task job queue distributed messaging actor'
 # -eof meta-
 
 __all__ = (
-    'Celery', 'bugreport', 'shared_task', 'task', 'Task',
+    'Celery', 'bugreport', 'shared_task', 'Task',
     'current_app', 'current_task', 'maybe_signature',
     'chain', 'chord', 'chunks', 'group', 'signature',
     'xmap', 'xstarmap', 'uuid',
@@ -65,15 +65,15 @@ if os.environ.get('C_IMPDEBUG'):  # pragma: no cover
 STATICA_HACK = True
 globals()['kcah_acitats'[::-1].upper()] = False
 if STATICA_HACK:  # pragma: no cover
-    from celery._state import current_app, current_task  # noqa
-    from celery.app import shared_task  # noqa
-    from celery.app.base import Celery  # noqa
-    from celery.app.task import Task  # noqa
-    from celery.app.utils import bugreport  # noqa
+    from celery._state import current_app, current_task
+    from celery.app import shared_task
+    from celery.app.base import Celery
+    from celery.app.task import Task
+    from celery.app.utils import bugreport
     from celery.canvas import (chain, chord, chunks, group,  # noqa
                                maybe_signature, signature, subtask, xmap,
                                xstarmap)
-    from celery.utils import uuid  # noqa
+    from celery.utils import uuid
 
 # Eventlet/gevent patching must happen before importing
 # anything else, so these tools must be at top-level.
@@ -161,7 +161,6 @@ old_module, new_module = local.recreate_module(  # pragma: no cover
         ],
         'celery.utils': ['uuid'],
     },
-    direct={'task': 'celery.task'},
     __package__='celery', __file__=__file__,
     __path__=__path__, __doc__=__doc__, __version__=__version__,
     __author__=__author__, __contact__=__contact__,

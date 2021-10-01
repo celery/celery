@@ -48,13 +48,13 @@ try:
 
 except ImportError:  # pragma: no cover
 
-    def __read__(fd, buf, size, read=os.read):  # noqa
+    def __read__(fd, buf, size, read=os.read):
         chunk = read(fd, size)
         n = len(chunk)
         if n != 0:
             buf.write(chunk)
         return n
-    readcanbuf = False  # noqa
+    readcanbuf = False
 
     def unpack_from(fmt, iobuf, unpack=unpack):  # noqa
         return unpack(fmt, iobuf.getvalue())  # <-- BytesIO
@@ -978,10 +978,14 @@ class AsynPool(_pool.Pool):
     def flush(self):
         if self._state == TERMINATE:
             return
-        # cancel all tasks that haven't been accepted so that NACK is sent.
-        for job in self._cache.values():
+        # cancel all tasks that haven't been accepted so that NACK is sent
+        # if synack is enabled.
+        for job in tuple(self._cache.values()):
             if not job._accepted:
-                job._cancel()
+                if self.synack:
+                    job._cancel()
+                else:
+                    job.discard()
 
         # clear the outgoing buffer as the tasks will be redelivered by
         # the broker anyway.

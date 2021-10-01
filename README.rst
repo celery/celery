@@ -2,7 +2,7 @@
 
 |build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 5.1.2 (sun-harmonics)
+:Version: 5.2.0rc1 (dawn-chorus)
 :Web: https://docs.celeryproject.org/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -57,10 +57,10 @@ in such a way that the client enqueues an URL to be requested by a worker.
 What do I need?
 ===============
 
-Celery version 5.1.2 runs on,
+Celery version 5.2.0rc1 runs on,
 
-- Python (3.6, 3.7, 3.8, 3.9)
-- PyPy3.6 (7.6)
+- Python (3.7, 3.8, 3.9)
+- PyPy3.7 (7.3+)
 
 
 This is the next version of celery which will support Python 3.6 or newer.
@@ -72,6 +72,7 @@ an older version of Celery:
 - Python 2.5: Celery series 3.0 or earlier.
 - Python 2.4: Celery series 2.2 or earlier.
 - Python 2.7: Celery 4.x series.
+- Python 3.6: Celery 5.1 or earlier.
 
 Celery is a project with minimal funding,
 so we don't support Microsoft Windows.
@@ -89,7 +90,7 @@ Get Started
 ===========
 
 If this is the first time you're trying to use Celery, or you're
-new to Celery 5.0.5 or 5.1.2 coming from previous versions then you should read our
+new to Celery 5.0.5 or 5.2.0rc1 coming from previous versions then you should read our
 getting started tutorials:
 
 - `First steps with Celery`_
@@ -105,7 +106,7 @@ getting started tutorials:
 
 .. _`Next steps`:
     http://docs.celeryproject.org/en/latest/getting-started/next-steps.html
-    
+
  You can also get started with Celery by using a hosted broker transport CloudAMQP. The largest hosting provider of RabbitMQ is a proud sponsor of Celery.
 
 Celery is...
@@ -421,10 +422,10 @@ please join the `celery-users`_ mailing list.
 IRC
 ---
 
-Come chat with us on IRC. The **#celery** channel is located at the `Freenode`_
-network.
+Come chat with us on IRC. The **#celery** channel is located at the
+`Libera Chat`_ network.
 
-.. _`Freenode`: https://freenode.net
+.. _`Libera Chat`: https://libera.chat/
 
 .. _bug-tracker:
 
