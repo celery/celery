@@ -245,8 +245,8 @@ the message broker (a popular combination):
 
 To read more about result backends please see :ref:`task-result-backends`.
 
-Now with the result backend configured, close the current python session and `import` the
-`app` from `tasks` again to put the changes into effect. This time you'll hold on to the
+Now with the result backend configured, close the current python session and import the
+``tasks`` module again to put the changes into effect. This time you'll hold on to the
 :class:`~@AsyncResult` instance returned when you call a task:
 
 .. code-block:: pycon
