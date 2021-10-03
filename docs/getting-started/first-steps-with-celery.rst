@@ -245,12 +245,13 @@ the message broker (a popular combination):
 
 To read more about result backends please see :ref:`task-result-backends`.
 
-Now with the result backend configured, let's call the task again.
-This time you'll hold on to the :class:`~@AsyncResult` instance returned
-when you call a task:
+Now with the result backend configured, close the current python session and `import` the
+`app` from `tasks` again to put the changes into effect. This time you'll hold on to the
+:class:`~@AsyncResult` instance returned when you call a task:
 
 .. code-block:: pycon
 
+    >>> from tasks import add    # close and reopen to get updated 'app'
     >>> result = add.delay(4, 4)
 
 The :meth:`~@AsyncResult.ready` method returns whether the task
