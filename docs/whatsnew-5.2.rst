@@ -159,7 +159,7 @@ Experimental support
 Celery supports these Python versions provisionally as they are not production
 ready yet:
 
-- CPython 3.10
+- CPython 3.10 (currently in RC2)
 
 Memory Leak Fixes
 -----------------
@@ -204,6 +204,14 @@ you can still use Celery 5.1.
 However we encourage you to upgrade to a supported Python version since
 no further security patches will be applied for Python 3.6 after
 the 23th of December, 2021.
+
+Tasks
+-----
+
+When replacing a task with another task, we now give an indication of the
+replacing nesting level through the ``replaced_task_nesting`` header.
+
+A task which was never replaced has a ``replaced_task_nesting`` value of 0.
 
 Kombu
 -----
@@ -349,6 +357,17 @@ You can opt out of this behavior by setting ``one_client`` to True.
 Please refer to the documentation of the backend if you're using the Consul
 backend to find out which behavior suites you.
 
+Filesystem Result Backend
+-------------------------
+
+We now cleanup expired task results while using the
+filesystem result backend as most result backends do.
+
 ArangoDB Result Backend
 -----------------------
 
+You can now check the validity of the CA certificate while making
+a TLS connection to ArangoDB result backend.
+
+If you'd like to do so, set the ``verify`` key in the
+:setting:`arangodb_backend_settings`` dictionary to ``True``.
