@@ -1611,7 +1611,7 @@ Timeout in seconds for establishing the azure block blob connection.
 .. setting:: azureblockblob_read_timeout
 
 ``azureblockblob_read_timeout``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 
 Default: 120.
 
