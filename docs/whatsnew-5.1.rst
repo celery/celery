@@ -290,6 +290,9 @@ you should import `kombu.utils.encoding` instead.
 If you were using the `celery.task` module before, you should import directly
 from the `celery` module instead.
 
+If you were using `from celery.task import Task` you should use 
+`from celery import Task` instead.
+
 If you were using the `celery.task` decorator you should use 
 `celery.shared_task` instead.
 
