@@ -61,6 +61,42 @@ class test_AzureBlockBlobBackend:
         assert backend._blob_service_client is not None
         assert mock_blob_service_client_instance.create_container.call_count == 1
 
+    @patch(MODULE_TO_MOCK + ".BlobServiceClient")
+    def test_configure_client(self, mock_blob_service_factory):
+
+        connection_timeout = 3
+        read_timeout = 11
+        self.app.conf.update(
+            {
+                'azureblockblob_connection_timeout': connection_timeout,
+                'azureblockblob_read_timeout': read_timeout,
+            }
+        )
+
+        mock_blob_service_client_instance = Mock()
+        mock_blob_service_factory.from_connection_string.return_value = (
+            mock_blob_service_client_instance
+        )
+
+        base_url = "azureblockblob://"
+        connection_string = "connection_string"
+        backend = AzureBlockBlobBackend(
+            app=self.app, url=f'{base_url}{connection_string}'
+        )
+
+        client = backend._blob_service_client
+        assert client is mock_blob_service_client_instance
+
+        (
+            mock_blob_service_factory
+            .from_connection_string
+            .assert_called_once_with(
+                connection_string,
+                connection_timeout=connection_timeout,
+                read_timeout=read_timeout
+            )
+        )
+
     @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._blob_service_client")
     def test_get(self, mock_client, base_path):
         self.backend.base_path = base_path
