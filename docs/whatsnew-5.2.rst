@@ -218,6 +218,11 @@ Kombu
 
 Starting from v5.2, the minimum required version is Kombu 5.2.0.
 
+Prefork Workers Pool
+---------------------
+
+Now all orphaned worker processes are killed automatically when main process exits.
+
 Eventlet Workers Pool
 ---------------------
 
