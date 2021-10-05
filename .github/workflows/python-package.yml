@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10.0-rc.2', 'pypy-3.7']
+        python-version: ['3.7', '3.8', '3.9', '3.10', 'pypy-3.7']
         os: ["ubuntu-20.04", "windows-2019"]
 
     steps:
