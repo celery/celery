@@ -44,6 +44,10 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
             conf["azureblockblob_container_name"])
 
         self.base_path = conf.get('azureblockblob_base_path', '')
+        self._connection_timeout = conf.get(
+            'azureblockblob_connection_timeout', 20
+        )
+        self._read_timeout = conf.get('azureblockblob_read_timeout', 120)
 
     @classmethod
     def _parse_url(cls, url, prefix="azureblockblob://"):
@@ -61,7 +65,11 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
         the container is created if it doesn't yet exist.
 
         """
-        client = BlobServiceClient.from_connection_string(self._connection_string)
+        client = BlobServiceClient.from_connection_string(
+            self._connection_string,
+            connection_timeout=self._connection_timeout,
+            read_timeout=self._read_timeout
+        )
 
         try:
             client.create_container(name=self._container_name)
