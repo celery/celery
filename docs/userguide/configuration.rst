@@ -372,7 +372,7 @@ methods that have been registered with :mod:`kombu.serialization.registry`.
 ``task_args_repr_function``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded: 5.1
+.. versionadded: 5.3
 
 Default: ``"celery.utils.saferepr.saferepr"``.
 
