@@ -7,3 +7,26 @@
 This document contains change notes for bugfix & new features
 in the & 5.2.x series, please see :ref:`whatsnew-5.2` for
 an overview of what's new in Celery 5.2.
+
+
+.. _version-5.2.0b1:
+
+5.1.0b1
+=======
+:release-date: 2021-08-11 5.42 P.M UTC+3:00
+:release-by: Omer Katz
+
+- Add Python 3.10 support (#6807).
+- Fix docstring for Signal.send to match code (#6835).
+- No blank line in log output (#6838).
+- Chords get body_type independently to handle cases where body.type does not exist (#6847).
+- Fix #6844 by allowing safe queries via app.inspect().active() (#6849).
+- Fix multithreaded backend usage (#6851)
+- Fix Open Collective donate button (#6848)
+- Fix setting worker concurrency option after signal (#6853).
+- Make ResultSet.on_ready promise hold a weakref to self (#6784).
+- Update configuration.rst.
+- Discard jobs on flush if synack isn't enabled (#6863).
+- Bump click version to 8.0 (#6861).
+- Amend IRC network link to Libera (#6837).
+-
