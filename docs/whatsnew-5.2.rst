@@ -23,6 +23,14 @@ Celery has a large and diverse community of users and contributors,
 you should come join us :ref:`on IRC <irc-channel>`
 or :ref:`our mailing-list <mailing-list>`.
 
+.. note::
+
+    Following the problems with Freenode, we migrated our IRC channel to Libera Chat
+    as most projects did.
+    You can also join us using `Gitter <https://gitter.im/celery/celery>`_.
+
+    We're sometimes there to answer questions. We welcome you to join.
+
 To read more about Celery you should go read the :ref:`introduction <intro>`.
 
 While this version is **mostly** backward compatible with previous versions
