@@ -1151,7 +1151,7 @@ may also be one of ``CERT_REQUIRED``, ``CERT_OPTIONAL``, ``CERT_NONE``).
 
 If a Unix socket connection should be used, the URL needs to be in the format:::
 
-    result_backend = 'socket:///path/to/redis.sock'
+    result_backend = 'redis+socket:///path/to/redis.sock'
 
 The fields of the URL are defined as follows:
 

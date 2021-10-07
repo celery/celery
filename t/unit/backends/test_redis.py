@@ -403,7 +403,7 @@ class test_RedisBackend(basetest_RedisBackend):
         self.app.conf.redis_socket_timeout = 30.0
         self.app.conf.redis_socket_connect_timeout = 100.0
         x = self.Backend(
-            'socket:///tmp/redis.sock?virtual_host=/3', app=self.app,
+            'redis+socket:///tmp/redis.sock?virtual_host=/3', app=self.app,
         )
         assert x.connparams
         assert x.connparams['path'] == '/tmp/redis.sock'
