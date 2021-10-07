@@ -603,7 +603,6 @@ class AMQP:
                 'task_args_repr_function must be a function or a string '
                 'providing the path to a function'
             )
-        return repr_function
 
     @property
     def producer_pool(self):
