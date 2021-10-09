@@ -165,3 +165,30 @@ class test_AzureBlockBlobBackend:
             url=self.url
         )
         assert backend.base_path == ''
+
+
+class test_as_uri:
+    def setup(self):
+        self.url = (
+            "azureblockblob://"
+            "DefaultEndpointsProtocol=protocol;"
+            "AccountName=name;"
+            "AccountKey=account_key;"
+            "EndpointSuffix=suffix"
+        )
+        self.backend = AzureBlockBlobBackend(
+            app=self.app,
+            url=self.url
+        )
+
+    def test_as_uri_include_password(self):
+        assert self.backend.as_uri(include_password=True) == self.url
+
+    def test_as_uri_exclude_password(self):
+        assert self.backend.as_uri(include_password=False) == (
+            "azureblockblob://"
+            "DefaultEndpointsProtocol=protocol;"
+            "AccountName=name;"
+            "AccountKey=**;"
+            "EndpointSuffix=suffix"
+        )
