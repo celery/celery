@@ -137,6 +137,7 @@ def long_description():
 
 class pytest(setuptools.command.test.test):
     user_options = [('pytest-args=', 'a', 'Arguments to pass to pytest')]
+    pytest_args = None
 
     def initialize_options(self):
         super().initialize_options()
