@@ -21,12 +21,15 @@ an overview of what's new in Celery 5.2.
 - No blank line in log output (#6838).
 - Chords get body_type independently to handle cases where body.type does not exist (#6847).
 - Fix #6844 by allowing safe queries via app.inspect().active() (#6849).
-- Fix multithreaded backend usage (#6851)
-- Fix Open Collective donate button (#6848)
+- Fix multithreaded backend usage (#6851).
+- Fix Open Collective donate button (#6848).
 - Fix setting worker concurrency option after signal (#6853).
 - Make ResultSet.on_ready promise hold a weakref to self (#6784).
 - Update configuration.rst.
 - Discard jobs on flush if synack isn't enabled (#6863).
 - Bump click version to 8.0 (#6861).
 - Amend IRC network link to Libera (#6837).
--
+- Import celery lazily in pytest plugin and unignore flake8 F821, "undefined name '...'" (#6872).
+- Fix inspect --json output to return valid json without --quiet.
+- Remove celery.task references in modules, docs (#6869).
+-  The Consul backend must correctly associate requests and responses (#6823).
