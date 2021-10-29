@@ -1,4 +1,4 @@
-"""Functional-style utilties."""
+"""Functional-style utilities."""
 import inspect
 import sys
 from collections import UserList

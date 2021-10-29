@@ -47,7 +47,7 @@ ENV PATH="$HOME/.pyenv/bin:$PATH"
 # Copy and run setup scripts
 WORKDIR $PROVISIONING
 #COPY docker/scripts/install-couchbase.sh .
-# Scripts will lose thier executable flags on copy. To avoid the extra instructions
+# Scripts will lose their executable flags on copy. To avoid the extra instructions
 # we call the shell directly.
 #RUN sh install-couchbase.sh
 COPY docker/scripts/create-linux-user.sh .

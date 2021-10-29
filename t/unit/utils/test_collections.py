@@ -178,7 +178,7 @@ class test_LimitedSet:
 
     def test_purge(self):
         # purge now enforces rules
-        # cant purge(1) now. but .purge(now=...) still works
+        # can't purge(1) now. but .purge(now=...) still works
         s = LimitedSet(maxlen=10)
         [s.add(i) for i in range(10)]
         s.maxlen = 2

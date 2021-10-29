@@ -33,13 +33,13 @@ def str_to_list(s):
 
 def dedent_initial(s, n=4):
     # type: (str, int) -> str
-    """Remove identation from first line of text."""
+    """Remove indentation from first line of text."""
     return s[n:] if s[:n] == ' ' * n else s
 
 
 def dedent(s, n=4, sep='\n'):
     # type: (str, int, str) -> str
-    """Remove identation."""
+    """Remove indentation."""
     return sep.join(dedent_initial(l) for l in s.splitlines())
 
 
