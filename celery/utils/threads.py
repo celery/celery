@@ -282,7 +282,7 @@ class LocalManager:
     def get_ident(self):
         """Return context identifier.
 
-        This is the indentifer the local objects use internally
+        This is the identifier the local objects use internally
         for this context.  You cannot override this method to change the
         behavior but use it to link other context local objects (such as
         SQLAlchemy's scoped sessions) to the Werkzeug locals.

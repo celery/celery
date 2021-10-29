@@ -143,7 +143,7 @@ class Redis(mock.MockCallbacks):
 
     def zrange(self, key, start, stop):
         # `stop` is inclusive in Redis so we use `stop + 1` unless that would
-        # cause us to move from negative (right-most) indicies to positive
+        # cause us to move from negative (right-most) indices to positive
         stop = stop + 1 if stop != -1 else None
         return [e[1] for e in self._get_sorted_set(key)[start:stop]]
 

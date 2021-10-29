@@ -1068,7 +1068,7 @@ class AsynPool(_pool.Pool):
                     if owner is None)
 
     def on_grow(self, n):
-        """Grow the pool by ``n`` proceses."""
+        """Grow the pool by ``n`` processes."""
         diff = max(self._processes - len(self._queues), 0)
         if diff:
             self._queues.update({
@@ -1248,7 +1248,7 @@ class AsynPool(_pool.Pool):
         """Called when a job was partially written to exited child."""
         # worker terminated by signal:
         # we cannot reuse the sockets again, because we don't know if
-        # the process wrote/read anything frmo them, and if so we cannot
+        # the process wrote/read anything from them, and if so we cannot
         # restore the message boundaries.
         if not job._accepted:
             # job was not acked, so find another worker to send it to.

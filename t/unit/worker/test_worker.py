@@ -893,7 +893,7 @@ class test_WorkController(ConsumerCase):
         worker.pool._pool.on_poll_start()
         # Then: test did not raise OSError
 
-        # Given: a mock object that fakes whats required to do whats next
+        # Given: a mock object that fakes what's required to do what's next
         proc = Mock(_sentinel_poll=42)
 
         # When: Calling again to register with event loop ...
