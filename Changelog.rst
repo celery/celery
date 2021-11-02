@@ -8,6 +8,34 @@ This document contains change notes for bugfix & new features
 in the & 5.2.x series, please see :ref:`whatsnew-5.2` for
 an overview of what's new in Celery 5.2.
 
+.. _version-5.2.0rc2:
+
+5.2.0rc2
+=======
+:release-date: soon
+:release-by: Omer Katz
+
+- Bump Python 3.10.0 to rc2.
+- [pre-commit.ci] pre-commit autoupdate (#6972).
+- autopep8.
+- Prevent worker to send expired revoked items upon hello command (#6975).
+- docs: clarify the 'keeping results' section (#6979).
+- Update deprecated task module removal in 5.0 documentation (#6981).
+- [pre-commit.ci] pre-commit autoupdate.
+- try python 3.10 GA.
+- mention python 3.10 on readme.
+- Documenting the default consumer_timeout value for rabbitmq >= 3.8.15.
+- Azure blockblob backend parametrized connection/read timeouts (#6978).
+- Add as_uri method to azure block blob backend.
+- Add possibility to override backend implementation with celeryconfig (#6879).
+- [pre-commit.ci] pre-commit autoupdate.
+- try to fix deprecation warning.
+- [pre-commit.ci] pre-commit autoupdate.
+- not needed anyore.
+- not needed anyore.
+- not used anymore.
+- add github discussions forum
+
 .. _version-5.2.0rc1:
 
 5.2.0rc1
