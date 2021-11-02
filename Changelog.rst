@@ -12,7 +12,7 @@ an overview of what's new in Celery 5.2.
 
 5.2.0rc2
 =======
-:release-date: soon
+:release-date: 2021-11-02 1.54 P.M UTC+3:00
 :release-by: Naomi Elstein
 
 - Bump Python 3.10.0 to rc2.
