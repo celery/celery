@@ -8,6 +8,32 @@ This document contains change notes for bugfix & new features
 in the & 5.2.x series, please see :ref:`whatsnew-5.2` for
 an overview of what's new in Celery 5.2.
 
+.. _version-5.2.0rc1:
+
+5.2.0rc1
+=======
+:release-date: 2021-09-26 4.04 P.M UTC+3:00
+:release-by: Omer Katz
+
+- Kill all workers when main process exits in prefork model (#6942).
+- test kombu 5.2.0rc1 (#6947).
+- try moto 2.2.x (#6948).
+- Prepared Hacker News Post on Release Action.
+- update setup with python 3.7 as minimum.
+- update kombu on setupcfg.
+- Added note about automatic killing all child processes of worker after its termination.
+- [pre-commit.ci] pre-commit autoupdate.
+- Move importskip before greenlet import (#6956).
+- amqp: send expiration field to broker if requested by user (#6957).
+- Single line drift warning.
+- canvas: fix kwargs argument to prevent recursion (#6810) (#6959).
+- Allow to enable Events with app.conf mechanism.
+- Warn when expiration date is in the past.
+- Add the Framework :: Celery trove classifier.
+- Give indication whether the task is replacing another (#6916).
+- Make setup.py executable.
+- Bump version: 5.2.0b3 → 5.2.0rc1.
+
 .. _version-5.2.0b3:
 
 5.2.0b3
