@@ -11,7 +11,7 @@ an overview of what's new in Celery 5.2.
 
 .. _version-5.2.0b1:
 
-5.1.0b1
+5.2.0b1
 =======
 :release-date: 2021-08-11 5.42 P.M UTC+3:00
 :release-by: Omer Katz
