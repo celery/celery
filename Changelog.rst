@@ -8,6 +8,19 @@ This document contains change notes for bugfix & new features
 in the & 5.2.x series, please see :ref:`whatsnew-5.2` for
 an overview of what's new in Celery 5.2.
 
+.. _version-5.2.0b2:
+
+5.2.0b2
+=======
+:release-date: 2021-08-17 5.35 P.M UTC+3:00
+:release-by: Omer Katz
+
+- Test windows on py3.10rc1 and pypy3.7 (#6868).
+- Route chord_unlock task to the same queue as chord body (#6896).
+- Add message properties to app.tasks.Context (#6818).
+- handle already converted LogLevel and JSON (#6915).
+- 5.2 is codenamed dawn-chorus.
+- Bump version: 5.2.0b1 → 5.2.0b2.
 
 .. _version-5.2.0b1:
 
