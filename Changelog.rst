@@ -8,6 +8,33 @@ This document contains change notes for bugfix & new features
 in the & 5.2.x series, please see :ref:`whatsnew-5.2` for
 an overview of what's new in Celery 5.2.
 
+.. _version-5.2.0b3:
+
+5.2.0b3
+=======
+:release-date: 2021-09-02 8.38 P.M UTC+3:00
+:release-by: Omer Katz
+
+- Add args to LOG_RECEIVED (fixes #6885) (#6898).
+- Terminate job implementation for eventlet concurrency backend (#6917).
+- Add cleanup implementation to filesystem backend (#6919).
+- [pre-commit.ci] pre-commit autoupdate (#69).
+- Add before_start hook (fixes #4110) (#6923).
+- Restart consumer if connection drops (#6930).
+- Remove outdated optimization documentation (#6933).
+- added https verification check functionality in arangodb backend (#6800).
+- Drop Python 3.6 support.
+- update supported python versions on readme.
+- [pre-commit.ci] pre-commit autoupdate (#6935).
+- Remove appveyor configuration since we migrated to GA.
+- pyugrade is now set to upgrade code to 3.7.
+- Drop exclude statement since we no longer test with pypy-3.6.
+- 3.10 is not GA so it's not supported yet.
+- Celery 5.1 or earlier support Python 3.6.
+- Fix linting error.
+- fix: Pass a Context when chaining fail results (#6899).
+- Bump version: 5.2.0b2 → 5.2.0b3.
+
 .. _version-5.2.0b2:
 
 5.2.0b2
