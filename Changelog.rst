@@ -13,7 +13,7 @@ an overview of what's new in Celery 5.2.
 5.2.0rc2
 =======
 :release-date: soon
-:release-by: Omer Katz
+:release-by: Naomi Elstein
 
 - Bump Python 3.10.0 to rc2.
 - [pre-commit.ci] pre-commit autoupdate (#6972).
