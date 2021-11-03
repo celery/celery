@@ -110,7 +110,8 @@ class ResultConsumer(BaseResultConsumer):
         self._pubsub = self.backend.client.pubsub(
             ignore_subscribe_messages=True,
         )
-        self._pubsub.subscribe(*self.subscribed_to)
+        if self.subscribed_to:
+            self._pubsub.subscribe(*self.subscribed_to)
 
     @contextmanager
     def reconnect_on_error(self):
