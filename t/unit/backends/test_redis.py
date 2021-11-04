@@ -276,6 +276,15 @@ class test_RedisResultConsumer:
         parent_on_state_change.assert_called_with(meta, None)
         assert consumer._pubsub._subscribed_to == {b'celery-task-meta-initial'}
 
+    def test_drain_events_connection_error_no_patch(self):
+        meta = {'task_id': 'initial', 'status': states.SUCCESS}
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.backend._set_with_state(b'celery-task-meta-initial', json.dumps(meta), states.SUCCESS)
+        consumer._pubsub.get_message.side_effect = ConnectionError()
+        consumer.drain_events()
+        consumer._pubsub.subscribe.assert_not_called()
+
 
 class basetest_RedisBackend:
     def get_backend(self):
