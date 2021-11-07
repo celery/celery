@@ -333,9 +333,9 @@ older `azure-servicebus` versions.
 Dropped support for Pymongo 3.12.1 and above
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We added a limitation which only allows for Pymongo versions between 3.3.0 and 3.12.0 because DNS does not resolve with pymongo versions 3.12.1 and above.  
+We added a limitation on Pymongo version, only allowing for versions between 3.3.0 and 3.12.0. DNS does not resolve with pymongo versions 3.12.1 and above.  
 
-We plan to upgrade Pymongo to version 3.11.1 which will resolve this issue.
+This limitation will be removed when we resolve the root issue. 
 
 News
 ====
