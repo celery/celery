@@ -330,6 +330,13 @@ older `azure-servicebus` versions.
 
 .. _v520-news:
 
+Bug: Pymongo 3.12.1 is not compatible with Celery 5.2 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For now we are limiting Pymongo version, only allowing for versions between 3.3.0 and 3.12.0.  
+
+This will be fixed in the next patch.
+
 News
 ====
 
