@@ -8,6 +8,19 @@ This document contains change notes for bugfix & new features
 in the & 5.2.x series, please see :ref:`whatsnew-5.2` for
 an overview of what's new in Celery 5.2.
 
+.. _version-5.2.0:
+
+5.2.0
+=======
+:release-date: 2021-11-08 7.15 A.M UTC+6:00
+:release-by: Asif Saif Uddin
+
+- Prevent from subscribing to empty channels (#7040)
+- fix register_task method.
+- Fire task failure signal on final reject (#6980)
+- Limit pymongo version: <3.12.1 (#7041) 
+- Bump min kombu version to 5.2.1
+
 .. _version-5.2.0rc2:
 
 5.2.0rc2
