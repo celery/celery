@@ -287,6 +287,31 @@ class test_default_logger:
                     assert stderr.getvalue()
 
     @mock.restore_logging()
+    def test_logging_proxy_bytes(self):
+        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
+                                   root=False)
+
+        with mock.wrap_logger(logger) as sio:
+            p = LoggingProxy(logger, loglevel=logging.ERROR)
+            p.close()
+            p.write(b'foo')
+            assert 'foo' not in str(sio.getvalue())
+            p.closed = False
+            p.write(b'\n')
+            assert str(sio.getvalue()) == ''
+            write_res = p.write(b'foo ')
+            assert str(sio.getvalue()) == 'foo \n'
+            assert write_res == 4
+            p.flush()
+            p.close()
+            assert not p.isatty()
+
+            with mock.stdouts() as (stdout, stderr):
+                with in_sighandler():
+                    p.write(b'foo')
+                    assert stderr.getvalue()
+
+    @mock.restore_logging()
     def test_logging_proxy_recurse_protection(self):
         logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
                                    root=False)
