@@ -941,6 +941,17 @@ class test_tasks(TasksCase):
                 name='George Costanza', test_eta=True, test_expires=True,
             )
 
+            # With ETA, absolute expires without timezone.
+            presult2 = self.mytask.apply_async(
+                kwargs={'name': 'George Constanza'},
+                eta=self.now() + timedelta(days=1),
+                expires=(self.now() + timedelta(hours=2)).replace(tzinfo=None),
+            )
+            self.assert_next_task_data_equal(
+                consumer, presult2, self.mytask.name,
+                name='George Constanza', test_eta=True, test_expires=True,
+            )
+
             # With ETA, absolute expires in the past.
             presult2 = self.mytask.apply_async(
                 kwargs={'name': 'George Costanza'},
