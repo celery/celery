@@ -57,13 +57,13 @@ in such a way that the client enqueues an URL to be requested by a worker.
 What do I need?
 ===============
 
-Celery version 5.2.0rc2 runs on,
+Celery version 5.2.0 runs on,
 
 - Python (3.7, 3.8, 3.9, 3.10)
-- PyPy3.7 (7.3+)
+- PyPy3.7 (7.3.7+)
 
 
-This is the next version of celery which will support Python 3.6 or newer.
+This is the version of celery which will support Python 3.7 or newer.
 
 If you're running an older version of Python, you need to be running
 an older version of Celery:
@@ -90,7 +90,7 @@ Get Started
 ===========
 
 If this is the first time you're trying to use Celery, or you're
-new to Celery 5.0.5 or 5.2.0rc2 coming from previous versions then you should read our
+new to Celery v5.2.0 coming from previous versions then you should read our
 getting started tutorials:
 
 - `First steps with Celery`_
@@ -258,9 +258,9 @@ separating them by commas.
 ::
 
 
-    $ pip install "celery[librabbitmq]"
+    $ pip install "celery[amqp]"
 
-    $ pip install "celery[librabbitmq,redis,auth,msgpack]"
+    $ pip install "celery[amqp,redis,auth,msgpack]"
 
 The following bundles are available:
 
@@ -288,8 +288,8 @@ Concurrency
 Transports and Backends
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-:``celery[librabbitmq]``:
-    for using the librabbitmq C library.
+:``celery[amqp]``:
+    for using the RabbitMQ amqp python library.
 
 :``celery[redis]``:
     for using Redis as a message transport or as a result backend.
