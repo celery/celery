@@ -5,7 +5,6 @@ from itertools import cycle
 from unittest.mock import Mock, patch
 
 import pytest
-from case import mock
 
 import t.skip
 from celery.app.defaults import DEFAULTS
@@ -64,55 +63,53 @@ class test_process_initializer:
         return loader
 
     @patch('celery.platforms.signals')
-    def test_process_initializer(self, _signals, set_mp_process_title):
-        with mock.restore_logging():
-            from celery import signals
-            from celery._state import _tls
-            from celery.concurrency.prefork import (WORKER_SIGIGNORE,
-                                                    WORKER_SIGRESET,
-                                                    process_initializer)
-            on_worker_process_init = Mock()
-            signals.worker_process_init.connect(on_worker_process_init)
+    def test_process_initializer(self, _signals, set_mp_process_title, restore_logging):
+        from celery import signals
+        from celery._state import _tls
+        from celery.concurrency.prefork import (WORKER_SIGIGNORE,
+                                                WORKER_SIGRESET,
+                                                process_initializer)
+        on_worker_process_init = Mock()
+        signals.worker_process_init.connect(on_worker_process_init)
 
-            with self.Celery(loader=self.Loader) as app:
-                app.conf = AttributeDict(DEFAULTS)
-                process_initializer(app, 'awesome.worker.com')
-                _signals.ignore.assert_any_call(*WORKER_SIGIGNORE)
-                _signals.reset.assert_any_call(*WORKER_SIGRESET)
-                assert app.loader.init_worker.call_count
-                on_worker_process_init.assert_called()
-                assert _tls.current_app is app
-                set_mp_process_title.assert_called_with(
-                    'celeryd', hostname='awesome.worker.com',
-                )
+        with self.Celery(loader=self.Loader) as app:
+            app.conf = AttributeDict(DEFAULTS)
+            process_initializer(app, 'awesome.worker.com')
+            _signals.ignore.assert_any_call(*WORKER_SIGIGNORE)
+            _signals.reset.assert_any_call(*WORKER_SIGRESET)
+            assert app.loader.init_worker.call_count
+            on_worker_process_init.assert_called()
+            assert _tls.current_app is app
+            set_mp_process_title.assert_called_with(
+                'celeryd', hostname='awesome.worker.com',
+            )
 
-                with patch('celery.app.trace.setup_worker_optimizations') as S:
-                    os.environ['FORKED_BY_MULTIPROCESSING'] = '1'
-                    try:
-                        process_initializer(app, 'luke.worker.com')
-                        S.assert_called_with(app, 'luke.worker.com')
-                    finally:
-                        os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
-
-                os.environ['CELERY_LOG_FILE'] = 'worker%I.log'
-                app.log.setup = Mock(name='log_setup')
+            with patch('celery.app.trace.setup_worker_optimizations') as S:
+                os.environ['FORKED_BY_MULTIPROCESSING'] = '1'
                 try:
                     process_initializer(app, 'luke.worker.com')
+                    S.assert_called_with(app, 'luke.worker.com')
                 finally:
-                    os.environ.pop('CELERY_LOG_FILE', None)
+                    os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+
+            os.environ['CELERY_LOG_FILE'] = 'worker%I.log'
+            app.log.setup = Mock(name='log_setup')
+            try:
+                process_initializer(app, 'luke.worker.com')
+            finally:
+                os.environ.pop('CELERY_LOG_FILE', None)
 
     @patch('celery.platforms.set_pdeathsig')
-    def test_pdeath_sig(self, _set_pdeathsig, set_mp_process_title):
-        with mock.restore_logging():
-            from celery import signals
-            on_worker_process_init = Mock()
-            signals.worker_process_init.connect(on_worker_process_init)
-            from celery.concurrency.prefork import process_initializer
+    def test_pdeath_sig(self, _set_pdeathsig, set_mp_process_title, restore_logging):
+        from celery import signals
+        on_worker_process_init = Mock()
+        signals.worker_process_init.connect(on_worker_process_init)
+        from celery.concurrency.prefork import process_initializer
 
-            with self.Celery(loader=self.Loader) as app:
-                app.conf = AttributeDict(DEFAULTS)
-                process_initializer(app, 'awesome.worker.com')
-            _set_pdeathsig.assert_called_once_with('SIGKILL')
+        with self.Celery(loader=self.Loader) as app:
+            app.conf = AttributeDict(DEFAULTS)
+            process_initializer(app, 'awesome.worker.com')
+        _set_pdeathsig.assert_called_once_with('SIGKILL')
 
 
 class test_process_destructor:

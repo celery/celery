@@ -4,7 +4,6 @@ import warnings
 from unittest.mock import Mock, patch
 
 import pytest
-from case import mock
 
 from celery import loaders
 from celery.exceptions import NotConfigured
@@ -120,8 +119,8 @@ class test_DefaultLoader:
             l.read_configuration(fail_silently=False)
 
     @patch('celery.loaders.base.find_module')
-    @mock.environ('CELERY_CONFIG_MODULE', 'celeryconfig.py')
-    def test_read_configuration_py_in_name(self, find_module):
+    @pytest.mark.patched_environ('CELERY_CONFIG_MODULE', 'celeryconfig.py')
+    def test_read_configuration_py_in_name(self, find_module, environ):
         find_module.side_effect = NotAPackage()
         l = default.Loader(app=self.app)
         with pytest.raises(NotAPackage):

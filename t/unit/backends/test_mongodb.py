@@ -4,7 +4,6 @@ from unittest.mock import ANY, MagicMock, Mock, patch, sentinel
 
 import pytest
 import pytz
-from case import mock
 from kombu.exceptions import EncodeError
 
 try:
@@ -15,6 +14,8 @@ except ImportError:
 from celery import states, uuid
 from celery.backends.mongodb import Binary, InvalidDocument, MongoBackend
 from celery.exceptions import ImproperlyConfigured
+
+from t.unit import conftest
 
 COLLECTION = 'taskmeta_celery'
 TASK_ID = uuid()
@@ -529,7 +530,7 @@ class test_MongoBackend:
             '/work4us?replicaSet=rs&ssl=true'
         )
         worker = self.app.Worker()
-        with mock.stdouts():
+        with conftest.stdouts():
             worker.on_start()
             assert worker.startup_info()
 

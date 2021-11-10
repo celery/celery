@@ -8,14 +8,16 @@ from pickle import dumps, loads
 from unittest.mock import ANY, Mock, call, patch
 
 import pytest
-from case import ContextMock, mock
 
 from celery import signature, states, uuid
 from celery.canvas import Signature
 from celery.exceptions import (BackendStoreError, ChordError,
                                ImproperlyConfigured)
 from celery.result import AsyncResult, GroupResult
+from celery.contrib.testing.mocks import ContextMock
 from celery.utils.collections import AttributeDict
+
+from t.unit import conftest
 
 
 def raise_on_second_call(mock, exc, *retval):
@@ -61,7 +63,7 @@ class Pipeline:
         return [step(*a, **kw) for step, a, kw in self.steps]
 
 
-class PubSub(mock.MockCallbacks):
+class PubSub(conftest.MockCallbacks):
     def __init__(self, ignore_subscribe_messages=False):
         self._subscribed_to = set()
 
@@ -78,7 +80,7 @@ class PubSub(mock.MockCallbacks):
         pass
 
 
-class Redis(mock.MockCallbacks):
+class Redis(conftest.MockCallbacks):
     Connection = Connection
     Pipeline = Pipeline
     pubsub = PubSub
@@ -158,7 +160,7 @@ class Redis(mock.MockCallbacks):
         return len(self.zrangebyscore(key, min_, max_))
 
 
-class Sentinel(mock.MockCallbacks):
+class Sentinel(conftest.MockCallbacks):
     def __init__(self, sentinels, min_other_sentinels=0, sentinel_kwargs=None,
                  **connection_kwargs):
         self.sentinel_kwargs = sentinel_kwargs

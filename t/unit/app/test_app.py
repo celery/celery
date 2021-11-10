@@ -9,7 +9,6 @@ from pickle import dumps, loads
 from unittest.mock import Mock, patch
 
 import pytest
-from case import ContextMock, mock
 from vine import promise
 
 from celery import Celery, _state
@@ -18,6 +17,7 @@ from celery import current_app, shared_task
 from celery.app import base as _appbase
 from celery.app import defaults
 from celery.backends.base import Backend
+from celery.contrib.testing.mocks import ContextMock
 from celery.exceptions import ImproperlyConfigured
 from celery.loaders.base import unconfigured
 from celery.platforms import pyimplementation
@@ -25,6 +25,8 @@ from celery.utils.collections import DictAttribute
 from celery.utils.objects import Bunch
 from celery.utils.serialization import pickle
 from celery.utils.time import localize, timezone, to_utc
+
+from t.unit import conftest
 
 THIS_IS_A_KEY = 'this is a value'
 
@@ -915,10 +917,10 @@ class test_App:
         assert 'add1' in self.app.conf.beat_schedule
         assert 'add2' in self.app.conf.beat_schedule
 
-    def test_pool_no_multiprocessing(self):
-        with mock.mask_modules('multiprocessing.util'):
-            pool = self.app.pool
-            assert pool is self.app._pool
+    @pytest.mark.masked_modules('multiprocessing.util')
+    def test_pool_no_multiprocessing(self, mask_modules):
+        pool = self.app.pool
+        assert pool is self.app._pool
 
     def test_bugreport(self):
         assert self.app.bugreport()
@@ -1078,26 +1080,26 @@ class test_debugging_utils:
 class test_pyimplementation:
 
     def test_platform_python_implementation(self):
-        with mock.platform_pyimp(lambda: 'Xython'):
+        with conftest.platform_pyimp(lambda: 'Xython'):
             assert pyimplementation() == 'Xython'
 
     def test_platform_jython(self):
-        with mock.platform_pyimp():
-            with mock.sys_platform('java 1.6.51'):
+        with conftest.platform_pyimp():
+            with conftest.sys_platform('java 1.6.51'):
                 assert 'Jython' in pyimplementation()
 
     def test_platform_pypy(self):
-        with mock.platform_pyimp():
-            with mock.sys_platform('darwin'):
-                with mock.pypy_version((1, 4, 3)):
+        with conftest.platform_pyimp():
+            with conftest.sys_platform('darwin'):
+                with conftest.pypy_version((1, 4, 3)):
                     assert 'PyPy' in pyimplementation()
-                with mock.pypy_version((1, 4, 3, 'a4')):
+                with conftest.pypy_version((1, 4, 3, 'a4')):
                     assert 'PyPy' in pyimplementation()
 
     def test_platform_fallback(self):
-        with mock.platform_pyimp():
-            with mock.sys_platform('darwin'):
-                with mock.pypy_version():
+        with conftest.platform_pyimp():
+            with conftest.sys_platform('darwin'):
+                with conftest.pypy_version():
                     assert 'CPython' == pyimplementation()
 
 

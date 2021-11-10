@@ -19,7 +19,6 @@ import tempfile
 from unittest.mock import Mock, patch
 
 import pytest
-from case import mock
 from kombu.exceptions import SerializerNotInstalled
 from kombu.serialization import disable_insecure_serializers, registry
 
@@ -29,6 +28,7 @@ from celery.security.utils import reraise_errors
 
 from . import CERT1, KEY1
 from .case import SecurityCase
+from t.unit import conftest
 
 
 class test_security(SecurityCase):
@@ -120,7 +120,7 @@ class test_security(SecurityCase):
 
         self.app.conf.task_serializer = 'auth'
         self.app.conf.accept_content = ['auth']
-        with mock.open(side_effect=effect):
+        with conftest.open(side_effect=effect):
             with patch('celery.security.registry') as registry:
                 store = Mock()
                 self.app.setup_security(['json'], key, cert, store)

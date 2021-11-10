@@ -1,10 +1,10 @@
 from unittest.mock import Mock, patch
 
 import pytest
-from case import ContextMock
 
 from celery import chord, group
 from celery.app import builtins
+from celery.contrib.testing.mocks import ContextMock
 from celery.utils.functional import pass1
 
 

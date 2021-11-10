@@ -4,12 +4,12 @@ from datetime import datetime, timedelta
 from unittest.mock import ANY, MagicMock, Mock, patch, sentinel
 
 import pytest
-from case import ContextMock
 from kombu import Queue
 from kombu.exceptions import EncodeError
 
 from celery import Task, group, uuid
 from celery.app.task import _reprtask
+from celery.contrib.testing.mocks import ContextMock
 from celery.exceptions import Ignore, ImproperlyConfigured, Retry
 from celery.result import AsyncResult, EagerResult
 from celery.utils.time import parse_iso8601

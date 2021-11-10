@@ -1,10 +1,11 @@
 from unittest.mock import patch
 
 import pytest
-from case import mock
 
 from celery.utils.threads import (Local, LocalManager, _FastLocalStack,
                                   _LocalStack, bgThread)
+
+from t.unit import conftest
 
 
 class test_bgThread:
@@ -17,7 +18,7 @@ class test_bgThread:
                 raise KeyError()
 
         with patch('os._exit') as _exit:
-            with mock.stdouts():
+            with conftest.stdouts():
                 _exit.side_effect = ValueError()
                 t = T()
                 with pytest.raises(ValueError):

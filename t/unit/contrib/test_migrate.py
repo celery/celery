@@ -3,7 +3,6 @@ from unittest.mock import Mock, patch
 
 import pytest
 from amqp import ChannelError
-from case import mock
 from kombu import Connection, Exchange, Producer, Queue
 from kombu.transport.virtual import QoS
 from kombu.utils.encoding import ensure_bytes
@@ -14,6 +13,8 @@ from celery.contrib.migrate import (State, StopFiltering, _maybe_queue,
                                     migrate_tasks, move, move_by_idmap,
                                     move_by_taskmap, move_task_by_id,
                                     start_filter, task_id_eq, task_id_in)
+
+from t.unit import conftest
 
 # hack to ignore error at shutdown
 QoS.restore_at_shutdown = False
@@ -203,7 +204,7 @@ def test_maybe_queue():
 
 
 def test_filter_status():
-    with mock.stdouts() as (stdout, stderr):
+    with conftest.stdouts() as (stdout, stderr):
         filter_status(State(), {'id': '1', 'task': 'add'}, Mock())
         assert stdout.getvalue()
 
