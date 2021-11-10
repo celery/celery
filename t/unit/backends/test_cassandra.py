@@ -8,7 +8,6 @@ from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.objects import Bunch
 
-
 CASSANDRA_MODULES = [
     'cassandra',
     'cassandra.auth',
