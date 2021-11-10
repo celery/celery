@@ -8,8 +8,6 @@ from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.objects import Bunch
 
-# from case import mock
-
 
 CASSANDRA_MODULES = [
     'cassandra',

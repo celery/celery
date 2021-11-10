@@ -666,8 +666,10 @@ def reset_modules(*modules):
         >>> with conftest.reset_modules('celery.result', 'celery.app.base'):
         ...     pass
     """
-    prev = {k: sys.modules.pop(k)
-                for k in modules if k in sys.modules}
+    prev = {
+        k: sys.modules.pop(k) for k in modules if k in sys.modules
+    }
+
     try:
         for k in modules:
             reload(import_module(k))
