@@ -1,5 +1,4 @@
 pytest-cov
-pytest-travis-fold
 codecov
 -r extras/redis.txt
 -r extras/sqlalchemy.txt
