@@ -1,20 +1,19 @@
 import builtins
-from contextlib import contextmanager
-import io
 import inspect
+import io
 import logging
 import os
+import platform
 import sys
 import threading
-import platform
 import types
 import warnings
+from contextlib import contextmanager
 from functools import wraps
 from importlib import import_module, reload
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
-
 from kombu import Queue
 
 from celery.backends.cache import CacheBackend, DummyClient
@@ -561,7 +560,7 @@ def _module(*names):
                     pass
 
 
-class _patching(object):
+class _patching:
 
     def __init__(self, monkeypatch, request):
         self.monkeypatch = monkeypatch
@@ -667,8 +666,8 @@ def reset_modules(*modules):
         >>> with conftest.reset_modules('celery.result', 'celery.app.base'):
         ...     pass
     """
-    prev = dict((k, sys.modules.pop(k))
-                for k in modules if k in sys.modules)
+    prev = {k: sys.modules.pop(k)
+                for k in modules if k in sys.modules}
     try:
         for k in modules:
             reload(import_module(k))
@@ -780,7 +779,7 @@ def _bind(f, o):
     return bound_meth
 
 
-class MockCallbacks(object):
+class MockCallbacks:
 
     def __new__(cls, *args, **kwargs):
         r = Mock(name=cls.__name__)

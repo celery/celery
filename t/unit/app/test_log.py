@@ -13,7 +13,6 @@ from celery.utils.log import (ColorFormatter, LoggingProxy, get_logger,
                               get_task_logger, in_sighandler)
 from celery.utils.log import logger as base_logger
 from celery.utils.log import logger_isa, task_logger
-
 from t.unit import conftest
 
 

@@ -25,7 +25,6 @@ from celery.utils.collections import DictAttribute
 from celery.utils.objects import Bunch
 from celery.utils.serialization import pickle
 from celery.utils.time import localize, timezone, to_utc
-
 from t.unit import conftest
 
 THIS_IS_A_KEY = 'this is a value'

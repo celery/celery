@@ -11,12 +11,11 @@ import pytest
 
 from celery import signature, states, uuid
 from celery.canvas import Signature
+from celery.contrib.testing.mocks import ContextMock
 from celery.exceptions import (BackendStoreError, ChordError,
                                ImproperlyConfigured)
 from celery.result import AsyncResult, GroupResult
-from celery.contrib.testing.mocks import ContextMock
 from celery.utils.collections import AttributeDict
-
 from t.unit import conftest
 
 

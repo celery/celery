@@ -9,7 +9,6 @@ from kombu.utils.encoding import ensure_bytes, str_to_bytes
 from celery import signature, states, uuid
 from celery.backends.cache import CacheBackend, DummyClient, backends
 from celery.exceptions import ImproperlyConfigured
-
 from t.unit import conftest
 
 

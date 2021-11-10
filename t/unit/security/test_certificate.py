@@ -6,11 +6,10 @@ import pytest
 
 from celery.exceptions import SecurityError
 from celery.security.certificate import Certificate, CertStore, FSCertStore
+from t.unit import conftest
 
 from . import CERT1, CERT2, KEY1
 from .case import SecurityCase
-
-from t.unit import conftest
 
 
 class test_Certificate(SecurityCase):

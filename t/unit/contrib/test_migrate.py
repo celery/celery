@@ -13,7 +13,6 @@ from celery.contrib.migrate import (State, StopFiltering, _maybe_queue,
                                     migrate_tasks, move, move_by_idmap,
                                     move_by_taskmap, move_task_by_id,
                                     start_filter, task_id_eq, task_id_in)
-
 from t.unit import conftest
 
 # hack to ignore error at shutdown

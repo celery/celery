@@ -6,8 +6,8 @@ from unittest.mock import Mock, call, patch
 import pytest
 from billiard.exceptions import RestartFreqExceeded
 
-from celery.utils.collections import LimitedSet
 from celery.contrib.testing.mocks import ContextMock
+from celery.utils.collections import LimitedSet
 from celery.worker.consumer.agent import Agent
 from celery.worker.consumer.consumer import (CANCEL_TASKS_BY_DEFAULT, CLOSE,
                                              TERMINATE, Consumer)

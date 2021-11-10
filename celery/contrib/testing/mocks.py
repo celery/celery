@@ -2,11 +2,10 @@
 import numbers
 from datetime import datetime, timedelta
 from typing import Any, Mapping, Sequence
+from unittest.mock import Mock
 
 from celery import Celery
 from celery.canvas import Signature
-
-from unittest.mock import Mock
 
 
 def TaskMessage(

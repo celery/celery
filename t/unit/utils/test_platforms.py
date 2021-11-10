@@ -21,7 +21,6 @@ from celery.platforms import (ASSUMING_ROOT, ROOT_DISALLOWED,
                               set_process_title, setgid, setgroups, setuid,
                               signals)
 from celery.utils.text import WhateverIO
-
 from t.unit import conftest
 
 try:

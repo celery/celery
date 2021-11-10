@@ -14,7 +14,6 @@ except ImportError:
 from celery import states, uuid
 from celery.backends.mongodb import Binary, InvalidDocument, MongoBackend
 from celery.exceptions import ImproperlyConfigured
-
 from t.unit import conftest
 
 COLLECTION = 'taskmeta_celery'
