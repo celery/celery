@@ -2,7 +2,7 @@ import sys
 from time import monotonic
 from unittest.mock import Mock, patch
 
-from case import mock
+import pytest
 
 from celery.concurrency.base import BasePool
 from celery.utils.objects import Bunch
@@ -100,8 +100,8 @@ class test_Autoscaler:
             x.stop()
         assert not x.joined
 
-    @mock.sleepdeprived(module=autoscale)
-    def test_body(self):
+    @pytest.mark.sleepdeprived_patched_module(autoscale)
+    def test_body(self, sleepdeprived):
         worker = Mock(name='worker')
         x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
         x.body()
@@ -216,8 +216,8 @@ class test_Autoscaler:
         _exit.assert_called_with(1)
         stderr.write.assert_called()
 
-    @mock.sleepdeprived(module=autoscale)
-    def test_no_negative_scale(self):
+    @pytest.mark.sleepdeprived_patched_module(autoscale)
+    def test_no_negative_scale(self, sleepdeprived):
         total_num_processes = []
         worker = Mock(name='worker')
         x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)

@@ -11,7 +11,6 @@ from unittest.mock import Mock, patch
 
 import pytest
 from amqp import ChannelError
-from case import mock
 from kombu import Connection
 from kombu.asynchronous import get_event_loop
 from kombu.common import QoS, ignore_errors
@@ -804,8 +803,8 @@ class test_WorkController(ConsumerCase):
         assert worker.autoscaler
 
     @t.skip.if_win32
-    @mock.sleepdeprived(module=autoscale)
-    def test_with_autoscaler_file_descriptor_safety(self):
+    @pytest.mark.sleepdeprived_patched_module(autoscale)
+    def test_with_autoscaler_file_descriptor_safety(self, sleepdeprived):
         # Given: a test celery worker instance with auto scaling
         worker = self.create_worker(
             autoscale=[10, 5], use_eventloop=True,
@@ -853,8 +852,8 @@ class test_WorkController(ConsumerCase):
         worker.pool.terminate()
 
     @t.skip.if_win32
-    @mock.sleepdeprived(module=autoscale)
-    def test_with_file_descriptor_safety(self):
+    @pytest.mark.sleepdeprived_patched_module(autoscale)
+    def test_with_file_descriptor_safety(self, sleepdeprived):
         # Given: a test celery worker instance
         worker = self.create_worker(
             autoscale=[10, 5], use_eventloop=True,
