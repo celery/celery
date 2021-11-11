@@ -54,7 +54,7 @@ jobs:
           ${{ matrix.python-version }}-${{matrix.os}}
 
     - name: Install tox
-      run: python -m pip install tox tox-gh-actions
+      run: python -m pip install --upgrade pip tox tox-gh-actions
     - name: >
         Run tox for
         "${{ matrix.python-version }}-unit"
