@@ -8,6 +8,26 @@ This document contains change notes for bugfix & new features
 in the & 5.2.x series, please see :ref:`whatsnew-5.2` for
 an overview of what's new in Celery 5.2.
 
+
+.. _version-5.2.1:
+
+5.2.1
+=======
+:release-date: 2021-11-16 8.55 P.M UTC+6:00
+:release-by: Asif Saif Uddin
+
+- Fix rstrip usage on bytes instance in ProxyLogger.
+- Pass logfile to ExecStop in celery.service example systemd file.
+- fix: reduce latency of AsyncResult.get under gevent (#7052)
+- Limit redis version: <4.0.0. 
+- Bump min kombu version to 5.2.2.
+- Change pytz>dev to a PEP 440 compliant pytz>0.dev.0.
+- Remove dependency to case (#7077).
+- fix: task expiration is timezone aware if needed (#7065).
+- Initial testing of pypy-3.8 beta to CI.
+- Docs, CI & tests cleanups.
+
+
 .. _version-5.2.0:
 
 5.2.0
