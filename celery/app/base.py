@@ -327,6 +327,8 @@ class Celery:
         "autofinalize",
         "namespace",
         "strict_typing",
+        # adding '__dict__' to get dynamic assignment
+        "__dict__",
         )
 
     def _get_default_loader(self):
