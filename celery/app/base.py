@@ -32,7 +32,8 @@ from celery.utils.functional import first, head_from_fun, maybe_list
 from celery.utils.imports import gen_task_name, instantiate, symbol_by_name
 from celery.utils.log import get_logger
 from celery.utils.objects import FallbackContext, mro_lookup
-from celery.utils.time import maybe_make_aware, timezone, to_utc
+from celery.utils.time import (maybe_iso8601, maybe_make_aware, timezone,
+                               to_utc)
 
 # Load all builtin tasks
 from . import builtins  # noqa
@@ -733,8 +734,10 @@ class Celery:
         options = router.route(
             options, route_name or name, args, kwargs, task_type)
         if expires is not None:
-            if isinstance(expires, datetime):
-                expires_s = (maybe_make_aware(expires) - self.now()).total_seconds()
+            if isinstance(expires, (str, datetime)):
+                expires_s = (
+                    maybe_make_aware(maybe_iso8601(expires)) - self.now()
+                ).total_seconds()
             else:
                 expires_s = expires
 
