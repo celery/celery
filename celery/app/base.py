@@ -312,7 +312,6 @@ class Celery:
         _register_app(self)
 
     __slots__ = (
-        "_local",
         "clock",
         "main",
         "amqp_cls",
