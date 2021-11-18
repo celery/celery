@@ -983,6 +983,17 @@ class test_tasks(TasksCase):
                 name='George Costanza', test_eta=True, test_expires=True,
             )
 
+            # With ETA, absolute expires in the past in ISO format.
+            presult2 = self.mytask.apply_async(
+                kwargs={'name': 'George Costanza'},
+                eta=self.now() + timedelta(days=1),
+                expires=(self.now() - timedelta(days=2)).isoformat(),
+            )
+            self.assert_next_task_data_equal(
+                consumer, presult2, self.mytask.name,
+                name='George Costanza', test_eta=True, test_expires=True,
+            )
+
             # Default argsrepr/kwargsrepr behavior
             presult2 = self.mytask.apply_async(
                 args=('spam',), kwargs={'name': 'Jerry Seinfeld'}
