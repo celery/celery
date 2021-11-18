@@ -313,7 +313,6 @@ class Celery:
 
     __slots__ = (
         "clock",
-        "main",
         "amqp_cls",
         "events_cls",
         "loader_cls",
@@ -329,6 +328,7 @@ class Celery:
         "strict_typing",
         # adding '__dict__' to get dynamic assignment
         "__dict__",
+        "__weakref__",
         )
 
     def _get_default_loader(self):
