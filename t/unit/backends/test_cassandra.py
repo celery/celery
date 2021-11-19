@@ -3,7 +3,6 @@ from pickle import dumps, loads
 from unittest.mock import Mock
 
 import pytest
-from case import mock
 
 from celery import states
 from celery.exceptions import ImproperlyConfigured
@@ -17,7 +16,6 @@ CASSANDRA_MODULES = [
 ]
 
 
-@mock.module(*CASSANDRA_MODULES)
 class test_CassandraBackend:
 
     def setup(self):
@@ -27,7 +25,8 @@ class test_CassandraBackend:
             cassandra_table='task_results',
         )
 
-    def test_init_no_cassandra(self, *modules):
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    def test_init_no_cassandra(self, module):
         # should raise ImproperlyConfigured when no python-driver
         # installed.
         from celery.backends import cassandra as mod
@@ -38,7 +37,8 @@ class test_CassandraBackend:
         finally:
             mod.cassandra = prev
 
-    def test_init_with_and_without_LOCAL_QUROM(self, *modules):
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    def test_init_with_and_without_LOCAL_QUROM(self, module):
         from celery.backends import cassandra as mod
         mod.cassandra = Mock()
 
@@ -60,12 +60,14 @@ class test_CassandraBackend:
                 app=self.app, keyspace='b', column_family='c',
             )
 
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
     @pytest.mark.usefixtures('depends_on_current_app')
-    def test_reduce(self, *modules):
+    def test_reduce(self, module):
         from celery.backends.cassandra import CassandraBackend
         assert loads(dumps(CassandraBackend(app=self.app)))
 
-    def test_get_task_meta_for(self, *modules):
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    def test_get_task_meta_for(self, module):
         from celery.backends import cassandra as mod
         mod.cassandra = Mock()
 
@@ -95,7 +97,8 @@ class test_CassandraBackend:
         x.as_uri()
         x.as_uri(include_password=False)
 
-    def test_store_result(self, *modules):
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    def test_store_result(self, module):
         from celery.backends import cassandra as mod
         mod.cassandra = Mock()
 

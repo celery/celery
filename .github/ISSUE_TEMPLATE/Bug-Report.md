@@ -13,7 +13,7 @@ bug reports which are incomplete.
 To check an item on the list replace [ ] with [x].
 -->
 - [ ] I have verified that the issue exists against the `master` branch of Celery.
-- [ ] This has already been asked to the [discussion group](https://groups.google.com/forum/#!forum/celery-users) first.
+- [ ] This has already been asked to the [discussions forum](https://github.com/celery/celery/discussions) first.
 - [ ] I have read the relevant section in the
   [contribution guide](http://docs.celeryproject.org/en/latest/contributing.html#other-bugs)
   on reporting bugs.

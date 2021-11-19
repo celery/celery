@@ -1251,7 +1251,7 @@ class test_chord(CanvasCase):
         # When we freeze the chord, its body will be cloned and options set
         top_group.freeze()
         with subtests.test(
-            msg="Validate body group indicies count from 0 after freezing"
+            msg="Validate body group indices count from 0 after freezing"
         ):
             assert all(
                 embedded_body_elem is not body_elem

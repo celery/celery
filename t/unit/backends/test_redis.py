@@ -8,14 +8,15 @@ from pickle import dumps, loads
 from unittest.mock import ANY, Mock, call, patch
 
 import pytest
-from case import ContextMock, mock
 
 from celery import signature, states, uuid
 from celery.canvas import Signature
+from celery.contrib.testing.mocks import ContextMock
 from celery.exceptions import (BackendStoreError, ChordError,
                                ImproperlyConfigured)
 from celery.result import AsyncResult, GroupResult
 from celery.utils.collections import AttributeDict
+from t.unit import conftest
 
 
 def raise_on_second_call(mock, exc, *retval):
@@ -61,7 +62,7 @@ class Pipeline:
         return [step(*a, **kw) for step, a, kw in self.steps]
 
 
-class PubSub(mock.MockCallbacks):
+class PubSub(conftest.MockCallbacks):
     def __init__(self, ignore_subscribe_messages=False):
         self._subscribed_to = set()
 
@@ -78,7 +79,7 @@ class PubSub(mock.MockCallbacks):
         pass
 
 
-class Redis(mock.MockCallbacks):
+class Redis(conftest.MockCallbacks):
     Connection = Connection
     Pipeline = Pipeline
     pubsub = PubSub
@@ -143,7 +144,7 @@ class Redis(mock.MockCallbacks):
 
     def zrange(self, key, start, stop):
         # `stop` is inclusive in Redis so we use `stop + 1` unless that would
-        # cause us to move from negative (right-most) indicies to positive
+        # cause us to move from negative (right-most) indices to positive
         stop = stop + 1 if stop != -1 else None
         return [e[1] for e in self._get_sorted_set(key)[start:stop]]
 
@@ -158,7 +159,7 @@ class Redis(mock.MockCallbacks):
         return len(self.zrangebyscore(key, min_, max_))
 
 
-class Sentinel(mock.MockCallbacks):
+class Sentinel(conftest.MockCallbacks):
     def __init__(self, sentinels, min_other_sentinels=0, sentinel_kwargs=None,
                  **connection_kwargs):
         self.sentinel_kwargs = sentinel_kwargs
@@ -275,6 +276,15 @@ class test_RedisResultConsumer:
         consumer.drain_events()
         parent_on_state_change.assert_called_with(meta, None)
         assert consumer._pubsub._subscribed_to == {b'celery-task-meta-initial'}
+
+    def test_drain_events_connection_error_no_patch(self):
+        meta = {'task_id': 'initial', 'status': states.SUCCESS}
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.backend._set_with_state(b'celery-task-meta-initial', json.dumps(meta), states.SUCCESS)
+        consumer._pubsub.get_message.side_effect = ConnectionError()
+        consumer.drain_events()
+        consumer._pubsub.subscribe.assert_not_called()
 
 
 class basetest_RedisBackend:

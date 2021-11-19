@@ -32,7 +32,7 @@ from celery.utils.functional import first, head_from_fun, maybe_list
 from celery.utils.imports import gen_task_name, instantiate, symbol_by_name
 from celery.utils.log import get_logger
 from celery.utils.objects import FallbackContext, mro_lookup
-from celery.utils.time import timezone, to_utc
+from celery.utils.time import maybe_make_aware, timezone, to_utc
 
 # Load all builtin tasks
 from . import builtins  # noqa
@@ -492,7 +492,7 @@ class Celery:
             task = self._tasks[name]
         return task
 
-    def register_task(self, task):
+    def register_task(self, task, **options):
         """Utility for registering a task-based class.
 
         Note:
@@ -505,7 +505,7 @@ class Celery:
             task_cls = type(task)
             task.name = self.gen_task_name(
                 task_cls.__name__, task_cls.__module__)
-        add_autoretry_behaviour(task)
+        add_autoretry_behaviour(task, **options)
         self.tasks[task.name] = task
         task._app = self
         task.bind(self)
@@ -734,7 +734,7 @@ class Celery:
             options, route_name or name, args, kwargs, task_type)
         if expires is not None:
             if isinstance(expires, datetime):
-                expires_s = (expires - self.now()).total_seconds()
+                expires_s = (maybe_make_aware(expires) - self.now()).total_seconds()
             else:
                 expires_s = expires
 

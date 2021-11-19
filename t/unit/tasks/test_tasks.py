@@ -4,12 +4,12 @@ from datetime import datetime, timedelta
 from unittest.mock import ANY, MagicMock, Mock, patch, sentinel
 
 import pytest
-from case import ContextMock
 from kombu import Queue
 from kombu.exceptions import EncodeError
 
 from celery import Task, group, uuid
 from celery.app.task import _reprtask
+from celery.contrib.testing.mocks import ContextMock
 from celery.exceptions import Ignore, ImproperlyConfigured, Retry
 from celery.result import AsyncResult, EagerResult
 from celery.utils.time import parse_iso8601
@@ -939,6 +939,17 @@ class test_tasks(TasksCase):
             self.assert_next_task_data_equal(
                 consumer, presult2, self.mytask.name,
                 name='George Costanza', test_eta=True, test_expires=True,
+            )
+
+            # With ETA, absolute expires without timezone.
+            presult2 = self.mytask.apply_async(
+                kwargs={'name': 'George Constanza'},
+                eta=self.now() + timedelta(days=1),
+                expires=(self.now() + timedelta(hours=2)).replace(tzinfo=None),
+            )
+            self.assert_next_task_data_equal(
+                consumer, presult2, self.mytask.name,
+                name='George Constanza', test_eta=True, test_expires=True,
             )
 
             # With ETA, absolute expires in the past.

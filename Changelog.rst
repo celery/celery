@@ -5,135 +5,158 @@
 ================
 
 This document contains change notes for bugfix & new features
-in the & 5.1.x series, please see :ref:`whatsnew-5.1` for
-an overview of what's new in Celery 5.1.
+in the & 5.2.x series, please see :ref:`whatsnew-5.2` for
+an overview of what's new in Celery 5.2.
 
-.. version-5.1.2:
 
-5.1.2
-=====
-:release-date: 2021-06-28 16.15 P.M UTC+3:00
-:release-by: Omer Katz
+.. _version-5.2.1:
 
-- When chords fail, correctly call errbacks. (#6814)
-
-    We had a special case for calling errbacks when a chord failed which
-    assumed they were old style. This change ensures that we call the proper
-    errback dispatch method which understands new and old style errbacks,
-    and adds test to confirm that things behave as one might expect now.
-- Avoid using the ``Event.isSet()`` deprecated alias. (#6824)
-- Reintroduce sys.argv default behaviour for ``Celery.start()``. (#6825)
-
-.. version-5.1.1:
-
-5.1.1
-=====
-:release-date: 2021-06-17 16.10 P.M UTC+3:00
-:release-by: Omer Katz
-
-- Fix ``--pool=threads`` support in command line options parsing. (#6787)
-- Fix ``LoggingProxy.write()`` return type. (#6791)
-- Couchdb key is now always coerced into a string. (#6781)
-- grp is no longer imported unconditionally. (#6804)
-    This fixes a regression in 5.1.0 when running Celery in non-unix systems.
-- Ensure regen utility class gets marked as done when concertised. (#6789)
-- Preserve call/errbacks of replaced tasks. (#6770)
-- Use single-lookahead for regen consumption. (#6799)
-- Revoked tasks are no longer incorrectly marked as retried. (#6812, #6816)
-
-.. version-5.1.0:
-
-5.1.0
-=====
-:release-date: 2021-05-23 19.20 P.M UTC+3:00
-:release-by: Omer Katz
-
-- ``celery -A app events -c camera`` now works as expected. (#6774)
-- Bump minimum required Kombu version to 5.1.0.
-
-.. _version-5.1.0rc1:
-
-5.1.0rc1
-========
-:release-date: 2021-05-02 16.06 P.M UTC+3:00
-:release-by: Omer Katz
-
-- Celery Mailbox accept and serializer parameters are initialized from configuration. (#6757)
-- Error propagation and errback calling for group-like signatures now works as expected. (#6746)
-- Fix sanitization of passwords in sentinel URIs. (#6765)
-- Add LOG_RECEIVED to customize logging. (#6758)
-
-.. _version-5.1.0b2:
-
-5.1.0b2
+5.2.1
 =======
-:release-date: 2021-05-02 16.06 P.M UTC+3:00
-:release-by: Omer Katz
-
-- Fix the behavior of our json serialization which regressed in 5.0. (#6561)
-- Add support for SQLAlchemy 1.4. (#6709)
-- Safeguard against schedule entry without kwargs. (#6619)
-- ``task.apply_async(ignore_result=True)`` now avoids persisting the results. (#6713)
-- Update systemd tmpfiles path. (#6688)
-- Ensure AMQPContext exposes an app attribute. (#6741)
-- Inspect commands accept arguments again (#6710).
-- Chord counting of group children is now accurate. (#6733)
-- Add a setting :setting:`worker_cancel_long_running_tasks_on_connection_loss`
-  to terminate tasks with late acknowledgement on connection loss. (#6654)
-- The ``task-revoked`` event and the ``task_revoked`` signal are not duplicated
-  when ``Request.on_failure`` is called. (#6654)
-- Restore pickling support for ``Retry``. (#6748)
-- Add support in the redis result backend for authenticating with a username. (#6750)
-- The :setting:`worker_pool` setting is now respected correctly. (#6711)
-
-.. _version-5.1.0b1:
-
-5.1.0b1
-=======
-:release-date: 2021-04-02 10.25 P.M UTC+6:00
+:release-date: 2021-11-16 8.55 P.M UTC+6:00
 :release-by: Asif Saif Uddin
 
-- Add sentinel_kwargs to Redis Sentinel docs.
-- Depend on the maintained python-consul2 library. (#6544).
-- Use result_chord_join_timeout instead of hardcoded default value.
-- Upgrade AzureBlockBlob storage backend to use Azure blob storage library v12 (#6580).
-- Improved integration tests.
-- pass_context for handle_preload_options decorator (#6583).
-- Makes regen less greedy (#6589).
-- Pytest worker shutdown timeout (#6588).
-- Exit celery with non zero exit value if failing (#6602).
-- Raise BackendStoreError when set value is too large for Redis.
-- Trace task optimizations are now set via Celery app instance.
-- Make trace_task_ret and fast_trace_task public.
-- reset_worker_optimizations and create_request_cls has now app as optional parameter.
-- Small refactor in exception handling of on_failure (#6633).
-- Fix for issue #5030 "Celery Result backend on Windows OS".
-- Add store_eager_result setting so eager tasks can store result on the result backend (#6614).
-- Allow heartbeats to be sent in tests (#6632).
-- Fixed default visibility timeout note in sqs documentation.
-- Support Redis Sentinel with SSL.
-- Simulate more exhaustive delivery info in apply().
-- Start chord header tasks as soon as possible (#6576).
-- Forward shadow option for retried tasks (#6655).
-- --quiet flag now actually makes celery avoid producing logs (#6599).
-- Update platforms.py "superuser privileges" check (#6600).
-- Remove unused property `autoregister` from the Task class (#6624).
-- fnmatch.translate() already translates globs for us. (#6668).
-- Upgrade some syntax to Python 3.6+.
-- Add `azureblockblob_base_path` config (#6669).
-- Fix checking expiration of X.509 certificates (#6678).
-- Drop the lzma extra.
-- Fix JSON decoding errors when using MongoDB as backend (#6675).
-- Allow configuration of RedisBackend's health_check_interval (#6666).
-- Safeguard against schedule entry without kwargs (#6619).
-- Docs only - SQS broker - add STS support (#6693) through kombu.
-- Drop fun_accepts_kwargs backport.
-- Tasks can now have required kwargs at any order (#6699).
-- Min py-amqp 5.0.6.
-- min billiard is now 3.6.4.0.
-- Minimum kombu now is5.1.0b1.
-- Numerous docs fixes.
-- Moved CI to github action.
-- Updated deployment scripts.
-- Updated docker.
-- Initial support of python 3.9 added.
+- Fix rstrip usage on bytes instance in ProxyLogger.
+- Pass logfile to ExecStop in celery.service example systemd file.
+- fix: reduce latency of AsyncResult.get under gevent (#7052)
+- Limit redis version: <4.0.0. 
+- Bump min kombu version to 5.2.2.
+- Change pytz>dev to a PEP 440 compliant pytz>0.dev.0.
+- Remove dependency to case (#7077).
+- fix: task expiration is timezone aware if needed (#7065).
+- Initial testing of pypy-3.8 beta to CI.
+- Docs, CI & tests cleanups.
+
+
+.. _version-5.2.0:
+
+5.2.0
+=======
+:release-date: 2021-11-08 7.15 A.M UTC+6:00
+:release-by: Asif Saif Uddin
+
+- Prevent from subscribing to empty channels (#7040)
+- fix register_task method.
+- Fire task failure signal on final reject (#6980)
+- Limit pymongo version: <3.12.1 (#7041) 
+- Bump min kombu version to 5.2.1
+
+.. _version-5.2.0rc2:
+
+5.2.0rc2
+=======
+:release-date: 2021-11-02 1.54 P.M UTC+3:00
+:release-by: Naomi Elstein
+
+- Bump Python 3.10.0 to rc2.
+- [pre-commit.ci] pre-commit autoupdate (#6972).
+- autopep8.
+- Prevent worker to send expired revoked items upon hello command (#6975).
+- docs: clarify the 'keeping results' section (#6979).
+- Update deprecated task module removal in 5.0 documentation (#6981).
+- [pre-commit.ci] pre-commit autoupdate.
+- try python 3.10 GA.
+- mention python 3.10 on readme.
+- Documenting the default consumer_timeout value for rabbitmq >= 3.8.15.
+- Azure blockblob backend parametrized connection/read timeouts (#6978).
+- Add as_uri method to azure block blob backend.
+- Add possibility to override backend implementation with celeryconfig (#6879).
+- [pre-commit.ci] pre-commit autoupdate.
+- try to fix deprecation warning.
+- [pre-commit.ci] pre-commit autoupdate.
+- not needed anyore.
+- not needed anyore.
+- not used anymore.
+- add github discussions forum
+
+.. _version-5.2.0rc1:
+
+5.2.0rc1
+=======
+:release-date: 2021-09-26 4.04 P.M UTC+3:00
+:release-by: Omer Katz
+
+- Kill all workers when main process exits in prefork model (#6942).
+- test kombu 5.2.0rc1 (#6947).
+- try moto 2.2.x (#6948).
+- Prepared Hacker News Post on Release Action.
+- update setup with python 3.7 as minimum.
+- update kombu on setupcfg.
+- Added note about automatic killing all child processes of worker after its termination.
+- [pre-commit.ci] pre-commit autoupdate.
+- Move importskip before greenlet import (#6956).
+- amqp: send expiration field to broker if requested by user (#6957).
+- Single line drift warning.
+- canvas: fix kwargs argument to prevent recursion (#6810) (#6959).
+- Allow to enable Events with app.conf mechanism.
+- Warn when expiration date is in the past.
+- Add the Framework :: Celery trove classifier.
+- Give indication whether the task is replacing another (#6916).
+- Make setup.py executable.
+- Bump version: 5.2.0b3 → 5.2.0rc1.
+
+.. _version-5.2.0b3:
+
+5.2.0b3
+=======
+:release-date: 2021-09-02 8.38 P.M UTC+3:00
+:release-by: Omer Katz
+
+- Add args to LOG_RECEIVED (fixes #6885) (#6898).
+- Terminate job implementation for eventlet concurrency backend (#6917).
+- Add cleanup implementation to filesystem backend (#6919).
+- [pre-commit.ci] pre-commit autoupdate (#69).
+- Add before_start hook (fixes #4110) (#6923).
+- Restart consumer if connection drops (#6930).
+- Remove outdated optimization documentation (#6933).
+- added https verification check functionality in arangodb backend (#6800).
+- Drop Python 3.6 support.
+- update supported python versions on readme.
+- [pre-commit.ci] pre-commit autoupdate (#6935).
+- Remove appveyor configuration since we migrated to GA.
+- pyugrade is now set to upgrade code to 3.7.
+- Drop exclude statement since we no longer test with pypy-3.6.
+- 3.10 is not GA so it's not supported yet.
+- Celery 5.1 or earlier support Python 3.6.
+- Fix linting error.
+- fix: Pass a Context when chaining fail results (#6899).
+- Bump version: 5.2.0b2 → 5.2.0b3.
+
+.. _version-5.2.0b2:
+
+5.2.0b2
+=======
+:release-date: 2021-08-17 5.35 P.M UTC+3:00
+:release-by: Omer Katz
+
+- Test windows on py3.10rc1 and pypy3.7 (#6868).
+- Route chord_unlock task to the same queue as chord body (#6896).
+- Add message properties to app.tasks.Context (#6818).
+- handle already converted LogLevel and JSON (#6915).
+- 5.2 is codenamed dawn-chorus.
+- Bump version: 5.2.0b1 → 5.2.0b2.
+
+.. _version-5.2.0b1:
+
+5.2.0b1
+=======
+:release-date: 2021-08-11 5.42 P.M UTC+3:00
+:release-by: Omer Katz
+
+- Add Python 3.10 support (#6807).
+- Fix docstring for Signal.send to match code (#6835).
+- No blank line in log output (#6838).
+- Chords get body_type independently to handle cases where body.type does not exist (#6847).
+- Fix #6844 by allowing safe queries via app.inspect().active() (#6849).
+- Fix multithreaded backend usage (#6851).
+- Fix Open Collective donate button (#6848).
+- Fix setting worker concurrency option after signal (#6853).
+- Make ResultSet.on_ready promise hold a weakref to self (#6784).
+- Update configuration.rst.
+- Discard jobs on flush if synack isn't enabled (#6863).
+- Bump click version to 8.0 (#6861).
+- Amend IRC network link to Libera (#6837).
+- Import celery lazily in pytest plugin and unignore flake8 F821, "undefined name '...'" (#6872).
+- Fix inspect --json output to return valid json without --quiet.
+- Remove celery.task references in modules, docs (#6869).
+-  The Consul backend must correctly associate requests and responses (#6823).

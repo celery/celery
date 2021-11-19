@@ -25,7 +25,7 @@ an overview of what's new in Celery 4.4.
 - Fix REMAP_SIGTERM=SIGQUIT not working
 - (Fixes#6258) MongoDB: fix for serialization issue (#6259)
 - Make use of ordered sets in Redis opt-in
-- Test, CI, Docker & style and minor doc impovements.
+- Test, CI, Docker & style and minor doc improvements.
 
 4.4.6
 =======

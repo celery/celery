@@ -2,16 +2,16 @@ import time
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pickle import dumps, loads
+from unittest import TestCase
 from unittest.mock import Mock
 
 import pytest
 import pytz
-from case import Case
 
 from celery.schedules import (ParseException, crontab, crontab_parser,
                               schedule, solar)
 
-assertions = Case('__init__')
+assertions = TestCase('__init__')
 
 
 @contextmanager

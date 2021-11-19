@@ -6,7 +6,6 @@ from unittest.mock import Mock
 
 import pytest
 import pytz
-from case import mock
 from kombu import Queue
 
 from celery.utils.serialization import (STRTOBOOL_DEFAULT_TABLE,
@@ -18,14 +17,14 @@ from celery.utils.serialization import (STRTOBOOL_DEFAULT_TABLE,
 
 class test_AAPickle:
 
-    def test_no_cpickle(self):
+    @pytest.mark.masked_modules('cPickle')
+    def test_no_cpickle(self, mask_modules):
         prev = sys.modules.pop('celery.utils.serialization', None)
         try:
-            with mock.mask_modules('cPickle'):
-                import pickle as orig_pickle
+            import pickle as orig_pickle
 
-                from celery.utils.serialization import pickle
-                assert pickle.dumps is orig_pickle.dumps
+            from celery.utils.serialization import pickle
+            assert pickle.dumps is orig_pickle.dumps
         finally:
             sys.modules['celery.utils.serialization'] = prev
 

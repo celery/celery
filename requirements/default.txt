@@ -1,6 +1,6 @@
-pytz>dev
+pytz>0.dev.0
 billiard>=3.6.4.0,<4.0
-kombu>=5.2.0rc1,<6.0
+kombu>=5.2.2,<6.0
 vine>=5.0.0,<6.0
 click>=8.0,<9.0
 click-didyoumean>=0.0.3
