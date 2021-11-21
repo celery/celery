@@ -25,7 +25,7 @@ RUN apt-get update && apt-get install -y build-essential \
     wget \
     pypy3 \
     pypy3-lib \
-    python-openssl \
+    python3-openssl \
     libncursesw5-dev \
     zlib1g-dev \
     pkg-config \
