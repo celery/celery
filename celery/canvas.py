@@ -396,17 +396,19 @@ class Signature(dict):
     def __or__(self, other):
         # These could be implemented in each individual class,
         # I'm sure, but for now we have this.
-        if isinstance(other, group):
+        if isinstance(self, _chain) and isinstance(other, group):
             # unroll group with one member
             other = maybe_unroll_group(other)
-            if isinstance(self, _chain):
-                # chain | group() -> chain
-                tasks = self.unchain_tasks()
-                if not tasks:
-                    # If the chain is empty, return the group
-                    return other
-                return _chain(seq_concat_item(
-                    tasks, other), app=self._app)
+            # chain | group() -> chain
+            tasks = self.unchain_tasks()
+            if not tasks:
+                # If the chain is empty, return the group
+                return other
+            return _chain(seq_concat_item(
+                tasks, other), app=self._app)
+        elif isinstance(other, group):
+            # unroll group with one member
+            other = maybe_unroll_group(other)
             # task | group() -> chain
             return _chain(self, other, app=self.app)
 
