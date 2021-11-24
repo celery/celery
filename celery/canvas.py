@@ -396,17 +396,7 @@ class Signature(dict):
     def __or__(self, other):
         # These could be implemented in each individual class,
         # I'm sure, but for now we have this.
-        if isinstance(self, _chain) and isinstance(other, group):
-            # unroll group with one member
-            other = maybe_unroll_group(other)
-            # chain | group() -> chain
-            tasks = self.unchain_tasks()
-            if not tasks:
-                # If the chain is empty, return the group
-                return other
-            return _chain(seq_concat_item(
-                tasks, other), app=self._app)
-        elif isinstance(other, group):
+        if isinstance(other, group):
             # unroll group with one member
             other = maybe_unroll_group(other)
             # task | group() -> chain
@@ -611,6 +601,20 @@ class _chain(Signature):
     def __call__(self, *args, **kwargs):
         if self.tasks:
             return self.apply_async(args, kwargs)
+
+    def __or__(self, other):
+        if isinstance(other, group):
+            # unroll group with one member
+            other = maybe_unroll_group(other)
+            # chain | group() -> chain
+            tasks = self.unchain_tasks()
+            if not tasks:
+                # If the chain is empty, return the group
+                return other
+            return _chain(seq_concat_item(
+                tasks, other), app=self._app)
+        else:
+            return super().__or__(other)
 
     def clone(self, *args, **kwargs):
         to_signature = maybe_signature
