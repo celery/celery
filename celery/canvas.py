@@ -396,10 +396,7 @@ class Signature(dict):
     def __or__(self, other):
         # These could be implemented in each individual class,
         # I'm sure, but for now we have this.
-        if isinstance(self, group):
-            # group() | task -> chord
-            return chord(self, body=other, app=self._app)
-        elif isinstance(other, group):
+        if isinstance(other, group):
             # unroll group with one member
             other = maybe_unroll_group(other)
             if isinstance(self, _chain):
@@ -1070,6 +1067,10 @@ class group(Signature):
 
     def __call__(self, *partial_args, **options):
         return self.apply_async(partial_args, **options)
+
+    def __or__(self, other):
+        # group() | task -> chord
+        return chord(self, body=other, app=self._app)
 
     def skew(self, start=1.0, stop=None, step=1.0):
         it = fxrange(start, stop, step, repeatlast=True)
