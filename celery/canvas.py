@@ -1379,7 +1379,8 @@ class _chord(Signature):
         return self.apply_async((), {'body': body} if body else {}, **options)
 
     def __or__(self, other):
-        if not isinstance(other, (group, _chain)):
+        if (not isinstance(other, (group, _chain)) and
+           isinstance(other, Signature)):
             # chord | task ->  attach to body
             sig = self.clone()
             sig.body = sig.body | other
