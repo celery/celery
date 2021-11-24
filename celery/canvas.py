@@ -396,8 +396,8 @@ class Signature(dict):
     def __or__(self, other):
         # These could be implemented in each individual class,
         # I'm sure, but for now we have this.
-        if not isinstance(other, (group, _chain)) and isinstance(other, Signature):
-            if isinstance(self, _chain):
+        if isinstance(self, _chain):
+            if not isinstance(other, (group, _chain)) and isinstance(other, Signature):
                 if self.tasks and isinstance(self.tasks[-1], group):
                     # CHAIN [last item is group] | TASK -> chord
                     sig = self.clone()
@@ -413,6 +413,7 @@ class Signature(dict):
                     # chain | task -> chain
                     return _chain(seq_concat_item(
                         self.unchain_tasks(), other), app=self._app)
+        elif not isinstance(other, (group, _chain)) and isinstance(other, Signature):
             # task | task -> chain
             return _chain(self, other, app=self._app)
         elif isinstance(other, _chain):
