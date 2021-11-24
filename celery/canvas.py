@@ -394,8 +394,6 @@ class Signature(dict):
         )))
 
     def __or__(self, other):
-        # These could be implemented in each individual class,
-        # I'm sure, but for now we have this.
         if isinstance(other, _chain):
             # task | chain -> chain
             return _chain(seq_concat_seq(
