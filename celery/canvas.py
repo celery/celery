@@ -396,12 +396,7 @@ class Signature(dict):
     def __or__(self, other):
         # These could be implemented in each individual class,
         # I'm sure, but for now we have this.
-        if isinstance(self, chord) and not isinstance(other, (group, _chain)):
-            # chord | task ->  attach to body
-            sig = self.clone()
-            sig.body = sig.body | other
-            return sig
-        elif isinstance(other, _chain):
+        if isinstance(other, _chain):
             # task | chain -> chain
             return _chain(seq_concat_seq(
                 (self,), other.unchain_tasks()), app=self._app)
@@ -1382,6 +1377,15 @@ class _chord(Signature):
 
     def __call__(self, body=None, **options):
         return self.apply_async((), {'body': body} if body else {}, **options)
+
+    def __or__(self, other):
+        if not isinstance(other, (group, _chain)):
+            # chord | task ->  attach to body
+            sig = self.clone()
+            sig.body = sig.body | other
+            return sig
+        else:
+            return super().__or__(other)
 
     def freeze(self, _id=None, group_id=None, chord=None,
                root_id=None, parent_id=None, group_index=None):
