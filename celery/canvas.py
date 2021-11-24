@@ -396,15 +396,15 @@ class Signature(dict):
     def __or__(self, other):
         # These could be implemented in each individual class,
         # I'm sure, but for now we have this.
-        if isinstance(other, _chain):
-            # task | chain -> chain
-            return _chain(seq_concat_seq(
-                (self,), other.unchain_tasks()), app=self._app)
-        elif isinstance(self, chord) and not isinstance(other, group):
+        if isinstance(self, chord) and not isinstance(other, (group, _chain)):
             # chord | task ->  attach to body
             sig = self.clone()
             sig.body = sig.body | other
             return sig
+        elif isinstance(other, _chain):
+            # task | chain -> chain
+            return _chain(seq_concat_seq(
+                (self,), other.unchain_tasks()), app=self._app)
         elif isinstance(other, group):
             # unroll group with one member
             other = maybe_unroll_group(other)
