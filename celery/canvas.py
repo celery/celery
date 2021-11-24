@@ -396,24 +396,7 @@ class Signature(dict):
     def __or__(self, other):
         # These could be implemented in each individual class,
         # I'm sure, but for now we have this.
-        if isinstance(self, _chain):
-            if not isinstance(other, (group, _chain)) and isinstance(other, Signature):
-                if self.tasks and isinstance(self.tasks[-1], group):
-                    # CHAIN [last item is group] | TASK -> chord
-                    sig = self.clone()
-                    sig.tasks[-1] = chord(
-                        sig.tasks[-1], other, app=self._app)
-                    return sig
-                elif self.tasks and isinstance(self.tasks[-1], chord):
-                    # CHAIN [last item is chord] -> chain with chord body.
-                    sig = self.clone()
-                    sig.tasks[-1].body = sig.tasks[-1].body | other
-                    return sig
-                else:
-                    # chain | task -> chain
-                    return _chain(seq_concat_item(
-                        self.unchain_tasks(), other), app=self._app)
-        elif not isinstance(other, (group, _chain)) and isinstance(other, Signature):
+        if not isinstance(other, (group, _chain)) and isinstance(other, Signature):
             # task | task -> chain
             return _chain(self, other, app=self._app)
         elif isinstance(other, _chain):
@@ -608,8 +591,24 @@ class _chain(Signature):
             # chain | chain -> chain
             return _chain(seq_concat_seq(
                 self.unchain_tasks(), other.unchain_tasks()), app=self._app)
+        elif isinstance(other, Signature):
+            if self.tasks and isinstance(self.tasks[-1], group):
+                # CHAIN [last item is group] | TASK -> chord
+                sig = self.clone()
+                sig.tasks[-1] = chord(
+                    sig.tasks[-1], other, app=self._app)
+                return sig
+            elif self.tasks and isinstance(self.tasks[-1], chord):
+                # CHAIN [last item is chord] -> chain with chord body.
+                sig = self.clone()
+                sig.tasks[-1].body = sig.tasks[-1].body | other
+                return sig
+            else:
+                # chain | task -> chain
+                return _chain(seq_concat_item(
+                    self.unchain_tasks(), other), app=self._app)
         else:
-            return super().__or__(other)
+            return NotImplemented
 
     def clone(self, *args, **kwargs):
         to_signature = maybe_signature
