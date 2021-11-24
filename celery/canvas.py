@@ -396,10 +396,7 @@ class Signature(dict):
     def __or__(self, other):
         # These could be implemented in each individual class,
         # I'm sure, but for now we have this.
-        if not isinstance(other, (group, _chain)) and isinstance(other, Signature):
-            # task | task -> chain
-            return _chain(self, other, app=self._app)
-        elif isinstance(other, _chain):
+        if isinstance(other, _chain):
             # task | chain -> chain
             return _chain(seq_concat_seq(
                 (self,), other.unchain_tasks()), app=self._app)
@@ -408,6 +405,9 @@ class Signature(dict):
             other = maybe_unroll_group(other)
             # task | group() -> chain
             return _chain(self, other, app=self.app)
+        elif isinstance(other, Signature):
+            # task | task -> chain
+            return _chain(self, other, app=self._app)
         return NotImplemented
 
     def __ior__(self, other):
