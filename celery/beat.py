@@ -401,7 +401,8 @@ class Scheduler:
             entry_args = _evaluate_entry_args(entry.args)
             entry_kwargs = _evaluate_entry_kwargs(entry.kwargs)
             if entry.schedule and "eta" not in entry_kwargs:
-                entry_kwargs["eta"] = entry.schedule.next_scheduled_run(entry.last_run_at)
+                next_run = entry.schedule.next_scheduled_run(entry.last_run_at)
+                entry_kwargs["eta"] = next_run
             if task:
                 return task.apply_async(entry_args, entry_kwargs,
                                         producer=producer,
