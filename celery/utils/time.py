@@ -183,8 +183,9 @@ def remaining(start, ends_in, now=None, relative=False):
         relative (bool): If enabled the end time will be calculated
             using :func:`delta_resolution` (i.e., rounded to the
             resolution of `ends_in`).
-        now (Callable): Function returning the current time and date.
-            Defaults to :func:`datetime.utcnow`.
+        now (~datetime.datetime): Datetime instance representing the
+            current time and date. Defaults to calling
+            :func:`datetime.utcnow`.
 
     Returns:
         ~datetime.timedelta: Remaining time.
