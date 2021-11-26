@@ -613,7 +613,7 @@ class crontab(BaseSchedule):
                                                 next_hour, next_minute)
         return self.to_local(last_run_at), delta, self.to_local(now)
 
-    def remaining_estimate(self, last_run_at, ffwd=ffwd):
+    def next_scheduled_run(self, last_run_at, ffwd=ffwd):
         """Estimate of next run time.
 
         Returns when the periodic task should run next as a
@@ -621,7 +621,7 @@ class crontab(BaseSchedule):
         """
         # pylint: disable=redefined-outer-name
         # caching global ffwd
-        return remaining(*self.remaining_delta(last_run_at, ffwd=ffwd))
+        return calc_next(*self.remaining_delta(last_run_at, ffwd=ffwd))
 
     def is_due(self, last_run_at):
         """Return tuple of ``(is_due, next_time_to_run)``.
