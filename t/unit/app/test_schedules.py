@@ -486,7 +486,6 @@ class test_crontab_next_scheduled_run:
         assert next == tz.localize(datetime(2017, 3, 26, 9, 0))
 
 
-
 class test_crontab_remaining_estimate:
 
     def crontab(self, *args, **kwargs):
