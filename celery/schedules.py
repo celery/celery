@@ -12,7 +12,8 @@ from kombu.utils.objects import cached_property
 from . import current_app
 from .utils.collections import AttributeDict
 from .utils.time import (ffwd, humanize_seconds, localize, maybe_make_aware,
-                         maybe_timedelta, remaining, timezone, weekday)
+                         maybe_timedelta, remaining, timezone, weekday,
+                         delta_resolution)
 
 __all__ = (
     'ParseException', 'schedule', 'crontab', 'crontab_parser',
@@ -65,6 +66,9 @@ class BaseSchedule:
 
     def now(self):
         return (self.nowfun or self.app.now)()
+
+    def next_scheduled_run(self, last_run_at, now=None):
+        raise NotImplementedError()
 
     def remaining_estimate(self, last_run_at):
         raise NotImplementedError()
@@ -121,11 +125,23 @@ class schedule(BaseSchedule):
         self.relative = relative
         super().__init__(nowfun=nowfun, app=app)
 
+    def next_scheduled_run(self, last_run_at, now=None):
+        now = now or self.maybe_make_aware(self.now())
+        ends_in = self.run_every
+        start = self.maybe_make_aware(last_run_at)
+        if str(start.tzinfo) == str(now.tzinfo) and now.utcoffset() != start.utcoffset():
+            # DST started/ended
+            start = start.replace(tzinfo=now.tzinfo)
+        end_date = start + ends_in
+        if self.relative:
+            end_date = delta_resolution(end_date, ends_in).replace(
+                microsecond=0)
+        return end_date
+
     def remaining_estimate(self, last_run_at):
-        return remaining(
-            self.maybe_make_aware(last_run_at), self.run_every,
-            self.maybe_make_aware(self.now()), self.relative,
-        )
+        now = self.maybe_make_aware(self.now())
+        next = self.next_scheduled_run(last_run_at, now=now)
+        return next - now
 
     def is_due(self, last_run_at):
         """Return tuple of ``(is_due, next_time_to_check)``.
@@ -767,15 +783,7 @@ class solar(BaseSchedule):
             self.event, self.lat, self.lon,
         )
 
-    def remaining_estimate(self, last_run_at):
-        """Return estimate of next time to run.
-
-        Returns:
-            ~datetime.timedelta: when the periodic task should
-                run next, or if it shouldn't run today (e.g., the sun does
-                not rise today), returns the time when the next check
-                should take place.
-        """
+    def next_scheduled_run(self, last_run_at, now=None):
         last_run_at = self.maybe_make_aware(last_run_at)
         last_run_at_utc = localize(last_run_at, timezone.utc)
         self.cal.date = last_run_at_utc
@@ -797,10 +805,20 @@ class solar(BaseSchedule):
                 self.cal.next_antitransit(self.ephem.Sun()) +
                 timedelta(minutes=1)
             )
-        next = self.maybe_make_aware(next_utc.datetime())
+        return self.maybe_make_aware(next_utc.datetime())
+
+    def remaining_estimate(self, last_run_at):
+        """Return estimate of next time to run.
+
+        Returns:
+            ~datetime.timedelta: when the periodic task should
+                run next, or if it shouldn't run today (e.g., the sun does
+                not rise today), returns the time when the next check
+                should take place.
+        """
         now = self.maybe_make_aware(self.now())
-        delta = next - now
-        return delta
+        next = self.next_scheduled_run(last_run_at)
+        return next - now
 
     def is_due(self, last_run_at):
         """Return tuple of ``(is_due, next_time_to_run)``.
