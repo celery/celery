@@ -12,8 +12,7 @@ from kombu.utils.objects import cached_property
 from . import current_app
 from .utils.collections import AttributeDict
 from .utils.time import (calc_next, ffwd, humanize_seconds, localize,
-                         maybe_make_aware, maybe_timedelta, remaining,
-                         timezone, weekday)
+                         maybe_make_aware, maybe_timedelta, timezone, weekday)
 
 __all__ = (
     'ParseException', 'schedule', 'crontab', 'crontab_parser',
