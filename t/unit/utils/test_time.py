@@ -6,8 +6,8 @@ import pytz
 from pytz import AmbiguousTimeError
 
 from celery.utils.iso8601 import parse_iso8601
-from celery.utils.time import (LocalTimezone, delta_resolution, ffwd,
-                               get_exponential_backoff_interval,
+from celery.utils.time import (LocalTimezone, calc_next, delta_resolution,
+                               ffwd, get_exponential_backoff_interval,
                                humanize_seconds, localize, make_aware,
                                maybe_iso8601, maybe_make_aware,
                                maybe_timedelta, rate, remaining, timezone,
@@ -105,6 +105,53 @@ def test_maybe_timedelta(arg, expected):
     assert maybe_timedelta(arg) == expected
 
 
+def test_end_date():
+    """
+    The upcoming cases check whether the next run is calculated correctly
+    """
+    eastern_tz = pytz.timezone("US/Eastern")
+    tokyo_tz = pytz.timezone("Asia/Tokyo")
+
+    # Case 1: `start` in UTC and `now` in other timezone
+    start = datetime.now(pytz.utc)
+    now = datetime.now(eastern_tz)
+    delta = timedelta(hours=1)
+    assert str(start.tzinfo) == str(pytz.utc)
+    assert str(now.tzinfo) == str(eastern_tz)
+    next_actual_time = start + timedelta(hours=1)
+    next_time = calc_next(start, delta, now)
+    # assert calculated next time equals expected value
+    assert next_time == next_actual_time
+
+    # Case 2: `start` and `now` in different timezones (other than UTC)
+    start = datetime.now(eastern_tz)
+    now = datetime.now(tokyo_tz)
+    delta = timedelta(hours=1)
+    assert str(start.tzinfo) == str(eastern_tz)
+    assert str(now.tzinfo) == str(tokyo_tz)
+    next_actual_time = start + timedelta(hours=1)
+    next_time = calc_next(start, delta, now)
+    assert next_time == next_actual_time
+
+    """
+    Case 3: DST check
+    Suppose start (which is last_run_time) is in EST while next_run is in EDT,
+    then check whether the `next_run` is actually the time specified in the
+    start (i.e. there is not an hour diff due to DST).
+    In 2019, DST starts on March 10
+    """
+    start = eastern_tz.localize(datetime(day=9, month=3, year=2019, hour=10, minute=0))         # EST
+    now = eastern_tz.localize(datetime(day=11, month=3, year=2019, hour=1, minute=0))           # EDT
+    delta = ffwd(hour=10, year=2019, microsecond=0, minute=0, second=0, day=11, weeks=0, month=3)
+    # `next_actual_time` is the next time to run (derived from delta)
+    next_actual_time = eastern_tz.localize(datetime(day=11, month=3, year=2019, hour=10, minute=0))         # EDT
+    assert start.tzname() == "EST"
+    assert now.tzname() == "EDT"
+    assert next_actual_time.tzname() == "EDT"
+    next_time = calc_next(start, delta, now)
+    assert next_time == next_actual_time
+
+
 def test_remaining():
     # Relative
     remaining(datetime.utcnow(), timedelta(hours=1), relative=True)
@@ -141,7 +188,7 @@ def test_remaining():
     start (i.e. there is not an hour diff due to DST).
     In 2019, DST starts on March 10
     """
-    start = eastern_tz.localize(datetime(month=3, day=9, year=2019, hour=10, minute=0))         # EST
+    start = eastern_tz.localize(datetime(day=9, month=3, year=2019, hour=10, minute=0))         # EST
     now = eastern_tz.localize(datetime(day=11, month=3, year=2019, hour=1, minute=0))           # EDT
     delta = ffwd(hour=10, year=2019, microsecond=0, minute=0, second=0, day=11, weeks=0, month=3)
     # `next_actual_time` is the next time to run (derived from delta)
