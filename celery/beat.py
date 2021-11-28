@@ -400,17 +400,18 @@ class Scheduler:
         try:
             entry_args = _evaluate_entry_args(entry.args)
             entry_kwargs = _evaluate_entry_kwargs(entry.kwargs)
-            if entry.schedule and "eta" not in entry_kwargs:
+            entry_options = entry.options
+            if entry.schedule and "eta" not in entry_options:
                 next_run = entry.schedule.next_scheduled_run(entry.last_run_at)
-                entry_kwargs["eta"] = next_run
+                entry_options["eta"] = next_run
             if task:
                 return task.apply_async(entry_args, entry_kwargs,
                                         producer=producer,
-                                        **entry.options)
+                                        **entry_options)
             else:
                 return self.send_task(entry.task, entry_args, entry_kwargs,
                                       producer=producer,
-                                      **entry.options)
+                                      **entry_options)
         except Exception as exc:  # pylint: disable=broad-except
             reraise(SchedulingError, SchedulingError(
                 "Couldn't apply scheduled task {0.name}: {exc}".format(
