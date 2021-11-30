@@ -1,5 +1,3 @@
-import perform as perform
-
 import datetime
 from pickle import dumps, loads
 from unittest.mock import ANY, MagicMock, Mock, patch, sentinel
