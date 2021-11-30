@@ -3,6 +3,7 @@ from pickle import dumps, loads
 from unittest.mock import ANY, MagicMock, Mock, patch, sentinel
 
 import dns.version
+import pymongo
 import pytest
 import pytz
 from kombu.exceptions import EncodeError
@@ -152,9 +153,11 @@ class test_MongoBackend:
         mb = MongoBackend(app=self.app, url='mongodb://')
 
     @pytest.mark.skipif(dns.version.MAJOR > 1,
-                        reason="For dnspython version >= 2, pymongo's"
+                        reason="For dnspython version > 1, pymongo's"
                                "srv_resolver calls resolver.resolve")
-    def test_init_mongodb_dnspython1_seedlist(self):
+    @pytest.mark.skipif(pymongo.version_tuple[0] > 3,
+                        reason="For pymongo version > 3, options returns ssl")
+    def test_init_mongodb_dnspython1_pymongo3_seedlist(self):
         resolver = fake_resolver()
         self.app.conf.mongodb_backend_settings = None
 
@@ -169,7 +172,43 @@ class test_MongoBackend:
     @pytest.mark.skipif(dns.version.MAJOR <= 1,
                         reason="For dnspython versions 1.X, pymongo's"
                                "srv_resolver calls resolver.query")
-    def test_init_mongodb_dnspython2_seedlist(self):
+    @pytest.mark.skipif(pymongo.version_tuple[0] > 3,
+                        reason="For pymongo version > 3, options returns ssl")
+    def test_init_mongodb_dnspython2_pymongo3_seedlist(self):
+        resolver = fake_resolver()
+        self.app.conf.mongodb_backend_settings = None
+
+        with patch('dns.resolver.resolve', side_effect=resolver):
+            mb = self.perform_seedlist_assertions()
+            assert mb.options == dict(
+                mb._prepare_client_options(),
+                replicaset='rs0',
+                ssl=True
+            )
+
+    @pytest.mark.skipif(dns.version.MAJOR > 1,
+                        reason="For dnspython version >= 2, pymongo's"
+                               "srv_resolver calls resolver.resolve")
+    @pytest.mark.skipif(pymongo.version_tuple[0] <= 3,
+                        reason="For pymongo version > 3, options returns tls")
+    def test_init_mongodb_dnspython1_pymongo4_seedlist(self):
+        resolver = fake_resolver()
+        self.app.conf.mongodb_backend_settings = None
+
+        with patch('dns.resolver.query', side_effect=resolver):
+            mb = self.perform_seedlist_assertions()
+            assert mb.options == dict(
+                mb._prepare_client_options(),
+                replicaset='rs0',
+                tls=True
+            )
+
+    @pytest.mark.skipif(dns.version.MAJOR <= 1,
+                        reason="For dnspython versions 1.X, pymongo's"
+                               "srv_resolver calls resolver.query")
+    @pytest.mark.skipif(pymongo.version_tuple[0] <= 3,
+                        reason="For pymongo version > 3, options returns tls")
+    def test_init_mongodb_dnspython2_pymongo4_seedlist(self):
         resolver = fake_resolver()
         self.app.conf.mongodb_backend_settings = None
 
