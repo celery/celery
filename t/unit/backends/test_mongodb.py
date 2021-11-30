@@ -64,6 +64,27 @@ def fake_resolver():
 
     return mock_resolver
 
+def fake_resolver_dnspython2():
+    Name = pytest.importorskip('dns.name').Name
+    TXT = pytest.importorskip('dns.rdtypes.ANY.TXT').TXT
+    SRV = pytest.importorskip('dns.rdtypes.IN.SRV').SRV
+
+    def mock_resolver(_, rdtype, rdclass=None, lifetime=None, **kwargs):
+
+        if rdtype == 'SRV':
+            return [
+                SRV(0, 0, 0, 0, 27017, Name(labels=hostname))
+                for hostname in [
+                    'mongo1.example.com'.split('.'),
+                    'mongo2.example.com'.split('.'),
+                    'mongo3.example.com'.split('.')
+                ]
+            ]
+        elif rdtype == 'TXT':
+            return [TXT(0, 0, [b'replicaSet=rs0'])]
+
+    return mock_resolver
+
 class test_MongoBackend:
     default_url = 'mongodb://uuuu:pwpw@hostname.dom/database'
     replica_set_url = (
@@ -209,7 +230,7 @@ class test_MongoBackend:
     @pytest.mark.skipif(pymongo.version_tuple[0] <= 3,
                         reason="For pymongo version > 3, options returns tls")
     def test_init_mongodb_dnspython2_pymongo4_seedlist(self):
-        resolver = fake_resolver()
+        resolver = fake_resolver_dnspython2()
         self.app.conf.mongodb_backend_settings = None
 
         with patch('dns.resolver.resolve', side_effect=resolver):
