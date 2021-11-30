@@ -44,8 +44,7 @@ CELERY_DATABASE = 'celerydatabase'
 pytest.importorskip('pymongo')
 
 
-def fake_resolver_dnspython1():
-    Name = pytest.importorskip('dns.name').Name
+def fake_resolver_dnspython():
     TXT = pytest.importorskip('dns.rdtypes.ANY.TXT').TXT
     SRV = pytest.importorskip('dns.rdtypes.IN.SRV').SRV
 
@@ -53,29 +52,7 @@ def fake_resolver_dnspython1():
 
         if rdtype == 'SRV':
             return [
-                SRV(0, 0, 0, 0, 27017, Name(labels=hostname))
-                for hostname in [
-                    b'mongo1.example.com'.split(b'.'),
-                    b'mongo2.example.com'.split(b'.'),
-                    b'mongo3.example.com'.split(b'.')
-                ]
-            ]
-        elif rdtype == 'TXT':
-            return [TXT(0, 0, [b'replicaSet=rs0'])]
-
-    return mock_resolver
-
-
-def fake_resolver_dnspython2():
-    name_from_text = pytest.importorskip('dns.name').from_text
-    TXT = pytest.importorskip('dns.rdtypes.ANY.TXT').TXT
-    SRV = pytest.importorskip('dns.rdtypes.IN.SRV').SRV
-
-    def mock_resolver(_, rdtype, rdclass=None, lifetime=None, **kwargs):
-
-        if rdtype == 'SRV':
-            return [
-                SRV(0, 0, 0, 0, 27017, name_from_text(hostname))
+                SRV(0, 0, 0, 0, 27017, hostname)
                 for hostname in [
                     'mongo1.example.com',
                     'mongo2.example.com',
@@ -181,7 +158,7 @@ class test_MongoBackend:
     @pytest.mark.skipif(pymongo.version_tuple[0] > 3,
                         reason="For pymongo version > 3, options returns ssl")
     def test_init_mongodb_dnspython1_pymongo3_seedlist(self):
-        resolver = fake_resolver_dnspython1()
+        resolver = fake_resolver_dnspython()
         self.app.conf.mongodb_backend_settings = None
 
         with patch('dns.resolver.query', side_effect=resolver):
@@ -198,7 +175,7 @@ class test_MongoBackend:
     @pytest.mark.skipif(pymongo.version_tuple[0] > 3,
                         reason="For pymongo version > 3, options returns ssl")
     def test_init_mongodb_dnspython2_pymongo3_seedlist(self):
-        resolver = fake_resolver_dnspython1()
+        resolver = fake_resolver_dnspython()
         self.app.conf.mongodb_backend_settings = None
 
         with patch('dns.resolver.resolve', side_effect=resolver):
@@ -215,7 +192,7 @@ class test_MongoBackend:
     @pytest.mark.skipif(pymongo.version_tuple[0] <= 3,
                         reason="For pymongo version > 3, options returns tls")
     def test_init_mongodb_dnspython1_pymongo4_seedlist(self):
-        resolver = fake_resolver_dnspython1()
+        resolver = fake_resolver_dnspython()
         self.app.conf.mongodb_backend_settings = None
 
         with patch('dns.resolver.query', side_effect=resolver):
@@ -232,7 +209,7 @@ class test_MongoBackend:
     @pytest.mark.skipif(pymongo.version_tuple[0] <= 3,
                         reason="For pymongo version > 3, options returns tls")
     def test_init_mongodb_dnspython2_pymongo4_seedlist(self):
-        resolver = fake_resolver_dnspython2()
+        resolver = fake_resolver_dnspython()
         self.app.conf.mongodb_backend_settings = None
 
         with patch('dns.resolver.resolve', side_effect=resolver):
