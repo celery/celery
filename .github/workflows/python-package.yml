@@ -23,7 +23,6 @@ jobs:
   Unit:
 
     runs-on: ${{ matrix.os }}
-    continue-on-error: startsWith(matrix.python_version, 'pypy') && ${{matrix.os}} == "windows-latest"
     strategy:
       fail-fast: false
       matrix:
@@ -59,6 +58,7 @@ jobs:
     - name: >
         Run tox for
         "${{ matrix.python-version }}-unit"
+      continue-on-error: ${{matrix.os}} == "windows-latest"
       timeout-minutes: 20
       run: |
         tox --verbose --verbose
