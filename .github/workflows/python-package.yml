@@ -58,7 +58,7 @@ jobs:
     - name: >
         Run tox for
         "${{ matrix.python-version }}-unit"
-      continue-on-error: (startsWith(${{matrix.python_version}}, 'pypy') && startsWith(${{matrix.os}}, 'windows'))
+      continue-on-error: (startsWith(${{matrix.python-version}}, 'pypy') && startsWith(${{matrix.os}}, 'windows'))
       timeout-minutes: 20
       run: |
         tox --verbose --verbose
