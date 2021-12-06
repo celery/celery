@@ -182,7 +182,7 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               value: value or ctx.obj.app.conf.worker_prefetch_multiplier,
               cls=CeleryOption,
               help_group="Worker Options",
-              help="Set custom prefetch multiplier value"
+              help="Set custom prefetch multiplier value "
                    "for this worker instance.")
 @click.option('-c',
               '--concurrency',
