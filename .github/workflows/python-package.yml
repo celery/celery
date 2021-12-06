@@ -23,12 +23,12 @@ jobs:
   Unit:
 
     runs-on: ${{ matrix.os }}
+    continue-on-error: startsWith(matrix.python_version, 'pypy') && ${{matrix.os}} == "windows-latest"
     strategy:
       fail-fast: false
       matrix:
         python-version: ['3.7', '3.8', '3.9', '3.10', 'pypy-3.7', 'pypy-3.8']
         os: ["ubuntu-20.04", "windows-latest"]
-      continue-on-error: startsWith(matrix.python_version, 'pypy') && ${{matrix.os}} == "windows-latest"
 
     steps:
     - name: Install apt packages
