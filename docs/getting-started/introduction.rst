@@ -41,7 +41,7 @@ What do I need?
 .. sidebar:: Version Requirements
     :subtitle: Celery version 5.2 runs on
 
-    - Python ❨3.7, 3.8, 3.9❩
+    - Python ❨3.7, 3.8, 3.9, 3.10❩
     - PyPy3.6 ❨7.3❩
 
     Celery 4.x was the last version to support Python 2.7,
