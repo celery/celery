@@ -42,7 +42,7 @@ What do I need?
     :subtitle: Celery version 5.2 runs on
 
     - Python ❨3.7, 3.8, 3.9, 3.10❩
-    - PyPy3.6 ❨7.3❩
+    - PyPy3.7, 3.8 ❨7.3.7❩
 
     Celery 4.x was the last version to support Python 2.7,
     Celery 5.x requires Python 3.6 or newer.
