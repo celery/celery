@@ -240,8 +240,8 @@ class test_Scheduler:
         entry = scheduler.Entry(task=foo.name, app=self.app,
                                 schedule=always_due)
         scheduler.apply_async(entry, advance=False)
-        assert "eta" in foo.apply_async.call_args.kwargs
-        kwarg_eta = foo.apply_async.call_args.kwargs["eta"]
+        assert "eta" in foo.apply_async.call_args[1]
+        kwarg_eta = foo.apply_async.call_args[1]["eta"]
         # Mock scheduler has a frequency of 1 second
         expected_eta = datetime.now(tz=pytz.utc) + timedelta(seconds=1)
         difference = kwarg_eta - expected_eta
@@ -261,8 +261,8 @@ class test_Scheduler:
                                 options={"eta": preset_eta},
                                 schedule=always_due)
         scheduler.apply_async(entry, advance=False)
-        assert "eta" in foo.apply_async.call_args.kwargs
-        kwarg_eta = foo.apply_async.call_args.kwargs["eta"]
+        assert "eta" in foo.apply_async.call_args[1]
+        kwarg_eta = foo.apply_async.call_args[1]["eta"]
         # The *exact* value of a given ETA should be passed to the task
         assert kwarg_eta == preset_eta
 
