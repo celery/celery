@@ -2182,7 +2182,7 @@ Examples:
         },
     }
 
-    task_routes = ('myapp.tasks.route_task', {'celery.ping': 'default})
+    task_routes = ('myapp.tasks.route_task', {'celery.ping': 'default'})
 
 Where ``myapp.tasks.route_task`` could be:
 

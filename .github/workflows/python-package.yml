@@ -5,14 +5,14 @@ name: Celery
 
 on:
   push:
-    branches: [ 'master', '5.0' ]
+    branches: [ 'master']
     paths:
         - '**.py'
         - '**.txt'
         - '.github/workflows/python-package.yml'
         - '**.toml'
   pull_request:
-    branches: [ 'master', '5.0' ]
+    branches: [ 'master']
     paths:
         - '**.py'
         - '**.txt'
@@ -26,9 +26,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', 'pypy-3.7','pypy-3.8']
-        os: ["ubuntu-20.04", "windows-2019"]
-
+        python-version: ['3.7', '3.8', '3.9', '3.10', 'pypy-3.7', 'pypy-3.8']
+        os: ["ubuntu-20.04", "windows-latest"]
+        exclude:
+            - python-version: 'pypy-3.7'
+              os: "windows-latest"
+            - python-version: 'pypy-3.8'
+              os: "windows-latest"
     steps:
     - name: Install apt packages
       if: startsWith(matrix.os, 'ubuntu-')
