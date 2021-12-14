@@ -249,6 +249,19 @@ Caveats
   :program:`celery events`, :program:`celerymon`, or the Django Admin
   monitor.
 
+- With FIFO queues it might be necessary to set additional message properties such as ``MessageGroupId`` and ``MessageDeduplicationId`` when publishing a message.
+
+  Message properties can be passed as keyword arguments to :meth:`~celery.app.task.Task.apply_async`:
+    
+  .. code-block:: python
+
+    message_properties = {
+        'MessageGroupId': '<YourMessageGroupId>',
+        'MessageDeduplicationId': '<YourMessageDeduplicationId>'
+    }
+    task.apply_async(**message_properties)
+
+
 .. _sqs-results-configuration:
 
 Results
