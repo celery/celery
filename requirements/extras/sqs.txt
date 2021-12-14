@@ -1,3 +1,3 @@
 boto3>=1.9.12
-pycurl~=7.44.1  # Latest build with wheels provided
-urllib3>=1.26.7    # Unittests are faiing with urllib3>=1.28
+pycurl~=7.44.1  # Latest pypi release without wheels provided
+urllib3>=1.26.7
