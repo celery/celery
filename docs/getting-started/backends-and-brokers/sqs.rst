@@ -198,7 +198,7 @@ STS token authentication
 https://docs.aws.amazon.com/cli/latest/reference/sts/assume-role.html
 
 AWS STS authentication is supported by using the ``sts_role_arn`` and ``sts_token_timeout`` broker transport options. ``sts_role_arn`` is the assumed IAM role ARN we use to authorize our access to SQS.
-``sts_token_timeout`` is the token timeout, defaults (and minimum) to 900 seconds. After the mentioned period, a new token will be created.
+``sts_token_timeout`` is the token timeout, defaults (and minimum) to 900 seconds. After the mentioned period, a new token will be created::
 
     broker_transport_options = {
         'predefined_queues': {
@@ -248,6 +248,19 @@ Caveats
 - SQS doesn't yet support events, and so cannot be used with
   :program:`celery events`, :program:`celerymon`, or the Django Admin
   monitor.
+
+- With FIFO queues it might be necessary to set additional message properties such as ``MessageGroupId`` and ``MessageDeduplicationId`` when publishing a message.
+
+  Message properties can be passed as keyword arguments to :meth:`~celery.app.task.Task.apply_async`:
+    
+  .. code-block:: python
+
+    message_properties = {
+        'MessageGroupId': '<YourMessageGroupId>',
+        'MessageDeduplicationId': '<YourMessageDeduplicationId>'
+    }
+    task.apply_async(**message_properties)
+
 
 .. _sqs-results-configuration:
 
