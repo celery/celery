@@ -38,13 +38,24 @@ encode the password so it can always be parsed correctly. For example:
 .. code-block:: python
 
     from kombu.utils.url import safequote
-    
+
     aws_access_key = safequote("ABCDEFGHIJKLMNOPQRST")
     aws_secret_key = safequote("ZYXK7NiynG/TogH8Nj+P9nlE73sq3")
-    
+
     broker_url = "sqs://{aws_access_key}:{aws_secret_key}@".format(
         aws_access_key=aws_access_key, aws_secret_key=aws_secret_key,
     )
+
+.. warning::
+
+    Don't use this setup option with django's ``debug=True``.
+    It may lead to security issues within deployed django apps.
+
+    In debug mode django shows environment variables and the SQS URL
+    may be exposed to the internet including your AWS access and secret keys.
+    Please turn off debug mode on your deployed django application or
+    consider a setup option described below.
+
 
 The login credentials can also be set using the environment variables
 :envvar:`AWS_ACCESS_KEY_ID` and :envvar:`AWS_SECRET_ACCESS_KEY`,
@@ -252,7 +263,7 @@ Caveats
 - With FIFO queues it might be necessary to set additional message properties such as ``MessageGroupId`` and ``MessageDeduplicationId`` when publishing a message.
 
   Message properties can be passed as keyword arguments to :meth:`~celery.app.task.Task.apply_async`:
-    
+
   .. code-block:: python
 
     message_properties = {
