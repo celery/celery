@@ -402,6 +402,27 @@ class test_chain(CanvasCase):
         tasks2, _ = c2.prepare_steps((), {}, c2.tasks)
         assert isinstance(tasks2[0], group)
 
+    def test_chord_to_chain(self):
+        c = (
+            chord([self.add.s('x0', 'y0'), self.add.s('x1', 'y1')],
+                  self.add.s(['foo'])) |
+            chain(self.add.s(['y']), self.add.s(['z']))
+        )
+        assert isinstance(c, _chain)
+        assert c.apply().get() == ['x0y0', 'x1y1', 'foo', 'y', 'z']
+
+    def test_chord_to_group(self):
+        c = (
+            chord([self.add.s('x0', 'y0'), self.add.s('x1', 'y1')],
+                  self.add.s(['foo'])) |
+            group([self.add.s(['y']), self.add.s(['z'])])
+        )
+        assert isinstance(c, _chain)
+        assert c.apply().get() == [
+            ['x0y0', 'x1y1', 'foo', 'y'],
+            ['x0y0', 'x1y1', 'foo', 'z']
+        ]
+
     def test_apply_options(self):
 
         class static(Signature):
