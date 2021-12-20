@@ -46,6 +46,16 @@ consumer: Connection to broker lost. \
 Trying to re-establish the connection...\
 """
 
+TERMINATE_CELERY_ON_CONNECTION_RESTART = """\
+Terminating Celery due to a connection restart.
+This is happening because worker_terminate_on_connection_error is set to True.
+
+If you enabled this option, your process supervisor should restart your celery
+process.
+If that's not the case, you should disable this option or debug the problem
+elsewhere,
+"""
+
 CONNECTION_RETRY_STEP = """\
 Trying again {when}... ({retries}/{max_retries})\
 """
@@ -327,6 +337,10 @@ class Consumer:
                 # connection errors
                 if not self.app.conf.broker_connection_retry:
                     raise
+                if self.app.conf.worker_terminate_on_connection_error:
+                    crit(TERMINATE_CELERY_ON_CONNECTION_RESTART)
+                    self.controller.terminate()
+                    return
                 if isinstance(exc, OSError) and exc.errno == errno.EMFILE:
                     raise  # Too many open files
                 maybe_shutdown()
