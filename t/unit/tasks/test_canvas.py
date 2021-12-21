@@ -762,6 +762,76 @@ class test_group(CanvasCase):
         assert sig_in_g3_2_res._get_task_meta()['groups'] == \
                [g1_res.id, g2_res.id, g3_res.id]
 
+    def test_group_stamping_parallel_groups(self):
+        """
+        In the case of group within a group that is from another canvas
+        element, ensure that group stamps are added correctly when groups are
+        run in parallel.
+        """
+        self.app.conf.task_always_eager = True
+        self.app.conf.task_store_eager_result = True
+        self.app.conf.result_extended = True
+
+        sig_in_g1 = self.add.s(1, 1)
+        sig_in_g2_chain = self.add.s(2, 2)
+        sig_in_g2_1 = self.add.s(4)
+        sig_in_g2_2 = self.add.s(8)
+        sig_in_g3_chain = self.add.s(2, 2)
+        sig_in_g3_1 = self.add.s(4)
+        sig_in_g3_2 = self.add.s(8)
+
+        sig_in_g1_res = sig_in_g1.freeze()
+        sig_in_g2_chain_res = sig_in_g2_chain.freeze()
+        sig_in_g2_1_res = sig_in_g2_1.freeze()
+        sig_in_g2_2_res = sig_in_g2_2.freeze()
+        sig_in_g3_chain_res = sig_in_g3_chain.freeze()
+        sig_in_g3_1_res = sig_in_g3_1.freeze()
+        sig_in_g3_2_res = sig_in_g3_2.freeze()
+
+        g3 = group(
+            sig_in_g3_1,
+            sig_in_g3_2,
+            app=self.app
+        )
+        g3_res = g3.freeze()
+
+        g2 = group(
+            sig_in_g2_1,
+            sig_in_g2_2,
+            app=self.app
+        )
+        g2_res = g2.freeze()
+
+        g1 = group(
+            sig_in_g1,
+            chain(
+                sig_in_g2_chain,
+                g2,
+                app=self.app
+            ),
+            chain(
+                sig_in_g3_chain,
+                g3,
+                app=self.app
+            ),
+        )
+        g1_res = g1.freeze()
+        g1.apply()
+
+        assert sig_in_g1_res._get_task_meta()['groups'] == [g1_res.id]
+        assert sig_in_g2_chain_res._get_task_meta()['groups'] == \
+               [g1_res.id]
+        assert sig_in_g2_1_res._get_task_meta()['groups'] == \
+               [g1_res.id, g2_res.id]
+        assert sig_in_g2_2_res._get_task_meta()['groups'] == \
+               [g1_res.id, g2_res.id]
+        assert sig_in_g3_chain_res._get_task_meta()['groups'] == \
+               [g1_res.id]
+        assert sig_in_g3_1_res._get_task_meta()['groups'] == \
+               [g1_res.id, g3_res.id]
+        assert sig_in_g3_2_res._get_task_meta()['groups'] == \
+               [g1_res.id, g3_res.id]
+
     def test_repr(self):
         x = group([self.add.s(2, 2), self.add.s(4, 4)])
         assert repr(x)
