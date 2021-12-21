@@ -37,16 +37,19 @@ class CanvasCase:
         @self.app.task(shared=False)
         def add(x, y):
             return x + y
+
         self.add = add
 
         @self.app.task(shared=False)
         def mul(x, y):
             return x * y
+
         self.mul = mul
 
         @self.app.task(shared=False)
         def div(x, y):
             return x / y
+
         self.div = div
 
 
@@ -620,6 +623,145 @@ class test_chain(CanvasCase):
 
 class test_group(CanvasCase):
 
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_group_stamping_one_level(self):
+        """
+        Test that when a group ID is frozen, that group ID is stored in
+        each task within the group.
+        """
+        self.app.conf.task_always_eager = True
+        self.app.conf.task_store_eager_result = True
+        self.app.conf.result_extended = True
+
+        sig_1 = self.add.s(2, 2)
+        sig_2 = self.add.s(4, 4)
+        sig_1_res = sig_1.freeze()
+        sig_2_res = sig_2.freeze()
+
+        g = group(sig_1, sig_2, app=self.app)
+        g_res = g.freeze()
+        g.apply()
+
+        assert sig_1_res._get_task_meta()['groups'] == [g_res.id]
+        assert sig_2_res._get_task_meta()['groups'] == [g_res.id]
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_group_stamping_two_levels(self):
+        """
+        For a group within a group, test that group stamps are stored in
+        the correct order.
+        """
+        self.app.conf.task_always_eager = True
+        self.app.conf.task_store_eager_result = True
+        self.app.conf.result_extended = True
+
+        sig_1 = self.add.s(2, 2)
+        sig_2 = self.add.s(1, 1)
+        nested_sig_1 = self.add.s(2)
+        nested_sig_2 = self.add.s(4)
+
+        sig_1_res = sig_1.freeze()
+        sig_2_res = sig_2.freeze()
+        first_nested_sig_res = nested_sig_1.freeze()
+        second_nested_sig_res = nested_sig_2.freeze()
+
+        g2 = group(
+            nested_sig_1,
+            nested_sig_2,
+            app=self.app
+        )
+
+        g2_res = g2.freeze()
+
+        g1 = group(
+            sig_1,
+            chain(
+                sig_2,
+                g2,
+                app=self.app
+            ),
+            app=self.app
+        )
+
+        g1_res = g1.freeze()
+
+        g1.apply()
+
+        assert sig_1_res._get_task_meta()['groups'] == [g1_res.id]
+        assert sig_2_res._get_task_meta()['groups'] == [g1_res.id]
+        assert first_nested_sig_res._get_task_meta()['groups'] == \
+               [g1_res.id, g2_res.id]
+        assert second_nested_sig_res._get_task_meta()['groups'] == \
+               [g1_res.id, g2_res.id]
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_group_stamping_three_levels(self):
+        """
+        For groups with three levels of nesting, test that group stamps
+        are saved in the correct order for all nesting levels.
+        """
+        self.app.conf.task_always_eager = True
+        self.app.conf.task_store_eager_result = True
+        self.app.conf.result_extended = True
+
+        sig_in_g1_1 = self.add.s(2, 2)
+        sig_in_g1_2 = self.add.s(1, 1)
+        sig_in_g2 = self.add.s(2)
+        sig_in_g2_chain = self.add.s(4)
+        sig_in_g3_1 = self.add.s(8)
+        sig_in_g3_2 = self.add.s(16)
+
+        sig_in_g1_1_res = sig_in_g1_1.freeze()
+        sig_in_g1_2_res = sig_in_g1_2.freeze()
+        sig_in_g2_res = sig_in_g2.freeze()
+        sig_in_g2_chain_res = sig_in_g2_chain.freeze()
+        sig_in_g3_1_res = sig_in_g3_1.freeze()
+        sig_in_g3_2_res = sig_in_g3_2.freeze()
+
+        g3 = group(
+            sig_in_g3_1,
+            sig_in_g3_2,
+            app=self.app
+        )
+
+        g3_res = g3.freeze()
+
+        g2 = group(
+            sig_in_g2,
+            chain(
+                sig_in_g2_chain,
+                g3
+            ),
+            app=self.app
+        )
+
+        g2_res = g2.freeze()
+
+        g1 = group(
+            sig_in_g1_1,
+            chain(
+                sig_in_g1_2,
+                g2,
+                app=self.app
+            ),
+            app=self.app
+        )
+
+        g1_res = g1.freeze()
+
+        g1.apply()
+
+        assert sig_in_g1_1_res._get_task_meta()['groups'] == [g1_res.id]
+        assert sig_in_g1_2_res._get_task_meta()['groups'] == [g1_res.id]
+        assert sig_in_g2_res._get_task_meta()['groups'] == \
+               [g1_res.id, g2_res.id]
+        assert sig_in_g2_chain_res._get_task_meta()['groups'] == \
+               [g1_res.id, g2_res.id]
+        assert sig_in_g3_1_res._get_task_meta()['groups'] == \
+               [g1_res.id, g2_res.id, g3_res.id]
+        assert sig_in_g3_2_res._get_task_meta()['groups'] == \
+               [g1_res.id, g2_res.id, g3_res.id]
+
     def test_repr(self):
         x = group([self.add.s(2, 2), self.add.s(4, 4)])
         assert repr(x)
@@ -832,9 +974,9 @@ class test_group(CanvasCase):
     def test_apply_contains_chord(self):
         gchild_count = 42
         gchild_sig = self.add.si(0, 0)
-        gchild_sigs = (gchild_sig, ) * gchild_count
+        gchild_sigs = (gchild_sig,) * gchild_count
         child_chord = chord(gchild_sigs, gchild_sig)
-        group_sig = group((child_chord, ))
+        group_sig = group((child_chord,))
         with patch.object(
             self.app.backend, "set_chord_size",
         ) as mock_set_chord_size, patch(
@@ -852,10 +994,10 @@ class test_group(CanvasCase):
     def test_apply_contains_chords_containing_chain(self):
         ggchild_count = 42
         ggchild_sig = self.add.si(0, 0)
-        gchild_sig = chain((ggchild_sig, ) * ggchild_count)
+        gchild_sig = chain((ggchild_sig,) * ggchild_count)
         child_count = 24
-        child_chord = chord((gchild_sig, ), ggchild_sig)
-        group_sig = group((child_chord, ) * child_count)
+        child_chord = chord((gchild_sig,), ggchild_sig)
+        group_sig = group((child_chord,) * child_count)
         with patch.object(
             self.app.backend, "set_chord_size",
         ) as mock_set_chord_size, patch(
@@ -868,14 +1010,14 @@ class test_group(CanvasCase):
         assert len(res_obj.children) == child_count
         # We must have set the chord sizes based on the number of tail tasks of
         # the encapsulated chains - in this case 1 for each child chord
-        mock_set_chord_size.assert_has_calls((call(ANY, 1), ) * child_count)
+        mock_set_chord_size.assert_has_calls((call(ANY, 1),) * child_count)
 
     @pytest.mark.xfail(reason="Invalid canvas setup with bad exception")
     def test_apply_contains_chords_containing_empty_chain(self):
         gchild_sig = chain(tuple())
         child_count = 24
-        child_chord = chord((gchild_sig, ), self.add.si(0, 0))
-        group_sig = group((child_chord, ) * child_count)
+        child_chord = chord((gchild_sig,), self.add.si(0, 0))
+        group_sig = group((child_chord,) * child_count)
         # This is an invalid setup because we can't complete a chord header if
         # there are no actual tasks which will run in it. However, the current
         # behaviour of an `IndexError` isn't particularly helpful to a user.
@@ -886,11 +1028,11 @@ class test_group(CanvasCase):
         ggchild_sig = self.add.si(0, 0)
         tail_count = 24
         gchild_sig = chain(
-            (ggchild_sig, ) * ggchild_count +
-            (group((ggchild_sig, ) * tail_count), group(tuple()), ),
+            (ggchild_sig,) * ggchild_count +
+            (group((ggchild_sig,) * tail_count), group(tuple()),),
         )
-        child_chord = chord((gchild_sig, ), ggchild_sig)
-        group_sig = group((child_chord, ))
+        child_chord = chord((gchild_sig,), ggchild_sig)
+        group_sig = group((child_chord,))
         with patch.object(
             self.app.backend, "set_chord_size",
         ) as mock_set_chord_size, patch(
@@ -909,10 +1051,10 @@ class test_group(CanvasCase):
     def test_apply_contains_chords_containing_group(self):
         ggchild_count = 42
         ggchild_sig = self.add.si(0, 0)
-        gchild_sig = group((ggchild_sig, ) * ggchild_count)
+        gchild_sig = group((ggchild_sig,) * ggchild_count)
         child_count = 24
-        child_chord = chord((gchild_sig, ), ggchild_sig)
-        group_sig = group((child_chord, ) * child_count)
+        child_chord = chord((gchild_sig,), ggchild_sig)
+        group_sig = group((child_chord,) * child_count)
         with patch.object(
             self.app.backend, "set_chord_size",
         ) as mock_set_chord_size, patch(
@@ -926,15 +1068,15 @@ class test_group(CanvasCase):
         # We must have set the chord sizes based on the number of tail tasks of
         # the encapsulated groups - in this case `ggchild_count`
         mock_set_chord_size.assert_has_calls(
-            (call(ANY, ggchild_count), ) * child_count,
+            (call(ANY, ggchild_count),) * child_count,
         )
 
     @pytest.mark.xfail(reason="Invalid canvas setup but poor behaviour")
     def test_apply_contains_chords_containing_empty_group(self):
         gchild_sig = group(tuple())
         child_count = 24
-        child_chord = chord((gchild_sig, ), self.add.si(0, 0))
-        group_sig = group((child_chord, ) * child_count)
+        child_chord = chord((gchild_sig,), self.add.si(0, 0))
+        group_sig = group((child_chord,) * child_count)
         with patch.object(
             self.app.backend, "set_chord_size",
         ) as mock_set_chord_size, patch(
@@ -949,15 +1091,15 @@ class test_group(CanvasCase):
         # chain test, this is an invalid setup. However, we should probably
         # expect that the chords are dealt with in some other way the probably
         # being left incomplete forever...
-        mock_set_chord_size.assert_has_calls((call(ANY, 0), ) * child_count)
+        mock_set_chord_size.assert_has_calls((call(ANY, 0),) * child_count)
 
     def test_apply_contains_chords_containing_chord(self):
         ggchild_count = 42
         ggchild_sig = self.add.si(0, 0)
-        gchild_sig = chord((ggchild_sig, ) * ggchild_count, ggchild_sig)
+        gchild_sig = chord((ggchild_sig,) * ggchild_count, ggchild_sig)
         child_count = 24
-        child_chord = chord((gchild_sig, ), ggchild_sig)
-        group_sig = group((child_chord, ) * child_count)
+        child_chord = chord((gchild_sig,), ggchild_sig)
+        group_sig = group((child_chord,) * child_count)
         with patch.object(
             self.app.backend, "set_chord_size",
         ) as mock_set_chord_size, patch(
@@ -973,14 +1115,14 @@ class test_group(CanvasCase):
         # child chord. This means we have `child_count` interleaved calls to
         # set chord sizes of 1 and `ggchild_count`.
         mock_set_chord_size.assert_has_calls(
-            (call(ANY, 1), call(ANY, ggchild_count), ) * child_count,
+            (call(ANY, 1), call(ANY, ggchild_count),) * child_count,
         )
 
     def test_apply_contains_chords_containing_empty_chord(self):
         gchild_sig = chord(tuple(), self.add.si(0, 0))
         child_count = 24
-        child_chord = chord((gchild_sig, ), self.add.si(0, 0))
-        group_sig = group((child_chord, ) * child_count)
+        child_chord = chord((gchild_sig,), self.add.si(0, 0))
+        group_sig = group((child_chord,) * child_count)
         with patch.object(
             self.app.backend, "set_chord_size",
         ) as mock_set_chord_size, patch(
@@ -993,7 +1135,7 @@ class test_group(CanvasCase):
         assert len(res_obj.children) == child_count
         # We must have set the chord sizes based on the number of tail tasks of
         # the encapsulated chains - in this case 1 for each child chord
-        mock_set_chord_size.assert_has_calls((call(ANY, 1), ) * child_count)
+        mock_set_chord_size.assert_has_calls((call(ANY, 1),) * child_count)
 
 
 class test_chord(CanvasCase):
@@ -1213,7 +1355,7 @@ class test_chord(CanvasCase):
         with patch(
             "celery.canvas.Signature.from_dict", return_value=child_sig
         ) as mock_from_dict:
-            assert chord_sig. __length_hint__() == 1
+            assert chord_sig.__length_hint__() == 1
         mock_from_dict.assert_called_once_with(deserialized_child_sig)
 
     def test_chord_size_deserialized_element_many(self):
@@ -1227,7 +1369,7 @@ class test_chord(CanvasCase):
         with patch(
             "celery.canvas.Signature.from_dict", return_value=child_sig
         ) as mock_from_dict:
-            assert chord_sig. __length_hint__() == 42
+            assert chord_sig.__length_hint__() == 42
         mock_from_dict.assert_has_calls([call(deserialized_child_sig)] * 42)
 
     def test_set_immutable(self):

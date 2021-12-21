@@ -1217,9 +1217,17 @@ class group(Signature):
     def _freeze_gid(self, options):
         # remove task_id and use that as the group_id,
         # if we don't remove it then every task will have the same id...
-        options = dict(self.options, **options)
+        options = {**self.options, **options}
         options['group_id'] = group_id = (
             options.pop('task_id', uuid()))
+        options.setdefault('headers', {})
+        options['headers'].setdefault('groups', [])
+        options['headers']['groups'].append(group_id)  # group stamping
+
+        for task in self.tasks:
+            task.options.setdefault('headers', {})
+            task.options['headers']['groups'] = options['headers']['groups']
+
         return options, group_id, options.get('root_id')
 
     def _freeze_group_tasks(self, _id=None, group_id=None, chord=None,

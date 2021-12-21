@@ -452,6 +452,7 @@ class Backend:
                     'kwargs': getattr(request, 'kwargs', None),
                     'worker': getattr(request, 'hostname', None),
                     'retries': getattr(request, 'retries', None),
+                    'groups': getattr(request, 'headers', {}).get('groups', []),
                     'queue': request.delivery_info.get('routing_key')
                     if hasattr(request, 'delivery_info') and
                     request.delivery_info else None
