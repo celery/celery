@@ -201,7 +201,7 @@ To use this with your project you need to follow these steps:
 
     .. code-block:: python
 
-        CELERY_RESULT_BACKEND = 'django-cache'
+        CELERY_CACHE_BACKEND = 'django-cache'
 
     We can also use the cache defined in the CACHES setting in django.
 
