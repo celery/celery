@@ -2,6 +2,7 @@
 
 import datetime
 import time
+import warnings
 from collections import deque
 from contextlib import contextmanager
 from weakref import proxy
@@ -12,7 +13,7 @@ from vine import Thenable, barrier, promise
 from . import current_app, states
 from ._state import _set_task_join_will_block, task_join_will_block
 from .app import app_or_default
-from .exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
+from .exceptions import CDeprecationWarning, ImproperlyConfigured, IncompleteStream, TimeoutError
 from .utils.graph import DependencyGraph, GraphFormatter
 from .utils.iso8601 import parse_iso8601
 
@@ -994,10 +995,22 @@ class EagerResult(AsyncResult):
         return True
 
     def get(self, timeout=None, propagate=True,
-            disable_sync_subtasks=True, **kwargs):
-        if disable_sync_subtasks:
-            assert_will_not_block()
+            disable_sync_subtasks=None,         # deprecated
+            **kwargs):
+        """Return the result of an eagerly executed task.
 
+        Arguments:
+            timeout: No effect. This method never waits.
+            propagate (bool): Re-raise exception if the task failed.
+            disable_sync_subtask: No effect.
+
+        Raises:
+            Exception: If the task raised an exception and `propagate` is True.
+        """
+        if disable_sync_subtasks is not None:
+            warnings.warn(
+                'Passing `disable_sync_subtasks` to EagerResult.get has no effect.',
+                CDeprecationWarning, stacklevel=2)
         if self.successful():
             return self.result
         elif self.state in states.PROPAGATE_STATES:
