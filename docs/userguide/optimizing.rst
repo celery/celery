@@ -179,6 +179,33 @@ You can enable this behavior by using the following configuration options:
     task_acks_late = True
     worker_prefetch_multiplier = 1
 
+Memory Usage
+------------
+
+If you are experiencing high memory usage on a prefork worker, first you need
+to determine whether the issue is also happening on the Celery master
+process. The Celery master process's memory usage should not continue to
+increase drastically after start-up. If you see this happening, it may indicate
+a memory leak bug which should be reported to the Celery issue tracker.
+
+If only your child processes have high memory usage, this indicates an issue
+with your task.
+
+Keep in mind, Python process memory usage has a "high watermark" and will not
+return memory to the operating system until the child process has stopped. This
+means a single high memory usage task could permanently increase the memory
+usage of a child process until it's restarted. Fixing this may require adding
+chunking logic to your task to reduce peak memory usage.
+
+Celery workers have two main ways to help reduce memory usage due to the "high
+watermark" and/or memory leaks in child processes: the 
+:setting:`worker_max_tasks_per_child` and :setting:`worker_max_memory_per_child`
+settings.
+
+You must be careful not to set these settings too low, or else your workers
+will spend most of their time restarting child processes instead of processing
+tasks.
+
 .. rubric:: Footnotes
 
 .. [*] The chapter is available to read for free here:
