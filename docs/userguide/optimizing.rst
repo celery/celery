@@ -198,13 +198,18 @@ usage of a child process until it's restarted. Fixing this may require adding
 chunking logic to your task to reduce peak memory usage.
 
 Celery workers have two main ways to help reduce memory usage due to the "high
-watermark" and/or memory leaks in child processes: the 
+watermark" and/or memory leaks in child processes: the
 :setting:`worker_max_tasks_per_child` and :setting:`worker_max_memory_per_child`
 settings.
 
 You must be careful not to set these settings too low, or else your workers
 will spend most of their time restarting child processes instead of processing
-tasks.
+tasks. For example, if you use a :setting:`worker_max_tasks_per_child` of 1
+and your child process takes 1 second to start, then that child process would
+only be able to process a maximum of 60 tasks per minute (assuming the task ran
+instantly). A similar issue can occur when your tasks always exceed
+:setting:`worker_max_memory_per_child`.
+
 
 .. rubric:: Footnotes
 
