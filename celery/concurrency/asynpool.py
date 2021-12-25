@@ -405,6 +405,9 @@ class AsynPool(_pool.Pool):
     ResultHandler = ResultHandler
     Worker = Worker
 
+    #: Set by :meth:`register_with_event_loop` after running the first time.
+    _registered_with_event_loop = False
+
     def WorkerProcess(self, worker):
         worker = super().WorkerProcess(worker)
         worker.dead = False
@@ -523,7 +526,11 @@ class AsynPool(_pool.Pool):
         for handler, interval in self.timers.items():
             hub.call_repeatedly(interval, handler)
 
-        hub.on_tick.add(self.on_poll_start)
+        # Add on_poll_start to the event loop only once to prevent duplication
+        # when the Consumer restarts due to a connection error.
+        if not self._registered_with_event_loop:
+            hub.on_tick.add(self.on_poll_start)
+            self._registered_with_event_loop = True
 
     def _create_timelimit_handlers(self, hub):
         """Create handlers used to implement time limits."""
