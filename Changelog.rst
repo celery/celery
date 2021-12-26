@@ -12,14 +12,15 @@ an overview of what's new in Celery 5.2.
 .. _version-5.2.1:
 
 5.2.1
-=======
+=====
+
 :release-date: 2021-11-16 8.55 P.M UTC+6:00
 :release-by: Asif Saif Uddin
 
 - Fix rstrip usage on bytes instance in ProxyLogger.
 - Pass logfile to ExecStop in celery.service example systemd file.
 - fix: reduce latency of AsyncResult.get under gevent (#7052)
-- Limit redis version: <4.0.0. 
+- Limit redis version: <4.0.0.
 - Bump min kombu version to 5.2.2.
 - Change pytz>dev to a PEP 440 compliant pytz>0.dev.0.
 - Remove dependency to case (#7077).
@@ -31,20 +32,22 @@ an overview of what's new in Celery 5.2.
 .. _version-5.2.0:
 
 5.2.0
-=======
+=====
+
 :release-date: 2021-11-08 7.15 A.M UTC+6:00
 :release-by: Asif Saif Uddin
 
 - Prevent from subscribing to empty channels (#7040)
 - fix register_task method.
 - Fire task failure signal on final reject (#6980)
-- Limit pymongo version: <3.12.1 (#7041) 
+- Limit pymongo version: <3.12.1 (#7041)
 - Bump min kombu version to 5.2.1
 
 .. _version-5.2.0rc2:
 
 5.2.0rc2
-=======
+========
+
 :release-date: 2021-11-02 1.54 P.M UTC+3:00
 :release-by: Naomi Elstein
 
@@ -72,7 +75,7 @@ an overview of what's new in Celery 5.2.
 .. _version-5.2.0rc1:
 
 5.2.0rc1
-=======
+========
 :release-date: 2021-09-26 4.04 P.M UTC+3:00
 :release-by: Omer Katz
 
@@ -99,6 +102,7 @@ an overview of what's new in Celery 5.2.
 
 5.2.0b3
 =======
+
 :release-date: 2021-09-02 8.38 P.M UTC+3:00
 :release-by: Omer Katz
 
@@ -126,6 +130,7 @@ an overview of what's new in Celery 5.2.
 
 5.2.0b2
 =======
+
 :release-date: 2021-08-17 5.35 P.M UTC+3:00
 :release-by: Omer Katz
 
@@ -140,6 +145,7 @@ an overview of what's new in Celery 5.2.
 
 5.2.0b1
 =======
+
 :release-date: 2021-08-11 5.42 P.M UTC+3:00
 :release-by: Omer Katz
 
