@@ -8,6 +8,25 @@ This document contains change notes for bugfix & new features
 in the & 5.2.x series, please see :ref:`whatsnew-5.2` for
 an overview of what's new in Celery 5.2.
 
+.. _version-5.2.3:
+
+5.2.3
+=====
+
+:release-date: 2021-12-29 12:00 P.M UTC+6:00
+:release-by: Asif Saif Uddin
+
+- Allow redis >= 4.0.2.
+- Upgrade minimum required pymongo version to 3.11.1.
+- tested pypy3.8 beta (#6998).
+- Split Signature.__or__ into subclasses' __or__ (#7135).
+- Prevent duplication in event loop on Consumer restart.
+- Restrict setuptools>=59.1.1,<59.7.0.
+- Kombu bumped to v5.2.3
+- py-amqp bumped to v5.0.9
+- Some docs & CI improvements.
+
+
 .. _version-5.2.2:
 
 5.2.2
