@@ -345,7 +345,7 @@ The request defines the following attributes:
 
 :callbacks: A list of signatures to be called if this task returns successfully.
 
-:errback: A list of signatures to be called if this task fails.
+:errbacks: A list of signatures to be called if this task fails.
 
 :utc: Set to true the caller has UTC enabled (:setting:`enable_utc`).
 
