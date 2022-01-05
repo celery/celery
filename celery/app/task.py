@@ -17,6 +17,7 @@ from celery.utils import abstract
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
 from celery.utils.nodenames import gethostname
+from celery.utils.saferepr import saferepr
 from celery.utils.serialization import raise_with_context
 
 from .annotations import resolve_all as resolve_all_annotations
@@ -717,7 +718,7 @@ class Task:
                 raise_with_context(exc)
             raise self.MaxRetriesExceededError(
                 "Can't retry {}[{}] args:{} kwargs:{}".format(
-                    self.name, request.id, S.args, S.kwargs
+                    self.name, request.id, saferepr(S.args), saferepr(S.kwargs)
                 ), task_args=S.args, task_kwargs=S.kwargs
             )
 
