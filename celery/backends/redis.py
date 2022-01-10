@@ -107,10 +107,10 @@ class ResultConsumer(BaseResultConsumer):
         metas = [meta for meta in metas if meta]
         for meta in metas:
             self.on_state_change(self._decode_result(meta), None)
-        self._pubsub = self.backend.client.pubsub(
-            ignore_subscribe_messages=True,
-        )
         if self.subscribed_to:
+            self._pubsub = self.backend.client.pubsub(
+                ignore_subscribe_messages=True,
+            )
             self._pubsub.subscribe(*self.subscribed_to)
 
     @contextmanager
