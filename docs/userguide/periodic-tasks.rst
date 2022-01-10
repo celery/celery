@@ -170,7 +170,7 @@ Available Fields
 
     The name of the task to execute.
     
-    Task names are describes in the :ref:`task-names` section of the User Guide.
+    Task names are described in the :ref:`task-names` section of the User Guide.
     Note that this is not the import path of the task, even though the default
     naming pattern is built like it is.
 
