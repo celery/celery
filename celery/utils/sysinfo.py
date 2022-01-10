@@ -14,7 +14,7 @@ if hasattr(os, 'getloadavg'):
 
 else:  # pragma: no cover
     # Windows doesn't have getloadavg
-    def _load_average():  # noqa
+    def _load_average():
         return (0.0, 0.0, 0.0)
 
 

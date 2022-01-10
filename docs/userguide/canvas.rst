@@ -688,6 +688,52 @@ Group also supports iterators:
 A group is a signature object, so it can be used in combination
 with other signatures.
 
+.. _group-callbacks:
+
+Group Callbacks and Error Handling
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Groups can have callback and errback signatures linked to them as well, however
+the behaviour can be somewhat surprising due to the fact that groups are not
+real tasks and simply pass linked tasks down to their encapsulated signatures.
+This means that the return values of a group are not collected to be passed to
+a linked callback signature.
+As an example, the following snippet using a simple `add(a, b)` task is faulty
+since the linked `add.s()` signature will not received the finalised group
+result as one might expect.
+
+.. code-block:: pycon
+
+    >>> g = group(add.s(2, 2), add.s(4, 4))
+    >>> g.link(add.s())
+    >>> res = g()
+    [4, 8]
+
+Note that the finalised results of the first two tasks are returned, but the
+callback signature will have run in the background and raised an exception
+since it did not receive the two arguments it expects.
+
+Group errbacks are passed down to encapsulated signatures as well which opens
+the possibility for an errback linked only once to be called more than once if
+multiple tasks in a group were to fail.
+As an example, the following snippet using a `fail()` task which raises an
+exception can be expected to invoke the `log_error()` signature once for each
+failing task which gets run in the group.
+
+.. code-block:: pycon
+
+    >>> g = group(fail.s(), fail.s())
+    >>> g.link_error(log_error.s())
+    >>> res = g()
+
+With this in mind, it's generally advisable to create idempotent or counting
+tasks which are tolerant to being called repeatedly for use as errbacks.
+
+These use cases are better addressed by the :class:`~celery.chord` class which
+is supported on certain backend implementations.
+
+.. _group-results:
+
 Group Results
 ~~~~~~~~~~~~~
 
@@ -883,6 +929,12 @@ an errback to the chord callback:
 
     >>> c = (group(add.s(i, i) for i in range(10)) |
     ...      xsum.s().on_error(on_chord_error.s())).delay()
+
+Chords may have callback and errback signatures linked to them, which addresses
+some of the issues with linking signatures to groups.
+Doing so will link the provided signature to the chord's body which can be
+expected to gracefully invoke callbacks just once upon completion of the body,
+or errbacks just once if any task in the chord header or body fails.
 
 .. _chord-important-notes:
 

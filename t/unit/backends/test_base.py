@@ -1,5 +1,6 @@
+import re
 from contextlib import contextmanager
-from unittest.mock import ANY, Mock, call, patch, sentinel
+from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
 from kombu.serialization import prepare_accept_content
@@ -11,7 +12,7 @@ from celery.app.task import Context, Task
 from celery.backends.base import (BaseBackend, DisabledBackend,
                                   KeyValueStoreBackend, _nulldict)
 from celery.exceptions import (BackendGetMetaError, BackendStoreError,
-                               ChordError, TimeoutError)
+                               ChordError, SecurityError, TimeoutError)
 from celery.result import result_from_tuple
 from celery.utils import serialization
 from celery.utils.functional import pass1
@@ -206,7 +207,17 @@ class test_BaseBackend_interface:
 
         self.b.apply_chord(header_result_args, body)
         called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
-        assert called_kwargs['queue'] is None
+        assert called_kwargs['queue'] == 'testcelery'
+
+        routing_queue = Mock()
+        routing_queue.name = "routing_queue"
+        self.app.amqp.router.route = Mock(return_value={
+            "queue": routing_queue
+        })
+        self.b.apply_chord(header_result_args, body)
+        assert self.app.amqp.router.route.call_args[0][1] == body.name
+        called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
+        assert called_kwargs["queue"] == "routing_queue"
 
         self.b.apply_chord(header_result_args, body.set(queue='test_queue'))
         called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
@@ -219,6 +230,21 @@ class test_BaseBackend_interface:
         self.b.apply_chord(header_result_args, callback_queue.s())
         called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
         assert called_kwargs['queue'] == 'test_queue_two'
+
+        with self.Celery() as app2:
+            @app2.task(name='callback_different_app', shared=False)
+            def callback_different_app(result):
+                pass
+
+            callback_different_app_signature = self.app.signature('callback_different_app')
+            self.b.apply_chord(header_result_args, callback_different_app_signature)
+            called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
+            assert called_kwargs['queue'] == 'routing_queue'
+
+            callback_different_app_signature.set(queue='test_queue_three')
+            self.b.apply_chord(header_result_args, callback_different_app_signature)
+            called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
+            assert called_kwargs['queue'] == 'test_queue_three'
 
 
 class test_exception_pickle:
@@ -317,7 +343,7 @@ class KVBackend(KeyValueStoreBackend):
 class DictBackend(BaseBackend):
 
     def __init__(self, *args, **kwargs):
-        BaseBackend.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._data = {'can-delete': {'result': 'foo'}}
 
     def _restore_group(self, group_id):
@@ -534,21 +560,52 @@ class test_BaseBackend_dict:
         b.on_chord_part_return.assert_called_with(request, states.REVOKED, ANY)
 
     def test_chord_error_from_stack_raises(self):
+        class ExpectedException(Exception):
+            pass
+
         b = BaseBackend(app=self.app)
-        exc = KeyError()
-        callback = Mock(name='callback')
+        callback = MagicMock(name='callback')
         callback.options = {'link_error': []}
+        callback.keys.return_value = []
         task = self.app.tasks[callback.task] = Mock()
         b.fail_from_current_stack = Mock()
-        group = self.patching('celery.group')
-        group.side_effect = exc
-        b.chord_error_from_stack(callback, exc=ValueError())
+        self.patching('celery.group')
+        with patch.object(
+            b, "_call_task_errbacks", side_effect=ExpectedException()
+        ) as mock_call_errbacks:
+            b.chord_error_from_stack(callback, exc=ValueError())
         task.backend.fail_from_current_stack.assert_called_with(
-            callback.id, exc=exc)
+            callback.id, exc=mock_call_errbacks.side_effect,
+        )
 
     def test_exception_to_python_when_None(self):
         b = BaseBackend(app=self.app)
         assert b.exception_to_python(None) is None
+
+    def test_not_an_actual_exc_info(self):
+        pass
+
+    def test_not_an_exception_but_a_callable(self):
+        x = {
+            'exc_message': ('echo 1',),
+            'exc_type': 'system',
+            'exc_module': 'os'
+        }
+
+        with pytest.raises(SecurityError,
+                           match=re.escape(r"Expected an exception class, got os.system with payload ('echo 1',)")):
+            self.b.exception_to_python(x)
+
+    def test_not_an_exception_but_another_object(self):
+        x = {
+            'exc_message': (),
+            'exc_type': 'object',
+            'exc_module': 'builtins'
+        }
+
+        with pytest.raises(SecurityError,
+                           match=re.escape(r"Expected an exception class, got builtins.object with payload ()")):
+            self.b.exception_to_python(x)
 
     def test_exception_to_python_when_attribute_exception(self):
         b = BaseBackend(app=self.app)

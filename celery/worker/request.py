@@ -50,7 +50,7 @@ def __optimize__():
     _does_info = logger.isEnabledFor(logging.INFO)
 
 
-__optimize__()  # noqa: E305
+__optimize__()
 
 # Localize
 tz_or_local = timezone.tz_or_local
@@ -93,7 +93,8 @@ class Request:
                  maybe_make_aware=maybe_make_aware,
                  maybe_iso8601=maybe_iso8601, **opts):
         self._message = message
-        self._request_dict = message.headers if headers is None else headers
+        self._request_dict = (message.headers.copy() if headers is None
+                              else headers.copy())
         self._body = message.body if body is None else body
         self._app = app
         self._utc = utc
@@ -157,6 +158,7 @@ class Request:
             'redelivered': delivery_info.get('redelivered'),
         }
         self._request_dict.update({
+            'properties': properties,
             'reply_to': properties.get('reply_to'),
             'correlation_id': properties.get('correlation_id'),
             'hostname': self._hostname,
@@ -291,7 +293,7 @@ class Request:
         # XXX compat
         return self.id
 
-    @task_id.setter  # noqa
+    @task_id.setter
     def task_id(self, value):
         self.id = value
 
@@ -300,7 +302,7 @@ class Request:
         # XXX compat
         return self.name
 
-    @task_name.setter  # noqa
+    @task_name.setter
     def task_name(self, value):
         self.name = value
 
@@ -308,6 +310,10 @@ class Request:
     def reply_to(self):
         # used by rpc backend when failures reported by parent process
         return self._request_dict['reply_to']
+
+    @property
+    def replaced_task_nesting(self):
+        return self._request_dict.get('replaced_task_nesting', 0)
 
     @property
     def correlation_id(self):
@@ -520,16 +526,20 @@ class Request:
 
         is_terminated = isinstance(exc, Terminated)
         if is_terminated:
-            # If the message no longer has a connection and the worker
-            # is terminated, we aborted it.
-            # Otherwise, it is revoked.
-            if self.message.channel.connection and not self._already_revoked:
+            # If the task was terminated and the task was not cancelled due
+            # to a connection loss, it is revoked.
+
+            # We always cancel the tasks inside the master process.
+            # If the request was cancelled, it was not revoked and there's
+            # nothing to be done.
+            # According to the comment below, we need to check if the task
+            # is already revoked and if it wasn't, we should announce that
+            # it was.
+            if not self._already_cancelled and not self._already_revoked:
                 # This is a special case where the process
                 # would not have had time to write the result.
                 self._announce_revoked(
                     'terminated', True, str(exc), False)
-            elif not self._already_cancelled:
-                self._announce_cancelled()
             return
         elif isinstance(exc, MemoryError):
             raise MemoryError(f'Process got: {exc}')
@@ -569,6 +579,12 @@ class Request:
                 store_result=self.store_errors,
             )
 
+            signals.task_failure.send(sender=self.task, task_id=self.id,
+                                      exception=exc, args=self.args,
+                                      kwargs=self.kwargs,
+                                      traceback=exc_info.traceback,
+                                      einfo=exc_info)
+
         if send_failed_event:
             self.send_event(
                 'task-failed',
@@ -596,8 +612,8 @@ class Request:
         return {
             'id': self.id,
             'name': self.name,
-            'args': self._args,
-            'kwargs': self._kwargs,
+            'args': self._args if not safe else self._argsrepr,
+            'kwargs': self._kwargs if not safe else self._kwargsrepr,
             'type': self._type,
             'hostname': self._hostname,
             'time_start': self.time_start,

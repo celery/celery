@@ -13,18 +13,18 @@ from .base import BaseBackend
 try:
     import pymongo
 except ImportError:  # pragma: no cover
-    pymongo = None   # noqa
+    pymongo = None
 
 if pymongo:
     try:
         from bson.binary import Binary
     except ImportError:                     # pragma: no cover
-        from pymongo.binary import Binary  # noqa
-    from pymongo.errors import InvalidDocument  # noqa
+        from pymongo.binary import Binary
+    from pymongo.errors import InvalidDocument
 else:                                       # pragma: no cover
-    Binary = None                           # noqa
+    Binary = None
 
-    class InvalidDocument(Exception):       # noqa
+    class InvalidDocument(Exception):
         pass
 
 __all__ = ('MongoBackend',)
@@ -265,16 +265,7 @@ class MongoBackend(BaseBackend):
 
     def _get_database(self):
         conn = self._get_connection()
-        db = conn[self.database_name]
-        if self.user and self.password:
-            source = self.options.get(
-                'authsource',
-                self.database_name or 'admin'
-            )
-            if not db.authenticate(self.user, self.password, source=source):
-                raise ImproperlyConfigured(
-                    'Invalid MongoDB username or password.')
-        return db
+        return conn[self.database_name]
 
     @cached_property
     def database(self):

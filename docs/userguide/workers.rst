@@ -97,6 +97,11 @@ longer version:
 
     $ ps auxww | awk '/celery worker/ {print $2}' | xargs kill -9
 
+.. versionchanged:: 5.2
+    On Linux systems, Celery now supports sending :sig:`KILL` signal to all child processes
+    after worker termination. This is done via `PR_SET_PDEATHSIG` option of ``prctl(2)``.
+
+
 .. _worker-restarting:
 
 Restarting the worker
@@ -324,7 +329,7 @@ Commands
 
 ``revoke``: Revoking tasks
 --------------------------
-:pool support: all, terminate only supported by prefork
+:pool support: all, terminate only supported by prefork and eventlet
 :broker support: *amqp, redis*
 :command: :program:`celery -A proj control revoke <task_id>`
 
@@ -434,7 +439,7 @@ Time Limits
 
 .. versionadded:: 2.0
 
-:pool support: *prefork/gevent*
+:pool support: *prefork/gevent (see note below)*
 
 .. sidebar:: Soft, or hard?
 
@@ -473,6 +478,11 @@ Time limits can also be set using the :setting:`task_time_limit` /
 
     Time limits don't currently work on platforms that don't support
     the :sig:`SIGUSR1` signal.
+
+.. note::
+
+    The gevent pool does not implement soft time limits. Additionally,
+    it will not enforce the hard time limit if the task is blocking.
 
 
 Changing time limits at run-time

@@ -6,6 +6,7 @@ import sys
 import threading
 import traceback
 from contextlib import contextmanager
+from typing import AnyStr, Sequence
 
 from kombu.log import LOG_LEVELS
 from kombu.log import get_logger as _get_logger
@@ -132,17 +133,17 @@ class ColorFormatter(logging.Formatter):
     }
 
     def __init__(self, fmt=None, use_color=True):
-        logging.Formatter.__init__(self, fmt)
+        super().__init__(fmt)
         self.use_color = use_color
 
     def formatException(self, ei):
         if ei and not isinstance(ei, tuple):
             ei = sys.exc_info()
-        r = logging.Formatter.formatException(self, ei)
+        r = super().formatException(ei)
         return r
 
     def format(self, record):
-        msg = logging.Formatter.format(self, record)
+        msg = super().format(record)
         color = self.colors.get(record.levelname)
 
         # reset exception info later for other handlers...
@@ -167,7 +168,7 @@ class ColorFormatter(logging.Formatter):
                     ),
                 )
                 try:
-                    return logging.Formatter.format(self, record)
+                    return super().format(record)
                 finally:
                     record.msg, record.exc_info = prev_msg, einfo
         else:
@@ -214,19 +215,25 @@ class LoggingProxy:
         return [wrap_handler(h) for h in self.logger.handlers]
 
     def write(self, data):
+        # type: (AnyStr) -> int
         """Write message to logging object."""
         if _in_sighandler:
-            return print(safe_str(data), file=sys.__stderr__)
+            safe_data = safe_str(data)
+            print(safe_data, file=sys.__stderr__)
+            return len(safe_data)
         if getattr(self._thread, 'recurse_protection', False):
             # Logger is logging back to this file, so stop recursing.
-            return
-        data = data.strip()
+            return 0
         if data and not self.closed:
             self._thread.recurse_protection = True
             try:
-                self.logger.log(self.loglevel, safe_str(data))
+                safe_data = safe_str(data).rstrip('\n')
+                if safe_data:
+                    self.logger.log(self.loglevel, safe_data)
+                    return len(safe_data)
             finally:
                 self._thread.recurse_protection = False
+        return 0
 
     def writelines(self, sequence):
         # type: (Sequence[str]) -> None

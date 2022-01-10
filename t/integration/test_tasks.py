@@ -9,7 +9,8 @@ from celery import group
 from .conftest import get_active_redis_channels
 from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add,
                     add_ignore_result, add_not_typed, fail, print_unicode,
-                    retry, retry_once, retry_once_priority, sleeping)
+                    retry, retry_once, retry_once_priority, return_properties,
+                    sleeping)
 
 TIMEOUT = 10
 
@@ -269,6 +270,11 @@ class test_tasks:
             group(print_unicode.s() for _ in range(5))(),
             timeout=TIMEOUT, propagate=True,
         )
+
+    @flaky
+    def test_properties(self, celery_session_worker):
+        res = return_properties.apply_async(app_id="1234")
+        assert res.get(timeout=TIMEOUT)["app_id"] == "1234"
 
 
 class tests_task_redis_result_backend:

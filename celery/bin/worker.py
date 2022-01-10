@@ -11,6 +11,7 @@ from celery import concurrency
 from celery.bin.base import (COMMA_SEPARATED_LIST, LOG_LEVEL,
                              CeleryDaemonCommand, CeleryOption,
                              handle_preload_options)
+from celery.concurrency.base import BasePool
 from celery.exceptions import SecurityError
 from celery.platforms import (EX_FAILURE, EX_OK, detached,
                               maybe_drop_privileges)
@@ -40,13 +41,28 @@ class WorkersPool(click.Choice):
 
     def __init__(self):
         """Initialize the workers pool option with the relevant choices."""
-        super().__init__(('prefork', 'eventlet', 'gevent', 'solo'))
+        super().__init__(concurrency.get_available_pool_names())
 
     def convert(self, value, param, ctx):
         # Pools like eventlet/gevent needs to patch libs as early
         # as possible.
-        return concurrency.get_implementation(
-            value) or ctx.obj.app.conf.worker_pool
+        if isinstance(value, type) and issubclass(value, BasePool):
+            return value
+
+        value = super().convert(value, param, ctx)
+        worker_pool = ctx.obj.app.conf.worker_pool
+        if value == 'prefork' and worker_pool:
+            # If we got the default pool through the CLI
+            # we need to check if the worker pool was configured.
+            # If the worker pool was configured, we shouldn't use the default.
+            value = concurrency.get_implementation(worker_pool)
+        else:
+            value = concurrency.get_implementation(value)
+
+            if not value:
+                value = concurrency.get_implementation(worker_pool)
+
+        return value
 
 
 class Hostname(StringParamType):
@@ -140,7 +156,8 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               '--statedb',
               cls=CeleryOption,
               type=click.Path(),
-              callback=lambda ctx, _, value: value or ctx.obj.app.conf.worker_state_db,
+              callback=lambda ctx, _,
+              value: value or ctx.obj.app.conf.worker_state_db,
               help_group="Worker Options",
               help="Path to the state database. The extension '.db' may be "
                    "appended to the filename.")
@@ -161,21 +178,23 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
 @click.option('--prefetch-multiplier',
               type=int,
               metavar="<prefetch multiplier>",
-              callback=lambda ctx, _, value: value or ctx.obj.app.conf.worker_prefetch_multiplier,
+              callback=lambda ctx, _,
+              value: value or ctx.obj.app.conf.worker_prefetch_multiplier,
               cls=CeleryOption,
               help_group="Worker Options",
-              help="Set custom prefetch multiplier value"
+              help="Set custom prefetch multiplier value "
                    "for this worker instance.")
 @click.option('-c',
               '--concurrency',
               type=int,
               metavar="<concurrency>",
-              callback=lambda ctx, _, value: value or ctx.obj.app.conf.worker_concurrency,
+              callback=lambda ctx, _,
+              value: value or ctx.obj.app.conf.worker_concurrency,
               cls=CeleryOption,
               help_group="Pool Options",
               help="Number of child processes processing the queue.  "
                    "The default is the number of CPUs available"
-                   "on your system.")
+                   " on your system.")
 @click.option('-P',
               '--pool',
               default='prefork',
@@ -187,6 +206,7 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               '--task-events',
               '--events',
               is_flag=True,
+              default=None,
               cls=CeleryOption,
               help_group="Pool Options",
               help="Send task-related events that can be captured by monitors"
@@ -268,7 +288,8 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
 @click.option('-s',
               '--schedule-filename',
               '--schedule',
-              callback=lambda ctx, _, value: value or ctx.obj.app.conf.beat_schedule_filename,
+              callback=lambda ctx, _,
+              value: value or ctx.obj.app.conf.beat_schedule_filename,
               cls=CeleryOption,
               help_group="Embedded Beat Options")
 @click.option('--scheduler',

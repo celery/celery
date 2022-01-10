@@ -279,6 +279,24 @@ class test_chord(ChordCase):
         finally:
             chord.run = prev
 
+    def test_init(self):
+        from celery import chord
+        from celery.utils.serialization import pickle
+
+        @self.app.task(shared=False)
+        def addX(x, y):
+            return x + y
+
+        @self.app.task(shared=False)
+        def sumX(n):
+            return sum(n)
+
+        x = chord(addX.s(i, i) for i in range(10))
+        # kwargs used to nest and recurse in serialization/deserialization
+        # (#6810)
+        assert x.kwargs['kwargs'] == {}
+        assert pickle.loads(pickle.dumps(x)).kwargs == x.kwargs
+
 
 class test_add_to_chord:
 

@@ -38,13 +38,24 @@ encode the password so it can always be parsed correctly. For example:
 .. code-block:: python
 
     from kombu.utils.url import safequote
-    
+
     aws_access_key = safequote("ABCDEFGHIJKLMNOPQRST")
     aws_secret_key = safequote("ZYXK7NiynG/TogH8Nj+P9nlE73sq3")
-    
+
     broker_url = "sqs://{aws_access_key}:{aws_secret_key}@".format(
         aws_access_key=aws_access_key, aws_secret_key=aws_secret_key,
     )
+
+.. warning::
+
+    Don't use this setup option with django's ``debug=True``.
+    It may lead to security issues within deployed django apps.
+
+    In debug mode django shows environment variables and the SQS URL
+    may be exposed to the internet including your AWS access and secret keys.
+    Please turn off debug mode on your deployed django application or
+    consider a setup option described below.
+
 
 The login credentials can also be set using the environment variables
 :envvar:`AWS_ACCESS_KEY_ID` and :envvar:`AWS_SECRET_ACCESS_KEY`,
@@ -198,7 +209,7 @@ STS token authentication
 https://docs.aws.amazon.com/cli/latest/reference/sts/assume-role.html
 
 AWS STS authentication is supported by using the ``sts_role_arn`` and ``sts_token_timeout`` broker transport options. ``sts_role_arn`` is the assumed IAM role ARN we use to authorize our access to SQS.
-``sts_token_timeout`` is the token timeout, defaults (and minimum) to 900 seconds. After the mentioned period, a new token will be created.
+``sts_token_timeout`` is the token timeout, defaults (and minimum) to 900 seconds. After the mentioned period, a new token will be created::
 
     broker_transport_options = {
         'predefined_queues': {
@@ -248,6 +259,19 @@ Caveats
 - SQS doesn't yet support events, and so cannot be used with
   :program:`celery events`, :program:`celerymon`, or the Django Admin
   monitor.
+
+- With FIFO queues it might be necessary to set additional message properties such as ``MessageGroupId`` and ``MessageDeduplicationId`` when publishing a message.
+
+  Message properties can be passed as keyword arguments to :meth:`~celery.app.task.Task.apply_async`:
+
+  .. code-block:: python
+
+    message_properties = {
+        'MessageGroupId': '<YourMessageGroupId>',
+        'MessageDeduplicationId': '<YourMessageDeduplicationId>'
+    }
+    task.apply_async(**message_properties)
+
 
 .. _sqs-results-configuration:
 

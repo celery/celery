@@ -56,7 +56,7 @@ class Queues(dict):
     def __init__(self, queues=None, default_exchange=None,
                  create_missing=True, autoexchange=None,
                  max_priority=None, default_routing_key=None):
-        dict.__init__(self)
+        super().__init__()
         self.aliases = WeakValueDictionary()
         self.default_exchange = default_exchange
         self.default_routing_key = default_routing_key
@@ -73,12 +73,12 @@ class Queues(dict):
         try:
             return self.aliases[name]
         except KeyError:
-            return dict.__getitem__(self, name)
+            return super().__getitem__(name)
 
     def __setitem__(self, name, queue):
         if self.default_exchange and not queue.exchange:
             queue.exchange = self.default_exchange
-        dict.__setitem__(self, name, queue)
+        super().__setitem__(name, queue)
         if queue.alias:
             self.aliases[queue.alias] = queue
 
@@ -558,7 +558,7 @@ class AMQP:
         """Queue name⇒ declaration mapping."""
         return self.Queues(self.app.conf.task_queues)
 
-    @queues.setter  # noqa
+    @queues.setter
     def queues(self, queues):
         return self.Queues(queues)
 

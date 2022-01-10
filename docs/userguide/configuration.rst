@@ -107,6 +107,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_REDIS_DB``                        :setting:`redis_db`
 ``CELERY_REDIS_HOST``                      :setting:`redis_host`
 ``CELERY_REDIS_MAX_CONNECTIONS``           :setting:`redis_max_connections`
+``CELERY_REDIS_USERNAME``                  :setting:`redis_username`
 ``CELERY_REDIS_PASSWORD``                  :setting:`redis_password`
 ``CELERY_REDIS_PORT``                      :setting:`redis_port`
 ``CELERY_REDIS_BACKEND_USE_SSL``           :setting:`redis_backend_use_ssl`
@@ -483,7 +484,7 @@ you can set :setting:`task_store_errors_even_if_ignored`.
 Default: Disabled.
 
 If set, the worker stores all task errors in the result store even if
-:attr:`Task.ignore_result <celery.task.base.Task.ignore_result>` is on.
+:attr:`Task.ignore_result <celery.app.task.Task.ignore_result>` is on.
 
 .. setting:: task_track_started
 
@@ -854,6 +855,28 @@ Default interval for retrying chord tasks.
 
 .. _conf-database-result-backend:
 
+
+.. setting:: override_backends
+
+``override_backends``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: Disabled by default.
+
+Path to class that implements backend.
+
+Allows to override backend implementation.
+This can be useful if you need to store additional metadata about executed tasks,
+override retry policies, etc.
+
+Example:
+
+.. code-block:: python
+
+    override_backends = {"db": "custom_module.backend.class"}
+
+
+
 Database backend settings
 -------------------------
 
@@ -1127,7 +1150,7 @@ Configuring the backend URL
 This backend requires the :setting:`result_backend`
 setting to be set to a Redis or `Redis over TLS`_ URL::
 
-    result_backend = 'redis://:password@host:port/db'
+    result_backend = 'redis://username:password@host:port/db'
 
 .. _`Redis over TLS`:
     https://www.iana.org/assignments/uri-schemes/prov/rediss
@@ -1142,7 +1165,7 @@ is the same as::
 
 Use the ``rediss://`` protocol to connect to redis over TLS::
 
-    result_backend = 'rediss://:password@host:port/db?ssl_cert_reqs=required'
+    result_backend = 'rediss://username:password@host:port/db?ssl_cert_reqs=required'
 
 Note that the ``ssl_cert_reqs`` string should be one of ``required``,
 ``optional``, or ``none`` (though, for backwards compatibility, the string
@@ -1153,6 +1176,20 @@ If a Unix socket connection should be used, the URL needs to be in the format:::
     result_backend = 'socket:///path/to/redis.sock'
 
 The fields of the URL are defined as follows:
+
+#. ``username``
+
+    .. versionadded:: 5.1.0
+
+    Username used to connect to the database.
+
+    Note that this is only supported in Redis>=6.0 and with py-redis>=3.4.0
+    installed.
+
+    If you use an older database version or an older client version
+    you can omit the username::
+
+        result_backend = 'redis://:password@host:port/db'
 
 #. ``password``
 
@@ -1584,6 +1621,24 @@ Default: 3.
 
 The maximum number of retry attempts.
 
+.. setting:: azureblockblob_connection_timeout
+
+``azureblockblob_connection_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 20.
+
+Timeout in seconds for establishing the azure block blob connection.
+
+.. setting:: azureblockblob_read_timeout
+
+``azureblockblob_read_timeout``
+~~~~~~~~~~~~~~~~~~~~
+
+Default: 120.
+
+Timeout in seconds for reading of an azure block blob.
+
 .. _conf-elasticsearch-result-backend:
 
 Elasticsearch backend settings
@@ -1869,6 +1924,16 @@ This is a dict supporting the following keys:
 
     Password to authenticate to the ArangoDB server (optional).
 
+* ``http_protocol``
+
+    HTTP Protocol in ArangoDB server connection.
+    Defaults to ``http``.
+
+* ``verify``
+
+    HTTPS Verification check while creating the ArangoDB connection.
+    Defaults to ``False``.
+
 .. _conf-cosmosdbsql-result-backend:
 
 CosmosDB backend settings (experimental)
@@ -2001,14 +2066,52 @@ without any further configuration. For larger clusters you could use NFS,
 Consul K/V store backend settings
 ---------------------------------
 
-The Consul backend can be configured using a URL, for example:
+.. note::
+
+    The Consul backend requires the :pypi:`python-consul2` library:
+
+    To install this package use :command:`pip`:
+
+    .. code-block:: console
+
+        $ pip install python-consul2
+
+The Consul backend can be configured using a URL, for example::
 
     CELERY_RESULT_BACKEND = 'consul://localhost:8500/'
 
-The backend will storage results in the K/V store of Consul
-as individual keys.
+or::
 
-The backend supports auto expire of results using TTLs in Consul.
+    result_backend = 'consul://localhost:8500/'
+
+The backend will store results in the K/V store of Consul
+as individual keys. The backend supports auto expire of results using TTLs in
+Consul. The full syntax of the URL is::
+
+    consul://host:port[?one_client=1]
+
+The URL is formed out of the following parts:
+
+* ``host``
+
+    Host name of the Consul server.
+
+* ``port``
+
+    The port the Consul server is listening to.
+
+* ``one_client``
+
+    By default, for correctness, the backend uses a separate client connection
+    per operation. In cases of extreme load, the rate of creation of new
+    connections can cause HTTP 429 "too many connections" error responses from
+    the Consul server when under load. The recommended way to handle this is to
+    enable retries in ``python-consul2`` using the patch at
+    https://github.com/poppyred/python-consul2/pull/31.
+
+    Alternatively, if ``one_client`` is set, a single client connection will be
+    used for all operations instead. This should eliminate the HTTP 429 errors,
+    but the storage of results in the backend can become unreliable.
 
 .. _conf-messaging:
 
@@ -2079,7 +2182,7 @@ Examples:
         },
     }
 
-    task_routes = ('myapp.tasks.route_task', {'celery.ping': 'default})
+    task_routes = ('myapp.tasks.route_task', {'celery.ping': 'default'})
 
 Where ``myapp.tasks.route_task`` could be:
 
@@ -2117,7 +2220,7 @@ the final message options will be:
     immediate=False, exchange='video', routing_key='video.compress'
 
 (and any default message options defined in the
-:class:`~celery.task.base.Task` class)
+:class:`~celery.app.task.Task` class)
 
 Values defined in :setting:`task_routes` have precedence over values defined in
 :setting:`task_queues` when merging the two.
@@ -2991,7 +3094,7 @@ Default:
 .. code-block:: text
 
     "[%(asctime)s: %(levelname)s/%(processName)s]
-        [%(task_name)s(%(task_id)s)] %(message)s"
+        %(task_name)s[%(task_id)s]: %(message)s"
 
 The format to use for log messages logged in tasks.
 

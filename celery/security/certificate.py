@@ -85,7 +85,7 @@ class FSCertStore(CertStore):
     """File system certificate store."""
 
     def __init__(self, path):
-        CertStore.__init__(self)
+        super().__init__()
         if os.path.isdir(path):
             path = os.path.join(path, '*')
         for p in glob.glob(path):

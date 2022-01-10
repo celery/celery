@@ -1,10 +1,29 @@
 repos:
--   repo: https://github.com/ambv/black
-    rev: stable
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v2.31.0
     hooks:
-    - id: black
-      language_version: python3.7
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v1.2.3
+      - id: pyupgrade
+        args: ["--py37-plus"]
+
+  - repo: https://github.com/PyCQA/flake8
+    rev: 4.0.1
     hooks:
-    - id: flake8
+      - id: flake8
+
+  - repo: https://github.com/asottile/yesqa
+    rev: v1.3.0
+    hooks:
+      - id: yesqa
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.1.0
+    hooks:
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: check-yaml
+      - id: mixed-line-ending
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort

@@ -1,11 +1,17 @@
 """Fixtures and testing utilities for :pypi:`pytest <pytest>`."""
 import os
 from contextlib import contextmanager
+from typing import TYPE_CHECKING, Any, Mapping, Sequence, Union
 
 import pytest
 
-from .testing import worker
-from .testing.app import TestApp, setup_default_app
+if TYPE_CHECKING:
+    from celery import Celery
+
+    from ..worker import WorkController
+else:
+    Celery = WorkController = object
+
 
 NO_WORKER = os.environ.get('NO_WORKER')
 
@@ -16,7 +22,7 @@ NO_WORKER = os.environ.get('NO_WORKER')
 def pytest_configure(config):
     """Register additional pytest configuration."""
     # add the pytest.mark.celery() marker registration to the pytest.ini [markers] section
-    # this prevents pytest 4.5 and newer from issueing a warning about an unknown marker
+    # this prevents pytest 4.5 and newer from issuing a warning about an unknown marker
     # and shows helpful marker documentation when running pytest --markers.
     config.addinivalue_line(
         "markers", "celery(**overrides): override celery configuration for a test case"
@@ -30,6 +36,9 @@ def _create_app(enable_logging=False,
                 **config):
     # type: (Any, Any, Any, **Any) -> Celery
     """Utility context used to setup Celery app for pytest fixtures."""
+
+    from .testing.app import TestApp, setup_default_app
+
     parameters = {} if not parameters else parameters
     test_app = TestApp(
         set_as_current=False,
@@ -83,6 +92,8 @@ def celery_session_worker(
 ):
     # type: (...) -> WorkController
     """Session Fixture: Start worker that lives throughout test suite."""
+    from .testing import worker
+
     if not NO_WORKER:
         for module in celery_includes:
             celery_session_app.loader.import_task_module(module)
@@ -188,6 +199,8 @@ def celery_worker(request,
                   celery_worker_parameters):
     # type: (Any, Celery, Sequence[str], str, Any) -> WorkController
     """Fixture: Start worker in a thread, stop it when the test returns."""
+    from .testing import worker
+
     if not NO_WORKER:
         for module in celery_includes:
             celery_app.loader.import_task_module(module)

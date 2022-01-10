@@ -399,19 +399,10 @@ def getappattr(path):
     return current_app._rgetattr(path)
 
 
-def _compat_periodic_task_decorator(*args, **kwargs):
-    from celery.task import periodic_task
-    return periodic_task(*args, **kwargs)
-
-
 COMPAT_MODULES = {
     'celery': {
         'execute': {
             'send_task': 'send_task',
-        },
-        'decorators': {
-            'task': 'task',
-            'periodic_task': _compat_periodic_task_decorator,
         },
         'log': {
             'get_default_logger': 'log.get_default_logger',
@@ -428,19 +419,6 @@ COMPAT_MODULES = {
             'tasks': 'tasks',
         },
     },
-    'celery.task': {
-        'control': {
-            'broadcast': 'control.broadcast',
-            'rate_limit': 'control.rate_limit',
-            'time_limit': 'control.time_limit',
-            'ping': 'control.ping',
-            'revoke': 'control.revoke',
-            'discard_all': 'control.purge',
-            'inspect': 'control.inspect',
-        },
-        'schedules': 'celery.schedules',
-        'chords': 'celery.canvas',
-    }
 }
 
 #: We exclude these from dir(celery)

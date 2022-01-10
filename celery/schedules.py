@@ -79,7 +79,7 @@ class BaseSchedule:
     def app(self):
         return self._app or current_app._get_current_object()
 
-    @app.setter  # noqa
+    @app.setter
     def app(self, app):
         self._app = app
 

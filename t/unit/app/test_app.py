@@ -9,7 +9,6 @@ from pickle import dumps, loads
 from unittest.mock import Mock, patch
 
 import pytest
-from case import ContextMock, mock
 from vine import promise
 
 from celery import Celery, _state
@@ -18,6 +17,7 @@ from celery import current_app, shared_task
 from celery.app import base as _appbase
 from celery.app import defaults
 from celery.backends.base import Backend
+from celery.contrib.testing.mocks import ContextMock
 from celery.exceptions import ImproperlyConfigured
 from celery.loaders.base import unconfigured
 from celery.platforms import pyimplementation
@@ -25,6 +25,7 @@ from celery.utils.collections import DictAttribute
 from celery.utils.objects import Bunch
 from celery.utils.serialization import pickle
 from celery.utils.time import localize, timezone, to_utc
+from t.unit import conftest
 
 THIS_IS_A_KEY = 'this is a value'
 
@@ -273,6 +274,14 @@ class test_App:
         patching.setenv('CELERY_BROKER_URL', '')
         with self.Celery(broker='foo://baribaz') as app:
             assert app.conf.broker_url == 'foo://baribaz'
+
+    def test_pending_configuration_non_true__kwargs(self):
+        with self.Celery(task_create_missing_queues=False) as app:
+            assert app.conf.task_create_missing_queues is False
+
+    def test_pending_configuration__kwargs(self):
+        with self.Celery(foo='bar') as app:
+            assert app.conf.foo == 'bar'
 
     def test_pending_configuration__setattr(self):
         with self.Celery(broker='foo://bar') as app:
@@ -575,20 +584,12 @@ class test_App:
         for key, value in changes.items():
             assert restored.conf[key] == value
 
-    # def test_worker_main(self):
-    #     from celery.bin import worker as worker_bin
-    #
-    #     class worker(worker_bin.worker):
-    #
-    #         def execute_from_commandline(self, argv):
-    #             return argv
-    #
-    #     prev, worker_bin.worker = worker_bin.worker, worker
-    #     try:
-    #         ret = self.app.worker_main(argv=['--version'])
-    #         assert ret == ['--version']
-    #     finally:
-    #         worker_bin.worker = prev
+    @patch('celery.bin.celery.celery')
+    def test_worker_main(self, mocked_celery):
+        self.app.worker_main(argv=['worker', '--help'])
+
+        mocked_celery.main.assert_called_with(
+            args=['worker', '--help'], standalone_mode=False)
 
     def test_config_from_envvar(self):
         os.environ['CELERYTEST_CONFIG_OBJECT'] = 't.unit.app.test_app'
@@ -771,6 +772,11 @@ class test_App:
         assert self.app.conf['FOO'] == 10
         assert self.app.conf['BAR'] == 20
 
+    @patch('celery.bin.celery.celery')
+    def test_start(self, mocked_celery):
+        self.app.start()
+        mocked_celery.main.assert_called()
+
     @pytest.mark.parametrize('url,expected_fields', [
         ('pyamqp://', {
             'hostname': 'localhost',
@@ -910,10 +916,10 @@ class test_App:
         assert 'add1' in self.app.conf.beat_schedule
         assert 'add2' in self.app.conf.beat_schedule
 
-    def test_pool_no_multiprocessing(self):
-        with mock.mask_modules('multiprocessing.util'):
-            pool = self.app.pool
-            assert pool is self.app._pool
+    @pytest.mark.masked_modules('multiprocessing.util')
+    def test_pool_no_multiprocessing(self, mask_modules):
+        pool = self.app.pool
+        assert pool is self.app._pool
 
     def test_bugreport(self):
         assert self.app.bugreport()
@@ -1073,26 +1079,26 @@ class test_debugging_utils:
 class test_pyimplementation:
 
     def test_platform_python_implementation(self):
-        with mock.platform_pyimp(lambda: 'Xython'):
+        with conftest.platform_pyimp(lambda: 'Xython'):
             assert pyimplementation() == 'Xython'
 
     def test_platform_jython(self):
-        with mock.platform_pyimp():
-            with mock.sys_platform('java 1.6.51'):
+        with conftest.platform_pyimp():
+            with conftest.sys_platform('java 1.6.51'):
                 assert 'Jython' in pyimplementation()
 
     def test_platform_pypy(self):
-        with mock.platform_pyimp():
-            with mock.sys_platform('darwin'):
-                with mock.pypy_version((1, 4, 3)):
+        with conftest.platform_pyimp():
+            with conftest.sys_platform('darwin'):
+                with conftest.pypy_version((1, 4, 3)):
                     assert 'PyPy' in pyimplementation()
-                with mock.pypy_version((1, 4, 3, 'a4')):
+                with conftest.pypy_version((1, 4, 3, 'a4')):
                     assert 'PyPy' in pyimplementation()
 
     def test_platform_fallback(self):
-        with mock.platform_pyimp():
-            with mock.sys_platform('darwin'):
-                with mock.pypy_version():
+        with conftest.platform_pyimp():
+            with conftest.sys_platform('darwin'):
+                with conftest.pypy_version():
                     assert 'CPython' == pyimplementation()
 
 

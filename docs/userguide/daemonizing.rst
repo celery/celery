@@ -403,7 +403,8 @@ This is an example systemd file:
         --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} \
         --loglevel="${CELERYD_LOG_LEVEL}" $CELERYD_OPTS'
     ExecStop=/bin/sh -c '${CELERY_BIN} multi stopwait $CELERYD_NODES \
-        --pidfile=${CELERYD_PID_FILE} --loglevel="${CELERYD_LOG_LEVEL}"'
+        --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} \
+        --loglevel="${CELERYD_LOG_LEVEL}"'
     ExecReload=/bin/sh -c '${CELERY_BIN} -A $CELERY_APP multi restart $CELERYD_NODES \
         --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} \
         --loglevel="${CELERYD_LOG_LEVEL}" $CELERYD_OPTS'

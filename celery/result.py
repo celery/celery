@@ -4,6 +4,7 @@ import datetime
 import time
 from collections import deque
 from contextlib import contextmanager
+from weakref import proxy
 
 from kombu.utils.objects import cached_property
 from vine import Thenable, barrier, promise
@@ -482,7 +483,7 @@ class AsyncResult(ResultBase):
         """Compat. alias to :attr:`id`."""
         return self.id
 
-    @task_id.setter  # noqa
+    @task_id.setter
     def task_id(self, id):
         self.id = id
 
@@ -535,7 +536,7 @@ class ResultSet(ResultBase):
     def __init__(self, results, app=None, ready_barrier=None, **kwargs):
         self._app = app
         self.results = results
-        self.on_ready = promise(args=(self,))
+        self.on_ready = promise(args=(proxy(self),))
         self._on_full = ready_barrier or barrier(results)
         if self._on_full:
             self._on_full.then(promise(self._on_ready, weak=True))
@@ -851,7 +852,7 @@ class ResultSet(ResultBase):
         return self._app
 
     @app.setter
-    def app(self, app):  # noqa
+    def app(self, app):
         self._app = app
 
     @property
@@ -883,11 +884,11 @@ class GroupResult(ResultSet):
     def __init__(self, id=None, results=None, parent=None, **kwargs):
         self.id = id
         self.parent = parent
-        ResultSet.__init__(self, results, **kwargs)
+        super().__init__(results, **kwargs)
 
     def _on_ready(self):
         self.backend.remove_pending_result(self)
-        ResultSet._on_ready(self)
+        super()._on_ready()
 
     def save(self, backend=None):
         """Save group-result for later retrieval using :meth:`restore`.

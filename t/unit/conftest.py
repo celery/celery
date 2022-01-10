@@ -1,13 +1,19 @@
+import builtins
+import inspect
+import io
 import logging
 import os
+import platform
 import sys
 import threading
+import types
 import warnings
-from importlib import import_module
-from unittest.mock import Mock
+from contextlib import contextmanager
+from functools import wraps
+from importlib import import_module, reload
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
-from case.utils import decorator
 from kombu import Queue
 
 from celery.backends.cache import CacheBackend, DummyClient
@@ -27,7 +33,7 @@ __all__ = (
 )
 
 try:
-    WindowsError = WindowsError  # noqa
+    WindowsError = WindowsError
 except NameError:
 
     class WindowsError(Exception):
@@ -38,6 +44,24 @@ PYPY3 = getattr(sys, 'pypy_version_info', None) and sys.version_info[0] > 3
 CASE_LOG_REDIRECT_EFFECT = 'Test {0} didn\'t disable LoggingProxy for {1}'
 CASE_LOG_LEVEL_EFFECT = 'Test {0} modified the level of the root logger'
 CASE_LOG_HANDLER_EFFECT = 'Test {0} modified handlers for the root logger'
+
+_SIO_write = io.StringIO.write
+_SIO_init = io.StringIO.__init__
+
+SENTINEL = object()
+
+
+def noop(*args, **kwargs):
+    pass
+
+
+class WhateverIO(io.StringIO):
+
+    def __init__(self, v=None, *a, **kw):
+        _SIO_init(self, v.decode() if isinstance(v, bytes) else v, *a, **kw)
+
+    def write(self, data):
+        _SIO_write(self, data.decode() if isinstance(data, bytes) else data)
 
 
 @pytest.fixture(scope='session')
@@ -88,7 +112,7 @@ def reset_cache_backend_state(celery_app):
             backend._cache.clear()
 
 
-@decorator
+@contextmanager
 def assert_signal_called(signal, **expected):
     """Context that verifes signal is called before exiting."""
     handler = Mock()
@@ -113,7 +137,6 @@ def app(celery_app):
 def AAA_disable_multiprocessing():
     # pytest-cov breaks if a multiprocessing.Process is started,
     # so disable them completely to make sure it doesn't happen.
-    from unittest.mock import patch
     stuff = [
         'multiprocessing.Process',
         'billiard.Process',
@@ -326,3 +349,447 @@ def import_all_modules(name=__name__, file=__file__,
                     'Ignored error importing module {}: {!r}'.format(
                         module, exc,
                     )))
+
+
+@pytest.fixture
+def sleepdeprived(request):
+    """Mock sleep method in patched module to do nothing.
+
+    Example:
+        >>> import time
+        >>> @pytest.mark.sleepdeprived_patched_module(time)
+        >>> def test_foo(self, sleepdeprived):
+        >>>     pass
+    """
+    module = request.node.get_closest_marker(
+            "sleepdeprived_patched_module").args[0]
+    old_sleep, module.sleep = module.sleep, noop
+    try:
+        yield
+    finally:
+        module.sleep = old_sleep
+
+
+# Taken from
+# http://bitbucket.org/runeh/snippets/src/tip/missing_modules.py
+@pytest.fixture
+def mask_modules(request):
+    """Ban some modules from being importable inside the context
+    For example::
+        >>> @pytest.mark.masked_modules('gevent.monkey')
+        >>> def test_foo(self, mask_modules):
+        ...     try:
+        ...         import sys
+        ...     except ImportError:
+        ...         print('sys not found')
+        sys not found
+    """
+    realimport = builtins.__import__
+    modnames = request.node.get_closest_marker("masked_modules").args
+
+    def myimp(name, *args, **kwargs):
+        if name in modnames:
+            raise ImportError('No module named %s' % name)
+        else:
+            return realimport(name, *args, **kwargs)
+
+    builtins.__import__ = myimp
+    try:
+        yield
+    finally:
+        builtins.__import__ = realimport
+
+
+@pytest.fixture
+def environ(request):
+    """Mock environment variable value.
+    Example::
+        >>> @pytest.mark.patched_environ('DJANGO_SETTINGS_MODULE', 'proj.settings')
+        >>> def test_other_settings(self, environ):
+        ...    ...
+    """
+    env_name, env_value = request.node.get_closest_marker("patched_environ").args
+    prev_val = os.environ.get(env_name, SENTINEL)
+    os.environ[env_name] = env_value
+    try:
+        yield
+    finally:
+        if prev_val is SENTINEL:
+            os.environ.pop(env_name, None)
+        else:
+            os.environ[env_name] = prev_val
+
+
+def replace_module_value(module, name, value=None):
+    """Mock module value, given a module, attribute name and value.
+
+    Example::
+
+        >>> replace_module_value(module, 'CONSTANT', 3.03)
+    """
+    has_prev = hasattr(module, name)
+    prev = getattr(module, name, None)
+    if value:
+        setattr(module, name, value)
+    else:
+        try:
+            delattr(module, name)
+        except AttributeError:
+            pass
+    try:
+        yield
+    finally:
+        if prev is not None:
+            setattr(module, name, prev)
+        if not has_prev:
+            try:
+                delattr(module, name)
+            except AttributeError:
+                pass
+
+
+@contextmanager
+def platform_pyimp(value=None):
+    """Mock :data:`platform.python_implementation`
+    Example::
+        >>> with platform_pyimp('PyPy'):
+        ...     ...
+    """
+    yield from replace_module_value(platform, 'python_implementation', value)
+
+
+@contextmanager
+def sys_platform(value=None):
+    """Mock :data:`sys.platform`
+
+    Example::
+        >>> mock.sys_platform('darwin'):
+        ...     ...
+    """
+    prev, sys.platform = sys.platform, value
+    try:
+        yield
+    finally:
+        sys.platform = prev
+
+
+@contextmanager
+def pypy_version(value=None):
+    """Mock :data:`sys.pypy_version_info`
+
+    Example::
+        >>> with pypy_version((3, 6, 1)):
+        ...     ...
+    """
+    yield from replace_module_value(sys, 'pypy_version_info', value)
+
+
+def _restore_logging():
+    outs = sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__
+    root = logging.getLogger()
+    level = root.level
+    handlers = root.handlers
+
+    try:
+        yield
+    finally:
+        sys.stdout, sys.stderr, sys.__stdout__, sys.__stderr__ = outs
+        root.level = level
+        root.handlers[:] = handlers
+
+
+@contextmanager
+def restore_logging_context_manager():
+    """Restore root logger handlers after test returns.
+    Example::
+        >>> with restore_logging_context_manager():
+        ...     setup_logging()
+    """
+    yield from _restore_logging()
+
+
+@pytest.fixture
+def restore_logging(request):
+    """Restore root logger handlers after test returns.
+    Example::
+        >>> def test_foo(self, restore_logging):
+        ...     setup_logging()
+    """
+    yield from _restore_logging()
+
+
+@pytest.fixture
+def module(request):
+    """Mock one or modules such that every attribute is a :class:`Mock`."""
+    yield from _module(*request.node.get_closest_marker("patched_module").args)
+
+
+@contextmanager
+def module_context_manager(*names):
+    """Mock one or modules such that every attribute is a :class:`Mock`."""
+    yield from _module(*names)
+
+
+def _module(*names):
+    prev = {}
+
+    class MockModule(types.ModuleType):
+
+        def __getattr__(self, attr):
+            setattr(self, attr, Mock())
+            return types.ModuleType.__getattribute__(self, attr)
+
+    mods = []
+    for name in names:
+        try:
+            prev[name] = sys.modules[name]
+        except KeyError:
+            pass
+        mod = sys.modules[name] = MockModule(name)
+        mods.append(mod)
+    try:
+        yield mods
+    finally:
+        for name in names:
+            try:
+                sys.modules[name] = prev[name]
+            except KeyError:
+                try:
+                    del(sys.modules[name])
+                except KeyError:
+                    pass
+
+
+class _patching:
+
+    def __init__(self, monkeypatch, request):
+        self.monkeypatch = monkeypatch
+        self.request = request
+
+    def __getattr__(self, name):
+        return getattr(self.monkeypatch, name)
+
+    def __call__(self, path, value=SENTINEL, name=None,
+                 new=MagicMock, **kwargs):
+        value = self._value_or_mock(value, new, name, path, **kwargs)
+        self.monkeypatch.setattr(path, value)
+        return value
+
+    def object(self, target, attribute, *args, **kwargs):
+        return _wrap_context(
+            patch.object(target, attribute, *args, **kwargs),
+            self.request)
+
+    def _value_or_mock(self, value, new, name, path, **kwargs):
+        if value is SENTINEL:
+            value = new(name=name or path.rpartition('.')[2])
+        for k, v in kwargs.items():
+            setattr(value, k, v)
+        return value
+
+    def setattr(self, target, name=SENTINEL, value=SENTINEL, **kwargs):
+        # alias to __call__ with the interface of pytest.monkeypatch.setattr
+        if value is SENTINEL:
+            value, name = name, None
+        return self(target, value, name=name)
+
+    def setitem(self, dic, name, value=SENTINEL, new=MagicMock, **kwargs):
+        # same as pytest.monkeypatch.setattr but default value is MagicMock
+        value = self._value_or_mock(value, new, name, dic, **kwargs)
+        self.monkeypatch.setitem(dic, name, value)
+        return value
+
+    def modules(self, *mods):
+        modules = []
+        for mod in mods:
+            mod = mod.split('.')
+            modules.extend(reversed([
+                '.'.join(mod[:-i] if i else mod) for i in range(len(mod))
+            ]))
+        modules = sorted(set(modules))
+        return _wrap_context(module_context_manager(*modules), self.request)
+
+
+def _wrap_context(context, request):
+    ret = context.__enter__()
+
+    def fin():
+        context.__exit__(*sys.exc_info())
+    request.addfinalizer(fin)
+    return ret
+
+
+@pytest.fixture()
+def patching(monkeypatch, request):
+    """Monkeypath.setattr shortcut.
+    Example:
+        .. code-block:: python
+        >>> def test_foo(patching):
+        >>>     # execv value here will be mock.MagicMock by default.
+        >>>     execv = patching('os.execv')
+        >>>     patching('sys.platform', 'darwin')  # set concrete value
+        >>>     patching.setenv('DJANGO_SETTINGS_MODULE', 'x.settings')
+        >>>     # val will be of type mock.MagicMock by default
+        >>>     val = patching.setitem('path.to.dict', 'KEY')
+    """
+    return _patching(monkeypatch, request)
+
+
+@contextmanager
+def stdouts():
+    """Override `sys.stdout` and `sys.stderr` with `StringIO`
+    instances.
+        >>> with conftest.stdouts() as (stdout, stderr):
+        ...     something()
+        ...     self.assertIn('foo', stdout.getvalue())
+    """
+    prev_out, prev_err = sys.stdout, sys.stderr
+    prev_rout, prev_rerr = sys.__stdout__, sys.__stderr__
+    mystdout, mystderr = WhateverIO(), WhateverIO()
+    sys.stdout = sys.__stdout__ = mystdout
+    sys.stderr = sys.__stderr__ = mystderr
+
+    try:
+        yield mystdout, mystderr
+    finally:
+        sys.stdout = prev_out
+        sys.stderr = prev_err
+        sys.__stdout__ = prev_rout
+        sys.__stderr__ = prev_rerr
+
+
+@contextmanager
+def reset_modules(*modules):
+    """Remove modules from :data:`sys.modules` by name,
+    and reset back again when the test/context returns.
+    Example::
+        >>> with conftest.reset_modules('celery.result', 'celery.app.base'):
+        ...     pass
+    """
+    prev = {
+        k: sys.modules.pop(k) for k in modules if k in sys.modules
+    }
+
+    try:
+        for k in modules:
+            reload(import_module(k))
+        yield
+    finally:
+        sys.modules.update(prev)
+
+
+def get_logger_handlers(logger):
+    return [
+        h for h in logger.handlers
+        if not isinstance(h, logging.NullHandler)
+    ]
+
+
+@contextmanager
+def wrap_logger(logger, loglevel=logging.ERROR):
+    """Wrap :class:`logging.Logger` with a StringIO() handler.
+    yields a StringIO handle.
+    Example::
+        >>> with conftest.wrap_logger(logger, loglevel=logging.DEBUG) as sio:
+        ...     ...
+        ...     sio.getvalue()
+    """
+    old_handlers = get_logger_handlers(logger)
+    sio = WhateverIO()
+    siohandler = logging.StreamHandler(sio)
+    logger.handlers = [siohandler]
+
+    try:
+        yield sio
+    finally:
+        logger.handlers = old_handlers
+
+
+@contextmanager
+def _mock_context(mock):
+    context = mock.return_value = Mock()
+    context.__enter__ = Mock()
+    context.__exit__ = Mock()
+
+    def on_exit(*x):
+        if x[0]:
+            raise x[0] from x[1]
+    context.__exit__.side_effect = on_exit
+    context.__enter__.return_value = context
+    try:
+        yield context
+    finally:
+        context.reset()
+
+
+@contextmanager
+def open(side_effect=None):
+    """Patch builtins.open so that it returns StringIO object.
+    :param side_effect: Additional side effect for when the open context
+        is entered.
+    Example::
+        >>> with mock.open(io.BytesIO) as open_fh:
+        ...     something_opening_and_writing_bytes_to_a_file()
+        ...     self.assertIn(b'foo', open_fh.getvalue())
+    """
+    with patch('builtins.open') as open_:
+        with _mock_context(open_) as context:
+            if side_effect is not None:
+                context.__enter__.side_effect = side_effect
+            val = context.__enter__.return_value = WhateverIO()
+            val.__exit__ = Mock()
+            yield val
+
+
+@contextmanager
+def module_exists(*modules):
+    """Patch one or more modules to ensure they exist.
+    A module name with multiple paths (e.g. gevent.monkey) will
+    ensure all parent modules are also patched (``gevent`` +
+    ``gevent.monkey``).
+    Example::
+        >>> with conftest.module_exists('gevent.monkey'):
+        ...     gevent.monkey.patch_all = Mock(name='patch_all')
+        ...     ...
+    """
+    gen = []
+    old_modules = []
+    for module in modules:
+        if isinstance(module, str):
+            module = types.ModuleType(module)
+        gen.append(module)
+        if module.__name__ in sys.modules:
+            old_modules.append(sys.modules[module.__name__])
+        sys.modules[module.__name__] = module
+        name = module.__name__
+        if '.' in name:
+            parent, _, attr = name.rpartition('.')
+            setattr(sys.modules[parent], attr, module)
+    try:
+        yield
+    finally:
+        for module in gen:
+            sys.modules.pop(module.__name__, None)
+        for module in old_modules:
+            sys.modules[module.__name__] = module
+
+
+def _bind(f, o):
+    @wraps(f)
+    def bound_meth(*fargs, **fkwargs):
+        return f(o, *fargs, **fkwargs)
+    return bound_meth
+
+
+class MockCallbacks:
+
+    def __new__(cls, *args, **kwargs):
+        r = Mock(name=cls.__name__)
+        cls.__init__(r, *args, **kwargs)
+        for key, value in vars(cls).items():
+            if key not in ('__dict__', '__weakref__', '__new__', '__init__'):
+                if inspect.ismethod(value) or inspect.isfunction(value):
+                    r.__getattr__(key).side_effect = _bind(value, r)
+                else:
+                    r.__setattr__(key, value)
+        return r

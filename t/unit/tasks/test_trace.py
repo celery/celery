@@ -7,8 +7,8 @@ from kombu.exceptions import EncodeError
 
 from celery import group, signals, states, uuid
 from celery.app.task import Context
-from celery.app.trace import (TraceInfo, build_tracer,
-                              fast_trace_task, get_log_policy, get_task_name,
+from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task,
+                              get_log_policy, get_task_name,
                               log_policy_expected, log_policy_ignore,
                               log_policy_internal, log_policy_reject,
                               log_policy_unexpected,
@@ -60,6 +60,14 @@ class test_trace(TraceCase):
         retval, info = self.trace(self.add, (2, 2), {})
         assert info is None
         assert retval == 4
+
+    def test_trace_before_start(self):
+        @self.app.task(shared=False, before_start=Mock())
+        def add_with_before_start(x, y):
+            return x + y
+
+        self.trace(add_with_before_start, (2, 2), {})
+        add_with_before_start.before_start.assert_called()
 
     def test_trace_on_success(self):
         @self.app.task(shared=False, on_success=Mock())

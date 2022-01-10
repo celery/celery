@@ -18,6 +18,7 @@ except ImportError:
 __all__ = ("AzureBlockBlobBackend",)
 
 LOGGER = get_logger(__name__)
+AZURE_BLOCK_BLOB_CONNECTION_PREFIX = 'azureblockblob://'
 
 
 class AzureBlockBlobBackend(KeyValueStoreBackend):
@@ -44,9 +45,13 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
             conf["azureblockblob_container_name"])
 
         self.base_path = conf.get('azureblockblob_base_path', '')
+        self._connection_timeout = conf.get(
+            'azureblockblob_connection_timeout', 20
+        )
+        self._read_timeout = conf.get('azureblockblob_read_timeout', 120)
 
     @classmethod
-    def _parse_url(cls, url, prefix="azureblockblob://"):
+    def _parse_url(cls, url, prefix=AZURE_BLOCK_BLOB_CONNECTION_PREFIX):
         connection_string = url[len(prefix):]
         if not connection_string:
             raise ImproperlyConfigured("Invalid URL")
@@ -61,7 +66,11 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
         the container is created if it doesn't yet exist.
 
         """
-        client = BlobServiceClient.from_connection_string(self._connection_string)
+        client = BlobServiceClient.from_connection_string(
+            self._connection_string,
+            connection_timeout=self._connection_timeout,
+            read_timeout=self._read_timeout
+        )
 
         try:
             client.create_container(name=self._container_name)
@@ -135,3 +144,23 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
         )
 
         blob_client.delete_blob()
+
+    def as_uri(self, include_password=False):
+        if include_password:
+            return (
+                f'{AZURE_BLOCK_BLOB_CONNECTION_PREFIX}'
+                f'{self._connection_string}'
+            )
+
+        connection_string_parts = self._connection_string.split(';')
+        account_key_prefix = 'AccountKey='
+        redacted_connection_string_parts = [
+            f'{account_key_prefix}**' if part.startswith(account_key_prefix)
+            else part
+            for part in connection_string_parts
+        ]
+
+        return (
+            f'{AZURE_BLOCK_BLOB_CONNECTION_PREFIX}'
+            f'{";".join(redacted_connection_string_parts)}'
+        )

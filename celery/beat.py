@@ -512,7 +512,7 @@ class PersistentScheduler(Scheduler):
 
     def __init__(self, *args, **kwargs):
         self.schedule_filename = kwargs.get('schedule_filename')
-        Scheduler.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def _remove_db(self):
         for suffix in self.known_suffixes:
@@ -703,7 +703,7 @@ try:
 except NotImplementedError:     # pragma: no cover
     _Process = None
 else:
-    class _Process(Process):    # noqa
+    class _Process(Process):
 
         def __init__(self, app, **kwargs):
             super().__init__()

@@ -32,7 +32,7 @@ from celery.utils.functional import first, head_from_fun, maybe_list
 from celery.utils.imports import gen_task_name, instantiate, symbol_by_name
 from celery.utils.log import get_logger
 from celery.utils.objects import FallbackContext, mro_lookup
-from celery.utils.time import timezone, to_utc
+from celery.utils.time import maybe_make_aware, timezone, to_utc
 
 # Load all builtin tasks
 from . import builtins  # noqa
@@ -274,9 +274,10 @@ class Celery:
         self.__autoset('broker_url', broker)
         self.__autoset('result_backend', backend)
         self.__autoset('include', include)
-        self.__autoset('broker_use_ssl', kwargs.get('broker_use_ssl'))
-        self.__autoset('redis_backend_use_ssl',
-                       kwargs.get('redis_backend_use_ssl'))
+
+        for key, value in kwargs.items():
+            self.__autoset(key, value)
+
         self._conf = Settings(
             PendingConfiguration(
                 self._preconf, self._finalize_pending_conf),
@@ -322,7 +323,7 @@ class Celery:
         """Optional callback called at init."""
 
     def __autoset(self, key, value):
-        if value:
+        if value is not None:
             self._preconf[key] = value
             self._preconf_set_by_auto.add(key)
 
@@ -355,9 +356,16 @@ class Celery:
         _deregister_app(self)
 
     def start(self, argv=None):
+        """Run :program:`celery` using `argv`.
+
+        Uses :data:`sys.argv` if `argv` is not specified.
+        """
         from celery.bin.celery import celery
 
         celery.params[0].default = self
+
+        if argv is None:
+            argv = sys.argv
 
         try:
             celery.main(args=argv, standalone_mode=False)
@@ -367,6 +375,10 @@ class Celery:
             celery.params[0].default = None
 
     def worker_main(self, argv=None):
+        """Run :program:`celery worker` using `argv`.
+
+        Uses :data:`sys.argv` if `argv` is not specified.
+        """
         if argv is None:
             argv = sys.argv
 
@@ -480,7 +492,7 @@ class Celery:
             task = self._tasks[name]
         return task
 
-    def register_task(self, task):
+    def register_task(self, task, **options):
         """Utility for registering a task-based class.
 
         Note:
@@ -493,7 +505,7 @@ class Celery:
             task_cls = type(task)
             task.name = self.gen_task_name(
                 task_cls.__name__, task_cls.__module__)
-        add_autoretry_behaviour(task)
+        add_autoretry_behaviour(task, **options)
         self.tasks[task.name] = task
         task._app = self
         task.bind(self)
@@ -720,6 +732,27 @@ class Celery:
         ignore_result = options.pop('ignore_result', False)
         options = router.route(
             options, route_name or name, args, kwargs, task_type)
+        if expires is not None:
+            if isinstance(expires, datetime):
+                expires_s = (maybe_make_aware(expires) - self.now()).total_seconds()
+            else:
+                expires_s = expires
+
+            if expires_s < 0:
+                logger.warning(
+                    f"{task_id} has an expiration date in the past ({-expires_s}s ago).\n"
+                    "We assume this is intended and so we have set the "
+                    "expiration date to 0 instead.\n"
+                    "According to RabbitMQ's documentation:\n"
+                    "\"Setting the TTL to 0 causes messages to be expired upon "
+                    "reaching a queue unless they can be delivered to a "
+                    "consumer immediately.\"\n"
+                    "If this was unintended, please check the code which "
+                    "published this task."
+                )
+                expires_s = 0
+
+            options["expiration"] = expires_s
 
         if not root_id or not parent_id:
             parent = self.current_worker_task
@@ -1060,7 +1093,7 @@ class Celery:
         self.close()
 
     def __repr__(self):
-        return '<{} {}>'.format(type(self).__name__, appstr(self))
+        return f'<{type(self).__name__} {appstr(self)}>'
 
     def __reduce__(self):
         if self._using_v1_reduce:
@@ -1227,7 +1260,7 @@ class Celery:
         return self._conf
 
     @conf.setter
-    def conf(self, d):  # noqa
+    def conf(self, d):
         self._conf = d
 
     @cached_property
@@ -1289,4 +1322,4 @@ class Celery:
         return timezone.get_timezone(conf.timezone)
 
 
-App = Celery  # noqa: E305 XXX compat
+App = Celery  # XXX compat
