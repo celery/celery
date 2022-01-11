@@ -138,11 +138,12 @@ def gen_task_name(app, name, module_name):
 
 def load_extension_class_names(namespace):
     try:
-        from pkg_resources import iter_entry_points
-    except ImportError:  # pragma: no cover
-        return
+        from importlib import metadata as importlib_metadata
+    except ImportError:
+        # TODO: Remove this when we drop support for Python 3.7
+        import importlib_metadata
 
-    for ep in iter_entry_points(namespace):
+    for ep in importlib_metadata.entry_points().get(namespace, []):
         yield ep.name, ':'.join([ep.module_name, ep.attrs[0]])
 
 

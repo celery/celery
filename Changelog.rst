@@ -8,6 +8,12 @@ This document contains change notes for bugfix & new features
 in the & 5.2.x series, please see :ref:`whatsnew-5.2` for
 an overview of what's new in Celery 5.2.
 
+Unreleased
+==========
+
+- Use importlib-metadata instead of pkg_resources for better performance and compatibility
+
+
 .. _version-5.2.3:
 
 5.2.3

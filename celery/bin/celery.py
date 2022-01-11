@@ -3,12 +3,17 @@ import os
 import pathlib
 import traceback
 
+try:
+    from importlib import metadata as importlib_metadata
+except ImportError:
+    # TODO: Remove this when we drop support for Python 3.7
+    import importlib_metadata
+
 import click
 import click.exceptions
 from click.types import ParamType
 from click_didyoumean import DYMGroup
 from click_plugins import with_plugins
-from pkg_resources import iter_entry_points
 
 from celery import VERSION_BANNER
 from celery.app.utils import find_app
@@ -71,7 +76,7 @@ class App(ParamType):
 APP = App()
 
 
-@with_plugins(iter_entry_points('celery.commands'))
+@with_plugins(importlib_metadata.entry_points().get('celery.commands', []))
 @click.group(cls=DYMGroup, invoke_without_command=True)
 @click.option('-A',
               '--app',
