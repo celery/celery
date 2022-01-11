@@ -6,6 +6,11 @@ import warnings
 from contextlib import contextmanager
 from importlib import reload
 
+try:
+    from importlib.metadata import entry_points
+except ImportError:
+    from importlib_metadata import entry_points
+
 from kombu.utils.imports import symbol_by_name
 
 #: Billiard sets this when execv is enabled.
@@ -137,12 +142,7 @@ def gen_task_name(app, name, module_name):
 
 
 def load_extension_class_names(namespace):
-    try:
-        from pkg_resources import iter_entry_points
-    except ImportError:  # pragma: no cover
-        return
-
-    for ep in iter_entry_points(namespace):
+    for ep in entry_points().get(namespace, []):
         yield ep.name, ':'.join([ep.module_name, ep.attrs[0]])
 
 
