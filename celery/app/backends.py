@@ -44,8 +44,7 @@ def by_name(backend=None, loader=None,
     backend = backend or 'disabled'
     loader = loader or current_app.loader
     aliases = dict(BACKEND_ALIASES, **loader.override_backends)
-    aliases.update(
-        load_extension_class_names(extension_namespace) or {})
+    aliases.update(load_extension_class_names(extension_namespace))
     try:
         cls = symbol_by_name(backend, aliases)
     except ValueError as exc:

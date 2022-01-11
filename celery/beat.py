@@ -666,8 +666,7 @@ class Service:
     def get_scheduler(self, lazy=False,
                       extension_namespace='celery.beat_schedulers'):
         filename = self.schedule_filename
-        aliases = dict(
-            load_extension_class_names(extension_namespace) or {})
+        aliases = dict(load_extension_class_names(extension_namespace))
         return symbol_by_name(self.scheduler_cls, aliases=aliases)(
             app=self.app,
             schedule_filename=filename,
