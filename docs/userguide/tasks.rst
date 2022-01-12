@@ -236,6 +236,12 @@ named :file:`tasks.py`:
     >>> add.name
     'tasks.add'
 
+.. note::
+
+   You can use the `inspect` command in a worker to view the names of
+   all registered tasks. See the `inspect registered` command in the
+   :ref:`monitoring-control` section of the User Guide.
+   
 .. _task-naming-relative-imports:
 
 Automatic naming and relative imports
