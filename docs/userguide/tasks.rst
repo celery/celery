@@ -1641,7 +1641,7 @@ setting.
 .. versionadded::4.2
 
 Results can be enabled/disabled on a per-execution basis, by passing the ``ignore_result`` boolean parameter,
-when calling ``apply_async`` or ``delay``.
+when calling ``apply_async``.
 
 .. code-block:: python
 
