@@ -107,11 +107,13 @@ class ResultConsumer(BaseResultConsumer):
         metas = [meta for meta in metas if meta]
         for meta in metas:
             self.on_state_change(self._decode_result(meta), None)
-        if self.subscribed_to:
-            self._pubsub = self.backend.client.pubsub(
+        self._pubsub = self.backend.client.pubsub(
                 ignore_subscribe_messages=True,
             )
+        if self.subscribed_to:
             self._pubsub.subscribe(*self.subscribed_to)
+        else:
+            self._pubsub.ping()
 
     @contextmanager
     def reconnect_on_error(self):
