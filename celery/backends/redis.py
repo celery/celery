@@ -112,6 +112,8 @@ class ResultConsumer(BaseResultConsumer):
         )
         if self.subscribed_to:
             self._pubsub.subscribe(*self.subscribed_to)
+        else:
+            self._pubsub.ping()
 
     @contextmanager
     def reconnect_on_error(self):
