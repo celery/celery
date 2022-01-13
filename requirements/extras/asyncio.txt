@@ -1,0 +1,2 @@
+janus>=1.0.0
+asyncio-pool>=0.5.2
