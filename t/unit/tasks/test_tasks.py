@@ -47,6 +47,15 @@ class TaskWithRetry(Task):
     retry_backoff_max = 700
     retry_jitter = False
 
+class TaskWithRetryButForTypeError(Task):
+    autoretry_for = (Exception,)
+    dont_autoretry_for = (TypeError,)
+    retry_kwargs = {'max_retries': 5}
+    retry_backoff = True
+    retry_backoff_max = 700
+    retry_jitter = False
+
+
 
 class TasksCase:
 
@@ -221,6 +230,16 @@ class TasksCase:
             return a / b
 
         self.autoretry_task = autoretry_task
+
+        @self.app.task(bind=True, autoretry_for=(ArithmeticError,),
+                       dont_autoretry_for=(ZeroDivisionError,),
+                       retry_kwargs={'max_retries': 5}, shared=False)
+        def autoretry_arith_task(self, a, b):
+            self.iterations += 1
+            return a / b
+
+        self.autoretry_arith_task = autoretry_arith_task
+
 
         @self.app.task(bind=True, autoretry_for=(HTTPError,),
                        retry_backoff=True, shared=False)
@@ -560,6 +579,12 @@ class test_task_retries(TasksCase):
         self.autoretry_task.iterations = 0
         self.autoretry_task.apply((1, 0))
         assert self.autoretry_task.iterations == 6
+
+    def test_autoretry_arith(self):
+        self.autoretry_arith_task.max_retries = 3
+        self.autoretry_arith_task.iterations = 0
+        self.autoretry_arith_task.apply((1, 0))
+        assert self.autoretry_task.iterations == 1
 
     @patch('random.randrange', side_effect=lambda i: i - 1)
     def test_autoretry_backoff(self, randrange):
