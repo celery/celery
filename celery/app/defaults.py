@@ -288,6 +288,7 @@ NAMESPACES = Namespace(
         ),
         store_errors_even_if_ignored=Option(False, type='bool'),
         track_started=Option(False, type='bool'),
+        resultrepr_maxsize=Option(1024, type='int')
     ),
     worker=Namespace(
         __old__=OLD_NS_WORKER,

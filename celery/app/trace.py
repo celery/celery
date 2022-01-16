@@ -363,7 +363,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     push_task = _task_stack.push
     pop_task = _task_stack.pop
     _does_info = logger.isEnabledFor(logging.INFO)
-    resultrepr_maxsize = task.resultrepr_maxsize
+    resultrepr_maxsize = app.conf.task_resultrepr_maxsize or task.resultrepr_maxsize
 
     prerun_receivers = signals.task_prerun.receivers
     postrun_receivers = signals.task_postrun.receivers
