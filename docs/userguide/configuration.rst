@@ -150,6 +150,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_TASK_TRACK_STARTED``              :setting:`task_track_started`
 ``CELERY_TASK_REJECT_ON_WORKER_LOST``      :setting:`task_reject_on_worker_lost`
 ``CELERYD_TIME_LIMIT``                     :setting:`task_time_limit`
+``CELERY_TASK_RESULTREPR_MAXSIZE``         :setting:`task_resultrepr_maxsize` 
 ``CELERYD_AGENT``                          :setting:`worker_agent`
 ``CELERYD_AUTOSCALER``                     :setting:`worker_autoscaler`
 ``CELERYD_CONCURRENCY``                    :setting:`worker_concurrency`
@@ -581,6 +582,18 @@ worker.
 
     Enabling this can cause message loops; make sure you know
     what you're doing.
+
+
+.. setting:: task_resultrepr_maxsize
+
+``task_resultrepr_maxsize``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 1024
+
+By default, the result is truncated(ellipsis object).
+
+You can try to increase the size of the log line.
 
 .. setting:: task_default_rate_limit
 
