@@ -286,6 +286,35 @@ class test_RedisResultConsumer:
         consumer.drain_events()
         consumer._pubsub.subscribe.assert_not_called()
 
+    def test__reconnect_pubsub_no_subscribed(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.subscribed_to = set()
+        consumer._reconnect_pubsub()
+        consumer.backend.client.mget.assert_not_called()
+        consumer._pubsub.subscribe.assert_not_called()
+        consumer._pubsub.connection.register_connect_callback.assert_called_once()
+
+    def test__reconnect_pubsub_with_state_change(self):
+        meta = {'task_id': 'initial', 'status': states.SUCCESS}
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.backend._set_with_state(b'celery-task-meta-initial', json.dumps(meta), states.SUCCESS)
+        consumer._reconnect_pubsub()
+        consumer.backend.client.mget.assert_called_once()
+        consumer._pubsub.subscribe.assert_not_called()
+        consumer._pubsub.connection.register_connect_callback.assert_called_once()
+
+    def test__reconnect_pubsub_without_state_change(self):
+        meta = {'task_id': 'initial', 'status': states.STARTED}
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.backend._set_with_state(b'celery-task-meta-initial', json.dumps(meta), states.SUCCESS)
+        consumer._reconnect_pubsub()
+        consumer.backend.client.mget.assert_called_once()
+        consumer._pubsub.subscribe.assert_called_once()
+        consumer._pubsub.connection.register_connect_callback.assert_not_called()
+
 
 class basetest_RedisBackend:
     def get_backend(self):
