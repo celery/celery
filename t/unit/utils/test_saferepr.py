@@ -213,9 +213,7 @@ class test_saferepr:
 
     def test_with_conf(self):
         assert self.app.conf.task_resultrepr_maxsize == 1024
-
-        value = 'test' * 1024        
-        assert saferepr(value, self.app.conf.task_resultrepr_maxsize).endswith("...'")
-
+        val = 'test' * 1024        
+        assert saferepr(val, self.app.conf.task_resultrepr_maxsize).endswith("...'")
         self.app.conf.task_resultrepr_maxsize = 10240
-        assert not saferepr(value, self.app.conf.task_resultrepr_maxsize).endswith("...'")
+        assert not saferepr(val, self.app.conf.task_resultrepr_maxsize).endswith("...'")
