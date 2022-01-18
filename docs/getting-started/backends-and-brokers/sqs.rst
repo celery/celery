@@ -167,7 +167,7 @@ setting::
     }
 
 When using this option, the visibility timeout should be set in the SQS queue
-rather than via the :setting:`broker_transport_options` setting
+in AWS rather than via the :setting:`broker_transport_options` setting.
 
 Back-off policy
 ------------------------
