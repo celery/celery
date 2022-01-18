@@ -118,6 +118,9 @@ class ResultConsumer(BaseResultConsumer):
             self._pubsub.connection = self._pubsub.connection_pool.get_connection(
                 'pubsub', self._pubsub.shard_hint
             )
+            # even if nothing to subscribe, we should not lost the callback after being connected.
+            # maybe on_connect will be changed in the future. at present, this callback
+            # re-subscribe to any channels previously subscribed to.
             self._pubsub.connection.register_connect_callback(self._pubsub.on_connect)
 
     @contextmanager
