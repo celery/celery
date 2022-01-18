@@ -95,6 +95,9 @@ This option is set via the :setting:`broker_transport_options` setting::
 
 The default visibility timeout is 30 minutes.
 
+This option is used when creating the SQS queue and has no effect if
+using :ref:`predefined queues <tpredefined-queues>`.
+
 Polling Interval
 ----------------
 
@@ -143,6 +146,8 @@ using the :setting:`broker_transport_options` setting::
 
     broker_transport_options = {'queue_name_prefix': 'celery-'}
 
+.. _predefined-queues:
+
 Predefined Queues
 -----------------
 
@@ -160,6 +165,9 @@ setting::
             }
         }
     }
+
+When using this option, the visibility timeout should be set in the SQS queue
+rather than via the :setting:`broker_transport_options` setting
 
 Back-off policy
 ------------------------
