@@ -103,17 +103,22 @@ class ResultConsumer(BaseResultConsumer):
         self.backend.client.connection_pool.reset()
         # task state might have changed when the connection was down so we
         # retrieve meta for all subscribed tasks before going into pubsub mode
-        metas = self.backend.client.mget(self.subscribed_to)
-        metas = [meta for meta in metas if meta]
-        for meta in metas:
-            self.on_state_change(self._decode_result(meta), None)
+        if self.subscribed_to:
+            metas = self.backend.client.mget(self.subscribed_to)
+            metas = [meta for meta in metas if meta]
+            for meta in metas:
+                self.on_state_change(self._decode_result(meta), None)
         self._pubsub = self.backend.client.pubsub(
             ignore_subscribe_messages=True,
         )
+        # subscribed_to maybe empty after on_state_change
         if self.subscribed_to:
             self._pubsub.subscribe(*self.subscribed_to)
         else:
-            self._pubsub.ping()
+            self._pubsub.connection = self._pubsub.connection_pool.get_connection(
+                'pubsub', self._pubsub.shard_hint
+            )
+            self._pubsub.connection.register_connect_callback(self._pubsub.on_connect)
 
     @contextmanager
     def reconnect_on_error(self):
