@@ -82,6 +82,8 @@ by configuring the :setting:`broker_transport_options` setting::
 
         http://aws.amazon.com/about-aws/globalinfrastructure/
 
+.. _sqs-visibility-timeout:
+
 Visibility Timeout
 ------------------
 
@@ -94,6 +96,9 @@ This option is set via the :setting:`broker_transport_options` setting::
     broker_transport_options = {'visibility_timeout': 3600}  # 1 hour.
 
 The default visibility timeout is 30 minutes.
+
+This option is used when creating the SQS queue and has no effect if
+using :ref:`predefined queues <predefined-queues>`.
 
 Polling Interval
 ----------------
@@ -143,6 +148,8 @@ using the :setting:`broker_transport_options` setting::
 
     broker_transport_options = {'queue_name_prefix': 'celery-'}
 
+.. _predefined-queues:
+
 Predefined Queues
 -----------------
 
@@ -160,6 +167,10 @@ setting::
             }
         }
     }
+
+When using this option, the visibility timeout should be set in the SQS queue
+(in AWS) rather than via the :ref:`visibility timeout <sqs-visibility-timeout>`
+option.
 
 Back-off policy
 ------------------------
