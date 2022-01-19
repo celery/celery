@@ -217,3 +217,4 @@ class test_saferepr:
         assert saferepr(val, self.app.conf.task_resultrepr_maxsize).endswith("...'")
         self.app.conf.task_resultrepr_maxsize = 10240
         assert not saferepr(val, self.app.conf.task_resultrepr_maxsize).endswith("...'")
+        
