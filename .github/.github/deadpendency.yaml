@@ -1,0 +1,5 @@
+additional-dependency-files:
+  - type: pip-requirements-txt
+    path: requirements/*.txt
+  - type: pip-requirements-txt
+    path: requirements/**/*.txt
