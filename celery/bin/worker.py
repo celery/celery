@@ -327,6 +327,10 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
                 argv.remove('--detach')
             if '-D' in argv:
                 argv.remove('-D')
+            if "--uid" in argv:
+                argv.remove('--uid')
+            if "--gid" in argv:
+                argv.remove('--gid')
 
             return detach(sys.executable,
                           argv,
