@@ -12,7 +12,7 @@ from celery.canvas import _chain, signature
 from celery.exceptions import (Ignore, ImproperlyConfigured,
                                MaxRetriesExceededError, Reject, Retry)
 from celery.local import class_property
-from celery.result import EagerResult, denied_join_result, allow_join_result
+from celery.result import EagerResult, allow_join_result, denied_join_result
 from celery.utils import abstract
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
