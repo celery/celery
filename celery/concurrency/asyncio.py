@@ -13,6 +13,19 @@ async def test():
     print("TEST HERE PASSED!!!!")
 
 
+class AsyncJob:
+    def __init__(self, func, args=(), kwargs=None,
+                 callback=None, error_callback=None, accept_callback=None,
+                 timeout_callback=None):
+        self.timeout_callback = timeout_callback
+        self.accept_callback = accept_callback
+        self.error_callback = error_callback
+        self.callback = callback
+        self.kwargs = kwargs
+        self.args = args
+        self.func = func
+
+
 class TaskPool(BasePool):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
