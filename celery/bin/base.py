@@ -179,7 +179,6 @@ class CeleryDaemonCommand(CeleryCommand):
         self.params.append(CeleryOption(('-f', '--logfile'), help_group="Daemonization Options"))
         self.params.append(CeleryOption(('--pidfile',), help_group="Daemonization Options"))
         self.params.append(CeleryOption(('--uid',), help_group="Daemonization Options"))
-        self.params.append(CeleryOption(('--uid',), help_group="Daemonization Options"))
         self.params.append(CeleryOption(('--gid',), help_group="Daemonization Options"))
         self.params.append(CeleryOption(('--umask',), help_group="Daemonization Options"))
         self.params.append(CeleryOption(('--executable',), help_group="Daemonization Options"))
