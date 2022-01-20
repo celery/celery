@@ -96,13 +96,15 @@ class Context:
     utc = None
 
     def __init__(self, *args, **kwargs):
+        self.__dict__.setdefault('headers', {})
         self.update(*args, **kwargs)
 
     def update(self, *args, **kwargs):
         return self.__dict__.update(*args, **kwargs)
 
     def clear(self):
-        return self.__dict__.clear()
+        self.__dict__.clear()
+        self.__dict__.setdefault('headers', {})
 
     def get(self, key, default=None):
         return getattr(self, key, default)
