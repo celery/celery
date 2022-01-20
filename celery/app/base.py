@@ -476,7 +476,7 @@ class Celery(object):
                     try:
                         return task._orig_run(*args, **kwargs)
                     except Ignore:
-                        raise
+                        pass
                     except autoretry_for as exc:
                         if retry_backoff:
                             retry_kwargs['countdown'] = \
