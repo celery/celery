@@ -22,7 +22,7 @@ __all__ = (
     'humanize_seconds', 'maybe_iso8601', 'is_naive',
     'make_aware', 'localize', 'to_utc', 'maybe_make_aware',
     'ffwd', 'utcoffset', 'adjust_timestamp',
-    'get_exponential_backoff_interval',
+    'get_exponential_backoff_interval', 'calc_next',
 )
 
 C_REMDEBUG = os.environ.get('C_REMDEBUG', False)
@@ -172,6 +172,33 @@ def delta_resolution(dt, delta):
     return dt
 
 
+def calc_next(start, ends_in, now=None, relative=False):
+    """Calculate the next run time for a start date and a timedelta.
+
+        Arguments:
+            start (~datetime.datetime): Starting date.
+            ends_in (~datetime.timedelta): The end delta.
+            relative (bool): If enabled the end time will be calculated
+                using :func:`delta_resolution` (i.e., rounded to the
+                resolution of `ends_in`).
+            now (~datetime.datetime): Datetime instance representing the
+                current time and date. Defaults to calling
+                :func:`datetime.utcnow`. Only needed when using a `ffwd`
+                as the `ends_in` argument, to avoid issues regarding DST.
+
+        Returns:
+            ~datetime.datetime: Next run time.
+        """
+    now = now or datetime.utcnow()
+    if str(start.tzinfo) == str(now.tzinfo) and now.utcoffset() != start.utcoffset():
+        # DST started/ended
+        start = start.replace(tzinfo=now.tzinfo)
+    end_date = start + ends_in
+    if relative:
+        end_date = delta_resolution(end_date, ends_in).replace(microsecond=0)
+    return end_date
+
+
 def remaining(start, ends_in, now=None, relative=False):
     """Calculate the remaining time for a start date and a timedelta.
 
@@ -183,19 +210,15 @@ def remaining(start, ends_in, now=None, relative=False):
         relative (bool): If enabled the end time will be calculated
             using :func:`delta_resolution` (i.e., rounded to the
             resolution of `ends_in`).
-        now (Callable): Function returning the current time and date.
-            Defaults to :func:`datetime.utcnow`.
+        now (~datetime.datetime): Datetime instance representing the
+            current time and date. Defaults to calling
+            :func:`datetime.utcnow`.
 
     Returns:
         ~datetime.timedelta: Remaining time.
     """
     now = now or datetime.utcnow()
-    if str(start.tzinfo) == str(now.tzinfo) and now.utcoffset() != start.utcoffset():
-        # DST started/ended
-        start = start.replace(tzinfo=now.tzinfo)
-    end_date = start + ends_in
-    if relative:
-        end_date = delta_resolution(end_date, ends_in).replace(microsecond=0)
+    end_date = calc_next(start, ends_in, now, relative)
     ret = end_date - now
     if C_REMDEBUG:  # pragma: no cover
         print('rem: NOW:{!r} START:{!r} ENDS_IN:{!r} END_DATE:{} REM:{}'.format(

@@ -98,6 +98,13 @@ class test_schedule:
         s2 = fun(*args)
         assert s1 == s2
 
+    def test_next_scheduled_run(self):
+        s1 = schedule(10, app=self.app)
+        last_run = datetime.now(pytz.utc)
+        next_actual_run = last_run + timedelta(seconds=10)
+        next_run = s1.next_scheduled_run(last_run)
+        assert next_run == next_actual_run
+
 
 # This is needed for test_crontab_parser because datetime.utcnow doesn't pickle
 # in python 2
@@ -238,6 +245,245 @@ class test_crontab_parser:
         assert object() != self.crontab(minute='1')
         assert self.crontab(minute='1') != object()
         assert crontab(month_of_year='1') != schedule(10)
+
+
+class test_crontab_next_scheduled_run:
+
+    def crontab(self, *args, **kwargs):
+        return crontab(*args, **dict(kwargs, app=self.app))
+
+    def next_ocurrance(self, crontab, now):
+        crontab.nowfun = lambda: now
+        return crontab.next_scheduled_run(now).replace(tzinfo=None)
+
+    def test_next_minute(self):
+        next = self.next_ocurrance(
+            self.crontab(), datetime(2010, 9, 11, 14, 30, 15),
+        )
+        assert next == datetime(2010, 9, 11, 14, 31)
+
+    def test_not_next_minute(self):
+        next = self.next_ocurrance(
+            self.crontab(), datetime(2010, 9, 11, 14, 59, 15),
+        )
+        assert next == datetime(2010, 9, 11, 15, 0)
+
+    def test_this_hour(self):
+        next = self.next_ocurrance(
+            self.crontab(minute=[5, 42]),
+            datetime(2010, 9, 11, 14, 30, 15),
+        )
+        assert next == datetime(2010, 9, 11, 14, 42)
+
+    def test_not_this_hour(self):
+        next = self.next_ocurrance(
+            self.crontab(minute=[5, 10, 15]),
+            datetime(2010, 9, 11, 14, 30, 15),
+        )
+        assert next == datetime(2010, 9, 11, 15, 5)
+
+    def test_today(self):
+        next = self.next_ocurrance(
+            self.crontab(minute=[5, 42], hour=[12, 17]),
+            datetime(2010, 9, 11, 14, 30, 15),
+        )
+        assert next == datetime(2010, 9, 11, 17, 5)
+
+    def test_not_today(self):
+        next = self.next_ocurrance(
+            self.crontab(minute=[5, 42], hour=[12]),
+            datetime(2010, 9, 11, 14, 30, 15),
+        )
+        assert next == datetime(2010, 9, 12, 12, 5)
+
+    def test_weekday(self):
+        next = self.next_ocurrance(
+            self.crontab(minute=30, hour=14, day_of_week='sat'),
+            datetime(2010, 9, 11, 14, 30, 15),
+        )
+        assert next == datetime(2010, 9, 18, 14, 30)
+
+    def test_not_weekday(self):
+        next = self.next_ocurrance(
+            self.crontab(minute=[5, 42], day_of_week='mon-fri'),
+            datetime(2010, 9, 11, 14, 30, 15),
+        )
+        assert next == datetime(2010, 9, 13, 0, 5)
+
+    def test_monthday(self):
+        next = self.next_ocurrance(
+            self.crontab(minute=30, hour=14, day_of_month=18),
+            datetime(2010, 9, 11, 14, 30, 15),
+        )
+        assert next == datetime(2010, 9, 18, 14, 30)
+
+    def test_not_monthday(self):
+        next = self.next_ocurrance(
+            self.crontab(minute=[5, 42], day_of_month=29),
+            datetime(2010, 1, 22, 14, 30, 15),
+        )
+        assert next == datetime(2010, 1, 29, 0, 5)
+
+    def test_weekday_monthday(self):
+        next = self.next_ocurrance(
+            self.crontab(minute=30, hour=14,
+                         day_of_week='mon', day_of_month=18),
+            datetime(2010, 1, 18, 14, 30, 15),
+        )
+        assert next == datetime(2010, 10, 18, 14, 30)
+
+    def test_monthday_not_weekday(self):
+        next = self.next_ocurrance(
+            self.crontab(minute=[5, 42], day_of_week='sat',
+                         day_of_month=29),
+            datetime(2010, 1, 29, 0, 5, 15),
+        )
+        assert next == datetime(2010, 5, 29, 0, 5)
+
+    def test_weekday_not_monthday(self):
+        next = self.next_ocurrance(
+            self.crontab(minute=[5, 42], day_of_week='mon',
+                         day_of_month=18),
+            datetime(2010, 1, 11, 0, 5, 15),
+        )
+        assert next == datetime(2010, 1, 18, 0, 5)
+
+    def test_not_weekday_not_monthday(self):
+        next = self.next_ocurrance(
+            self.crontab(minute=[5, 42], day_of_week='mon',
+                         day_of_month=18),
+            datetime(2010, 1, 10, 0, 5, 15),
+        )
+        assert next == datetime(2010, 1, 18, 0, 5)
+
+    def test_leapday(self):
+        next = self.next_ocurrance(
+            self.crontab(minute=30, hour=14, day_of_month=29),
+            datetime(2012, 1, 29, 14, 30, 15),
+        )
+        assert next == datetime(2012, 2, 29, 14, 30)
+
+    def test_not_leapday(self):
+        next = self.next_ocurrance(
+            self.crontab(minute=30, hour=14, day_of_month=29),
+            datetime(2010, 1, 29, 14, 30, 15),
+        )
+        assert next == datetime(2010, 3, 29, 14, 30)
+
+    def test_weekmonthdayyear(self):
+        next = self.next_ocurrance(
+            self.crontab(minute=30, hour=14, day_of_week='fri',
+                         day_of_month=29, month_of_year=1),
+            datetime(2010, 1, 22, 14, 30, 15),
+        )
+        assert next == datetime(2010, 1, 29, 14, 30)
+
+    def test_monthdayyear_not_week(self):
+        next = self.next_ocurrance(
+            self.crontab(minute=[5, 42], day_of_week='wed,thu',
+                         day_of_month=29, month_of_year='1,4,7'),
+            datetime(2010, 1, 29, 14, 30, 15),
+        )
+        assert next == datetime(2010, 4, 29, 0, 5)
+
+    def test_weekdaymonthyear_not_monthday(self):
+        next = self.next_ocurrance(
+            self.crontab(minute=30, hour=14, day_of_week='fri',
+                         day_of_month=29, month_of_year='1-10'),
+            datetime(2010, 1, 29, 14, 30, 15),
+        )
+        assert next == datetime(2010, 10, 29, 14, 30)
+
+    def test_weekmonthday_not_monthyear(self):
+        next = self.next_ocurrance(
+            self.crontab(minute=[5, 42], day_of_week='fri',
+                         day_of_month=29, month_of_year='2-10'),
+            datetime(2010, 1, 29, 14, 30, 15),
+        )
+        assert next == datetime(2010, 10, 29, 0, 5)
+
+    def test_weekday_not_monthdayyear(self):
+        next = self.next_ocurrance(
+            self.crontab(minute=[5, 42], day_of_week='mon',
+                         day_of_month=18, month_of_year='2-10'),
+            datetime(2010, 1, 11, 0, 5, 15),
+        )
+        assert next == datetime(2010, 10, 18, 0, 5)
+
+    def test_monthday_not_weekdaymonthyear(self):
+        next = self.next_ocurrance(
+            self.crontab(minute=[5, 42], day_of_week='mon',
+                         day_of_month=29, month_of_year='2-4'),
+            datetime(2010, 1, 29, 0, 5, 15),
+        )
+        assert next == datetime(2010, 3, 29, 0, 5)
+
+    def test_monthyear_not_weekmonthday(self):
+        next = self.next_ocurrance(
+            self.crontab(minute=[5, 42], day_of_week='mon',
+                         day_of_month=29, month_of_year='2-4'),
+            datetime(2010, 2, 28, 0, 5, 15),
+        )
+        assert next == datetime(2010, 3, 29, 0, 5)
+
+    def test_not_weekmonthdayyear(self):
+        next = self.next_ocurrance(
+            self.crontab(minute=[5, 42], day_of_week='fri,sat',
+                         day_of_month=29, month_of_year='2-10'),
+            datetime(2010, 1, 28, 14, 30, 15),
+        )
+        assert next == datetime(2010, 5, 29, 0, 5)
+
+    def test_invalid_specification(self):
+        # *** WARNING ***
+        # This test triggers an infinite loop in case of a regression
+        with pytest.raises(RuntimeError):
+            self.next_ocurrance(
+                self.crontab(day_of_month=31, month_of_year=4),
+                datetime(2010, 1, 28, 14, 30, 15),
+            )
+
+    def test_leapyear(self):
+        next = self.next_ocurrance(
+            self.crontab(minute=30, hour=14, day_of_month=29,
+                         month_of_year=2),
+            datetime(2012, 2, 29, 14, 30),
+        )
+        assert next == datetime(2016, 2, 29, 14, 30)
+
+    def test_day_after_dst_end(self):
+        # Test for #1604 issue with region configuration using DST
+        tzname = "Europe/Paris"
+        self.app.timezone = tzname
+        tz = pytz.timezone(tzname)
+        crontab = self.crontab(minute=0, hour=9)
+
+        # Set last_run_at Before DST end
+        last_run_at = tz.localize(datetime(2017, 10, 28, 9, 0))
+        # Set now after DST end
+        now = tz.localize(datetime(2017, 10, 29, 7, 0))
+        crontab.nowfun = lambda: now
+        next = crontab.next_scheduled_run(last_run_at)
+
+        assert next.utcoffset().seconds == 3600
+        assert next == tz.localize(datetime(2017, 10, 29, 9, 0))
+
+    def test_day_after_dst_start(self):
+        # Test for #1604 issue with region configuration using DST
+        tzname = "Europe/Paris"
+        self.app.timezone = tzname
+        tz = pytz.timezone(tzname)
+        crontab = self.crontab(minute=0, hour=9)
+
+        # Set last_run_at Before DST start
+        last_run_at = tz.localize(datetime(2017, 3, 25, 9, 0))
+        # Set now after DST start
+        now = tz.localize(datetime(2017, 3, 26, 7, 0))
+        crontab.nowfun = lambda: now
+        next = crontab.next_scheduled_run(last_run_at)
+
+        assert next.utcoffset().seconds == 7200
+        assert next == tz.localize(datetime(2017, 3, 26, 9, 0))
 
 
 class test_crontab_remaining_estimate:

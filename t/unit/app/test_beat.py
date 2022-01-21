@@ -229,6 +229,43 @@ class test_Scheduler:
         foo.apply_async.assert_called()
         assert foo.apply_async.call_args[0][0] == [101]
 
+    def test_apply_async_sets_eta(self):
+
+        @self.app.task(shared=False)
+        def foo():
+            pass
+        foo.apply_async = Mock(name='foo.apply_async')
+
+        scheduler = mScheduler(app=self.app)
+        entry = scheduler.Entry(task=foo.name, app=self.app,
+                                schedule=always_due)
+        scheduler.apply_async(entry, advance=False)
+        assert "eta" in foo.apply_async.call_args[1]
+        kwarg_eta = foo.apply_async.call_args[1]["eta"]
+        # Mock scheduler has a frequency of 1 second
+        expected_eta = datetime.now(tz=pytz.utc) + timedelta(seconds=1)
+        difference = kwarg_eta - expected_eta
+        # ETA received by the task should be approx equal to current time
+        assert abs(difference) < timedelta(seconds=1)
+
+    def test_apply_async_keeps_existing_eta(self):
+
+        @self.app.task(shared=False)
+        def foo():
+            pass
+        foo.apply_async = Mock(name='foo.apply_async')
+
+        scheduler = mScheduler(app=self.app)
+        preset_eta = datetime(2000, 10, 10, 10, 10, 10, 10, tzinfo=pytz.utc)
+        entry = scheduler.Entry(task=foo.name, app=self.app,
+                                options={"eta": preset_eta},
+                                schedule=always_due)
+        scheduler.apply_async(entry, advance=False)
+        assert "eta" in foo.apply_async.call_args[1]
+        kwarg_eta = foo.apply_async.call_args[1]["eta"]
+        # The *exact* value of a given ETA should be passed to the task
+        assert kwarg_eta == preset_eta
+
     def test_should_sync(self):
 
         @self.app.task(shared=False)
