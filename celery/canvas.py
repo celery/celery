@@ -726,7 +726,7 @@ class _chain(Signature):
                 task = from_dict(task, app=app)
             if isinstance(task, group):
                 # when groups are nested, they are unrolled - all tasks within
-                # groups within groups should be called in parallel
+                # groups should be called in parallel
                 task = maybe_unroll_group(task)
 
             # first task gets partial args from chain
