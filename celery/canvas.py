@@ -635,7 +635,7 @@ class _chain(Signature):
             with allow_join_result():
                 return self.apply(args, kwargs, **options)
         return self.run(args, kwargs, app=app, **(
-            dict(self.options, **options) if options else self.options))
+            {**self.options, **options} if options else self.options))
 
     def run(self, args=None, kwargs=None, group_id=None, chord=None,
             task_id=None, link=None, link_error=None, publisher=None,
