@@ -194,14 +194,6 @@ class ScheduleEntry:
         """
         return self.editable_fields_equal(other)
 
-    def __ne__(self, other):
-        """Test schedule entries inequality.
-
-        Will only compare "editable" fields:
-        ``task``, ``schedule``, ``args``, ``kwargs``, ``options``.
-        """
-        return not self == other
-
 
 def _evaluate_entry_args(entry_args):
     if not entry_args:

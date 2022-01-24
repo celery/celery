@@ -628,10 +628,6 @@ class LimitedSet:
         # type: (Any) -> bool
         return self._data == other._data
 
-    def __ne__(self, other):
-        # type: (Any) -> bool
-        return not self.__eq__(other)
-
     def __repr__(self):
         # type: () -> str
         return REPR_LIMITED_SET.format(

@@ -172,9 +172,6 @@ class schedule(BaseSchedule):
             return self.run_every == other.run_every
         return self.run_every == other
 
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
     def __reduce__(self):
         return self.__class__, (self.run_every, self.relative, self.nowfun)
 
@@ -638,12 +635,6 @@ class crontab(BaseSchedule):
             )
         return NotImplemented
 
-    def __ne__(self, other):
-        res = self.__eq__(other)
-        if res is NotImplemented:
-            return True
-        return not res
-
 
 def maybe_schedule(s, relative=False, app=None):
     """Return schedule from number, timedelta, or actual schedule."""
@@ -827,9 +818,3 @@ class solar(BaseSchedule):
                 other.lon == self.lon
             )
         return NotImplemented
-
-    def __ne__(self, other):
-        res = self.__eq__(other)
-        if res is NotImplemented:
-            return True
-        return not res
