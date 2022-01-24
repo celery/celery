@@ -1,5 +1,91 @@
 additional-dependency-files:
-  - type: pip-requirements-txt
-    path: ./requirements/*.txt
-  - type: pip-requirements-txt
-    path: ./requirements/**/*.txt
+    - path: requirements/test-ci-default.txt
+      type: pip-requirements-txt
+    - path: requirements/test.txt
+      type: pip-requirements-txt
+    - path: requirements/security.txt
+      type: pip-requirements-txt
+    - path: requirements/test-integration.txt
+      type: pip-requirements-txt
+    - path: requirements/default.txt
+      type: pip-requirements-txt
+    - path: requirements/docs.txt
+      type: pip-requirements-txt
+    - path: requirements/dev.txt
+      type: pip-requirements-txt
+    - path: requirements/pkgutils.txt
+      type: pip-requirements-txt
+    - path: requirements/test-ci-base.txt
+      type: pip-requirements-txt
+    - path: requirements/test-pypy3.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/elasticsearch.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/msgpack.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/cassandra.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/auth.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/memcache.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/arangodb.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/sqs.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/redis.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/pytest.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/dynamodb.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/sphinxautobuild.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/librabbitmq.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/gevent.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/sqlalchemy.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/azureblockblob.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/mongodb.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/couchdb.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/couchbase.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/eventlet.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/django.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/zeromq.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/tblib.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/consul.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/pymemcache.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/brotli.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/zookeeper.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/slmq.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/zstd.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/thread.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/cosmosdbsql.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/solar.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/pyro.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/yaml.txt
+      type: pip-requirements-txt
+    - path: requirements/extras/s3.txt
+      type: pip-requirements-txt
+    - path: requirements/deps/mock.txt
+      type: pip-requirements-txt
