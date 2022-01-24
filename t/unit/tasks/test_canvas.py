@@ -640,6 +640,7 @@ class test_group(CanvasCase):
 
         g = group(sig_1, sig_2, app=self.app)
         g_res = g.freeze()
+        g.stamp(groups=g_res.id)
         g.apply()
 
         assert sig_1_res._get_task_meta()['groups'] == [g_res.id]
@@ -672,6 +673,7 @@ class test_group(CanvasCase):
         )
 
         g2_res = g2.freeze()
+        g2.stamp(groups=g2_res.id)
 
         g1 = group(
             sig_1,
@@ -684,6 +686,7 @@ class test_group(CanvasCase):
         )
 
         g1_res = g1.freeze()
+        g1.stamp(groups=g1_res.id)
 
         g1.apply()
 
@@ -725,6 +728,7 @@ class test_group(CanvasCase):
         )
 
         g3_res = g3.freeze()
+        g3.stamp(groups=g3_res.id)
 
         g2 = group(
             sig_in_g2,
@@ -736,6 +740,7 @@ class test_group(CanvasCase):
         )
 
         g2_res = g2.freeze()
+        g2.stamp(groups=g2_res.id)
 
         g1 = group(
             sig_in_g1_1,
@@ -748,6 +753,7 @@ class test_group(CanvasCase):
         )
 
         g1_res = g1.freeze()
+        g1.stamp(groups=g1_res.id)
 
         g1.apply()
 
