@@ -16,6 +16,7 @@ from weakref import WeakValueDictionary
 from billiard.einfo import ExceptionInfo
 from kombu.serialization import dumps, loads, prepare_accept_content
 from kombu.serialization import registry as serializer_registry
+from kombu.utils import maybe_list
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, from_utf8
 from kombu.utils.url import maybe_sanitize_url
 
@@ -446,13 +447,18 @@ class Backend:
 
         if self.app.conf.find_value_for_key('extended', 'result'):
             if request:
+                groups = []
+
+                if request.headers:
+                    groups = maybe_list(request.headers.get('groups', []))
+
                 request_meta = {
                     'name': getattr(request, 'task', None),
                     'args': getattr(request, 'args', None),
                     'kwargs': getattr(request, 'kwargs', None),
                     'worker': getattr(request, 'hostname', None),
                     'retries': getattr(request, 'retries', None),
-                    'groups': getattr(request, 'headers', {}).get('groups', []),
+                    'groups': groups,
                     'queue': request.delivery_info.get('routing_key')
                     if hasattr(request, 'delivery_info') and
                     request.delivery_info else None
