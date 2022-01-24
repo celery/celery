@@ -950,6 +950,8 @@ class BaseKeyValueStoreBackend(Backend):
         if meta:
             meta = self.decode(meta)
             result = meta['result']
+            if isinstance(result[-1], dict):
+                meta['options'] = meta['result'].pop()
             meta['result'] = result_from_tuple(result, self.app)
             return meta
 

@@ -530,7 +530,7 @@ class ResultSet(ResultBase):
 
     _app = None
 
-    #: List of results in in the set.
+    #: List of results in the set.
     results = None
 
     def __init__(self, results, app=None, ready_barrier=None, **kwargs):
@@ -881,9 +881,10 @@ class GroupResult(ResultSet):
     #: List/iterator of results in the group
     results = None
 
-    def __init__(self, id=None, results=None, parent=None, **kwargs):
+    def __init__(self, id=None, results=None, parent=None, options=None, **kwargs):
         self.id = id
         self.parent = parent
+        self.options = options or {}
         super().__init__(results, **kwargs)
 
     def _on_ready(self):
@@ -942,9 +943,14 @@ class GroupResult(ResultSet):
 
     def as_tuple(self):
         return (
-            (self.id, self.parent and self.parent.as_tuple()),
-            [r.as_tuple() for r in self.results]
+            (self.id,
+             self.parent and self.parent.as_tuple()),
+            [r.as_tuple() for r in self.results],
+            self.options
         )
+
+    def _get_group_meta(self):
+        return self.backend.get_group_meta(self.id)
 
     @property
     def children(self):
@@ -1060,8 +1066,8 @@ def result_from_tuple(r, app=None):
 
         if nodes is not None:
             return app.GroupResult(
-                id, [result_from_tuple(child, app) for child in nodes],
-                parent=parent,
+                id, [result_from_tuple(child[:2], app) for child in nodes],
+                parent=parent
             )
 
         return Result(id, parent=parent)

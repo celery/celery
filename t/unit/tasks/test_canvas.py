@@ -762,7 +762,7 @@ class test_group(CanvasCase):
         assert sig_in_g3_2_res._get_task_meta()['groups'] == \
                [g1_res.id, g2_res.id, g3_res.id]
 
-    def test_group_stamping_parallel_groups(self):
+    def test_group_stamping_parallel_groups(self, subtests):
         """
         In the case of group within a group that is from another canvas
         element, ensure that group stamps are added correctly when groups are
@@ -780,27 +780,29 @@ class test_group(CanvasCase):
         sig_in_g3_1 = self.add.s(4)
         sig_in_g3_2 = self.add.s(8)
 
-        sig_in_g1_res = sig_in_g1.freeze()
-        sig_in_g2_chain_res = sig_in_g2_chain.freeze()
-        sig_in_g2_1_res = sig_in_g2_1.freeze()
-        sig_in_g2_2_res = sig_in_g2_2.freeze()
-        sig_in_g3_chain_res = sig_in_g3_chain.freeze()
-        sig_in_g3_1_res = sig_in_g3_1.freeze()
-        sig_in_g3_2_res = sig_in_g3_2.freeze()
+        sig_in_g1.freeze(_id='sig_in_g1')
+        sig_in_g2_chain.freeze(_id='sig_in_g2_chain')
+        sig_in_g2_1.freeze(_id='sig_in_g2_1')
+        sig_in_g2_2.freeze(_id='sig_in_g2_2')
+        sig_in_g3_chain.freeze(_id='sig_in_g3_chain')
+        sig_in_g3_1.freeze(_id='sig_in_g3_1')
+        sig_in_g3_2.freeze(_id='sig_in_g3_2')
 
         g3 = group(
             sig_in_g3_1,
             sig_in_g3_2,
             app=self.app
         )
-        g3_res = g3.freeze()
+        g3_res = g3.freeze(group_id='g3')
+        g3.stamp(groups=(g3_res.id,))
 
         g2 = group(
             sig_in_g2_1,
             sig_in_g2_2,
             app=self.app
         )
-        g2_res = g2.freeze()
+        g2_res = g2.freeze(group_id='g2')
+        g2.stamp(groups=(g2_res.id,))
 
         g1 = group(
             sig_in_g1,
@@ -815,22 +817,66 @@ class test_group(CanvasCase):
                 app=self.app
             ),
         )
-        g1_res = g1.freeze()
-        g1.apply()
+        g1_res = g1.freeze(group_id='g1')
+        g1.stamp(groups=(g1_res.id,))
+        g1_res.save()
+        g2_res.save()
+        g3_res.save()
+        g1_res_after_apply = g1.apply()
 
-        assert sig_in_g1_res._get_task_meta()['groups'] == [g1_res.id]
-        assert sig_in_g2_chain_res._get_task_meta()['groups'] == \
-               [g1_res.id]
-        assert sig_in_g2_1_res._get_task_meta()['groups'] == \
-               [g1_res.id, g2_res.id]
-        assert sig_in_g2_2_res._get_task_meta()['groups'] == \
-               [g1_res.id, g2_res.id]
-        assert sig_in_g3_chain_res._get_task_meta()['groups'] == \
-               [g1_res.id]
-        assert sig_in_g3_1_res._get_task_meta()['groups'] == \
-               [g1_res.id, g3_res.id]
-        assert sig_in_g3_2_res._get_task_meta()['groups'] == \
-               [g1_res.id, g3_res.id]
+        with subtests.test("g1 is stamped", groups=[g1_res.id]):
+            assert g1_res._get_group_meta()['options']['headers']['groups'] == [g1_res.id]
+
+        with subtests.test("g2 is stamped", groups=[g1_res.id, g2_res.id]):
+            assert g2_res._get_group_meta()['options']['headers']['groups'] == [g1_res.id, g2_res.id]
+
+        with subtests.test("g3 is stamped", groups=[g1_res.id, g3_res.id]):
+            assert g3_res._get_group_meta()['options']['headers']['groups'] == [g1_res.id, g3_res.id]
+
+        sig_in_g1_res = g1_res.children[0]
+
+        with subtests.test("sig_in_g1 is stamped", groups=[g1_res.id]):
+            assert sig_in_g1_res.id == 'sig_in_g1'
+            assert sig_in_g1_res._get_task_meta()['groups'] == [g1_res.id]
+
+        sig_in_g2_chain_res = g1_res.children[1].parent
+        with subtests.test("sig_in_g2_chain is stamped", groups=[g1_res.id]):
+            assert sig_in_g2_chain_res.id == 'sig_in_g2_chain'
+            assert sig_in_g2_chain_res._get_task_meta()['groups'] == \
+                   [g1_res.id]
+
+        sig_in_g2_1_res = g1_res.children[1][0]
+        with subtests.test("sig_in_g2_1 is stamped", groups=[g1_res.id, g2_res.id]):
+            assert sig_in_g2_chain_res.id == 'sig_in_g2_1'
+            assert sig_in_g2_1_res._get_task_meta()['groups'] == \
+                   [g1_res.id, g2_res.id]
+
+        sig_in_g2_2_res = g1_res.children[1][1]
+        with subtests.test("sig_in_g2_2 is stamped",
+                           groups=[g1_res.id, g2_res.id]):
+            assert sig_in_g2_chain_res.id == 'sig_in_g2_2'
+            assert sig_in_g2_2_res._get_task_meta()['groups'] == \
+                   [g1_res.id, g2_res.id]
+
+        sig_in_g3_chain_res = g1_res.children[2].parent
+        with subtests.test("sig_in_g3_chain is stamped",
+                           groups=[g1_res.id]):
+            assert sig_in_g2_chain_res.id == 'sig_in_g3_chain'
+            assert sig_in_g3_chain_res._get_task_meta()['groups'] == \
+                   [g1_res.id]
+
+        sig_in_g3_1_res = g1_res.children[2][0]
+        with subtests.test("sig_in_g3_1 is stamped",
+                           groups=[g1_res.id, g3_res.id]):
+            assert sig_in_g3_1_res.id == 'sig_in_g3_1'
+            assert sig_in_g3_1_res._get_task_meta()['groups'] == \
+                   [g1_res.id, g3_res.id]
+
+        sig_in_g3_2_res = g1_res.children[2][1]
+        with subtests.test("sig_in_g3_2 is stamped",
+                           groups=[g1_res.id, g3_res.id]):
+            assert sig_in_g3_2_res._get_task_meta()['groups'] == \
+                   [g1_res.id, g3_res.id]
 
     def test_repr(self):
         x = group([self.add.s(2, 2), self.add.s(4, 4)])

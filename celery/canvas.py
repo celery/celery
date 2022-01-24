@@ -336,15 +336,16 @@ class Signature(dict):
         self.immutable = immutable
 
     def stamp(self, **headers):
+        headers = headers.copy()
         if 'headers' not in self.options:
             return self.set(**{'headers': headers})
 
         for header, value in headers.items():
             if header in self.options['headers']:
-                old_headers = deque(
-                    maybe_list(self.options['headers'][header]) or ())
-                old_headers.extendleft(maybe_list(value) or ())
-                self.options['headers'][header] = list(old_headers)
+                old_header = maybe_list(self.options['headers'][header]) or ()
+                # if old_header != value:
+                new_header = (*maybe_list(value), *old_header)
+                self.options['headers'][header] = new_header
 
     def _with_list_option(self, key):
         items = self.options.setdefault(key, [])
@@ -833,7 +834,7 @@ class _chain(Signature):
         last, (fargs, fkwargs) = None, (args, kwargs)
         for task in self.tasks:
             res = task.clone(fargs, fkwargs).apply(
-                last and (last.get(),), **dict(self.options, **options))
+                last and (last.get(),), {**self.options, **options})
             res.parent, last, (fargs, fkwargs) = last, res, (None, None)
         return last
 
@@ -1301,10 +1302,8 @@ class group(Signature):
                 root_id=root_id,
                 parent_id=parent_id,
                 group_index=group_index
-            )
-        )
-        self.stamp(
-            groups=[result.id]
+            ),
+            options=self.options or {}
         )
         return result
 
