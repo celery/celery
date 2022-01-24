@@ -32,9 +32,10 @@ int, str, or an iterable type. {type!r} was given.\
 """
 
 CRON_REPR = """\
-<crontab: {0._orig_minute} {0._orig_hour} {0._orig_day_of_week} \
-{0._orig_day_of_month} {0._orig_month_of_year} (m/h/d/dM/MY)>\
+<crontab: {0._orig_minute} {0._orig_hour} {0._orig_day_of_month} {0._orig_month_of_year} \
+{0._orig_day_of_week} (m/h/dM/MY/d)>\
 """
+
 
 SOLAR_INVALID_LATITUDE = """\
 Argument latitude {lat} is invalid, must be between -90 and 90.\
