@@ -335,6 +335,17 @@ class Signature(dict):
     def set_immutable(self, immutable):
         self.immutable = immutable
 
+    def stamp(self, **headers):
+        if 'headers' not in self.options:
+            return self.set(**{'headers': headers})
+
+        for header, value in headers.items():
+            if header in self.options['headers']:
+                old_headers = deque(
+                    maybe_list(self.options['headers'][header]) or ())
+                old_headers.extendleft(maybe_list(value) or ())
+                self.options['headers'][header] = list(old_headers)
+
     def _with_list_option(self, key):
         items = self.options.setdefault(key, [])
         if not isinstance(items, MutableSequence):
@@ -687,6 +698,11 @@ class _chain(Signature):
         )
         return results[0]
 
+    def stamp(self, **headers):
+        super().stamp(**headers)
+        for task in self.tasks:
+            task.stamp(**headers)
+
     def prepare_steps(self, args, kwargs, tasks,
                       root_id=None, parent_id=None, link_error=None, app=None,
                       last_task_id=None, group_id=None, chord_body=None,
@@ -909,7 +925,8 @@ class _basemap(Signature):
 
     def __init__(self, task, it, **options):
         super().__init__(self._task_name, (),
-                         {'task': task, 'it': regen(it)}, immutable=True, **options
+                         {'task': task, 'it': regen(it)}, immutable=True,
+                         **options
                          )
 
     def apply_async(self, args=None, kwargs=None, **opts):
@@ -1121,12 +1138,18 @@ class group(Signature):
         options, group_id, root_id = self._freeze_gid(options)
         tasks = self._prepared(self.tasks, [], group_id, root_id, app)
         return app.GroupResult(group_id, [
-            sig.apply(args=args, kwargs=kwargs, **options) for sig, _, _ in tasks
+            sig.apply(args=args, kwargs=kwargs, **options) for sig, _, _ in
+            tasks
         ])
 
     def set_immutable(self, immutable):
         for task in self.tasks:
             task.set_immutable(immutable)
+
+    def stamp(self, **headers):
+        super().stamp(**headers)
+        for task in self.tasks:
+            task.stamp(**headers)
 
     def link(self, sig):
         # Simply link to first task. Doing this is slightly misleading because
@@ -1170,7 +1193,8 @@ class group(Signature):
             else:
                 if partial_args and not task.immutable:
                     task.args = tuple(partial_args) + tuple(task.args)
-                yield task, task.freeze(group_id=group_id, root_id=root_id), group_id
+                yield task, task.freeze(group_id=group_id,
+                                        root_id=root_id), group_id
 
     def _apply_tasks(self, tasks, producer=None, app=None, p=None,
                      add_to_parent=None, chord=None,
@@ -1192,7 +1216,8 @@ class group(Signature):
                 # end up messing up chord counts and there are all sorts of
                 # awful race conditions to think about. We'll hope it's not!
                 sig, res, group_id = current_task
-                chord_obj = chord if chord is not None else sig.options.get("chord")
+                chord_obj = chord if chord is not None else sig.options.get(
+                    "chord")
                 # We need to check the chord size of each contributing task so
                 # that when we get to the final one, we can correctly set the
                 # size in the backend and the chord can be sensible completed.
@@ -1220,13 +1245,6 @@ class group(Signature):
         options = {**self.options, **options}
         options['group_id'] = group_id = (
             options.pop('task_id', uuid()))
-        options.setdefault('headers', {})
-        options['headers'].setdefault('groups', [])
-        options['headers']['groups'].append(group_id)  # group stamping
-
-        for task in self.tasks:
-            task.options.setdefault('headers', {})
-            task.options['headers']['groups'] = options['headers']['groups']
 
         return options, group_id, options.get('root_id')
 
@@ -1252,7 +1270,9 @@ class group(Signature):
             # tasks1, tasks2 are each a clone of self.tasks
             tasks1, tasks2 = itertools.tee(self._unroll_tasks(self.tasks))
             # freeze each task in tasks1, results now holds AsyncResult for each task
-            results = regen(self._freeze_tasks(tasks1, group_id, chord, root_id, parent_id))
+            results = regen(
+                self._freeze_tasks(tasks1, group_id, chord, root_id,
+                                   parent_id))
             # TODO figure out why this makes sense -
             # we freeze all tasks in the clone tasks1, and then zip the results
             # with the IDs of tasks in the second clone, tasks2. and then, we build
@@ -1273,10 +1293,20 @@ class group(Signature):
 
     def freeze(self, _id=None, group_id=None, chord=None,
                root_id=None, parent_id=None, group_index=None):
-        return self.app.GroupResult(*self._freeze_group_tasks(
-            _id=_id, group_id=group_id,
-            chord=chord, root_id=root_id, parent_id=parent_id, group_index=group_index
-        ))
+        result = self.app.GroupResult(
+            *self._freeze_group_tasks(
+                _id=_id,
+                group_id=group_id,
+                chord=chord,
+                root_id=root_id,
+                parent_id=parent_id,
+                group_index=group_index
+            )
+        )
+        self.stamp(
+            groups=[result.id]
+        )
+        return result
 
     _freeze = freeze
 
@@ -1290,7 +1320,8 @@ class group(Signature):
 
     def _unroll_tasks(self, tasks):
         # should be refactored to: (maybe_signature(task, app=self._app, clone=True) for task in tasks)
-        yield from (maybe_signature(task, app=self._app).clone() for task in tasks)
+        yield from (maybe_signature(task, app=self._app).clone() for task in
+                    tasks)
 
     def _freeze_unroll(self, new_tasks, group_id, chord, root_id, parent_id):
         # pylint: disable=redefined-outer-name
@@ -1377,7 +1408,8 @@ class _chord(Signature):
         kwargs = kwargs if kwargs else {'kwargs': {}}
         super().__init__(task, args,
                          {**kwargs, 'header': _maybe_group(header, app),
-                          'body': maybe_signature(body, app=app)}, app=app, **options
+                          'body': maybe_signature(body, app=app)}, app=app,
+                         **options
                          )
         self.subtask_type = 'chord'
 
@@ -1386,7 +1418,7 @@ class _chord(Signature):
 
     def __or__(self, other):
         if (not isinstance(other, (group, _chain)) and
-           isinstance(other, Signature)):
+            isinstance(other, Signature)):
             # chord | task ->  attach to body
             sig = self.clone()
             sig.body = sig.body | other
@@ -1441,7 +1473,8 @@ class _chord(Signature):
                 return self.apply(args, kwargs,
                                   body=body, task_id=task_id, **options)
 
-        merged_options = dict(self.options, **options) if options else self.options
+        merged_options = dict(self.options,
+                              **options) if options else self.options
         option_task_id = merged_options.pop("task_id", None)
         if task_id is None:
             task_id = option_task_id
@@ -1511,7 +1544,9 @@ class _chord(Signature):
         options.pop('chord', None)
         options.pop('task_id', None)
 
-        header_result_args = header._freeze_group_tasks(group_id=group_id, chord=body, root_id=root_id)
+        header_result_args = header._freeze_group_tasks(group_id=group_id,
+                                                        chord=body,
+                                                        root_id=root_id)
 
         if header.tasks:
             app.backend.apply_chord(
