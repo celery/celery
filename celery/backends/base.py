@@ -358,7 +358,7 @@ class Backend:
         try:
             exc_type = exc['exc_type']
         except KeyError as e:
-            raise ValueError("Exception information must include"
+            raise ValueError("Exception information must include "
                              "the exception type") from e
         if exc_module is None:
             cls = create_exception_cls(
