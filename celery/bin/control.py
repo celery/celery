@@ -4,8 +4,7 @@ from functools import partial
 import click
 from kombu.utils.json import dumps
 
-from celery.bin.base import (COMMA_SEPARATED_LIST, CeleryCommand,
-                             CeleryOption, handle_preload_options)
+from celery.bin.base import COMMA_SEPARATED_LIST, CeleryCommand, CeleryOption, handle_preload_options
 from celery.exceptions import CeleryCommandException
 from celery.platforms import EX_UNAVAILABLE
 from celery.utils import text

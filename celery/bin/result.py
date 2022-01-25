@@ -1,8 +1,7 @@
 """The ``celery result`` program, used to inspect task results."""
 import click
 
-from celery.bin.base import (CeleryCommand, CeleryOption,
-                             handle_preload_options)
+from celery.bin.base import CeleryCommand, CeleryOption, handle_preload_options
 
 
 @click.command(cls=CeleryCommand)

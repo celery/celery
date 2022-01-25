@@ -15,8 +15,7 @@ from celery.utils.collections import ConfigurationView
 from celery.utils.imports import import_from_cwd, qualname, symbol_by_name
 from celery.utils.text import pretty
 
-from .defaults import (_OLD_DEFAULTS, _OLD_SETTING_KEYS, _TO_NEW_KEY,
-                       _TO_OLD_KEY, DEFAULTS, SETTING_KEYS, find)
+from .defaults import _OLD_DEFAULTS, _OLD_SETTING_KEYS, _TO_NEW_KEY, _TO_OLD_KEY, DEFAULTS, SETTING_KEYS, find
 
 __all__ = (
     'Settings', 'appstr', 'bugreport',

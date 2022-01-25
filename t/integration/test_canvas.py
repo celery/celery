@@ -14,17 +14,13 @@ from celery.exceptions import ImproperlyConfigured, TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet
 
 from . import tasks
-from .conftest import (TEST_BACKEND, get_active_redis_channels,
-                       get_redis_connection)
-from .tasks import (ExpectedException, add, add_chord_to_chord, add_replaced,
-                    add_to_all, add_to_all_to_chord, build_chain_inside_task,
-                    collect_ids, delayed_sum, delayed_sum_with_soft_guard,
-                    errback_new_style, errback_old_style, fail, fail_replaced,
-                    identity, ids, print_unicode, raise_error, redis_count,
-                    redis_echo, replace_with_chain,
-                    replace_with_chain_which_raises, replace_with_empty_chain,
-                    retry_once, return_exception, return_priority,
-                    second_order_replace1, tsum, write_to_file_and_return_int)
+from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connection
+from .tasks import (ExpectedException, add, add_chord_to_chord, add_replaced, add_to_all, add_to_all_to_chord,
+                    build_chain_inside_task, collect_ids, delayed_sum, delayed_sum_with_soft_guard,
+                    errback_new_style, errback_old_style, fail, fail_replaced, identity, ids, print_unicode,
+                    raise_error, redis_count, redis_echo, replace_with_chain, replace_with_chain_which_raises,
+                    replace_with_empty_chain, retry_once, return_exception, return_priority, second_order_replace1,
+                    tsum, write_to_file_and_return_int)
 
 RETRYABLE_EXCEPTIONS = (OSError, ConnectionError, TimeoutError)
 

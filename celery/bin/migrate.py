@@ -2,8 +2,7 @@
 import click
 from kombu import Connection
 
-from celery.bin.base import (CeleryCommand, CeleryOption,
-                             handle_preload_options)
+from celery.bin.base import CeleryCommand, CeleryOption, handle_preload_options
 from celery.contrib.migrate import migrate_tasks
 
 

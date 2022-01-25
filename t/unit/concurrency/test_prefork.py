@@ -66,9 +66,7 @@ class test_process_initializer:
     def test_process_initializer(self, _signals, set_mp_process_title, restore_logging):
         from celery import signals
         from celery._state import _tls
-        from celery.concurrency.prefork import (WORKER_SIGIGNORE,
-                                                WORKER_SIGRESET,
-                                                process_initializer)
+        from celery.concurrency.prefork import WORKER_SIGIGNORE, WORKER_SIGRESET, process_initializer
         on_worker_process_init = Mock()
         signals.worker_process_init.connect(on_worker_process_init)
 

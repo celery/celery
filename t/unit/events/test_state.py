@@ -9,8 +9,7 @@ import pytest
 
 from celery import states, uuid
 from celery.events import Event
-from celery.events.state import (HEARTBEAT_DRIFT_MAX, HEARTBEAT_EXPIRE_WINDOW,
-                                 State, Task, Worker, heartbeat_expires)
+from celery.events.state import HEARTBEAT_DRIFT_MAX, HEARTBEAT_EXPIRE_WINDOW, State, Task, Worker, heartbeat_expires
 
 
 class replay:

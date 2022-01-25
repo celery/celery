@@ -7,14 +7,10 @@ from kombu.exceptions import EncodeError
 
 from celery import group, signals, states, uuid
 from celery.app.task import Context
-from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task,
-                              get_log_policy, get_task_name,
-                              log_policy_expected, log_policy_ignore,
-                              log_policy_internal, log_policy_reject,
-                              log_policy_unexpected,
-                              reset_worker_optimizations,
-                              setup_worker_optimizations, trace_task,
-                              trace_task_ret, traceback_clear)
+from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task, get_log_policy, get_task_name,
+                              log_policy_expected, log_policy_ignore, log_policy_internal, log_policy_reject,
+                              log_policy_unexpected, reset_worker_optimizations, setup_worker_optimizations,
+                              trace_task, trace_task_ret, traceback_clear)
 from celery.backends.base import BaseDictBackend
 from celery.backends.cache import CacheBackend
 from celery.exceptions import BackendGetMetaError, Ignore, Reject, Retry

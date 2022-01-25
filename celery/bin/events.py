@@ -4,8 +4,7 @@ from functools import partial
 
 import click
 
-from celery.bin.base import (LOG_LEVEL, CeleryDaemonCommand, CeleryOption,
-                             handle_preload_options)
+from celery.bin.base import LOG_LEVEL, CeleryDaemonCommand, CeleryOption, handle_preload_options
 from celery.platforms import detached, set_process_title, strargv
 
 

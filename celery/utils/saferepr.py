@@ -15,8 +15,7 @@ from decimal import Decimal
 from itertools import chain
 from numbers import Number
 from pprint import _recursion
-from typing import (Any, AnyStr, Callable, Dict, Iterator, List, Sequence,
-                    Set, Tuple)
+from typing import Any, AnyStr, Callable, Dict, Iterator, List, Sequence, Set, Tuple
 
 from .text import truncate
 

@@ -3,8 +3,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from celery.fixups.django import (DjangoFixup, DjangoWorkerFixup,
-                                  FixupWarning, _maybe_close_fd, fixup)
+from celery.fixups.django import DjangoFixup, DjangoWorkerFixup, FixupWarning, _maybe_close_fd, fixup
 from t.unit import conftest
 
 

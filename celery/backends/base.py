@@ -23,20 +23,14 @@ import celery.exceptions
 from celery import current_app, group, maybe_signature, states
 from celery._state import get_current_task
 from celery.app.task import Context
-from celery.exceptions import (BackendGetMetaError, BackendStoreError,
-                               ChordError, ImproperlyConfigured,
-                               NotRegistered, SecurityError, TaskRevokedError,
-                               TimeoutError)
-from celery.result import (GroupResult, ResultBase, ResultSet,
-                           allow_join_result, result_from_tuple)
+from celery.exceptions import (BackendGetMetaError, BackendStoreError, ChordError, ImproperlyConfigured,
+                               NotRegistered, SecurityError, TaskRevokedError, TimeoutError)
+from celery.result import GroupResult, ResultBase, ResultSet, allow_join_result, result_from_tuple
 from celery.utils.collections import BufferMap
 from celery.utils.functional import LRUCache, arity_greater
 from celery.utils.log import get_logger
-from celery.utils.serialization import (create_exception_cls,
-                                        ensure_serializable,
-                                        get_pickleable_exception,
-                                        get_pickled_exception,
-                                        raise_with_context)
+from celery.utils.serialization import (create_exception_cls, ensure_serializable, get_pickleable_exception,
+                                        get_pickled_exception, raise_with_context)
 from celery.utils.time import get_exponential_backoff_interval
 
 __all__ = ('BaseBackend', 'KeyValueStoreBackend', 'DisabledBackend')

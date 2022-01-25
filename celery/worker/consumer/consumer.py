@@ -22,8 +22,7 @@ from vine import ppartial, promise
 
 from celery import bootsteps, signals
 from celery.app.trace import build_tracer
-from celery.exceptions import (CPendingDeprecationWarning, InvalidTaskError,
-                               NotRegistered)
+from celery.exceptions import CPendingDeprecationWarning, InvalidTaskError, NotRegistered
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
@@ -31,8 +30,7 @@ from celery.utils.objects import Bunch
 from celery.utils.text import truncate
 from celery.utils.time import humanize_seconds, rate
 from celery.worker import loops
-from celery.worker.state import (active_requests, maybe_shutdown,
-                                 reserved_requests, task_reserved)
+from celery.worker.state import active_requests, maybe_shutdown, reserved_requests, task_reserved
 
 __all__ = ('Consumer', 'Evloop', 'dump_body')
 
