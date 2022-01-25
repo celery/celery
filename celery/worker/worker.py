@@ -23,8 +23,7 @@ from celery import bootsteps
 from celery import concurrency as _concurrency
 from celery import signals
 from celery.bootsteps import RUN, TERMINATE
-from celery.exceptions import (ImproperlyConfigured, TaskRevokedError,
-                               WorkerTerminate)
+from celery.exceptions import ImproperlyConfigured, TaskRevokedError, WorkerTerminate
 from celery.platforms import EX_FAILURE, create_pidlock
 from celery.utils.imports import reload_from_cwd
 from celery.utils.log import mlevel

@@ -6,12 +6,9 @@ import pytz
 from pytz import AmbiguousTimeError
 
 from celery.utils.iso8601 import parse_iso8601
-from celery.utils.time import (LocalTimezone, delta_resolution, ffwd,
-                               get_exponential_backoff_interval,
-                               humanize_seconds, localize, make_aware,
-                               maybe_iso8601, maybe_make_aware,
-                               maybe_timedelta, rate, remaining, timezone,
-                               utcoffset)
+from celery.utils.time import (LocalTimezone, delta_resolution, ffwd, get_exponential_backoff_interval,
+                               humanize_seconds, localize, make_aware, maybe_iso8601, maybe_make_aware,
+                               maybe_timedelta, rate, remaining, timezone, utcoffset)
 
 
 class test_LocalTimezone:

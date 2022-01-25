@@ -8,8 +8,7 @@ from kombu.asynchronous import ERR, READ, WRITE, Hub
 from kombu.exceptions import DecodeError
 
 from celery.bootsteps import CLOSE, RUN
-from celery.exceptions import (InvalidTaskError, WorkerLostError,
-                               WorkerShutdown, WorkerTerminate)
+from celery.exceptions import InvalidTaskError, WorkerLostError, WorkerShutdown, WorkerTerminate
 from celery.platforms import EX_FAILURE, EX_OK
 from celery.worker import state
 from celery.worker.consumer import Consumer

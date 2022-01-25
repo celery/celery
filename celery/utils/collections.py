@@ -2,8 +2,7 @@
 import time
 from collections import OrderedDict as _OrderedDict
 from collections import deque
-from collections.abc import (Callable, Mapping, MutableMapping, MutableSet,
-                             Sequence)
+from collections.abc import Callable, Mapping, MutableMapping, MutableSet, Sequence
 from heapq import heapify, heappop, heappush
 from itertools import chain, count
 from queue import Empty

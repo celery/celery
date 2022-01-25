@@ -7,10 +7,8 @@ import celery
 from celery import group
 
 from .conftest import get_active_redis_channels
-from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add,
-                    add_ignore_result, add_not_typed, fail, print_unicode,
-                    retry, retry_once, retry_once_priority, return_properties,
-                    sleeping)
+from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result, add_not_typed, fail,
+                    print_unicode, retry, retry_once, retry_once_priority, return_properties, sleeping)
 
 TIMEOUT = 10
 

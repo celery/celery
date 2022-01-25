@@ -20,11 +20,9 @@ from celery.backends.cache import CacheBackend, DummyClient
 # we have to import the pytest plugin fixtures here,
 # in case user did not do the `python setup.py develop` yet,
 # that installs the pytest plugin into the setuptools registry.
-from celery.contrib.pytest import (celery_app, celery_enable_logging,
-                                   celery_parameters, depends_on_current_app)
+from celery.contrib.pytest import celery_app, celery_enable_logging, celery_parameters, depends_on_current_app
 from celery.contrib.testing.app import TestApp, Trap
-from celery.contrib.testing.mocks import (TaskMessage, TaskMessage1,
-                                          task_message_from_sig)
+from celery.contrib.testing.mocks import TaskMessage, TaskMessage1, task_message_from_sig
 
 # Tricks flake8 into silencing redefining fixtures warnings.
 __all__ = (

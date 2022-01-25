@@ -6,8 +6,7 @@ from importlib import import_module
 
 import click
 
-from celery.bin.base import (CeleryCommand, CeleryOption,
-                             handle_preload_options)
+from celery.bin.base import CeleryCommand, CeleryOption, handle_preload_options
 
 
 def _invoke_fallback_shell(locals):

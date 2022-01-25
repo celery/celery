@@ -12,8 +12,7 @@ from celery import signals
 from celery.exceptions import reraise
 from celery.utils.collections import DictAttribute, force_mapping
 from celery.utils.functional import maybe_list
-from celery.utils.imports import (NotAPackage, find_module, import_from_cwd,
-                                  symbol_by_name)
+from celery.utils.imports import NotAPackage, find_module, import_from_cwd, symbol_by_name
 
 __all__ = ('BaseLoader',)
 

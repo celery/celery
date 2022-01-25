@@ -19,8 +19,7 @@ from celery._state import get_current_task
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
 from celery.local import class_property
 from celery.platforms import isatty
-from celery.utils.log import (ColorFormatter, LoggingProxy, get_logger,
-                              get_multiprocessing_logger, mlevel,
+from celery.utils.log import (ColorFormatter, LoggingProxy, get_logger, get_multiprocessing_logger, mlevel,
                               reset_multiprocessing_logger)
 from celery.utils.nodenames import node_format
 from celery.utils.term import colored

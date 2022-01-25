@@ -11,8 +11,7 @@ from .base import KeyValueStoreBackend
 try:
     import pydocumentdb
     from pydocumentdb.document_client import DocumentClient
-    from pydocumentdb.documents import (ConnectionPolicy, ConsistencyLevel,
-                                        PartitionKind)
+    from pydocumentdb.documents import ConnectionPolicy, ConsistencyLevel, PartitionKind
     from pydocumentdb.errors import HTTPFailure
     from pydocumentdb.retry_options import RetryOptions
 except ImportError:  # pragma: no cover

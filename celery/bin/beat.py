@@ -3,8 +3,7 @@ from functools import partial
 
 import click
 
-from celery.bin.base import (LOG_LEVEL, CeleryDaemonCommand, CeleryOption,
-                             handle_preload_options)
+from celery.bin.base import LOG_LEVEL, CeleryDaemonCommand, CeleryOption, handle_preload_options
 from celery.platforms import detached, maybe_drop_privileges
 
 

@@ -20,16 +20,13 @@ from celery import current_app, group, signals, states
 from celery._state import _task_stack
 from celery.app.task import Context
 from celery.app.task import Task as BaseTask
-from celery.exceptions import (BackendGetMetaError, Ignore, InvalidTaskError,
-                               Reject, Retry)
+from celery.exceptions import BackendGetMetaError, Ignore, InvalidTaskError, Reject, Retry
 from celery.result import AsyncResult
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.objects import mro_lookup
 from celery.utils.saferepr import saferepr
-from celery.utils.serialization import (get_pickleable_etype,
-                                        get_pickleable_exception,
-                                        get_pickled_exception)
+from celery.utils.serialization import get_pickleable_etype, get_pickleable_exception, get_pickled_exception
 
 # ## ---
 # This is the heart of the worker, the inner loop so to speak.

@@ -21,8 +21,7 @@ from kombu.utils.uuid import uuid
 import t.skip
 from celery.bootsteps import CLOSE, RUN, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
-from celery.exceptions import (ImproperlyConfigured, InvalidTaskError,
-                               TaskRevokedError, WorkerShutdown,
+from celery.exceptions import (ImproperlyConfigured, InvalidTaskError, TaskRevokedError, WorkerShutdown,
                                WorkerTerminate)
 from celery.platforms import EX_FAILURE
 from celery.utils.nodenames import worker_direct
