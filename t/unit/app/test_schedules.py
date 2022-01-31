@@ -8,8 +8,7 @@ from unittest.mock import Mock
 import pytest
 import pytz
 
-from celery.schedules import (ParseException, crontab, crontab_parser,
-                              schedule, solar)
+from celery.schedules import ParseException, crontab, crontab_parser, schedule, solar
 
 assertions = TestCase('__init__')
 

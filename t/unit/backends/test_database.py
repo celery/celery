@@ -10,11 +10,9 @@ from celery.exceptions import ImproperlyConfigured
 
 pytest.importorskip('sqlalchemy')
 
-from celery.backends.database import (DatabaseBackend, retry, session,  # noqa
-                                      session_cleanup)
+from celery.backends.database import DatabaseBackend, retry, session, session_cleanup  # noqa
 from celery.backends.database.models import Task, TaskSet  # noqa
-from celery.backends.database.session import (  # noqa
-    PREPARE_MODELS_MAX_RETRIES, ResultModelBase, SessionManager)
+from celery.backends.database.session import PREPARE_MODELS_MAX_RETRIES, ResultModelBase, SessionManager  # noqa
 from t import skip  # noqa
 
 

@@ -15,8 +15,7 @@ from decimal import Decimal
 from itertools import chain
 from numbers import Number
 from pprint import _recursion
-from typing import (Any, AnyStr, Callable, Dict, Iterator, List, Sequence,
-                    Set, Tuple)
+from typing import Any, AnyStr, Callable, Dict, Iterator, List, Sequence, Set, Tuple
 
 from .text import truncate
 
@@ -136,14 +135,7 @@ def _repr_binary_bytes(val):
         return val.decode('utf-8')
     except UnicodeDecodeError:
         # possibly not unicode, but binary data so format as hex.
-        try:
-            ashex = val.hex
-        except AttributeError:  # pragma: no cover
-            # Python 3.4
-            return val.decode('utf-8', errors='replace')
-        else:
-            # Python 3.5+
-            return ashex()
+        return val.hex()
 
 
 def _format_chars(val, maxlen):

@@ -9,8 +9,7 @@ from .base import KeyValueStoreBackend
 
 try:
     import azure.storage.blob as azurestorage
-    from azure.core.exceptions import (ResourceExistsError,
-                                       ResourceNotFoundError)
+    from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
     from azure.storage.blob import BlobServiceClient
 except ImportError:
     azurestorage = None

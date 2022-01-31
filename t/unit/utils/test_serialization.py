@@ -8,11 +8,8 @@ import pytest
 import pytz
 from kombu import Queue
 
-from celery.utils.serialization import (STRTOBOOL_DEFAULT_TABLE,
-                                        UnpickleableExceptionWrapper,
-                                        ensure_serializable,
-                                        get_pickleable_etype, jsonify,
-                                        strtobool)
+from celery.utils.serialization import (STRTOBOOL_DEFAULT_TABLE, UnpickleableExceptionWrapper, ensure_serializable,
+                                        get_pickleable_etype, jsonify, strtobool)
 
 
 class test_AAPickle:

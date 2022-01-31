@@ -1,6 +1,5 @@
 """Message Signing Serializer."""
-from kombu.serialization import \
-    disable_insecure_serializers as _disable_insecure_serializers
+from kombu.serialization import disable_insecure_serializers as _disable_insecure_serializers
 from kombu.serialization import registry
 
 from celery.exceptions import ImproperlyConfigured

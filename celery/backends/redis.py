@@ -12,8 +12,7 @@ from kombu.utils.url import _parse_url, maybe_sanitize_url
 from celery import states
 from celery._state import task_join_will_block
 from celery.canvas import maybe_signature
-from celery.exceptions import (BackendStoreError, ChordError,
-                               ImproperlyConfigured)
+from celery.exceptions import BackendStoreError, ChordError, ImproperlyConfigured
 from celery.result import GroupResult, allow_join_result
 from celery.utils.functional import _regen, dictfilter
 from celery.utils.log import get_logger
@@ -112,6 +111,8 @@ class ResultConsumer(BaseResultConsumer):
         )
         if self.subscribed_to:
             self._pubsub.subscribe(*self.subscribed_to)
+        else:
+            self._pubsub.ping()
 
     @contextmanager
     def reconnect_on_error(self):

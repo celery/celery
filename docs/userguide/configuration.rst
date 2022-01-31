@@ -145,7 +145,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_QUEUES``                          :setting:`task_queues`
 ``CELERY_ROUTES``                          :setting:`task_routes`
 ``CELERY_SEND_SENT_EVENT``                 :setting:`task_send_sent_event`
-``CELERY_SERIALIZER``                      :setting:`task_serializer`
+``CELERY_TASK_SERIALIZER``                 :setting:`task_serializer`
 ``CELERYD_SOFT_TIME_LIMIT``                :setting:`task_soft_time_limit`
 ``CELERY_TASK_TRACK_STARTED``              :setting:`task_track_started`
 ``CELERY_TASK_REJECT_ON_WORKER_LOST``      :setting:`task_reject_on_worker_lost`

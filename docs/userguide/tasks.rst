@@ -237,6 +237,12 @@ named :file:`tasks.py`:
     >>> add.name
     'tasks.add'
 
+.. note::
+
+   You can use the `inspect` command in a worker to view the names of
+   all registered tasks. See the `inspect registered` command in the
+   :ref:`monitoring-control` section of the User Guide.
+
 .. _task-name-generator-info:
 
 Changing the automatic naming behavior
@@ -345,7 +351,7 @@ The request defines the following attributes:
 
 :callbacks: A list of signatures to be called if this task returns successfully.
 
-:errback: A list of signatures to be called if this task fails.
+:errbacks: A list of signatures to be called if this task fails.
 
 :utc: Set to true the caller has UTC enabled (:setting:`enable_utc`).
 
@@ -1641,7 +1647,7 @@ setting.
 .. versionadded::4.2
 
 Results can be enabled/disabled on a per-execution basis, by passing the ``ignore_result`` boolean parameter,
-when calling ``apply_async`` or ``delay``.
+when calling ``apply_async``.
 
 .. code-block:: python
 

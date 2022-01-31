@@ -5,8 +5,7 @@ from collections import UserList
 from functools import partial
 from itertools import islice, tee, zip_longest
 
-from kombu.utils.functional import (LRUCache, dictfilter, is_list, lazy,
-                                    maybe_evaluate, maybe_list, memoize)
+from kombu.utils.functional import LRUCache, dictfilter, is_list, lazy, maybe_evaluate, maybe_list, memoize
 from vine import promise
 
 __all__ = (
