@@ -339,7 +339,7 @@ class Consumer:
                     raise
                 if self.app.conf.worker_terminate_on_connection_error:
                     crit(TERMINATE_CELERY_ON_CONNECTION_RESTART)
-                    self.controller.terminate()
+                    self.controller.stop()
                     return
                 if isinstance(exc, OSError) and exc.errno == errno.EMFILE:
                     raise  # Too many open files
