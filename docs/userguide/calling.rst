@@ -673,13 +673,13 @@ publisher:
 
 .. code-block:: python
 
-
+    numbers = [(2, 2), (4, 4), (8, 8), (16, 16)]
     results = []
     with add.app.pool.acquire(block=True) as connection:
         with add.get_publisher(connection) as publisher:
             try:
-                for args in numbers:
-                    res = add.apply_async((2, 2), publisher=publisher)
+                for i, j in numbers:
+                    res = add.apply_async((i, j), publisher=publisher)
                     results.append(res)
     print([res.get() for res in results])
 
