@@ -28,6 +28,7 @@ from celery.utils.collections import AttributeDictMixin
 from celery.utils.dispatch import Signal
 from celery.utils.functional import first, head_from_fun, maybe_list
 from celery.utils.imports import gen_task_name, instantiate, symbol_by_name
+from celery.utils.iso8601 import parse_iso8601
 from celery.utils.log import get_logger
 from celery.utils.objects import FallbackContext, mro_lookup
 from celery.utils.time import maybe_make_aware, timezone, to_utc
@@ -730,10 +731,12 @@ class Celery:
         options = router.route(
             options, route_name or name, args, kwargs, task_type)
         if expires is not None:
-            if isinstance(expires, datetime):
-                expires_s = (maybe_make_aware(expires) - self.now()).total_seconds()
+            if isinstance(expires, str):
+                expires_s = parse_iso8601(expires)
             else:
                 expires_s = expires
+            if isinstance(expires_s, datetime):
+                expires_s = (maybe_make_aware(expires_s) - self.now()).total_seconds()
 
             if expires_s < 0:
                 logger.warning(
