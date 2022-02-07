@@ -22,8 +22,7 @@ from vine import ppartial, promise
 
 from celery import bootsteps, signals
 from celery.app.trace import build_tracer
-from celery.exceptions import (CPendingDeprecationWarning, InvalidTaskError,
-                               NotRegistered, WorkerShutdown)
+from celery.exceptions import CPendingDeprecationWarning, InvalidTaskError, NotRegistered, WorkerShutdown
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
