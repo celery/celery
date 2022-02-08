@@ -330,6 +330,10 @@ NAMESPACES = Namespace(
         ),
         state_db=Option(),
         task_log_format=Option(DEFAULT_TASK_LOG_FMT),
+        terminate_on_connection_error=Option(
+            False,
+            type='bool'
+        ),
         timer=Option(type='string'),
         timer_precision=Option(1.0, type='float'),
     ),
