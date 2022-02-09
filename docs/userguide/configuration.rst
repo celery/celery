@@ -126,6 +126,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_SECURITY_CERTIFICATE``            :setting:`security_certificate`
 ``CELERY_SECURITY_CERT_STORE``             :setting:`security_cert_store`
 ``CELERY_SECURITY_KEY``                    :setting:`security_key`
+``CELERY_SECURITY_KEY_PASSWORD``           :setting:`security_key_password`
 ``CELERY_ACKS_LATE``                       :setting:`task_acks_late`
 ``CELERY_ACKS_ON_FAILURE_OR_TIMEOUT``      :setting:`task_acks_on_failure_or_timeout`
 ``CELERY_ALWAYS_EAGER``                    :setting:`task_always_eager`
@@ -3140,6 +3141,18 @@ Default: :const:`None`.
 
 The relative or absolute path to a file containing the private key
 used to sign messages when :ref:`message-signing` is used.
+
+.. setting:: security_key_password
+
+``security_key_password``
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: :const:`None`.
+
+.. versionadded:: 5.2.3
+
+The password used to decrypt the private key when :ref:`message-signing`
+is used.
 
 .. setting:: security_certificate
 

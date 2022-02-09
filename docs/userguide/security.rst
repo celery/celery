@@ -162,6 +162,8 @@ the :setting:`security_key`,
 :setting:`security_certificate`, and :setting:`security_cert_store`
 settings respectively.
 You can tweak the signing algorithm with :setting:`security_digest`.
+If using an encrypted private key, the password can be configured with
+:setting:`security_key_password`.
 
 With these configured it's also necessary to call the
 :func:`celery.setup_security` function. Note that this will also
