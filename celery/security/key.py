@@ -18,7 +18,7 @@ class PrivateKey:
         ):
             self._key = serialization.load_pem_private_key(
                 ensure_bytes(key),
-                password=password,
+                password=ensure_bytes(password),
                 backend=default_backend())
 
     def sign(self, data, digest):
