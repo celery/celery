@@ -5,7 +5,7 @@ from celery.exceptions import SecurityError
 from celery.security.key import PrivateKey
 from celery.security.utils import get_digest_algorithm
 
-from . import CERT1, KEYPASSWORD, KEY1, ENCKEY1, KEY2, ENCKEY2
+from . import CERT1, ENCKEY1, ENCKEY2, KEY1, KEY2, KEYPASSWORD
 from .case import SecurityCase
 
 

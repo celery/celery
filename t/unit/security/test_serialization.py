@@ -55,7 +55,7 @@ class test_secureserializer(SecurityCase):
         assert s2.deserialize(s1.serialize('foo')) == 'foo'
 
     def test_register_auth(self):
-        register_auth(KEY1, CERT1, '')
+        register_auth(KEY1, None, CERT1, '')
         assert 'application/data' in registry._decoders
 
     def test_lots_of_sign(self):
