@@ -164,6 +164,7 @@ class mocked_schedule(schedule):
 
 always_due = mocked_schedule(True, 1)
 always_pending = mocked_schedule(False, 1)
+always_pending_left_10_milliseconds = mocked_schedule(False, 0.01)
 
 
 class test_Scheduler:
@@ -353,6 +354,12 @@ class test_Scheduler:
         scheduler.add(name='test_pending_tick',
                       schedule=always_pending)
         assert scheduler.tick() == 1 - 0.010
+
+    def test_pending_left_10_milliseconds_tick(self):
+        scheduler = mScheduler(app=self.app)
+        scheduler.add(name='test_pending_left_10_milliseconds_tick',
+                      schedule=always_pending_left_10_milliseconds)
+        assert scheduler.tick() == 0.010 - 0.010
 
     def test_honors_max_interval(self):
         scheduler = mScheduler(app=self.app)
