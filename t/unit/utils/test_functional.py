@@ -5,8 +5,8 @@ import pytest_subtests  # noqa: F401
 from kombu.utils.functional import lazy
 
 from celery.utils.functional import (DummyContext, first, firstmethod, fun_accepts_kwargs, fun_takes_argument,
-                                     head_from_fun, lookahead, maybe_list, mlazy, padlist, regen, seq_concat_item,
-                                     seq_concat_seq, is_numeric_value)
+                                     head_from_fun, is_numeric_value, lookahead, maybe_list, mlazy, padlist, regen,
+                                     seq_concat_item, seq_concat_seq)
 
 
 def test_DummyContext():
