@@ -1,4 +1,4 @@
-setuptools>=40.8.0
+setuptools
 wheel>=0.33.1
 flake8>=3.8.3
 flakeplus>=1.1
