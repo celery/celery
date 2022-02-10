@@ -4,10 +4,12 @@ import click
 <<<<<<< HEAD
 from celery.bin.base import (ISO8601, ISO8601_OR_FLOAT, JSON, CeleryCommand,
                              CeleryOption, handle_preload_options)
+
 =======
 from celery.bin.base import (ISO8601, ISO8601_OR_FLOAT, JSON_ARRAY,
                              JSON_OBJECT, CeleryCommand, CeleryOption,
                              handle_preload_options)
+
 >>>>>>> v5.2.3
 
 

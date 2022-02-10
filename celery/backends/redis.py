@@ -1,6 +1,6 @@
 """Redis result store backend."""
-import uuid
 import time
+import uuid
 from contextlib import contextmanager
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
@@ -13,14 +13,10 @@ from kombu.utils.url import _parse_url, maybe_sanitize_url
 from celery import states
 from celery._state import task_join_will_block
 from celery.canvas import maybe_signature
-from celery.exceptions import (
-    BackendStoreError,
-    ChordError,
-    ImproperlyConfigured,
-    TaskRevokedError,
-)
+from celery.exceptions import (BackendStoreError, ChordError,
+                               ImproperlyConfigured, TaskRevokedError)
 from celery.result import GroupResult, allow_join_result
-from celery.utils.functional import dictfilter, _regen
+from celery.utils.functional import _regen, dictfilter
 from celery.utils.log import get_logger
 from celery.utils.time import humanize_seconds
 
@@ -531,7 +527,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         if chord_size_bytes:
             try:
                 callback = maybe_signature(request.chord, app=app)
-                total = callback["chord_size"] + totaldiff
+                total = int(chord_size_bytes) + totaldiff
                 if readycount == total:
                     header_result = GroupResult.restore(gid)
                     if header_result is not None:
@@ -585,7 +581,11 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                         )
                     finally:
                         with client.pipeline() as pipe:
-                            _, _ = pipe.delete(jkey).delete(tkey).delete(skey).execute()
+                            pipe \
+                                .delete(jkey) \
+                                .delete(tkey) \
+                                .delete(skey) \
+                                .execute()
             except ChordError as exc:
                 logger.exception("Chord %r raised: %r", request.group, exc)
                 return self.chord_error_from_stack(callback, exc)

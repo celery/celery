@@ -1540,6 +1540,7 @@ limits, and other failures.
 .. code-block:: python
 
    import logging
+
    from celery import Task
    from celery.worker.request import Request
 
@@ -1977,13 +1978,12 @@ to the database, then I launch the spam filter task in the background.
 
 .. code-block:: python
 
-    from django import forms
-    from django.http import HttpResponseRedirect
-    from django.template.context import RequestContext
-    from django.shortcuts import get_object_or_404, render_to_response
-
     from blog import tasks
     from blog.models import Comment
+    from django import forms
+    from django.http import HttpResponseRedirect
+    from django.shortcuts import get_object_or_404, render_to_response
+    from django.template.context import RequestContext
 
 
     class CommentForm(forms.ModelForm):
@@ -2026,14 +2026,12 @@ To make API calls to `Akismet`_ I use the `akismet.py`_ library written by
 
 .. code-block:: python
 
-    from celery import Celery
-
     from akismet import Akismet
-
-    from django.core.exceptions import ImproperlyConfigured
-    from django.contrib.sites.models import Site
-
     from blog.models import Comment
+    from django.contrib.sites.models import Site
+    from django.core.exceptions import ImproperlyConfigured
+
+    from celery import Celery
 
 
     app = Celery(broker='amqp://')

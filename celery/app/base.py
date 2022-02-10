@@ -18,17 +18,10 @@ from kombu.utils.uuid import uuid
 from vine import starpromise
 
 from celery import platforms, signals
-from celery._state import (
-    _announce_app_finalized,
-    _deregister_app,
-    _register_app,
-    _set_current_app,
-    _task_stack,
-    connect_on_app_finalize,
-    get_current_app,
-    get_current_worker_task,
-    set_default_app,
-)
+from celery._state import (_announce_app_finalized, _deregister_app,
+                           _register_app, _set_current_app, _task_stack,
+                           connect_on_app_finalize, get_current_app,
+                           get_current_worker_task, set_default_app)
 from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
@@ -48,17 +41,9 @@ from .annotations import prepare as prepare_annotations
 from .autoretry import add_autoretry_behaviour
 from .defaults import DEFAULT_SECURITY_DIGEST, find_deprecated_settings
 from .registry import TaskRegistry
-from .utils import (
-    AppPickler,
-    Settings,
-    _new_key_to_old,
-    _old_key_to_new,
-    _unpickle_app,
-    _unpickle_app_v2,
-    appstr,
-    bugreport,
-    detect_settings,
-)
+from .utils import (AppPickler, Settings, _new_key_to_old, _old_key_to_new,
+                    _unpickle_app, _unpickle_app_v2, appstr, bugreport,
+                    detect_settings)
 
 __all__ = ("Celery",)
 

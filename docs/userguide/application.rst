@@ -245,6 +245,7 @@ environment variable named :envvar:`CELERY_CONFIG_MODULE`:
 .. code-block:: python
 
     import os
+
     from celery import Celery
 
     #: Set default configuration module name
@@ -372,9 +373,8 @@ Finalizing the object will:
 
     .. code-block:: python
 
-        from celery.task import Task   # << OLD Task base class.
-
-        from celery import Task        # << NEW base class.
+        from celery import Task  # << NEW base class.
+        from celery.task import Task  # << OLD Task base class.
 
 
 Breaking the chain

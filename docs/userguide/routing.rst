@@ -790,6 +790,7 @@ a :program:`celery beat` schedule:
 .. code-block:: python
 
     from kombu.common import Broadcast
+
     from celery.schedules import crontab
 
     app.conf.task_queues = (Broadcast('broadcast_tasks'),)

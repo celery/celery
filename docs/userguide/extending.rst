@@ -22,9 +22,9 @@ whenever the connection is established:
 
 .. code-block:: python
 
-    from celery import Celery
-    from celery import bootsteps
     from kombu import Consumer, Exchange, Queue
+
+    from celery import Celery, bootsteps
 
     my_queue = Queue('custom', Exchange('custom'), 'routing_key')
 

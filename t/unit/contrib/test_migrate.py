@@ -7,23 +7,12 @@ from kombu import Connection, Exchange, Producer, Queue
 from kombu.transport.virtual import QoS
 from kombu.utils.encoding import ensure_bytes
 
-from celery.contrib.migrate import (
-    State,
-    StopFiltering,
-    _maybe_queue,
-    expand_dest,
-    filter_callback,
-    filter_status,
-    migrate_task,
-    migrate_tasks,
-    move,
-    move_by_idmap,
-    move_by_taskmap,
-    move_task_by_id,
-    start_filter,
-    task_id_eq,
-    task_id_in,
-)
+from celery.contrib.migrate import (State, StopFiltering, _maybe_queue,
+                                    expand_dest, filter_callback,
+                                    filter_status, migrate_task,
+                                    migrate_tasks, move, move_by_idmap,
+                                    move_by_taskmap, move_task_by_id,
+                                    start_filter, task_id_eq, task_id_in)
 from t.unit import conftest
 
 # hack to ignore error at shutdown

@@ -95,17 +95,9 @@ if STATICA_HACK:  # pragma: no cover
     from celery.app.base import Celery
     from celery.app.task import Task
     from celery.app.utils import bugreport
-    from celery.canvas import (
-        chain,
-        chord,
-        chunks,
-        group,  # noqa
-        maybe_signature,
-        signature,
-        subtask,
-        xmap,
-        xstarmap,
-    )
+    from celery.canvas import group  # noqa
+    from celery.canvas import (chain, chord, chunks, maybe_signature,
+                               signature, subtask, xmap, xstarmap)
     from celery.utils import uuid
 
 # Eventlet/gevent patching must happen before importing

@@ -3,8 +3,8 @@
 This module defines the :class:`Request` class, that specifies
 how tasks are executed.
 """
-import os
 import logging
+import os
 import sys
 from datetime import datetime
 from time import monotonic, time
@@ -17,16 +17,9 @@ from kombu.utils.objects import cached_property
 from celery import current_app, signals
 from celery.app.task import Context
 from celery.app.trace import fast_trace_task, trace_task, trace_task_ret
-from celery.exceptions import (
-    Ignore,
-    InvalidTaskError,
-    Reject,
-    Retry,
-    TaskRevokedError,
-    Terminated,
-    TimeLimitExceeded,
-    WorkerLostError,
-)
+from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
+                               TaskRevokedError, Terminated,
+                               TimeLimitExceeded, WorkerLostError)
 from celery.platforms import signals as _signals
 from celery.utils.functional import maybe, noop
 from celery.utils.log import get_logger

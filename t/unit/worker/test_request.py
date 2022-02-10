@@ -12,26 +12,13 @@ from kombu.utils.encoding import from_utf8, safe_repr, safe_str
 from kombu.utils.uuid import uuid
 
 from celery import states
-from celery.app.trace import (
-    TraceInfo,
-    build_tracer,
-    fast_trace_task,
-    mro_lookup,
-    reset_worker_optimizations,
-    setup_worker_optimizations,
-    trace_task,
-    trace_task_ret,
-)
+from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task,
+                              mro_lookup, reset_worker_optimizations,
+                              setup_worker_optimizations, trace_task,
+                              trace_task_ret)
 from celery.backends.base import BaseDictBackend
-from celery.exceptions import (
-    Ignore,
-    InvalidTaskError,
-    Reject,
-    Retry,
-    TaskRevokedError,
-    Terminated,
-    WorkerLostError,
-)
+from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
+                               TaskRevokedError, Terminated, WorkerLostError)
 from celery.signals import task_failure, task_retry, task_revoked
 from celery.worker import request as module
 from celery.worker import strategy
