@@ -187,7 +187,7 @@ def rate_limit(state, task_name, rate_limit, **kwargs):
     """Tell worker(s) to modify the rate limit for a task by type.
 
     See Also:
-        :attr:`celery.task.base.Task.rate_limit`.
+        :attr:`celery.app.task.Task.rate_limit`.
 
     Arguments:
         task_name (str): Type of task to set rate limit for.
@@ -310,6 +310,8 @@ def hello(state, from_node, revoked=None, **kwargs):
         logger.info('sync with %s', from_node)
         if revoked:
             worker_state.revoked.update(revoked)
+        # Do not send expired items to the other worker.
+        worker_state.revoked.purge()
         return {
             'revoked': worker_state.revoked._data,
             'clock': state.app.clock.forward(),
@@ -362,9 +364,9 @@ def reserved(state, **kwargs):
 
 
 @inspect_command(alias='dump_active')
-def active(state, **kwargs):
+def active(state, safe=False, **kwargs):
     """List of tasks currently being executed."""
-    return [request.info()
+    return [request.info(safe=safe)
             for request in state.tset(worker_state.active_requests)]
 
 

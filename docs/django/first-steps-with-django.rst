@@ -19,8 +19,8 @@ Using Celery with Django
 
 .. note::
 
-    Celery 4.0 supports Django 1.8 and newer versions. Please use Celery 3.1
-    for versions older than Django 1.8.
+    Celery 5.0.x supports Django 1.11 LTS or newer versions. Please use Celery 4.4.x
+    for versions older than Django 1.11.
 
 To use Celery with your Django project you must first define
 an instance of the Celery library (called an "app")
@@ -152,15 +152,6 @@ concrete app instance:
 
     You can find the full source code for the Django example project at:
     https://github.com/celery/celery/tree/master/examples/django/
-
-.. admonition:: Relative Imports
-
-    You have to be consistent in how you import the task module.
-    For example, if you have ``project.app`` in ``INSTALLED_APPS``, then you
-    must also import the tasks ``from project.app`` or else the names
-    of the tasks will end up being different.
-
-    See :ref:`task-naming-relative-imports`
 
 Extensions
 ==========

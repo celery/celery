@@ -27,7 +27,7 @@ class Certificate:
 
     def has_expired(self):
         """Check if the certificate has expired."""
-        return datetime.datetime.now() > self._cert.not_valid_after
+        return datetime.datetime.utcnow() >= self._cert.not_valid_after
 
     def get_pubkey(self):
         """Get public key from certificate."""
@@ -85,7 +85,7 @@ class FSCertStore(CertStore):
     """File system certificate store."""
 
     def __init__(self, path):
-        CertStore.__init__(self)
+        super().__init__()
         if os.path.isdir(path):
             path = os.path.join(path, '*')
         for p in glob.glob(path):

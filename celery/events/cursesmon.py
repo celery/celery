@@ -483,7 +483,7 @@ class DisplayThread(threading.Thread):  # pragma: no cover
     def __init__(self, display):
         self.display = display
         self.shutdown = False
-        threading.Thread.__init__(self)
+        super().__init__()
 
     def run(self):
         while not self.shutdown:

@@ -64,11 +64,12 @@ consider enabling the :setting:`task_reject_on_worker_lost` setting.
     the process by force so only use them to detect cases where you haven't
     used manual timeouts yet.
 
-    The default prefork pool scheduler is not friendly to long-running tasks,
-    so if you have tasks that run for minutes/hours make sure you enable
-    the :option:`-Ofair <celery worker -O>` command-line argument to
-    the :program:`celery worker`. See :ref:`optimizing-prefetch-limit` for more
-    information, and for the best performance route long-running and
+    In previous versions, the default prefork pool scheduler was not friendly
+    to long-running tasks, so if you had tasks that ran for minutes/hours, it
+    was advised to enable the :option:`-Ofair <celery worker -O>` command-line
+    argument to the :program:`celery worker`. However, as of version 4.0,
+    -Ofair is now the default scheduling strategy. See :ref:`optimizing-prefetch-limit`
+    for more information, and for the best performance route long-running and
     short-running tasks to dedicated workers (:ref:`routing-automatic`).
 
     If your worker hangs then please investigate what tasks are running
@@ -91,7 +92,7 @@ Basics
 ======
 
 You can easily create a task from any callable by using
-the :meth:`~@task` decorator:
+the :meth:`@task` decorator:
 
 .. code-block:: python
 
@@ -153,7 +154,7 @@ be the task instance (``self``), just like Python bound methods:
 
     logger = get_task_logger(__name__)
 
-    @task(bind=True)
+    @app.task(bind=True)
     def add(self, x, y):
         logger.info(self.request.id)
 
@@ -175,7 +176,7 @@ The ``base`` argument to the task decorator specifies the base class of the task
         def on_failure(self, exc, task_id, args, kwargs, einfo):
             print('{0!r} failed: {1!r}'.format(task_id, exc))
 
-    @task(base=MyTask)
+    @app.task(base=MyTask)
     def add(x, y):
         raise KeyError()
 
@@ -236,92 +237,6 @@ named :file:`tasks.py`:
     >>> add.name
     'tasks.add'
 
-.. _task-naming-relative-imports:
-
-Automatic naming and relative imports
--------------------------------------
-
-.. sidebar:: Absolute Imports
-
-    The best practice for developers targeting Python 2 is to add the
-    following to the top of **every module**:
-
-    .. code-block:: python
-
-        from __future__ import absolute_import
-
-    This will force you to always use absolute imports so you will
-    never have any problems with tasks using relative names.
-
-    Absolute imports are the default in Python 3 so you don't need this
-    if you target that version.
-
-Relative imports and automatic name generation don't go well together,
-so if you're using relative imports you should set the name explicitly.
-
-For example if the client imports the module ``"myapp.tasks"``
-as ``".tasks"``, and the worker imports the module as ``"myapp.tasks"``,
-the generated names won't match and an :exc:`~@NotRegistered` error will
-be raised by the worker.
-
-This is also the case when using Django and using ``project.myapp``-style
-naming in ``INSTALLED_APPS``:
-
-.. code-block:: python
-
-    INSTALLED_APPS = ['project.myapp']
-
-If you install the app under the name ``project.myapp`` then the
-tasks module will be imported as ``project.myapp.tasks``,
-so you must make sure you always import the tasks using the same name:
-
-.. code-block:: pycon
-
-    >>> from project.myapp.tasks import mytask   # << GOOD
-
-    >>> from myapp.tasks import mytask    # << BAD!!!
-
-The second example will cause the task to be named differently
-since the worker and the client imports the modules under different names:
-
-.. code-block:: pycon
-
-    >>> from project.myapp.tasks import mytask
-    >>> mytask.name
-    'project.myapp.tasks.mytask'
-
-    >>> from myapp.tasks import mytask
-    >>> mytask.name
-    'myapp.tasks.mytask'
-
-For this reason you must be consistent in how you
-import modules, and that is also a Python best practice.
-
-Similarly, you shouldn't use old-style relative imports:
-
-.. code-block:: python
-
-    from module import foo   # BAD!
-
-    from proj.module import foo  # GOOD!
-
-New-style relative imports are fine and can be used:
-
-.. code-block:: python
-
-    from .module import foo  # GOOD!
-
-If you want to use Celery with a project already using these patterns
-extensively and you don't have the time to refactor the existing code
-then you can consider specifying the names explicitly instead of relying
-on the automatic naming:
-
-.. code-block:: python
-
-    @task(name='proj.tasks.add')
-    def add(x, y):
-        return x + y
-
 .. _task-name-generator-info:
 
 Changing the automatic naming behavior
@@ -359,7 +274,7 @@ may contain:
         def gen_task_name(self, name, module):
             if module.endswith('.tasks'):
                 module = module[:-6]
-            return super(MyCelery, self).gen_task_name(name, module)
+            return super().gen_task_name(name, module)
 
     app = MyCelery('main')
 
@@ -456,6 +371,14 @@ The request defines the following attributes:
         The last item in this list will be the next task to succeed the
         current task.  If using version one of the task protocol the chain
         tasks will be in ``request.callbacks`` instead.
+
+.. versionadded:: 5.2
+
+:properties: Mapping of message properties received with this task message
+             (may be :const:`None` or :const:`{}`)
+
+:replaced_task_nesting: How many times the task was replaced, if at all.
+                        (may be :const:`0`)
 
 Example
 -------
@@ -742,7 +665,7 @@ Sometimes you just want to retry a task whenever a particular exception
 is raised.
 
 Fortunately, you can tell Celery to automatically retry a task using
-`autoretry_for` argument in the :meth:`~@Celery.task` decorator:
+`autoretry_for` argument in the :meth:`@task` decorator:
 
 .. code-block:: python
 
@@ -753,7 +676,7 @@ Fortunately, you can tell Celery to automatically retry a task using
         return twitter.refresh_timeline(user)
 
 If you want to specify custom arguments for an internal :meth:`~@Task.retry`
-call, pass `retry_kwargs` argument to :meth:`~@Celery.task` decorator:
+call, pass `retry_kwargs` argument to :meth:`@task` decorator:
 
 .. code-block:: python
 
@@ -805,13 +728,13 @@ via options documented below.
 
 .. versionadded:: 4.4
 
-You can also set `autoretry_for`, `retry_kwargs`, `retry_backoff`, `retry_backoff_max` and `retry_jitter` options in class-based tasks:
+You can also set `autoretry_for`, `max_retries`, `retry_backoff`, `retry_backoff_max` and `retry_jitter` options in class-based tasks:
 
 .. code-block:: python
 
     class BaseTaskWithRetry(Task):
         autoretry_for = (TypeError,)
-        retry_kwargs = {'max_retries': 5}
+        max_retries = 5
         retry_backoff = True
         retry_backoff_max = 700
         retry_jitter = False
@@ -822,12 +745,10 @@ You can also set `autoretry_for`, `retry_kwargs`, `retry_backoff`, `retry_backof
     during the execution of the task, the task will automatically be retried.
     By default, no exceptions will be autoretried.
 
-.. attribute:: Task.retry_kwargs
+.. attribute:: Task.max_retries
 
-    A dictionary. Use this to customize how autoretries are executed.
-    Note that if you use the exponential backoff options below, the `countdown`
-    task option will be determined by Celery's autoretry system, and any
-    `countdown` included in this dictionary will be ignored.
+    A number. Maximum number of retries before giving up. A value of ``None``
+    means task will retry forever. By default, this option is set to ``3``.
 
 .. attribute:: Task.retry_backoff
 
@@ -1522,6 +1443,18 @@ The default value is the class provided by Celery: ``'celery.app.task:Task'``.
 Handlers
 --------
 
+.. method:: before_start(self, task_id, args, kwargs)
+
+    Run by the worker before the task starts executing.
+
+    .. versionadded:: 5.2
+
+    :param task_id: Unique id of the task to execute.
+    :param args: Original arguments for the task to execute.
+    :param kwargs: Original keyword arguments for the task to execute.
+
+    The return value of this handler is ignored.
+
 .. method:: after_return(self, status, retval, task_id, args, kwargs, einfo)
 
     Handler called after the task returns.
@@ -1607,6 +1540,7 @@ limits, and other failures.
 .. code-block:: python
 
    import logging
+   from celery import Task
    from celery.worker.request import Request
 
    logger = logging.getLogger('my.package')
@@ -1623,7 +1557,7 @@ limits, and other failures.
               )
 
        def on_failure(self, exc_info, send_failed_event=True, return_ok=False):
-           super(Request, self).on_failure(
+           super().on_failure(
                exc_info,
                send_failed_event=send_failed_event,
                return_ok=return_ok

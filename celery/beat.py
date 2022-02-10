@@ -203,6 +203,24 @@ class ScheduleEntry:
         return not self == other
 
 
+def _evaluate_entry_args(entry_args):
+    if not entry_args:
+        return []
+    return [
+        v() if isinstance(v, BeatLazyFunc) else v
+        for v in entry_args
+    ]
+
+
+def _evaluate_entry_kwargs(entry_kwargs):
+    if not entry_kwargs:
+        return {}
+    return {
+        k: v() if isinstance(v, BeatLazyFunc) else v
+        for k, v in entry_kwargs.items()
+    }
+
+
 class Scheduler:
     """Scheduler for periodic tasks.
 
@@ -380,8 +398,8 @@ class Scheduler:
         task = self.app.tasks.get(entry.task)
 
         try:
-            entry_args = [v() if isinstance(v, BeatLazyFunc) else v for v in (entry.args or [])]
-            entry_kwargs = {k: v() if isinstance(v, BeatLazyFunc) else v for k, v in entry.kwargs.items()}
+            entry_args = _evaluate_entry_args(entry.args)
+            entry_kwargs = _evaluate_entry_kwargs(entry.kwargs)
             if task:
                 return task.apply_async(entry_args, entry_kwargs,
                                         producer=producer,
@@ -494,7 +512,7 @@ class PersistentScheduler(Scheduler):
 
     def __init__(self, *args, **kwargs):
         self.schedule_filename = kwargs.get('schedule_filename')
-        Scheduler.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def _remove_db(self):
         for suffix in self.known_suffixes:
@@ -685,7 +703,7 @@ try:
 except NotImplementedError:     # pragma: no cover
     _Process = None
 else:
-    class _Process(Process):    # noqa
+    class _Process(Process):
 
         def __init__(self, app, **kwargs):
             super().__init__()

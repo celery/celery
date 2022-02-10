@@ -279,6 +279,24 @@ class test_chord(ChordCase):
         finally:
             chord.run = prev
 
+    def test_init(self):
+        from celery import chord
+        from celery.utils.serialization import pickle
+
+        @self.app.task(shared=False)
+        def addX(x, y):
+            return x + y
+
+        @self.app.task(shared=False)
+        def sumX(n):
+            return sum(n)
+
+        x = chord(addX.s(i, i) for i in range(10))
+        # kwargs used to nest and recurse in serialization/deserialization
+        # (#6810)
+        assert x.kwargs['kwargs'] == {}
+        assert pickle.loads(pickle.dumps(x)).kwargs == x.kwargs
+
 
 class test_add_to_chord:
 
@@ -342,3 +360,13 @@ class test_Chord_task(ChordCase):
         Chord(group(self.add.signature((i, i)) for i in range(5)), body)
         Chord([self.add.signature((j, j)) for j in range(5)], body)
         assert self.app.backend.apply_chord.call_count == 2
+
+    @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
+    def test_run__chord_size_set(self):
+        Chord = self.app.tasks['celery.chord']
+        body = self.add.signature()
+        group_size = 4
+        group1 = group(self.add.signature((i, i)) for i in range(group_size))
+        result = Chord(group1, body)
+
+        self.app.backend.set_chord_size.assert_called_once_with(result.parent.id, group_size)

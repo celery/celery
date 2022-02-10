@@ -4,12 +4,12 @@ from contextlib import contextmanager
 from unittest.mock import Mock, patch
 
 import pytest
-from case import mock
 from kombu.utils.encoding import ensure_bytes, str_to_bytes
 
 from celery import signature, states, uuid
 from celery.backends.cache import CacheBackend, DummyClient, backends
 from celery.exceptions import ImproperlyConfigured
+from t.unit import conftest
 
 
 class SomeClass:
@@ -71,12 +71,12 @@ class test_CacheBackend:
 
     def test_apply_chord(self):
         tb = CacheBackend(backend='memory://', app=self.app)
-        result = self.app.GroupResult(
+        result_args = (
             uuid(),
             [self.app.AsyncResult(uuid()) for _ in range(3)],
         )
-        tb.apply_chord(result, None)
-        assert self.app.GroupResult.restore(result.id, backend=tb) == result
+        tb.apply_chord(result_args, None)
+        assert self.app.GroupResult.restore(result_args[0], backend=tb) == self.app.GroupResult(*result_args)
 
     @patch('celery.result.GroupResult.restore')
     def test_on_chord_part_return(self, restore):
@@ -91,12 +91,12 @@ class test_CacheBackend:
         self.app.tasks['foobarbaz'] = task
         task.request.chord = signature(task)
 
-        result = self.app.GroupResult(
+        result_args = (
             uuid(),
             [self.app.AsyncResult(uuid()) for _ in range(3)],
         )
-        task.request.group = result.id
-        tb.apply_chord(result, None)
+        task.request.group = result_args[0]
+        tb.apply_chord(result_args, None)
 
         deps.join_native.assert_not_called()
         tb.on_chord_part_return(task.request, 'SUCCESS', 10)
@@ -148,7 +148,7 @@ class test_CacheBackend:
             'cache+memcached://127.0.0.1:11211;127.0.0.2:11211;127.0.0.3/'
         )
         worker = self.app.Worker()
-        with mock.stdouts():
+        with conftest.stdouts():
             worker.on_start()
             assert worker.startup_info()
 
@@ -201,31 +201,31 @@ class test_get_best_memcache(MockCacheMixin):
 
     def test_pylibmc(self):
         with self.mock_pylibmc():
-            with mock.reset_modules('celery.backends.cache'):
+            with conftest.reset_modules('celery.backends.cache'):
                 from celery.backends import cache
                 cache._imp = [None]
                 assert cache.get_best_memcache()[0].__module__ == 'pylibmc'
 
-    def test_memcache(self):
+    @pytest.mark.masked_modules('pylibmc')
+    def test_memcache(self, mask_modules):
         with self.mock_memcache():
-            with mock.reset_modules('celery.backends.cache'):
-                with mock.mask_modules('pylibmc'):
-                    from celery.backends import cache
-                    cache._imp = [None]
-                    assert (cache.get_best_memcache()[0]().__module__ ==
-                            'memcache')
-
-    def test_no_implementations(self):
-        with mock.mask_modules('pylibmc', 'memcache'):
-            with mock.reset_modules('celery.backends.cache'):
+            with conftest.reset_modules('celery.backends.cache'):
                 from celery.backends import cache
                 cache._imp = [None]
-                with pytest.raises(ImproperlyConfigured):
-                    cache.get_best_memcache()
+                assert (cache.get_best_memcache()[0]().__module__ ==
+                        'memcache')
+
+    @pytest.mark.masked_modules('pylibmc', 'memcache')
+    def test_no_implementations(self, mask_modules):
+        with conftest.reset_modules('celery.backends.cache'):
+            from celery.backends import cache
+            cache._imp = [None]
+            with pytest.raises(ImproperlyConfigured):
+                cache.get_best_memcache()
 
     def test_cached(self):
         with self.mock_pylibmc():
-            with mock.reset_modules('celery.backends.cache'):
+            with conftest.reset_modules('celery.backends.cache'):
                 from celery.backends import cache
                 cache._imp = [None]
                 cache.get_best_memcache()[0](behaviors={'foo': 'bar'})
@@ -241,30 +241,30 @@ class test_get_best_memcache(MockCacheMixin):
 
 class test_memcache_key(MockCacheMixin):
 
-    def test_memcache_unicode_key(self):
+    @pytest.mark.masked_modules('pylibmc')
+    def test_memcache_unicode_key(self, mask_modules):
         with self.mock_memcache():
-            with mock.reset_modules('celery.backends.cache'):
-                with mock.mask_modules('pylibmc'):
-                    from celery.backends import cache
-                    cache._imp = [None]
-                    task_id, result = str(uuid()), 42
-                    b = cache.CacheBackend(backend='memcache', app=self.app)
-                    b.store_result(task_id, result, state=states.SUCCESS)
-                    assert b.get_result(task_id) == result
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                cache._imp = [None]
+                task_id, result = str(uuid()), 42
+                b = cache.CacheBackend(backend='memcache', app=self.app)
+                b.store_result(task_id, result, state=states.SUCCESS)
+                assert b.get_result(task_id) == result
 
-    def test_memcache_bytes_key(self):
+    @pytest.mark.masked_modules('pylibmc')
+    def test_memcache_bytes_key(self, mask_modules):
         with self.mock_memcache():
-            with mock.reset_modules('celery.backends.cache'):
-                with mock.mask_modules('pylibmc'):
-                    from celery.backends import cache
-                    cache._imp = [None]
-                    task_id, result = str_to_bytes(uuid()), 42
-                    b = cache.CacheBackend(backend='memcache', app=self.app)
-                    b.store_result(task_id, result, state=states.SUCCESS)
-                    assert b.get_result(task_id) == result
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                cache._imp = [None]
+                task_id, result = str_to_bytes(uuid()), 42
+                b = cache.CacheBackend(backend='memcache', app=self.app)
+                b.store_result(task_id, result, state=states.SUCCESS)
+                assert b.get_result(task_id) == result
 
     def test_pylibmc_unicode_key(self):
-        with mock.reset_modules('celery.backends.cache'):
+        with conftest.reset_modules('celery.backends.cache'):
             with self.mock_pylibmc():
                 from celery.backends import cache
                 cache._imp = [None]
@@ -274,7 +274,7 @@ class test_memcache_key(MockCacheMixin):
                 assert b.get_result(task_id) == result
 
     def test_pylibmc_bytes_key(self):
-        with mock.reset_modules('celery.backends.cache'):
+        with conftest.reset_modules('celery.backends.cache'):
             with self.mock_pylibmc():
                 from celery.backends import cache
                 cache._imp = [None]

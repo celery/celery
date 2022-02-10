@@ -22,6 +22,7 @@ from decimal import Decimal
 from itertools import islice
 from operator import itemgetter
 from time import time
+from typing import Mapping
 from weakref import WeakSet, ref
 
 from kombu.clocks import timetuple
@@ -50,10 +51,10 @@ HEARTBEAT_EXPIRE_WINDOW = 200
 #: before we alert that clocks may be unsynchronized.
 HEARTBEAT_DRIFT_MAX = 16
 
-DRIFT_WARNING = """\
-Substantial drift from %s may mean clocks are out of sync.  Current drift is
-%s seconds.  [orig: %s recv: %s]
-"""
+DRIFT_WARNING = (
+    "Substantial drift from %s may mean clocks are out of sync.  Current drift is "
+    "%s seconds.  [orig: %s recv: %s]"
+)
 
 logger = get_logger(__name__)
 warn = logger.warning
@@ -99,7 +100,7 @@ class CallableDefaultdict(defaultdict):
         return self.fun(*args, **kwargs)
 
 
-Callable.register(CallableDefaultdict)  # noqa: E305
+Callable.register(CallableDefaultdict)
 
 
 @memoize(maxsize=1000, keyfun=lambda a, _: a[0])
@@ -429,15 +430,13 @@ class State:
         self._tasks_to_resolve = {}
         self.rebuild_taskheap()
 
-        # type: Mapping[TaskName, WeakSet[Task]]
         self.tasks_by_type = CallableDefaultdict(
-            self._tasks_by_type, WeakSet)
+            self._tasks_by_type, WeakSet)  # type: Mapping[str, WeakSet[Task]]
         self.tasks_by_type.update(
             _deserialize_Task_WeakSet_Mapping(tasks_by_type, self.tasks))
 
-        # type: Mapping[Hostname, WeakSet[Task]]
         self.tasks_by_worker = CallableDefaultdict(
-            self._tasks_by_worker, WeakSet)
+            self._tasks_by_worker, WeakSet)  # type: Mapping[str, WeakSet[Task]]
         self.tasks_by_worker.update(
             _deserialize_Task_WeakSet_Mapping(tasks_by_worker, self.tasks))
 
@@ -517,7 +516,7 @@ class State:
         return self._event(dict(fields, type='-'.join(['worker', type_])))[0]
 
     def _create_dispatcher(self):
-        # noqa: C901
+
         # pylint: disable=too-many-statements
         # This code is highly optimized, but not for reusability.
         get_handler = self.handlers.__getitem__

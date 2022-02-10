@@ -121,7 +121,7 @@ class Worker(WorkController):
 
     def on_start(self):
         app = self.app
-        WorkController.on_start(self)
+        super().on_start()
 
         # this signal can be used to, for example, change queues after
         # the -Q option has been applied.

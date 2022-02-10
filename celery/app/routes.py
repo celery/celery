@@ -2,8 +2,8 @@
 
 Contains utilities for working with task routers, (:setting:`task_routes`).
 """
+import fnmatch
 import re
-import string
 from collections import OrderedDict
 from collections.abc import Mapping
 
@@ -23,11 +23,6 @@ except AttributeError:  # pragma: no cover
 __all__ = ('MapRoute', 'Router', 'prepare')
 
 
-def glob_to_re(glob, quote=string.punctuation.replace('*', '')):
-    glob = ''.join('\\' + c if c in quote else c for c in glob)
-    return glob.replace('*', '.+?')
-
-
 class MapRoute:
     """Creates a router out of a :class:`dict`."""
 
@@ -39,7 +34,7 @@ class MapRoute:
             if isinstance(k, Pattern):
                 self.patterns[k] = v
             elif '*' in k:
-                self.patterns[re.compile(glob_to_re(k))] = v
+                self.patterns[re.compile(fnmatch.translate(k))] = v
             else:
                 self.map[k] = v
 
@@ -126,6 +121,7 @@ def expand_router_string(router):
 
 def prepare(routes):
     """Expand the :setting:`task_routes` setting."""
+
     def expand_route(route):
         if isinstance(route, (Mapping, list, tuple)):
             return MapRoute(route)

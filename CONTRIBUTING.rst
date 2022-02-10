@@ -292,13 +292,12 @@ Branches
 Current active version branches:
 
 * dev (which git calls "master") (https://github.com/celery/celery/tree/master)
-* 4.2 (https://github.com/celery/celery/tree/4.2)
-* 4.1 (https://github.com/celery/celery/tree/4.1)
+* 4.5 (https://github.com/celery/celery/tree/v4.5)
 * 3.1 (https://github.com/celery/celery/tree/3.1)
 
 You can see the state of any branch by looking at the Changelog:
 
-    https://github.com/celery/celery/blob/master/Changelog
+    https://github.com/celery/celery/blob/master/Changelog.rst
 
 If the branch is in active development the topmost version info should
 contain meta-data like:
@@ -494,19 +493,19 @@ Some useful commands to run:
     **Note:** This command will run tests for every environment defined in :file:`tox.ini`.
     It takes a while.
 
-* ``pyenv exec python{2.7,3.5,3.6,3.7,3.8} -m pytest t/unit``
+* ``pyenv exec python{3.6,3.7,3.8,3.9} -m pytest t/unit``
 
     To run unit tests using pytest.
 
-    **Note:** ``{2.7,3.5,3.6,3.7,3.8}`` means you can use any of those options.
-    e.g. ``pyenv exec python3.6 -m pytest t/unit``
+    **Note:** ``{3.6,3.7,3.8,3.9}`` means you can use any of those options.
+    e.g. ``pyenv exec python3.7 -m pytest t/unit``
 
-* ``pyenv exec python{2.7,3.5,3.6,3.7,3.8} -m pytest t/integration``
+* ``pyenv exec python{3.6,3.7,3.8,3.9} -m pytest t/integration``
 
     To run integration tests using pytest
 
-    **Note:** ``{2.7,3.5,3.6,3.7,3.8}`` means you can use any of those options.
-    e.g. ``pyenv exec python3.6 -m pytest t/unit``
+    **Note:** ``{3.6,3.7,3.8,3.9}`` means you can use any of those options.
+    e.g. ``pyenv exec python3.7 -m pytest t/unit``
 
 By default, docker-compose will mount the Celery and test folders in the Docker
 container, allowing code changes and testing to be immediately visible inside
@@ -516,7 +515,7 @@ use are also defined in the :file:`docker/docker-compose.yml` file.
 By running ``docker-compose build celery`` an image will be created with the
 name ``celery/celery:dev``. This docker image has every dependency needed
 for development installed. ``pyenv`` is used to install multiple python
-versions, the docker image offers python 2.7, 3.5, 3.6, 3.7 and 3.8.
+versions, the docker image offers python 3.6, 3.7, 3.8 and 3.9.
 The default python version is set to 3.8.
 
 The :file:`docker-compose.yml` file defines the necessary environment variables
@@ -677,7 +676,7 @@ Use the ``tox -e`` option if you only want to test specific Python versions:
 
 .. code-block:: console
 
-    $ tox -e 2.7
+    $ tox -e 3.7
 
 Building the documentation
 --------------------------
@@ -710,6 +709,20 @@ Make sure there are no errors or warnings in the build output.
 After building succeeds, the documentation is available at :file:`_build/html`.
 
 .. _contributing-verify:
+
+Build the documentation using Docker
+------------------------------------
+
+Build the documentation by running:
+
+.. code-block:: console
+
+    $ docker-compose -f docker/docker-compose.yml up --build docs
+
+The service will start a local docs server at ``:7000``. The server is using
+``sphinx-autobuild`` with the ``--watch`` option enabled, so you can live
+edit the documentation. Check the additional options and configs in
+:file:`docker/docker-compose.yml`
 
 Verifying your contribution
 ---------------------------
@@ -831,14 +844,13 @@ make it easier for the maintainers to accept your proposed changes:
       ``pytest -xv --cov=celery --cov-report=xml --cov-report term``.
       You can check the current test coverage here: https://codecov.io/gh/celery/celery
 
-- [ ] Run ``flake8`` against the code. The following commands are valid
+- [ ] Run ``pre-commit`` against the code. The following commands are valid
       and equivalent.:
 
       .. code-block:: console
 
-          $ flake8 -j 2 celery/ t/
-          $ make flakecheck
-          $ tox -e flake8
+          $ pre-commit run --all-files
+          $ tox -e lint
 
 - [ ]  Build api docs to make sure everything is OK. The following commands are valid
       and equivalent.:

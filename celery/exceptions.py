@@ -44,6 +44,7 @@ Error Hierarchy
         - :class:`~celery.exceptions.DuplicateNodenameWarning`
         - :class:`~celery.exceptions.FixupWarning`
         - :class:`~celery.exceptions.NotConfigured`
+        - :class:`~celery.exceptions.SecurityWarning`
 - :exc:`BaseException`
     - :exc:`SystemExit`
         - :exc:`~celery.exceptions.WorkerTerminate`
@@ -54,6 +55,7 @@ import numbers
 
 from billiard.exceptions import (SoftTimeLimitExceeded, Terminated,
                                  TimeLimitExceeded, WorkerLostError)
+from click import ClickException
 from kombu.exceptions import OperationalError
 
 __all__ = (
@@ -61,7 +63,7 @@ __all__ = (
     # Warnings
     'CeleryWarning',
     'AlwaysEagerIgnored', 'DuplicateNodenameWarning',
-    'FixupWarning', 'NotConfigured',
+    'FixupWarning', 'NotConfigured', 'SecurityWarning',
 
     # Core errors
     'CeleryError',
@@ -91,6 +93,8 @@ __all__ = (
 
     # Worker shutdown semi-predicates (inherits from SystemExit).
     'WorkerShutdown', 'WorkerTerminate',
+
+    'CeleryCommandException',
 )
 
 UNREGISTERED_FMT = """\
@@ -123,6 +127,10 @@ class FixupWarning(CeleryWarning):
 
 class NotConfigured(CeleryWarning):
     """Celery hasn't been configured, as no config module has been found."""
+
+
+class SecurityWarning(CeleryWarning):
+    """Potential security issue found."""
 
 
 class CeleryError(Exception):
@@ -172,10 +180,10 @@ class Retry(TaskPredicate):
         return f'Retry {self.humanize()}'
 
     def __reduce__(self):
-        return self.__class__, (self.message, self.excs, self.when)
+        return self.__class__, (self.message, self.exc, self.when)
 
 
-RetryTaskError = Retry  # noqa: E305 XXX compat
+RetryTaskError = Retry  # XXX compat
 
 
 class Ignore(TaskPredicate):
@@ -263,7 +271,7 @@ class WorkerTerminate(SystemExit):
     """Signals that the worker should terminate immediately."""
 
 
-SystemTerminate = WorkerTerminate  # noqa: E305 XXX compat
+SystemTerminate = WorkerTerminate  # XXX compat
 
 
 class WorkerShutdown(SystemExit):
@@ -285,7 +293,7 @@ class BackendGetMetaError(BackendError):
 
 
 class BackendStoreError(BackendError):
-    """An issue writing from the backend."""
+    """An issue writing to the backend."""
 
     def __init__(self, *args, **kwargs):
         self.state = kwargs.get('state', "")
@@ -293,3 +301,11 @@ class BackendStoreError(BackendError):
 
     def __repr__(self):
         return super().__repr__() + " state:" + self.state + " task_id:" + self.task_id
+
+
+class CeleryCommandException(ClickException):
+    """A general command exception which stores an exit code."""
+
+    def __init__(self, message, exit_code):
+        super().__init__(message=message)
+        self.exit_code = exit_code

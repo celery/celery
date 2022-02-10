@@ -41,6 +41,8 @@ def process_initializer(app, hostname):
     Initialize the child pool process to ensure the correct
     app instance is used and things like logging works.
     """
+    # Each running worker gets SIGKILL by OS when main process exits.
+    platforms.set_pdeathsig('SIGKILL')
     _set_task_join_will_block(True)
     platforms.signals.reset(*WORKER_SIGRESET)
     platforms.signals.ignore(*WORKER_SIGIGNORE)

@@ -1,8 +1,14 @@
 """The ``celery call`` program used to send tasks from the command-line."""
 import click
 
+<<<<<<< HEAD
 from celery.bin.base import (ISO8601, ISO8601_OR_FLOAT, JSON, CeleryCommand,
                              CeleryOption, handle_preload_options)
+=======
+from celery.bin.base import (ISO8601, ISO8601_OR_FLOAT, JSON_ARRAY,
+                             JSON_OBJECT, CeleryCommand, CeleryOption,
+                             handle_preload_options)
+>>>>>>> v5.2.3
 
 
 @click.command(cls=CeleryCommand)
@@ -10,14 +16,14 @@ from celery.bin.base import (ISO8601, ISO8601_OR_FLOAT, JSON, CeleryCommand,
 @click.option('-a',
               '--args',
               cls=CeleryOption,
-              type=JSON,
+              type=JSON_ARRAY,
               default='[]',
               help_group="Calling Options",
               help="Positional arguments.")
 @click.option('-k',
               '--kwargs',
               cls=CeleryOption,
-              type=JSON,
+              type=JSON_OBJECT,
               default='{}',
               help_group="Calling Options",
               help="Keyword arguments.")

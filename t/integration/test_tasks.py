@@ -9,7 +9,8 @@ from celery import group
 from .conftest import get_active_redis_channels
 from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add,
                     add_ignore_result, add_not_typed, fail, print_unicode,
-                    retry, retry_once, retry_once_priority, sleeping)
+                    retry, retry_once, retry_once_priority, return_properties,
+                    sleeping)
 
 TIMEOUT = 10
 
@@ -100,6 +101,10 @@ class test_tasks:
         """Testing calling task with ignoring results."""
         result = add.apply_async((1, 2), ignore_result=True)
         assert result.get() is None
+        # We wait since it takes a bit of time for the result to be
+        # persisted in the result backend.
+        sleep(1)
+        assert result.result is None
 
     @flaky
     def test_timeout(self, manager):
@@ -176,6 +181,22 @@ class test_tasks:
         assert result.successful() is False
 
     @flaky
+    def test_revoked(self, manager):
+        """Testing revoking of task"""
+        # Fill the queue with tasks to fill the queue
+        for _ in range(4):
+            sleeping.delay(2)
+        # Execute task and revoke it
+        result = add.apply_async((1, 1))
+        result.revoke()
+        with pytest.raises(celery.exceptions.TaskRevokedError):
+            result.get()
+        assert result.status == 'REVOKED'
+        assert result.ready() is True
+        assert result.failed() is False
+        assert result.successful() is False
+
+    @flaky
     def test_wrong_arguments(self, manager):
         """Tests that proper exceptions are raised when task is called with wrong arguments."""
         with pytest.raises(TypeError):
@@ -249,6 +270,11 @@ class test_tasks:
             group(print_unicode.s() for _ in range(5))(),
             timeout=TIMEOUT, propagate=True,
         )
+
+    @flaky
+    def test_properties(self, celery_session_worker):
+        res = return_properties.apply_async(app_id="1234")
+        assert res.get(timeout=TIMEOUT)["app_id"] == "1234"
 
 
 class tests_task_redis_result_backend:

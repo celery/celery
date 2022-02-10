@@ -66,7 +66,7 @@ class LocalTimezone(tzinfo):
         else:
             self.DSTOFFSET = self.STDOFFSET
         self.DSTDIFF = self.DSTOFFSET - self.STDOFFSET
-        tzinfo.__init__(self)
+        super().__init__()
 
     def __repr__(self):
         return f'<LocalTimezone: UTC{int(self.DSTOFFSET.total_seconds() / 3600):+03d}>'

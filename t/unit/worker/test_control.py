@@ -1,5 +1,6 @@
 import socket
 import sys
+import time
 from collections import defaultdict
 from datetime import datetime, timedelta
 from queue import Queue as FastQueue
@@ -11,12 +12,12 @@ from kombu.utils.uuid import uuid
 
 from celery.utils.collections import AttributeDict
 from celery.utils.timer2 import Timer
-from celery.worker import WorkController as _WC  # noqa
+from celery.worker import WorkController as _WC
 from celery.worker import consumer, control
 from celery.worker import state as worker_state
 from celery.worker.pidbox import Pidbox, gPidbox
 from celery.worker.request import Request
-from celery.worker.state import revoked
+from celery.worker.state import REVOKE_EXPIRES, revoked
 
 hostname = socket.gethostname()
 
@@ -192,6 +193,22 @@ class test_ControlPanel:
         finally:
             worker_state.revoked.discard('revoked1')
 
+    def test_hello_does_not_send_expired_revoked_items(self):
+        consumer = Consumer(self.app)
+        panel = self.create_panel(consumer=consumer)
+        panel.state.app.clock.value = 313
+        panel.state.hostname = 'elaine@vandelay.com'
+        # Add an expired revoked item to the revoked set.
+        worker_state.revoked.add(
+            'expired_in_past',
+            now=time.monotonic() - REVOKE_EXPIRES - 1
+        )
+        x = panel.handle('hello', {
+            'from_node': 'george@vandelay.com',
+            'revoked': {'1234', '4567', '891'}
+        })
+        assert 'expired_in_past' not in x['revoked']
+
     def test_conf(self):
         consumer = Consumer(self.app)
         panel = self.create_panel(consumer=consumer)
@@ -295,6 +312,20 @@ class test_ControlPanel:
         worker_state.active_requests.add(r)
         try:
             assert self.panel.handle('dump_active')
+        finally:
+            worker_state.active_requests.discard(r)
+
+    def test_active_safe(self):
+        kwargsrepr = '<anything>'
+        r = Request(
+            self.TaskMessage(self.mytask.name, id='do re mi',
+                             kwargsrepr=kwargsrepr),
+            app=self.app,
+        )
+        worker_state.active_requests.add(r)
+        try:
+            active_resp = self.panel.handle('dump_active', {'safe': True})
+            assert active_resp[0]['kwargs'] == kwargsrepr
         finally:
             worker_state.active_requests.discard(r)
 

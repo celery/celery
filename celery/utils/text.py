@@ -5,6 +5,7 @@ from collections.abc import Callable
 from functools import partial
 from pprint import pformat
 from textwrap import fill
+from typing import Any, List, Mapping, Pattern
 
 __all__ = (
     'abbr', 'abbrtask', 'dedent', 'dedent_initial',
@@ -32,13 +33,13 @@ def str_to_list(s):
 
 def dedent_initial(s, n=4):
     # type: (str, int) -> str
-    """Remove identation from first line of text."""
+    """Remove indentation from first line of text."""
     return s[n:] if s[:n] == ' ' * n else s
 
 
 def dedent(s, n=4, sep='\n'):
     # type: (str, int, str) -> str
-    """Remove identation."""
+    """Remove indentation."""
     return sep.join(dedent_initial(l) for l in s.splitlines())
 
 
@@ -111,7 +112,7 @@ def pretty(value, width=80, nl_width=80, sep='\n', **kw):
     # type: (str, int, int, str, **Any) -> str
     """Format value for printing to console."""
     if isinstance(value, dict):
-        return '{{{0} {1}'.format(sep, pformat(value, 4, nl_width)[1:])
+        return f'{{{sep} {pformat(value, 4, nl_width)[1:]}'
     elif isinstance(value, tuple):
         return '{}{}{}'.format(
             sep, ' ' * 4, pformat(value, width=nl_width, **kw),

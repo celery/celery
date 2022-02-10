@@ -24,6 +24,14 @@ def add(x, y, z=None):
         return x + y
 
 
+@shared_task
+def write_to_file_and_return_int(file_name, i):
+    with open(file_name, mode="a", buffering=1) as file_handle:
+        file_handle.write(str(i) + "\n")
+
+    return i
+
+
 @shared_task(typing=False)
 def add_not_typed(x, y):
     """Add two numbers, but don't check arguments"""
@@ -44,9 +52,7 @@ def raise_error(*args):
 
 @shared_task
 def chain_add(x, y):
-    (
-        add.s(x, x) | add.s(y)
-    ).apply_async()
+    (add.s(x, x) | add.s(y)).apply_async()
 
 
 @shared_task
@@ -136,7 +142,7 @@ def add_chord_to_chord(self, nums, val):
 
 
 @shared_task
-def print_unicode(log_message='håå®ƒ valmuefrø', print_message='hiöäüß'):
+def print_unicode(log_message="håå®ƒ valmuefrø", print_message="hiöäüß"):
     """Task that both logs and print strings containing funny characters."""
     logger.warning(log_message)
     print(print_message)
@@ -179,10 +185,10 @@ def retry(self, return_value=None):
     the result. Otherwise it fails.
     """
     if return_value:
-        attempt = getattr(self, 'attempt', 0)
-        print('attempt', attempt)
+        attempt = getattr(self, "attempt", 0)
+        print("attempt", attempt)
         if attempt >= 3:
-            delattr(self, 'attempt')
+            delattr(self, "attempt")
             return return_value
         self.attempt = attempt + 1
 
@@ -194,49 +200,53 @@ def retry_once(self, *args, expires=60.0, max_retries=1, countdown=0.1):
     """Task that fails and is retried. Returns the number of retries."""
     if self.request.retries:
         return self.request.retries
-    raise self.retry(countdown=countdown,
-                     max_retries=max_retries)
+    raise self.retry(countdown=countdown, max_retries=max_retries)
 
 
 @shared_task(bind=True, expires=60.0, max_retries=1)
-def retry_once_priority(self, *args, expires=60.0, max_retries=1,
-                        countdown=0.1):
+def retry_once_priority(self, *args, expires=60.0, max_retries=1, countdown=0.1):
     """Task that fails and is retried. Returns the priority."""
     if self.request.retries:
-        return self.request.delivery_info['priority']
-    raise self.retry(countdown=countdown,
-                     max_retries=max_retries)
+        return self.request.delivery_info["priority"]
+    raise self.retry(countdown=countdown, max_retries=max_retries)
 
 
 @shared_task
-def redis_echo(message):
+def redis_echo(message, redis_key="redis-echo"):
     """Task that appends the message to a redis list."""
     redis_connection = get_redis_connection()
-    redis_connection.rpush('redis-echo', message)
+    redis_connection.rpush(redis_key, message)
+
+
+@shared_task
+def redis_count(redis_key="redis-count"):
+    """Task that increments a specified or well-known redis key."""
+    redis_connection = get_redis_connection()
+    redis_connection.incr(redis_key)
 
 
 @shared_task(bind=True)
 def second_order_replace1(self, state=False):
     redis_connection = get_redis_connection()
     if not state:
-        redis_connection.rpush('redis-echo', 'In A')
-        new_task = chain(second_order_replace2.s(),
-                         second_order_replace1.si(state=True))
+        redis_connection.rpush("redis-echo", "In A")
+        new_task = chain(
+            second_order_replace2.s(), second_order_replace1.si(state=True)
+        )
         raise self.replace(new_task)
     else:
-        redis_connection.rpush('redis-echo', 'Out A')
+        redis_connection.rpush("redis-echo", "Out A")
 
 
 @shared_task(bind=True)
 def second_order_replace2(self, state=False):
     redis_connection = get_redis_connection()
     if not state:
-        redis_connection.rpush('redis-echo', 'In B')
-        new_task = chain(redis_echo.s("In/Out C"),
-                         second_order_replace2.si(state=True))
+        redis_connection.rpush("redis-echo", "In B")
+        new_task = chain(redis_echo.s("In/Out C"), second_order_replace2.si(state=True))
         raise self.replace(new_task)
     else:
-        redis_connection.rpush('redis-echo', 'Out B')
+        redis_connection.rpush("redis-echo", "Out B")
 
 
 @shared_task(bind=True)
@@ -246,15 +256,7 @@ def build_chain_inside_task(self):
     This task builds a chain and returns the chain's AsyncResult
     to verify that Asyncresults are correctly converted into
     serializable objects"""
-    test_chain = (
-        add.s(1, 1) |
-        add.s(2) |
-        group(
-            add.s(3),
-            add.s(4)
-        ) |
-        add.s(5)
-    )
+    test_chain = add.s(1, 1) | add.s(2) | group(add.s(3), add.s(4)) | add.s(5)
     result = test_chain()
     return result
 
@@ -264,9 +266,9 @@ class ExpectedException(Exception):
 
     def __eq__(self, other):
         return (
-            other is not None and
-            isinstance(other, ExpectedException) and
-            self.args == other.args
+            other is not None
+            and isinstance(other, ExpectedException)
+            and self.args == other.args
         )
 
     def __hash__(self):
@@ -280,20 +282,26 @@ def fail(*args):
     raise ExpectedException(*args)
 
 
-@shared_task
-def chord_error(*args):
-    return args
+@shared_task(bind=True)
+def fail_replaced(self, *args):
+    """Replace this task with one which raises ExpectedException."""
+    raise self.replace(fail.si(*args))
 
 
 @shared_task(bind=True)
 def return_priority(self, *_args):
-    return "Priority: %s" % self.request.delivery_info['priority']
+    return "Priority: %s" % self.request.delivery_info["priority"]
+
+
+@shared_task(bind=True)
+def return_properties(self):
+    return self.request.properties
 
 
 class ClassBasedAutoRetryTask(Task):
-    name = 'auto_retry_class_task'
+    name = "auto_retry_class_task"
     autoretry_for = (ValueError,)
-    retry_kwargs = {'max_retries': 1}
+    retry_kwargs = {"max_retries": 1}
     retry_backoff = True
 
     def run(self):
@@ -355,7 +363,7 @@ def rebuild_signature(sig_dict):
 
     def _recurse(sig):
         if not isinstance(sig, Signature):
-            raise TypeError("{!r} is not a signature object".format(sig))
+            raise TypeError(f"{sig!r} is not a signature object")
         # Most canvas types have a `tasks` attribute
         if isinstance(sig, (chain, group, chord)):
             for task in sig.tasks:
@@ -363,4 +371,17 @@ def rebuild_signature(sig_dict):
         # `chord`s also have a `body` attribute
         if isinstance(sig, chord):
             _recurse(sig.body)
+
     _recurse(sig_obj)
+
+
+@shared_task
+def errback_old_style(request_id):
+    redis_count(request_id)
+    return request_id
+
+
+@shared_task
+def errback_new_style(request, exc, tb):
+    redis_count(request.id)
+    return request.id

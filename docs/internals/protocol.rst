@@ -49,6 +49,7 @@ Definition
         'argsrepr': str repr(args),
         'kwargsrepr': str repr(kwargs),
         'origin': str nodename,
+        'replaced_task_nesting': int
     }
 
     body = (
@@ -168,7 +169,7 @@ Changes from version 1
 
             def apply_async(self, args, kwargs, **options):
                 fun, real_args = self.unpack_args(*args)
-                return super(PickleTask, self).apply_async(
+                return super().apply_async(
                     (fun, real_args, kwargs), shadow=qualname(fun), **options
                 )
 

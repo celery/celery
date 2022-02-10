@@ -37,7 +37,7 @@ def fixup(app, env='DJANGO_SETTINGS_MODULE'):
     SETTINGS_MODULE = os.environ.get(env)
     if SETTINGS_MODULE and 'django' not in app.loader_cls.lower():
         try:
-            import django  # noqa
+            import django
         except ImportError:
             warnings.warn(FixupWarning(ERR_NOT_INSTALLED))
         else:

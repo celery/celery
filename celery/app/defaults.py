@@ -132,6 +132,9 @@ NAMESPACES = Namespace(
         retry_initial_backoff_sec=Option(2, type='int'),
         retry_increment_base=Option(2, type='int'),
         retry_max_attempts=Option(3, type='int'),
+        base_path=Option('', type='string'),
+        connection_timeout=Option(20, type='int'),
+        read_timeout=Option(120, type='int'),
     ),
     control=Namespace(
         queue_ttl=Option(300.0, type='float'),
@@ -175,6 +178,7 @@ NAMESPACES = Namespace(
         db=Option(type='int'),
         host=Option(type='string'),
         max_connections=Option(type='int'),
+        username=Option(type='string'),
         password=Option(type='string'),
         port=Option(type='int'),
         socket_timeout=Option(120.0, type='float'),
@@ -255,6 +259,7 @@ NAMESPACES = Namespace(
             False, type='bool', old={'celery_eager_propagates_exceptions'},
         ),
         ignore_result=Option(False, type='bool'),
+        store_eager_result=Option(False, type='bool'),
         protocol=Option(2, type='int', old={'celery_task_protocol'}),
         publish_retry=Option(
             True, type='bool', old={'celery_task_publish_retry'},
@@ -288,11 +293,17 @@ NAMESPACES = Namespace(
         __old__=OLD_NS_WORKER,
         agent=Option(None, type='string'),
         autoscaler=Option('celery.worker.autoscale:Autoscaler'),
-        concurrency=Option(0, type='int'),
+        cancel_long_running_tasks_on_connection_loss=Option(
+            False, type='bool'
+        ),
+        concurrency=Option(None, type='int'),
         consumer=Option('celery.worker.consumer:Consumer', type='string'),
         direct=Option(False, type='bool', old={'celery_worker_direct'}),
         disable_rate_limits=Option(
             False, type='bool', old={'celery_disable_rate_limits'},
+        ),
+        deduplicate_successful_tasks=Option(
+            False, type='bool'
         ),
         enable_remote_control=Option(
             True, type='bool', old={'celery_enable_remote_control'},

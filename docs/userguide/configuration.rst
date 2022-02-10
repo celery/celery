@@ -107,6 +107,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_REDIS_DB``                        :setting:`redis_db`
 ``CELERY_REDIS_HOST``                      :setting:`redis_host`
 ``CELERY_REDIS_MAX_CONNECTIONS``           :setting:`redis_max_connections`
+``CELERY_REDIS_USERNAME``                  :setting:`redis_username`
 ``CELERY_REDIS_PASSWORD``                  :setting:`redis_password`
 ``CELERY_REDIS_PORT``                      :setting:`redis_port`
 ``CELERY_REDIS_BACKEND_USE_SSL``           :setting:`redis_backend_use_ssl`
@@ -146,8 +147,9 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_SEND_SENT_EVENT``                 :setting:`task_send_sent_event`
 ``CELERY_SERIALIZER``                      :setting:`task_serializer`
 ``CELERYD_SOFT_TIME_LIMIT``                :setting:`task_soft_time_limit`
+``CELERY_TASK_TRACK_STARTED``              :setting:`task_track_started`
+``CELERY_TASK_REJECT_ON_WORKER_LOST``      :setting:`task_reject_on_worker_lost`
 ``CELERYD_TIME_LIMIT``                     :setting:`task_time_limit`
-``CELERY_TRACK_STARTED``                   :setting:`task_track_started`
 ``CELERYD_AGENT``                          :setting:`worker_agent`
 ``CELERYD_AUTOSCALER``                     :setting:`worker_autoscaler`
 ``CELERYD_CONCURRENCY``                    :setting:`worker_concurrency`
@@ -317,7 +319,7 @@ instead of a dict to choose the tasks to annotate:
 
 .. code-block:: python
 
-    class MyAnnotate(object):
+    class MyAnnotate:
 
         def annotate(self, task):
             if task.name.startswith('tasks.'):
@@ -426,6 +428,23 @@ propagate exceptions.
 
 It's the same as always running ``apply()`` with ``throw=True``.
 
+.. setting:: task_store_eager_result
+
+``task_store_eager_result``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.1
+
+Default: Disabled.
+
+If this is :const:`True` and :setting:`task_always_eager` is :const:`True`
+and :setting:`task_ignore_result` is :const:`False`,
+the results of eagerly executed tasks will be saved to the backend.
+
+By default, even with :setting:`task_always_eager` set to :const:`True`
+and :setting:`task_ignore_result` set to :const:`False`,
+the result will not be saved.
+
 .. setting:: task_remote_tracebacks
 
 ``task_remote_tracebacks``
@@ -465,7 +484,7 @@ you can set :setting:`task_store_errors_even_if_ignored`.
 Default: Disabled.
 
 If set, the worker stores all task errors in the result store even if
-:attr:`Task.ignore_result <celery.task.base.Task.ignore_result>` is on.
+:attr:`Task.ignore_result <celery.app.task.Task.ignore_result>` is on.
 
 .. setting:: task_track_started
 
@@ -836,6 +855,28 @@ Default interval for retrying chord tasks.
 
 .. _conf-database-result-backend:
 
+
+.. setting:: override_backends
+
+``override_backends``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: Disabled by default.
+
+Path to class that implements backend.
+
+Allows to override backend implementation.
+This can be useful if you need to store additional metadata about executed tasks,
+override retry policies, etc.
+
+Example:
+
+.. code-block:: python
+
+    override_backends = {"db": "custom_module.backend.class"}
+
+
+
 Database backend settings
 -------------------------
 
@@ -1109,7 +1150,7 @@ Configuring the backend URL
 This backend requires the :setting:`result_backend`
 setting to be set to a Redis or `Redis over TLS`_ URL::
 
-    result_backend = 'redis://:password@host:port/db'
+    result_backend = 'redis://username:password@host:port/db'
 
 .. _`Redis over TLS`:
     https://www.iana.org/assignments/uri-schemes/prov/rediss
@@ -1124,7 +1165,7 @@ is the same as::
 
 Use the ``rediss://`` protocol to connect to redis over TLS::
 
-    result_backend = 'rediss://:password@host:port/db?ssl_cert_reqs=required'
+    result_backend = 'rediss://username:password@host:port/db?ssl_cert_reqs=required'
 
 Note that the ``ssl_cert_reqs`` string should be one of ``required``,
 ``optional``, or ``none`` (though, for backwards compatibility, the string
@@ -1135,6 +1176,20 @@ If a Unix socket connection should be used, the URL needs to be in the format:::
     result_backend = 'socket:///path/to/redis.sock'
 
 The fields of the URL are defined as follows:
+
+#. ``username``
+
+    .. versionadded:: 5.1.0
+
+    Username used to connect to the database.
+
+    Note that this is only supported in Redis>=6.0 and with py-redis>=3.4.0
+    installed.
+
+    If you use an older database version or an older client version
+    you can omit the username::
+
+        result_backend = 'redis://:password@host:port/db'
 
 #. ``password``
 
@@ -1166,6 +1221,22 @@ When using a TLS connection (protocol is ``rediss://``), you may pass in all val
 Note that the ``ssl_cert_reqs`` string should be one of ``required``,
 ``optional``, or ``none`` (though, for backwards compatibility, the string
 may also be one of ``CERT_REQUIRED``, ``CERT_OPTIONAL``, ``CERT_NONE``).
+
+
+.. setting:: redis_backend_health_check_interval
+
+.. versionadded:: 5.1.0
+
+``redis_backend_health_check_interval``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: Not configured
+
+The Redis backend supports health checks.  This value must be
+set as an integer whose value is the number of seconds between
+health checks.  If a ConnectionError or a TimeoutError is
+encountered during the health check, the connection will be
+re-established and the command retried exactly once.
 
 .. setting:: redis_backend_use_ssl
 
@@ -1511,6 +1582,19 @@ Default: celery.
 
 The name for the storage container in which to store the results.
 
+.. setting:: azureblockblob_base_path
+
+``azureblockblob_base_path``
+~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.1
+
+Default: None.
+
+A base path in the storage container to use to store result keys. For example::
+
+    azureblockblob_base_path = 'prefix/'
+
 .. setting:: azureblockblob_retry_initial_backoff_sec
 
 ``azureblockblob_retry_initial_backoff_sec``
@@ -1536,6 +1620,24 @@ Default: 2.
 Default: 3.
 
 The maximum number of retry attempts.
+
+.. setting:: azureblockblob_connection_timeout
+
+``azureblockblob_connection_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 20.
+
+Timeout in seconds for establishing the azure block blob connection.
+
+.. setting:: azureblockblob_read_timeout
+
+``azureblockblob_read_timeout``
+~~~~~~~~~~~~~~~~~~~~
+
+Default: 120.
+
+Timeout in seconds for reading of an azure block blob.
 
 .. _conf-elasticsearch-result-backend:
 
@@ -1822,6 +1924,16 @@ This is a dict supporting the following keys:
 
     Password to authenticate to the ArangoDB server (optional).
 
+* ``http_protocol``
+
+    HTTP Protocol in ArangoDB server connection.
+    Defaults to ``http``.
+
+* ``verify``
+
+    HTTPS Verification check while creating the ArangoDB connection.
+    Defaults to ``False``.
+
 .. _conf-cosmosdbsql-result-backend:
 
 CosmosDB backend settings (experimental)
@@ -1954,14 +2066,52 @@ without any further configuration. For larger clusters you could use NFS,
 Consul K/V store backend settings
 ---------------------------------
 
-The Consul backend can be configured using a URL, for example:
+.. note::
+
+    The Consul backend requires the :pypi:`python-consul2` library:
+
+    To install this package use :command:`pip`:
+
+    .. code-block:: console
+
+        $ pip install python-consul2
+
+The Consul backend can be configured using a URL, for example::
 
     CELERY_RESULT_BACKEND = 'consul://localhost:8500/'
 
-The backend will storage results in the K/V store of Consul
-as individual keys.
+or::
 
-The backend supports auto expire of results using TTLs in Consul.
+    result_backend = 'consul://localhost:8500/'
+
+The backend will store results in the K/V store of Consul
+as individual keys. The backend supports auto expire of results using TTLs in
+Consul. The full syntax of the URL is::
+
+    consul://host:port[?one_client=1]
+
+The URL is formed out of the following parts:
+
+* ``host``
+
+    Host name of the Consul server.
+
+* ``port``
+
+    The port the Consul server is listening to.
+
+* ``one_client``
+
+    By default, for correctness, the backend uses a separate client connection
+    per operation. In cases of extreme load, the rate of creation of new
+    connections can cause HTTP 429 "too many connections" error responses from
+    the Consul server when under load. The recommended way to handle this is to
+    enable retries in ``python-consul2`` using the patch at
+    https://github.com/poppyred/python-consul2/pull/31.
+
+    Alternatively, if ``one_client`` is set, a single client connection will be
+    used for all operations instead. This should eliminate the HTTP 429 errors,
+    but the storage of results in the backend can become unreliable.
 
 .. _conf-messaging:
 
@@ -2032,7 +2182,7 @@ Examples:
         },
     }
 
-    task_routes = ('myapp.tasks.route_task', {'celery.ping': 'default})
+    task_routes = ('myapp.tasks.route_task', {'celery.ping': 'default'})
 
 Where ``myapp.tasks.route_task`` could be:
 
@@ -2070,7 +2220,7 @@ the final message options will be:
     immediate=False, exchange='video', routing_key='video.compress'
 
 (and any default message options defined in the
-:class:`~celery.task.base.Task` class)
+:class:`~celery.app.task.Task` class)
 
 Values defined in :setting:`task_routes` have precedence over values defined in
 :setting:`task_queues` when merging the two.
@@ -2554,6 +2704,33 @@ to have different import categories.
 The modules in this setting are imported after the modules in
 :setting:`imports`.
 
+.. setting:: worker_deduplicate_successful_tasks
+
+``worker_deduplicate_successful_tasks``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.1
+
+Default: False
+
+Before each task execution, instruct the worker to check if this task is
+a duplicate message.
+
+Deduplication occurs only with tasks that have the same identifier,
+enabled late acknowledgment, were redelivered by the message broker
+and their state is ``SUCCESS`` in the result backend.
+
+To avoid overflowing the result backend with queries, a local cache of
+successfully executed tasks is checked before querying the result backend
+in case the task was already successfully executed by the same worker that
+received the task.
+
+This cache can be made persistent by setting the :setting:`worker_state_db`
+setting.
+
+If the result backend is not persistent (the RPC backend, for example),
+this setting is ignored.
+
 .. _conf-concurrency:
 
 .. setting:: worker_concurrency
@@ -2687,6 +2864,36 @@ Specify if remote control of the workers is enabled.
 Default: 4.0.
 
 The timeout in seconds (int/float) when waiting for a new worker process to start up.
+
+.. setting:: worker_cancel_long_running_tasks_on_connection_loss
+
+``worker_cancel_long_running_tasks_on_connection_loss``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.1
+
+Default: Disabled by default.
+
+Kill all long-running tasks with late acknowledgment enabled on connection loss.
+
+Tasks which have not been acknowledged before the connection loss cannot do so
+anymore since their channel is gone and the task is redelivered back to the queue.
+This is why tasks with late acknowledged enabled must be idempotent as they may be executed more than once.
+In this case, the task is being executed twice per connection loss (and sometimes in parallel in other workers).
+
+When turning this option on, those tasks which have not been completed are
+cancelled and their execution is terminated.
+Tasks which have completed in any way before the connection loss
+are recorded as such in the result backend as long as :setting:`task_ignore_result` is not enabled.
+
+.. warning::
+
+    This feature was introduced as a future breaking change.
+    If it is turned off, Celery will emit a warning message.
+
+    In Celery 6.0, the :setting:`worker_cancel_long_running_tasks_on_connection_loss`
+    will be set to ``True`` by default as the current behavior leads to more
+    problems than it solves.
 
 .. _conf-events:
 
@@ -2887,7 +3094,7 @@ Default:
 .. code-block:: text
 
     "[%(asctime)s: %(levelname)s/%(processName)s]
-        [%(task_name)s(%(task_id)s)] %(message)s"
+        %(task_name)s[%(task_id)s]: %(message)s"
 
 The format to use for log messages logged in tasks.
 

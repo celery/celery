@@ -1,1 +1,6 @@
-
+[tool.pytest.ini_options]
+addopts = "--strict-markers"
+testpaths = "t/unit/"
+python_classes = "test_*"
+xdfail_strict=true
+markers = ["sleepdeprived_patched_module", "masked_modules", "patched_environ", "patched_module"]

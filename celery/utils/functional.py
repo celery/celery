@@ -1,9 +1,9 @@
-"""Functional-style utilties."""
+"""Functional-style utilities."""
 import inspect
 import sys
 from collections import UserList
 from functools import partial
-from itertools import chain, islice
+from itertools import islice, tee, zip_longest
 
 from kombu.utils.functional import (LRUCache, dictfilter, is_list, lazy,
                                     maybe_evaluate, maybe_list, memoize)
@@ -90,6 +90,7 @@ def firstmethod(method, on_call=None):
     The list can also contain lazy instances
     (:class:`~kombu.utils.functional.lazy`.)
     """
+
     def _matcher(it, *args, **kwargs):
         for obj in it:
             try:
@@ -101,6 +102,7 @@ def firstmethod(method, on_call=None):
             else:
                 if reply is not None:
                     return reply
+
     return _matcher
 
 
@@ -160,6 +162,19 @@ def uniq(it):
     return (seen.add(obj) or obj for obj in it if obj not in seen)
 
 
+def lookahead(it):
+    """Yield pairs of (current, next) items in `it`.
+
+    `next` is None if `current` is the last item.
+    Example:
+        >>> list(lookahead(x for x in range(6)))
+        [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, None)]
+    """
+    a, b = tee(it)
+    next(b, None)
+    return zip_longest(a, b)
+
+
 def regen(it):
     """Convert iterator to an object that can be consumed multiple times.
 
@@ -180,8 +195,8 @@ class _regen(UserList, list):
         # UserList creates a new list and sets .data, so we don't
         # want to call init here.
         self.__it = it
-        self.__index = 0
         self.__consumed = []
+        self.__done = False
 
     def __reduce__(self):
         return list, (self.data,)
@@ -189,30 +204,70 @@ class _regen(UserList, list):
     def __length_hint__(self):
         return self.__it.__length_hint__()
 
+    def __lookahead_consume(self, limit=None):
+        if not self.__done and (limit is None or limit > 0):
+            it = iter(self.__it)
+            try:
+                now = next(it)
+            except StopIteration:
+                return
+            self.__consumed.append(now)
+            # Maintain a single look-ahead to ensure we set `__done` when the
+            # underlying iterator gets exhausted
+            while not self.__done:
+                try:
+                    next_ = next(it)
+                    self.__consumed.append(next_)
+                except StopIteration:
+                    self.__done = True
+                    break
+                finally:
+                    yield now
+                now = next_
+                # We can break out when `limit` is exhausted
+                if limit is not None:
+                    limit -= 1
+                    if limit <= 0:
+                        break
+
     def __iter__(self):
-        return chain(self.__consumed, self.__it)
+        yield from self.__consumed
+        yield from self.__lookahead_consume()
 
     def __getitem__(self, index):
         if index < 0:
             return self.data[index]
+        # Consume elements up to the desired index prior to attempting to
+        # access it from within `__consumed`
+        consume_count = index - len(self.__consumed) + 1
+        for _ in self.__lookahead_consume(limit=consume_count):
+            pass
+        return self.__consumed[index]
+
+    def __bool__(self):
+        if len(self.__consumed):
+            return True
+
         try:
-            return self.__consumed[index]
-        except IndexError:
-            try:
-                for _ in range(self.__index, index + 1):
-                    self.__consumed.append(next(self.__it))
-            except StopIteration:
-                raise IndexError(index)
-            else:
-                return self.__consumed[index]
+            next(iter(self))
+        except StopIteration:
+            return False
+        else:
+            return True
 
     @property
     def data(self):
-        try:
-            self.__consumed.extend(list(self.__it))
-        except StopIteration:
-            pass
+        if not self.__done:
+            self.__consumed.extend(self.__it)
+            self.__done = True
         return self.__consumed
+
+    def __repr__(self):
+        return "<{}: [{}{}]>".format(
+            self.__class__.__name__,
+            ", ".join(repr(e) for e in self.__consumed),
+            "..." if not self.__done else "",
+        )
 
 
 def _argsfromspec(spec, replace_defaults=True):
@@ -228,11 +283,11 @@ def _argsfromspec(spec, replace_defaults=True):
     varargs = spec.varargs
     varkw = spec.varkw
     if spec.kwonlydefaults:
-        split = len(spec.kwonlydefaults)
-        kwonlyargs = spec.kwonlyargs[:-split]
+        kwonlyargs = set(spec.kwonlyargs) - set(spec.kwonlydefaults.keys())
         if replace_defaults:
             kwonlyargs_optional = [
-                (kw, i) for i, kw in enumerate(spec.kwonlyargs[-split:])]
+                (kw, i) for i, kw in enumerate(spec.kwonlydefaults.keys())
+            ]
         else:
             kwonlyargs_optional = list(spec.kwonlydefaults.items())
     else:
@@ -296,24 +351,12 @@ def fun_takes_argument(name, fun, position=None):
     )
 
 
-if hasattr(inspect, 'signature'):
-    def fun_accepts_kwargs(fun):
-        """Return true if function accepts arbitrary keyword arguments."""
-        return any(
-            p for p in inspect.signature(fun).parameters.values()
-            if p.kind == p.VAR_KEYWORD
-        )
-else:
-    def fun_accepts_kwargs(fun):  # noqa
-        """Return true if function accepts arbitrary keyword arguments."""
-        try:
-            argspec = inspect.getargspec(fun)
-        except TypeError:
-            try:
-                argspec = inspect.getargspec(fun.__call__)
-            except (TypeError, AttributeError):
-                return
-        return not argspec or argspec[2] is not None
+def fun_accepts_kwargs(fun):
+    """Return true if function accepts arbitrary keyword arguments."""
+    return any(
+        p for p in inspect.signature(fun).parameters.values()
+        if p.kind == p.VAR_KEYWORD
+    )
 
 
 def maybe(typ, val):

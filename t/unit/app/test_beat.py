@@ -127,7 +127,7 @@ class mScheduler(beat.Scheduler):
 
     def __init__(self, *args, **kwargs):
         self.sent = []
-        beat.Scheduler.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def send_task(self, name=None, args=None, kwargs=None, **options):
         self.sent.append({'name': name,
@@ -195,6 +195,39 @@ class test_Scheduler:
         scheduler = mScheduler(app=self.app)
         scheduler.apply_async(scheduler.Entry(task=foo.name, app=self.app, args=None, kwargs=None))
         foo.apply_async.assert_called()
+
+    def test_apply_async_with_null_args_set_to_none(self):
+
+        @self.app.task(shared=False)
+        def foo():
+            pass
+        foo.apply_async = Mock(name='foo.apply_async')
+
+        scheduler = mScheduler(app=self.app)
+        entry = scheduler.Entry(task=foo.name, app=self.app, args=None,
+                                kwargs=None)
+        entry.args = None
+        entry.kwargs = None
+
+        scheduler.apply_async(entry, advance=False)
+        foo.apply_async.assert_called()
+
+    def test_apply_async_without_null_args(self):
+
+        @self.app.task(shared=False)
+        def foo(moo: int):
+            return moo
+        foo.apply_async = Mock(name='foo.apply_async')
+
+        scheduler = mScheduler(app=self.app)
+        entry = scheduler.Entry(task=foo.name, app=self.app, args=None,
+                                kwargs=None)
+        entry.args = (101,)
+        entry.kwargs = None
+
+        scheduler.apply_async(entry, advance=False)
+        foo.apply_async.assert_called()
+        assert foo.apply_async.call_args[0][0] == [101]
 
     def test_should_sync(self):
 
@@ -566,7 +599,7 @@ def create_persistent_scheduler_w_call_logging(shelv=None):
 
         def __init__(self, *args, **kwargs):
             self.sent = []
-            beat.PersistentScheduler.__init__(self, *args, **kwargs)
+            super().__init__(*args, **kwargs)
 
         def send_task(self, task=None, args=None, kwargs=None, **options):
             self.sent.append({'task': task,
@@ -706,12 +739,12 @@ class test_Service:
         s.sync()
         assert sh.closed
         assert sh.synced
-        assert s._is_stopped.isSet()
+        assert s._is_stopped.is_set()
         s.sync()
         s.stop(wait=False)
-        assert s._is_shutdown.isSet()
+        assert s._is_shutdown.is_set()
         s.stop(wait=True)
-        assert s._is_shutdown.isSet()
+        assert s._is_shutdown.is_set()
 
         p = s.scheduler._store
         s.scheduler._store = None
@@ -734,13 +767,13 @@ class test_Service:
         s, sh = self.get_service()
         s.scheduler.tick_raises_exit = True
         s.start()
-        assert s._is_shutdown.isSet()
+        assert s._is_shutdown.is_set()
 
     def test_start_manages_one_tick_before_shutdown(self):
         s, sh = self.get_service()
         s.scheduler.shutdown_service = s
         s.start()
-        assert s._is_shutdown.isSet()
+        assert s._is_shutdown.is_set()
 
 
 class test_EmbeddedService:

@@ -34,7 +34,7 @@ Compat Task Modules
 
         from celery import task
 
-- Module ``celery.task`` *may* be removed (not decided)
+- Module ``celery.task`` will be removed 
 
     This means you should change:
 
@@ -46,7 +46,18 @@ Compat Task Modules
 
     .. code-block:: python
 
+        from celery import shared_task
+
+    -- and:
+    .. code-block:: python
+
         from celery import task
+
+    into:
+
+    .. code-block:: python
+
+        from celery import shared_task
 
     -- and:
 

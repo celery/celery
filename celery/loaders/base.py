@@ -126,6 +126,8 @@ class BaseLoader:
                     return False
                 raise
         self._conf = force_mapping(obj)
+        if self._conf.get('override_backends') is not None:
+            self.override_backends = self._conf['override_backends']
         return True
 
     def _smart_import(self, path, imp=None):
@@ -249,7 +251,7 @@ def autodiscover_tasks(packages, related_name='tasks'):
 
 def find_related_module(package, related_name):
     """Find module in package."""
-    # Django 1.7 allows for speciying a class name in INSTALLED_APPS.
+    # Django 1.7 allows for specifying a class name in INSTALLED_APPS.
     # (Issue #2248).
     try:
         module = importlib.import_module(package)

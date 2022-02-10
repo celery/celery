@@ -33,7 +33,7 @@ def add_autoretry_behaviour(task, **options):
             try:
                 return task._orig_run(*args, **kwargs)
             except Ignore:
-                # If Ignore signal occures task shouldn't be retried,
+                # If Ignore signal occurs task shouldn't be retried,
                 # even if it suits autoretry_for list
                 raise
             except Retry:

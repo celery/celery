@@ -38,13 +38,24 @@ encode the password so it can always be parsed correctly. For example:
 .. code-block:: python
 
     from kombu.utils.url import safequote
-    
+
     aws_access_key = safequote("ABCDEFGHIJKLMNOPQRST")
     aws_secret_key = safequote("ZYXK7NiynG/TogH8Nj+P9nlE73sq3")
-    
+
     broker_url = "sqs://{aws_access_key}:{aws_secret_key}@".format(
         aws_access_key=aws_access_key, aws_secret_key=aws_secret_key,
     )
+
+.. warning::
+
+    Don't use this setup option with django's ``debug=True``.
+    It may lead to security issues within deployed django apps.
+
+    In debug mode django shows environment variables and the SQS URL
+    may be exposed to the internet including your AWS access and secret keys.
+    Please turn off debug mode on your deployed django application or
+    consider a setup option described below.
+
 
 The login credentials can also be set using the environment variables
 :envvar:`AWS_ACCESS_KEY_ID` and :envvar:`AWS_SECRET_ACCESS_KEY`,
@@ -82,7 +93,7 @@ This option is set via the :setting:`broker_transport_options` setting::
 
     broker_transport_options = {'visibility_timeout': 3600}  # 1 hour.
 
-The default visibility timeout is 30 seconds.
+The default visibility timeout is 30 minutes.
 
 Polling Interval
 ----------------
@@ -150,6 +161,70 @@ setting::
         }
     }
 
+Back-off policy
+------------------------
+Back-off policy is using SQS visibility timeout mechanism altering the time difference between task retries.
+The mechanism changes message specific ``visibility timeout`` from queue ``Default visibility timeout`` to policy configured timeout.
+The number of retries is managed by SQS (specifically by the ``ApproximateReceiveCount`` message attribute) and no further action is required by the user.
+
+Configuring the queues and backoff policy::
+
+    broker_transport_options = {
+        'predefined_queues': {
+            'my-q': {
+                'url': 'https://ap-southeast-2.queue.amazonaws.com/123456/my-q',
+                'access_key_id': 'xxx',
+                'secret_access_key': 'xxx',
+                'backoff_policy': {1: 10, 2: 20, 3: 40, 4: 80, 5: 320, 6: 640},
+                'backoff_tasks': ['svc.tasks.tasks.task1']
+            }
+        }
+    }
+
+
+``backoff_policy`` dictionary where key is number of retries, and value is delay seconds between retries (i.e
+SQS visibility timeout)
+``backoff_tasks`` list of task names to apply the above policy
+
+The above policy:
+
++-----------------------------------------+--------------------------------------------+
+| **Attempt**                             | **Delay**                                  |
++-----------------------------------------+--------------------------------------------+
+| ``2nd attempt``                         | 20 seconds                                 |
++-----------------------------------------+--------------------------------------------+
+| ``3rd attempt``                         | 40 seconds                                 |
++-----------------------------------------+--------------------------------------------+
+| ``4th attempt``                         | 80 seconds                                 |
++-----------------------------------------+--------------------------------------------+
+| ``5th attempt``                         | 320 seconds                                |
++-----------------------------------------+--------------------------------------------+
+| ``6th attempt``                         | 640 seconds                                |
++-----------------------------------------+--------------------------------------------+
+
+
+STS token authentication
+----------------------------
+
+https://docs.aws.amazon.com/cli/latest/reference/sts/assume-role.html
+
+AWS STS authentication is supported by using the ``sts_role_arn`` and ``sts_token_timeout`` broker transport options. ``sts_role_arn`` is the assumed IAM role ARN we use to authorize our access to SQS.
+``sts_token_timeout`` is the token timeout, defaults (and minimum) to 900 seconds. After the mentioned period, a new token will be created::
+
+    broker_transport_options = {
+        'predefined_queues': {
+            'my-q': {
+                'url': 'https://ap-southeast-2.queue.amazonaws.com/123456/my-q',
+                'access_key_id': 'xxx',
+                'secret_access_key': 'xxx',
+                'backoff_policy': {1: 10, 2: 20, 3: 40, 4: 80, 5: 320, 6: 640},
+                'backoff_tasks': ['svc.tasks.tasks.task1']
+            }
+        },
+    'sts_role_arn': 'arn:aws:iam::<xxx>:role/STSTest', # optional
+    'sts_token_timeout': 900 # optional
+    }
+
 
 .. _sqs-caveats:
 
@@ -184,6 +259,19 @@ Caveats
 - SQS doesn't yet support events, and so cannot be used with
   :program:`celery events`, :program:`celerymon`, or the Django Admin
   monitor.
+
+- With FIFO queues it might be necessary to set additional message properties such as ``MessageGroupId`` and ``MessageDeduplicationId`` when publishing a message.
+
+  Message properties can be passed as keyword arguments to :meth:`~celery.app.task.Task.apply_async`:
+
+  .. code-block:: python
+
+    message_properties = {
+        'MessageGroupId': '<YourMessageGroupId>',
+        'MessageDeduplicationId': '<YourMessageDeduplicationId>'
+    }
+    task.apply_async(**message_properties)
+
 
 .. _sqs-results-configuration:
 
