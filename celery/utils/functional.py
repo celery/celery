@@ -389,3 +389,7 @@ def seq_concat_seq(a, b):
     if not isinstance(b, prefer):
         b = prefer(b)
     return a + b
+
+
+def is_numeric_value(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
