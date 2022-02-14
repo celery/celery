@@ -385,13 +385,13 @@ Here's some examples:
     .. code-block:: pycon
 
         >>> from celery import chord
-        >>> res = chord((add.s(i, i) for i in range(10)), xsum.s())()
+        >>> res = chord((add.s(i, i) for i in range(10)), tsum.s())()
         >>> res.get()
         90
 
     The above example creates 10 task that all start in parallel,
     and when all of them are complete the return values are combined
-    into a list and sent to the ``xsum`` task.
+    into a list and sent to the ``tsum`` task.
 
     The body of a chord can also be immutable, so that the return value
     of the group isn't passed on to the callback:
@@ -434,7 +434,7 @@ Here's some examples:
 
     .. code-block:: pycon
 
-        >>> c3 = (group(add.s(i, i) for i in range(10)) | xsum.s())
+        >>> c3 = (group(add.s(i, i) for i in range(10)) | tsum.s())
         >>> res = c3()
         >>> res.get()
         90
@@ -928,7 +928,7 @@ an errback to the chord callback:
 .. code-block:: pycon
 
     >>> c = (group(add.s(i, i) for i in range(10)) |
-    ...      xsum.s().on_error(on_chord_error.s())).delay()
+    ...      tsum.s().on_error(on_chord_error.s())).delay()
 
 Chords may have callback and errback signatures linked to them, which addresses
 some of the issues with linking signatures to groups.
@@ -1025,7 +1025,7 @@ For example using ``map``:
 
     >>> from proj.tasks import add
 
-    >>> ~xsum.map([range(10), range(100)])
+    >>> ~tsum.map([range(10), range(100)])
     [45, 4950]
 
 is the same as having a task doing:
@@ -1034,7 +1034,7 @@ is the same as having a task doing:
 
     @app.task
     def temp():
-        return [xsum(range(10)), xsum(range(100))]
+        return [tsum(range(10)), tsum(range(100))]
 
 and using ``starmap``:
 
