@@ -1695,7 +1695,7 @@ Make your design asynchronous instead, for example by using *callbacks*.
     @app.task
     def update_page_info(url):
         page = fetch_page.delay(url).get()
-        info = parse_page.delay(url, page).get()
+        info = parse_page.delay(page).get()
         store_page_info.delay(url, info)
 
     @app.task
@@ -1748,7 +1748,7 @@ enabling subtasks to run synchronously is not recommended!
     @app.task
     def update_page_info(url):
         page = fetch_page.delay(url).get(disable_sync_subtasks=False)
-        info = parse_page.delay(url, page).get(disable_sync_subtasks=False)
+        info = parse_page.delay(page).get(disable_sync_subtasks=False)
         store_page_info.delay(url, info)
 
     @app.task
@@ -1756,7 +1756,7 @@ enabling subtasks to run synchronously is not recommended!
         return myhttplib.get(url)
 
     @app.task
-    def parse_page(url, page):
+    def parse_page(page):
         return myparser.parse_document(page)
 
     @app.task
