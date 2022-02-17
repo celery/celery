@@ -468,9 +468,9 @@ class Consumer:
             if deprecated_no_retry_on_startup:
                 warnings.warn(
                     CPendingDeprecationWarning(
-                        "The broker_connection_retry configuration setting will no longer determine"
+                        "The broker_connection_retry configuration setting will no longer determine\n"
                         "whether broker connection retries are made during startup in Celery 6.0 and above.\n"
-                        "If you wish to refrain from retrying connections on startup, "
+                        "If you wish to refrain from retrying connections on startup,\n"
                         "you should set broker_connection_retry_on_startup to False instead.")
                 )
             # Retry disabled, just call connect directly.
