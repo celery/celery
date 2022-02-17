@@ -305,6 +305,10 @@ class Consumer:
         return self._schedule_bucket_request(bucket)
 
     def _limit_post_eta(self, request, bucket, tokens):
+        # TODO: Compare this code to the apply_eta_task and decide if this feature
+        # should also be rewritten to respect the QoS values
+        # See: :method:`apply_eta_task`
+        # See: celery.worker.strategy.default
         self.qos.decrement_eventually()
         bucket.add((request, tokens))
         return self._schedule_bucket_request(bucket)
@@ -492,9 +496,38 @@ class Consumer:
 
     def apply_eta_task(self, task):
         """Method called by the timer to apply a task with an ETA/countdown."""
-        task_reserved(task)
-        self.on_task_request(task)
+        #
+        # Force the QoS decrement by calling `update` so RabbitMQ won't
+        # push the same task just before we reject it.
+        # The QoS is increased everytime a future-ETA task is received and
+        # decreased here everytime the future-ETA is reached.
+        #
+        # See: celery.worker.strategy.default
+        #
+        logger.warn(f"Task {task.humaninfo()} reached ETA. Decrementing QoS (synchronously)")
         self.qos.decrement_eventually()
+        self.qos.update()
+        #
+        # Regardless of the `acks_late` feature, tasks aren't acknowledged until they
+        # start to be processed by a child worker so this task isn't acknowledged yet
+        # and we can reject it to requeue.
+        #
+        # RabbitMQ will immediately push this task to any worker which QoS allows
+        # accepting new tasks. It could be ourselves or any other consumer.
+        # The next worker receiving this task will ignore the ETA and treat the
+        # task as a regular task (it can ignore the ETA because it's already passed).
+        #
+        # In this way, a worker never holds a task that violates the original QoS
+        # restrictions (remember that Celery cheats this number to handle the
+        # future-ETA tasks)
+        #
+        # See: celery.worker.strategy.default
+        #
+        logger.warn(
+            f"Task {task.humaninfo()} reached ETA. "
+            "Requeuing to RabbitMQ so idle workers can process it"
+        )
+        task.message.reject_log_error(logger, self.connection_errors, requeue=True)
 
     def _message_report(self, body, message):
         return MESSAGE_REPORT.format(dump_body(message, body),

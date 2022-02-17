@@ -1,5 +1,6 @@
 """Task execution strategy (optimization)."""
 import logging
+from time import monotonic
 
 from kombu.asynchronous.timer import to_timestamp
 from kombu.utils.encoding import safe_repr
@@ -100,7 +101,7 @@ def proto1_to_proto2(message, body):
 def default(task, app, consumer,
             info=logger.info, error=logger.error, task_reserved=task_reserved,
             to_system_tz=timezone.to_system, bytes=bytes,
-            proto1_to_proto2=proto1_to_proto2):
+            proto1_to_proto2=proto1_to_proto2, nowfun=monotonic):
     """Default task execution strategy.
 
     Note:
@@ -187,6 +188,12 @@ def default(task, app, consumer,
                 error("Couldn't convert ETA %r to timestamp: %r. Task: %r",
                       req.eta, exc, req.info(safe=True), exc_info=True)
                 req.reject(requeue=False)
+            else:
+                # If ETA has passed then treat this task as a regular task.
+                # See celery.worker.consumer.consumer.Consumer:apply_eta_task
+                if eta < nowfun():
+                    eta = None
+
         if rate_limits_enabled:
             bucket = get_bucket(task.name)
 
