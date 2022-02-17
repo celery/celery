@@ -56,6 +56,27 @@ def task_name_from(task):
     return getattr(task, 'name', task)
 
 
+def _merge_dictionaries(d1, d2):
+    for key, value in d1.items():
+        if key in d2:
+            if isinstance(value, dict):
+                _merge_dictionaries(d1[key], d2[key])
+            else:
+                if isinstance(value, (int, float, str)):
+                    d1[key] = [value]
+                if isinstance(d2[key], list):
+                    d1[key].extend(d2[key])
+                else:
+                    if d1[key] is None:
+                        d1[key] = []
+                    else:
+                        d1[key] = list(maybe_list(d1[key]))
+                    d1[key].append(d2[key])
+    for key, value in d2.items():
+        if key not in d1:
+            d1[key] = value
+
+
 @abstract.CallableSignature.register
 class Signature(dict):
     """Task Signature.
@@ -335,16 +356,13 @@ class Signature(dict):
         self.immutable = immutable
 
     def stamp(self, **headers):
-        headers = headers.copy()
-        if 'headers' not in self.options:
-            return self.set(**{'headers': headers})
-
-        for header, value in headers.items():
-            if header in self.options['headers']:
-                old_header = maybe_list(self.options['headers'][header]) or ()
-                # if old_header != value:
-                new_header = (*maybe_list(value), *old_header)
-                self.options['headers'][header] = new_header
+        if 'headers' in headers:
+            headers = headers['headers'].copy()
+        else:
+            headers = headers.copy()
+        self.options.setdefault('headers', {})
+        _merge_dictionaries(headers, self.options['headers'])
+        return self.set(headers=headers)
 
     def _with_list_option(self, key):
         items = self.options.setdefault(key, [])
