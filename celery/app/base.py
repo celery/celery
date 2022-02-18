@@ -264,7 +264,7 @@ class Celery:
 
         # Used for caching redis backend, redis-py is thread safe
         self._redis_backend = None
-            
+
         # If the class defines a custom __reduce_args__ we need to use
         # the old way of pickling apps: pickling a list of
         # args instead of the new way that pickles a dict of keywords.
