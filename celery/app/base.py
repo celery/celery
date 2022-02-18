@@ -262,6 +262,9 @@ class Celery:
         if not isinstance(self._tasks, TaskRegistry):
             self._tasks = self.registry_cls(self._tasks or {})
 
+        # Used for caching redis backend, redis-py is thread safe
+        self._redis_backend = None
+            
         # If the class defines a custom __reduce_args__ we need to use
         # the old way of pickling apps: pickling a list of
         # args instead of the new way that pickles a dict of keywords.
@@ -955,6 +958,14 @@ class Celery:
         backend, url = backends.by_url(
             self.backend_cls or self.conf.result_backend,
             self.loader)
+        
+        # redis-py always uses independent connection for every command,
+        # one pool instance is enough
+        if url.startswith('redis'):
+            if not self.redis_backend:
+                self.redis_backend = backend(app=self, url=url)
+            return self.redis_backend
+
         return backend(app=self, url=url)
 
     def _finalize_pending_conf(self):
@@ -1243,7 +1254,7 @@ class Celery:
         """AMQP related functionality: :class:`~@amqp`."""
         return instantiate(self.amqp_cls, app=self)
 
-    @cached_property
+    @property
     def backend(self):
         """Current backend instance."""
         try:
