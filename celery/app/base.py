@@ -962,9 +962,9 @@ class Celery:
         # redis-py always uses independent connection for every command,
         # one pool instance is enough
         if url.startswith('redis'):
-            if not self.redis_backend:
-                self.redis_backend = backend(app=self, url=url)
-            return self.redis_backend
+            if not self._redis_backend:
+                self._redis_backend = backend(app=self, url=url)
+            return self._redis_backend
 
         return backend(app=self, url=url)
 
