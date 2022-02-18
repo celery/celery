@@ -2313,7 +2313,7 @@ becomes::
 
     w1@example.com.dq
 
-Then you can route the task to the task by specifying the hostname
+Then you can route the task to the worker by specifying the hostname
 as the routing key and the ``C.dq`` exchange::
 
     task_routes = {
