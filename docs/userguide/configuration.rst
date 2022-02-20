@@ -3149,7 +3149,7 @@ used to sign messages when :ref:`message-signing` is used.
 
 Default: :const:`None`.
 
-.. versionadded:: 5.2.3
+.. versionadded:: 5.3.0
 
 The password used to decrypt the private key when :ref:`message-signing`
 is used.
