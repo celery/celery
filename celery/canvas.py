@@ -246,10 +246,10 @@ class Signature(dict):
             # override values in `self.options` except for keys which are
             # noted as being immutable (unrelated to signature immutability)
             # implying that allowing their value to change would stall tasks
-            new_options = dict(self.options, **{
+            new_options = {**self.options, **{
                 k: v for k, v in options.items()
-                if k not in self._IMMUTABLE_OPTIONS or k not in self.options
-            })
+                if (k not in self._IMMUTABLE_OPTIONS or k not in self.options) and k != 'headers'
+            }}
         else:
             new_options = self.options
         if self.immutable and not force:
@@ -1489,8 +1489,7 @@ class _chord(Signature):
                 return self.apply(args, kwargs,
                                   body=body, task_id=task_id, **options)
 
-        merged_options = dict(self.options,
-                              **options) if options else self.options
+        merged_options = {**self.options, **options}
         option_task_id = merged_options.pop("task_id", None)
         if task_id is None:
             task_id = option_task_id
@@ -1547,7 +1546,7 @@ class _chord(Signature):
         app = app or self._get_app(body)
         group_id = header.options.get('task_id') or uuid()
         root_id = body.options.get('root_id')
-        options = dict(self.options, **options) if options else self.options
+        options = {**self.options, **options}
         if options:
             options.pop('task_id', None)
             body.options.update(options)
