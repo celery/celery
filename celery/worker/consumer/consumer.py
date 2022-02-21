@@ -339,7 +339,8 @@ class Consumer:
                         f"been disabled (app.conf.{connection_retry_type}=False). Shutting down...")
                     raise WorkerShutdown(1) from exc
                 if isinstance(exc, OSError) and exc.errno == errno.EMFILE:
-                    raise WorkerTerminate("Too many open files. Aborting...") from exc
+                    crit("Too many open files. Aborting...")
+                    raise WorkerTerminate(1) from exc
                 maybe_shutdown()
                 if blueprint.state not in STOP_CONDITIONS:
                     if self.connection:
