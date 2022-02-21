@@ -1547,7 +1547,6 @@ class _chord(Signature):
         root_id = body.options.get('root_id')
         options = {**self.options, **options}
         if options:
-            options.pop('task_id', None)
             body.options.update(options)
 
         bodyres = body.freeze(task_id, root_id=root_id)
