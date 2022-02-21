@@ -327,16 +327,14 @@ class Consumer:
                 # If we're not retrying connections, we need to properly shutdown or terminate
                 # the Celery main process instead of abruptly aborting the process without any cleanup.
                 is_connection_loss_on_startup = self.restart_count == 0
-                connection_retry_type = ('broker_connection_retry_on_startup'
-                                         if (is_connection_loss_on_startup
-                                             and self.app.conf.broker_connection_retry_on_startup is not None)
-                                         else 'broker_connection_retry')
+                connection_retry_type = self._get_connection_retry_type(is_connection_loss_on_startup)
                 connection_retry = self.app.conf[connection_retry_type]
                 if not connection_retry:
                     crit(
                         f"Retrying to {'establish' if is_connection_loss_on_startup else 're-establish'} "
                         f"a connection to the message broker after a connection loss has "
-                        f"been disabled (app.conf.{connection_retry_type}=False). Shutting down...")
+                        f"been disabled (app.conf.{connection_retry_type}=False). Shutting down..."
+                    )
                     raise WorkerShutdown(1) from exc
                 if isinstance(exc, OSError) and exc.errno == errno.EMFILE:
                     crit("Too many open files. Aborting...")
@@ -349,6 +347,12 @@ class Consumer:
                         self.on_connection_error_before_connected(exc)
                     self.on_close()
                     blueprint.restart(self)
+
+    def _get_connection_retry_type(self, is_connection_loss_on_startup):
+        return ('broker_connection_retry_on_startup'
+                if (is_connection_loss_on_startup
+                    and self.app.conf.broker_connection_retry_on_startup is not None)
+                else 'broker_connection_retry')
 
     def on_connection_error_before_connected(self, exc):
         error(CONNECTION_ERROR, self.conninfo.as_uri(), exc,

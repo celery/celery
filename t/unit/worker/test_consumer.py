@@ -6,7 +6,9 @@ from unittest.mock import Mock, call, patch
 import pytest
 from billiard.exceptions import RestartFreqExceeded
 
+from celery import bootsteps
 from celery.contrib.testing.mocks import ContextMock
+from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.utils.collections import LimitedSet
 from celery.worker.consumer.agent import Agent
 from celery.worker.consumer.consumer import CANCEL_TASKS_BY_DEFAULT, CLOSE, TERMINATE, Consumer
@@ -17,8 +19,7 @@ from celery.worker.consumer.tasks import Tasks
 from celery.worker.state import active_requests
 
 
-class test_Consumer:
-
+class ConsumerTestCase:
     def get_consumer(self, no_hub=False, **kwargs):
         consumer = Consumer(
             on_task_request=Mock(),
@@ -36,6 +37,9 @@ class test_Consumer:
         consumer.connection_errors = (socket.error, OSError,)
         consumer.conninfo = consumer.connection
         return consumer
+
+
+class test_Consumer(ConsumerTestCase):
 
     def test_repr(self):
         assert repr(self.get_consumer())
@@ -313,6 +317,44 @@ class test_Consumer:
 
         with pytest.deprecated_call():
             c.ensure_connected(Mock())
+
+
+@pytest.mark.parametrize(
+    "broker_connection_retry_on_startup,is_connection_loss_on_startup",
+    [
+        pytest.param(False, True, id='shutdown on connection loss on startup'),
+        pytest.param(None, True, id='shutdown on connection loss on startup when retry on startup is undefined'),
+        pytest.param(False, False, id='shutdown on connection loss not on startup but startup is defined as false'),
+        pytest.param(None, False, id='shutdown on connection loss not on startup and startup is not defined'),
+        pytest.param(True, False, id='shutdown on connection loss not on startup but startup is defined as true'),
+    ]
+)
+class test_Consumer_WorkerShutdown(ConsumerTestCase):
+
+    def test_start_raises_connection_error(self,
+                                           broker_connection_retry_on_startup,
+                                           is_connection_loss_on_startup,
+                                           caplog, subtests):
+        c = self.get_consumer()
+        # in order to reproduce the actual behavior: if this is the startup, then restart count has not been
+        # incremented yet, and is therefore -1.
+        c.restart_count = -1 if is_connection_loss_on_startup else 1
+        c.app.conf['broker_connection_retry'] = False
+        c.app.conf['broker_connection_retry_on_startup'] = broker_connection_retry_on_startup
+        c.blueprint.start.side_effect = ConnectionError()
+
+        with subtests.test("Consumer raises WorkerShutdown on connection restart"):
+            with pytest.raises(WorkerShutdown):
+                c.start()
+
+        record = caplog.records[0]
+        with subtests.test("Critical error log message is outputted to the screen"):
+            assert record.levelname == "CRITICAL"
+            action = "establish" if is_connection_loss_on_startup else "re-establish"
+            expected_prefix = f"Retrying to {action}"
+            assert record.msg.startswith(expected_prefix)
+            expected_connection_retry_type = f"app.conf.{c._get_connection_retry_type(is_connection_loss_on_startup)}=False"
+            assert expected_connection_retry_type in record.msg
 
 
 class test_Heart:
