@@ -848,7 +848,7 @@ class _chain(Signature):
         last, (fargs, fkwargs) = None, (args, kwargs)
         for task in self.tasks:
             res = task.clone(fargs, fkwargs).apply(
-                last and (last.get(),), options={**self.options, **options})
+                last and (last.get(),), **{**self.options, **options})
             res.parent, last, (fargs, fkwargs) = last, res, (None, None)
         return last
 
@@ -1153,7 +1153,7 @@ class group(Signature):
         options, group_id, root_id = self._freeze_gid(options)
         tasks = self._prepared(self.tasks, [], group_id, root_id, app)
         return app.GroupResult(group_id, [
-            sig.apply(args=args, kwargs=kwargs, options=options) for sig, _, _ in
+            sig.apply(args=args, kwargs=kwargs, **options) for sig, _, _ in
             tasks
         ])
 
