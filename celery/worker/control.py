@@ -20,7 +20,6 @@ __all__ = ('Panel',)
 
 DEFAULT_TASK_INFO_ITEMS = ('exchange', 'routing_key', 'rate_limit')
 logger = get_logger(__name__)
-crit = logger.critical
 
 controller_info_t = namedtuple('controller_info_t', [
     'alias', 'type', 'visible', 'default_timeout',
@@ -516,8 +515,7 @@ def autoscale(state, max=None, min=None):
 def shutdown(state, msg='Got shutdown from remote', **kwargs):
     """Shutdown worker(s)."""
     logger.warning(msg)
-    logger.critical(msg)
-    raise WorkerShutdown(1)
+    raise WorkerShutdown(msg)
 
 
 # -- Queues

@@ -17,10 +17,6 @@ from kombu.utils.objects import cached_property
 from celery import __version__
 from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.utils.collections import LimitedSet
-from celery.utils.log import get_logger
-
-logger = get_logger(__name__)
-crit = logger.critical
 
 __all__ = (
     'SOFTWARE_INFO', 'reserved_requests', 'active_requests',
@@ -90,8 +86,7 @@ def maybe_shutdown():
     if should_terminate is not None and should_terminate is not False:
         raise WorkerTerminate(should_terminate)
     elif should_stop is not None and should_stop is not False:
-        crit(should_stop)
-        raise WorkerShutdown(1)
+        raise WorkerShutdown(should_stop)
 
 
 def task_reserved(request,
