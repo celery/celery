@@ -284,7 +284,7 @@ class AMQP:
                    time_limit=None, soft_time_limit=None,
                    create_sent_event=False, root_id=None, parent_id=None,
                    shadow=None, chain=None, now=None, timezone=None,
-                   origin=None, ignore_result=False, argsrepr=None, kwargsrepr=None):
+                   origin=None, ignore_result=False, argsrepr=None, kwargsrepr=None, groups=None):
         args = args or ()
         kwargs = kwargs or {}
         if not isinstance(args, (list, tuple)):
@@ -337,6 +337,7 @@ class AMQP:
                 'kwargsrepr': kwargsrepr,
                 'origin': origin or anon_nodename(),
                 'ignore_result': ignore_result,
+                'groups': groups
             },
             properties={
                 'correlation_id': task_id,

@@ -70,7 +70,7 @@ def _merge_dictionaries(d1, d2):
                     if d1[key] is None:
                         d1[key] = []
                     else:
-                        d1[key] = list(maybe_list(d1[key]))
+                        d1[key] = list(d1[key])
                     d1[key].append(d2[key])
     for key, value in d2.items():
         if key not in d1:
@@ -357,8 +357,7 @@ class Signature(dict):
 
     def stamp(self, **headers):
         headers = headers.copy()
-        self.options.setdefault('headers', {})
-        _merge_dictionaries(headers, self.options['headers'])
+        _merge_dictionaries(headers, self.options)
         return self.set(headers=headers)
 
     def _with_list_option(self, key):
