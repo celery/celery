@@ -1498,7 +1498,10 @@ class _chord(Signature):
               propagate=True, body=None, **options):
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
+        options = {**self.options, **options}
         body = self.body if body is None else body
+        body.options = {**body.options, **options}
+
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
                  else group(self.tasks, app=self.app))
         return body.apply(
