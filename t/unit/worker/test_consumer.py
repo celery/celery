@@ -306,6 +306,14 @@ class test_Consumer:
         with pytest.deprecated_call(match=CANCEL_TASKS_BY_DEFAULT):
             c.on_connection_error_after_connected(Mock())
 
+    def test_ensure_connected_warns_if_deprecated_no_retry_on_startup(self):
+        c = self.get_consumer()
+        c.app.conf.broker_connection_retry_on_startup = None
+        c.app.conf.broker_connection_retry = False
+
+        with pytest.deprecated_call():
+            c.ensure_connected(Mock())
+
 
 class test_Heart:
 
