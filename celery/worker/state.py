@@ -17,8 +17,8 @@ from kombu.utils.objects import cached_property
 from celery import __version__
 from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.utils.collections import LimitedSet
-
 from celery.utils.log import get_logger
+
 logger = get_logger(__name__)
 crit = logger.critical
 
