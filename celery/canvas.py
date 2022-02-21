@@ -356,10 +356,7 @@ class Signature(dict):
         self.immutable = immutable
 
     def stamp(self, **headers):
-        if 'headers' in headers:
-            headers = headers['headers'].copy()
-        else:
-            headers = headers.copy()
+        headers = headers.copy()
         self.options.setdefault('headers', {})
         _merge_dictionaries(headers, self.options['headers'])
         return self.set(headers=headers)
