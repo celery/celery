@@ -18,6 +18,10 @@ from celery import __version__
 from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.utils.collections import LimitedSet
 
+from celery.utils.log import get_logger
+logger = get_logger(__name__)
+crit = logger.critical
+
 __all__ = (
     'SOFTWARE_INFO', 'reserved_requests', 'active_requests',
     'total_count', 'revoked', 'task_reserved', 'maybe_shutdown',
@@ -86,7 +90,8 @@ def maybe_shutdown():
     if should_terminate is not None and should_terminate is not False:
         raise WorkerTerminate(should_terminate)
     elif should_stop is not None and should_stop is not False:
-        raise WorkerShutdown(should_stop)
+        crit(should_stop)
+        raise WorkerShutdown(1)
 
 
 def task_reserved(request,

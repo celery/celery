@@ -333,10 +333,11 @@ class Consumer:
                                          else 'broker_connection_retry')
                 connection_retry = self.app.conf[connection_retry_type]
                 if not connection_retry:
-                    raise WorkerShutdown(
+                    crit(
                         f"Retrying to {'establish' if is_connection_loss_on_startup else 're-establish'} "
                         f"a connection to the message broker after a connection loss has "
-                        f"been disabled (app.conf.{connection_retry_type}=False). Shutting down...") from exc
+                        f"been disabled (app.conf.{connection_retry_type}=False). Shutting down...")
+                    raise WorkerShutdown(1) from exc
                 if isinstance(exc, OSError) and exc.errno == errno.EMFILE:
                     raise WorkerTerminate("Too many open files. Aborting...") from exc
                 maybe_shutdown()
