@@ -227,6 +227,24 @@ class test_Consumer(ConsumerTestCase):
             c.blueprint.state = CLOSE
         return se
 
+    def test_blueprint_restart_when_state_not_in_stop_conditions(self):
+        c = self.get_consumer()
+
+        # ensure that WorkerShutdown is not raised
+        c.app.conf['broker_connection_retry'] = True
+        c.app.conf['broker_connection_retry_on_startup'] = True
+        c.restart_count = -1
+
+        # ensure that blueprint state is not in stop conditions
+        c.blueprint.state = bootsteps.RUN
+        c.blueprint.start.side_effect = ConnectionError()
+
+        # stops test from running indefinitely in the while loop
+        c.blueprint.restart.side_effect = self._closer(c)
+
+        c.start()
+        c.blueprint.restart.assert_called_once()
+
     def test_collects_at_restart(self):
         c = self.get_consumer()
         c.connection.collect.side_effect = MemoryError()
