@@ -214,11 +214,12 @@ class test_Consumer(ConsumerTestCase):
 
         c.blueprint.start.assert_called_once_with(c)
 
-    def test_no_retry_raises_error(self):
-        self.app.conf.broker_connection_retry = False
+    def test_too_many_open_files_raises_error(self):
         c = self.get_consumer()
-        c.blueprint.start.side_effect = socket.error()
-        with pytest.raises(socket.error):
+        err = OSError()
+        err.errno = errno.EMFILE
+        c.blueprint.start.side_effect = err
+        with pytest.raises(WorkerTerminate):
             c.start()
 
     def _closer(self, c):
