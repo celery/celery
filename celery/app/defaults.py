@@ -226,6 +226,7 @@ NAMESPACES = Namespace(
         certificate=Option(type='string'),
         cert_store=Option(type='string'),
         key=Option(type='string'),
+        key_password=Option(type='bytes'),
         digest=Option(DEFAULT_SECURITY_DIGEST, type='string'),
     ),
     database=Namespace(

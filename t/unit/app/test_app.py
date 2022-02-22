@@ -113,9 +113,9 @@ class test_App:
     @patch('celery.security.setup_security')
     def test_setup_security(self, setup_security):
         self.app.setup_security(
-            {'json'}, 'key', 'cert', 'store', 'digest', 'serializer')
+            {'json'}, 'key', None, 'cert', 'store', 'digest', 'serializer')
         setup_security.assert_called_with(
-            {'json'}, 'key', 'cert', 'store', 'digest', 'serializer',
+            {'json'}, 'key', None, 'cert', 'store', 'digest', 'serializer',
             app=self.app)
 
     def test_task_autofinalize_disabled(self):

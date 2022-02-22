@@ -27,7 +27,7 @@ from celery.security import disable_untrusted_serializers, setup_security
 from celery.security.utils import reraise_errors
 from t.unit import conftest
 
-from . import CERT1, KEY1
+from . import CERT1, ENCKEY1, KEY1, KEYPASSWORD
 from .case import SecurityCase
 
 
@@ -84,6 +84,25 @@ class test_security(SecurityCase):
         os.remove(tmp_key1.name)
         os.remove(tmp_cert1.name)
 
+    def test_setup_security_encrypted_key_file(self):
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp_key1:
+            tmp_key1.write(ENCKEY1)
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp_cert1:
+            tmp_cert1.write(CERT1)
+
+        self.app.conf.update(
+            task_serializer='auth',
+            accept_content=['auth'],
+            security_key=tmp_key1.name,
+            security_key_password=KEYPASSWORD,
+            security_certificate=tmp_cert1.name,
+            security_cert_store='*.pem',
+        )
+        self.app.setup_security()
+
+        os.remove(tmp_key1.name)
+        os.remove(tmp_cert1.name)
+
     def test_setup_security_disabled_serializers(self):
         disabled = registry._disabled_content_types
         assert len(disabled) == 0
@@ -123,9 +142,9 @@ class test_security(SecurityCase):
         with conftest.open(side_effect=effect):
             with patch('celery.security.registry') as registry:
                 store = Mock()
-                self.app.setup_security(['json'], key, cert, store)
+                self.app.setup_security(['json'], key, None, cert, store)
                 dis.assert_called_with(['json'])
-                reg.assert_called_with('A', 'B', store, 'sha256', 'json')
+                reg.assert_called_with('A', None, 'B', store, 'sha256', 'json')
                 registry._set_default_serializer.assert_called_with('auth')
 
     def test_security_conf(self):
