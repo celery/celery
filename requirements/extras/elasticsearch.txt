@@ -1,1 +1,1 @@
-elasticsearch
+elasticsearch<8.0
