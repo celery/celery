@@ -322,13 +322,23 @@ class test_Consumer(ConsumerTestCase):
         with pytest.deprecated_call(match=CANCEL_TASKS_BY_DEFAULT):
             c.on_connection_error_after_connected(Mock())
 
-    def test_ensure_connected_warns_if_deprecated_no_retry_on_startup(self):
+    @pytest.mark.parametrize("broker_connection_retry", [True, False])
+    def test_ensure_connected_warns_if_deprecated_no_retry_on_startup(self, broker_connection_retry):
         c = self.get_consumer()
         c.app.conf.broker_connection_retry_on_startup = None
-        c.app.conf.broker_connection_retry = False
+        c.app.conf.broker_connection_retry = broker_connection_retry
 
         with pytest.deprecated_call():
             c.ensure_connected(Mock())
+
+    @pytest.mark.parametrize("broker_connection_retry_on_startup", [None, False])
+    def test_ensure_connected_calls_connect_when_retry_is_disabled(self, broker_connection_retry_on_startup):
+        c = self.get_consumer()
+        c.app.conf.broker_connection_retry = False
+        c.app.conf.broker_connection_retry_on_startup = broker_connection_retry_on_startup
+        conn = Mock()
+        c.ensure_connected(conn)
+        conn.connect.assert_called_with()
 
 
 @pytest.mark.parametrize(

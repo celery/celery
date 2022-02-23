@@ -465,20 +465,17 @@ class Consumer:
 
         # TODO: Rely only on broker_connection_retry_on_startup to determine whether connection retries are disabled.
         #       We will make the switch in Celery 6.0.
-        deprecated_no_retry_on_startup = (self.app.conf.broker_connection_retry_on_startup is None
-                                          and not self.app.conf.broker_connection_retry)
-        if (
-            deprecated_no_retry_on_startup
-            or not self.app.conf.broker_connection_retry_on_startup
-        ):
-            if deprecated_no_retry_on_startup:
-                warnings.warn(
-                    CPendingDeprecationWarning(
-                        "The broker_connection_retry configuration setting will no longer determine\n"
-                        "whether broker connection retries are made during startup in Celery 6.0 and above.\n"
-                        "If you wish to refrain from retrying connections on startup,\n"
-                        "you should set broker_connection_retry_on_startup to False instead.")
-                )
+
+        if self.app.conf.broker_connection_retry_on_startup is None:
+            warnings.warn(
+                CPendingDeprecationWarning(
+                    f"The broker_connection_retry configuration setting will no longer determine\n"
+                    f"whether broker connection retries are made during startup in Celery 6.0 and above.\n"
+                    f"If you wish to retain the existing behavior for retrying connections on startup,\n"
+                    f"you should set broker_connection_retry_on_startup to {self.app.conf.broker_connection_retry}.")
+            )
+
+        if not self.app.conf.broker_connection_retry and not self.app.conf.broker_connection_retry_on_startup:
             # Retry disabled, just call connect directly.
             conn.connect()
             return conn
