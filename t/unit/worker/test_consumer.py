@@ -227,11 +227,12 @@ class test_Consumer(ConsumerTestCase):
             c.blueprint.state = CLOSE
         return se
 
-    def test_blueprint_restart_when_state_not_in_stop_conditions(self):
+    @pytest.mark.parametrize("broker_connection_retry", [True, False])
+    def test_blueprint_restart_when_state_not_in_stop_conditions(self, broker_connection_retry):
         c = self.get_consumer()
 
         # ensure that WorkerShutdown is not raised
-        c.app.conf['broker_connection_retry'] = True
+        c.app.conf['broker_connection_retry'] = broker_connection_retry
         c.app.conf['broker_connection_retry_on_startup'] = True
         c.restart_count = -1
 
