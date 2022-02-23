@@ -164,14 +164,6 @@ class test_Consumer(ConsumerTestCase):
             bucket.add.assert_called_with((request, 1))
             reserv.assert_called_with(bucket)
 
-    def test_start_blueprint_raises_EMFILE(self):
-        c = self.get_consumer()
-        exc = c.blueprint.start.side_effect = OSError()
-        exc.errno = errno.EMFILE
-
-        with pytest.raises(OSError):
-            c.start()
-
     def test_max_restarts_exceeded(self):
         c = self.get_consumer()
 
