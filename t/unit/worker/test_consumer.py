@@ -335,10 +335,11 @@ class test_Consumer(ConsumerTestCase):
                     c.ensure_connected(Mock())
 
         if broker_connection_retry is False:
-            with subtests.test("Connect called when there is no broker connection retry configured"):
+            with subtests.test("Does not retry when connect throws an error and retry is set to false"):
                 conn = Mock()
-                c.ensure_connected(conn)
-                conn.connect.assert_called_with()
+                conn.connect.side_effect = ConnectionError()
+                with pytest.raises(ConnectionError):
+                    c.ensure_connected(conn)
 
 
 @pytest.mark.parametrize(
