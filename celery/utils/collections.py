@@ -113,8 +113,7 @@ class AttributeDictMixin:
             raise AttributeError(
                 f'{type(self).__name__!r} object has no attribute {k!r}')
 
-    def __setattr__(self, key, value):
-        # type: (str, Any) -> None
+    def __setattr__(self, key: str, value: Any) -> None:
         """`d[key] = value -> d.key = value`."""
         self[key] = value
 
@@ -595,8 +594,7 @@ class LimitedSet:
                     break  # oldest item hasn't expired yet
                 self.pop()
 
-    def pop(self, default=None):
-        # type: (Any) -> Any
+    def pop(self, default: Any = None) -> Any:
         """Remove and return the oldest item, or :const:`None` when empty."""
         while self._heap:
             _, item = heappop(self._heap)
@@ -608,8 +606,7 @@ class LimitedSet:
                 return item
         return default
 
-    def as_dict(self):
-        # type: () -> Dict
+    def as_dict(self) -> Dict:
         """Whole set as serializable dictionary.
 
         Example:
@@ -675,20 +672,17 @@ class Evictable:
 
     Empty = Empty
 
-    def evict(self):
-        # type: () -> None
+    def evict(self) -> None:
         """Force evict until maxsize is enforced."""
         self._evict(range=count)
 
-    def _evict(self, limit=100, range=range):
-        # type: (int) -> None
+    def _evict(self, limit: int = 100, range=range) -> None:
         try:
             [self._evict1() for _ in range(limit)]
         except IndexError:
             pass
 
-    def _evict1(self):
-        # type: () -> None
+    def _evict1(self) -> None:
         if self._evictcount <= self.maxsize:
             raise IndexError()
         try:
