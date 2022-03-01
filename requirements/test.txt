@@ -1,7 +1,7 @@
-pytest~=6.2
+pytest~=7.0.1
 pytest-celery
 pytest-subtests
-pytest-timeout~=1.4.2
+pytest-timeout~=2.10
 boto3>=1.9.178
 moto>=2.2.6
 pre-commit
