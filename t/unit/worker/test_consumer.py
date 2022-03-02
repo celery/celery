@@ -1,9 +1,9 @@
-import allure
 import errno
 import socket
 from collections import deque
 from unittest.mock import Mock, call, patch
 
+import allure
 import pytest
 from billiard.exceptions import RestartFreqExceeded
 
