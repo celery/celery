@@ -358,7 +358,7 @@ class Signature(dict):
     def stamp(self, **headers):
         headers = headers.copy()
         _merge_dictionaries(headers, self.options)
-        return self.set(headers=headers)
+        return self.set(**headers)
 
     def _with_list_option(self, key):
         items = self.options.setdefault(key, [])

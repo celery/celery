@@ -1,3 +1,4 @@
+import allure
 import errno
 import socket
 from collections import deque
