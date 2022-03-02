@@ -376,7 +376,10 @@ class test_Consumer_WorkerShutdown(ConsumerTestCase):
             action = "establish" if is_connection_loss_on_startup else "re-establish"
             expected_prefix = f"Retrying to {action}"
             assert record.msg.startswith(expected_prefix)
-            expected_connection_retry_type = f"app.conf.{c._get_connection_retry_type(is_connection_loss_on_startup)}=False"
+            conn_type_name = c._get_connection_retry_type(
+                is_connection_loss_on_startup
+            )
+            expected_connection_retry_type = f"app.conf.{conn_type_name}=False"
             assert expected_connection_retry_type in record.msg
 
 
