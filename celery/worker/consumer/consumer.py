@@ -22,7 +22,8 @@ from vine import ppartial, promise
 
 from celery import bootsteps, signals
 from celery.app.trace import build_tracer
-from celery.exceptions import CPendingDeprecationWarning, InvalidTaskError, NotRegistered
+from celery.exceptions import (CPendingDeprecationWarning, InvalidTaskError, NotRegistered, WorkerShutdown,
+                               WorkerTerminate)
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
@@ -323,12 +324,21 @@ class Consumer:
             try:
                 blueprint.start(self)
             except self.connection_errors as exc:
-                # If we're not retrying connections, no need to catch
-                # connection errors
-                if not self.app.conf.broker_connection_retry:
-                    raise
+                # If we're not retrying connections, we need to properly shutdown or terminate
+                # the Celery main process instead of abruptly aborting the process without any cleanup.
+                is_connection_loss_on_startup = self.restart_count == 0
+                connection_retry_type = self._get_connection_retry_type(is_connection_loss_on_startup)
+                connection_retry = self.app.conf[connection_retry_type]
+                if not connection_retry:
+                    crit(
+                        f"Retrying to {'establish' if is_connection_loss_on_startup else 're-establish'} "
+                        f"a connection to the message broker after a connection loss has "
+                        f"been disabled (app.conf.{connection_retry_type}=False). Shutting down..."
+                    )
+                    raise WorkerShutdown(1) from exc
                 if isinstance(exc, OSError) and exc.errno == errno.EMFILE:
-                    raise  # Too many open files
+                    crit("Too many open files. Aborting...")
+                    raise WorkerTerminate(1) from exc
                 maybe_shutdown()
                 if blueprint.state not in STOP_CONDITIONS:
                     if self.connection:
@@ -337,6 +347,12 @@ class Consumer:
                         self.on_connection_error_before_connected(exc)
                     self.on_close()
                     blueprint.restart(self)
+
+    def _get_connection_retry_type(self, is_connection_loss_on_startup):
+        return ('broker_connection_retry_on_startup'
+                if (is_connection_loss_on_startup
+                    and self.app.conf.broker_connection_retry_on_startup is not None)
+                else 'broker_connection_retry')
 
     def on_connection_error_before_connected(self, exc):
         error(CONNECTION_ERROR, self.conninfo.as_uri(), exc,
@@ -442,10 +458,25 @@ class Consumer:
                 max_retries=self.app.conf.broker_connection_max_retries)
             error(CONNECTION_ERROR, conn.as_uri(), exc, next_step)
 
-        # remember that the connection is lazy, it won't establish
+        # Remember that the connection is lazy, it won't establish
         # until needed.
-        if not self.app.conf.broker_connection_retry:
-            # retry disabled, just call connect directly.
+        # If broker_connection_retry_on_startup is not set, revert to broker_connection_retry
+        # to determine whether connection retries are disabled.
+
+        # TODO: Rely only on broker_connection_retry_on_startup to determine whether connection retries are disabled.
+        #       We will make the switch in Celery 6.0.
+
+        if self.app.conf.broker_connection_retry_on_startup is None:
+            warnings.warn(
+                CPendingDeprecationWarning(
+                    f"The broker_connection_retry configuration setting will no longer determine\n"
+                    f"whether broker connection retries are made during startup in Celery 6.0 and above.\n"
+                    f"If you wish to retain the existing behavior for retrying connections on startup,\n"
+                    f"you should set broker_connection_retry_on_startup to {self.app.conf.broker_connection_retry}.")
+            )
+
+        if not self.app.conf.broker_connection_retry and not self.app.conf.broker_connection_retry_on_startup:
+            # Retry disabled, just call connect directly.
             conn.connect()
             return conn
 

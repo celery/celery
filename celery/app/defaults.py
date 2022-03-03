@@ -87,6 +87,7 @@ NAMESPACES = Namespace(
         transport_options=Option({}, type='dict'),
         connection_timeout=Option(4, type='float'),
         connection_retry=Option(True, type='bool'),
+        connection_retry_on_startup=Option(None, type='bool'),
         connection_max_retries=Option(100, type='int'),
         failover_strategy=Option(None, type='string'),
         heartbeat=Option(120, type='int'),

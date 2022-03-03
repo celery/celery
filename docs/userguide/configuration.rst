@@ -2619,7 +2619,28 @@ gevent.
 
 Default: Enabled.
 
-Automatically try to re-establish the connection to the AMQP broker if lost.
+Automatically try to re-establish the connection to the AMQP broker if lost
+after the initial connection is made.
+
+The time between retries is increased for each retry, and is
+not exhausted before :setting:`broker_connection_max_retries` is
+exceeded.
+
+.. warning::
+
+    The broker_connection_retry configuration setting will no longer determine
+    whether broker connection retries are made during startup in Celery 6.0 and above.
+    If you wish to refrain from retrying connections on startup,
+    you should set broker_connection_retry_on_startup to False instead.
+
+.. setting:: broker_connection_retry_on_startup
+
+``broker_connection_retry_on_startup``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: Enabled.
+
+Automatically try to establish the connection to the AMQP broker on Celery startup if it is unavailable.
 
 The time between retries is increased for each retry, and is
 not exhausted before :setting:`broker_connection_max_retries` is
