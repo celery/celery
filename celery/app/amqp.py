@@ -598,7 +598,7 @@ class AMQP:
     @cached_property
     def _event_dispatcher(self):
         # We call Dispatcher.publish with a custom producer
-        # so don't need the diuspatcher to be enabled.
+        # so don't need the dispatcher to be enabled.
         return self.app.events.Dispatcher(enabled=False)
 
     def _handle_conf_update(self, *args, **kwargs):
