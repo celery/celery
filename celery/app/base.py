@@ -765,6 +765,7 @@ class Celery:
                     options.setdefault('priority',
                                        parent.request.delivery_info.get('priority'))
 
+        # alias for 'task_as_v2'
         message = amqp.create_task_message(
             task_id, name, args, kwargs, countdown, eta, group_id, group_index,
             expires, retries, chord,
