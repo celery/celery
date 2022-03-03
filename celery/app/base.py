@@ -604,7 +604,7 @@ class Celery:
             self.loader.cmdline_config_parser(argv, namespace)
         )
 
-    def setup_security(self, allowed_serializers=None, key=None, key_password=None, cert=None,
+    def setup_security(self, allowed_serializers=None, key=None, cert=None,
                        store=None, digest=DEFAULT_SECURITY_DIGEST,
                        serializer='json'):
         """Setup the message-signing serializer.
@@ -620,8 +620,6 @@ class Celery:
                 content_types that should be exempt from being disabled.
             key (str): Name of private key file to use.
                 Defaults to the :setting:`security_key` setting.
-            key_password (bytes): Password to decrypt the private key.
-                Defaults to the :setting:`security_key_password` setting.
             cert (str): Name of certificate file to use.
                 Defaults to the :setting:`security_certificate` setting.
             store (str): Directory containing certificates.
@@ -633,7 +631,7 @@ class Celery:
                 the serializers supported.  Default is ``json``.
         """
         from celery.security import setup_security
-        return setup_security(allowed_serializers, key, key_password, cert,
+        return setup_security(allowed_serializers, key, cert,
                               store, digest, serializer, app=self)
 
     def autodiscover_tasks(self, packages=None,
@@ -775,6 +773,7 @@ class Celery:
             ignore_result=ignore_result,
             argsrepr=options.get('argsrepr'),
             kwargsrepr=options.get('kwargsrepr'),
+            groups=options.get('groups')
         )
 
         if connection:
