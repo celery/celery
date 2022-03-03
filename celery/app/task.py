@@ -93,6 +93,7 @@ class Context:
     taskset = None   # compat alias to group
     timelimit = None
     utc = None
+    groups = None
 
     def __init__(self, *args, **kwargs):
         self.update(*args, **kwargs)
@@ -783,6 +784,7 @@ class Task:
                 'routing_key': options.get('routing_key'),
                 'priority': options.get('priority'),
             },
+            'groups': maybe_list(options.get('groups'))
         }
         tb = None
         tracer = build_tracer(
