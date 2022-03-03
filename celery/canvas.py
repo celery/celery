@@ -56,6 +56,27 @@ def task_name_from(task):
     return getattr(task, 'name', task)
 
 
+def _merge_dictionaries(d1, d2):
+    for key, value in d1.items():
+        if key in d2:
+            if isinstance(value, dict):
+                _merge_dictionaries(d1[key], d2[key])
+            else:
+                if isinstance(value, (int, float, str)):
+                    d1[key] = [value]
+                if isinstance(d2[key], list):
+                    d1[key].extend(d2[key])
+                else:
+                    if d1[key] is None:
+                        d1[key] = []
+                    else:
+                        d1[key] = list(d1[key])
+                    d1[key].append(d2[key])
+    for key, value in d2.items():
+        if key not in d1:
+            d1[key] = value
+
+
 @abstract.CallableSignature.register
 class Signature(dict):
     """Task Signature.
@@ -333,6 +354,11 @@ class Signature(dict):
 
     def set_immutable(self, immutable):
         self.immutable = immutable
+
+    def stamp(self, **headers):
+        headers = headers.copy()
+        _merge_dictionaries(headers, self.options)
+        return self.set(**headers)
 
     def _with_list_option(self, key):
         items = self.options.setdefault(key, [])
@@ -686,6 +712,11 @@ class _chain(Signature):
         )
         return results[0]
 
+    def stamp(self, **headers):
+        super().stamp(**headers)
+        for task in self.tasks:
+            task.stamp(**headers)
+
     def prepare_steps(self, args, kwargs, tasks,
                       root_id=None, parent_id=None, link_error=None, app=None,
                       last_task_id=None, group_id=None, chord_body=None,
@@ -725,7 +756,7 @@ class _chain(Signature):
                 task = from_dict(task, app=app)
             if isinstance(task, group):
                 # when groups are nested, they are unrolled - all tasks within
-                # groups within groups should be called in parallel
+                # groups should be called in parallel
                 task = maybe_unroll_group(task)
 
             # first task gets partial args from chain
@@ -1126,6 +1157,11 @@ class group(Signature):
     def set_immutable(self, immutable):
         for task in self.tasks:
             task.set_immutable(immutable)
+
+    def stamp(self, **headers):
+        super().stamp(**headers)
+        for task in self.tasks:
+            task.stamp(**headers)
 
     def link(self, sig):
         # Simply link to first task. Doing this is slightly misleading because
