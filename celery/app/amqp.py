@@ -284,7 +284,7 @@ class AMQP:
                    time_limit=None, soft_time_limit=None,
                    create_sent_event=False, root_id=None, parent_id=None,
                    shadow=None, chain=None, now=None, timezone=None,
-                   origin=None, ignore_result=False, argsrepr=None, kwargsrepr=None):
+                   origin=None, ignore_result=False, argsrepr=None, kwargsrepr=None, groups=None):
         args = args or ()
         kwargs = kwargs or {}
         if not isinstance(args, (list, tuple)):
@@ -337,6 +337,7 @@ class AMQP:
                 'kwargsrepr': kwargsrepr,
                 'origin': origin or anon_nodename(),
                 'ignore_result': ignore_result,
+                'groups': groups
             },
             properties={
                 'correlation_id': task_id,
@@ -597,7 +598,7 @@ class AMQP:
     @cached_property
     def _event_dispatcher(self):
         # We call Dispatcher.publish with a custom producer
-        # so don't need the dispatcher to be enabled.
+        # so don't need the diuspatcher to be enabled.
         return self.app.events.Dispatcher(enabled=False)
 
     def _handle_conf_update(self, *args, **kwargs):
