@@ -87,7 +87,7 @@ class AsyncResult(ResultBase):
 
     def __init__(self, id, backend=None,
                  task_name=None,            # deprecated
-                 app=None, parent=None):
+                 app=None, parent=None, groups=None):
         if id is None:
             raise ValueError(
                 f'AsyncResult requires valid id, not {type(id)}')
@@ -98,6 +98,7 @@ class AsyncResult(ResultBase):
         self.on_ready = promise(self._on_fulfilled, weak=True)
         self._cache = None
         self._ignored = False
+        self.groups = groups
 
     @property
     def ignored(self):
@@ -970,7 +971,7 @@ class GroupResult(ResultSet):
 class EagerResult(AsyncResult):
     """Result that we know has already been executed."""
 
-    def __init__(self, id, ret_value, state, traceback=None):
+    def __init__(self, id, ret_value, state, traceback=None, groups=None):
         # pylint: disable=super-init-not-called
         # XXX should really not be inheriting from AsyncResult
         self.id = id
@@ -979,6 +980,7 @@ class EagerResult(AsyncResult):
         self._traceback = traceback
         self.on_ready = promise()
         self.on_ready(self)
+        self.groups = groups
 
     def then(self, callback, on_error=None, weak=False):
         return self.on_ready.then(callback, on_error)
@@ -1029,6 +1031,7 @@ class EagerResult(AsyncResult):
             'result': self._result,
             'status': self._state,
             'traceback': self._traceback,
+            'groups': self.groups,
         }
 
     @property

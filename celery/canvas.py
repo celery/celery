@@ -246,6 +246,7 @@ class Signature(dict):
             # override values in `self.options` except for keys which are
             # noted as being immutable (unrelated to signature immutability)
             # implying that allowing their value to change would stall tasks
+            # todo see if this is a problem
             new_options = {**self.options, **{
                 k: v for k, v in options.items()
                 if (k not in self._IMMUTABLE_OPTIONS or k not in self.options) and k != 'headers'
@@ -321,7 +322,7 @@ class Signature(dict):
             opts['group_index'] = group_index
         # pylint: disable=too-many-function-args
         #   Borks on this, as it's a property.
-        return self.AsyncResult(tid)
+        return self.AsyncResult(tid, groups=opts.get('groups'))
 
     _freeze = freeze
 
