@@ -6,7 +6,7 @@ import pytest_subtests  # noqa: F401
 
 from celery._state import _task_stack
 from celery.canvas import (Signature, _chain, _maybe_group, chain, chord, chunks, group, maybe_signature,
-                           maybe_unroll_group, signature, xmap, xstarmap)
+                           maybe_unroll_group, signature, xmap, xstarmap, GroupStampingVisitor)
 from celery.result import AsyncResult, EagerResult, GroupResult
 
 SIG = Signature({
@@ -799,7 +799,7 @@ class test_group(CanvasCase):
             app=self.app
         )
         g3_res = g3.freeze(group_id='g3')
-        g3.stamp(groups=g3_res.id)
+        # g3.stamp(groups=g3_res.id)
 
         g2 = group(
             sig_in_g2_1,
@@ -807,7 +807,7 @@ class test_group(CanvasCase):
             app=self.app
         )
         g2_res = g2.freeze(group_id='g2')
-        g2.stamp(groups=g2_res.id,)
+        # g2.stamp(groups=g2_res.id,)
 
         g1 = group(
             sig_in_g1,
@@ -823,20 +823,8 @@ class test_group(CanvasCase):
             ),
         )
         g1_res = g1.freeze(group_id='g1')
-        g1.stamp(groups=g1_res.id)
-        g1_res.save()
-        g2_res.save()
-        g3_res.save()
+        g1.stamp(visitor=GroupStampingVisitor())
         g1.apply()
-
-        # with subtests.test("g1 is stamped", groups=[g1_res.id]):
-        #     assert g1_res._get_group_meta()['options']['groups'] == [g1_res.id]
-        #
-        # with subtests.test("g2 is stamped", groups=[g1_res.id, g2_res.id]):
-        #     assert g2_res._get_group_meta()['options']['groups'] == [g1_res.id, g2_res.id]
-        #
-        # with subtests.test("g3 is stamped", groups=[g1_res.id, g3_res.id]):
-        #     assert g3_res._get_group_meta()['options']['groups'] == [g1_res.id, g3_res.id]
 
         with subtests.test("sig_in_g1 is stamped", groups=[g1_res.id]):
             assert sig_in_g1_res.id == 'sig_in_g1'
