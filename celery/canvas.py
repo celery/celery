@@ -77,6 +77,36 @@ def _merge_dictionaries(d1, d2):
             d1[key] = value
 
 
+class StampingVisitor:
+    def on_group(self, group, **headers) -> dict:
+        pass
+
+    def on_chain(self, chain, **headers) -> dict:
+        pass
+
+    def on_signature(self, sig, **headers) -> dict:
+        pass
+
+
+class GroupStampingVisitor(StampingVisitor):
+    def __init__(self):
+        self.groups = []
+
+    def on_group(self, group, **headers) -> dict:
+        self.groups.append(group.id)
+
+        return {'groups': list(self.groups)}
+
+    def on_group_end(self):
+        self.groups.pop()
+
+    def on_chain(self, chain, **headers) -> dict:
+        return {'groups': list(self.groups)}
+
+    def on_signature(self, sig, **headers) -> dict:
+        return {'groups': list(self.groups)}
+
+
 @abstract.CallableSignature.register
 class Signature(dict):
     """Task Signature.
@@ -355,9 +385,12 @@ class Signature(dict):
     def set_immutable(self, immutable):
         self.immutable = immutable
 
-    def stamp(self, **headers):
+    def stamp(self, visitor=None, **headers):
         headers = headers.copy()
-        _merge_dictionaries(headers, self.options)
+        if visitor:
+            headers.update(visitor.on_signature(self, **headers))
+        else:
+            _merge_dictionaries(headers, self.options)
         return self.set(**headers)
 
     def _with_list_option(self, key):
@@ -712,10 +745,12 @@ class _chain(Signature):
         )
         return results[0]
 
-    def stamp(self, **headers):
-        super().stamp(**headers)
+    def stamp(self, visitor=None, **headers):
+        if visitor:
+            headers.update(visitor.on_chain(self, **headers))
+        super().stamp(visitor=visitor, **headers)
         for task in self.tasks:
-            task.stamp(**headers)
+            task.stamp(visitor=visitor, **headers)
 
     def prepare_steps(self, args, kwargs, tasks,
                       root_id=None, parent_id=None, link_error=None, app=None,
@@ -1158,10 +1193,15 @@ class group(Signature):
         for task in self.tasks:
             task.set_immutable(immutable)
 
-    def stamp(self, **headers):
-        super().stamp(**headers)
+    def stamp(self, visitor=None, **headers):
+        if visitor:
+            headers.update(visitor.on_group(self, **headers))
+        super().stamp(visitor=visitor, **headers)
         for task in self.tasks:
-            task.stamp(**headers)
+            task.stamp(visitor=visitor, **headers)
+
+        if visitor:
+            visitor.on_group_end()
 
     def link(self, sig):
         # Simply link to first task. Doing this is slightly misleading because
