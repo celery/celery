@@ -5,8 +5,8 @@ import pytest
 import pytest_subtests  # noqa: F401
 
 from celery._state import _task_stack
-from celery.canvas import (Signature, _chain, _maybe_group, chain, chord, chunks, group, maybe_signature,
-                           maybe_unroll_group, signature, xmap, xstarmap, GroupStampingVisitor)
+from celery.canvas import (GroupStampingVisitor, Signature, _chain, _maybe_group, chain, chord, chunks, group,
+                           maybe_signature, maybe_unroll_group, signature, xmap, xstarmap)
 from celery.result import AsyncResult, EagerResult, GroupResult
 
 SIG = Signature({
