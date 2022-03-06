@@ -137,11 +137,6 @@ def with_unique_field(attr):
             return NotImplemented
         cls.__eq__ = __eq__
 
-        def __ne__(this, other):
-            res = this.__eq__(other)
-            return True if res is NotImplemented else not res
-        cls.__ne__ = __ne__
-
         def __hash__(this):
             return hash(getattr(this, attr))
         cls.__hash__ = __hash__

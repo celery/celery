@@ -371,10 +371,6 @@ class AsyncResult(ResultBase):
             return other == self.id
         return NotImplemented
 
-    def __ne__(self, other):
-        res = self.__eq__(other)
-        return True if res is NotImplemented else not res
-
     def __copy__(self):
         return self.__class__(
             self.id, self.backend, None, self.app, self.parent,
@@ -830,10 +826,6 @@ class ResultSet(ResultBase):
             return other.results == self.results
         return NotImplemented
 
-    def __ne__(self, other):
-        res = self.__eq__(other)
-        return True if res is NotImplemented else not res
-
     def __repr__(self):
         return f'<{type(self).__name__}: [{", ".join(r.id for r in self.results)}]>'
 
@@ -924,10 +916,6 @@ class GroupResult(ResultSet):
         elif isinstance(other, str):
             return other == self.id
         return NotImplemented
-
-    def __ne__(self, other):
-        res = self.__eq__(other)
-        return True if res is NotImplemented else not res
 
     def __repr__(self):
         return f'<{type(self).__name__}: {self.id} [{", ".join(r.id for r in self.results)}]>'
