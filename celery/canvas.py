@@ -106,6 +106,27 @@ class GroupStampingVisitor(StampingVisitor):
     def on_signature(self, sig, **headers) -> dict:
         return {'groups': list(self.groups)}
 
+class OptionsStamping(StampingVisitor):
+    def on_group(self, group, **headers) -> dict:
+        headers.pop('groups', None)
+        options = dict(group.options, **headers)
+        options['group_id'] = options.pop('task_id', uuid())
+        return options
+
+    def on_group_end(self):
+        pass
+
+    def on_chain(self, chain, **headers) -> dict:
+        headers.pop('groups', None)
+        options = dict(chain.options, **headers)
+        options['group_id'] = options.pop('task_id', uuid())
+        return options
+
+    def on_signature(self, sig, **headers) -> dict:
+        headers.pop('groups', None)
+        options = dict(sig.options, **headers)
+        options['group_id'] = options.pop('task_id', uuid())
+        return options
 
 @abstract.CallableSignature.register
 class Signature(dict):
@@ -1183,10 +1204,13 @@ class group(Signature):
         app = self.app
         if not self.tasks:
             return self.freeze()  # empty group returns GroupResult
-        options, group_id, root_id = self._freeze_gid(options)
+        # options, group_id, root_id = self._freeze_gid(options)
+        self.stamp(visitor=OptionsStamping(), **options)
+        group_id = self.options['group_id']
+        root_id = options.get('root_id')
         tasks = self._prepared(self.tasks, [], group_id, root_id, app)
         return app.GroupResult(group_id, [
-            sig.apply(args=args, kwargs=kwargs, **options) for sig, _, _ in tasks
+            sig.apply(args=args, kwargs=kwargs) for sig, _, _ in tasks
         ])
 
     def set_immutable(self, immutable):
@@ -1200,6 +1224,14 @@ class group(Signature):
         for task in self.tasks:
             task.stamp(visitor=visitor, **headers)
 
+        if visitor:
+            visitor.on_group_end()
+
+    def stamp_on_child(self, visitor=None, **headers):
+        if visitor:
+            headers.update(visitor.on_group(self, **headers))
+        for task in self.tasks:
+            task.stamp(visitor=visitor, **headers)
         if visitor:
             visitor.on_group_end()
 
