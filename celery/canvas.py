@@ -14,6 +14,7 @@ from functools import partial as _partial
 from functools import reduce
 from operator import itemgetter
 from types import GeneratorType
+from abc import ABCMeta, abstractmethod
 
 from kombu.utils.functional import fxrange, reprcall
 from kombu.utils.objects import cached_property
@@ -77,54 +78,73 @@ def _merge_dictionaries(d1, d2):
             d1[key] = value
 
 
-class StampingVisitor:
-    def on_group(self, group, **headers) -> dict:
+class _StampingVisitor(metaclass=ABCMeta):
+    @abstractmethod
+    def on_group_start(self, group, **headers) -> dict:
         pass
 
-    def on_chain(self, chain, **headers) -> dict:
+    @abstractmethod
+    def on_group_end(self, group, **headers) -> None:
         pass
 
+    @abstractmethod
+    def on_chain_start(self, chain, **headers) -> dict:
+        pass
+
+    @abstractmethod
+    def on_chain_end(self, chain, **headers) -> None:
+        pass
+
+    @abstractmethod
     def on_signature(self, sig, **headers) -> dict:
         pass
 
 
-class GroupStampingVisitor(StampingVisitor):
+class GroupStampingVisitor(_StampingVisitor):
     def __init__(self):
         self.groups = []
 
-    def on_group(self, group, **headers) -> dict:
+    def on_group_start(self, group, **headers) -> dict:
         self.groups.append(group.id)
-
         return {'groups': list(self.groups)}
 
-    def on_group_end(self):
+    def on_group_end(self, group, **headers) -> None:
         self.groups.pop()
 
-    def on_chain(self, chain, **headers) -> dict:
+    def on_chain_start(self, chain, **headers) -> dict:
         return {'groups': list(self.groups)}
+
+    def on_chain_end(self, chain, **headers) -> None:
+        pass
 
     def on_signature(self, sig, **headers) -> dict:
         return {'groups': list(self.groups)}
 
-class OptionsStamping(StampingVisitor):
-    def on_group(self, group, **headers) -> dict:
+
+class OptionsStamping(_StampingVisitor):
+    def on_group_start(self, group, **headers) -> dict:
         headers.pop('groups', None)
         options = dict(group.options, **headers)
         options['group_id'] = options.pop('task_id', uuid())
         return options
 
-    def on_group_end(self):
+    def on_group_end(self, group, **headers) -> None:
         pass
 
-    def on_chain(self, chain, **headers) -> dict:
+    def on_chain_start(self, chain, **headers) -> dict:
         headers.pop('groups', None)
         options = dict(chain.options, **headers)
+        # TODO: correct
         options['group_id'] = options.pop('task_id', uuid())
         return options
+
+    def on_chain_end(self, chain, **headers) -> None:
+        pass
 
     def on_signature(self, sig, **headers) -> dict:
         headers.pop('groups', None)
         options = dict(sig.options, **headers)
+        # TODO: correct
         options['group_id'] = options.pop('task_id', uuid())
         return options
 
@@ -767,11 +787,15 @@ class _chain(Signature):
         return results[0]
 
     def stamp(self, visitor=None, **headers):
-        if visitor:
-            headers.update(visitor.on_chain(self, **headers))
+        if visitor is not None:
+            headers.update(visitor.on_chain_start(self, **headers))
+
         super().stamp(visitor=visitor, **headers)
         for task in self.tasks:
             task.stamp(visitor=visitor, **headers)
+
+        if visitor is not None:
+            visitor.on_chain_end(self, **headers)
 
     def prepare_steps(self, args, kwargs, tasks,
                       root_id=None, parent_id=None, link_error=None, app=None,
@@ -1204,7 +1228,7 @@ class group(Signature):
         app = self.app
         if not self.tasks:
             return self.freeze()  # empty group returns GroupResult
-        # options, group_id, root_id = self._freeze_gid(options)
+        #options, group_id, root_id = self._freeze_gid(options)
         self.stamp(visitor=OptionsStamping(), **options)
         group_id = self.options['group_id']
         root_id = options.get('root_id')
@@ -1218,22 +1242,15 @@ class group(Signature):
             task.set_immutable(immutable)
 
     def stamp(self, visitor=None, **headers):
-        if visitor:
-            headers.update(visitor.on_group(self, **headers))
+        if visitor is not None:
+            headers.update(visitor.on_group_start(self, **headers))
+
         super().stamp(visitor=visitor, **headers)
         for task in self.tasks:
             task.stamp(visitor=visitor, **headers)
 
-        if visitor:
-            visitor.on_group_end()
-
-    def stamp_on_child(self, visitor=None, **headers):
-        if visitor:
-            headers.update(visitor.on_group(self, **headers))
-        for task in self.tasks:
-            task.stamp(visitor=visitor, **headers)
-        if visitor:
-            visitor.on_group_end()
+        if visitor is not None:
+            visitor.on_group_end(self, **headers)
 
     def link(self, sig):
         # Simply link to first task. Doing this is slightly misleading because
@@ -1327,7 +1344,7 @@ class group(Signature):
     def _freeze_gid(self, options):
         # remove task_id and use that as the group_id,
         # if we don't remove it then every task will have the same id...
-        options = dict(options, **self.options)
+        options = dict(self.options, **options)
         options['group_id'] = group_id = (
             options.pop('task_id', uuid()))
         return options, group_id, options.get('root_id')
@@ -1524,6 +1541,16 @@ class _chord(Signature):
             node = node.parent
         self.id = self.tasks.id
         return body_result
+
+    def stamp(self, visitor=None, **headers):
+        if visitor:
+            headers.update(visitor.on_group_start(self, **headers))
+        super().stamp(visitor=visitor, **headers)
+        for task in self.tasks:
+            task.stamp(visitor=visitor, **headers)
+
+        if visitor:
+            visitor.on_group_end()
 
     def apply_async(self, args=None, kwargs=None, task_id=None,
                     producer=None, publisher=None, connection=None,
