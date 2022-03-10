@@ -199,6 +199,7 @@ class Consumer:
         self.disable_rate_limits = disable_rate_limits
         self.initial_prefetch_count = initial_prefetch_count
         self.prefetch_multiplier = prefetch_multiplier
+        self._maximum_prefetch_restored = True
 
         # this contains a tokenbucket for each task type by name, used for
         # rate limits, or None if rate limits are disabled for that task.
@@ -379,6 +380,13 @@ class Consumer:
                     request.cancel(self.pool)
         else:
             warnings.warn(CANCEL_TASKS_BY_DEFAULT, CPendingDeprecationWarning)
+
+        self.initial_prefetch_count = max(
+            self.prefetch_multiplier,
+            self.max_prefetch_multiplier - len(tuple(active_requests)) * self.prefetch_multiplier
+        )
+
+        self._maximum_prefetch_restored = self.initial_prefetch_count == self.max_prefetch_multiplier
 
     def register_with_event_loop(self, hub):
         self.blueprint.send_all(
@@ -622,10 +630,24 @@ class Consumer:
                 return on_unknown_task(None, message, exc)
             else:
                 try:
+                    ack_log_error_promise = promise(call_soon, (message.ack_log_error,))
+                    reject_log_error_promise = promise(call_soon, (message.reject_log_error,))
+
+                    new_prefetch_count = self.qos.value + self.prefetch_multiplier
+                    if (
+                        not self._maximum_prefetch_restored
+                        and self.restart_count > 0
+                        and new_prefetch_count <= self.max_prefetch_multiplier
+                    ):
+                        ack_log_error_promise.then(self._restore_prefetch_count_after_connection_restart)
+                        reject_log_error_promise.then(self._restore_prefetch_count_after_connection_restart)
+
+                        self._maximum_prefetch_restored = new_prefetch_count == self.max_prefetch_multiplier
+
                     strategy(
                         message, payload,
-                        promise(call_soon, (message.ack_log_error,)),
-                        promise(call_soon, (message.reject_log_error,)),
+                        ack_log_error_promise,
+                        reject_log_error_promise,
                         callbacks,
                     )
                 except (InvalidTaskError, ContentDisallowed) as exc:
@@ -634,6 +656,16 @@ class Consumer:
                     return self.on_decode_error(message, exc)
 
         return on_task_received
+
+    def _restore_prefetch_count_after_connection_restart(self, _):
+        with self.qos._mutex:
+            self.qos.value = self.initial_prefetch_count = min(self.max_prefetch_multiplier,
+                                                               self.qos.value + self.prefetch_multiplier)
+            self.qos.set(self.qos.value)
+
+    @property
+    def max_prefetch_multiplier(self):
+        return self.pool.num_processes * self.prefetch_multiplier
 
     def __repr__(self):
         """``repr(self)``."""
