@@ -1543,7 +1543,12 @@ class _chord(Signature):
         if visitor:
             headers.update(visitor.on_group_start(self, **headers))
         super().stamp(visitor=visitor, **headers)
-        for task in self.tasks:
+
+        tasks = self.tasks
+        if isinstance(tasks, group):
+            tasks = tasks.tasks
+
+        for task in tasks:
             task.stamp(visitor=visitor, **headers)
 
         if visitor:

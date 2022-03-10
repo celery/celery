@@ -52,6 +52,15 @@ class CanvasCase:
         self.div = div
 
 
+        @self.app.task(shared=False)
+        def xsum(numbers):
+            return sum(numbers)
+
+        self.xsum = xsum
+
+
+
+
 class test_Signature(CanvasCase):
 
     def test_getitem_property_class(self):
@@ -1240,6 +1249,29 @@ class test_group(CanvasCase):
 
 
 class test_chord(CanvasCase):
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_chord_stamping_one_level(self):
+        """
+        In the case of group within a chord that is from another canvas
+        element, ensure that chord stamps are added correctly when chord are
+        run in parallel.
+        """
+        self.app.conf.task_always_eager = True
+        self.app.conf.task_store_eager_result = True
+        self.app.conf.result_extended = True
+
+        sig_1 = self.add.s(2, 2)
+        sig_2 = self.add.s(4, 4)
+        sig_1_res = sig_1.freeze()
+        sig_2_res = sig_2.freeze()
+
+        g = chord([sig_1, sig_2], self.xsum.s(), app=self.app)
+        g_res = g.freeze()
+        g.stamp(groups=g_res.id)
+        g.apply()
+
+        assert sig_1_res._get_task_meta()['groups'] == [g_res.id]
+        assert sig_2_res._get_task_meta()['groups'] == [g_res.id]
 
     def test__get_app_does_not_exhaust_generator(self):
         def build_generator():
