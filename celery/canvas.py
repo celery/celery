@@ -7,6 +7,7 @@
 
 import itertools
 import operator
+from abc import ABCMeta, abstractmethod
 from collections import deque
 from collections.abc import MutableSequence
 from copy import deepcopy
@@ -14,7 +15,6 @@ from functools import partial as _partial
 from functools import reduce
 from operator import itemgetter
 from types import GeneratorType
-from abc import ABCMeta, abstractmethod
 
 from kombu.utils.functional import fxrange, reprcall
 from kombu.utils.objects import cached_property
