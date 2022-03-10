@@ -1323,10 +1323,10 @@ class group(Signature):
     def _freeze_gid(self, options):
         # remove task_id and use that as the group_id,
         # if we don't remove it then every task will have the same id...
-        options = dict(self.options, **{
+        options = {**self.options, **{
                 k: v for k, v in options.items()
                 if k not in self._IMMUTABLE_OPTIONS or k not in self.options
-            })
+            }}
         options['group_id'] = group_id = (
             options.pop('task_id', uuid()))
         return options, group_id, options.get('root_id')
