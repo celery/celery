@@ -78,7 +78,7 @@ def _merge_dictionaries(d1, d2):
             d1[key] = value
 
 
-class _StampingVisitor(metaclass=ABCMeta):
+class StampingVisitor(metaclass=ABCMeta):
     @abstractmethod
     def on_group_start(self, group, **headers) -> dict:
         pass
@@ -99,8 +99,17 @@ class _StampingVisitor(metaclass=ABCMeta):
     def on_signature(self, sig, **headers) -> dict:
         pass
 
+    def on_chord_header_start(self, chord, **header) -> dict:
+        return self.on_group_start(chord, **header)
 
-class GroupStampingVisitor(_StampingVisitor):
+    def on_chord_header_end(self, chord, **header) -> None:
+        self.on_group_end(chord, **header)
+
+    def on_chord_body(self, chord, **header) -> dict:
+        return self.on_signature(chord, **header)
+
+
+class GroupStampingVisitor(StampingVisitor):
     def __init__(self):
         self.groups = []
 
@@ -120,33 +129,6 @@ class GroupStampingVisitor(_StampingVisitor):
     def on_signature(self, sig, **headers) -> dict:
         return {'groups': list(self.groups)}
 
-
-class OptionsStamping(_StampingVisitor):
-    def on_group_start(self, group, **headers) -> dict:
-        headers.pop('groups', None)
-        options = dict(group.options, **headers)
-        options['group_id'] = options.pop('task_id', uuid())
-        return options
-
-    def on_group_end(self, group, **headers) -> None:
-        pass
-
-    def on_chain_start(self, chain, **headers) -> dict:
-        headers.pop('groups', None)
-        options = dict(chain.options, **headers)
-        # TODO: correct
-        options['group_id'] = options.pop('task_id', uuid())
-        return options
-
-    def on_chain_end(self, chain, **headers) -> None:
-        pass
-
-    def on_signature(self, sig, **headers) -> dict:
-        headers.pop('groups', None)
-        options = dict(sig.options, **headers)
-        # TODO: correct
-        options['group_id'] = options.pop('task_id', uuid())
-        return options
 
 @abstract.CallableSignature.register
 class Signature(dict):
@@ -428,7 +410,7 @@ class Signature(dict):
 
     def stamp(self, visitor=None, **headers):
         headers = headers.copy()
-        if visitor:
+        if visitor is not None:
             headers.update(visitor.on_signature(self, **headers))
         else:
             _merge_dictionaries(headers, self.options)
@@ -1229,12 +1211,9 @@ class group(Signature):
         if not self.tasks:
             return self.freeze()  # empty group returns GroupResult
         options, group_id, root_id = self._freeze_gid(options)
-        #self.stamp(visitor=OptionsStamping(), **options)
-        #group_id = self.options['group_id']
-        #root_id = options.get('root_id')
         tasks = self._prepared(self.tasks, [], group_id, root_id, app)
         return app.GroupResult(group_id, [
-            sig.apply(args=args, kwargs=kwargs) for sig, _, _ in tasks
+            sig.apply(args=args, kwargs=kwargs, **options) for sig, _, _ in tasks
         ])
 
     def set_immutable(self, immutable):
@@ -1546,8 +1525,8 @@ class _chord(Signature):
         return body_result
 
     def stamp(self, visitor=None, **headers):
-        if visitor:
-            headers.update(visitor.on_group_start(self, **headers))
+        if visitor is not None:
+            headers.update(visitor.on_chord_header_start(self, **headers))
         super().stamp(visitor=visitor, **headers)
 
         tasks = self.tasks
@@ -1557,8 +1536,12 @@ class _chord(Signature):
         for task in tasks:
             task.stamp(visitor=visitor, **headers)
 
-        if visitor:
-            visitor.on_group_end()
+        if visitor is not None:
+            visitor.on_chord_header_end(self, **headers)
+
+        if visitor is not None:
+            headers.update(visitor.on_body(self, **headers))
+            self.body.stamp(visitor=visitor, **headers)
 
     def apply_async(self, args=None, kwargs=None, task_id=None,
                     producer=None, publisher=None, connection=None,
