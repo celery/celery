@@ -210,7 +210,7 @@ class Signature(dict):
     _app = _type = None
     # The following fields must not be changed during freezing/merging because
     # to do so would disrupt completion of parent tasks
-    _IMMUTABLE_OPTIONS = {"group_id"}
+    _IMMUTABLE_OPTIONS = {"group_id", "groups"}
 
     @classmethod
     def register_type(cls, name=None):
@@ -1228,10 +1228,10 @@ class group(Signature):
         app = self.app
         if not self.tasks:
             return self.freeze()  # empty group returns GroupResult
-        #options, group_id, root_id = self._freeze_gid(options)
-        self.stamp(visitor=OptionsStamping(), **options)
-        group_id = self.options['group_id']
-        root_id = options.get('root_id')
+        options, group_id, root_id = self._freeze_gid(options)
+        #self.stamp(visitor=OptionsStamping(), **options)
+        #group_id = self.options['group_id']
+        #root_id = options.get('root_id')
         tasks = self._prepared(self.tasks, [], group_id, root_id, app)
         return app.GroupResult(group_id, [
             sig.apply(args=args, kwargs=kwargs) for sig, _, _ in tasks
@@ -1344,7 +1344,10 @@ class group(Signature):
     def _freeze_gid(self, options):
         # remove task_id and use that as the group_id,
         # if we don't remove it then every task will have the same id...
-        options = dict(self.options, **options)
+        options = dict(self.options, **{
+                k: v for k, v in options.items()
+                if k not in self._IMMUTABLE_OPTIONS or k not in self.options
+            })
         options['group_id'] = group_id = (
             options.pop('task_id', uuid()))
         return options, group_id, options.get('root_id')
