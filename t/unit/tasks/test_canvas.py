@@ -832,7 +832,6 @@ class test_group(CanvasCase):
             ),
         )
         g1_res = g1.freeze(group_id='g1')
-        g1.stamp(visitor=GroupStampingVisitor())
         g1.apply()
 
         with subtests.test("sig_in_g1 is stamped", groups=[g1_res.id]):
