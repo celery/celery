@@ -78,6 +78,12 @@ def _merge_dictionaries(d1, d2):
             d1[key] = value
 
 
+def _update_list(list_to_update, list_update_from):
+    for el in list_update_from:
+        if el not in list_to_update:
+            list_to_update.append(el)
+
+
 class StampingVisitor(metaclass=ABCMeta):
     @abstractmethod
     def on_group_start(self, group, **headers) -> dict:
@@ -111,14 +117,14 @@ class StampingVisitor(metaclass=ABCMeta):
 
 class GroupStampingVisitor(StampingVisitor):
     def __init__(self):
-        self.groups = set()
+        self.groups = []
 
     def on_group_start(self, group, **headers) -> dict:
-        self.groups.add(group.id)
+        self.groups.append(group.id)
         return {'groups': list(self.groups)}
 
     def on_group_end(self, group, **headers) -> None:
-        self.groups.discard(group.id)
+        self.groups.pop()
 
     def on_chain_start(self, chain, **headers) -> dict:
         return {'groups': list(self.groups)}
@@ -128,9 +134,9 @@ class GroupStampingVisitor(StampingVisitor):
 
     def on_signature(self, sig, **headers) -> dict:
         if "groups" in headers:
-            self.groups.update(headers["groups"])
+            _update_list(self.groups, headers["groups"])
         if "groups" in sig.options:
-            self.groups.update(sig.options["groups"])
+            _update_list(self.groups, sig.options["groups"])
         return {'groups': list(self.groups)}
 
 
