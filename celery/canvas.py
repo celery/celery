@@ -111,14 +111,14 @@ class StampingVisitor(metaclass=ABCMeta):
 
 class GroupStampingVisitor(StampingVisitor):
     def __init__(self):
-        self.groups = []
+        self.groups = set()
 
     def on_group_start(self, group, **headers) -> dict:
-        self.groups.append(group.id)
+        self.groups.add(group.id)
         return {'groups': list(self.groups)}
 
     def on_group_end(self, group, **headers) -> None:
-        self.groups.pop()
+        self.groups.discard(group.id)
 
     def on_chain_start(self, chain, **headers) -> dict:
         return {'groups': list(self.groups)}
@@ -127,6 +127,10 @@ class GroupStampingVisitor(StampingVisitor):
         pass
 
     def on_signature(self, sig, **headers) -> dict:
+        if "groups" in headers:
+            self.groups.update(headers["groups"])
+        if "groups" in sig.options:
+            self.groups.update(sig.options["groups"])
         return {'groups': list(self.groups)}
 
 
@@ -1207,6 +1211,7 @@ class group(Signature):
     def apply(self, args=None, kwargs=None, **options):
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
+        self.stamp(visitor=GroupStampingVisitor())
         app = self.app
         if not self.tasks:
             return self.freeze()  # empty group returns GroupResult
