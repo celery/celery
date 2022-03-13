@@ -133,10 +133,10 @@ class GroupStampingVisitor(StampingVisitor):
         pass
 
     def on_signature(self, sig, **headers) -> dict:
-        if "groups" in headers:
-            _update_list(self.groups, headers["groups"])
         if "groups" in sig.options:
             _update_list(self.groups, sig.options["groups"])
+        if "groups" in headers:
+            _update_list(self.groups, headers["groups"])
         return {'groups': list(self.groups)}
 
 
