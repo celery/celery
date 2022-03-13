@@ -5,7 +5,7 @@ import pytest
 import pytest_subtests  # noqa: F401
 
 from celery._state import _task_stack
-from celery.canvas import (GroupStampingVisitor, Signature, _chain, _maybe_group, chain, chord, chunks, group,
+from celery.canvas import (Signature, _chain, _maybe_group, chain, chord, chunks, group,
                            maybe_signature, maybe_unroll_group, signature, xmap, xstarmap)
 from celery.result import AsyncResult, EagerResult, GroupResult
 
@@ -648,7 +648,6 @@ class test_group(CanvasCase):
 
         g = group(sig_1, sig_2, app=self.app)
         g_res = g.freeze()
-        g.stamp(groups=g_res.id)
         g.apply()
 
         assert sig_1_res._get_task_meta()['groups'] == [g_res.id]
@@ -681,7 +680,6 @@ class test_group(CanvasCase):
         )
 
         g2_res = g2.freeze()
-        g2.stamp(groups=g2_res.id)
 
         g1 = group(
             sig_1,
@@ -694,8 +692,6 @@ class test_group(CanvasCase):
         )
 
         g1_res = g1.freeze()
-        g1.stamp(groups=g1_res.id)
-
         g1.apply()
 
         assert sig_1_res._get_task_meta()['groups'] == [g1_res.id]
@@ -736,7 +732,6 @@ class test_group(CanvasCase):
         )
 
         g3_res = g3.freeze()
-        g3.stamp(groups=g3_res.id)
 
         g2 = group(
             sig_in_g2,
@@ -748,7 +743,6 @@ class test_group(CanvasCase):
         )
 
         g2_res = g2.freeze()
-        g2.stamp(groups=g2_res.id)
 
         g1 = group(
             sig_in_g1_1,
@@ -761,8 +755,6 @@ class test_group(CanvasCase):
         )
 
         g1_res = g1.freeze()
-        g1.stamp(groups=g1_res.id)
-
         g1.apply()
 
         assert sig_in_g1_1_res._get_task_meta()['groups'] == [g1_res.id]
@@ -808,7 +800,6 @@ class test_group(CanvasCase):
             app=self.app
         )
         g3_res = g3.freeze(group_id='g3')
-        # g3.stamp(groups=g3_res.id)
 
         g2 = group(
             sig_in_g2_1,
@@ -816,7 +807,6 @@ class test_group(CanvasCase):
             app=self.app
         )
         g2_res = g2.freeze(group_id='g2')
-        # g2.stamp(groups=g2_res.id,)
 
         g1 = group(
             sig_in_g1,
@@ -1268,13 +1258,12 @@ class test_chord(CanvasCase):
 
         g = chord([sig_1, sig_2], sig_sum, app=self.app)
         g_res = g.freeze()
-        g.stamp(groups=g_res.id)
         g.apply()
 
         with pytest.raises(AttributeError):
             sig_sum._get_task_meta()['groups']
-        assert sig_1_res._get_task_meta()['groups'] == [g_res.id]
-        assert sig_2_res._get_task_meta()['groups'] == [g_res.id]
+        assert sig_1_res._get_task_meta()['groups'] == [g_res.id, g.id]
+        assert sig_2_res._get_task_meta()['groups'] == [g_res.id, g.id]
 
 
     def test__get_app_does_not_exhaust_generator(self):

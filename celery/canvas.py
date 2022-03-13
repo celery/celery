@@ -126,6 +126,10 @@ class GroupStampingVisitor(StampingVisitor):
     def on_group_end(self, group, **headers) -> None:
         self.groups.pop()
 
+    def on_chord_header_start(self, chord, **header) -> dict:
+        self.groups.append(chord.body.id)
+        return {'groups': list(self.groups)}
+
     def on_chain_start(self, chain, **headers) -> dict:
         return {'groups': list(self.groups)}
 
@@ -133,10 +137,11 @@ class GroupStampingVisitor(StampingVisitor):
         pass
 
     def on_signature(self, sig, **headers) -> dict:
-        if "groups" in sig.options:
-            _update_list(self.groups, sig.options["groups"])
+        new_grops = sig.options["groups"].copy() if "groups" in sig.options else []
+        _update_list(new_grops, self.groups)
         if "groups" in headers:
-            _update_list(self.groups, headers["groups"])
+            _update_list(new_grops, headers["groups"])
+        self.groups = new_grops
         return {'groups': list(self.groups)}
 
 
@@ -262,6 +267,7 @@ class Signature(dict):
         """
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
+        self.stamp(visitor=GroupStampingVisitor())
         # Extra options set to None are dismissed
         options = {k: v for k, v in options.items() if v is not None}
         # For callbacks: extra args are prepended to the stored args.
@@ -916,6 +922,7 @@ class _chain(Signature):
     def apply(self, args=None, kwargs=None, **options):
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
+        self.stamp(visitor=GroupStampingVisitor())
         last, (fargs, fkwargs) = None, (args, kwargs)
         for task in self.tasks:
             res = task.clone(fargs, fkwargs).apply(
@@ -1548,7 +1555,7 @@ class _chord(Signature):
             visitor.on_chord_header_end(self, **headers)
 
         if visitor is not None:
-            headers.update(visitor.on_body(self, **headers))
+            headers.update(visitor.on_chord_body(self, **headers))
             self.body.stamp(visitor=visitor, **headers)
 
     def apply_async(self, args=None, kwargs=None, task_id=None,
@@ -1581,6 +1588,7 @@ class _chord(Signature):
               propagate=True, body=None, **options):
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
+        self.stamp(visitor=GroupStampingVisitor())
         body = self.body if body is None else body
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
                  else group(self.tasks, app=self.app))
