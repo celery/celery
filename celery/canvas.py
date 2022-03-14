@@ -126,10 +126,6 @@ class GroupStampingVisitor(StampingVisitor):
     def on_group_end(self, group, **headers) -> None:
         self.groups.pop()
 
-    def on_chord_header_start(self, chord, **header) -> dict:
-        self.groups.append(chord.body.id)
-        return {'groups': list(self.groups)}
-
     def on_chain_start(self, chain, **headers) -> dict:
         return {'groups': list(self.groups)}
 
@@ -1554,7 +1550,7 @@ class _chord(Signature):
         if visitor is not None:
             visitor.on_chord_header_end(self, **headers)
 
-        if visitor is not None:
+        if visitor is not None and self.body is not None:
             headers.update(visitor.on_chord_body(self, **headers))
             self.body.stamp(visitor=visitor, **headers)
 
