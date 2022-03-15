@@ -78,13 +78,12 @@ def _merge_dictionaries(d1, d2):
             d1[key] = value
 
 
-def _update_list(list_to_update, list_update_from):
-    for el in list_update_from:
-        if el not in list_to_update:
-            list_to_update.append(el)
-
-
 class StampingVisitor(metaclass=ABCMeta):
+    """
+    Stamping API.  A class that provides a stamping API possibility for
+    canvas primitives. If you want to implement stamping behavior for
+    a canvas primitive override method that represents it.
+    """
     @abstractmethod
     def on_group_start(self, group, **headers) -> dict:
         pass
@@ -116,11 +115,15 @@ class StampingVisitor(metaclass=ABCMeta):
 
 
 class GroupStampingVisitor(StampingVisitor):
-    def __init__(self):
-        self.groups = []
+    """
+    Group stamping implementation based on Stamping API.
+    """
+    def __init__(self, groups=None):
+        self.groups = groups or []
 
     def on_group_start(self, group, **headers) -> dict:
-        self.groups.append(group.id)
+        if group.id not in self.groups:
+            self.groups.append(group.id)
         return {'groups': list(self.groups)}
 
     def on_group_end(self, group, **headers) -> None:
@@ -133,11 +136,6 @@ class GroupStampingVisitor(StampingVisitor):
         pass
 
     def on_signature(self, sig, **headers) -> dict:
-        new_grops = sig.options["groups"].copy() if "groups" in sig.options else []
-        _update_list(new_grops, self.groups)
-        if "groups" in headers:
-            _update_list(new_grops, headers["groups"])
-        self.groups = new_grops
         return {'groups': list(self.groups)}
 
 
@@ -263,7 +261,8 @@ class Signature(dict):
         """
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
-        self.stamp(visitor=GroupStampingVisitor())
+        groups = self.options.get("groups")
+        self.stamp(visitor=GroupStampingVisitor(groups))
         # Extra options set to None are dismissed
         options = {k: v for k, v in options.items() if v is not None}
         # For callbacks: extra args are prepended to the stored args.
@@ -918,7 +917,8 @@ class _chain(Signature):
     def apply(self, args=None, kwargs=None, **options):
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
-        self.stamp(visitor=GroupStampingVisitor())
+        groups = self.options.get("groups")
+        self.stamp(visitor=GroupStampingVisitor(groups))
         last, (fargs, fkwargs) = None, (args, kwargs)
         for task in self.tasks:
             res = task.clone(fargs, fkwargs).apply(
@@ -1220,7 +1220,8 @@ class group(Signature):
     def apply(self, args=None, kwargs=None, **options):
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
-        self.stamp(visitor=GroupStampingVisitor())
+        groups = self.options.get("groups") or []
+        self.stamp(visitor=GroupStampingVisitor(groups))
         app = self.app
         if not self.tasks:
             return self.freeze()  # empty group returns GroupResult
@@ -1539,6 +1540,11 @@ class _chord(Signature):
         return body_result
 
     def stamp(self, visitor=None, **headers):
+        # Chord body is group
+        if visitor is not None and self.body is not None:
+            headers.update(visitor.on_chord_body(self, **headers))
+            self.body.stamp(visitor=visitor, **headers)
+
         if visitor is not None:
             headers.update(visitor.on_chord_header_start(self, **headers))
         super().stamp(visitor=visitor, **headers)
@@ -1552,10 +1558,6 @@ class _chord(Signature):
 
         if visitor is not None:
             visitor.on_chord_header_end(self, **headers)
-
-        if visitor is not None and self.body is not None:
-            headers.update(visitor.on_chord_body(self, **headers))
-            self.body.stamp(visitor=visitor, **headers)
 
     def apply_async(self, args=None, kwargs=None, task_id=None,
                     producer=None, publisher=None, connection=None,
@@ -1587,7 +1589,8 @@ class _chord(Signature):
               propagate=True, body=None, **options):
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
-        self.stamp(visitor=GroupStampingVisitor())
+        groups = self.options.get("groups")
+        self.stamp(visitor=GroupStampingVisitor(groups))
         body = self.body if body is None else body
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
                  else group(self.tasks, app=self.app))
