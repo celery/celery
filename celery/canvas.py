@@ -79,38 +79,95 @@ def _merge_dictionaries(d1, d2):
 
 
 class StampingVisitor(metaclass=ABCMeta):
-    """
-    Stamping API.  A class that provides a stamping API possibility for
+    """Stamping API.  A class that provides a stamping API possibility for
     canvas primitives. If you want to implement stamping behavior for
     a canvas primitive override method that represents it.
     """
     @abstractmethod
     def on_group_start(self, group, **headers) -> dict:
+        """Method that is called on group stamping start.
+
+         Arguments:
+             group (group): Group that is stamped.
+             headers (Dict): Partial headers that could be merged with existing headers.
+         Returns:
+             Dict: headers to update.
+         """
         pass
 
     @abstractmethod
     def on_group_end(self, group, **headers) -> None:
+        """Method that is called on group stamping end.
+
+         Arguments:
+             group (group): Group that is stamped.
+             headers (Dict): Partial headers that could be merged with existing headers.
+         """
         pass
 
     @abstractmethod
     def on_chain_start(self, chain, **headers) -> dict:
+        """Method that is called on chain stamping start.
+
+         Arguments:
+             chain (chain): Chain that is stamped.
+             headers (Dict): Partial headers that could be merged with existing headers.
+         Returns:
+             Dict: headers to update.
+         """
         pass
 
     @abstractmethod
     def on_chain_end(self, chain, **headers) -> None:
+        """Method that is called on chain stamping end.
+
+         Arguments:
+             chain (chain): Chain that is stamped.
+             headers (Dict): Partial headers that could be merged with existing headers.
+         """
         pass
 
     @abstractmethod
     def on_signature(self, sig, **headers) -> dict:
+        """Method that is called on signature stamping.
+
+         Arguments:
+             sig (Signature): Signature that is stamped.
+             headers (Dict): Partial headers that could be merged with existing headers.
+         Returns:
+             Dict: headers to update.
+         """
         pass
 
     def on_chord_header_start(self, chord, **header) -> dict:
+        """Method that is called on сhord header stamping start.
+
+         Arguments:
+             chord (chord): chord that is stamped.
+             headers (Dict): Partial headers that could be merged with existing headers.
+         Returns:
+             Dict: headers to update.
+         """
         return self.on_group_start(chord, **header)
 
     def on_chord_header_end(self, chord, **header) -> None:
+        """Method that is called on сhord header stamping end.
+
+           Arguments:
+               chord (chord): chord that is stamped.
+               headers (Dict): Partial headers that could be merged with existing headers.
+        """
         self.on_group_end(chord, **header)
 
     def on_chord_body(self, chord, **header) -> dict:
+        """Method that is called on chord body stamping.
+
+         Arguments:
+             chord (chord): chord that is stamped.
+             headers (Dict): Partial headers that could be merged with existing headers.
+         Returns:
+             Dict: headers to update.
+        """
         return self.on_signature(chord, **header)
 
 
@@ -1537,7 +1594,6 @@ class _chord(Signature):
         return body_result
 
     def stamp(self, visitor=None, **headers):
-        # Chord body is group
         if visitor is not None and self.body is not None:
             headers.update(visitor.on_chord_body(self, **headers))
             self.body.stamp(visitor=visitor, **headers)

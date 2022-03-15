@@ -1,4 +1,5 @@
 import json
+import math
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
@@ -56,6 +57,12 @@ class CanvasCase:
             return sum(numbers)
 
         self.xsum = xsum
+
+        @self.app.task(shared=False)
+        def xprod(numbers):
+            return math.prod(numbers)
+
+        self.xprod = xprod
 
 
 class test_Signature(CanvasCase):
@@ -1254,12 +1261,39 @@ class test_chord(CanvasCase):
         sig_sum_res = sig_sum.freeze()
 
         g = chord([sig_1, sig_2], sig_sum, app=self.app)
-        g_res = g.freeze()
+        g.freeze()
         g.apply()
 
         assert sig_sum_res._get_task_meta()['groups'] == []
-        assert sig_1_res._get_task_meta()['groups'] == [g_res.parent.id]
-        assert sig_2_res._get_task_meta()['groups'] == [g_res.parent.id]
+        assert sig_1_res._get_task_meta()['groups'] == [g.id]
+        assert sig_2_res._get_task_meta()['groups'] == [g.id]
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_chord_stamping_body_group(self):
+        """
+        In the case of group within a chord that is from another canvas
+        element, ensure that chord stamps are added correctly when chord are
+        run in parallel.
+        """
+        self.app.conf.task_always_eager = True
+        self.app.conf.task_store_eager_result = True
+        self.app.conf.result_extended = True
+
+        tasks = [self.add.s(i, i) for i in range(10)]
+
+        sum_task = self.xsum.s()
+        sum_task_res = sum_task.freeze()
+        prod_task = self.xprod.s()
+        prod_task_res = sum_task.freeze()
+
+        body = group(sum_task, prod_task)
+
+        g = chord(tasks, body, app=self.app)
+        g.freeze()
+        g.apply()
+
+        assert sum_task_res._get_task_meta()['groups'] == [body.id]
+        assert prod_task_res._get_task_meta()['groups'] == [body.id]
 
     def test__get_app_does_not_exhaust_generator(self):
         def build_generator():
