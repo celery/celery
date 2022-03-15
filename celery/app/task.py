@@ -932,6 +932,13 @@ class Task:
         # retain their original task IDs as well
         for t in reversed(self.request.chain or []):
             sig |= signature(t, app=self.app)
+        # TODO: stamp all the task we are replace
+        # self.groups
+        # A -> B (was signtature and turns intor a group)
+        # stamp of all group with
+        # self.groups
+        # sig.stamp(visitor=GroupStampingVistor(self.groups))
+
         # Finally, either apply or delay the new signature!
         if self.request.is_eager:
             return sig.apply().get()
