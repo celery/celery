@@ -1251,15 +1251,15 @@ class test_chord(CanvasCase):
         sig_1_res = sig_1.freeze()
         sig_2_res = sig_2.freeze()
         sig_sum = self.xsum.s()
-        sig_sum.freeze()
+        sig_sum_res = sig_sum.freeze()
 
         g = chord([sig_1, sig_2], sig_sum, app=self.app)
+        g_res = g.freeze()
         g.apply()
 
-        with pytest.raises(AttributeError):
-            sig_sum._get_task_meta()['groups']
-        assert sig_1_res._get_task_meta()['groups'] == [g.id]
-        assert sig_2_res._get_task_meta()['groups'] == [g.id]
+        assert sig_sum_res._get_task_meta()['groups'] == []
+        assert sig_1_res._get_task_meta()['groups'] == [g_res.parent.id]
+        assert sig_2_res._get_task_meta()['groups'] == [g_res.parent.id]
 
     def test__get_app_does_not_exhaust_generator(self):
         def build_generator():
