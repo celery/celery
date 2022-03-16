@@ -58,6 +58,12 @@ class CanvasCase:
 
         self.xsum = xsum
 
+        @self.app.task(shared=False, bind=True)
+        def replaced(self, x, y):
+            return self.replace(add.si(x, y))
+
+        self.replaced = replaced
+
         @self.app.task(shared=False)
         def xprod(numbers):
             return math.prod(numbers)
@@ -66,7 +72,6 @@ class CanvasCase:
 
 
 class test_Signature(CanvasCase):
-
     def test_getitem_property_class(self):
         assert Signature.task
         assert Signature.args
@@ -704,6 +709,28 @@ class test_group(CanvasCase):
                [g1_res.id, g2_res.id]
         assert second_nested_sig_res._get_task_meta()['groups'] == \
                [g1_res.id, g2_res.id]
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_group_stamping_with_replace(self):
+        """
+        For a group within a group, test that group stamps are stored in
+        the correct order.
+        """
+        self.app.conf.task_always_eager = True
+        self.app.conf.task_store_eager_result = True
+        self.app.conf.result_extended = True
+
+        sig_1 = self.add.s(2, 2)
+        sig_2 = self.add.s(2, 2) | self.replaced.s(8)
+        sig_1_res = sig_1.freeze()
+        sig_2_res = sig_2.freeze()
+
+        g = group(sig_1, sig_2, app=self.app)
+        g_res = g.freeze()
+        g.apply()
+
+        assert sig_1_res._get_task_meta()['groups'] == [g_res.id]
+        assert sig_2_res._get_task_meta()['groups'] == [g_res.id]
 
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_group_stamping_three_levels(self):
