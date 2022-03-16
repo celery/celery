@@ -114,6 +114,7 @@ NAMESPACES = Namespace(
         port=Option(type='string'),
         read_consistency=Option(type='string'),
         servers=Option(type='list'),
+        bundle_path=Option(type='string'),
         table=Option(type='string'),
         write_consistency=Option(type='string'),
         auth_provider=Option(type='string'),

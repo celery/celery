@@ -53,9 +53,19 @@ class test_CassandraBackend:
         cons.LOCAL_FOO = 'bar'
         mod.CassandraBackend(app=self.app)
 
-        # no servers raises ImproperlyConfigured
+        # no servers and no bundle_path raises ImproperlyConfigured
         with pytest.raises(ImproperlyConfigured):
             self.app.conf.cassandra_servers = None
+            self.app.conf.cassandra_secure_bundle_path = None
+            mod.CassandraBackend(
+                app=self.app, keyspace='b', column_family='c',
+            )
+
+        # both servers no bundle_path raises ImproperlyConfigured
+        with pytest.raises(ImproperlyConfigured):
+            self.app.conf.cassandra_servers = ['localhost']
+            self.app.conf.cassandra_secure_bundle_path = (
+                '/home/user/secure-connect-bundle.zip')
             mod.CassandraBackend(
                 app=self.app, keyspace='b', column_family='c',
             )

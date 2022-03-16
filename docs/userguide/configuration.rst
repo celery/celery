@@ -1314,12 +1314,18 @@ used by the redis result backend.
 
 .. _conf-cassandra-result-backend:
 
-Cassandra backend settings
+Cassandra/AstraDB backend settings
 --------------------------
 
 .. note::
 
     This Cassandra backend driver requires :pypi:`cassandra-driver`.
+
+    This backend can refer to either a regular Cassandra installation
+    or a managed Astra DB instance. Depending on which one, exactly one
+    between the :setting:`cassandra_servers` and
+    :setting:`cassandra_secure_bundle_path` settings must be provided
+    (but not both).
 
     To install, use :command:`pip`:
 
@@ -1339,9 +1345,31 @@ This backend requires the following configuration directives to be set.
 
 Default: ``[]`` (empty list).
 
-List of ``host`` Cassandra servers. For example::
+List of ``host`` Cassandra servers. This must be provided when connecting to
+a Cassandra cluster. Passing this setting is strictly exclusive
+to :setting:`cassandra_secure_bundle_path`. Example::
 
     cassandra_servers = ['localhost']
+
+.. setting:: cassandra_secure_bundle_path
+
+``cassandra_secure_bundle_path``
+~~~~~~~~~~~~~~~~~~~~~
+
+Default: None.
+
+Absolute path to the secure-connect-bundle zip file to connect
+to an Astra DB instance. Passing this setting is strictly exclusive
+to :setting:`cassandra_servers`.
+Example::
+
+    cassandra_secure_bundle_path = '/home/user/bundles/secure-connect.zip'
+
+When connecting to Astra DB, it is necessary to specify
+the plain-text auth provider and the associated username and password,
+which take the value of the Client ID and the Client Secret, respectively,
+of a valid token generated for the Astra DB instance.
+See below for an Astra DB configuration example.
 
 .. setting:: cassandra_port
 
@@ -1446,16 +1474,35 @@ Named arguments to pass into the ``cassandra.cluster`` class.
         'protocol_version': 3
     }
 
-Example configuration
+Example configuration (Cassandra)
 ~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
+    result_backend = 'cassandra://'
     cassandra_servers = ['localhost']
     cassandra_keyspace = 'celery'
     cassandra_table = 'tasks'
-    cassandra_read_consistency = 'ONE'
-    cassandra_write_consistency = 'ONE'
+    cassandra_read_consistency = 'QUORUM'
+    cassandra_write_consistency = 'QUORUM'
+    cassandra_entry_ttl = 86400
+
+Example configuration (Astra DB)
+~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    result_backend = 'cassandra://'
+    cassandra_keyspace = 'celery'
+    cassandra_table = 'tasks'
+    cassandra_read_consistency = 'QUORUM'
+    cassandra_write_consistency = 'QUORUM'
+    cassandra_auth_provider = 'PlainTextAuthProvider'
+    cassandra_auth_kwargs = {
+      'username': '<<CLIENT_ID_FROM_ASTRA_DB_TOKEN>>',
+      'password': '<<CLIENT_SECRET_FROM_ASTRA_DB_TOKEN>>'
+    }
+    cassandra_secure_bundle_path = '/path/to/secure-connect-bundle.zip'
     cassandra_entry_ttl = 86400
 
 .. _conf-s3-result-backend:
