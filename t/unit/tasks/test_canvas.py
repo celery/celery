@@ -72,6 +72,22 @@ class CanvasCase:
 
 
 class test_Signature(CanvasCase):
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_group_stamping_overide(self):
+        """
+        Test manual signature stamping.
+        """
+        self.app.conf.task_always_eager = True
+        self.app.conf.task_store_eager_result = True
+        self.app.conf.result_extended = True
+
+        sig_1 = self.add.s(2, 2)
+        groups = ["sig_1"]
+        sig_1.stamp(visitor=None, groups=groups)
+        sig_1_res = sig_1.freeze()
+        sig_1.apply()
+        assert sig_1_res._get_task_meta()['groups'] == groups
+
     def test_getitem_property_class(self):
         assert Signature.task
         assert Signature.args
@@ -639,7 +655,6 @@ class test_chain(CanvasCase):
 
 
 class test_group(CanvasCase):
-
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_group_stamping_one_level(self):
         """
@@ -713,8 +728,7 @@ class test_group(CanvasCase):
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_group_stamping_with_replace(self):
         """
-        For a group within a group, test that group stamps are stored in
-        the correct order.
+        For a group within a replaced element, test that group stamps are replaced correctly.
         """
         self.app.conf.task_always_eager = True
         self.app.conf.task_store_eager_result = True
@@ -1294,6 +1308,49 @@ class test_chord(CanvasCase):
         assert sig_sum_res._get_task_meta()['groups'] == []
         assert sig_1_res._get_task_meta()['groups'] == [g.id]
         assert sig_2_res._get_task_meta()['groups'] == [g.id]
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_group_stamping_two_levels(self):
+        """
+        For a group within a chord, test that group stamps are stored in
+        the correct order.
+        """
+        self.app.conf.task_always_eager = True
+        self.app.conf.task_store_eager_result = True
+        self.app.conf.result_extended = True
+
+        sig_1 = self.add.s(2, 2)
+        sig_2 = self.add.s(1, 1)
+        nested_sig_1 = self.add.s(2)
+        nested_sig_2 = self.add.s(4)
+
+        sig_1_res = sig_1.freeze()
+        sig_2_res = sig_2.freeze()
+        first_nested_sig_res = nested_sig_1.freeze()
+        second_nested_sig_res = nested_sig_2.freeze()
+
+        g2 = group(
+            nested_sig_1,
+            nested_sig_2,
+            app=self.app
+        )
+
+        g2_res = g2.freeze()
+
+        sig_sum = self.xsum.s()
+        sig_sum.freeze()
+
+        g1 = chord([sig_2, chain(sig_1, g2)], sig_sum, app=self.app)
+
+        g1.freeze()
+        g1.apply()
+
+        assert sig_1_res._get_task_meta()['groups'] == [g1.id]
+        assert sig_2_res._get_task_meta()['groups'] == [g1.id]
+        assert first_nested_sig_res._get_task_meta()['groups'] == \
+               [g1.id, g2_res.id]
+        assert second_nested_sig_res._get_task_meta()['groups'] == \
+               [g1.id, g2_res.id]
 
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_chord_stamping_body_group(self):
