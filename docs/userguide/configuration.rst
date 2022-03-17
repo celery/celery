@@ -1315,7 +1315,7 @@ used by the redis result backend.
 .. _conf-cassandra-result-backend:
 
 Cassandra/AstraDB backend settings
---------------------------
+----------------------------------
 
 .. note::
 
@@ -1354,7 +1354,7 @@ to :setting:`cassandra_secure_bundle_path`. Example::
 .. setting:: cassandra_secure_bundle_path
 
 ``cassandra_secure_bundle_path``
-~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Default: None.
 
@@ -1475,7 +1475,7 @@ Named arguments to pass into the ``cassandra.cluster`` class.
     }
 
 Example configuration (Cassandra)
-~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -1488,7 +1488,7 @@ Example configuration (Cassandra)
     cassandra_entry_ttl = 86400
 
 Example configuration (Astra DB)
-~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
