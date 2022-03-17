@@ -73,7 +73,7 @@ class CanvasCase:
 
 class test_Signature(CanvasCase):
     @pytest.mark.usefixtures('depends_on_current_app')
-    def test_group_stamping_overide(self):
+    def test_manual_stamping(self):
         """
         Test manual signature stamping.
         """
@@ -82,11 +82,12 @@ class test_Signature(CanvasCase):
         self.app.conf.result_extended = True
 
         sig_1 = self.add.s(2, 2)
-        groups = ["sig_1"]
-        sig_1.stamp(visitor=None, groups=groups)
+        stamps = ["stamp1", "stamp2"]
+        sig_1.stamp(visitor=None, groups=[stamps[1]])
+        sig_1.stamp(visitor=None, groups=stamps[0])
         sig_1_res = sig_1.freeze()
         sig_1.apply()
-        assert sig_1_res._get_task_meta()['groups'] == groups
+        assert sig_1_res._get_task_meta()['groups'] == stamps
 
     def test_getitem_property_class(self):
         assert Signature.task
