@@ -64,6 +64,24 @@ class CanvasCase:
 
         self.replaced = replaced
 
+        @self.app.task(shared=False, bind=True)
+        def replaced_group(self, x, y):
+            return self.replace(group(add.si(x, y), mul.si(x, y)))
+
+        self.replaced_group = replaced_group
+
+        @self.app.task(shared=False, bind=True)
+        def replace_with_group(self, x, y):
+            return self.replace(group(add.si(x, y), mul.si(x, y)))
+
+        self.replace_with_group = replace_with_group
+
+        @self.app.task(shared=False, bind=True)
+        def replace_with_chain(self, x, y):
+            return self.replace(group(add.si(x, y) | mul.s(y), add.si(x, y)))
+
+        self.replace_with_chain = replace_with_chain
+
         @self.app.task(shared=False)
         def xprod(numbers):
             return math.prod(numbers)
@@ -746,6 +764,50 @@ class test_group(CanvasCase):
 
         assert sig_1_res._get_task_meta()['groups'] == [g_res.id]
         assert sig_2_res._get_task_meta()['groups'] == [g_res.id]
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_group_stamping_with_replaced_group(self):
+        """
+        For a group within a replaced element, test that group stamps are replaced correctly.
+        """
+        self.app.conf.task_always_eager = True
+        self.app.conf.task_store_eager_result = True
+        self.app.conf.result_extended = True
+        nested_g = self.replace_with_group.s(8)
+        nested_g_res = nested_g.freeze()
+        sig_1 = self.add.s(2, 2)
+        sig_2 = self.add.s(2, 2) | nested_g
+        sig_1_res = sig_1.freeze()
+        sig_2_res = sig_2.freeze()
+
+        g = group(sig_1, sig_2, app=self.app)
+        g_res = g.freeze()
+        g.apply()
+
+        assert sig_1_res._get_task_meta()['groups'] == [g_res.id]
+        assert sig_2_res._get_task_meta()['groups'] == nested_g_res._get_task_meta()['groups']
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_group_stamping_with_replaced_chain(self):
+        """
+        For a group within a replaced element, test that group stamps are replaced correctly.
+        """
+        self.app.conf.task_always_eager = True
+        self.app.conf.task_store_eager_result = True
+        self.app.conf.result_extended = True
+        nested_g = self.replace_with_chain.s(8)
+        nested_g_res = nested_g.freeze()
+        sig_1 = self.add.s(2, 2)
+        sig_2 = self.add.s(2, 2) | nested_g
+        sig_1_res = sig_1.freeze()
+        sig_2_res = sig_2.freeze()
+
+        g = group(sig_1, sig_2, app=self.app)
+        g_res = g.freeze()
+        g.apply()
+
+        assert sig_1_res._get_task_meta()['groups'] == [g_res.id]
+        assert sig_2_res._get_task_meta()['groups'] == nested_g_res._get_task_meta()['groups']
 
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_group_stamping_three_levels(self):
