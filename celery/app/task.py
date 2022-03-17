@@ -932,6 +932,7 @@ class Task:
         # retain their original task IDs as well
         for t in reversed(self.request.chain or []):
             sig |= signature(t, app=self.app)
+        # Stamping sig with parents groups
         groups = self.request.groups
         sig.stamp(visitor=GroupStampingVisitor(groups))
 
