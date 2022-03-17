@@ -674,8 +674,7 @@ class test_chain(CanvasCase):
 
 
 class test_group(CanvasCase):
-    @pytest.mark.usefixtures('depends_on_current_app')
-    def test_group_stamping_one_level(self):
+    def test_group_stamping_one_level(self, subtests):
         """
         Test that when a group ID is frozen, that group ID is stored in
         each task within the group.
@@ -692,12 +691,13 @@ class test_group(CanvasCase):
         g = group(sig_1, sig_2, app=self.app)
         g_res = g.freeze()
         g.apply()
+        with subtests.test("sig_1_res is stamped", groups=[g_res.id]):
+            assert sig_1_res._get_task_meta()['groups'] == [g_res.id]
 
-        assert sig_1_res._get_task_meta()['groups'] == [g_res.id]
-        assert sig_2_res._get_task_meta()['groups'] == [g_res.id]
+        with subtests.test("sig_2_res is stamped", groups=[g_res.id]):
+            assert sig_2_res._get_task_meta()['groups'] == [g_res.id]
 
-    @pytest.mark.usefixtures('depends_on_current_app')
-    def test_group_stamping_two_levels(self):
+    def test_group_stamping_two_levels(self, subtests):
         """
         For a group within a group, test that group stamps are stored in
         the correct order.
@@ -737,15 +737,18 @@ class test_group(CanvasCase):
         g1_res = g1.freeze()
         g1.apply()
 
-        assert sig_1_res._get_task_meta()['groups'] == [g1_res.id]
-        assert sig_2_res._get_task_meta()['groups'] == [g1_res.id]
-        assert first_nested_sig_res._get_task_meta()['groups'] == \
-               [g1_res.id, g2_res.id]
-        assert second_nested_sig_res._get_task_meta()['groups'] == \
-               [g1_res.id, g2_res.id]
+        with subtests.test("sig_1_res is stamped", groups=[g1_res.id]):
+            assert sig_1_res._get_task_meta()['groups'] == [g1_res.id]
+        with subtests.test("sig_2_res is stamped", groups=[g1_res.id]):
+            assert sig_2_res._get_task_meta()['groups'] == [g1_res.id]
+        with subtests.test("first_nested_sig_res is stamped", groups=[g1_res.id, g2_res.id]):
+            assert first_nested_sig_res._get_task_meta()['groups'] == \
+                   [g1_res.id, g2_res.id]
+        with subtests.test("second_nested_sig_res is stamped", groups=[g1_res.id, g2_res.id]):
+            assert second_nested_sig_res._get_task_meta()['groups'] == \
+                   [g1_res.id, g2_res.id]
 
-    @pytest.mark.usefixtures('depends_on_current_app')
-    def test_group_stamping_with_replace(self):
+    def test_group_stamping_with_replace(self, subtests):
         """
         For a group within a replaced element, test that group stamps are replaced correctly.
         """
@@ -762,11 +765,12 @@ class test_group(CanvasCase):
         g_res = g.freeze()
         g.apply()
 
-        assert sig_1_res._get_task_meta()['groups'] == [g_res.id]
-        assert sig_2_res._get_task_meta()['groups'] == [g_res.id]
+        with subtests.test("sig_1_res is stamped", groups=[g_res.id]):
+            assert sig_1_res._get_task_meta()['groups'] == [g_res.id]
+        with subtests.test("sig_2_res is stamped", groups=[g_res.id]):
+            assert sig_2_res._get_task_meta()['groups'] == [g_res.id]
 
-    @pytest.mark.usefixtures('depends_on_current_app')
-    def test_group_stamping_with_replaced_group(self):
+    def test_group_stamping_with_replaced_group(self, subtests):
         """
         For a group within a replaced element, test that group stamps are replaced correctly.
         """
@@ -784,11 +788,12 @@ class test_group(CanvasCase):
         g_res = g.freeze()
         g.apply()
 
-        assert sig_1_res._get_task_meta()['groups'] == [g_res.id]
-        assert sig_2_res._get_task_meta()['groups'] == nested_g_res._get_task_meta()['groups']
+        with subtests.test("sig_1_res is stamped", groups=[g_res.id]):
+            assert sig_1_res._get_task_meta()['groups'] == [g_res.id]
+        with subtests.test("sig_2_res is stamped", groups=nested_g_res._get_task_meta()['groups']):
+            assert sig_2_res._get_task_meta()['groups'] == nested_g_res._get_task_meta()['groups']
 
-    @pytest.mark.usefixtures('depends_on_current_app')
-    def test_group_stamping_with_replaced_chain(self):
+    def test_group_stamping_with_replaced_chain(self, subtests):
         """
         For a group within a replaced element, test that group stamps are replaced correctly.
         """
@@ -806,11 +811,12 @@ class test_group(CanvasCase):
         g_res = g.freeze()
         g.apply()
 
-        assert sig_1_res._get_task_meta()['groups'] == [g_res.id]
-        assert sig_2_res._get_task_meta()['groups'] == nested_g_res._get_task_meta()['groups']
+        with subtests.test("sig_1_res is stamped", groups=[g_res.id]):
+            assert sig_1_res._get_task_meta()['groups'] == [g_res.id]
+        with subtests.test("sig_2_res is stamped", groups=nested_g_res._get_task_meta()['groups']):
+            assert sig_2_res._get_task_meta()['groups'] == nested_g_res._get_task_meta()['groups']
 
-    @pytest.mark.usefixtures('depends_on_current_app')
-    def test_group_stamping_three_levels(self):
+    def test_group_stamping_three_levels(self, subtests):
         """
         For groups with three levels of nesting, test that group stamps
         are saved in the correct order for all nesting levels.
@@ -865,16 +871,22 @@ class test_group(CanvasCase):
         g1_res = g1.freeze()
         g1.apply()
 
-        assert sig_in_g1_1_res._get_task_meta()['groups'] == [g1_res.id]
-        assert sig_in_g1_2_res._get_task_meta()['groups'] == [g1_res.id]
-        assert sig_in_g2_res._get_task_meta()['groups'] == \
-               [g1_res.id, g2_res.id]
-        assert sig_in_g2_chain_res._get_task_meta()['groups'] == \
-               [g1_res.id, g2_res.id]
-        assert sig_in_g3_1_res._get_task_meta()['groups'] == \
-               [g1_res.id, g2_res.id, g3_res.id]
-        assert sig_in_g3_2_res._get_task_meta()['groups'] == \
-               [g1_res.id, g2_res.id, g3_res.id]
+        with subtests.test("sig_in_g1_1_res is stamped", groups=[g1_res.id]):
+            assert sig_in_g1_1_res._get_task_meta()['groups'] == [g1_res.id]
+        with subtests.test("sig_in_g1_2_res is stamped", groups=[g1_res.id]):
+            assert sig_in_g1_2_res._get_task_meta()['groups'] == [g1_res.id]
+        with subtests.test("sig_in_g2_res is stamped", groups=[g1_res.id, g2_res.id]):
+            assert sig_in_g2_res._get_task_meta()['groups'] == \
+                   [g1_res.id, g2_res.id]
+        with subtests.test("sig_in_g2_chain_res is stamped", groups=[g1_res.id, g2_res.id]):
+            assert sig_in_g2_chain_res._get_task_meta()['groups'] == \
+                   [g1_res.id, g2_res.id]
+        with subtests.test("sig_in_g3_1_res is stamped", groups=[g1_res.id, g2_res.id, g3_res.id]):
+            assert sig_in_g3_1_res._get_task_meta()['groups'] == \
+                   [g1_res.id, g2_res.id, g3_res.id]
+        with subtests.test("sig_in_g3_2_res is stamped", groups=[g1_res.id, g2_res.id, g3_res.id]):
+            assert sig_in_g3_2_res._get_task_meta()['groups'] == \
+                   [g1_res.id, g2_res.id, g3_res.id]
 
     def test_group_stamping_parallel_groups(self, subtests):
         """
@@ -1346,8 +1358,7 @@ class test_group(CanvasCase):
 
 
 class test_chord(CanvasCase):
-    @pytest.mark.usefixtures('depends_on_current_app')
-    def test_chord_stamping_one_level(self):
+    def test_chord_stamping_one_level(self, subtests):
         """
         In the case of group within a chord that is from another canvas
         element, ensure that chord stamps are added correctly when chord are
@@ -1367,13 +1378,14 @@ class test_chord(CanvasCase):
         g = chord([sig_1, sig_2], sig_sum, app=self.app)
         g.freeze()
         g.apply()
+        with subtests.test("sig_sum_res body isn't stamped", groups=[]):
+            assert sig_sum_res._get_task_meta()['groups'] == []
+        with subtests.test("sig_1_res is stamped", groups=[g.id]):
+            assert sig_1_res._get_task_meta()['groups'] == [g.id]
+        with subtests.test("sig_2_res is stamped", groups=[g.id]):
+            assert sig_2_res._get_task_meta()['groups'] == [g.id]
 
-        assert sig_sum_res._get_task_meta()['groups'] == []
-        assert sig_1_res._get_task_meta()['groups'] == [g.id]
-        assert sig_2_res._get_task_meta()['groups'] == [g.id]
-
-    @pytest.mark.usefixtures('depends_on_current_app')
-    def test_group_stamping_two_levels(self):
+    def test_group_stamping_two_levels(self, subtests):
         """
         For a group within a chord, test that group stamps are stored in
         the correct order.
@@ -1408,15 +1420,18 @@ class test_chord(CanvasCase):
         g1.freeze()
         g1.apply()
 
-        assert sig_1_res._get_task_meta()['groups'] == [g1.id]
-        assert sig_2_res._get_task_meta()['groups'] == [g1.id]
-        assert first_nested_sig_res._get_task_meta()['groups'] == \
-               [g1.id, g2_res.id]
-        assert second_nested_sig_res._get_task_meta()['groups'] == \
-               [g1.id, g2_res.id]
+        with subtests.test("sig_1_res body is stamped", groups=[g1.id]):
+            assert sig_1_res._get_task_meta()['groups'] == [g1.id]
+        with subtests.test("sig_2_res body is stamped", groups=[g1.id]):
+            assert sig_2_res._get_task_meta()['groups'] == [g1.id]
+        with subtests.test("first_nested_sig_res body is stamped", groups=[g1.id, g2_res.id]):
+            assert first_nested_sig_res._get_task_meta()['groups'] == \
+                   [g1.id, g2_res.id]
+        with subtests.test("second_nested_sig_res body is stamped", groups=[g1.id, g2_res.id]):
+            assert second_nested_sig_res._get_task_meta()['groups'] == \
+                   [g1.id, g2_res.id]
 
-    @pytest.mark.usefixtures('depends_on_current_app')
-    def test_chord_stamping_body_group(self):
+    def test_chord_stamping_body_group(self, subtests):
         """
         In the case of group within a chord that is from another canvas
         element, ensure that chord stamps are added correctly when chord are
@@ -1439,8 +1454,10 @@ class test_chord(CanvasCase):
         g.freeze()
         g.apply()
 
-        assert sum_task_res._get_task_meta()['groups'] == [body.id]
-        assert prod_task_res._get_task_meta()['groups'] == [body.id]
+        with subtests.test("sum_task_res is stamped", groups=[body.id]):
+            assert sum_task_res._get_task_meta()['groups'] == [body.id]
+        with subtests.test("prod_task_res is stamped", groups=[body.id]):
+            assert prod_task_res._get_task_meta()['groups'] == [body.id]
 
     def test__get_app_does_not_exhaust_generator(self):
         def build_generator():
