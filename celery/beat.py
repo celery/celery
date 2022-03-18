@@ -156,7 +156,7 @@ class ScheduleEntry:
         })
 
     def is_due(self):
-        """See :meth:`~celery.schedule.schedule.is_due`."""
+        """See :meth:`~celery.schedules.schedule.is_due`."""
         return self.schedule.is_due(self.last_run_at)
 
     def __iter__(self):
