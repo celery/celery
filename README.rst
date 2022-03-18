@@ -102,10 +102,10 @@ getting started tutorials:
     A more complete overview, showing more features.
 
 .. _`First steps with Celery`:
-    http://docs.celeryproject.org/en/latest/getting-started/first-steps-with-celery.html
+    https://docs.celeryq.dev/en/stable/getting-started/first-steps-with-celery.html
 
 .. _`Next steps`:
-    http://docs.celeryproject.org/en/latest/getting-started/next-steps.html
+    https://docs.celeryq.dev/en/stable/getting-started/next-steps.html
 
  You can also get started with Celery by using a hosted broker transport CloudAMQP. The largest hosting provider of RabbitMQ is a proud sponsor of Celery.
 
