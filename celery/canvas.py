@@ -179,6 +179,8 @@ class GroupStampingVisitor(StampingVisitor):
         self.groups = groups or []
 
     def on_group_start(self, group, **headers) -> dict:
+        if group.id is None:
+            group.freeze()
         if group.id not in self.groups:
             self.groups.append(group.id)
         return {'groups': list(self.groups)}
@@ -191,6 +193,11 @@ class GroupStampingVisitor(StampingVisitor):
 
     def on_chain_end(self, chain, **headers) -> None:
         pass
+
+    def on_chord_header_start(self, chord, **header) -> dict:
+        if chord.id not in self.groups:
+            self.groups.append(chord.id)
+        return {'groups': list(self.groups)}
 
     def on_signature(self, sig, **headers) -> dict:
         return {'groups': list(self.groups)}
