@@ -789,7 +789,6 @@ class test_group:
         with subtests.test("sig_1 is stamped", groups=[g1_res.id]):
             assert sig1_res._get_task_meta()["groups"] == [g1_res.id]
 
-
     @flaky
     def test_ready_with_exception(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
