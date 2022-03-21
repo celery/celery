@@ -771,6 +771,25 @@ class test_result_set:
 
 
 class test_group:
+    def test_stamping(self, manager, subtests):
+        prev_task_store_eager_result = manager.app.conf.task_store_eager_result
+        prev_result_extended = manager.app.conf.result_extended
+        manager.app.conf.task_store_eager_result = True
+        manager.app.conf.result_extended = True
+
+        sig1 = add.s(1, 1000)
+        sig1_res = sig1.freeze()
+        g1 = group(sig1, add.s(1, 2000))
+        g1_res = g1.freeze()
+        g1.apply()
+
+        manager.app.conf.task_store_eager_result = prev_task_store_eager_result
+        manager.app.conf.result_extended = prev_result_extended
+
+        with subtests.test("sig_1 is stamped", groups=[g1_res.id]):
+            assert sig1_res._get_task_meta()["groups"] == [g1_res.id]
+
+
     @flaky
     def test_ready_with_exception(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
