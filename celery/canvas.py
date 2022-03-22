@@ -148,6 +148,8 @@ class StampingVisitor(metaclass=ABCMeta):
          Returns:
              Dict: headers to update.
          """
+        if not isinstance(chord.tasks, group):
+            chord.freeze()
         return self.on_group_start(chord.tasks, **header)
 
     def on_chord_header_end(self, chord, **header) -> None:
@@ -784,6 +786,8 @@ class _chain(Signature):
         args = args if args else ()
         kwargs = kwargs if kwargs else []
         app = self.app
+        groups = self.options.get("groups")
+        self.stamp(visitor=GroupStampingVisitor(groups))
         if app.conf.task_always_eager:
             with allow_join_result():
                 return self.apply(args, kwargs, **options)

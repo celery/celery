@@ -209,7 +209,7 @@ class test_unlock_chord_task(ChordCase):
     def test_unlock_join_timeout_custom(self):
         self._test_unlock_join_timeout(timeout=5.0)
 
-    def test_unlock_with_chord_params(self):
+    def test_unlock_with_chord_params_default(self):
         @self.app.task(shared=False)
         def mul(x, y):
             return x * y
@@ -219,9 +219,10 @@ class test_unlock_chord_task(ChordCase):
         body = mul.s()
         ch = chord(g, body, interval=10)
 
+
         with patch.object(ch, 'run') as run:
             ch.apply_async()
-            run.assert_called_once_with(g, body, (), task_id=None, interval=10, groups=[g.id])
+            run.assert_called_once_with(ch.tasks, mul.s(), (), task_id=ch.tasks.id, interval=10, groups=[ch.tasks.id])
 
     def test_unlock_with_chord_params_and_task_id(self):
         @self.app.task(shared=False)
@@ -236,12 +237,12 @@ class test_unlock_chord_task(ChordCase):
         with patch.object(ch, 'run') as run:
             ch.apply_async(task_id=sentinel.task_id)
             run.assert_called_once_with(
-                g,
-                body,
+                ch.tasks,
+                mul.s(),
                 (),
                 task_id=sentinel.task_id,
                 interval=10,
-                groups=[None]
+                groups=[ch.tasks.id]
             )
 
 

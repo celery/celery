@@ -646,7 +646,7 @@ class test_chain(CanvasCase):
             res = chain_sig()
         # `_prepare_chain_from_options()` sets this `chain` kwarg with the
         # subsequent tasks which would be run - nothing in this case
-        mock_apply.assert_called_once_with(chain=[])
+        mock_apply.assert_called_once_with(chain=[], groups=[])
         assert res is mock_apply.return_value
 
     @pytest.mark.usefixtures('depends_on_current_app')
@@ -669,7 +669,7 @@ class test_chain(CanvasCase):
             res = chain_sig()
         # `_prepare_chain_from_options()` sets this `chain` kwarg with the
         # subsequent tasks which would be run - nothing in this case
-        mock_apply.assert_called_once_with(chain=[])
+        mock_apply.assert_called_once_with(chain=[], groups=[])
         assert res is mock_apply.return_value
 
 
