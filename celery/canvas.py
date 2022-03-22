@@ -350,6 +350,8 @@ class Signature(dict):
         """
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
+        groups = self.options.get("groups")
+        self.stamp(visitor=GroupStampingVisitor(groups))
         # Extra options set to None are dismissed
         options = {k: v for k, v in options.items() if v is not None}
         try:
@@ -1253,6 +1255,8 @@ class group(Signature):
         if link_error is not None:
             raise TypeError(
                 'Cannot add link to group: do that on individual tasks')
+        groups = self.options.get("groups") or []
+        self.stamp(visitor=GroupStampingVisitor(groups))
         app = self.app
         if app.conf.task_always_eager:
             return self.apply(args, kwargs, **options)
@@ -1624,6 +1628,8 @@ class _chord(Signature):
                     router=None, result_cls=None, **options):
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
+        groups = self.options.get("groups") or []
+        self.stamp(visitor=GroupStampingVisitor(groups))
         args = (tuple(args) + tuple(self.args)
                 if args and not self.immutable else self.args)
         body = kwargs.pop('body', None) or self.kwargs['body']
