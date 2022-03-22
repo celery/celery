@@ -20,7 +20,7 @@ from .tasks import (ExpectedException, add, add_chord_to_chord, add_replaced, ad
                     errback_new_style, errback_old_style, fail, fail_replaced, identity, ids, print_unicode,
                     raise_error, redis_count, redis_echo, replace_with_chain, replace_with_chain_which_raises,
                     replace_with_empty_chain, retry_once, return_exception, return_priority, second_order_replace1,
-                    tsum, write_to_file_and_return_int)
+                    tsum, write_to_file_and_return_int, xsum)
 
 RETRYABLE_EXCEPTIONS = (OSError, ConnectionError, TimeoutError)
 
@@ -1238,6 +1238,38 @@ def assert_ping(manager):
 
 
 class test_chord:
+    def test_group_stamping_two_levels(self, manager, subtests):
+        """
+        For a group within a chord, test that group stamps are stored in
+        the correct order.
+        """
+        sig_1 = add.s(2, 2)
+        sig_2 = add.s(2)
+
+        sig_1_res = sig_1.freeze()
+        sig_2_res = sig_2.freeze()
+
+        g2 = group(
+            sig_2,
+            add.s(4),
+        )
+
+        g2_res = g2.freeze()
+
+        sig_sum = xsum.s()
+        sig_sum.freeze()
+
+        g1 = chord([sig_1, chain(add.s(4, 4), g2)], sig_sum)
+        g1.freeze()
+
+        res = g1.apply_async()
+        res.get(timeout=TIMEOUT)
+
+        with subtests.test("sig_1_res is stamped", groups=[g1.tasks.id]):
+            assert sig_1_res._get_task_meta()['groups'] == [g1.tasks.id]
+        with subtests.test("sig_2_res is stamped", groups=[g1.id]):
+            assert sig_2_res._get_task_meta()['groups'] == [g1.tasks.id, g2_res.id]
+
     @flaky
     def test_simple_chord_with_a_delay_in_group_save(self, manager, monkeypatch):
         try:
