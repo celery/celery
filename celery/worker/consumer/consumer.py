@@ -383,10 +383,10 @@ class Consumer:
 
         self.initial_prefetch_count = max(
             self.prefetch_multiplier,
-            self.max_prefetch_multiplier - len(tuple(active_requests)) * self.prefetch_multiplier
+            self.max_prefetch_count - len(tuple(active_requests)) * self.prefetch_multiplier
         )
 
-        self._maximum_prefetch_restored = self.initial_prefetch_count == self.max_prefetch_multiplier
+        self._maximum_prefetch_restored = self.initial_prefetch_count == self.max_prefetch_count
 
     def register_with_event_loop(self, hub):
         self.blueprint.send_all(
@@ -633,16 +633,15 @@ class Consumer:
                     ack_log_error_promise = promise(call_soon, (message.ack_log_error,))
                     reject_log_error_promise = promise(call_soon, (message.reject_log_error,))
 
-                    new_prefetch_count = self.qos.value + self.prefetch_multiplier
                     if (
                         not self._maximum_prefetch_restored
                         and self.restart_count > 0
-                        and new_prefetch_count <= self.max_prefetch_multiplier
+                        and self._new_prefetch_count <= self.max_prefetch_count
                     ):
                         ack_log_error_promise.then(self._restore_prefetch_count_after_connection_restart)
                         reject_log_error_promise.then(self._restore_prefetch_count_after_connection_restart)
 
-                        self._maximum_prefetch_restored = new_prefetch_count == self.max_prefetch_multiplier
+                        self._maximum_prefetch_restored = self._new_prefetch_count == self.max_prefetch_count
 
                     strategy(
                         message, payload,
@@ -659,13 +658,17 @@ class Consumer:
 
     def _restore_prefetch_count_after_connection_restart(self, _):
         with self.qos._mutex:
-            self.qos.value = self.initial_prefetch_count = min(self.max_prefetch_multiplier,
-                                                               self.qos.value + self.prefetch_multiplier)
+            self.qos.value = self.initial_prefetch_count = min(self.max_prefetch_count,
+                                                               self._new_prefetch_count)
             self.qos.set(self.qos.value)
 
     @property
-    def max_prefetch_multiplier(self):
+    def max_prefetch_count(self):
         return self.pool.num_processes * self.prefetch_multiplier
+
+    @property
+    def _new_prefetch_count(self):
+        return self.qos.value + self.prefetch_multiplier
 
     def __repr__(self):
         """``repr(self)``."""
