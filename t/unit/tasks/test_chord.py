@@ -215,11 +215,13 @@ class test_unlock_chord_task(ChordCase):
             return x * y
 
         from celery import chord
-        ch = chord(group(mul.s(1, 1), mul.s(2, 2)), mul.s(), interval=10)
+        g = group(mul.s(1, 1), mul.s(2, 2))
+        body = mul.s()
+        ch = chord(g, body, interval=10)
 
         with patch.object(ch, 'run') as run:
             ch.apply_async()
-            run.assert_called_once_with(group(mul.s(1, 1), mul.s(2, 2)), mul.s(), (), task_id=None, interval=10)
+            run.assert_called_once_with(g, body, (), task_id=None, interval=10, groups=[None])
 
     def test_unlock_with_chord_params_and_task_id(self):
         @self.app.task(shared=False)
@@ -227,16 +229,19 @@ class test_unlock_chord_task(ChordCase):
             return x * y
 
         from celery import chord
-        ch = chord(group(mul.s(1, 1), mul.s(2, 2)), mul.s(), interval=10)
+        g = group(mul.s(1, 1), mul.s(2, 2))
+        body = mul.s()
+        ch = chord(g, body, interval=10)
 
         with patch.object(ch, 'run') as run:
             ch.apply_async(task_id=sentinel.task_id)
             run.assert_called_once_with(
-                group(mul.s(1, 1), mul.s(2, 2)),
-                mul.s(),
+                g,
+                body,
                 (),
                 task_id=sentinel.task_id,
                 interval=10,
+                groups=[None]
             )
 
 
