@@ -148,7 +148,7 @@ class StampingVisitor(metaclass=ABCMeta):
          Returns:
              Dict: headers to update.
          """
-        return self.on_group_start(chord, **header)
+        return self.on_group_start(chord.tasks, **header)
 
     def on_chord_header_end(self, chord, **header) -> None:
         """Method that is called on сhord header stamping end.
@@ -157,7 +157,7 @@ class StampingVisitor(metaclass=ABCMeta):
                chord (chord): chord that is stamped.
                headers (Dict): Partial headers that could be merged with existing headers.
         """
-        self.on_group_end(chord, **header)
+        self.on_group_end(chord.tasks, **header)
 
     def on_chord_body(self, chord, **header) -> dict:
         """Method that is called on chord body stamping.
@@ -168,7 +168,7 @@ class StampingVisitor(metaclass=ABCMeta):
          Returns:
              Dict: headers to update.
         """
-        return self.on_signature(chord, **header)
+        return self.on_signature(chord.body, **header)
 
 
 class GroupStampingVisitor(StampingVisitor):
@@ -371,10 +371,10 @@ class Signature(dict):
             # override values in `self.options` except for keys which are
             # noted as being immutable (unrelated to signature immutability)
             # implying that allowing their value to change would stall tasks
-            new_options = dict(self.options, **{
+            new_options = {**self.options, **{
                 k: v for k, v in options.items()
                 if k not in self._IMMUTABLE_OPTIONS or k not in self.options
-            })
+            }}
         else:
             new_options = self.options
         if self.immutable and not force:
@@ -1579,8 +1579,10 @@ class _chord(Signature):
         # first freeze all tasks in the header
         header_result = self.tasks.freeze(
             parent_id=parent_id, root_id=root_id, chord=self.body)
-        # secondly freeze all tasks in the body: those that should be called after the header
         self.id = self.tasks.id
+        # secondly freeze all tasks in the body: those that should be called after the header
+
+        body_result = None
         if self.body:
             body_result = self.body.freeze(
                 _id, root_id=root_id, chord=chord, group_id=group_id,
@@ -1598,8 +1600,8 @@ class _chord(Signature):
                     node.parent = header_result
                     break
                 node = node.parent
-            self.id = self.tasks.id
-            return body_result
+
+        return body_result
 
     def stamp(self, visitor=None, **headers):
         if visitor is not None and self.body is not None:
