@@ -219,10 +219,16 @@ class test_unlock_chord_task(ChordCase):
         body = mul.s()
         ch = chord(g, body, interval=10)
 
-
         with patch.object(ch, 'run') as run:
             ch.apply_async()
-            run.assert_called_once_with(ch.tasks, mul.s(), (), task_id=ch.tasks.id, interval=10, groups=[ch.tasks.id])
+            run.assert_called_once_with(
+                ch.tasks,
+                mul.s(),
+                (),
+                task_id=ch.tasks.id,
+                interval=10,
+                groups=[ch.tasks.id]
+            )
 
     def test_unlock_with_chord_params_and_task_id(self):
         @self.app.task(shared=False)
