@@ -221,7 +221,7 @@ class test_unlock_chord_task(ChordCase):
 
         with patch.object(ch, 'run') as run:
             ch.apply_async()
-            run.assert_called_once_with(g, body, (), task_id=None, interval=10, groups=[None])
+            run.assert_called_once_with(g, body, (), task_id=None, interval=10, groups=[g.id])
 
     def test_unlock_with_chord_params_and_task_id(self):
         @self.app.task(shared=False)
