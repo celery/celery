@@ -799,7 +799,6 @@ class test_group:
         res = g1.apply_async()
         res.get(timeout=10)
 
-
         with subtests.test("sig1 is stamped", groups=[g1_res.id]):
             assert sig1_res._get_task_meta()['groups'] == [g1_res.id]
         with subtests.test("sig2 is stamped", groups=[g1_res.id, g2_res.id]):
