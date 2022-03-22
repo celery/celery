@@ -54,7 +54,7 @@ class CanvasCase:
 
         @self.app.task(shared=False)
         def xsum(numbers):
-            return sum(numbers)
+            return sum([sum(num) if type(num) == list else num for num in numbers])
 
         self.xsum = xsum
 
@@ -1385,7 +1385,7 @@ class test_chord(CanvasCase):
         with subtests.test("sig_2_res is stamped", groups=[g.id]):
             assert sig_2_res._get_task_meta()['groups'] == [g.id]
 
-    def test_group_stamping_two_levels(self, subtests):
+    def test_chord_stamping_two_levels(self, subtests):
         """
         For a group within a chord, test that group stamps are stored in
         the correct order.

@@ -87,6 +87,12 @@ def tsum(nums):
     return sum(nums)
 
 
+@shared_task
+def xsum(nums):
+    """Sum of ints and lists."""
+    return sum([sum(num) if type(num) == list else num for num in nums])
+
+
 @shared_task(bind=True)
 def add_replaced(self, x, y):
     """Add two numbers (via the add task)."""
