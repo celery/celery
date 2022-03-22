@@ -71,7 +71,7 @@ class test_unlock_chord_task(ChordCase):
 
         with self._chord_context(AlwaysReady) as (cb, retry, _):
             cb.type.apply_async.assert_called_with(
-                ([2, 4, 8, 6],), {}, task_id=cb.id,
+                ([2, 4, 8, 6],), {}, groups=[], task_id=cb.id,
             )
             # didn't retry
             assert not retry.call_count
