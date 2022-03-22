@@ -54,7 +54,7 @@ class CanvasCase:
 
         @self.app.task(shared=False)
         def xsum(numbers):
-            return sum([sum(num) if type(num) == list else num for num in numbers])
+            return sum(sum(num) if type(num) == list else num for num in numbers)
 
         self.xsum = xsum
 

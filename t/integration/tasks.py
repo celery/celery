@@ -90,7 +90,7 @@ def tsum(nums):
 @shared_task
 def xsum(nums):
     """Sum of ints and lists."""
-    return sum([sum(num) if type(num) == list else num for num in nums])
+    return sum(sum(num) if type(num) == list else num for num in nums)
 
 
 @shared_task(bind=True)
