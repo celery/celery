@@ -771,23 +771,40 @@ class test_result_set:
 
 
 class test_group:
-    def test_stamping(self, manager, subtests):
-        prev_task_store_eager_result = manager.app.conf.task_store_eager_result
-        prev_result_extended = manager.app.conf.result_extended
-        manager.app.conf.task_store_eager_result = True
-        manager.app.conf.result_extended = True
-
+    def test_group_stamping(self, manager, subtests):
         sig1 = add.s(1, 1000)
         sig1_res = sig1.freeze()
         g1 = group(sig1, add.s(1, 2000))
         g1_res = g1.freeze()
-        g1.apply()
-
-        manager.app.conf.task_store_eager_result = prev_task_store_eager_result
-        manager.app.conf.result_extended = prev_result_extended
+        res = g1.apply_async()
+        res.get(timeout=TIMEOUT)
 
         with subtests.test("sig_1 is stamped", groups=[g1_res.id]):
             assert sig1_res._get_task_meta()["groups"] == [g1_res.id]
+
+    def test_nested_group_stamping(self, manager, subtests):
+        sig1 = add.s(2, 2)
+        sig2 = add.s(2)
+
+        sig1_res = sig1.freeze()
+        sig2_res = sig2.freeze()
+
+        g2 = group(sig2, chain(add.s(4), add.s(2)))
+
+        g2_res = g2.freeze()
+
+        g1 = group(sig1, chain(add.s(1, 1), g2))
+
+        g1_res = g1.freeze()
+        res = g1.apply_async()
+        res.get(timeout=10)
+
+
+        with subtests.test("sig1 is stamped", groups=[g1_res.id]):
+            assert sig1_res._get_task_meta()['groups'] == [g1_res.id]
+        with subtests.test("sig2 is stamped", groups=[g1_res.id, g2_res.id]):
+            assert sig2_res._get_task_meta()['groups'] == \
+                   [g1_res.id, g2_res.id]
 
     @flaky
     def test_ready_with_exception(self, manager):
