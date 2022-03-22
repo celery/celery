@@ -194,11 +194,6 @@ class GroupStampingVisitor(StampingVisitor):
     def on_chain_end(self, chain, **headers) -> None:
         pass
 
-    def on_chord_header_start(self, chord, **header) -> dict:
-        if chord.id not in self.groups:
-            self.groups.append(chord.id)
-        return {'groups': list(self.groups)}
-
     def on_signature(self, sig, **headers) -> dict:
         return {'groups': list(self.groups)}
 
@@ -1588,24 +1583,26 @@ class _chord(Signature):
         header_result = self.tasks.freeze(
             parent_id=parent_id, root_id=root_id, chord=self.body)
         # secondly freeze all tasks in the body: those that should be called after the header
-        body_result = self.body.freeze(
-            _id, root_id=root_id, chord=chord, group_id=group_id,
-            group_index=group_index)
-        # we need to link the body result back to the group result,
-        # but the body may actually be a chain,
-        # so find the first result without a parent
-        node = body_result
-        seen = set()
-        while node:
-            if node.id in seen:
-                raise RuntimeError('Recursive result parents')
-            seen.add(node.id)
-            if node.parent is None:
-                node.parent = header_result
-                break
-            node = node.parent
         self.id = self.tasks.id
-        return body_result
+        if self.body:
+            body_result = self.body.freeze(
+                _id, root_id=root_id, chord=chord, group_id=group_id,
+                group_index=group_index)
+            # we need to link the body result back to the group result,
+            # but the body may actually be a chain,
+            # so find the first result without a parent
+            node = body_result
+            seen = set()
+            while node:
+                if node.id in seen:
+                    raise RuntimeError('Recursive result parents')
+                seen.add(node.id)
+                if node.parent is None:
+                    node.parent = header_result
+                    break
+                node = node.parent
+            self.id = self.tasks.id
+            return body_result
 
     def stamp(self, visitor=None, **headers):
         if visitor is not None and self.body is not None:
@@ -1631,13 +1628,13 @@ class _chord(Signature):
                     router=None, result_cls=None, **options):
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
-        groups = self.options.get("groups") or []
-        self.stamp(visitor=GroupStampingVisitor(groups))
         args = (tuple(args) + tuple(self.args)
                 if args and not self.immutable else self.args)
         body = kwargs.pop('body', None) or self.kwargs['body']
         kwargs = dict(self.kwargs['kwargs'], **kwargs)
         body = body.clone(**options)
+        groups = self.options.get("groups")
+        self.stamp(visitor=GroupStampingVisitor(groups))
         app = self._get_app(body)
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
                  else group(self.tasks, app=app))
