@@ -3,7 +3,7 @@
 |build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
 :Version: 5.2.3 (dawn-chorus)
-:Web: https://docs.celeryproject.org/en/stable/index.html
+:Web: https://docs.celeryq.dev/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
 :Keywords: task, queue, job, async, rabbitmq, amqp, redis,
@@ -102,10 +102,10 @@ getting started tutorials:
     A more complete overview, showing more features.
 
 .. _`First steps with Celery`:
-    http://docs.celeryproject.org/en/latest/getting-started/first-steps-with-celery.html
+    https://docs.celeryq.dev/en/stable/getting-started/first-steps-with-celery.html
 
 .. _`Next steps`:
-    http://docs.celeryproject.org/en/latest/getting-started/next-steps.html
+    https://docs.celeryq.dev/en/stable/getting-started/next-steps.html
 
  You can also get started with Celery by using a hosted broker transport CloudAMQP. The largest hosting provider of RabbitMQ is a proud sponsor of Celery.
 
