@@ -1,5 +1,6 @@
 import json
 import math
+from collections import Iterable
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
@@ -54,7 +55,7 @@ class CanvasCase:
 
         @self.app.task(shared=False)
         def xsum(numbers):
-            return sum([sum(num) if type(num) == list else num for num in numbers])
+            return sum([sum(num) if isinstance(num, Iterable) else num for num in numbers])
 
         self.xsum = xsum
 
