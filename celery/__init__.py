@@ -20,7 +20,7 @@ SERIES = 'dawn-chorus'
 __version__ = '5.2.3'
 __author__ = 'Ask Solem'
 __contact__ = 'auvipy@gmail.com'
-__homepage__ = 'http://celeryproject.org'
+__homepage__ = 'https://docs.celeryq.dev/'
 __docformat__ = 'restructuredtext'
 __keywords__ = 'task job queue distributed messaging actor'
 
