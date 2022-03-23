@@ -91,7 +91,7 @@ def tsum(nums):
 @shared_task
 def xsum(nums):
     """Sum of ints and lists."""
-    return sum([sum(num) if isinstance(num, Iterable) else num for num in nums])
+    return sum(sum(num) if isinstance(num, Iterable) else num for num in nums)
 
 
 @shared_task(bind=True)
