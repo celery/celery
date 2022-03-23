@@ -226,7 +226,7 @@ tutorials, and an API reference.
 
 最新的中文文档托管在 https://www.celerycn.io/ 中，包含用户指南、教程、API接口等。
 
-.. _`latest documentation`: http://docs.celeryproject.org/en/latest/
+.. _`latest documentation`: https://docs.celeryq.dev/en/latest/
 
 .. _celery-installation:
 
