@@ -255,9 +255,7 @@ class Signature(dict):
             new_options = self.options
 
         new_options = new_options if new_options else {}
-        new_options["link_error"] = new_options.get("link_error", []) + new_options.pop(
-            "link_error", []
-        )
+        new_options["link_error"] = new_options.get("link_error", []) or []
 
         if self.immutable and not force:
             return (self.args, self.kwargs, new_options)
