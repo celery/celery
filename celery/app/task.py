@@ -8,7 +8,7 @@ from kombu.utils.uuid import uuid
 
 from celery import current_app, states
 from celery._state import _task_stack
-from celery.canvas import _chain, group, signature
+from celery.canvas import GroupStampingVisitor, _chain, group, signature
 from celery.exceptions import Ignore, ImproperlyConfigured, MaxRetriesExceededError, Reject, Retry
 from celery.local import class_property
 from celery.result import EagerResult, denied_join_result
@@ -932,6 +932,10 @@ class Task:
         # retain their original task IDs as well
         for t in reversed(self.request.chain or []):
             sig |= signature(t, app=self.app)
+        # Stamping sig with parents groups
+        groups = self.request.groups
+        sig.stamp(visitor=GroupStampingVisitor(groups))
+
         # Finally, either apply or delay the new signature!
         if self.request.is_eager:
             return sig.apply().get()
