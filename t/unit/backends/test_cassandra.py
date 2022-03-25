@@ -70,6 +70,33 @@ class test_CassandraBackend:
                 app=self.app, keyspace='b', column_family='c',
             )
 
+    def test_init_with_cloud(self):
+        # Tests behavior when Cluster.connect works properly
+        # and cluster is created with 'cloud' param instead of 'contact_points'
+        from celery.backends import cassandra as mod
+
+        class DummyClusterWithBundle:
+
+            def __init__(self, *args, **kwargs):
+                if args != ():
+                    # this cluster is supposed to be created with 'cloud=...'
+                    raise ValueError('I should be created with kwargs only')
+                pass
+
+            def connect(self, *args, **kwargs):
+                return Mock()
+
+        mod.cassandra = Mock()
+        mod.cassandra.cluster = Mock()
+        mod.cassandra.cluster.Cluster = DummyClusterWithBundle
+
+        self.app.conf.cassandra_secure_bundle_path = '/path/to/bundle.zip'
+        self.app.conf.cassandra_servers = None
+
+        x = mod.CassandraBackend(app=self.app)
+        x._get_connection()
+        assert isinstance(x._cluster, DummyClusterWithBundle)
+
     @pytest.mark.patched_module(*CASSANDRA_MODULES)
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_reduce(self, module):

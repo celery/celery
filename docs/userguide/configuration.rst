@@ -1387,7 +1387,7 @@ Port to contact the Cassandra servers on.
 
 Default: None.
 
-The key-space in which to store the results. For example::
+The keyspace in which to store the results. For example::
 
     cassandra_keyspace = 'tasks_keyspace'
 
@@ -1504,6 +1504,54 @@ Example configuration (Astra DB)
     }
     cassandra_secure_bundle_path = '/path/to/secure-connect-bundle.zip'
     cassandra_entry_ttl = 86400
+
+Additional configuration
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The Cassandra driver, when estabilishing the connection, undergoes a stage
+of negotiating the protocol version with the server(s). Similarly,
+a load-balancing policy is automatically supplied (by default
+``DCAwareRoundRobinPolicy``, which in turn has a ``local_dc`` setting, also
+determined by the driver upon connection).
+When possible, one should explicitly provide these in the configuration:
+moreover, future versions of the Cassandra driver will require at least the
+load-balancing policy to be specified (using `execution profiles <https://docs.datastax.com/en/developer/python-driver/3.25/execution_profiles/>`_,
+as shown below).
+
+A full configuration for the Cassandra backend would thus have the
+following additional lines:
+
+.. code-block:: python
+
+    from cassandra.policies import DCAwareRoundRobinPolicy
+    from cassandra.cluster import ExecutionProfile
+    from cassandra.cluster import EXEC_PROFILE_DEFAULT
+    myEProfile = ExecutionProfile(
+      load_balancing_policy=DCAwareRoundRobinPolicy(
+        local_dc='datacenter1', # replace with your DC name
+      )
+    )
+    cassandra_options = {
+      'protocol_version': 5,    # for Cassandra 4, change if needed
+      'execution_profiles': {EXEC_PROFILE_DEFAULT: myEProfile},
+    }
+
+And similarly for Astra DB:
+
+.. code-block:: python
+
+    from cassandra.policies import DCAwareRoundRobinPolicy
+    from cassandra.cluster import ExecutionProfile
+    from cassandra.cluster import EXEC_PROFILE_DEFAULT
+    myEProfile = ExecutionProfile(
+      load_balancing_policy=DCAwareRoundRobinPolicy(
+        local_dc='europe-west1',  # for Astra DB, region name = dc name
+      )
+    )
+    cassandra_options = {
+      'protocol_version': 4,      # for Astra DB
+      'execution_profiles': {EXEC_PROFILE_DEFAULT: myEProfile},
+    }
 
 .. _conf-s3-result-backend:
 
