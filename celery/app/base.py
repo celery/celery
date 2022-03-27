@@ -777,6 +777,7 @@ class Celery:
             argsrepr=options.get('argsrepr'),
             kwargsrepr=options.get('kwargsrepr'),
             groups=options.get('groups'),
+            stamps=options.get('stamps'),
         )
 
         if connection:
