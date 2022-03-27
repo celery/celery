@@ -487,6 +487,7 @@ class Signature(dict):
         if visitor is not None:
             headers.update(visitor.on_signature(self, **headers))
         else:
+            headers = {"stamps": headers}
             _merge_dictionaries(headers, self.options)
         return self.set(**headers)
 

@@ -92,7 +92,7 @@ class CanvasCase:
 
 class test_Signature(CanvasCase):
     @pytest.mark.usefixtures('depends_on_current_app')
-    def test_double_stamping(self):
+    def test_double_stamping(self, subtests):
         """
         Test manual signature stamping.
         """
@@ -106,8 +106,11 @@ class test_Signature(CanvasCase):
         sig_1_res = sig_1.freeze()
         sig_1.apply()
 
-        assert sig_1_res._get_task_meta()["stamp1"] == "stamp1"
-        assert sig_1_res._get_task_meta()["stamp2"] == "stamp2"
+        with subtests.test("stamp1 is stamped", stamps="stamp1"):
+            assert sig_1_res._get_task_meta()["stamp1"] == "stamp1"
+
+        with subtests.test("stamp2 is stamped", stamps="stamp2"):
+            assert sig_1_res._get_task_meta()["stamp2"] == "stamp2"
 
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_manual_stamping(self):
