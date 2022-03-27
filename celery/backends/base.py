@@ -491,7 +491,8 @@ class Backend:
                     if hasattr(request, 'delivery_info') and
                     request.delivery_info else None
                 }
-
+                if hasattr(request, 'stamps') and request.stamps:
+                    request_meta.update(request.stamps)
                 if encode:
                     # args and kwargs need to be encoded properly before saving
                     encode_needed_fields = {"args", "kwargs"}

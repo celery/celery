@@ -262,7 +262,7 @@ class Signature(dict):
     _app = _type = None
     # The following fields must not be changed during freezing/merging because
     # to do so would disrupt completion of parent tasks
-    _IMMUTABLE_OPTIONS = {"group_id", "groups"}
+    _IMMUTABLE_OPTIONS = {"group_id", "groups", "stamps"}
 
     @classmethod
     def register_type(cls, name=None):
@@ -487,6 +487,7 @@ class Signature(dict):
         if visitor is not None:
             headers.update(visitor.on_signature(self, **headers))
         else:
+            headers = {"stamps": headers}
             _merge_dictionaries(headers, self.options)
         return self.set(**headers)
 
