@@ -113,6 +113,23 @@ class test_Signature(CanvasCase):
             assert sig_1_res._get_task_meta()["stamp2"] == "stamp2"
 
     @pytest.mark.usefixtures('depends_on_current_app')
+    def test_stamping_twice(self):
+        """
+        Test manual signature stamping.
+        """
+        self.app.conf.task_always_eager = True
+        self.app.conf.task_store_eager_result = True
+        self.app.conf.result_extended = True
+
+        sig_1 = self.add.s(2, 2)
+        sig_1.stamp(stamp="stamp1")
+        sig_1.stamp(stamp="stamp2")
+        sig_1_res = sig_1.freeze()
+        sig_1.apply()
+
+        assert sig_1_res._get_task_meta()["stamp"] == ["stamp2", "stamp1"]
+
+    @pytest.mark.usefixtures('depends_on_current_app')
     def test_manual_stamping(self):
         """
         Test manual signature stamping.
