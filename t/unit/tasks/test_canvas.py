@@ -126,7 +126,7 @@ class test_Signature(CanvasCase):
 
         assert sig_1_res._get_task_meta()["stamp"] == ["stamp2", "stamp1"]
 
-    @pytest.mark.usefixtures('depends_on_current_app')        
+    @pytest.mark.usefixtures('depends_on_current_app')
     def test_manual_stamping(self):
         """
         Test manual signature stamping.

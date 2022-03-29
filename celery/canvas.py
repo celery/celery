@@ -172,7 +172,7 @@ class StampingVisitor(metaclass=ABCMeta):
         """
         return self.on_signature(chord.body, **header)
 
-      
+
 class GroupStampingVisitor(StampingVisitor):
     """
     Group stamping implementation based on Stamping API.
