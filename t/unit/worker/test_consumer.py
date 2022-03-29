@@ -32,6 +32,7 @@ class ConsumerTestCase:
             **kwargs
         )
         consumer.blueprint = Mock(name='blueprint')
+        consumer.pool.num_processes = 2
         consumer._restart_state = Mock(name='_restart_state')
         consumer.connection = _amqp_connection()
         consumer.connection_errors = (socket.error, OSError,)
