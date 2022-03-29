@@ -646,8 +646,6 @@ class Consumer:
                         reject_log_error_promise.then(self._restore_prefetch_count_after_connection_restart,
                                                       on_error=self._restore_prefetch_count_after_connection_restart)
 
-                        self._maximum_prefetch_restored = self._new_prefetch_count == self.max_prefetch_count
-
                     strategy(
                         message, payload,
                         ack_log_error_promise,
@@ -663,13 +661,15 @@ class Consumer:
 
     def _restore_prefetch_count_after_connection_restart(self, p):
         with self.qos._mutex:
-            if self.qos.value == self.max_prefetch_count:
+            if self._maximum_prefetch_restored:
                 p.cancel()
                 return
 
-            self.qos.value = self.initial_prefetch_count = min(self.max_prefetch_count,
-                                                               self._new_prefetch_count)
+            new_prefetch_count = min(self.max_prefetch_count, self._new_prefetch_count)
+            self.qos.value = self.initial_prefetch_count = new_prefetch_count
             self.qos.set(self.qos.value)
+
+            self._maximum_prefetch_restored = new_prefetch_count == self.max_prefetch_count
 
     @property
     def max_prefetch_count(self):
