@@ -85,6 +85,43 @@ class test_Consumer(ConsumerTestCase):
         c._update_qos_eventually.assert_called_with(8)
         assert c.initial_prefetch_count == 10 * 10
 
+    @pytest.mark.parametrize(
+        'active_requests_count,expected_initial,expected_maximum',
+        [
+            [0, 2, True],
+            [1, 1, False],
+            [2, 1, False]
+        ]
+    )
+    @patch('celery.worker.consumer.consumer.active_requests', new_callable=set)
+    def test_restore_prefetch_count_on_restart(self, active_requests_mock, active_requests_count, expected_initial, expected_maximum, subtests):
+        reqs = {Mock() for _ in range(active_requests_count)}
+        active_requests_mock.update(reqs)
+
+        c = self.get_consumer()
+        c.qos = Mock()
+        c.blueprint = Mock()
+
+        def bp_start(*_, **__):
+            if c.restart_count > 1:
+                c.blueprint.state = CLOSE
+            else:
+                raise ConnectionError
+
+        c.blueprint.start.side_effect = bp_start
+
+        c.start()
+
+        with subtests.test("initial prefetch count is never 0"):
+            assert c.initial_prefetch_count != 0
+
+        with subtests.test(f"initial prefetch count is equal to {expected_initial}"):
+            assert c.initial_prefetch_count == expected_initial
+
+        with subtests.test(f"maximum prefetch is reached"):
+            assert c._maximum_prefetch_restored is expected_maximum
+
+
     def test_flush_events(self):
         c = self.get_consumer()
         c.event_dispatcher = None
