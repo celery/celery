@@ -62,6 +62,10 @@ def republish(producer, message, exchange=None, routing_key=None,
     # remove compression header, as this will be inserted again
     # when the message is recompressed.
     compression = headers.pop('compression', None)
+    
+    expiration = props.pop('expiration', None)
+    # ensure expiration is a float
+    expiration = float(expiration) if expiration is not None else None
 
     for key in remove_props:
         props.pop(key, None)
