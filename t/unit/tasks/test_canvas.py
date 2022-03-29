@@ -94,7 +94,7 @@ class test_Signature(CanvasCase):
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_double_stamping(self):
         """
-        Test manual signature stamping.
+        Test manual signature stamping with two different stamps.
         """
         self.app.conf.task_always_eager = True
         self.app.conf.task_store_eager_result = True
@@ -106,16 +106,13 @@ class test_Signature(CanvasCase):
         sig_1_res = sig_1.freeze()
         sig_1.apply()
 
-        # TODO: whats easier
         assert sig_1_res._get_task_meta()["stamp1"] == ["stamp1"]
         assert sig_1_res._get_task_meta()["stamp2"] == ["stamp2"]
-
-        # stamp headers contains stamp1 and stamp2
 
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_twice_stamping(self):
         """
-        Test manual signature stamping.
+        Test manual signature stamping with two stamps twice.
         """
         self.app.conf.task_always_eager = True
         self.app.conf.task_store_eager_result = True
@@ -127,9 +124,9 @@ class test_Signature(CanvasCase):
         sig_1_res = sig_1.freeze()
         sig_1.apply()
 
-        # stamp headers contains stamp1 and stamp2
         assert sig_1_res._get_task_meta()["stamp"] == ["stamp2", "stamp1"]
 
+    @pytest.mark.usefixtures('depends_on_current_app')        
     def test_manual_stamping(self):
         """
         Test manual signature stamping.
@@ -731,7 +728,6 @@ class test_group(CanvasCase):
         g.stamp(stamp="stamp")
         g_res = g.freeze()
         g.apply()
-
         with subtests.test("sig_1_res is stamped", groups=[g_res.id]):
             assert sig_1_res._get_task_meta()['groups'] == [g_res.id]
 
@@ -749,7 +745,6 @@ class test_group(CanvasCase):
 
         with subtests.test("sig_2_res has stamped_headers", stamped_headers=["stamp"]):
             assert sig_2_res._get_task_meta()['stamped_headers'] == ['stamp']
-
 
     def test_group_stamping_two_levels(self, subtests):
         """
