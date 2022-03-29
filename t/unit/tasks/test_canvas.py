@@ -91,8 +91,7 @@ class CanvasCase:
 
 
 class test_Signature(CanvasCase):
-    @pytest.mark.usefixtures('depends_on_current_app')
-    def test_double_stamping(self):
+    def test_double_stamping(self, subtests):
         """
         Test manual signature stamping with two different stamps.
         """
@@ -106,11 +105,16 @@ class test_Signature(CanvasCase):
         sig_1_res = sig_1.freeze()
         sig_1.apply()
 
-        assert sig_1_res._get_task_meta()["stamp1"] == ["stamp1"]
-        assert sig_1_res._get_task_meta()["stamp2"] == ["stamp2"]
+        with subtests.test("sig_1_res is stamped with stamp1", stamp1=["stamp1"]):
+            assert sig_1_res._get_task_meta()["stamp1"] == ["stamp1"]
 
-    @pytest.mark.usefixtures('depends_on_current_app')
-    def test_twice_stamping(self):
+        with subtests.test("sig_1_res is stamped with stamp2", stamp2=["stamp2"]):
+            assert sig_1_res._get_task_meta()["stamp2"] == ["stamp2"]
+
+        with subtests.test("sig_1_res is stamped twice", stamped_headers=["stamp1", "stamp2"]):
+            assert sig_1_res._get_task_meta()["stamped_headers"] == ["stamp2", "stamp1"]
+
+    def test_twice_stamping(self, subtests):
         """
         Test manual signature stamping with two stamps twice.
         """
@@ -124,7 +128,11 @@ class test_Signature(CanvasCase):
         sig_1_res = sig_1.freeze()
         sig_1.apply()
 
-        assert sig_1_res._get_task_meta()["stamp"] == ["stamp2", "stamp1"]
+        with subtests.test("sig_1_res is stamped twice", stamps=["stamp2", "stamp1"]):
+            assert sig_1_res._get_task_meta()["stamp"] == ["stamp2", "stamp1"]
+
+        with subtests.test("sig_1_res is stamped twice", stamped_headers=["stamp2", "stamp1"]):
+            assert sig_1_res._get_task_meta()["stamped_headers"] == ["stamp", "stamp"]
 
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_manual_stamping(self):
