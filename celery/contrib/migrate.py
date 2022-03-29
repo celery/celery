@@ -73,7 +73,8 @@ def republish(producer, message, exchange=None, routing_key=None,
     producer.publish(ensure_bytes(body), exchange=exchange,
                      routing_key=routing_key, compression=compression,
                      headers=headers, content_type=ctype,
-                     content_encoding=enc, **props)
+                     content_encoding=enc, expiration=expiration,
+                     **props)
 
 
 def migrate_task(producer, body_, message, queues=None):
