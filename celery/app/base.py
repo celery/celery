@@ -776,8 +776,7 @@ class Celery:
             ignore_result=ignore_result,
             argsrepr=options.get('argsrepr'),
             kwargsrepr=options.get('kwargsrepr'),
-            groups=options.get('groups'),
-            stamps=options.get('stamps'),
+            **options
         )
 
         if connection:

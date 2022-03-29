@@ -373,9 +373,12 @@ class Signature(dict):
             # override values in `self.options` except for keys which are
             # noted as being immutable (unrelated to signature immutability)
             # implying that allowing their value to change would stall tasks
+            immutable_options = self._IMMUTABLE_OPTIONS
+            if "stamps" in self.options:
+                immutable_options = self._IMMUTABLE_OPTIONS.union(set(self.options["stamps"]))
             new_options = {**self.options, **{
                 k: v for k, v in options.items()
-                if k not in self._IMMUTABLE_OPTIONS or k not in self.options
+                if k not in immutable_options or k not in self.options
             }}
         else:
             new_options = self.options
@@ -483,11 +486,17 @@ class Signature(dict):
         self.immutable = immutable
 
     def stamp(self, visitor=None, **headers):
+        """Apply this task asynchronously.
+
+        Arguments:
+            visitor (StampingVisitor): Visitor API object.
+            headers (Dict): Stamps that should be added to headers.
+        """
         headers = headers.copy()
         if visitor is not None:
             headers.update(visitor.on_signature(self, **headers))
         else:
-            headers = {"stamps": headers}
+            headers = {"stamped_headers": list(headers.keys()), **headers}
             _merge_dictionaries(headers, self.options)
         return self.set(**headers)
 

@@ -94,6 +94,7 @@ class Context:
     timelimit = None
     utc = None
     groups = None
+    stamped_headers = None
     stamps = None
 
     def __init__(self, *args, **kwargs):
@@ -786,8 +787,11 @@ class Task:
                 'priority': options.get('priority'),
             },
             'groups': maybe_list(options.get('groups')),
-            'stamps': options.get('stamps')
         }
+        if 'stamped_headers' in options:
+            request['stamped_headers'] = maybe_list(options['stamped_headers'])
+            request['stamps'] = {header: maybe_list(options[header]) for header in request['stamped_headers']}
+
         tb = None
         tracer = build_tracer(
             task.name, task, eager=True,
