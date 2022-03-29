@@ -15,7 +15,7 @@ from decimal import Decimal
 from itertools import chain
 from numbers import Number
 from pprint import _recursion
-from typing import Any, AnyStr, Callable, Dict, Iterator, List, Sequence, Set, Tuple
+from typing import Any, AnyStr, Callable, Dict, Iterator, List, Sequence, Set, Tuple, Optional
 
 from .text import truncate
 
@@ -194,9 +194,14 @@ def _reprseq(val, lit_start, lit_end, builtin_type, chainer):
     )
 
 
-def reprstream(stack, seen=None, maxlevels=3, level=0, isinstance=isinstance):
+def reprstream(
+    stack: deque,
+    seen: Optional[Set] = None,
+    maxlevels: int = 3,
+    level: int = 0,
+    isinstance: Callable[[Any, Any], bool] = isinstance
+) -> Iterator[Any]:
     """Streaming repr, yielding tokens."""
-    # type: (deque, Set, int, int, Callable) -> Iterator[Any]
     seen = seen or set()
     append = stack.append
     popleft = stack.popleft

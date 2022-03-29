@@ -744,8 +744,7 @@ class Messagebuffer(Evictable):
         # type: () -> int
         return self._len()
 
-    def __contains__(self, item):
-        # type: () -> bool
+    def __contains__(self, item) -> bool:
         return item in self.data
 
     def __reversed__(self):

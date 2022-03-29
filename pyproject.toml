@@ -4,3 +4,15 @@ testpaths = "t/unit/"
 python_classes = "test_*"
 xdfail_strict=true
 markers = ["sleepdeprived_patched_module", "masked_modules", "patched_environ", "patched_module"]
+
+[tool.mypy]
+warn_unused_configs = true
+strict = false
+warn_return_any = true
+follow_imports = "skip"
+show_error_codes = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+files = [
+    "celery/__main__.py",
+]
