@@ -285,7 +285,6 @@ class AMQP:
                    create_sent_event=False, root_id=None, parent_id=None,
                    shadow=None, chain=None, now=None, timezone=None,
                    origin=None, ignore_result=False, argsrepr=None, kwargsrepr=None, stamps=None, **options):
-                # TODO: change to kwargs
 
         args = args or ()
         kwargs = kwargs or {}
