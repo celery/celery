@@ -319,8 +319,12 @@ class Request:
         return self._request_dict.get('groups', [])
 
     @property
-    def stamps(self):
+    def stamped_headers(self) -> list:
         return self._request_dict.get('stamps', [])
+
+    @property
+    def stamps(self) -> dict:
+        return {header: self._request_dict[header] for header in self.stamped_headers}
 
     @property
     def correlation_id(self):
