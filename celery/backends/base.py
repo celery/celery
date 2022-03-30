@@ -230,7 +230,7 @@ class Backend:
                         hasattr(errback.type, '__header__') and
 
                         # workaround to support tasks with bind=True executed as
-                        # link errors. Otherwise retries can't be used
+                        # link errors. Otherwise, retries can't be used
                         not isinstance(errback.type.__header__, partial) and
                         arity_greater(errback.type.__header__, 1)
                 ):
