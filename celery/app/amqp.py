@@ -284,7 +284,8 @@ class AMQP:
                    time_limit=None, soft_time_limit=None,
                    create_sent_event=False, root_id=None, parent_id=None,
                    shadow=None, chain=None, now=None, timezone=None,
-                   origin=None, ignore_result=False, argsrepr=None, kwargsrepr=None, stamps=None, **options):
+                   origin=None, ignore_result=False, argsrepr=None, kwargsrepr=None, stamped_headers=None,
+                   **options):
 
         args = args or ()
         kwargs = kwargs or {}
@@ -337,9 +338,9 @@ class AMQP:
             'kwargsrepr': kwargsrepr,
             'origin': origin or anon_nodename(),
             'ignore_result': ignore_result,
-            'stamps': stamps,
+            'stamped_headers': stamped_headers,
+            **options
         }
-        headers.update(options)
 
         return task_message(
             headers=headers,

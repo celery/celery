@@ -111,8 +111,8 @@ class test_Signature(CanvasCase):
         with subtests.test("sig_1_res is stamped with stamp2", stamp2=["stamp2"]):
             assert sig_1_res._get_task_meta()["stamp2"] == ["stamp2"]
 
-        with subtests.test("sig_1_res is stamped twice", stamped_headers=["stamp1", "stamp2"]):
-            assert sig_1_res._get_task_meta()["stamped_headers"] == ["stamp2", "stamp1"]
+        with subtests.test("sig_1_res is stamped twice", stamped_headers=["stamp2", "stamp1"]):
+            assert sig_1_res._get_task_meta()["stamped_headers"] == ["stamp2", "stamp1", "groups"]
 
     def test_twice_stamping(self, subtests):
         """
@@ -132,7 +132,7 @@ class test_Signature(CanvasCase):
             assert sig_1_res._get_task_meta()["stamp"] == ["stamp2", "stamp1"]
 
         with subtests.test("sig_1_res is stamped twice", stamped_headers=["stamp2", "stamp1"]):
-            assert sig_1_res._get_task_meta()["stamped_headers"] == ["stamp", "stamp"]
+            assert sig_1_res._get_task_meta()["stamped_headers"] == ["stamp", "groups"]
 
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_manual_stamping(self):
@@ -690,7 +690,7 @@ class test_chain(CanvasCase):
             res = chain_sig()
         # `_prepare_chain_from_options()` sets this `chain` kwarg with the
         # subsequent tasks which would be run - nothing in this case
-        mock_apply.assert_called_once_with(chain=[], groups=[])
+        mock_apply.assert_called_once_with(chain=[], groups=[], stamped_headers=['groups'])
         assert res is mock_apply.return_value
 
     @pytest.mark.usefixtures('depends_on_current_app')
@@ -713,7 +713,7 @@ class test_chain(CanvasCase):
             res = chain_sig()
         # `_prepare_chain_from_options()` sets this `chain` kwarg with the
         # subsequent tasks which would be run - nothing in this case
-        mock_apply.assert_called_once_with(chain=[], groups=[])
+        mock_apply.assert_called_once_with(chain=[], groups=[], stamped_headers=['groups'])
         assert res is mock_apply.return_value
 
 
@@ -748,11 +748,11 @@ class test_group(CanvasCase):
         with subtests.test("sig_2_res is stamped manually", stamp=["stamp"]):
             assert sig_2_res._get_task_meta()['stamp'] == ["stamp"]
 
-        with subtests.test("sig_1_res has stamped_headers", stamped_headers=["stamp"]):
-            assert sig_1_res._get_task_meta()['stamped_headers'] == ['stamp']
+        with subtests.test("sig_1_res has stamped_headers", stamped_headers=["stamp", 'groups']):
+            assert sig_1_res._get_task_meta()['stamped_headers'] == ['stamp', 'groups']
 
         with subtests.test("sig_2_res has stamped_headers", stamped_headers=["stamp"]):
-            assert sig_2_res._get_task_meta()['stamped_headers'] == ['stamp']
+            assert sig_2_res._get_task_meta()['stamped_headers'] == ['stamp', 'groups']
 
     def test_group_stamping_two_levels(self, subtests):
         """

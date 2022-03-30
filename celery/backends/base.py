@@ -486,10 +486,9 @@ class Backend:
                     'kwargs': getattr(request, 'kwargs', None),
                     'worker': getattr(request, 'hostname', None),
                     'retries': getattr(request, 'retries', None),
-                    'groups': getattr(request, 'groups', None),
                     'queue': request.delivery_info.get('routing_key')
                     if hasattr(request, 'delivery_info') and
-                    request.delivery_info else None
+                    request.delivery_info else None,
                 }
                 if hasattr(request, 'stamps') and request.stamps:
                     request_meta['stamped_headers'] = request.stamped_headers

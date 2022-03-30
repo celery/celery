@@ -177,27 +177,30 @@ class GroupStampingVisitor(StampingVisitor):
     """
     Group stamping implementation based on Stamping API.
     """
-    def __init__(self, groups=None):
+    def __init__(self, groups=None, stamped_headers=None):
         self.groups = groups or []
+        self.stamped_headers = stamped_headers or []
+        if "groups" not in self.stamped_headers:
+            self.stamped_headers.append("groups")
 
     def on_group_start(self, group, **headers) -> dict:
         if group.id is None:
             group.freeze()
         if group.id not in self.groups:
             self.groups.append(group.id)
-        return {'groups': list(self.groups)}
+        return {'groups': list(self.groups), "stamped_headers": list(self.stamped_headers)}
 
     def on_group_end(self, group, **headers) -> None:
         self.groups.pop()
 
     def on_chain_start(self, chain, **headers) -> dict:
-        return {'groups': list(self.groups)}
+        return {'groups': list(self.groups), "stamped_headers": list(self.stamped_headers)}
 
     def on_chain_end(self, chain, **headers) -> None:
         pass
 
     def on_signature(self, sig, **headers) -> dict:
-        return {'groups': list(self.groups)}
+        return {'groups': list(self.groups), "stamped_headers": list(self.stamped_headers)}
 
 
 @abstract.CallableSignature.register
@@ -262,7 +265,7 @@ class Signature(dict):
     _app = _type = None
     # The following fields must not be changed during freezing/merging because
     # to do so would disrupt completion of parent tasks
-    _IMMUTABLE_OPTIONS = {"group_id", "groups", "stamps"}
+    _IMMUTABLE_OPTIONS = {"group_id", "stamped_headers"}
 
     @classmethod
     def register_type(cls, name=None):
@@ -323,7 +326,8 @@ class Signature(dict):
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
         groups = self.options.get("groups")
-        self.stamp(visitor=GroupStampingVisitor(groups))
+        stamped_headers = self.options.get("stamped_headers")
+        self.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
         # Extra options set to None are dismissed
         options = {k: v for k, v in options.items() if v is not None}
         # For callbacks: extra args are prepended to the stored args.
@@ -348,7 +352,8 @@ class Signature(dict):
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
         groups = self.options.get("groups")
-        self.stamp(visitor=GroupStampingVisitor(groups))
+        stamped_headers = self.options.get("stamped_headers")
+        self.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
         # Extra options set to None are dismissed
         options = {k: v for k, v in options.items() if v is not None}
         try:
@@ -374,8 +379,8 @@ class Signature(dict):
             # noted as being immutable (unrelated to signature immutability)
             # implying that allowing their value to change would stall tasks
             immutable_options = self._IMMUTABLE_OPTIONS
-            if "stamps" in self.options:
-                immutable_options = self._IMMUTABLE_OPTIONS.union(set(self.options["stamps"]))
+            if "stamped_headers" in self.options:
+                immutable_options = self._IMMUTABLE_OPTIONS.union(set(self.options["stamped_headers"]))
             new_options = {**self.options, **{
                 k: v for k, v in options.items()
                 if k not in immutable_options or k not in self.options
@@ -496,7 +501,7 @@ class Signature(dict):
         if visitor is not None:
             headers.update(visitor.on_signature(self, **headers))
         else:
-            headers = {"stamped_headers": list(headers.keys()), **headers}
+            headers["stamped_headers"] = [header for header in headers.keys() if header not in self.options]
             _merge_dictionaries(headers, self.options)
         return self.set(**headers)
 
@@ -797,7 +802,8 @@ class _chain(Signature):
         kwargs = kwargs if kwargs else []
         app = self.app
         groups = self.options.get("groups")
-        self.stamp(visitor=GroupStampingVisitor(groups))
+        stamped_headers = self.options.get("stamped_headers")
+        self.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
         if app.conf.task_always_eager:
             with allow_join_result():
                 return self.apply(args, kwargs, **options)
@@ -993,7 +999,8 @@ class _chain(Signature):
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
         groups = self.options.get("groups")
-        self.stamp(visitor=GroupStampingVisitor(groups))
+        stamped_headers = self.options.get("stamped_headers")
+        self.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
         last, (fargs, fkwargs) = None, (args, kwargs)
         for task in self.tasks:
             res = task.clone(fargs, fkwargs).apply(
@@ -1264,8 +1271,9 @@ class group(Signature):
         if link_error is not None:
             raise TypeError(
                 'Cannot add link to group: do that on individual tasks')
-        groups = self.options.get("groups") or []
-        self.stamp(visitor=GroupStampingVisitor(groups))
+        groups = self.options.get("groups")
+        stamped_headers = self.options.get("stamped_headers")
+        self.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
         app = self.app
         if app.conf.task_always_eager:
             return self.apply(args, kwargs, **options)
@@ -1297,8 +1305,9 @@ class group(Signature):
     def apply(self, args=None, kwargs=None, **options):
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
-        groups = self.options.get("groups") or []
-        self.stamp(visitor=GroupStampingVisitor(groups))
+        groups = self.options.get("groups")
+        stamped_headers = self.options.get("stamped_headers")
+        self.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
         app = self.app
         if not self.tasks:
             return self.freeze()  # empty group returns GroupResult
@@ -1647,7 +1656,8 @@ class _chord(Signature):
         kwargs = dict(self.kwargs['kwargs'], **kwargs)
         body = body.clone(**options)
         groups = self.options.get("groups")
-        self.stamp(visitor=GroupStampingVisitor(groups))
+        stamped_headers = self.options.get("stamped_headers")
+        self.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
         app = self._get_app(body)
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
                  else group(self.tasks, app=app))
@@ -1668,8 +1678,9 @@ class _chord(Signature):
               propagate=True, body=None, **options):
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
+        stamped_headers = self.options.get("stamped_headers")
         groups = self.options.get("groups")
-        self.stamp(visitor=GroupStampingVisitor(groups))
+        self.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
         body = self.body if body is None else body
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
                  else group(self.tasks, app=self.app))
