@@ -736,6 +736,7 @@ class test_group(CanvasCase):
         g.stamp(stamp="stamp")
         g_res = g.freeze()
         g.apply()
+
         with subtests.test("sig_1_res is stamped", groups=[g_res.id]):
             assert sig_1_res._get_task_meta()['groups'] == [g_res.id]
 
@@ -1433,14 +1434,30 @@ class test_chord(CanvasCase):
         sig_sum_res = sig_sum.freeze()
 
         g = chord([sig_1, sig_2], sig_sum, app=self.app)
+        g.stamp(stamp="stamp")
         g.freeze()
         g.apply()
+
         with subtests.test("sig_sum_res body isn't stamped", groups=[]):
             assert sig_sum_res._get_task_meta()['groups'] == []
+
         with subtests.test("sig_1_res is stamped", groups=[g.id]):
             assert sig_1_res._get_task_meta()['groups'] == [g.id]
+
         with subtests.test("sig_2_res is stamped", groups=[g.id]):
             assert sig_2_res._get_task_meta()['groups'] == [g.id]
+
+        with subtests.test("sig_1_res is stamped manually", stamp=["stamp"]):
+            assert sig_1_res._get_task_meta()['stamp'] == ["stamp"]
+
+        with subtests.test("sig_2_res is stamped manually", stamp=["stamp"]):
+            assert sig_2_res._get_task_meta()['stamp'] == ["stamp"]
+
+        with subtests.test("sig_1_res has stamped_headers", stamped_headers=["stamp", 'groups']):
+            assert sig_1_res._get_task_meta()['stamped_headers'] == ['stamp', 'groups']
+
+        with subtests.test("sig_2_res has stamped_headers", stamped_headers=["stamp", 'groups']):
+            assert sig_2_res._get_task_meta()['stamped_headers'] == ['stamp', 'groups']
 
     def test_chord_stamping_two_levels(self, subtests):
         """
