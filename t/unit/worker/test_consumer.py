@@ -1,7 +1,7 @@
 import errno
 import socket
 from collections import deque
-from unittest.mock import Mock, call, patch, MagicMock
+from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
 from billiard.exceptions import RestartFreqExceeded
