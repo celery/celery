@@ -622,9 +622,9 @@ class Consumer:
                 try:
                     ack_log_error_promise = promise(call_soon, (message.ack_log_error,),
                                                     on_error=self._restore_prefetch_count_after_connection_restart)
-                    reject_log_error_promise = promise(call_soon,
-                                                       (message.reject_log_error,),
-                                                       on_error=self._restore_prefetch_count_after_connection_restart)
+                    reject_log_error_promise = \
+                        promise(call_soon, (message.reject_log_error,),
+                                on_error=self._restore_prefetch_count_after_connection_restart)
 
                     if (
                         not self._maximum_prefetch_restored
@@ -649,7 +649,7 @@ class Consumer:
 
         return on_task_received
 
-    def _restore_prefetch_count_after_connection_restart(self, p):
+    def _restore_prefetch_count_after_connection_restart(self, p, *args):
         with self.qos._mutex:
             if self._maximum_prefetch_restored:
                 p.cancel()
