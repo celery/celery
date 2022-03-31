@@ -1,7 +1,7 @@
 import errno
 import socket
 from collections import deque
-from unittest.mock import Mock, call, patch
+from unittest.mock import Mock, call, patch, MagicMock
 
 import pytest
 from billiard.exceptions import RestartFreqExceeded
@@ -94,7 +94,8 @@ class test_Consumer(ConsumerTestCase):
         ]
     )
     @patch('celery.worker.consumer.consumer.active_requests', new_callable=set)
-    def test_restore_prefetch_count_on_restart(self, active_requests_mock, active_requests_count, expected_initial, expected_maximum, subtests):
+    def test_restore_prefetch_count_on_restart(self, active_requests_mock, active_requests_count,
+                                               expected_initial, expected_maximum, subtests):
         reqs = {Mock() for _ in range(active_requests_count)}
         active_requests_mock.update(reqs)
 
@@ -118,9 +119,36 @@ class test_Consumer(ConsumerTestCase):
         with subtests.test(f"initial prefetch count is equal to {expected_initial}"):
             assert c.initial_prefetch_count == expected_initial
 
-        with subtests.test(f"maximum prefetch is reached"):
+        with subtests.test("maximum prefetch is reached"):
             assert c._maximum_prefetch_restored is expected_maximum
 
+    def test_create_task_handler(self, subtests):
+        c = self.get_consumer()
+        c.qos = MagicMock()
+        c.qos.value = 1
+        c._maximum_prefetch_restored = False
+
+        def raise_exception():
+            raise KeyError('Foo')
+
+        def strategy(_, __, ack_log_error_promise, ___, ____):
+            ack_log_error_promise()
+
+        c.strategies = {'strategy': strategy}
+        c.call_soon = raise_exception
+        on_task_received = c.create_task_handler()
+        message = Mock()
+        message.headers = {'task': 'strategy'}
+        on_task_received(message)
+
+        with subtests.test("initial prefetch count is never 0"):
+            assert c.initial_prefetch_count != 0
+
+        with subtests.test("initial prefetch count is 2"):
+            assert c.initial_prefetch_count == 2
+
+        with subtests.test("maximum prefetch is reached"):
+            assert c._maximum_prefetch_restored is True
 
     def test_flush_events(self):
         c = self.get_consumer()
