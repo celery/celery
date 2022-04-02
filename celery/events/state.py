@@ -495,7 +495,7 @@ class State:
                 hostname, **kwargs)
             return worker, True
 
-    def get_or_create_task(self, uuid: str):
+    def get_or_create_task(self, uuid):
         """Get or create task by uuid."""
         try:
             return self.tasks[uuid], False

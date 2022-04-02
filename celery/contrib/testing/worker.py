@@ -90,15 +90,16 @@ def start_worker(
 
 
 @contextmanager
-def _start_worker_thread(app: Celery,
-                         concurrency: int = 1,
-                         pool: str = 'solo',
+def _start_worker_thread(app,
+                         concurrency=1,
+                         pool='solo',
                          loglevel=WORKER_LOGLEVEL,
-                         logfile: Union[str, int] = None,
-                         WorkController: Any = TestWorkController,
-                         perform_ping_check: bool = True,
-                         shutdown_timeout: float = 10.0,
-                         **kwargs: Any) -> Iterable:
+                         logfile=None,
+                         WorkController=TestWorkController,
+                         perform_ping_check=True,
+                         shutdown_timeout=10.0,
+                         **kwargs):
+    # type: (Celery, int, str, Union[str, int], str, Any, **Any) -> Iterable
     """Start Celery worker in a thread.
 
     Yields:
@@ -166,7 +167,8 @@ def _start_worker_process(app,
     cluster.stopwait()
 
 
-def setup_app_for_worker(app: Celery, loglevel: Union[str, int], logfile: str) -> None:
+def setup_app_for_worker(app, loglevel, logfile) -> None:
+    # type: (Celery, Union[str, int], str) -> None
     """Setup the app to be used for starting an embedded worker."""
     app.finalize()
     app.set_current()

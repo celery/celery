@@ -194,14 +194,9 @@ def _reprseq(val, lit_start, lit_end, builtin_type, chainer):
     )
 
 
-def reprstream(
-    stack: deque,
-    seen: Optional[Set] = None,
-    maxlevels: int = 3,
-    level: int = 0,
-    isinstance: Callable[[Any, Any], bool] = isinstance
-) -> Iterator[Any]:
+def reprstream(stack, seen=None, maxlevels=3, level=0, isinstance=isinstance):
     """Streaming repr, yielding tokens."""
+    # type: (deque, Set, int, int, Callable) -> Iterator[Any]
     seen = seen or set()
     append = stack.append
     popleft = stack.popleft

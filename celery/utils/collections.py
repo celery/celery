@@ -113,7 +113,7 @@ class AttributeDictMixin:
             raise AttributeError(
                 f'{type(self).__name__!r} object has no attribute {k!r}')
 
-    def __setattr__(self, key: str, value: Any) -> None:
+    def __setattr__(self, key: str, value) -> None:
         """`d[key] = value -> d.key = value`."""
         self[key] = value
 
@@ -594,7 +594,8 @@ class LimitedSet:
                     break  # oldest item hasn't expired yet
                 self.pop()
 
-    def pop(self, default: Any = None) -> Any:
+    def pop(self, default=None) -> Any:
+        # type: (Any) -> Any
         """Remove and return the oldest item, or :const:`None` when empty."""
         while self._heap:
             _, item = heappop(self._heap)
@@ -606,7 +607,8 @@ class LimitedSet:
                 return item
         return default
 
-    def as_dict(self) -> Dict:
+    def as_dict(self):
+        # type: () -> Dict
         """Whole set as serializable dictionary.
 
         Example:
