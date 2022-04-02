@@ -190,8 +190,8 @@ class Retry(TaskPredicate):
 
     def __reduce__(self) -> Tuple[
         Type["Retry"],
-        Tuple[Optional[str], Optional[Exception], Optional[Union[datetime, numbers.Number]]
-    ]]:
+        Tuple[Optional[str], Optional[Exception], Optional[Union[datetime, numbers.Number]]]
+    ]:
         return self.__class__, (self.message, self.exc, self.when)
 
 
