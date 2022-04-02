@@ -51,10 +51,10 @@ Error Hierarchy
         - :exc:`~celery.exceptions.WorkerShutdown`
 """
 
-from datetime import datetime
 import numbers
+from datetime import datetime
 from types import TracebackType
-from typing import Any, Optional, Tuple, Type, TypeVar, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, Optional, Tuple, Type, TypeVar, Union
 
 from billiard.exceptions import SoftTimeLimitExceeded, Terminated, TimeLimitExceeded, WorkerLostError
 from click import ClickException
