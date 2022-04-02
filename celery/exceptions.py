@@ -51,11 +51,17 @@ Error Hierarchy
         - :exc:`~celery.exceptions.WorkerShutdown`
 """
 
+from datetime import datetime
 import numbers
+from types import TracebackType
+from typing import Any, Optional, Tuple, Type, TypeVar, TYPE_CHECKING, Union
 
 from billiard.exceptions import SoftTimeLimitExceeded, Terminated, TimeLimitExceeded, WorkerLostError
 from click import ClickException
 from kombu.exceptions import OperationalError
+
+if TYPE_CHECKING:
+    from celery.canvas import Signature
 
 __all__ = (
     'reraise',
@@ -101,7 +107,10 @@ Task of kind {0} never registered, please make sure it's imported.\
 """
 
 
-def reraise(tp, value, tb=None):
+_T = TypeVar("_T", bound="Exception")
+
+
+def reraise(tp: Type[_T], value: _T, tb: Optional[TracebackType] = None) -> _T:
     """Reraise exception."""
     if value.__traceback__ is not tb:
         raise value.with_traceback(tb)
@@ -144,17 +153,18 @@ class Retry(TaskPredicate):
     """The task is to be retried later."""
 
     #: Optional message describing context of retry.
-    message = None
+    message: Optional[str] = None
 
     #: Exception (if any) that caused the retry to happen.
-    exc = None
+    exc: Optional[Exception] = None
+    excs: Optional[str] = None
 
-    #: Time of retry (ETA), either :class:`numbers.Real` or
-    #: :class:`~datetime.datetime`.
-    when = None
+    #: Time of retry (ETA)
+    when: Optional[Union[datetime, numbers.Number]] = None
 
-    def __init__(self, message=None, exc=None, when=None, is_eager=False,
-                 sig=None, **kwargs):
+    def __init__(self, message: Optional[str] = None, exc: Optional[Exception] = None,
+                 when: Optional[Union[datetime, numbers.Number]] = None, is_eager: bool = False,
+                 sig: Optional[Signature] = None, **kwargs: Any) -> None:
         from kombu.utils.encoding import safe_repr
         self.message = message
         if isinstance(exc, str):
@@ -166,19 +176,22 @@ class Retry(TaskPredicate):
         self.sig = sig
         super().__init__(self, exc, when, **kwargs)
 
-    def humanize(self):
+    def humanize(self) -> str:
         if isinstance(self.when, numbers.Number):
             return f'in {self.when}s'
         return f'at {self.when}'
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.message:
             return self.message
         if self.excs:
             return f'Retry {self.humanize()}: {self.excs}'
         return f'Retry {self.humanize()}'
 
-    def __reduce__(self):
+    def __reduce__(self) -> Tuple[
+        Type["Retry"],
+        Tuple[Optional[str], Optional[Exception], Optional[Union[datetime, numbers.Number]]
+    ]]:
         return self.__class__, (self.message, self.exc, self.when)
 
 
@@ -192,12 +205,12 @@ class Ignore(TaskPredicate):
 class Reject(TaskPredicate):
     """A task can raise this if it wants to reject/re-queue the message."""
 
-    def __init__(self, reason=None, requeue=False):
+    def __init__(self, reason: Optional[str] = None, requeue: bool = False) -> None:
         self.reason = reason
         self.requeue = requeue
         super().__init__(reason, requeue)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'reject requeue={self.requeue}: {self.reason}'
 
 
@@ -224,7 +237,7 @@ class IncompleteStream(TaskError):
 class NotRegistered(KeyError, TaskError):
     """The task is not registered."""
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return UNREGISTERED_FMT.format(self)
 
 
@@ -240,7 +253,7 @@ class TimeoutError(TaskError):
 class MaxRetriesExceededError(TaskError):
     """The tasks max restart limit has been exceeded."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.task_args = kwargs.pop("task_args", [])
         self.task_kwargs = kwargs.pop("task_kwargs", dict())
         super().__init__(*args, **kwargs)
@@ -284,27 +297,27 @@ class BackendError(Exception):
 class BackendGetMetaError(BackendError):
     """An issue reading from the backend."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: str, **kwargs: str) -> None:
         self.task_id = kwargs.get('task_id', "")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return super().__repr__() + " task_id:" + self.task_id
 
 
 class BackendStoreError(BackendError):
     """An issue writing to the backend."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: str, **kwargs: str) -> None:
         self.state = kwargs.get('state', "")
         self.task_id = kwargs.get('task_id', "")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return super().__repr__() + " state:" + self.state + " task_id:" + self.task_id
 
 
 class CeleryCommandException(ClickException):
     """A general command exception which stores an exit code."""
 
-    def __init__(self, message, exit_code):
+    def __init__(self, message: str, exit_code: int) -> None:
         super().__init__(message=message)
         self.exit_code = exit_code
