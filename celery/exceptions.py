@@ -164,7 +164,7 @@ class Retry(TaskPredicate):
 
     def __init__(self, message: Optional[str] = None, exc: Optional[Exception] = None,
                  when: Optional[Union[datetime, numbers.Number]] = None, is_eager: bool = False,
-                 sig: Optional[Signature] = None, **kwargs: Any) -> None:
+                 sig: Optional["Signature"] = None, **kwargs: Any) -> None:
         from kombu.utils.encoding import safe_repr
         self.message = message
         if isinstance(exc, str):
