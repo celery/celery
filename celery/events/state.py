@@ -22,7 +22,7 @@ from decimal import Decimal
 from itertools import islice
 from operator import itemgetter
 from time import time
-from typing import Mapping
+from typing import Mapping, Optional
 from weakref import WeakSet, ref
 
 from kombu.clocks import timetuple
@@ -452,7 +452,7 @@ class State:
         with self._mutex:
             return self._clear_tasks(ready)
 
-    def _clear_tasks(self, ready=True):
+    def _clear_tasks(self, ready: bool = True):
         if ready:
             in_progress = {
                 uuid: task for uuid, task in self.itertasks()
@@ -470,7 +470,7 @@ class State:
         self.event_count = 0
         self.task_count = 0
 
-    def clear(self, ready=True):
+    def clear(self, ready: bool = True):
         with self._mutex:
             return self._clear(ready)
 
@@ -647,13 +647,13 @@ class State:
         ]
         heap.sort()
 
-    def itertasks(self, limit=None):
+    def itertasks(self, limit: Optional[int] = None):
         for index, row in enumerate(self.tasks.items()):
             yield row
             if limit and index + 1 >= limit:
                 break
 
-    def tasks_by_time(self, limit=None, reverse=True):
+    def tasks_by_time(self, limit=None, reverse: bool = True):
         """Generator yielding tasks ordered by time.
 
         Yields:

@@ -7,7 +7,7 @@ from . import maybe_patch_concurrency
 __all__ = ('main',)
 
 
-def main():
+def main() -> None:
     """Entrypoint to the ``celery`` umbrella command."""
     if 'multi' not in sys.argv:
         maybe_patch_concurrency()

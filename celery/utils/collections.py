@@ -113,8 +113,7 @@ class AttributeDictMixin:
             raise AttributeError(
                 f'{type(self).__name__!r} object has no attribute {k!r}')
 
-    def __setattr__(self, key, value):
-        # type: (str, Any) -> None
+    def __setattr__(self, key: str, value) -> None:
         """`d[key] = value -> d.key = value`."""
         self[key] = value
 
@@ -595,7 +594,7 @@ class LimitedSet:
                     break  # oldest item hasn't expired yet
                 self.pop()
 
-    def pop(self, default=None):
+    def pop(self, default=None) -> Any:
         # type: (Any) -> Any
         """Remove and return the oldest item, or :const:`None` when empty."""
         while self._heap:
@@ -671,20 +670,17 @@ class Evictable:
 
     Empty = Empty
 
-    def evict(self):
-        # type: () -> None
+    def evict(self) -> None:
         """Force evict until maxsize is enforced."""
         self._evict(range=count)
 
-    def _evict(self, limit=100, range=range):
-        # type: (int) -> None
+    def _evict(self, limit: int = 100, range=range) -> None:
         try:
             [self._evict1() for _ in range(limit)]
         except IndexError:
             pass
 
-    def _evict1(self):
-        # type: () -> None
+    def _evict1(self) -> None:
         if self._evictcount <= self.maxsize:
             raise IndexError()
         try:
@@ -746,8 +742,7 @@ class Messagebuffer(Evictable):
         # type: () -> int
         return self._len()
 
-    def __contains__(self, item):
-        # type: () -> bool
+    def __contains__(self, item) -> bool:
         return item in self.data
 
     def __reversed__(self):

@@ -167,7 +167,7 @@ def _start_worker_process(app,
     cluster.stopwait()
 
 
-def setup_app_for_worker(app, loglevel, logfile):
+def setup_app_for_worker(app, loglevel, logfile) -> None:
     # type: (Celery, Union[str, int], str) -> None
     """Setup the app to be used for starting an embedded worker."""
     app.finalize()

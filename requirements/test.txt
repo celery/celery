@@ -4,6 +4,8 @@ pytest-subtests
 pytest-timeout~=2.1.0
 boto3>=1.9.178
 moto>=2.2.6
+# typing extensions
+mypy; platform_python_implementation=="CPython"
 pre-commit
 -r extras/yaml.txt
 -r extras/msgpack.txt
