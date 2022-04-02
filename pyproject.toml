@@ -15,4 +15,5 @@ disallow_untyped_defs = true
 ignore_missing_imports = true
 files = [
     "celery/__main__.py",
+    "celery/states.py"
 ]
