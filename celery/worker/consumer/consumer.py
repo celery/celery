@@ -81,6 +81,12 @@ for more information.
 
 The full contents of the message body was:
 %s
+
+Thw full contents of the message headers:
+%s
+
+The delivery info for this task is:
+%s
 """
 
 #: Error message for when an invalid task message is received.
@@ -511,7 +517,11 @@ class Consumer:
         signals.task_rejected.send(sender=self, message=message, exc=None)
 
     def on_unknown_task(self, body, message, exc):
-        error(UNKNOWN_TASK_ERROR, exc, dump_body(message, body),
+        error(UNKNOWN_TASK_ERROR,
+              exc,
+              dump_body(message, body),
+              message.headers,
+              message.delivery_info,
               exc_info=True)
         try:
             id_, name = message.headers['id'], message.headers['task']
