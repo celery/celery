@@ -8,6 +8,16 @@ This document contains change notes for bugfix & new features
 in the & 5.2.x series, please see :ref:`whatsnew-5.2` for
 an overview of what's new in Celery 5.2.
 
+.. _version-5.2.4:
+
+5.2.4
+=====
+
+:release-date: 2022-4-03 20:30 P.M UTC+2:00
+:release-by: Omer Katz
+
+- Expose more debugging information when receiving unknown tasks (#7404).
+
 .. _version-5.2.3:
 
 5.2.3
