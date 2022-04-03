@@ -8,6 +8,17 @@ This document contains change notes for bugfix & new features
 in the & 5.2.x series, please see :ref:`whatsnew-5.2` for
 an overview of what's new in Celery 5.2.
 
+
+.. _version-5.2.5:
+
+5.2.5
+=====
+
+:release-date: 2022-4-03 20:42 P.M UTC+2:00
+:release-by: Omer Katz
+
+- Use importlib instead of deprecated pkg_resources (#7218).
+
 .. _version-5.2.4:
 
 5.2.4

@@ -1,8 +1,8 @@
-.. image:: http://docs.celeryq.dev/en/latest/_images/celery-banner-small.png
+.. image:: http://docs.celeryproject.org/en/latest/_images/celery-banner-small.png
 
 |build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 5.2.4 (dawn-chorus)
+:Version: 5.2.5 (dawn-chorus)
 :Web: https://docs.celeryq.dev/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
