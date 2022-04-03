@@ -656,7 +656,7 @@ class solar(BaseSchedule):
 
     Notes:
 
-        Available event valus are:
+        Available event values are:
 
             - ``dawn_astronomical``
             - ``dawn_nautical``
