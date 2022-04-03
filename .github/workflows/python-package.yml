@@ -20,55 +20,133 @@ on:
         - '.github/workflows/python-package.yml'
 
 jobs:
-  Unit:
+#  Unit:
+#
+#    runs-on: ${{ matrix.os }}
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        python-version: ['3.7', '3.8', '3.9', '3.10', 'pypy-3.7', 'pypy-3.8']
+#        os: ["ubuntu-20.04", "windows-latest"]
+#        exclude:
+#            - python-version: 'pypy-3.7'
+#              os: "windows-latest"
+#            - python-version: 'pypy-3.8'
+#              os: "windows-latest"
+#    steps:
+#    - name: Install apt packages
+#      if: startsWith(matrix.os, 'ubuntu-')
+#      run: |
+#        sudo apt update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev gnutls-dev httping expect libmemcached-dev
+#    - uses: actions/checkout@v2.4.0
+#    - name: Set up Python ${{ matrix.python-version }}
+#      uses: actions/setup-python@v2.2.2
+#      with:
+#        python-version: ${{ matrix.python-version }}
+#
+#    - name: Get pip cache dir
+#      id: pip-cache
+#      run: |
+#        echo "::set-output name=dir::$(pip cache dir)"
+#    - name: Cache
+#      uses: actions/cache@v2.1.6
+#      with:
+#        path: ${{ steps.pip-cache.outputs.dir }}
+#        key:
+#          ${{ matrix.python-version }}-${{matrix.os}}-${{ hashFiles('**/setup.py') }}
+#        restore-keys: |
+#          ${{ matrix.python-version }}-${{matrix.os}}
+#
+#    - name: Install tox
+#      run: python -m pip install --upgrade pip tox tox-gh-actions
+#    - name: >
+#        Run tox for
+#        "${{ matrix.python-version }}-unit"
+#      timeout-minutes: 20
+#      run: |
+#        tox --verbose --verbose
+#
+#    - uses: codecov/codecov-action@v2.1.0
+#      with:
+#        flags: unittests # optional
+#        fail_ci_if_error: true # optional (default = false)
+#        verbose: true # optional (default = false)
 
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', 'pypy-3.7', 'pypy-3.8']
-        os: ["ubuntu-20.04", "windows-latest"]
-        exclude:
-            - python-version: 'pypy-3.7'
-              os: "windows-latest"
-            - python-version: 'pypy-3.8'
-              os: "windows-latest"
-    steps:
-    - name: Install apt packages
-      if: startsWith(matrix.os, 'ubuntu-')
-      run: |
-        sudo apt update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev gnutls-dev httping expect libmemcached-dev
-    - uses: actions/checkout@v2.4.0
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2.2.2
-      with:
-        python-version: ${{ matrix.python-version }}
+  Integration:
 
-    - name: Get pip cache dir
-      id: pip-cache
-      run: |
-        echo "::set-output name=dir::$(pip cache dir)"
-    - name: Cache
-      uses: actions/cache@v2.1.6
-      with:
-        path: ${{ steps.pip-cache.outputs.dir }}
-        key:
-          ${{ matrix.python-version }}-${{matrix.os}}-${{ hashFiles('**/setup.py') }}
-        restore-keys: |
-          ${{ matrix.python-version }}-${{matrix.os}}
+#      needs:
+#          - Unit
+      # XXX: DO NOT MERGE THIS LINE
+      if: ${{ always() }}
 
-    - name: Install tox
-      run: python -m pip install --upgrade pip tox tox-gh-actions
-    - name: >
-        Run tox for
-        "${{ matrix.python-version }}-unit"
-      timeout-minutes: 20
-      run: |
-        tox --verbose --verbose
+      # XXX: We should set this to some reasonable maximum prior to merge. The
+      # default 6 hour timeout is far too long.
+      timeout-minutes: 240
 
-    - uses: codecov/codecov-action@v2.1.0
-      with:
-        flags: unittests # optional
-        fail_ci_if_error: true # optional (default = false)
-        verbose: true # optional (default = false)
+      runs-on: ubuntu-20.04
+      strategy:
+          fail-fast: false
+          matrix:
+              python-version: [ '3.7', '3.8', '3.9', 'pypy3' ]
+              # XXX: Does each matrix variation get their own copy of the service
+              # containers? Test cross-talk may be an issue...
+              toxenv: [ 'redis', ] #'rabbitmq']
 
+          # additional service containers to run
+      services:
+          #rabbitmq:
+          #  # docker hub image
+          #  image: rabbitmq
+          #  # configure the instance
+          #  env:
+          #    # XXX: If we set these, we need to set TEST_{BROKER,BACKEND} URIs
+          #    RABBITMQ_DEFAULT_USER: craiga
+          #    RABBITMQ_DEFAULT_PASS: security_is_important
+          #  ports:
+          #    - 5432:5432
+
+          redis:
+              # Docker Hub image
+              image: redis
+              ports:
+                  - 6379:6379
+              # configure the instance
+              env:
+                  # The hostname used to communicate with the Redis service container
+                  REDIS_HOST: localhost
+                  # The default Redis port
+                  REDIS_PORT: 6379
+
+      steps:
+          -   name: Install apt packages
+              run: |
+                  sudo apt-get install -f libcurl4-openssl-dev libssl-dev gnutls-dev httping expect libmemcached-dev
+          -   uses: actions/checkout@v2
+          -   name: Set up Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v2
+              with:
+                  python-version: ${{ matrix.python-version }}
+
+          -   name: Get pip cache dir
+              id: pip-cache
+              run: |
+                  echo "::set-output name=dir::$(pip cache dir)"
+          # XXX: What does this do? Does using tox change its usefulness?
+          #- name: Cache
+          #  uses: actions/cache@v2
+          #  with:
+          #    path: ${{ steps.pip-cache.outputs.dir }}
+          #    key:
+          #      ${{ matrix.python-version }}-v1-${{ hashFiles('**/setup.py') }}
+          #    restore-keys: |
+          #      ${{ matrix.python-version }}-v1-
+
+          -   name: Install tox
+              run: python -m pip install tox
+          -   name: >
+                  Run tox for
+                  "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}"
+              timeout-minutes: 20
+              run: >
+                  tox --verbose --verbose -e
+                  "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -- -vv
