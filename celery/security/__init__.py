@@ -51,7 +51,7 @@ except ImportError:
 def setup_security(allowed_serializers: Optional[Iterable[str]] = None,
                    key: Optional[str] = None, key_password: Optional[str] = None,
                    cert: Optional[str] = None, store: Optional[str] = None,
-                   digest: Optional[str] = None, serializer: _Serializer = 'json',
+                   digest: Optional[str] = None, serializer: "_Serializer" = 'json',
                    app: Optional["Celery"] = None) -> None:
     """See :meth:`@Celery.setup_security`."""
     if app is None:
@@ -80,5 +80,5 @@ def setup_security(allowed_serializers: Optional[Iterable[str]] = None,
     registry._set_default_serializer('auth')
 
 
-def disable_untrusted_serializers(whitelist: Optional[Iterable[_Serializer]] = None) -> None:
+def disable_untrusted_serializers(whitelist: Optional[Iterable["_Serializer"]] = None) -> None:
     _disable_insecure_serializers(allowed=whitelist)
