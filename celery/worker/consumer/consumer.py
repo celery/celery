@@ -620,11 +620,16 @@ class Consumer:
                 return on_unknown_task(None, message, exc)
             else:
                 try:
-                    ack_log_error_promise = promise(call_soon, (message.ack_log_error,),
-                                                    on_error=self._restore_prefetch_count_after_connection_restart)
-                    reject_log_error_promise = \
-                        promise(call_soon, (message.reject_log_error,),
-                                on_error=self._restore_prefetch_count_after_connection_restart)
+                    ack_log_error_promise = promise(
+                        call_soon,
+                        (message.ack_log_error,),
+                        on_error=self._restore_prefetch_count_after_connection_restart,
+                    )
+                    reject_log_error_promise = promise(
+                        call_soon,
+                        (message.reject_log_error,),
+                        on_error=self._restore_prefetch_count_after_connection_restart,
+                    )
 
                     if (
                         not self._maximum_prefetch_restored
