@@ -8,7 +8,6 @@ markers = ["sleepdeprived_patched_module", "masked_modules", "patched_environ", 
 [tool.mypy]
 warn_unused_configs = true
 strict = false
-warn_return_any = true
 follow_imports = "skip"
 show_error_codes = true
 disallow_untyped_defs = true
@@ -17,4 +16,5 @@ files = [
     "celery/__main__.py",
     "celery/states.py",
     "celery/signals.py",
+    "celery/fixups",
 ]
