@@ -21,15 +21,15 @@ def flaky(fn):
     return _timeout(_flaky(fn))
 
 
-class test_class_based_tasks:
+#class test_class_based_tasks:
 
-    @flaky
-    def test_class_based_task_retried(self, celery_session_app,
-                                      celery_session_worker):
-        task = ClassBasedAutoRetryTask()
-        celery_session_app.tasks.register(task)
-        res = task.delay()
-        assert res.get(timeout=TIMEOUT) == 1
+    # @flaky
+    # def test_class_based_task_retried(self, celery_session_app,
+    #                                   celery_session_worker):
+    #     task = ClassBasedAutoRetryTask()
+    #     celery_session_app.tasks.register(task)
+    #     res = task.delay()
+    #     assert res.get(timeout=TIMEOUT) == 1
 
 
 def _producer(j):
@@ -252,15 +252,15 @@ class test_tasks:
         sleeping.delay(sleep)
         manager.assert_accepted([r1.id])
 
-    @flaky
-    def test_task_retried(self):
-        res = retry_once.delay()
-        assert res.get(timeout=TIMEOUT) == 1  # retried once
+    # @flaky
+    # def test_task_retried(self):
+    #     res = retry_once.delay()
+    #     assert res.get(timeout=TIMEOUT) == 1  # retried once
 
-    @flaky
-    def test_task_retried_priority(self):
-        res = retry_once_priority.apply_async(priority=7)
-        assert res.get(timeout=TIMEOUT) == 7  # retried once with priority 7
+    # @flaky
+    # def test_task_retried_priority(self):
+    #     res = retry_once_priority.apply_async(priority=7)
+    #     assert res.get(timeout=TIMEOUT) == 7  # retried once with priority 7
 
     @flaky
     def test_unicode_task(self, manager):

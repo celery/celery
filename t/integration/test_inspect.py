@@ -96,98 +96,98 @@ class test_Inspect:
                 'routing_key': 'celery'}
         ]
 
-    @flaky
-    def test_active(self, inspect):
-        """Tests listing active tasks"""
-        res = sleeping.delay(5)
-        sleep(1)
-        ret = inspect.active()
-        assert len(ret) == 1
-        assert ret[NODENAME] == [
-            {
-                'id': res.task_id,
-                'name': 't.integration.tasks.sleeping',
-                'args': [5],
-                'kwargs': {},
-                'type': 't.integration.tasks.sleeping',
-                'hostname': ANY,
-                'time_start': ANY,
-                'acknowledged': True,
-                'delivery_info': {
-                    'exchange': '',
-                    'routing_key': 'celery',
-                    'priority': 0,
-                    'redelivered': False
-                },
-                'worker_pid': ANY
-            }
-        ]
+    # @flaky
+    # def test_active(self, inspect):
+    #     """Tests listing active tasks"""
+    #     res = sleeping.delay(5)
+    #     sleep(1)
+    #     ret = inspect.active()
+    #     assert len(ret) == 1
+    #     assert ret[NODENAME] == [
+    #         {
+    #             'id': res.task_id,
+    #             'name': 't.integration.tasks.sleeping',
+    #             'args': [5],
+    #             'kwargs': {},
+    #             'type': 't.integration.tasks.sleeping',
+    #             'hostname': ANY,
+    #             'time_start': ANY,
+    #             'acknowledged': True,
+    #             'delivery_info': {
+    #                 'exchange': '',
+    #                 'routing_key': 'celery',
+    #                 'priority': 0,
+    #                 'redelivered': False
+    #             },
+    #             'worker_pid': ANY
+    #         }
+    #     ]
 
-    @flaky
-    def test_scheduled(self, inspect):
-        """Tests listing scheduled tasks"""
-        exec_time = datetime.utcnow() + timedelta(seconds=5)
-        res = add.apply_async([1, 2], {'z': 3}, eta=exec_time)
-        ret = inspect.scheduled()
-        assert len(ret) == 1
-        assert ret[NODENAME] == [
-            {
-                'eta': exec_time.strftime('%Y-%m-%dT%H:%M:%S.%f') + '+00:00',
-                'priority': 6,
-                'request': {
-                    'id': res.task_id,
-                    'name': 't.integration.tasks.add',
-                    'args': [1, 2],
-                    'kwargs': {'z': 3},
-                    'type': 't.integration.tasks.add',
-                    'hostname': ANY,
-                    'time_start': None,
-                    'acknowledged': False,
-                    'delivery_info': {
-                        'exchange': '',
-                        'routing_key': 'celery',
-                        'priority': 0,
-                        'redelivered': False
-                    },
-                    'worker_pid': None
-                }
-            }
-        ]
+    # @flaky
+    # def test_scheduled(self, inspect):
+    #     """Tests listing scheduled tasks"""
+    #     exec_time = datetime.utcnow() + timedelta(seconds=5)
+    #     res = add.apply_async([1, 2], {'z': 3}, eta=exec_time)
+    #     ret = inspect.scheduled()
+    #     assert len(ret) == 1
+    #     assert ret[NODENAME] == [
+    #         {
+    #             'eta': exec_time.strftime('%Y-%m-%dT%H:%M:%S.%f') + '+00:00',
+    #             'priority': 6,
+    #             'request': {
+    #                 'id': res.task_id,
+    #                 'name': 't.integration.tasks.add',
+    #                 'args': [1, 2],
+    #                 'kwargs': {'z': 3},
+    #                 'type': 't.integration.tasks.add',
+    #                 'hostname': ANY,
+    #                 'time_start': None,
+    #                 'acknowledged': False,
+    #                 'delivery_info': {
+    #                     'exchange': '',
+    #                     'routing_key': 'celery',
+    #                     'priority': 0,
+    #                     'redelivered': False
+    #                 },
+    #                 'worker_pid': None
+    #             }
+    #         }
+    #     ]
 
-    @flaky
-    def test_query_task(self, inspect):
-        """Task that does not exist or is finished"""
-        ret = inspect.query_task('d08b257e-a7f1-4b92-9fea-be911441cb2a')
-        assert len(ret) == 1
-        assert ret[NODENAME] == {}
-
-        # Task in progress
-        res = sleeping.delay(5)
-        sleep(1)
-        ret = inspect.query_task(res.task_id)
-        assert len(ret) == 1
-        assert ret[NODENAME] == {
-            res.task_id: [
-                'active', {
-                    'id': res.task_id,
-                    'name': 't.integration.tasks.sleeping',
-                    'args': [5],
-                    'kwargs': {},
-                    'type': 't.integration.tasks.sleeping',
-                    'hostname': NODENAME,
-                    'time_start': ANY,
-                    'acknowledged': True,
-                    'delivery_info': {
-                        'exchange': '',
-                        'routing_key': 'celery',
-                        'priority': 0,
-                        'redelivered': False
-                    },
-                    # worker is running in the same process as separate thread
-                    'worker_pid': ANY
-                }
-            ]
-        }
+    # @flaky
+    # def test_query_task(self, inspect):
+    #     """Task that does not exist or is finished"""
+    #     ret = inspect.query_task('d08b257e-a7f1-4b92-9fea-be911441cb2a')
+    #     assert len(ret) == 1
+    #     assert ret[NODENAME] == {}
+    #
+    #     # Task in progress
+    #     res = sleeping.delay(5)
+    #     sleep(1)
+    #     ret = inspect.query_task(res.task_id)
+    #     assert len(ret) == 1
+    #     assert ret[NODENAME] == {
+    #         res.task_id: [
+    #             'active', {
+    #                 'id': res.task_id,
+    #                 'name': 't.integration.tasks.sleeping',
+    #                 'args': [5],
+    #                 'kwargs': {},
+    #                 'type': 't.integration.tasks.sleeping',
+    #                 'hostname': NODENAME,
+    #                 'time_start': ANY,
+    #                 'acknowledged': True,
+    #                 'delivery_info': {
+    #                     'exchange': '',
+    #                     'routing_key': 'celery',
+    #                     'priority': 0,
+    #                     'redelivered': False
+    #                 },
+    #                 # worker is running in the same process as separate thread
+    #                 'worker_pid': ANY
+    #             }
+    #         ]
+    #     }
 
     @flaky
     def test_stats(self, inspect):
