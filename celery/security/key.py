@@ -1,6 +1,5 @@
 """Private keys for the security serializer."""
-from ctypes import Union
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization

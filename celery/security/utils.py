@@ -1,7 +1,7 @@
 """Utilities used by the message signing serializer."""
 import sys
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Iterable, Iterator, Optional
+from typing import TYPE_CHECKING, Iterable, Iterator, Optional, Type
 
 import cryptography.exceptions
 from cryptography.hazmat.primitives import hashes
@@ -21,7 +21,7 @@ def get_digest_algorithm(digest: str = 'sha256') -> HashAlgorithm:
 
 
 @contextmanager
-def reraise_errors(msg: str = '{0!r}', errors: Optional[Iterable[BaseException]] = None) -> Iterator[None]:
+def reraise_errors(msg: str = '{0!r}', errors: Optional[Iterable[Type[BaseException]]] = None) -> Iterator[None]:
     """Context reraising crypto errors as :exc:`SecurityError`."""
     errors = (cryptography.exceptions,) if errors is None else errors
     try:
