@@ -1,10 +1,17 @@
 """Message Signing Serializer."""
+from typing import TYPE_CHECKING, Iterable, Literal, Optional
+
 from kombu.serialization import disable_insecure_serializers as _disable_insecure_serializers
 from kombu.serialization import registry
 
 from celery.exceptions import ImproperlyConfigured
 
 from .serialization import register_auth  # : need cryptography first
+
+if TYPE_CHECKING:
+    from celery.app.base import Celery, Settings
+
+    _Serializer = Literal["json", "msgpack", "yaml", "pickle"]
 
 CRYPTOGRAPHY_NOT_INSTALLED = """\
 You need to install the cryptography library to use the auth serializer.
@@ -41,8 +48,11 @@ except ImportError:
     raise ImproperlyConfigured(CRYPTOGRAPHY_NOT_INSTALLED)
 
 
-def setup_security(allowed_serializers=None, key=None, key_password=None, cert=None, store=None,
-                   digest=None, serializer='json', app=None):
+def setup_security(allowed_serializers: Optional[Iterable[str]] = None,
+                   key: Optional[str] = None, key_password: Optional[str] = None,
+                   cert: Optional[str] = None, store: Optional[str] = None,
+                   digest: Optional[str] = None, serializer: _Serializer = 'json',
+                   app: Optional["Celery"] = None) -> None:
     """See :meth:`@Celery.setup_security`."""
     if app is None:
         from celery import current_app
@@ -51,7 +61,7 @@ def setup_security(allowed_serializers=None, key=None, key_password=None, cert=N
     _disable_insecure_serializers(allowed_serializers)
 
     # check conf for sane security settings
-    conf = app.conf
+    conf: "Settings" = app.conf
     if conf.task_serializer != 'auth' or conf.accept_content != ['auth']:
         raise ImproperlyConfigured(SETTING_MISSING)
 
@@ -70,5 +80,5 @@ def setup_security(allowed_serializers=None, key=None, key_password=None, cert=N
     registry._set_default_serializer('auth')
 
 
-def disable_untrusted_serializers(whitelist=None):
+def disable_untrusted_serializers(whitelist: Optional[Iterable[_Serializer]] = None) -> None:
     _disable_insecure_serializers(allowed=whitelist)

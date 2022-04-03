@@ -17,4 +17,8 @@ files = [
     "celery/__main__.py",
     "celery/states.py",
     "celery/signals.py",
+    "celery/security/key.py",
+    "celery/security/serialization.py",
+    "celery/security/utils.py",
+    "celery/security/__init__.py",
 ]
