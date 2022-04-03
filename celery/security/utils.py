@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 __all__ = ('get_digest_algorithm', 'reraise_errors',)
 
 
-def get_digest_algorithm(digest: str = 'sha256') -> HashAlgorithm:
+def get_digest_algorithm(digest: str = 'sha256') -> "HashAlgorithm":
     """Convert string to hash object of cryptography library."""
     assert digest is not None
     return getattr(hashes, digest.upper())()

@@ -1,5 +1,5 @@
 """Message Signing Serializer."""
-from typing import TYPE_CHECKING, Iterable, Literal, Optional
+from typing import TYPE_CHECKING, Iterable, Optional
 
 from kombu.serialization import disable_insecure_serializers as _disable_insecure_serializers
 from kombu.serialization import registry
@@ -9,7 +9,14 @@ from celery.exceptions import ImproperlyConfigured
 from .serialization import register_auth  # : need cryptography first
 
 if TYPE_CHECKING:
+    import sys
+
     from celery.app.base import Celery, Settings
+
+    if sys.version_info < (3, 8):
+        from typing_extensions import Literal
+    else:
+        from typing import Literal
 
     _Serializer = Literal["json", "msgpack", "yaml", "pickle"]
 

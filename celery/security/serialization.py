@@ -1,5 +1,5 @@
 """Secure serializer."""
-from typing import TYPE_CHECKING, Any, Literal, Optional, TypedDict, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from kombu.serialization import dumps, loads, registry
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, str_to_bytes
@@ -12,6 +12,13 @@ from .key import PrivateKey
 from .utils import get_digest_algorithm, reraise_errors
 
 if TYPE_CHECKING:
+    import sys
+
+    if sys.version_info < (3.8):
+        from typing_extensions import Literal, TypedDict
+    else:
+        from typing import Literal, TypedDict
+
     _Serializer = Literal["json", "msgpack", "yaml", "pickle"]
 
     class _UnpackReturn(TypedDict):
