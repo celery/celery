@@ -41,6 +41,11 @@ class ConsumerTestCase:
 
 
 class test_Consumer(ConsumerTestCase):
+    def setup(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+        self.add = add
 
     def test_repr(self):
         assert repr(self.get_consumer())
@@ -128,17 +133,18 @@ class test_Consumer(ConsumerTestCase):
         c.qos.value = 1
         c._maximum_prefetch_restored = False
 
+        sig = self.add.s(2, 2)
+        message = self.task_message_from_sig(self.app, sig)
+
         def raise_exception():
             raise KeyError('Foo')
 
         def strategy(_, __, ack_log_error_promise, ___, ____):
             ack_log_error_promise()
 
-        c.strategies = {'strategy': strategy}
+        c.strategies[sig.task] = strategy
         c.call_soon = raise_exception
         on_task_received = c.create_task_handler()
-        message = Mock()
-        message.headers = {'task': 'strategy'}
         on_task_received(message)
 
         with subtests.test("initial prefetch count is never 0"):
