@@ -18,3 +18,9 @@ files = [
     "celery/states.py",
     "celery/signals.py",
 ]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:"
+]
