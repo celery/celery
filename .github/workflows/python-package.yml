@@ -87,7 +87,7 @@ jobs:
       strategy:
           fail-fast: false
           matrix:
-              python-version: [ '3.7', '3.8', '3.9', 'pypy3' ]
+              python-version: [ '3.7' ]
               # XXX: Does each matrix variation get their own copy of the service
               # containers? Test cross-talk may be an issue...
               toxenv: [ 'redis', ] #'rabbitmq']
@@ -146,7 +146,7 @@ jobs:
           -   name: >
                   Run tox for
                   "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}"
-              timeout-minutes: 20
+              timeout-minutes: 5
               run: >
                   tox --verbose --verbose -e
-                  "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -- -vv
+                  "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -- test_canvas.py::test_group -vv
