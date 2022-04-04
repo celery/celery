@@ -20,4 +20,4 @@
 -r extras/azureblockblob.txt
 
 # SQS dependencies other than boto
-pycurl==7.45.1  # Latest version with wheel built (for appveyor)
+pycurl~=7.45.1
