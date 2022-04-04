@@ -1,1 +1,1 @@
-kombu[sqs]==5.2.4
+kombu[sqs]~=5.2.4
