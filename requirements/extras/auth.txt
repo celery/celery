@@ -1,1 +1,1 @@
-cryptography
+cryptography==36.0.2
