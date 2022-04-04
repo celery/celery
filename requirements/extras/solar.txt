@@ -1,1 +1,1 @@
-ephem; platform_python_implementation!="PyPy"
+ephem~=4.1.3; platform_python_implementation!="PyPy"
