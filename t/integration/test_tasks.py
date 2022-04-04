@@ -21,15 +21,15 @@ def flaky(fn):
     return _timeout(_flaky(fn))
 
 
-#class test_class_based_tasks:
-
-    # @flaky
-    # def test_class_based_task_retried(self, celery_session_app,
-    #                                   celery_session_worker):
-    #     task = ClassBasedAutoRetryTask()
-    #     celery_session_app.tasks.register(task)
-    #     res = task.delay()
-    #     assert res.get(timeout=TIMEOUT) == 1
+# class test_class_based_tasks:
+#
+#     @flaky
+#     def test_class_based_task_retried(self, celery_session_app,
+#                                       celery_session_worker):
+#         task = ClassBasedAutoRetryTask()
+#         celery_session_app.tasks.register(task)
+#         res = task.delay()
+#         assert res.get(timeout=TIMEOUT) == 1
 
 
 def _producer(j):

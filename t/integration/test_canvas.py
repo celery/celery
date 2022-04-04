@@ -120,7 +120,7 @@ class test_link_error:
         )
         assert result.get(timeout=TIMEOUT, propagate=False) == exception
 
-    #@flaky
+    # @flaky
     # def test_link_error_callback_retries(self):
     #     exception = ExpectedException("Task expected to fail", "test")
     #     result = fail.apply_async(
