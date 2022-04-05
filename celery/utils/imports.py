@@ -143,7 +143,7 @@ def gen_task_name(app, name, module_name):
 
 def load_extension_class_names(namespace):
     for ep in entry_points().get(namespace, []):
-        yield ep.name, ep.value
+        yield ep.name, ':'.join([ep.module_name, ep.attrs[0]])
 
 
 def load_extension_classes(namespace):
