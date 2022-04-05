@@ -17,7 +17,7 @@ an overview of what's new in Celery 5.2.
 :release-date: 2022-4-04 21:15 P.M UTC+2:00
 :release-by: Omer Katz
 
-- load_extension_class_names - correct module_name (#7406).
+- load_extension_class_names - correct module_name (#7433).
     This fixes a regression caused by #7218.
 
 .. _version-5.2.5:
