@@ -120,14 +120,14 @@ class test_link_error:
         )
         assert result.get(timeout=TIMEOUT, propagate=False) == exception
 
-    # @flaky
-    # def test_link_error_callback_retries(self):
-    #     exception = ExpectedException("Task expected to fail", "test")
-    #     result = fail.apply_async(
-    #         args=("test",),
-    #         link_error=retry_once.s(countdown=None)
-    #     )
-    #     assert result.get(timeout=TIMEOUT, propagate=False) == exception
+    @pytest.mark.xfail(raises=TimeoutError, reason="Task is timeout instead of returning exception")
+    def test_link_error_callback_retries(self):
+        exception = ExpectedException("Task expected to fail", "test")
+        result = fail.apply_async(
+            args=("test",),
+            link_error=retry_once.s(countdown=None)
+        )
+        assert result.get(timeout=TIMEOUT, propagate=False) == exception
 
     @flaky
     def test_link_error_using_signature_eager(self):
@@ -140,16 +140,16 @@ class test_link_error:
         assert (fail.apply().get(timeout=TIMEOUT, propagate=False), True) == (
             exception, True)
 
-    # @flaky
-    # def test_link_error_using_signature(self):
-    #     fail = signature('t.integration.tasks.fail', args=("test",))
-    #     retrun_exception = signature('t.integration.tasks.return_exception')
-    #
-    #     fail.link_error(retrun_exception)
-    #
-    #     exception = ExpectedException("Task expected to fail", "test")
-    #     assert (fail.delay().get(timeout=TIMEOUT, propagate=False), True) == (
-    #         exception, True)
+    @pytest.mark.xfail(raises=TimeoutError, reason="Task is timeout instead of returning exception")
+    def test_link_error_using_signature(self):
+        fail = signature('t.integration.tasks.fail', args=("test",))
+        retrun_exception = signature('t.integration.tasks.return_exception')
+
+        fail.link_error(retrun_exception)
+
+        exception = ExpectedException("Task expected to fail", "test")
+        assert (fail.delay().get(timeout=TIMEOUT, propagate=False), True) == (
+            exception, True)
 
 
 class test_chain:
@@ -175,19 +175,19 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [64, 65, 66, 67]
 
-    # @flaky
-    # def test_group_results_in_chain(self, manager):
-    #     # This adds in an explicit test for the special case added in commit
-    #     # 1e3fcaa969de6ad32b52a3ed8e74281e5e5360e6
-    #     c = (
-    #         group(
-    #             add.s(1, 2) | group(
-    #                 add.s(1), add.s(2)
-    #             )
-    #         )
-    #     )
-    #     res = c()
-    #     assert res.get(timeout=TIMEOUT) == [4, 5]
+    @pytest.mark.xfail(raises=TimeoutError, reason="Task is timeout")
+    def test_group_results_in_chain(self, manager):
+        # This adds in an explicit test for the special case added in commit
+        # 1e3fcaa969de6ad32b52a3ed8e74281e5e5360e6
+        c = (
+            group(
+                add.s(1, 2) | group(
+                    add.s(1), add.s(2)
+                )
+            )
+        )
+        res = c()
+        assert res.get(timeout=TIMEOUT) == [4, 5]
 
     def test_chain_of_chain_with_a_single_task(self, manager):
         sig = signature('any_taskname', queue='any_q')
@@ -473,16 +473,16 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [8, 8]
 
-    # @flaky
-    # def test_nested_chain_group_lone(self, manager):
-    #     """
-    #     Test that a lone group in a chain completes.
-    #     """
-    #     sig = chain(
-    #         group(identity.s(42), identity.s(42)),  # [42, 42]
-    #     )
-    #     res = sig.delay()
-    #     assert res.get(timeout=TIMEOUT) == [42, 42]
+    @pytest.mark.xfail(raises=TimeoutError, reason="Task is timeout")
+    def test_nested_chain_group_lone(self, manager):
+        """
+        Test that a lone group in a chain completes.
+        """
+        sig = chain(
+            group(identity.s(42), identity.s(42)),  # [42, 42]
+        )
+        res = sig.delay()
+        assert res.get(timeout=TIMEOUT) == [42, 42]
 
     def test_nested_chain_group_mid(self, manager):
         """
@@ -1229,46 +1229,46 @@ class test_chord:
         result = c()
         assert result.get(timeout=TIMEOUT) == 4
 
-    # @flaky
-    # def test_redis_subscribed_channels_leak(self, manager):
-    #     if not manager.app.conf.result_backend.startswith('redis'):
-    #         raise pytest.skip('Requires redis result backend.')
-    #
-    #     manager.app.backend.result_consumer.on_after_fork()
-    #     initial_channels = get_active_redis_channels()
-    #     initial_channels_count = len(initial_channels)
-    #     total_chords = 10
-    #     async_results = [
-    #         chord([add.s(5, 6), add.s(6, 7)])(delayed_sum.s())
-    #         for _ in range(total_chords)
-    #     ]
-    #
-    #     channels_before = get_active_redis_channels()
-    #     manager.assert_result_tasks_in_progress_or_completed(async_results)
-    #
-    #     channels_before_count = len(channels_before)
-    #     assert set(channels_before) != set(initial_channels)
-    #     assert channels_before_count > initial_channels_count
-    #
-    #     # The total number of active Redis channels at this point
-    #     # is the number of chord header tasks multiplied by the
-    #     # total chord tasks, plus the initial channels
-    #     # (existing from previous tests).
-    #     chord_header_task_count = 2
-    #     assert channels_before_count <= \
-    #         chord_header_task_count * total_chords + initial_channels_count
-    #
-    #     result_values = [
-    #         result.get(timeout=TIMEOUT)
-    #         for result in async_results
-    #     ]
-    #     assert result_values == [24] * total_chords
-    #
-    #     channels_after = get_active_redis_channels()
-    #     channels_after_count = len(channels_after)
-    #
-    #     assert channels_after_count == initial_channels_count
-    #     assert set(channels_after) == set(initial_channels)
+    @pytest.mark.xfail(reason="async_results aren't performed in async way")
+    def test_redis_subscribed_channels_leak(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        manager.app.backend.result_consumer.on_after_fork()
+        initial_channels = get_active_redis_channels()
+        initial_channels_count = len(initial_channels)
+        total_chords = 10
+        async_results = [
+            chord([add.s(5, 6), add.s(6, 7)])(delayed_sum.s())
+            for _ in range(total_chords)
+        ]
+
+        channels_before = get_active_redis_channels()
+        manager.assert_result_tasks_in_progress_or_completed(async_results)
+
+        channels_before_count = len(channels_before)
+        assert set(channels_before) != set(initial_channels)
+        assert channels_before_count > initial_channels_count
+
+        # The total number of active Redis channels at this point
+        # is the number of chord header tasks multiplied by the
+        # total chord tasks, plus the initial channels
+        # (existing from previous tests).
+        chord_header_task_count = 2
+        assert channels_before_count <= \
+            chord_header_task_count * total_chords + initial_channels_count
+
+        result_values = [
+            result.get(timeout=TIMEOUT)
+            for result in async_results
+        ]
+        assert result_values == [24] * total_chords
+
+        channels_after = get_active_redis_channels()
+        channels_after_count = len(channels_after)
+
+        assert channels_after_count == initial_channels_count
+        assert set(channels_after) == set(initial_channels)
 
     @flaky
     def test_replaced_nested_chord(self, manager):
@@ -1561,21 +1561,21 @@ class test_chord:
         assert len([cr for cr in chord_results if cr[2] != states.SUCCESS]
                    ) == 1
 
-    # @flaky
-    # def test_generator(self, manager):
-    #     def assert_generator(file_name):
-    #         for i in range(3):
-    #             sleep(1)
-    #             if i == 2:
-    #                 with open(file_name) as file_handle:
-    #                     # ensures chord header generators tasks are processed incrementally #3021
-    #                     assert file_handle.readline() == '0\n', "Chord header was unrolled too early"
-    #             yield write_to_file_and_return_int.s(file_name, i)
-    #
-    #     with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp_file:
-    #         file_name = tmp_file.name
-    #         c = chord(assert_generator(file_name), tsum.s())
-    #         assert c().get(timeout=TIMEOUT) == 3
+    @pytest.mark.xfail(reason="chord header generators tasks aren't processed incrementally")
+    def test_generator(self, manager):
+        def assert_generator(file_name):
+            for i in range(3):
+                sleep(1)
+                if i == 2:
+                    with open(file_name) as file_handle:
+                        # ensures chord header generators tasks are processed incrementally #3021
+                        assert file_handle.readline() == '0\n', "Chord header was unrolled too early"
+                yield write_to_file_and_return_int.s(file_name, i)
+
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp_file:
+            file_name = tmp_file.name
+            c = chord(assert_generator(file_name), tsum.s())
+            assert c().get(timeout=TIMEOUT) == 3
 
     @flaky
     def test_parallel_chords(self, manager):
