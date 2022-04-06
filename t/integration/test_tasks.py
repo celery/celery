@@ -252,13 +252,13 @@ class test_tasks:
         sleeping.delay(sleep)
         manager.assert_accepted([r1.id])
 
-    @pytest.mark.xfail(reason="Task is timeout on retry")
-    def test_task_retried(self):
+    @flaky
+    def test_task_retried_once(self, manager):
         res = retry_once.delay()
         assert res.get(timeout=TIMEOUT) == 1  # retried once
 
-    @pytest.mark.xfail(reason="Task is timeout on retry")
-    def test_task_retried_priority(self):
+    @flaky
+    def test_task_retried_priority(self, manager):
         res = retry_once_priority.apply_async(priority=7)
         assert res.get(timeout=TIMEOUT) == 7  # retried once with priority 7
 
