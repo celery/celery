@@ -154,7 +154,7 @@ class Request:
             'exchange': delivery_info.get('exchange'),
             'routing_key': delivery_info.get('routing_key'),
             'priority': properties.get('priority'),
-            'redelivered': delivery_info.get('redelivered') is True,
+            'redelivered': delivery_info.get('redelivered', False),
         }
         self._request_dict.update({
             'properties': properties,
