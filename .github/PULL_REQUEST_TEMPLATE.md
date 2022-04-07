@@ -1,5 +1,5 @@
 *Note*: Before submitting this pull request, please review our [contributing
-guidelines](https://docs.celeryproject.org/en/master/contributing.html).
+guidelines](https://docs.celeryq.dev/en/master/contributing.html).
 
 ## Description
 
