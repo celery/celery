@@ -1561,12 +1561,12 @@ class test_chord:
         assert len([cr for cr in chord_results if cr[2] != states.SUCCESS]
                    ) == 1
 
-    @pytest.mark.xfail(reason="chord header generators tasks aren't processed incrementally")
+    @flaky
     def test_generator(self, manager):
         def assert_generator(file_name):
-            for i in range(3):
+            for i in range(5):
                 sleep(1)
-                if i == 2:
+                if i == 4:
                     with open(file_name) as file_handle:
                         # ensures chord header generators tasks are processed incrementally #3021
                         assert file_handle.readline() == '0\n', "Chord header was unrolled too early"
@@ -1575,7 +1575,7 @@ class test_chord:
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp_file:
             file_name = tmp_file.name
             c = chord(assert_generator(file_name), tsum.s())
-            assert c().get(timeout=TIMEOUT) == 3
+            assert c().get(timeout=TIMEOUT) == 10
 
     @flaky
     def test_parallel_chords(self, manager):
