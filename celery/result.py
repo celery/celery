@@ -299,6 +299,8 @@ class AsyncResult(ResultBase):
 
     def iterdeps(self, intermediate=False):
         stack = deque([(None, self)])
+        
+        is_incomplete_stream = not intermediate
 
         while stack:
             parent, node = stack.popleft()
@@ -306,7 +308,7 @@ class AsyncResult(ResultBase):
             if node.ready():
                 stack.extend((node, child) for child in node.children or [])
             else:
-                if not intermediate:
+                if is_incomplete_stream:
                     raise IncompleteStream()
 
     def ready(self):
