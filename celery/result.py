@@ -299,7 +299,7 @@ class AsyncResult(ResultBase):
 
     def iterdeps(self, intermediate=False):
         stack = deque([(None, self)])
-        
+
         is_incomplete_stream = not intermediate
 
         while stack:
