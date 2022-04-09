@@ -26,7 +26,7 @@ from time import sleep
 from weakref import WeakValueDictionary, ref
 
 from billiard import pool as _pool
-from billiard.compat import buf_t, isblocking, setblocking
+from billiard.compat import isblocking, setblocking
 from billiard.pool import ACK, NACK, RUN, TERMINATE, WorkersJoined
 from billiard.queues import _SimpleQueue
 from kombu.asynchronous import ERR, WRITE
@@ -868,7 +868,7 @@ class AsynPool(_pool.Pool):
             header = pack('>I', body_size)
             # index 1,0 is the job ID.
             job = get_job(tup[1][0])
-            job._payload = buf_t(header), buf_t(body), body_size
+            job._payload = memoryview(header), memoryview(body), body_size
             put_message(job)
         self._quick_put = send_job
 
