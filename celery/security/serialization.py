@@ -1,4 +1,6 @@
 """Secure serializer."""
+from typing import TYPE_CHECKING, Any, Optional, Union
+
 from kombu.serialization import dumps, loads, registry
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, str_to_bytes
 
@@ -9,21 +11,40 @@ from .certificate import Certificate, FSCertStore
 from .key import PrivateKey
 from .utils import get_digest_algorithm, reraise_errors
 
+if TYPE_CHECKING:
+    import sys
+
+    if sys.version_info < (3.8):
+        from typing_extensions import Literal, TypedDict
+    else:
+        from typing import Literal, TypedDict
+
+    _Serializer = Literal["json", "msgpack", "yaml", "pickle"]
+
+    class _UnpackReturn(TypedDict):
+        signer: bytes
+        signature: bytes
+        content_type: str
+        content_encoding: str
+        body: str
+
+
 __all__ = ('SecureSerializer', 'register_auth')
 
 
 class SecureSerializer:
     """Signed serializer."""
 
-    def __init__(self, key=None, cert=None, cert_store=None,
-                 digest=DEFAULT_SECURITY_DIGEST, serializer='json'):
+    def __init__(self, key: Optional[PrivateKey] = None, cert: Optional[Certificate] = None,
+                 cert_store: Optional[FSCertStore] = None, digest: str = DEFAULT_SECURITY_DIGEST,
+                 serializer: "_Serializer" = 'json'):
         self._key = key
         self._cert = cert
         self._cert_store = cert_store
         self._digest = get_digest_algorithm(digest)
         self._serializer = serializer
 
-    def serialize(self, data):
+    def serialize(self, data: Union[bytes, str]) -> str:
         """Serialize data structure into string."""
         assert self._key is not None
         assert self._cert is not None
@@ -39,7 +60,7 @@ class SecureSerializer:
                               signature=self._key.sign(body, self._digest),
                               signer=self._cert.get_id())
 
-    def deserialize(self, data):
+    def deserialize(self, data: Union[bytes, str]) -> Any:
         """Deserialize data structure from string."""
         assert self._cert_store is not None
         with reraise_errors('Unable to deserialize: {0!r}', (Exception,)):
@@ -51,15 +72,16 @@ class SecureSerializer:
         return loads(bytes_to_str(body), payload['content_type'],
                      payload['content_encoding'], force=True)
 
-    def _pack(self, body, content_type, content_encoding, signer, signature,
-              sep=str_to_bytes('\x00\x01')):
+    def _pack(self, body: bytes, content_type: str, content_encoding: str,
+              signer: Union[bytes, str], signature: Union[bytes, str],
+              sep: bytes = str_to_bytes('\x00\x01')) -> str:
         fields = sep.join(
             ensure_bytes(s) for s in [signer, signature, content_type,
                                       content_encoding, body]
         )
         return b64encode(fields)
 
-    def _unpack(self, payload, sep=str_to_bytes('\x00\x01')):
+    def _unpack(self, payload: Union[bytes, str], sep: bytes = str_to_bytes('\x00\x01')) -> "_UnpackReturn":
         raw_payload = b64decode(ensure_bytes(payload))
         first_sep = raw_payload.find(sep)
 
@@ -88,9 +110,9 @@ class SecureSerializer:
         }
 
 
-def register_auth(key=None, key_password=None, cert=None, store=None,
-                  digest=DEFAULT_SECURITY_DIGEST,
-                  serializer='json'):
+def register_auth(key: Optional[str] = None, key_password: Optional[str] = None,
+                  cert: Optional[str] = None, store: Optional[str] = None, digest: str = DEFAULT_SECURITY_DIGEST,
+                  serializer: "_Serializer" = 'json') -> None:
     """Register security serializer."""
     s = SecureSerializer(key and PrivateKey(key, password=key_password),
                          cert and Certificate(cert),
