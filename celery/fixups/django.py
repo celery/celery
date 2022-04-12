@@ -4,12 +4,26 @@ import sys
 import warnings
 from datetime import datetime
 from importlib import import_module
+from typing import IO, TYPE_CHECKING, Any, List, Optional, cast
 
 from kombu.utils.imports import symbol_by_name
 from kombu.utils.objects import cached_property
 
 from celery import _state, signals
 from celery.exceptions import FixupWarning, ImproperlyConfigured
+
+if TYPE_CHECKING:
+    from types import ModuleType
+    from typing import Protocol
+
+    from django.db.utils import ConnectionHandler
+
+    from celery.app.base import Celery
+    from celery.app.task import Task
+
+    class DjangoDBModule(Protocol):
+        connections: ConnectionHandler
+
 
 __all__ = ('DjangoFixup', 'fixup')
 
@@ -19,7 +33,7 @@ but Django isn't installed.  Won't apply Django fix-ups!
 """
 
 
-def _maybe_close_fd(fh):
+def _maybe_close_fd(fh: IO) -> None:
     try:
         os.close(fh.fileno())
     except (AttributeError, OSError, TypeError):
@@ -27,12 +41,12 @@ def _maybe_close_fd(fh):
         pass
 
 
-def _verify_django_version(django):
+def _verify_django_version(django: "ModuleType") -> None:
     if django.VERSION < (1, 11):
         raise ImproperlyConfigured('Celery 5.x requires Django 1.11 or later.')
 
 
-def fixup(app, env='DJANGO_SETTINGS_MODULE'):
+def fixup(app: "Celery", env: str = 'DJANGO_SETTINGS_MODULE') -> Optional["DjangoFixup"]:
     """Install Django fixup if settings module environment is set."""
     SETTINGS_MODULE = os.environ.get(env)
     if SETTINGS_MODULE and 'django' not in app.loader_cls.lower():
@@ -43,18 +57,19 @@ def fixup(app, env='DJANGO_SETTINGS_MODULE'):
         else:
             _verify_django_version(django)
             return DjangoFixup(app).install()
+    return None
 
 
 class DjangoFixup:
     """Fixup installed when using Django."""
 
-    def __init__(self, app):
+    def __init__(self, app: "Celery"):
         self.app = app
         if _state.default_app is None:
             self.app.set_default()
-        self._worker_fixup = None
+        self._worker_fixup: Optional["DjangoWorkerFixup"] = None
 
-    def install(self):
+    def install(self) -> "DjangoFixup":
         # Need to add project directory to path.
         # The project directory has precedence over system modules,
         # so we prepend it to the path.
@@ -68,41 +83,41 @@ class DjangoFixup:
         return self
 
     @property
-    def worker_fixup(self):
+    def worker_fixup(self) -> "DjangoWorkerFixup":
         if self._worker_fixup is None:
             self._worker_fixup = DjangoWorkerFixup(self.app)
         return self._worker_fixup
 
     @worker_fixup.setter
-    def worker_fixup(self, value):
+    def worker_fixup(self, value: "DjangoWorkerFixup") -> None:
         self._worker_fixup = value
 
-    def on_import_modules(self, **kwargs):
+    def on_import_modules(self, **kwargs: Any) -> None:
         # call django.setup() before task modules are imported
         self.worker_fixup.validate_models()
 
-    def on_worker_init(self, **kwargs):
+    def on_worker_init(self, **kwargs: Any) -> None:
         self.worker_fixup.install()
 
-    def now(self, utc=False):
+    def now(self, utc: bool = False) -> datetime:
         return datetime.utcnow() if utc else self._now()
 
-    def autodiscover_tasks(self):
+    def autodiscover_tasks(self) -> List[str]:
         from django.apps import apps
         return [config.name for config in apps.get_app_configs()]
 
     @cached_property
-    def _now(self):
+    def _now(self) -> datetime:
         return symbol_by_name('django.utils.timezone:now')
 
 
 class DjangoWorkerFixup:
     _db_recycles = 0
 
-    def __init__(self, app):
+    def __init__(self, app: "Celery") -> None:
         self.app = app
         self.db_reuse_max = self.app.conf.get('CELERY_DB_REUSE_MAX', None)
-        self._db = import_module('django.db')
+        self._db = cast("DjangoDBModule", import_module('django.db'))
         self._cache = import_module('django.core.cache')
         self._settings = symbol_by_name('django.conf:settings')
 
@@ -111,16 +126,16 @@ class DjangoWorkerFixup:
         )
         self.DatabaseError = symbol_by_name('django.db:DatabaseError')
 
-    def django_setup(self):
+    def django_setup(self) -> None:
         import django
         django.setup()
 
-    def validate_models(self):
+    def validate_models(self) -> None:
         from django.core.checks import run_checks
         self.django_setup()
         run_checks()
 
-    def install(self):
+    def install(self) -> "DjangoWorkerFixup":
         signals.beat_embedded_init.connect(self.close_database)
         signals.worker_ready.connect(self.on_worker_ready)
         signals.task_prerun.connect(self.on_task_prerun)
@@ -130,7 +145,7 @@ class DjangoWorkerFixup:
         self.close_cache()
         return self
 
-    def on_worker_process_init(self, **kwargs):
+    def on_worker_process_init(self, **kwargs: Any) -> None:
         # Child process must validate models again if on Windows,
         # or if they were started using execv.
         if os.environ.get('FORKED_BY_MULTIPROCESSING'):
@@ -152,25 +167,24 @@ class DjangoWorkerFixup:
         self._close_database(force=True)
         self.close_cache()
 
-    def _maybe_close_db_fd(self, fd):
+    def _maybe_close_db_fd(self, fd: IO) -> None:
         try:
             _maybe_close_fd(fd)
         except self.interface_errors:
             pass
 
-    def on_task_prerun(self, sender, **kwargs):
+    def on_task_prerun(self, sender: "Task", **kwargs: Any) -> None:
         """Called before every task."""
         if not getattr(sender.request, 'is_eager', False):
             self.close_database()
 
-    def on_task_postrun(self, sender, **kwargs):
-        # See https://groups.google.com/group/django-users/
-        #            browse_thread/thread/78200863d0c07c6d/
+    def on_task_postrun(self, sender: "Task", **kwargs: Any) -> None:
+        # See https://groups.google.com/group/django-users/browse_thread/thread/78200863d0c07c6d/
         if not getattr(sender.request, 'is_eager', False):
             self.close_database()
             self.close_cache()
 
-    def close_database(self, **kwargs):
+    def close_database(self, **kwargs: Any) -> None:
         if not self.db_reuse_max:
             return self._close_database()
         if self._db_recycles >= self.db_reuse_max * 2:
@@ -178,7 +192,7 @@ class DjangoWorkerFixup:
             self._close_database()
         self._db_recycles += 1
 
-    def _close_database(self, force=False):
+    def _close_database(self, force: bool = False) -> None:
         for conn in self._db.connections.all():
             try:
                 if force:
@@ -192,13 +206,13 @@ class DjangoWorkerFixup:
                 if 'closed' not in str_exc and 'not connected' not in str_exc:
                     raise
 
-    def close_cache(self):
+    def close_cache(self) -> None:
         try:
             self._cache.close_caches()
         except (TypeError, AttributeError):
             pass
 
-    def on_worker_ready(self, **kwargs):
+    def on_worker_ready(self, **kwargs: Any) -> None:
         if self._settings.DEBUG:
             warnings.warn('''Using settings.DEBUG leads to a memory
             leak, never use this setting in production environments!''')
