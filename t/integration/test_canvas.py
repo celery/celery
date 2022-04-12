@@ -1562,11 +1562,12 @@ class test_chord:
                    ) == 1
 
     @flaky
-    def test_generator(self, manager):
+    @pytest.mark.parametrize('size', [5, 6, 7, 8, 9])
+    def test_generator(self, manager, size):
         def assert_generator(file_name):
-            for i in range(5):
+            for i in range(size):
                 sleep(1)
-                if i == 4:
+                if i == size - 1:
                     with open(file_name) as file_handle:
                         # ensures chord header generators tasks are processed incrementally #3021
                         assert file_handle.readline() == '0\n', "Chord header was unrolled too early"
@@ -1575,7 +1576,7 @@ class test_chord:
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp_file:
             file_name = tmp_file.name
             c = chord(assert_generator(file_name), tsum.s())
-            assert c().get(timeout=TIMEOUT) == 10
+            assert c().get(timeout=TIMEOUT) == size * (size - 1) // 2
 
     @flaky
     def test_parallel_chords(self, manager):
