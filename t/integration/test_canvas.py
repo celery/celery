@@ -969,7 +969,7 @@ class test_group:
             raise pytest.skip("Requires redis result backend.")
         redis_connection = get_redis_connection()
 
-        callback_msg = str(uuid.uuid4())
+        callback_msg = str(uuid.uuid4()).encode()
         redis_key = str(uuid.uuid4())
         callback = redis_echo.si(callback_msg, redis_key=redis_key)
 
@@ -988,7 +988,7 @@ class test_group:
             raise pytest.skip("Requires redis result backend.")
         redis_connection = get_redis_connection()
 
-        errback_msg = str(uuid.uuid4())
+        errback_msg = str(uuid.uuid4()).encode()
         redis_key = str(uuid.uuid4())
         errback = redis_echo.si(errback_msg, redis_key=redis_key)
 
@@ -1008,7 +1008,7 @@ class test_group:
             raise pytest.skip("Requires redis result backend.")
         redis_connection = get_redis_connection()
 
-        errback_msg = str(uuid.uuid4())
+        errback_msg = str(uuid.uuid4()).encode()
         redis_key = str(uuid.uuid4())
         errback = redis_echo.si(errback_msg, redis_key=redis_key)
 
@@ -1818,7 +1818,7 @@ class test_chord:
             raise pytest.skip("Requires redis result backend.")
         redis_connection = get_redis_connection()
 
-        errback_msg = str(uuid.uuid4())
+        errback_msg = str(uuid.uuid4()).encode()
         redis_key = str(uuid.uuid4())
         errback = redis_echo.si(errback_msg, redis_key=redis_key)
         child_sig = fail.s()
@@ -1919,7 +1919,7 @@ class test_chord:
             raise pytest.skip("Requires redis result backend.")
         redis_connection = get_redis_connection()
 
-        errback_msg = str(uuid.uuid4())
+        errback_msg = str(uuid.uuid4()).encode()
         redis_key = str(uuid.uuid4())
         errback = redis_echo.si(errback_msg, redis_key=redis_key)
         child_sig = chain(identity.si(42), fail.s(), identity.si(42))
@@ -2030,7 +2030,7 @@ class test_chord:
             raise pytest.skip("Requires redis result backend.")
         redis_connection = get_redis_connection()
 
-        errback_msg = str(uuid.uuid4())
+        errback_msg = str(uuid.uuid4()).encode()
         redis_key = str(uuid.uuid4())
         errback = redis_echo.si(errback_msg, redis_key=redis_key)
         child_sig = chain(identity.si(42), fail.s())
@@ -2137,7 +2137,7 @@ class test_chord:
             raise pytest.skip("Requires redis result backend.")
         redis_connection = get_redis_connection()
 
-        errback_msg = str(uuid.uuid4())
+        errback_msg = str(uuid.uuid4()).encode()
         redis_key = str(uuid.uuid4())
         errback = redis_echo.si(errback_msg, redis_key=redis_key)
         child_sig = group(identity.si(42), fail.s())
