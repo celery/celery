@@ -15,7 +15,7 @@ To check an item on the list replace [ ] with [x].
 - [ ] I have verified that the issue exists against the `master` branch of Celery.
 - [ ] This has already been asked to the [discussions forum](https://github.com/celery/celery/discussions) first.
 - [ ] I have read the relevant section in the
-  [contribution guide](http://docs.celeryproject.org/en/latest/contributing.html#other-bugs)
+  [contribution guide](https://docs.celeryq.dev/en/master/contributing.html#other-bugs)
   on reporting bugs.
 - [ ] I have checked the [issues list](https://github.com/celery/celery/issues?q=is%3Aissue+label%3A%22Issue+Type%3A+Bug+Report%22+-label%3A%22Category%3A+Documentation%22)
   for similar or identical bug reports.
