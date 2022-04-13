@@ -1562,7 +1562,7 @@ class test_chord:
                    ) == 1
 
     @flaky
-    @pytest.mark.parametrize('size', [5, 6, 7, 8, 9])
+    @pytest.mark.parametrize('size', [3, 4, 5, 6, 7, 8, 9])
     def test_generator(self, manager, size):
         def assert_generator(file_name):
             for i in range(size):
