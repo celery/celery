@@ -197,12 +197,13 @@ def retry(self, return_value=None):
     raise self.retry(exc=ExpectedException(), countdown=5)
 
 
-@shared_task(bind=True, max_retries=1)
-def retry_once(self, *args, expires=60.0, max_retries=1, countdown=0.1):
+@shared_task(bind=True, expires=120.0, max_retries=1)
+def retry_once(self, *args, expires=None, max_retries=1, countdown=0.1):
     """Task that fails and is retried. Returns the number of retries."""
     if self.request.retries:
         return self.request.retries
     raise self.retry(countdown=countdown,
+                     expires=expires,
                      max_retries=max_retries)
 
 

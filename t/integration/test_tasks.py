@@ -258,6 +258,11 @@ class test_tasks:
         assert res.get(timeout=TIMEOUT) == 1  # retried once
 
     @flaky
+    def test_task_retried_once_with_expires(self, manager):
+        res = retry_once.delay(expires=60)
+        assert res.get(timeout=TIMEOUT) == 1  # retried once
+
+    @flaky
     def test_task_retried_priority(self, manager):
         res = retry_once_priority.apply_async(priority=7)
         assert res.get(timeout=TIMEOUT) == 7  # retried once with priority 7
