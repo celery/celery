@@ -26,7 +26,7 @@ from celery.utils import abstract
 from celery.utils.collections import ChainMap
 from celery.utils.functional import _regen
 from celery.utils.functional import chunks as _chunks
-from celery.utils.functional import is_list, lookahead, maybe_list, regen, seq_concat_item, seq_concat_seq
+from celery.utils.functional import is_list, maybe_list, regen, seq_concat_item, seq_concat_seq
 from celery.utils.objects import getitem_property
 from celery.utils.text import remove_repeating_from_task, truncate
 
@@ -1183,9 +1183,11 @@ class group(Signature):
             # next_task is None.  This enables us to set the chord size
             # without burning through the entire generator.  See #3021.
             chord_size = 0
-            for task_index, (current_task, next_task) in enumerate(
-                lookahead(tasks)
-            ):
+            tasks_shifted, tasks = itertools.tee(tasks)
+            next(tasks_shifted, None)
+            next_task = next(tasks_shifted, None)
+
+            for task_index, current_task in enumerate(tasks):
                 # We expect that each task must be part of the same group which
                 # seems sensible enough. If that's somehow not the case we'll
                 # end up messing up chord counts and there are all sorts of
@@ -1211,6 +1213,7 @@ class group(Signature):
                 if p and not p.cancelled and not p.ready:
                     p.size += 1
                     res.then(p, weak=True)
+                next_task = next(tasks_shifted, None)
                 yield res  # <-- r.parent, etc set in the frozen result.
 
     def _freeze_gid(self, options):
@@ -1248,7 +1251,7 @@ class group(Signature):
             # we freeze all tasks in the clone tasks1, and then zip the results
             # with the IDs of tasks in the second clone, tasks2. and then, we build
             # a generator that takes only the task IDs from tasks2.
-            self.tasks = regen(x[0] for x in zip(tasks2, results))
+            self.tasks = regen(tasks2)
         else:
             new_tasks = []
             # Need to unroll subgroups early so that chord gets the

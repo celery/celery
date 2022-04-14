@@ -27,7 +27,7 @@ class test_class_based_tasks:
     def test_class_based_task_retried(self, celery_session_app,
                                       celery_session_worker):
         task = ClassBasedAutoRetryTask()
-        celery_session_app.tasks.register(task)
+        celery_session_app.register_task(task)
         res = task.delay()
         assert res.get(timeout=TIMEOUT) == 1
 
@@ -253,12 +253,17 @@ class test_tasks:
         manager.assert_accepted([r1.id])
 
     @flaky
-    def test_task_retried(self):
+    def test_task_retried_once(self, manager):
         res = retry_once.delay()
         assert res.get(timeout=TIMEOUT) == 1  # retried once
 
     @flaky
-    def test_task_retried_priority(self):
+    def test_task_retried_once_with_expires(self, manager):
+        res = retry_once.delay(expires=60)
+        assert res.get(timeout=TIMEOUT) == 1  # retried once
+
+    @flaky
+    def test_task_retried_priority(self, manager):
         res = retry_once_priority.apply_async(priority=7)
         assert res.get(timeout=TIMEOUT) == 7  # retried once with priority 7
 

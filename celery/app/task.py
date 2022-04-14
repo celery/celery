@@ -604,7 +604,7 @@ class Task:
         request = self.request if request is None else request
         args = request.args if args is None else args
         kwargs = request.kwargs if kwargs is None else kwargs
-        options = request.as_execution_options()
+        options = {**request.as_execution_options(), **extra_options}
         delivery_info = request.delivery_info or {}
         priority = delivery_info.get('priority')
         if priority is not None:

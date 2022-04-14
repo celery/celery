@@ -120,7 +120,7 @@ class test_link_error:
         )
         assert result.get(timeout=TIMEOUT, propagate=False) == exception
 
-    @flaky
+    @pytest.mark.xfail(raises=TimeoutError, reason="Task is timeout instead of returning exception")
     def test_link_error_callback_retries(self):
         exception = ExpectedException("Task expected to fail", "test")
         result = fail.apply_async(
@@ -140,7 +140,7 @@ class test_link_error:
         assert (fail.apply().get(timeout=TIMEOUT, propagate=False), True) == (
             exception, True)
 
-    @flaky
+    @pytest.mark.xfail(raises=TimeoutError, reason="Task is timeout instead of returning exception")
     def test_link_error_using_signature(self):
         fail = signature('t.integration.tasks.fail', args=("test",))
         retrun_exception = signature('t.integration.tasks.return_exception')
@@ -175,7 +175,7 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [64, 65, 66, 67]
 
-    @flaky
+    @pytest.mark.xfail(raises=TimeoutError, reason="Task is timeout")
     def test_group_results_in_chain(self, manager):
         # This adds in an explicit test for the special case added in commit
         # 1e3fcaa969de6ad32b52a3ed8e74281e5e5360e6
@@ -473,7 +473,7 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [8, 8]
 
-    @flaky
+    @pytest.mark.xfail(raises=TimeoutError, reason="Task is timeout")
     def test_nested_chain_group_lone(self, manager):
         """
         Test that a lone group in a chain completes.
@@ -1229,7 +1229,7 @@ class test_chord:
         result = c()
         assert result.get(timeout=TIMEOUT) == 4
 
-    @flaky
+    @pytest.mark.xfail(reason="async_results aren't performed in async way")
     def test_redis_subscribed_channels_leak(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
@@ -1562,11 +1562,12 @@ class test_chord:
                    ) == 1
 
     @flaky
-    def test_generator(self, manager):
+    @pytest.mark.parametrize('size', [3, 4, 5, 6, 7, 8, 9])
+    def test_generator(self, manager, size):
         def assert_generator(file_name):
-            for i in range(3):
+            for i in range(size):
                 sleep(1)
-                if i == 2:
+                if i == size - 1:
                     with open(file_name) as file_handle:
                         # ensures chord header generators tasks are processed incrementally #3021
                         assert file_handle.readline() == '0\n', "Chord header was unrolled too early"
@@ -1575,7 +1576,7 @@ class test_chord:
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp_file:
             file_name = tmp_file.name
             c = chord(assert_generator(file_name), tsum.s())
-            assert c().get(timeout=TIMEOUT) == 3
+            assert c().get(timeout=TIMEOUT) == size * (size - 1) // 2
 
     @flaky
     def test_parallel_chords(self, manager):

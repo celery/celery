@@ -3,3 +3,4 @@
 -r extras/auth.txt
 -r extras/memcache.txt
 pytest-rerunfailures>=6.0
+git+https://github.com/celery/kombu.git
