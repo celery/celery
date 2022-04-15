@@ -113,7 +113,8 @@ these can be specified as arguments to the decorator:
         User.objects.create(username=username, password=password)
 
 
-.. sidebar:: How do I import the task decorator? And what's "app"?
+How do I import the task decorator?
+-----------------------------------
 
     The task decorator is available on your :class:`@Celery` application instance,
     if you don't know what this is then please read :ref:`first-steps`.
@@ -129,7 +130,8 @@ these can be specified as arguments to the decorator:
         def add(x, y):
             return x + y
 
-.. sidebar:: Multiple decorators
+Multiple decorators
+-------------------
 
     When using multiple decorators in combination with the task
     decorator you must make sure that the `task`
