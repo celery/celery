@@ -205,8 +205,7 @@ class test_AMQP_proto1:
         self.app.amqp.as_task_v1(uuid(), 'foo', countdown=30, expires=40)
 
 
-class test_AMQP:
-
+class test_AMQP_Base:
     def setup(self):
         self.simple_message = self.app.amqp.as_task_v2(
             uuid(), 'foo', create_sent_event=True,
@@ -214,6 +213,9 @@ class test_AMQP:
         self.simple_message_no_sent_event = self.app.amqp.as_task_v2(
             uuid(), 'foo', create_sent_event=False,
         )
+
+
+class test_AMQP(test_AMQP_Base):
 
     def test_kwargs_must_be_mapping(self):
         with pytest.raises(TypeError):
@@ -336,7 +338,7 @@ class test_AMQP:
         assert router != router_was
 
 
-class test_as_task_v2:
+class test_as_task_v2(test_AMQP_Base):
 
     def test_raises_if_args_is_not_tuple(self):
         with pytest.raises(TypeError):
@@ -368,8 +370,27 @@ class test_as_task_v2:
         )
         assert m.headers['eta'] == eta.isoformat()
 
-    def test_callbacks_errbacks_chord(self):
+    def test_compression(self):
+        self.app.conf.task_compression = 'gzip'
 
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event,
+            compression=None
+        )
+        assert prod.publish.call_args[1]['compression'] == 'gzip'
+
+    def test_compression_override(self):
+        self.app.conf.task_compression = 'gzip'
+
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event,
+            compression='bz2'
+        )
+        assert prod.publish.call_args[1]['compression'] == 'bz2'
+
+    def test_callbacks_errbacks_chord(self):
         @self.app.task
         def t(i):
             pass
