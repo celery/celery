@@ -447,7 +447,7 @@ class AMQP:
 
         default_rkey = self.app.conf.task_default_routing_key
         default_serializer = self.app.conf.task_serializer
-        default_compressor = self.app.conf.result_compression
+        default_compressor = self.app.conf.task_compression
 
         def send_task_message(producer, name, message,
                               exchange=None, routing_key=None, queue=None,
