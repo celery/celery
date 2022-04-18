@@ -83,9 +83,8 @@ jobs:
           fail-fast: false
           matrix:
 #              python-version: ['3.7', '3.8', '3.9', '3.10']
-#              toxenv: ['redis', 'rabbitmq']
+              toxenv: ['redis', 'rabbitmq']
               python-version: ['3.10']
-              toxenv: ['rabbitmq']
 
       services:
           redis:
