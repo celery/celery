@@ -69,7 +69,7 @@ jobs:
     - uses: codecov/codecov-action@v2.1.0
       with:
         flags: unittests # optional
-        fail_ci_if_error: true # optional (default = false)
+        #fail_ci_if_error: true # optional (default = false)
         verbose: true # optional (default = false)
 
   Integration:
@@ -92,6 +92,13 @@ jobs:
               env:
                   REDIS_HOST: localhost
                   REDIS_PORT: 6379
+          rabbitmq:
+              image: rabbitmq
+              ports:
+                  - 5672:5672
+              env:
+                  RABBITMQ_DEFAULT_USER: guest
+                  RABBITMQ_DEFAULT_PASS: guest
 
       steps:
           -   name: Install apt packages
