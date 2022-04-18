@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
 import pytest
-from kombu import Exchange, Queue, uuid
+from kombu import Exchange, Queue
 
 from celery import uuid
 from celery.app.amqp import Queues, utf8dict
