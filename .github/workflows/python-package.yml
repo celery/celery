@@ -120,7 +120,7 @@ jobs:
           -   name: >
                   Run tox for
                   "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}"
-              timeout-minutes: 40
+              timeout-minutes: 50
               run: >
                   tox --verbose --verbose -e
                   "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -vv
