@@ -46,7 +46,7 @@ class Certificate:
         return datetime.datetime.utcnow() >= self._cert.not_valid_after
 
     def get_pubkey(self) -> Union[
-        "DSAPublicKey", "EllipticCurvePublicKey", "Ed448PublicKey", "Ed25519PublicKey", "RSAPublicKey"
+        DSAPublicKey, EllipticCurvePublicKey, Ed448PublicKey, Ed25519PublicKey, RSAPublicKey
     ]:
         return self._cert.public_key()
 
@@ -62,7 +62,7 @@ class Certificate:
         """Serial number/issuer pair uniquely identifies a certificate."""
         return f'{self.get_issuer()} {self.get_serial_number()}'
 
-    def verify(self, data: bytes, signature: bytes, digest: Union["HashAlgorithm", "Prehashed"]) -> None:
+    def verify(self, data: bytes, signature: bytes, digest: Union[HashAlgorithm, Prehashed]) -> None:
         """Verify signature for string containing data."""
         with reraise_errors('Bad signature: {0!r}'):
 
@@ -77,7 +77,7 @@ class CertStore:
     """Base class for certificate stores."""
 
     def __init__(self) -> None:
-        self._certs: Dict[str, Certificate] = {}
+        self._certs: dict[str, Certificate] = {}
 
     def itercerts(self) -> Iterator[Certificate]:
         """Return certificate iterator."""
