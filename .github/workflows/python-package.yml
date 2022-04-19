@@ -69,7 +69,7 @@ jobs:
     - uses: codecov/codecov-action@v2.1.0
       with:
         flags: unittests # optional
-#        fail_ci_if_error: true # optional (default = false)
+        fail_ci_if_error: true # optional (default = false)
         verbose: true # optional (default = false)
 
   Integration:
