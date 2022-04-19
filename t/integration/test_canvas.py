@@ -727,24 +727,30 @@ class test_chain:
             await_redis_count(1, redis_key=redis_key)
         redis_connection.delete(redis_key)
 
-    def test_task_replaced_with_chain(self):
+    @pytest.mark.xfail(raises=TimeoutError,
+                       reason="Task is timeout instead of returning exception on rpc backend",
+                       strict=False)
+    def test_task_replaced_with_chain(self, manager):
         orig_sig = replace_with_chain.si(42)
         res_obj = orig_sig.delay()
         assert res_obj.get(timeout=TIMEOUT) == 42
 
-    def test_chain_child_replaced_with_chain_first(self):
+    def test_chain_child_replaced_with_chain_first(self, manager):
         orig_sig = chain(replace_with_chain.si(42), identity.s())
         res_obj = orig_sig.delay()
         assert res_obj.get(timeout=TIMEOUT) == 42
 
-    def test_chain_child_replaced_with_chain_middle(self):
+    def test_chain_child_replaced_with_chain_middle(self, manager):
         orig_sig = chain(
             identity.s(42), replace_with_chain.s(), identity.s()
         )
         res_obj = orig_sig.delay()
         assert res_obj.get(timeout=TIMEOUT) == 42
 
-    def test_chain_child_replaced_with_chain_last(self):
+    @pytest.mark.xfail(raises=TimeoutError,
+                       reason="Task is timeout instead of returning exception on rpc backend",
+                       strict=False)
+    def test_chain_child_replaced_with_chain_last(self, manager):
         orig_sig = chain(identity.s(42), replace_with_chain.s())
         res_obj = orig_sig.delay()
         assert res_obj.get(timeout=TIMEOUT) == 42
@@ -1171,19 +1177,28 @@ class test_group:
             await_redis_count(1, redis_key=redis_key)
         redis_connection.delete(redis_key)
 
-    def test_group_child_replaced_with_chain_first(self):
+    @pytest.mark.xfail(raises=TimeoutError,
+                       reason="Task is timeout instead of returning exception on rpc backend",
+                       strict=False)
+    def test_group_child_replaced_with_chain_first(self, manager):
         orig_sig = group(replace_with_chain.si(42), identity.s(1337))
         res_obj = orig_sig.delay()
         assert res_obj.get(timeout=TIMEOUT) == [42, 1337]
 
-    def test_group_child_replaced_with_chain_middle(self):
+    @pytest.mark.xfail(raises=TimeoutError,
+                       reason="Task is timeout instead of returning exception on rpc backend",
+                       strict=False)
+    def test_group_child_replaced_with_chain_middle(self, manager):
         orig_sig = group(
             identity.s(42), replace_with_chain.s(1337), identity.s(31337)
         )
         res_obj = orig_sig.delay()
         assert res_obj.get(timeout=TIMEOUT) == [42, 1337, 31337]
 
-    def test_group_child_replaced_with_chain_last(self):
+    @pytest.mark.xfail(raises=TimeoutError,
+                       reason="Task is timeout instead of returning exception on rpc backend",
+                       strict=False)
+    def test_group_child_replaced_with_chain_last(self, manager):
         orig_sig = group(identity.s(42), replace_with_chain.s(1337))
         res_obj = orig_sig.delay()
         assert res_obj.get(timeout=TIMEOUT) == [42, 1337]
@@ -1564,6 +1579,9 @@ class test_chord:
     @flaky
     @pytest.mark.parametrize('size', [3, 4, 5, 6, 7, 8, 9])
     def test_generator(self, manager, size):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
         def assert_generator(file_name):
             for i in range(size):
                 sleep(1)

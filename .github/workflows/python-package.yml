@@ -83,7 +83,8 @@ jobs:
           fail-fast: false
           matrix:
               python-version: ['3.7', '3.8', '3.9', '3.10']
-              toxenv: ['redis']
+              toxenv: ['redis', 'rabbitmq']
+
       services:
           redis:
               image: redis
@@ -92,6 +93,13 @@ jobs:
               env:
                   REDIS_HOST: localhost
                   REDIS_PORT: 6379
+          rabbitmq:
+              image: rabbitmq
+              ports:
+                  - 5672:5672
+              env:
+                  RABBITMQ_DEFAULT_USER: guest
+                  RABBITMQ_DEFAULT_PASS: guest
 
       steps:
           -   name: Install apt packages
@@ -112,7 +120,7 @@ jobs:
           -   name: >
                   Run tox for
                   "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}"
-              timeout-minutes: 25
+              timeout-minutes: 50
               run: >
                   tox --verbose --verbose -e
                   "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -vv
