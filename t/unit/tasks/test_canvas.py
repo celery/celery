@@ -1,6 +1,5 @@
 import json
 import math
-
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
