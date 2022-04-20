@@ -93,6 +93,7 @@ class StampingVisitor(metaclass=ABCMeta):
          Returns:
              Dict: headers to update.
          """
+<<<<<<< HEAD
         pass
 
     @abstractmethod
@@ -106,6 +107,21 @@ class StampingVisitor(metaclass=ABCMeta):
         pass
 
     @abstractmethod
+=======
+        pass
+
+    @abstractmethod
+    def on_group_end(self, group, **headers) -> None:
+        """Method that is called on group stamping end.
+
+         Arguments:
+             group (group): Group that is stamped.
+             headers (Dict): Partial headers that could be merged with existing headers.
+         """
+        pass
+
+    @abstractmethod
+>>>>>>> 9bbc3799d (Redo header stamping (#7341))
     def on_chain_start(self, chain, **headers) -> dict:
         """Method that is called on chain stamping start.
 
@@ -160,6 +176,7 @@ class StampingVisitor(metaclass=ABCMeta):
                headers (Dict): Partial headers that could be merged with existing headers.
         """
         self.on_group_end(chord.tasks, **header)
+<<<<<<< HEAD
 
     def on_chord_body(self, chord, **header) -> dict:
         """Method that is called on chord body stamping.
@@ -173,6 +190,21 @@ class StampingVisitor(metaclass=ABCMeta):
         return self.on_signature(chord.body, **header)
 
 
+=======
+
+    def on_chord_body(self, chord, **header) -> dict:
+        """Method that is called on chord body stamping.
+
+         Arguments:
+             chord (chord): chord that is stamped.
+             headers (Dict): Partial headers that could be merged with existing headers.
+         Returns:
+             Dict: headers to update.
+        """
+        return self.on_signature(chord.body, **header)
+
+
+>>>>>>> 9bbc3799d (Redo header stamping (#7341))
 class GroupStampingVisitor(StampingVisitor):
     """
     Group stamping implementation based on Stamping API.
@@ -262,7 +294,11 @@ class Signature(dict):
     _app = _type = None
     # The following fields must not be changed during freezing/merging because
     # to do so would disrupt completion of parent tasks
+<<<<<<< HEAD
     _IMMUTABLE_OPTIONS = {"group_id", "groups", "stamps"}
+=======
+    _IMMUTABLE_OPTIONS = {"group_id", "groups"}
+>>>>>>> 9bbc3799d (Redo header stamping (#7341))
 
     @classmethod
     def register_type(cls, name=None):
@@ -373,12 +409,18 @@ class Signature(dict):
             # override values in `self.options` except for keys which are
             # noted as being immutable (unrelated to signature immutability)
             # implying that allowing their value to change would stall tasks
+<<<<<<< HEAD
             immutable_options = self._IMMUTABLE_OPTIONS
             if "stamps" in self.options:
                 immutable_options = self._IMMUTABLE_OPTIONS.union(set(self.options["stamps"]))
             new_options = {**self.options, **{
                 k: v for k, v in options.items()
                 if k not in immutable_options or k not in self.options
+=======
+            new_options = {**self.options, **{
+                k: v for k, v in options.items()
+                if k not in self._IMMUTABLE_OPTIONS or k not in self.options
+>>>>>>> 9bbc3799d (Redo header stamping (#7341))
             }}
         else:
             new_options = self.options

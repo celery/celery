@@ -92,44 +92,6 @@ class CanvasCase:
 
 class test_Signature(CanvasCase):
     @pytest.mark.usefixtures('depends_on_current_app')
-    def test_double_stamping(self):
-        """
-        Test manual signature stamping.
-        """
-        self.app.conf.task_always_eager = True
-        self.app.conf.task_store_eager_result = True
-        self.app.conf.result_extended = True
-
-        sig_1 = self.add.s(2, 2)
-        sig_1.stamp(stamp1="stamp1")
-        sig_1.stamp(stamp2="stamp2")
-        sig_1_res = sig_1.freeze()
-        sig_1.apply()
-
-        # TODO: whats easier
-        assert sig_1_res._get_task_meta()["stamp1"] == ["stamp1"]
-        assert sig_1_res._get_task_meta()["stamp2"] == ["stamp2"]
-
-        # stamp headers contains stamp1 and stamp2
-
-    @pytest.mark.usefixtures('depends_on_current_app')
-    def test_twice_stamping(self):
-        """
-        Test manual signature stamping.
-        """
-        self.app.conf.task_always_eager = True
-        self.app.conf.task_store_eager_result = True
-        self.app.conf.result_extended = True
-
-        sig_1 = self.add.s(2, 2)
-        sig_1.stamp(stamp="stamp1")
-        sig_1.stamp(stamp="stamp2")
-        sig_1_res = sig_1.freeze()
-        sig_1.apply()
-
-        # stamp headers contains stamp1 and stamp2
-        assert sig_1_res._get_task_meta()["stamp"] == ["stamp2", "stamp1"]
-
     def test_manual_stamping(self):
         """
         Test manual signature stamping.
@@ -728,28 +690,13 @@ class test_group(CanvasCase):
         sig_2_res = sig_2.freeze()
 
         g = group(sig_1, sig_2, app=self.app)
-        g.stamp(stamp="stamp")
         g_res = g.freeze()
         g.apply()
-
         with subtests.test("sig_1_res is stamped", groups=[g_res.id]):
             assert sig_1_res._get_task_meta()['groups'] == [g_res.id]
 
-        with subtests.test("sig_1_res is stamped manually", stamp=["stamp"]):
-            assert sig_1_res._get_task_meta()['stamp'] == ["stamp"]
-
         with subtests.test("sig_2_res is stamped", groups=[g_res.id]):
             assert sig_2_res._get_task_meta()['groups'] == [g_res.id]
-
-        with subtests.test("sig_2_res is stamped manually", stamp=["stamp"]):
-            assert sig_2_res._get_task_meta()['stamp'] == ["stamp"]
-
-        with subtests.test("sig_1_res has stamped_headers", stamped_headers=["stamp"]):
-            assert sig_1_res._get_task_meta()['stamped_headers'] == ['stamp']
-
-        with subtests.test("sig_2_res has stamped_headers", stamped_headers=["stamp"]):
-            assert sig_2_res._get_task_meta()['stamped_headers'] == ['stamp']
-
 
     def test_group_stamping_two_levels(self, subtests):
         """
