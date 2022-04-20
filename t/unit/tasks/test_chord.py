@@ -71,7 +71,7 @@ class test_unlock_chord_task(ChordCase):
 
         with self._chord_context(AlwaysReady) as (cb, retry, _):
             cb.type.apply_async.assert_called_with(
-                ([2, 4, 8, 6],), {}, groups=[], task_id=cb.id,
+                ([2, 4, 8, 6],), {}, task_id=cb.id, stamped_headers=['groups'], groups=[]
             )
             # didn't retry
             assert not retry.call_count
@@ -227,7 +227,8 @@ class test_unlock_chord_task(ChordCase):
                 (),
                 task_id=ch.tasks.id,
                 interval=10,
-                groups=[ch.tasks.id]
+                groups=[ch.tasks.id],
+                stamped_headers=["groups"]
             )
 
     def test_unlock_with_chord_params_and_task_id(self):
@@ -248,7 +249,8 @@ class test_unlock_chord_task(ChordCase):
                 (),
                 task_id=sentinel.task_id,
                 interval=10,
-                groups=[ch.tasks.id]
+                groups=[ch.tasks.id],
+                stamped_headers=['groups']
             )
 
 

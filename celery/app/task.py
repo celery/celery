@@ -93,7 +93,6 @@ class Context:
     taskset = None   # compat alias to group
     timelimit = None
     utc = None
-    groups = None
     stamped_headers = None
     stamps = None
 
@@ -785,12 +784,13 @@ class Task:
                 'exchange': options.get('exchange'),
                 'routing_key': options.get('routing_key'),
                 'priority': options.get('priority'),
-            },
-            'groups': maybe_list(options.get('groups')),
+            }
         }
         if 'stamped_headers' in options:
             request['stamped_headers'] = maybe_list(options['stamped_headers'])
-            request['stamps'] = {header: maybe_list(options[header]) for header in request['stamped_headers']}
+            request['stamps'] = {
+                header: maybe_list(options.get(header, [])) for header in request['stamped_headers']
+            }
 
         tb = None
         tracer = build_tracer(
@@ -939,8 +939,10 @@ class Task:
         for t in reversed(self.request.chain or []):
             sig |= signature(t, app=self.app)
         # Stamping sig with parents groups
-        groups = self.request.groups
-        sig.stamp(visitor=GroupStampingVisitor(groups))
+        stamped_headers = self.request.stamped_headers
+        if self.request.stamps:
+            groups = self.request.stamps.get("groups")
+            sig.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
 
         # Finally, either apply or delay the new signature!
         if self.request.is_eager:
