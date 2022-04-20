@@ -19,7 +19,7 @@ SIG = Signature({
 )
 try:
     from collections import Iterable
-except:
+except ImportError:
     from collections.abc import Iterable
 
 
