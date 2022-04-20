@@ -320,7 +320,7 @@ class Request:
 
     @property
     def stamped_headers(self) -> list:
-        return self._request_dict.get('stamps', [])
+        return self._request_dict.get('stamped_headers', [])
 
     @property
     def stamps(self) -> dict:
