@@ -106,16 +106,6 @@ class StampingVisitor(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def on_group_end(self, group, **headers) -> None:
-        """Method that is called on group stamping end.
-
-         Arguments:
-             group (group): Group that is stamped.
-             headers (Dict): Partial headers that could be merged with existing headers.
-         """
-        pass
-
-    @abstractmethod
     def on_chain_start(self, chain, **headers) -> dict:
         """Method that is called on chain stamping start.
 
@@ -170,17 +160,6 @@ class StampingVisitor(metaclass=ABCMeta):
                headers (Dict): Partial headers that could be merged with existing headers.
         """
         self.on_group_end(chord.tasks, **header)
-
-    def on_chord_body(self, chord, **header) -> dict:
-        """Method that is called on chord body stamping.
-
-         Arguments:
-             chord (chord): chord that is stamped.
-             headers (Dict): Partial headers that could be merged with existing headers.
-         Returns:
-             Dict: headers to update.
-        """
-        return self.on_signature(chord.body, **header)
 
     def on_chord_body(self, chord, **header) -> dict:
         """Method that is called on chord body stamping.
@@ -404,7 +383,7 @@ class Signature(dict):
                 immutable_options = self._IMMUTABLE_OPTIONS.union(set(self.options["stamped_headers"]))
             new_options = {**self.options, **{
                 k: v for k, v in options.items()
-                if k not in self._IMMUTABLE_OPTIONS or k not in self.options
+                if k not in immutable_options or k not in self.options
             }}
         else:
             new_options = self.options
