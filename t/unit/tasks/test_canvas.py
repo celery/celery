@@ -1,6 +1,6 @@
 import json
 import math
-from collections import Iterable
+
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
@@ -18,6 +18,10 @@ SIG = Signature({
     'options': {'task_id': 'TASK_ID'},
     'subtask_type': ''},
 )
+try:
+    from collections import Iterable
+except:
+    from collections.abc import Iterable
 
 
 class test_maybe_unroll_group:
