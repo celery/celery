@@ -30,6 +30,10 @@ CASSANDRA_AUTH_PROVIDER you provided is not a valid auth_provider class.
 See https://datastax.github.io/python-driver/api/cassandra/auth.html.
 """
 
+E_CASSANDRA_MISCONFIGURED = 'Cassandra backend improperly configured.'
+
+E_CASSANDRA_NOT_CONFIGURED = 'Cassandra backend not configured.'
+
 Q_INSERT_RESULT = """
 INSERT INTO {table} (
     task_id, status, result, date_done, traceback, children) VALUES (
@@ -65,21 +69,24 @@ def buf_t(x):
 
 
 class CassandraBackend(BaseBackend):
-    """Cassandra backend utilizing DataStax driver.
+    """Cassandra/AstraDB backend utilizing DataStax driver.
 
     Raises:
         celery.exceptions.ImproperlyConfigured:
             if module :pypi:`cassandra-driver` is not available,
-            or if the :setting:`cassandra_servers` setting is not set.
+            or not-exactly-one of the :setting:`cassandra_servers` and
+            the :setting:`cassandra_secure_bundle_path` settings is set.
     """
 
     #: List of Cassandra servers with format: ``hostname``.
     servers = None
+    #: Location of the secure connect bundle zipfile (absolute path).
+    bundle_path = None
 
     supports_autoexpire = True      # autoexpire supported via entry_ttl
 
     def __init__(self, servers=None, keyspace=None, table=None, entry_ttl=None,
-                 port=9042, **kwargs):
+                 port=9042, bundle_path=None, **kwargs):
         super().__init__(**kwargs)
 
         if not cassandra:
@@ -87,13 +94,20 @@ class CassandraBackend(BaseBackend):
 
         conf = self.app.conf
         self.servers = servers or conf.get('cassandra_servers', None)
+        self.bundle_path = bundle_path or conf.get(
+            'cassandra_secure_bundle_path', None)
         self.port = port or conf.get('cassandra_port', None)
         self.keyspace = keyspace or conf.get('cassandra_keyspace', None)
         self.table = table or conf.get('cassandra_table', None)
         self.cassandra_options = conf.get('cassandra_options', {})
 
-        if not self.servers or not self.keyspace or not self.table:
-            raise ImproperlyConfigured('Cassandra backend not configured.')
+        # either servers or bundle path must be provided...
+        db_directions = self.servers or self.bundle_path
+        if not db_directions or not self.keyspace or not self.table:
+            raise ImproperlyConfigured(E_CASSANDRA_NOT_CONFIGURED)
+        # ...but not both:
+        if self.servers and self.bundle_path:
+            raise ImproperlyConfigured(E_CASSANDRA_MISCONFIGURED)
 
         expires = entry_ttl or conf.get('cassandra_entry_ttl', None)
 
@@ -137,10 +151,20 @@ class CassandraBackend(BaseBackend):
         try:
             if self._session is not None:
                 return
-            self._cluster = cassandra.cluster.Cluster(
-                self.servers, port=self.port,
-                auth_provider=self.auth_provider,
-                **self.cassandra_options)
+            # using either 'servers' or 'bundle_path' here:
+            if self.servers:
+                self._cluster = cassandra.cluster.Cluster(
+                    self.servers, port=self.port,
+                    auth_provider=self.auth_provider,
+                    **self.cassandra_options)
+            else:
+                # 'bundle_path' is guaranteed to be set
+                self._cluster = cassandra.cluster.Cluster(
+                    cloud={
+                        'secure_connect_bundle': self.bundle_path,
+                    },
+                    auth_provider=self.auth_provider,
+                    **self.cassandra_options)
             self._session = self._cluster.connect(self.keyspace)
 
             # We're forced to do concatenation below, as formatting would
