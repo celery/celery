@@ -38,9 +38,9 @@ jobs:
       if: startsWith(matrix.os, 'ubuntu-')
       run: |
         sudo apt update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev gnutls-dev httping expect libmemcached-dev
-    - uses: actions/checkout@v2.4.0
+    - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2.2.2
+      uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -49,7 +49,7 @@ jobs:
       run: |
         echo "::set-output name=dir::$(pip cache dir)"
     - name: Cache
-      uses: actions/cache@v2.1.6
+      uses: actions/cache@v3.0.2
       with:
         path: ${{ steps.pip-cache.outputs.dir }}
         key:
@@ -66,7 +66,7 @@ jobs:
       run: |
         tox --verbose --verbose
 
-    - uses: codecov/codecov-action@v2.1.0
+    - uses: codecov/codecov-action@v3.1.0
       with:
         flags: unittests # optional
         fail_ci_if_error: true # optional (default = false)
@@ -105,9 +105,9 @@ jobs:
           -   name: Install apt packages
               run: |
                   sudo apt-get install -f libcurl4-openssl-dev libssl-dev gnutls-dev httping expect libmemcached-dev
-          -   uses: actions/checkout@v2
+          -   uses: actions/checkout@v3
           -   name: Set up Python ${{ matrix.python-version }}
-              uses: actions/setup-python@v2
+              uses: actions/setup-python@v3
               with:
                   python-version: ${{ matrix.python-version }}
 
