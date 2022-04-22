@@ -346,7 +346,7 @@ Example:
 
     # Do this in your tests.
     def test_add_task(celery_session_worker):
-        assert add.delay(2, 2) == 4
+        assert add.delay(2, 2).get() == 4
 
 .. warning::
 
