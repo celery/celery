@@ -490,7 +490,7 @@ class Backend:
                     if hasattr(request, 'delivery_info') and
                     request.delivery_info else None,
                 }
-                if hasattr(request, 'stamps') and request.stamps:
+                if getattr(request, 'stamps'):
                     request_meta['stamped_headers'] = request.stamped_headers
                     request_meta.update(request.stamps)
 
