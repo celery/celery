@@ -321,6 +321,7 @@ class AMQP:
         if not root_id:  # empty root_id defaults to task_id
             root_id = task_id
 
+        stamps = {header: options[header] for header in stamped_headers or []}
         headers = {
             'lang': 'py',
             'task': name,
@@ -339,7 +340,7 @@ class AMQP:
             'origin': origin or anon_nodename(),
             'ignore_result': ignore_result,
             'stamped_headers': stamped_headers,
-            **options
+            **stamps
         }
 
         return task_message(
