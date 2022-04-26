@@ -83,6 +83,7 @@ class StampingVisitor(metaclass=ABCMeta):
     canvas primitives. If you want to implement stamping behavior for
     a canvas primitive override method that represents it.
     """
+
     @abstractmethod
     def on_group_start(self, group, **headers) -> dict:
         """Method that is called on group stamping start.
@@ -95,7 +96,6 @@ class StampingVisitor(metaclass=ABCMeta):
          """
         pass
 
-    @abstractmethod
     def on_group_end(self, group, **headers) -> None:
         """Method that is called on group stamping end.
 
@@ -117,7 +117,6 @@ class StampingVisitor(metaclass=ABCMeta):
          """
         pass
 
-    @abstractmethod
     def on_chain_end(self, chain, **headers) -> None:
         """Method that is called on chain stamping end.
 
@@ -177,6 +176,7 @@ class GroupStampingVisitor(StampingVisitor):
     """
     Group stamping implementation based on Stamping API.
     """
+
     def __init__(self, groups=None, stamped_headers=None):
         self.groups = groups or []
         self.stamped_headers = stamped_headers or []
@@ -184,10 +184,13 @@ class GroupStampingVisitor(StampingVisitor):
             self.stamped_headers.append("groups")
 
     def on_group_start(self, group, **headers) -> dict:
-        if group.id is None:
+        group_id = group.options.get("group_id", group.id)
+        if group_id is None:
             group.freeze()
-        if group.id not in self.groups:
-            self.groups.append(group.id)
+            group_id = group.id
+
+        if group_id not in self.groups:
+            self.groups.append(group_id)
         return {'groups': list(self.groups), "stamped_headers": list(self.stamped_headers)}
 
     def on_group_end(self, group, **headers) -> None:
@@ -195,9 +198,6 @@ class GroupStampingVisitor(StampingVisitor):
 
     def on_chain_start(self, chain, **headers) -> dict:
         return {'groups': list(self.groups), "stamped_headers": list(self.stamped_headers)}
-
-    def on_chain_end(self, chain, **headers) -> None:
-        pass
 
     def on_signature(self, sig, **headers) -> dict:
         return {'groups': list(self.groups), "stamped_headers": list(self.stamped_headers)}
@@ -801,9 +801,7 @@ class _chain(Signature):
         args = args if args else ()
         kwargs = kwargs if kwargs else []
         app = self.app
-        groups = self.options.get("groups")
-        stamped_headers = self.options.get("stamped_headers")
-        self.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
+
         if app.conf.task_always_eager:
             with allow_join_result():
                 return self.apply(args, kwargs, **options)
@@ -829,6 +827,10 @@ class _chain(Signature):
             args, kwargs, self.tasks, root_id, parent_id, link_error, app,
             task_id, group_id, chord, group_index=group_index,
         )
+
+        groups = self.options.get("groups")
+        stamped_headers = self.options.get("stamped_headers")
+        self.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
 
         if results_from_prepare:
             if link:
@@ -1425,9 +1427,9 @@ class group(Signature):
         # remove task_id and use that as the group_id,
         # if we don't remove it then every task will have the same id...
         options = {**self.options, **{
-                k: v for k, v in options.items()
-                if k not in self._IMMUTABLE_OPTIONS or k not in self.options
-            }}
+            k: v for k, v in options.items()
+            if k not in self._IMMUTABLE_OPTIONS or k not in self.options
+        }}
         options['group_id'] = group_id = (
             options.pop('task_id', uuid()))
         return options, group_id, options.get('root_id')
