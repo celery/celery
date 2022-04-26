@@ -1,4 +1,4 @@
-from collections import Iterable
+from collections.abc import Iterable
 from time import sleep
 
 from celery import Signature, Task, chain, chord, group, shared_task
