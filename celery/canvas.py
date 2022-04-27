@@ -184,13 +184,11 @@ class GroupStampingVisitor(StampingVisitor):
             self.stamped_headers.append("groups")
 
     def on_group_start(self, group, **headers) -> dict:
-        group_id = group.options.get("group_id", group.id)
-        if group_id is None:
+        if group.id is None:
             group.freeze()
-            group_id = group.id
 
-        if group_id not in self.groups:
-            self.groups.append(group_id)
+        if group.id not in self.groups:
+            self.groups.append(group.id)
         return {'groups': list(self.groups), "stamped_headers": list(self.stamped_headers)}
 
     def on_group_end(self, group, **headers) -> None:

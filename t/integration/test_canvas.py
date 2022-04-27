@@ -1240,7 +1240,7 @@ def assert_ping(manager):
 
 
 class test_chord:
-    def test_group_stamping_two_levels(self, manager, subtests):
+    def test_chord_stamping_two_levels(self, manager, subtests):
         """
         For a group within a chord, test that group stamps are stored in
         the correct order.

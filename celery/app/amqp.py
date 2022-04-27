@@ -340,7 +340,7 @@ class AMQP:
             'origin': origin or anon_nodename(),
             'ignore_result': ignore_result,
             'stamped_headers': stamped_headers,
-            **stamps
+            'stamps': stamps,
         }
 
         return task_message(
