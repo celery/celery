@@ -4,12 +4,18 @@ from unittest.mock import Mock, PropertyMock, patch, sentinel
 import pytest
 
 from celery import canvas, group, result, uuid
+from celery.canvas import Signature
 from celery.exceptions import ChordError, Retry
 from celery.result import AsyncResult, EagerResult, GroupResult
 
 
 def passthru(x):
     return x
+
+
+class AnySignatureWithTask(Signature):
+    def __eq__(self, other):
+        return self.task == other.task
 
 
 class ChordCase:
@@ -221,17 +227,14 @@ class test_unlock_chord_task(ChordCase):
 
         with patch.object(ch, 'run') as run:
             ch.apply_async()
-            tasks = ch.tasks
-            tasks.options["groups"] = ch.options["groups"]
-            tasks.options["stamped_headers"] = ch.options["stamped_headers"]
             run.assert_called_once_with(
-                tasks,
+                AnySignatureWithTask(g),
                 mul.s(),
                 (),
                 task_id=ch.tasks.id,
                 interval=10,
                 groups=[ch.tasks.id],
-                stamped_headers=["groups"]
+                stamped_headers=['groups']
             )
 
     def test_unlock_with_chord_params_and_task_id(self):
@@ -246,12 +249,9 @@ class test_unlock_chord_task(ChordCase):
 
         with patch.object(ch, 'run') as run:
             ch.apply_async(task_id=sentinel.task_id)
-            tasks = ch.tasks
-            tasks.options["groups"] = ch.options["groups"]
-            tasks.options["stamped_headers"] = ch.options["stamped_headers"]
 
             run.assert_called_once_with(
-                tasks,
+                AnySignatureWithTask(g),
                 mul.s(),
                 (),
                 task_id=sentinel.task_id,

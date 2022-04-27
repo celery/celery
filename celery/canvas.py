@@ -1271,9 +1271,6 @@ class group(Signature):
         if link_error is not None:
             raise TypeError(
                 'Cannot add link to group: do that on individual tasks')
-        groups = self.options.get("groups")
-        stamped_headers = self.options.get("stamped_headers")
-        self.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
         app = self.app
         if app.conf.task_always_eager:
             return self.apply(args, kwargs, **options)
@@ -1282,6 +1279,11 @@ class group(Signature):
 
         options, group_id, root_id = self._freeze_gid(options)
         tasks = self._prepared(self.tasks, [], group_id, root_id, app)
+
+        groups = self.options.get("groups")
+        stamped_headers = self.options.get("stamped_headers")
+        self.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
+
         p = barrier()
         results = list(self._apply_tasks(tasks, producer, app, p,
                                          args=args, kwargs=kwargs, **options))
@@ -1322,6 +1324,9 @@ class group(Signature):
             task.set_immutable(immutable)
 
     def stamp(self, visitor=None, **headers):
+        if isinstance(self.tasks, _regen):
+            return
+
         if visitor is not None:
             headers.update(visitor.on_group_start(self, **headers))
 
@@ -1630,6 +1635,9 @@ class _chord(Signature):
         return body_result
 
     def stamp(self, visitor=None, **headers):
+        if isinstance(self.tasks, _regen):
+            return
+
         if visitor is not None and self.body is not None:
             headers.update(visitor.on_chord_body(self, **headers))
             self.body.stamp(visitor=visitor, **headers)
@@ -1658,19 +1666,21 @@ class _chord(Signature):
         body = kwargs.pop('body', None) or self.kwargs['body']
         kwargs = dict(self.kwargs['kwargs'], **kwargs)
         body = body.clone(**options)
-        groups = self.options.get("groups")
-        stamped_headers = self.options.get("stamped_headers")
-        self.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
         app = self._get_app(body)
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
                  else group(self.tasks, app=app))
-        tasks.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
         if app.conf.task_always_eager:
             with allow_join_result():
                 return self.apply(args, kwargs,
                                   body=body, task_id=task_id, **options)
 
+        groups = self.options.get("groups")
+        stamped_headers = self.options.get("stamped_headers")
+        self.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
+        tasks.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
+
         merged_options = dict(self.options, **options) if options else self.options
+
         option_task_id = merged_options.pop("task_id", None)
         if task_id is None:
             task_id = option_task_id
