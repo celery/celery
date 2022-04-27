@@ -777,6 +777,9 @@ class test_result_set:
 
 class test_group:
     def test_group_stamping(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
         sig1 = add.s(1, 1000)
         sig1_res = sig1.freeze()
         g1 = group(sig1, add.s(1, 2000))
@@ -788,6 +791,9 @@ class test_group:
             assert sig1_res._get_task_meta()["groups"] == [g1_res.id]
 
     def test_nested_group_stamping(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
         sig1 = add.s(2, 2)
         sig2 = add.s(2)
 
@@ -1257,6 +1263,11 @@ class test_chord:
         For a group within a chord, test that group stamps are stored in
         the correct order.
         """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
         sig_1 = add.s(2, 2)
         sig_2 = add.s(2)
 
