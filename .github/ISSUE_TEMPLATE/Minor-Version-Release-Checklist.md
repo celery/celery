@@ -1,6 +1,10 @@
 ---
 name: Minor Version Release Checklist
 about: About to release a new minor version? (Maintainers Only!)
+title: ''
+labels: ''
+assignees: ''
+
 ---
 
 Version: <!-- Insert Version Here -->
