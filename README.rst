@@ -307,7 +307,7 @@ Transports and Backends
     for using Memcached as a result backend (pure-Python implementation).
 
 :``celery[cassandra]``:
-    for using Apache Cassandra as a result backend with DataStax driver.
+    for using Apache Cassandra/Astra DB as a result backend with the DataStax driver.
 
 :``celery[azureblockblob]``:
     for using Azure Storage as a result backend (using ``azure-storage``)

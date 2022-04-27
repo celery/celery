@@ -10,9 +10,7 @@ This is a Celery application containing two example tasks.
 First you need to install Eventlet, and also recommended is the `dnspython`
 module (when this is installed all name lookups will be asynchronous)::
 
-    $ pip install eventlet
-    $ pip install dnspython
-    $ pip install requests
+    $ python -m pip install eventlet celery pybloom-live
 
 Before you run any of the example tasks you need to start
 the worker::
@@ -34,7 +32,7 @@ of the response body::
     $ cd examples/eventlet
     $ python
     >>> from tasks import urlopen
-    >>> urlopen.delay('http://www.google.com/').get()
+    >>> urlopen.delay('https://www.google.com/').get()
     9980
 
 To open several URLs at once you can do::

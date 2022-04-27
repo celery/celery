@@ -201,12 +201,24 @@ class test_AsynPool:
 
         def gen():
             yield 1
+            assert not asynpool.gen_not_started(g)
             yield 2
         g = gen()
         assert asynpool.gen_not_started(g)
         next(g)
         assert not asynpool.gen_not_started(g)
         list(g)
+        assert not asynpool.gen_not_started(g)
+
+        def gen2():
+            yield 1
+            raise RuntimeError('generator error')
+        g = gen2()
+        assert asynpool.gen_not_started(g)
+        next(g)
+        assert not asynpool.gen_not_started(g)
+        with pytest.raises(RuntimeError):
+            next(g)
         assert not asynpool.gen_not_started(g)
 
     @patch('select.select', create=True)

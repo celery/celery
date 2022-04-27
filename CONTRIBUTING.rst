@@ -1170,7 +1170,7 @@ that require third-party libraries must be added.
 
     .. code-block:: console
 
-        $ pip install -U requirements/pkgutils.txt
+        $ pip install -U -r requirements/pkgutils.txt
         $ make readme
 
 

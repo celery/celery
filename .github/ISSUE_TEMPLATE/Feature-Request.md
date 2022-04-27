@@ -1,8 +1,12 @@
 ---
 name: Feature Request
 about: Do you need a new feature?
-labels: "Issue Type: Feature Request"
+title: ''
+labels: 'Issue Type: Feature Request'
+assignees: ''
+
 ---
+
 <!--
 Please fill this template entirely and do not erase parts of it.
 We reserve the right to close without a response

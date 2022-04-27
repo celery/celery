@@ -14,6 +14,7 @@ This code deals with three major challenges:
 """
 import errno
 import gc
+import inspect
 import os
 import select
 import time
@@ -89,8 +90,7 @@ Ack = namedtuple('Ack', ('id', 'fd', 'payload'))
 
 def gen_not_started(gen):
     """Return true if generator is not started."""
-    # gi_frame is None when generator stopped.
-    return gen.gi_frame and gen.gi_frame.f_lasti == -1
+    return inspect.getgeneratorstate(gen) == "GEN_CREATED"
 
 
 def _get_job_writer(job):

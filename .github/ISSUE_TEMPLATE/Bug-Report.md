@@ -1,8 +1,12 @@
 ---
 name: Bug Report
 about: Is something wrong with Celery?
-labels: "Issue Type: Bug Report"
+title: ''
+labels: 'Issue Type: Bug Report'
+assignees: ''
+
 ---
+
 <!--
 Please fill this template entirely and do not erase parts of it.
 We reserve the right to close without a response
