@@ -24,9 +24,9 @@ import re
 
 import requests
 from eventlet import Timeout
-from pybloom import BloomFilter
+from pybloom_live import BloomFilter
 
-from celery import group, task
+from celery import group, shared_task
 
 try:
     from urllib.parse import urlsplit
@@ -43,7 +43,7 @@ def domain(url):
     return urlsplit(url)[1].split(':')[0]
 
 
-@task(ignore_result=True, serializer='pickle', compression='zlib')
+@shared_task(ignore_result=True, serializer='pickle', compression='zlib')
 def crawl(url, seen=None):
     print(f'crawling: {url}')
     if not seen:

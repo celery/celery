@@ -1,6 +1,10 @@
 ---
 name: Major Version Release Checklist
 about: About to release a new major version? (Maintainers Only!)
+title: ''
+labels: ''
+assignees: ''
+
 ---
 
 Version: <!-- Insert Version Here -->

@@ -128,7 +128,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
                     self.time_to_live_seconds = int(ttl)
                 except ValueError as e:
                     logger.error(
-                        'TTL must be a number; got "{ttl}"',
+                        f'TTL must be a number; got "{ttl}"',
                         exc_info=e
                     )
                     raise e
