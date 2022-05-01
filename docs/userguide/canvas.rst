@@ -1122,3 +1122,53 @@ of one:
 
 This means that the first task will have a countdown of one second, the second
 task a countdown of two seconds, and so on.
+
+Stamping
+==============
+The goal of the Stamping API is to give an ability to mark signature and it components for a debug purposes. For example,
+
+.. code-block:: pycon
+
+    >>> sig1 = add.si(2, 2)
+    >>> sig1_res = sig1.freeze()
+    >>> g = group(sig1, add.si(3, 3))
+    >>> g.stamp(stamp='your_custom_stamp')
+    >>> res = g1.apply_async()
+    >>> res.get(timeout=TIMEOUT)
+    [4, 6]
+    >>> sig1_res._get_task_meta()['stamp']
+    ['your_custom_stamp']
+
+will initialize a group ``g`` and mark its components with stamp ``your_custom_stamp``.
+
+You need to set ``result_extended = True`` for the usage of stamping API.
+
+
+Group stamping
+------
+When the ``apply`` and ``apply_async`` methods are called,
+there is an automatic stamping signature with group id.
+Stamps are stored in group header.
+For example, after
+
+.. code-block:: pycon
+
+    >>> g.apply_async()
+
+the header of task sig1 will store the stamp groups with g.id.
+In the case of nested groups, the order of the stamps corresponds
+to the nesting level. The group stamping is idempotent;
+the task cannot be stamped twice with the same group id.
+
+Canvas stamping
+------
+In addition to the default group stamping, we can also stamp
+canvas with custom marks, as shown in the example.
+
+Custom stamping
+------
+If more complex stamping logic is required, it is possible
+to implement custom stamping behavior based on the Visitor
+pattern. The class that implements this custom logic must
+inherit ``VisitorStamping`` and implement appropriate methods.
+
