@@ -27,7 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ['3.7', '3.8', '3.9', '3.10', 'pypy-3.7', 'pypy-3.8']
-        os: ["ubuntu-20.04", "windows-latest"]
+        os: ["ubuntu-latest", "windows-latest"]
         exclude:
             - python-version: 'pypy-3.7'
               os: "windows-latest"
@@ -37,7 +37,7 @@ jobs:
     - name: Install apt packages
       if: startsWith(matrix.os, 'ubuntu-')
       run: |
-        sudo apt update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev gnutls-dev httping expect libmemcached-dev
+        sudo apt update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
     - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
@@ -62,7 +62,7 @@ jobs:
     - name: >
         Run tox for
         "${{ matrix.python-version }}-unit"
-      timeout-minutes: 25
+      timeout-minutes: 30
       run: |
         tox --verbose --verbose
 
@@ -78,7 +78,7 @@ jobs:
       if: needs.Unit.result == 'success'
       timeout-minutes: 240
 
-      runs-on: ubuntu-20.04
+      runs-on: ubuntu-latest
       strategy:
           fail-fast: false
           matrix:
@@ -104,7 +104,7 @@ jobs:
       steps:
           -   name: Install apt packages
               run: |
-                  sudo apt-get install -f libcurl4-openssl-dev libssl-dev gnutls-dev httping expect libmemcached-dev
+                  sudo apt-get install -f libcurl4-openssl-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
           -   uses: actions/checkout@v3
           -   name: Set up Python ${{ matrix.python-version }}
               uses: actions/setup-python@v3
