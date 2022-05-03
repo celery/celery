@@ -816,17 +816,6 @@ class test_group:
             assert sig2_res._get_task_meta()['groups'] == \
                 [g1_res.id, g2_res.id]
 
-    def test_documentation(self, manager, subtests):
-        sig1 = add.si(2, 2)
-        sig1_res = sig1.freeze()
-        g1 = group(sig1, add.si(3, 3))
-        g1.stamp(stamp="your_custom_stamp")
-        res = g1.apply_async()
-        res.get(timeout=TIMEOUT)
-
-        with subtests.test("your_custom_stamp is stamped"):
-            assert sig1_res._get_task_meta()["stamp"] == ['your_custom_stamp']
-
     @flaky
     def test_ready_with_exception(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
