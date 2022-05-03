@@ -827,8 +827,6 @@ class test_group:
         with subtests.test("your_custom_stamp is stamped"):
             assert sig1_res._get_task_meta()["stamp"] == ['your_custom_stamp']
 
-
-
     @flaky
     def test_ready_with_exception(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
