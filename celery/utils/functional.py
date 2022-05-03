@@ -200,6 +200,10 @@ class _regen(UserList, list):
     def __reduce__(self):
         return list, (self.data,)
 
+    def map(self, func):
+        self.__consumed = [func(el) for el in self.__consumed]
+        self.__it = map(func, self.__it)
+
     def __length_hint__(self):
         return self.__it.__length_hint__()
 

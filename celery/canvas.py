@@ -1335,8 +1335,7 @@ class group(Signature):
         super().stamp(visitor=visitor, **headers)
 
         if isinstance(self.tasks, _regen):
-            tasks = _regen(map(lambda x: _stamp_regen_task(x, visitor, **headers), self.tasks))
-            self.tasks = tasks
+            self.tasks.map(_partial(_stamp_regen_task, visitor=visitor, **headers))
         else:
             new_tasks = []
             for task in self.tasks:
@@ -1662,8 +1661,7 @@ class _chord(Signature):
             tasks = tasks.tasks
 
         if isinstance(tasks, _regen):
-            tasks = regen(map(lambda x: _stamp_regen_task(x, visitor, **headers), tasks))
-            self.tasks = tasks
+            tasks.map(_partial(_stamp_regen_task, visitor=visitor, **headers))
         else:
             for task in tasks:
                 task.stamp(visitor=visitor, **headers)
