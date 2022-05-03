@@ -1338,13 +1338,15 @@ class group(Signature):
             tasks = _regen(map(lambda x: _stamp_regen_task(x, visitor, **headers), self.tasks))
             self.tasks = tasks
         else:
-            updated_tasks = []
+            new_tasks = []
             for task in self.tasks:
-                if not isinstance(task, abstract.CallableSignature):
-                    task = Signature.from_dict(task)
+                task = maybe_signature(task, app=self.app)
                 task.stamp(visitor=visitor, **headers)
-                updated_tasks.append(task)
-            self.tasks = updated_tasks
+                new_tasks.append(task)
+            if isinstance(self.tasks, MutableSequence):
+                self.tasks[:] = new_tasks
+            else:
+                self.tasks = new_tasks
 
         if visitor is not None:
             visitor.on_group_end(self, **headers)

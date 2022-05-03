@@ -1664,7 +1664,7 @@ class test_chord:
                    ) == 1
 
     @flaky
-    @pytest.mark.parametrize('size', [5, 6, 7, 8, 9])
+    @pytest.mark.parametrize('size', [3, 4, 5, 6, 7, 8, 9])
     def test_generator(self, manager, size):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
