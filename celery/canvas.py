@@ -57,6 +57,11 @@ def task_name_from(task):
     return getattr(task, 'name', task)
 
 
+def _stamp_regen_task(task, visitor, **headers):
+    task.stamp(visitor=visitor, **headers)
+    return task
+
+
 def _merge_dictionaries(d1, d2):
     for key, value in d1.items():
         if key in d2:
@@ -148,7 +153,7 @@ class StampingVisitor(metaclass=ABCMeta):
              Dict: headers to update.
          """
         if not isinstance(chord.tasks, group):
-            chord.freeze()
+            chord.tasks = group(chord.tasks)
         return self.on_group_start(chord.tasks, **header)
 
     def on_chord_header_end(self, chord, **header) -> None:
@@ -185,7 +190,7 @@ class GroupStampingVisitor(StampingVisitor):
 
     def on_group_start(self, group, **headers) -> dict:
         if group.id is None:
-            group.freeze()
+            group.set(task_id=uuid())
 
         if group.id not in self.groups:
             self.groups.append(group.id)
@@ -1324,15 +1329,22 @@ class group(Signature):
             task.set_immutable(immutable)
 
     def stamp(self, visitor=None, **headers):
-        if isinstance(self.tasks, _regen):
-            return
-
         if visitor is not None:
             headers.update(visitor.on_group_start(self, **headers))
 
         super().stamp(visitor=visitor, **headers)
-        for task in self.tasks:
-            task.stamp(visitor=visitor, **headers)
+
+        if isinstance(self.tasks, _regen):
+            tasks = _regen(map(lambda x: _stamp_regen_task(x, visitor, **headers), self.tasks))
+            self.tasks = tasks
+        else:
+            updated_tasks = []
+            for task in self.tasks:
+                if not isinstance(task, abstract.CallableSignature):
+                    task = Signature.from_dict(task)
+                task.stamp(visitor=visitor, **headers)
+                updated_tasks.append(task)
+            self.tasks = updated_tasks
 
         if visitor is not None:
             visitor.on_group_end(self, **headers)
@@ -1635,9 +1647,6 @@ class _chord(Signature):
         return body_result
 
     def stamp(self, visitor=None, **headers):
-        if isinstance(self.tasks, _regen):
-            return
-
         if visitor is not None and self.body is not None:
             headers.update(visitor.on_chord_body(self, **headers))
             self.body.stamp(visitor=visitor, **headers)
@@ -1650,8 +1659,12 @@ class _chord(Signature):
         if isinstance(tasks, group):
             tasks = tasks.tasks
 
-        for task in tasks:
-            task.stamp(visitor=visitor, **headers)
+        if isinstance(tasks, _regen):
+            tasks = regen(map(lambda x: _stamp_regen_task(x, visitor, **headers), tasks))
+            self.tasks = tasks
+        else:
+            for task in tasks:
+                task.stamp(visitor=visitor, **headers)
 
         if visitor is not None:
             visitor.on_chord_header_end(self, **headers)
@@ -1694,10 +1707,10 @@ class _chord(Signature):
         kwargs = kwargs if kwargs else {}
         stamped_headers = self.options.get("stamped_headers")
         groups = self.options.get("groups")
-        self.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
         body = self.body if body is None else body
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
                  else group(self.tasks, app=self.app))
+        self.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
         tasks.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
         return body.apply(
             args=(tasks.apply(args, kwargs).get(propagate=propagate),),

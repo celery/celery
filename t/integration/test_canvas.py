@@ -808,13 +808,26 @@ class test_group:
 
         g1_res = g1.freeze()
         res = g1.apply_async()
-        res.get(timeout=10)
+        res.get(timeout=TIMEOUT)
 
         with subtests.test("sig1 is stamped", groups=[g1_res.id]):
             assert sig1_res._get_task_meta()['groups'] == [g1_res.id]
         with subtests.test("sig2 is stamped", groups=[g1_res.id, g2_res.id]):
             assert sig2_res._get_task_meta()['groups'] == \
                 [g1_res.id, g2_res.id]
+
+    def test_documentation(self, manager, subtests):
+        sig1 = add.si(2, 2)
+        sig1_res = sig1.freeze()
+        g1 = group(sig1, add.si(3, 3))
+        g1.stamp(stamp="your_custom_stamp")
+        res = g1.apply_async()
+        res.get(timeout=TIMEOUT)
+
+        with subtests.test("your_custom_stamp is stamped"):
+            assert sig1_res._get_task_meta()["stamp"] == ['your_custom_stamp']
+
+
 
     @flaky
     def test_ready_with_exception(self, manager):
@@ -1653,7 +1666,7 @@ class test_chord:
                    ) == 1
 
     @flaky
-    @pytest.mark.parametrize('size', [3, 4, 5, 6, 7, 8, 9])
+    @pytest.mark.parametrize('size', [5, 6, 7, 8, 9])
     def test_generator(self, manager, size):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
@@ -1665,6 +1678,7 @@ class test_chord:
                     with open(file_name) as file_handle:
                         # ensures chord header generators tasks are processed incrementally #3021
                         assert file_handle.readline() == '0\n', "Chord header was unrolled too early"
+
                 yield write_to_file_and_return_int.s(file_name, i)
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp_file:

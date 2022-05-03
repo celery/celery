@@ -231,7 +231,7 @@ class test_unlock_chord_task(ChordCase):
                 AnySignatureWithTask(g),
                 mul.s(),
                 (),
-                task_id=ch.tasks.id,
+                task_id=None,
                 interval=10,
                 groups=[ch.tasks.id],
                 stamped_headers=['groups']
