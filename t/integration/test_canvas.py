@@ -126,7 +126,7 @@ class test_link_error:
             args=("test",),
             link_error=retry_once.s(countdown=None)
         )
-        assert result.get(timeout=TIMEOUT, propagate=False) == exception
+        assert result.get(timeout=TIMEOUT / 10, propagate=False) == exception
 
     @flaky
     def test_link_error_using_signature_eager(self):
@@ -147,7 +147,7 @@ class test_link_error:
         fail.link_error(retrun_exception)
 
         exception = ExpectedException("Task expected to fail", "test")
-        assert (fail.delay().get(timeout=TIMEOUT, propagate=False), True) == (
+        assert (fail.delay().get(timeout=TIMEOUT / 10, propagate=False), True) == (
             exception, True)
 
 
@@ -186,7 +186,7 @@ class test_chain:
             )
         )
         res = c()
-        assert res.get(timeout=TIMEOUT) == [4, 5]
+        assert res.get(timeout=TIMEOUT / 10) == [4, 5]
 
     def test_chain_of_chain_with_a_single_task(self, manager):
         sig = signature('any_taskname', queue='any_q')
@@ -481,7 +481,7 @@ class test_chain:
             group(identity.s(42), identity.s(42)),  # [42, 42]
         )
         res = sig.delay()
-        assert res.get(timeout=TIMEOUT) == [42, 42]
+        assert res.get(timeout=TIMEOUT / 10) == [42, 42]
 
     def test_nested_chain_group_mid(self, manager):
         """
@@ -2381,8 +2381,9 @@ class test_chord:
             redis_connection.delete(fail_sig_id)
         with subtests.test(msg="Error propagates from body group"):
             res = chord_sig.delay()
+            sleep(1)
             with pytest.raises(ExpectedException):
-                res.get(timeout=TIMEOUT)
+                res.get(timeout=TIMEOUT * 2)
         with subtests.test(msg="Errback is called after body group fails"):
             # NOTE: Here we expect the errback to be called once per failing
             # task in the chord body since it is a group, and each task has a
