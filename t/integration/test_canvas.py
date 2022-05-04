@@ -2383,7 +2383,7 @@ class test_chord:
             res = chord_sig.delay()
             sleep(1)
             with pytest.raises(ExpectedException):
-                res.get(timeout=TIMEOUT * 2)
+                res.get(timeout=TIMEOUT)
         with subtests.test(msg="Errback is called after body group fails"):
             # NOTE: Here we expect the errback to be called once per failing
             # task in the chord body since it is a group, and each task has a
