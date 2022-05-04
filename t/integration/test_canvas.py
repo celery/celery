@@ -2368,6 +2368,7 @@ class test_chord:
         redis_connection.delete(expected_redis_key)
         with subtests.test(msg="Error propagates from header group"):
             res = chord_sig.delay()
+            sleep(1)
             with pytest.raises(ExpectedException):
                 res.get(timeout=TIMEOUT)
         with subtests.test(msg="Errback is called after header group fails"):
