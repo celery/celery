@@ -704,7 +704,7 @@ in a :keyword:`try` ... :keyword:`except` statement:
         try:
             twitter.refresh_timeline(user)
         except FailWhaleError as exc:
-            raise div.retry(exc=exc, max_retries=5)
+            raise refresh_timeline.retry(exc=exc, max_retries=5)
 
 If you want to automatically retry on any error, simply use:
 
