@@ -1124,7 +1124,7 @@ This means that the first task will have a countdown of one second, the second
 task a countdown of two seconds, and so on.
 
 Stamping
-==============
+=======
 The goal of the Stamping API is to give an ability to mark signature and it components for a debug purposes. For example,
 
 .. code-block:: pycon
