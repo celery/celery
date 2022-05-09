@@ -107,7 +107,6 @@ class CouchbaseBackend(KeyValueStoreBackend):
         else:
             self.connection.upsert(key, value, ttl=self.expires)
 
-
     def mget(self, keys):
         return self.connection.get_multi(keys)
 
