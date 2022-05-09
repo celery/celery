@@ -9,9 +9,13 @@ from .base import KeyValueStoreBackend
 try:
     from couchbase.auth import PasswordAuthenticator
     from couchbase.cluster import Cluster, ClusterOptions
-    from couchbase_core._libcouchbase import FMT_AUTO
 except ImportError:
     Cluster = PasswordAuthenticator = ClusterOptions = None
+
+try:
+    from couchbase_core._libcouchbase import FMT_AUTO
+except ImportError:
+    FMT_AUTO = None
 
 __all__ = ('CouchbaseBackend',)
 
@@ -97,7 +101,12 @@ class CouchbaseBackend(KeyValueStoreBackend):
         return self.connection.get(key).content
 
     def set(self, key, value):
-        self.connection.upsert(key, value, ttl=self.expires, format=FMT_AUTO)
+        # Since 4.0.0 value is JSONType in couchbase lib, so parameter format isn't needed
+        if FMT_AUTO is not None:
+            self.connection.upsert(key, value, ttl=self.expires, format=FMT_AUTO)
+        else:
+            self.connection.upsert(key, value, ttl=self.expires)
+
 
     def mget(self, keys):
         return self.connection.get_multi(keys)
