@@ -1141,11 +1141,12 @@ The goal of the Stamping API is to give an ability to mark signature and it comp
 
 will initialize a group ``g`` and mark its components with stamp ``your_custom_stamp``.
 
-You need to set ``result_extended = True`` for the usage of stamping API.
+For the usage of stamping API to use this feature, you need to set up the :ref:`configuration <configuration:result_extended>` ``CELERY_RESULT_EXTENDED = True``
+or directive ``result_extended = True``.
 
 
 Group stamping
-------
+----------------
 When the ``apply`` and ``apply_async`` methods are called,
 there is an automatic stamping signature with group id.
 Stamps are stored in group header.
@@ -1161,14 +1162,13 @@ to the nesting level. The group stamping is idempotent;
 the task cannot be stamped twice with the same group id.
 
 Canvas stamping
-------
+----------------
 In addition to the default group stamping, we can also stamp
-canvas with custom marks, as shown in the example.
+canvas with custom stamps, as shown in the example.
 
 Custom stamping
-------
+----------------
 If more complex stamping logic is required, it is possible
 to implement custom stamping behavior based on the Visitor
 pattern. The class that implements this custom logic must
 inherit ``VisitorStamping`` and implement appropriate methods.
-
