@@ -1125,7 +1125,18 @@ task a countdown of two seconds, and so on.
 
 Stamping
 =======
-The goal of the Stamping API is to give an ability to mark signature and it components for a debug purposes. For example,
+The goal of the Stamping API is to give an ability to label
+the signature and its components for debug purposes. For example,
+when the canvas is a  complex structure, it may be necessary to
+label each element of the formed structure. The complexity
+increases even more when nested groups are roll-out or chain
+elements are replaced. In such cases, it may be necessary to
+understand which group an element is a part of or on what nested
+level it is. This requires a mechanism that traverses the canvas
+elements and marks them with specific metadata. Stamping API
+allow doing that based on the Visitor pattern.
+
+For example,
 
 .. code-block:: pycon
 
