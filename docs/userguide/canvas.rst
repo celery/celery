@@ -1183,3 +1183,24 @@ If more complex stamping logic is required, it is possible
 to implement custom stamping behavior based on the Visitor
 pattern. The class that implements this custom logic must
 inherit ``VisitorStamping`` and implement appropriate methods.
+
+For example, the following example ``InGroupVisitor`` will label
+tasks that are in side of some group by lable ``in_group``.
+
+.. code-block:: python
+    class InGroupVisitor(StampingVisitor):
+        def __init__(self):
+            self.in_group = False
+
+        def on_group_start(self, group, **headers) -> dict:
+            self.in_group = True
+            return {"in_group": [self.in_group], "stamped_headers": ["in_group"]}
+
+        def on_group_end(self, group, **headers) -> None:
+            self.in_group = False
+
+        def on_chain_start(self, chain, **headers) -> dict:
+            return {"in_group": [self.in_group], "stamped_headers": ["in_group"]}
+
+        def on_signature(self, sig, **headers) -> dict:
+            return {"in_group": [self.in_group], "stamped_headers": ["in_group"]}
