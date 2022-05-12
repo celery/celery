@@ -698,6 +698,8 @@ the behaviour can be somewhat surprising due to the fact that groups are not
 real tasks and simply pass linked tasks down to their encapsulated signatures.
 This means that the return values of a group are not collected to be passed to
 a linked callback signature.
+Additionally, linking the task will *not* guarantee that it will activate only 
+when all group tasks have finished.
 As an example, the following snippet using a simple `add(a, b)` task is faulty
 since the linked `add.s()` signature will not received the finalised group
 result as one might expect.
