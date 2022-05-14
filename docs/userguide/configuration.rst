@@ -583,6 +583,18 @@ worker.
     Enabling this can cause message loops; make sure you know
     what you're doing.
 
+
+.. setting:: task_resultrepr_maxsize
+
+``task_resultrepr_maxsize``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 1024
+
+By default, the result is truncated(ellipsis object).
+
+You can try to increase the size of the log line.
+
 .. setting:: task_default_rate_limit
 
 ``task_default_rate_limit``
