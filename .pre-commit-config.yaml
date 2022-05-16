@@ -27,3 +27,8 @@ repos:
     rev: 5.10.1
     hooks:
       - id: isort
+      
+  - repo: https://github.com/tonybaloney/perflint
+    rev: v0.7.3
+    hooks:
+      - id: perflint
