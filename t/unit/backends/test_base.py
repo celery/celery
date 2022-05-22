@@ -705,6 +705,18 @@ class test_KeyValueStoreBackend:
         stored_meta = self.b.decode(self.b.get(self.b.get_key_for_task(tid)))
         assert stored_meta['status'] == states.SUCCESS
 
+    def test_get_key_for_task_none_task_id(self):
+        with pytest.raises(ValueError):
+            self.b.get_key_for_task(None)
+
+    def test_get_key_for_group_none_group_id(self):
+        with pytest.raises(ValueError):
+            self.b.get_key_for_task(None)
+
+    def test_get_key_for_chord_none_group_id(self):
+        with pytest.raises(ValueError):
+            self.b.get_key_for_group(None)
+
     def test_strip_prefix(self):
         x = self.b.get_key_for_task('x1b34')
         assert self.b._strip_prefix(x) == 'x1b34'
