@@ -1,1 +1,1 @@
-pycouchdb==1.14.1
+pycouchdb==1.14.2
