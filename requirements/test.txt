@@ -1,5 +1,5 @@
 pytest~=7.1.1
-pytest-celery
+pytest-celery==0.0.0
 pytest-subtests==0.7.0
 pytest-timeout~=2.1.0
 boto3>=1.9.178
