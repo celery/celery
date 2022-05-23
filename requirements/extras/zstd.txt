@@ -1,1 +1,1 @@
-zstandard
+zstandard==0.17.0
