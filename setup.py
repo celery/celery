@@ -163,7 +163,7 @@ setuptools.setup(
     license='BSD',
     platforms=['any'],
     install_requires=install_requires(),
-    python_requires=">=3.7,",
+    python_requires=">=3.7",
     tests_require=reqs('test.txt'),
     extras_require=extras_require(),
     cmdclass={'test': pytest},
