@@ -9,6 +9,27 @@ in the & 5.2.x series, please see :ref:`whatsnew-5.2` for
 an overview of what's new in Celery 5.2.
 
 
+.. _version-5.2.7:
+
+5.2.7
+=====
+
+:release-date: 2022-5-25 15:30 P.M UTC+2:00
+:release-by: Omer Katz
+
+- Fix packaging issue which causes poetry 1.2b1 and above to fail install Celery (#7534).
+
+.. _version-5.2.6:
+
+5.2.6
+=====
+
+:release-date: 2022-4-04 21:15 P.M UTC+2:00
+:release-by: Omer Katz
+
+- load_extension_class_names - correct module_name (#7433).
+    This fixes a regression caused by #7218.
+
 .. _version-5.2.5:
 
 5.2.5
@@ -16,6 +37,8 @@ an overview of what's new in Celery 5.2.
 
 :release-date: 2022-4-03 20:42 P.M UTC+2:00
 :release-by: Omer Katz
+
+**This release was yanked due to a regression caused by the PR below**
 
 - Use importlib instead of deprecated pkg_resources (#7218).
 
