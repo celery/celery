@@ -9,6 +9,16 @@ in the & 5.2.x series, please see :ref:`whatsnew-5.2` for
 an overview of what's new in Celery 5.2.
 
 
+.. _version-5.2.7:
+
+5.2.7
+=====
+
+:release-date: 2022-5-25 15:30 P.M UTC+2:00
+:release-by: Omer Katz
+
+- Fix packaging issue which causes poetry 1.2b1 and above to fail install Celery (#7534).
+
 .. _version-5.2.6:
 
 5.2.6
