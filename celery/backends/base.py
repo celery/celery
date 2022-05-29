@@ -849,23 +849,27 @@ class BaseKeyValueStoreBackend(Backend):
 
     def get_key_for_task(self, task_id, key=''):
         """Get the cache key for a task by id."""
-        key_t = self.key_t
-        return key_t('').join([
-            self.task_keyprefix, key_t(task_id), key_t(key),
-        ])
+        if not task_id:
+            raise ValueError(f'task_id must not be empty. Got {task_id} instead.')
+        return self._get_key_for(self.task_keyprefix, task_id, key)
 
     def get_key_for_group(self, group_id, key=''):
         """Get the cache key for a group by id."""
-        key_t = self.key_t
-        return key_t('').join([
-            self.group_keyprefix, key_t(group_id), key_t(key),
-        ])
+        if not group_id:
+            raise ValueError(f'group_id must not be empty. Got {group_id} instead.')
+        return self._get_key_for(self.group_keyprefix, group_id, key)
 
     def get_key_for_chord(self, group_id, key=''):
         """Get the cache key for the chord waiting on group with given id."""
+        if not group_id:
+            raise ValueError(f'group_id must not be empty. Got {group_id} instead.')
+        return self._get_key_for(self.chord_keyprefix, group_id, key)
+
+    def _get_key_for(self, prefix, id, key=''):
         key_t = self.key_t
+
         return key_t('').join([
-            self.chord_keyprefix, key_t(group_id), key_t(key),
+            prefix, key_t(id), key_t(key),
         ])
 
     def _strip_prefix(self, key):

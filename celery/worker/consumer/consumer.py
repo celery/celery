@@ -75,7 +75,7 @@ Did you remember to import the module containing this task?
 Or maybe you're using relative imports?
 
 Please see
-http://docs.celeryq.org/en/latest/internals/protocol.html
+http://docs.celeryq.dev/en/latest/internals/protocol.html
 for more information.
 
 The full contents of the message body was:
@@ -95,7 +95,7 @@ The message has been ignored and discarded.
 
 Please ensure your message conforms to the task
 message protocol as described here:
-http://docs.celeryq.org/en/latest/internals/protocol.html
+http://docs.celeryq.dev/en/latest/internals/protocol.html
 
 The full contents of the message body was:
 %s
