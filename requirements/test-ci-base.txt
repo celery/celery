@@ -1,4 +1,4 @@
-pytest-cov
+pytest-cov==3.0.0
 pytest-github-actions-annotate-failures
 codecov==2.1.12
 -r extras/redis.txt
