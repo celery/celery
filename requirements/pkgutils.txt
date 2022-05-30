@@ -8,4 +8,4 @@ tox>=3.8.4
 sphinx2rst>=1.0
 # Disable cyanide until it's fully updated.
 # cyanide>=1.0.1
-bumpversion
+bumpversion==0.6.0
