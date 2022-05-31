@@ -244,7 +244,7 @@ arguments:
     >>> add.apply_async((2, 2), link=add.s(8))
 
 As expected this will first launch one task calculating :math:`2 + 2`, then
-another task calculating :math:`4 + 8`.
+another task calculating :math:`8 + 4`.
 
 The Primitives
 ==============
