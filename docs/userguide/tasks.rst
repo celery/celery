@@ -913,6 +913,9 @@ General
     :class:`~celery.result.AsyncResult` to check if the task is ready,
     or get its return value.
 
+    Note: Certain features will not work if task results are disabled.
+    For more details check the Canvas documentation.
+
 .. attribute:: Task.store_errors_even_if_ignored
 
     If :const:`True`, errors will be stored even if the task is configured
