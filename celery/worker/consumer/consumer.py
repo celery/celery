@@ -387,6 +387,13 @@ class Consumer:
         )
 
         self._maximum_prefetch_restored = self.initial_prefetch_count == self.max_prefetch_count
+        if not self._maximum_prefetch_restored:
+            logger.info(
+                f"Temporarily reducing the prefetch count to {self.initial_prefetch_count} to avoid over-fetching "
+                f"since {len(tuple(active_requests))} tasks are currently being processed.\n"
+                f"The prefetch count will be gradually restored to {self.max_prefetch_count} as the tasks "
+                "complete processing."
+            )
 
     def register_with_event_loop(self, hub):
         self.blueprint.send_all(
