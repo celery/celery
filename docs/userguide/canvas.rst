@@ -655,6 +655,12 @@ Groups
 
 .. versionadded:: 3.0
 
+.. note::
+
+    Similarly to chords, tasks used in a group must *not* ignore their results.
+    See ":ref:`chord-important-notes`" for more information.
+
+
 A group can be used to execute several tasks in parallel.
 
 The :class:`~celery.group` function takes a list of signatures:
@@ -698,7 +704,7 @@ the behaviour can be somewhat surprising due to the fact that groups are not
 real tasks and simply pass linked tasks down to their encapsulated signatures.
 This means that the return values of a group are not collected to be passed to
 a linked callback signature.
-Additionally, linking the task will *not* guarantee that it will activate only 
+Additionally, linking the task will *not* guarantee that it will activate only
 when all group tasks have finished.
 As an example, the following snippet using a simple `add(a, b)` task is faulty
 since the linked `add.s()` signature will not received the finalised group
@@ -814,7 +820,7 @@ Chords
 
     Tasks used within a chord must *not* ignore their results. If the result
     backend is disabled for *any* task (header or body) in your chord you
-    should read ":ref:`chord-important-notes`." Chords are not currently
+    should read ":ref:`chord-important-notes`". Chords are not currently
     supported with the RPC result backend.
 
 
