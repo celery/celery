@@ -2,6 +2,7 @@ pytest~=7.1.1
 pytest-celery
 pytest-subtests==0.8.0
 pytest-timeout~=2.1.0
+pytest-click
 boto3>=1.9.178
 moto>=2.2.6
 # typing extensions
