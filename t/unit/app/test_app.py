@@ -591,8 +591,8 @@ class test_App:
         mocked_celery.main.assert_called_with(
             args=['worker', '--help'], standalone_mode=False)
 
-    def test_config_from_envvar(self):
-        os.environ['CELERYTEST_CONFIG_OBJECT'] = 't.unit.app.test_app'
+    def test_config_from_envvar(self, monkeypatch):
+        monkeypatch.setenv("CELERYTEST_CONFIG_OBJECT", 't.unit.app.test_app')
         self.app.config_from_envvar('CELERYTEST_CONFIG_OBJECT')
         assert self.app.conf.THIS_IS_A_KEY == 'this is a value'
 
