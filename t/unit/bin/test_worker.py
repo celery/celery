@@ -14,7 +14,7 @@ def test_cli(isolated_cli_runner: CliRunner):
     Logging._setup = True  # To avoid hitting the logging sanity checks
     res = isolated_cli_runner.invoke(
         celery,
-        ["-A", "t.unit.bin.proj.app", "worker"],
+        ["-A", "t.unit.bin.proj.app", "worker", "--pool", "solo"],
         catch_exceptions=False
     )
     assert res.exit_code == 1, (res, res.stdout)
