@@ -987,7 +987,7 @@ class test_tasks(TasksCase):
             presult2 = self.mytask.apply_async(
                 kwargs={'name': 'George Costanza'},
                 eta=self.now() + timedelta(days=1),
-                expires=(self.now() - timedelta(days=2)).isoformat(),
+                expires=self.now() - timedelta(days=2),
             )
             self.assert_next_task_data_equal(
                 consumer, presult2, self.mytask.name,
