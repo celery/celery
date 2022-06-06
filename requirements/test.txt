@@ -6,7 +6,7 @@ pytest-click==1.1.0
 boto3>=1.9.178
 moto>=2.2.6
 # typing extensions
-mypy; platform_python_implementation=="CPython"
+mypy==0.960; platform_python_implementation=="CPython"
 pre-commit==2.18.1
 -r extras/yaml.txt
 -r extras/msgpack.txt
