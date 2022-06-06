@@ -30,8 +30,7 @@ from celery.utils.functional import first, head_from_fun, maybe_list
 from celery.utils.imports import gen_task_name, instantiate, symbol_by_name
 from celery.utils.log import get_logger
 from celery.utils.objects import FallbackContext, mro_lookup
-from celery.utils.time import (maybe_iso8601, maybe_make_aware, timezone,
-                               to_utc)
+from celery.utils.time import maybe_make_aware, timezone, to_utc
 
 # Load all builtin tasks
 from . import builtins  # noqa
