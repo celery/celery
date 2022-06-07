@@ -11,4 +11,11 @@ body:
     render: python3
   validations:
    required: true
+- type: textarea
+  id: repro
+  attributes:
+    label: Expected Behavior
+    description: "Describe in detail what you expect to happen"
+  validations:
+    required: true
 ---
