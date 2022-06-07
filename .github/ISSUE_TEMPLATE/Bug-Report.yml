@@ -18,4 +18,18 @@ body:
     description: "Describe in detail what you expect to happen"
   validations:
     required: true
+- type: dropdown
+  id: version
+  attributes:
+    label: Minimal Python Version
+    description: 
+    options: 
+    - 3.7
+    - 3.8
+    - 3.9
+    - 3.10
+  validations:
+    required: true
+   
+ 
 ---
