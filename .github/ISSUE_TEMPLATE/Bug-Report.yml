@@ -30,6 +30,9 @@ body:
     - '3.10'
   validations:
     required: true
+- type: dropdown
+  id: Celery version
+  attributes:    
     label: Minimal Celery Version
     description: 
     options: 
@@ -38,6 +41,5 @@ body:
     - '5.2'
   validations:
     required: true
-   
- 
+    
 ---
