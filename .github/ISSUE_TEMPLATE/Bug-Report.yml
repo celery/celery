@@ -19,7 +19,7 @@ body:
   validations:
     required: true
 - type: dropdown
-  id: version
+  id: python version
   attributes:
     label: Minimal Python Version
     description: 
@@ -28,6 +28,14 @@ body:
     - 3.8
     - 3.9
     - '3.10'
+  validations:
+    required: true
+    label: Minimal Celery Version
+    description: 
+    options: 
+    - '5.0'
+    - '5.1'
+    - '5.2'
   validations:
     required: true
    
