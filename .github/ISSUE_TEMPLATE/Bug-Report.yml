@@ -30,6 +30,4 @@ body:
     - '3.10'
   validations:
     required: true
-
-    
 ---
