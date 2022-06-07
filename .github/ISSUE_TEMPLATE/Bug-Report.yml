@@ -31,7 +31,7 @@ body:
   validations:
     required: true
 - type: dropdown
-  id: celery version
+  id: python version
   attributes:    
     label: Minimal Celery Version
     description: 
