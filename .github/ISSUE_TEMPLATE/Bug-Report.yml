@@ -8,7 +8,7 @@ body:
   attributes:
     label: Minimally Reproducible Test Case
     description: "Provide a code sample which is the most minimal example possible for reproducing the bug (Paste a Gist or a link to a Github repository if the MRTC is too long)"
-    render: Python
+    render: python3
   validations:
    required: true
 ---
