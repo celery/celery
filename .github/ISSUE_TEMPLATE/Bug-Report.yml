@@ -75,15 +75,15 @@ body:
     required: true
     
 - type: dropdown
-  id: Kombu_version
+  id: python_package
   attributes:
     label: Python Packages
     description: 
     options: 
     - 1
-    - 1
-    - 1
-    - 1
+    - 2
+    - 3
+    - 4
     
   validations:
     required: true
