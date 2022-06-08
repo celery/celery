@@ -34,6 +34,15 @@ body:
     description: "Describe in detail what you expect to happen"
   validations:
     required: true
+    
+- type: textarea
+  id: actual
+  attributes:
+    label: Actual Behavior
+    description: "Describe in detail what actually happened"
+  validations:
+    required: true
+    
 - type: dropdown
   id: python_version
   attributes:
