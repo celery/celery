@@ -48,8 +48,7 @@ body:
     description: "Describe in detail what actually happened"
     placeholder: |
       Please include a backtrace and surround it with triple backticks (```).
-      In addition, include the Celery daemon logs, the broker logs,
-      the result backend logs and system logs below if they will help us debug the issue
+      In addition, include the Celery daemon logs, the broker logs, the result backend logs and system logs below if they will help us debug the issue
   validations:
     required: true
     
