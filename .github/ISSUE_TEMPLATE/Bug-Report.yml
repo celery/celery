@@ -74,17 +74,12 @@ body:
   validations:
     required: true
     
-- type: dropdown
+- type: textarea
   id: python_package
   attributes:
     label: Python Packages
-    description: 
-    options: 
-    - 1
-    - 2
-    - 3
-    - 4
-    
+    description: Please fill the contents of pip freeze below
+      
   validations:
     required: true
     
