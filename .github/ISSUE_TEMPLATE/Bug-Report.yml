@@ -8,7 +8,7 @@ body:
   attributes: 
     label: Checklist
     description: 
-    value:
+    options:
     - I have verified that the issue exists against the `master` branch of Celery
     - This has already been asked to the [discussions forum](https://github.com/celery/celery/discussions) first
     - I have read the relevant section in the [contribution guide](https://docs.celeryq.dev/en/master/contributing.html#other-bugs) on reporting bugs
