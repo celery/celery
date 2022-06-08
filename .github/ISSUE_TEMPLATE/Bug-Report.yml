@@ -19,7 +19,7 @@ body:
   validations:
     required: true
 - type: dropdown
-  id: python version
+  id: python_version
   attributes:
     label: Minimal Python Version
     description: 
