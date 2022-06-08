@@ -38,7 +38,7 @@ body:
   id: python_version
   attributes:
     label: Minimal Python Version
-    description: 
+    description: Please select the minimal Python supported version
     options: 
     - 3.7
     - 3.8
@@ -51,7 +51,7 @@ body:
   id: celery_version
   attributes:
     label: Minimal Celery Version
-    description: 
+    description: Please select the minimal Celery supported version
     options: 
     - '5.0'
     - 5.1
@@ -62,7 +62,7 @@ body:
 
 - type: dropdown
   id: Kombu_version
-  attributes:
+  attributes: Please select the minimal Kombu supported version
     label: Minimal Kombu Version
     description: 
     options: 
