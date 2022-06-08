@@ -19,7 +19,6 @@ body:
   validations:
     required: true
 - type: dropdown
-  id: python version
   attributes:
     label: Minimal Python Version
     description: 
