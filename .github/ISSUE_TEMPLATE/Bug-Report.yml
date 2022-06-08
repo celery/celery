@@ -25,13 +25,14 @@ body:
     label: Minimally Reproducible Test Case
     description: "Provide a code sample which is the most minimal example possible for reproducing the bug (Paste a Gist or a link to a Github repository if the MRTC is too long)"
     placeholder: |
-      We prefer submitting test cases in the form of a PR to our integration test suite. 
-      If you can provide one, please mention the PR number below. 
-      If not, please attach the most minimal code example required to reproduce the issue below. 
-      If the test case is too large, please include a link to a gist or a repository below.
+      We prefer submitting test cases in the form of a PR to our integration test suite
+      If you can provide one, please mention the PR number below
+      If not, please attach the most minimal code example required to reproduce the issue below
+      If the test case is too large, please include a link to a gist or a repository below
     render: python3
   validations:
    required: true
+   
 - type: textarea
   id: repro
   attributes:
@@ -45,6 +46,10 @@ body:
   attributes:
     label: Actual Behavior
     description: "Describe in detail what actually happened"
+    placeholder: |
+      Please include a backtrace and surround it with triple backticks (```).
+      In addition, include the Celery daemon logs, the broker logs,
+      the result backend logs and system logs below if they will help us debug the issue
   validations:
     required: true
     
