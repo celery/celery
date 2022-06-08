@@ -69,8 +69,23 @@ body:
     - 4.6
     - '5.0'
     - 5.1
-    - 5.2
+    - 5.2 
 
   validations:
     required: true
+    
+- type: dropdown
+  id: Kombu_version
+  attributes:
+    label: Python Packages
+    description: 
+    options: 
+    - 1
+    - 1
+    - 1
+    - 1
+    
+  validations:
+    required: true
+    
 ---
