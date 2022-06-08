@@ -43,4 +43,18 @@ body:
 
   validations:
     required: true
+
+- type: dropdown
+  id: celery_version
+  attributes:
+    label: Minimal Kombu Version
+    description: 
+    options: 
+    - 4.6
+    - '5.0'
+    - 5.1
+    - 5.2
+
+  validations:
+    required: true
 ---
