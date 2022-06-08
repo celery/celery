@@ -62,9 +62,9 @@ body:
 
 - type: dropdown
   id: Kombu_version
-  attributes: Please select the minimal Kombu supported version
+  attributes: 
     label: Minimal Kombu Version
-    description: 
+    description: Please select the minimal Kombu supported version
     options: 
     - 4.6
     - '5.0'
