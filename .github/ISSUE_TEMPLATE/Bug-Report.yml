@@ -45,7 +45,7 @@ body:
     required: true
 
 - type: dropdown
-  id: celery_version
+  id: Kombu_version
   attributes:
     label: Minimal Kombu Version
     description: 
