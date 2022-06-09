@@ -787,7 +787,7 @@ You can also set `autoretry_for`, `max_retries`, `retry_backoff`, `retry_backoff
     and the actual delay value will be a random number between zero and that
     maximum. By default, this option is set to ``True``.
 
-.. versionadded:: 5.2.4
+.. versionadded:: 5.3.0
 
 .. attribute:: Task.dont_autoretry_for
 
