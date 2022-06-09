@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v3
       - uses: pre-commit/action@v3.0.0
       - run: pip install --upgrade pip wheel
       - run: pip install -U bandit codespell flake8 isort pytest pyupgrade tox
