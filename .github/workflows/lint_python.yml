@@ -1,14 +1,14 @@
-name: lint_python
-on: [pull_request, push]
+name: lint Python
+on: [pull_request]
 jobs:
   lint_python:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-      - uses: pre-commit/action@v2.0.3
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+      - uses: pre-commit/action@v3.0.0
       - run: pip install --upgrade pip wheel
-      - run: pip install bandit codespell flake8 isort pytest pyupgrade tox
+      - run: pip install -U bandit codespell flake8 isort pytest pyupgrade tox
 
       - name: bandit
         run: bandit -r . || true
