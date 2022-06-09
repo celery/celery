@@ -47,6 +47,7 @@ class TaskWithRetry(Task):
     retry_backoff_max = 700
     retry_jitter = False
 
+
 class TaskWithRetryButForTypeError(Task):
     autoretry_for = (Exception,)
     dont_autoretry_for = (TypeError,)
@@ -54,7 +55,6 @@ class TaskWithRetryButForTypeError(Task):
     retry_backoff = True
     retry_backoff_max = 700
     retry_jitter = False
-
 
 
 class TasksCase:
@@ -239,7 +239,6 @@ class TasksCase:
             return a / b
 
         self.autoretry_arith_task = autoretry_arith_task
-
 
         @self.app.task(bind=True, autoretry_for=(HTTPError,),
                        retry_backoff=True, shared=False)
