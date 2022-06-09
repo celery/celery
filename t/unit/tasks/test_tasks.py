@@ -584,7 +584,7 @@ class test_task_retries(TasksCase):
         self.autoretry_arith_task.max_retries = 3
         self.autoretry_arith_task.iterations = 0
         self.autoretry_arith_task.apply((1, 0))
-        assert self.autoretry_task.iterations == 1
+        assert self.autoretry_arith_task.iterations == 1
 
     @patch('random.randrange', side_effect=lambda i: i - 1)
     def test_autoretry_backoff(self, randrange):
