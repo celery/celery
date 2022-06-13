@@ -21,4 +21,4 @@
 git+https://github.com/celery/kombu.git
 
 # SQS dependencies other than boto
-pycurl==7.43.0.5  # Latest version with wheel built (for appveyor)
+pycurl==7.45.1  # Latest version with wheel built (for appveyor)
