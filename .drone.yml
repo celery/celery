@@ -1,0 +1,106 @@
+kind: pipeline
+type: kubernetes
+name: publish
+
+trigger:
+  event:
+    - push
+  exclude:
+    - pull_request
+
+image_pull_secrets:
+  - DOCKER_CONFIG_JSON
+
+# resource requests are defined on the pipeline level
+resources:
+  requests:
+  {{ if .input.cpuRequest }}
+    cpu: {{ .input.cpuRequest }}
+  {{ else }}
+    cpu: 1000
+  {{ end }}
+
+  steps:
+  # when merge to dev do a real release
+  - name: release
+    image: harbor.devops.indico.io/indico/semantic-releaser:v4
+    settings:
+      username:
+        from_secret: harbor_username
+      password:
+        from_secret: harbor_password
+      registry: harbor.devops.indico.io
+    environment:
+      GITHUB_ACCESS_TOKEN:
+        from_secret: GITHUB_PAT
+      GH_TOKEN:
+        from_secret: GITHUB_PAT
+      REPOSITORY_PASSWORD:
+        from_secret: GEMFURY_TOKEN
+      REPOSITORY_USERNAME:
+        from_secret: GEMFURY_TOKEN
+    commands:
+      - "semantic-release publish -D commit_subject='{version} [CI SKIP]'"
+    when:
+      branch:
+        - development
+
+  # if on a feature branch do a prerelease
+  - name: prerelease
+    image: harbor.devops.indico.io/indico/semantic-releaser:v4
+    environment:
+      GITHUB_ACCESS_TOKEN:
+        from_secret: GITHUB_PAT
+      GH_TOKEN:
+        from_secret: GITHUB_PAT
+      REPOSITORY_PASSWORD:
+        from_secret: GEMFURY_TOKEN
+      REPOSITORY_USERNAME:
+        from_secret: GEMFURY_TOKEN
+    commands:
+      # filter for fix and feat commits (other tags break semantic-release)
+      ## ex. 'fix: dev-num' and 'feat: dev-num' are valid and `update algorithm` is not
+      - bash -c '[[ "$DRONE_COMMIT_MESSAGE" = fix:* ]] || [[ "$DRONE_COMMIT_MESSAGE" = feat:* ]]'
+      # normalize branch name to alphanumeric (required by pep 440)
+      ## ex. if on 'feature/Drone-Template2', LOCALID normalizes to 'DroneTemplate2'
+      - export LOCALID=$$(echo ${DRONE_SOURCE_BRANCH} | cut -c 9- | sed 's/[^a-z0-9]*//gi')
+      # publish prerelease with local version id of normalized branch
+      ## ex. if already on version 1.0.0, committing to 'feature/Drone-Template' would
+      ##     result in a prerelease labeled '1.0.0-pre1+DroneTemplate.1'.
+      ##     local versions bump incrementally, so if existing projects specify deps
+      ##     semantically (or within a range), Poetry/pip should resolve correctly
+      - semantic-release publish --prerelease -D prerelease_tag="pre1+$${LOCALID}" -D branch="${DRONE_SOURCE_BRANCH}" -D commit_subject="{version} [CI SKIP]"
+    when:
+      branch:
+        - feature/*
+
+---
+kind: secret
+name: DOCKER_CONFIG_JSON
+get:
+  path: tools/drone/devops_harbor_pull_secret
+  name: DOCKER_CONFIG_JSON
+---
+kind: secret
+name: harbor_username
+get:
+  path: tools/drone/harbor-push-token
+  name: username
+---
+kind: secret
+name: harbor_password
+get:
+  path: tools/drone/harbor-push-token
+  name: password
+---
+kind: secret
+name: GITHUB_PAT
+get:
+  path: tools/drone/devops-sa-credentials
+  name: GITHUB_PAT
+---
+kind: secret
+name: GEMFURY_TOKEN
+get:
+  path: tools/drone/gemfury
+  name: token

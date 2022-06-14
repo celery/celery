@@ -4,3 +4,16 @@ testpaths = "t/unit/"
 python_classes = "test_*"
 xdfail_strict=true
 markers = ["sleepdeprived_patched_module", "masked_modules", "patched_environ", "patched_module"]
+
+[tool.semantic_release]
+version_variable = ["celery/__init__.py:__version__"]
+version_toml = ["pyproject.toml:tool.poetry.version"]
+branch = "development"
+upload_to_respository=true
+repository_url="https://push.fury.io/indico"
+build_command="poetry build"
+
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
