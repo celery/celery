@@ -137,6 +137,22 @@ isn't recommended in production:
     :sig:`HUP` is disabled on macOS because of a limitation on
     that platform.
 
+Automatic re-connection on connection loss to broker
+====================================================
+
+Unless :setting:`broker_connection_retry_on_startup` is set to False,
+Celery will automatically retry reconnecting to the broker after the first
+connection loss. :setting:`broker_connection_retry` controls whether to automatically
+retry reconnecting to the broker for subsequent reconnects.
+
+If :setting:`worker_cancel_long_running_tasks_on_connection_loss` is set to True,
+Celery will also cancel any long running task that is currently running.
+
+Since the message broker does not track how many tasks were already fetched before
+the connection was lost, Celery will reduce the prefetch count by the number of
+tasks that are currently running multiplied by :setting:`worker_prefetch_multiplier`.
+The prefetch count will be gradually restored to the maximum allowed after
+each time a task that was running before the connection was lost is complete.
 
 .. _worker-process-signals:
 
