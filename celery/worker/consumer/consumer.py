@@ -674,14 +674,20 @@ class Consumer:
     def _restore_prefetch_count_after_connection_restart(self, p, *args):
         with self.qos._mutex:
             if self._maximum_prefetch_restored:
-                p.cancel()
                 return
 
             new_prefetch_count = min(self.max_prefetch_count, self._new_prefetch_count)
             self.qos.value = self.initial_prefetch_count = new_prefetch_count
             self.qos.set(self.qos.value)
 
+            already_restored = self._maximum_prefetch_restored
             self._maximum_prefetch_restored = new_prefetch_count == self.max_prefetch_count
+
+            if already_restored is False and self._maximum_prefetch_restored is True:
+                logger.info(
+                    "Resuming normal operations following a restart.\n"
+                    f"Prefetch count has been restored to the maximum of {self.max_prefetch_count}"
+                )
 
     @property
     def max_prefetch_count(self):
