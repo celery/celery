@@ -220,7 +220,7 @@ You can do that by adding the following to your :file:`my.cnf`::
     [mysqld]
     transaction-isolation = READ-COMMITTED
 
-For more information about InnoDB`s transaction model see `MySQL - The InnoDB
+For more information about InnoDB’s transaction model see `MySQL - The InnoDB
 Transaction Model and Locking`_ in the MySQL user manual.
 
 (Thanks to Honza Kral and Anton Tsigularov for this solution)
