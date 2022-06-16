@@ -95,9 +95,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
             collection or config.get('collection', self.collection)
         self.username = username or config.get('username', self.username)
         self.password = password or config.get('password', self.password)
-        self.arangodb_url = "{http_protocol}://{host}:{port}".format(
-            http_protocol=self.http_protocol, host=self.host, port=self.port
-        )
+        self.arangodb_url = f"{self.http_protocol}://{self.host}:{self.port}"
         self._connection = None
 
     @property
@@ -122,14 +120,10 @@ class ArangoDbBackend(KeyValueStoreBackend):
     def get(self, key):
         try:
             logging.debug(
-                'RETURN DOCUMENT("{collection}/{key}").task'.format(
-                    collection=self.collection, key=key
-                )
+                f'RETURN DOCUMENT("{self.collection}/{key}").task'
             )
             query = self.db.AQLQuery(
-                'RETURN DOCUMENT("{collection}/{key}").task'.format(
-                    collection=self.collection, key=key
-                )
+                f'RETURN DOCUMENT("{self.collection}/{key}").task'
             )
             result = query.response["result"][0]
             if result is None:
@@ -146,16 +140,12 @@ class ArangoDbBackend(KeyValueStoreBackend):
         """Insert a doc with value into task attribute and _key as key."""
         try:
             logging.debug(
-                'INSERT {{ task: {task}, _key: "{key}" }} INTO {collection}'
-                .format(
-                    collection=self.collection, key=key, task=value
-                )
+                f'INSERT {{ task: {value}, _key: "{key}" }} INTO {self.collection}'
+                
             )
             self.db.AQLQuery(
-                'INSERT {{ task: {task}, _key: "{key}" }} INTO {collection}'
-                .format(
-                    collection=self.collection, key=key, task=value
-                )
+                f'INSERT {{ task: {value}, _key: "{key}" }} INTO {self.collection}'
+                
             )
         except AQLQueryError as aql_err:
             logging.error(aql_err)
@@ -166,20 +156,16 @@ class ArangoDbBackend(KeyValueStoreBackend):
         try:
             json_keys = json.dumps(keys)
             logging.debug(
+                f"""
+                FOR key in {json_keys}
+                    RETURN DOCUMENT(CONCAT("{self.collection}/", key)).task
                 """
-                FOR key in {keys}
-                    RETURN DOCUMENT(CONCAT("{collection}/", key)).task
-                """.format(
-                    collection=self.collection, keys=json_keys
-                )
             )
             query = self.db.AQLQuery(
+                f"""
+                FOR key in {json_keys}
+                    RETURN DOCUMENT(CONCAT("{self.collection}/", key)).task
                 """
-                FOR key in {keys}
-                    RETURN DOCUMENT(CONCAT("{collection}/", key)).task
-                """.format(
-                    collection=self.collection, keys=json_keys
-                )
             )
             results = []
             while True:
@@ -201,14 +187,10 @@ class ArangoDbBackend(KeyValueStoreBackend):
     def delete(self, key):
         try:
             logging.debug(
-                'REMOVE {{ _key: "{key}" }} IN {collection}'.format(
-                    key=key, collection=self.collection
-                )
+                f'REMOVE {{ _key: "{key}" }} IN {self.collection}'
             )
             self.db.AQLQuery(
-                'REMOVE {{ _key: "{key}" }} IN {collection}'.format(
-                    key=key, collection=self.collection
-                )
+                f'REMOVE {{ _key: "{key}" }} IN {self.collection}'
             )
         except AQLQueryError as aql_err:
             logging.error(aql_err)
@@ -220,10 +202,10 @@ class ArangoDbBackend(KeyValueStoreBackend):
         remove_before = (self.app.now() - self.expires_delta).isoformat()
         try:
             query = (
-                'FOR item IN {collection} '
-                'FILTER item.task.date_done < "{remove_before}" '
-                'REMOVE item IN {collection}'
-            ).format(collection=self.collection, remove_before=remove_before)
+                f'FOR item IN {self.collection} '
+                f'FILTER item.task.date_done < "{remove_before}" '
+                f'REMOVE item IN {self.collection}'
+            )
             logging.debug(query)
             self.db.AQLQuery(query)
         except AQLQueryError as aql_err:
