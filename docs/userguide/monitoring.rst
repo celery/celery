@@ -266,9 +266,6 @@ Features
 .. figure:: ../images/dashboard.png
    :width: 700px
 
-.. figure:: ../images/monitor.png
-   :width: 700px
-
 More screenshots_:
 
 .. _screenshots: https://github.com/mher/flower/tree/master/docs/screenshots
