@@ -2,7 +2,7 @@ import logging
 import sys
 from collections import defaultdict
 from io import StringIO
-from tempfile import mktemp
+from tempfile import mkstemp
 from unittest.mock import Mock, patch
 
 import pytest
@@ -210,7 +210,7 @@ class test_default_logger:
 
     @patch('os.fstat')
     def test_setup_logger_no_handlers_file(self, *args):
-        tempfile = mktemp(suffix='unittest', prefix='celery')
+        _, tempfile = mkstemp(suffix='unittest', prefix='celery')
         with patch('builtins.open') as osopen:
             with conftest.restore_logging_context_manager():
                 files = defaultdict(StringIO)
