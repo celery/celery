@@ -539,9 +539,7 @@ class crontab(BaseSchedule):
         super().__init__(**state)
 
     def remaining_delta(self, last_run_at, tz=None, ffwd=ffwd):
-        # pylint: disable=redefined-outer-name
         # caching global ffwd
-        tz = tz or self.tz
         last_run_at = self.maybe_make_aware(last_run_at)
         now = self.maybe_make_aware(self.now())
         dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7
