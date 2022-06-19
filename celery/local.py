@@ -148,12 +148,6 @@ class Proxy:
     def __delitem__(self, key):
         del self._get_current_object()[key]
 
-    def __setslice__(self, i, j, seq):
-        self._get_current_object()[i:j] = seq
-
-    def __delslice__(self, i, j):
-        del self._get_current_object()[i:j]
-
     def __setattr__(self, name, value):
         setattr(self._get_current_object(), name, value)
 
@@ -198,9 +192,6 @@ class Proxy:
 
     def __contains__(self, i):
         return i in self._get_current_object()
-
-    def __getslice__(self, i, j):
-        return self._get_current_object()[i:j]
 
     def __add__(self, other):
         return self._get_current_object() + other
