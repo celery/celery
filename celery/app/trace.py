@@ -369,7 +369,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     from celery import canvas
     signature = canvas.maybe_signature  # maybe_ does not clone if already
 
-    def on_error(request, exc, uuid, state=FAILURE, call_errbacks=True):
+    def on_error(request, exc, state=FAILURE, call_errbacks=True):
         if propagate:
             raise
         I = Info(state, exc)
@@ -459,10 +459,10 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     traceback_clear(exc)
                 except Retry as exc:
                     I, R, state, retval = on_error(
-                        task_request, exc, uuid, RETRY, call_errbacks=False)
+                        task_request, exc, RETRY, call_errbacks=False)
                     traceback_clear(exc)
                 except Exception as exc:
-                    I, R, state, retval = on_error(task_request, exc, uuid)
+                    I, R, state, retval = on_error(task_request, exc)
                     traceback_clear(exc)
                 except BaseException:
                     raise
@@ -516,7 +516,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             uuid, retval, task_request, publish_result,
                         )
                     except EncodeError as exc:
-                        I, R, state, retval = on_error(task_request, exc, uuid)
+                        I, R, state, retval = on_error(task_request, exc)
                     else:
                         Rstr = saferepr(R, resultrepr_maxsize)
                         T = monotonic() - time_start
@@ -566,7 +566,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 raise
             R = report_internal_error(task, exc)
             if task_request is not None:
-                I, _, _, _ = on_error(task_request, exc, uuid)
+                I, _, _, _ = on_error(task_request, exc)
         return trace_ok_t(R, I, T, Rstr)
 
     return trace_task
