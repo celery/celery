@@ -1,10 +1,9 @@
 """Utilities related to importing modules and symbols by name."""
-import importlib
 import os
 import sys
 import warnings
 from contextlib import contextmanager
-from importlib import reload
+from importlib import import_module, reload
 
 try:
     from importlib.metadata import entry_points
@@ -69,7 +68,7 @@ def cwd_in_path():
 def find_module(module, path=None, imp=None):
     """Version of :func:`imp.find_module` supporting dots."""
     if imp is None:
-        imp = importlib.import_module
+        imp = import_module
     with cwd_in_path():
         try:
             return imp(module)
@@ -100,7 +99,7 @@ def import_from_cwd(module, imp=None, package=None):
     precedence over modules located in `sys.path`.
     """
     if imp is None:
-        imp = importlib.import_module
+        imp = import_module
     with cwd_in_path():
         return imp(module, package=package)
 
