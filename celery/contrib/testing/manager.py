@@ -153,7 +153,7 @@ class ManagerMixin:
     def assert_received(self, ids, interval=0.5,
                         desc='waiting for tasks to be received', **policy):
         return self.assert_task_worker_state(
-            self.is_accepted, ids, interval=interval, desc=desc, **policy
+            self.is_received, ids, interval=interval, desc=desc, **policy
         )
 
     def assert_result_tasks_in_progress_or_completed(
