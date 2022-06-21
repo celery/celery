@@ -140,13 +140,19 @@ isn't recommended in production:
 Automatic re-connection on connection loss to broker
 ====================================================
 
+.. versionadded:: 5.3
+
 Unless :setting:`broker_connection_retry_on_startup` is set to False,
 Celery will automatically retry reconnecting to the broker after the first
 connection loss. :setting:`broker_connection_retry` controls whether to automatically
 retry reconnecting to the broker for subsequent reconnects.
 
+.. versionadded:: 5.1
+
 If :setting:`worker_cancel_long_running_tasks_on_connection_loss` is set to True,
 Celery will also cancel any long running task that is currently running.
+
+.. versionadded:: 5.3
 
 Since the message broker does not track how many tasks were already fetched before
 the connection was lost, Celery will reduce the prefetch count by the number of
