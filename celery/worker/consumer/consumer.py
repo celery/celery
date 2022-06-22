@@ -199,6 +199,7 @@ class Consumer:
         self.disable_rate_limits = disable_rate_limits
         self.initial_prefetch_count = initial_prefetch_count
         self.prefetch_multiplier = prefetch_multiplier
+        self._maximum_prefetch_restored = True
 
         # this contains a tokenbucket for each task type by name, used for
         # rate limits, or None if rate limits are disabled for that task.
@@ -379,6 +380,20 @@ class Consumer:
                     request.cancel(self.pool)
         else:
             warnings.warn(CANCEL_TASKS_BY_DEFAULT, CPendingDeprecationWarning)
+
+        self.initial_prefetch_count = max(
+            self.prefetch_multiplier,
+            self.max_prefetch_count - len(tuple(active_requests)) * self.prefetch_multiplier
+        )
+
+        self._maximum_prefetch_restored = self.initial_prefetch_count == self.max_prefetch_count
+        if not self._maximum_prefetch_restored:
+            logger.info(
+                f"Temporarily reducing the prefetch count to {self.initial_prefetch_count} to avoid over-fetching "
+                f"since {len(tuple(active_requests))} tasks are currently being processed.\n"
+                f"The prefetch count will be gradually restored to {self.max_prefetch_count} as the tasks "
+                "complete processing."
+            )
 
     def register_with_event_loop(self, hub):
         self.blueprint.send_all(
@@ -622,10 +637,31 @@ class Consumer:
                 return on_unknown_task(None, message, exc)
             else:
                 try:
+                    ack_log_error_promise = promise(
+                        call_soon,
+                        (message.ack_log_error,),
+                        on_error=self._restore_prefetch_count_after_connection_restart,
+                    )
+                    reject_log_error_promise = promise(
+                        call_soon,
+                        (message.reject_log_error,),
+                        on_error=self._restore_prefetch_count_after_connection_restart,
+                    )
+
+                    if (
+                        not self._maximum_prefetch_restored
+                        and self.restart_count > 0
+                        and self._new_prefetch_count <= self.max_prefetch_count
+                    ):
+                        ack_log_error_promise.then(self._restore_prefetch_count_after_connection_restart,
+                                                   on_error=self._restore_prefetch_count_after_connection_restart)
+                        reject_log_error_promise.then(self._restore_prefetch_count_after_connection_restart,
+                                                      on_error=self._restore_prefetch_count_after_connection_restart)
+
                     strategy(
                         message, payload,
-                        promise(call_soon, (message.ack_log_error,)),
-                        promise(call_soon, (message.reject_log_error,)),
+                        ack_log_error_promise,
+                        reject_log_error_promise,
                         callbacks,
                     )
                 except (InvalidTaskError, ContentDisallowed) as exc:
@@ -634,6 +670,32 @@ class Consumer:
                     return self.on_decode_error(message, exc)
 
         return on_task_received
+
+    def _restore_prefetch_count_after_connection_restart(self, p, *args):
+        with self.qos._mutex:
+            if self._maximum_prefetch_restored:
+                return
+
+            new_prefetch_count = min(self.max_prefetch_count, self._new_prefetch_count)
+            self.qos.value = self.initial_prefetch_count = new_prefetch_count
+            self.qos.set(self.qos.value)
+
+            already_restored = self._maximum_prefetch_restored
+            self._maximum_prefetch_restored = new_prefetch_count == self.max_prefetch_count
+
+            if already_restored is False and self._maximum_prefetch_restored is True:
+                logger.info(
+                    "Resuming normal operations following a restart.\n"
+                    f"Prefetch count has been restored to the maximum of {self.max_prefetch_count}"
+                )
+
+    @property
+    def max_prefetch_count(self):
+        return self.pool.num_processes * self.prefetch_multiplier
+
+    @property
+    def _new_prefetch_count(self):
+        return self.qos.value + self.prefetch_multiplier
 
     def __repr__(self):
         """``repr(self)``."""

@@ -293,6 +293,7 @@ class test_Consumer(ConsumerCase):
             yield SyntaxError('bar')
         c = self.NoopConsumer(task_events=False, pool=BasePool())
         c.loop.side_effect = loop_side_effect()
+        c.pool.num_processes = 2
         c.connection_errors = (KeyError,)
         try:
             with pytest.raises(SyntaxError):
