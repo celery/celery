@@ -558,7 +558,7 @@ class _chain(Signature):
             if isinstance(tasks, tuple):  # aaaargh
                 tasks = d['kwargs']['tasks'] = list(tasks)
             tasks = [maybe_signature(task, app=app) for task in tasks]
-        return _chain(tasks, app=app, **d['options'])
+        return cls(tasks, app=app, **d['options'])
 
     def __init__(self, *tasks, **options):
         tasks = (regen(tasks[0]) if len(tasks) == 1 and is_list(tasks[0])
@@ -957,7 +957,7 @@ class chunks(Signature):
 
     @classmethod
     def from_dict(cls, d, app=None):
-        return chunks(*cls._unpack_args(d['kwargs']), app=app, **d['options'])
+        return cls(*cls._unpack_args(d['kwargs']), app=app, **d['options'])
 
     def __init__(self, task, it, n, **options):
         super().__init__('celery.chunks', (),
@@ -1047,7 +1047,7 @@ class group(Signature):
         d["kwargs"]["tasks"] = rebuilt_tasks = type(orig_tasks)(
             maybe_signature(task, app=app) for task in orig_tasks
         )
-        return group(rebuilt_tasks, app=app, **d['options'])
+        return cls(rebuilt_tasks, app=app, **d['options'])
 
     def __init__(self, *tasks, **options):
         if len(tasks) == 1:
