@@ -64,9 +64,8 @@ class Logging:
         handled = self.setup_logging_subsystem(
             loglevel, logfile, colorize=colorize, hostname=hostname,
         )
-        if not handled:
-            if redirect_stdouts:
-                self.redirect_stdouts(redirect_level)
+        if not handled and redirect_stdouts:
+            self.redirect_stdouts(redirect_level)
         os.environ.update(
             CELERY_LOG_LEVEL=str(loglevel) if loglevel else '',
             CELERY_LOG_FILE=str(logfile) if logfile else '',

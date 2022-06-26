@@ -30,12 +30,6 @@ __all__ = (
     'celery_parameters'
 )
 
-try:
-    WindowsError = WindowsError
-except NameError:
-
-    class WindowsError(Exception):
-        pass
 
 PYPY3 = getattr(sys, 'pypy_version_info', None) and sys.version_info[0] > 3
 
