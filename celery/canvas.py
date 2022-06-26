@@ -582,11 +582,13 @@ class _chain(Signature):
             if not tasks:
                 # If the chain is empty, return the group
                 return other
-            return _chain(seq_concat_item(
+            # use type(self) for _chain subclasses
+            return type(self)(seq_concat_item(
                 tasks, other), app=self._app)
         elif isinstance(other, _chain):
             # chain | chain -> chain
-            return _chain(seq_concat_seq(
+            # use type(self) for _chain subclasses
+            return type(self)(seq_concat_seq(
                 self.unchain_tasks(), other.unchain_tasks()), app=self._app)
         elif isinstance(other, Signature):
             if self.tasks and isinstance(self.tasks[-1], group):
@@ -602,7 +604,8 @@ class _chain(Signature):
                 return sig
             else:
                 # chain | task -> chain
-                return _chain(seq_concat_item(
+                # use type(self) for _chain subclasses
+                return type(self)(seq_concat_item(
                     self.unchain_tasks(), other), app=self._app)
         else:
             return NotImplemented
@@ -894,7 +897,7 @@ class chain(_chain):
                 tasks = tasks[0] if len(tasks) == 1 else tasks
                 # if is_list(tasks) and len(tasks) == 1:
                 #     return super(chain, cls).__new__(cls, tasks, **kwargs)
-                return reduce(operator.or_, tasks, chain())
+                return reduce(operator.or_, tasks, cls())
         return super().__new__(cls, *tasks, **kwargs)
 
 
