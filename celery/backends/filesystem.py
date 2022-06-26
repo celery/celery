@@ -55,7 +55,7 @@ class FilesystemBackend(KeyValueStoreBackend):
 
     def __reduce__(self, args=(), kwargs=None):
         kwargs = {} if not kwargs else kwargs
-        return super().__reduce__(args, dict(kwargs, url=self.url))
+        return super().__reduce__(args, {**kwargs, 'url': self.url})
 
     def _find_path(self, url):
         if not url:
