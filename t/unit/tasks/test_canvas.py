@@ -48,29 +48,34 @@ class CanvasCase:
             return x / y
         self.div = div
 
+
 @Signature.register_type()
 class chord_subclass(chord):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.subtask_type = "chord_subclass"
 
+
 @Signature.register_type()
 class group_subclass(group):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.subtask_type = "group_subclass"
-    
+
+
 @Signature.register_type()
 class chain_subclass(chain):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.subtask_type = "chain_subclass"
 
+
 @Signature.register_type()
 class chunks_subclass(chunks):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.subtask_type = "chunks_subclass"
+
 
 class test_Signature(CanvasCase):
 
@@ -301,7 +306,7 @@ class test_chunks(CanvasCase):
     def test_chunks(self):
         x = self.add.chunks(range(100), 10)
         assert dict(chunks.from_dict(dict(x), app=self.app)) == dict(x)
-                          
+
         assert x.group()
         assert len(x.group().tasks) == 10
 
@@ -1312,7 +1317,6 @@ class test_chord(CanvasCase):
         chord_obj = chord(self.add.s(), body=chord_body)
         top_group = group_type([chord_obj])
 
-
         # We expect the body to be the signature we passed in before we freeze
         with subtests.test(msg="Validate body type and tasks are retained"):
             assert isinstance(chord_obj.body, group_type)
@@ -1366,7 +1370,6 @@ class test_chord(CanvasCase):
         finally:
             _state.task_join_will_block = fixture_task_join_will_block
             result.task_join_will_block = fixture_task_join_will_block
-
 
     @pytest.mark.parametrize("chord_type", [chord, chord_subclass])
     def test_from_dict(self, chord_type):

@@ -897,7 +897,10 @@ class chain(_chain):
                 tasks = tasks[0] if len(tasks) == 1 else tasks
                 # if is_list(tasks) and len(tasks) == 1:
                 #     return super(chain, cls).__new__(cls, tasks, **kwargs)
-                return reduce(operator.or_, tasks, cls())
+                new_instance = reduce(operator.or_, tasks, _chain())
+                if cls != chain and isinstance(new_instance, _chain) and not isinstance(new_instance, cls):
+                    return super().__new__(cls, new_instance.tasks, **kwargs)
+                return new_instance
         return super().__new__(cls, *tasks, **kwargs)
 
 
