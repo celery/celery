@@ -886,7 +886,7 @@ class Task:
                 type_,
                 uuid=req.id, retry=retry, retry_policy=retry_policy, **fields)
 
-    def replace(self, sig):
+    def replace(self, sig, reuse_task_id=True):
         """Replace this task, with a new task inheriting the task id.
 
         Execution of the host task ends immediately and no subsequent statements
@@ -896,6 +896,9 @@ class Task:
 
         Arguments:
             sig (Signature): signature to replace with.
+            reuse_task_id (bool): If False, then dont reuse task id of current
+            task as o/w it breaks task monitoring. If False, AsyncResult.get()
+            will not work.
 
         Raises:
             ~@Ignore: This is always raised when called in asynchronous context.
@@ -927,7 +930,8 @@ class Task:
         # We need to freeze the replacement signature with the current task's
         # ID to ensure that we don't disassociate it from the existing task IDs
         # which would break previously constructed results objects.
-        sig.freeze(self.request.id)
+        if reuse_task_id:
+            sig.freeze(self.request.id)
         # Ensure the important options from the original signature are retained
         replaced_task_nesting = self.request.get('replaced_task_nesting', 0) + 1
         sig.set(
