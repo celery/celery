@@ -232,6 +232,7 @@ class test_unlock_chord_task(ChordCase):
                 mul.s(),
                 (),
                 task_id=None,
+                kwargs={},
                 interval=10,
                 groups=[ch.tasks.id],
                 stamped_headers=['groups']
@@ -255,6 +256,7 @@ class test_unlock_chord_task(ChordCase):
                 mul.s(),
                 (),
                 task_id=sentinel.task_id,
+                kwargs={},
                 interval=10,
                 groups=[ch.tasks.id],
                 stamped_headers=['groups']

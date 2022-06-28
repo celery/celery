@@ -1705,7 +1705,7 @@ class _chord(Signature):
             task_id = option_task_id
 
         # chord([A, B, ...], C)
-        return self.run(tasks, body, args, task_id=task_id, **merged_options)
+        return self.run(tasks, body, args, task_id=task_id, kwargs=kwargs, **merged_options)
 
     def apply(self, args=None, kwargs=None,
               propagate=True, body=None, **options):
@@ -1755,7 +1755,7 @@ class _chord(Signature):
 
     def run(self, header, body, partial_args, app=None, interval=None,
             countdown=1, max_retries=None, eager=False,
-            task_id=None, **options):
+            task_id=None, kwargs=None, **options):
         app = app or self._get_app(body)
         group_id = header.options.get('task_id') or uuid()
         root_id = body.options.get('root_id')
@@ -1782,7 +1782,7 @@ class _chord(Signature):
                 countdown=countdown,
                 max_retries=max_retries,
             )
-            header_result = header(*partial_args, task_id=group_id, **options)
+            header_result = header.apply_async(partial_args, kwargs, task_id=group_id, **options)
         # The execution of a chord body is normally triggered by its header's
         # tasks completing. If the header is empty this will never happen, so
         # we execute the body manually here.

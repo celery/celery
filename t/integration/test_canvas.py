@@ -1424,6 +1424,36 @@ class test_chord:
         res = c()
         assert res.get(timeout=TIMEOUT) == [12, 13, 14, 15]
 
+    def test_group_kwargs(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+        c = (
+            add.s(2, 2) |
+            group(add.s(i) for i in range(4)) |
+            add_to_all.s(8)
+        )
+        res = c.apply_async(kwargs={"z": 1})
+        assert res.get(timeout=TIMEOUT) == [13, 14, 15, 16]
+
+    def test_group_args_and_kwargs(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+        c = (
+            group(add.s(i) for i in range(4)) |
+            add_to_all.s(8)
+        )
+        res = c.apply_async(args=(4,), kwargs={"z": 1})
+        if manager.app.conf.result_backend.startswith('redis'):
+            # for a simple chord like the one above, redis does not guarantee
+            # the ordering of the results as a performance trade off.
+            assert set(res.get(timeout=TIMEOUT)) == {13, 14, 15, 16}
+        else:
+            assert res.get(timeout=TIMEOUT) == [13, 14, 15, 16]
+
     def test_nested_group_chain(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
