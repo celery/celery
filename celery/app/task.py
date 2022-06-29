@@ -8,7 +8,7 @@ from kombu.utils.uuid import uuid
 
 from celery import current_app, states
 from celery._state import _task_stack
-from celery.canvas import _chain, group, signature
+from celery.canvas import GroupStampingVisitor, _chain, group, signature
 from celery.exceptions import Ignore, ImproperlyConfigured, MaxRetriesExceededError, Reject, Retry
 from celery.local import class_property
 from celery.result import EagerResult, denied_join_result
@@ -93,6 +93,8 @@ class Context:
     taskset = None   # compat alias to group
     timelimit = None
     utc = None
+    stamped_headers = None
+    stamps = None
 
     def __init__(self, *args, **kwargs):
         self.update(*args, **kwargs)
@@ -794,8 +796,14 @@ class Task:
                 'exchange': options.get('exchange'),
                 'routing_key': options.get('routing_key'),
                 'priority': options.get('priority'),
-            },
+            }
         }
+        if 'stamped_headers' in options:
+            request['stamped_headers'] = maybe_list(options['stamped_headers'])
+            request['stamps'] = {
+                header: maybe_list(options.get(header, [])) for header in request['stamped_headers']
+            }
+
         tb = None
         tracer = build_tracer(
             task.name, task, eager=True,
@@ -942,6 +950,12 @@ class Task:
         # retain their original task IDs as well
         for t in reversed(self.request.chain or []):
             sig |= signature(t, app=self.app)
+        # Stamping sig with parents groups
+        stamped_headers = self.request.stamped_headers
+        if self.request.stamps:
+            groups = self.request.stamps.get("groups")
+            sig.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
+
         # Finally, either apply or delay the new signature!
         if self.request.is_eager:
             return sig.apply().get()

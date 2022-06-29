@@ -20,7 +20,7 @@ from .tasks import (ExpectedException, add, add_chord_to_chord, add_replaced, ad
                     errback_new_style, errback_old_style, fail, fail_replaced, identity, ids, print_unicode,
                     raise_error, redis_count, redis_echo, replace_with_chain, replace_with_chain_which_raises,
                     replace_with_empty_chain, retry_once, return_exception, return_priority, second_order_replace1,
-                    tsum, write_to_file_and_return_int)
+                    tsum, write_to_file_and_return_int, xsum)
 
 RETRYABLE_EXCEPTIONS = (OSError, ConnectionError, TimeoutError)
 
@@ -30,7 +30,6 @@ def is_retryable_exception(exc):
 
 
 TIMEOUT = 60
-
 
 _flaky = pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
 _timeout = pytest.mark.timeout(timeout=300)
@@ -47,7 +46,7 @@ def await_redis_echo(expected_msgs, redis_key="redis-echo", timeout=TIMEOUT):
     redis_connection = get_redis_connection()
 
     if isinstance(expected_msgs, (str, bytes, bytearray)):
-        expected_msgs = (expected_msgs, )
+        expected_msgs = (expected_msgs,)
     expected_msgs = collections.Counter(
         e if not isinstance(e, str) else e.encode("utf-8")
         for e in expected_msgs
@@ -127,7 +126,7 @@ class test_link_error:
             args=("test",),
             link_error=retry_once.s(countdown=None)
         )
-        assert result.get(timeout=TIMEOUT, propagate=False) == exception
+        assert result.get(timeout=TIMEOUT / 10, propagate=False) == exception
 
     @flaky
     def test_link_error_using_signature_eager(self):
@@ -148,7 +147,7 @@ class test_link_error:
         fail.link_error(retrun_exception)
 
         exception = ExpectedException("Task expected to fail", "test")
-        assert (fail.delay().get(timeout=TIMEOUT, propagate=False), True) == (
+        assert (fail.delay().get(timeout=TIMEOUT / 10, propagate=False), True) == (
             exception, True)
 
 
@@ -166,11 +165,11 @@ class test_chain:
 
     @flaky
     def test_complex_chain(self, manager):
+        g = group(add.s(i) for i in range(4))
         c = (
             add.s(2, 2) | (
                 add.s(4) | add_replaced.s(8) | add.s(16) | add.s(32)
-            ) |
-            group(add.s(i) for i in range(4))
+            ) | g
         )
         res = c()
         assert res.get(timeout=TIMEOUT) == [64, 65, 66, 67]
@@ -187,7 +186,7 @@ class test_chain:
             )
         )
         res = c()
-        assert res.get(timeout=TIMEOUT) == [4, 5]
+        assert res.get(timeout=TIMEOUT / 10) == [4, 5]
 
     def test_chain_of_chain_with_a_single_task(self, manager):
         sig = signature('any_taskname', queue='any_q')
@@ -482,7 +481,7 @@ class test_chain:
             group(identity.s(42), identity.s(42)),  # [42, 42]
         )
         res = sig.delay()
-        assert res.get(timeout=TIMEOUT) == [42, 42]
+        assert res.get(timeout=TIMEOUT / 10) == [42, 42]
 
     def test_nested_chain_group_mid(self, manager):
         """
@@ -494,9 +493,9 @@ class test_chain:
             raise pytest.skip(e.args[0])
 
         sig = chain(
-            identity.s(42),                         # 42
-            group(identity.s(), identity.s()),      # [42, 42]
-            identity.s(),                           # [42, 42]
+            identity.s(42),  # 42
+            group(identity.s(), identity.s()),  # [42, 42]
+            identity.s(),  # [42, 42]
         )
         res = sig.delay()
         assert res.get(timeout=TIMEOUT) == [42, 42]
@@ -506,8 +505,8 @@ class test_chain:
         Test that a final group in a chain with preceding tasks completes.
         """
         sig = chain(
-            identity.s(42),                         # 42
-            group(identity.s(), identity.s()),      # [42, 42]
+            identity.s(42),  # 42
+            group(identity.s(), identity.s()),  # [42, 42]
         )
         res = sig.delay()
         assert res.get(timeout=TIMEOUT) == [42, 42]
@@ -777,6 +776,46 @@ class test_result_set:
 
 
 class test_group:
+    def test_group_stamping(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        sig1 = add.s(1, 1000)
+        sig1_res = sig1.freeze()
+        g1 = group(sig1, add.s(1, 2000))
+        g1_res = g1.freeze()
+        res = g1.apply_async()
+        res.get(timeout=TIMEOUT)
+
+        with subtests.test("sig_1 is stamped", groups=[g1_res.id]):
+            assert sig1_res._get_task_meta()["groups"] == [g1_res.id]
+
+    def test_nested_group_stamping(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        sig1 = add.s(2, 2)
+        sig2 = add.s(2)
+
+        sig1_res = sig1.freeze()
+        sig2_res = sig2.freeze()
+
+        g2 = group(sig2, chain(add.s(4), add.s(2)))
+
+        g2_res = g2.freeze()
+
+        g1 = group(sig1, chain(add.s(1, 1), g2))
+
+        g1_res = g1.freeze()
+        res = g1.apply_async()
+        res.get(timeout=TIMEOUT)
+
+        with subtests.test("sig1 is stamped", groups=[g1_res.id]):
+            assert sig1_res._get_task_meta()['groups'] == [g1_res.id]
+        with subtests.test("sig2 is stamped", groups=[g1_res.id, g2_res.id]):
+            assert sig2_res._get_task_meta()['groups'] == \
+                [g1_res.id, g2_res.id]
+
     @flaky
     def test_ready_with_exception(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
@@ -850,7 +889,7 @@ class test_group:
         """
         Test that a simple group completes.
         """
-        sig = group(identity.s(42), identity.s(42))     # [42, 42]
+        sig = group(identity.s(42), identity.s(42))  # [42, 42]
         res = sig.delay()
         assert res.get(timeout=TIMEOUT) == [42, 42]
 
@@ -860,7 +899,7 @@ class test_group:
         """
         sig = group(
             group(identity.s(42), identity.s(42)),  # [42, 42]
-        )                                       # [42, 42] due to unrolling
+        )  # [42, 42] due to unrolling
         res = sig.delay()
         assert res.get(timeout=TIMEOUT) == [42, 42]
 
@@ -871,8 +910,8 @@ class test_group:
             raise pytest.skip(e.args[0])
 
         gchild_sig = identity.si(42)
-        child_chord = chord((gchild_sig, ), identity.s())
-        group_sig = group((child_chord, ))
+        child_chord = chord((gchild_sig,), identity.s())
+        group_sig = group((child_chord,))
         res = group_sig.delay()
         # Wait for the result to land and confirm its value is as expected
         assert res.get(timeout=TIMEOUT) == [[42]]
@@ -884,9 +923,9 @@ class test_group:
             raise pytest.skip(e.args[0])
 
         gchild_count = 42
-        gchild_sig = chain((identity.si(1337), ) * gchild_count)
-        child_chord = chord((gchild_sig, ), identity.s())
-        group_sig = group((child_chord, ))
+        gchild_sig = chain((identity.si(1337),) * gchild_count)
+        child_chord = chord((gchild_sig,), identity.s())
+        group_sig = group((child_chord,))
         res = group_sig.delay()
         # Wait for the result to land and confirm its value is as expected
         assert res.get(timeout=TIMEOUT) == [[1337]]
@@ -898,9 +937,9 @@ class test_group:
             raise pytest.skip(e.args[0])
 
         gchild_count = 42
-        gchild_sig = group((identity.si(1337), ) * gchild_count)
-        child_chord = chord((gchild_sig, ), identity.s())
-        group_sig = group((child_chord, ))
+        gchild_sig = group((identity.si(1337),) * gchild_count)
+        child_chord = chord((gchild_sig,), identity.s())
+        group_sig = group((child_chord,))
         res = group_sig.delay()
         # Wait for the result to land and confirm its value is as expected
         assert res.get(timeout=TIMEOUT) == [[1337] * gchild_count]
@@ -913,10 +952,10 @@ class test_group:
 
         gchild_count = 42
         gchild_sig = chord(
-            (identity.si(1337), ) * gchild_count, identity.si(31337),
+            (identity.si(1337),) * gchild_count, identity.si(31337),
         )
-        child_chord = chord((gchild_sig, ), identity.s())
-        group_sig = group((child_chord, ))
+        child_chord = chord((gchild_sig,), identity.s())
+        group_sig = group((child_chord,))
         res = group_sig.delay()
         # Wait for the result to land and confirm its value is as expected
         assert res.get(timeout=TIMEOUT) == [[31337]]
@@ -931,19 +970,19 @@ class test_group:
         child_chord = chord(
             (
                 identity.si(42),
-                chain((identity.si(42), ) * gchild_count),
-                group((identity.si(42), ) * gchild_count),
-                chord((identity.si(42), ) * gchild_count, identity.si(1337)),
+                chain((identity.si(42),) * gchild_count),
+                group((identity.si(42),) * gchild_count),
+                chord((identity.si(42),) * gchild_count, identity.si(1337)),
             ),
             identity.s(),
         )
-        group_sig = group((child_chord, ))
+        group_sig = group((child_chord,))
         res = group_sig.delay()
         # Wait for the result to land and confirm its value is as expected. The
         # group result gets unrolled into the encapsulating chord, hence the
         # weird unpacking below
         assert res.get(timeout=TIMEOUT) == [
-            [42, 42, *((42, ) * gchild_count), 1337]
+            [42, 42, *((42,) * gchild_count), 1337]
         ]
 
     @pytest.mark.xfail(raises=TimeoutError, reason="#6734")
@@ -953,8 +992,8 @@ class test_group:
         except NotImplementedError as e:
             raise pytest.skip(e.args[0])
 
-        child_chord = chord(identity.si(42), chain((identity.s(), )))
-        group_sig = group((child_chord, ))
+        child_chord = chord(identity.si(42), chain((identity.s(),)))
+        group_sig = group((child_chord,))
         res = group_sig.delay()
         # The result can be expected to timeout since it seems like its
         # underlying promise might not be getting fulfilled (ref #6734). Pick a
@@ -1219,6 +1258,43 @@ def assert_ping(manager):
 
 
 class test_chord:
+    def test_chord_stamping_two_levels(self, manager, subtests):
+        """
+        For a group within a chord, test that group stamps are stored in
+        the correct order.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        sig_1 = add.s(2, 2)
+        sig_2 = add.s(2)
+
+        sig_1_res = sig_1.freeze()
+        sig_2_res = sig_2.freeze()
+
+        g2 = group(
+            sig_2,
+            add.s(4),
+        )
+
+        g2_res = g2.freeze()
+
+        sig_sum = xsum.s()
+        sig_sum.freeze()
+
+        g1 = chord([sig_1, chain(add.s(4, 4), g2)], sig_sum)
+        g1.freeze()
+
+        res = g1.apply_async()
+        res.get(timeout=TIMEOUT)
+
+        with subtests.test("sig_1_res is stamped", groups=[g1.tasks.id]):
+            assert sig_1_res._get_task_meta()['groups'] == [g1.tasks.id]
+        with subtests.test("sig_2_res is stamped", groups=[g1.id]):
+            assert sig_2_res._get_task_meta()['groups'] == [g1.tasks.id, g2_res.id]
+
     @flaky
     def test_simple_chord_with_a_delay_in_group_save(self, manager, monkeypatch):
         try:
@@ -1589,6 +1665,7 @@ class test_chord:
                     with open(file_name) as file_handle:
                         # ensures chord header generators tasks are processed incrementally #3021
                         assert file_handle.readline() == '0\n', "Chord header was unrolled too early"
+
                 yield write_to_file_and_return_int.s(file_name, i)
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp_file:
@@ -1752,7 +1829,7 @@ class test_chord:
             (
                 group(identity.s(42), identity.s(42)),  # [42, 42]
             ),
-            identity.s()                            # [42, 42]
+            identity.s()  # [42, 42]
         )
         res = sig.delay()
         assert res.get(timeout=TIMEOUT) == [42, 42]
@@ -1772,14 +1849,14 @@ class test_chord:
         sig = chord(
             group(
                 chain(
-                    identity.s(42),     # 42
+                    identity.s(42),  # 42
                     group(
-                        identity.s(),       # 42
-                        identity.s(),       # 42
-                    ),                  # [42, 42]
-                ),                  # [42, 42]
-            ),                  # [[42, 42]] since the chain prevents unrolling
-            identity.s(),       # [[42, 42]]
+                        identity.s(),  # 42
+                        identity.s(),  # 42
+                    ),  # [42, 42]
+                ),  # [42, 42]
+            ),  # [[42, 42]] since the chain prevents unrolling
+            identity.s(),  # [[42, 42]]
         )
         res = sig.delay()
         assert res.get(timeout=TIMEOUT) == [[42, 42]]
@@ -1817,13 +1894,13 @@ class test_chord:
 
         child_sig = fail.s()
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         with subtests.test(msg="Error propagates from simple header task"):
             res = chord_sig.delay()
             with pytest.raises(ExpectedException):
                 res.get(timeout=TIMEOUT)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         with subtests.test(msg="Error propagates from simple body task"):
             res = chord_sig.delay()
             with pytest.raises(ExpectedException):
@@ -1841,7 +1918,7 @@ class test_chord:
         errback = redis_echo.si(errback_msg, redis_key=redis_key)
         child_sig = fail.s()
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         chord_sig.link_error(errback)
         redis_connection.delete(redis_key)
         with subtests.test(msg="Error propagates from simple header task"):
@@ -1853,7 +1930,7 @@ class test_chord:
         ):
             await_redis_echo({errback_msg, }, redis_key=redis_key)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         chord_sig.link_error(errback)
         redis_connection.delete(redis_key)
         with subtests.test(msg="Error propagates from simple body task"):
@@ -1879,7 +1956,7 @@ class test_chord:
         errback = errback_task.s()
         child_sig = fail.s()
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         chord_sig.link_error(errback)
         expected_redis_key = chord_sig.body.freeze().id
         redis_connection.delete(expected_redis_key)
@@ -1892,7 +1969,7 @@ class test_chord:
         ):
             await_redis_count(1, redis_key=expected_redis_key)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         chord_sig.link_error(errback)
         expected_redis_key = chord_sig.body.freeze().id
         redis_connection.delete(expected_redis_key)
@@ -1914,7 +1991,7 @@ class test_chord:
 
         child_sig = chain(identity.si(42), fail.s(), identity.si(42))
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         with subtests.test(
             msg="Error propagates from header chain which fails before the end"
         ):
@@ -1922,7 +1999,7 @@ class test_chord:
             with pytest.raises(ExpectedException):
                 res.get(timeout=TIMEOUT)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         with subtests.test(
             msg="Error propagates from body chain which fails before the end"
         ):
@@ -1942,7 +2019,7 @@ class test_chord:
         errback = redis_echo.si(errback_msg, redis_key=redis_key)
         child_sig = chain(identity.si(42), fail.s(), identity.si(42))
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         chord_sig.link_error(errback)
         redis_connection.delete(redis_key)
         with subtests.test(
@@ -1956,7 +2033,7 @@ class test_chord:
         ):
             await_redis_echo({errback_msg, }, redis_key=redis_key)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         chord_sig.link_error(errback)
         redis_connection.delete(redis_key)
         with subtests.test(
@@ -1986,7 +2063,7 @@ class test_chord:
         fail_sig_id = fail_sig.freeze().id
         child_sig = chain(identity.si(42), fail_sig, identity.si(42))
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         chord_sig.link_error(errback)
         expected_redis_key = chord_sig.body.freeze().id
         redis_connection.delete(expected_redis_key)
@@ -2001,7 +2078,7 @@ class test_chord:
         ):
             await_redis_count(1, redis_key=expected_redis_key)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         chord_sig.link_error(errback)
         expected_redis_key = fail_sig_id
         redis_connection.delete(expected_redis_key)
@@ -2025,7 +2102,7 @@ class test_chord:
 
         child_sig = chain(identity.si(42), fail.s())
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         with subtests.test(
             msg="Error propagates from header chain which fails at the end"
         ):
@@ -2033,7 +2110,7 @@ class test_chord:
             with pytest.raises(ExpectedException):
                 res.get(timeout=TIMEOUT)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         with subtests.test(
             msg="Error propagates from body chain which fails at the end"
         ):
@@ -2053,7 +2130,7 @@ class test_chord:
         errback = redis_echo.si(errback_msg, redis_key=redis_key)
         child_sig = chain(identity.si(42), fail.s())
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         chord_sig.link_error(errback)
         redis_connection.delete(redis_key)
         with subtests.test(
@@ -2067,7 +2144,7 @@ class test_chord:
         ):
             await_redis_echo({errback_msg, }, redis_key=redis_key)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         chord_sig.link_error(errback)
         redis_connection.delete(redis_key)
         with subtests.test(
@@ -2097,7 +2174,7 @@ class test_chord:
         fail_sig_id = fail_sig.freeze().id
         child_sig = chain(identity.si(42), fail_sig)
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         chord_sig.link_error(errback)
         expected_redis_key = chord_sig.body.freeze().id
         redis_connection.delete(expected_redis_key)
@@ -2112,7 +2189,7 @@ class test_chord:
         ):
             await_redis_count(1, redis_key=expected_redis_key)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         chord_sig.link_error(errback)
         expected_redis_key = fail_sig_id
         redis_connection.delete(expected_redis_key)
@@ -2136,13 +2213,13 @@ class test_chord:
 
         child_sig = group(identity.si(42), fail.s())
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         with subtests.test(msg="Error propagates from header group"):
             res = chord_sig.delay()
             with pytest.raises(ExpectedException):
                 res.get(timeout=TIMEOUT)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         with subtests.test(msg="Error propagates from body group"):
             res = chord_sig.delay()
             with pytest.raises(ExpectedException):
@@ -2160,7 +2237,7 @@ class test_chord:
         errback = redis_echo.si(errback_msg, redis_key=redis_key)
         child_sig = group(identity.si(42), fail.s())
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         chord_sig.link_error(errback)
         redis_connection.delete(redis_key)
         with subtests.test(msg="Error propagates from header group"):
@@ -2170,7 +2247,7 @@ class test_chord:
         with subtests.test(msg="Errback is called after header group fails"):
             await_redis_echo({errback_msg, }, redis_key=redis_key)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         chord_sig.link_error(errback)
         redis_connection.delete(redis_key)
         with subtests.test(msg="Error propagates from body group"):
@@ -2196,7 +2273,7 @@ class test_chord:
         fail_sig_id = fail_sig.freeze().id
         child_sig = group(identity.si(42), fail_sig)
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         chord_sig.link_error(errback)
         expected_redis_key = chord_sig.body.freeze().id
         redis_connection.delete(expected_redis_key)
@@ -2207,7 +2284,7 @@ class test_chord:
         with subtests.test(msg="Errback is called after header group fails"):
             await_redis_count(1, redis_key=expected_redis_key)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         chord_sig.link_error(errback)
         expected_redis_key = fail_sig_id
         redis_connection.delete(expected_redis_key)
@@ -2235,7 +2312,7 @@ class test_chord:
             *(fail.s() for _ in range(fail_task_count)),
         )
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         chord_sig.link_error(errback)
         redis_connection.delete(redis_key)
         with subtests.test(msg="Error propagates from header group"):
@@ -2248,7 +2325,7 @@ class test_chord:
             # is attached to the chord body which is a single task!
             await_redis_count(1, redis_key=redis_key)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         chord_sig.link_error(errback)
         redis_connection.delete(redis_key)
         with subtests.test(msg="Error propagates from body group"):
@@ -2285,12 +2362,13 @@ class test_chord:
             *fail_sigs,
         )
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         chord_sig.link_error(errback)
         expected_redis_key = chord_sig.body.freeze().id
         redis_connection.delete(expected_redis_key)
         with subtests.test(msg="Error propagates from header group"):
             res = chord_sig.delay()
+            sleep(1)
             with pytest.raises(ExpectedException):
                 res.get(timeout=TIMEOUT)
         with subtests.test(msg="Errback is called after header group fails"):
@@ -2298,12 +2376,13 @@ class test_chord:
             # is attached to the chord body which is a single task!
             await_redis_count(1, redis_key=expected_redis_key)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         chord_sig.link_error(errback)
         for fail_sig_id in fail_sig_ids:
             redis_connection.delete(fail_sig_id)
         with subtests.test(msg="Error propagates from body group"):
             res = chord_sig.delay()
+            sleep(1)
             with pytest.raises(ExpectedException):
                 res.get(timeout=TIMEOUT)
         with subtests.test(msg="Errback is called after body group fails"):
@@ -2341,7 +2420,7 @@ class test_chord:
             raise pytest.skip(e.args[0])
 
         orig_sig = chord(
-            (replace_with_chain.si(42), identity.s(1337), ),
+            (replace_with_chain.si(42), identity.s(1337),),
             identity.s(),
         )
         res_obj = orig_sig.delay()
@@ -2354,7 +2433,7 @@ class test_chord:
             raise pytest.skip(e.args[0])
 
         orig_sig = chord(
-            (identity.s(42), replace_with_chain.s(1337), identity.s(31337), ),
+            (identity.s(42), replace_with_chain.s(1337), identity.s(31337),),
             identity.s(),
         )
         res_obj = orig_sig.delay()
@@ -2367,7 +2446,7 @@ class test_chord:
             raise pytest.skip(e.args[0])
 
         orig_sig = chord(
-            (identity.s(42), replace_with_chain.s(1337), ),
+            (identity.s(42), replace_with_chain.s(1337),),
             identity.s(),
         )
         res_obj = orig_sig.delay()
