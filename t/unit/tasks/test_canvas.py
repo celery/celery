@@ -83,6 +83,10 @@ class test_Signature(CanvasCase):
         x = Signature('TASK', link=Signature('B', app=self.app), app=self.app)
         assert x.__json__() == dict(x)
 
+    def test_yaml(self):
+        x = Signature('TASK', link=Signature('B', app=self.app), app=self.app)
+        assert x.__yaml__() == dict(x)
+
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_reduce(self):
         x = Signature('TASK', (2, 4), app=self.app)
