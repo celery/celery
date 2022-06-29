@@ -49,6 +49,34 @@ class CanvasCase:
         self.div = div
 
 
+@Signature.register_type()
+class chord_subclass(chord):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.subtask_type = "chord_subclass"
+
+
+@Signature.register_type()
+class group_subclass(group):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.subtask_type = "group_subclass"
+
+
+@Signature.register_type()
+class chain_subclass(chain):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.subtask_type = "chain_subclass"
+
+
+@Signature.register_type()
+class chunks_subclass(chunks):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.subtask_type = "chunks_subclass"
+
+
 class test_Signature(CanvasCase):
 
     def test_getitem_property_class(self):
@@ -268,6 +296,13 @@ class test_xmap_xstarmap(CanvasCase):
 
 class test_chunks(CanvasCase):
 
+    def test_chunks_preserves_state(self):
+        x = self.add.chunks(range(100), 10)
+        d = dict(x)
+        d['subtask_type'] = "chunks_subclass"
+        isinstance(chunks_subclass.from_dict(d), chunks_subclass)
+        isinstance(chunks_subclass.from_dict(d).clone(), chunks_subclass)
+
     def test_chunks(self):
         x = self.add.chunks(range(100), 10)
         assert dict(chunks.from_dict(dict(x), app=self.app)) == dict(x)
@@ -294,11 +329,13 @@ class test_chain(CanvasCase):
         s = self.add.s(1, 1)
         assert chain([chain(s)]).tasks == list(chain(s).tasks)
 
-    def test_clone_preserves_state(self):
-        x = chain(self.add.s(i, i) for i in range(10))
+    @pytest.mark.parametrize("chain_type", (_chain, chain_subclass))
+    def test_clone_preserves_state(self, chain_type):
+        x = chain_type(self.add.s(i, i) for i in range(10))
         assert x.clone().tasks == x.tasks
         assert x.clone().kwargs == x.kwargs
         assert x.clone().args == x.args
+        assert isinstance(x.clone(), chain_type)
 
     def test_repr(self):
         x = self.add.s(2, 2) | self.add.s(2)
@@ -311,24 +348,30 @@ class test_chain(CanvasCase):
         assert result.parent.parent
         assert result.parent.parent.parent is None
 
-    def test_splices_chains(self):
-        c = chain(
+    @pytest.mark.parametrize("chain_type", (_chain, chain_subclass))
+    def test_splices_chains(self, chain_type):
+        c = chain_type(
             self.add.s(5, 5),
-            chain(self.add.s(6), self.add.s(7), self.add.s(8), app=self.app),
+            chain_type(self.add.s(6), self.add.s(7), self.add.s(8), app=self.app),
             app=self.app,
         )
         c.freeze()
         tasks, _ = c._frozen
         assert len(tasks) == 4
+        assert isinstance(c, chain_type)
 
-    def test_from_dict_no_tasks(self):
-        assert chain.from_dict(dict(chain(app=self.app)), app=self.app)
+    @pytest.mark.parametrize("chain_type", [_chain, chain_subclass])
+    def test_from_dict_no_tasks(self, chain_type):
+        assert chain_type.from_dict(dict(chain_type(app=self.app)), app=self.app)
+        assert isinstance(chain_type.from_dict(dict(chain_type(app=self.app)), app=self.app), chain_type)
 
-    def test_from_dict_full_subtasks(self):
-        c = chain(self.add.si(1, 2), self.add.si(3, 4), self.add.si(5, 6))
+    @pytest.mark.parametrize("chain_type", [_chain, chain_subclass])
+    def test_from_dict_full_subtasks(self, chain_type):
+        c = chain_type(self.add.si(1, 2), self.add.si(3, 4), self.add.si(5, 6))
         serialized = json.loads(json.dumps(c))
-        deserialized = chain.from_dict(serialized)
+        deserialized = chain_type.from_dict(serialized)
         assert all(isinstance(task, Signature) for task in deserialized.tasks)
+        assert isinstance(deserialized, chain_type)
 
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_app_falls_back_to_default(self):
@@ -628,6 +671,11 @@ class test_group(CanvasCase):
         assert isinstance(signature(x), group)
         assert isinstance(signature(dict(x)), group)
 
+    def test_reverse_with_subclass(self):
+        x = group_subclass([self.add.s(2, 2), self.add.s(4, 4)])
+        assert isinstance(signature(x), group_subclass)
+        assert isinstance(signature(dict(x)), group_subclass)
+
     def test_cannot_link_on_group(self):
         x = group([self.add.s(2, 2), self.add.s(4, 4)])
         with pytest.raises(TypeError):
@@ -711,29 +759,36 @@ class test_group(CanvasCase):
         finally:
             _task_stack.pop()
 
-    def test_from_dict(self):
-        x = group([self.add.s(2, 2), self.add.s(4, 4)])
+    @pytest.mark.parametrize("group_type", (group, group_subclass))
+    def test_from_dict(self, group_type):
+        x = group_type([self.add.s(2, 2), self.add.s(4, 4)])
         x['args'] = (2, 2)
-        assert group.from_dict(dict(x))
+        value = group_type.from_dict(dict(x))
+        assert value and isinstance(value, group_type)
         x['args'] = None
-        assert group.from_dict(dict(x))
+        value = group_type.from_dict(dict(x))
+        assert value and isinstance(value, group_type)
 
-    def test_from_dict_deep_deserialize(self):
-        original_group = group([self.add.s(1, 2)] * 42)
+    @pytest.mark.parametrize("group_type", (group, group_subclass))
+    def test_from_dict_deep_deserialize(self, group_type):
+        original_group = group_type([self.add.s(1, 2)] * 42)
         serialized_group = json.loads(json.dumps(original_group))
-        deserialized_group = group.from_dict(serialized_group)
+        deserialized_group = group_type.from_dict(serialized_group)
+        assert isinstance(deserialized_group, group_type)
         assert all(
             isinstance(child_task, Signature)
             for child_task in deserialized_group.tasks
         )
 
-    def test_from_dict_deeper_deserialize(self):
-        inner_group = group([self.add.s(1, 2)] * 42)
-        outer_group = group([inner_group] * 42)
+    @pytest.mark.parametrize("group_type", (group, group_subclass))
+    def test_from_dict_deeper_deserialize(self, group_type):
+        inner_group = group_type([self.add.s(1, 2)] * 42)
+        outer_group = group_type([inner_group] * 42)
         serialized_group = json.loads(json.dumps(outer_group))
-        deserialized_group = group.from_dict(serialized_group)
+        deserialized_group = group_type.from_dict(serialized_group)
+        assert isinstance(deserialized_group, group_type)
         assert all(
-            isinstance(child_task, Signature)
+            isinstance(child_task, group_type)
             for child_task in deserialized_group.tasks
         )
         assert all(
@@ -1012,10 +1067,11 @@ class test_chord(CanvasCase):
         # Access it again to make sure the generator is not further evaluated
         c.app
 
-    def test_reverse(self):
-        x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))
-        assert isinstance(signature(x), chord)
-        assert isinstance(signature(dict(x)), chord)
+    @pytest.mark.parametrize("chord_type", [chord, chord_subclass])
+    def test_reverse(self, chord_type):
+        x = chord_type([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))
+        assert isinstance(signature(x), chord_type)
+        assert isinstance(signature(dict(x)), chord_type)
 
     def test_clone_clones_body(self):
         x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))
@@ -1252,15 +1308,18 @@ class test_chord(CanvasCase):
         x.kwargs['body'] = None
         assert 'without body' in repr(x)
 
-    def test_freeze_tasks_body_is_group(self, subtests):
+    @pytest.mark.parametrize("group_type", [group,  group_subclass])
+    def test_freeze_tasks_body_is_group(self, subtests, group_type):
         # Confirm that `group index` values counting up from 0 are set for
         # elements of a chord's body when the chord is encapsulated in a group
         body_elem = self.add.s()
-        chord_body = group([body_elem] * 42)
+        chord_body = group_type([body_elem] * 42)
         chord_obj = chord(self.add.s(), body=chord_body)
-        top_group = group([chord_obj])
+        top_group = group_type([chord_obj])
+
         # We expect the body to be the signature we passed in before we freeze
-        with subtests.test(msg="Validate body tasks are retained"):
+        with subtests.test(msg="Validate body type and tasks are retained"):
+            assert isinstance(chord_obj.body, group_type)
             assert all(
                 embedded_body_elem is body_elem
                 for embedded_body_elem in chord_obj.body.tasks
@@ -1273,6 +1332,8 @@ class test_chord(CanvasCase):
         with subtests.test(
             msg="Validate body group indices count from 0 after freezing"
         ):
+            assert isinstance(chord_obj.body, group_type)
+
             assert all(
                 embedded_body_elem is not body_elem
                 for embedded_body_elem in chord_obj.body.tasks
@@ -1310,17 +1371,19 @@ class test_chord(CanvasCase):
             _state.task_join_will_block = fixture_task_join_will_block
             result.task_join_will_block = fixture_task_join_will_block
 
-    def test_from_dict(self):
+    @pytest.mark.parametrize("chord_type", [chord, chord_subclass])
+    def test_from_dict(self, chord_type):
         header = self.add.s(1, 2)
-        original_chord = chord(header=header)
-        rebuilt_chord = chord.from_dict(dict(original_chord))
-        assert isinstance(rebuilt_chord, chord)
+        original_chord = chord_type(header=header)
+        rebuilt_chord = chord_type.from_dict(dict(original_chord))
+        assert isinstance(rebuilt_chord, chord_type)
 
-    def test_from_dict_with_body(self):
+    @pytest.mark.parametrize("chord_type", [chord, chord_subclass])
+    def test_from_dict_with_body(self, chord_type):
         header = body = self.add.s(1, 2)
-        original_chord = chord(header=header, body=body)
-        rebuilt_chord = chord.from_dict(dict(original_chord))
-        assert isinstance(rebuilt_chord, chord)
+        original_chord = chord_type(header=header, body=body)
+        rebuilt_chord = chord_type.from_dict(dict(original_chord))
+        assert isinstance(rebuilt_chord, chord_type)
 
     def test_from_dict_deep_deserialize(self, subtests):
         header = body = self.add.s(1, 2)
@@ -1337,8 +1400,9 @@ class test_chord(CanvasCase):
         with subtests.test(msg="Verify chord body is deserialized"):
             assert isinstance(deserialized_chord.body, Signature)
 
-    def test_from_dict_deep_deserialize_group(self, subtests):
-        header = body = group([self.add.s(1, 2)] * 42)
+    @pytest.mark.parametrize("group_type", [group, group_subclass])
+    def test_from_dict_deep_deserialize_group(self, subtests, group_type):
+        header = body = group_type([self.add.s(1, 2)] * 42)
         original_chord = chord(header=header, body=body)
         serialized_chord = json.loads(json.dumps(original_chord))
         deserialized_chord = chord.from_dict(serialized_chord)
@@ -1350,22 +1414,23 @@ class test_chord(CanvasCase):
         ):
             assert all(
                 isinstance(child_task, Signature)
-                and not isinstance(child_task, group)
+                and not isinstance(child_task, group_type)
                 for child_task in deserialized_chord.tasks
             )
         # A body which is a group remains as it we passed in
         with subtests.test(
             msg="Validate chord body is deserialized and not unpacked"
         ):
-            assert isinstance(deserialized_chord.body, group)
+            assert isinstance(deserialized_chord.body, group_type)
             assert all(
                 isinstance(body_child_task, Signature)
                 for body_child_task in deserialized_chord.body.tasks
             )
 
-    def test_from_dict_deeper_deserialize_group(self, subtests):
-        inner_group = group([self.add.s(1, 2)] * 42)
-        header = body = group([inner_group] * 42)
+    @pytest.mark.parametrize("group_type", [group, group_subclass])
+    def test_from_dict_deeper_deserialize_group(self, subtests, group_type):
+        inner_group = group_type([self.add.s(1, 2)] * 42)
+        header = body = group_type([inner_group] * 42)
         original_chord = chord(header=header, body=body)
         serialized_chord = json.loads(json.dumps(original_chord))
         deserialized_chord = chord.from_dict(serialized_chord)
@@ -1376,7 +1441,7 @@ class test_chord(CanvasCase):
             msg="Validate chord header tasks are deserialized and unpacked"
         ):
             assert all(
-                isinstance(child_task, group)
+                isinstance(child_task, group_type)
                 for child_task in deserialized_chord.tasks
             )
             assert all(

@@ -558,7 +558,7 @@ class _chain(Signature):
             if isinstance(tasks, tuple):  # aaaargh
                 tasks = d['kwargs']['tasks'] = list(tasks)
             tasks = [maybe_signature(task, app=app) for task in tasks]
-        return _chain(tasks, app=app, **d['options'])
+        return cls(tasks, app=app, **d['options'])
 
     def __init__(self, *tasks, **options):
         tasks = (regen(tasks[0]) if len(tasks) == 1 and is_list(tasks[0])
@@ -582,11 +582,13 @@ class _chain(Signature):
             if not tasks:
                 # If the chain is empty, return the group
                 return other
-            return _chain(seq_concat_item(
+            # use type(self) for _chain subclasses
+            return type(self)(seq_concat_item(
                 tasks, other), app=self._app)
         elif isinstance(other, _chain):
             # chain | chain -> chain
-            return _chain(seq_concat_seq(
+            # use type(self) for _chain subclasses
+            return type(self)(seq_concat_seq(
                 self.unchain_tasks(), other.unchain_tasks()), app=self._app)
         elif isinstance(other, Signature):
             if self.tasks and isinstance(self.tasks[-1], group):
@@ -602,7 +604,8 @@ class _chain(Signature):
                 return sig
             else:
                 # chain | task -> chain
-                return _chain(seq_concat_item(
+                # use type(self) for _chain subclasses
+                return type(self)(seq_concat_item(
                     self.unchain_tasks(), other), app=self._app)
         else:
             return NotImplemented
@@ -894,7 +897,10 @@ class chain(_chain):
                 tasks = tasks[0] if len(tasks) == 1 else tasks
                 # if is_list(tasks) and len(tasks) == 1:
                 #     return super(chain, cls).__new__(cls, tasks, **kwargs)
-                return reduce(operator.or_, tasks, chain())
+                new_instance = reduce(operator.or_, tasks, _chain())
+                if cls != chain and isinstance(new_instance, _chain) and not isinstance(new_instance, cls):
+                    return super().__new__(cls, new_instance.tasks, **kwargs)
+                return new_instance
         return super().__new__(cls, *tasks, **kwargs)
 
 
@@ -957,7 +963,7 @@ class chunks(Signature):
 
     @classmethod
     def from_dict(cls, d, app=None):
-        return chunks(*cls._unpack_args(d['kwargs']), app=app, **d['options'])
+        return cls(*cls._unpack_args(d['kwargs']), app=app, **d['options'])
 
     def __init__(self, task, it, n, **options):
         super().__init__('celery.chunks', (),
@@ -1047,7 +1053,7 @@ class group(Signature):
         d["kwargs"]["tasks"] = rebuilt_tasks = type(orig_tasks)(
             maybe_signature(task, app=app) for task in orig_tasks
         )
-        return group(rebuilt_tasks, app=app, **d['options'])
+        return cls(rebuilt_tasks, app=app, **d['options'])
 
     def __init__(self, *tasks, **options):
         if len(tasks) == 1:
