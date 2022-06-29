@@ -1130,3 +1130,91 @@ of one:
 
 This means that the first task will have a countdown of one second, the second
 task a countdown of two seconds, and so on.
+
+Stamping
+========
+
+.. versionadded:: 5.3
+
+The goal of the Stamping API is to give an ability to label
+the signature and its components for debugging information purposes.
+For example, when the canvas is a complex structure, it may be necessary to
+label some or all elements of the formed structure. The complexity
+increases even more when nested groups are rolled-out or chain
+elements are replaced. In such cases, it may be necessary to
+understand which group an element is a part of or on what nested
+level it is. This requires a mechanism that traverses the canvas
+elements and marks them with specific metadata. The stamping API
+allows doing that based on the Visitor pattern.
+
+For example,
+
+.. code-block:: pycon
+
+    >>> sig1 = add.si(2, 2)
+    >>> sig1_res = sig1.freeze()
+    >>> g = group(sig1, add.si(3, 3))
+    >>> g.stamp(stamp='your_custom_stamp')
+    >>> res = g1.apply_async()
+    >>> res.get(timeout=TIMEOUT)
+    [4, 6]
+    >>> sig1_res._get_task_meta()['stamp']
+    ['your_custom_stamp']
+
+will initialize a group ``g`` and mark its components with stamp ``your_custom_stamp``.
+
+For this feature to be useful, you need to set the :setting:`result_extended`
+configuration option to ``True`` or directive ``result_extended = True``.
+
+
+Group stamping
+--------------
+
+When the ``apply`` and ``apply_async`` methods are called,
+there is an automatic stamping signature with group id.
+Stamps are stored in group header.
+For example, after
+
+.. code-block:: pycon
+
+    >>> g.apply_async()
+
+the header of task sig1 will store the stamp groups with g.id.
+In the case of nested groups, the order of the stamps corresponds
+to the nesting level. The group stamping is idempotent;
+the task cannot be stamped twice with the same group id.
+
+Canvas stamping
+----------------
+
+In addition to the default group stamping, we can also stamp
+canvas with custom stamps, as shown in the example.
+
+Custom stamping
+----------------
+
+If more complex stamping logic is required, it is possible
+to implement custom stamping behavior based on the Visitor
+pattern. The class that implements this custom logic must
+inherit ``VisitorStamping`` and implement appropriate methods.
+
+For example, the following example ``InGroupVisitor`` will label
+tasks that are in side of some group by lable ``in_group``.
+
+.. code-block:: python
+    class InGroupVisitor(StampingVisitor):
+        def __init__(self):
+            self.in_group = False
+
+        def on_group_start(self, group, **headers) -> dict:
+            self.in_group = True
+            return {"in_group": [self.in_group], "stamped_headers": ["in_group"]}
+
+        def on_group_end(self, group, **headers) -> None:
+            self.in_group = False
+
+        def on_chain_start(self, chain, **headers) -> dict:
+            return {"in_group": [self.in_group], "stamped_headers": ["in_group"]}
+
+        def on_signature(self, sig, **headers) -> dict:
+            return {"in_group": [self.in_group], "stamped_headers": ["in_group"]}

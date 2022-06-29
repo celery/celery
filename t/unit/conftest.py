@@ -354,7 +354,7 @@ def sleepdeprived(request):
         >>>     pass
     """
     module = request.node.get_closest_marker(
-            "sleepdeprived_patched_module").args[0]
+        "sleepdeprived_patched_module").args[0]
     old_sleep, module.sleep = module.sleep, noop
     try:
         yield

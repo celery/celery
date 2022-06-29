@@ -230,7 +230,7 @@ class Backend:
                         hasattr(errback.type, '__header__') and
 
                         # workaround to support tasks with bind=True executed as
-                        # link errors. Otherwise retries can't be used
+                        # link errors. Otherwise, retries can't be used
                         not isinstance(errback.type.__header__, partial) and
                         arity_greater(errback.type.__header__, 1)
                 ):
@@ -488,8 +488,11 @@ class Backend:
                     'retries': getattr(request, 'retries', None),
                     'queue': request.delivery_info.get('routing_key')
                     if hasattr(request, 'delivery_info') and
-                    request.delivery_info else None
+                    request.delivery_info else None,
                 }
+                if getattr(request, 'stamps'):
+                    request_meta['stamped_headers'] = request.stamped_headers
+                    request_meta.update(request.stamps)
 
                 if encode:
                     # args and kwargs need to be encoded properly before saving

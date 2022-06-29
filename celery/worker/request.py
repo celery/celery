@@ -315,6 +315,18 @@ class Request:
         return self._request_dict.get('replaced_task_nesting', 0)
 
     @property
+    def groups(self):
+        return self._request_dict.get('groups', [])
+
+    @property
+    def stamped_headers(self) -> list:
+        return self._request_dict.get('stamped_headers', [])
+
+    @property
+    def stamps(self) -> dict:
+        return {header: self._request_dict[header] for header in self.stamped_headers}
+
+    @property
     def correlation_id(self):
         # used similarly to reply_to
         return self._request_dict['correlation_id']

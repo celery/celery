@@ -284,7 +284,9 @@ class AMQP:
                    time_limit=None, soft_time_limit=None,
                    create_sent_event=False, root_id=None, parent_id=None,
                    shadow=None, chain=None, now=None, timezone=None,
-                   origin=None, ignore_result=False, argsrepr=None, kwargsrepr=None):
+                   origin=None, ignore_result=False, argsrepr=None, kwargsrepr=None, stamped_headers=None,
+                   **options):
+
         args = args or ()
         kwargs = kwargs or {}
         if not isinstance(args, (list, tuple)):
@@ -319,25 +321,30 @@ class AMQP:
         if not root_id:  # empty root_id defaults to task_id
             root_id = task_id
 
+        stamps = {header: maybe_list(options[header]) for header in stamped_headers or []}
+        headers = {
+            'lang': 'py',
+            'task': name,
+            'id': task_id,
+            'shadow': shadow,
+            'eta': eta,
+            'expires': expires,
+            'group': group_id,
+            'group_index': group_index,
+            'retries': retries,
+            'timelimit': [time_limit, soft_time_limit],
+            'root_id': root_id,
+            'parent_id': parent_id,
+            'argsrepr': argsrepr,
+            'kwargsrepr': kwargsrepr,
+            'origin': origin or anon_nodename(),
+            'ignore_result': ignore_result,
+            'stamped_headers': stamped_headers,
+            'stamps': stamps,
+        }
+
         return task_message(
-            headers={
-                'lang': 'py',
-                'task': name,
-                'id': task_id,
-                'shadow': shadow,
-                'eta': eta,
-                'expires': expires,
-                'group': group_id,
-                'group_index': group_index,
-                'retries': retries,
-                'timelimit': [time_limit, soft_time_limit],
-                'root_id': root_id,
-                'parent_id': parent_id,
-                'argsrepr': argsrepr,
-                'kwargsrepr': kwargsrepr,
-                'origin': origin or anon_nodename(),
-                'ignore_result': ignore_result,
-            },
+            headers=headers,
             properties={
                 'correlation_id': task_id,
                 'reply_to': reply_to or '',
