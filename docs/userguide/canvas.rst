@@ -1132,17 +1132,20 @@ This means that the first task will have a countdown of one second, the second
 task a countdown of two seconds, and so on.
 
 Stamping
-=======
+========
+
+.. versionadded:: 5.3
+
 The goal of the Stamping API is to give an ability to label
-the signature and its components for debug purposes. For example,
-when the canvas is a  complex structure, it may be necessary to
-label each element of the formed structure. The complexity
-increases even more when nested groups are roll-out or chain
+the signature and its components for debugging information purposes.
+For example, when the canvas is a complex structure, it may be necessary to
+label some or all elements of the formed structure. The complexity
+increases even more when nested groups are rolled-out or chain
 elements are replaced. In such cases, it may be necessary to
 understand which group an element is a part of or on what nested
 level it is. This requires a mechanism that traverses the canvas
-elements and marks them with specific metadata. Stamping API
-allow doing that based on the Visitor pattern.
+elements and marks them with specific metadata. The stamping API
+allows doing that based on the Visitor pattern.
 
 For example,
 
@@ -1160,12 +1163,13 @@ For example,
 
 will initialize a group ``g`` and mark its components with stamp ``your_custom_stamp``.
 
-For the usage of stamping API to use this feature, you need to set up the :ref:`configuration <configuration:result_extended>` ``CELERY_RESULT_EXTENDED = True``
-or directive ``result_extended = True``.
+For this feature to be useful, you need to set the :setting:`result_extended`
+configuration option to ``True`` or directive ``result_extended = True``.
 
 
 Group stamping
-----------------
+--------------
+
 When the ``apply`` and ``apply_async`` methods are called,
 there is an automatic stamping signature with group id.
 Stamps are stored in group header.
@@ -1182,11 +1186,13 @@ the task cannot be stamped twice with the same group id.
 
 Canvas stamping
 ----------------
+
 In addition to the default group stamping, we can also stamp
 canvas with custom stamps, as shown in the example.
 
 Custom stamping
 ----------------
+
 If more complex stamping logic is required, it is possible
 to implement custom stamping behavior based on the Visitor
 pattern. The class that implements this custom logic must
