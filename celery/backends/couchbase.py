@@ -8,9 +8,9 @@ from .base import KeyValueStoreBackend
 
 try:
     from couchbase.auth import PasswordAuthenticator
-    from couchbase.cluster import Cluster, ClusterOptions
+    from couchbase.cluster import Cluster
 except ImportError:
-    Cluster = PasswordAuthenticator = ClusterOptions = None
+    Cluster = PasswordAuthenticator = None
 
 try:
     from couchbase_core._libcouchbase import FMT_AUTO

@@ -351,7 +351,7 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
             quiet=ctx.obj.quiet,
             **kwargs)
         worker.start()
-        return worker.exitcode
+        ctx.exit(worker.exitcode)
     except SecurityError as e:
         ctx.obj.error(e.args[0])
         ctx.exit(1)

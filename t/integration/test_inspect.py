@@ -51,7 +51,7 @@ class test_Inspect:
         # TODO: We can check also the exact values of the registered methods
         ret = inspect.registered()
         assert len(ret) == 1
-        len(ret[NODENAME]) > 0
+        assert len(ret[NODENAME]) > 0
         for task_name in ret[NODENAME]:
             assert isinstance(task_name, str)
 

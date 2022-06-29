@@ -32,9 +32,10 @@ int, str, or an iterable type. {type!r} was given.\
 """
 
 CRON_REPR = """\
-<crontab: {0._orig_minute} {0._orig_hour} {0._orig_day_of_week} \
-{0._orig_day_of_month} {0._orig_month_of_year} (m/h/d/dM/MY)>\
+<crontab: {0._orig_minute} {0._orig_hour} {0._orig_day_of_month} {0._orig_month_of_year} \
+{0._orig_day_of_week} (m/h/dM/MY/d)>\
 """
+
 
 SOLAR_INVALID_LATITUDE = """\
 Argument latitude {lat} is invalid, must be between -90 and 90.\
@@ -538,9 +539,7 @@ class crontab(BaseSchedule):
         super().__init__(**state)
 
     def remaining_delta(self, last_run_at, tz=None, ffwd=ffwd):
-        # pylint: disable=redefined-outer-name
         # caching global ffwd
-        tz = tz or self.tz
         last_run_at = self.maybe_make_aware(last_run_at)
         now = self.maybe_make_aware(self.now())
         dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7

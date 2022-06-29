@@ -1,7 +1,7 @@
 import errno
 import socket
 from collections import deque
-from unittest.mock import Mock, call, patch
+from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
 from billiard.exceptions import RestartFreqExceeded
@@ -32,6 +32,7 @@ class ConsumerTestCase:
             **kwargs
         )
         consumer.blueprint = Mock(name='blueprint')
+        consumer.pool.num_processes = 2
         consumer._restart_state = Mock(name='_restart_state')
         consumer.connection = _amqp_connection()
         consumer.connection_errors = (socket.error, OSError,)
@@ -40,6 +41,11 @@ class ConsumerTestCase:
 
 
 class test_Consumer(ConsumerTestCase):
+    def setup(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+        self.add = add
 
     def test_repr(self):
         assert repr(self.get_consumer())
@@ -83,6 +89,72 @@ class test_Consumer(ConsumerTestCase):
         c._update_prefetch_count(8)
         c._update_qos_eventually.assert_called_with(8)
         assert c.initial_prefetch_count == 10 * 10
+
+    @pytest.mark.parametrize(
+        'active_requests_count,expected_initial,expected_maximum',
+        [
+            [0, 2, True],
+            [1, 1, False],
+            [2, 1, False]
+        ]
+    )
+    @patch('celery.worker.consumer.consumer.active_requests', new_callable=set)
+    def test_restore_prefetch_count_on_restart(self, active_requests_mock, active_requests_count,
+                                               expected_initial, expected_maximum, subtests):
+        reqs = {Mock() for _ in range(active_requests_count)}
+        active_requests_mock.update(reqs)
+
+        c = self.get_consumer()
+        c.qos = Mock()
+        c.blueprint = Mock()
+
+        def bp_start(*_, **__):
+            if c.restart_count > 1:
+                c.blueprint.state = CLOSE
+            else:
+                raise ConnectionError
+
+        c.blueprint.start.side_effect = bp_start
+
+        c.start()
+
+        with subtests.test("initial prefetch count is never 0"):
+            assert c.initial_prefetch_count != 0
+
+        with subtests.test(f"initial prefetch count is equal to {expected_initial}"):
+            assert c.initial_prefetch_count == expected_initial
+
+        with subtests.test("maximum prefetch is reached"):
+            assert c._maximum_prefetch_restored is expected_maximum
+
+    def test_create_task_handler(self, subtests):
+        c = self.get_consumer()
+        c.qos = MagicMock()
+        c.qos.value = 1
+        c._maximum_prefetch_restored = False
+
+        sig = self.add.s(2, 2)
+        message = self.task_message_from_sig(self.app, sig)
+
+        def raise_exception():
+            raise KeyError('Foo')
+
+        def strategy(_, __, ack_log_error_promise, ___, ____):
+            ack_log_error_promise()
+
+        c.strategies[sig.task] = strategy
+        c.call_soon = raise_exception
+        on_task_received = c.create_task_handler()
+        on_task_received(message)
+
+        with subtests.test("initial prefetch count is never 0"):
+            assert c.initial_prefetch_count != 0
+
+        with subtests.test("initial prefetch count is 2"):
+            assert c.initial_prefetch_count == 2
+
+        with subtests.test("maximum prefetch is reached"):
+            assert c._maximum_prefetch_restored is True
 
     def test_flush_events(self):
         c = self.get_consumer()

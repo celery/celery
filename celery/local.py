@@ -148,12 +148,6 @@ class Proxy:
     def __delitem__(self, key):
         del self._get_current_object()[key]
 
-    def __setslice__(self, i, j, seq):
-        self._get_current_object()[i:j] = seq
-
-    def __delslice__(self, i, j):
-        del self._get_current_object()[i:j]
-
     def __setattr__(self, name, value):
         setattr(self._get_current_object(), name, value)
 
@@ -198,9 +192,6 @@ class Proxy:
 
     def __contains__(self, i):
         return i in self._get_current_object()
-
-    def __getslice__(self, i, j):
-        return self._get_current_object()[i:j]
 
     def __add__(self, other):
         return self._get_current_object() + other
@@ -506,12 +497,11 @@ def create_module(name, attrs, cls_attrs=None, pkg=None,
 
 def recreate_module(name, compat_modules=None, by_module=None, direct=None,
                     base=LazyModule, **attrs):
-    compat_modules = compat_modules or ()
+    compat_modules = compat_modules or COMPAT_MODULES.get(name, ())
     by_module = by_module or {}
     direct = direct or {}
     old_module = sys.modules[name]
     origins = get_origins(by_module)
-    compat_modules = COMPAT_MODULES.get(name, ())
 
     _all = tuple(set(reduce(
         operator.add,

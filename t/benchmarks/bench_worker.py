@@ -60,7 +60,7 @@ def it(_, n):
             n, total, n / (total + .0),
         ))
         import os
-        os._exit()
+        os._exit(0)
     it.cur += 1
 
 

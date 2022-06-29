@@ -576,8 +576,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     def __reduce__(self, args=(), kwargs=None):
         kwargs = {} if not kwargs else kwargs
         return super().__reduce__(
-            (self.url,), {'expires': self.expires},
-        )
+            args, dict(kwargs, expires=self.expires, url=self.url))
 
 
 if getattr(redis, "sentinel", None):

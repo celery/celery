@@ -733,7 +733,8 @@ class Celery:
             options, route_name or name, args, kwargs, task_type)
         if expires is not None:
             if isinstance(expires, datetime):
-                expires_s = (maybe_make_aware(expires) - self.now()).total_seconds()
+                expires_s = (maybe_make_aware(
+                    expires) - self.now()).total_seconds()
             else:
                 expires_s = expires
 

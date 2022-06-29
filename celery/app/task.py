@@ -98,6 +98,18 @@ class Context:
 
     def __init__(self, *args, **kwargs):
         self.update(*args, **kwargs)
+        if self.headers is None:
+            self.headers = self._get_custom_headers(*args, **kwargs)
+
+    def _get_custom_headers(self, *args, **kwargs):
+        headers = {}
+        headers.update(*args, **kwargs)
+        celery_keys = {*Context.__dict__.keys(), 'lang', 'task', 'argsrepr', 'kwargsrepr'}
+        for key in celery_keys:
+            headers.pop(key, None)
+        if not headers:
+            return None
+        return headers
 
     def update(self, *args, **kwargs):
         return self.__dict__.update(*args, **kwargs)

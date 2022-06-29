@@ -315,7 +315,7 @@ def head_from_fun(fun, bound=False, debug=False):
     # with an empty body, meaning it has the same performance as
     # as just calling a function.
     is_function = inspect.isfunction(fun)
-    is_callable = hasattr(fun, '__call__')
+    is_callable = callable(fun)
     is_cython = fun.__class__.__name__ == 'cython_function_or_method'
     is_method = inspect.ismethod(fun)
 

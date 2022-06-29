@@ -207,6 +207,7 @@ Mike Attwood, 2016/01/22
 David Harrigan, 2016/02/01
 Ahmet Demir, 2016/02/27
 Maxime Verger, 2016/02/29
+David Pravec, 2016/03/11
 Alexander Oblovatniy, 2016/03/10
 Komu Wairagu, 2016/04/03
 Joe Sanford, 2016/04/11
@@ -287,3 +288,4 @@ Konstantin Kochin, 2021/07/11
 kronion, 2021/08/26
 Gabor Boros, 2021/11/09
 Tizian Seehaus, 2022/02/09
+Oleh Romanovskyi, 2022/06/09

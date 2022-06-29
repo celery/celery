@@ -8,7 +8,8 @@ from celery import group
 
 from .conftest import get_active_redis_channels
 from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result, add_not_typed, fail,
-                    print_unicode, retry, retry_once, retry_once_priority, return_properties, sleeping)
+                    print_unicode, retry, retry_once, retry_once_headers, retry_once_priority, return_properties,
+                    sleeping)
 
 TIMEOUT = 10
 
@@ -266,6 +267,13 @@ class test_tasks:
     def test_task_retried_priority(self, manager):
         res = retry_once_priority.apply_async(priority=7)
         assert res.get(timeout=TIMEOUT) == 7  # retried once with priority 7
+
+    @flaky
+    def test_task_retried_headers(self, manager):
+        res = retry_once_headers.apply_async(headers={'x-test-header': 'test-value'})
+        headers = res.get(timeout=TIMEOUT)
+        assert headers is not None  # retried once with headers
+        assert 'x-test-header' in headers  # retry keeps custom headers
 
     @flaky
     def test_unicode_task(self, manager):

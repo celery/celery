@@ -224,6 +224,16 @@ def retry_once_priority(self, *args, expires=60.0, max_retries=1,
                      max_retries=max_retries)
 
 
+@shared_task(bind=True, max_retries=1)
+def retry_once_headers(self, *args, max_retries=1,
+                       countdown=0.1):
+    """Task that fails and is retried. Returns headers."""
+    if self.request.retries:
+        return self.request.headers
+    raise self.retry(countdown=countdown,
+                     max_retries=max_retries)
+
+
 @shared_task
 def redis_echo(message, redis_key="redis-echo"):
     """Task that appends the message to a redis list."""

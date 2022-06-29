@@ -787,6 +787,15 @@ You can also set `autoretry_for`, `max_retries`, `retry_backoff`, `retry_backoff
     and the actual delay value will be a random number between zero and that
     maximum. By default, this option is set to ``True``.
 
+.. versionadded:: 5.3.0
+
+.. attribute:: Task.dont_autoretry_for
+
+    A list/tuple of exception classes.  These exceptions won't be autoretried.
+	This allows to exclude some exceptions that match `autoretry_for
+	<Task.autoretry_for>`:attr: but for which you don't want a retry.
+
+
 .. _task-options:
 
 List of Options
@@ -912,6 +921,9 @@ General
     Don't store task state. Note that this means you can't use
     :class:`~celery.result.AsyncResult` to check if the task is ready,
     or get its return value.
+
+    Note: Certain features will not work if task results are disabled.
+    For more details check the Canvas documentation.
 
 .. attribute:: Task.store_errors_even_if_ignored
 

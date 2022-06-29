@@ -1731,10 +1731,9 @@ class _chord(Signature):
                 child_size = cls._descend(child_sig)
                 if child_size > 0:
                     return child_size
-            else:
-                # We have to just hope this chain is part of some encapsulating
-                # signature which is valid and can fire the chord body
-                return 0
+            # We have to just hope this chain is part of some encapsulating
+            # signature which is valid and can fire the chord body
+            return 0
         elif isinstance(sig_obj, chord):
             # The child chord's body counts toward this chord
             return cls._descend(sig_obj.body)

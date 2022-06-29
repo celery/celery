@@ -572,9 +572,10 @@ class Backend:
             pass
 
     def _ensure_not_eager(self):
-        if self.app.conf.task_always_eager:
+        if self.app.conf.task_always_eager and not self.app.conf.task_store_eager_result:
             warnings.warn(
-                "Shouldn't retrieve result with task_always_eager enabled.",
+                "Results are not stored in backend and should not be retrieved when "
+                "task_always_eager is enabled, unless task_store_eager_result is enabled.",
                 RuntimeWarning
             )
 
