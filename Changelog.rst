@@ -5,8 +5,55 @@
 ================
 
 This document contains change notes for bugfix & new features
-in the & 5.2.x series, please see :ref:`whatsnew-5.2` for
+in the master branch & 5.2.x series, please see :ref:`whatsnew-5.2` for
 an overview of what's new in Celery 5.2.
+
+.. _version-5.3.0a1:
+
+5.3.0a1
+=======
+
+:release-date: 2022-06-29 5:15 P.M UTC+6:00
+:release-by: Asif Saif Uddin
+
+- Remove Python 3.4 compatibility code.
+- call ping to set connection attr for avoiding redis parse_response error.
+- Use importlib instead of deprecated pkg_resources.
+- fix #7245 uid duplicated in command params.
+- Fix subscribed_to maybe empty (#7232).
+- Fix: Celery beat sleeps 300 seconds sometimes even when it should run a task within a few seconds (e.g. 13 seconds) #7290.
+- Add security_key_password option (#7292).
+- Limit elasticsearch support to below version 8.0.
+- try new major release of pytest 7 (#7330).
+- broker_connection_retry should no longer apply on startup (#7300).
+- Remove __ne__ methods (#7257).
+- fix #7200 uid and gid.
+- Remove exception-throwing from the signal handler.
+- Add mypy to the pipeline (#7383).
+- Expose more debugging information when receiving unkown tasks. (#7405)
+- Avoid importing buf_t from billiard's compat module as it was removed.
+- Avoid negating a constant in a loop. (#7443)
+- Ensure expiration is of float type when migrating tasks (#7385).
+- load_extension_class_names - correct module_name (#7406)
+- Bump pymongo[srv]>=4.0.2.
+- Use inspect.getgeneratorstate in asynpool.gen_not_started (#7476).
+- Fix test with missing .get() (#7479).
+- azure-storage-blob>=12.11.0
+- Make start_worker, setup_default_app reusable outside of pytest.
+- Ensure a proper error message is raised when id for key is empty (#7447).
+- Crontab string representation does not match UNIX crontab expression.
+- Worker should exit with ctx.exit to get the right exitcode for non-zero.
+- Fix expiration check (#7552).
+- Use callable built-in.
+- Include dont_autoretry_for option in tasks. (#7556)
+- fix: Syntax error in arango query.
+- Fix custom headers propagation on task retries (#7555).
+- Silence backend warning when eager results are stored.
+- Reduce prefetch count on restart and gradually restore it (#7350).
+- Improve workflow primitive subclassing (#7593).
+- test kombu>=5.3.0a1,<6.0 (#7598).
+- Canvas Header Stamping (#7384).
+
 
 
 .. _version-5.2.7:
