@@ -736,7 +736,7 @@ Sent if the execution of the task failed.
 task-rejected
 ~~~~~~~~~~~~~
 
-:signature: ``task-rejected(uuid, requeued)``
+:signature: ``task-rejected(uuid, requeue)``
 
 The task was rejected by the worker, possibly to be re-queued or moved to a
 dead letter queue.
