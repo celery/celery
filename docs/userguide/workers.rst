@@ -358,6 +358,20 @@ Commands
 All worker nodes keeps a memory of revoked task ids, either in-memory or
 persistent on disk (see :ref:`worker-persistent-revokes`).
 
+.. note::
+
+    The maximum number of revoked tasks to keep in memory can be
+    specified using the ``CELERY_WORKER_REVOKES_MAX`` environment
+    variable, which defaults to 50000. When the limit has been exceeded,
+    the revokes will be active for 10800 seconds (3 hours) before being
+    expired. This value can be changed using the
+    ``CELERY_WORKER_REVOKE_EXPIRES`` environment variable.
+
+    Memory limits can also be set for successful tasks through the
+    ``CELERY_WORKER_SUCCESSFUL_MAX`` and
+    ``CELERY_WORKER_SUCCESSFUL_EXPIRES`` environment variables, and
+    default to 1000 and 10800 respectively.
+
 When a worker receives a revoke request it will skip executing
 the task, but it won't terminate an already executing task unless
 the `terminate` option is set.
