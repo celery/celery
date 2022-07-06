@@ -1,4 +1,4 @@
-"""Prefork execution pool.
+"""Subprocess execution pool.
 
 Pool implementation using :mod:`multiprocessing`.
 """
@@ -6,8 +6,8 @@ import os
 
 from billiard import forking_enable
 from billiard.common import REMAP_SIGTERM, TERM_SIGNAME
+from billiard.context import SpawnProcess
 from billiard.pool import CLOSE, RUN
-from billiard.pool import Pool as BlockingPool
 
 from celery import platforms, signals
 from celery._state import _set_task_join_will_block, set_default_app
@@ -93,7 +93,10 @@ class TaskPool(BasePool):
     """Multiprocessing Pool implementation."""
 
     Pool = AsynPool
-    BlockingPool = BlockingPool
+
+    @staticmethod
+    def BlockingPool(*args, **kwargs):
+        return SpawnProcess().Pool(*args, **kwargs)
 
     uses_semaphore = True
     write_stats = None
