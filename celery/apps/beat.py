@@ -44,7 +44,8 @@ class Beat:
                  scheduler=None,
                  scheduler_cls=None,  # XXX use scheduler
                  redirect_stdouts=None,
-                 redirect_stdouts_level=None, **kwargs):
+                 redirect_stdouts_level=None,
+                 quiet=False, **kwargs):
         self.app = app = app or self.app
         either = self.app.either
         self.loglevel = loglevel
@@ -56,6 +57,7 @@ class Beat:
             'worker_redirect_stdouts', redirect_stdouts)
         self.redirect_stdouts_level = either(
             'worker_redirect_stdouts_level', redirect_stdouts_level)
+        self.quiet = quiet
 
         self.max_interval = max_interval
         self.socket_timeout = socket_timeout
@@ -70,8 +72,9 @@ class Beat:
             self.loglevel = LOG_LEVELS[self.loglevel.upper()]
 
     def run(self):
-        print(str(self.colored.cyan(
-            f'celery beat v{VERSION_BANNER} is starting.')))
+        if not self.quiet:
+            print(str(self.colored.cyan(
+                f'celery beat v{VERSION_BANNER} is starting.')))
         self.init_loader()
         self.set_process_title()
         self.start_scheduler()
@@ -93,7 +96,8 @@ class Beat:
             schedule_filename=self.schedule,
         )
 
-        print(self.banner(service))
+        if not self.quiet:
+            print(self.banner(service))
 
         self.setup_logging()
         if self.socket_timeout:
