@@ -2,14 +2,9 @@
 
 from os import getpid
 
-from billiard import forking_enable
 from kombu.asynchronous import Hub
 
 from celery.concurrency.asynpool import AsynPool
-
-
-def noop(*args, **kwargs):
-    pass
 
 
 def check_if_state_persisted():

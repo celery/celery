@@ -2,7 +2,6 @@
 
 Pool implementation using :mod:`multiprocessing`.
 """
-from functools import partial
 import os
 
 from billiard import forking_enable
