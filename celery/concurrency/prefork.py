@@ -2,12 +2,13 @@
 
 Pool implementation using :mod:`multiprocessing`.
 """
+from functools import partial
 import os
 
 from billiard import forking_enable
 from billiard.common import REMAP_SIGTERM, TERM_SIGNAME
-from billiard.context import SpawnProcess
 from billiard.pool import CLOSE, RUN
+from billiard.pool import Pool as BlockingPool
 
 from celery import platforms, signals
 from celery._state import _set_task_join_will_block, set_default_app
@@ -93,10 +94,7 @@ class TaskPool(BasePool):
     """Multiprocessing Pool implementation."""
 
     Pool = AsynPool
-
-    @staticmethod
-    def BlockingPool(*args, **kwargs):
-        return SpawnProcess().Pool(*args, **kwargs)
+    BlockingPool = BlockingPool
 
     uses_semaphore = True
     write_stats = None

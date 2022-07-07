@@ -28,6 +28,7 @@ from weakref import WeakValueDictionary, ref
 
 from billiard import pool as _pool
 from billiard.compat import isblocking, setblocking
+from billiard.context import SpawnContext
 from billiard.pool import ACK, NACK, RUN, TERMINATE, WorkersJoined
 from billiard.queues import _SimpleQueue
 from kombu.asynchronous import ERR, WRITE
@@ -460,7 +461,7 @@ class AsynPool(_pool.Pool):
 
         self.write_stats = Counter()
 
-        super().__init__(processes, *args, **kwargs)
+        super().__init__(processes, context=SpawnContext(), *args, **kwargs)
 
         for proc in self._pool:
             # create initial mappings, these will be updated
