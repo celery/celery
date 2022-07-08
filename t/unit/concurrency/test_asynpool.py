@@ -6,6 +6,8 @@ from kombu.asynchronous import Hub
 
 from celery.concurrency.asynpool import AsynPool
 
+from ... import skip
+
 
 def check_if_state_persisted():
     from t.unit.concurrency import test_asynpool
@@ -14,10 +16,14 @@ def check_if_state_persisted():
 
 
 class test_AsynPool:
+    @skip.if_win32
     def test_subprocesses_are_spawned(self):
         """
         Subprocesses are new, indepenent processes, rather than
         buggy fork()-without-execve() subprocesses.
+
+        On Windows fork()-without-execve() isn't even possible... and apparently
+        processes aren't used on Windows at all, in any case, so we skip.
         """
         # Add some state to this module, in the parent; only if we're
         # doing fork() without execve() will this be visible to worker
