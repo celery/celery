@@ -4,7 +4,6 @@ Pool implementation using :mod:`multiprocessing`.
 """
 import os
 
-from billiard import forking_enable
 from billiard.common import REMAP_SIGTERM, TERM_SIGNAME
 from billiard.pool import CLOSE, RUN
 from billiard.pool import Pool as BlockingPool
@@ -99,7 +98,6 @@ class TaskPool(BasePool):
     write_stats = None
 
     def on_start(self):
-        forking_enable(self.forking_enable)
         Pool = (self.BlockingPool if self.options.get('threads', True)
                 else self.Pool)
         proc_alive_timeout = (
