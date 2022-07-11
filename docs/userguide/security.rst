@@ -251,7 +251,7 @@ that can be used.
 .. _`OSSEC`: http://www.ossec.net/
 .. _`Samhain`: http://la-samhna.de/samhain/index.html
 .. _`AIDE`: http://aide.sourceforge.net/
-.. _`Open Source Tripwire`: http://sourceforge.net/projects/tripwire/
+.. _`Open Source Tripwire`: https://github.com/Tripwire/tripwire-open-source
 .. _`ZFS`: https://en.wikipedia.org/wiki/ZFS
 
 .. rubric:: Footnotes
