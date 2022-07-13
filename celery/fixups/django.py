@@ -137,7 +137,6 @@ class DjangoWorkerFixup:
 
     def install(self) -> "DjangoWorkerFixup":
         signals.beat_embedded_init.connect(self.close_database)
-        signals.worker_ready.connect(self.on_worker_ready)
         signals.task_prerun.connect(self.on_task_prerun)
         signals.task_postrun.connect(self.on_task_postrun)
         signals.worker_process_init.connect(self.on_worker_process_init)
@@ -211,8 +210,3 @@ class DjangoWorkerFixup:
             self._cache.close_caches()
         except (TypeError, AttributeError):
             pass
-
-    def on_worker_ready(self, **kwargs: Any) -> None:
-        if self._settings.DEBUG:
-            warnings.warn('''Using settings.DEBUG leads to a memory
-            leak, never use this setting in production environments!''')
