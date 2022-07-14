@@ -259,6 +259,9 @@ class Celery:
         if not isinstance(self._tasks, TaskRegistry):
             self._tasks = self.registry_cls(self._tasks or {})
 
+        # Used for caching redis backend, redis-py is thread safe
+        self._redis_backend = None
+
         # If the class defines a custom __reduce_args__ we need to use
         # the old way of pickling apps: pickling a list of
         # args instead of the new way that pickles a dict of keywords.
@@ -955,6 +958,11 @@ class Celery:
         backend, url = backends.by_url(
             self.backend_cls or self.conf.result_backend,
             self.loader)
+
+        if isinstance(url, str) and url.startswith('redis'):
+            self._redis_backend = self._redis_backend or backend(app=self, url=url)
+            return self._redis_backend
+
         return backend(app=self, url=url)
 
     def _finalize_pending_conf(self):
