@@ -1421,6 +1421,22 @@ class test_chord(CanvasCase):
         ):
             assert isinstance(deserialized_chord.body, _chain)
 
+    def test_chord_clone_kwargs(self, subtests):
+        """ Test that chord clone ensures the kwargs are the same """
+
+        with subtests.test(msg='Verify chord cloning clones kwargs correctly'):
+            c = chord([signature('g'), signature('h')], signature('i'), kwargs={'U': 6})
+            c2 = c.clone()
+            assert c2.kwargs == c.kwargs
+
+        with subtests.test(msg='Cloning the chord with overridden kwargs'):
+            override_kw = {'X': 2}
+            c3 = c.clone(args=(1,), kwargs=override_kw)
+
+        with subtests.test(msg='Verify the overridden kwargs were cloned correctly'):
+            new_kw = c.kwargs.copy()
+            new_kw.update(override_kw)
+            assert c3.kwargs == new_kw
 
 class test_maybe_signature(CanvasCase):
 
