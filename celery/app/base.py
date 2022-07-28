@@ -253,7 +253,7 @@ class Celery:
         self._pending_periodic_tasks = deque()
 
         self.finalized = False
-        self._finalize_mutex = threading.Lock()
+        self._finalize_mutex = threading.RLock()
         self._pending = deque()
         self._tasks = tasks
         if not isinstance(self._tasks, TaskRegistry):
