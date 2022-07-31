@@ -596,7 +596,7 @@ This value is used for tasks that doesn't have a custom rate limit
 
 .. seealso::
 
-    The setting:`worker_disable_rate_limits` setting can
+    The :setting:`worker_disable_rate_limits` setting can
     disable all rate limits.
 
 .. _conf-result-backend:
