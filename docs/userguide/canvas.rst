@@ -1201,6 +1201,7 @@ For example, the following example ``InGroupVisitor`` will label
 tasks that are in side of some group by lable ``in_group``.
 
 .. code-block:: python
+
     class InGroupVisitor(StampingVisitor):
         def __init__(self):
             self.in_group = False
