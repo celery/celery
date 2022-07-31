@@ -20,8 +20,8 @@ Security Fixes
 --------------
 
 * [Security: `CELERYSA-0001`_] Daemons would set effective id's rather than
-  real id's when the :option:`--uid <celery --uid>`/
-  :option:`--gid <celery --gid>` arguments to :program:`celery multi`,
+  real id's when the :option:`!--uid`/
+  :option:`!--gid` arguments to :program:`celery multi`,
   :program:`celeryd_detach`, :program:`celery beat` and
   :program:`celery events` were used.
 
@@ -47,7 +47,7 @@ Security Fixes
 
 * Redis result backend now works with Redis 2.4.4.
 
-* multi: The :option:`--gid <celery --gid>` option now works correctly.
+* multi: The :option:`!--gid` option now works correctly.
 
 * worker: Retry wrongfully used the repr of the traceback instead
   of the string representation.
@@ -1026,6 +1026,3 @@ Experimental
     def my_view(request):
         with pool.acquire() as publisher:
             add.apply_async((2, 2), publisher=publisher, retry=True)
-
-
-

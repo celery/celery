@@ -127,7 +127,7 @@ and prioritization, all described in the :ref:`Routing Guide
 <guide-routing>`.
 
 You can get a complete list of command-line arguments
-by passing in the :option:`--help <celery --help>` flag:
+by passing in the :option:`!--help` flag:
 
 .. code-block:: console
 
