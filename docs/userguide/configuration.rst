@@ -854,9 +854,6 @@ Default: 1.0.
 
 Default interval for retrying chord tasks.
 
-.. _conf-database-result-backend:
-
-
 .. setting:: override_backends
 
 ``override_backends``
@@ -876,7 +873,7 @@ Example:
 
     override_backends = {"db": "custom_module.backend.class"}
 
-
+.. _conf-database-result-backend:
 
 Database backend settings
 -------------------------
