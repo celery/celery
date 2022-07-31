@@ -2179,7 +2179,9 @@ or::
 
 The backend will store results in the K/V store of Consul
 as individual keys. The backend supports auto expire of results using TTLs in
-Consul. The full syntax of the URL is::
+Consul. The full syntax of the URL is:
+
+.. code-block:: text
 
     consul://host:port[?one_client=1]
 
