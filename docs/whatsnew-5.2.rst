@@ -390,4 +390,4 @@ You can now check the validity of the CA certificate while making
 a TLS connection to ArangoDB result backend.
 
 If you'd like to do so, set the ``verify`` key in the
-:setting:`arangodb_backend_settings`` dictionary to ``True``.
+:setting:`arangodb_backend_settings` dictionary to ``True``.
