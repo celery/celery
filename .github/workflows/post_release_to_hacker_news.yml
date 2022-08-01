@@ -13,5 +13,5 @@ jobs:
           HN_USERNAME: ${{ secrets.HN_USERNAME }}
           HN_PASSWORD: ${{ secrets.HN_PASSWORD }}
           HN_TITLE_FORMAT_SPECIFIER:  Celery v%s Released!
-          HN_URL_FORMAT_SPECIFIER: https://docs.celeryproject.org/en/v%s/changelog.html
+          HN_URL_FORMAT_SPECIFIER: https://docs.celeryq.dev/en/v%s/changelog.html
           HN_TEST_MODE: true
