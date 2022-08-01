@@ -461,7 +461,7 @@ Be sure to also read the `Contributing to Celery`_ section in the
 documentation.
 
 .. _`Contributing to Celery`:
-    http://docs.celeryproject.org/en/master/contributing.html
+    https://docs.celeryq.dev/en/master/contributing.html
 
 |oc-contributors|
 

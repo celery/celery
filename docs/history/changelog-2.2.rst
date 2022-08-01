@@ -138,7 +138,7 @@ News
 ----
 
 * Our documentation is now hosted by Read The Docs
-  (http://docs.celeryproject.org), and all links have been changed to point to
+  (https://docs.celeryq.dev), and all links have been changed to point to
   the new URL.
 
 * Logging: Now supports log rotation using external tools like `logrotate.d`_
