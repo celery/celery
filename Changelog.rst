@@ -8,6 +8,26 @@ This document contains change notes for bugfix & new features
 in the master branch & 5.2.x series, please see :ref:`whatsnew-5.2` for
 an overview of what's new in Celery 5.2.
 
+.. _version-5.3.0b1:
+
+5.3.0b1
+=======
+
+:release-date: 2022-08-01 5:15 P.M UTC+6:00
+:release-by: Asif Saif Uddin
+
+- Canvas Header Stamping (#7384).
+- async chords should pass it's kwargs to the group/body.
+- beat: Suppress banner output with the quiet option (#7608).
+- Fix honor Django's TIME_ZONE setting.
+- Don't warn about DEBUG=True for Django.
+- Fixed the on_after_finalize cannot access tasks due to deadlock.
+- Bump kombu>=5.3.0b1,<6.0.
+- Make default worker state limits configurable (#7609).
+- Only clear the cache if there are no active writers.
+- Billiard 4.0.1
+
+
 .. _version-5.3.0a1:
 
 5.3.0a1
