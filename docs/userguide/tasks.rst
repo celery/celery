@@ -629,7 +629,7 @@ arguments:
     ...     kwargsrepr=repr({'card': '**** **** **** 5678'})
     ... ).delay()
 
-.. versionadded:: 5.1
+.. versionadded:: 5.3
 
 You can also define a custom function to generate the representation of the
 positional and keyword arguments of all tasks, by using
