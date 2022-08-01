@@ -638,7 +638,7 @@ new in Celery 3.1.
 
 - **Django**: Compatibility with Django 1.7 on Windows (Issue #2126).
 
-- **Programs**: :option:`--umask <celery --umask>` argument can now be
+- **Programs**: :option:`!--umask` argument can now be
   specified in both octal (if starting with 0) or decimal.
 
 

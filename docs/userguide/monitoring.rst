@@ -353,7 +353,7 @@ and it includes a tool to dump events to :file:`stdout`:
 
     $ celery -A proj events --dump
 
-For a complete list of options use :option:`--help <celery --help>`:
+For a complete list of options use :option:`!--help`:
 
 .. code-block:: console
 

@@ -624,7 +624,7 @@ which needs two numbers: the maximum and minimum number of pool processes:
               10 if necessary).
 
 You can also define your own rules for the autoscaler by subclassing
-:class:`~celery.worker.autoscaler.Autoscaler`.
+:class:`~celery.worker.autoscale.Autoscaler`.
 Some ideas for metrics include load average or the amount of memory available.
 You can specify a custom autoscaler with the :setting:`worker_autoscaler` setting.
 
@@ -970,7 +970,7 @@ There are two types of remote control commands:
 
 Remote control commands are registered in the control panel and
 they take a single argument: the current
-:class:`~celery.worker.control.ControlDispatch` instance.
+:class:`!celery.worker.control.ControlDispatch` instance.
 From there you have access to the active
 :class:`~celery.worker.consumer.Consumer` if needed.
 
