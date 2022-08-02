@@ -955,6 +955,22 @@ class Celery:
         backend, url = backends.by_url(
             self.backend_cls or self.conf.result_backend,
             self.loader)
+
+        from celery.backends.redis import RedisBackend
+
+        if backend == RedisBackend:
+            # redis-py is thread safe, so we can share one backend to avoid creating too many open connections
+            # (especially in regard to gevent)
+            return self.redis_backend
+
+        return backend(app=self, url=url)
+
+    @cached_property
+    def redis_backend(self):
+        backend, url = backends.by_url(
+            self.backend_cls or self.conf.result_backend,
+            self.loader)
+
         return backend(app=self, url=url)
 
     def _finalize_pending_conf(self):
