@@ -1438,6 +1438,7 @@ class test_chord(CanvasCase):
             new_kw.update(override_kw)
             assert c3.kwargs == new_kw
 
+
 class test_maybe_signature(CanvasCase):
 
     def test_is_None(self):
