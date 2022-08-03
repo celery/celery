@@ -81,7 +81,7 @@ for more information.
 The full contents of the message body was:
 %s
 
-Thw full contents of the message headers:
+The full contents of the message headers:
 %s
 
 The delivery info for this task is:
