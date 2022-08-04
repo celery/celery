@@ -288,7 +288,7 @@ class test_tasks:
         assert res.get(timeout=TIMEOUT)["app_id"] == "1234"
 
 
-class tests_task_redis_result_backend:
+class test_task_redis_result_backend:
     def setup(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
@@ -302,15 +302,16 @@ class tests_task_redis_result_backend:
     def test_asyncresult_forget_cancels_subscription(self):
         result = add.delay(1, 2)
         assert get_active_redis_channels() == [
-            f"celery-task-meta-{result.id}"
+            f"celery-task-meta-{result.id}".encode("utf-8")
         ]
         result.forget()
+
         assert get_active_redis_channels() == []
 
     def test_asyncresult_get_cancels_subscription(self):
         result = add.delay(1, 2)
         assert get_active_redis_channels() == [
-            f"celery-task-meta-{result.id}"
+            f"celery-task-meta-{result.id}".encode("utf-8")
         ]
         assert result.get(timeout=3) == 3
         assert get_active_redis_channels() == []
