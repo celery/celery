@@ -8,7 +8,7 @@ from celery.exceptions import SecurityError
 from celery.security.certificate import Certificate, CertStore, FSCertStore
 from t.unit import conftest
 
-from . import CERT1, CERT2, KEY1, CERT_ECDSA
+from . import CERT1, CERT2, CERT_ECDSA, KEY1
 from .case import SecurityCase
 
 
