@@ -293,13 +293,13 @@ class test_task_redis_result_backend:
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
 
-    def test_ignoring_result_no_subscriptions(self):
+    def test_ignoring_result_no_subscriptions(self, manager):
         assert get_active_redis_channels() == []
         result = add_ignore_result.delay(1, 2)
         assert result.ignored is True
         assert get_active_redis_channels() == []
 
-    def test_asyncresult_forget_cancels_subscription(self):
+    def test_asyncresult_forget_cancels_subscription(self, manager):
         result = add.delay(1, 2)
         assert get_active_redis_channels() == [
             f"celery-task-meta-{result.id}".encode()
@@ -308,7 +308,7 @@ class test_task_redis_result_backend:
 
         assert get_active_redis_channels() == []
 
-    def test_asyncresult_get_cancels_subscription(self):
+    def test_asyncresult_get_cancels_subscription(self, manager):
         result = add.delay(1, 2)
         assert get_active_redis_channels() == [
             f"celery-task-meta-{result.id}".encode()
