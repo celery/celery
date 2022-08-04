@@ -302,7 +302,7 @@ class test_task_redis_result_backend:
     def test_asyncresult_forget_cancels_subscription(self):
         result = add.delay(1, 2)
         assert get_active_redis_channels() == [
-            f"celery-task-meta-{result.id}".encode("utf-8")
+            f"celery-task-meta-{result.id}".encode()
         ]
         result.forget()
 
@@ -311,7 +311,7 @@ class test_task_redis_result_backend:
     def test_asyncresult_get_cancels_subscription(self):
         result = add.delay(1, 2)
         assert get_active_redis_channels() == [
-            f"celery-task-meta-{result.id}".encode("utf-8")
+            f"celery-task-meta-{result.id}".encode()
         ]
         assert result.get(timeout=3) == 3
         assert get_active_redis_channels() == []
