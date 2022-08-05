@@ -289,9 +289,12 @@ class test_tasks:
 
 
 class test_task_redis_result_backend:
-    def setup(self, manager):
+    @pytest.fixture()
+    def manager(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
+
+        return manager
 
     def test_ignoring_result_no_subscriptions(self, manager):
         assert get_active_redis_channels() == []
