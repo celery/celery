@@ -5,8 +5,9 @@ import pytest
 
 import celery
 from celery import group
+from celery.result import AsyncResult
 
-from .conftest import get_active_redis_channels
+from .conftest import get_active_redis_channels, get_redis_connection
 from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result, add_not_typed, fail,
                     print_unicode, retry, retry_once, retry_once_headers, retry_once_priority, return_properties,
                     sleeping)
@@ -328,3 +329,16 @@ class test_task_redis_result_backend:
 
         new_channels = [channel for channel in get_active_redis_channels() if channel not in channels_before_test]
         assert new_channels == []
+
+    def test_redis_connection_cleanup_with_send_task(self, manager):
+        redis = get_redis_connection()
+        connections_before = len(redis.client_list())
+
+        result = manager.app.send_task('t.integration.tasks.add', args=(1, 2))
+        assert result.get(timeout=TIMEOUT) == 3
+
+        # Result should be there after a few seconds
+        sleep(5)
+
+        # TODO: This fails but shouldn't
+        assert len(redis.client_list()) == connections_before
