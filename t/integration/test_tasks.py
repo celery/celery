@@ -297,24 +297,34 @@ class test_task_redis_result_backend:
         return manager
 
     def test_ignoring_result_no_subscriptions(self, manager):
-        assert get_active_redis_channels() == []
+        channels_before_test = get_active_redis_channels()
+
         result = add_ignore_result.delay(1, 2)
         assert result.ignored is True
-        assert get_active_redis_channels() == []
+
+        new_channels = [channel for channel in get_active_redis_channels() if channel not in channels_before_test]
+        assert new_channels == []
 
     def test_asyncresult_forget_cancels_subscription(self, manager):
+        channels_before_test = get_active_redis_channels()
+
         result = add.delay(1, 2)
-        assert get_active_redis_channels() == [
-            f"celery-task-meta-{result.id}".encode()
-        ]
+        assert set(get_active_redis_channels()) == {
+            f"celery-task-meta-{result.id}".encode(), *channels_before_test
+        }
         result.forget()
 
-        assert get_active_redis_channels() == []
+        new_channels = [channel for channel in get_active_redis_channels() if channel not in channels_before_test]
+        assert new_channels == []
 
     def test_asyncresult_get_cancels_subscription(self, manager):
+        channels_before_test = get_active_redis_channels()
+
         result = add.delay(1, 2)
-        assert get_active_redis_channels() == [
-            f"celery-task-meta-{result.id}".encode()
-        ]
+        assert set(get_active_redis_channels()) == {
+            f"celery-task-meta-{result.id}".encode(), *channels_before_test
+        }
         assert result.get(timeout=3) == 3
-        assert get_active_redis_channels() == []
+
+        new_channels = [channel for channel in get_active_redis_channels() if channel not in channels_before_test]
+        assert new_channels == []
