@@ -68,7 +68,7 @@ class EventDispatcher:
         self.buffer_limit = buffer_limit
         self.on_send_buffered = on_send_buffered
         self._group_buffer = defaultdict(list)
-        self.mutex = threading.Lock()
+        self.mutex = threading.RLock()
         self.producer = None
         self._outbound_buffer = deque()
         self.serializer = serializer or self.app.conf.event_serializer

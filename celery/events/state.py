@@ -419,7 +419,7 @@ class State:
         self.max_tasks_in_memory = max_tasks_in_memory
         self.on_node_join = on_node_join
         self.on_node_leave = on_node_leave
-        self._mutex = threading.Lock()
+        self._mutex = threading.RLock()
         self.handlers = {}
         self._seen_types = set()
         self._tasks_to_resolve = {}
