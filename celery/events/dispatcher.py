@@ -220,8 +220,9 @@ class EventDispatcher:
         """Close the event dispatcher."""
         try:
             self.mutex.release()
-        finally:
-            self.producer = None
+        except RuntimeError:
+            pass
+        self.producer = None
 
     def _get_publisher(self):
         return self.producer
