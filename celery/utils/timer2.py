@@ -55,7 +55,7 @@ class Timer(threading.Thread):
         # something other than an `Event` instance (e.g. a `bool`)
         self.__is_shutdown = threading.Event()
         self.__is_stopped = threading.Event()
-        self.mutex = threading.Lock()
+        self.mutex = threading.RLock()
         self.not_empty = threading.Condition(self.mutex)
         self.daemon = True
         self.name = f'Timer-{next(self._timer_count)}'

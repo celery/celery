@@ -85,7 +85,7 @@ class Signal:  # pragma: no cover
         self.receivers = []
         self.providing_args = set(
             providing_args if providing_args is not None else [])
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
         self.use_caching = use_caching
         self.name = name
         # For convenience we create empty caches even if they are not used.

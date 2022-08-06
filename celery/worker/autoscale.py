@@ -66,7 +66,7 @@ class Autoscaler(bgThread):
                  keepalive=AUTOSCALE_KEEPALIVE, mutex=None):
         super().__init__()
         self.pool = pool
-        self.mutex = mutex or threading.Lock()
+        self.mutex = mutex or threading.RLock()
         self.max_concurrency = max_concurrency
         self.min_concurrency = min_concurrency
         self.keepalive = keepalive
