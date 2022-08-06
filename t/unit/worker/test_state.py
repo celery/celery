@@ -1,4 +1,7 @@
+import os
 import pickle
+import sys
+from importlib import import_module
 from time import time
 from unittest.mock import Mock, patch
 
@@ -187,3 +190,32 @@ class test_state:
         for request in requests:
             state.task_ready(request)
         assert len(state.active_requests) == 0
+
+
+class test_state_configuration():
+
+    @staticmethod
+    def import_state():
+        with patch.dict(sys.modules):
+            del sys.modules['celery.worker.state']
+            return import_module('celery.worker.state')
+
+    @patch.dict(os.environ, {
+        'CELERY_WORKER_REVOKES_MAX': '50001',
+        'CELERY_WORKER_SUCCESSFUL_MAX': '1001',
+        'CELERY_WORKER_REVOKE_EXPIRES': '10801',
+        'CELERY_WORKER_SUCCESSFUL_EXPIRES': '10801',
+    })
+    def test_custom_configuration(self):
+        state = self.import_state()
+        assert state.REVOKES_MAX == 50001
+        assert state.SUCCESSFUL_MAX == 1001
+        assert state.REVOKE_EXPIRES == 10801
+        assert state.SUCCESSFUL_EXPIRES == 10801
+
+    def test_default_configuration(self):
+        state = self.import_state()
+        assert state.REVOKES_MAX == 50000
+        assert state.SUCCESSFUL_MAX == 1000
+        assert state.REVOKE_EXPIRES == 10800
+        assert state.SUCCESSFUL_EXPIRES == 10800

@@ -53,7 +53,7 @@ new in Celery 3.1.
     messages from clients/workers running 4.0.
 
 .. _`new task message protocol`:
-    http://docs.celeryproject.org/en/master/internals/protocol.html#version-2
+    https://docs.celeryq.dev/en/master/internals/protocol.html#version-2
 
 - ``Task.send_events`` can now be set to disable sending of events
   for that task only.
@@ -638,7 +638,7 @@ new in Celery 3.1.
 
 - **Django**: Compatibility with Django 1.7 on Windows (Issue #2126).
 
-- **Programs**: :option:`--umask <celery --umask>` argument can now be
+- **Programs**: :option:`!--umask` argument can now be
   specified in both octal (if starting with 0) or decimal.
 
 

@@ -987,12 +987,10 @@ class AsynPool(_pool.Pool):
             return
         # cancel all tasks that haven't been accepted so that NACK is sent
         # if synack is enabled.
-        for job in tuple(self._cache.values()):
-            if not job._accepted:
-                if self.synack:
+        if self.synack:
+            for job in self._cache.values():
+                if not job._accepted:
                     job._cancel()
-                else:
-                    job.discard()
 
         # clear the outgoing buffer as the tasks will be redelivered by
         # the broker anyway.
@@ -1008,37 +1006,45 @@ class AsynPool(_pool.Pool):
             if self._state == RUN:
                 # flush outgoing buffers
                 intervals = fxrange(0.01, 0.1, 0.01, repeatlast=True)
+
+                # TODO: Rewrite this as a dictionary comprehension once we drop support for Python 3.7
+                #       This dict comprehension requires the walrus operator which is only available in 3.8.
                 owned_by = {}
                 for job in self._cache.values():
                     writer = _get_job_writer(job)
                     if writer is not None:
                         owned_by[writer] = job
 
-                while self._active_writers:
-                    writers = list(self._active_writers)
-                    for gen in writers:
-                        if (gen.__name__ == '_write_job' and
-                                gen_not_started(gen)):
-                            # hasn't started writing the job so can
-                            # discard the task, but we must also remove
-                            # it from the Pool._cache.
-                            try:
-                                job = owned_by[gen]
-                            except KeyError:
-                                pass
+                if not self._active_writers:
+                    self._cache.clear()
+                else:
+                    while self._active_writers:
+                        writers = list(self._active_writers)
+                        for gen in writers:
+                            if (gen.__name__ == '_write_job' and
+                                    gen_not_started(gen)):
+                                # hasn't started writing the job so can
+                                # discard the task, but we must also remove
+                                # it from the Pool._cache.
+                                try:
+                                    job = owned_by[gen]
+                                except KeyError:
+                                    pass
+                                else:
+                                    # removes from Pool._cache
+                                    job.discard()
+                                self._active_writers.discard(gen)
                             else:
-                                # removes from Pool._cache
-                                job.discard()
-                            self._active_writers.discard(gen)
-                        else:
-                            try:
-                                job = owned_by[gen]
-                            except KeyError:
-                                pass
-                            else:
-                                job_proc = job._write_to
-                                if job_proc._is_alive():
-                                    self._flush_writer(job_proc, gen)
+                                try:
+                                    job = owned_by[gen]
+                                except KeyError:
+                                    pass
+                                else:
+                                    job_proc = job._write_to
+                                    if job_proc._is_alive():
+                                        self._flush_writer(job_proc, gen)
+
+                                    job.discard()
                     # workers may have exited in the meantime.
                     self.maintain_pool()
                     sleep(next(intervals))  # don't busyloop

@@ -1934,11 +1934,14 @@ once all transactions have been committed successfully.
 
 .. code-block:: python
 
-    from django.db.transaction import on_commit
+    from django.db import transaction
+    from django.http import HttpResponseRedirect
 
+    @transaction.atomic
     def create_article(request):
         article = Article.objects.create()
-        on_commit(lambda: expand_abbreviations.delay(article.pk))
+        transaction.on_commit(lambda: expand_abbreviations.delay(article.pk))
+        return HttpResponseRedirect('/articles/')
 
 .. note::
     ``on_commit`` is available in Django 1.9 and above, if you are using a

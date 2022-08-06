@@ -596,7 +596,7 @@ This value is used for tasks that doesn't have a custom rate limit
 
 .. seealso::
 
-    The setting:`worker_disable_rate_limits` setting can
+    The :setting:`worker_disable_rate_limits` setting can
     disable all rate limits.
 
 .. _conf-result-backend:
@@ -854,9 +854,6 @@ Default: 1.0.
 
 Default interval for retrying chord tasks.
 
-.. _conf-database-result-backend:
-
-
 .. setting:: override_backends
 
 ``override_backends``
@@ -876,7 +873,7 @@ Example:
 
     override_backends = {"db": "custom_module.backend.class"}
 
-
+.. _conf-database-result-backend:
 
 Database backend settings
 -------------------------
@@ -1681,7 +1678,7 @@ The name for the storage container in which to store the results.
 .. setting:: azureblockblob_base_path
 
 ``azureblockblob_base_path``
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 5.1
 
@@ -1729,7 +1726,7 @@ Timeout in seconds for establishing the azure block blob connection.
 .. setting:: azureblockblob_read_timeout
 
 ``azureblockblob_read_timeout``
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Default: 120.
 
@@ -2182,7 +2179,9 @@ or::
 
 The backend will store results in the K/V store of Consul
 as individual keys. The backend supports auto expire of results using TTLs in
-Consul. The full syntax of the URL is::
+Consul. The full syntax of the URL is:
+
+.. code-block:: text
 
     consul://host:port[?one_client=1]
 

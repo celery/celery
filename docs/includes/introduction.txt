@@ -1,5 +1,5 @@
-:Version: 5.3.0a1 (dawn-chorus)
-:Web: https://docs.celeryproject.org/en/stable/index.html
+:Version: 5.3.0b1 (dawn-chorus)
+:Web: https://docs.celeryq.dev/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
 :Keywords: task, queue, job, async, rabbitmq, amqp, redis,
@@ -80,10 +80,10 @@ getting started tutorials:
     A more complete overview, showing more features.
 
 .. _`First steps with Celery`:
-    http://docs.celeryproject.org/en/latest/getting-started/first-steps-with-celery.html
+    https://docs.celeryq.dev/en/latest/getting-started/first-steps-with-celery.html
 
 .. _`Next steps`:
-    http://docs.celeryproject.org/en/latest/getting-started/next-steps.html
+    https://docs.celeryq.dev/en/latest/getting-started/next-steps.html
 
 Celery is…
 =============
@@ -198,4 +198,4 @@ Documentation
 The `latest documentation`_ is hosted at Read The Docs, containing user guides,
 tutorials, and an API reference.
 
-.. _`latest documentation`: http://docs.celeryproject.org/en/latest/
+.. _`latest documentation`: https://docs.celeryq.dev/en/latest/

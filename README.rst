@@ -2,7 +2,7 @@
 
 |build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 5.3.0a1 (dawn-chorus)
+:Version: 5.3.0b1 (dawn-chorus)
 :Web: https://docs.celeryq.dev/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -461,7 +461,7 @@ Be sure to also read the `Contributing to Celery`_ section in the
 documentation.
 
 .. _`Contributing to Celery`:
-    http://docs.celeryproject.org/en/master/contributing.html
+    https://docs.celeryq.dev/en/master/contributing.html
 
 |oc-contributors|
 

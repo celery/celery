@@ -1277,7 +1277,7 @@ Packages
 :CI: https://travis-ci.org/#!/celery/celery
 :Windows-CI: https://ci.appveyor.com/project/ask/celery
 :PyPI: :pypi:`celery`
-:docs: http://docs.celeryproject.org
+:docs: https://docs.celeryq.dev
 
 ``kombu``
 ---------
@@ -1376,7 +1376,7 @@ Deprecated
 
 :git: https://github.com/celery/django-celery
 :PyPI: :pypi:`django-celery`
-:docs: http://docs.celeryproject.org/en/latest/django
+:docs: https://docs.celeryq.dev/en/latest/django
 
 - ``Flask-Celery``
 
@@ -1487,11 +1487,11 @@ following:
 
 .. _`mailing-list`: https://groups.google.com/group/celery-users
 
-.. _`irc-channel`: http://docs.celeryproject.org/en/latest/getting-started/resources.html#irc
+.. _`irc-channel`: https://docs.celeryq.dev/en/latest/getting-started/resources.html#irc
 
-.. _`internals-guide`: http://docs.celeryproject.org/en/latest/internals/guide.html
+.. _`internals-guide`: https://docs.celeryq.dev/en/latest/internals/guide.html
 
-.. _`bundles`: http://docs.celeryproject.org/en/latest/getting-started/introduction.html#bundles
+.. _`bundles`: https://docs.celeryq.dev/en/latest/getting-started/introduction.html#bundles
 
-.. _`report an issue`: http://docs.celeryproject.org/en/latest/contributing.html#reporting-bugs
+.. _`report an issue`: https://docs.celeryq.dev/en/latest/contributing.html#reporting-bugs
 
