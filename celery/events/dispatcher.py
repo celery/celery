@@ -218,8 +218,10 @@ class EventDispatcher:
 
     def close(self):
         """Close the event dispatcher."""
-        self.mutex.locked() and self.mutex.release()
-        self.producer = None
+        try:
+            self.mutex.release()
+        finally:
+            self.producer = None
 
     def _get_publisher(self):
         return self.producer
