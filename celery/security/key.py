@@ -24,7 +24,6 @@ class PrivateKey:
             if not isinstance(self._key, rsa.RSAPrivateKey):
                 raise ValueError("Non-RSA keys are not supported.")
 
-
     def sign(self, data, digest):
         """Sign string containing data."""
         with reraise_errors('Unable to sign data: {0!r}'):
