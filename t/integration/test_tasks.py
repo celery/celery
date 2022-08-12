@@ -288,29 +288,43 @@ class test_tasks:
         assert res.get(timeout=TIMEOUT)["app_id"] == "1234"
 
 
-class tests_task_redis_result_backend:
-    def setup(self, manager):
+class test_task_redis_result_backend:
+    @pytest.fixture()
+    def manager(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
 
-    def test_ignoring_result_no_subscriptions(self):
-        assert get_active_redis_channels() == []
+        return manager
+
+    def test_ignoring_result_no_subscriptions(self, manager):
+        channels_before_test = get_active_redis_channels()
+
         result = add_ignore_result.delay(1, 2)
         assert result.ignored is True
-        assert get_active_redis_channels() == []
 
-    def test_asyncresult_forget_cancels_subscription(self):
+        new_channels = [channel for channel in get_active_redis_channels() if channel not in channels_before_test]
+        assert new_channels == []
+
+    def test_asyncresult_forget_cancels_subscription(self, manager):
+        channels_before_test = get_active_redis_channels()
+
         result = add.delay(1, 2)
-        assert get_active_redis_channels() == [
-            f"celery-task-meta-{result.id}"
-        ]
+        assert set(get_active_redis_channels()) == {
+            f"celery-task-meta-{result.id}".encode(), *channels_before_test
+        }
         result.forget()
-        assert get_active_redis_channels() == []
 
-    def test_asyncresult_get_cancels_subscription(self):
+        new_channels = [channel for channel in get_active_redis_channels() if channel not in channels_before_test]
+        assert new_channels == []
+
+    def test_asyncresult_get_cancels_subscription(self, manager):
+        channels_before_test = get_active_redis_channels()
+
         result = add.delay(1, 2)
-        assert get_active_redis_channels() == [
-            f"celery-task-meta-{result.id}"
-        ]
+        assert set(get_active_redis_channels()) == {
+            f"celery-task-meta-{result.id}".encode(), *channels_before_test
+        }
         assert result.get(timeout=3) == 3
-        assert get_active_redis_channels() == []
+
+        new_channels = [channel for channel in get_active_redis_channels() if channel not in channels_before_test]
+        assert new_channels == []
