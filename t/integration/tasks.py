@@ -241,6 +241,12 @@ def redis_echo(message, redis_key="redis-echo"):
     redis_connection.rpush(redis_key, message)
 
 
+@shared_task(bind=True)
+def redis_echo_group_id(self, _, redis_key="redis-group-ids"):
+    redis_connection = get_redis_connection()
+    redis_connection.rpush(redis_key, self.request.group)
+
+
 @shared_task
 def redis_count(redis_key="redis-count"):
     """Task that increments a specified or well-known redis key."""
