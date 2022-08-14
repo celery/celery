@@ -605,7 +605,7 @@ class Signature(dict):
 
     def __deepcopy__(self, memo):
         memo[id(self)] = self
-        return dict(self)
+        return dict(self)  # TODO: Potential bug of being a shallow copy
 
     def __invert__(self):
         return self.apply_async().get()
@@ -1687,7 +1687,7 @@ class _chord(Signature):
         body = body.clone(**options)
         app = self._get_app(body)
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
-                 else group(self.tasks, app=app))
+                 else group(self.tasks, app=app, task_id=self.options.get('task_id', uuid())))
         if app.conf.task_always_eager:
             with allow_join_result():
                 return self.apply(args, kwargs,
