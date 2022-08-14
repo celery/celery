@@ -5,7 +5,7 @@ from celery.exceptions import SecurityError
 from celery.security.key import PrivateKey
 from celery.security.utils import get_digest_algorithm
 
-from . import CERT1, ENCKEY1, ENCKEY2, KEY1, KEY2, KEYPASSWORD
+from . import CERT1, ENCKEY1, ENCKEY2, KEY1, KEY2, KEY_ECDSA, KEYPASSWORD
 from .case import SecurityCase
 
 
@@ -32,9 +32,14 @@ class test_PrivateKey(SecurityCase):
             PrivateKey(ENCKEY2, KEYPASSWORD+b"wrong")
         with pytest.raises(SecurityError):
             PrivateKey(CERT1)
+        with pytest.raises(SecurityError):
+            PrivateKey(KEY_ECDSA)
 
     def test_sign(self):
         pkey = PrivateKey(KEY1)
         pkey.sign(ensure_bytes('test'), get_digest_algorithm())
         with pytest.raises(AttributeError):
             pkey.sign(ensure_bytes('test'), get_digest_algorithm('unknown'))
+
+        # pkey = PrivateKey(KEY_ECDSA)
+        # pkey.sign(ensure_bytes('test'), get_digest_algorithm())

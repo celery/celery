@@ -4,7 +4,7 @@ import glob
 import os
 
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.x509 import load_pem_x509_certificate
 from kombu.utils.encoding import bytes_to_str, ensure_bytes
 
@@ -25,12 +25,15 @@ class Certificate:
             self._cert = load_pem_x509_certificate(
                 ensure_bytes(cert), backend=default_backend())
 
+            if not isinstance(self._cert.public_key(), rsa.RSAPublicKey):
+                raise ValueError("Non-RSA certificates are not supported.")
+
     def has_expired(self):
         """Check if the certificate has expired."""
         return datetime.datetime.utcnow() >= self._cert.not_valid_after
 
-    def get_pubkey(self):
-        """Get public key from certificate."""
+    def get_pubkey(self) -> rsa.RSAPublicKey:
+        """Get public key from certificate. Public key type is checked in __init__."""
         return self._cert.public_key()
 
     def get_serial_number(self):

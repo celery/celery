@@ -1,7 +1,7 @@
 """Private keys for the security serializer."""
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from kombu.utils.encoding import ensure_bytes
 
 from .utils import reraise_errors
@@ -20,6 +20,9 @@ class PrivateKey:
                 ensure_bytes(key),
                 password=ensure_bytes(password),
                 backend=default_backend())
+
+            if not isinstance(self._key, rsa.RSAPrivateKey):
+                raise ValueError("Non-RSA keys are not supported.")
 
     def sign(self, data, digest):
         """Sign string containing data."""
