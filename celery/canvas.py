@@ -1808,6 +1808,14 @@ class _chord(Signature):
         return callback
 
     def link_error(self, errback):
+        if self.app.conf.task_allow_error_cb_on_chord_header:
+            # self.tasks can be a list of the chord header workflow.
+            if isinstance(self.tasks, list):
+                for task in self.tasks:
+                    task.link_error(errback)
+            else:
+                self.tasks.link_error(errback)
+
         self.body.link_error(errback)
         return errback
 

@@ -2638,6 +2638,70 @@ class test_chord:
         res_obj = orig_sig.delay()
         assert res_obj.get(timeout=TIMEOUT) == [42]
 
+    def test_flag_allow_error_cb_on_chord_header(self, manager, subtests):
+        """
+        Test that the flag allow_error_callback_on_chord_header works as
+        expected. To confirm this, we create a chord with a failing header
+        task, and check that the body does not execute when the header task fails.
+        This allows preventing the body from executing when the chord header fails
+        when the flag is turned on. In addition, we make sure the body error callback
+        is also executed when the header fails and the flag is turned on.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+        redis_connection = get_redis_connection()
+
+        manager.app.conf.task_allow_error_cb_on_chord_header = True
+
+        header_errback_msg = 'header errback called'
+        header_errback_key = 'echo_header_errback'
+        header_errback_sig = redis_echo.si(header_errback_msg, redis_key=header_errback_key)
+
+        body_errback_msg = 'body errback called'
+        body_errback_key = 'echo_body_errback'
+        body_errback_sig = redis_echo.si(body_errback_msg, redis_key=body_errback_key)
+
+        body_msg = 'chord body called'
+        body_key = 'echo_body'
+        body_sig = redis_echo.si(body_msg, redis_key=body_key)
+
+        headers = (
+            (fail.si(),),
+            (fail.si(), identity.si(42)),
+        )
+
+        # for some reason using parametrize breaks the test so we do it manually unfortunately
+        for header in headers:
+            chord_sig = chord(header, body_sig)
+            # link error to chord header ONLY
+            [header_task.link_error(header_errback_sig) for header_task in chord_sig.tasks]
+            # link error to chord body ONLY
+            chord_sig.body.link_error(body_errback_sig)
+            redis_connection.delete(header_errback_key, body_errback_key, body_key)
+
+            with subtests.test(msg='Error propagates from failure in header'):
+                res = chord_sig.delay()
+                with pytest.raises(ExpectedException):
+                    res.get(timeout=TIMEOUT)
+
+            with pytest.raises(TimeoutError):
+                # confirm the chord body was not called
+                await_redis_echo((body_msg,), redis_key=body_key, timeout=10)
+
+            with subtests.test(msg='Errback is called after simple header task fails'):
+                # errback message would exist twice, once due to header failing, and once due to body
+                # failing (as a result of the header failing)
+                await_redis_echo((header_errback_msg,), redis_key=header_errback_key)
+                await_redis_echo((body_errback_msg,), redis_key=body_errback_key)
+
+            redis_connection.delete(header_errback_key, body_errback_key)
+            assert not redis_connection.exists(body_key), 'Chord body was called when it should have not'
+
 
 class test_signature_serialization:
     """
