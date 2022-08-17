@@ -2042,6 +2042,38 @@ class test_chord(CanvasCase):
             new_kw.update(override_kw)
             assert c3.kwargs == new_kw
 
+    def test_flag_allow_error_cb_on_chord_header(self, subtests):
+        header_mock = [Mock(name='t1'), Mock(name='t2')]
+        header = group(header_mock)
+        body = Mock(name='tbody')
+        errback_sig = Mock(name='errback_sig')
+        chord_sig = chord(header, body, app=self.app)
+
+        with subtests.test(msg='Verify the errback is not linked'):
+            # header
+            for child_sig in header_mock:
+                child_sig.link_error.assert_not_called()
+            # body
+            body.link_error.assert_not_called()
+
+        with subtests.test(msg='Verify flag turned off links only the body'):
+            self.app.conf.task_allow_error_cb_on_chord_header = False
+            chord_sig.link_error(errback_sig)
+            # header
+            for child_sig in header_mock:
+                child_sig.link_error.assert_not_called()
+            # body
+            body.link_error.assert_called_once_with(errback_sig)
+
+        with subtests.test(msg='Verify flag turned on links the header'):
+            self.app.conf.task_allow_error_cb_on_chord_header = True
+            chord_sig.link_error(errback_sig)
+            # header
+            for child_sig in header_mock:
+                child_sig.link_error.assert_called_once_with(errback_sig)
+            # body
+            body.link_error.assert_has_calls([call(errback_sig), call(errback_sig)])
+
 
 class test_maybe_signature(CanvasCase):
 
