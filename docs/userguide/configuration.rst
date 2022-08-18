@@ -151,6 +151,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_TASK_TRACK_STARTED``              :setting:`task_track_started`
 ``CELERY_TASK_REJECT_ON_WORKER_LOST``      :setting:`task_reject_on_worker_lost`
 ``CELERYD_TIME_LIMIT``                     :setting:`task_time_limit`
+``CELERY_ALLOW_ERROR_CB_ON_CHORD_HEADER``  :setting:`task_allow_error_cb_on_chord_header`
 ``CELERYD_AGENT``                          :setting:`worker_agent`
 ``CELERYD_AUTOSCALER``                     :setting:`worker_autoscaler`
 ``CELERYD_CONCURRENCY``                    :setting:`worker_concurrency`
@@ -510,6 +511,41 @@ Default: No time limit.
 
 Task hard time limit in seconds. The worker processing the task will
 be killed and replaced with a new one when this is exceeded.
+
+.. setting:: task_allow_error_cb_on_chord_header
+
+.. _task_allow_error_cb_on_chord_header:
+
+``task_allow_error_cb_on_chord_header``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.3
+
+Default: Disabled.
+
+Enabling this flag will allow linking an error callback to a chord header,
+which by default will not link when using :code:`link_error()`, and preventing
+from the chord body to execute if the header fails.
+
+Consider the following canvas:
+
+.. code-block:: python
+
+    header = group([t1, t2])
+    body = t3
+    c = chord(header, body)
+    c.link_error(error_callback_sig)
+
+If :code:`t1` or :code:`t2` will fail, by default, the chord body would still execute, and :code:`error_callback_sig` will **not** be called.
+
+Enabling this flag will change the above behavior by:
+
+1. :code:`error_callback_sig` will be linked to :code:`t1` and :code:`t2` (as well as :code:`t3`).
+2. If :code:`t1` or :code:`t2` failed, :code:`t3` **will not** execute.
+3. If *any* of the header tasks failed, :code:`error_callback_sig` will be called for **each** failed header task **and** the :code:`body` (even if it didn't run).
+
+Using such a workflow may allow preventing the chord body from executing if the header was not completed successfully.
+This differs from the standard behavior of the chord, which will execute the body even if the header fails.
 
 .. setting:: task_soft_time_limit
 
