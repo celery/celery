@@ -203,8 +203,9 @@ class Celery:
     task_cls = 'celery.app.task:Task'
     registry_cls = 'celery.app.registry:TaskRegistry'
 
-    #: Thread local storage.
-    _local = None
+    # Thread local storage. Note that this doesn't work with eventlet since every spawned coroutine has a unique
+    # identifier and hence acquires its own cache
+    local = None
     _fixups = None
     _pool = None
     _conf = None
@@ -229,7 +230,7 @@ class Celery:
                  autofinalize=True, namespace=None, strict_typing=True,
                  **kwargs):
 
-        self._local = threading.local()
+        self.local = threading.local()
 
         self.clock = LamportClock()
         self.main = main
@@ -1233,9 +1234,9 @@ class Celery:
     def thread_oid(self):
         """Per-thread unique identifier for this app."""
         try:
-            return self._local.oid
+            return self.local.oid
         except AttributeError:
-            self._local.oid = new_oid = oid_from(self, threads=True)
+            self.local.oid = new_oid = oid_from(self, threads=True)
             return new_oid
 
     @cached_property
@@ -1247,9 +1248,9 @@ class Celery:
     def backend(self):
         """Current backend instance."""
         try:
-            return self._local.backend
+            return self.local.backend
         except AttributeError:
-            self._local.backend = new_backend = self._get_backend()
+            self.local.backend = new_backend = self._get_backend()
             return new_backend
 
     @property

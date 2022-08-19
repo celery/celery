@@ -667,8 +667,17 @@ class Backend:
         """Backend cleanup."""
 
     def process_cleanup(self):
-        """Cleanup actions to do at the end of a task worker process."""
-
+        try:
+            from eventlet import corolocal
+            task_backend_cache = self.app.local
+            # Whenever an eventlet pool spawns a coroutine it has a different identifier and hence will acquire
+            # a new coroutine-local storage. To avoid that we leak connections we explicitly clean out the
+            # cache once the coroutine is done.
+            if isinstance(task_backend_cache, corolocal.local):
+                task_backend_cache.__dict__.clear()
+        except ImportError:
+            # Eventlet is not installed and hence not used
+            pass
     def on_task_call(self, producer, task_id):
         return {}
 
