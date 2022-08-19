@@ -309,6 +309,10 @@ class Celery:
         self.on_init()
         _register_app(self)
 
+        backend_cls = backends.by_url(
+            self.backend_cls or self.conf.result_backend,
+            self.loader)
+
     def _get_default_loader(self):
         # the --loader command-line argument sets the environment variable.
         return (
@@ -952,6 +956,13 @@ class Celery:
         """Return information useful in bug reports."""
         return bugreport(self)
 
+    @cached_property
+    def _thread_safe_backend(self):
+        backend, url = backends.by_url(
+            self.backend_cls or self.conf.result_backend,
+            self.loader)
+        return backend(app=self, url=url)
+
     def _get_backend(self):
         backend, url = backends.by_url(
             self.backend_cls or self.conf.result_backend,
@@ -1250,7 +1261,17 @@ class Celery:
         try:
             return self.local.backend
         except AttributeError:
-            self.local.backend = new_backend = self._get_backend()
+            backend_cls, _ = backends.by_url(
+                self.backend_cls or self.conf.result_backend,
+                self.loader)
+
+            if backend_cls.is_threadsafe:
+                self.local.backend = self._thread_safe_backend
+                return self._thread_safe_backend
+
+            new_backend = self._get_backend()
+            self.local.backend = new_backend
+
             return new_backend
 
     @property

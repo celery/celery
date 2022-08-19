@@ -202,6 +202,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
     supports_autoexpire = True
     supports_native_join = True
+    is_threadsafe = True
 
     #: Maximal length of string value in Redis.
     #: 512 MB - https://redis.io/topics/data-types
