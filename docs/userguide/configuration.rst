@@ -514,8 +514,6 @@ be killed and replaced with a new one when this is exceeded.
 
 .. setting:: task_allow_error_cb_on_chord_header
 
-.. _task_allow_error_cb_on_chord_header:
-
 ``task_allow_error_cb_on_chord_header``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -527,7 +525,7 @@ Enabling this flag will allow linking an error callback to a chord header,
 which by default will not link when using :code:`link_error()`, and preventing
 from the chord's body to execute if any of the tasks in the header fails.
 
-Consider the following canvas:
+Consider the following canvas with the flag disabled (default behavior):
 
 .. code-block:: python
 
@@ -536,16 +534,23 @@ Consider the following canvas:
     c = chord(header, body)
     c.link_error(error_callback_sig)
 
-If :code:`t1` or :code:`t2` will fail, by default, the chord body would still execute, and :code:`error_callback_sig` will **not** be called.
+If *any* of the header tasks failed (:code:`t1` or :code:`t2`), by default, the chord body (:code:`t3`) would **not execute**, and :code:`error_callback_sig` will be called **once** (for the body).
 
 Enabling this flag will change the above behavior by:
 
 1. :code:`error_callback_sig` will be linked to :code:`t1` and :code:`t2` (as well as :code:`t3`).
-2. If :code:`t1` or :code:`t2` failed, :code:`t3` **will not** execute.
-3. If *any* of the header tasks failed, :code:`error_callback_sig` will be called for **each** failed header task **and** the :code:`body` (even if it didn't run).
+2. If *any* of the header tasks failed, :code:`error_callback_sig` will be called **for each** failed header task **and** the :code:`body` (even if the body didn't run).
 
-Using such a workflow may allow preventing the chord body from executing if the header was not completed successfully.
-This differs from the standard behavior of the chord, which will execute the body even if the header fails.
+Consider now the following canvas with the flag enabled:
+
+.. code-block:: python
+
+    header = group([failingT1, failingT2])
+    body = t3
+    c = chord(header, body)
+    c.link_error(error_callback_sig)
+
+If *all* of the header tasks failed (:code:`failingT1` and :code:`failingT2`), then the chord body (:code:`t3`) would **not execute**, and :code:`error_callback_sig` will be called **3 times** (two times for the header and one time for the body).
 
 .. setting:: task_soft_time_limit
 

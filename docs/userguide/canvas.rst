@@ -941,12 +941,10 @@ Chords may have callback and errback signatures linked to them, which addresses
 some of the issues with linking signatures to groups.
 Doing so will link the provided signature to the chord's body which can be
 expected to gracefully invoke callbacks just once upon completion of the body,
-or errbacks just once if the body fails.
+or errbacks just once if any task in the chord header or body fails.
 
-This behavior can be manipulated to allow error handling of the chord header
-using the :ref:`task_allow_error_cb_on_chord_header <task_allow_error_cb_on_chord_header>` flag.
-Enabling this flag will cause the chord header to invoke the errback if any of the tasks in the header fail,
-and prevent the body from being executed if any of the tasks in the header fail.
+This behavior can be manipulated to allow error handling of the chord header using the :ref:`task_allow_error_cb_on_chord_header <task_allow_error_cb_on_chord_header>` flag.
+Enabling this flag will cause the chord header to invoke the errback for the body (default behavior) *and* any task in the chord's header that fails.
 
 .. _chord-important-notes:
 
