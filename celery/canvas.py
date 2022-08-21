@@ -7,6 +7,7 @@
 
 import itertools
 import operator
+import warnings
 from abc import ABCMeta, abstractmethod
 from collections import deque
 from collections.abc import MutableSequence
@@ -22,6 +23,7 @@ from kombu.utils.uuid import uuid
 from vine import barrier
 
 from celery._state import current_app
+from celery.exceptions import CPendingDeprecationWarning
 from celery.result import GroupResult, allow_join_result
 from celery.utils import abstract
 from celery.utils.collections import ChainMap
@@ -1612,7 +1614,7 @@ class _chord(Signature):
 
     def __or__(self, other):
         if (not isinstance(other, (group, _chain)) and
-           isinstance(other, Signature)):
+            isinstance(other, Signature)):
             # chord | task ->  attach to body
             sig = self.clone()
             sig.body = sig.body | other
@@ -1815,6 +1817,15 @@ class _chord(Signature):
                     task.link_error(errback)
             else:
                 self.tasks.link_error(errback)
+        else:
+            warnings.warn(
+                "task_allow_error_cb_on_chord_header=False is pending deprecation in "
+                "a future release of Celery.\n"
+                "Please test the new behavior by setting task_allow_error_cb_on_chord_header to True "
+                "and report any concerns you might have in our issue tracker before we make a final decision "
+                "regarding how errbacks should behave when used with chords.",
+                CPendingDeprecationWarning
+            )
 
         self.body.link_error(errback)
         return errback
