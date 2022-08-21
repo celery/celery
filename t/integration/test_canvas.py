@@ -2764,7 +2764,7 @@ class test_chord:
                 # Double check
                 assert not redis_connection.exists(body_key), 'Chord body was called when it should have not'
 
-            with subtests.test(msg='Confirm there only one errback was called'):
+            with subtests.test(msg='Confirm only one errback was called'):
                 await_redis_echo((errback_msg,), redis_key=errback_key, timeout=10)
                 with pytest.raises(TimeoutError):
                     await_redis_echo((errback_msg,), redis_key=errback_key, timeout=10)
