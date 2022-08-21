@@ -525,7 +525,7 @@ Default: Disabled.
 
 Enabling this flag will allow linking an error callback to a chord header,
 which by default will not link when using :code:`link_error()`, and preventing
-from the chord body to execute if the header fails.
+from the chord's body to execute if any of the tasks in the header fails.
 
 Consider the following canvas:
 
