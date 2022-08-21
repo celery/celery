@@ -10,7 +10,7 @@ __all__ = ('Option', 'NAMESPACES', 'flatten', 'find')
 
 DEFAULT_POOL = 'prefork'
 
-DEFAULT_ACCEPT_CONTENT = ['json']
+DEFAULT_ACCEPT_CONTENT = ('json',)
 DEFAULT_PROCESS_LOG_FMT = """
     [%(asctime)s: %(levelname)s/%(processName)s] %(message)s
 """.strip()
