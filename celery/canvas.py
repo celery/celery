@@ -1614,7 +1614,7 @@ class _chord(Signature):
 
     def __or__(self, other):
         if (not isinstance(other, (group, _chain)) and
-            isinstance(other, Signature)):
+                isinstance(other, Signature)):
             # chord | task ->  attach to body
             sig = self.clone()
             sig.body = sig.body | other
