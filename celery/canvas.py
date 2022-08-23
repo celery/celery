@@ -176,7 +176,7 @@ class StampingVisitor(metaclass=ABCMeta):
          Returns:
              Dict: headers to update.
         """
-        return self.on_signature(chord.body, **header)
+        return {}
 
 
 class GroupStampingVisitor(StampingVisitor):
