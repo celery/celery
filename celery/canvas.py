@@ -496,7 +496,9 @@ class Signature(dict):
         self.immutable = immutable
 
     def stamp(self, visitor=None, **headers):
-        """Apply this task asynchronously.
+        """Stamp this signature with additional custom headers.
+        Using a visitor will pass on responsibility for the stamping
+        to the visitor.
 
         Arguments:
             visitor (StampingVisitor): Visitor API object.
