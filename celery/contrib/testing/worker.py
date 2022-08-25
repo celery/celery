@@ -72,6 +72,7 @@ def start_worker(
     """
     test_worker_starting.send(sender=app)
 
+    worker = None
     try:
         with _start_worker_thread(app,
                                   concurrency=concurrency,
