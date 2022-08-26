@@ -252,7 +252,7 @@ class Task:
     track_started = None
 
     #: When enabled messages for this task will be acknowledged **after**
-    #: the task has been executed, and not *just before* (the
+    #: the task has been executed, and not *right before* (the
     #: default behavior).
     #:
     #: Please note that this means the task may be executed twice if the
