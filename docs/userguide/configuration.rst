@@ -595,7 +595,7 @@ clean up before the hard time limit comes:
 Default: Disabled.
 
 Late ack means the task messages will be acknowledged **after** the task
-has been executed, not *just before* (the default behavior).
+has been executed, not *right before* (the default behavior).
 
 .. seealso::
 
