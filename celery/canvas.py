@@ -91,7 +91,6 @@ class StampingVisitor(metaclass=ABCMeta):
     a canvas primitive override method that represents it.
     """
 
-    @abstractmethod
     def on_group_start(self, group, **headers) -> dict:
         """Method that is called on group stamping start.
 
@@ -101,7 +100,7 @@ class StampingVisitor(metaclass=ABCMeta):
          Returns:
              Dict: headers to update.
          """
-        pass
+        return {}
 
     def on_group_end(self, group, **headers) -> None:
         """Method that is called on group stamping end.
@@ -112,7 +111,6 @@ class StampingVisitor(metaclass=ABCMeta):
          """
         pass
 
-    @abstractmethod
     def on_chain_start(self, chain, **headers) -> dict:
         """Method that is called on chain stamping start.
 
@@ -122,7 +120,7 @@ class StampingVisitor(metaclass=ABCMeta):
          Returns:
              Dict: headers to update.
          """
-        pass
+        return {}
 
     def on_chain_end(self, chain, **headers) -> None:
         """Method that is called on chain stamping end.
@@ -196,13 +194,10 @@ class GroupStampingVisitor(StampingVisitor):
 
         if group.id not in self.groups:
             self.groups.append(group.id)
-        return {'groups': list(self.groups), "stamped_headers": list(self.stamped_headers)}
+        return super().on_group_start(group, **headers)
 
     def on_group_end(self, group, **headers) -> None:
         self.groups.pop()
-
-    def on_chain_start(self, chain, **headers) -> dict:
-        return {'groups': list(self.groups), "stamped_headers": list(self.stamped_headers)}
 
     def on_signature(self, sig, **headers) -> dict:
         return {'groups': list(self.groups), "stamped_headers": list(self.stamped_headers)}
@@ -1658,10 +1653,6 @@ class _chord(Signature):
         return body_result
 
     def stamp(self, visitor=None, **headers):
-        if visitor is not None and self.body is not None:
-            headers.update(visitor.on_chord_body(self, **headers))
-            self.body.stamp(visitor=visitor, **headers)
-
         if visitor is not None:
             headers.update(visitor.on_chord_header_start(self, **headers))
         super().stamp(visitor=visitor, **headers)
@@ -1678,6 +1669,10 @@ class _chord(Signature):
 
         if visitor is not None:
             visitor.on_chord_header_end(self, **headers)
+
+        if visitor is not None and self.body is not None:
+            headers.update(visitor.on_chord_body(self, **headers))
+            self.body.stamp(visitor=visitor, **headers)
 
     def apply_async(self, args=None, kwargs=None, task_id=None,
                     producer=None, publisher=None, connection=None,
