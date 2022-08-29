@@ -88,7 +88,13 @@ class CanvasCase:
 
         @self.app.task(shared=False)
         def xprod(numbers):
-            return math.prod(numbers)
+            try:
+                return math.prod(numbers)
+            except AttributeError:
+                import operator
+                from functools import reduce
+
+                return reduce(operator.mul, numbers)
 
         self.xprod = xprod
 
