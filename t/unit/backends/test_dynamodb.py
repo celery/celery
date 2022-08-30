@@ -121,6 +121,32 @@ class test_DynamoDBBackend:
         mock_set_table_ttl.assert_called_once()
 
     def test_get_or_create_table_not_exists(self):
+        from botocore.exceptions import ClientError
+
+        self.backend._client = MagicMock()
+        mock_create_table = self.backend._client.create_table = MagicMock()
+        client_error = ClientError(
+            {
+                'Error': {
+                    'Code': 'ResourceNotFoundException'
+                }
+            },
+            'DescribeTable'
+        )
+        mock_describe_table = self.backend._client.describe_table = \
+            MagicMock()
+        mock_describe_table.side_effect = client_error
+        self.backend._wait_for_table_status = MagicMock()
+
+        self.backend._get_or_create_table()
+        mock_describe_table.assert_called_once_with(
+            TableName=self.backend.table_name
+        )
+        mock_create_table.assert_called_once_with(
+            **self.backend._get_table_schema()
+        )
+
+    def test_get_or_create_table_already_exists(self):
         self.backend._client = MagicMock()
         mock_create_table = self.backend._client.create_table = MagicMock()
         mock_describe_table = self.backend._client.describe_table = \
@@ -137,37 +163,6 @@ class test_DynamoDBBackend:
             TableName=self.backend.table_name
         )
         mock_create_table.assert_not_called()
-
-    def test_get_or_create_table_already_exists(self):
-        from botocore.exceptions import ClientError
-
-        self.backend._client = MagicMock()
-        mock_create_table = self.backend._client.create_table = MagicMock()
-        client_error = ClientError(
-            {
-                'Error': {
-                    'Code': 'ResourceInUseException',
-                    'Message': 'Table already exists: {}'.format(
-                        self.backend.table_name
-                    )
-                }
-            },
-            'CreateTable'
-        )
-        mock_create_table.side_effect = client_error
-        mock_describe_table = self.backend._client.describe_table = \
-            MagicMock()
-
-        mock_describe_table.return_value = {
-            'Table': {
-                'TableStatus': 'ACTIVE'
-            }
-        }
-
-        self.backend._get_or_create_table()
-        mock_describe_table.assert_called_once_with(
-            TableName=self.backend.table_name
-        )
 
     def test_wait_for_table_status(self):
         self.backend._client = MagicMock()
