@@ -88,7 +88,15 @@ class CanvasCase:
 
         @self.app.task(shared=False)
         def xprod(numbers):
-            return math.prod(numbers)
+            try:
+                return math.prod(numbers)
+            except AttributeError:
+                #  TODO: Drop this backport once
+                #        we drop support for Python 3.7
+                import operator
+                from functools import reduce
+
+                return reduce(operator.mul, numbers)
 
         self.xprod = xprod
 
@@ -1590,6 +1598,38 @@ class test_chord(CanvasCase):
             assert sum_task_res._get_task_meta()['groups'] == [body.id]
         with subtests.test("prod_task_res is stamped", groups=[body.id]):
             assert prod_task_res._get_task_meta()['groups'] == [body.id]
+
+    def test_chord_stamping_body_chord(self, subtests):
+        """
+        In the case of chord within a chord that is from another canvas
+        element, ensure that chord stamps are added correctly when chord are
+        run in parallel.
+        """
+        self.app.conf.task_always_eager = True
+        self.app.conf.task_store_eager_result = True
+        self.app.conf.result_extended = True
+
+        parent_header_tasks = [self.add.s(i, i) for i in range(10)]
+
+        sum_task = self.xsum.s()
+        sum_task_res = sum_task.freeze()
+        sum_task2 = self.xsum.s()
+        sum_task_res2 = sum_task2.freeze()
+        prod_task = self.xprod.s()
+        prod_task_res = sum_task.freeze()
+
+        body = chord(group(sum_task, prod_task), sum_task2, app=self.app)
+
+        g = chord(parent_header_tasks, body, app=self.app)
+        g.freeze()
+        g.apply()
+
+        with subtests.test("sum_task_res is stamped", groups=[body.id]):
+            assert sum_task_res._get_task_meta()['groups'] == [body.id]
+        with subtests.test("prod_task_res is stamped", groups=[body.id]):
+            assert prod_task_res._get_task_meta()['groups'] == [body.id]
+        with subtests.test("sum_task_res2 is NOT stamped", groups=[]):
+            assert len(sum_task_res2._get_task_meta()['groups']) == 0
 
     def test__get_app_does_not_exhaust_generator(self):
         def build_generator():
