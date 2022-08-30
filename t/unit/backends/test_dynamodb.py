@@ -133,9 +133,10 @@ class test_DynamoDBBackend:
         }
 
         self.backend._get_or_create_table()
-        mock_create_table.assert_called_once_with(
-            **self.backend._get_table_schema()
+        mock_describe_table.assert_called_once_with(
+            TableName=self.backend.table_name
         )
+        mock_create_table.assert_not_called()
 
     def test_get_or_create_table_already_exists(self):
         from botocore.exceptions import ClientError
