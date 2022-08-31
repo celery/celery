@@ -201,28 +201,25 @@ class DynamoDBBackend(KeyValueStoreBackend):
         """Create table if not exists, otherwise return the description."""
         table_schema = self._get_table_schema()
         try:
-            table_description = self._client.create_table(**table_schema)
-            logger.info(
-                'DynamoDB Table {} did not exist, creating.'.format(
-                    self.table_name
-                )
-            )
-            # In case we created the table, wait until it becomes available.
-            self._wait_for_table_status('ACTIVE')
-            logger.info(
-                'DynamoDB Table {} is now available.'.format(
-                    self.table_name
-                )
-            )
-            return table_description
+            return self._client.describe_table(TableName=self.table_name)
         except ClientError as e:
             error_code = e.response['Error'].get('Code', 'Unknown')
 
-            # If table exists, do not fail, just return the description.
-            if error_code == 'ResourceInUseException':
-                return self._client.describe_table(
-                    TableName=self.table_name
+            if error_code == 'ResourceNotFoundException':
+                table_description = self._client.create_table(**table_schema)
+                logger.info(
+                    'DynamoDB Table {} did not exist, creating.'.format(
+                        self.table_name
+                    )
                 )
+                # In case we created the table, wait until it becomes available.
+                self._wait_for_table_status('ACTIVE')
+                logger.info(
+                    'DynamoDB Table {} is now available.'.format(
+                        self.table_name
+                    )
+                )
+                return table_description
             else:
                 raise e
 
