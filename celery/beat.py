@@ -622,8 +622,8 @@ class Service:
         self._is_stopped = Event()
 
     def __reduce__(self):
-        return self.__class__, (self.max_interval, self.schedule_filename,
-                                self.scheduler_cls, self.app)
+        return self.__class__, (self.app, self.max_interval,
+                                self.schedule_filename, self.scheduler_cls)
 
     def start(self, embedded_process=False):
         info('beat: Starting...')
