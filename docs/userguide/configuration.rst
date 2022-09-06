@@ -552,6 +552,17 @@ Consider now the following canvas with the flag enabled:
 
 If *all* of the header tasks failed (:code:`failingT1` and :code:`failingT2`), then the chord body (:code:`t3`) would **not execute**, and :code:`error_callback_sig` will be called **3 times** (two times for the header and one time for the body).
 
+Lastly, consider the following canvas with the flag enabled:
+
+.. code-block:: python
+
+    header = group([failingT1, failingT2])
+    body = t3
+    upgraded_chord = chain(header, body)
+    upgraded_chord.link_error(error_callback_sig)
+
+This canvas will behave exactly the same as the previous one, since the :code:`chain` will be upgraded to a :code:`chord` internally.
+
 .. setting:: task_soft_time_limit
 
 ``task_soft_time_limit``

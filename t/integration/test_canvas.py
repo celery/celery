@@ -2772,6 +2772,70 @@ class test_chord:
             # Cleanup
             redis_connection.delete(errback_key)
 
+    def test_flag_allow_error_cb_on_chord_header_on_upgraded_chord(self, manager, subtests):
+        """
+        Confirm that allow_error_callback_on_chord_header flag supports upgraded chords
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+        redis_connection = get_redis_connection()
+
+        manager.app.conf.task_allow_error_cb_on_chord_header = True
+
+        errback_msg = 'errback called'
+        errback_key = 'echo_errback'
+        errback_sig = redis_echo.si(errback_msg, redis_key=errback_key)
+
+        body_msg = 'chord body called'
+        body_key = 'echo_body'
+        body_sig = redis_echo.si(body_msg, redis_key=body_key)
+
+        headers = (
+            # (fail.si(),),  <-- this is not supported because it's not a valid chord header (only one task)
+            (fail.si(), fail.si(), fail.si()),
+            (fail.si(), identity.si(42)),
+            (fail.si(), identity.si(42), identity.si(42)),
+            (fail.si(), identity.si(42), fail.si()),
+            (fail.si(), identity.si(42), fail.si(), identity.si(42)),
+            (fail.si(), identity.si(42), fail.si(), identity.si(42), fail.si()),
+        )
+
+        # for some reason using parametrize breaks the test so we do it manually unfortunately
+        for header in headers:
+            implicit_chord_sig = chain(group(list(header)), body_sig)
+            implicit_chord_sig.link_error(errback_sig)
+            redis_connection.delete(errback_key, body_key)
+
+            with subtests.test(msg='Error propagates from failure in header'):
+                res = implicit_chord_sig.delay()
+                with pytest.raises(ExpectedException):
+                    res.get(timeout=TIMEOUT)
+
+            with subtests.test(msg='Confirm the body was not executed'):
+                with pytest.raises(TimeoutError):
+                    # confirm the chord body was not called
+                    await_redis_echo((body_msg,), redis_key=body_key, timeout=10)
+                # Double check
+                assert not redis_connection.exists(body_key), 'Chord body was called when it should have not'
+
+            with subtests.test(msg='Confirm the errback was called for each failed header task + body'):
+                # confirm the errback was called for each task in the chord header
+                failed_header_tasks_count = len(list(filter(lambda f_sig: f_sig.name == fail.si().name, header)))
+                expected_errbacks_count = failed_header_tasks_count + 1  # +1 for the body
+                expected_errbacks = tuple(errback_msg for _ in range(expected_errbacks_count))
+                await_redis_echo(expected_errbacks, redis_key=errback_key)
+
+                # confirm there are not leftovers
+                assert not redis_connection.exists(errback_key)
+
+            # Cleanup
+            redis_connection.delete(errback_key)
+
 
 class test_signature_serialization:
     """
