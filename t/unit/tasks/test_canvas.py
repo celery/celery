@@ -1609,7 +1609,8 @@ class test_chord(CanvasCase):
         self.app.conf.task_store_eager_result = True
         self.app.conf.result_extended = True
 
-        parent_header_tasks = [self.add.s(i, i) for i in range(10)]
+        parent_header_tasks = group([self.add.s(i, i) for i in range(10)])
+        parent_header_tasks_res = parent_header_tasks.freeze()
 
         sum_task = self.xsum.s()
         sum_task_res = sum_task.freeze()
@@ -1620,14 +1621,20 @@ class test_chord(CanvasCase):
 
         body = chord(group(sum_task, prod_task), sum_task2, app=self.app)
 
-        g = chord(parent_header_tasks, body, app=self.app)
-        g.freeze()
-        g.apply()
+        c = chord(parent_header_tasks, body, app=self.app)
+        c.freeze()
+        c.apply()
 
+        with subtests.test("parent_header_tasks are stamped", groups=[c.id]):
+            for ar in parent_header_tasks_res.children:
+                assert ar._get_task_meta()['groups'] == [c.id]
+                assert ar._get_task_meta()['groups'] != [body.id]
         with subtests.test("sum_task_res is stamped", groups=[body.id]):
             assert sum_task_res._get_task_meta()['groups'] == [body.id]
+            assert sum_task_res._get_task_meta()['groups'] != [c.id]
         with subtests.test("prod_task_res is stamped", groups=[body.id]):
             assert prod_task_res._get_task_meta()['groups'] == [body.id]
+            assert prod_task_res._get_task_meta()['groups'] != [c.id]
         with subtests.test("sum_task_res2 is NOT stamped", groups=[]):
             assert len(sum_task_res2._get_task_meta()['groups']) == 0
 
