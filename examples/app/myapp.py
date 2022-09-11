@@ -22,6 +22,7 @@ name using the fully qualified form::
     $ celery -A myapp:app worker -l INFO
 
 """
+import sys
 from time import sleep
 
 from celery import Celery
@@ -42,4 +43,4 @@ def add(x, y):
 
 
 if __name__ == '__main__':
-    app.start()
+    app.start(sys.argv[1:])
