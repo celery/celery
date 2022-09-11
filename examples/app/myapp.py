@@ -22,6 +22,7 @@ name using the fully qualified form::
     $ celery -A myapp:app worker -l INFO
 
 """
+import os
 import sys
 from time import sleep
 
@@ -29,7 +30,7 @@ from celery import Celery
 
 app = Celery(
     'myapp',
-    broker='amqp://guest@localhost//',
+    broker=os.environ.get('celery_broker_url', 'amqp://guest@localhost//'),
     # ## add result backend here if needed.
     # backend='rpc'
     task_acks_late=True
@@ -40,6 +41,11 @@ app = Celery(
 def add(x, y):
     sleep(10)
     return x + y
+
+
+@app.task
+def echo(d):
+    print(repr(d))
 
 
 if __name__ == '__main__':
