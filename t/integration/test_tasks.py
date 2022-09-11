@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from time import perf_counter, sleep
 
 import pytest
@@ -7,9 +7,9 @@ import celery
 from celery import group
 
 from .conftest import get_active_redis_channels
-from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result, add_not_typed, fail,
-                    print_unicode, retry, retry_once, retry_once_headers, retry_once_priority, return_properties,
-                    sleeping)
+from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result, add_not_typed,
+                    expecting_date, fail, print_unicode, retry, retry_once, retry_once_headers, retry_once_priority,
+                    return_properties, sleeping)
 
 TIMEOUT = 10
 
@@ -286,6 +286,14 @@ class test_tasks:
     def test_properties(self, celery_session_worker):
         res = return_properties.apply_async(app_id="1234")
         assert res.get(timeout=TIMEOUT)["app_id"] == "1234"
+
+    @flaky
+    def test_regression_issue7754(self):
+        res = expecting_date.delay(datetime.utcnow())
+        assert not res.get(timeout=TIMEOUT)
+
+        res = expecting_date.delay(date.today())
+        assert res.get(timeout=TIMEOUT)
 
 
 class test_task_redis_result_backend:

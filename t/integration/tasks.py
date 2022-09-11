@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from datetime import date, datetime
 from time import sleep
 
 from celery import Signature, Task, chain, chord, group, shared_task
@@ -421,3 +422,8 @@ def errback_old_style(request_id):
 def errback_new_style(request, exc, tb):
     redis_count(request.id)
     return request.id
+
+
+@shared_task
+def expecting_date(d):
+    return isinstance(d, date) and not isinstance(d, datetime)
