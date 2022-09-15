@@ -17,18 +17,19 @@ from .base import BaseBackend
 try:
     import pymongo
 except ImportError:  # pragma: no cover
-    pymongo = None   # noqa
+    pymongo = None  # noqa
 
 if pymongo:
     try:
         from bson.binary import Binary
-    except ImportError:                     # pragma: no cover
-        from pymongo.binary import Binary   # noqa
+    except ImportError:  # pragma: no cover
+        from pymongo.binary import Binary  # noqa
     from pymongo.errors import InvalidDocument  # noqa
-else:                                       # pragma: no cover
-    Binary = None                           # noqa
+else:  # pragma: no cover
+    Binary = None  # noqa
 
-    class InvalidDocument(Exception):       # noqa
+
+    class InvalidDocument(Exception):  # noqa
         pass
 
 __all__ = ('MongoBackend',)
@@ -152,7 +153,7 @@ class MongoBackend(BaseBackend):
                 # See pymongo.Connection() for more info.
                 host = self.host
                 if isinstance(host, string_t) \
-                   and not host.startswith('mongodb://'):
+                    and not host.startswith('mongodb://'):
                     host = 'mongodb://{0}:{1}'.format(host, self.port)
             # don't change self.options
             conf = dict(self.options)
@@ -182,11 +183,18 @@ class MongoBackend(BaseBackend):
             return data
         return super(MongoBackend, self).decode(data)
 
+    def current_task_children(self, request=None):
+        return self.encode(super(MongoBackend, self).current_task_children(request))
+
     def _store_result(self, task_id, result, state,
                       traceback=None, request=None, **kwargs):
         """Store return value and state of an executed task."""
-        meta = self._get_result_meta(result=self.encode(result), state=state,
-                                     traceback=traceback, request=request)
+        meta = self._get_result_meta(
+            result=self.encode(result),
+            state=state,
+            traceback=self.encode(traceback),
+            request=request
+        )
         # Add the _id for mongodb
         meta['_id'] = task_id
 
@@ -218,7 +226,8 @@ class MongoBackend(BaseBackend):
             'result': self.encode([i.id for i in result]),
             'date_done': datetime.utcnow(),
         }
-        self.group_collection.replace_one({'_id': group_id}, meta, upsert=True)
+        self.group_collection.replace_one({'_id': group_id}, meta,
+                                          upsert=True)
         return result
 
     def _restore_group(self, group_id):
