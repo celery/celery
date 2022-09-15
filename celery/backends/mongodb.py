@@ -184,6 +184,7 @@ class MongoBackend(BaseBackend):
 
     def current_task_children(self, request=None):
         return self.encode(super(MongoBackend, self).current_task_children(request))
+
     def _store_result(self, task_id, result, state,
                       traceback=None, request=None, **kwargs):
         """Store return value and state of an executed task."""
