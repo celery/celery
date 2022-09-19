@@ -2,6 +2,7 @@ on:
   release:
     types: [released]
 
+permissions: {}
 jobs:
   post_release_to_hacker_news:
     runs-on: ubuntu-latest
