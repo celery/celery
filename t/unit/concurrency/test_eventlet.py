@@ -29,7 +29,7 @@ class EventletCase:
         for mod in [mod for mod in sys.modules
                     if mod.startswith('eventlet')]:
             try:
-                del(sys.modules[mod])
+                del (sys.modules[mod])
             except KeyError:
                 pass
 

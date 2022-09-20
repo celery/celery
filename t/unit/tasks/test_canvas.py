@@ -18,7 +18,7 @@ SIG = Signature({
     'subtask_type': ''},
 )
 try:
-    from collections import Iterable
+    from collections.abc import Iterable
 except ImportError:
     from collections.abc import Iterable
 
