@@ -742,7 +742,7 @@ class test_App:
         appid = id(app1)
         assert app1 in _state._get_active_apps()
         app1.close()
-        del(app1)
+        del (app1)
 
         gc.collect()
 
