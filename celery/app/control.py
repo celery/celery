@@ -499,6 +499,40 @@ class Control:
             'signal': signal,
         }, **kwargs)
 
+    def revoke_by_stamped_header(self, header, destination=None, terminate=False,
+                                 signal=TERM_SIGNAME, **kwargs):
+        """
+        Tell all (or specific) workers to revoke a task by a header (or list of key-value pairs).
+
+        If a task is revoked, the workers will ignore the task and
+        not execute it after all.
+
+        Arguments:
+            header (Union(dict, list[str])): Header of the task to revoke
+            terminate (bool): Also terminate the process currently working
+                on the task (if any).
+            signal (str): Name of signal to send to process if terminate.
+                Default is TERM.
+
+        See Also:
+            :meth:`broadcast` for supported keyword arguments.
+        """
+        result = self.broadcast('revoke_by_stamped_header', destination=destination, arguments={
+            'header': header,
+            'terminate': terminate,
+            'signal': signal,
+        }, **kwargs)
+
+        task_ids = set()
+        for host in result:
+            for response in host.values():
+                task_ids.update(response['ok'])
+
+        if task_ids:
+            return self.revoke(list(task_ids), destination=destination, terminate=terminate, signal=signal, **kwargs)
+        else:
+            return result
+
     def terminate(self, task_id,
                   destination=None, signal=TERM_SIGNAME, **kwargs):
         """Tell all (or specific) workers to terminate a task by id (or list of ids).

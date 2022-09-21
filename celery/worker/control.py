@@ -1,12 +1,13 @@
 """Worker remote control command implementations."""
 import io
 import tempfile
+import warnings
 from collections import UserDict, namedtuple
 
 from billiard.common import TERM_SIGNAME
 from kombu.utils.encoding import safe_repr
 
-from celery.exceptions import WorkerShutdown
+from celery.exceptions import CeleryWarning, WorkerShutdown
 from celery.platforms import signals as _signals
 from celery.utils.functional import maybe_list
 from celery.utils.log import get_logger
@@ -146,6 +147,54 @@ def revoke(state, task_id, terminate=False, signal=None, **kwargs):
     #     Outside of this scope that is a function.
     # supports list argument since 3.1
     task_ids, task_id = set(maybe_list(task_id) or []), None
+    task_ids = _revoke(state, task_ids, terminate, signal, **kwargs)
+    return ok(f'tasks {task_ids} flagged as revoked')
+
+
+@control_command(
+    variadic='header',
+    signature='[header1 [header2 [... [headerN]]]]',
+)
+def revoke_by_stamped_header(state, header, terminate=False, signal=None, **kwargs):
+    """Revoke task by header (or list of headers).
+
+    Keyword Arguments:
+        terminate (bool): Also terminate the process if the task is active.
+        signal (str): Name of signal to use for terminate (e.g., ``KILL``).
+    """
+    # pylint: disable=redefined-outer-name
+    # XXX Note that this redefines `terminate`:
+    #     Outside of this scope that is a function.
+    # supports list argument since 3.1
+    if isinstance(header, list):
+        headers, header = {h.split('=')[0]: h.split('=')[1] for h in header}, None
+    else:
+        headers = header
+
+    task_ids = set()
+    requests = worker_state.requests.values()
+
+    if requests:
+        warnings.warn(
+            "revoke_by_stamped_header does not scale well, when worker concurrency is high",
+            CeleryWarning
+        )
+
+        for req in requests:
+            if req.stamped_headers:
+                for stamped_header_key, expected_header_value in headers.items():
+                    if stamped_header_key in req.stamped_headers and \
+                            stamped_header_key in req._message.headers['stamps']:
+                        actual_header = req._message.headers['stamps'][stamped_header_key]
+                        if expected_header_value in actual_header:
+                            task_ids.add(req.task_id)
+                            continue
+
+    task_ids = _revoke(state, task_ids, terminate, signal, **kwargs)
+    return ok(list(task_ids))
+
+
+def _revoke(state, task_ids, terminate=False, signal=None, **kwargs):
     size = len(task_ids)
     terminated = set()
 
@@ -166,7 +215,7 @@ def revoke(state, task_id, terminate=False, signal=None, **kwargs):
 
     idstr = ', '.join(task_ids)
     logger.info('Tasks flagged as revoked: %s', idstr)
-    return ok(f'tasks {idstr} flagged as revoked')
+    return task_ids
 
 
 @control_command(
