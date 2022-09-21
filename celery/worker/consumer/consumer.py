@@ -31,7 +31,7 @@ from celery.utils.objects import Bunch
 from celery.utils.text import truncate
 from celery.utils.time import humanize_seconds, rate
 from celery.worker import loops
-from celery.worker.state import active_requests, maybe_shutdown, reserved_requests, task_reserved
+from celery.worker.state import active_requests, maybe_shutdown, requests, reserved_requests, task_reserved
 
 __all__ = ('Consumer', 'Evloop', 'dump_body')
 
@@ -444,6 +444,9 @@ class Consumer:
         for bucket in self.task_buckets.values():
             if bucket:
                 bucket.clear_pending()
+        for request_id in reserved_requests:
+            if request_id in requests:
+                del requests[request_id]
         reserved_requests.clear()
         if self.pool and self.pool.flush:
             self.pool.flush()
