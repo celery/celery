@@ -1,3 +1,5 @@
+import sys
+from importlib.util import find_spec
 from unittest.mock import Mock
 
 import pytest
@@ -339,3 +341,15 @@ class test_PromiseProxy:
 
         assert maybe_evaluate(30) == 30
         assert x.__evaluated__()
+
+
+class test_celery_import:
+    def test_import_celery(self, monkeypatch):
+        monkeypatch.delitem(sys.modules, "celery", raising=False)
+        spec = find_spec("celery")
+        assert spec
+
+        import celery
+
+        assert celery.__spec__ == spec
+        assert find_spec("celery") == spec
