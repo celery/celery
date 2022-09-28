@@ -48,7 +48,7 @@ def celery_config(request):
         # The file must contain a dictionary of valid configuration name/value pairs.
         config_overrides = json.load(open(str(request.config.rootdir / "integration-tests-config.json")))
         config.update(config_overrides)
-    except IOError:
+    except OSError:
         pass
     return config
 
