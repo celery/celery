@@ -145,8 +145,8 @@ class test_ExceptionInfo:
         except Exception:
             einfo = ExceptionInfo()
             assert str(einfo) == einfo.traceback
-            assert isinstance(einfo.exception, LookupError)
-            assert einfo.exception.args == ('The quick brown fox jumps...',)
+            assert isinstance(einfo.exception.exc, LookupError)
+            assert einfo.exception.exc.args == ('The quick brown fox jumps...',)
             assert einfo.traceback
 
             assert repr(einfo)

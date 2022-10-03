@@ -155,7 +155,7 @@ class test_trace_task(RequestCase):
             self.app, uuid(), self.mytask_raising.name, {}, [4], {},
         )
         assert isinstance(ret, ExceptionInfo)
-        assert ret.exception.args == (4,)
+        assert ret.exception.exc.args == (4,)
 
     def test_execute_task_ignore_result(self):
         @self.app.task(shared=False, ignore_result=True)
@@ -385,7 +385,7 @@ class test_Request(RequestCase):
             task_failure,
             sender=req.task,
             task_id=req.id,
-            exception=einfo.exception,
+            exception=einfo.exception.exc,
             args=req.args,
             kwargs=req.kwargs,
             traceback=einfo.traceback,
@@ -394,7 +394,7 @@ class test_Request(RequestCase):
             req.on_failure(einfo)
 
         req.task.backend.mark_as_failure.assert_called_once_with(req.id,
-                                                                 einfo.exception,
+                                                                 einfo.exception.exc,
                                                                  request=req._context,
                                                                  store_result=True)
 
@@ -807,7 +807,7 @@ class test_Request(RequestCase):
         m = self.TaskMessage(self.mytask.name, args=(), kwargs='foo')
         req = Request(m, app=self.app)
         with pytest.raises(InvalidTaskError):
-            raise req.execute().exception
+            raise req.execute().exception.exc
 
     def test_on_hard_timeout_acks_late(self, patching):
         error = patching('celery.worker.request.error')
