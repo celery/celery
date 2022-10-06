@@ -602,7 +602,7 @@ class test_chain(CanvasCase):
         c.apply_async(link_error=[s('error')])
         for task in c.tasks:
             assert task.options['link_error'] == [s('error')]
-        
+
         c.apply_async(priority=5)
         for task in c.tasks:
             assert task.options['priority'] == 5
