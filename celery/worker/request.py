@@ -10,6 +10,7 @@ from time import monotonic, time
 from weakref import ref
 
 from billiard.common import TERM_SIGNAME
+from billiard.einfo import ExceptionWithTraceback
 from kombu.utils.encoding import safe_repr, safe_str
 from kombu.utils.objects import cached_property
 
@@ -511,8 +512,11 @@ class Request:
         """Handler called if the task was successfully processed."""
         failed, retval, runtime = failed__retval__runtime
         if failed:
-            if isinstance(retval.exception, (SystemExit, KeyboardInterrupt)):
-                raise retval.exception
+            exc = retval.exception
+            if isinstance(exc, ExceptionWithTraceback):
+                exc = exc.exc
+            if isinstance(exc, (SystemExit, KeyboardInterrupt)):
+                raise exc
             return self.on_failure(retval, return_ok=True)
         task_ready(self, successful=True)
 
@@ -534,6 +538,9 @@ class Request:
         """Handler called if the task raised an exception."""
         task_ready(self)
         exc = exc_info.exception
+
+        if isinstance(exc, ExceptionWithTraceback):
+            exc = exc.exc
 
         is_terminated = isinstance(exc, Terminated)
         if is_terminated:
@@ -735,9 +742,11 @@ def create_request_cls(base, task, pool, hostname, eventer,
         def on_success(self, failed__retval__runtime, **kwargs):
             failed, retval, runtime = failed__retval__runtime
             if failed:
-                if isinstance(retval.exception, (
-                        SystemExit, KeyboardInterrupt)):
-                    raise retval.exception
+                exc = retval.exception
+                if isinstance(exc, ExceptionWithTraceback):
+                    exc = exc.exc
+                if isinstance(exc, (SystemExit, KeyboardInterrupt)):
+                    raise exc
                 return self.on_failure(retval, return_ok=True)
             task_ready(self)
 
