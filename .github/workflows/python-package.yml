@@ -19,6 +19,9 @@ on:
         - '**.toml'
         - '.github/workflows/python-package.yml'
 
+permissions:
+  contents: read # to fetch code (actions/checkout)
+
 jobs:
   Unit:
 
