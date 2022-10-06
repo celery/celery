@@ -106,7 +106,7 @@ Installing Celery
 =================
 
 Celery is on the Python Package Index (PyPI), so it can be installed
-with standard Python tools like ``pip`` or ``easy_install``:
+with standard Python tools like ``pip``:
 
 .. code-block:: console
 
