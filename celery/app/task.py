@@ -11,7 +11,7 @@ from celery._state import _task_stack
 from celery.canvas import GroupStampingVisitor, _chain, group, signature
 from celery.exceptions import Ignore, ImproperlyConfigured, MaxRetriesExceededError, Reject, Retry
 from celery.local import class_property
-from celery.result import EagerResult, denied_join_result
+from celery.result import EagerResult, allow_join_result, denied_join_result
 from celery.utils import abstract
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
@@ -960,7 +960,9 @@ class Task:
 
         # Finally, either apply or delay the new signature!
         if self.request.is_eager:
-            return sig.apply().get()
+            task_result = sig.apply()
+            with allow_join_result():
+                  return task_result.get()
         else:
             sig.delay()
             raise Ignore('Replaced by new task')
