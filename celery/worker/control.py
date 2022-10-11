@@ -152,10 +152,10 @@ def revoke(state, task_id, terminate=False, signal=None, **kwargs):
 
 
 @control_command(
-    variadic='header',
-    signature='[header1 [header2 [... [headerN]]]]',
+    variadic='headers',
+    signature='[key1=value1 [key2=value2 [... [keyN=valueN]]]]',
 )
-def revoke_by_stamped_header(state, header, terminate=False, signal=None, **kwargs):
+def revoke_by_stamped_headers(state, headers, terminate=False, signal=None, **kwargs):
     """Revoke task by header (or list of headers).
 
     Keyword Arguments:
@@ -166,17 +166,21 @@ def revoke_by_stamped_header(state, header, terminate=False, signal=None, **kwar
     # XXX Note that this redefines `terminate`:
     #     Outside of this scope that is a function.
     # supports list argument since 3.1
-    if isinstance(header, list):
-        headers, header = {h.split('=')[0]: h.split('=')[1] for h in header}, None
-    else:
-        headers = header
+    if isinstance(headers, list):
+        headers = {h.split('=')[0]: h.split('=')[1] for h in headers}, None
+
+    worker_state.revoked_headers.update(headers)
+
+    if not terminate:
+        return ok(f'headers {headers} flagged as revoked')
 
     task_ids = set()
-    requests = worker_state.requests.values()
+    requests = worker_state.active_requests.values()
 
+    # Terminate all running tasks of matching headers
     if requests:
         warnings.warn(
-            "revoke_by_stamped_header does not scale well, when worker concurrency is high",
+            "Terminating tasks by headers does not scale well when worker concurrency is high",
             CeleryWarning
         )
 

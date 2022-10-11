@@ -210,7 +210,7 @@ class test_tasks:
             stamped_task = add.si(1, 1)
             stamped_task.stamp(visitor=MonitoringIdStampingVisitor())
             result = stamped_task.freeze()
-            result.revoke_by_stamped_header(header={'monitoring_id': monitoring_id})
+            result.revoke_by_stamped_headers(headers={'monitoring_id': [monitoring_id]})
             stamped_task.apply_async()
             if monitoring_id == target_monitoring_id:
                 with pytest.raises(celery.exceptions.TaskRevokedError):

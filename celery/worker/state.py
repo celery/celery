@@ -67,6 +67,9 @@ all_total_count = [0]
 #: the list of currently revoked tasks.  Persistent if ``statedb`` set.
 revoked = LimitedSet(maxlen=REVOKES_MAX, expires=REVOKE_EXPIRES)
 
+#: Mapping of stamped headers flagged for revoking.
+revoked_headers = {}
+
 should_stop = None
 should_terminate = None
 

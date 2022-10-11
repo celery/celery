@@ -161,16 +161,16 @@ class AsyncResult(ResultBase):
                                 terminate=terminate, signal=signal,
                                 reply=wait, timeout=timeout)
 
-    def revoke_by_stamped_header(self, header, connection=None, terminate=False, signal=None,
-                                 wait=True, timeout=10):
-        """Send revoke signal to all workers only for tasks with matching a header (or list of key-value pairs).
+    def revoke_by_stamped_headers(self, headers, connection=None, terminate=False, signal=None,
+                                  wait=True, timeout=10):
+        """Send revoke signal to all workers only for tasks with matching headers values
 
         Any worker receiving the task, or having reserved the
         task, *must* ignore it.
         All header fields *must* match.
 
         Arguments:
-            header (Union(dict, list[str])): Header fields to match.
+            headers (dict[str, list]): Headers to match when revoking tasks.
             terminate (bool): Also terminate the process currently working
                 on the task (if any).
             signal (str): Name of signal to send to process if terminate.
@@ -181,9 +181,9 @@ class AsyncResult(ResultBase):
             timeout (float): Time in seconds to wait for replies when
                 ``wait`` is enabled.
         """
-        self.app.control.revoke_by_stamped_header(header, connection=connection,
-                                                  terminate=terminate, signal=signal,
-                                                  reply=wait, timeout=timeout)
+        self.app.control.revoke_by_stamped_headers(headers, connection=connection,
+                                                   terminate=terminate, signal=signal,
+                                                   reply=wait, timeout=timeout)
 
     def get(self, timeout=None, propagate=True, interval=0.5,
             no_ack=True, follow_parents=True, callback=None, on_message=None,

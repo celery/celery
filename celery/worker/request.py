@@ -60,6 +60,7 @@ send_retry = signals.task_retry.send
 task_accepted = state.task_accepted
 task_ready = state.task_ready
 revoked_tasks = state.revoked
+revoked_headers = state.revoked_headers
 
 
 class Request:
@@ -463,8 +464,19 @@ class Request:
             return True
         if self._expires:
             expired = self.maybe_expire()
-        if self.id in revoked_tasks:
-            info('Discarding revoked task: %s[%s]', self.name, self.id)
+
+        revoked_by_header, revoking_header = False, None
+        for header in self.stamped_headers:
+            if header in revoked_headers:
+                revoked_by_header = self.headers['stamps'][header] in revoked_headers[header]
+                revoking_header = {header: self.headers['stamps'][header]}
+                break
+
+        if self.id in revoked_tasks or revoked_by_header:
+            log_msg = 'Discarding revoked task: %s[%s]'
+            if revoked_by_header:
+                log_msg += ' (revoked by header: %s)' % revoking_header
+            info(log_msg, self.name, self.id)
             self._announce_revoked(
                 'expired' if expired else 'revoked', False, None, expired,
             )
