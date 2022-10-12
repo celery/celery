@@ -18,7 +18,7 @@ SIG = Signature({
     'subtask_type': ''},
 )
 try:
-    from collections import Iterable
+    from collections.abc import Iterable
 except ImportError:
     from collections.abc import Iterable
 
@@ -88,7 +88,15 @@ class CanvasCase:
 
         @self.app.task(shared=False)
         def xprod(numbers):
-            return math.prod(numbers)
+            try:
+                return math.prod(numbers)
+            except AttributeError:
+                #  TODO: Drop this backport once
+                #        we drop support for Python 3.7
+                import operator
+                from functools import reduce
+
+                return reduce(operator.mul, numbers)
 
         self.xprod = xprod
 
@@ -1591,6 +1599,45 @@ class test_chord(CanvasCase):
         with subtests.test("prod_task_res is stamped", groups=[body.id]):
             assert prod_task_res._get_task_meta()['groups'] == [body.id]
 
+    def test_chord_stamping_body_chord(self, subtests):
+        """
+        In the case of chord within a chord that is from another canvas
+        element, ensure that chord stamps are added correctly when chord are
+        run in parallel.
+        """
+        self.app.conf.task_always_eager = True
+        self.app.conf.task_store_eager_result = True
+        self.app.conf.result_extended = True
+
+        parent_header_tasks = group([self.add.s(i, i) for i in range(10)])
+        parent_header_tasks_res = parent_header_tasks.freeze()
+
+        sum_task = self.xsum.s()
+        sum_task_res = sum_task.freeze()
+        sum_task2 = self.xsum.s()
+        sum_task_res2 = sum_task2.freeze()
+        prod_task = self.xprod.s()
+        prod_task_res = sum_task.freeze()
+
+        body = chord(group(sum_task, prod_task), sum_task2, app=self.app)
+
+        c = chord(parent_header_tasks, body, app=self.app)
+        c.freeze()
+        c.apply()
+
+        with subtests.test("parent_header_tasks are stamped", groups=[c.id]):
+            for ar in parent_header_tasks_res.children:
+                assert ar._get_task_meta()['groups'] == [c.id]
+                assert ar._get_task_meta()['groups'] != [body.id]
+        with subtests.test("sum_task_res is stamped", groups=[body.id]):
+            assert sum_task_res._get_task_meta()['groups'] == [body.id]
+            assert sum_task_res._get_task_meta()['groups'] != [c.id]
+        with subtests.test("prod_task_res is stamped", groups=[body.id]):
+            assert prod_task_res._get_task_meta()['groups'] == [body.id]
+            assert prod_task_res._get_task_meta()['groups'] != [c.id]
+        with subtests.test("sum_task_res2 is NOT stamped", groups=[]):
+            assert len(sum_task_res2._get_task_meta()['groups']) == 0
+
     def test__get_app_does_not_exhaust_generator(self):
         def build_generator():
             yield self.add.s(1, 1)
@@ -2041,6 +2088,53 @@ class test_chord(CanvasCase):
             new_kw = c.kwargs.copy()
             new_kw.update(override_kw)
             assert c3.kwargs == new_kw
+
+    def test_flag_allow_error_cb_on_chord_header(self, subtests):
+        header_mock = [Mock(name='t1'), Mock(name='t2')]
+        header = group(header_mock)
+        body = Mock(name='tbody')
+        errback_sig = Mock(name='errback_sig')
+        chord_sig = chord(header, body, app=self.app)
+
+        with subtests.test(msg='Verify the errback is not linked'):
+            # header
+            for child_sig in header_mock:
+                child_sig.link_error.assert_not_called()
+            # body
+            body.link_error.assert_not_called()
+
+        with subtests.test(msg='Verify flag turned off links only the body'):
+            self.app.conf.task_allow_error_cb_on_chord_header = False
+            chord_sig.link_error(errback_sig)
+            # header
+            for child_sig in header_mock:
+                child_sig.link_error.assert_not_called()
+            # body
+            body.link_error.assert_called_once_with(errback_sig)
+
+        with subtests.test(msg='Verify flag turned on links the header'):
+            self.app.conf.task_allow_error_cb_on_chord_header = True
+            chord_sig.link_error(errback_sig)
+            # header
+            for child_sig in header_mock:
+                child_sig.link_error.assert_called_once_with(errback_sig)
+            # body
+            body.link_error.assert_has_calls([call(errback_sig), call(errback_sig)])
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_flag_allow_error_cb_on_chord_header_various_header_types(self):
+        """ Test chord link_error with various header types. """
+        self.app.conf.task_allow_error_cb_on_chord_header = True
+        headers = [
+            signature('t'),
+            [signature('t'), signature('t')],
+            group(signature('t'), signature('t'))
+        ]
+        for chord_header in headers:
+            c = chord(chord_header, signature('t'))
+            sig = signature('t')
+            errback = c.link_error(sig)
+            assert errback == sig
 
 
 class test_maybe_signature(CanvasCase):

@@ -943,6 +943,9 @@ Doing so will link the provided signature to the chord's body which can be
 expected to gracefully invoke callbacks just once upon completion of the body,
 or errbacks just once if any task in the chord header or body fails.
 
+This behavior can be manipulated to allow error handling of the chord header using the :ref:`task_allow_error_cb_on_chord_header <task_allow_error_cb_on_chord_header>` flag.
+Enabling this flag will cause the chord header to invoke the errback for the body (default behavior) *and* any task in the chord's header that fails.
+
 .. _chord-important-notes:
 
 Important Notes
@@ -1198,7 +1201,7 @@ pattern. The class that implements this custom logic must
 inherit ``VisitorStamping`` and implement appropriate methods.
 
 For example, the following example ``InGroupVisitor`` will label
-tasks that are in side of some group by lable ``in_group``.
+tasks that are in side of some group by label ``in_group``.
 
 .. code-block:: python
 
@@ -1218,3 +1221,33 @@ tasks that are in side of some group by lable ``in_group``.
 
         def on_signature(self, sig, **headers) -> dict:
             return {"in_group": [self.in_group], "stamped_headers": ["in_group"]}
+
+The following example shows another custom stamping visitor, which labels all
+tasks with a custom ``monitoring_id`` which can represent a UUID value of an external monitoring system,
+that can be used to track the task execution by including the id with such a visitor implementation.
+This ``monitoring_id`` can be a randomly generated UUID, or a unique identifier of the span id used by
+the external monitoring system.
+
+.. code-block:: python
+
+    class MonitoringIdStampingVisitor(StampingVisitor):
+        def on_signature(self, sig, **headers) -> dict:
+            return {'monitoring_id': uuid4(), 'stamped_headers': ['monitoring_id']}
+
+Next, lets see how to use the ``MonitoringIdStampingVisitor`` stamping visitor.
+
+.. code-block:: python
+
+    sig_example = signature('t1')
+    sig_example.stamp(visitor=MonitoringIdStampingVisitor())
+
+    group_example = group([signature('t1'), signature('t2')])
+    group_example.stamp(visitor=MonitoringIdStampingVisitor())
+
+    chord_example = chord([signature('t1'), signature('t2')], signature('t3'))
+    chord_example.stamp(visitor=MonitoringIdStampingVisitor())
+
+    chain_example = chain(signature('t1'), group(signature('t2'), signature('t3')), signature('t4'))
+    chain_example.stamp(visitor=MonitoringIdStampingVisitor())
+
+Lastly, it's important to mention that each monitoring id stamp in the example above would be different from each other between tasks.

@@ -167,6 +167,9 @@ The callbacks/errbacks will then be called in order, and all
 callbacks will be called with the return value of the parent task
 as a partial argument.
 
+In the case of a chord, we can handle errors using multiple handling strategies.
+See :ref:`chord error handling <chord-errors>` for more information.
+
 .. _calling-on-message:
 
 On message

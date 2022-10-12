@@ -33,3 +33,4 @@ test.db
 pip-wheel-metadata/
 .python-version
 .vscode/
+integration-tests-config.json

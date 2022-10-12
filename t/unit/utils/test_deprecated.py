@@ -40,7 +40,7 @@ class test_deprecated_property:
             description='foo', removal=None,
         )
         warn.reset_mock()
-        del(x.foo)
+        del (x.foo)
         warn.assert_called_with(
             stacklevel=3, deprecation='1.2', alternative=None,
             description='foo', removal=None,
@@ -57,7 +57,7 @@ class test_deprecated_property:
         with pytest.raises(AttributeError):
             x.foo = 10
         with pytest.raises(AttributeError):
-            del(x.foo)
+            del (x.foo)
 
 
 class test_warn:

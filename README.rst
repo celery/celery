@@ -68,11 +68,11 @@ This is the version of celery which will support Python 3.7 or newer.
 If you're running an older version of Python, you need to be running
 an older version of Celery:
 
+- Python 3.6: Celery 5.1 or earlier.
+- Python 2.7: Celery 4.x series.
 - Python 2.6: Celery series 3.1 or earlier.
 - Python 2.5: Celery series 3.0 or earlier.
 - Python 2.4: Celery series 2.2 or earlier.
-- Python 2.7: Celery 4.x series.
-- Python 3.6: Celery 5.1 or earlier.
 
 Celery is a project with minimal funding,
 so we don't support Microsoft Windows.

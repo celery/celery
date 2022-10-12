@@ -547,7 +547,7 @@ def _module(*names):
                 sys.modules[name] = prev[name]
             except KeyError:
                 try:
-                    del(sys.modules[name])
+                    del (sys.modules[name])
                 except KeyError:
                     pass
 

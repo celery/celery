@@ -7,6 +7,7 @@
 
 import itertools
 import operator
+import warnings
 from abc import ABCMeta, abstractmethod
 from collections import deque
 from collections.abc import MutableSequence
@@ -22,6 +23,7 @@ from kombu.utils.uuid import uuid
 from vine import barrier
 
 from celery._state import current_app
+from celery.exceptions import CPendingDeprecationWarning
 from celery.result import GroupResult, allow_join_result
 from celery.utils import abstract
 from celery.utils.collections import ChainMap
@@ -89,7 +91,6 @@ class StampingVisitor(metaclass=ABCMeta):
     a canvas primitive override method that represents it.
     """
 
-    @abstractmethod
     def on_group_start(self, group, **headers) -> dict:
         """Method that is called on group stamping start.
 
@@ -99,7 +100,7 @@ class StampingVisitor(metaclass=ABCMeta):
          Returns:
              Dict: headers to update.
          """
-        pass
+        return {}
 
     def on_group_end(self, group, **headers) -> None:
         """Method that is called on group stamping end.
@@ -110,7 +111,6 @@ class StampingVisitor(metaclass=ABCMeta):
          """
         pass
 
-    @abstractmethod
     def on_chain_start(self, chain, **headers) -> dict:
         """Method that is called on chain stamping start.
 
@@ -120,7 +120,7 @@ class StampingVisitor(metaclass=ABCMeta):
          Returns:
              Dict: headers to update.
          """
-        pass
+        return {}
 
     def on_chain_end(self, chain, **headers) -> None:
         """Method that is called on chain stamping end.
@@ -174,7 +174,7 @@ class StampingVisitor(metaclass=ABCMeta):
          Returns:
              Dict: headers to update.
         """
-        return self.on_signature(chord.body, **header)
+        return {}
 
 
 class GroupStampingVisitor(StampingVisitor):
@@ -194,13 +194,10 @@ class GroupStampingVisitor(StampingVisitor):
 
         if group.id not in self.groups:
             self.groups.append(group.id)
-        return {'groups': list(self.groups), "stamped_headers": list(self.stamped_headers)}
+        return super().on_group_start(group, **headers)
 
     def on_group_end(self, group, **headers) -> None:
         self.groups.pop()
-
-    def on_chain_start(self, chain, **headers) -> dict:
-        return {'groups': list(self.groups), "stamped_headers": list(self.stamped_headers)}
 
     def on_signature(self, sig, **headers) -> dict:
         return {'groups': list(self.groups), "stamped_headers": list(self.stamped_headers)}
@@ -494,7 +491,9 @@ class Signature(dict):
         self.immutable = immutable
 
     def stamp(self, visitor=None, **headers):
-        """Apply this task asynchronously.
+        """Stamp this signature with additional custom headers.
+        Using a visitor will pass on responsibility for the stamping
+        to the visitor.
 
         Arguments:
             visitor (StampingVisitor): Visitor API object.
@@ -1612,7 +1611,7 @@ class _chord(Signature):
 
     def __or__(self, other):
         if (not isinstance(other, (group, _chain)) and
-           isinstance(other, Signature)):
+                isinstance(other, Signature)):
             # chord | task ->  attach to body
             sig = self.clone()
             sig.body = sig.body | other
@@ -1654,10 +1653,6 @@ class _chord(Signature):
         return body_result
 
     def stamp(self, visitor=None, **headers):
-        if visitor is not None and self.body is not None:
-            headers.update(visitor.on_chord_body(self, **headers))
-            self.body.stamp(visitor=visitor, **headers)
-
         if visitor is not None:
             headers.update(visitor.on_chord_header_start(self, **headers))
         super().stamp(visitor=visitor, **headers)
@@ -1674,6 +1669,10 @@ class _chord(Signature):
 
         if visitor is not None:
             visitor.on_chord_header_end(self, **headers)
+
+        if visitor is not None and self.body is not None:
+            headers.update(visitor.on_chord_body(self, **headers))
+            self.body.stamp(visitor=visitor, **headers)
 
     def apply_async(self, args=None, kwargs=None, task_id=None,
                     producer=None, publisher=None, connection=None,
@@ -1808,6 +1807,23 @@ class _chord(Signature):
         return callback
 
     def link_error(self, errback):
+        if self.app.conf.task_allow_error_cb_on_chord_header:
+            # self.tasks can be a list of the chord header workflow.
+            if isinstance(self.tasks, (list, tuple)):
+                for task in self.tasks:
+                    task.link_error(errback)
+            else:
+                self.tasks.link_error(errback)
+        else:
+            warnings.warn(
+                "task_allow_error_cb_on_chord_header=False is pending deprecation in "
+                "a future release of Celery.\n"
+                "Please test the new behavior by setting task_allow_error_cb_on_chord_header to True "
+                "and report any concerns you might have in our issue tracker before we make a final decision "
+                "regarding how errbacks should behave when used with chords.",
+                CPendingDeprecationWarning
+            )
+
         self.body.link_error(errback)
         return errback
 

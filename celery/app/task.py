@@ -1,7 +1,7 @@
 """Task implementation: request context and the task base class."""
 import sys
 
-from billiard.einfo import ExceptionInfo
+from billiard.einfo import ExceptionInfo, ExceptionWithTraceback
 from kombu import serialization
 from kombu.exceptions import OperationalError
 from kombu.utils.uuid import uuid
@@ -252,7 +252,7 @@ class Task:
     track_started = None
 
     #: When enabled messages for this task will be acknowledged **after**
-    #: the task has been executed, and not *just before* (the
+    #: the task has been executed, and not *right before* (the
     #: default behavior).
     #:
     #: Please note that this means the task may be executed twice if the
@@ -813,6 +813,8 @@ class Task:
         retval = ret.retval
         if isinstance(retval, ExceptionInfo):
             retval, tb = retval.exception, retval.traceback
+            if isinstance(retval, ExceptionWithTraceback):
+                retval = retval.exc
         if isinstance(retval, Retry) and retval.sig is not None:
             return retval.sig.apply(retries=retries + 1)
         state = states.SUCCESS if ret.info is None else ret.info.state
