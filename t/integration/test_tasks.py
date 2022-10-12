@@ -197,7 +197,6 @@ class test_tasks:
         assert result.failed() is False
         assert result.successful() is False
 
-    @pytest.mark.skip(reason="revoke_by_stamped_header cannot be tested with with the solo concurrency pool")
     def test_revoked_by_headers_simple_canvas(self, manager):
         """Testing revoking of task using a stamped header"""
         target_monitoring_id = uuid4().hex
@@ -226,7 +225,7 @@ class test_tasks:
                 assert result.failed() is False
                 assert result.successful() is True
 
-    @pytest.mark.skip(reason="revoke_by_stamped_header cannot be tested with with the solo concurrency pool")
+    @flaky
     def test_revoked_by_headers_complex_canvas(self, manager, subtests):
         """Testing revoking of task using a stamped header"""
         target_monitoring_id = uuid4().hex
@@ -250,7 +249,7 @@ class test_tasks:
         ]
 
         for sig in canvas:
-            result.revoke_by_stamped_header(header={'monitoring_id': target_monitoring_id})
+            result.revoke_by_stamped_headers(headers={'monitoring_id': [target_monitoring_id]})
             sig_result = sig.apply_async()
             with subtests.test(msg='Testing if task was revoked'):
                 with pytest.raises(celery.exceptions.TaskRevokedError):

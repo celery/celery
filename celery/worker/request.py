@@ -465,16 +465,27 @@ class Request:
         if self._expires:
             expired = self.maybe_expire()
 
-        revoked_by_header, revoking_header = False, None
-        for header in self.stamped_headers:
-            if header in revoked_headers:
-                revoked_by_header = self.headers['stamps'][header] in revoked_headers[header]
-                revoking_header = {header: self.headers['stamps'][header]}
-                break
+        is_revoked_by_header, revoking_header = False, None
+        if self.stamped_headers:
+            for header in self.stamped_headers:
+                if header in revoked_headers:
+                    revoked_header = revoked_headers[header]
+                    stamped_header = self._message.headers['stamps'][header]
 
-        if self.id in revoked_tasks or revoked_by_header:
+                    if isinstance(stamped_header, (list, tuple)):
+                        for stamped_value in stamped_header:
+                            if stamped_value in revoked_header:
+                                is_revoked_by_header = True
+                                revoking_header = {header: stamped_value}
+                                break
+                    else:
+                        is_revoked_by_header = stamped_header in revoked_headers[header]
+                        revoking_header = {header: stamped_header}
+                    break
+
+        if self.id in revoked_tasks or is_revoked_by_header:
             log_msg = 'Discarding revoked task: %s[%s]'
-            if revoked_by_header:
+            if is_revoked_by_header:
                 log_msg += ' (revoked by header: %s)' % revoking_header
             info(log_msg, self.name, self.id)
             self._announce_revoked(
@@ -730,7 +741,7 @@ def create_request_cls(base, task, pool, hostname, eventer,
 
         def execute_using_pool(self, pool, **kwargs):
             task_id = self.task_id
-            if (self.expires or task_id in revoked_tasks) and self.revoked():
+            if (self.expires or task_id in revoked_tasks) or self.revoked():
                 raise TaskRevokedError(task_id)
 
             time_limit, soft_time_limit = self.time_limits
