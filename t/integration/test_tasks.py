@@ -239,6 +239,7 @@ class test_tasks:
         result = stamped_task.freeze()
 
         canvas = [
+            group([stamped_task]),
             group([sleeping.si(2), stamped_task, sleeping.si(2)]),
             chord([sleeping.si(2), stamped_task], sleeping.si(2)),
             chord([sleeping.si(2), sleeping.si(2)], stamped_task),

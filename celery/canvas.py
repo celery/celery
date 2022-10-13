@@ -1345,7 +1345,9 @@ class group(Signature):
             new_tasks = []
             for task in self.tasks:
                 task = maybe_signature(task, app=self.app)
+                task_stamped_headers = task.options.get("stamped_headers", [])
                 task.stamp(visitor=visitor, **headers)
+                task.options['stamped_headers'].extend(task_stamped_headers)
                 new_tasks.append(task)
             if isinstance(self.tasks, MutableSequence):
                 self.tasks[:] = new_tasks
