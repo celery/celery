@@ -1,12 +1,16 @@
 """Functional-style utilities."""
 import inspect
-import sys
 from collections import UserList
 from functools import partial
 from itertools import islice, tee, zip_longest
+from typing import Any, Callable
 
 from kombu.utils.functional import LRUCache, dictfilter, is_list, lazy, maybe_evaluate, maybe_list, memoize
 from vine import promise
+
+from celery.utils.log import get_logger
+
+logger = get_logger(__name__)
 
 __all__ = (
     'LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
@@ -307,7 +311,7 @@ def _argsfromspec(spec, replace_defaults=True):
     ]))
 
 
-def head_from_fun(fun, bound=False, debug=False):
+def head_from_fun(fun: Callable[..., Any], bound: bool = False) -> str:
     """Generate signature function from actual function."""
     # we could use inspect.Signature here, but that implementation
     # is very slow since it implements the argument checking
@@ -328,8 +332,7 @@ def head_from_fun(fun, bound=False, debug=False):
         fun_args=_argsfromspec(inspect.getfullargspec(fun)),
         fun_value=1,
     )
-    if debug:  # pragma: no cover
-        print(definition, file=sys.stderr)
+    logger.debug(definition)
     namespace = {'__name__': fun.__module__}
     # pylint: disable=exec-used
     # Tasks are rarely, if ever, created at runtime - exec here is fine.
