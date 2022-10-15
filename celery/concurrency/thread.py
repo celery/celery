@@ -50,7 +50,7 @@ class TaskPool(BasePool):
     def on_apply(
         self,
         target: TargetFunction,
-        args: tuple | None = None,
+        args: tuple[Any, ...] | None = None,
         kwargs: dict[str, Any] | None = None,
         callback: Callable[..., Any] | None = None,
         accept_callback: Callable[..., Any] | None = None,
