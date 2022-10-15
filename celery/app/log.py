@@ -6,6 +6,8 @@ Sets up logging for the worker and other programs,
 redirects standard outs, colors log output, patches logging
 related compatibility fixes, and so on.
 """
+from __future__ import annotations
+
 import logging
 import os
 import sys
@@ -153,8 +155,8 @@ class Logging:
             if loglevel:
                 logger.setLevel(loglevel)
 
-    def setup_task_loggers(self, loglevel=None, logfile=None, format=None,
-                           colorize=None, propagate=False, **kwargs):
+    def setup_task_loggers(self, loglevel: int | None = None, logfile=None, format=None,
+                           colorize=None, propagate: bool = False, **kwargs):
         """Setup the task logger.
 
         If `logfile` is not specified, then `sys.stderr` is used.
@@ -171,8 +173,7 @@ class Logging:
             formatter=TaskFormatter, **kwargs
         )
         logger.setLevel(loglevel)
-        # this is an int for some reason, better to not question why.
-        logger.propagate = int(propagate)
+        logger.propagate = propagate
         signals.after_setup_task_logger.send(
             sender=None, logger=logger,
             loglevel=loglevel, logfile=logfile,
