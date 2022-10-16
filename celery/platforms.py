@@ -13,7 +13,6 @@ import platform as _platform
 import signal as _signal
 import sys
 import warnings
-from collections import namedtuple
 from contextlib import contextmanager
 
 from billiard.compat import close_open_fds, get_fdmax
@@ -64,8 +63,6 @@ PIDFILE_MODE = ((os.R_OK | os.W_OK) << 6) | ((os.R_OK) << 3) | (os.R_OK)
 
 PIDLOCKED = """ERROR: Pidfile ({0}) already exists.
 Seems we're already running? (pid: {1})"""
-
-_range = namedtuple('_range', ('start', 'stop'))
 
 ROOT_DISALLOWED = """\
 Running a worker with superuser privileges when the
