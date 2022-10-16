@@ -21,7 +21,7 @@ from t.unit import conftest
 
 try:
     import resource
-except ImportError:  # pragma: no cover
+except ImportError:
     resource = None
 
 
