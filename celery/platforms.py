@@ -27,7 +27,7 @@ from .local import try_import
 
 try:
     from billiard.process import current_process
-except ImportError:  # pragma: no cover
+except ImportError:
     current_process = None
 
 _setproctitle = try_import('setproctitle')

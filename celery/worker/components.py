@@ -89,7 +89,7 @@ class Hub(bootsteps.StartStopStep):
         # multiprocessing's ApplyResult uses this lock.
         try:
             from billiard import pool
-        except ImportError:  # pragma: no cover
+        except ImportError:
             pass
         else:
             pool.Lock = DummyLock

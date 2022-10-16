@@ -12,7 +12,7 @@ try:  # pragma: no cover
     import cassandra.auth
     import cassandra.cluster
     import cassandra.query
-except ImportError:  # pragma: no cover
+except ImportError:
     cassandra = None
 
 

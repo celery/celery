@@ -12,7 +12,7 @@ from .base import KeyValueStoreBackend
 try:
     import boto3
     from botocore.exceptions import ClientError
-except ImportError:  # pragma: no cover
+except ImportError:
     boto3 = ClientError = None
 
 __all__ = ('DynamoDBBackend',)

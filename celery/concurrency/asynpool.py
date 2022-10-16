@@ -47,7 +47,7 @@ try:
     from _billiard import read as __read__
     readcanbuf = True
 
-except ImportError:  # pragma: no cover
+except ImportError:
 
     def __read__(fd, buf, size, read=os.read):
         chunk = read(fd, size)

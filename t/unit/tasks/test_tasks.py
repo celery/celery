@@ -16,7 +16,7 @@ from celery.utils.time import parse_iso8601
 
 try:
     from urllib.error import HTTPError
-except ImportError:  # pragma: no cover
+except ImportError:
     from urllib2 import HTTPError
 
 

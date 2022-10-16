@@ -24,7 +24,7 @@ from .base import BaseKeyValueStoreBackend
 try:
     import redis.connection
     from kombu.transport.redis import get_redis_error_classes
-except ImportError:  # pragma: no cover
+except ImportError:
     redis = None
     get_redis_error_classes = None
 

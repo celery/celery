@@ -12,13 +12,13 @@ from .base import BaseBackend
 
 try:
     import pymongo
-except ImportError:  # pragma: no cover
+except ImportError:
     pymongo = None
 
 if pymongo:
     try:
         from bson.binary import Binary
-    except ImportError:                     # pragma: no cover
+    except ImportError:
         from pymongo.binary import Binary
     from pymongo.errors import InvalidDocument
 else:                                       # pragma: no cover

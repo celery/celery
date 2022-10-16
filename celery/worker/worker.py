@@ -36,7 +36,7 @@ from . import state
 
 try:
     import resource
-except ImportError:  # pragma: no cover
+except ImportError:
     resource = None
 
 
