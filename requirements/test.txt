@@ -10,3 +10,4 @@ mypy==0.982; platform_python_implementation=="CPython"
 pre-commit==2.20.0
 -r extras/yaml.txt
 -r extras/msgpack.txt
+-r extras/mongodb.txt
