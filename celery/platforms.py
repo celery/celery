@@ -186,7 +186,7 @@ class Pidfile:
     def remove_if_stale(self):
         """Remove the lock if the process isn't running.
 
-        I.e. process does not respons to signal.
+        I.e. process does not respond to signal.
         """
         try:
             pid = self.read_pid()

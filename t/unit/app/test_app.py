@@ -1023,7 +1023,7 @@ class test_App:
         assert oid1 == oid2
 
     def test_backend(self):
-        # Test that app.bakend returns the same backend in single thread
+        # Test that app.backend returns the same backend in single thread
         backend1 = self.app.backend
         backend2 = self.app.backend
         assert isinstance(backend1, Backend)
@@ -1031,7 +1031,7 @@ class test_App:
         assert backend1 is backend2
 
     def test_thread_backend(self):
-        # Test that app.bakend returns the new backend for each thread
+        # Test that app.backend returns the new backend for each thread
         main_backend = self.app.backend
         from concurrent.futures import ThreadPoolExecutor
         with ThreadPoolExecutor(max_workers=1) as executor:

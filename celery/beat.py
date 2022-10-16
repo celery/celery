@@ -293,7 +293,7 @@ class Scheduler:
         return entry.is_due()
 
     def _when(self, entry, next_time_to_run, mktime=timegm):
-        """Return a utc timestamp, make sure heapq in currect order."""
+        """Return a utc timestamp, make sure heapq in correct order."""
         adjust = self.adjust
 
         as_now = maybe_make_aware(entry.default_now())

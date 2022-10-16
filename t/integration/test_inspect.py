@@ -26,7 +26,7 @@ def inspect(manager):
 
 
 class test_Inspect:
-    """Integration tests fo app.control.inspect() API"""
+    """Integration tests to app.control.inspect() API"""
 
     @flaky
     def test_ping(self, inspect):
