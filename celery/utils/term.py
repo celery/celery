@@ -6,8 +6,6 @@ import platform
 import sys
 from functools import reduce
 
-from celery.platforms import isatty
-
 __all__ = ('colored',)
 
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
@@ -164,7 +162,7 @@ class colored:
 
 
 def supports_images():
-    return isatty(sys.stdin) and ITERM_PROFILE
+    return sys.stdin.isatty() and ITERM_PROFILE
 
 
 def _read_as_base64(path):
