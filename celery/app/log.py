@@ -18,7 +18,6 @@ from celery import signals
 from celery._state import get_current_task
 from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
 from celery.local import class_property
-from celery.platforms import isatty
 from celery.utils.log import (ColorFormatter, LoggingProxy, get_logger, get_multiprocessing_logger, mlevel,
                               reset_multiprocessing_logger)
 from celery.utils.nodenames import node_format
@@ -204,7 +203,7 @@ class Logging:
         if colorize or colorize is None:
             # Only use color if there's no active log file
             # and stderr is an actual terminal.
-            return logfile is None and isatty(sys.stderr)
+            return logfile is None and sys.stderr.isatty()
         return colorize
 
     def colored(self, logfile=None, enabled=None):

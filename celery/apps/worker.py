@@ -20,7 +20,7 @@ from kombu.utils.encoding import safe_str
 from celery import VERSION_BANNER, platforms, signals
 from celery.app import trace
 from celery.loaders.app import AppLoader
-from celery.platforms import EX_FAILURE, EX_OK, check_privileges, isatty
+from celery.platforms import EX_FAILURE, EX_OK, check_privileges
 from celery.utils import static, term
 from celery.utils.debug import cry
 from celery.utils.imports import qualname
@@ -106,7 +106,7 @@ class Worker(WorkController):
         super().setup_defaults(**kwargs)
         self.purge = purge
         self.no_color = no_color
-        self._isatty = isatty(sys.stdout)
+        self._isatty = sys.stdout.isatty()
         self.colored = self.app.log.colored(
             self.logfile,
             enabled=not no_color if no_color is not None else no_color
