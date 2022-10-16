@@ -440,7 +440,7 @@ class crontab(BaseSchedule):
         else:
             raise TypeError(CRON_INVALID_TYPE.format(type=type(cronspec)))
 
-        # assure the result does not preceed the min or exceed the max
+        # assure the result does not precede the min or exceed the max
         for number in result:
             if number >= max_ + min_ or number < min_:
                 raise ValueError(CRON_PATTERN_INVALID.format(

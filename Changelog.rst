@@ -50,7 +50,7 @@ an overview of what's new in Celery 5.2.
 - fix #7200 uid and gid.
 - Remove exception-throwing from the signal handler.
 - Add mypy to the pipeline (#7383).
-- Expose more debugging information when receiving unkown tasks. (#7405)
+- Expose more debugging information when receiving unknown tasks. (#7405)
 - Avoid importing buf_t from billiard's compat module as it was removed.
 - Avoid negating a constant in a loop. (#7443)
 - Ensure expiration is of float type when migrating tasks (#7385).

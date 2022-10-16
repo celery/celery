@@ -21,7 +21,7 @@ set CELERYD_PID_FILE=%PATH_TO_PROJECT%\log\celery.pid
 set CELERYD_LOG_FILE=%PATH_TO_PROJECT%\log\celery.log
 set CELERYD_LOG_LEVEL=INFO
 
-rem You might need to change th path of the Python runing
+rem You might need to change th path of the Python running
 set PYTHONPATH=%PYTHONPATH%;%PATH_TO_PROJECT%;
 
 cd %PATH_TO_PROJECT%

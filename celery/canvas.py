@@ -230,7 +230,7 @@ class Signature(dict):
             >>> add.s(1, kw=2)
 
     - the ``.s()`` shortcut does not allow you to specify execution options
-      but there's a chaning `.set` method that returns the signature:
+      but there's a chaining `.set` method that returns the signature:
 
         .. code-block:: pycon
 
