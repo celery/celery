@@ -17,6 +17,7 @@ files = [
     "celery/states.py",
     "celery/signals.py",
     "celery/fixups",
+    "celery/concurrency/thread.py"
 ]
 
 [tool.coverage.report]

@@ -17,6 +17,7 @@ from kombu.utils.objects import cached_property
 from celery import current_app, signals
 from celery.app.task import Context
 from celery.app.trace import fast_trace_task, trace_task, trace_task_ret
+from celery.concurrency.base import BasePool
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError, Terminated,
                                TimeLimitExceeded, WorkerLostError)
 from celery.platforms import signals as _signals
@@ -332,7 +333,7 @@ class Request:
         # used similarly to reply_to
         return self._request_dict['correlation_id']
 
-    def execute_using_pool(self, pool, **kwargs):
+    def execute_using_pool(self, pool: BasePool, **kwargs):
         """Used by the worker to send this task to the pool.
 
         Arguments:
