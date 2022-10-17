@@ -27,3 +27,9 @@ repos:
     rev: 5.10.1
     hooks:
       - id: isort
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v0.982
+    hooks:
+    -   id: mypy
+        pass_filenames: false
