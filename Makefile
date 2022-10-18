@@ -5,7 +5,6 @@ PYTEST=pytest
 GIT=git
 TOX=tox
 ICONV=iconv
-FLAKE8=flake8
 PYROMA=pyroma
 SPHINX2RST=sphinx2rst
 RST2HTML=rst2html.py
@@ -36,8 +35,6 @@ help:
 	@echo "    configcheck      - Check configuration reference coverage."
 	@echo "    readmecheck      - Check README.rst encoding."
 	@echo "    contribcheck     - Check CONTRIBUTING.rst encoding"
-	@echo "    flakes --------  - Check code for syntax and style errors."
-	@echo "      flakecheck     - Run flake8 on the source code."
 	@echo "readme               - Regenerate README.rst file."
 	@echo "contrib              - Regenerate CONTRIBUTING.rst file"
 	@echo "clean-dist --------- - Clean all distribution build artifacts."
@@ -76,19 +73,13 @@ docs: clean-docs Documentation
 clean-docs:
 	-rm -rf "$(SPHINX_BUILDDIR)" "$(DOCUMENTATION)"
 
-lint: flakecheck apicheck configcheck readmecheck
+lint: apicheck configcheck readmecheck
 
 apicheck:
 	(cd "$(SPHINX_DIR)"; $(MAKE) apicheck)
 
 configcheck:
 	(cd "$(SPHINX_DIR)"; $(MAKE) configcheck)
-
-flakecheck:
-	$(FLAKE8) "$(PROJ)" "$(TESTDIR)"
-
-flakediag:
-	-$(MAKE) flakecheck
 
 clean-readme:
 	-rm -f $(README)
