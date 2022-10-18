@@ -7,7 +7,6 @@ TOX=tox
 ICONV=iconv
 FLAKE8=flake8
 PYROMA=pyroma
-FLAKEPLUS=flakeplus
 SPHINX2RST=sphinx2rst
 RST2HTML=rst2html.py
 DEVNULL=/dev/null
@@ -22,7 +21,6 @@ CONTRIBUTING=CONTRIBUTING.rst
 CONTRIBUTING_SRC="docs/contributing.rst"
 SPHINX_HTMLDIR="${SPHINX_BUILDDIR}/html"
 DOCUMENTATION=Documentation
-FLAKEPLUSTARGET=2.7
 
 WORKER_GRAPH="docs/images/worker_graph_full.png"
 
@@ -40,7 +38,6 @@ help:
 	@echo "    contribcheck     - Check CONTRIBUTING.rst encoding"
 	@echo "    flakes --------  - Check code for syntax and style errors."
 	@echo "      flakecheck     - Run flake8 on the source code."
-	@echo "      flakepluscheck - Run flakeplus on the source code."
 	@echo "readme               - Regenerate README.rst file."
 	@echo "contrib              - Regenerate CONTRIBUTING.rst file"
 	@echo "clean-dist --------- - Clean all distribution build artifacts."
@@ -92,14 +89,6 @@ flakecheck:
 
 flakediag:
 	-$(MAKE) flakecheck
-
-flakepluscheck:
-	$(FLAKEPLUS) --$(FLAKEPLUSTARGET) "$(PROJ)" "$(TESTDIR)"
-
-flakeplusdiag:
-	-$(MAKE) flakepluscheck
-
-flakes: flakediag flakeplusdiag
 
 clean-readme:
 	-rm -f $(README)
