@@ -21,8 +21,8 @@ files = [
 ]
 
 [tool.coverage.run]
-branch = 1
-cover_pylib = 0
+branch = true
+cover_pylib = false
 include = ["*celery/*"]
 omit = ["celery.tests.*"]
 
