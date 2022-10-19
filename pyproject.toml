@@ -20,9 +20,28 @@ files = [
     "celery/concurrency/thread.py"
 ]
 
+[tool.coverage.run]
+branch = true
+cover_pylib = false
+include = ["*celery/*"]
+omit = ["celery.tests.*"]
+
 [tool.coverage.report]
 exclude_lines = [
     "pragma: no cover",
     "if TYPE_CHECKING:",
     "except ImportError:"
+]
+omit = [
+    "*/python?.?/*",
+    "*/site-packages/*",
+    "*/pypy/*",
+    "*/celery/bin/graph.py",
+    "*celery/bin/logtool.py",
+    "*celery/task/base.py",
+    "*celery/contrib/sphinx.py",
+    "*celery/concurrency/asynpool.py",
+    "*celery/utils/debug.py",
+    "*celery/contrib/testing/*",
+    "*celery/contrib/pytest.py"
 ]
