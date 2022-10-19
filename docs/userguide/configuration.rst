@@ -2698,12 +2698,14 @@ certificate authority:
       'cert_reqs': ssl.CERT_REQUIRED
     }
 
-.. warning::
+.. versionadded:: 5.1
 
-    Be careful using ``broker_use_ssl=True``. It's possible that your default
-    configuration won't validate the server cert at all. Please read Python
-    `ssl module security
-    considerations <https://docs.python.org/3/library/ssl.html#ssl-security>`_.
+    Starting from Celery 5.1, py-amqp will always validate certificates received from the server
+    and it is no longer required to manually set ``cert_reqs`` to ``ssl.CERT_REQUIRED``.
+
+    The previous default, ``ssl.CERT_NONE`` is insecure and we its usage should be discouraged.
+    If you'd like to revert to the previous insecure default set ``cert_reqs`` to ``ssl.CERT_NONE``
+
 
 ``redis``
 _________
