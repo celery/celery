@@ -1,7 +1,6 @@
 """Celery Command Line Interface."""
 import os
 import pathlib
-import sys
 import traceback
 
 try:
@@ -76,16 +75,7 @@ class App(ParamType):
 APP = App()
 
 
-if sys.version_info >= (3, 10):
-    _PLUGINS = entry_points(group='celery.commands')
-else:
-    try:
-        _PLUGINS = entry_points().get('celery.commands', [])
-    except AttributeError:
-        _PLUGINS = entry_points().select(group='celery.commands')
-
-
-@with_plugins(_PLUGINS)
+@with_plugins(entry_points().get('celery.commands', []))
 @click.group(cls=DYMGroup, invoke_without_command=True)
 @click.option('-A',
               '--app',
