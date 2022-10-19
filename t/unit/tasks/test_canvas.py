@@ -151,7 +151,7 @@ class test_Signature(CanvasCase):
             assert sig_1_res._get_task_meta()["stamp2"] == ["stamp2"]
 
         with subtests.test("sig_1_res is stamped twice", stamped_headers=["stamp2", "stamp1"]):
-            assert sig_1_res._get_task_meta()["stamped_headers"] == ["stamp2", "stamp1", "groups"]
+            assert sorted(sig_1_res._get_task_meta()["stamped_headers"]) == sorted(["stamp2", "stamp1", "groups"])
 
     def test_twice_stamping(self, subtests):
         """
@@ -168,10 +168,10 @@ class test_Signature(CanvasCase):
         sig_1.apply()
 
         with subtests.test("sig_1_res is stamped twice", stamps=["stamp2", "stamp1"]):
-            assert sig_1_res._get_task_meta()["stamp"] == ["stamp2", "stamp1"]
+            assert sorted(sig_1_res._get_task_meta()["stamp"]) == sorted(["stamp2", "stamp1"])
 
         with subtests.test("sig_1_res is stamped twice", stamped_headers=["stamp2", "stamp1"]):
-            assert sig_1_res._get_task_meta()["stamped_headers"] == ["stamp", "groups"]
+            assert sorted(sig_1_res._get_task_meta()["stamped_headers"]) == sorted(["stamp", "groups"])
 
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_manual_stamping(self):
@@ -188,7 +188,7 @@ class test_Signature(CanvasCase):
         sig_1.stamp(visitor=None, groups=stamps[0])
         sig_1_res = sig_1.freeze()
         sig_1.apply()
-        assert sig_1_res._get_task_meta()['groups'] == stamps
+        assert sorted(sig_1_res._get_task_meta()['groups']) == sorted(stamps)
 
     def test_getitem_property_class(self):
         assert Signature.task
@@ -804,10 +804,10 @@ class test_group(CanvasCase):
             assert sig_2_res._get_task_meta()['stamp'] == ["stamp"]
 
         with subtests.test("sig_1_res has stamped_headers", stamped_headers=["stamp", 'groups']):
-            assert sig_1_res._get_task_meta()['stamped_headers'] == ['stamp', 'groups']
+            assert sorted(sig_1_res._get_task_meta()['stamped_headers']) == sorted(['stamp', 'groups'])
 
         with subtests.test("sig_2_res has stamped_headers", stamped_headers=["stamp"]):
-            assert sig_2_res._get_task_meta()['stamped_headers'] == ['stamp', 'groups']
+            assert sorted(sig_2_res._get_task_meta()['stamped_headers']) == sorted(['stamp', 'groups'])
 
     def test_group_stamping_two_levels(self, subtests):
         """
@@ -854,11 +854,11 @@ class test_group(CanvasCase):
         with subtests.test("sig_2_res is stamped", groups=[g1_res.id]):
             assert sig_2_res._get_task_meta()['groups'] == [g1_res.id]
         with subtests.test("first_nested_sig_res is stamped", groups=[g1_res.id, g2_res.id]):
-            assert first_nested_sig_res._get_task_meta()['groups'] == \
-                [g1_res.id, g2_res.id]
+            assert sorted(first_nested_sig_res._get_task_meta()['groups']) == \
+                sorted([g1_res.id, g2_res.id])
         with subtests.test("second_nested_sig_res is stamped", groups=[g1_res.id, g2_res.id]):
-            assert second_nested_sig_res._get_task_meta()['groups'] == \
-                [g1_res.id, g2_res.id]
+            assert sorted(second_nested_sig_res._get_task_meta()['groups']) == \
+                sorted([g1_res.id, g2_res.id])
 
     def test_group_stamping_with_replace(self, subtests):
         """
@@ -988,17 +988,17 @@ class test_group(CanvasCase):
         with subtests.test("sig_in_g1_2_res is stamped", groups=[g1_res.id]):
             assert sig_in_g1_2_res._get_task_meta()['groups'] == [g1_res.id]
         with subtests.test("sig_in_g2_res is stamped", groups=[g1_res.id, g2_res.id]):
-            assert sig_in_g2_res._get_task_meta()['groups'] == \
-                [g1_res.id, g2_res.id]
+            assert sorted(sig_in_g2_res._get_task_meta()['groups']) == \
+                sorted([g1_res.id, g2_res.id])
         with subtests.test("sig_in_g2_chain_res is stamped", groups=[g1_res.id, g2_res.id]):
-            assert sig_in_g2_chain_res._get_task_meta()['groups'] == \
-                [g1_res.id, g2_res.id]
+            assert sorted(sig_in_g2_chain_res._get_task_meta()['groups']) == \
+                sorted([g1_res.id, g2_res.id])
         with subtests.test("sig_in_g3_1_res is stamped", groups=[g1_res.id, g2_res.id, g3_res.id]):
-            assert sig_in_g3_1_res._get_task_meta()['groups'] == \
-                [g1_res.id, g2_res.id, g3_res.id]
+            assert sorted(sig_in_g3_1_res._get_task_meta()['groups']) == \
+                sorted([g1_res.id, g2_res.id, g3_res.id])
         with subtests.test("sig_in_g3_2_res is stamped", groups=[g1_res.id, g2_res.id, g3_res.id]):
-            assert sig_in_g3_2_res._get_task_meta()['groups'] == \
-                [g1_res.id, g2_res.id, g3_res.id]
+            assert sorted(sig_in_g3_2_res._get_task_meta()['groups']) == \
+                sorted([g1_res.id, g2_res.id, g3_res.id])
 
     def test_group_stamping_parallel_groups(self, subtests):
         """
@@ -1067,14 +1067,14 @@ class test_group(CanvasCase):
 
         with subtests.test("sig_in_g2_1 is stamped", groups=[g1_res.id, g2_res.id]):
             assert sig_in_g2_1_res.id == 'sig_in_g2_1'
-            assert sig_in_g2_1_res._get_task_meta()['groups'] == \
-                [g1_res.id, g2_res.id]
+            assert sorted(sig_in_g2_1_res._get_task_meta()['groups']) == \
+                sorted([g1_res.id, g2_res.id])
 
         with subtests.test("sig_in_g2_2 is stamped",
                            groups=[g1_res.id, g2_res.id]):
             assert sig_in_g2_2_res.id == 'sig_in_g2_2'
-            assert sig_in_g2_2_res._get_task_meta()['groups'] == \
-                [g1_res.id, g2_res.id]
+            assert sorted(sig_in_g2_2_res._get_task_meta()['groups']) == \
+                sorted([g1_res.id, g2_res.id])
 
         with subtests.test("sig_in_g3_chain is stamped",
                            groups=[g1_res.id]):
@@ -1085,13 +1085,13 @@ class test_group(CanvasCase):
         with subtests.test("sig_in_g3_1 is stamped",
                            groups=[g1_res.id, g3_res.id]):
             assert sig_in_g3_1_res.id == 'sig_in_g3_1'
-            assert sig_in_g3_1_res._get_task_meta()['groups'] == \
-                [g1_res.id, g3_res.id]
+            assert sorted(sig_in_g3_1_res._get_task_meta()['groups']) == \
+                sorted([g1_res.id, g3_res.id])
 
         with subtests.test("sig_in_g3_2 is stamped",
                            groups=[g1_res.id, g3_res.id]):
-            assert sig_in_g3_2_res._get_task_meta()['groups'] == \
-                [g1_res.id, g3_res.id]
+            assert sorted(sig_in_g3_2_res._get_task_meta()['groups']) == \
+                sorted([g1_res.id, g3_res.id])
 
     def test_repr(self):
         x = group([self.add.s(2, 2), self.add.s(4, 4)])
@@ -1520,10 +1520,10 @@ class test_chord(CanvasCase):
             assert sig_2_res._get_task_meta()['stamp'] == ["stamp"]
 
         with subtests.test("sig_1_res has stamped_headers", stamped_headers=["stamp", 'groups']):
-            assert sig_1_res._get_task_meta()['stamped_headers'] == ['stamp', 'groups']
+            assert sorted(sig_1_res._get_task_meta()['stamped_headers']) == sorted(['stamp', 'groups'])
 
         with subtests.test("sig_2_res has stamped_headers", stamped_headers=["stamp", 'groups']):
-            assert sig_2_res._get_task_meta()['stamped_headers'] == ['stamp', 'groups']
+            assert sorted(sig_2_res._get_task_meta()['stamped_headers']) == sorted(['stamp', 'groups'])
 
     def test_chord_stamping_two_levels(self, subtests):
         """
@@ -1565,11 +1565,11 @@ class test_chord(CanvasCase):
         with subtests.test("sig_2_res body is stamped", groups=[g1.id]):
             assert sig_2_res._get_task_meta()['groups'] == [g1.id]
         with subtests.test("first_nested_sig_res body is stamped", groups=[g1.id, g2_res.id]):
-            assert first_nested_sig_res._get_task_meta()['groups'] == \
-                [g1.id, g2_res.id]
+            assert sorted(first_nested_sig_res._get_task_meta()['groups']) == \
+                sorted([g1.id, g2_res.id])
         with subtests.test("second_nested_sig_res body is stamped", groups=[g1.id, g2_res.id]):
-            assert second_nested_sig_res._get_task_meta()['groups'] == \
-                [g1.id, g2_res.id]
+            assert sorted(second_nested_sig_res._get_task_meta()['groups']) == \
+                sorted([g1.id, g2_res.id])
 
     def test_chord_stamping_body_group(self, subtests):
         """
