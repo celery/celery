@@ -505,6 +505,10 @@ class Signature(dict):
         else:
             headers["stamped_headers"] = [header for header in headers.keys() if header not in self.options]
             _merge_dictionaries(headers, self.options)
+
+        stamped_headers = set(self.options.get("stamped_headers", []))
+        stamped_headers.update(headers["stamped_headers"])
+        headers["stamped_headers"] = list(stamped_headers)
         return self.set(**headers)
 
     def _with_list_option(self, key):
@@ -1761,6 +1765,9 @@ class _chord(Signature):
         options = dict(self.options, **options) if options else self.options
         if options:
             options.pop('task_id', None)
+            stamped_headers = set(body.options.get("stamped_headers", []))
+            stamped_headers.update(options["stamped_headers"])
+            options["stamped_headers"] = list(stamped_headers)
             body.options.update(options)
 
         bodyres = body.freeze(task_id, root_id=root_id)
