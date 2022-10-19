@@ -1,10 +1,12 @@
 from datetime import datetime, timedelta
 from time import perf_counter, sleep
+from uuid import uuid4
 
 import pytest
 
 import celery
-from celery import group
+from celery import chain, chord, group
+from celery.canvas import StampingVisitor
 
 from .conftest import get_active_redis_channels
 from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result, add_not_typed, fail,
@@ -194,6 +196,73 @@ class test_tasks:
         assert result.ready() is True
         assert result.failed() is False
         assert result.successful() is False
+
+    def test_revoked_by_headers_simple_canvas(self, manager):
+        """Testing revoking of task using a stamped header"""
+        target_monitoring_id = uuid4().hex
+
+        class MonitoringIdStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {'monitoring_id': target_monitoring_id, 'stamped_headers': ['monitoring_id']}
+
+        for monitoring_id in [target_monitoring_id, uuid4().hex, 4242, None]:
+            stamped_task = add.si(1, 1)
+            stamped_task.stamp(visitor=MonitoringIdStampingVisitor())
+            result = stamped_task.freeze()
+            result.revoke_by_stamped_headers(headers={'monitoring_id': [monitoring_id]})
+            stamped_task.apply_async()
+            if monitoring_id == target_monitoring_id:
+                with pytest.raises(celery.exceptions.TaskRevokedError):
+                    result.get()
+                assert result.status == 'REVOKED'
+                assert result.ready() is True
+                assert result.failed() is False
+                assert result.successful() is False
+            else:
+                assert result.get() == 2
+                assert result.status == 'SUCCESS'
+                assert result.ready() is True
+                assert result.failed() is False
+                assert result.successful() is True
+
+    @pytest.mark.parametrize('monitoring_id', [4242, uuid4().hex, [uuid4().hex, uuid4().hex]])
+    def test_revoked_by_headers_complex_canvas(self, manager, subtests, monitoring_id):
+        """Testing revoking of task using a stamped header"""
+        target_monitoring_id = isinstance(monitoring_id, list) and monitoring_id[0] or monitoring_id
+
+        class MonitoringIdStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {'monitoring_id': target_monitoring_id, 'stamped_headers': ['monitoring_id']}
+
+        stamped_task = sleeping.si(4)
+        stamped_task.stamp(visitor=MonitoringIdStampingVisitor())
+        result = stamped_task.freeze()
+
+        canvas = [
+            group([stamped_task]),
+            chord(group([stamped_task]), sleeping.si(2)),
+            chord(group([sleeping.si(2)]), stamped_task),
+            chain(stamped_task),
+            group([sleeping.si(2), stamped_task, sleeping.si(2)]),
+            chord([sleeping.si(2), stamped_task], sleeping.si(2)),
+            chord([sleeping.si(2), sleeping.si(2)], stamped_task),
+            chain(sleeping.si(2), stamped_task),
+            chain(sleeping.si(2), group([sleeping.si(2), stamped_task, sleeping.si(2)])),
+            chain(sleeping.si(2), group([sleeping.si(2), stamped_task]), sleeping.si(2)),
+            chain(sleeping.si(2), group([sleeping.si(2), sleeping.si(2)]), stamped_task),
+        ]
+
+        result.revoke_by_stamped_headers(headers={'monitoring_id': monitoring_id})
+
+        for sig in canvas:
+            sig_result = sig.apply_async()
+            with subtests.test(msg='Testing if task was revoked'):
+                with pytest.raises(celery.exceptions.TaskRevokedError):
+                    sig_result.get()
+                assert result.status == 'REVOKED'
+                assert result.ready() is True
+                assert result.failed() is False
+                assert result.successful() is False
 
     @flaky
     def test_wrong_arguments(self, manager):

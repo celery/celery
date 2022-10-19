@@ -21,7 +21,7 @@ from celery.concurrency.base import BasePool
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError, Terminated,
                                TimeLimitExceeded, WorkerLostError)
 from celery.platforms import signals as _signals
-from celery.utils.functional import maybe, noop
+from celery.utils.functional import maybe, maybe_list, noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.serialization import get_pickled_exception
@@ -61,6 +61,7 @@ send_retry = signals.task_retry.send
 task_accepted = state.task_accepted
 task_ready = state.task_ready
 revoked_tasks = state.revoked
+revoked_headers = state.revoked_headers
 
 
 class Request:
@@ -464,8 +465,30 @@ class Request:
             return True
         if self._expires:
             expired = self.maybe_expire()
-        if self.id in revoked_tasks:
-            info('Discarding revoked task: %s[%s]', self.name, self.id)
+
+        is_revoked_by_header, revoking_header = False, None
+        if self.stamped_headers:
+            for header in self.stamped_headers:
+                if header in revoked_headers:
+                    revoked_header = revoked_headers[header]
+                    stamped_header = self._message.headers['stamps'][header]
+
+                    if isinstance(stamped_header, (list, tuple)):
+                        for stamped_value in stamped_header:
+                            if stamped_value in maybe_list(revoked_header):
+                                is_revoked_by_header = True
+                                revoking_header = {header: stamped_value}
+                                break
+                    else:
+                        is_revoked_by_header = stamped_header in revoked_headers[header]
+                        revoking_header = {header: stamped_header}
+                    break
+
+        if self.id in revoked_tasks or is_revoked_by_header:
+            log_msg = 'Discarding revoked task: %s[%s]'
+            if is_revoked_by_header:
+                log_msg += ' (revoked by header: %s)' % revoking_header
+            info(log_msg, self.name, self.id)
             self._announce_revoked(
                 'expired' if expired else 'revoked', False, None, expired,
             )
@@ -719,7 +742,7 @@ def create_request_cls(base, task, pool, hostname, eventer,
 
         def execute_using_pool(self, pool, **kwargs):
             task_id = self.task_id
-            if (self.expires or task_id in revoked_tasks) and self.revoked():
+            if (self.expires or task_id in revoked_tasks) or self.revoked():
                 raise TaskRevokedError(task_id)
 
             time_limit, soft_time_limit = self.time_limits
