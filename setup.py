@@ -160,7 +160,7 @@ setuptools.setup(
     author=meta['author'],
     author_email=meta['contact'],
     url=meta['homepage'],
-    license='BSD',
+    license='BSD-3-Clause',
     platforms=['any'],
     install_requires=install_requires(),
     python_requires=">=3.7",
