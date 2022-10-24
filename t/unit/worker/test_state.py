@@ -19,6 +19,7 @@ def reset_state():
     yield
     state.active_requests.clear()
     state.revoked.clear()
+    state.revoked_headers.clear()
     state.total_count.clear()
 
 
