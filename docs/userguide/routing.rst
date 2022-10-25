@@ -304,8 +304,8 @@ The config above will give you these queue names:
 
 
 That said, note that this will never be as good as priorities implemented at the
-server level, and may be approximate at best. But it may still be good enough
-for your application.
+broker server level, and may be approximate at best. But it may still be good
+enough for your application.
 
 
 AMQP Primer
