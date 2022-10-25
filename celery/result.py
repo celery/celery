@@ -215,7 +215,7 @@ class AsyncResult(ResultBase):
         if on_interval:
             _on_interval.then(on_interval)
 
-        if self._cache:
+        if self._cache and not no_ack:
             if propagate:
                 self.maybe_throw(callback=callback)
             return self.result
