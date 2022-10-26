@@ -424,6 +424,16 @@ class test_Control:
             terminate=False,
         )
 
+    def test_revoke_by_stamped_headers(self):
+        self.app.control.revoke_by_stamped_headers({'foo': 'bar'})
+        self.assert_control_called_with_args(
+            'revoke_by_stamped_headers',
+            destination=None,
+            headers={'foo': 'bar'},
+            signal=control.TERM_SIGNAME,
+            terminate=False,
+        )
+
     def test_revoke__with_options(self):
         self.app.control.revoke(
             'foozbaaz',
@@ -436,6 +446,23 @@ class test_Control:
             'revoke',
             destination='a@q.com',
             task_id='foozbaaz',
+            signal='KILL',
+            terminate=True,
+            _options={'limit': 404},
+        )
+
+    def test_revoke_by_stamped_headers__with_options(self):
+        self.app.control.revoke_by_stamped_headers(
+            {'foo': 'bar'},
+            destination='a@q.com',
+            terminate=True,
+            signal='KILL',
+            limit=404,
+        )
+        self.assert_control_called_with_args(
+            'revoke_by_stamped_headers',
+            destination='a@q.com',
+            headers={'foo': 'bar'},
             signal='KILL',
             terminate=True,
             _options={'limit': 404},
@@ -496,6 +523,14 @@ class test_Control:
         self.app.AsyncResult('foozbazzbar').revoke()
         self.app.control.revoke.assert_called_with(
             'foozbazzbar',
+            connection=None, reply=False, signal=None,
+            terminate=False, timeout=None)
+
+    def test_revoke_by_stamped_headers_from_result(self):
+        self.app.control.revoke_by_stamped_headers = Mock(name='revoke_by_stamped_headers')
+        self.app.AsyncResult('foozbazzbar').revoke_by_stamped_headers({'foo': 'bar'})
+        self.app.control.revoke_by_stamped_headers.assert_called_with(
+            {'foo': 'bar'},
             connection=None, reply=False, signal=None,
             terminate=False, timeout=None)
 

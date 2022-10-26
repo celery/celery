@@ -468,6 +468,71 @@ Note that remote control commands must be working for revokes to work.
 Remote control commands are only supported by the RabbitMQ (amqp) and Redis
 at this point.
 
+.. control:: revoke_by_stamped_header
+
+``revoke_by_stamped_header``: Revoking tasks by their stamped headers
+---------------------------------------------------------------------
+:pool support: all, terminate only supported by prefork and eventlet
+:broker support: *amqp, redis*
+:command: :program:`celery -A proj control revoke_by_stamped_header <header=value>`
+
+This command is similar to :meth:`~@control.revoke`, but instead of
+specifying the task id(s), you specify the stamped header(s) as key-value pair(s),
+and each task that has a stamped header matching the key-value pair(s) will be revoked.
+
+.. warning::
+
+    The revoked headers mapping is not persistent across restarts, so if you
+    restart the workers, the revoked headers will be lost and need to be
+    mapped again.
+
+.. warning::
+
+    This command may perform poorly if your worker pool concurrency is high
+    and terminate is enabled, since it will have to iterate over all the runnig
+    tasks to find the ones with the specified stamped header.
+
+**Example**
+
+.. code-block:: pycon
+
+    >>> app.control.revoke_by_stamped_header({'header': 'value'})
+
+    >>> app.control.revoke_by_stamped_header({'header': 'value'}, terminate=True)
+
+    >>> app.control.revoke_by_stamped_header({'header': 'value'}, terminate=True, signal='SIGKILL')
+
+
+Revoking multiple tasks by stamped headers
+------------------------------------------
+
+.. versionadded:: 5.3
+
+The ``revoke_by_stamped_header`` method also accepts a list argument, where it will revoke
+by several headers or several values.
+
+**Example**
+
+.. code-block:: pycon
+
+    >> app.control.revoke_by_stamped_header({
+    ...    'header_A': 'value_1',
+    ...    'header_B': ['value_2', 'value_3'],
+    })
+
+This will revoke all of the tasks that have a stamped header ``header_A`` with value ``value_1``,
+and all of the tasks that have a stamped header ``header_B`` with values ``value_2`` or ``value_3``.
+
+**CLI Example**
+
+.. code-block:: console
+
+    $ celery -A proj control revoke_by_stamped_header stamped_header_key_A=stamped_header_value_1 stamped_header_key_B=stamped_header_value_2
+
+    $ celery -A proj control revoke_by_stamped_header stamped_header_key_A=stamped_header_value_1 stamped_header_key_B=stamped_header_value_2 --terminate
+
+    $ celery -A proj control revoke_by_stamped_header stamped_header_key_A=stamped_header_value_1 stamped_header_key_B=stamped_header_value_2 --terminate --signal=SIGKILL
+
 .. _worker-time-limits:
 
 Time Limits
