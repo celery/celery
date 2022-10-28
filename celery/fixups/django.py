@@ -133,7 +133,8 @@ class DjangoWorkerFixup:
     def validate_models(self) -> None:
         from django.core.checks import run_checks
         self.django_setup()
-        run_checks()
+        if not os.environ.get('CELERY_SKIP_CHECKS'):
+            run_checks()
 
     def install(self) -> "DjangoWorkerFixup":
         signals.beat_embedded_init.connect(self.close_database)
