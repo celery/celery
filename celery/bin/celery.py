@@ -131,9 +131,15 @@ else:
               cls=CeleryOption,
               is_flag=True,
               help_group="Global Options")
+@click.option('--skip-checks',
+              envvar='SKIP_CHECKS',
+              cls=CeleryOption,
+              is_flag=True,
+              help_group="Global Options",
+              help="Skip Django core checks on startup.")
 @click.pass_context
 def celery(ctx, app, broker, result_backend, loader, config, workdir,
-           no_color, quiet, version):
+           no_color, quiet, version, skip_checks):
     """Celery command entrypoint."""
     if version:
         click.echo(VERSION_BANNER)
@@ -151,6 +157,8 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir,
         os.environ['CELERY_RESULT_BACKEND'] = result_backend
     if config:
         os.environ['CELERY_CONFIG_MODULE'] = config
+    if skip_checks:
+        os.environ['CELERY_SKIP_CHECKS'] = skip_checks
     ctx.obj = CLIContext(app=app, no_color=no_color, workdir=workdir,
                          quiet=quiet)
 

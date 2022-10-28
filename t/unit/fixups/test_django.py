@@ -263,9 +263,19 @@ class test_DjangoWorkerFixup(FixupCase):
         f.django_setup = Mock(name='django.setup')
         patching.modules('django.core.checks')
         from django.core.checks import run_checks
+
         f.validate_models()
         f.django_setup.assert_called_with()
         run_checks.assert_called_with()
+
+        # test --skip-checks flag
+        f.django_setup.reset_mock()
+        run_checks.reset_mock()
+
+        patching.setenv('CELERY_SKIP_CHECKS', True)
+        f.validate_models()
+        f.django_setup.assert_called_with()
+        run_checks.assert_not_called()
 
     def test_django_setup(self, patching):
         patching('celery.fixups.django.symbol_by_name')
