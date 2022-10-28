@@ -454,7 +454,7 @@ Each option has its advantages and disadvantages.
 
 json -- JSON is supported in many programming languages, is now
     a standard part of Python (since 2.6), and is fairly fast to decode
-    using the modern Python libraries, such as :pypi:`simplejson`.
+    using modern Python libraries, such as :pypi:`simplejson`.
 
     The primary disadvantage to JSON is that it limits you to the following
     data types: strings, Unicode, floats, Boolean, dictionaries, and lists.
@@ -498,17 +498,29 @@ yaml -- YAML has many of the same characteristics as json,
     If you need a more expressive set of data types and need to maintain
     cross-language compatibility, then YAML may be a better fit than the above.
 
+    To use it, install Celery with:
+
+    .. code-block:: console
+
+      $ pip install celery[yaml]
+
     See http://yaml.org/ for more information.
 
 msgpack -- msgpack is a binary serialization format that's closer to JSON
-    in features. It's very young however, and support should be considered
-    experimental at this point.
+    in features. The format compresses better, so is a faster to parse and
+    encode compared to JSON.
+
+    To use it, install Celery with:
+
+    .. code-block:: console
+
+      $ pip install celery[msgpack]
 
     See http://msgpack.org/ for more information.
 
-The encoding used is available as a message header, so the worker knows how to
-deserialize any task. If you use a custom serializer, this serializer must
-be available for the worker.
+To use a custom serializer you need add the content type to
+:setting:`accept_content`. By default, only JSON is accepted,
+and tasks containing other content headers are rejected.
 
 The following order is used to decide the serializer
 used when sending a task:
