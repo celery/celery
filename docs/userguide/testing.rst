@@ -160,7 +160,8 @@ Example:
         @celery_app.task
         def mul(x, y):
             return x * y
-
+        
+        celery_worker.reload()
         assert mul.delay(4, 4).get(timeout=10) == 16
 
 ``celery_worker`` - Embed live worker.
