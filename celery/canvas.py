@@ -501,7 +501,10 @@ class Signature(dict):
         """
         headers = headers.copy()
         if visitor is not None:
-            headers.update(visitor.on_signature(self, **headers))
+            visitor_headers = visitor.on_signature(self, **headers)
+            if "stamped_headers" not in visitor_headers:
+                visitor_headers["stamped_headers"] = list(visitor_headers.keys())
+            headers.update(visitor_headers)
         else:
             headers["stamped_headers"] = [header for header in headers.keys() if header not in self.options]
             _merge_dictionaries(headers, self.options)
