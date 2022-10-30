@@ -1232,9 +1232,22 @@ the external monitoring system.
 
     class MonitoringIdStampingVisitor(StampingVisitor):
         def on_signature(self, sig, **headers) -> dict:
-            return {'monitoring_id': uuid4(), 'stamped_headers': ['monitoring_id']}
+            return {'monitoring_id': uuid4().hex}
 
-Next, lets see how to use the ``MonitoringIdStampingVisitor`` stamping visitor.
+.. note::
+
+    The ``stamped_headers`` key returned in ``on_signature`` is used to specify the headers that will be
+    stamped on the task. If this key is not specified, the stamping visitor will assume all keys in the
+    returned dictionary are the stamped headers from the visitor.
+    This means the following code block will result in the same behavior as the previous example.
+
+.. code-block:: python
+
+    class MonitoringIdStampingVisitor(StampingVisitor):
+        def on_signature(self, sig, **headers) -> dict:
+            return {'monitoring_id': uuid4().hex, 'stamped_headers': ['monitoring_id']}
+
+Next, lets see how to use the ``MonitoringIdStampingVisitor`` example stamping visitor.
 
 .. code-block:: python
 

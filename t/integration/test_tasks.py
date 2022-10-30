@@ -204,7 +204,7 @@ class test_tasks:
 
         class MonitoringIdStampingVisitor(StampingVisitor):
             def on_signature(self, sig, **headers) -> dict:
-                return {'monitoring_id': target_monitoring_id, 'stamped_headers': ['monitoring_id']}
+                return {'monitoring_id': target_monitoring_id}
 
         for monitoring_id in [target_monitoring_id, uuid4().hex, 4242, None]:
             stamped_task = add.si(1, 1)

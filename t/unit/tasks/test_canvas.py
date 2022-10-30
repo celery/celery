@@ -6,8 +6,8 @@ import pytest
 import pytest_subtests  # noqa: F401
 
 from celery._state import _task_stack
-from celery.canvas import (Signature, _chain, _maybe_group, chain, chord, chunks, group, maybe_signature,
-                           maybe_unroll_group, signature, xmap, xstarmap)
+from celery.canvas import (Signature, StampingVisitor, _chain, _maybe_group, chain, chord, chunks, group,
+                           maybe_signature, maybe_unroll_group, signature, xmap, xstarmap)
 from celery.result import AsyncResult, EagerResult, GroupResult
 
 SIG = Signature({
@@ -189,6 +189,45 @@ class test_Signature(CanvasCase):
         sig_1_res = sig_1.freeze()
         sig_1.apply()
         assert sorted(sig_1_res._get_task_meta()['groups']) == sorted(stamps)
+
+    def test_custom_stamping_visitor(self, subtests):
+        """
+        Test manual signature stamping with a custom visitor class.
+        """
+        self.app.conf.task_always_eager = True
+        self.app.conf.task_store_eager_result = True
+        self.app.conf.result_extended = True
+
+        class CustomStampingVisitor1(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                # without using stamped_headers key explicitly
+                # the key will be calculated from the headers implicitly
+                return {'header': 'value'}
+
+        class CustomStampingVisitor2(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {'header': 'value', 'stamped_headers': ['header']}
+
+        sig_1 = self.add.s(2, 2)
+        sig_1.stamp(visitor=CustomStampingVisitor1())
+        sig_1_res = sig_1.freeze()
+        sig_1.apply()
+        sig_2 = self.add.s(2, 2)
+        sig_2.stamp(visitor=CustomStampingVisitor2())
+        sig_2_res = sig_2.freeze()
+        sig_2.apply()
+
+        with subtests.test("sig_1 is stamped with custom visitor", stamped_headers=["header", "groups"]):
+            assert sorted(sig_1_res._get_task_meta()["stamped_headers"]) == sorted(["header", "groups"])
+
+        with subtests.test("sig_2 is stamped with custom visitor", stamped_headers=["header", "groups"]):
+            assert sorted(sig_2_res._get_task_meta()["stamped_headers"]) == sorted(["header", "groups"])
+
+        with subtests.test("sig_1 is stamped with custom visitor", header=["value"]):
+            assert sig_1_res._get_task_meta()["header"] == ["value"]
+
+        with subtests.test("sig_2 is stamped with custom visitor", header=["value"]):
+            assert sig_2_res._get_task_meta()["header"] == ["value"]
 
     def test_getitem_property_class(self):
         assert Signature.task
