@@ -453,8 +453,7 @@ them into the Kombu serializer registry
 Each option has its advantages and disadvantages.
 
 json -- JSON is supported in many programming languages, is now
-    a standard part of Python (since 2.6), and is fairly fast to decode
-    using modern Python libraries, such as :pypi:`simplejson`.
+    a standard part of Python (since 2.6), and is fairly fast to decode.
 
     The primary disadvantage to JSON is that it limits you to the following
     data types: strings, Unicode, floats, Boolean, dictionaries, and lists.
