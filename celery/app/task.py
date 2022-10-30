@@ -958,12 +958,7 @@ class Task:
             groups = self.request.stamps.get("groups")
             sig.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
 
-        # Finally, either apply or delay the new signature!
-        if self.request.is_eager:
-            return sig.apply().get()
-        else:
-            sig.delay()
-            raise Ignore('Replaced by new task')
+        return self.on_replace(sig)
 
     def add_to_chord(self, sig, lazy=False):
         """Add signature to the chord the current task is a member of.
@@ -1078,6 +1073,24 @@ class Task:
         Returns:
             None: The return value of this handler is ignored.
         """
+
+    def on_replace(self, sig):
+        """Handler called when the task is replaced.
+
+        Must return super().on_replace(sig) when overriding to ensure the task replacement
+        is properly handled.
+
+        .. versionadded:: 5.3
+
+        Arguments:
+            sig (Signature): signature to replace with.
+        """
+        # Finally, either apply or delay the new signature!
+        if self.request.is_eager:
+            return sig.apply().get()
+        else:
+            sig.delay()
+            raise Ignore('Replaced by new task')
 
     def add_trail(self, result):
         if self.trail:
