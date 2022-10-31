@@ -1,6 +1,6 @@
 pytest==7.2.0
 pytest-celery==0.0.0
-pytest-subtests==0.8.0
+pytest-subtests==0.9.0
 pytest-timeout~=2.1.0
 pytest-click==1.1.0
 pytest-order==1.0.1
