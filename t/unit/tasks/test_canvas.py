@@ -6,8 +6,8 @@ import pytest
 import pytest_subtests  # noqa: F401
 
 from celery._state import _task_stack
-from celery.canvas import (Signature, StampingVisitor, _chain, _maybe_group, chain, chord, chunks, group,
-                           maybe_signature, maybe_unroll_group, signature, xmap, xstarmap)
+from celery.canvas import (GroupStampingVisitor, Signature, StampingVisitor, _chain, _maybe_group, chain, chord,
+                           chunks, group, maybe_signature, maybe_unroll_group, signature, xmap, xstarmap)
 from celery.result import AsyncResult, EagerResult, GroupResult
 
 SIG = Signature({
@@ -636,11 +636,15 @@ class test_chain(CanvasCase):
         assert c.tasks[-1].options['chord'] == 'some_chord_id'
 
         c.apply_async(link=[s(32)])
-        assert c.tasks[-1].options['link'] == [s(32)]
+        expected_sig = s(32)
+        expected_sig.stamp(visitor=GroupStampingVisitor())
+        assert c.tasks[-1].options['link'] == [expected_sig]
 
         c.apply_async(link_error=[s('error')])
+        expected_sig = s('error')
+        expected_sig.stamp(visitor=GroupStampingVisitor())
         for task in c.tasks:
-            assert task.options['link_error'] == [s('error')]
+            assert task.options['link_error'] == [expected_sig]
 
     def test_apply_options_none(self):
         class static(Signature):

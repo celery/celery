@@ -176,6 +176,28 @@ class StampingVisitor(metaclass=ABCMeta):
         """
         return {}
 
+    def on_callback(self, callback, **header) -> dict:
+        """Method that is called on callback stamping.
+
+         Arguments:
+             callback (Signature): callback that is stamped.
+             headers (Dict): Partial headers that could be merged with existing headers.
+         Returns:
+             Dict: headers to update.
+         """
+        return {}
+
+    def on_errback(self, errback, **header) -> dict:
+        """Method that is called on errback stamping.
+
+         Arguments:
+             errback (Signature): errback that is stamped.
+             headers (Dict): Partial headers that could be merged with existing headers.
+         Returns:
+             Dict: headers to update.
+         """
+        return {}
+
 
 class GroupStampingVisitor(StampingVisitor):
     """
@@ -499,20 +521,57 @@ class Signature(dict):
             visitor (StampingVisitor): Visitor API object.
             headers (Dict): Stamps that should be added to headers.
         """
+        self.stamp_links(visitor, **headers)
+
         headers = headers.copy()
         if visitor is not None:
             visitor_headers = visitor.on_signature(self, **headers)
             if "stamped_headers" not in visitor_headers:
                 visitor_headers["stamped_headers"] = list(visitor_headers.keys())
-            headers.update(visitor_headers)
+            _merge_dictionaries(headers, visitor_headers)
         else:
             headers["stamped_headers"] = [header for header in headers.keys() if header not in self.options]
             _merge_dictionaries(headers, self.options)
 
+        # Preserve previous stamped headers
         stamped_headers = set(self.options.get("stamped_headers", []))
         stamped_headers.update(headers["stamped_headers"])
         headers["stamped_headers"] = list(stamped_headers)
         return self.set(**headers)
+
+    def stamp_links(self, visitor, **headers):
+        """Stamp this signature links (callbacks and errbacks).
+        Using a visitor will pass on responsibility for the stamping
+        to the visitor.
+
+        Arguments:
+            visitor (StampingVisitor): Visitor API object.
+            headers (Dict): Stamps that should be added to headers.
+        """
+        if not visitor:
+            return
+
+        non_visitor_headers = headers.copy()
+
+        # Stamp all of the callbacks of this signature
+        headers = non_visitor_headers.copy()
+        for link in self.options.get('link', []) or []:
+            visitor_headers = visitor.on_callback(link, **headers)
+            if visitor_headers and "stamped_headers" not in visitor_headers:
+                visitor_headers["stamped_headers"] = list(visitor_headers.keys())
+            headers.update(visitor_headers or {})
+            link = maybe_signature(link, app=self.app)
+            link.stamp(visitor=visitor, **headers)
+
+        # Stamp all of the errbacks of this signature
+        headers = non_visitor_headers.copy()
+        for link in self.options.get('link_error', []) or []:
+            visitor_headers = visitor.on_errback(link, **headers)
+            if visitor_headers and "stamped_headers" not in visitor_headers:
+                visitor_headers["stamped_headers"] = list(visitor_headers.keys())
+            headers.update(visitor_headers or {})
+            link = maybe_signature(link, app=self.app)
+            link.stamp(visitor=visitor, **headers)
 
     def _with_list_option(self, key):
         items = self.options.setdefault(key, [])
@@ -842,11 +901,13 @@ class _chain(Signature):
 
         groups = self.options.get("groups")
         stamped_headers = self.options.get("stamped_headers")
-        self.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
+        visitor = GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers)
+        self.stamp(visitor=visitor)
 
         if results_from_prepare:
             if link:
                 tasks[0].extend_list_option('link', link)
+                tasks[0].stamp_links(visitor=visitor)
             first_task = tasks.pop()
             options = _prepare_chain_from_options(options, tasks, use_link)
 
@@ -1660,13 +1721,13 @@ class _chord(Signature):
         return body_result
 
     def stamp(self, visitor=None, **headers):
-        if visitor is not None:
-            headers.update(visitor.on_chord_header_start(self, **headers))
-        super().stamp(visitor=visitor, **headers)
-
         tasks = self.tasks
         if isinstance(tasks, group):
             tasks = tasks.tasks
+
+        if visitor is not None:
+            headers.update(visitor.on_chord_header_start(self, **headers))
+        super().stamp(visitor=visitor, **headers)
 
         if isinstance(tasks, _regen):
             tasks.map(_partial(_stamp_regen_task, visitor=visitor, **headers))
