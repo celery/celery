@@ -651,8 +651,11 @@ class ResultSet(ResultBase):
     def completed_count(self):
         """Task completion count.
 
+        Note that `complete` means `successful` in this context. In other words, the
+        return value of this method is the number of successful tasks.
+
         Returns:
-            int: the number of tasks completed.
+            int: the number of complete (i.e. successful) tasks.
         """
         return sum(int(result.successful()) for result in self.results)
 
