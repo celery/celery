@@ -797,7 +797,9 @@ It supports the following operations:
 
 * :meth:`~celery.result.GroupResult.completed_count`
 
-    Return the number of completed subtasks.
+    Return the number of completed subtasks. Note that `complete` means `successful` in
+    this context. In other words, the return value of this method is the number of
+    ``successful`` tasks.
 
 * :meth:`~celery.result.GroupResult.revoke`
 

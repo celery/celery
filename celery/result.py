@@ -652,7 +652,7 @@ class ResultSet(ResultBase):
         """Task completion count.
 
         Note that `complete` means `successful` in this context. In other words, the
-        return value of this method is the number of successful tasks.
+        return value of this method is the number of ``successful`` tasks.
 
         Returns:
             int: the number of complete (i.e. successful) tasks.
