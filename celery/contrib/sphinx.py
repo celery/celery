@@ -30,7 +30,7 @@ syntax.
 
 Use ``.. autotask::`` to alternatively manually document a task.
 """
-from inspect import formatargspec, getfullargspec
+from inspect import signature
 
 from sphinx.domains.python import PyFunction
 from sphinx.ext.autodoc import FunctionDocumenter
@@ -51,12 +51,10 @@ class TaskDocumenter(FunctionDocumenter):
     def format_args(self):
         wrapped = getattr(self.object, '__wrapped__', None)
         if wrapped is not None:
-            argspec = getfullargspec(wrapped)
-            if argspec[0] and argspec[0][0] in ('cls', 'self'):
-                del argspec[0][0]
-            fmt = formatargspec(*argspec)
-            fmt = fmt.replace('\\', '\\\\')
-            return fmt
+            sig = signature(wrapped)
+            if "self" in sig.parameters or "cls" in sig.parameters:
+                sig = sig.replace(parameters=list(sig.parameters.values())[1:])
+            return str(sig)
         return ''
 
     def document_members(self, all_members=False):
