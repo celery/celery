@@ -129,6 +129,7 @@ class test_TaskPool(EventletCase):
         x = TaskPool(10)
         x._pool = Mock(name='_pool')
         assert x._get_info() == {
+            'implementation': 'celery.concurrency.eventlet:TaskPool',
             'max-concurrency': 10,
             'free-threads': x._pool.free(),
             'running-threads': x._pool.running(),
