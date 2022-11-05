@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 import time
+from typing import Dict, Any
 
 from billiard.einfo import ExceptionInfo
 from billiard.exceptions import WorkerLostError
@@ -154,7 +155,13 @@ class BasePool:
                              callbacks_propagate=self.callbacks_propagate,
                              **options)
 
-    def _get_info(self):
+    def _get_info(self) -> Dict[str, Any]:
+        """
+        Return configuration and statistics information. Subclasses should
+        augment the data as required.
+
+        :return: The returned value must be JSON-friendly.
+        """
         return {
             'max-concurrency': self.limit,
         }
