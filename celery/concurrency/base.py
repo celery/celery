@@ -3,7 +3,7 @@ import logging
 import os
 import sys
 import time
-from typing import Dict, Any
+from typing import Any, Dict
 
 from billiard.einfo import ExceptionInfo
 from billiard.exceptions import WorkerLostError
