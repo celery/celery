@@ -1,4 +1,5 @@
 """Pool implementation abstract factory, and alias definitions."""
+import os
 
 # Import from kombu directly as it's used
 # early in the import stage, where celery.utils loads
@@ -21,6 +22,20 @@ except ImportError:
     pass
 else:
     ALIASES['threads'] = 'celery.concurrency.thread:TaskPool'
+#
+# Allow for an out-of-tree worker pool implementation. This is used as follows:
+#
+#   - Set the environment variable CELERY_CUSTOM_WORKER_POOL to the name of
+#     an implementation of :class:`celery.concurrency.base.BasePool` in the
+#     standard Celery format of "package:class".
+#   - Select this pool using '--pool custom'.
+#
+try:
+    custom = os.environ.get('CELERY_CUSTOM_WORKER_POOL')
+except KeyError:
+    pass
+else:
+    ALIASES['custom'] = custom
 
 
 def get_implementation(cls):
