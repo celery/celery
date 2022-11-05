@@ -109,6 +109,7 @@ class test_BasePool:
 
     def test_interface_info(self):
         assert BasePool(10).info == {
+            'implementation': 'celery.concurrency.base:BasePool',
             'max-concurrency': 10,
         }
 

@@ -163,6 +163,7 @@ class BasePool:
         :return: The returned value must be JSON-friendly.
         """
         return {
+            'implementation': self.__class__.__module__ + ':' + self.__class__.__name__,
             'max-concurrency': self.limit,
         }
 
