@@ -5,9 +5,11 @@ from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 import pytest
 import pytest_subtests  # noqa: F401
 
+from celery import Task
 from celery._state import _task_stack
 from celery.canvas import (GroupStampingVisitor, Signature, StampingVisitor, _chain, _maybe_group, chain, chord,
                            chunks, group, maybe_signature, maybe_unroll_group, signature, xmap, xstarmap)
+from celery.exceptions import Ignore
 from celery.result import AsyncResult, EagerResult, GroupResult
 
 SIG = Signature({
@@ -21,6 +23,11 @@ try:
     from collections.abc import Iterable
 except ImportError:
     from collections.abc import Iterable
+
+
+def return_True(*args, **kwargs):
+    # Task run functions can't be closures/lambdas, as they're pickled.
+    return True
 
 
 class test_maybe_unroll_group:
@@ -173,7 +180,6 @@ class test_Signature(CanvasCase):
         with subtests.test("sig_1_res is stamped twice", stamped_headers=["stamp2", "stamp1"]):
             assert sorted(sig_1_res._get_task_meta()["stamped_headers"]) == sorted(["stamp", "groups"])
 
-    @pytest.mark.usefixtures('depends_on_current_app')
     def test_manual_stamping(self):
         """
         Test manual signature stamping.
@@ -228,6 +234,138 @@ class test_Signature(CanvasCase):
 
         with subtests.test("sig_2 is stamped with custom visitor", header=["value"]):
             assert sig_2_res._get_task_meta()["header"] == ["value"]
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_callback_stamping(self, subtests):
+        self.app.conf.task_always_eager = True
+        self.app.conf.task_store_eager_result = True
+        self.app.conf.result_extended = True
+
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {'header': 'value'}
+
+            def on_callback(self, callback, **header) -> dict:
+                return {'on_callback': True}
+
+            def on_errback(self, errback, **header) -> dict:
+                return {'on_errback': True}
+
+        sig_1 = self.add.s(0, 1)
+        sig_1_res = sig_1.freeze()
+        group_sig = group([self.add.s(3), self.add.s(4)])
+        group_sig_res = group_sig.freeze()
+        chord_sig = chord([self.xsum.s(), self.xsum.s()], self.xsum.s())
+        chord_sig_res = chord_sig.freeze()
+        sig_2 = self.add.s(2)
+        sig_2_res = sig_2.freeze()
+        chain_sig = chain(
+            sig_1,      # --> 1
+            group_sig,  # --> [1+3, 1+4] --> [4, 5]
+            chord_sig,  # --> [4+5, 4+5] --> [9, 9] --> 9+9 --> 18
+            sig_2       # --> 18 + 2 --> 20
+        )
+        callback = signature('callback_task')
+        errback = signature('errback_task')
+        chain_sig.link(callback)
+        chain_sig.link_error(errback)
+        chain_sig.stamp(visitor=CustomStampingVisitor())
+        chain_sig_res = chain_sig.apply_async()
+        chain_sig_res.get()
+
+        with subtests.test("Confirm the chain was executed correctly", result=20):
+            # Before we run our assersions, let's confirm the base functionality of the chain is working
+            # as expected including the links stamping.
+            assert chain_sig_res.result == 20
+
+        with subtests.test("sig_1 is stamped with custom visitor", stamped_headers=["header", "groups"]):
+            assert sorted(sig_1_res._get_task_meta()["stamped_headers"]) == sorted(["header", "groups"])
+
+        with subtests.test("group_sig is stamped with custom visitor", stamped_headers=["header", "groups"]):
+            for result in group_sig_res.results:
+                assert sorted(result._get_task_meta()["stamped_headers"]) == sorted(["header", "groups"])
+
+        with subtests.test("chord_sig is stamped with custom visitor", stamped_headers=["header", "groups"]):
+            assert sorted(chord_sig_res._get_task_meta()["stamped_headers"]) == sorted(["header", "groups"])
+
+        with subtests.test("sig_2 is stamped with custom visitor", stamped_headers=["header", "groups"]):
+            assert sorted(sig_2_res._get_task_meta()["stamped_headers"]) == sorted(["header", "groups"])
+
+        with subtests.test("callback is stamped with custom visitor",
+                           stamped_headers=["header", "groups, on_callback"]):
+            callback_link = chain_sig.options['link'][0]
+            headers = callback_link.options
+            stamped_headers = headers['stamped_headers']
+            assert sorted(stamped_headers) == sorted(["header", "groups", "on_callback"])
+            assert headers['on_callback'] is True
+            assert headers['header'] == 'value'
+
+        with subtests.test("errback is stamped with custom visitor",
+                           stamped_headers=["header", "groups, on_errback"]):
+            errback_link = chain_sig.options['link_error'][0]
+            headers = errback_link.options
+            stamped_headers = headers['stamped_headers']
+            assert sorted(stamped_headers) == sorted(["header", "groups", "on_errback"])
+            assert headers['on_errback'] is True
+            assert headers['header'] == 'value'
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_callback_stamping_on_replace(self, subtests):
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {'header': 'value'}
+
+            def on_callback(self, callback, **header) -> dict:
+                return {'on_callback': True}
+
+            def on_errback(self, errback, **header) -> dict:
+                return {'on_errback': True}
+
+        class MyTask(Task):
+            def on_replace(self, sig):
+                sig.stamp(CustomStampingVisitor())
+                return super().on_replace(sig)
+
+        mytask = self.app.task(shared=False, base=MyTask)(return_True)
+
+        sig1 = signature('sig1')
+        callback = signature('callback_task')
+        errback = signature('errback_task')
+        sig1.link(callback)
+        sig1.link_error(errback)
+
+        with subtests.test("callback is not stamped with custom visitor yet"):
+            callback_link = sig1.options['link'][0]
+            headers = callback_link.options
+            assert 'on_callback' not in headers
+            assert 'header' not in headers
+
+        with subtests.test("errback is not stamped with custom visitor yet"):
+            errback_link = sig1.options['link_error'][0]
+            headers = errback_link.options
+            assert 'on_errback' not in headers
+            assert 'header' not in headers
+
+        with pytest.raises(Ignore):
+            mytask.replace(sig1)
+
+        with subtests.test("callback is stamped with custom visitor",
+                           stamped_headers=["header", "groups, on_callback"]):
+            callback_link = sig1.options['link'][0]
+            headers = callback_link.options
+            stamped_headers = headers['stamped_headers']
+            assert sorted(stamped_headers) == sorted(["header", "groups", "on_callback"])
+            assert headers['on_callback'] is True
+            assert headers['header'] == 'value'
+
+        with subtests.test("errback is stamped with custom visitor",
+                           stamped_headers=["header", "groups, on_errback"]):
+            errback_link = sig1.options['link_error'][0]
+            headers = errback_link.options
+            stamped_headers = headers['stamped_headers']
+            assert sorted(stamped_headers) == sorted(["header", "groups", "on_errback"])
+            assert headers['on_errback'] is True
+            assert headers['header'] == 'value'
 
     def test_getitem_property_class(self):
         assert Signature.task
