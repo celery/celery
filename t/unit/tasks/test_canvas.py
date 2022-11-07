@@ -527,7 +527,6 @@ class test_Signature(CanvasCase):
         z = x | t
         assert isinstance(z, _chain)
         assert t in z.tasks
-        assert not z.options.get('link_error')
         assert SIG in z.tasks[0].options['link_error']
         assert not z.tasks[2].options.get('link_error')
         assert SIG in x.options['link_error']
@@ -537,7 +536,6 @@ class test_Signature(CanvasCase):
         z = t | x
         assert isinstance(z, _chain)
         assert t in z.tasks
-        assert not z.options.get('link_error')
         assert SIG in z.tasks[1].options['link_error']
         assert not z.tasks[0].options.get('link_error')
         assert SIG in x.options['link_error']
@@ -549,7 +547,6 @@ class test_Signature(CanvasCase):
 
         z = x | y
         assert isinstance(z, _chain)
-        assert not z.options.get('link_error')
         assert SIG in z.tasks[0].options['link_error']
         assert not z.tasks[2].options.get('link_error')
         assert SIG in x.options['link_error']
@@ -557,7 +554,6 @@ class test_Signature(CanvasCase):
 
         z = y | x
         assert isinstance(z, _chain)
-        assert not z.options.get('link_error')
         assert SIG in z.tasks[3].options['link_error']
         assert not z.tasks[1].options.get('link_error')
         assert SIG in x.options['link_error']
@@ -950,6 +946,16 @@ class test_chain(CanvasCase):
         # subsequent tasks which would be run - nothing in this case
         mock_apply.assert_called_once_with(chain=[])
         assert res is mock_apply.return_value
+
+    def test_chain_flattening(self):
+        c = chain(signature('a'), signature('b'))
+        c.link(signature('link'))
+        c.link_error(signature('link_error'))
+        assert c.options['link'] == [signature('link')]
+        assert c.options['link_error'] == [signature('link_error')]
+        flat = chain(c, signature('c'))
+        assert flat.options['link'] == [signature('link')]
+        assert flat.options['link_error'] == [signature('link_error')]
 
 
 class test_group(CanvasCase):

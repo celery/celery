@@ -827,8 +827,10 @@ class _chain(Signature):
         elif isinstance(other, _chain):
             # chain | chain -> chain
             # use type(self) for _chain subclasses
-            return type(self)(seq_concat_seq(
+            concatenated_chain = type(self)(seq_concat_seq(
                 self.unchain_tasks(), other.unchain_tasks()), app=self._app)
+            concatenated_chain.set(**other.options)
+            return concatenated_chain
         elif isinstance(other, Signature):
             if self.tasks and isinstance(self.tasks[-1], group):
                 # CHAIN [last item is group] | TASK -> chord
@@ -844,8 +846,10 @@ class _chain(Signature):
             else:
                 # chain | task -> chain
                 # use type(self) for _chain subclasses
-                return type(self)(seq_concat_item(
+                concatenated_chain = type(self)(seq_concat_item(
                     self.unchain_tasks(), other), app=self._app)
+                concatenated_chain.set(**self.options)
+                return concatenated_chain
         else:
             return NotImplemented
 
