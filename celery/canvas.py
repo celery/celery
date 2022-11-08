@@ -71,6 +71,20 @@ def _stamp_regen_task(task, visitor, **headers):
 
 
 def _merge_dictionaries(d1, d2):
+    """Merge two dictionaries recursively into the first one.
+
+    Example:
+    >>> d1 = {'dict': {'a': 1}, 'list': [1, 2], 'tuple': (1, 2)}
+    >>> d2 = {'dict': {'b': 2}, 'list': [3, 4], 'set': {'a', 'b'}}
+    >>> _merge_dictionaries(d1, d2)
+
+    d1 will be modified to: {
+        'dict': {'a': 1, 'b': 2},
+        'list': [1, 2, 3, 4],
+        'tuple': (1, 2),
+        'set': {'a', 'b'}
+    }
+    """
     for key, value in d1.items():
         if key in d2:
             if isinstance(value, dict):
