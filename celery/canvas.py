@@ -62,6 +62,10 @@ def task_name_from(task):
 
 
 def _stamp_regen_task(task, visitor, **headers):
+    """When stamping a sequence of tasks created by a generator,
+    we use this function to stamp each task in the generator
+    without exhausting it."""
+
     task.stamp(visitor=visitor, **headers)
     return task
 
