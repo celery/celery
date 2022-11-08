@@ -46,7 +46,7 @@ class SchedulingError(Exception):
 
 
 class BeatLazyFunc:
-    """An lazy function declared in 'beat_schedule' and called before sending to worker.
+    """A lazy function declared in 'beat_schedule' and called before sending to worker.
 
     Example:
 
