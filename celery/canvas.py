@@ -40,7 +40,9 @@ __all__ = (
 
 
 def maybe_unroll_group(group):
-    """Unroll group with only one member."""
+    """Unroll group with only one member.
+    This allows treating a group of a single task as if it
+    was a single task without pre-knowledge."""
     # Issue #1656
     try:
         size = len(group.tasks)
@@ -60,11 +62,29 @@ def task_name_from(task):
 
 
 def _stamp_regen_task(task, visitor, **headers):
+    """When stamping a sequence of tasks created by a generator,
+    we use this function to stamp each task in the generator
+    without exhausting it."""
+
     task.stamp(visitor=visitor, **headers)
     return task
 
 
 def _merge_dictionaries(d1, d2):
+    """Merge two dictionaries recursively into the first one.
+
+    Example:
+    >>> d1 = {'dict': {'a': 1}, 'list': [1, 2], 'tuple': (1, 2)}
+    >>> d2 = {'dict': {'b': 2}, 'list': [3, 4], 'set': {'a', 'b'}}
+    >>> _merge_dictionaries(d1, d2)
+
+    d1 will be modified to: {
+        'dict': {'a': 1, 'b': 2},
+        'list': [1, 2, 3, 4],
+        'tuple': (1, 2),
+        'set': {'a', 'b'}
+    }
+    """
     for key, value in d1.items():
         if key in d2:
             if isinstance(value, dict):
