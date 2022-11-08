@@ -40,7 +40,9 @@ __all__ = (
 
 
 def maybe_unroll_group(group):
-    """Unroll group with only one member."""
+    """Unroll group with only one member.
+    This allows treating a group of a single task as if it
+    was a single task without pre-knowledge."""
     # Issue #1656
     try:
         size = len(group.tasks)
