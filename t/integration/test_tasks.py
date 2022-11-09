@@ -241,11 +241,6 @@ class test_tasks:
             if count == 0:
                 break
 
-    # This test leaves the environment dirty,
-    # so we let it run last in the suite to avoid
-    # affecting other tests until we can fix it.
-    @pytest.mark.order("last")
-    @flaky
     def test_revoked_by_headers_complex_canvas(self, manager, subtests):
         """Testing revoking of task using a stamped header"""
         try:
@@ -298,6 +293,13 @@ class test_tasks:
                     assert result.failed() is False
                     assert result.successful() is False
             worker_state.revoked_headers.clear()
+
+        # Try to purge the queue after we're done
+        # to attempt to avoid interference to other tests
+        while True:
+            count = manager.app.control.purge()
+            if count == 0:
+                break
 
     @flaky
     def test_wrong_arguments(self, manager):
