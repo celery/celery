@@ -311,6 +311,12 @@ class Signature(dict):
 
     @classmethod
     def register_type(cls, name=None):
+        """Register a new type of signature.
+        Used as a class decorator, for example:
+        >>> @Signature.register_type()
+        >>> class mysig(Signature):
+        >>>     pass
+        """
         def _inner(subclass):
             cls.TYPES[name or subclass.__name__] = subclass
             return subclass
@@ -319,6 +325,10 @@ class Signature(dict):
 
     @classmethod
     def from_dict(cls, d, app=None):
+        """Create a new signature from a dict.
+        Subclasses can override this method to customize how are
+        they created from a dict.
+        """
         typ = d.get('subtask_type')
         if typ:
             target_cls = cls.TYPES[typ]
@@ -413,6 +423,24 @@ class Signature(dict):
         return _apply(args, kwargs, **options)
 
     def _merge(self, args=None, kwargs=None, options=None, force=False):
+        """Merge partial args/kwargs/options with existing ones.
+
+        If the signature is immutable and ``force`` is False, the existing
+        args/kwargs will be returned as-is and only the options will be merged.
+
+        Stamped headers are considered immutable and will not be merged regardless.
+
+        Arguments:
+            args (Tuple): Partial args to be prepended to the existing args.
+            kwargs (Dict): Partial kwargs to be merged with existing kwargs.
+            options (Dict): Partial options to be merged with existing options.
+            force (bool): If True, the args/kwargs will be merged even if the signature is
+                immutable. The stamped headers are not affected by this option and will not
+                be merged regardless.
+
+        Returns:
+            Tuple: (args, kwargs, options)
+        """
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
         if options is not None:
@@ -423,6 +451,7 @@ class Signature(dict):
             immutable_options = self._IMMUTABLE_OPTIONS
             if "stamped_headers" in self.options:
                 immutable_options = self._IMMUTABLE_OPTIONS.union(set(self.options["stamped_headers"]))
+            # merge self.options with options without overriding stamped headers from self.options
             new_options = {**self.options, **{
                 k: v for k, v in options.items()
                 if k not in immutable_options or k not in self.options
@@ -470,6 +499,18 @@ class Signature(dict):
         The task won't be called and you shouldn't call the signature
         twice after freezing it as that'll result in two task messages
         using the same task id.
+
+        The arguments are used to override the signature's headers during
+        freezing.
+
+        Arguments:
+            _id (str): Task id to use if it didn't already have one.
+                New UUID is generated if not provided.
+            group_id (str): Group id to use if it didn't already have one.
+            chord (Signature): Chord body when freezing a chord header.
+            root_id (str): Root id to use.
+            parent_id (str): Parent id to use.
+            group_index (int): Group index to use.
 
         Returns:
             ~@AsyncResult: promise of future evaluation.
@@ -594,18 +635,34 @@ class Signature(dict):
             link.stamp(visitor=visitor, **headers)
 
     def _with_list_option(self, key):
+        """Gets the value at the given self.options[key] as a list.
+
+        If the value is not a list, it will be converted to one and saved in self.options.
+        If the key does not exist, an empty list will be set and returned instead.
+
+        Arguments:
+            key (str): The key to get the value for.
+
+        Returns:
+            List: The value at the given key as a list or an empty list if the key does not exist.
+        """
         items = self.options.setdefault(key, [])
         if not isinstance(items, MutableSequence):
             items = self.options[key] = [items]
         return items
 
     def append_to_list_option(self, key, value):
+        """Appends the given value to the list at the given key in self.options."""
         items = self._with_list_option(key)
         if value not in items:
             items.append(value)
         return value
 
     def extend_list_option(self, key, value):
+        """Extends the list at the given key in self.options with the given value.
+
+        If the value is not a list, it will be converted to one.
+        """
         items = self._with_list_option(key)
         items.extend(maybe_list(value))
 
@@ -652,6 +709,14 @@ class Signature(dict):
         )))
 
     def __or__(self, other):
+        """Chaining operator.
+
+        Example:
+            >>> add.s(2, 2) | add.s(4) | add.s(8)
+
+        Returns:
+            chain: Constructs a :class:`~celery.canvas.chain` of the given signatures.
+        """
         if isinstance(other, _chain):
             # task | chain -> chain
             return _chain(seq_concat_seq(
@@ -685,6 +750,16 @@ class Signature(dict):
             return type.AsyncResult(tid)
 
     def reprcall(self, *args, **kwargs):
+        """Return a string representation of the signature.
+
+        Merges the given arguments with the signature's arguments
+        only for the purpose of generating the string representation.
+        The signature itself is not modified.
+
+        Example:
+            >>> add.s(2, 2).reprcall()
+            'add(2, 2)'
+        """
         args, kwargs, _ = self._merge(args, kwargs, {}, force=True)
         return reprcall(self['task'], args, kwargs)
 
