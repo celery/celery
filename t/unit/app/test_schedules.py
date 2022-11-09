@@ -26,7 +26,7 @@ def patch_crontab_nowfun(cls, retval):
 class test_solar:
 
     def setup(self):
-        pytest.importorskip('ephem0')
+        pytest.importorskip('ephem')
         self.s = solar('sunrise', 60, 30, app=self.app)
 
     def test_reduce(self):

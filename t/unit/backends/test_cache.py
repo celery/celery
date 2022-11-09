@@ -143,7 +143,7 @@ class test_CacheBackend:
         assert b.as_uri() == backend
 
     def test_regression_worker_startup_info(self):
-        pytest.importorskip('memcached')
+        pytest.importorskip('memcache')
         self.app.conf.result_backend = (
             'cache+memcached://127.0.0.1:11211;127.0.0.2:11211;127.0.0.3/'
         )
