@@ -954,6 +954,13 @@ class _chain(Signature):
         return signature
 
     def unchain_tasks(self):
+        """Return a list of tasks in the chain.
+
+        The tasks list would be cloned from the chain's tasks,
+        and all of the tasks would be linked to the same error callback
+        as the chain itself, to ensure that the correct error callback is called
+        if any of the (cloned) tasks of the chain fail.
+        """
         # Clone chain's tasks assigning signatures from link_error
         # to each task
         tasks = [t.clone() for t in self.tasks]
