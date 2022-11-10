@@ -200,6 +200,13 @@ class test_tasks:
 
     def test_revoked_by_headers_simple_canvas(self, manager):
         """Testing revoking of task using a stamped header"""
+        # Try to purge the queue before we start
+        # to attempt to avoid interference from other tests
+        while True:
+            count = manager.app.control.purge()
+            if count == 0:
+                break
+
         target_monitoring_id = uuid4().hex
 
         class MonitoringIdStampingVisitor(StampingVisitor):
@@ -227,11 +234,13 @@ class test_tasks:
                 assert result.successful() is True
         worker_state.revoked_headers.clear()
 
-    # This test leaves the environment dirty,
-    # so we let it run last in the suite to avoid
-    # affecting other tests until we can fix it.
-    @pytest.mark.order("last")
-    @flaky
+        # Try to purge the queue after we're done
+        # to attempt to avoid interference to other tests
+        while True:
+            count = manager.app.control.purge()
+            if count == 0:
+                break
+
     def test_revoked_by_headers_complex_canvas(self, manager, subtests):
         """Testing revoking of task using a stamped header"""
         try:
@@ -284,6 +293,13 @@ class test_tasks:
                     assert result.failed() is False
                     assert result.successful() is False
             worker_state.revoked_headers.clear()
+
+        # Try to purge the queue after we're done
+        # to attempt to avoid interference to other tests
+        while True:
+            count = manager.app.control.purge()
+            if count == 0:
+                break
 
     @flaky
     def test_wrong_arguments(self, manager):
