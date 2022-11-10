@@ -985,6 +985,12 @@ class _chain(Signature):
             task_id=None, link=None, link_error=None, publisher=None,
             producer=None, root_id=None, parent_id=None, app=None,
             group_index=None, **options):
+        """Executes the chain.
+
+        Responsible for executing the chain in the correct order.
+        In a case of a chain of a single task, the task is executed directly
+        and the result is returned for that task specifically.
+        """
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
         args = args if args else ()
@@ -996,6 +1002,7 @@ class _chain(Signature):
         args = (tuple(args) + tuple(self.args)
                 if args and not self.immutable else self.args)
 
+        # Unpack nested chains/groups/chords
         tasks, results_from_prepare = self.prepare_steps(
             args, kwargs, self.tasks, root_id, parent_id, link_error, app,
             task_id, group_id, chord, group_index=group_index,
@@ -1006,6 +1013,8 @@ class _chain(Signature):
         visitor = GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers)
         self.stamp(visitor=visitor)
 
+        # For a chain of single task, execute the task directly and return the result for that task
+        # For a chain of multiple tasks, execute all of the tasks and return the AsyncResult for the chain
         if results_from_prepare:
             if link:
                 tasks[0].extend_list_option('link', link)
