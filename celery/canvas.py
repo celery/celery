@@ -1053,6 +1053,38 @@ class _chain(Signature):
                       last_task_id=None, group_id=None, chord_body=None,
                       clone=True, from_dict=Signature.from_dict,
                       group_index=None):
+        """Prepare the chain for execution.
+
+        To execute a chain, we first need to unpack it correctly.
+        During the unpacking, we might encounter other chains, groups, or chords,
+        which we need to unpack as well.
+
+        For example:
+        chain(signature1, chain(signature2, signature3)) --> Upgrades to chain(signature1, signature2, signature3)
+        chain(group(signature1, signature2), signature3) --> Upgrades to chord([signature1, signature2], signature3)
+
+        The responsibility of this method is to assure that the chain is
+        correctly unpacked, and that the correct callbacks are set up along the way.
+
+        Arguments:
+            args (Tuple): Partial args to be prepended to the existing args.
+            kwargs (Dict): Partial kwargs to be merged with existing kwargs.
+            tasks (List[Signature]): The tasks of the chain.
+            root_id (str): The id of the root task.
+            parent_id (str): The id of the parent task.
+            link_error (Union[List[Signature], Signature]): The error callback.
+                will be set for all tasks in the chain.
+            app (Celery): The Celery app instance.
+            last_task_id (str): The id of the last task in the chain.
+            group_id (str): The id of the group that the chain is a part of.
+            chord_body (Signature): The body of the chord, used to syncronize with the chain's
+                last task and the chord's body when used together.
+            clone (bool): Whether to clone the chain's tasks before modifying them.
+            from_dict (Callable): A function that takes a dict and returns a Signature.
+
+        Returns:
+            Tuple[List[Signature], List[AsyncResult]]: The frozen tasks of the chain, and the async results
+        """
         app = app or self.app
         # use chain message field for protocol 2 and later.
         # this avoids pickle blowing the stack on the recursion
