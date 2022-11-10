@@ -1,10 +1,11 @@
+import copy
 import re
 from contextlib import contextmanager
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
 from kombu.serialization import prepare_accept_content
-from kombu.utils.encoding import ensure_bytes
+from kombu.utils.encoding import bytes_to_str, ensure_bytes
 
 import celery
 from celery import chord, group, signature, states, uuid
@@ -721,6 +722,22 @@ class test_KeyValueStoreBackend:
         x = self.b.get_key_for_task('x1b34')
         assert self.b._strip_prefix(x) == 'x1b34'
         assert self.b._strip_prefix('x1b34') == 'x1b34'
+
+    def test_global_keyprefix(self):
+        global_keyprefix = "test_global_keyprefix_"
+        app = copy.deepcopy(self.app)
+        app.conf.get('result_backend_transport_options', {}).update({"global_keyprefix": global_keyprefix})
+        b = KVBackend(app=app)
+        tid = uuid()
+        assert bytes_to_str(b.get_key_for_task(tid)) == f"{global_keyprefix}_celery-task-meta-{tid}"
+        assert bytes_to_str(b.get_key_for_group(tid)) == f"{global_keyprefix}_celery-taskset-meta-{tid}"
+        assert bytes_to_str(b.get_key_for_chord(tid)) == f"{global_keyprefix}_chord-unlock-{tid}"
+
+    def test_global_keyprefix_missing(self):
+        tid = uuid()
+        assert bytes_to_str(self.b.get_key_for_task(tid)) == f"celery-task-meta-{tid}"
+        assert bytes_to_str(self.b.get_key_for_group(tid)) == f"celery-taskset-meta-{tid}"
+        assert bytes_to_str(self.b.get_key_for_chord(tid)) == f"chord-unlock-{tid}"
 
     def test_get_many(self):
         for is_dict in True, False:
