@@ -1073,7 +1073,7 @@ class _chain(Signature):
         chain(group(signature1, signature2), signature3) --> Upgrades to chord([signature1, signature2], signature3)
 
         The responsibility of this method is to assure that the chain is
-        correctly unpacked, and that the correct callbacks are set up along the way.
+        correctly unpacked, and then the correct callbacks are set up along the way.
 
         Arguments:
             args (Tuple): Partial args to be prepended to the existing args.
