@@ -1065,7 +1065,7 @@ class _chain(Signature):
         """Prepare the chain for execution.
 
         To execute a chain, we first need to unpack it correctly.
-        During the unpacking, we might encounter other chains, groups, or chords,
+        During the unpacking, we might encounter other chains, groups, or chords
         which we need to unpack as well.
 
         For example:
