@@ -1072,7 +1072,7 @@ class _chain(Signature):
         chain(signature1, chain(signature2, signature3)) --> Upgrades to chain(signature1, signature2, signature3)
         chain(group(signature1, signature2), signature3) --> Upgrades to chord([signature1, signature2], signature3)
 
-        The responsibility of this method is to assure that the chain is
+        The responsibility of this method is to ensure that the chain is
         correctly unpacked, and then the correct callbacks are set up along the way.
 
         Arguments:
