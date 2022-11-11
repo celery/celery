@@ -221,8 +221,9 @@ def remaining(
     if str(
             start.tzinfo) == str(
             now.tzinfo) and now.utcoffset() != start.utcoffset():
-        # DST started/ended
-        start = start.replace(tzinfo=now.tzinfo)
+        if now.utcoffset() > start.utcoffset():
+            # DST started
+            start = start.replace(tzinfo=now.tzinfo)
     end_date = start + ends_in
     if relative:
         end_date = delta_resolution(end_date, ends_in).replace(microsecond=0)
