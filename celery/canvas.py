@@ -1448,6 +1448,14 @@ class group(Signature):
 
     @classmethod
     def from_dict(cls, d, app=None):
+        """Create a group signature from a dictionary of tasks.
+
+        Iterates over the given tasks and convert them to signatures.
+        Tasks needs to be defined in d['kwargs']['tasks'] as a sequence
+        of tasks.
+
+        The tasks themselves can be dictionaries or signatures (or both).
+        """
         # We need to mutate the `kwargs` element in place to avoid confusing
         # `freeze()` implementations which end up here and expect to be able to
         # access elements from that dictionary later and refer to objects
