@@ -1481,6 +1481,7 @@ class group(Signature):
         return chord(self, body=other, app=self._app)
 
     def skew(self, start=1.0, stop=None, step=1.0):
+        # TODO: Not sure if this is still used anywhere (besides its own tests). Consider removing.
         it = fxrange(start, stop, step, repeatlast=True)
         for task in self.tasks:
             task.set(countdown=next(it))
