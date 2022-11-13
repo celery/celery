@@ -1466,6 +1466,8 @@ class group(Signature):
             if isinstance(tasks, abstract.CallableSignature):
                 tasks = [tasks.clone()]
             if not isinstance(tasks, _regen):
+                # May potentially cause slow downs when using a
+                # generator of many tasks - Issue #6973
                 tasks = regen(tasks)
         super().__init__('celery.group', (), {'tasks': tasks}, **options
                          )
