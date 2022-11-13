@@ -1712,6 +1712,7 @@ class group(Signature):
                 yield res  # <-- r.parent, etc set in the frozen result.
 
     def _freeze_gid(self, options):
+        """Freeze the group id by the existing task_id or a new UUID."""
         # remove task_id and use that as the group_id,
         # if we don't remove it then every task will have the same id...
         options = {**self.options, **{
