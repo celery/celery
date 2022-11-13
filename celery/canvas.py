@@ -1602,6 +1602,32 @@ class group(Signature):
                   CallableSignature=abstract.CallableSignature,
                   from_dict=Signature.from_dict,
                   isinstance=isinstance, tuple=tuple):
+        """Recursively unroll the group into a generator of its tasks.
+
+        This is used by :meth:`apply_async` and :meth:`apply` to
+        unroll the group into a list of tasks that can be evaluated.
+
+        Note:
+            This does not change the group itself, it only returns
+            a generator of the tasks that the group would evaluate to.
+
+        Arguments:
+            tasks (list): List of tasks in the group (may contain nested groups).
+            partial_args (list): List of arguments to be prepended to
+                the arguments of each task.
+            group_id (str): The group id of the group.
+            root_id (str): The root id of the group.
+            app (Celery): The Celery app instance.
+            CallableSignature (class): The signature class of the group's tasks.
+            from_dict (fun): Function to create a signature from a dict.
+            isinstance (fun): Function to check if an object is an instance
+                of a class.
+            tuple (class): A tuple-like class.
+
+        Returns:
+            generator: A generator for the unrolled group tasks.
+                The generator yields tuples of the form ``(task, AsyncResult, group_id)``.
+        """
         for task in tasks:
             if isinstance(task, CallableSignature):
                 # local sigs are always of type Signature, and we
