@@ -1650,6 +1650,25 @@ class group(Signature):
     def _apply_tasks(self, tasks, producer=None, app=None, p=None,
                      add_to_parent=None, chord=None,
                      args=None, kwargs=None, **options):
+        """Run all the tasks in the group.
+
+        This is used by :meth:`apply_async` to run all the tasks in the group
+        and return a generator of their results.
+
+        Arguments:
+            tasks (list): List of tasks in the group.
+            producer (Producer): The producer to use to publish the tasks.
+            app (Celery): The Celery app instance.
+            p (barrier): Barrier object to synchronize the tasks results.
+            args (list): List of arguments to be prepended to
+                the arguments of each task.
+            kwargs (dict): Dict of keyword arguments to be merged with
+                the keyword arguments of each task.
+            **options (dict): Options to be merged with the options of each task.
+
+        Returns:
+            generator: A generator for the AsyncResult of the tasks in the group.
+        """
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
         app = app or self.app
