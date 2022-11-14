@@ -1782,6 +1782,7 @@ class group(Signature):
                     for group_index, task in enumerate(tasks))
 
     def _unroll_tasks(self, tasks):
+        """Creates a generator for the cloned tasks of the tasks argument."""
         # should be refactored to: (maybe_signature(task, app=self._app, clone=True) for task in tasks)
         yield from (maybe_signature(task, app=self._app).clone() for task in tasks)
 
