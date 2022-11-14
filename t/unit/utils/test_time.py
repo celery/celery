@@ -158,15 +158,9 @@ def test_remaining():
     start (i.e. there is not an hour diff due to DST).
     In 2019, DST starts on March 10
     """
-    start = datetime(
-        month=3, day=9, year=2019, hour=10,
-        minute=0, tzinfo=eastern_tz)  # EST
-
-    now = datetime(
-        day=11, month=3, year=2019, hour=1,
-        minute=0, tzinfo=eastern_tz)  # EDT
-    delta = ffwd(hour=10, year=2019, microsecond=0, minute=0,
-                 second=0, day=11, weeks=0, month=3)
+    start = eastern_tz.localize(datetime(day=9, month=3, year=2019, hour=10, minute=0))         # EST
+    now = eastern_tz.localize(datetime(day=11, month=3, year=2019, hour=1, minute=0))           # EDT
+    delta = ffwd(hour=10, year=2019, microsecond=0, minute=0, second=0, day=11, weeks=0, month=3)
     # `next_actual_time` is the next time to run (derived from delta)
     next_actual_time = datetime(
         day=11, month=3, year=2019, hour=10, minute=0, tzinfo=eastern_tz)  # EDT
