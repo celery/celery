@@ -1448,6 +1448,50 @@ class group(Signature):
 
     @classmethod
     def from_dict(cls, d, app=None):
+        """Create a group signature from a dictionary that represents a group.
+
+        Example:
+            >>> group_dict = {
+                "task": "celery.group",
+                "args": [],
+                "kwargs": {
+                    "tasks": [
+                        {
+                            "task": "add",
+                            "args": [
+                                1,
+                                2
+                            ],
+                            "kwargs": {},
+                            "options": {},
+                            "subtask_type": None,
+                            "immutable": False
+                        },
+                        {
+                            "task": "add",
+                            "args": [
+                                3,
+                                4
+                            ],
+                            "kwargs": {},
+                            "options": {},
+                            "subtask_type": None,
+                            "immutable": False
+                        }
+                    ]
+                },
+                "options": {},
+                "subtask_type": "group",
+                "immutable": False
+            }
+            >>> group_sig = group.from_dict(group_dict)
+
+        Iterates over the given tasks in the dictionary and convert them to signatures.
+        Tasks needs to be defined in d['kwargs']['tasks'] as a sequence
+        of tasks.
+
+        The tasks themselves can be dictionaries or signatures (or both).
+        """
         # We need to mutate the `kwargs` element in place to avoid confusing
         # `freeze()` implementations which end up here and expect to be able to
         # access elements from that dictionary later and refer to objects
@@ -1466,6 +1510,8 @@ class group(Signature):
             if isinstance(tasks, abstract.CallableSignature):
                 tasks = [tasks.clone()]
             if not isinstance(tasks, _regen):
+                # May potentially cause slow downs when using a
+                # generator of many tasks - Issue #6973
                 tasks = regen(tasks)
         super().__init__('celery.group', (), {'tasks': tasks}, **options
                          )
@@ -1479,6 +1525,7 @@ class group(Signature):
         return chord(self, body=other, app=self._app)
 
     def skew(self, start=1.0, stop=None, step=1.0):
+        # TODO: Not sure if this is still used anywhere (besides its own tests). Consider removing.
         it = fxrange(start, stop, step, repeatlast=True)
         for task in self.tasks:
             task.set(countdown=next(it))
@@ -1591,6 +1638,32 @@ class group(Signature):
                   CallableSignature=abstract.CallableSignature,
                   from_dict=Signature.from_dict,
                   isinstance=isinstance, tuple=tuple):
+        """Recursively unroll the group into a generator of its tasks.
+
+        This is used by :meth:`apply_async` and :meth:`apply` to
+        unroll the group into a list of tasks that can be evaluated.
+
+        Note:
+            This does not change the group itself, it only returns
+            a generator of the tasks that the group would evaluate to.
+
+        Arguments:
+            tasks (list): List of tasks in the group (may contain nested groups).
+            partial_args (list): List of arguments to be prepended to
+                the arguments of each task.
+            group_id (str): The group id of the group.
+            root_id (str): The root id of the group.
+            app (Celery): The Celery app instance.
+            CallableSignature (class): The signature class of the group's tasks.
+            from_dict (fun): Function to create a signature from a dict.
+            isinstance (fun): Function to check if an object is an instance
+                of a class.
+            tuple (class): A tuple-like class.
+
+        Returns:
+            generator: A generator for the unrolled group tasks.
+                The generator yields tuples of the form ``(task, AsyncResult, group_id)``.
+        """
         for task in tasks:
             if isinstance(task, CallableSignature):
                 # local sigs are always of type Signature, and we
@@ -1613,6 +1686,25 @@ class group(Signature):
     def _apply_tasks(self, tasks, producer=None, app=None, p=None,
                      add_to_parent=None, chord=None,
                      args=None, kwargs=None, **options):
+        """Run all the tasks in the group.
+
+        This is used by :meth:`apply_async` to run all the tasks in the group
+        and return a generator of their results.
+
+        Arguments:
+            tasks (list): List of tasks in the group.
+            producer (Producer): The producer to use to publish the tasks.
+            app (Celery): The Celery app instance.
+            p (barrier): Barrier object to synchronize the tasks results.
+            args (list): List of arguments to be prepended to
+                the arguments of each task.
+            kwargs (dict): Dict of keyword arguments to be merged with
+                the keyword arguments of each task.
+            **options (dict): Options to be merged with the options of each task.
+
+        Returns:
+            generator: A generator for the AsyncResult of the tasks in the group.
+        """
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
         app = app or self.app
@@ -1656,6 +1748,7 @@ class group(Signature):
                 yield res  # <-- r.parent, etc set in the frozen result.
 
     def _freeze_gid(self, options):
+        """Freeze the group id by the existing task_id or a new UUID."""
         # remove task_id and use that as the group_id,
         # if we don't remove it then every task will have the same id...
         options = {**self.options, **{
@@ -1668,6 +1761,15 @@ class group(Signature):
 
     def _freeze_group_tasks(self, _id=None, group_id=None, chord=None,
                             root_id=None, parent_id=None, group_index=None):
+        """Freeze the tasks in the group.
+
+        Note:
+            If the group tasks are created from a generator, the tasks generator would
+            not be exhausted, and the tasks would be frozen lazily.
+
+        Returns:
+            tuple: A tuple of the group id, and the AsyncResult of each of the group tasks.
+        """
         # pylint: disable=redefined-outer-name
         #  XXX chord is also a class in outer scope.
         opts = self.options
@@ -1684,15 +1786,16 @@ class group(Signature):
         root_id = opts.setdefault('root_id', root_id)
         parent_id = opts.setdefault('parent_id', parent_id)
         if isinstance(self.tasks, _regen):
-            # We are draining from a generator here.
-            # tasks1, tasks2 are each a clone of self.tasks
+            # When the group tasks are a generator, we need to make sure we don't
+            # exhaust it during the freeze process. We use two generators to do this.
+            # One generator will be used to freeze the tasks to get their AsyncResult.
+            # The second generator will be used to replace the tasks in the group with an unexhausted state.
+
+            # Create two new generators from the original generator of the group tasks (cloning the tasks).
             tasks1, tasks2 = itertools.tee(self._unroll_tasks(self.tasks))
-            # freeze each task in tasks1, results now holds AsyncResult for each task
+            # Use the first generator to freeze the group tasks to acquire the AsyncResult for each task.
             results = regen(self._freeze_tasks(tasks1, group_id, chord, root_id, parent_id))
-            # TODO figure out why this makes sense -
-            # we freeze all tasks in the clone tasks1, and then zip the results
-            # with the IDs of tasks in the second clone, tasks2. and then, we build
-            # a generator that takes only the task IDs from tasks2.
+            # Use the second generator to replace the exhausted generator of the group tasks.
             self.tasks = regen(tasks2)
         else:
             new_tasks = []
@@ -1717,6 +1820,7 @@ class group(Signature):
     _freeze = freeze
 
     def _freeze_tasks(self, tasks, group_id, chord, root_id, parent_id):
+        """Creates a generator for the AsyncResult of each task in the tasks argument."""
         yield from (task.freeze(group_id=group_id,
                                 chord=chord,
                                 root_id=root_id,
@@ -1725,10 +1829,29 @@ class group(Signature):
                     for group_index, task in enumerate(tasks))
 
     def _unroll_tasks(self, tasks):
+        """Creates a generator for the cloned tasks of the tasks argument."""
         # should be refactored to: (maybe_signature(task, app=self._app, clone=True) for task in tasks)
         yield from (maybe_signature(task, app=self._app).clone() for task in tasks)
 
     def _freeze_unroll(self, new_tasks, group_id, chord, root_id, parent_id):
+        """Generator for the frozen flattened group tasks.
+
+        Creates a flattened list of the tasks in the group, and freezes
+        each task in the group. Nested groups will be recursively flattened.
+
+        Exhausting the generator will create a new list of the flattened
+        tasks in the group and will return it in the new_tasks argument.
+
+        Arguments:
+            new_tasks (list): The list to append the flattened tasks to.
+            group_id (str): The group_id to use for the tasks.
+            chord (Chord): The chord to use for the tasks.
+            root_id (str): The root_id to use for the tasks.
+            parent_id (str): The parent_id to use for the tasks.
+
+        Yields:
+            AsyncResult: The frozen task.
+        """
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
         stack = deque(self.tasks)
