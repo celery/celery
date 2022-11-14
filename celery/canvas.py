@@ -1448,9 +1448,45 @@ class group(Signature):
 
     @classmethod
     def from_dict(cls, d, app=None):
-        """Create a group signature from a dictionary of tasks.
+        """Create a group signature from a dictionary that represents a group.
 
-        Iterates over the given tasks and convert them to signatures.
+        Example:
+            >>> group_dict = {
+                "task": "celery.group",
+                "args": [],
+                "kwargs": {
+                    "tasks": [
+                        {
+                            "task": "add",
+                            "args": [
+                                1,
+                                2
+                            ],
+                            "kwargs": {},
+                            "options": {},
+                            "subtask_type": None,
+                            "immutable": False
+                        },
+                        {
+                            "task": "add",
+                            "args": [
+                                3,
+                                4
+                            ],
+                            "kwargs": {},
+                            "options": {},
+                            "subtask_type": None,
+                            "immutable": False
+                        }
+                    ]
+                },
+                "options": {},
+                "subtask_type": "group",
+                "immutable": False
+            }
+            >>> group_sig = group.from_dict(group_dict)
+
+        Iterates over the given tasks in the dictionary and convert them to signatures.
         Tasks needs to be defined in d['kwargs']['tasks'] as a sequence
         of tasks.
 
