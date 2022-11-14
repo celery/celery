@@ -1757,7 +1757,7 @@ class group(Signature):
 
             # Create two new generators from the original generator of the group tasks (cloning the tasks).
             tasks1, tasks2 = itertools.tee(self._unroll_tasks(self.tasks))
-            # Use the first generator to freeze the group tasks to aquire the AsyncResult for each task.
+            # Use the first generator to freeze the group tasks to acquire the AsyncResult for each task.
             results = regen(self._freeze_tasks(tasks1, group_id, chord, root_id, parent_id))
             # Use the second generator to replace the exhausted generator of the group tasks.
             self.tasks = regen(tasks2)
