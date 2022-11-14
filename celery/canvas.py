@@ -2165,7 +2165,14 @@ class _chord(Signature):
         return errback
 
     def set_immutable(self, immutable):
-        # changes mutability of header only, not callback.
+        """Sets the immutable flag on the chord header only.
+
+        Note:
+            Does not affect the chord body.
+
+        Arguments:
+            immutable (bool): The new mutability value for chord header.
+        """
         for task in self.tasks:
             task.set_immutable(immutable)
 
