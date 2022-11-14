@@ -2145,6 +2145,14 @@ class _chord(Signature):
         return callback
 
     def link_error(self, errback):
+        """Links an error callback to the chord body, and potentially the header as well.
+
+        Note:
+            The ``task_allow_error_cb_on_chord_header`` setting controls whether
+            error callbacks are allowed on the header. If this setting is
+            ``False`` (the current default), then the error callback will only be
+            applied to the body.
+        """
         if self.app.conf.task_allow_error_cb_on_chord_header:
             # self.tasks can be a list of the chord header workflow.
             if isinstance(self.tasks, (list, tuple)):
