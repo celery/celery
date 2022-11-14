@@ -171,6 +171,22 @@ def test_remaining():
     next_run = now + rem_time
     assert next_run == next_actual_time
 
+    """
+    Case 4: DST check
+    Suppose start (which is last_run_time) is in PDT while next_run is in PST,
+    Check whether there is an hour added to the time between now and the `next_run`
+    In 2022, DST ends on Nov 6
+    """
+    start = eastern_tz.localize(datetime(day=6, month=11, year=2022, hour=1, minute=15), is_dst=True)
+    now = eastern_tz.localize(datetime(day=6, month=11, year=2022, hour=1, minute=34), is_dst=False)
+    ends_in = timedelta(80)
+    next_actual_time = eastern_tz.localize(datetime(day=6, month=11, year=2022, hour=1, minute=35), is_dst=False)
+    assert start.tzname() == "EDT"
+    assert now.tzname() == "EST"
+    assert next_actual_time.tzname() == "EST"
+    rem_time = remaining(start, ends_in, now)
+    next_run = now + rem_time
+    assert next_run == next_actual_time
 
 class test_timezone:
 
