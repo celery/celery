@@ -1725,6 +1725,15 @@ class group(Signature):
 
     def _freeze_group_tasks(self, _id=None, group_id=None, chord=None,
                             root_id=None, parent_id=None, group_index=None):
+        """Freeze the tasks in the group.
+
+        Note:
+            If the group tasks are created from a generator, the tasks generator would
+            not be exhausted, and the tasks would be frozen lazily.
+
+        Returns:
+            tuple: A tuple of the group id, and the AsyncResult of each of the group tasks.
+        """
         # pylint: disable=redefined-outer-name
         #  XXX chord is also a class in outer scope.
         opts = self.options
@@ -1741,15 +1750,16 @@ class group(Signature):
         root_id = opts.setdefault('root_id', root_id)
         parent_id = opts.setdefault('parent_id', parent_id)
         if isinstance(self.tasks, _regen):
-            # We are draining from a generator here.
-            # tasks1, tasks2 are each a clone of self.tasks
+            # When the group tasks are a generator, we need to make sure we don't
+            # exhaust it during the freeze process. We use two generators to do this.
+            # One generator will be used to freeze the tasks to get their AsyncResult.
+            # The second generator will be used to replace the tasks in the group with an unexhausted state.
+
+            # Create two new generators from the original generator of the group tasks (cloning the tasks).
             tasks1, tasks2 = itertools.tee(self._unroll_tasks(self.tasks))
-            # freeze each task in tasks1, results now holds AsyncResult for each task
+            # Use the first generator to freeze the group tasks to aquire the AsyncResult for each task.
             results = regen(self._freeze_tasks(tasks1, group_id, chord, root_id, parent_id))
-            # TODO figure out why this makes sense -
-            # we freeze all tasks in the clone tasks1, and then zip the results
-            # with the IDs of tasks in the second clone, tasks2. and then, we build
-            # a generator that takes only the task IDs from tasks2.
+            # Use the second generator to replace the exhausted generator of the group tasks.
             self.tasks = regen(tasks2)
         else:
             new_tasks = []
