@@ -1786,6 +1786,24 @@ class group(Signature):
         yield from (maybe_signature(task, app=self._app).clone() for task in tasks)
 
     def _freeze_unroll(self, new_tasks, group_id, chord, root_id, parent_id):
+        """Generator for the frozen flattened group tasks.
+
+        Creates a flattened list of the tasks in the group, and freezes
+        each task in the group. Nested groups will be recursively flattened.
+
+        Exhausting the generator will create a new list of the flattened
+        tasks in the group and will return it in the new_tasks argument.
+
+        Arguments:
+            new_tasks (list): The list to append the flattened tasks to.
+            group_id (str): The group_id to use for the tasks.
+            chord (Chord): The chord to use for the tasks.
+            root_id (str): The root_id to use for the tasks.
+            parent_id (str): The parent_id to use for the tasks.
+
+        Yields:
+            AsyncResult: The frozen task.
+        """
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
         stack = deque(self.tasks)
