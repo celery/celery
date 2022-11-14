@@ -2140,6 +2140,7 @@ class _chord(Signature):
         return signature
 
     def link(self, callback):
+        """Links a callback to the chord body only."""
         self.body.link(callback)
         return callback
 
