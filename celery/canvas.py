@@ -1774,6 +1774,7 @@ class group(Signature):
     _freeze = freeze
 
     def _freeze_tasks(self, tasks, group_id, chord, root_id, parent_id):
+        """Creates a generator for the AsyncResult of each task in the tasks argument."""
         yield from (task.freeze(group_id=group_id,
                                 chord=chord,
                                 root_id=root_id,
