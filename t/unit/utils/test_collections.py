@@ -52,7 +52,7 @@ class test_DictAttribute:
 
 class test_ConfigurationView:
 
-    def setup(self):
+    def setup_method(self):
         self.view = ConfigurationView(
             {'changed_key': 1, 'both': 2},
             [

@@ -60,7 +60,7 @@ class TaskWithRetryButForTypeError(Task):
 
 class TasksCase:
 
-    def setup(self):
+    def setup_method(self):
         self.mytask = self.app.task(shared=False)(return_True)
 
         @self.app.task(bind=True, count=0, shared=False)

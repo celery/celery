@@ -69,7 +69,7 @@ class test_serialization:
 
 class test_Backend_interface:
 
-    def setup(self):
+    def setup_method(self):
         self.app.conf.accept_content = ['json']
 
     def test_accept_precedence(self):
@@ -167,7 +167,7 @@ class test_Backend_interface:
 
 class test_BaseBackend_interface:
 
-    def setup(self):
+    def setup_method(self):
         self.b = BaseBackend(self.app)
 
         @self.app.task(shared=False)
@@ -261,7 +261,7 @@ class test_exception_pickle:
 
 class test_prepare_exception:
 
-    def setup(self):
+    def setup_method(self):
         self.b = BaseBackend(self.app)
 
     def test_unpickleable(self):
@@ -359,7 +359,7 @@ class DictBackend(BaseBackend):
 
 class test_BaseBackend_dict:
 
-    def setup(self):
+    def setup_method(self):
         self.b = DictBackend(app=self.app)
 
         @self.app.task(shared=False, bind=True)
@@ -650,7 +650,7 @@ class test_BaseBackend_dict:
 
 class test_KeyValueStoreBackend:
 
-    def setup(self):
+    def setup_method(self):
         self.b = KVBackend(app=self.app)
 
     def test_on_chord_part_return(self):
@@ -1031,7 +1031,7 @@ class test_DisabledBackend:
 
 class test_as_uri:
 
-    def setup(self):
+    def setup_method(self):
         self.b = BaseBackend(
             app=self.app,
             url='sch://uuuu:pwpw@hostname.dom'

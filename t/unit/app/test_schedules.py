@@ -25,7 +25,7 @@ def patch_crontab_nowfun(cls, retval):
 
 class test_solar:
 
-    def setup(self):
+    def setup_method(self):
         pytest.importorskip('ephem')
         self.s = solar('sunrise', 60, 30, app=self.app)
 
@@ -475,7 +475,7 @@ class test_crontab_remaining_estimate:
 
 class test_crontab_is_due:
 
-    def setup(self):
+    def setup_method(self):
         self.now = self.app.now()
         self.next_minute = 60 - self.now.second - 1e-6 * self.now.microsecond
         self.every_minute = self.crontab()

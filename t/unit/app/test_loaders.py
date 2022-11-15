@@ -35,7 +35,7 @@ class test_LoaderBase:
                       'password': 'qwerty',
                       'timeout': 3}
 
-    def setup(self):
+    def setup_method(self):
         self.loader = DummyLoader(app=self.app)
 
     def test_handlers_pass(self):
@@ -212,7 +212,7 @@ class test_DefaultLoader:
 
 class test_AppLoader:
 
-    def setup(self):
+    def setup_method(self):
         self.loader = AppLoader(app=self.app)
 
     def test_on_worker_init(self):

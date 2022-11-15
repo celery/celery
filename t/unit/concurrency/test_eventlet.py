@@ -22,10 +22,10 @@ eventlet_modules = (
 @t.skip.if_pypy
 class EventletCase:
 
-    def setup(self):
+    def setup_method(self):
         self.patching.modules(*eventlet_modules)
 
-    def teardown(self):
+    def teardown_method(self):
         for mod in [mod for mod in sys.modules
                     if mod.startswith('eventlet')]:
             try:
@@ -129,6 +129,7 @@ class test_TaskPool(EventletCase):
         x = TaskPool(10)
         x._pool = Mock(name='_pool')
         assert x._get_info() == {
+            'implementation': 'celery.concurrency.eventlet:TaskPool',
             'max-concurrency': 10,
             'free-threads': x._pool.free(),
             'running-threads': x._pool.running(),

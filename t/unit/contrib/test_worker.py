@@ -8,7 +8,7 @@ from celery.contrib.testing.worker import start_worker
 
 
 class test_worker:
-    def setup(self):
+    def setup_method(self):
         self.app = Celery('celerytest', backend='cache+memory://', broker='memory://',)
 
         @self.app.task

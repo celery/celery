@@ -45,7 +45,7 @@ class MyPersistent(state.Persistent):
 
 class test_maybe_shutdown:
 
-    def teardown(self):
+    def teardown_method(self):
         state.should_stop = None
         state.should_terminate = None
 

@@ -14,7 +14,7 @@ pytest.importorskip('azure.core.exceptions')
 
 
 class test_AzureBlockBlobBackend:
-    def setup(self):
+    def setup_method(self):
         self.url = (
             "azureblockblob://"
             "DefaultEndpointsProtocol=protocol;"
@@ -168,7 +168,7 @@ class test_AzureBlockBlobBackend:
 
 
 class test_as_uri:
-    def setup(self):
+    def setup_method(self):
         self.url = (
             "azureblockblob://"
             "DefaultEndpointsProtocol=protocol;"
