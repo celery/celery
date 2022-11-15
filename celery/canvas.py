@@ -2083,6 +2083,7 @@ class _chord(Signature):
         return len(sig_obj)
 
     def __length_hint__(self):
+        """Return the number of tasks in this chord's header (recursively)."""
         tasks = getattr(self.tasks, "tasks", self.tasks)
         return sum(self._descend(task) for task in tasks)
 
