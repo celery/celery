@@ -1920,6 +1920,60 @@ class _chord(Signature):
 
     @classmethod
     def from_dict(cls, d, app=None):
+        """Create a chord signature from a dictionary that represents a chord.
+
+        Example:
+            >>> chord_dict = {
+                "task": "celery.chord",
+                "args": [],
+                "kwargs": {
+                    "kwargs": {},
+                    "header": [
+                        {
+                            "task": "add",
+                            "args": [
+                                1,
+                                2
+                            ],
+                            "kwargs": {},
+                            "options": {},
+                            "subtask_type": None,
+                            "immutable": False
+                        },
+                        {
+                            "task": "add",
+                            "args": [
+                                3,
+                                4
+                            ],
+                            "kwargs": {},
+                            "options": {},
+                            "subtask_type": None,
+                            "immutable": False
+                        }
+                    ],
+                    "body": {
+                        "task": "xsum",
+                        "args": [],
+                        "kwargs": {},
+                        "options": {},
+                        "subtask_type": None,
+                        "immutable": False
+                    }
+                },
+                "options": {},
+                "subtask_type": "chord",
+                "immutable": False
+            }
+            >>> chord_sig = chord.from_dict(chord_dict)
+
+        Iterates over the given tasks in the dictionary and convert them to signatures.
+        Chord header needs to be defined in d['kwargs']['header'] as a sequence
+        of tasks.
+        Chord body needs to be defined in d['kwargs']['body'] as a single task.
+
+        The tasks themselves can be dictionaries or signatures (or both).
+        """
         options = d.copy()
         args, options['kwargs'] = cls._unpack_args(**options['kwargs'])
         return cls(*args, app=app, **options)
