@@ -2148,6 +2148,27 @@ class _chord(Signature):
     def run(self, header, body, partial_args, app=None, interval=None,
             countdown=1, max_retries=None, eager=False,
             task_id=None, kwargs=None, **options):
+        """Execute the chord.
+
+        Executing the chord means executing the header and sending the
+        result to the body. In case of an empty header, the body is
+        executed immediately.
+
+        Arguments:
+            header (group): The header to execute.
+            body (Signature): The body to execute.
+            partial_args (tuple): Arguments to pass to the header.
+            app (Celery): The Celery app instance.
+            interval (float): The interval between retries.
+            countdown (int): The countdown between retries.
+            max_retries (int): The maximum number of retries.
+            task_id (str): The task id to use for the body.
+            kwargs (dict): Keyword arguments to pass to the header.
+            options (dict): Options to pass to the header.
+
+        Returns:
+            AsyncResult: The result of the body (with the result of the header in the parent of the body).
+        """
         app = app or self._get_app(body)
         group_id = header.options.get('task_id') or uuid()
         root_id = body.options.get('root_id')
