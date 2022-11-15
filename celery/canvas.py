@@ -2057,6 +2057,10 @@ class _chord(Signature):
 
     @classmethod
     def _descend(cls, sig_obj):
+        """Count the number of tasks in the given signature recursively.
+
+        Descend into the signature object and return the amount of tasks it contains.
+        """
         # Sometimes serialized signatures might make their way here
         if not isinstance(sig_obj, Signature) and isinstance(sig_obj, dict):
             sig_obj = Signature.from_dict(sig_obj)
