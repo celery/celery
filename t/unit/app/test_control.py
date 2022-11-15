@@ -52,7 +52,7 @@ class test_flatten_reply:
 
 class test_inspect:
 
-    def setup(self):
+    def setup_method(self):
         self.app.control.broadcast = Mock(name='broadcast')
         self.app.control.broadcast.return_value = {}
         self.inspect = self.app.control.inspect()
@@ -207,7 +207,7 @@ class test_inspect:
 
 class test_Control_broadcast:
 
-    def setup(self):
+    def setup_method(self):
         self.app.control.mailbox = Mock(name='mailbox')
 
     def test_broadcast(self):
@@ -231,7 +231,7 @@ class test_Control_broadcast:
 
 class test_Control:
 
-    def setup(self):
+    def setup_method(self):
         self.app.control.broadcast = Mock(name='broadcast')
         self.app.control.broadcast.return_value = {}
 

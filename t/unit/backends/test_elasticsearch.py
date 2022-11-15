@@ -31,7 +31,7 @@ pytest.importorskip('elasticsearch')
 
 class test_ElasticsearchBackend:
 
-    def setup(self):
+    def setup_method(self):
         self.backend = ElasticsearchBackend(app=self.app)
 
     def test_init_no_elasticsearch(self):

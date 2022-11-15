@@ -22,10 +22,10 @@ eventlet_modules = (
 @t.skip.if_pypy
 class EventletCase:
 
-    def setup(self):
+    def setup_method(self):
         self.patching.modules(*eventlet_modules)
 
-    def teardown(self):
+    def teardown_method(self):
         for mod in [mod for mod in sys.modules
                     if mod.startswith('eventlet')]:
             try:

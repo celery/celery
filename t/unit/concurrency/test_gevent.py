@@ -26,7 +26,7 @@ class test_gevent_patch:
 
 class test_Timer:
 
-    def setup(self):
+    def setup_method(self):
         self.patching.modules(*gevent_modules)
         self.greenlet = self.patching('gevent.greenlet')
         self.GreenletExit = self.patching('gevent.greenlet.GreenletExit')
@@ -57,7 +57,7 @@ class test_Timer:
 
 class test_TaskPool:
 
-    def setup(self):
+    def setup_method(self):
         self.patching.modules(*gevent_modules)
         self.spawn_raw = self.patching('gevent.spawn_raw')
         self.Pool = self.patching('gevent.pool.Pool')

@@ -45,7 +45,7 @@ class test_session_cleanup:
 @skip.if_pypy
 class test_DatabaseBackend:
 
-    def setup(self):
+    def setup_method(self):
         self.uri = 'sqlite:///test.db'
         self.app.conf.result_serializer = 'pickle'
 
@@ -219,7 +219,7 @@ class test_DatabaseBackend:
 
 @skip.if_pypy
 class test_DatabaseBackend_result_extended():
-    def setup(self):
+    def setup_method(self):
         self.uri = 'sqlite:///test.db'
         self.app.conf.result_serializer = 'pickle'
         self.app.conf.result_extended = True

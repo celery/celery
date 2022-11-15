@@ -71,7 +71,7 @@ class test_task_join_will_block:
 
 class test_App:
 
-    def setup(self):
+    def setup_method(self):
         self.app.add_defaults(deepcopy(self.CELERY_TEST_CONFIG))
 
     def test_now(self):

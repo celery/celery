@@ -172,7 +172,7 @@ class test_multi_args:
 
 class test_Node:
 
-    def setup(self):
+    def setup_method(self):
         self.p = Mock(name='p')
         self.p.options = {
             '--executable': 'python',
@@ -308,7 +308,7 @@ class test_Node:
 
 class test_Cluster:
 
-    def setup(self):
+    def setup_method(self):
         self.Popen = self.patching('celery.apps.multi.Popen')
         self.kill = self.patching('os.kill')
         self.gethostname = self.patching('celery.apps.multi.gethostname')

@@ -23,7 +23,7 @@ class test_RPCResultConsumer:
 
 class test_RPCBackend:
 
-    def setup(self):
+    def setup_method(self):
         self.b = RPCBackend(app=self.app)
 
     def test_oid(self):

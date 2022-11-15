@@ -28,7 +28,7 @@ def trace(
 
 
 class TraceCase:
-    def setup(self):
+    def setup_method(self):
         @self.app.task(shared=False)
         def add(x, y):
             return x + y

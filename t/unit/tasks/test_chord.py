@@ -20,7 +20,7 @@ class AnySignatureWithTask(Signature):
 
 class ChordCase:
 
-    def setup(self):
+    def setup_method(self):
 
         @self.app.task(shared=False)
         def add(x, y):
@@ -323,7 +323,7 @@ class test_chord(ChordCase):
 
 class test_add_to_chord:
 
-    def setup(self):
+    def setup_method(self):
 
         @self.app.task(shared=False)
         def add(x, y):
