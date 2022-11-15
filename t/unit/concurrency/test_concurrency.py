@@ -167,6 +167,7 @@ class test_get_available_pool_names:
             'gevent',
             'solo',
             'processes',
+            'custom',
         )
         with patch.dict(sys.modules, {'concurrent.futures': None}):
             importlib.reload(concurrency)
@@ -180,6 +181,7 @@ class test_get_available_pool_names:
             'solo',
             'processes',
             'threads',
+            'custom',
         )
         with patch.dict(sys.modules, {'concurrent.futures': Mock()}):
             importlib.reload(concurrency)
