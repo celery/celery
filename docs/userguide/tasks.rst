@@ -1432,9 +1432,11 @@ The above can be added to each task like this:
 .. code-block:: python
 
 
-    @app.task(base=DatabaseTask)
-    def process_rows():
-        for row in process_rows.db.table.all():
+    from celery.app import task
+
+    @app.task(base=DatabaseTask, bind=True)
+    def process_rows(self: task):
+        for row in self.db.table.all():
             process_row(row)
 
 The ``db`` attribute of the ``process_rows`` task will then
