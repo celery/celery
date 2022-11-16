@@ -1920,6 +1920,60 @@ class _chord(Signature):
 
     @classmethod
     def from_dict(cls, d, app=None):
+        """Create a chord signature from a dictionary that represents a chord.
+
+        Example:
+            >>> chord_dict = {
+                "task": "celery.chord",
+                "args": [],
+                "kwargs": {
+                    "kwargs": {},
+                    "header": [
+                        {
+                            "task": "add",
+                            "args": [
+                                1,
+                                2
+                            ],
+                            "kwargs": {},
+                            "options": {},
+                            "subtask_type": None,
+                            "immutable": False
+                        },
+                        {
+                            "task": "add",
+                            "args": [
+                                3,
+                                4
+                            ],
+                            "kwargs": {},
+                            "options": {},
+                            "subtask_type": None,
+                            "immutable": False
+                        }
+                    ],
+                    "body": {
+                        "task": "xsum",
+                        "args": [],
+                        "kwargs": {},
+                        "options": {},
+                        "subtask_type": None,
+                        "immutable": False
+                    }
+                },
+                "options": {},
+                "subtask_type": "chord",
+                "immutable": False
+            }
+            >>> chord_sig = chord.from_dict(chord_dict)
+
+        Iterates over the given tasks in the dictionary and convert them to signatures.
+        Chord header needs to be defined in d['kwargs']['header'] as a sequence
+        of tasks.
+        Chord body needs to be defined in d['kwargs']['body'] as a single task.
+
+        The tasks themselves can be dictionaries or signatures (or both).
+        """
         options = d.copy()
         args, options['kwargs'] = cls._unpack_args(**options['kwargs'])
         return cls(*args, app=app, **options)
@@ -2057,6 +2111,10 @@ class _chord(Signature):
 
     @classmethod
     def _descend(cls, sig_obj):
+        """Count the number of tasks in the given signature recursively.
+
+        Descend into the signature object and return the amount of tasks it contains.
+        """
         # Sometimes serialized signatures might make their way here
         if not isinstance(sig_obj, Signature) and isinstance(sig_obj, dict):
             sig_obj = Signature.from_dict(sig_obj)
@@ -2083,12 +2141,34 @@ class _chord(Signature):
         return len(sig_obj)
 
     def __length_hint__(self):
+        """Return the number of tasks in this chord's header (recursively)."""
         tasks = getattr(self.tasks, "tasks", self.tasks)
         return sum(self._descend(task) for task in tasks)
 
     def run(self, header, body, partial_args, app=None, interval=None,
             countdown=1, max_retries=None, eager=False,
             task_id=None, kwargs=None, **options):
+        """Execute the chord.
+
+        Executing the chord means executing the header and sending the
+        result to the body. In case of an empty header, the body is
+        executed immediately.
+
+        Arguments:
+            header (group): The header to execute.
+            body (Signature): The body to execute.
+            partial_args (tuple): Arguments to pass to the header.
+            app (Celery): The Celery app instance.
+            interval (float): The interval between retries.
+            countdown (int): The countdown between retries.
+            max_retries (int): The maximum number of retries.
+            task_id (str): The task id to use for the body.
+            kwargs (dict): Keyword arguments to pass to the header.
+            options (dict): Options to pass to the header.
+
+        Returns:
+            AsyncResult: The result of the body (with the result of the header in the parent of the body).
+        """
         app = app or self._get_app(body)
         group_id = header.options.get('task_id') or uuid()
         root_id = body.options.get('root_id')
@@ -2140,10 +2220,19 @@ class _chord(Signature):
         return signature
 
     def link(self, callback):
+        """Links a callback to the chord body only."""
         self.body.link(callback)
         return callback
 
     def link_error(self, errback):
+        """Links an error callback to the chord body, and potentially the header as well.
+
+        Note:
+            The ``task_allow_error_cb_on_chord_header`` setting controls whether
+            error callbacks are allowed on the header. If this setting is
+            ``False`` (the current default), then the error callback will only be
+            applied to the body.
+        """
         if self.app.conf.task_allow_error_cb_on_chord_header:
             # self.tasks can be a list of the chord header workflow.
             if isinstance(self.tasks, (list, tuple)):
@@ -2165,7 +2254,14 @@ class _chord(Signature):
         return errback
 
     def set_immutable(self, immutable):
-        # changes mutability of header only, not callback.
+        """Sets the immutable flag on the chord header only.
+
+        Note:
+            Does not affect the chord body.
+
+        Arguments:
+            immutable (bool): The new mutability value for chord header.
+        """
         for task in self.tasks:
             task.set_immutable(immutable)
 
