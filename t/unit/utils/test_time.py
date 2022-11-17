@@ -179,7 +179,7 @@ def test_remaining():
     """
     start = eastern_tz.localize(datetime(day=6, month=11, year=2022, hour=1, minute=15), is_dst=True)
     now = eastern_tz.localize(datetime(day=6, month=11, year=2022, hour=1, minute=34), is_dst=False)
-    ends_in = timedelta(80)
+    ends_in = timedelta(minutes=80)
     next_actual_time = eastern_tz.localize(datetime(day=6, month=11, year=2022, hour=1, minute=35), is_dst=False)
     assert start.tzname() == "EDT"
     assert now.tzname() == "EST"
