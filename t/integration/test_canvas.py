@@ -10,6 +10,7 @@ import pytest_subtests  # noqa: F401
 
 from celery import chain, chord, group, signature
 from celery.backends.base import BaseKeyValueStoreBackend
+from celery.canvas import StampingVisitor
 from celery.exceptions import ImproperlyConfigured, TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet
 from celery.signals import before_task_publish
@@ -2953,3 +2954,46 @@ class test_signature_serialization:
             tasks.rebuild_signature.s()
         )
         sig.delay().get(timeout=TIMEOUT)
+
+
+class test_stamping_visitor:
+    def test_stamp_value_type_defined_by_visitor(self, manager, subtests):
+        """ Test that the visitor can define the type of the stamped value """
+
+        @before_task_publish.connect
+        def before_task_publish_handler(sender=None, body=None, exchange=None, routing_key=None, headers=None,
+                                        properties=None, declare=None, retry_policy=None, **kwargs):
+            nonlocal task_headers
+            task_headers = headers.copy()
+
+        with subtests.test(msg='Test stamping a single value'):
+            class CustomStampingVisitor(StampingVisitor):
+                def on_signature(self, sig, **headers) -> dict:
+                    return {'stamp': 42}
+
+            stamped_task = add.si(1, 1)
+            stamped_task.stamp(visitor=CustomStampingVisitor())
+            result = stamped_task.freeze()
+            task_headers = None
+            stamped_task.apply_async()
+            assert task_headers is not None
+            assert result.get() == 2
+            assert 'stamps' in task_headers
+            assert 'stamp' in task_headers['stamps']
+            assert not isinstance(task_headers['stamps']['stamp'], list)
+
+        with subtests.test(msg='Test stamping a list of values'):
+            class CustomStampingVisitor(StampingVisitor):
+                def on_signature(self, sig, **headers) -> dict:
+                    return {'stamp': [4, 2]}
+
+            stamped_task = add.si(1, 1)
+            stamped_task.stamp(visitor=CustomStampingVisitor())
+            result = stamped_task.freeze()
+            task_headers = None
+            stamped_task.apply_async()
+            assert task_headers is not None
+            assert result.get() == 2
+            assert 'stamps' in task_headers
+            assert 'stamp' in task_headers['stamps']
+            assert isinstance(task_headers['stamps']['stamp'], list)
