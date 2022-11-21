@@ -2997,3 +2997,34 @@ class test_stamping_visitor:
             assert 'stamps' in task_headers
             assert 'stamp' in task_headers['stamps']
             assert isinstance(task_headers['stamps']['stamp'], list)
+
+    def test_properties_not_affected_from_stamping(self, manager, subtests):
+        """ Test that the task properties are not dirty with stamping visitor entries """
+
+        @before_task_publish.connect
+        def before_task_publish_handler(sender=None, body=None, exchange=None, routing_key=None, headers=None,
+                                        properties=None, declare=None, retry_policy=None, **kwargs):
+            nonlocal task_headers
+            nonlocal task_properties
+            task_headers = headers.copy()
+            task_properties = properties.copy()
+
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {'stamp': 42}
+
+        stamped_task = add.si(1, 1)
+        stamped_task.stamp(visitor=CustomStampingVisitor())
+        result = stamped_task.freeze()
+        task_headers = None
+        task_properties = None
+        stamped_task.apply_async()
+        assert task_properties is not None
+        assert result.get() == 2
+        assert 'stamped_headers' in task_headers
+        stamped_headers = task_headers['stamped_headers']
+
+        with subtests.test(msg='Test that the task properties are not dirty with stamping visitor entries'):
+            assert 'stamped_headers' not in task_properties, 'The stamped_headers key should not be in the task properties'
+            for stamp in stamped_headers:
+                assert stamp not in task_properties, f'The stamp "{stamp}" should not be in the task properties'
