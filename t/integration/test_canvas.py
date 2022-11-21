@@ -3025,6 +3025,6 @@ class test_stamping_visitor:
         stamped_headers = task_headers['stamped_headers']
 
         with subtests.test(msg='Test that the task properties are not dirty with stamping visitor entries'):
-            assert 'stamped_headers' not in task_properties, 'The stamped_headers key should not be in the task properties'
+            assert 'stamped_headers' not in task_properties, 'stamped_headers key should not be in task properties'
             for stamp in stamped_headers:
                 assert stamp not in task_properties, f'The stamp "{stamp}" should not be in the task properties'
