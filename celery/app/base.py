@@ -778,6 +778,10 @@ class Celery:
             **options
         )
 
+        stamped_headers = options.pop('stamped_headers', [])
+        for stamp in stamped_headers:
+            options.pop(stamp)
+
         if connection:
             producer = amqp.Producer(connection, auto_declare=False)
 
