@@ -916,6 +916,10 @@ class _chain(Signature):
             if not tasks:
                 # If the chain is empty, return the group
                 return other
+            if isinstance(tasks[-1], chord):
+                # CHAIN [last item is chord] | GROUP -> chain with chord body.
+                tasks[-1].body = tasks[-1].body | other
+                return type(self)(tasks, app=self.app)
             # use type(self) for _chain subclasses
             return type(self)(seq_concat_item(
                 tasks, other), app=self._app)
@@ -2001,6 +2005,13 @@ class _chord(Signature):
         if (not isinstance(other, (group, _chain)) and
                 isinstance(other, Signature)):
             # chord | task ->  attach to body
+            sig = self.clone()
+            sig.body = sig.body | other
+            return sig
+        elif isinstance(other, group) and len(other.tasks) == 1:
+            # chord | group -> chain with chord body.
+            # unroll group with one member
+            other = maybe_unroll_group(other)
             sig = self.clone()
             sig.body = sig.body | other
             return sig

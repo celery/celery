@@ -900,7 +900,7 @@ class test_chain:
 
         with subtests.test(msg='Run the chain and wait for completion'):
             redis_connection.delete(redis_key, 'Done')
-            c.delay().get()
+            c.delay().get(timeout=TIMEOUT)
             await_redis_list_message_length(1, redis_key='Done', timeout=10)
 
         with subtests.test(msg='All tasks are executed once'):
@@ -949,7 +949,7 @@ class test_chain:
 
         with subtests.test(msg='Run the chain and wait for completion'):
             redis_connection.delete(redis_key, 'Done')
-            c.delay().get()
+            c.delay().get(timeout=TIMEOUT)
             await_redis_list_message_length(1, redis_key='Done', timeout=10)
 
         with subtests.test(msg='All tasks are executed once'):
@@ -995,7 +995,7 @@ class test_chain:
 
         with subtests.test(msg='Run the chain and wait for completion'):
             redis_connection.delete(redis_key, 'Done')
-            c.delay().get()
+            c.delay().get(timeout=TIMEOUT)
             await_redis_list_message_length(1, redis_key='Done', timeout=10)
 
         with subtests.test(msg='All tasks are executed once'):
