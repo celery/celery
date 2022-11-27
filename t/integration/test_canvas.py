@@ -859,6 +859,154 @@ class test_chain:
         redis_connection = get_redis_connection()
         redis_connection.delete(redis_key)
 
+    def test_chaining_upgraded_chords_pure_groups(self, manager, subtests):
+        """ This test is built to reproduce the github issue https://github.com/celery/celery/issues/5958
+
+        The issue describes a canvas where a chain of groups are executed multiple times instead of once.
+        This test is built to reproduce the issue and to verify that the issue is fixed.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_connection = get_redis_connection()
+        redis_key = 'echo_chamber'
+
+        c = chain(
+            # letting the chain upgrade the chord, reproduces the issue in _chord.__or__
+            group(
+                redis_echo.si('1', redis_key=redis_key),
+                redis_echo.si('2', redis_key=redis_key),
+                redis_echo.si('3', redis_key=redis_key),
+            ),
+            group(
+                redis_echo.si('4', redis_key=redis_key),
+                redis_echo.si('5', redis_key=redis_key),
+                redis_echo.si('6', redis_key=redis_key),
+            ),
+            group(
+                redis_echo.si('7', redis_key=redis_key),
+            ),
+            group(
+                redis_echo.si('8', redis_key=redis_key),
+            ),
+            redis_echo.si('9', redis_key=redis_key),
+            redis_echo.si('Done', redis_key='Done'),
+        )
+
+        with subtests.test(msg='Run the chain and wait for completion'):
+            redis_connection.delete(redis_key, 'Done')
+            c.delay().get(timeout=TIMEOUT)
+            await_redis_list_message_length(1, redis_key='Done', timeout=10)
+
+        with subtests.test(msg='All tasks are executed once'):
+            actual = [sig.decode('utf-8') for sig in redis_connection.lrange(redis_key, 0, -1)]
+            expected = [str(i) for i in range(1, 10)]
+            with subtests.test(msg='All tasks are executed once'):
+                assert sorted(actual) == sorted(expected)
+
+        # Cleanup
+        redis_connection.delete(redis_key, 'Done')
+
+    def test_chaining_upgraded_chords_starting_with_chord(self, manager, subtests):
+        """ This test is built to reproduce the github issue https://github.com/celery/celery/issues/5958
+
+        The issue describes a canvas where a chain of groups are executed multiple times instead of once.
+        This test is built to reproduce the issue and to verify that the issue is fixed.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_connection = get_redis_connection()
+        redis_key = 'echo_chamber'
+
+        c = chain(
+            # by manually upgrading the chord to a group, we can reproduce the issue in _chain.__or__
+            chord(group([redis_echo.si('1', redis_key=redis_key),
+                         redis_echo.si('2', redis_key=redis_key),
+                         redis_echo.si('3', redis_key=redis_key)]),
+                  group([redis_echo.si('4', redis_key=redis_key),
+                         redis_echo.si('5', redis_key=redis_key),
+                         redis_echo.si('6', redis_key=redis_key)])),
+            group(
+                redis_echo.si('7', redis_key=redis_key),
+            ),
+            group(
+                redis_echo.si('8', redis_key=redis_key),
+            ),
+            redis_echo.si('9', redis_key=redis_key),
+            redis_echo.si('Done', redis_key='Done'),
+        )
+
+        with subtests.test(msg='Run the chain and wait for completion'):
+            redis_connection.delete(redis_key, 'Done')
+            c.delay().get(timeout=TIMEOUT)
+            await_redis_list_message_length(1, redis_key='Done', timeout=10)
+
+        with subtests.test(msg='All tasks are executed once'):
+            actual = [sig.decode('utf-8') for sig in redis_connection.lrange(redis_key, 0, -1)]
+            expected = [str(i) for i in range(1, 10)]
+            with subtests.test(msg='All tasks are executed once'):
+                assert sorted(actual) == sorted(expected)
+
+        # Cleanup
+        redis_connection.delete(redis_key, 'Done')
+
+    def test_chaining_upgraded_chords_mixed_canvas(self, manager, subtests):
+        """ This test is built to reproduce the github issue https://github.com/celery/celery/issues/5958
+
+        The issue describes a canvas where a chain of groups are executed multiple times instead of once.
+        This test is built to reproduce the issue and to verify that the issue is fixed.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_connection = get_redis_connection()
+        redis_key = 'echo_chamber'
+
+        c = chain(
+            chord(group([redis_echo.si('1', redis_key=redis_key),
+                         redis_echo.si('2', redis_key=redis_key),
+                         redis_echo.si('3', redis_key=redis_key)]),
+                  group([redis_echo.si('4', redis_key=redis_key),
+                         redis_echo.si('5', redis_key=redis_key),
+                         redis_echo.si('6', redis_key=redis_key)])),
+            redis_echo.si('7', redis_key=redis_key),
+            group(
+                redis_echo.si('8', redis_key=redis_key),
+            ),
+            redis_echo.si('9', redis_key=redis_key),
+            redis_echo.si('Done', redis_key='Done'),
+        )
+
+        with subtests.test(msg='Run the chain and wait for completion'):
+            redis_connection.delete(redis_key, 'Done')
+            c.delay().get(timeout=TIMEOUT)
+            await_redis_list_message_length(1, redis_key='Done', timeout=10)
+
+        with subtests.test(msg='All tasks are executed once'):
+            actual = [sig.decode('utf-8') for sig in redis_connection.lrange(redis_key, 0, -1)]
+            expected = [str(i) for i in range(1, 10)]
+            with subtests.test(msg='All tasks are executed once'):
+                assert sorted(actual) == sorted(expected)
+
+        # Cleanup
+        redis_connection.delete(redis_key, 'Done')
+
 
 class test_result_set:
 

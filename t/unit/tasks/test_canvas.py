@@ -753,6 +753,22 @@ class test_chain(CanvasCase):
             ['x0y0', 'x1y1', 'foo', 'z']
         ]
 
+    def test_chain_of_chord__or__group_of_single_task(self):
+        c = chord([signature('header')], signature('body'))
+        c = chain(c)
+        g = group(signature('t'))
+        new_chain = c | g  # g should be chained with the body of c[0]
+        assert isinstance(new_chain, _chain)
+        assert isinstance(new_chain.tasks[0].body, _chain)
+
+    def test_chain_of_chord_upgrade_on_chaining(self):
+        c = chord([signature('header')], group(signature('body')))
+        c = chain(c)
+        t = signature('t')
+        new_chain = c | t  # t should be chained with the body of c[0] and create a new chord
+        assert isinstance(new_chain, _chain)
+        assert isinstance(new_chain.tasks[0].body, chord)
+
     def test_apply_options(self):
 
         class static(Signature):
@@ -2316,6 +2332,22 @@ class test_chord(CanvasCase):
             sig = signature('t')
             errback = c.link_error(sig)
             assert errback == sig
+
+    def test_chord__or__group_of_single_task(self):
+        """ Test chaining a chord to a group of a single task. """
+        c = chord([signature('header')], signature('body'))
+        g = group(signature('t'))
+        stil_chord = c | g  # g should be chained with the body of c
+        assert isinstance(stil_chord, chord)
+        assert isinstance(stil_chord.body, _chain)
+
+    def test_chord_upgrade_on_chaining(self):
+        """ Test that chaining a chord with a group body upgrades to a new chord """
+        c = chord([signature('header')], group(signature('body')))
+        t = signature('t')
+        stil_chord = c | t  # t should be chained with the body of c and create a new chord
+        assert isinstance(stil_chord, chord)
+        assert isinstance(stil_chord.body, chord)
 
 
 class test_maybe_signature(CanvasCase):
