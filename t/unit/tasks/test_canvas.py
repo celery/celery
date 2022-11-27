@@ -2317,6 +2317,14 @@ class test_chord(CanvasCase):
             errback = c.link_error(sig)
             assert errback == sig
 
+    def test_chord__or__group_of_single_task(self):
+        """ Test chaining a chord to a group of a single task. """
+        c = chord([signature('header')], signature('body'))
+        g = group(signature('t'))
+        stil_chord = c | g  # g should be chained with the body of c
+        assert isinstance(stil_chord, chord)
+        assert isinstance(stil_chord.body, _chain)
+
 
 class test_maybe_signature(CanvasCase):
 
