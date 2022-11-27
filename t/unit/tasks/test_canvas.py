@@ -2325,6 +2325,14 @@ class test_chord(CanvasCase):
         assert isinstance(stil_chord, chord)
         assert isinstance(stil_chord.body, _chain)
 
+    def test_chord_upgrade_on_chaining(self):
+        """ Test that chaining a chord with a group body upgrades to a new chord """
+        c = chord([signature('header')], group(signature('body')))
+        t = signature('t')
+        stil_chord = c | t  # t should be chained with the body of c and create a new chord
+        assert isinstance(stil_chord, chord)
+        assert isinstance(stil_chord.body, chord)
+
 
 class test_maybe_signature(CanvasCase):
 
