@@ -753,6 +753,14 @@ class test_chain(CanvasCase):
             ['x0y0', 'x1y1', 'foo', 'z']
         ]
 
+    def test_chain_of_chord__or__group_of_single_task(self):
+        c = chord([signature('header')], signature('body'))
+        c = chain(c)
+        g = group(signature('t'))
+        new_chain = c | g  # g should be chained with the body of c[0]
+        assert isinstance(new_chain, _chain)
+        assert isinstance(new_chain.tasks[0].body, _chain)
+
     def test_apply_options(self):
 
         class static(Signature):
