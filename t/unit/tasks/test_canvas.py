@@ -761,6 +761,14 @@ class test_chain(CanvasCase):
         assert isinstance(new_chain, _chain)
         assert isinstance(new_chain.tasks[0].body, _chain)
 
+    def test_chain_of_chord_upgrade_on_chaining(self):
+        c = chord([signature('header')], group(signature('body')))
+        c = chain(c)
+        t = signature('t')
+        new_chain = c | t  # t should be chained with the body of c[0] and create a new chord
+        assert isinstance(new_chain, _chain)
+        assert isinstance(new_chain.tasks[0].body, chord)
+
     def test_apply_options(self):
 
         class static(Signature):
