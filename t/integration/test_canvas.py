@@ -13,7 +13,7 @@ from celery.backends.base import BaseKeyValueStoreBackend
 from celery.canvas import StampingVisitor
 from celery.exceptions import ImproperlyConfigured, TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet
-from celery.signals import before_task_publish
+from celery.signals import before_task_publish, task_received
 
 from . import tasks
 from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connection
@@ -3176,3 +3176,30 @@ class test_stamping_visitor:
             assert 'stamped_headers' not in task_properties, 'stamped_headers key should not be in task properties'
             for stamp in stamped_headers:
                 assert stamp not in task_properties, f'The stamp "{stamp}" should not be in the task properties'
+
+    def test_task_received_has_access_to_stamps(self, manager):
+        """ Make sure that the request has the stamps using the task_received signal """
+
+        assertion_result = False
+
+        @task_received.connect
+        def task_received_handler(
+            sender=None,
+            request=None,
+            signal=None,
+            **kwargs
+        ):
+            nonlocal assertion_result
+            assertion_result = all([
+                stamped_header in request.stamps
+                for stamped_header in request.stamped_headers
+            ])
+
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {'stamp': 42}
+
+        stamped_task = add.si(1, 1)
+        stamped_task.stamp(visitor=CustomStampingVisitor())
+        stamped_task.apply_async().get()
+        assert assertion_result

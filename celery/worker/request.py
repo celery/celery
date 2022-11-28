@@ -327,7 +327,7 @@ class Request:
 
     @property
     def stamps(self) -> dict:
-        return {header: self._request_dict[header] for header in self.stamped_headers}
+        return {header: self._request_dict['stamps'][header] for header in self.stamped_headers}
 
     @property
     def correlation_id(self):
