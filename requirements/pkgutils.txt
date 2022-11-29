@@ -1,6 +1,6 @@
 setuptools>=40.8.0
 wheel>=0.33.1
-flake8>=3.8.3
+flake8==5.0.4
 flakeplus>=1.1
 flake8-docstrings~=1.5
 pydocstyle==6.1.1; python_version >= '3.0'
