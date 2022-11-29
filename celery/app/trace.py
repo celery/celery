@@ -10,7 +10,7 @@ import time
 from collections import namedtuple
 from warnings import warn
 
-from billiard.einfo import ExceptionInfo
+from billiard.einfo import ExceptionInfo, ExceptionWithTraceback
 from kombu.exceptions import EncodeError
 from kombu.serialization import loads as loads_message
 from kombu.serialization import prepare_accept_content
@@ -238,6 +238,8 @@ class TraceInfo:
 
     def _log_error(self, task, req, einfo):
         eobj = einfo.exception = get_pickled_exception(einfo.exception)
+        if isinstance(eobj, ExceptionWithTraceback):
+            eobj = einfo.exception = eobj.exc
         exception, traceback, exc_info, sargs, skwargs = (
             safe_repr(eobj),
             safe_str(einfo.traceback),
