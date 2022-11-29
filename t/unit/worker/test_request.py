@@ -155,7 +155,7 @@ class test_trace_task(RequestCase):
             self.app, uuid(), self.mytask_raising.name, {}, [4], {},
         )
         assert isinstance(ret, ExceptionInfo)
-        assert ret.exception.exc.args == (4,)
+        assert ret.exception.args == (4,)
 
     def test_execute_task_ignore_result(self):
         @self.app.task(shared=False, ignore_result=True)
