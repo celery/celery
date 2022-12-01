@@ -38,8 +38,8 @@ def prepare_workflow() -> Signature:
     to revoke the task by its stamped header.
     """
     canvas = create_canvas(n=3)
-    canvas.stamp(MonitoringIdStampingVisitor())
     canvas = canvas | wait_for_revoke.s()
+    canvas.stamp(MonitoringIdStampingVisitor())
     return canvas
 
 
