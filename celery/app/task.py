@@ -8,7 +8,7 @@ from kombu.utils.uuid import uuid
 
 from celery import current_app, states
 from celery._state import _task_stack
-from celery.canvas import GroupStampingVisitor, _chain, group, signature
+from celery.canvas import _chain, group, signature
 from celery.exceptions import Ignore, ImproperlyConfigured, MaxRetriesExceededError, Reject, Retry
 from celery.local import class_property
 from celery.result import EagerResult, denied_join_result
@@ -953,10 +953,16 @@ class Task:
         for t in reversed(self.request.chain or []):
             sig |= signature(t, app=self.app)
         # Stamping sig with parents groups
-        stamped_headers = self.request.stamped_headers
         if self.request.stamps:
-            groups = self.request.stamps.get("groups")
-            sig.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
+            stamped_headers = self.request.stamped_headers.copy()
+            stamps = self.request.stamps.copy()
+            stamped_headers.extend(sig.options.get('stamped_headers', []))
+            stamps.update({
+                stamp: value
+                for stamp, value in sig.options.items() if stamp in sig.options.get('stamped_headers', [])
+            })
+            sig.options['stamped_headers'] = stamped_headers
+            sig.options.update(stamps)
 
         return self.on_replace(sig)
 

@@ -17,12 +17,13 @@ from celery.signals import before_task_publish, task_received
 
 from . import tasks
 from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connection
-from .tasks import (ExpectedException, add, add_chord_to_chord, add_replaced, add_to_all, add_to_all_to_chord,
-                    build_chain_inside_task, collect_ids, delayed_sum, delayed_sum_with_soft_guard,
-                    errback_new_style, errback_old_style, fail, fail_replaced, identity, ids, print_unicode,
-                    raise_error, redis_count, redis_echo, redis_echo_group_id, replace_with_chain,
-                    replace_with_chain_which_raises, replace_with_empty_chain, retry_once, return_exception,
-                    return_priority, second_order_replace1, tsum, write_to_file_and_return_int, xsum)
+from .tasks import (ExpectedException, StampOnReplace, add, add_chord_to_chord, add_replaced, add_to_all,
+                    add_to_all_to_chord, build_chain_inside_task, collect_ids, delayed_sum,
+                    delayed_sum_with_soft_guard, errback_new_style, errback_old_style, fail, fail_replaced, identity,
+                    ids, print_unicode, raise_error, redis_count, redis_echo, redis_echo_group_id,
+                    replace_with_chain, replace_with_chain_which_raises, replace_with_empty_chain,
+                    replace_with_stamped_task, retry_once, return_exception, return_priority, second_order_replace1,
+                    tsum, write_to_file_and_return_int, xsum)
 
 RETRYABLE_EXCEPTIONS = (OSError, ConnectionError, TimeoutError)
 
@@ -3248,3 +3249,35 @@ class test_stamping_visitor:
                 assertion_result = True
                 stamped_task.apply_async().get()
                 assert assertion_result
+
+    def test_replace_merge_stamps(self, manager):
+        """ Test that replacing a task keeps the previous and new stamps """
+
+        @task_received.connect
+        def task_received_handler(**kwargs):
+            request = kwargs['request']
+            nonlocal assertion_result
+            expected_stamp_key = list(StampOnReplace.stamp.keys())[0]
+            expected_stamp_value = list(StampOnReplace.stamp.values())[0]
+
+            assertion_result = all([
+                assertion_result,
+                all([stamped_header in request.stamps for stamped_header in request.stamped_headers]),
+                request.stamps['stamp'] == 42,
+                request.stamps[expected_stamp_key] == expected_stamp_value
+                if 'replaced_with_me' in request.task_name else True
+            ])
+
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {'stamp': 42}
+
+        stamped_task = replace_with_stamped_task.s()
+        stamped_task.stamp(visitor=CustomStampingVisitor())
+        assertion_result = False
+        stamped_task.delay()
+        assertion_result = True
+        sleep(1)
+        # stamped_task needs to be stamped with CustomStampingVisitor
+        # and the replaced task with both CustomStampingVisitor and StampOnReplace
+        assert assertion_result, 'All of the tasks should have been stamped'
