@@ -2,7 +2,7 @@ from collections.abc import Iterable
 from time import sleep
 
 from celery import Signature, Task, chain, chord, group, shared_task
-from celery.canvas import StampingVisitor
+from celery.canvas import StampingVisitor, signature
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 
@@ -445,5 +445,7 @@ def replaced_with_me():
 
 
 @shared_task(bind=True, base=StampedTaskOnReplace)
-def replace_with_stamped_task(self: StampedTaskOnReplace):
-    self.replace(replaced_with_me.s())
+def replace_with_stamped_task(self: StampedTaskOnReplace, replace_with=None):
+    if replace_with is None:
+        replace_with = replaced_with_me.s()
+    self.replace(signature(replace_with))

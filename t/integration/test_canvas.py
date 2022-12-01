@@ -3281,3 +3281,31 @@ class test_stamping_visitor:
         # stamped_task needs to be stamped with CustomStampingVisitor
         # and the replaced task with both CustomStampingVisitor and StampOnReplace
         assert assertion_result, 'All of the tasks should have been stamped'
+
+    def test_replace_group_merge_stamps(self, manager):
+        """ Test that replacing a group signature keeps the previous and new group stamps """
+
+        x = 5
+        y = 6
+
+        @task_received.connect
+        def task_received_handler(**kwargs):
+            request = kwargs['request']
+            nonlocal assertion_result
+            nonlocal gid1
+
+            assertion_result = all([
+                assertion_result,
+                request.stamps['groups'][0] == gid1,
+                len(request.stamps['groups']) == 2
+                if any([request.args == [10, x], request.args == [10, y]]) else True
+            ])
+
+        sig = add.s(3, 3) | add.s(4) | group(add.s(x), add.s(y))
+        sig = group(add.s(1, 1), add.s(2, 2), replace_with_stamped_task.s(replace_with=sig))
+        assertion_result = False
+        sig.delay()
+        assertion_result = True
+        gid1 = sig.options['task_id']
+        sleep(1)
+        assert assertion_result, 'Group stamping is corrupted'
