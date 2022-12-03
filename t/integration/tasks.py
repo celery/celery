@@ -27,6 +27,12 @@ def add(x, y, z=None):
 
 
 @shared_task
+def mul(x: int, y: int) -> int:
+    """Multiply two numbers"""
+    return x * y
+
+
+@shared_task
 def write_to_file_and_return_int(file_name, i):
     with open(file_name, mode='a', buffering=1) as file_handle:
         file_handle.write(str(i)+'\n')

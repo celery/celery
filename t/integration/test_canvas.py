@@ -20,7 +20,7 @@ from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connect
 from .tasks import (ExpectedException, StampOnReplace, add, add_chord_to_chord, add_replaced, add_to_all,
                     add_to_all_to_chord, build_chain_inside_task, collect_ids, delayed_sum,
                     delayed_sum_with_soft_guard, errback_new_style, errback_old_style, fail, fail_replaced, identity,
-                    ids, print_unicode, raise_error, redis_count, redis_echo, redis_echo_group_id,
+                    ids, mul, print_unicode, raise_error, redis_count, redis_echo, redis_echo_group_id,
                     replace_with_chain, replace_with_chain_which_raises, replace_with_empty_chain,
                     replace_with_stamped_task, retry_once, return_exception, return_priority, second_order_replace1,
                     tsum, write_to_file_and_return_int, xsum)
@@ -505,6 +505,21 @@ class test_chain:
 
         res = c()
         assert res.get(timeout=TIMEOUT) == [8, 8]
+
+    def test_stamping_example_canvas(self, manager):
+        """Test the stamping example canvas from the examples directory"""
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = chain(
+            group(identity.s(i) for i in range(1, 4)) | xsum.s(),
+            chord(group(mul.s(10) for _ in range(1, 4)), xsum.s()),
+        )
+
+        res = c()
+        assert res.get(timeout=TIMEOUT) == 180
 
     @pytest.mark.xfail(raises=TimeoutError, reason="Task is timeout")
     def test_nested_chain_group_lone(self, manager):
