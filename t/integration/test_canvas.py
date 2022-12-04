@@ -618,6 +618,29 @@ class test_chain:
         assert res.get(timeout=TIMEOUT) == 'Hello world'
         await_redis_echo({link_msg, 'Hello world'})
 
+    def test_chain_flattening_keep_links_of_inner_chain(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_connection = get_redis_connection()
+
+        link_b_msg = 'link_b called'
+        link_b_key = 'echo_link_b'
+        link_b_sig = redis_echo.si(link_b_msg, redis_key=link_b_key)
+
+        def link_chain(sig):
+            sig.link(link_b_sig)
+            sig.link_error(identity.s('link_ab'))
+            return sig
+
+        inner_chain = link_chain(chain(identity.s('a'), add.s('b')))
+        flat_chain = chain(inner_chain, add.s('c'))
+        redis_connection.delete(link_b_key)
+        res = flat_chain.delay()
+
+        assert res.get(timeout=TIMEOUT) == 'abc'
+        await_redis_echo((link_b_msg,), redis_key=link_b_key)
+
     def test_chain_with_eb_replaced_with_chain_with_eb(
         self, manager, subtests
     ):
