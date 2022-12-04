@@ -967,6 +967,30 @@ class test_chain(CanvasCase):
         mock_apply.assert_called_once_with(chain=[])
         assert res is mock_apply.return_value
 
+    def test_chain_flattening_keep_links_of_inner_chain(self):
+        def link_chain(sig):
+            sig.link(signature('link_b'))
+            sig.link_error(signature('link_ab'))
+            return sig
+
+        inner_chain = link_chain(chain(signature('a'), signature('b')))
+        assert inner_chain.options['link'][0] == signature('link_b')
+        assert inner_chain.options['link_error'][0] == signature('link_ab')
+        assert inner_chain.tasks[0] == signature('a')
+        assert inner_chain.tasks[0].options == {}
+        assert inner_chain.tasks[1] == signature('b')
+        assert inner_chain.tasks[1].options == {}
+
+        flat_chain = chain(inner_chain, signature('c'))
+        assert flat_chain.options == {}
+        assert flat_chain.tasks[0].name == 'a'
+        assert 'link' not in flat_chain.tasks[0].options
+        assert signature(flat_chain.tasks[0].options['link_error'][0]) == signature('link_ab')
+        assert flat_chain.tasks[1].name == 'b'
+        assert 'link' in flat_chain.tasks[1].options, "b is missing the link from inner_chain.options['link'][0]"
+        assert signature(flat_chain.tasks[1].options['link'][0]) == signature('link_b')
+        assert signature(flat_chain.tasks[1].options['link_error'][0]) == signature('link_ab')
+
 
 class test_group(CanvasCase):
     def test_group_stamping_one_level(self, subtests):
