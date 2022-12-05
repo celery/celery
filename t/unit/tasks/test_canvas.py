@@ -563,6 +563,10 @@ class test_Signature(CanvasCase):
         assert SIG in x.options['link_error']
         assert not x.tasks[0].options.get('link_error')
 
+    def test_signature_on_error_adds_error_callback(self):
+        sig = signature('sig').on_error(signature('on_error'))
+        assert sig.options['link_error'] == [signature('on_error')]
+
 
 class test_xmap_xstarmap(CanvasCase):
 
