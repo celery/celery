@@ -7,8 +7,9 @@ import pytest_subtests  # noqa: F401
 
 from celery import Task
 from celery._state import _task_stack
-from celery.canvas import (GroupStampingVisitor, Signature, StampingVisitor, _chain, _maybe_group, chain, chord,
-                           chunks, group, maybe_signature, maybe_unroll_group, signature, xmap, xstarmap)
+from celery.canvas import (GroupStampingVisitor, Signature, StampingVisitor, _chain, _maybe_group,
+                           _merge_dictionaries, chain, chord, chunks, group, maybe_signature, maybe_unroll_group,
+                           signature, xmap, xstarmap)
 from celery.exceptions import Ignore
 from celery.result import AsyncResult, EagerResult, GroupResult
 
@@ -2394,3 +2395,63 @@ class test_maybe_signature(CanvasCase):
     def test_when_sig(self):
         s = self.add.s()
         assert maybe_signature(s, app=self.app) is s
+
+
+class test_merge_dictionaries(CanvasCase):
+
+    def test_docstring_example(self):
+        d1 = {'dict': {'a': 1}, 'list': [1, 2], 'tuple': (1, 2)}
+        d2 = {'dict': {'b': 2}, 'list': [3, 4], 'set': {'a', 'b'}}
+        _merge_dictionaries(d1, d2)
+        assert d1 == {
+            'dict': {'a': 1, 'b': 2},
+            'list': [1, 2, 3, 4],
+            'tuple': (1, 2),
+            'set': {'a', 'b'}
+        }
+
+    @pytest.mark.parametrize('d1,d2,expected_result', [
+        (
+            {'None': None},
+            {'None': None},
+            {'None': [None]}
+        ),
+        (
+            {'None': None},
+            {'None': [None]},
+            {'None': [[None]]}
+        ),
+        (
+            {'None': None},
+            {'None': 'Not None'},
+            {'None': ['Not None']}
+        ),
+        (
+            {'None': None},
+            {'None': ['Not None']},
+            {'None': [['Not None']]}
+        ),
+        (
+            {'None': [None]},
+            {'None': None},
+            {'None': [None, None]}
+        ),
+        (
+            {'None': [None]},
+            {'None': [None]},
+            {'None': [None, None]}
+        ),
+        (
+            {'None': [None]},
+            {'None': 'Not None'},
+            {'None': [None, 'Not None']}
+        ),
+        (
+            {'None': [None]},
+            {'None': ['Not None']},
+            {'None': [None, 'Not None']}
+        ),
+    ])
+    def test_none_values(self, d1, d2, expected_result):
+        _merge_dictionaries(d1, d2)
+        assert d1 == expected_result
