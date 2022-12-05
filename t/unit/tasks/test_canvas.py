@@ -1318,6 +1318,10 @@ class test_group(CanvasCase):
         x = group([self.add.s(2, 2), self.add.s(4, 4)])
         assert repr(x)
 
+    def test_repr_empty_group(self):
+        x = group([])
+        assert repr(x) == 'group(<empty>)'
+
     def test_reverse(self):
         x = group([self.add.s(2, 2), self.add.s(4, 4)])
         assert isinstance(signature(x), group)
