@@ -2247,13 +2247,14 @@ class _chord(Signature):
             applied to the body.
         """
         if self.app.conf.task_allow_error_cb_on_chord_header:
-            # self.tasks can be a list of the chord header workflow.
-            if isinstance(self.tasks, (list, tuple)):
-                for task in self.tasks:
-                    task.link_error(errback)
-            else:
-                self.tasks.link_error(errback)
+            for task in self.tasks:
+                task.link_error(errback)
         else:
+            # Once this warning is removed, the whole method needs to be refactored to:
+            # 1. link the error callback to each task in the header
+            # 2. link the error callback to the body
+            # 3. return the error callback
+            # In summary, up to 4 lines of code + updating the method docstring.
             warnings.warn(
                 "task_allow_error_cb_on_chord_header=False is pending deprecation in "
                 "a future release of Celery.\n"
