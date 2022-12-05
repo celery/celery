@@ -161,7 +161,6 @@ class StampingVisitor(metaclass=ABCMeta):
          Returns:
              Dict: headers to update.
          """
-        pass
 
     def on_chord_header_start(self, chord, **header) -> dict:
         """Method that is called on сhord header stamping start.
