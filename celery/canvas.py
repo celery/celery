@@ -92,7 +92,7 @@ def _merge_dictionaries(d1, d2):
             else:
                 if isinstance(value, (int, float, str)):
                     d1[key] = [value]
-                if isinstance(d2[key], list):
+                if isinstance(d2[key], list) and d1[key] is not None:
                     d1[key].extend(d2[key])
                 else:
                     if d1[key] is None:
