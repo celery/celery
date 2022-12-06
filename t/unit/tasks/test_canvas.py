@@ -455,6 +455,9 @@ class test_Signature(CanvasCase):
         assert isinstance(ax, _chain)
         assert len(ax.tasks), 3 == 'consolidates chain to chain'
 
+        with pytest.raises(TypeError):
+            assert signature('foo') | None
+
     def test_INVERT(self):
         x = self.add.s(2, 2)
         x.apply_async = Mock()
