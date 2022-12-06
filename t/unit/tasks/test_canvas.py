@@ -1735,6 +1735,19 @@ class test_group(CanvasCase):
         # the encapsulated chains - in this case 1 for each child chord
         mock_set_chord_size.assert_has_calls((call(ANY, 1),) * child_count)
 
+    def test_group_prepared(self):
+        # Using both partial and dict based signatures
+        sig = group(dict(self.add.s(0)), self.add.s(0))
+        _, group_id, root_id = sig._freeze_gid({})
+        tasks = sig._prepared(sig.tasks, [42], group_id, root_id, self.app)
+
+        for task, result, group_id in tasks:
+            assert isinstance(task, Signature)
+            assert task.args[0] == 42
+            assert task.args[1] == 0
+            assert isinstance(result, AsyncResult)
+            assert group_id is not None
+
 
 class test_chord(CanvasCase):
     def test_chord_stamping_one_level(self, subtests):
