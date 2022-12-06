@@ -571,6 +571,28 @@ class test_Signature(CanvasCase):
         sig = signature('sig').on_error(signature('on_error'))
         assert sig.options['link_error'] == [signature('on_error')]
 
+    @pytest.mark.parametrize('_id, group_id, chord, root_id, parent_id, group_index', [
+        ('_id', 'group_id', 'chord', 'root_id', 'parent_id', 1),
+    ])
+    def test_freezing_args_set_in_options(self, _id, group_id, chord, root_id, parent_id, group_index):
+        sig = self.add.s(1, 1)
+        sig.freeze(
+            _id=_id,
+            group_id=group_id,
+            chord=chord,
+            root_id=root_id,
+            parent_id=parent_id,
+            group_index=group_index,
+        )
+        options = sig.options
+
+        assert options['task_id'] == _id
+        assert options['group_id'] == group_id
+        assert options['chord'] == chord
+        assert options['root_id'] == root_id
+        assert options['parent_id'] == parent_id
+        assert options['group_index'] == group_index
+
 
 class test_xmap_xstarmap(CanvasCase):
 
