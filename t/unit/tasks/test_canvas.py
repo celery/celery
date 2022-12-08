@@ -441,7 +441,7 @@ class test_Signature(CanvasCase):
         tasks[1].link(tasks[2])
         assert tasks[0].flatten_links() == tasks
 
-    def test_OR(self):
+    def test_OR(self, subtests):
         x = self.add.s(2, 2) | self.mul.s(4)
         assert isinstance(x, _chain)
         y = self.add.s(4, 4) | self.div.s(2)
@@ -455,8 +455,9 @@ class test_Signature(CanvasCase):
         assert isinstance(ax, _chain)
         assert len(ax.tasks), 3 == 'consolidates chain to chain'
 
-        with pytest.raises(TypeError):
-            assert signature('foo') | None
+        with subtests.test('Test chaining with a non-signature object'):
+            with pytest.raises(TypeError):
+                assert signature('foo') | None
 
     def test_INVERT(self):
         x = self.add.s(2, 2)
