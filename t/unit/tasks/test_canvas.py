@@ -2420,6 +2420,22 @@ class test_chord(CanvasCase):
         assert isinstance(stil_chord, chord)
         assert isinstance(stil_chord.body, chord)
 
+    @pytest.mark.parametrize('header', [
+        [signature('s1'), signature('s2')],
+        group(signature('s1'), signature('s2'))
+    ])
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_link_error_on_chord_header(self, header):
+        """ Test that link_error on a chord also links the header """
+        self.app.conf.task_allow_error_cb_on_chord_header = True
+        c = chord(header, signature('body'))
+        err = signature('err')
+        errback = c.link_error(err)
+        assert errback == err
+        for header_task in c.tasks:
+            assert header_task.options['link_error'] == [err]
+        assert c.body.options['link_error'] == [err]
+
 
 class test_maybe_signature(CanvasCase):
 
