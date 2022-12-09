@@ -138,6 +138,20 @@ class chunks_subclass(chunks):
 
 
 class test_Signature(CanvasCase):
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_on_signature_gets_the_signature(self):
+        expected_sig = self.add.s(4, 2)
+
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, actual_sig, **headers) -> dict:
+                nonlocal expected_sig
+                assert actual_sig == expected_sig
+                return {'header': 'value'}
+
+        sig = expected_sig.clone()
+        sig.stamp(CustomStampingVisitor())
+        assert sig.options['header'] == 'value'
+
     def test_double_stamping(self, subtests):
         """
         Test manual signature stamping with two different stamps.
