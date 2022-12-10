@@ -120,7 +120,7 @@ jobs:
               run: |
                   echo "::set-output name=dir::$(pip cache dir)"
           -   name: Install tox
-              run: python -m pip install tox
+              run: python -m pip install --upgrade pip tox tox-gh-actions
           -   name: >
                   Run tox for
                   "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}"
