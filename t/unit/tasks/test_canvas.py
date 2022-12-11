@@ -7,8 +7,9 @@ import pytest_subtests  # noqa: F401
 
 from celery import Task
 from celery._state import _task_stack
-from celery.canvas import (GroupStampingVisitor, Signature, StampingVisitor, _chain, _maybe_group, chain, chord,
-                           chunks, group, maybe_signature, maybe_unroll_group, signature, xmap, xstarmap)
+from celery.canvas import (GroupStampingVisitor, Signature, StampingVisitor, _chain, _maybe_group,
+                           _merge_dictionaries, chain, chord, chunks, group, maybe_signature, maybe_unroll_group,
+                           signature, xmap, xstarmap)
 from celery.exceptions import Ignore
 from celery.result import AsyncResult, EagerResult, GroupResult
 
@@ -137,6 +138,20 @@ class chunks_subclass(chunks):
 
 
 class test_Signature(CanvasCase):
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_on_signature_gets_the_signature(self):
+        expected_sig = self.add.s(4, 2)
+
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, actual_sig, **headers) -> dict:
+                nonlocal expected_sig
+                assert actual_sig == expected_sig
+                return {'header': 'value'}
+
+        sig = expected_sig.clone()
+        sig.stamp(CustomStampingVisitor())
+        assert sig.options['header'] == 'value'
+
     def test_double_stamping(self, subtests):
         """
         Test manual signature stamping with two different stamps.
@@ -440,7 +455,7 @@ class test_Signature(CanvasCase):
         tasks[1].link(tasks[2])
         assert tasks[0].flatten_links() == tasks
 
-    def test_OR(self):
+    def test_OR(self, subtests):
         x = self.add.s(2, 2) | self.mul.s(4)
         assert isinstance(x, _chain)
         y = self.add.s(4, 4) | self.div.s(2)
@@ -453,6 +468,10 @@ class test_Signature(CanvasCase):
         ax = self.add.s(2, 2) | (self.add.s(4) | self.add.s(8))
         assert isinstance(ax, _chain)
         assert len(ax.tasks), 3 == 'consolidates chain to chain'
+
+        with subtests.test('Test chaining with a non-signature object'):
+            with pytest.raises(TypeError):
+                assert signature('foo') | None
 
     def test_INVERT(self):
         x = self.add.s(2, 2)
@@ -562,6 +581,32 @@ class test_Signature(CanvasCase):
         assert not z.tasks[1].options.get('link_error')
         assert SIG in x.options['link_error']
         assert not x.tasks[0].options.get('link_error')
+
+    def test_signature_on_error_adds_error_callback(self):
+        sig = signature('sig').on_error(signature('on_error'))
+        assert sig.options['link_error'] == [signature('on_error')]
+
+    @pytest.mark.parametrize('_id, group_id, chord, root_id, parent_id, group_index', [
+        ('_id', 'group_id', 'chord', 'root_id', 'parent_id', 1),
+    ])
+    def test_freezing_args_set_in_options(self, _id, group_id, chord, root_id, parent_id, group_index):
+        sig = self.add.s(1, 1)
+        sig.freeze(
+            _id=_id,
+            group_id=group_id,
+            chord=chord,
+            root_id=root_id,
+            parent_id=parent_id,
+            group_index=group_index,
+        )
+        options = sig.options
+
+        assert options['task_id'] == _id
+        assert options['group_id'] == group_id
+        assert options['chord'] == chord
+        assert options['root_id'] == root_id
+        assert options['parent_id'] == parent_id
+        assert options['group_index'] == group_index
 
 
 class test_xmap_xstarmap(CanvasCase):
@@ -1318,6 +1363,10 @@ class test_group(CanvasCase):
         x = group([self.add.s(2, 2), self.add.s(4, 4)])
         assert repr(x)
 
+    def test_repr_empty_group(self):
+        x = group([])
+        assert repr(x) == 'group(<empty>)'
+
     def test_reverse(self):
         x = group([self.add.s(2, 2), self.add.s(4, 4)])
         assert isinstance(signature(x), group)
@@ -1700,6 +1749,19 @@ class test_group(CanvasCase):
         # We must have set the chord sizes based on the number of tail tasks of
         # the encapsulated chains - in this case 1 for each child chord
         mock_set_chord_size.assert_has_calls((call(ANY, 1),) * child_count)
+
+    def test_group_prepared(self):
+        # Using both partial and dict based signatures
+        sig = group(dict(self.add.s(0)), self.add.s(0))
+        _, group_id, root_id = sig._freeze_gid({})
+        tasks = sig._prepared(sig.tasks, [42], group_id, root_id, self.app)
+
+        for task, result, group_id in tasks:
+            assert isinstance(task, Signature)
+            assert task.args[0] == 42
+            assert task.args[1] == 0
+            assert isinstance(result, AsyncResult)
+            assert group_id is not None
 
 
 class test_chord(CanvasCase):
@@ -2373,6 +2435,22 @@ class test_chord(CanvasCase):
         assert isinstance(stil_chord, chord)
         assert isinstance(stil_chord.body, chord)
 
+    @pytest.mark.parametrize('header', [
+        [signature('s1'), signature('s2')],
+        group(signature('s1'), signature('s2'))
+    ])
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_link_error_on_chord_header(self, header):
+        """ Test that link_error on a chord also links the header """
+        self.app.conf.task_allow_error_cb_on_chord_header = True
+        c = chord(header, signature('body'))
+        err = signature('err')
+        errback = c.link_error(err)
+        assert errback == err
+        for header_task in c.tasks:
+            assert header_task.options['link_error'] == [err]
+        assert c.body.options['link_error'] == [err]
+
 
 class test_maybe_signature(CanvasCase):
 
@@ -2386,3 +2464,63 @@ class test_maybe_signature(CanvasCase):
     def test_when_sig(self):
         s = self.add.s()
         assert maybe_signature(s, app=self.app) is s
+
+
+class test_merge_dictionaries(CanvasCase):
+
+    def test_docstring_example(self):
+        d1 = {'dict': {'a': 1}, 'list': [1, 2], 'tuple': (1, 2)}
+        d2 = {'dict': {'b': 2}, 'list': [3, 4], 'set': {'a', 'b'}}
+        _merge_dictionaries(d1, d2)
+        assert d1 == {
+            'dict': {'a': 1, 'b': 2},
+            'list': [1, 2, 3, 4],
+            'tuple': (1, 2),
+            'set': {'a', 'b'}
+        }
+
+    @pytest.mark.parametrize('d1,d2,expected_result', [
+        (
+            {'None': None},
+            {'None': None},
+            {'None': [None]}
+        ),
+        (
+            {'None': None},
+            {'None': [None]},
+            {'None': [[None]]}
+        ),
+        (
+            {'None': None},
+            {'None': 'Not None'},
+            {'None': ['Not None']}
+        ),
+        (
+            {'None': None},
+            {'None': ['Not None']},
+            {'None': [['Not None']]}
+        ),
+        (
+            {'None': [None]},
+            {'None': None},
+            {'None': [None, None]}
+        ),
+        (
+            {'None': [None]},
+            {'None': [None]},
+            {'None': [None, None]}
+        ),
+        (
+            {'None': [None]},
+            {'None': 'Not None'},
+            {'None': [None, 'Not None']}
+        ),
+        (
+            {'None': [None]},
+            {'None': ['Not None']},
+            {'None': [None, 'Not None']}
+        ),
+    ])
+    def test_none_values(self, d1, d2, expected_result):
+        _merge_dictionaries(d1, d2)
+        assert d1 == expected_result
