@@ -3,7 +3,7 @@ import math
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
-import pytest_subtests  # noqa: F401
+import pytest_subtests
 
 from celery import Task
 from celery._state import _task_stack

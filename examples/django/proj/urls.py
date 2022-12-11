@@ -1,4 +1,4 @@
-from django.urls import handler404, handler500, include, url  # noqa
+from django.urls import handler404, handler500, include, url
 
 # Uncomment the next two lines to enable the admin:
 # from django.contrib import admin

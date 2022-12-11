@@ -397,7 +397,7 @@ class Backend:
                 exc = cls(*exc_msg)
             else:
                 exc = cls(exc_msg)
-        except Exception as err:  # noqa
+        except Exception as err:
             exc = Exception(f'{cls}({exc_msg})')
 
         return exc

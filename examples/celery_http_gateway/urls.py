@@ -1,5 +1,5 @@
 from celery_http_gateway.tasks import hello_world
-from django.conf.urls.defaults import handler404, handler500, include, patterns, url  # noqa
+from django.conf.urls.defaults import handler404, handler500, include, patterns, url
 from djcelery import views as celery_views
 
 # Uncomment the next two lines to enable the admin:

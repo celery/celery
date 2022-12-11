@@ -36,7 +36,7 @@ There is no point in signing messages if they are not verified.
 __all__ = ('setup_security',)
 
 try:
-    import cryptography  # noqa
+    import cryptography
 except ImportError:
     raise ImproperlyConfigured(CRYPTOGRAPHY_NOT_INSTALLED)
 
