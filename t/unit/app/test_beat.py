@@ -99,9 +99,9 @@ class test_ScheduleEntry:
         e1 = self.create_entry(schedule=timedelta(seconds=10))
         e2 = self.create_entry(schedule=timedelta(seconds=2))
         # order doesn't matter, see comment in __lt__
-        res1 = e1 < e2  # noqa
+        res1 = e1 < e2
         try:
-            res2 = e1 < object()  # noqa
+            res2 = e1 < object()
         except TypeError:
             pass
 

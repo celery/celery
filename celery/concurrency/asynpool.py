@@ -57,7 +57,7 @@ except ImportError:
         return n
     readcanbuf = False
 
-    def unpack_from(fmt, iobuf, unpack=unpack):  # noqa
+    def unpack_from(fmt, iobuf, unpack=unpack):
         return unpack(fmt, iobuf.getvalue())  # <-- BytesIO
 
 __all__ = ('AsynPool',)
