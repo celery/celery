@@ -1,1 +1,1 @@
-import celery  # noqa: F401
+import celery

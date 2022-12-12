@@ -1,4 +1,4 @@
-from xyzzy import plugh  # noqa
+from xyzzy import plugh
 
 from celery import Celery, shared_task
 
