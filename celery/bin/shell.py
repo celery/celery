@@ -67,10 +67,10 @@ def _no_ipython(self):  # pragma: no cover
 
 def _invoke_default_shell(locals):
     try:
-        import IPython  # noqa
+        import IPython
     except ImportError:
         try:
-            import bpython  # noqa
+            import bpython
         except ImportError:
             _invoke_fallback_shell(locals)
         else:
