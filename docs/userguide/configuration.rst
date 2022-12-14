@@ -3496,10 +3496,12 @@ Also when running Celery beat embedded (:option:`-B <celery worker -B>`)
 on Jython as a thread the max interval is overridden and set to 1 so
 that it's possible to shut down in a timely manner.
 
-.. setting:: beat_cron_starting_deadline_seconds
+.. setting:: beat_cron_starting_deadline
 
-``beat_cron_starting_deadline_seconds``
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+``beat_cron_starting_deadline``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.3
 
 Default: None.
 
