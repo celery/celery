@@ -2809,6 +2809,8 @@ If this is set to :const:`0` or :const:`None`, we'll retry forever.
 ``broker_channel_error_retry``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. versionadded:: 5.3
+
 Default: Disabled.
 
 Automatically try to re-establish the connection to the AMQP broker
