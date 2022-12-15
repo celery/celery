@@ -1257,19 +1257,18 @@ class Celery:
             self._green = is_green
 
     def _cached_or_create(self, name, factory, thread_safe):
-        """Thread or process store
-        
+        """Thread or process store.
+
         :param: thread_safe: func(created) => True/False
         """
         cached = (getattr(self._local, name, None)
-                or getattr(self._global, name, None))
+                 or getattr(self._global, name, None))
         if cached is not None:
             return cached
-        
+
         created = factory()
         use_global = self._green or thread_safe(created)
-        setattr(self._global if use_global else self._local,
-            name, created)
+        setattr(self._global if use_global else self._local, name, created)
         return created
 
     @property
