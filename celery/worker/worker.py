@@ -127,6 +127,8 @@ class WorkController:
 
         # Initialize bootsteps
         self.pool_cls = _concurrency.get_implementation(self.pool_cls)
+        self.app.inform_green(self.pool_cls.is_green)
+
         self.steps = []
         self.on_init_blueprint()
         self.blueprint = self.Blueprint(

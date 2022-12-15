@@ -101,6 +101,9 @@ class Backend:
     #: Set to true if the backend is persistent by default.
     persistent = True
 
+    #: Set to true if backend lib is thread-safe
+    thread_safe = False
+
     retry_policy = {
         'max_retries': 20,
         'interval_start': 0,

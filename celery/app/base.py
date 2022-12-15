@@ -4,6 +4,7 @@ import os
 import sys
 import threading
 import warnings
+import multiprocessing
 from collections import UserDict, defaultdict, deque
 from datetime import datetime
 from operator import attrgetter
@@ -229,6 +230,8 @@ class Celery:
                  **kwargs):
 
         self._local = threading.local()
+        self._global = multiprocessing.current_process()
+        self._green = False
 
         self.clock = LamportClock()
         self.main = main
@@ -1249,14 +1252,34 @@ class Celery:
         """AMQP related functionality: :class:`~@amqp`."""
         return instantiate(self.amqp_cls, app=self)
 
+    def inform_green(self, is_green):
+        if is_green:
+            self._green = is_green
+
+    def _cached_or_create(self, name, factory, thread_safe):
+        """Thread or process store
+        
+        :param: thread_safe: func(created) => True/False
+        """
+        cached = (getattr(self._local, name, None)
+                or getattr(self._global, name, None))
+        if cached is not None:
+            return cached
+        
+        created = factory()
+        use_global = self._green or thread_safe(created)
+        setattr(self._global if use_global else self._local,
+            name, created)
+        return created
+
     @property
     def backend(self):
         """Current backend instance."""
-        try:
-            return self._local.backend
-        except AttributeError:
-            self._local.backend = new_backend = self._get_backend()
-            return new_backend
+        return self._cached_or_create(
+            'backend',
+            factory=self._get_backend,
+            thread_safe=lambda x: x.thread_safe,
+        )
 
     @property
     def conf(self):

@@ -191,6 +191,8 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     GET, MGET, DEL, INCRBY, EXPIRE, SET, SETEX
     """
 
+    thread_safe = True
+
     ResultConsumer = ResultConsumer
 
     #: :pypi:`redis` client module.
