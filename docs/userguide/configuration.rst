@@ -3508,3 +3508,16 @@ changes to the schedule into account.
 Also when running Celery beat embedded (:option:`-B <celery worker -B>`)
 on Jython as a thread the max interval is overridden and set to 1 so
 that it's possible to shut down in a timely manner.
+
+.. setting:: beat_cron_starting_deadline
+
+``beat_cron_starting_deadline``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.3
+
+Default: None.
+
+When using cron, the number of seconds :mod:`~celery.bin.beat` can look back
+when deciding whether a cron schedule is due. When set to `None`, cronjobs that
+are past due will always run immediately.
