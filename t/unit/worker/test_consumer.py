@@ -4,6 +4,7 @@ from collections import deque
 from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
+from amqp import ChannelError
 from billiard.exceptions import RestartFreqExceeded
 
 from celery import bootsteps
@@ -309,6 +310,31 @@ class test_Consumer(ConsumerTestCase):
 
         c.start()
         c.blueprint.restart.assert_called_once()
+
+    @pytest.mark.parametrize("broker_channel_error_retry", [True, False])
+    def test_blueprint_restart_for_channel_errors(self, broker_channel_error_retry):
+        c = self.get_consumer()
+
+        # ensure that WorkerShutdown is not raised
+        c.app.conf['broker_connection_retry'] = True
+        c.app.conf['broker_connection_retry_on_startup'] = True
+        c.app.conf['broker_channel_error_retry'] = broker_channel_error_retry
+        c.restart_count = -1
+
+        # ensure that blueprint state is not in stop conditions
+        c.blueprint.state = bootsteps.RUN
+        c.blueprint.start.side_effect = ChannelError()
+
+        # stops test from running indefinitely in the while loop
+        c.blueprint.restart.side_effect = self._closer(c)
+
+        # restarted only when broker_channel_error_retry is True
+        if broker_channel_error_retry:
+            c.start()
+            c.blueprint.restart.assert_called_once()
+        else:
+            with pytest.raises(ChannelError):
+                c.start()
 
     def test_collects_at_restart(self):
         c = self.get_consumer()

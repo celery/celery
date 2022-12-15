@@ -328,9 +328,13 @@ class Consumer:
                     crit('Frequent restarts detected: %r', exc, exc_info=1)
                     sleep(1)
             self.restart_count += 1
+            if self.app.conf.broker_channel_error_retry:
+                recoverable_errors = (self.connection_errors + self.channel_errors)
+            else:
+                recoverable_errors = self.connection_errors
             try:
                 blueprint.start(self)
-            except self.connection_errors as exc:
+            except recoverable_errors as exc:
                 # If we're not retrying connections, we need to properly shutdown or terminate
                 # the Celery main process instead of abruptly aborting the process without any cleanup.
                 is_connection_loss_on_startup = self.restart_count == 0

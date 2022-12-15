@@ -2806,6 +2806,19 @@ to the AMQP broker.
 
 If this is set to :const:`0` or :const:`None`, we'll retry forever.
 
+``broker_channel_error_retry``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.3
+
+Default: Disabled.
+
+Automatically try to re-establish the connection to the AMQP broker
+if any invalid response has been returned.
+
+The retry count and interval is the same as that of `broker_connection_retry`.
+Also, this option doesn't work when `broker_connection_retry` is `False`.
+
 .. setting:: broker_login_method
 
 ``broker_login_method``

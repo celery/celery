@@ -89,6 +89,7 @@ NAMESPACES = Namespace(
         connection_retry=Option(True, type='bool'),
         connection_retry_on_startup=Option(None, type='bool'),
         connection_max_retries=Option(100, type='int'),
+        channel_error_retry=Option(False, type='bool'),
         failover_strategy=Option(None, type='string'),
         heartbeat=Option(120, type='int'),
         heartbeat_checkrate=Option(3.0, type='int'),
