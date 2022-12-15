@@ -1,6 +1,5 @@
 """Actual App instance implementation."""
 import inspect
-import multiprocessing
 import os
 import sys
 import threading
@@ -9,6 +8,7 @@ from collections import UserDict, defaultdict, deque
 from datetime import datetime
 from operator import attrgetter
 
+from billiard.process import current_process
 from click.exceptions import Exit
 from kombu import pools
 from kombu.clocks import LamportClock
@@ -230,7 +230,7 @@ class Celery:
                  **kwargs):
 
         self._local = threading.local()
-        self._global = multiprocessing.current_process()
+        self._global = current_process()
         self._green = False
 
         self.clock = LamportClock()
