@@ -1261,8 +1261,7 @@ class Celery:
 
         :param: thread_safe: func(created) => True/False
         """
-        cached = (getattr(self._local, name, None)
-                 or getattr(self._global, name, None))
+        cached = getattr(self._local, name, None) or getattr(self._global, name, None)
         if cached is not None:
             return cached
 
