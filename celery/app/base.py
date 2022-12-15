@@ -1,10 +1,10 @@
 """Actual App instance implementation."""
 import inspect
+import multiprocessing
 import os
 import sys
 import threading
 import warnings
-import multiprocessing
 from collections import UserDict, defaultdict, deque
 from datetime import datetime
 from operator import attrgetter
