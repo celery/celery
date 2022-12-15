@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from time import monotonic, sleep
 
 import pytest
-import pytest_subtests  # noqa: F401
+import pytest_subtests
 
 from celery import chain, chord, group, signature
 from celery.backends.base import BaseKeyValueStoreBackend
@@ -17,12 +17,13 @@ from celery.signals import before_task_publish, task_received
 
 from . import tasks
 from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connection
-from .tasks import (ExpectedException, add, add_chord_to_chord, add_replaced, add_to_all, add_to_all_to_chord,
-                    build_chain_inside_task, collect_ids, delayed_sum, delayed_sum_with_soft_guard,
-                    errback_new_style, errback_old_style, fail, fail_replaced, identity, ids, print_unicode,
-                    raise_error, redis_count, redis_echo, redis_echo_group_id, replace_with_chain,
-                    replace_with_chain_which_raises, replace_with_empty_chain, retry_once, return_exception,
-                    return_priority, second_order_replace1, tsum, write_to_file_and_return_int, xsum)
+from .tasks import (ExpectedException, StampOnReplace, add, add_chord_to_chord, add_replaced, add_to_all,
+                    add_to_all_to_chord, build_chain_inside_task, collect_ids, delayed_sum,
+                    delayed_sum_with_soft_guard, errback_new_style, errback_old_style, fail, fail_replaced, identity,
+                    ids, mul, print_unicode, raise_error, redis_count, redis_echo, redis_echo_group_id,
+                    replace_with_chain, replace_with_chain_which_raises, replace_with_empty_chain,
+                    replace_with_stamped_task, retry_once, return_exception, return_priority, second_order_replace1,
+                    tsum, write_to_file_and_return_int, xsum)
 
 RETRYABLE_EXCEPTIONS = (OSError, ConnectionError, TimeoutError)
 
@@ -505,6 +506,21 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [8, 8]
 
+    def test_stamping_example_canvas(self, manager):
+        """Test the stamping example canvas from the examples directory"""
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = chain(
+            group(identity.s(i) for i in range(1, 4)) | xsum.s(),
+            chord(group(mul.s(10) for _ in range(1, 4)), xsum.s()),
+        )
+
+        res = c()
+        assert res.get(timeout=TIMEOUT) == 180
+
     @pytest.mark.xfail(raises=TimeoutError, reason="Task is timeout")
     def test_nested_chain_group_lone(self, manager):
         """
@@ -601,6 +617,29 @@ class test_chain:
 
         assert res.get(timeout=TIMEOUT) == 'Hello world'
         await_redis_echo({link_msg, 'Hello world'})
+
+    def test_chain_flattening_keep_links_of_inner_chain(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_connection = get_redis_connection()
+
+        link_b_msg = 'link_b called'
+        link_b_key = 'echo_link_b'
+        link_b_sig = redis_echo.si(link_b_msg, redis_key=link_b_key)
+
+        def link_chain(sig):
+            sig.link(link_b_sig)
+            sig.link_error(identity.s('link_ab'))
+            return sig
+
+        inner_chain = link_chain(chain(identity.s('a'), add.s('b')))
+        flat_chain = chain(inner_chain, add.s('c'))
+        redis_connection.delete(link_b_key)
+        res = flat_chain.delay()
+
+        assert res.get(timeout=TIMEOUT) == 'abc'
+        await_redis_echo((link_b_msg,), redis_key=link_b_key)
 
     def test_chain_with_eb_replaced_with_chain_with_eb(
         self, manager, subtests
@@ -3248,3 +3287,63 @@ class test_stamping_visitor:
                 assertion_result = True
                 stamped_task.apply_async().get()
                 assert assertion_result
+
+    def test_replace_merge_stamps(self, manager):
+        """ Test that replacing a task keeps the previous and new stamps """
+
+        @task_received.connect
+        def task_received_handler(**kwargs):
+            request = kwargs['request']
+            nonlocal assertion_result
+            expected_stamp_key = list(StampOnReplace.stamp.keys())[0]
+            expected_stamp_value = list(StampOnReplace.stamp.values())[0]
+
+            assertion_result = all([
+                assertion_result,
+                all([stamped_header in request.stamps for stamped_header in request.stamped_headers]),
+                request.stamps['stamp'] == 42,
+                request.stamps[expected_stamp_key] == expected_stamp_value
+                if 'replaced_with_me' in request.task_name else True
+            ])
+
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {'stamp': 42}
+
+        stamped_task = replace_with_stamped_task.s()
+        stamped_task.stamp(visitor=CustomStampingVisitor())
+        assertion_result = False
+        stamped_task.delay()
+        assertion_result = True
+        sleep(1)
+        # stamped_task needs to be stamped with CustomStampingVisitor
+        # and the replaced task with both CustomStampingVisitor and StampOnReplace
+        assert assertion_result, 'All of the tasks should have been stamped'
+
+    def test_replace_group_merge_stamps(self, manager):
+        """ Test that replacing a group signature keeps the previous and new group stamps """
+
+        x = 5
+        y = 6
+
+        @task_received.connect
+        def task_received_handler(**kwargs):
+            request = kwargs['request']
+            nonlocal assertion_result
+            nonlocal gid1
+
+            assertion_result = all([
+                assertion_result,
+                request.stamps['groups'][0] == gid1,
+                len(request.stamps['groups']) == 2
+                if any([request.args == [10, x], request.args == [10, y]]) else True
+            ])
+
+        sig = add.s(3, 3) | add.s(4) | group(add.s(x), add.s(y))
+        sig = group(add.s(1, 1), add.s(2, 2), replace_with_stamped_task.s(replace_with=sig))
+        assertion_result = False
+        sig.delay()
+        assertion_result = True
+        gid1 = sig.options['task_id']
+        sleep(1)
+        assert assertion_result, 'Group stamping is corrupted'

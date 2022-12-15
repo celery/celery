@@ -33,8 +33,7 @@ from celery.utils.objects import FallbackContext, mro_lookup
 from celery.utils.time import maybe_make_aware, timezone, to_utc
 
 # Load all builtin tasks
-from . import builtins  # noqa
-from . import backends
+from . import backends, builtins
 from .annotations import prepare as prepare_annotations
 from .autoretry import add_autoretry_behaviour
 from .defaults import DEFAULT_SECURITY_DIGEST, find_deprecated_settings
@@ -458,6 +457,9 @@ class Celery:
                     sum([len(args), len(opts)])))
         return inner_create_task_cls(**opts)
 
+    def type_checker(self, fun, bound=False):
+        return staticmethod(head_from_fun(fun, bound=bound))
+
     def _task_from_fun(self, fun, name=None, base=None, bind=False, **options):
         if not self.finalized and not self.autofinalize:
             raise RuntimeError('Contract breach: app not finalized')
@@ -474,7 +476,7 @@ class Celery:
                 '__doc__': fun.__doc__,
                 '__module__': fun.__module__,
                 '__annotations__': fun.__annotations__,
-                '__header__': staticmethod(head_from_fun(fun, bound=bind)),
+                '__header__': self.type_checker(fun, bound=bind),
                 '__wrapped__': run}, **options))()
             # for some reason __qualname__ cannot be set in type()
             # so we have to set it here.

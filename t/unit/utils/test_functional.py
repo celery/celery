@@ -1,7 +1,7 @@
 import collections
 
 import pytest
-import pytest_subtests  # noqa: F401
+import pytest_subtests
 from kombu.utils.functional import lazy
 
 from celery.utils.functional import (DummyContext, first, firstmethod, fun_accepts_kwargs, fun_takes_argument,

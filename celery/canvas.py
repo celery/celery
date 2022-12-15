@@ -92,7 +92,7 @@ def _merge_dictionaries(d1, d2):
             else:
                 if isinstance(value, (int, float, str)):
                     d1[key] = [value]
-                if isinstance(d2[key], list):
+                if isinstance(d2[key], list) and d1[key] is not None:
                     d1[key].extend(d2[key])
                 else:
                     if d1[key] is None:
@@ -161,7 +161,6 @@ class StampingVisitor(metaclass=ABCMeta):
          Returns:
              Dict: headers to update.
          """
-        pass
 
     def on_chord_header_start(self, chord, **header) -> dict:
         """Method that is called on сhord header stamping start.
@@ -960,14 +959,17 @@ class _chain(Signature):
     def unchain_tasks(self):
         """Return a list of tasks in the chain.
 
-        The tasks list would be cloned from the chain's tasks,
-        and all of the tasks would be linked to the same error callback
+        The tasks list would be cloned from the chain's tasks.
+        All of the chain callbacks would be added to the last task in the (cloned) chain.
+        All of the tasks would be linked to the same error callback
         as the chain itself, to ensure that the correct error callback is called
         if any of the (cloned) tasks of the chain fail.
         """
         # Clone chain's tasks assigning signatures from link_error
-        # to each task
+        # to each task and adding the chain's links to the last task.
         tasks = [t.clone() for t in self.tasks]
+        for sig in self.options.get('link', []):
+            tasks[-1].link(sig)
         for sig in self.options.get('link_error', []):
             for task in tasks:
                 task.link_error(sig)
@@ -2245,13 +2247,14 @@ class _chord(Signature):
             applied to the body.
         """
         if self.app.conf.task_allow_error_cb_on_chord_header:
-            # self.tasks can be a list of the chord header workflow.
-            if isinstance(self.tasks, (list, tuple)):
-                for task in self.tasks:
-                    task.link_error(errback)
-            else:
-                self.tasks.link_error(errback)
+            for task in self.tasks:
+                task.link_error(errback)
         else:
+            # Once this warning is removed, the whole method needs to be refactored to:
+            # 1. link the error callback to each task in the header
+            # 2. link the error callback to the body
+            # 3. return the error callback
+            # In summary, up to 4 lines of code + updating the method docstring.
             warnings.warn(
                 "task_allow_error_cb_on_chord_header=False is pending deprecation in "
                 "a future release of Celery.\n"

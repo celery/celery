@@ -29,10 +29,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', 'pypy-3.7', 'pypy-3.8']
+        python-version: ['3.7', '3.8', '3.9', '3.10', 'pypy-3.9', 'pypy-3.8']
         os: ["ubuntu-latest", "windows-latest"]
         exclude:
-            - python-version: 'pypy-3.7'
+            - python-version: 'pypy-3.9'
               os: "windows-latest"
             - python-version: 'pypy-3.8'
               os: "windows-latest"
@@ -120,7 +120,7 @@ jobs:
               run: |
                   echo "::set-output name=dir::$(pip cache dir)"
           -   name: Install tox
-              run: python -m pip install tox
+              run: python -m pip install --upgrade pip tox tox-gh-actions
           -   name: >
                   Run tox for
                   "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}"

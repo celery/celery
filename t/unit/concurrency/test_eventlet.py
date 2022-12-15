@@ -5,10 +5,10 @@ import pytest
 
 pytest.importorskip('eventlet')
 
-from greenlet import GreenletExit  # noqa
+from greenlet import GreenletExit
 
-import t.skip  # noqa
-from celery.concurrency.eventlet import TaskPool, Timer, apply_target  # noqa
+import t.skip
+from celery.concurrency.eventlet import TaskPool, Timer, apply_target
 
 eventlet_modules = (
     'eventlet',
