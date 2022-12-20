@@ -5,7 +5,7 @@
 ================
 
 This document contains change notes for bugfix & new features
-in the master branch & 5.2.x series, please see :ref:`whatsnew-5.2` for
+in the main branch & 5.2.x series, please see :ref:`whatsnew-5.2` for
 an overview of what's new in Celery 5.2.
 
 .. _version-5.3.0b1:

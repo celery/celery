@@ -21,9 +21,9 @@ To check an item on the list replace [ ] with [x].
   for similar or identical feature requests.
 - [ ] I have checked the [pull requests list](https://github.com/celery/celery/pulls?utf8=%E2%9C%93&q=is%3Apr+label%3A%22PR+Type%3A+Feature%22+)
   for existing proposed implementations of this feature.
-- [ ] I have checked the [commit log](https://github.com/celery/celery/commits/master)
+- [ ] I have checked the [commit log](https://github.com/celery/celery/commits/main)
   to find out if the same feature was already implemented in the
-  master branch.
+  main branch.
 - [ ] I have included all related issues and possible duplicate issues
   in this issue (If there are none, check this box anyway).
 

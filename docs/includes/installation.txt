@@ -155,11 +155,11 @@ pip commands:
 
 .. code-block:: console
 
-    $ pip install https://github.com/celery/celery/zipball/master#egg=celery
-    $ pip install https://github.com/celery/billiard/zipball/master#egg=billiard
-    $ pip install https://github.com/celery/py-amqp/zipball/master#egg=amqp
-    $ pip install https://github.com/celery/kombu/zipball/master#egg=kombu
-    $ pip install https://github.com/celery/vine/zipball/master#egg=vine
+    $ pip install https://github.com/celery/celery/zipball/main#egg=celery
+    $ pip install https://github.com/celery/billiard/zipball/main#egg=billiard
+    $ pip install https://github.com/celery/py-amqp/zipball/main#egg=amqp
+    $ pip install https://github.com/celery/kombu/zipball/main#egg=kombu
+    $ pip install https://github.com/celery/vine/zipball/main#egg=vine
 
 With git
 ~~~~~~~~

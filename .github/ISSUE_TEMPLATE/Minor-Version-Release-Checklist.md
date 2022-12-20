@@ -14,7 +14,7 @@ Release PR: <!-- Insert Release PR Here -->
 
 - [ ] Release PR drafted
 - [ ] Release PR reviewed
-- [ ] The master branch build passes
+- [ ] The main branch build passes
 
     [![Build Status](https://github.com/celery/celery/actions/workflows/python-package.yml/badge.svg)](https://github.com/celery/celery/actions/workflows/python-package.yml)
 - [ ] Release Notes
