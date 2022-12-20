@@ -151,7 +151,7 @@ concrete app instance:
 .. seealso::
 
     You can find the full source code for the Django example project at:
-    https://github.com/celery/celery/tree/master/examples/django/
+    https://github.com/celery/celery/tree/main/examples/django/
 
 Extensions
 ==========

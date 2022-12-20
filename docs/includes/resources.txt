@@ -53,7 +53,7 @@ Be sure to also read the `Contributing to Celery`_ section in the
 documentation.
 
 .. _`Contributing to Celery`:
-    https://docs.celeryq.dev/en/master/contributing.html
+    https://docs.celeryq.dev/en/main/contributing.html
 
 .. _license:
 
