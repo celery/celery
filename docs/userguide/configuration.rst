@@ -2453,7 +2453,7 @@ This option enables so that every worker has a dedicated queue,
 so that tasks can be routed to specific workers.
 
 The queue name for each worker is automatically generated based on
-the worker hostname and a ``.dq`` suffix, using the ``C.dq`` exchange.
+the worker hostname and a ``.dq`` suffix, using the ``C.dq2`` exchange.
 
 For example the queue name for the worker with node name ``w1@example.com``
 becomes::
@@ -2461,10 +2461,10 @@ becomes::
     w1@example.com.dq
 
 Then you can route the task to the worker by specifying the hostname
-as the routing key and the ``C.dq`` exchange::
+as the routing key and the ``C.dq2`` exchange::
 
     task_routes = {
-        'tasks.add': {'exchange': 'C.dq', 'routing_key': 'w1@example.com'}
+        'tasks.add': {'exchange': 'C.dq2', 'routing_key': 'w1@example.com'}
     }
 
 .. setting:: task_create_missing_queues
