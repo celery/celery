@@ -32,6 +32,7 @@ Use ``.. autotask::`` to alternatively manually document a task.
 """
 from inspect import signature
 
+from docutils import nodes
 from sphinx.domains.python import PyFunction
 from sphinx.ext.autodoc import FunctionDocumenter
 
@@ -75,7 +76,7 @@ class TaskDirective(PyFunction):
     """Sphinx task directive."""
 
     def get_signature_prefix(self, sig):
-        return self.env.config.celery_task_prefix
+        return [nodes.Text(self.env.config.celery_task_prefix)]
 
 
 def autodoc_skip_member_handler(app, what, name, obj, skip, options):
