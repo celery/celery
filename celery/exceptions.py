@@ -159,7 +159,8 @@ class Retry(TaskPredicate):
     exc: Optional[Exception] = None
     excs: Optional[str] = None
 
-    #: Time of retry (ETA)
+    #: Time of retry (ETA), either :class:`numbers.Number` or
+    #: :class:`~datetime.datetime`.
     when: Optional[Union[datetime, numbers.Number]] = None
 
     def __init__(self, message: Optional[str] = None, exc: Optional[Exception] = None,
