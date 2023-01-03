@@ -8,7 +8,7 @@ boto3>=1.9.178
 moto>=2.2.6
 # typing extensions
 mypy==0.991; platform_python_implementation=="CPython"
-pre-commit==2.20.0
+pre-commit==2.21.0
 -r extras/yaml.txt
 -r extras/msgpack.txt
 -r extras/mongodb.txt
