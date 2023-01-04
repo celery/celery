@@ -3345,5 +3345,5 @@ class test_stamping_visitor:
         sig.delay()
         assertion_result = True
         gid1 = sig.options['task_id']
-        sleep(1)
+        sleep(2)
         assert assertion_result, 'Group stamping is corrupted'
