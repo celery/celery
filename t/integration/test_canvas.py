@@ -3347,3 +3347,78 @@ class test_stamping_visitor:
         gid1 = sig.options['task_id']
         sleep(1)
         assert assertion_result, 'Group stamping is corrupted'
+
+    def test_linking_stamped_sig(self, manager):
+        """ Test that linking a callback after stamping will stamp the callback correctly"""
+
+        assertion_result = False
+
+        @task_received.connect
+        def task_received_handler(
+            sender=None,
+            request=None,
+            signal=None,
+            **kwargs
+        ):
+            nonlocal assertion_result
+            link = request._Request__payload[2]['callbacks'][0]
+            assertion_result = all([
+                stamped_header in link['options']
+                for stamped_header in link['options']['stamped_headers']
+            ])
+
+        class FixedMonitoringIdStampingVisitor(StampingVisitor):
+
+            def __init__(self, msg_id):
+                self.msg_id = msg_id
+
+            def on_signature(self, sig, **headers):
+                mtask_id = self.msg_id
+                return {"mtask_id": mtask_id}
+
+        link_sig = identity.si('link_sig')
+        stamped_pass_sig = identity.si('passing sig')
+        stamped_pass_sig.stamp(visitor=FixedMonitoringIdStampingVisitor(str(uuid.uuid4())))
+        stamped_pass_sig.link(link_sig)
+        # This causes the relevant stamping for this test case
+        # as it will stamp the link via the group stamping internally
+        stamped_pass_sig.apply_async().get(timeout=2)
+        assert assertion_result
+
+    def test_err_linking_stamped_sig(self, manager):
+        """ Test that linking an error after stamping will stamp the errlink correctly"""
+
+        assertion_result = False
+
+        @task_received.connect
+        def task_received_handler(
+            sender=None,
+            request=None,
+            signal=None,
+            **kwargs
+        ):
+            nonlocal assertion_result
+            link_error = request.errbacks[0]
+            assertion_result = all([
+                stamped_header in link_error['options']
+                for stamped_header in link_error['options']['stamped_headers']
+            ])
+
+        class FixedMonitoringIdStampingVisitor(StampingVisitor):
+
+            def __init__(self, msg_id):
+                self.msg_id = msg_id
+
+            def on_signature(self, sig, **headers):
+                mtask_id = self.msg_id
+                return {"mtask_id": mtask_id}
+
+        link_error_sig = identity.si('link_error')
+        stamped_fail_sig = fail.si()
+        stamped_fail_sig.stamp(visitor=FixedMonitoringIdStampingVisitor(str(uuid.uuid4())))
+        stamped_fail_sig.link_error(link_error_sig)
+        with pytest.raises(ExpectedException):
+            # This causes the relevant stamping for this test case
+            # as it will stamp the link via the group stamping internally
+            stamped_fail_sig.apply_async().get()
+        assert assertion_result

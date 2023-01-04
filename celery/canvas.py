@@ -622,6 +622,12 @@ class Signature(dict):
             headers.update(visitor_headers or {})
             link = maybe_signature(link, app=self.app)
             link.stamp(visitor=visitor, **headers)
+            # Stamping a link to a signature with previous stamps
+            # may result in missing stamps in the link options, if the linking
+            # was done AFTER the stamping of the signature
+            for stamp in link.options['stamped_headers']:
+                if stamp in self.options and stamp not in link.options:
+                    link.options[stamp] = self.options[stamp]
 
         # Stamp all of the errbacks of this signature
         headers = non_visitor_headers.copy()
@@ -632,6 +638,12 @@ class Signature(dict):
             headers.update(visitor_headers or {})
             link = maybe_signature(link, app=self.app)
             link.stamp(visitor=visitor, **headers)
+            # Stamping a link to a signature with previous stamps
+            # may result in missing stamps in the link options, if the linking
+            # was done AFTER the stamping of the signature
+            for stamp in link.options['stamped_headers']:
+                if stamp in self.options and stamp not in link.options:
+                    link.options[stamp] = self.options[stamp]
 
     def _with_list_option(self, key):
         """Gets the value at the given self.options[key] as a list.
