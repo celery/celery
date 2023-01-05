@@ -117,7 +117,7 @@ def _invoke_default_shell(locals):
 @handle_preload_options
 def shell(ctx, ipython=False, bpython=False,
           python=False, without_tasks=False, eventlet=False,
-          gevent=False):
+          gevent=False, **kwargs):
     """Start shell session with convenient access to celery symbols.
 
     The following symbols will be added to the main globals:
