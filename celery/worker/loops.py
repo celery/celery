@@ -96,7 +96,7 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
             try:
                 next(loop)
             except StopIteration:
-                loop = hub.create_loop()
+                break
     finally:
         try:
             hub.reset()
