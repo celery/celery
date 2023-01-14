@@ -81,28 +81,27 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     hub.propagate_errors = errors
     loop = hub.create_loop()
 
-    try:
-        while blueprint.state == RUN and obj.connection:
-            state.maybe_shutdown()
-            if heartbeat_error[0] is not None:
-                raise heartbeat_error[0]
+    while blueprint.state == RUN and obj.connection:
+        state.maybe_shutdown()
+        if heartbeat_error[0] is not None:
+            raise heartbeat_error[0]
 
-            # We only update QoS when there's no more messages to read.
-            # This groups together qos calls, and makes sure that remote
-            # control commands will be prioritized over task messages.
-            if qos.prev != qos.value:
-                update_qos()
+        # We only update QoS when there's no more messages to read.
+        # This groups together qos calls, and makes sure that remote
+        # control commands will be prioritized over task messages.
+        if qos.prev != qos.value:
+            update_qos()
 
-            try:
-                next(loop)
-            except StopIteration:
-                loop = hub.create_loop()
-    finally:
         try:
-            hub.reset()
-        except Exception as exc:  # pylint: disable=broad-except
-            logger.exception(
-                'Error cleaning up after event loop: %r', exc)
+            next(loop)
+        except StopIteration:
+            try:
+                hub.reset()
+            except Exception as exc:  # pylint: disable=broad-except
+                logger.exception(
+                    'Error cleaning up after event loop: %r', exc)
+            else:
+                loop = hub.create_loop()
 
 
 def synloop(obj, connection, consumer, blueprint, hub, qos,
