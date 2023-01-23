@@ -362,10 +362,10 @@ class test_trace(TraceCase):
         sig3.apply_async = Mock(name='gapply')
         request = {'callbacks': [sig1, sig3, sig2], 'root_id': 'root'}
 
-        def passt(s, *args, **kwargs):
+        def pass_value(s, *args, **kwargs):
             return s
 
-        maybe_signature.side_effect = passt
+        maybe_signature.side_effect = pass_value
         retval, _ = self.trace(self.add, (2, 2), {}, request=request)
         group_.assert_called_with((4,), parent_id='id-1', root_id='root', priority=None)
         sig3.apply_async.assert_called_with(
@@ -381,10 +381,10 @@ class test_trace(TraceCase):
         sig2.apply_async = Mock(name='gapply')
         request = {'callbacks': [sig1, sig2], 'root_id': 'root'}
 
-        def passt(s, *args, **kwargs):
+        def pass_value(s, *args, **kwargs):
             return s
 
-        maybe_signature.side_effect = passt
+        maybe_signature.side_effect = pass_value
         retval, _ = self.trace(self.add, (2, 2), {}, request=request)
         sig1.apply_async.assert_called_with(
             (4,), parent_id='id-1', root_id='root', priority=None

@@ -550,9 +550,9 @@ class test_ResultSet:
     def dummy_copy(self):
         with patch('celery.result.copy') as copy:
 
-            def passt(arg):
+            def pass_value(arg):
                 return arg
-            copy.side_effect = passt
+            copy.side_effect = pass_value
 
             yield
 
