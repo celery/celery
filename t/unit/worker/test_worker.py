@@ -220,8 +220,8 @@ class test_Consumer(ConsumerCase):
             Mock(), self.foo_task.name,
             args=(1, 2), kwargs='foobarbaz', id=1)
         c.update_strategies()
-        strat = c.strategies[self.foo_task.name] = Mock(name='strategy')
-        strat.side_effect = InvalidTaskError()
+        strategy = c.strategies[self.foo_task.name] = Mock(name='strategy')
+        strategy.side_effect = InvalidTaskError()
 
         callback = self._get_on_message(c)
         callback(m)
