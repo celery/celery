@@ -1104,7 +1104,7 @@ class _chain(Signature):
             app (Celery): The Celery app instance.
             last_task_id (str): The id of the last task in the chain.
             group_id (str): The id of the group that the chain is a part of.
-            chord_body (Signature): The body of the chord, used to syncronize with the chain's
+            chord_body (Signature): The body of the chord, used to synchronize with the chain's
                 last task and the chord's body when used together.
             clone (bool): Whether to clone the chain's tasks before modifying them.
             from_dict (Callable): A function that takes a dict and returns a Signature.

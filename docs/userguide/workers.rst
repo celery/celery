@@ -489,7 +489,7 @@ and each task that has a stamped header matching the key-value pair(s) will be r
 .. warning::
 
     This command may perform poorly if your worker pool concurrency is high
-    and terminate is enabled, since it will have to iterate over all the runnig
+    and terminate is enabled, since it will have to iterate over all the running
     tasks to find the ones with the specified stamped header.
 
 **Example**
