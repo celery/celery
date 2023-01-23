@@ -456,6 +456,46 @@ class test_Signature(CanvasCase):
             assert headers['on_errback'] is True
             assert headers['header'] == 'value'
 
+    @pytest.mark.parametrize('sig_to_replace', [
+        group(signature('sig1'), signature('sig2')),
+        chain(signature('sig1'), signature('sig2')),
+    ])
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_replacing_stamped_canvas_with_tasks(self, subtests, sig_to_replace):
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {'header': 'value'}
+
+        class MyTask(Task):
+            def on_replace(self, sig):
+                nonlocal assertion_result
+                nonlocal failed_task
+                tasks = sig.tasks.tasks if isinstance(sig.tasks, group) else sig.tasks
+                assertion_result = len(tasks) == 2
+                for task in tasks:
+                    assertion_result = all([
+                        'header' in task.options['stamped_headers'],
+                        all([header in task.options for header in task.options['stamped_headers']]),
+                        assertion_result
+                    ])
+                    if not assertion_result:
+                        failed_task = task
+                        break
+
+                return super().on_replace(sig)
+
+        @self.app.task(shared=False, bind=True, base=MyTask)
+        def replace_from_MyTask(self):
+            # Allows easy assertion for the test without using Mock
+            return self.replace(sig_to_replace)
+
+        sig = replace_from_MyTask.s()
+        sig.stamp(CustomStampingVisitor())
+        assertion_result = False
+        failed_task = None
+        sig.apply()
+        assert assertion_result, f"Task {failed_task} was not stamped correctly"
+
     def test_getitem_property_class(self):
         assert Signature.task
         assert Signature.args
