@@ -1,0 +1,4 @@
+[codespell]
+skip = .git,.venv,*.svg,package-lock.json,*.key
+# Some names and timezone (lower cased)
+ignore-words-list = gool,markey,sherif,wil,ist,fromm,brane,bu,nott

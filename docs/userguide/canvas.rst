@@ -1278,7 +1278,7 @@ visitor will be applied to the callback as well.
 
     The callback must be linked to the signature before stamping.
 
-For example, lets examine the following custome stamping visitor.
+For example, lets examine the following custom stamping visitor.
 
 .. code-block:: python
 

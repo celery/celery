@@ -70,12 +70,12 @@ class test_Consumer(ConsumerTestCase):
             assert self.app.conf.broker_connection_timeout is None
 
     def test_limit_moved_to_pool(self):
-        with patch('celery.worker.consumer.consumer.task_reserved') as reserv:
+        with patch('celery.worker.consumer.consumer.task_reserved') as task_reserved:
             c = self.get_consumer()
             c.on_task_request = Mock(name='on_task_request')
             request = Mock(name='request')
             c._limit_move_to_pool(request)
-            reserv.assert_called_with(request)
+            task_reserved.assert_called_with(request)
             c.on_task_request.assert_called_with(request)
 
     def test_update_prefetch_count(self):
@@ -185,11 +185,11 @@ class test_Consumer(ConsumerTestCase):
 
         with patch(
             'celery.worker.consumer.consumer.Consumer._limit_move_to_pool'
-        ) as reserv:
+        ) as task_reserved:
             bucket.contents.append((request, 3))
             c._schedule_bucket_request(bucket)
             bucket.can_consume.assert_called_with(3)
-            reserv.assert_called_with(request)
+            task_reserved.assert_called_with(request)
 
         bucket.can_consume.return_value = False
         bucket.contents = deque()
@@ -218,10 +218,10 @@ class test_Consumer(ConsumerTestCase):
 
         with patch(
             'celery.worker.consumer.consumer.Consumer._schedule_bucket_request'
-        ) as reserv:
+        ) as task_reserved:
             c._limit_task(request, bucket, 1)
             bucket.add.assert_called_with((request, 1))
-            reserv.assert_called_with(bucket)
+            task_reserved.assert_called_with(bucket)
 
     def test_post_eta(self):
         c = self.get_consumer()
@@ -231,11 +231,11 @@ class test_Consumer(ConsumerTestCase):
 
         with patch(
             'celery.worker.consumer.consumer.Consumer._schedule_bucket_request'
-        ) as reserv:
+        ) as task_reserved:
             c._limit_post_eta(request, bucket, 1)
             c.qos.decrement_eventually.assert_called_with()
             bucket.add.assert_called_with((request, 1))
-            reserv.assert_called_with(bucket)
+            task_reserved.assert_called_with(bucket)
 
     def test_max_restarts_exceeded(self):
         c = self.get_consumer()
