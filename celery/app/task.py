@@ -966,6 +966,14 @@ class Task:
             sig.options['stamped_headers'] = stamped_headers
             sig.options.update(stamps)
 
+            if hasattr(sig, "tasks"):
+                tasks = sig.tasks
+                if isinstance(tasks, group):
+                    tasks = tasks.tasks
+                for task in tasks:
+                    task.options['stamped_headers'] = stamped_headers
+                    task.options.update(stamps)
+
         return self.on_replace(sig)
 
     def add_to_chord(self, sig, lazy=False):
