@@ -8,7 +8,7 @@ from celery import signals
 
 from .base import BasePool, apply_target
 
-__all__ = ("TaskPool",)
+__all__ = ('TaskPool',)
 
 if TYPE_CHECKING:
     from typing import TypedDict
@@ -39,9 +39,9 @@ class TaskPool(BasePool):
 
     def _get_info(self) -> PoolInfo:
         return {
-            "max-concurrency": 1,
-            "processes": [os.getpid()],
-            "max-tasks-per-child": None,
-            "put-guarded-by-semaphore": True,
-            "timeouts": (),
+            'max-concurrency': 1,
+            'processes': [os.getpid()],
+            'max-tasks-per-child': None,
+            'put-guarded-by-semaphore': True,
+            'timeouts': (),
         }
