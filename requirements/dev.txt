@@ -1,4 +1,4 @@
-pytz>dev
+pytz
 git+https://github.com/celery/kombu.git
 git+https://github.com/celery/py-amqp.git
 git+https://github.com/celery/billiard.git
