@@ -474,9 +474,9 @@ class test_Signature(CanvasCase):
                 assertion_result = len(tasks) == 2
                 for task in tasks:
                     assertion_result = all([
+                        assertion_result,
                         'header' in task.options['stamped_headers'],
                         all([header in task.options for header in task.options['stamped_headers']]),
-                        assertion_result
                     ])
                     if not assertion_result:
                         failed_task = task
@@ -495,6 +495,76 @@ class test_Signature(CanvasCase):
         failed_task = None
         sig.apply()
         assert assertion_result, f"Task {failed_task} was not stamped correctly"
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_replacing_stamped_canvas_with_tasks_with_links(self):
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {'header': 'value'}
+
+        class MyTask(Task):
+            def on_replace(self, sig):
+                nonlocal assertion_result
+                nonlocal failed_task
+                nonlocal failed_task_link
+                tasks = sig.tasks.tasks if isinstance(sig.tasks, group) else sig.tasks
+                assertion_result = True
+                for task in tasks:
+                    links = task.options['link']
+                    links.extend(task.options['link_error'])
+                    for link in links:
+                        assertion_result = all([
+                            assertion_result,
+                            all([
+                                stamped_header in link['options']
+                                for stamped_header in link['options']['stamped_headers']
+                            ]),
+                        ])
+                    else:
+                        if not assertion_result:
+                            failed_task_link = link
+                            break
+
+                    assertion_result = all([
+                        assertion_result,
+                        task.options['stamped_headers']['header'] == 'value',
+                        all([
+                            header in task.options
+                            for header in task.options['stamped_headers']
+                        ]),
+                    ])
+
+                    if not assertion_result:
+                        failed_task = task
+                        break
+
+                return super().on_replace(sig)
+
+        @self.app.task(shared=False, bind=True, base=MyTask)
+        def replace_from_MyTask(self):
+            # Allows easy assertion for the test without using Mock
+            return self.replace(sig_to_replace)
+
+        s1 = chain(signature('foo11'), signature('foo12'))
+        s1.link(signature('link_foo1'))
+        s1.link_error(signature('link_error_foo1'))
+
+        s2 = chain(signature('foo21'), signature('foo22'))
+        s2.link(signature('link_foo2'))
+        s2.link_error(signature('link_error_foo2'))
+
+        sig_to_replace = group([s1, s2])
+        sig = replace_from_MyTask.s()
+        sig.stamp(CustomStampingVisitor())
+        assertion_result = False
+        failed_task = None
+        failed_task_link = None
+        sig.apply()
+
+        err_msg = f"Task {failed_task} was not stamped correctly" if failed_task else \
+            f"Task link {failed_task_link} was not stamped correctly" if failed_task_link else \
+            "Assertion failed"
+        assert assertion_result, err_msg
 
     def test_getitem_property_class(self):
         assert Signature.task
