@@ -34,3 +34,6 @@ pip-wheel-metadata/
 .python-version
 .vscode/
 integration-tests-config.json
+[0-9]*
+statefilename.*
+dump.rdb
