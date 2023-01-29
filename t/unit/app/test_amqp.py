@@ -206,7 +206,7 @@ class test_AMQP_proto1:
 
 
 class test_AMQP_Base:
-    def setup(self):
+    def setup_method(self):
         self.simple_message = self.app.amqp.as_task_v2(
             uuid(), 'foo', create_sent_event=True,
         )

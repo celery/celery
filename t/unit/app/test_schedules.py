@@ -25,8 +25,8 @@ def patch_crontab_nowfun(cls, retval):
 
 class test_solar:
 
-    def setup(self):
-        pytest.importorskip('ephem0')
+    def setup_method(self):
+        pytest.importorskip('ephem')
         self.s = solar('sunrise', 60, 30, app=self.app)
 
     def test_reduce(self):
@@ -475,7 +475,7 @@ class test_crontab_remaining_estimate:
 
 class test_crontab_is_due:
 
-    def setup(self):
+    def setup_method(self):
         self.now = self.app.now()
         self.next_minute = 60 - self.now.second - 1e-6 * self.now.microsecond
         self.every_minute = self.crontab()
@@ -800,3 +800,136 @@ class test_crontab_is_due:
             due, remaining = self.yearly.is_due(datetime(2009, 3, 12, 7, 30))
             assert not due
             assert remaining == 4 * 24 * 60 * 60 - 3 * 60 * 60
+
+    def test_execution_not_due_if_task_not_run_at_last_feasible_time_outside_deadline(
+            self):
+        """If the crontab schedule was added after the task was due, don't
+        immediately fire the task again"""
+        # could have feasibly been run on 12/5 at 7:30, but wasn't.
+        self.app.conf.beat_cron_starting_deadline = 3600
+        last_run = datetime(2022, 12, 4, 10, 30)
+        now = datetime(2022, 12, 5, 10, 30)
+        expected_next_execution_time = datetime(2022, 12, 6, 7, 30)
+        expected_remaining = (
+                    expected_next_execution_time - now).total_seconds()
+
+        # Run the daily (7:30) crontab with the current date
+        with patch_crontab_nowfun(self.daily, now):
+            due, remaining = self.daily.is_due(last_run)
+            assert remaining == expected_remaining
+            assert not due
+
+    def test_execution_not_due_if_task_not_run_at_last_feasible_time_no_deadline_set(
+            self):
+        """Same as above test except there's no deadline set, so it should be
+         due"""
+        last_run = datetime(2022, 12, 4, 10, 30)
+        now = datetime(2022, 12, 5, 10, 30)
+        expected_next_execution_time = datetime(2022, 12, 6, 7, 30)
+        expected_remaining = (
+                    expected_next_execution_time - now).total_seconds()
+
+        # Run the daily (7:30) crontab with the current date
+        with patch_crontab_nowfun(self.daily, now):
+            due, remaining = self.daily.is_due(last_run)
+            assert remaining == expected_remaining
+            assert due
+
+    def test_execution_due_if_task_not_run_at_last_feasible_time_within_deadline(
+            self):
+        # Could have feasibly been run on 12/5 at 7:30, but wasn't. We are
+        # still within a 1 hour deadline from the
+        # last feasible run, so the task should still be due.
+        self.app.conf.beat_cron_starting_deadline = 3600
+        last_run = datetime(2022, 12, 4, 10, 30)
+        now = datetime(2022, 12, 5, 8, 0)
+        expected_next_execution_time = datetime(2022, 12, 6, 7, 30)
+        expected_remaining = (
+                    expected_next_execution_time - now).total_seconds()
+
+        # run the daily (7:30) crontab with the current date
+        with patch_crontab_nowfun(self.daily, now):
+            due, remaining = self.daily.is_due(last_run)
+            assert remaining == expected_remaining
+            assert due
+
+    def test_execution_due_if_task_not_run_at_any_feasible_time_within_deadline(
+            self):
+        # Could have feasibly been run on 12/4 at 7:30, or 12/5 at 7:30,
+        # but wasn't. We are still within a 1 hour
+        # deadline from the last feasible run (12/5), so the task should
+        # still be due.
+        self.app.conf.beat_cron_starting_deadline = 3600
+        last_run = datetime(2022, 12, 3, 10, 30)
+        now = datetime(2022, 12, 5, 8, 0)
+        expected_next_execution_time = datetime(2022, 12, 6, 7, 30)
+        expected_remaining = (
+                    expected_next_execution_time - now).total_seconds()
+
+        # Run the daily (7:30) crontab with the current date
+        with patch_crontab_nowfun(self.daily, now):
+            due, remaining = self.daily.is_due(last_run)
+            assert remaining == expected_remaining
+            assert due
+
+    def test_execution_not_due_if_task_not_run_at_any_feasible_time_outside_deadline(
+            self):
+        """Verifies that remaining is still the time to the next
+        feasible run date even though the original feasible date
+        was passed over in favor of a newer one."""
+        # Could have feasibly been run on 12/4 or 12/5 at 7:30,
+        # but wasn't.
+        self.app.conf.beat_cron_starting_deadline = 3600
+        last_run = datetime(2022, 12, 3, 10, 30)
+        now = datetime(2022, 12, 5, 11, 0)
+        expected_next_execution_time = datetime(2022, 12, 6, 7, 30)
+        expected_remaining = (
+                    expected_next_execution_time - now).total_seconds()
+
+        # run the daily (7:30) crontab with the current date
+        with patch_crontab_nowfun(self.daily, now):
+            due, remaining = self.daily.is_due(last_run)
+            assert remaining == expected_remaining
+            assert not due
+
+    def test_execution_not_due_if_last_run_in_future(self):
+        # Should not run if the last_run hasn't happened yet.
+        last_run = datetime(2022, 12, 6, 7, 30)
+        now = datetime(2022, 12, 5, 10, 30)
+        expected_next_execution_time = datetime(2022, 12, 7, 7, 30)
+        expected_remaining = (
+                    expected_next_execution_time - now).total_seconds()
+
+        # Run the daily (7:30) crontab with the current date
+        with patch_crontab_nowfun(self.daily, now):
+            due, remaining = self.daily.is_due(last_run)
+            assert not due
+            assert remaining == expected_remaining
+
+    def test_execution_not_due_if_last_run_at_last_feasible_time(self):
+        # Last feasible time is 12/5 at 7:30
+        last_run = datetime(2022, 12, 5, 7, 30)
+        now = datetime(2022, 12, 5, 10, 30)
+        expected_next_execution_time = datetime(2022, 12, 6, 7, 30)
+        expected_remaining = (
+                    expected_next_execution_time - now).total_seconds()
+
+        # Run the daily (7:30) crontab with the current date
+        with patch_crontab_nowfun(self.daily, now):
+            due, remaining = self.daily.is_due(last_run)
+            assert remaining == expected_remaining
+            assert not due
+
+    def test_execution_not_due_if_last_run_past_last_feasible_time(self):
+        # Last feasible time is 12/5 at 7:30
+        last_run = datetime(2022, 12, 5, 8, 30)
+        now = datetime(2022, 12, 5, 10, 30)
+        expected_next_execution_time = datetime(2022, 12, 6, 7, 30)
+        expected_remaining = (
+                    expected_next_execution_time - now).total_seconds()
+
+        # Run the daily (7:30) crontab with the current date
+        with patch_crontab_nowfun(self.daily, now):
+            due, remaining = self.daily.is_due(last_run)
+            assert remaining == expected_remaining
+            assert not due

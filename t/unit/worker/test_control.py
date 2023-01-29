@@ -17,7 +17,7 @@ from celery.worker import consumer, control
 from celery.worker import state as worker_state
 from celery.worker.pidbox import Pidbox, gPidbox
 from celery.worker.request import Request
-from celery.worker.state import REVOKE_EXPIRES, revoked
+from celery.worker.state import REVOKE_EXPIRES, revoked, revoked_headers
 
 hostname = socket.gethostname()
 
@@ -116,7 +116,7 @@ class test_Pidbox_green:
 
 class test_ControlPanel:
 
-    def setup(self):
+    def setup_method(self):
         self.panel = self.create_panel(consumer=Consumer(self.app))
 
         @self.app.task(name='c.unittest.mytask', rate_limit=200, shared=False)
@@ -540,6 +540,24 @@ class test_ControlPanel:
             assert 'terminate:' in r['ok']
             # unknown task id only revokes
             r = control.revoke(state, uuid(), terminate=True)
+            assert 'tasks unknown' in r['ok']
+        finally:
+            worker_state.task_ready(request)
+
+    def test_revoke_by_stamped_headers_terminate(self):
+        request = Mock()
+        request.id = uuid()
+        request.options = stamped_header = {'stamp': 'foo'}
+        request.options['stamped_headers'] = ['stamp']
+        state = self.create_state()
+        state.consumer = Mock()
+        worker_state.task_reserved(request)
+        try:
+            r = control.revoke_by_stamped_headers(state, stamped_header, terminate=True)
+            assert stamped_header == revoked_headers
+            assert 'terminate:' in r['ok']
+            # unknown task id only revokes
+            r = control.revoke_by_stamped_headers(state, stamped_header, terminate=True)
             assert 'tasks unknown' in r['ok']
         finally:
             worker_state.task_ready(request)

@@ -2453,7 +2453,7 @@ This option enables so that every worker has a dedicated queue,
 so that tasks can be routed to specific workers.
 
 The queue name for each worker is automatically generated based on
-the worker hostname and a ``.dq`` suffix, using the ``C.dq`` exchange.
+the worker hostname and a ``.dq`` suffix, using the ``C.dq2`` exchange.
 
 For example the queue name for the worker with node name ``w1@example.com``
 becomes::
@@ -2461,10 +2461,10 @@ becomes::
     w1@example.com.dq
 
 Then you can route the task to the worker by specifying the hostname
-as the routing key and the ``C.dq`` exchange::
+as the routing key and the ``C.dq2`` exchange::
 
     task_routes = {
-        'tasks.add': {'exchange': 'C.dq', 'routing_key': 'w1@example.com'}
+        'tasks.add': {'exchange': 'C.dq2', 'routing_key': 'w1@example.com'}
     }
 
 .. setting:: task_create_missing_queues
@@ -2698,12 +2698,14 @@ certificate authority:
       'cert_reqs': ssl.CERT_REQUIRED
     }
 
-.. warning::
+.. versionadded:: 5.1
 
-    Be careful using ``broker_use_ssl=True``. It's possible that your default
-    configuration won't validate the server cert at all. Please read Python
-    `ssl module security
-    considerations <https://docs.python.org/3/library/ssl.html#ssl-security>`_.
+    Starting from Celery 5.1, py-amqp will always validate certificates received from the server
+    and it is no longer required to manually set ``cert_reqs`` to ``ssl.CERT_REQUIRED``.
+
+    The previous default, ``ssl.CERT_NONE`` is insecure and we its usage should be discouraged.
+    If you'd like to revert to the previous insecure default set ``cert_reqs`` to ``ssl.CERT_NONE``
+
 
 ``redis``
 _________
@@ -2803,6 +2805,19 @@ Maximum number of retries before we give up re-establishing a connection
 to the AMQP broker.
 
 If this is set to :const:`0` or :const:`None`, we'll retry forever.
+
+``broker_channel_error_retry``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.3
+
+Default: Disabled.
+
+Automatically try to re-establish the connection to the AMQP broker
+if any invalid response has been returned.
+
+The retry count and interval is the same as that of `broker_connection_retry`.
+Also, this option doesn't work when `broker_connection_retry` is `False`.
 
 .. setting:: broker_login_method
 
@@ -3493,3 +3508,16 @@ changes to the schedule into account.
 Also when running Celery beat embedded (:option:`-B <celery worker -B>`)
 on Jython as a thread the max interval is overridden and set to 1 so
 that it's possible to shut down in a timely manner.
+
+.. setting:: beat_cron_starting_deadline
+
+``beat_cron_starting_deadline``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.3
+
+Default: None.
+
+When using cron, the number of seconds :mod:`~celery.bin.beat` can look back
+when deciding whether a cron schedule is due. When set to `None`, cronjobs that
+are past due will always run immediately.

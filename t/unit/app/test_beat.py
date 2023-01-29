@@ -99,9 +99,9 @@ class test_ScheduleEntry:
         e1 = self.create_entry(schedule=timedelta(seconds=10))
         e2 = self.create_entry(schedule=timedelta(seconds=2))
         # order doesn't matter, see comment in __lt__
-        res1 = e1 < e2  # noqa
+        res1 = e1 < e2
         try:
-            res2 = e1 < object()  # noqa
+            res2 = e1 < object()
         except TypeError:
             pass
 
@@ -696,16 +696,19 @@ class test_PersistentScheduler:
                 'first_missed', 'first_missed',
                 last_run_at=now_func() - timedelta(minutes=2),
                 total_run_count=10,
+                app=self.app,
                 schedule=app_schedule['first_missed']['schedule']),
             'second_missed': beat.ScheduleEntry(
                 'second_missed', 'second_missed',
                 last_run_at=now_func() - timedelta(minutes=2),
                 total_run_count=10,
+                app=self.app,
                 schedule=app_schedule['second_missed']['schedule']),
             'non_missed': beat.ScheduleEntry(
                 'non_missed', 'non_missed',
                 last_run_at=now_func() - timedelta(minutes=2),
                 total_run_count=10,
+                app=self.app,
                 schedule=app_schedule['non_missed']['schedule']),
         }
 

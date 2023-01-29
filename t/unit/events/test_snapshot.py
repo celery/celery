@@ -19,7 +19,7 @@ timer = MockTimer()
 
 class test_Polaroid:
 
-    def setup(self):
+    def setup_method(self):
         self.state = self.app.events.State()
 
     def test_constructor(self):
@@ -101,7 +101,7 @@ class test_evcam:
         def Receiver(self, *args, **kwargs):
             return test_evcam.MockReceiver()
 
-    def setup(self):
+    def setup_method(self):
         self.app.events = self.MockEvents()
         self.app.events.app = self.app
 

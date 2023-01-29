@@ -78,6 +78,7 @@ NAMESPACES = Namespace(
         scheduler=Option('celery.beat:PersistentScheduler'),
         schedule_filename=Option('celerybeat-schedule'),
         sync_every=Option(0, type='int'),
+        cron_starting_deadline=Option(None, type=int)
     ),
     broker=Namespace(
         url=Option(None, type='string'),
@@ -89,6 +90,7 @@ NAMESPACES = Namespace(
         connection_retry=Option(True, type='bool'),
         connection_retry_on_startup=Option(None, type='bool'),
         connection_max_retries=Option(100, type='int'),
+        channel_error_retry=Option(False, type='bool'),
         failover_strategy=Option(None, type='string'),
         heartbeat=Option(120, type='int'),
         heartbeat_checkrate=Option(3.0, type='int'),

@@ -33,7 +33,7 @@ from .case import SecurityCase
 
 class test_security(SecurityCase):
 
-    def teardown(self):
+    def teardown_method(self):
         registry._disabled_content_types.clear()
         registry._set_default_serializer('json')
         try:

@@ -31,7 +31,7 @@ Installing the RabbitMQ Server
 See `Installing RabbitMQ`_ over at RabbitMQ's website. For macOS
 see `Installing RabbitMQ on macOS`_.
 
-.. _`Installing RabbitMQ`: http://www.rabbitmq.com/install.html
+.. _`Downloading and Installing RabbitMQ`: https://www.rabbitmq.com/download.html
 
 .. note::
 
@@ -69,9 +69,9 @@ Substitute in appropriate values for ``myuser``, ``mypassword`` and ``myvhost`` 
 
 See the RabbitMQ `Admin Guide`_ for more information about `access control`_.
 
-.. _`Admin Guide`: http://www.rabbitmq.com/admin-guide.html
+.. _`Admin Guide`: https://www.rabbitmq.com/admin-guide.html
 
-.. _`access control`: http://www.rabbitmq.com/admin-guide.html#access-control
+.. _`access control`: https://www.rabbitmq.com/access-control.html
 
 .. _rabbitmq-macOS-installation:
 

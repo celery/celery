@@ -19,6 +19,7 @@ def reset_state():
     yield
     state.active_requests.clear()
     state.revoked.clear()
+    state.revoked_headers.clear()
     state.total_count.clear()
 
 
@@ -44,7 +45,7 @@ class MyPersistent(state.Persistent):
 
 class test_maybe_shutdown:
 
-    def teardown(self):
+    def teardown_method(self):
         state.should_stop = None
         state.should_terminate = None
 

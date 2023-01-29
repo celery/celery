@@ -40,7 +40,9 @@ __all__ = (
 
 
 def maybe_unroll_group(group):
-    """Unroll group with only one member."""
+    """Unroll group with only one member.
+    This allows treating a group of a single task as if it
+    was a single task without pre-knowledge."""
     # Issue #1656
     try:
         size = len(group.tasks)
@@ -60,11 +62,29 @@ def task_name_from(task):
 
 
 def _stamp_regen_task(task, visitor, **headers):
+    """When stamping a sequence of tasks created by a generator,
+    we use this function to stamp each task in the generator
+    without exhausting it."""
+
     task.stamp(visitor=visitor, **headers)
     return task
 
 
 def _merge_dictionaries(d1, d2):
+    """Merge two dictionaries recursively into the first one.
+
+    Example:
+    >>> d1 = {'dict': {'a': 1}, 'list': [1, 2], 'tuple': (1, 2)}
+    >>> d2 = {'dict': {'b': 2}, 'list': [3, 4], 'set': {'a', 'b'}}
+    >>> _merge_dictionaries(d1, d2)
+
+    d1 will be modified to: {
+        'dict': {'a': 1, 'b': 2},
+        'list': [1, 2, 3, 4],
+        'tuple': (1, 2),
+        'set': {'a', 'b'}
+    }
+    """
     for key, value in d1.items():
         if key in d2:
             if isinstance(value, dict):
@@ -72,7 +92,7 @@ def _merge_dictionaries(d1, d2):
             else:
                 if isinstance(value, (int, float, str)):
                     d1[key] = [value]
-                if isinstance(d2[key], list):
+                if isinstance(d2[key], list) and d1[key] is not None:
                     d1[key].extend(d2[key])
                 else:
                     if d1[key] is None:
@@ -141,7 +161,6 @@ class StampingVisitor(metaclass=ABCMeta):
          Returns:
              Dict: headers to update.
          """
-        pass
 
     def on_chord_header_start(self, chord, **header) -> dict:
         """Method that is called on сhord header stamping start.
@@ -174,6 +193,28 @@ class StampingVisitor(metaclass=ABCMeta):
          Returns:
              Dict: headers to update.
         """
+        return {}
+
+    def on_callback(self, callback, **header) -> dict:
+        """Method that is called on callback stamping.
+
+         Arguments:
+             callback (Signature): callback that is stamped.
+             headers (Dict): Partial headers that could be merged with existing headers.
+         Returns:
+             Dict: headers to update.
+         """
+        return {}
+
+    def on_errback(self, errback, **header) -> dict:
+        """Method that is called on errback stamping.
+
+         Arguments:
+             errback (Signature): errback that is stamped.
+             headers (Dict): Partial headers that could be merged with existing headers.
+         Returns:
+             Dict: headers to update.
+         """
         return {}
 
 
@@ -269,6 +310,12 @@ class Signature(dict):
 
     @classmethod
     def register_type(cls, name=None):
+        """Register a new type of signature.
+        Used as a class decorator, for example:
+        >>> @Signature.register_type()
+        >>> class mysig(Signature):
+        >>>     pass
+        """
         def _inner(subclass):
             cls.TYPES[name or subclass.__name__] = subclass
             return subclass
@@ -277,6 +324,10 @@ class Signature(dict):
 
     @classmethod
     def from_dict(cls, d, app=None):
+        """Create a new signature from a dict.
+        Subclasses can override this method to customize how are
+        they created from a dict.
+        """
         typ = d.get('subtask_type')
         if typ:
             target_cls = cls.TYPES[typ]
@@ -371,6 +422,24 @@ class Signature(dict):
         return _apply(args, kwargs, **options)
 
     def _merge(self, args=None, kwargs=None, options=None, force=False):
+        """Merge partial args/kwargs/options with existing ones.
+
+        If the signature is immutable and ``force`` is False, the existing
+        args/kwargs will be returned as-is and only the options will be merged.
+
+        Stamped headers are considered immutable and will not be merged regardless.
+
+        Arguments:
+            args (Tuple): Partial args to be prepended to the existing args.
+            kwargs (Dict): Partial kwargs to be merged with existing kwargs.
+            options (Dict): Partial options to be merged with existing options.
+            force (bool): If True, the args/kwargs will be merged even if the signature is
+                immutable. The stamped headers are not affected by this option and will not
+                be merged regardless.
+
+        Returns:
+            Tuple: (args, kwargs, options)
+        """
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
         if options is not None:
@@ -381,6 +450,7 @@ class Signature(dict):
             immutable_options = self._IMMUTABLE_OPTIONS
             if "stamped_headers" in self.options:
                 immutable_options = self._IMMUTABLE_OPTIONS.union(set(self.options["stamped_headers"]))
+            # merge self.options with options without overriding stamped headers from self.options
             new_options = {**self.options, **{
                 k: v for k, v in options.items()
                 if k not in immutable_options or k not in self.options
@@ -428,6 +498,18 @@ class Signature(dict):
         The task won't be called and you shouldn't call the signature
         twice after freezing it as that'll result in two task messages
         using the same task id.
+
+        The arguments are used to override the signature's headers during
+        freezing.
+
+        Arguments:
+            _id (str): Task id to use if it didn't already have one.
+                New UUID is generated if not provided.
+            group_id (str): Group id to use if it didn't already have one.
+            chord (Signature): Chord body when freezing a chord header.
+            root_id (str): Root id to use.
+            parent_id (str): Parent id to use.
+            group_index (int): Group index to use.
 
         Returns:
             ~@AsyncResult: promise of future evaluation.
@@ -499,27 +581,99 @@ class Signature(dict):
             visitor (StampingVisitor): Visitor API object.
             headers (Dict): Stamps that should be added to headers.
         """
+        self.stamp_links(visitor, **headers)
+
         headers = headers.copy()
         if visitor is not None:
-            headers.update(visitor.on_signature(self, **headers))
+            visitor_headers = visitor.on_signature(self, **headers)
+            if "stamped_headers" not in visitor_headers:
+                visitor_headers["stamped_headers"] = list(visitor_headers.keys())
+            _merge_dictionaries(headers, visitor_headers)
         else:
             headers["stamped_headers"] = [header for header in headers.keys() if header not in self.options]
             _merge_dictionaries(headers, self.options)
+
+        # Preserve previous stamped headers
+        stamped_headers = set(self.options.get("stamped_headers", []))
+        stamped_headers.update(headers["stamped_headers"])
+        headers["stamped_headers"] = list(stamped_headers)
         return self.set(**headers)
 
+    def stamp_links(self, visitor, **headers):
+        """Stamp this signature links (callbacks and errbacks).
+        Using a visitor will pass on responsibility for the stamping
+        to the visitor.
+
+        Arguments:
+            visitor (StampingVisitor): Visitor API object.
+            headers (Dict): Stamps that should be added to headers.
+        """
+        if not visitor:
+            return
+
+        non_visitor_headers = headers.copy()
+
+        # Stamp all of the callbacks of this signature
+        headers = non_visitor_headers.copy()
+        for link in self.options.get('link', []) or []:
+            visitor_headers = visitor.on_callback(link, **headers)
+            if visitor_headers and "stamped_headers" not in visitor_headers:
+                visitor_headers["stamped_headers"] = list(visitor_headers.keys())
+            headers.update(visitor_headers or {})
+            link = maybe_signature(link, app=self.app)
+            link.stamp(visitor=visitor, **headers)
+            # Stamping a link to a signature with previous stamps
+            # may result in missing stamps in the link options, if the linking
+            # was done AFTER the stamping of the signature
+            for stamp in link.options['stamped_headers']:
+                if stamp in self.options and stamp not in link.options:
+                    link.options[stamp] = self.options[stamp]
+
+        # Stamp all of the errbacks of this signature
+        headers = non_visitor_headers.copy()
+        for link in self.options.get('link_error', []) or []:
+            visitor_headers = visitor.on_errback(link, **headers)
+            if visitor_headers and "stamped_headers" not in visitor_headers:
+                visitor_headers["stamped_headers"] = list(visitor_headers.keys())
+            headers.update(visitor_headers or {})
+            link = maybe_signature(link, app=self.app)
+            link.stamp(visitor=visitor, **headers)
+            # Stamping a link to a signature with previous stamps
+            # may result in missing stamps in the link options, if the linking
+            # was done AFTER the stamping of the signature
+            for stamp in link.options['stamped_headers']:
+                if stamp in self.options and stamp not in link.options:
+                    link.options[stamp] = self.options[stamp]
+
     def _with_list_option(self, key):
+        """Gets the value at the given self.options[key] as a list.
+
+        If the value is not a list, it will be converted to one and saved in self.options.
+        If the key does not exist, an empty list will be set and returned instead.
+
+        Arguments:
+            key (str): The key to get the value for.
+
+        Returns:
+            List: The value at the given key as a list or an empty list if the key does not exist.
+        """
         items = self.options.setdefault(key, [])
         if not isinstance(items, MutableSequence):
             items = self.options[key] = [items]
         return items
 
     def append_to_list_option(self, key, value):
+        """Appends the given value to the list at the given key in self.options."""
         items = self._with_list_option(key)
         if value not in items:
             items.append(value)
         return value
 
     def extend_list_option(self, key, value):
+        """Extends the list at the given key in self.options with the given value.
+
+        If the value is not a list, it will be converted to one.
+        """
         items = self._with_list_option(key)
         items.extend(maybe_list(value))
 
@@ -566,6 +720,14 @@ class Signature(dict):
         )))
 
     def __or__(self, other):
+        """Chaining operator.
+
+        Example:
+            >>> add.s(2, 2) | add.s(4) | add.s(8)
+
+        Returns:
+            chain: Constructs a :class:`~celery.canvas.chain` of the given signatures.
+        """
         if isinstance(other, _chain):
             # task | chain -> chain
             return _chain(seq_concat_seq(
@@ -599,6 +761,16 @@ class Signature(dict):
             return type.AsyncResult(tid)
 
     def reprcall(self, *args, **kwargs):
+        """Return a string representation of the signature.
+
+        Merges the given arguments with the signature's arguments
+        only for the purpose of generating the string representation.
+        The signature itself is not modified.
+
+        Example:
+            >>> add.s(2, 2).reprcall()
+            'add(2, 2)'
+        """
         args, kwargs, _ = self._merge(args, kwargs, {}, force=True)
         return reprcall(self['task'], args, kwargs)
 
@@ -755,6 +927,10 @@ class _chain(Signature):
             if not tasks:
                 # If the chain is empty, return the group
                 return other
+            if isinstance(tasks[-1], chord):
+                # CHAIN [last item is chord] | GROUP -> chain with chord body.
+                tasks[-1].body = tasks[-1].body | other
+                return type(self)(tasks, app=self.app)
             # use type(self) for _chain subclasses
             return type(self)(seq_concat_item(
                 tasks, other), app=self._app)
@@ -793,9 +969,19 @@ class _chain(Signature):
         return signature
 
     def unchain_tasks(self):
+        """Return a list of tasks in the chain.
+
+        The tasks list would be cloned from the chain's tasks.
+        All of the chain callbacks would be added to the last task in the (cloned) chain.
+        All of the tasks would be linked to the same error callback
+        as the chain itself, to ensure that the correct error callback is called
+        if any of the (cloned) tasks of the chain fail.
+        """
         # Clone chain's tasks assigning signatures from link_error
-        # to each task
+        # to each task and adding the chain's links to the last task.
         tasks = [t.clone() for t in self.tasks]
+        for sig in self.options.get('link', []):
+            tasks[-1].link(sig)
         for sig in self.options.get('link_error', []):
             for task in tasks:
                 task.link_error(sig)
@@ -817,6 +1003,12 @@ class _chain(Signature):
             task_id=None, link=None, link_error=None, publisher=None,
             producer=None, root_id=None, parent_id=None, app=None,
             group_index=None, **options):
+        """Executes the chain.
+
+        Responsible for executing the chain in the correct order.
+        In a case of a chain of a single task, the task is executed directly
+        and the result is returned for that task specifically.
+        """
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
         args = args if args else ()
@@ -828,6 +1020,7 @@ class _chain(Signature):
         args = (tuple(args) + tuple(self.args)
                 if args and not self.immutable else self.args)
 
+        # Unpack nested chains/groups/chords
         tasks, results_from_prepare = self.prepare_steps(
             args, kwargs, self.tasks, root_id, parent_id, link_error, app,
             task_id, group_id, chord, group_index=group_index,
@@ -835,11 +1028,15 @@ class _chain(Signature):
 
         groups = self.options.get("groups")
         stamped_headers = self.options.get("stamped_headers")
-        self.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
+        visitor = GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers)
+        self.stamp(visitor=visitor)
 
+        # For a chain of single task, execute the task directly and return the result for that task
+        # For a chain of multiple tasks, execute all of the tasks and return the AsyncResult for the chain
         if results_from_prepare:
             if link:
                 tasks[0].extend_list_option('link', link)
+                tasks[0].stamp_links(visitor=visitor)
             first_task = tasks.pop()
             options = _prepare_chain_from_options(options, tasks, use_link)
 
@@ -883,6 +1080,38 @@ class _chain(Signature):
                       last_task_id=None, group_id=None, chord_body=None,
                       clone=True, from_dict=Signature.from_dict,
                       group_index=None):
+        """Prepare the chain for execution.
+
+        To execute a chain, we first need to unpack it correctly.
+        During the unpacking, we might encounter other chains, groups, or chords
+        which we need to unpack as well.
+
+        For example:
+        chain(signature1, chain(signature2, signature3)) --> Upgrades to chain(signature1, signature2, signature3)
+        chain(group(signature1, signature2), signature3) --> Upgrades to chord([signature1, signature2], signature3)
+
+        The responsibility of this method is to ensure that the chain is
+        correctly unpacked, and then the correct callbacks are set up along the way.
+
+        Arguments:
+            args (Tuple): Partial args to be prepended to the existing args.
+            kwargs (Dict): Partial kwargs to be merged with existing kwargs.
+            tasks (List[Signature]): The tasks of the chain.
+            root_id (str): The id of the root task.
+            parent_id (str): The id of the parent task.
+            link_error (Union[List[Signature], Signature]): The error callback.
+                will be set for all tasks in the chain.
+            app (Celery): The Celery app instance.
+            last_task_id (str): The id of the last task in the chain.
+            group_id (str): The id of the group that the chain is a part of.
+            chord_body (Signature): The body of the chord, used to synchronize with the chain's
+                last task and the chord's body when used together.
+            clone (bool): Whether to clone the chain's tasks before modifying them.
+            from_dict (Callable): A function that takes a dict and returns a Signature.
+
+        Returns:
+            Tuple[List[Signature], List[AsyncResult]]: The frozen tasks of the chain, and the async results
+        """
         app = app or self.app
         # use chain message field for protocol 2 and later.
         # this avoids pickle blowing the stack on the recursion
@@ -1237,6 +1466,50 @@ class group(Signature):
 
     @classmethod
     def from_dict(cls, d, app=None):
+        """Create a group signature from a dictionary that represents a group.
+
+        Example:
+            >>> group_dict = {
+                "task": "celery.group",
+                "args": [],
+                "kwargs": {
+                    "tasks": [
+                        {
+                            "task": "add",
+                            "args": [
+                                1,
+                                2
+                            ],
+                            "kwargs": {},
+                            "options": {},
+                            "subtask_type": None,
+                            "immutable": False
+                        },
+                        {
+                            "task": "add",
+                            "args": [
+                                3,
+                                4
+                            ],
+                            "kwargs": {},
+                            "options": {},
+                            "subtask_type": None,
+                            "immutable": False
+                        }
+                    ]
+                },
+                "options": {},
+                "subtask_type": "group",
+                "immutable": False
+            }
+            >>> group_sig = group.from_dict(group_dict)
+
+        Iterates over the given tasks in the dictionary and convert them to signatures.
+        Tasks needs to be defined in d['kwargs']['tasks'] as a sequence
+        of tasks.
+
+        The tasks themselves can be dictionaries or signatures (or both).
+        """
         # We need to mutate the `kwargs` element in place to avoid confusing
         # `freeze()` implementations which end up here and expect to be able to
         # access elements from that dictionary later and refer to objects
@@ -1255,6 +1528,8 @@ class group(Signature):
             if isinstance(tasks, abstract.CallableSignature):
                 tasks = [tasks.clone()]
             if not isinstance(tasks, _regen):
+                # May potentially cause slow downs when using a
+                # generator of many tasks - Issue #6973
                 tasks = regen(tasks)
         super().__init__('celery.group', (), {'tasks': tasks}, **options
                          )
@@ -1268,6 +1543,7 @@ class group(Signature):
         return chord(self, body=other, app=self._app)
 
     def skew(self, start=1.0, stop=None, step=1.0):
+        # TODO: Not sure if this is still used anywhere (besides its own tests). Consider removing.
         it = fxrange(start, stop, step, repeatlast=True)
         for task in self.tasks:
             task.set(countdown=next(it))
@@ -1380,6 +1656,32 @@ class group(Signature):
                   CallableSignature=abstract.CallableSignature,
                   from_dict=Signature.from_dict,
                   isinstance=isinstance, tuple=tuple):
+        """Recursively unroll the group into a generator of its tasks.
+
+        This is used by :meth:`apply_async` and :meth:`apply` to
+        unroll the group into a list of tasks that can be evaluated.
+
+        Note:
+            This does not change the group itself, it only returns
+            a generator of the tasks that the group would evaluate to.
+
+        Arguments:
+            tasks (list): List of tasks in the group (may contain nested groups).
+            partial_args (list): List of arguments to be prepended to
+                the arguments of each task.
+            group_id (str): The group id of the group.
+            root_id (str): The root id of the group.
+            app (Celery): The Celery app instance.
+            CallableSignature (class): The signature class of the group's tasks.
+            from_dict (fun): Function to create a signature from a dict.
+            isinstance (fun): Function to check if an object is an instance
+                of a class.
+            tuple (class): A tuple-like class.
+
+        Returns:
+            generator: A generator for the unrolled group tasks.
+                The generator yields tuples of the form ``(task, AsyncResult, group_id)``.
+        """
         for task in tasks:
             if isinstance(task, CallableSignature):
                 # local sigs are always of type Signature, and we
@@ -1402,6 +1704,25 @@ class group(Signature):
     def _apply_tasks(self, tasks, producer=None, app=None, p=None,
                      add_to_parent=None, chord=None,
                      args=None, kwargs=None, **options):
+        """Run all the tasks in the group.
+
+        This is used by :meth:`apply_async` to run all the tasks in the group
+        and return a generator of their results.
+
+        Arguments:
+            tasks (list): List of tasks in the group.
+            producer (Producer): The producer to use to publish the tasks.
+            app (Celery): The Celery app instance.
+            p (barrier): Barrier object to synchronize the tasks results.
+            args (list): List of arguments to be prepended to
+                the arguments of each task.
+            kwargs (dict): Dict of keyword arguments to be merged with
+                the keyword arguments of each task.
+            **options (dict): Options to be merged with the options of each task.
+
+        Returns:
+            generator: A generator for the AsyncResult of the tasks in the group.
+        """
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
         app = app or self.app
@@ -1445,6 +1766,7 @@ class group(Signature):
                 yield res  # <-- r.parent, etc set in the frozen result.
 
     def _freeze_gid(self, options):
+        """Freeze the group id by the existing task_id or a new UUID."""
         # remove task_id and use that as the group_id,
         # if we don't remove it then every task will have the same id...
         options = {**self.options, **{
@@ -1457,6 +1779,15 @@ class group(Signature):
 
     def _freeze_group_tasks(self, _id=None, group_id=None, chord=None,
                             root_id=None, parent_id=None, group_index=None):
+        """Freeze the tasks in the group.
+
+        Note:
+            If the group tasks are created from a generator, the tasks generator would
+            not be exhausted, and the tasks would be frozen lazily.
+
+        Returns:
+            tuple: A tuple of the group id, and the AsyncResult of each of the group tasks.
+        """
         # pylint: disable=redefined-outer-name
         #  XXX chord is also a class in outer scope.
         opts = self.options
@@ -1473,15 +1804,16 @@ class group(Signature):
         root_id = opts.setdefault('root_id', root_id)
         parent_id = opts.setdefault('parent_id', parent_id)
         if isinstance(self.tasks, _regen):
-            # We are draining from a generator here.
-            # tasks1, tasks2 are each a clone of self.tasks
+            # When the group tasks are a generator, we need to make sure we don't
+            # exhaust it during the freeze process. We use two generators to do this.
+            # One generator will be used to freeze the tasks to get their AsyncResult.
+            # The second generator will be used to replace the tasks in the group with an unexhausted state.
+
+            # Create two new generators from the original generator of the group tasks (cloning the tasks).
             tasks1, tasks2 = itertools.tee(self._unroll_tasks(self.tasks))
-            # freeze each task in tasks1, results now holds AsyncResult for each task
+            # Use the first generator to freeze the group tasks to acquire the AsyncResult for each task.
             results = regen(self._freeze_tasks(tasks1, group_id, chord, root_id, parent_id))
-            # TODO figure out why this makes sense -
-            # we freeze all tasks in the clone tasks1, and then zip the results
-            # with the IDs of tasks in the second clone, tasks2. and then, we build
-            # a generator that takes only the task IDs from tasks2.
+            # Use the second generator to replace the exhausted generator of the group tasks.
             self.tasks = regen(tasks2)
         else:
             new_tasks = []
@@ -1506,6 +1838,7 @@ class group(Signature):
     _freeze = freeze
 
     def _freeze_tasks(self, tasks, group_id, chord, root_id, parent_id):
+        """Creates a generator for the AsyncResult of each task in the tasks argument."""
         yield from (task.freeze(group_id=group_id,
                                 chord=chord,
                                 root_id=root_id,
@@ -1514,10 +1847,29 @@ class group(Signature):
                     for group_index, task in enumerate(tasks))
 
     def _unroll_tasks(self, tasks):
+        """Creates a generator for the cloned tasks of the tasks argument."""
         # should be refactored to: (maybe_signature(task, app=self._app, clone=True) for task in tasks)
         yield from (maybe_signature(task, app=self._app).clone() for task in tasks)
 
     def _freeze_unroll(self, new_tasks, group_id, chord, root_id, parent_id):
+        """Generator for the frozen flattened group tasks.
+
+        Creates a flattened list of the tasks in the group, and freezes
+        each task in the group. Nested groups will be recursively flattened.
+
+        Exhausting the generator will create a new list of the flattened
+        tasks in the group and will return it in the new_tasks argument.
+
+        Arguments:
+            new_tasks (list): The list to append the flattened tasks to.
+            group_id (str): The group_id to use for the tasks.
+            chord (Chord): The chord to use for the tasks.
+            root_id (str): The root_id to use for the tasks.
+            parent_id (str): The parent_id to use for the tasks.
+
+        Yields:
+            AsyncResult: The frozen task.
+        """
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
         stack = deque(self.tasks)
@@ -1586,6 +1938,60 @@ class _chord(Signature):
 
     @classmethod
     def from_dict(cls, d, app=None):
+        """Create a chord signature from a dictionary that represents a chord.
+
+        Example:
+            >>> chord_dict = {
+                "task": "celery.chord",
+                "args": [],
+                "kwargs": {
+                    "kwargs": {},
+                    "header": [
+                        {
+                            "task": "add",
+                            "args": [
+                                1,
+                                2
+                            ],
+                            "kwargs": {},
+                            "options": {},
+                            "subtask_type": None,
+                            "immutable": False
+                        },
+                        {
+                            "task": "add",
+                            "args": [
+                                3,
+                                4
+                            ],
+                            "kwargs": {},
+                            "options": {},
+                            "subtask_type": None,
+                            "immutable": False
+                        }
+                    ],
+                    "body": {
+                        "task": "xsum",
+                        "args": [],
+                        "kwargs": {},
+                        "options": {},
+                        "subtask_type": None,
+                        "immutable": False
+                    }
+                },
+                "options": {},
+                "subtask_type": "chord",
+                "immutable": False
+            }
+            >>> chord_sig = chord.from_dict(chord_dict)
+
+        Iterates over the given tasks in the dictionary and convert them to signatures.
+        Chord header needs to be defined in d['kwargs']['header'] as a sequence
+        of tasks.
+        Chord body needs to be defined in d['kwargs']['body'] as a single task.
+
+        The tasks themselves can be dictionaries or signatures (or both).
+        """
         options = d.copy()
         args, options['kwargs'] = cls._unpack_args(**options['kwargs'])
         return cls(*args, app=app, **options)
@@ -1613,6 +2019,13 @@ class _chord(Signature):
         if (not isinstance(other, (group, _chain)) and
                 isinstance(other, Signature)):
             # chord | task ->  attach to body
+            sig = self.clone()
+            sig.body = sig.body | other
+            return sig
+        elif isinstance(other, group) and len(other.tasks) == 1:
+            # chord | group -> chain with chord body.
+            # unroll group with one member
+            other = maybe_unroll_group(other)
             sig = self.clone()
             sig.body = sig.body | other
             return sig
@@ -1653,13 +2066,13 @@ class _chord(Signature):
         return body_result
 
     def stamp(self, visitor=None, **headers):
-        if visitor is not None:
-            headers.update(visitor.on_chord_header_start(self, **headers))
-        super().stamp(visitor=visitor, **headers)
-
         tasks = self.tasks
         if isinstance(tasks, group):
             tasks = tasks.tasks
+
+        if visitor is not None:
+            headers.update(visitor.on_chord_header_start(self, **headers))
+        super().stamp(visitor=visitor, **headers)
 
         if isinstance(tasks, _regen):
             tasks.map(_partial(_stamp_regen_task, visitor=visitor, **headers))
@@ -1723,6 +2136,10 @@ class _chord(Signature):
 
     @classmethod
     def _descend(cls, sig_obj):
+        """Count the number of tasks in the given signature recursively.
+
+        Descend into the signature object and return the amount of tasks it contains.
+        """
         # Sometimes serialized signatures might make their way here
         if not isinstance(sig_obj, Signature) and isinstance(sig_obj, dict):
             sig_obj = Signature.from_dict(sig_obj)
@@ -1749,18 +2166,43 @@ class _chord(Signature):
         return len(sig_obj)
 
     def __length_hint__(self):
+        """Return the number of tasks in this chord's header (recursively)."""
         tasks = getattr(self.tasks, "tasks", self.tasks)
         return sum(self._descend(task) for task in tasks)
 
     def run(self, header, body, partial_args, app=None, interval=None,
             countdown=1, max_retries=None, eager=False,
             task_id=None, kwargs=None, **options):
+        """Execute the chord.
+
+        Executing the chord means executing the header and sending the
+        result to the body. In case of an empty header, the body is
+        executed immediately.
+
+        Arguments:
+            header (group): The header to execute.
+            body (Signature): The body to execute.
+            partial_args (tuple): Arguments to pass to the header.
+            app (Celery): The Celery app instance.
+            interval (float): The interval between retries.
+            countdown (int): The countdown between retries.
+            max_retries (int): The maximum number of retries.
+            task_id (str): The task id to use for the body.
+            kwargs (dict): Keyword arguments to pass to the header.
+            options (dict): Options to pass to the header.
+
+        Returns:
+            AsyncResult: The result of the body (with the result of the header in the parent of the body).
+        """
         app = app or self._get_app(body)
         group_id = header.options.get('task_id') or uuid()
         root_id = body.options.get('root_id')
         options = dict(self.options, **options) if options else self.options
         if options:
             options.pop('task_id', None)
+            stamped_headers = set(body.options.get("stamped_headers", []))
+            stamped_headers.update(options["stamped_headers"])
+            options["stamped_headers"] = list(stamped_headers)
             body.options.update(options)
 
         bodyres = body.freeze(task_id, root_id=root_id)
@@ -1803,18 +2245,28 @@ class _chord(Signature):
         return signature
 
     def link(self, callback):
+        """Links a callback to the chord body only."""
         self.body.link(callback)
         return callback
 
     def link_error(self, errback):
+        """Links an error callback to the chord body, and potentially the header as well.
+
+        Note:
+            The ``task_allow_error_cb_on_chord_header`` setting controls whether
+            error callbacks are allowed on the header. If this setting is
+            ``False`` (the current default), then the error callback will only be
+            applied to the body.
+        """
         if self.app.conf.task_allow_error_cb_on_chord_header:
-            # self.tasks can be a list of the chord header workflow.
-            if isinstance(self.tasks, (list, tuple)):
-                for task in self.tasks:
-                    task.link_error(errback)
-            else:
-                self.tasks.link_error(errback)
+            for task in self.tasks:
+                task.link_error(errback)
         else:
+            # Once this warning is removed, the whole method needs to be refactored to:
+            # 1. link the error callback to each task in the header
+            # 2. link the error callback to the body
+            # 3. return the error callback
+            # In summary, up to 4 lines of code + updating the method docstring.
             warnings.warn(
                 "task_allow_error_cb_on_chord_header=False is pending deprecation in "
                 "a future release of Celery.\n"
@@ -1828,7 +2280,14 @@ class _chord(Signature):
         return errback
 
     def set_immutable(self, immutable):
-        # changes mutability of header only, not callback.
+        """Sets the immutable flag on the chord header only.
+
+        Note:
+            Does not affect the chord body.
+
+        Arguments:
+            immutable (bool): The new mutability value for chord header.
+        """
         for task in self.tasks:
             task.set_immutable(immutable)
 

@@ -26,7 +26,7 @@ from celery.worker.state import revoked
 
 class RequestCase:
 
-    def setup(self):
+    def setup_method(self):
         self.app.conf.result_serializer = 'pickle'
 
         @self.app.task(shared=False)
@@ -155,7 +155,7 @@ class test_trace_task(RequestCase):
             self.app, uuid(), self.mytask_raising.name, {}, [4], {},
         )
         assert isinstance(ret, ExceptionInfo)
-        assert ret.exception.exc.args == (4,)
+        assert ret.exception.args == (4,)
 
     def test_execute_task_ignore_result(self):
         @self.app.task(shared=False, ignore_result=True)
@@ -1173,11 +1173,11 @@ class test_Request(RequestCase):
 
 class test_create_request_class(RequestCase):
 
-    def setup(self):
+    def setup_method(self):
         self.task = Mock(name='task')
         self.pool = Mock(name='pool')
         self.eventer = Mock(name='eventer')
-        super().setup()
+        super().setup_method()
 
     def create_request_cls(self, **kwargs):
         return create_request_cls(

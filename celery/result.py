@@ -161,6 +161,30 @@ class AsyncResult(ResultBase):
                                 terminate=terminate, signal=signal,
                                 reply=wait, timeout=timeout)
 
+    def revoke_by_stamped_headers(self, headers, connection=None, terminate=False, signal=None,
+                                  wait=False, timeout=None):
+        """Send revoke signal to all workers only for tasks with matching headers values.
+
+        Any worker receiving the task, or having reserved the
+        task, *must* ignore it.
+        All header fields *must* match.
+
+        Arguments:
+            headers (dict[str, Union(str, list)]): Headers to match when revoking tasks.
+            terminate (bool): Also terminate the process currently working
+                on the task (if any).
+            signal (str): Name of signal to send to process if terminate.
+                Default is TERM.
+            wait (bool): Wait for replies from workers.
+                The ``timeout`` argument specifies the seconds to wait.
+                Disabled by default.
+            timeout (float): Time in seconds to wait for replies when
+                ``wait`` is enabled.
+        """
+        self.app.control.revoke_by_stamped_headers(headers, connection=connection,
+                                                   terminate=terminate, signal=signal,
+                                                   reply=wait, timeout=timeout)
+
     def get(self, timeout=None, propagate=True, interval=0.5,
             no_ack=True, follow_parents=True, callback=None, on_message=None,
             on_interval=None, disable_sync_subtasks=True,
@@ -627,8 +651,11 @@ class ResultSet(ResultBase):
     def completed_count(self):
         """Task completion count.
 
+        Note that `complete` means `successful` in this context. In other words, the
+        return value of this method is the number of ``successful`` tasks.
+
         Returns:
-            int: the number of tasks completed.
+            int: the number of complete (i.e. successful) tasks.
         """
         return sum(int(result.successful()) for result in self.results)
 

@@ -291,13 +291,13 @@ Branches
 
 Current active version branches:
 
-* dev (which git calls "master") (https://github.com/celery/celery/tree/master)
+* dev (which git calls "main") (https://github.com/celery/celery/tree/main)
 * 4.5 (https://github.com/celery/celery/tree/v4.5)
 * 3.1 (https://github.com/celery/celery/tree/3.1)
 
 You can see the state of any branch by looking at the Changelog:
 
-    https://github.com/celery/celery/blob/master/Changelog.rst
+    https://github.com/celery/celery/blob/main/Changelog.rst
 
 If the branch is in active development the topmost version info should
 contain meta-data like:
@@ -308,7 +308,7 @@ contain meta-data like:
     ======
     :release-date: TBA
     :status: DEVELOPMENT
-    :branch: dev (git calls this master)
+    :branch: dev (git calls this main)
 
 The ``status`` field can be one of:
 
@@ -330,7 +330,7 @@ The ``status`` field can be one of:
 dev branch
 ----------
 
-The dev branch (called "master" by git), is where development of the next
+The dev branch (called "main" by git), is where development of the next
 version happens.
 
 Maintenance branches
@@ -430,19 +430,19 @@ always use the ``--rebase`` option to ``git pull``:
 
 .. code-block:: console
 
-    git pull --rebase upstream master
+    git pull --rebase upstream main
 
 With this option, you don't clutter the history with merging
 commit notes. See `Rebasing merge commits in git`_.
 If you want to learn more about rebasing, see the `Rebase`_
 section in the GitHub guides.
 
-If you need to work on a different branch than the one git calls ``master``, you can
+If you need to work on a different branch than the one git calls ``main``, you can
 fetch and checkout a remote branch like this::
 
     git checkout --track -b 5.0-devel upstream/5.0-devel
 
-**Note:** Any feature or fix branch should be created from ``upstream/master``.
+**Note:** Any feature or fix branch should be created from ``upstream/main``.
 
 .. _`Fork a Repo`: https://help.github.com/fork-a-repo/
 .. _`Rebasing merge commits in git`:
@@ -953,8 +953,8 @@ Here is a summary of such statuses:
 
 - **Status: Needs Rebase**
 
-  The PR has not been rebased with ``master``. It is very important to rebase
-  PRs before they can be merged to ``master`` to solve any merge conflicts.
+  The PR has not been rebased with ``main``. It is very important to rebase
+  PRs before they can be merged to ``main`` to solve any merge conflicts.
 
 - **Status: Needs Test Coverage**
 

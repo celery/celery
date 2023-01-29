@@ -61,7 +61,9 @@ class TaskPool(BasePool):
         return ApplyResult(f)
 
     def _get_info(self) -> PoolInfo:
-        return {
+        info = super()._get_info()
+        info.update({
             'max-concurrency': self.limit,
             'threads': len(self.executor._threads)
-        }
+        })
+        return info

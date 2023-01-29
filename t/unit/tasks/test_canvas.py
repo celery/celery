@@ -3,11 +3,14 @@ import math
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
-import pytest_subtests  # noqa: F401
+import pytest_subtests
 
+from celery import Task
 from celery._state import _task_stack
-from celery.canvas import (Signature, _chain, _maybe_group, chain, chord, chunks, group, maybe_signature,
-                           maybe_unroll_group, signature, xmap, xstarmap)
+from celery.canvas import (GroupStampingVisitor, Signature, StampingVisitor, _chain, _maybe_group,
+                           _merge_dictionaries, chain, chord, chunks, group, maybe_signature, maybe_unroll_group,
+                           signature, xmap, xstarmap)
+from celery.exceptions import Ignore
 from celery.result import AsyncResult, EagerResult, GroupResult
 
 SIG = Signature({
@@ -21,6 +24,11 @@ try:
     from collections.abc import Iterable
 except ImportError:
     from collections.abc import Iterable
+
+
+def return_True(*args, **kwargs):
+    # Task run functions can't be closures/lambdas, as they're pickled.
+    return True
 
 
 class test_maybe_unroll_group:
@@ -37,7 +45,7 @@ class test_maybe_unroll_group:
 
 class CanvasCase:
 
-    def setup(self):
+    def setup_method(self):
         @self.app.task(shared=False)
         def add(x, y):
             return x + y
@@ -130,6 +138,20 @@ class chunks_subclass(chunks):
 
 
 class test_Signature(CanvasCase):
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_on_signature_gets_the_signature(self):
+        expected_sig = self.add.s(4, 2)
+
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, actual_sig, **headers) -> dict:
+                nonlocal expected_sig
+                assert actual_sig == expected_sig
+                return {'header': 'value'}
+
+        sig = expected_sig.clone()
+        sig.stamp(CustomStampingVisitor())
+        assert sig.options['header'] == 'value'
+
     def test_double_stamping(self, subtests):
         """
         Test manual signature stamping with two different stamps.
@@ -151,7 +173,7 @@ class test_Signature(CanvasCase):
             assert sig_1_res._get_task_meta()["stamp2"] == ["stamp2"]
 
         with subtests.test("sig_1_res is stamped twice", stamped_headers=["stamp2", "stamp1"]):
-            assert sig_1_res._get_task_meta()["stamped_headers"] == ["stamp2", "stamp1", "groups"]
+            assert sorted(sig_1_res._get_task_meta()["stamped_headers"]) == sorted(["stamp2", "stamp1", "groups"])
 
     def test_twice_stamping(self, subtests):
         """
@@ -168,12 +190,11 @@ class test_Signature(CanvasCase):
         sig_1.apply()
 
         with subtests.test("sig_1_res is stamped twice", stamps=["stamp2", "stamp1"]):
-            assert sig_1_res._get_task_meta()["stamp"] == ["stamp2", "stamp1"]
+            assert sorted(sig_1_res._get_task_meta()["stamp"]) == sorted(["stamp2", "stamp1"])
 
         with subtests.test("sig_1_res is stamped twice", stamped_headers=["stamp2", "stamp1"]):
-            assert sig_1_res._get_task_meta()["stamped_headers"] == ["stamp", "groups"]
+            assert sorted(sig_1_res._get_task_meta()["stamped_headers"]) == sorted(["stamp", "groups"])
 
-    @pytest.mark.usefixtures('depends_on_current_app')
     def test_manual_stamping(self):
         """
         Test manual signature stamping.
@@ -188,7 +209,252 @@ class test_Signature(CanvasCase):
         sig_1.stamp(visitor=None, groups=stamps[0])
         sig_1_res = sig_1.freeze()
         sig_1.apply()
-        assert sig_1_res._get_task_meta()['groups'] == stamps
+        assert sorted(sig_1_res._get_task_meta()['groups']) == sorted(stamps)
+
+    def test_custom_stamping_visitor(self, subtests):
+        """
+        Test manual signature stamping with a custom visitor class.
+        """
+        self.app.conf.task_always_eager = True
+        self.app.conf.task_store_eager_result = True
+        self.app.conf.result_extended = True
+
+        class CustomStampingVisitor1(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                # without using stamped_headers key explicitly
+                # the key will be calculated from the headers implicitly
+                return {'header': 'value'}
+
+        class CustomStampingVisitor2(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {'header': 'value', 'stamped_headers': ['header']}
+
+        sig_1 = self.add.s(2, 2)
+        sig_1.stamp(visitor=CustomStampingVisitor1())
+        sig_1_res = sig_1.freeze()
+        sig_1.apply()
+        sig_2 = self.add.s(2, 2)
+        sig_2.stamp(visitor=CustomStampingVisitor2())
+        sig_2_res = sig_2.freeze()
+        sig_2.apply()
+
+        with subtests.test("sig_1 is stamped with custom visitor", stamped_headers=["header", "groups"]):
+            assert sorted(sig_1_res._get_task_meta()["stamped_headers"]) == sorted(["header", "groups"])
+
+        with subtests.test("sig_2 is stamped with custom visitor", stamped_headers=["header", "groups"]):
+            assert sorted(sig_2_res._get_task_meta()["stamped_headers"]) == sorted(["header", "groups"])
+
+        with subtests.test("sig_1 is stamped with custom visitor", header=["value"]):
+            assert sig_1_res._get_task_meta()["header"] == ["value"]
+
+        with subtests.test("sig_2 is stamped with custom visitor", header=["value"]):
+            assert sig_2_res._get_task_meta()["header"] == ["value"]
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_callback_stamping(self, subtests):
+        self.app.conf.task_always_eager = True
+        self.app.conf.task_store_eager_result = True
+        self.app.conf.result_extended = True
+
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {'header': 'value'}
+
+            def on_callback(self, callback, **header) -> dict:
+                return {'on_callback': True}
+
+            def on_errback(self, errback, **header) -> dict:
+                return {'on_errback': True}
+
+        sig_1 = self.add.s(0, 1)
+        sig_1_res = sig_1.freeze()
+        group_sig = group([self.add.s(3), self.add.s(4)])
+        group_sig_res = group_sig.freeze()
+        chord_sig = chord([self.xsum.s(), self.xsum.s()], self.xsum.s())
+        chord_sig_res = chord_sig.freeze()
+        sig_2 = self.add.s(2)
+        sig_2_res = sig_2.freeze()
+        chain_sig = chain(
+            sig_1,      # --> 1
+            group_sig,  # --> [1+3, 1+4] --> [4, 5]
+            chord_sig,  # --> [4+5, 4+5] --> [9, 9] --> 9+9 --> 18
+            sig_2       # --> 18 + 2 --> 20
+        )
+        callback = signature('callback_task')
+        errback = signature('errback_task')
+        chain_sig.link(callback)
+        chain_sig.link_error(errback)
+        chain_sig.stamp(visitor=CustomStampingVisitor())
+        chain_sig_res = chain_sig.apply_async()
+        chain_sig_res.get()
+
+        with subtests.test("Confirm the chain was executed correctly", result=20):
+            # Before we run our assersions, let's confirm the base functionality of the chain is working
+            # as expected including the links stamping.
+            assert chain_sig_res.result == 20
+
+        with subtests.test("sig_1 is stamped with custom visitor", stamped_headers=["header", "groups"]):
+            assert sorted(sig_1_res._get_task_meta()["stamped_headers"]) == sorted(["header", "groups"])
+
+        with subtests.test("group_sig is stamped with custom visitor", stamped_headers=["header", "groups"]):
+            for result in group_sig_res.results:
+                assert sorted(result._get_task_meta()["stamped_headers"]) == sorted(["header", "groups"])
+
+        with subtests.test("chord_sig is stamped with custom visitor", stamped_headers=["header", "groups"]):
+            assert sorted(chord_sig_res._get_task_meta()["stamped_headers"]) == sorted(["header", "groups"])
+
+        with subtests.test("sig_2 is stamped with custom visitor", stamped_headers=["header", "groups"]):
+            assert sorted(sig_2_res._get_task_meta()["stamped_headers"]) == sorted(["header", "groups"])
+
+        with subtests.test("callback is stamped with custom visitor",
+                           stamped_headers=["header", "groups, on_callback"]):
+            callback_link = chain_sig.options['link'][0]
+            headers = callback_link.options
+            stamped_headers = headers['stamped_headers']
+            assert sorted(stamped_headers) == sorted(["header", "groups", "on_callback"])
+            assert headers['on_callback'] is True
+            assert headers['header'] == 'value'
+
+        with subtests.test("errback is stamped with custom visitor",
+                           stamped_headers=["header", "groups, on_errback"]):
+            errback_link = chain_sig.options['link_error'][0]
+            headers = errback_link.options
+            stamped_headers = headers['stamped_headers']
+            assert sorted(stamped_headers) == sorted(["header", "groups", "on_errback"])
+            assert headers['on_errback'] is True
+            assert headers['header'] == 'value'
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_callback_stamping_link_after_stamp(self, subtests):
+        self.app.conf.task_always_eager = True
+        self.app.conf.task_store_eager_result = True
+        self.app.conf.result_extended = True
+
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {'header': 'value'}
+
+            def on_callback(self, callback, **header) -> dict:
+                return {'on_callback': True}
+
+            def on_errback(self, errback, **header) -> dict:
+                return {'on_errback': True}
+
+        sig_1 = self.add.s(0, 1)
+        sig_1_res = sig_1.freeze()
+        group_sig = group([self.add.s(3), self.add.s(4)])
+        group_sig_res = group_sig.freeze()
+        chord_sig = chord([self.xsum.s(), self.xsum.s()], self.xsum.s())
+        chord_sig_res = chord_sig.freeze()
+        sig_2 = self.add.s(2)
+        sig_2_res = sig_2.freeze()
+        chain_sig = chain(
+            sig_1,      # --> 1
+            group_sig,  # --> [1+3, 1+4] --> [4, 5]
+            chord_sig,  # --> [4+5, 4+5] --> [9, 9] --> 9+9 --> 18
+            sig_2       # --> 18 + 2 --> 20
+        )
+        callback = signature('callback_task')
+        errback = signature('errback_task')
+        chain_sig.stamp(visitor=CustomStampingVisitor())
+        chain_sig.link(callback)
+        chain_sig.link_error(errback)
+        chain_sig_res = chain_sig.apply_async()
+        chain_sig_res.get()
+
+        with subtests.test("Confirm the chain was executed correctly", result=20):
+            # Before we run our assersions, let's confirm the base functionality of the chain is working
+            # as expected including the links stamping.
+            assert chain_sig_res.result == 20
+
+        with subtests.test("sig_1 is stamped with custom visitor", stamped_headers=["header", "groups"]):
+            assert sorted(sig_1_res._get_task_meta()["stamped_headers"]) == sorted(["header", "groups"])
+
+        with subtests.test("group_sig is stamped with custom visitor", stamped_headers=["header", "groups"]):
+            for result in group_sig_res.results:
+                assert sorted(result._get_task_meta()["stamped_headers"]) == sorted(["header", "groups"])
+
+        with subtests.test("chord_sig is stamped with custom visitor", stamped_headers=["header", "groups"]):
+            assert sorted(chord_sig_res._get_task_meta()["stamped_headers"]) == sorted(["header", "groups"])
+
+        with subtests.test("sig_2 is stamped with custom visitor", stamped_headers=["header", "groups"]):
+            assert sorted(sig_2_res._get_task_meta()["stamped_headers"]) == sorted(["header", "groups"])
+
+        with subtests.test("callback is stamped with custom visitor",
+                           stamped_headers=["header", "groups, on_callback"]):
+            callback_link = chain_sig.options['link'][0]
+            headers = callback_link.options
+            stamped_headers = headers['stamped_headers']
+            assert 'on_callback' not in stamped_headers, "Linking after stamping should not stamp the callback"
+            assert sorted(stamped_headers) == sorted(["header", "groups"])
+            assert headers['header'] == 'value'
+
+        with subtests.test("errback is stamped with custom visitor",
+                           stamped_headers=["header", "groups, on_errback"]):
+            errback_link = chain_sig.options['link_error'][0]
+            headers = errback_link.options
+            stamped_headers = headers['stamped_headers']
+            assert 'on_callback' not in stamped_headers, "Linking after stamping should not stamp the errback"
+            assert sorted(stamped_headers) == sorted(["header", "groups"])
+            assert headers['header'] == 'value'
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_callback_stamping_on_replace(self, subtests):
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {'header': 'value'}
+
+            def on_callback(self, callback, **header) -> dict:
+                return {'on_callback': True}
+
+            def on_errback(self, errback, **header) -> dict:
+                return {'on_errback': True}
+
+        class MyTask(Task):
+            def on_replace(self, sig):
+                sig.stamp(CustomStampingVisitor())
+                return super().on_replace(sig)
+
+        mytask = self.app.task(shared=False, base=MyTask)(return_True)
+
+        sig1 = signature('sig1')
+        callback = signature('callback_task')
+        errback = signature('errback_task')
+        sig1.link(callback)
+        sig1.link_error(errback)
+
+        with subtests.test("callback is not stamped with custom visitor yet"):
+            callback_link = sig1.options['link'][0]
+            headers = callback_link.options
+            assert 'on_callback' not in headers
+            assert 'header' not in headers
+
+        with subtests.test("errback is not stamped with custom visitor yet"):
+            errback_link = sig1.options['link_error'][0]
+            headers = errback_link.options
+            assert 'on_errback' not in headers
+            assert 'header' not in headers
+
+        with pytest.raises(Ignore):
+            mytask.replace(sig1)
+
+        with subtests.test("callback is stamped with custom visitor",
+                           stamped_headers=["header", "groups, on_callback"]):
+            callback_link = sig1.options['link'][0]
+            headers = callback_link.options
+            stamped_headers = headers['stamped_headers']
+            assert sorted(stamped_headers) == sorted(["header", "groups", "on_callback"])
+            assert headers['on_callback'] is True
+            assert headers['header'] == 'value'
+
+        with subtests.test("errback is stamped with custom visitor",
+                           stamped_headers=["header", "groups, on_errback"]):
+            errback_link = sig1.options['link_error'][0]
+            headers = errback_link.options
+            stamped_headers = headers['stamped_headers']
+            assert sorted(stamped_headers) == sorted(["header", "groups", "on_errback"])
+            assert headers['on_errback'] is True
+            assert headers['header'] == 'value'
 
     def test_getitem_property_class(self):
         assert Signature.task
@@ -263,7 +529,7 @@ class test_Signature(CanvasCase):
         tasks[1].link(tasks[2])
         assert tasks[0].flatten_links() == tasks
 
-    def test_OR(self):
+    def test_OR(self, subtests):
         x = self.add.s(2, 2) | self.mul.s(4)
         assert isinstance(x, _chain)
         y = self.add.s(4, 4) | self.div.s(2)
@@ -276,6 +542,10 @@ class test_Signature(CanvasCase):
         ax = self.add.s(2, 2) | (self.add.s(4) | self.add.s(8))
         assert isinstance(ax, _chain)
         assert len(ax.tasks), 3 == 'consolidates chain to chain'
+
+        with subtests.test('Test chaining with a non-signature object'):
+            with pytest.raises(TypeError):
+                assert signature('foo') | None
 
     def test_INVERT(self):
         x = self.add.s(2, 2)
@@ -385,6 +655,32 @@ class test_Signature(CanvasCase):
         assert not z.tasks[1].options.get('link_error')
         assert SIG in x.options['link_error']
         assert not x.tasks[0].options.get('link_error')
+
+    def test_signature_on_error_adds_error_callback(self):
+        sig = signature('sig').on_error(signature('on_error'))
+        assert sig.options['link_error'] == [signature('on_error')]
+
+    @pytest.mark.parametrize('_id, group_id, chord, root_id, parent_id, group_index', [
+        ('_id', 'group_id', 'chord', 'root_id', 'parent_id', 1),
+    ])
+    def test_freezing_args_set_in_options(self, _id, group_id, chord, root_id, parent_id, group_index):
+        sig = self.add.s(1, 1)
+        sig.freeze(
+            _id=_id,
+            group_id=group_id,
+            chord=chord,
+            root_id=root_id,
+            parent_id=parent_id,
+            group_index=group_index,
+        )
+        options = sig.options
+
+        assert options['task_id'] == _id
+        assert options['group_id'] == group_id
+        assert options['chord'] == chord
+        assert options['root_id'] == root_id
+        assert options['parent_id'] == parent_id
+        assert options['group_index'] == group_index
 
 
 class test_xmap_xstarmap(CanvasCase):
@@ -576,6 +872,22 @@ class test_chain(CanvasCase):
             ['x0y0', 'x1y1', 'foo', 'z']
         ]
 
+    def test_chain_of_chord__or__group_of_single_task(self):
+        c = chord([signature('header')], signature('body'))
+        c = chain(c)
+        g = group(signature('t'))
+        new_chain = c | g  # g should be chained with the body of c[0]
+        assert isinstance(new_chain, _chain)
+        assert isinstance(new_chain.tasks[0].body, _chain)
+
+    def test_chain_of_chord_upgrade_on_chaining(self):
+        c = chord([signature('header')], group(signature('body')))
+        c = chain(c)
+        t = signature('t')
+        new_chain = c | t  # t should be chained with the body of c[0] and create a new chord
+        assert isinstance(new_chain, _chain)
+        assert isinstance(new_chain.tasks[0].body, chord)
+
     def test_apply_options(self):
 
         class static(Signature):
@@ -597,11 +909,15 @@ class test_chain(CanvasCase):
         assert c.tasks[-1].options['chord'] == 'some_chord_id'
 
         c.apply_async(link=[s(32)])
-        assert c.tasks[-1].options['link'] == [s(32)]
+        expected_sig = s(32)
+        expected_sig.stamp(visitor=GroupStampingVisitor())
+        assert c.tasks[-1].options['link'] == [expected_sig]
 
         c.apply_async(link_error=[s('error')])
+        expected_sig = s('error')
+        expected_sig.stamp(visitor=GroupStampingVisitor())
         for task in c.tasks:
-            assert task.options['link_error'] == [s('error')]
+            assert task.options['link_error'] == [expected_sig]
 
     def test_apply_options_none(self):
         class static(Signature):
@@ -770,6 +1086,30 @@ class test_chain(CanvasCase):
         mock_apply.assert_called_once_with(chain=[])
         assert res is mock_apply.return_value
 
+    def test_chain_flattening_keep_links_of_inner_chain(self):
+        def link_chain(sig):
+            sig.link(signature('link_b'))
+            sig.link_error(signature('link_ab'))
+            return sig
+
+        inner_chain = link_chain(chain(signature('a'), signature('b')))
+        assert inner_chain.options['link'][0] == signature('link_b')
+        assert inner_chain.options['link_error'][0] == signature('link_ab')
+        assert inner_chain.tasks[0] == signature('a')
+        assert inner_chain.tasks[0].options == {}
+        assert inner_chain.tasks[1] == signature('b')
+        assert inner_chain.tasks[1].options == {}
+
+        flat_chain = chain(inner_chain, signature('c'))
+        assert flat_chain.options == {}
+        assert flat_chain.tasks[0].name == 'a'
+        assert 'link' not in flat_chain.tasks[0].options
+        assert signature(flat_chain.tasks[0].options['link_error'][0]) == signature('link_ab')
+        assert flat_chain.tasks[1].name == 'b'
+        assert 'link' in flat_chain.tasks[1].options, "b is missing the link from inner_chain.options['link'][0]"
+        assert signature(flat_chain.tasks[1].options['link'][0]) == signature('link_b')
+        assert signature(flat_chain.tasks[1].options['link_error'][0]) == signature('link_ab')
+
 
 class test_group(CanvasCase):
     def test_group_stamping_one_level(self, subtests):
@@ -804,10 +1144,10 @@ class test_group(CanvasCase):
             assert sig_2_res._get_task_meta()['stamp'] == ["stamp"]
 
         with subtests.test("sig_1_res has stamped_headers", stamped_headers=["stamp", 'groups']):
-            assert sig_1_res._get_task_meta()['stamped_headers'] == ['stamp', 'groups']
+            assert sorted(sig_1_res._get_task_meta()['stamped_headers']) == sorted(['stamp', 'groups'])
 
         with subtests.test("sig_2_res has stamped_headers", stamped_headers=["stamp"]):
-            assert sig_2_res._get_task_meta()['stamped_headers'] == ['stamp', 'groups']
+            assert sorted(sig_2_res._get_task_meta()['stamped_headers']) == sorted(['stamp', 'groups'])
 
     def test_group_stamping_two_levels(self, subtests):
         """
@@ -854,11 +1194,11 @@ class test_group(CanvasCase):
         with subtests.test("sig_2_res is stamped", groups=[g1_res.id]):
             assert sig_2_res._get_task_meta()['groups'] == [g1_res.id]
         with subtests.test("first_nested_sig_res is stamped", groups=[g1_res.id, g2_res.id]):
-            assert first_nested_sig_res._get_task_meta()['groups'] == \
-                [g1_res.id, g2_res.id]
+            assert sorted(first_nested_sig_res._get_task_meta()['groups']) == \
+                sorted([g1_res.id, g2_res.id])
         with subtests.test("second_nested_sig_res is stamped", groups=[g1_res.id, g2_res.id]):
-            assert second_nested_sig_res._get_task_meta()['groups'] == \
-                [g1_res.id, g2_res.id]
+            assert sorted(second_nested_sig_res._get_task_meta()['groups']) == \
+                sorted([g1_res.id, g2_res.id])
 
     def test_group_stamping_with_replace(self, subtests):
         """
@@ -988,17 +1328,17 @@ class test_group(CanvasCase):
         with subtests.test("sig_in_g1_2_res is stamped", groups=[g1_res.id]):
             assert sig_in_g1_2_res._get_task_meta()['groups'] == [g1_res.id]
         with subtests.test("sig_in_g2_res is stamped", groups=[g1_res.id, g2_res.id]):
-            assert sig_in_g2_res._get_task_meta()['groups'] == \
-                [g1_res.id, g2_res.id]
+            assert sorted(sig_in_g2_res._get_task_meta()['groups']) == \
+                sorted([g1_res.id, g2_res.id])
         with subtests.test("sig_in_g2_chain_res is stamped", groups=[g1_res.id, g2_res.id]):
-            assert sig_in_g2_chain_res._get_task_meta()['groups'] == \
-                [g1_res.id, g2_res.id]
+            assert sorted(sig_in_g2_chain_res._get_task_meta()['groups']) == \
+                sorted([g1_res.id, g2_res.id])
         with subtests.test("sig_in_g3_1_res is stamped", groups=[g1_res.id, g2_res.id, g3_res.id]):
-            assert sig_in_g3_1_res._get_task_meta()['groups'] == \
-                [g1_res.id, g2_res.id, g3_res.id]
+            assert sorted(sig_in_g3_1_res._get_task_meta()['groups']) == \
+                sorted([g1_res.id, g2_res.id, g3_res.id])
         with subtests.test("sig_in_g3_2_res is stamped", groups=[g1_res.id, g2_res.id, g3_res.id]):
-            assert sig_in_g3_2_res._get_task_meta()['groups'] == \
-                [g1_res.id, g2_res.id, g3_res.id]
+            assert sorted(sig_in_g3_2_res._get_task_meta()['groups']) == \
+                sorted([g1_res.id, g2_res.id, g3_res.id])
 
     def test_group_stamping_parallel_groups(self, subtests):
         """
@@ -1067,14 +1407,14 @@ class test_group(CanvasCase):
 
         with subtests.test("sig_in_g2_1 is stamped", groups=[g1_res.id, g2_res.id]):
             assert sig_in_g2_1_res.id == 'sig_in_g2_1'
-            assert sig_in_g2_1_res._get_task_meta()['groups'] == \
-                [g1_res.id, g2_res.id]
+            assert sorted(sig_in_g2_1_res._get_task_meta()['groups']) == \
+                sorted([g1_res.id, g2_res.id])
 
         with subtests.test("sig_in_g2_2 is stamped",
                            groups=[g1_res.id, g2_res.id]):
             assert sig_in_g2_2_res.id == 'sig_in_g2_2'
-            assert sig_in_g2_2_res._get_task_meta()['groups'] == \
-                [g1_res.id, g2_res.id]
+            assert sorted(sig_in_g2_2_res._get_task_meta()['groups']) == \
+                sorted([g1_res.id, g2_res.id])
 
         with subtests.test("sig_in_g3_chain is stamped",
                            groups=[g1_res.id]):
@@ -1085,17 +1425,21 @@ class test_group(CanvasCase):
         with subtests.test("sig_in_g3_1 is stamped",
                            groups=[g1_res.id, g3_res.id]):
             assert sig_in_g3_1_res.id == 'sig_in_g3_1'
-            assert sig_in_g3_1_res._get_task_meta()['groups'] == \
-                [g1_res.id, g3_res.id]
+            assert sorted(sig_in_g3_1_res._get_task_meta()['groups']) == \
+                sorted([g1_res.id, g3_res.id])
 
         with subtests.test("sig_in_g3_2 is stamped",
                            groups=[g1_res.id, g3_res.id]):
-            assert sig_in_g3_2_res._get_task_meta()['groups'] == \
-                [g1_res.id, g3_res.id]
+            assert sorted(sig_in_g3_2_res._get_task_meta()['groups']) == \
+                sorted([g1_res.id, g3_res.id])
 
     def test_repr(self):
         x = group([self.add.s(2, 2), self.add.s(4, 4)])
         assert repr(x)
+
+    def test_repr_empty_group(self):
+        x = group([])
+        assert repr(x) == 'group(<empty>)'
 
     def test_reverse(self):
         x = group([self.add.s(2, 2), self.add.s(4, 4)])
@@ -1480,6 +1824,19 @@ class test_group(CanvasCase):
         # the encapsulated chains - in this case 1 for each child chord
         mock_set_chord_size.assert_has_calls((call(ANY, 1),) * child_count)
 
+    def test_group_prepared(self):
+        # Using both partial and dict based signatures
+        sig = group(dict(self.add.s(0)), self.add.s(0))
+        _, group_id, root_id = sig._freeze_gid({})
+        tasks = sig._prepared(sig.tasks, [42], group_id, root_id, self.app)
+
+        for task, result, group_id in tasks:
+            assert isinstance(task, Signature)
+            assert task.args[0] == 42
+            assert task.args[1] == 0
+            assert isinstance(result, AsyncResult)
+            assert group_id is not None
+
 
 class test_chord(CanvasCase):
     def test_chord_stamping_one_level(self, subtests):
@@ -1520,10 +1877,10 @@ class test_chord(CanvasCase):
             assert sig_2_res._get_task_meta()['stamp'] == ["stamp"]
 
         with subtests.test("sig_1_res has stamped_headers", stamped_headers=["stamp", 'groups']):
-            assert sig_1_res._get_task_meta()['stamped_headers'] == ['stamp', 'groups']
+            assert sorted(sig_1_res._get_task_meta()['stamped_headers']) == sorted(['stamp', 'groups'])
 
         with subtests.test("sig_2_res has stamped_headers", stamped_headers=["stamp", 'groups']):
-            assert sig_2_res._get_task_meta()['stamped_headers'] == ['stamp', 'groups']
+            assert sorted(sig_2_res._get_task_meta()['stamped_headers']) == sorted(['stamp', 'groups'])
 
     def test_chord_stamping_two_levels(self, subtests):
         """
@@ -1565,11 +1922,11 @@ class test_chord(CanvasCase):
         with subtests.test("sig_2_res body is stamped", groups=[g1.id]):
             assert sig_2_res._get_task_meta()['groups'] == [g1.id]
         with subtests.test("first_nested_sig_res body is stamped", groups=[g1.id, g2_res.id]):
-            assert first_nested_sig_res._get_task_meta()['groups'] == \
-                [g1.id, g2_res.id]
+            assert sorted(first_nested_sig_res._get_task_meta()['groups']) == \
+                sorted([g1.id, g2_res.id])
         with subtests.test("second_nested_sig_res body is stamped", groups=[g1.id, g2_res.id]):
-            assert second_nested_sig_res._get_task_meta()['groups'] == \
-                [g1.id, g2_res.id]
+            assert sorted(second_nested_sig_res._get_task_meta()['groups']) == \
+                sorted([g1.id, g2_res.id])
 
     def test_chord_stamping_body_group(self, subtests):
         """
@@ -2136,6 +2493,38 @@ class test_chord(CanvasCase):
             errback = c.link_error(sig)
             assert errback == sig
 
+    def test_chord__or__group_of_single_task(self):
+        """ Test chaining a chord to a group of a single task. """
+        c = chord([signature('header')], signature('body'))
+        g = group(signature('t'))
+        stil_chord = c | g  # g should be chained with the body of c
+        assert isinstance(stil_chord, chord)
+        assert isinstance(stil_chord.body, _chain)
+
+    def test_chord_upgrade_on_chaining(self):
+        """ Test that chaining a chord with a group body upgrades to a new chord """
+        c = chord([signature('header')], group(signature('body')))
+        t = signature('t')
+        stil_chord = c | t  # t should be chained with the body of c and create a new chord
+        assert isinstance(stil_chord, chord)
+        assert isinstance(stil_chord.body, chord)
+
+    @pytest.mark.parametrize('header', [
+        [signature('s1'), signature('s2')],
+        group(signature('s1'), signature('s2'))
+    ])
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_link_error_on_chord_header(self, header):
+        """ Test that link_error on a chord also links the header """
+        self.app.conf.task_allow_error_cb_on_chord_header = True
+        c = chord(header, signature('body'))
+        err = signature('err')
+        errback = c.link_error(err)
+        assert errback == err
+        for header_task in c.tasks:
+            assert header_task.options['link_error'] == [err]
+        assert c.body.options['link_error'] == [err]
+
 
 class test_maybe_signature(CanvasCase):
 
@@ -2149,3 +2538,63 @@ class test_maybe_signature(CanvasCase):
     def test_when_sig(self):
         s = self.add.s()
         assert maybe_signature(s, app=self.app) is s
+
+
+class test_merge_dictionaries(CanvasCase):
+
+    def test_docstring_example(self):
+        d1 = {'dict': {'a': 1}, 'list': [1, 2], 'tuple': (1, 2)}
+        d2 = {'dict': {'b': 2}, 'list': [3, 4], 'set': {'a', 'b'}}
+        _merge_dictionaries(d1, d2)
+        assert d1 == {
+            'dict': {'a': 1, 'b': 2},
+            'list': [1, 2, 3, 4],
+            'tuple': (1, 2),
+            'set': {'a', 'b'}
+        }
+
+    @pytest.mark.parametrize('d1,d2,expected_result', [
+        (
+            {'None': None},
+            {'None': None},
+            {'None': [None]}
+        ),
+        (
+            {'None': None},
+            {'None': [None]},
+            {'None': [[None]]}
+        ),
+        (
+            {'None': None},
+            {'None': 'Not None'},
+            {'None': ['Not None']}
+        ),
+        (
+            {'None': None},
+            {'None': ['Not None']},
+            {'None': [['Not None']]}
+        ),
+        (
+            {'None': [None]},
+            {'None': None},
+            {'None': [None, None]}
+        ),
+        (
+            {'None': [None]},
+            {'None': [None]},
+            {'None': [None, None]}
+        ),
+        (
+            {'None': [None]},
+            {'None': 'Not None'},
+            {'None': [None, 'Not None']}
+        ),
+        (
+            {'None': [None]},
+            {'None': ['Not None']},
+            {'None': [None, 'Not None']}
+        ),
+    ])
+    def test_none_values(self, d1, d2, expected_result):
+        _merge_dictionaries(d1, d2)
+        assert d1 == expected_result

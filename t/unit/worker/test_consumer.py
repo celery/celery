@@ -4,6 +4,7 @@ from collections import deque
 from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
+from amqp import ChannelError
 from billiard.exceptions import RestartFreqExceeded
 
 from celery import bootsteps
@@ -41,7 +42,7 @@ class ConsumerTestCase:
 
 
 class test_Consumer(ConsumerTestCase):
-    def setup(self):
+    def setup_method(self):
         @self.app.task(shared=False)
         def add(x, y):
             return x + y
@@ -69,12 +70,12 @@ class test_Consumer(ConsumerTestCase):
             assert self.app.conf.broker_connection_timeout is None
 
     def test_limit_moved_to_pool(self):
-        with patch('celery.worker.consumer.consumer.task_reserved') as reserv:
+        with patch('celery.worker.consumer.consumer.task_reserved') as task_reserved:
             c = self.get_consumer()
             c.on_task_request = Mock(name='on_task_request')
             request = Mock(name='request')
             c._limit_move_to_pool(request)
-            reserv.assert_called_with(request)
+            task_reserved.assert_called_with(request)
             c.on_task_request.assert_called_with(request)
 
     def test_update_prefetch_count(self):
@@ -184,11 +185,11 @@ class test_Consumer(ConsumerTestCase):
 
         with patch(
             'celery.worker.consumer.consumer.Consumer._limit_move_to_pool'
-        ) as reserv:
+        ) as task_reserved:
             bucket.contents.append((request, 3))
             c._schedule_bucket_request(bucket)
             bucket.can_consume.assert_called_with(3)
-            reserv.assert_called_with(request)
+            task_reserved.assert_called_with(request)
 
         bucket.can_consume.return_value = False
         bucket.contents = deque()
@@ -217,10 +218,10 @@ class test_Consumer(ConsumerTestCase):
 
         with patch(
             'celery.worker.consumer.consumer.Consumer._schedule_bucket_request'
-        ) as reserv:
+        ) as task_reserved:
             c._limit_task(request, bucket, 1)
             bucket.add.assert_called_with((request, 1))
-            reserv.assert_called_with(bucket)
+            task_reserved.assert_called_with(bucket)
 
     def test_post_eta(self):
         c = self.get_consumer()
@@ -230,11 +231,11 @@ class test_Consumer(ConsumerTestCase):
 
         with patch(
             'celery.worker.consumer.consumer.Consumer._schedule_bucket_request'
-        ) as reserv:
+        ) as task_reserved:
             c._limit_post_eta(request, bucket, 1)
             c.qos.decrement_eventually.assert_called_with()
             bucket.add.assert_called_with((request, 1))
-            reserv.assert_called_with(bucket)
+            task_reserved.assert_called_with(bucket)
 
     def test_max_restarts_exceeded(self):
         c = self.get_consumer()
@@ -309,6 +310,31 @@ class test_Consumer(ConsumerTestCase):
 
         c.start()
         c.blueprint.restart.assert_called_once()
+
+    @pytest.mark.parametrize("broker_channel_error_retry", [True, False])
+    def test_blueprint_restart_for_channel_errors(self, broker_channel_error_retry):
+        c = self.get_consumer()
+
+        # ensure that WorkerShutdown is not raised
+        c.app.conf['broker_connection_retry'] = True
+        c.app.conf['broker_connection_retry_on_startup'] = True
+        c.app.conf['broker_channel_error_retry'] = broker_channel_error_retry
+        c.restart_count = -1
+
+        # ensure that blueprint state is not in stop conditions
+        c.blueprint.state = bootsteps.RUN
+        c.blueprint.start.side_effect = ChannelError()
+
+        # stops test from running indefinitely in the while loop
+        c.blueprint.restart.side_effect = self._closer(c)
+
+        # restarted only when broker_channel_error_retry is True
+        if broker_channel_error_retry:
+            c.start()
+            c.blueprint.restart.assert_called_once()
+        else:
+            with pytest.raises(ChannelError):
+                c.start()
 
     def test_collects_at_restart(self):
         c = self.get_consumer()

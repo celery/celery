@@ -18,7 +18,7 @@ CASSANDRA_MODULES = [
 
 class test_CassandraBackend:
 
-    def setup(self):
+    def setup_method(self):
         self.app.conf.update(
             cassandra_servers=['example.com'],
             cassandra_keyspace='celery',

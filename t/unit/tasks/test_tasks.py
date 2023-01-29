@@ -9,6 +9,7 @@ from kombu.exceptions import EncodeError
 
 from celery import Task, group, uuid
 from celery.app.task import _reprtask
+from celery.canvas import StampingVisitor, signature
 from celery.contrib.testing.mocks import ContextMock
 from celery.exceptions import Ignore, ImproperlyConfigured, Retry
 from celery.result import AsyncResult, EagerResult
@@ -59,7 +60,7 @@ class TaskWithRetryButForTypeError(Task):
 
 class TasksCase:
 
-    def setup(self):
+    def setup_method(self):
         self.mytask = self.app.task(shared=False)(return_True)
 
         @self.app.task(bind=True, count=0, shared=False)
@@ -1058,6 +1059,24 @@ class test_tasks(TasksCase):
         mytask.app.events.default_dispatcher().send.assert_called_with(
             'task-foo', uuid='fb', id=3122,
             retry=True, retry_policy=self.app.conf.task_publish_retry_policy)
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_on_replace(self):
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {'header': 'value'}
+
+        class MyTask(Task):
+            def on_replace(self, sig):
+                sig.stamp(CustomStampingVisitor())
+                return super().on_replace(sig)
+
+        mytask = self.app.task(shared=False, base=MyTask)(return_True)
+
+        sig1 = signature('sig1')
+        with pytest.raises(Ignore):
+            mytask.replace(sig1)
+        assert sig1.options['header'] == 'value'
 
     def test_replace(self):
         sig1 = MagicMock(name='sig1')

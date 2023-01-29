@@ -24,7 +24,7 @@ def raise_something(i):
 
 class test_TaskPool:
 
-    def setup(self):
+    def setup_method(self):
         from celery.concurrency.prefork import TaskPool
         self.TaskPool = TaskPool
 

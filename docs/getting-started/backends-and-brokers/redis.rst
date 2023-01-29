@@ -100,6 +100,24 @@ If you are using Sentinel, you should specify the master_name using the :setting
 
     app.conf.result_backend_transport_options = {'master_name': "mymaster"}
 
+.. _redis-result-backend-global-keyprefix:
+
+Global keyprefix
+^^^^^^^^^^^^^^^^
+
+The global key prefix will be prepended to all keys used for the result backend,
+which can be useful when a redis database is shared by different users.
+By default, no prefix is prepended.
+
+To configure the global keyprefix for the Redis result backend, use the ``global_keyprefix`` key under :setting:`result_backend_transport_options`:
+
+
+.. code-block:: python
+
+    app.conf.result_backend_transport_options = {
+        'global_keyprefix': 'my_prefix_'
+    }
+
 .. _redis-result-backend-timeout:
 
 Connection timeouts

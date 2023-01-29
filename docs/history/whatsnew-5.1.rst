@@ -208,6 +208,26 @@ Kombu
 
 Starting from v5.1, the minimum required version is Kombu 5.1.0.
 
+Py-AMQP
+~~~~~~~
+
+Starting from Celery 5.1, py-amqp will always validate certificates received from the server
+and it is no longer required to manually set ``cert_reqs`` to ``ssl.CERT_REQUIRED``.
+
+The previous default, ``ssl.CERT_NONE`` is insecure and we its usage should be discouraged.
+If you'd like to revert to the previous insecure default set ``cert_reqs`` to ``ssl.CERT_NONE``
+
+.. code-block:: python
+
+    import ssl
+
+    broker_use_ssl = {
+      'keyfile': '/var/ssl/private/worker-key.pem',
+      'certfile': '/var/ssl/amqp-server-cert.pem',
+      'ca_certs': '/var/ssl/myca.pem',
+      'cert_reqs': ssl.CERT_NONE
+    }
+
 Billiard
 ~~~~~~~~
 

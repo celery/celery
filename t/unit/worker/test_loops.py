@@ -133,7 +133,7 @@ def get_task_callback(*args, **kwargs):
 
 class test_asynloop:
 
-    def setup(self):
+    def setup_method(self):
         @self.app.task(shared=False)
         def add(x, y):
             return x + y
@@ -529,7 +529,7 @@ class test_synloop:
 
 class test_quick_drain:
 
-    def setup(self):
+    def setup_method(self):
         self.connection = Mock(name='connection')
 
     def test_drain(self):

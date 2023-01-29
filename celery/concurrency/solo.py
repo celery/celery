@@ -38,10 +38,12 @@ class TaskPool(BasePool):
         signals.worker_process_init.send(sender=None)
 
     def _get_info(self) -> PoolInfo:
-        return {
+        info = super()._get_info()
+        info.update({
             'max-concurrency': 1,
             'processes': [os.getpid()],
             'max-tasks-per-child': None,
             'put-guarded-by-semaphore': True,
             'timeouts': (),
-        }
+        })
+        return info

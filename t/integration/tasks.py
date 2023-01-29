@@ -2,6 +2,7 @@ from collections.abc import Iterable
 from time import sleep
 
 from celery import Signature, Task, chain, chord, group, shared_task
+from celery.canvas import StampingVisitor, signature
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 
@@ -23,6 +24,12 @@ def add(x, y, z=None):
         return x + y + z
     else:
         return x + y
+
+
+@shared_task
+def mul(x: int, y: int) -> int:
+    """Multiply two numbers"""
+    return x * y
 
 
 @shared_task
@@ -421,3 +428,30 @@ def errback_old_style(request_id):
 def errback_new_style(request, exc, tb):
     redis_count(request.id)
     return request.id
+
+
+class StampOnReplace(StampingVisitor):
+    stamp = {'StampOnReplace': 'This is the replaced task'}
+
+    def on_signature(self, sig, **headers) -> dict:
+        return self.stamp
+
+
+class StampedTaskOnReplace(Task):
+    """Custom task for stamping on replace"""
+
+    def on_replace(self, sig):
+        sig.stamp(StampOnReplace())
+        return super().on_replace(sig)
+
+
+@shared_task
+def replaced_with_me():
+    return True
+
+
+@shared_task(bind=True, base=StampedTaskOnReplace)
+def replace_with_stamped_task(self: StampedTaskOnReplace, replace_with=None):
+    if replace_with is None:
+        replace_with = replaced_with_me.s()
+    self.replace(signature(replace_with))

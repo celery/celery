@@ -150,7 +150,7 @@ class test_default_logger:
 
         return logging.root
 
-    def setup(self):
+    def setup_method(self):
         self.get_logger = lambda n=None: get_logger(n) if n else logging.root
         signals.setup_logging.receivers[:] = []
         self.app.log.already_setup = False
@@ -312,7 +312,7 @@ class test_default_logger:
 
 class test_task_logger(test_default_logger):
 
-    def setup(self):
+    def setup_method(self):
         logger = self.logger = get_logger('celery.task')
         logger.handlers = []
         logging.root.manager.loggerDict.pop(logger.name, None)
@@ -326,7 +326,7 @@ class test_task_logger(test_default_logger):
         from celery._state import _task_stack
         _task_stack.push(test_task)
 
-    def teardown(self):
+    def teardown_method(self):
         from celery._state import _task_stack
         _task_stack.pop()
 

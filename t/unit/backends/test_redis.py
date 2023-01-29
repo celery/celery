@@ -358,7 +358,7 @@ class basetest_RedisBackend:
             callback.delay = Mock(name='callback.delay')
             yield tasks, request, callback
 
-    def setup(self):
+    def setup_method(self):
         self.Backend = self.get_backend()
         self.E_LOST = self.get_E_LOST()
         self.b = self.Backend(app=self.app)
@@ -1193,7 +1193,7 @@ class test_SentinelBackend:
         from celery.backends.redis import E_LOST
         return E_LOST
 
-    def setup(self):
+    def setup_method(self):
         self.Backend = self.get_backend()
         self.E_LOST = self.get_E_LOST()
         self.b = self.Backend(app=self.app)

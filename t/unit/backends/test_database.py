@@ -10,10 +10,10 @@ from celery.exceptions import ImproperlyConfigured
 
 pytest.importorskip('sqlalchemy')
 
-from celery.backends.database import DatabaseBackend, retry, session, session_cleanup  # noqa
-from celery.backends.database.models import Task, TaskSet  # noqa
-from celery.backends.database.session import PREPARE_MODELS_MAX_RETRIES, ResultModelBase, SessionManager  # noqa
-from t import skip  # noqa
+from celery.backends.database import DatabaseBackend, retry, session, session_cleanup
+from celery.backends.database.models import Task, TaskSet
+from celery.backends.database.session import PREPARE_MODELS_MAX_RETRIES, ResultModelBase, SessionManager
+from t import skip
 
 
 class SomeClass:
@@ -45,7 +45,7 @@ class test_session_cleanup:
 @skip.if_pypy
 class test_DatabaseBackend:
 
-    def setup(self):
+    def setup_method(self):
         self.uri = 'sqlite:///test.db'
         self.app.conf.result_serializer = 'pickle'
 
@@ -219,7 +219,7 @@ class test_DatabaseBackend:
 
 @skip.if_pypy
 class test_DatabaseBackend_result_extended():
-    def setup(self):
+    def setup_method(self):
         self.uri = 'sqlite:///test.db'
         self.app.conf.result_serializer = 'pickle'
         self.app.conf.result_extended = True

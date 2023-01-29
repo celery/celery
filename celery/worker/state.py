@@ -67,6 +67,9 @@ all_total_count = [0]
 #: the list of currently revoked tasks.  Persistent if ``statedb`` set.
 revoked = LimitedSet(maxlen=REVOKES_MAX, expires=REVOKE_EXPIRES)
 
+#: Mapping of stamped headers flagged for revoking.
+revoked_headers = {}
+
 should_stop = None
 should_terminate = None
 
@@ -79,6 +82,7 @@ def reset_state():
     total_count.clear()
     all_total_count[:] = [0]
     revoked.clear()
+    revoked_headers.clear()
 
 
 def maybe_shutdown():
@@ -99,11 +103,13 @@ def task_reserved(request,
 
 def task_accepted(request,
                   _all_total_count=None,
+                  add_request=requests.__setitem__,
                   add_active_request=active_requests.add,
                   add_to_total_count=total_count.update):
     """Update global state when a task has been accepted."""
     if not _all_total_count:
         _all_total_count = all_total_count
+    add_request(request.id, request)
     add_active_request(request)
     add_to_total_count({request.name: 1})
     all_total_count[0] += 1

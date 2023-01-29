@@ -797,7 +797,9 @@ It supports the following operations:
 
 * :meth:`~celery.result.GroupResult.completed_count`
 
-    Return the number of completed subtasks.
+    Return the number of completed subtasks. Note that `complete` means `successful` in
+    this context. In other words, the return value of this method is the number of
+    ``successful`` tasks.
 
 * :meth:`~celery.result.GroupResult.revoke`
 
@@ -1157,7 +1159,7 @@ For example,
     >>> sig1_res = sig1.freeze()
     >>> g = group(sig1, add.si(3, 3))
     >>> g.stamp(stamp='your_custom_stamp')
-    >>> res = g1.apply_async()
+    >>> res = g.apply_async()
     >>> res.get(timeout=TIMEOUT)
     [4, 6]
     >>> sig1_res._get_task_meta()['stamp']
@@ -1226,15 +1228,28 @@ The following example shows another custom stamping visitor, which labels all
 tasks with a custom ``monitoring_id`` which can represent a UUID value of an external monitoring system,
 that can be used to track the task execution by including the id with such a visitor implementation.
 This ``monitoring_id`` can be a randomly generated UUID, or a unique identifier of the span id used by
-the external monitoring system.
+the external monitoring system, etc.
 
 .. code-block:: python
 
     class MonitoringIdStampingVisitor(StampingVisitor):
         def on_signature(self, sig, **headers) -> dict:
-            return {'monitoring_id': uuid4(), 'stamped_headers': ['monitoring_id']}
+            return {'monitoring_id': uuid4().hex}
 
-Next, lets see how to use the ``MonitoringIdStampingVisitor`` stamping visitor.
+.. note::
+
+    The ``stamped_headers`` key returned in ``on_signature`` is used to specify the headers that will be
+    stamped on the task. If this key is not specified, the stamping visitor will assume all keys in the
+    returned dictionary are the stamped headers from the visitor.
+    This means the following code block will result in the same behavior as the previous example.
+
+.. code-block:: python
+
+    class MonitoringIdStampingVisitor(StampingVisitor):
+        def on_signature(self, sig, **headers) -> dict:
+            return {'monitoring_id': uuid4().hex, 'stamped_headers': ['monitoring_id']}
+
+Next, lets see how to use the ``MonitoringIdStampingVisitor`` example stamping visitor.
 
 .. code-block:: python
 
@@ -1251,3 +1266,75 @@ Next, lets see how to use the ``MonitoringIdStampingVisitor`` stamping visitor.
     chain_example.stamp(visitor=MonitoringIdStampingVisitor())
 
 Lastly, it's important to mention that each monitoring id stamp in the example above would be different from each other between tasks.
+
+Callbacks stamping
+------------------
+
+The stamping API also supports stamping callbacks implicitly.
+This means that when a callback is added to a task, the stamping
+visitor will be applied to the callback as well.
+
+.. warning::
+
+    The callback must be linked to the signature before stamping.
+
+For example, lets examine the following custom stamping visitor.
+
+.. code-block:: python
+
+    class CustomStampingVisitor(StampingVisitor):
+        def on_signature(self, sig, **headers) -> dict:
+            return {'header': 'value'}
+
+        def on_callback(self, callback, **header) -> dict:
+            return {'on_callback': True}
+
+        def on_errback(self, errback, **header) -> dict:
+            return {'on_errback': True}
+
+This custom stamping visitor will stamp the signature, callbacks, and errbacks with ``{'header': 'value'}``
+and stamp the callbacks and errbacks with ``{'on_callback': True}`` and ``{'on_errback': True}`` respectively as shown below.
+
+.. code-block:: python
+
+        c = chord([add.s(1, 1), add.s(2, 2)], xsum.s())
+        callback = signature('sig_link')
+        errback = signature('sig_link_error')
+        c.link(callback)
+        c.link_error(errback)
+        c.stamp(visitor=CustomStampingVisitor())
+
+This example will result in the following stamps:
+
+.. code-block:: python
+
+    >>> c.options
+    {'header': 'value', 'stamped_headers': ['header']}
+    >>> c.tasks.tasks[0].options
+    {'header': 'value', 'stamped_headers': ['header']}
+    >>> c.tasks.tasks[1].options
+    {'header': 'value', 'stamped_headers': ['header']}
+    >>> c.body.options
+    {'header': 'value', 'stamped_headers': ['header']}
+    >>> c.body.options['link'][0].options
+    {'header': 'value', 'on_callback': True, 'stamped_headers': ['header', 'on_callback']}
+    >>> c.body.options['link_error'][0].options
+    {'header': 'value', 'on_errback': True, 'stamped_headers': ['header', 'on_errback']}
+
+When calling ``apply_async()`` on ``c``, the group stamping will be applied on top of the above stamps.
+This will result in the following stamps:
+
+.. code-block:: python
+
+    >>> c.options
+    {'header': 'value', 'groups': ['1234'], 'stamped_headers': ['header', 'groups']}
+    >>> c.tasks.tasks[0].options
+    {'header': 'value', 'groups': ['1234'], 'stamped_headers': ['header', 'groups']}
+    >>> c.tasks.tasks[1].options
+    {'header': 'value', 'groups': ['1234'], 'stamped_headers': ['header', 'groups']}
+    >>> c.body.options
+    {'header': 'value', 'groups': [], 'stamped_headers': ['header', 'groups']}
+    >>> c.body.options['link'][0].options
+    {'header': 'value', 'on_callback': True, 'groups': [], 'stamped_headers': ['header', 'on_callback', 'groups']}
+    >>> c.body.options['link_error'][0].options
+    {'header': 'value', 'on_errback': True, 'groups': [], 'stamped_headers': ['header', 'on_errback', 'groups']}

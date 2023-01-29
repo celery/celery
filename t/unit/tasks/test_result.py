@@ -63,7 +63,7 @@ class _MockBackend:
 
 class test_AsyncResult:
 
-    def setup(self):
+    def setup_method(self):
         self.app.conf.result_cache_max = 100
         self.app.conf.result_serializer = 'pickle'
         self.app.conf.result_extended = True
@@ -550,9 +550,9 @@ class test_ResultSet:
     def dummy_copy(self):
         with patch('celery.result.copy') as copy:
 
-            def passt(arg):
+            def pass_value(arg):
                 return arg
-            copy.side_effect = passt
+            copy.side_effect = pass_value
 
             yield
 
@@ -628,7 +628,7 @@ class SimpleBackend(SyncBackendMixin):
 
 class test_GroupResult:
 
-    def setup(self):
+    def setup_method(self):
         self.size = 10
         self.ts = self.app.GroupResult(
             uuid(), make_mock_group(self.app, self.size),
@@ -882,7 +882,7 @@ class test_pending_AsyncResult:
 
 class test_failed_AsyncResult:
 
-    def setup(self):
+    def setup_method(self):
         self.size = 11
         self.app.conf.result_serializer = 'pickle'
         results = make_mock_group(self.app, 10)
@@ -907,7 +907,7 @@ class test_failed_AsyncResult:
 
 class test_pending_Group:
 
-    def setup(self):
+    def setup_method(self):
         self.ts = self.app.GroupResult(
             uuid(), [self.app.AsyncResult(uuid()),
                      self.app.AsyncResult(uuid())])
@@ -932,7 +932,7 @@ class test_pending_Group:
 
 class test_EagerResult:
 
-    def setup(self):
+    def setup_method(self):
         @self.app.task(shared=False)
         def raising(x, y):
             raise KeyError(x, y)

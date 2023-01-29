@@ -321,7 +321,7 @@ class AMQP:
         if not root_id:  # empty root_id defaults to task_id
             root_id = task_id
 
-        stamps = {header: maybe_list(options[header]) for header in stamped_headers or []}
+        stamps = {header: options[header] for header in stamped_headers or []}
         headers = {
             'lang': 'py',
             'task': name,
