@@ -1,1 +1,1 @@
-sqlalchemy>=1.4.46
+sqlalchemy==1.4.45
