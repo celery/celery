@@ -1,4 +1,4 @@
-pytest==7.2.0
+pytest==7.2.1
 pytest-celery==0.0.0
 pytest-subtests==0.9.0
 pytest-timeout~=2.1.0
