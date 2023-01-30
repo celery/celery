@@ -457,6 +457,9 @@ class test_Signature(CanvasCase):
             assert headers['header'] == 'value'
 
     @pytest.mark.parametrize('sig_to_replace', [
+        group(signature(f'sig{i}') for i in range(2)),
+        group([signature('sig1'), signature('sig2')]),
+        group((signature('sig1'), signature('sig2'))),
         group(signature('sig1'), signature('sig2')),
         chain(signature('sig1'), signature('sig2')),
     ])
