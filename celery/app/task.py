@@ -967,6 +967,7 @@ class Task:
             sig.options['stamped_headers'] = stamped_headers
             sig.options.update(stamps)
 
+            # Collecting all of the links (callback/errback) to stamp them
             links = sig.options['link'] if 'link' in sig.options else []
             links.extend(sig.options['link_error'] if 'link_error' in sig.options else [])
 
