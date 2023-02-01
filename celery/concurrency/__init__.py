@@ -17,7 +17,7 @@ ALIASES = {
 }
 
 try:
-    import concurrent.futures
+    import concurrent.futures  # noqa
 except ImportError:
     pass
 else:

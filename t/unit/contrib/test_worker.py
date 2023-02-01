@@ -2,7 +2,7 @@ import pytest
 
 # this import adds a @shared_task, which uses connect_on_app_finalize
 # to install the celery.ping task that the test lib uses
-import celery.contrib.testing.tasks
+import celery.contrib.testing.tasks  # noqa
 from celery import Celery
 from celery.contrib.testing.worker import start_worker
 

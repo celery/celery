@@ -3,7 +3,7 @@ import os
 import pytest
 
 try:
-    from sphinx.application import Sphinx
+    from sphinx.application import Sphinx  # noqa
     from sphinx_testing import TestApp
     sphinx_installed = True
 except ImportError:
