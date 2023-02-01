@@ -1,5 +1,6 @@
 import json
 import math
+from collections.abc import Iterable
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
@@ -20,10 +21,6 @@ SIG = Signature({
     'options': {'task_id': 'TASK_ID'},
     'subtask_type': ''},
 )
-try:
-    from collections.abc import Iterable
-except ImportError:
-    from collections.abc import Iterable
 
 
 def return_True(*args, **kwargs):
