@@ -30,7 +30,7 @@ Usage::
 import json
 
 # Import tasks in worker context
-import tasks
+import tasks  # noqa
 from config import app
 
 from celery.signals import task_received

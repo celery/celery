@@ -22,7 +22,7 @@ from decimal import Decimal
 from itertools import islice
 from operator import itemgetter
 from time import time
-from typing import Mapping, Optional
+from typing import Mapping, Optional  # noqa
 from weakref import WeakSet, ref
 
 from kombu.clocks import timetuple
