@@ -417,7 +417,7 @@ class Signature(dict):
             # implying that allowing their value to change would stall tasks
             immutable_options = self._IMMUTABLE_OPTIONS
             if "stamped_headers" in self.options:
-                immutable_options = self._IMMUTABLE_OPTIONS.union(set(self.options["stamped_headers"]))
+                immutable_options = self._IMMUTABLE_OPTIONS.union(set(self.options.get("stamped_headers", [])))
             # merge self.options with options without overriding stamped headers from self.options
             new_options = {**self.options, **{
                 k: v for k, v in options.items()
