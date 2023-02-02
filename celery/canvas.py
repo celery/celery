@@ -2142,7 +2142,7 @@ class _chord(Signature):
         if options:
             options.pop('task_id', None)
             stamped_headers = set(body.options.get("stamped_headers", []))
-            stamped_headers.update(options["stamped_headers"])
+            stamped_headers.update(options.get("stamped_headers", []))
             options["stamped_headers"] = list(stamped_headers)
             body.options.update(options)
 
