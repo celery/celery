@@ -589,7 +589,6 @@ class test_stamping_mechanism(CanvasCase):
 
         g = group(sig_1, sig_2, app=self.app)
         g.stamp(stamp="stamp")
-        g_res = g.freeze()
         g.apply()
 
         with subtests.test("sig_1_res is stamped manually", stamp=["stamp"]):
