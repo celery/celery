@@ -218,32 +218,6 @@ class StampingVisitor(metaclass=ABCMeta):
         return {}
 
 
-class GroupStampingVisitor(StampingVisitor):
-    """
-    Group stamping implementation based on Stamping API.
-    """
-
-    def __init__(self, groups=None, stamped_headers=None):
-        self.groups = groups or []
-        self.stamped_headers = stamped_headers or []
-        if "groups" not in self.stamped_headers:
-            self.stamped_headers.append("groups")
-
-    def on_group_start(self, group, **headers) -> dict:
-        if group.id is None:
-            group.set(task_id=uuid())
-
-        if group.id not in self.groups:
-            self.groups.append(group.id)
-        return super().on_group_start(group, **headers)
-
-    def on_group_end(self, group, **headers) -> None:
-        self.groups.pop()
-
-    def on_signature(self, sig, **headers) -> dict:
-        return {'groups': list(self.groups), "stamped_headers": list(self.stamped_headers)}
-
-
 @abstract.CallableSignature.register
 class Signature(dict):
     """Task Signature.
@@ -376,9 +350,6 @@ class Signature(dict):
         """
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
-        groups = self.options.get("groups")
-        stamped_headers = self.options.get("stamped_headers")
-        self.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
         # Extra options set to None are dismissed
         options = {k: v for k, v in options.items() if v is not None}
         # For callbacks: extra args are prepended to the stored args.
@@ -402,9 +373,6 @@ class Signature(dict):
         """
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
-        groups = self.options.get("groups")
-        stamped_headers = self.options.get("stamped_headers")
-        self.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
         # Extra options set to None are dismissed
         options = {k: v for k, v in options.items() if v is not None}
         try:
@@ -1026,17 +994,11 @@ class _chain(Signature):
             task_id, group_id, chord, group_index=group_index,
         )
 
-        groups = self.options.get("groups")
-        stamped_headers = self.options.get("stamped_headers")
-        visitor = GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers)
-        self.stamp(visitor=visitor)
-
         # For a chain of single task, execute the task directly and return the result for that task
         # For a chain of multiple tasks, execute all of the tasks and return the AsyncResult for the chain
         if results_from_prepare:
             if link:
                 tasks[0].extend_list_option('link', link)
-                tasks[0].stamp_links(visitor=visitor)
             first_task = tasks.pop()
             options = _prepare_chain_from_options(options, tasks, use_link)
 
@@ -1234,9 +1196,6 @@ class _chain(Signature):
     def apply(self, args=None, kwargs=None, **options):
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
-        groups = self.options.get("groups")
-        stamped_headers = self.options.get("stamped_headers")
-        self.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
         last, (fargs, fkwargs) = None, (args, kwargs)
         for task in self.tasks:
             res = task.clone(fargs, fkwargs).apply(
@@ -1565,11 +1524,6 @@ class group(Signature):
 
         options, group_id, root_id = self._freeze_gid(options)
         tasks = self._prepared(self.tasks, [], group_id, root_id, app)
-
-        groups = self.options.get("groups")
-        stamped_headers = self.options.get("stamped_headers")
-        self.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
-
         p = barrier()
         results = list(self._apply_tasks(tasks, producer, app, p,
                                          args=args, kwargs=kwargs, **options))
@@ -1593,9 +1547,6 @@ class group(Signature):
     def apply(self, args=None, kwargs=None, **options):
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
-        groups = self.options.get("groups")
-        stamped_headers = self.options.get("stamped_headers")
-        self.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
         app = self.app
         if not self.tasks:
             return self.freeze()  # empty group returns GroupResult
@@ -2105,13 +2056,7 @@ class _chord(Signature):
                 return self.apply(args, kwargs,
                                   body=body, task_id=task_id, **options)
 
-        groups = self.options.get("groups")
-        stamped_headers = self.options.get("stamped_headers")
-        self.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
-        tasks.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
-
         merged_options = dict(self.options, **options) if options else self.options
-
         option_task_id = merged_options.pop("task_id", None)
         if task_id is None:
             task_id = option_task_id
@@ -2123,13 +2068,9 @@ class _chord(Signature):
               propagate=True, body=None, **options):
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
-        stamped_headers = self.options.get("stamped_headers")
-        groups = self.options.get("groups")
         body = self.body if body is None else body
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
                  else group(self.tasks, app=self.app))
-        self.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
-        tasks.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=stamped_headers))
         return body.apply(
             args=(tasks.apply(args, kwargs).get(propagate=propagate),),
         )
