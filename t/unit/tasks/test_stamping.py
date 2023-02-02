@@ -82,7 +82,6 @@ class CanvasCase:
 class test_stamping_mechanism(CanvasCase):
     """These tests were extracted (and fixed) from the canvas unit tests."""
 
-    @pytest.mark.usefixtures("depends_on_current_app")
     def test_on_signature_gets_the_signature(self):
         expected_sig = self.add.s(4, 2)
 
@@ -212,7 +211,6 @@ class test_stamping_mechanism(CanvasCase):
         with subtests.test("sig_2 is stamped with custom visitor", header=["value"]):
             assert sig_2_res._get_task_meta()["header"] == ["value"]
 
-    @pytest.mark.usefixtures("depends_on_current_app")
     def test_callback_stamping(self, subtests):
         self.app.conf.task_always_eager = True
         self.app.conf.task_store_eager_result = True
@@ -306,7 +304,6 @@ class test_stamping_mechanism(CanvasCase):
             assert headers["on_errback"] is True
             assert headers["header"] == "value"
 
-    @pytest.mark.usefixtures("depends_on_current_app")
     def test_callback_stamping_link_after_stamp(self, subtests):
         self.app.conf.task_always_eager = True
         self.app.conf.task_store_eager_result = True
