@@ -127,83 +127,6 @@ class test_stamping_mechanism:
         res = c()
         assert res.get(timeout=TIMEOUT) == 180
 
-    def test_group_stamping(self, manager, subtests):
-        if not manager.app.conf.result_backend.startswith('redis'):
-            raise pytest.skip('Requires redis result backend.')
-
-        sig1 = add.s(1, 1000)
-        sig1_res = sig1.freeze()
-        g1 = group(sig1, add.s(1, 2000))
-        g1_res = g1.freeze()
-        res = g1.apply_async()
-        res.get(timeout=TIMEOUT)
-
-        with subtests.test("sig_1 is stamped", groups=[g1_res.id]):
-            assert sig1_res._get_task_meta()["groups"] == [g1_res.id]
-
-    def test_nested_group_stamping(self, manager, subtests):
-        if not manager.app.conf.result_backend.startswith('redis'):
-            raise pytest.skip('Requires redis result backend.')
-
-        sig1 = add.s(2, 2)
-        sig2 = add.s(2)
-
-        sig1_res = sig1.freeze()
-        sig2_res = sig2.freeze()
-
-        g2 = group(sig2, chain(add.s(4), add.s(2)))
-
-        g2_res = g2.freeze()
-
-        g1 = group(sig1, chain(add.s(1, 1), g2))
-
-        g1_res = g1.freeze()
-        res = g1.apply_async()
-        res.get(timeout=TIMEOUT)
-
-        with subtests.test("sig1 is stamped", groups=[g1_res.id]):
-            assert sig1_res._get_task_meta()['groups'] == [g1_res.id]
-        with subtests.test("sig2 is stamped", groups=[g1_res.id, g2_res.id]):
-            assert sig2_res._get_task_meta()['groups'] == \
-                [g1_res.id, g2_res.id]
-
-    def test_chord_stamping_two_levels(self, manager, subtests):
-        """
-        For a group within a chord, test that group stamps are stored in
-        the correct order.
-        """
-        try:
-            manager.app.backend.ensure_chords_allowed()
-        except NotImplementedError as e:
-            raise pytest.skip(e.args[0])
-
-        sig_1 = add.s(2, 2)
-        sig_2 = add.s(2)
-
-        sig_1_res = sig_1.freeze()
-        sig_2_res = sig_2.freeze()
-
-        g2 = group(
-            sig_2,
-            add.s(4),
-        )
-
-        g2_res = g2.freeze()
-
-        sig_sum = xsum.s()
-        sig_sum.freeze()
-
-        g1 = chord([sig_1, chain(add.s(4, 4), g2)], sig_sum)
-        g1.freeze()
-
-        res = g1.apply_async()
-        res.get(timeout=TIMEOUT)
-
-        with subtests.test("sig_1_res is stamped", groups=[g1.tasks.id]):
-            assert sig_1_res._get_task_meta()['groups'] == [g1.tasks.id]
-        with subtests.test("sig_2_res is stamped", groups=[g1.id]):
-            assert sig_2_res._get_task_meta()['groups'] == [g1.tasks.id, g2_res.id]
-
     def test_stamp_value_type_defined_by_visitor(self, manager, subtests):
         """ Test that the visitor can define the type of the stamped value """
 
@@ -380,34 +303,6 @@ class test_stamping_mechanism:
         # and the replaced task with both CustomStampingVisitor and StampOnReplace
         assert assertion_result, 'All of the tasks should have been stamped'
 
-    def test_replace_group_merge_stamps(self, manager):
-        """ Test that replacing a group signature keeps the previous and new group stamps """
-
-        x = 5
-        y = 6
-
-        @task_received.connect
-        def task_received_handler(**kwargs):
-            request = kwargs['request']
-            nonlocal assertion_result
-            nonlocal gid1
-
-            assertion_result = all([
-                assertion_result,
-                request.stamps['groups'][0] == gid1,
-                len(request.stamps['groups']) == 2
-                if any([request.args == [10, x], request.args == [10, y]]) else True
-            ])
-
-        sig = add.s(3, 3) | add.s(4) | group(add.s(x), add.s(y))
-        sig = group(add.s(1, 1), add.s(2, 2), replace_with_stamped_task.s(replace_with=sig))
-        assertion_result = False
-        sig.delay()
-        assertion_result = True
-        gid1 = sig.options['task_id']
-        sleep(1)
-        assert assertion_result, 'Group stamping is corrupted'
-
     def test_linking_stamped_sig(self, manager):
         """ Test that linking a callback after stamping will stamp the callback correctly"""
 
@@ -440,8 +335,7 @@ class test_stamping_mechanism:
         stamped_pass_sig = identity.si('passing sig')
         stamped_pass_sig.stamp(visitor=FixedMonitoringIdStampingVisitor(str(uuid.uuid4())))
         stamped_pass_sig.link(link_sig)
-        # This causes the relevant stamping for this test case
-        # as it will stamp the link via the group stamping internally
+        stamped_pass_sig.stamp(visitor=FixedMonitoringIdStampingVisitor("1234"))
         stamped_pass_sig.apply_async().get(timeout=2)
         assert assertion_result
 
@@ -478,7 +372,6 @@ class test_stamping_mechanism:
         stamped_fail_sig.stamp(visitor=FixedMonitoringIdStampingVisitor(str(uuid.uuid4())))
         stamped_fail_sig.link_error(link_error_sig)
         with pytest.raises(ExpectedException):
-            # This causes the relevant stamping for this test case
-            # as it will stamp the link via the group stamping internally
+            stamped_fail_sig.stamp(visitor=FixedMonitoringIdStampingVisitor("1234"))
             stamped_fail_sig.apply_async().get()
         assert assertion_result
