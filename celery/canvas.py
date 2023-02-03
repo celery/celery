@@ -1028,7 +1028,13 @@ class _chain(Signature):
 
     def stamp(self, visitor=None, **headers):
         if visitor is not None:
-            headers.update(visitor.on_chain_start(self, **headers))
+            visitor_headers = visitor.on_chain_start(self, **headers) or {}
+            if "stamped_headers" not in visitor_headers:
+                visitor_headers["stamped_headers"] = list(visitor_headers.keys())
+            _merge_dictionaries(headers, visitor_headers)
+            stamped_headers = set(self.options.get("stamped_headers", []))
+            stamped_headers.update(headers["stamped_headers"])
+            headers["stamped_headers"] = list(stamped_headers)
 
         super().stamp(visitor=visitor, **headers)
         for task in self.tasks:
@@ -1562,7 +1568,13 @@ class group(Signature):
 
     def stamp(self, visitor=None, **headers):
         if visitor is not None:
-            headers.update(visitor.on_group_start(self, **headers))
+            visitor_headers = visitor.on_group_start(self, **headers) or {}
+            if "stamped_headers" not in visitor_headers:
+                visitor_headers["stamped_headers"] = list(visitor_headers.keys())
+            _merge_dictionaries(headers, visitor_headers)
+            stamped_headers = set(self.options.get("stamped_headers", []))
+            stamped_headers.update(headers["stamped_headers"])
+            headers["stamped_headers"] = list(stamped_headers)
 
         super().stamp(visitor=visitor, **headers)
 
@@ -2022,7 +2034,13 @@ class _chord(Signature):
             tasks = tasks.tasks
 
         if visitor is not None:
-            headers.update(visitor.on_chord_header_start(self, **headers))
+            visitor_headers = visitor.on_chord_header_start(self, **headers) or {}
+            if "stamped_headers" not in visitor_headers:
+                visitor_headers["stamped_headers"] = list(visitor_headers.keys())
+            _merge_dictionaries(headers, visitor_headers)
+            stamped_headers = set(self.options.get("stamped_headers", []))
+            stamped_headers.update(headers["stamped_headers"])
+            headers["stamped_headers"] = list(stamped_headers)
             if isinstance(self.tasks, group):
                 self.tasks.stamp(visitor=visitor, **headers)
         super().stamp(visitor=visitor, **headers)
@@ -2037,7 +2055,13 @@ class _chord(Signature):
             visitor.on_chord_header_end(self, **headers)
 
         if visitor is not None and self.body is not None:
-            headers.update(visitor.on_chord_body(self, **headers))
+            visitor_headers = visitor.on_chord_body(self, **headers) or {}
+            if "stamped_headers" not in visitor_headers:
+                visitor_headers["stamped_headers"] = list(visitor_headers.keys())
+            _merge_dictionaries(headers, visitor_headers)
+            stamped_headers = set(self.options.get("stamped_headers", []))
+            stamped_headers.update(headers["stamped_headers"])
+            headers["stamped_headers"] = list(stamped_headers)
             self.body.stamp(visitor=visitor, **headers)
 
     def apply_async(self, args=None, kwargs=None, task_id=None,
