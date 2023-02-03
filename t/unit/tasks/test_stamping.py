@@ -8,6 +8,38 @@ from celery.canvas import StampingVisitor, chain, chord, group, signature
 from celery.exceptions import Ignore
 
 
+class CustomStampingVisitor(StampingVisitor):
+    # Should be applied on all signatures
+    def on_signature(self, actual_sig, **headers) -> dict:
+        return {"on_signature": True}
+
+    # Should be applied on all groups
+    def on_group_start(self, group, **headers) -> dict:
+        return {"on_group_start": True}
+
+    # Should be applied on all chains
+    def on_chain_start(self, chain, **headers) -> dict:
+        return {"on_chain_start": True}
+
+    # Should be applied on all chords
+    def on_chord_header_start(self, chord, **header) -> dict:
+        s = super().on_chord_header_start(chord, **header)
+        s.update({"on_chord_header_start": True})
+        return s
+
+    # Should be applied on all chords
+    def on_chord_body(self, chord, **header) -> dict:
+        return {"on_chord_body": True}
+
+    # Should be applied on all links
+    def on_callback(self, callback, **header) -> dict:
+        return {"on_callback": True}
+
+    # Should be applied on all link errors
+    def on_errback(self, errback, **header) -> dict:
+        return {"on_errback": True}
+
+
 def return_True(*args, **kwargs):
     return True
 
@@ -34,9 +66,7 @@ class CanvasCase:
 
         @self.app.task(shared=False)
         def xsum(numbers):
-            return sum(
-                sum(num) if isinstance(num, Iterable) else num for num in numbers
-            )
+            return sum(sum(num) if isinstance(num, Iterable) else num for num in numbers)
 
         self.xsum = xsum
 
@@ -666,42 +696,63 @@ class CanvasCase:
 class test_canvas_stamping(CanvasCase):
     @pytest.fixture
     def stamped_sig(self, canvas_workflow):
-        class CustomStampingVisitor(StampingVisitor):
-            # Should be applied on all signatures
-            def on_signature(self, actual_sig, **headers) -> dict:
-                return {"on_signature": True}
-
-            # Should be applied on all groups
-            def on_group_start(self, group, **headers) -> dict:
-                return {"on_group_start": True}
-
-            # Should be applied on all chains
-            def on_chain_start(self, chain, **headers) -> dict:
-                return {"on_chain_start": True}
-
-            # Should be applied on all chords
-            def on_chord_header_start(self, chord, **header) -> dict:
-                s = super().on_chord_header_start(chord, **header)
-                s.update({"on_chord_header_start": True})
-                return s
-
-            # Should be applied on all chords
-            def on_chord_body(self, chord, **header) -> dict:
-                return {"on_chord_body": True}
-
-            # Should be applied on all links
-            def on_callback(self, callback, **header) -> dict:
-                return {"on_callback": True}
-
-            # Should be applied on all link errors
-            def on_errback(self, errback, **header) -> dict:
-                return {"on_errback": True}
-
         canvas_workflow.stamp(CustomStampingVisitor())
         return canvas_workflow
 
     def test_stamp_in_options(self, stamped_sig, subtests):
-        assert stamped_sig.options["on_signature"] is True
+        """Test that all canvas signatures gets the stamp in options"""
+
+        class AssersionVisitor(StampingVisitor):
+            """
+            The canvas stamping mechanism traverses the canvas automatically, so we can ride
+            it to traverse the canvas recursively and assert that all signatures have the correct stamp in options
+            """
+
+            def on_signature(self, actual_sig, **headers) -> dict:
+                with subtests.test(f"Check if {actual_sig.name} has on_signature stamp"):
+                    assert actual_sig.options["on_signature"] is True, f"{actual_sig.name} has no on_signature stamp"
+                return {}
+
+            def on_group_start(self, group, **headers) -> dict:
+                with subtests.test(f"Check if {group.name} has on_group_start stamp"):
+                    assert group.options["on_group_start"] is True, f"{group.name} has no on_group_start stamp"
+                return super().on_group_start(group, **headers)
+
+            def on_chain_start(self, chain, **headers) -> dict:
+                with subtests.test(f"Check if {chain.name} has on_chain_start stamp"):
+                    assert chain.options["on_chain_start"] is True, f"{chain.name} has no on_chain_start stamp"
+                return super().on_chain_start(chain, **headers)
+
+            def on_chord_header_start(self, chord, **header) -> dict:
+                with subtests.test(f"Check if {chord.name} has on_chord_header_start stamp"):
+                    assert (
+                        chord.options["on_chord_header_start"] is True
+                    ), f"{chord.name} has no on_chord_header_start stamp"
+
+                with subtests.test(f"Check if {chord.tasks.name} has on_chord_header_start stamp"):
+                    assert (
+                        chord.tasks.options["on_chord_header_start"] is True
+                    ), f"{chord.tasks.name} has no on_chord_header_start stamp"
+                return super().on_chord_header_start(chord, **header)
+
+            def on_chord_body(self, chord, **header) -> dict:
+                with subtests.test(f"Check if {chord.body.name} has on_chord_body stamp"):
+                    assert (
+                        chord.body.options["on_chord_body"] is True
+                    ), f"{chord.body.name} has no on_chord_body stamp"
+                return super().on_chord_body(chord, **header)
+
+            def on_callback(self, callback, **header) -> dict:
+                with subtests.test(f"Check if {callback.name} has on_callback stamp"):
+                    assert callback.options["on_callback"] is True, f"{callback.name} has no on_callback stamp"
+                return super().on_callback(callback, **header)
+
+            def on_errback(self, errback, **header) -> dict:
+                with subtests.test(f"Check if {errback.name} has on_errback stamp"):
+                    assert errback.options["on_errback"] is True, f"{errback.name} has no on_errback stamp"
+                return super().on_errback(errback, **header)
+
+        stamped_sig.stamp(AssersionVisitor())
 
     def test_stamping_headers_in_options(self, stamped_sig, subtests):
         assert "on_signature" in stamped_sig.options["stamped_headers"]
@@ -743,12 +794,8 @@ class test_stamping_mechanism(CanvasCase):
         with subtests.test("sig_1_res is stamped with stamp2", stamp2=["stamp2"]):
             assert sig_1_res._get_task_meta()["stamp2"] == ["stamp2"]
 
-        with subtests.test(
-            "sig_1_res is stamped twice", stamped_headers=["stamp2", "stamp1"]
-        ):
-            assert sorted(sig_1_res._get_task_meta()["stamped_headers"]) == sorted(
-                ["stamp2", "stamp1"]
-            )
+        with subtests.test("sig_1_res is stamped twice", stamped_headers=["stamp2", "stamp1"]):
+            assert sorted(sig_1_res._get_task_meta()["stamped_headers"]) == sorted(["stamp2", "stamp1"])
 
     def test_twice_stamping(self, subtests):
         """
@@ -765,16 +812,10 @@ class test_stamping_mechanism(CanvasCase):
         sig_1.apply()
 
         with subtests.test("sig_1_res is stamped twice", stamps=["stamp2", "stamp1"]):
-            assert sorted(sig_1_res._get_task_meta()["stamp"]) == sorted(
-                ["stamp2", "stamp1"]
-            )
+            assert sorted(sig_1_res._get_task_meta()["stamp"]) == sorted(["stamp2", "stamp1"])
 
-        with subtests.test(
-            "sig_1_res is stamped twice", stamped_headers=["stamp2", "stamp1"]
-        ):
-            assert sorted(sig_1_res._get_task_meta()["stamped_headers"]) == sorted(
-                ["stamp"]
-            )
+        with subtests.test("sig_1_res is stamped twice", stamped_headers=["stamp2", "stamp1"]):
+            assert sorted(sig_1_res._get_task_meta()["stamped_headers"]) == sorted(["stamp"])
 
     def test_manual_stamping(self):
         """
@@ -819,19 +860,11 @@ class test_stamping_mechanism(CanvasCase):
         sig_2_res = sig_2.freeze()
         sig_2.apply()
 
-        with subtests.test(
-            "sig_1 is stamped with custom visitor", stamped_headers=["header"]
-        ):
-            assert sorted(sig_1_res._get_task_meta()["stamped_headers"]) == sorted(
-                ["header"]
-            )
+        with subtests.test("sig_1 is stamped with custom visitor", stamped_headers=["header"]):
+            assert sorted(sig_1_res._get_task_meta()["stamped_headers"]) == sorted(["header"])
 
-        with subtests.test(
-            "sig_2 is stamped with custom visitor", stamped_headers=["header"]
-        ):
-            assert sorted(sig_2_res._get_task_meta()["stamped_headers"]) == sorted(
-                ["header"]
-            )
+        with subtests.test("sig_2 is stamped with custom visitor", stamped_headers=["header"]):
+            assert sorted(sig_2_res._get_task_meta()["stamped_headers"]) == sorted(["header"])
 
         with subtests.test("sig_1 is stamped with custom visitor", header=["value"]):
             assert sig_1_res._get_task_meta()["header"] == ["value"]
@@ -881,34 +914,18 @@ class test_stamping_mechanism(CanvasCase):
             # as expected including the links stamping.
             assert chain_sig_res.result == 20
 
-        with subtests.test(
-            "sig_1 is stamped with custom visitor", stamped_headers=["header"]
-        ):
-            assert sorted(sig_1_res._get_task_meta()["stamped_headers"]) == sorted(
-                ["header"]
-            )
+        with subtests.test("sig_1 is stamped with custom visitor", stamped_headers=["header"]):
+            assert sorted(sig_1_res._get_task_meta()["stamped_headers"]) == sorted(["header"])
 
-        with subtests.test(
-            "group_sig is stamped with custom visitor", stamped_headers=["header"]
-        ):
+        with subtests.test("group_sig is stamped with custom visitor", stamped_headers=["header"]):
             for result in group_sig_res.results:
-                assert sorted(result._get_task_meta()["stamped_headers"]) == sorted(
-                    ["header"]
-                )
+                assert sorted(result._get_task_meta()["stamped_headers"]) == sorted(["header"])
 
-        with subtests.test(
-            "chord_sig is stamped with custom visitor", stamped_headers=["header"]
-        ):
-            assert sorted(chord_sig_res._get_task_meta()["stamped_headers"]) == sorted(
-                ["header"]
-            )
+        with subtests.test("chord_sig is stamped with custom visitor", stamped_headers=["header"]):
+            assert sorted(chord_sig_res._get_task_meta()["stamped_headers"]) == sorted(["header"])
 
-        with subtests.test(
-            "sig_2 is stamped with custom visitor", stamped_headers=["header"]
-        ):
-            assert sorted(sig_2_res._get_task_meta()["stamped_headers"]) == sorted(
-                ["header"]
-            )
+        with subtests.test("sig_2 is stamped with custom visitor", stamped_headers=["header"]):
+            assert sorted(sig_2_res._get_task_meta()["stamped_headers"]) == sorted(["header"])
 
         with subtests.test(
             "callback is stamped with custom visitor",
@@ -979,58 +996,38 @@ class test_stamping_mechanism(CanvasCase):
             # as expected including the links stamping.
             assert chain_sig_res.result == 20
 
-        with subtests.test(
-            "sig_1 is stamped with custom visitor", stamped_headers=["header", "stamp"]
-        ):
-            assert sorted(sig_1_res._get_task_meta()["stamped_headers"]) == sorted(
-                ["header", "stamp"]
-            )
+        with subtests.test("sig_1 is stamped with custom visitor", stamped_headers=["header", "stamp"]):
+            assert sorted(sig_1_res._get_task_meta()["stamped_headers"]) == sorted(["header", "stamp"])
 
         with subtests.test(
             "group_sig is stamped with custom visitor",
             stamped_headers=["header", "stamp"],
         ):
             for result in group_sig_res.results:
-                assert sorted(result._get_task_meta()["stamped_headers"]) == sorted(
-                    ["header", "stamp"]
-                )
+                assert sorted(result._get_task_meta()["stamped_headers"]) == sorted(["header", "stamp"])
 
         with subtests.test(
             "chord_sig is stamped with custom visitor",
             stamped_headers=["header", "stamp"],
         ):
-            assert sorted(chord_sig_res._get_task_meta()["stamped_headers"]) == sorted(
-                ["header", "stamp"]
-            )
+            assert sorted(chord_sig_res._get_task_meta()["stamped_headers"]) == sorted(["header", "stamp"])
 
-        with subtests.test(
-            "sig_2 is stamped with custom visitor", stamped_headers=["header", "stamp"]
-        ):
-            assert sorted(sig_2_res._get_task_meta()["stamped_headers"]) == sorted(
-                ["header", "stamp"]
-            )
+        with subtests.test("sig_2 is stamped with custom visitor", stamped_headers=["header", "stamp"]):
+            assert sorted(sig_2_res._get_task_meta()["stamped_headers"]) == sorted(["header", "stamp"])
 
-        with subtests.test(
-            "callback is stamped with MyStampingVisitor", stamped_headers=["stamp"]
-        ):
+        with subtests.test("callback is stamped with MyStampingVisitor", stamped_headers=["stamp"]):
             callback_link = chain_sig.options["link"][0]
             headers = callback_link.options
             stamped_headers = headers["stamped_headers"]
-            assert (
-                "on_callback" not in stamped_headers
-            ), "Linking after stamping should not stamp the callback"
+            assert "on_callback" not in stamped_headers, "Linking after stamping should not stamp the callback"
             assert sorted(stamped_headers) == sorted(["stamp"])
             assert headers["stamp"] == "stamp"
 
-        with subtests.test(
-            "errback is stamped with MyStampingVisitor", stamped_headers=["stamp"]
-        ):
+        with subtests.test("errback is stamped with MyStampingVisitor", stamped_headers=["stamp"]):
             errback_link = chain_sig.options["link_error"][0]
             headers = errback_link.options
             stamped_headers = headers["stamped_headers"]
-            assert (
-                "on_callback" not in stamped_headers
-            ), "Linking after stamping should not stamp the errback"
+            assert "on_callback" not in stamped_headers, "Linking after stamping should not stamp the errback"
             assert sorted(stamped_headers) == sorted(["stamp"])
             assert headers["stamp"] == "stamp"
 
@@ -1123,12 +1120,7 @@ class test_stamping_mechanism(CanvasCase):
                         [
                             assertion_result,
                             "header" in task.options["stamped_headers"],
-                            all(
-                                [
-                                    header in task.options
-                                    for header in task.options["stamped_headers"]
-                                ]
-                            ),
+                            all([header in task.options for header in task.options["stamped_headers"]]),
                         ]
                     )
                     if not assertion_result:
@@ -1172,9 +1164,7 @@ class test_stamping_mechanism(CanvasCase):
                                 all(
                                     [
                                         stamped_header in link["options"]
-                                        for stamped_header in link["options"][
-                                            "stamped_headers"
-                                        ]
+                                        for stamped_header in link["options"]["stamped_headers"]
                                     ]
                                 ),
                             ]
@@ -1188,12 +1178,7 @@ class test_stamping_mechanism(CanvasCase):
                         [
                             assertion_result,
                             task.options["stamped_headers"]["header"] == "value",
-                            all(
-                                [
-                                    header in task.options
-                                    for header in task.options["stamped_headers"]
-                                ]
-                            ),
+                            all([header in task.options for header in task.options["stamped_headers"]]),
                         ]
                     )
 
@@ -1254,14 +1239,10 @@ class test_stamping_mechanism(CanvasCase):
             assert sig_2_res._get_task_meta()["stamp"] == ["stamp"]
 
         with subtests.test("sig_1_res has stamped_headers", stamped_headers=["stamp"]):
-            assert sorted(sig_1_res._get_task_meta()["stamped_headers"]) == sorted(
-                ["stamp"]
-            )
+            assert sorted(sig_1_res._get_task_meta()["stamped_headers"]) == sorted(["stamp"])
 
         with subtests.test("sig_2_res has stamped_headers", stamped_headers=["stamp"]):
-            assert sorted(sig_2_res._get_task_meta()["stamped_headers"]) == sorted(
-                ["stamp"]
-            )
+            assert sorted(sig_2_res._get_task_meta()["stamped_headers"]) == sorted(["stamp"])
 
     def test_chord_stamping_one_level(self, subtests):
         """
@@ -1291,11 +1272,7 @@ class test_stamping_mechanism(CanvasCase):
             assert sig_2_res._get_task_meta()["stamp"] == ["stamp"]
 
         with subtests.test("sig_1_res has stamped_headers", stamped_headers=["stamp"]):
-            assert sorted(sig_1_res._get_task_meta()["stamped_headers"]) == sorted(
-                ["stamp"]
-            )
+            assert sorted(sig_1_res._get_task_meta()["stamped_headers"]) == sorted(["stamp"])
 
         with subtests.test("sig_2_res has stamped_headers", stamped_headers=["stamp"]):
-            assert sorted(sig_2_res._get_task_meta()["stamped_headers"]) == sorted(
-                ["stamp"]
-            )
+            assert sorted(sig_2_res._get_task_meta()["stamped_headers"]) == sorted(["stamp"])
