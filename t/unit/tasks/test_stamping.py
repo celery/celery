@@ -80,7 +80,7 @@ class CanvasCase:
 
 
 @pytest.mark.parametrize(
-    "expected_sig",
+    "canvas_workflow",
     [
         signature("sig"),
         group(signature("sig1")),
@@ -664,16 +664,47 @@ class CanvasCase:
     ],
 )
 class test_canvas_stamping(CanvasCase):
-    def test_visitor_stamps_options(self, expected_sig):
+    @pytest.fixture
+    def stamped_sig(self, canvas_workflow):
         class CustomStampingVisitor(StampingVisitor):
+            # Should be applied on all signatures
             def on_signature(self, actual_sig, **headers) -> dict:
-                return {"header": "value"}
+                return {"on_signature": True}
 
-            # TODO: implement all visitor methods
+            # Should be applied on all groups
+            def on_group_start(self, group, **headers) -> dict:
+                return {"on_group_start": True}
 
-        expected_sig.stamp(CustomStampingVisitor())
-        # TODO: assert every single task in the canvas is stamped correctly
-        assert expected_sig.options["header"] == "value"
+            # Should be applied on all chains
+            def on_chain_start(self, chain, **headers) -> dict:
+                return {"on_chain_start": True}
+
+            # Should be applied on all chords
+            def on_chord_header_start(self, chord, **header) -> dict:
+                s = super().on_chord_header_start(chord, **header)
+                s.update({"on_chord_header_start": True})
+                return s
+
+            # Should be applied on all chords
+            def on_chord_body(self, chord, **header) -> dict:
+                return {"on_chord_body": True}
+
+            # Should be applied on all links
+            def on_callback(self, callback, **header) -> dict:
+                return {"on_callback": True}
+
+            # Should be applied on all link errors
+            def on_errback(self, errback, **header) -> dict:
+                return {"on_errback": True}
+
+        canvas_workflow.stamp(CustomStampingVisitor())
+        return canvas_workflow
+
+    def test_stamp_in_options(self, stamped_sig, subtests):
+        assert stamped_sig.options["on_signature"] is True
+
+    def test_stamping_headers_in_options(self, stamped_sig, subtests):
+        assert "on_signature" in stamped_sig.options["stamped_headers"]
 
 
 class test_stamping_mechanism(CanvasCase):
