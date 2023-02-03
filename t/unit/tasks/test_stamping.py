@@ -629,6 +629,38 @@ class CanvasCase:
                 signature("sig10"),
             ),
         ),
+        chord(
+            chain(
+                group((signature("sig1"), signature("sig2"))),
+                group(signature(f"sig{i}") for i in range(3, 5)),
+            ),
+            chain(
+                chord(
+                    chain(
+                        group(signature(f"sig{i}") for i in range(5, 7)),
+                        group(signature(f"sig{i}") for i in range(7, 9)),
+                    ),
+                    signature("sig9"),
+                ),
+                signature("sig10"),
+            ),
+        ),
+        chord(
+            chain(
+                group(signature(f"sig{i}") for i in range(1, 3)),
+                group(signature(f"sig{i}") for i in range(3, 5)),
+            ),
+            chain(
+                chord(
+                    chain(
+                        group(signature(f"sig{i}") for i in range(5, 7)),
+                        group(signature(f"sig{i}") for i in range(7, 9)),
+                    ),
+                    signature("sig9"),
+                ),
+                signature("sig10"),
+            ),
+        ),
     ],
 )
 class test_canvas_stamping(CanvasCase):
