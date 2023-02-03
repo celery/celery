@@ -755,7 +755,70 @@ class test_canvas_stamping(CanvasCase):
         stamped_sig.stamp(AssersionVisitor())
 
     def test_stamping_headers_in_options(self, stamped_sig, subtests):
-        assert "on_signature" in stamped_sig.options["stamped_headers"]
+        """Test that all canvas signatures gets the stamp in options["stamped_headers"]"""
+
+        class AssersionVisitor(StampingVisitor):
+            """
+            The canvas stamping mechanism traverses the canvas automatically, so we can ride
+            it to traverse the canvas recursively and assert that all signatures have the correct
+            stamp in options["stamped_headers"]
+            """
+
+            def on_signature(self, actual_sig, **headers) -> dict:
+                with subtests.test(f"Check if {actual_sig.name} has on_signature in stamped_headers"):
+                    assert (
+                        "on_signature" in actual_sig.options["stamped_headers"]
+                    ), f"{actual_sig.name} has no on_signature in stamped_headers"
+                return {}
+
+            def on_group_start(self, group, **headers) -> dict:
+                with subtests.test(f"Check if {group.name} has on_group_start in stamped_headers"):
+                    assert (
+                        "on_group_start" in group.options["stamped_headers"]
+                    ), f"{group.name} has no on_group_start in stamped_headers"
+                return super().on_group_start(group, **headers)
+
+            def on_chain_start(self, chain, **headers) -> dict:
+                with subtests.test(f"Check if {chain.name} has on_chain_start in stamped_headers"):
+                    assert (
+                        "on_chain_start" in chain.options["stamped_headers"]
+                    ), f"{chain.name} has no on_chain_start in stamped_headers"
+                return super().on_chain_start(chain, **headers)
+
+            def on_chord_header_start(self, chord, **header) -> dict:
+                with subtests.test(f"Check if {chord.name} has on_chord_header_start in stamped_headers"):
+                    assert (
+                        "on_chord_header_start" in chord.options["stamped_headers"]
+                    ), f"{chord.name} has no on_chord_header_start in stamped_headers"
+
+                with subtests.test(f"Check if {chord.tasks.name} has on_chord_header_start in stamped_headers"):
+                    assert (
+                        "on_chord_header_start" in chord.tasks.options["stamped_headers"]
+                    ), f"{chord.tasks.name} has no on_chord_header_start in stamped_headers"
+                return super().on_chord_header_start(chord, **header)
+
+            def on_chord_body(self, chord, **header) -> dict:
+                with subtests.test(f"Check if {chord.body.name} has on_chord_body in stamped_headers"):
+                    assert (
+                        "on_chord_body" in chord.body.options["stamped_headers"]
+                    ), f"{chord.body.name} has no on_chord_body in stamped_headers"
+                return super().on_chord_body(chord, **header)
+
+            def on_callback(self, callback, **header) -> dict:
+                with subtests.test(f"Check if {callback.name} has on_callback in stamped_headers"):
+                    assert (
+                        "on_callback" in callback.options["stamped_headers"]
+                    ), f"{callback.name} has no on_callback in stamped_headers"
+                return super().on_callback(callback, **header)
+
+            def on_errback(self, errback, **header) -> dict:
+                with subtests.test(f"Check if {errback.name} has on_errback in stamped_headers"):
+                    assert (
+                        "on_errback" in errback.options["stamped_headers"]
+                    ), f"{errback.name} has no on_errback in stamped_headers"
+                return super().on_errback(errback, **header)
+
+        stamped_sig.stamp(AssersionVisitor())
 
 
 class test_stamping_mechanism(CanvasCase):
