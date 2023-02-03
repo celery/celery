@@ -2023,6 +2023,8 @@ class _chord(Signature):
 
         if visitor is not None:
             headers.update(visitor.on_chord_header_start(self, **headers))
+            if isinstance(self.tasks, group):
+                self.tasks.stamp(visitor=visitor, **headers)
         super().stamp(visitor=visitor, **headers)
 
         if isinstance(tasks, _regen):
