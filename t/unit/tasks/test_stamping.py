@@ -40,6 +40,123 @@ class BooleanStampingVisitor(StampingVisitor):
         return {"on_errback": True}
 
 
+class StampsAssersionVisitor(StampingVisitor):
+    """
+    The canvas stamping mechanism traverses the canvas automatically, so we can ride
+    it to traverse the canvas recursively and assert that all signatures have the correct stamp in options
+    """
+
+    def __init__(self, subtests):
+        self.subtests = subtests
+
+    def on_signature(self, actual_sig: Signature, **headers) -> dict:
+        with self.subtests.test(f"{actual_sig} has on_signature stamp"):
+            assert actual_sig.options["on_signature"] is True, f"{actual_sig} has no on_signature stamp"
+        return {}
+
+    def on_group_start(self, actual_sig: Signature, **headers) -> dict:
+        with self.subtests.test(f"{actual_sig} has on_group_start stamp"):
+            assert actual_sig.options["on_group_start"] is True, f"{actual_sig} has no on_group_start stamp"
+        return super().on_group_start(actual_sig, **headers)
+
+    def on_chain_start(self, actual_sig: Signature, **headers) -> dict:
+        with self.subtests.test(f"{actual_sig} has on_chain_start stamp"):
+            assert actual_sig.options["on_chain_start"] is True, f"{actual_sig} has no on_chain_start stamp"
+        return super().on_chain_start(actual_sig, **headers)
+
+    def on_chord_header_start(self, actual_sig: Signature, **header) -> dict:
+        with self.subtests.test(f"{actual_sig} has on_chord_header_start stamp"):
+            assert (
+                actual_sig.options["on_chord_header_start"] is True
+            ), f"{actual_sig} has no on_chord_header_start stamp"
+
+        with self.subtests.test(f"{actual_sig.tasks} has on_chord_header_start stamp"):
+            assert (
+                actual_sig.tasks.options["on_chord_header_start"] is True
+            ), f"{actual_sig.tasks} has no on_chord_header_start stamp"
+        return super().on_chord_header_start(actual_sig, **header)
+
+    def on_chord_body(self, actual_sig: Signature, **header) -> dict:
+        with self.subtests.test(f"{actual_sig.body} has on_chord_body stamp"):
+            assert actual_sig.body.options["on_chord_body"] is True, f"{actual_sig.body} has no on_chord_body stamp"
+        return super().on_chord_body(actual_sig, **header)
+
+    def on_callback(self, actual_link_sig: Signature, **header) -> dict:
+        with self.subtests.test(f"{actual_link_sig} has on_callback stamp"):
+            assert actual_link_sig.options["on_callback"] is True, f"{actual_link_sig} has no on_callback stamp"
+        return super().on_callback(actual_link_sig, **header)
+
+    def on_errback(self, actual_linkerr_sig: Signature, **header) -> dict:
+        with self.subtests.test(f"{actual_linkerr_sig} has on_errback stamp"):
+            assert actual_linkerr_sig.options["on_errback"] is True, f"{actual_linkerr_sig} has no on_errback stamp"
+        return super().on_errback(actual_linkerr_sig, **header)
+
+
+class StampedHeadersAssersionVisitor(StampingVisitor):
+    """
+    The canvas stamping mechanism traverses the canvas automatically, so we can ride
+    it to traverse the canvas recursively and assert that all signatures have the correct
+    stamp in options["stamped_headers"]
+    """
+
+    def __init__(self, subtests):
+        self.subtests = subtests
+
+    def on_signature(self, actual_sig: Signature, **headers) -> dict:
+        with self.subtests.test(f"{actual_sig} has on_signature in stamped_headers"):
+            assert (
+                "on_signature" in actual_sig.options["stamped_headers"]
+            ), f"{actual_sig} has no on_signature in stamped_headers"
+        return {}
+
+    def on_group_start(self, actual_sig: Signature, **headers) -> dict:
+        with self.subtests.test(f"{actual_sig} has on_group_start in stamped_headers"):
+            assert (
+                "on_group_start" in actual_sig.options["stamped_headers"]
+            ), f"{actual_sig} has no on_group_start in stamped_headers"
+        return super().on_group_start(actual_sig, **headers)
+
+    def on_chain_start(self, actual_sig: Signature, **headers) -> dict:
+        with self.subtests.test(f"{actual_sig} has on_chain_start in stamped_headers"):
+            assert (
+                "on_chain_start" in actual_sig.options["stamped_headers"]
+            ), f"{actual_sig} has no on_chain_start in stamped_headers"
+        return super().on_chain_start(actual_sig, **headers)
+
+    def on_chord_header_start(self, actual_sig: Signature, **header) -> dict:
+        with self.subtests.test(f"{actual_sig} has on_chord_header_start in stamped_headers"):
+            assert (
+                "on_chord_header_start" in actual_sig.options["stamped_headers"]
+            ), f"{actual_sig} has no on_chord_header_start in stamped_headers"
+
+        with self.subtests.test(f"{actual_sig.tasks} has on_chord_header_start in stamped_headers"):
+            assert (
+                "on_chord_header_start" in actual_sig.tasks.options["stamped_headers"]
+            ), f"{actual_sig.tasks} has no on_chord_header_start in stamped_headers"
+        return super().on_chord_header_start(actual_sig, **header)
+
+    def on_chord_body(self, actual_sig: Signature, **header) -> dict:
+        with self.subtests.test(f"{actual_sig.body} has on_chord_body in stamped_headers"):
+            assert (
+                "on_chord_body" in actual_sig.body.options["stamped_headers"]
+            ), f"{actual_sig.body} has no on_chord_body in stamped_headers"
+        return super().on_chord_body(actual_sig, **header)
+
+    def on_callback(self, actual_link_sig: Signature, **header) -> dict:
+        with self.subtests.test(f"{actual_link_sig} has on_callback in stamped_headers"):
+            assert (
+                "on_callback" in actual_link_sig.options["stamped_headers"]
+            ), f"{actual_link_sig} has no on_callback in stamped_headers"
+        return super().on_callback(actual_link_sig, **header)
+
+    def on_errback(self, actual_linkerr_sig: Signature, **header) -> dict:
+        with self.subtests.test(f"{actual_linkerr_sig} has on_errback in stamped_headers"):
+            assert (
+                "on_errback" in actual_linkerr_sig.options["stamped_headers"]
+            ), f"{actual_linkerr_sig} has no on_errback in stamped_headers"
+        return super().on_errback(actual_linkerr_sig, **header)
+
+
 def return_True(*args, **kwargs):
     return True
 
@@ -724,128 +841,13 @@ class test_canvas_stamping(CanvasCase):
     def test_stamp_in_options(self, workflow, subtests):
         """Test that all canvas signatures gets the stamp in options"""
 
-        class AssersionVisitor(StampingVisitor):
-            """
-            The canvas stamping mechanism traverses the canvas automatically, so we can ride
-            it to traverse the canvas recursively and assert that all signatures have the correct stamp in options
-            """
-
-            def on_signature(self, actual_sig, **headers) -> dict:
-                with subtests.test(f"Check if {actual_sig} has on_signature stamp"):
-                    assert actual_sig.options["on_signature"] is True, f"{actual_sig} has no on_signature stamp"
-                return {}
-
-            def on_group_start(self, actual_sig, **headers) -> dict:
-                with subtests.test(f"Check if {actual_sig} has on_group_start stamp"):
-                    assert actual_sig.options["on_group_start"] is True, f"{actual_sig} has no on_group_start stamp"
-                return super().on_group_start(actual_sig, **headers)
-
-            def on_chain_start(self, actual_sig, **headers) -> dict:
-                with subtests.test(f"Check if {actual_sig} has on_chain_start stamp"):
-                    assert actual_sig.options["on_chain_start"] is True, f"{actual_sig} has no on_chain_start stamp"
-                return super().on_chain_start(actual_sig, **headers)
-
-            def on_chord_header_start(self, actual_sig, **header) -> dict:
-                with subtests.test(f"Check if {actual_sig} has on_chord_header_start stamp"):
-                    assert (
-                        actual_sig.options["on_chord_header_start"] is True
-                    ), f"{actual_sig} has no on_chord_header_start stamp"
-
-                with subtests.test(f"Check if {actual_sig.tasks} has on_chord_header_start stamp"):
-                    assert (
-                        actual_sig.tasks.options["on_chord_header_start"] is True
-                    ), f"{actual_sig.tasks} has no on_chord_header_start stamp"
-                return super().on_chord_header_start(actual_sig, **header)
-
-            def on_chord_body(self, actual_sig, **header) -> dict:
-                with subtests.test(f"Check if {actual_sig.body} has on_chord_body stamp"):
-                    assert (
-                        actual_sig.body.options["on_chord_body"] is True
-                    ), f"{actual_sig.body} has no on_chord_body stamp"
-                return super().on_chord_body(actual_sig, **header)
-
-            def on_callback(self, actual_link_sig, **header) -> dict:
-                with subtests.test(f"Check if {actual_link_sig} has on_callback stamp"):
-                    assert (
-                        actual_link_sig.options["on_callback"] is True
-                    ), f"{actual_link_sig} has no on_callback stamp"
-                return super().on_callback(actual_link_sig, **header)
-
-            def on_errback(self, actual_linkerr_sig, **header) -> dict:
-                with subtests.test(f"Check if {actual_linkerr_sig} has on_errback stamp"):
-                    assert (
-                        actual_linkerr_sig.options["on_errback"] is True
-                    ), f"{actual_linkerr_sig} has no on_errback stamp"
-                return super().on_errback(actual_linkerr_sig, **header)
-
-        workflow.stamp(AssersionVisitor())
+        workflow.stamp(StampsAssersionVisitor(subtests))
 
     @pytest.mark.usefixtures("depends_on_current_app")
     def test_stamping_headers_in_options(self, workflow, subtests):
         """Test that all canvas signatures gets the stamp in options["stamped_headers"]"""
 
-        class AssersionVisitor(StampingVisitor):
-            """
-            The canvas stamping mechanism traverses the canvas automatically, so we can ride
-            it to traverse the canvas recursively and assert that all signatures have the correct
-            stamp in options["stamped_headers"]
-            """
-
-            def on_signature(self, actual_sig, **headers) -> dict:
-                with subtests.test(f"Check if {actual_sig} has on_signature in stamped_headers"):
-                    assert (
-                        "on_signature" in actual_sig.options["stamped_headers"]
-                    ), f"{actual_sig} has no on_signature in stamped_headers"
-                return {}
-
-            def on_group_start(self, actual_sig, **headers) -> dict:
-                with subtests.test(f"Check if {actual_sig} has on_group_start in stamped_headers"):
-                    assert (
-                        "on_group_start" in actual_sig.options["stamped_headers"]
-                    ), f"{actual_sig} has no on_group_start in stamped_headers"
-                return super().on_group_start(actual_sig, **headers)
-
-            def on_chain_start(self, actual_sig, **headers) -> dict:
-                with subtests.test(f"Check if {actual_sig} has on_chain_start in stamped_headers"):
-                    assert (
-                        "on_chain_start" in actual_sig.options["stamped_headers"]
-                    ), f"{actual_sig} has no on_chain_start in stamped_headers"
-                return super().on_chain_start(actual_sig, **headers)
-
-            def on_chord_header_start(self, actual_sig, **header) -> dict:
-                with subtests.test(f"Check if {actual_sig} has on_chord_header_start in stamped_headers"):
-                    assert (
-                        "on_chord_header_start" in actual_sig.options["stamped_headers"]
-                    ), f"{actual_sig} has no on_chord_header_start in stamped_headers"
-
-                with subtests.test(f"Check if {actual_sig.tasks} has on_chord_header_start in stamped_headers"):
-                    assert (
-                        "on_chord_header_start" in actual_sig.tasks.options["stamped_headers"]
-                    ), f"{actual_sig.tasks} has no on_chord_header_start in stamped_headers"
-                return super().on_chord_header_start(actual_sig, **header)
-
-            def on_chord_body(self, actual_sig, **header) -> dict:
-                with subtests.test(f"Check if {actual_sig.body} has on_chord_body in stamped_headers"):
-                    assert (
-                        "on_chord_body" in actual_sig.body.options["stamped_headers"]
-                    ), f"{actual_sig.body} has no on_chord_body in stamped_headers"
-                return super().on_chord_body(actual_sig, **header)
-
-            def on_callback(self, actual_link_sig, **header) -> dict:
-                with subtests.test(f"Check if {actual_link_sig} has on_callback in stamped_headers"):
-                    assert (
-                        "on_callback" in actual_link_sig.options["stamped_headers"]
-                    ), f"{actual_link_sig} has no on_callback in stamped_headers"
-                return super().on_callback(actual_link_sig, **header)
-
-            def on_errback(self, actual_linkerr_sig, **header) -> dict:
-                with subtests.test(f"Check if {actual_linkerr_sig} has on_errback in stamped_headers"):
-                    assert (
-                        "on_errback" in actual_linkerr_sig.options["stamped_headers"]
-                    ), f"{actual_linkerr_sig} has no on_errback in stamped_headers"
-                return super().on_errback(actual_linkerr_sig, **header)
-
-        workflow.stamp(AssersionVisitor())
+        workflow.stamp(StampedHeadersAssersionVisitor(subtests))
 
 
 class test_stamping_mechanism(CanvasCase):
