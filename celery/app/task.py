@@ -953,39 +953,7 @@ class Task:
         for t in reversed(self.request.chain or []):
             sig |= signature(t, app=self.app)
         # Stamping sig with parents groups
-        if self.request.stamps:
-            stamped_headers = self.request.stamped_headers.copy()
-            stamps = self.request.stamps.copy()
-            stamped_headers.extend(sig.options.get('stamped_headers', []))
-            stamped_headers = list(set(stamped_headers))
-            stamps.update({
-                stamp: value
-                for stamp, value in sig.options.items() if stamp in sig.options.get('stamped_headers', [])
-            })
-            sig.options['stamped_headers'] = stamped_headers
-            sig.options.update(stamps)
-
-            # Collecting all of the links (callback/errback) to stamp them
-            links = sig.options['link'] if 'link' in sig.options else []
-            links.extend(sig.options['link_error'] if 'link_error' in sig.options else [])
-
-            if hasattr(sig, "tasks"):
-                tasks = sig.tasks
-                if isinstance(tasks, group):
-                    tasks = tasks.tasks
-                for task in tasks:
-                    task.options['stamped_headers'] = stamped_headers
-                    task.options.update(stamps)
-                    links.extend(task.options['link'] if 'link' in task.options else [])
-                    links.extend(task.options['link_error'] if 'link_error' in task.options else [])
-
-            for link in links:
-                link_stamped_headers = stamped_headers.copy()
-                link_stamped_headers.extend(link['options'].get('stamped_headers', []))
-                link_stamped_headers = list(set(link_stamped_headers))
-                link['options']['stamped_headers'] = link_stamped_headers
-                link['options'].update(stamps)
-
+        self.on_replace_stamping(sig)
         return self.on_replace(sig)
 
     def add_to_chord(self, sig, lazy=False):
@@ -1101,6 +1069,20 @@ class Task:
         Returns:
             None: The return value of this handler is ignored.
         """
+
+    def on_replace_stamping(self, sig, visitor=None):
+        """Handler called when the task is replaced and stamps are present.
+
+        .. versionadded:: 5.3
+
+        Arguments:
+            sig (Signature): signature to replace with.
+        """
+        if self.request.stamps:
+            stamps = self.request.stamps.copy()
+            for header, stamp in stamps.items():
+                stamps[header] = stamp[0]
+            sig.stamp(visitor=visitor, **stamps)
 
     def on_replace(self, sig):
         """Handler called when the task is replaced.
