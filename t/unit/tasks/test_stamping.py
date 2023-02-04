@@ -4,7 +4,7 @@ from collections.abc import Iterable
 import pytest
 
 from celery import Task
-from celery.canvas import StampingVisitor, chain, chord, group, signature
+from celery.canvas import Signature, StampingVisitor, chain, chord, group, signature
 from celery.exceptions import Ignore
 
 
@@ -695,11 +695,33 @@ class CanvasCase:
 )
 class test_canvas_stamping(CanvasCase):
     @pytest.fixture
-    def stamped_canvas(self, canvas_workflow):
+    def linked_canvas(self, canvas_workflow) -> Signature:
+        class LinkingVisitor(StampingVisitor):
+            def on_signature(self, actual_sig: Signature, **headers) -> dict:
+                actual_sig.link(signature("link_sig"))
+                actual_sig.link_error(signature("link_error_sig"))
+                return super().on_signature(actual_sig, **headers)
+
+        canvas_workflow.stamp(LinkingVisitor())
+        return canvas_workflow
+
+    @pytest.fixture
+    def stamped_canvas(self, canvas_workflow) -> Signature:
         canvas_workflow.stamp(BooleanStampingVisitor())
         return canvas_workflow
 
-    def test_stamp_in_options(self, stamped_canvas, subtests):
+    @pytest.fixture
+    def stamped_linked_canvas(self, linked_canvas) -> Signature:
+        linked_canvas.stamp(BooleanStampingVisitor())
+        return linked_canvas
+
+    @pytest.fixture(params=["stamped_canvas", "stamped_linked_canvas"])
+    def workflow(self, request, canvas_workflow) -> Signature:
+        canvas_workflow = canvas_workflow
+        return request.getfixturevalue(request.param)
+
+    @pytest.mark.usefixtures("depends_on_current_app")
+    def test_stamp_in_options(self, workflow, subtests):
         """Test that all canvas signatures gets the stamp in options"""
 
         class AssersionVisitor(StampingVisitor):
@@ -756,9 +778,10 @@ class test_canvas_stamping(CanvasCase):
                     ), f"{actual_linkerr_sig} has no on_errback stamp"
                 return super().on_errback(actual_linkerr_sig, **header)
 
-        stamped_canvas.stamp(AssersionVisitor())
+        workflow.stamp(AssersionVisitor())
 
-    def test_stamping_headers_in_options(self, stamped_canvas, subtests):
+    @pytest.mark.usefixtures("depends_on_current_app")
+    def test_stamping_headers_in_options(self, workflow, subtests):
         """Test that all canvas signatures gets the stamp in options["stamped_headers"]"""
 
         class AssersionVisitor(StampingVisitor):
@@ -822,7 +845,7 @@ class test_canvas_stamping(CanvasCase):
                     ), f"{actual_linkerr_sig} has no on_errback in stamped_headers"
                 return super().on_errback(actual_linkerr_sig, **header)
 
-        stamped_canvas.stamp(AssersionVisitor())
+        workflow.stamp(AssersionVisitor())
 
 
 class test_stamping_mechanism(CanvasCase):
