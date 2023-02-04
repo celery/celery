@@ -849,6 +849,39 @@ class test_canvas_stamping(CanvasCase):
 
         workflow.stamp(StampedHeadersAssersionVisitor(subtests))
 
+    @pytest.mark.usefixtures("depends_on_current_app")
+    def test_stamping_with_replace(self, workflow, subtests):
+        self.app.conf.task_always_eager = True
+        self.app.conf.task_store_eager_result = True
+        self.app.conf.result_extended = True
+
+        class AssersionTask(Task):
+            def on_replace(self, sig):
+                nonlocal assertion_result
+                assert sig == workflow
+                sig.stamp(StampsAssersionVisitor(subtests))
+                sig.stamp(StampedHeadersAssersionVisitor(subtests))
+                assertion_result = True
+                return super().on_replace(sig)
+
+        @self.app.task(shared=False, bind=True, base=AssersionTask)
+        def assert_using_replace(self):
+            return self.replace(workflow)
+
+        class StampingTask(Task):
+            def on_replace(self, sig: Signature):
+                sig.stamp(BooleanStampingVisitor())
+                return super().on_replace(sig)
+
+        @self.app.task(shared=False, bind=True, base=StampingTask)
+        def stamp_using_replace(self):
+            return self.replace(assert_using_replace.s())
+
+        replaced_sig = stamp_using_replace.s()
+        assertion_result = False
+        replaced_sig.apply()
+        assert assertion_result
+
 
 class test_stamping_mechanism(CanvasCase):
     """These tests were extracted (and fixed) from the canvas unit tests."""
