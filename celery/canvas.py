@@ -85,6 +85,9 @@ def _merge_dictionaries(d1, d2, aggregate_duplicates=True):
         'set': {'a', 'b'}
     }
     """
+    if not d2:
+        return
+
     for key, value in d1.items():
         if key in d2:
             if isinstance(value, dict):
@@ -568,9 +571,16 @@ class Signature(dict):
         else:
             stamped_headers = [
                 header for header in headers.keys()
-                if header not in self.options and header != "stamped_headers"
+                if all([
+                    header != "stamped_headers",
+                    header in self.options.get("stamped_headers", [])
+                ])
             ]
-            headers["stamped_headers"] = list(set(stamped_headers))
+            if "stamped_headers" in headers:
+                headers["stamped_headers"].extend(stamped_headers)
+            else:
+                headers["stamped_headers"] = stamped_headers
+            headers["stamped_headers"] = list(set(headers["stamped_headers"]))
             _merge_dictionaries(headers, self.options, aggregate_duplicates=False)
 
         # Preserve previous stamped headers
@@ -599,7 +609,7 @@ class Signature(dict):
         # Stamp all of the callbacks of this signature
         headers = deepcopy(non_visitor_headers)
         for link in self.options.get('link', []) or []:
-            visitor_headers = visitor.on_callback(link, **headers)
+            visitor_headers = visitor.on_callback(signature(link), **headers)
             if visitor_headers and "stamped_headers" not in visitor_headers:
                 visitor_headers["stamped_headers"] = list(visitor_headers.keys())
             headers.update(visitor_headers or {})
@@ -615,7 +625,7 @@ class Signature(dict):
         # Stamp all of the errbacks of this signature
         headers = deepcopy(non_visitor_headers)
         for link in self.options.get('link_error', []) or []:
-            visitor_headers = visitor.on_errback(link, **headers)
+            visitor_headers = visitor.on_errback(signature(link), **headers)
             if visitor_headers and "stamped_headers" not in visitor_headers:
                 visitor_headers["stamped_headers"] = list(visitor_headers.keys())
             headers.update(visitor_headers or {})
@@ -2043,7 +2053,7 @@ class _chord(Signature):
             visitor_headers = visitor.on_chord_header_start(self, **headers) or {}
         headers = self._stamp_headers(visitor_headers, **headers)
 
-        if visitor is not None and isinstance(self.tasks, group):
+        if isinstance(self.tasks, group):
             self.tasks.stamp(visitor=None, **headers)
 
         super().stamp(visitor=visitor, **headers)
