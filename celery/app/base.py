@@ -229,6 +229,7 @@ class Celery:
                  **kwargs):
 
         self._local = threading.local()
+        self._backend_cache = None
 
         self.clock = LamportClock()
         self.main = main
@@ -1250,13 +1251,30 @@ class Celery:
         return instantiate(self.amqp_cls, app=self)
 
     @property
+    def _backend(self):
+        """A reference to the backend object
+
+        Uses self._backend_cache if it is thread safe.
+        Otherwise, use self._local
+        """
+        if self._backend_cache is not None:
+            return self._backend_cache
+        return getattr(self._local, "backend", None)
+
+    @_backend.setter
+    def _backend(self, backend):
+        """Set the backend object on the app"""
+        if backend.thread_safe:
+            self._backend_cache = backend
+        else:
+            self._local.backend = backend
+
+    @property
     def backend(self):
         """Current backend instance."""
-        try:
-            return self._local.backend
-        except AttributeError:
-            self._local.backend = new_backend = self._get_backend()
-            return new_backend
+        if self._backend is None:
+            self._backend = self._get_backend()
+        return self._backend
 
     @property
     def conf(self):

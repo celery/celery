@@ -792,6 +792,18 @@ Default: Inf
 This is the maximum of retries in case of recoverable exceptions.
 
 
+.. setting:: result_backend_thread_safe
+
+``result_backend_thread_safe``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: False
+
+If True, then the backend object is shared across threads.
+This may be useful for using a shared connection pool instead of creating
+a connection for every thread.
+
+
 .. setting:: result_backend_transport_options
 
 ``result_backend_transport_options``
