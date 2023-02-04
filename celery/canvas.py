@@ -70,7 +70,7 @@ def _stamp_regen_task(task, visitor, **headers):
     return task
 
 
-def _merge_dictionaries(d1, d2):
+def _merge_dictionaries(d1, d2, aggregate_duplicates=True):
     """Merge two dictionaries recursively into the first one.
 
     Example:
@@ -91,10 +91,10 @@ def _merge_dictionaries(d1, d2):
                 _merge_dictionaries(d1[key], d2[key])
             else:
                 if isinstance(value, (int, float, str)):
-                    d1[key] = [value]
-                if isinstance(d2[key], list) and d1[key] is not None:
+                    d1[key] = [value] if aggregate_duplicates else value
+                if isinstance(d2[key], list) and isinstance(d1[key], list):
                     d1[key].extend(d2[key])
-                else:
+                elif aggregate_duplicates:
                     if d1[key] is None:
                         d1[key] = []
                     else:
@@ -550,22 +550,37 @@ class Signature(dict):
             headers (Dict): Stamps that should be added to headers.
         """
         self.stamp_links(visitor, **headers)
-
-        headers = headers.copy()
+        headers = deepcopy(headers)
+        visitor_headers = None
         if visitor is not None:
             visitor_headers = visitor.on_signature(self, **headers) or {}
+        headers = self._stamp_headers(visitor_headers, **headers)
+        return self.set(**headers)
+
+    def _stamp_headers(self, visitor_headers=None, **headers):
+        headers = deepcopy(headers)
+        if visitor_headers is not None:
+            visitor_headers = visitor_headers or {}
             if "stamped_headers" not in visitor_headers:
                 visitor_headers["stamped_headers"] = list(visitor_headers.keys())
-            _merge_dictionaries(headers, visitor_headers)
+            _merge_dictionaries(headers, visitor_headers, aggregate_duplicates=False)
+            headers["stamped_headers"] = list(set(headers["stamped_headers"]))
         else:
-            headers["stamped_headers"] = [header for header in headers.keys() if header not in self.options]
-            _merge_dictionaries(headers, self.options)
+            stamped_headers = [
+                header for header in headers.keys()
+                if header not in self.options and header != "stamped_headers"
+            ]
+            headers["stamped_headers"] = list(set(stamped_headers))
+            _merge_dictionaries(headers, self.options, aggregate_duplicates=False)
 
         # Preserve previous stamped headers
         stamped_headers = set(self.options.get("stamped_headers", []))
-        stamped_headers.update(headers["stamped_headers"])
+        stamped_headers.update(headers.get("stamped_headers", []))
         headers["stamped_headers"] = list(stamped_headers)
-        return self.set(**headers)
+        for previous_header in stamped_headers:
+            if previous_header not in headers:
+                headers[previous_header] = self.options[previous_header]
+        return headers
 
     def stamp_links(self, visitor, **headers):
         """Stamp this signature links (callbacks and errbacks).
@@ -579,10 +594,10 @@ class Signature(dict):
         if not visitor:
             return
 
-        non_visitor_headers = headers.copy()
+        non_visitor_headers = deepcopy(headers)
 
         # Stamp all of the callbacks of this signature
-        headers = non_visitor_headers.copy()
+        headers = deepcopy(non_visitor_headers)
         for link in self.options.get('link', []) or []:
             visitor_headers = visitor.on_callback(link, **headers)
             if visitor_headers and "stamped_headers" not in visitor_headers:
@@ -593,12 +608,12 @@ class Signature(dict):
             # Stamping a link to a signature with previous stamps
             # may result in missing stamps in the link options, if the linking
             # was done AFTER the stamping of the signature
-            for stamp in link.options['stamped_headers']:
+            for stamp in link.options.get('stamped_headers', []):
                 if stamp in self.options and stamp not in link.options:
                     link.options[stamp] = self.options[stamp]
 
         # Stamp all of the errbacks of this signature
-        headers = non_visitor_headers.copy()
+        headers = deepcopy(non_visitor_headers)
         for link in self.options.get('link_error', []) or []:
             visitor_headers = visitor.on_errback(link, **headers)
             if visitor_headers and "stamped_headers" not in visitor_headers:
@@ -609,7 +624,7 @@ class Signature(dict):
             # Stamping a link to a signature with previous stamps
             # may result in missing stamps in the link options, if the linking
             # was done AFTER the stamping of the signature
-            for stamp in link.options['stamped_headers']:
+            for stamp in link.options.get('stamped_headers', []):
                 if stamp in self.options and stamp not in link.options:
                     link.options[stamp] = self.options[stamp]
 
@@ -1027,15 +1042,10 @@ class _chain(Signature):
         return results[0]
 
     def stamp(self, visitor=None, **headers):
+        visitor_headers = None
         if visitor is not None:
             visitor_headers = visitor.on_chain_start(self, **headers) or {}
-            if "stamped_headers" not in visitor_headers:
-                visitor_headers["stamped_headers"] = list(visitor_headers.keys())
-            _merge_dictionaries(headers, visitor_headers)
-            stamped_headers = set(self.options.get("stamped_headers", []))
-            stamped_headers.update(headers["stamped_headers"])
-            headers["stamped_headers"] = list(stamped_headers)
-
+        headers = self._stamp_headers(visitor_headers, **headers)
         super().stamp(visitor=visitor, **headers)
         for task in self.tasks:
             task.stamp(visitor=visitor, **headers)
@@ -1567,15 +1577,10 @@ class group(Signature):
             task.set_immutable(immutable)
 
     def stamp(self, visitor=None, **headers):
+        visitor_headers = None
         if visitor is not None:
             visitor_headers = visitor.on_group_start(self, **headers) or {}
-            if "stamped_headers" not in visitor_headers:
-                visitor_headers["stamped_headers"] = list(visitor_headers.keys())
-            _merge_dictionaries(headers, visitor_headers)
-            stamped_headers = set(self.options.get("stamped_headers", []))
-            stamped_headers.update(headers["stamped_headers"])
-            headers["stamped_headers"] = list(stamped_headers)
-
+        headers = self._stamp_headers(visitor_headers, **headers)
         super().stamp(visitor=visitor, **headers)
 
         if isinstance(self.tasks, _regen):
@@ -2033,35 +2038,29 @@ class _chord(Signature):
         if isinstance(tasks, group):
             tasks = tasks.tasks
 
+        visitor_headers = None
         if visitor is not None:
             visitor_headers = visitor.on_chord_header_start(self, **headers) or {}
-            if "stamped_headers" not in visitor_headers:
-                visitor_headers["stamped_headers"] = list(visitor_headers.keys())
-            _merge_dictionaries(headers, visitor_headers)
-            stamped_headers = set(self.options.get("stamped_headers", []))
-            stamped_headers.update(headers["stamped_headers"])
-            headers["stamped_headers"] = list(stamped_headers)
-            if isinstance(self.tasks, group):
-                self.tasks.stamp(visitor=visitor, **headers)
+        headers = self._stamp_headers(visitor_headers, **headers)
+
+        if visitor is not None and isinstance(self.tasks, group):
+            self.tasks.stamp(visitor=None, **headers)
+
         super().stamp(visitor=visitor, **headers)
 
         if isinstance(tasks, _regen):
             tasks.map(_partial(_stamp_regen_task, visitor=visitor, **headers))
         else:
+            stamps = deepcopy(headers)
             for task in tasks:
-                task.stamp(visitor=visitor, **headers)
+                task.stamp(visitor=visitor, **stamps)
 
         if visitor is not None:
             visitor.on_chord_header_end(self, **headers)
 
         if visitor is not None and self.body is not None:
             visitor_headers = visitor.on_chord_body(self, **headers) or {}
-            if "stamped_headers" not in visitor_headers:
-                visitor_headers["stamped_headers"] = list(visitor_headers.keys())
-            _merge_dictionaries(headers, visitor_headers)
-            stamped_headers = set(self.options.get("stamped_headers", []))
-            stamped_headers.update(headers["stamped_headers"])
-            headers["stamped_headers"] = list(stamped_headers)
+            headers = self._stamp_headers(visitor_headers, **headers)
             self.body.stamp(visitor=visitor, **headers)
 
     def apply_async(self, args=None, kwargs=None, task_id=None,
