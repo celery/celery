@@ -9,33 +9,26 @@ from celery.exceptions import Ignore
 
 
 class BooleanStampingVisitor(StampingVisitor):
-    # Should be applied on all signatures
     def on_signature(self, actual_sig: Signature, **headers) -> dict:
         return {"on_signature": True}
 
-    # Should be applied on all groups
     def on_group_start(self, actual_sig: Signature, **headers) -> dict:
         return {"on_group_start": True}
 
-    # Should be applied on all chains
     def on_chain_start(self, actual_sig: Signature, **headers) -> dict:
         return {"on_chain_start": True}
 
-    # Should be applied on all chords
     def on_chord_header_start(self, actual_sig: Signature, **header) -> dict:
         s = super().on_chord_header_start(actual_sig, **header)
         s.update({"on_chord_header_start": True})
         return s
 
-    # Should be applied on all chords
     def on_chord_body(self, actual_sig: Signature, **header) -> dict:
         return {"on_chord_body": True}
 
-    # Should be applied on all links
     def on_callback(self, actual_sig: Signature, **header) -> dict:
         return {"on_callback": True}
 
-    # Should be applied on all link errors
     def on_errback(self, actual_sig: Signature, **header) -> dict:
         return {"on_errback": True}
 
