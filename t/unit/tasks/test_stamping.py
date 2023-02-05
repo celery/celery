@@ -4,7 +4,7 @@ from collections.abc import Iterable
 import pytest
 
 from celery import Task
-from celery.canvas import Signature, StampingVisitor, chain, chord, group, signature
+from celery.canvas import Signature, StampingVisitor, _chain, _chord, chain, chord, group, signature
 from celery.exceptions import Ignore
 
 
@@ -46,49 +46,28 @@ class StampsAssersionVisitor(StampingVisitor):
     it to traverse the canvas recursively and assert that all signatures have the correct stamp in options
     """
 
-    def __init__(self, subtests):
+    def __init__(self, subtests, visitor: StampingVisitor):
         self.subtests = subtests
+        self.visitor = visitor
+
+    def assertion_check(self, actual_sig: Signature, method: str, **headers) -> None:
+        expected_stamp = getattr(self.visitor, method)(actual_sig, **headers)
+        actual_stamp = actual_sig.options[method]
+        with self.subtests.test(f"Check if {actual_sig} has stamp: {expected_stamp}"):
+            asserstion_check = actual_stamp in expected_stamp.values()
+            asserstion_error = f"{actual_sig} has stamp {actual_stamp} instead of {expected_stamp}"
+            assert asserstion_check, asserstion_error
 
     def on_signature(self, actual_sig: Signature, **headers) -> dict:
-        with self.subtests.test(f"{actual_sig} has on_signature stamp"):
-            assert actual_sig.options["on_signature"] is True, f"{actual_sig} has no on_signature stamp"
-        return {}
-
-    def on_group_start(self, actual_sig: Signature, **headers) -> dict:
-        with self.subtests.test(f"{actual_sig} has on_group_start stamp"):
-            assert actual_sig.options["on_group_start"] is True, f"{actual_sig} has no on_group_start stamp"
-        return super().on_group_start(actual_sig, **headers)
-
-    def on_chain_start(self, actual_sig: Signature, **headers) -> dict:
-        with self.subtests.test(f"{actual_sig} has on_chain_start stamp"):
-            assert actual_sig.options["on_chain_start"] is True, f"{actual_sig} has no on_chain_start stamp"
-        return super().on_chain_start(actual_sig, **headers)
-
-    def on_chord_header_start(self, actual_sig: Signature, **header) -> dict:
-        with self.subtests.test(f"{actual_sig} has on_chord_header_start stamp"):
-            assert (
-                actual_sig.options["on_chord_header_start"] is True
-            ), f"{actual_sig} has no on_chord_header_start stamp"
-
-        with self.subtests.test(f"{actual_sig.tasks} has on_chord_header_start stamp"):
-            assert (
-                actual_sig.tasks.options["on_chord_header_start"] is True
-            ), f"{actual_sig.tasks} has no on_chord_header_start stamp"
-        return super().on_chord_header_start(actual_sig, **header)
-
-    def on_chord_body(self, actual_sig: Signature, **header) -> dict:
-        with self.subtests.test(f"{actual_sig.body} has on_chord_body stamp"):
-            assert actual_sig.body.options["on_chord_body"] is True, f"{actual_sig.body} has no on_chord_body stamp"
-        return super().on_chord_body(actual_sig, **header)
+        self.assertion_check(actual_sig, "on_signature", **headers)
+        return super().on_signature(actual_sig, **headers)
 
     def on_callback(self, actual_link_sig: Signature, **header) -> dict:
-        with self.subtests.test(f"{actual_link_sig} has on_callback stamp"):
-            assert actual_link_sig.options["on_callback"] is True, f"{actual_link_sig} has no on_callback stamp"
+        self.assertion_check(actual_link_sig, "on_callback", **header)
         return super().on_callback(actual_link_sig, **header)
 
     def on_errback(self, actual_linkerr_sig: Signature, **header) -> dict:
-        with self.subtests.test(f"{actual_linkerr_sig} has on_errback stamp"):
-            assert actual_linkerr_sig.options["on_errback"] is True, f"{actual_linkerr_sig} has no on_errback stamp"
+        self.assertion_check(actual_linkerr_sig, "on_errback", **header)
         return super().on_errback(actual_linkerr_sig, **header)
 
 
@@ -99,61 +78,55 @@ class StampedHeadersAssersionVisitor(StampingVisitor):
     stamp in options["stamped_headers"]
     """
 
-    def __init__(self, subtests):
+    def __init__(self, subtests, visitor: StampingVisitor):
         self.subtests = subtests
+        self.visitor = visitor
+
+    def assertion_check(self, actual_sig: Signature, expected_stamped_header: str) -> None:
+        if any(
+            [
+                isinstance(actual_sig, group),
+                isinstance(actual_sig, _chain),
+                isinstance(actual_sig, _chord),
+            ]
+        ):
+            return
+        actual_stamped_headers = actual_sig.options["stamped_headers"]
+        with self.subtests.test(f'Check if {actual_sig}["stamped_headers"] has: {expected_stamped_header}'):
+            asserstion_check = expected_stamped_header in actual_stamped_headers
+            asserstion_error = (
+                f'{actual_sig}["stamped_headers"] {actual_stamped_headers} does '
+                f"not contain {expected_stamped_header}"
+            )
+            assert asserstion_check, asserstion_error
 
     def on_signature(self, actual_sig: Signature, **headers) -> dict:
-        with self.subtests.test(f"{actual_sig} has on_signature in stamped_headers"):
-            assert (
-                "on_signature" in actual_sig.options["stamped_headers"]
-            ), f"{actual_sig} has no on_signature in stamped_headers"
-        return {}
+        self.assertion_check(actual_sig, "on_signature")
+        return super().on_signature(actual_sig, **headers)
 
     def on_group_start(self, actual_sig: Signature, **headers) -> dict:
-        with self.subtests.test(f"{actual_sig} has on_group_start in stamped_headers"):
-            assert (
-                "on_group_start" in actual_sig.options["stamped_headers"]
-            ), f"{actual_sig} has no on_group_start in stamped_headers"
+        self.assertion_check(actual_sig, "on_group_start")
         return super().on_group_start(actual_sig, **headers)
 
     def on_chain_start(self, actual_sig: Signature, **headers) -> dict:
-        with self.subtests.test(f"{actual_sig} has on_chain_start in stamped_headers"):
-            assert (
-                "on_chain_start" in actual_sig.options["stamped_headers"]
-            ), f"{actual_sig} has no on_chain_start in stamped_headers"
+        self.assertion_check(actual_sig, "on_chain_start")
         return super().on_chain_start(actual_sig, **headers)
 
     def on_chord_header_start(self, actual_sig: Signature, **header) -> dict:
-        with self.subtests.test(f"{actual_sig} has on_chord_header_start in stamped_headers"):
-            assert (
-                "on_chord_header_start" in actual_sig.options["stamped_headers"]
-            ), f"{actual_sig} has no on_chord_header_start in stamped_headers"
-
-        with self.subtests.test(f"{actual_sig.tasks} has on_chord_header_start in stamped_headers"):
-            assert (
-                "on_chord_header_start" in actual_sig.tasks.options["stamped_headers"]
-            ), f"{actual_sig.tasks} has no on_chord_header_start in stamped_headers"
+        self.assertion_check(actual_sig, "on_chord_header_start")
+        self.assertion_check(actual_sig.tasks, "on_chord_header_start")
         return super().on_chord_header_start(actual_sig, **header)
 
-    def on_chord_body(self, actual_sig: Signature, **header) -> dict:
-        with self.subtests.test(f"{actual_sig.body} has on_chord_body in stamped_headers"):
-            assert (
-                "on_chord_body" in actual_sig.body.options["stamped_headers"]
-            ), f"{actual_sig.body} has no on_chord_body in stamped_headers"
+    def on_chord_body(self, actual_sig: chord, **header) -> dict:
+        self.assertion_check(actual_sig.body, "on_chord_body")
         return super().on_chord_body(actual_sig, **header)
 
     def on_callback(self, actual_link_sig: Signature, **header) -> dict:
-        with self.subtests.test(f"{actual_link_sig} has on_callback in stamped_headers"):
-            assert (
-                "on_callback" in actual_link_sig.options["stamped_headers"]
-            ), f"{actual_link_sig} has no on_callback in stamped_headers"
+        self.assertion_check(actual_link_sig, "on_callback")
         return super().on_callback(actual_link_sig, **header)
 
     def on_errback(self, actual_linkerr_sig: Signature, **header) -> dict:
-        with self.subtests.test(f"{actual_linkerr_sig} has on_errback in stamped_headers"):
-            assert (
-                "on_errback" in actual_linkerr_sig.options["stamped_headers"]
-            ), f"{actual_linkerr_sig} has no on_errback in stamped_headers"
+        self.assertion_check(actual_linkerr_sig, "on_errback")
         return super().on_errback(actual_linkerr_sig, **header)
 
 
@@ -292,12 +265,12 @@ class test_canvas_stamping(CanvasCase):
     @pytest.mark.usefixtures("depends_on_current_app")
     def test_stamp_in_options(self, workflow: Signature, subtests):
         """Test that all canvas signatures gets the stamp in options"""
-        workflow.stamp(StampsAssersionVisitor(subtests))
+        workflow.stamp(StampsAssersionVisitor(subtests, BooleanStampingVisitor()))
 
     @pytest.mark.usefixtures("depends_on_current_app")
     def test_stamping_headers_in_options(self, workflow: Signature, subtests):
         """Test that all canvas signatures gets the stamp in options["stamped_headers"]"""
-        workflow.stamp(StampedHeadersAssersionVisitor(subtests))
+        workflow.stamp(StampedHeadersAssersionVisitor(subtests, BooleanStampingVisitor()))
 
     @pytest.mark.usefixtures("depends_on_current_app")
     def test_stamping_with_replace(self, linked_canvas: Signature, subtests):
@@ -313,8 +286,8 @@ class test_canvas_stamping(CanvasCase):
 
             def on_replace(self, sig: Signature):
                 nonlocal assertion_result
-                sig.stamp(StampsAssersionVisitor(subtests))
-                sig.stamp(StampedHeadersAssersionVisitor(subtests))
+                sig.stamp(StampsAssersionVisitor(subtests, BooleanStampingVisitor()))
+                sig.stamp(StampedHeadersAssersionVisitor(subtests, BooleanStampingVisitor()))
                 assertion_result = True
                 return super().on_replace(sig)
 
