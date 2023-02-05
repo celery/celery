@@ -51,6 +51,15 @@ class StampsAssersionVisitor(StampingVisitor):
         self.visitor = visitor
 
     def assertion_check(self, actual_sig: Signature, method: str, **headers) -> None:
+        if any(
+            [
+                isinstance(actual_sig, group),
+                isinstance(actual_sig, _chain),
+                isinstance(actual_sig, _chord),
+            ]
+        ):
+            return
+
         expected_stamp = getattr(self.visitor, method)(actual_sig, **headers)
         actual_stamp = actual_sig.options[method]
         with self.subtests.test(f"Check if {actual_sig} has stamp: {expected_stamp}"):
@@ -61,6 +70,23 @@ class StampsAssersionVisitor(StampingVisitor):
     def on_signature(self, actual_sig: Signature, **headers) -> dict:
         self.assertion_check(actual_sig, "on_signature", **headers)
         return super().on_signature(actual_sig, **headers)
+
+    def on_group_start(self, actual_sig: Signature, **headers) -> dict:
+        self.assertion_check(actual_sig, "on_group_start", **headers)
+        return super().on_group_start(actual_sig, **headers)
+
+    def on_chain_start(self, actual_sig: Signature, **headers) -> dict:
+        self.assertion_check(actual_sig, "on_chain_start", **headers)
+        return super().on_chain_start(actual_sig, **headers)
+
+    def on_chord_header_start(self, actual_sig: Signature, **header) -> dict:
+        self.assertion_check(actual_sig, "on_chord_header_start", **header)
+        self.assertion_check(actual_sig.tasks, "on_chord_header_start", **header)
+        return super().on_chord_header_start(actual_sig, **header)
+
+    def on_chord_body(self, actual_sig: chord, **header) -> dict:
+        self.assertion_check(actual_sig.body, "on_chord_body", **header)
+        return super().on_chord_body(actual_sig, **header)
 
     def on_callback(self, actual_link_sig: Signature, **header) -> dict:
         self.assertion_check(actual_link_sig, "on_callback", **header)
@@ -91,6 +117,7 @@ class StampedHeadersAssersionVisitor(StampingVisitor):
             ]
         ):
             return
+
         actual_stamped_headers = actual_sig.options["stamped_headers"]
         with self.subtests.test(f'Check if {actual_sig}["stamped_headers"] has: {expected_stamped_header}'):
             asserstion_check = expected_stamped_header in actual_stamped_headers
