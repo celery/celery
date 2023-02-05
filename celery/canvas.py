@@ -165,33 +165,33 @@ class StampingVisitor(metaclass=ABCMeta):
              Dict: headers to update.
          """
 
-    def on_chord_header_start(self, chord, **header) -> dict:
+    def on_chord_header_start(self, sig, **header) -> dict:
         """Method that is called on сhord header stamping start.
 
          Arguments:
-             chord (chord): chord that is stamped.
+             sig (chord): chord that is stamped.
              headers (Dict): Partial headers that could be merged with existing headers.
          Returns:
              Dict: headers to update.
          """
-        if not isinstance(chord.tasks, group):
-            chord.tasks = group(chord.tasks)
-        return self.on_group_start(chord.tasks, **header)
+        if not isinstance(sig.tasks, group):
+            sig.tasks = group(sig.tasks)
+        return self.on_group_start(sig.tasks, **header)
 
-    def on_chord_header_end(self, chord, **header) -> None:
+    def on_chord_header_end(self, sig, **header) -> None:
         """Method that is called on сhord header stamping end.
 
            Arguments:
-               chord (chord): chord that is stamped.
+               sig (chord): chord that is stamped.
                headers (Dict): Partial headers that could be merged with existing headers.
         """
-        self.on_group_end(chord.tasks, **header)
+        self.on_group_end(sig.tasks, **header)
 
-    def on_chord_body(self, chord, **header) -> dict:
+    def on_chord_body(self, sig, **header) -> dict:
         """Method that is called on chord body stamping.
 
          Arguments:
-             chord (chord): chord that is stamped.
+             sig (chord): chord that is stamped.
              headers (Dict): Partial headers that could be merged with existing headers.
          Returns:
              Dict: headers to update.
@@ -580,10 +580,10 @@ class Signature(dict):
                 headers["stamped_headers"].extend(stamped_headers)
             else:
                 headers["stamped_headers"] = stamped_headers
-            headers["stamped_headers"] = list(set(headers["stamped_headers"]))
             for stamp in headers.keys():
-                if stamp != "stamped_headers" and stamp not in stamped_headers:
+                if stamp != "stamped_headers" and stamp not in headers["stamped_headers"]:
                     headers["stamped_headers"].append(stamp)
+            headers["stamped_headers"] = list(set(headers["stamped_headers"]))
             _merge_dictionaries(headers, self.options, aggregate_duplicates=False)
 
         # Preserve previous stamped headers

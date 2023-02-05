@@ -10,33 +10,33 @@ from celery.exceptions import Ignore
 
 class BooleanStampingVisitor(StampingVisitor):
     # Should be applied on all signatures
-    def on_signature(self, actual_sig, **headers) -> dict:
+    def on_signature(self, actual_sig: Signature, **headers) -> dict:
         return {"on_signature": True}
 
     # Should be applied on all groups
-    def on_group_start(self, group, **headers) -> dict:
+    def on_group_start(self, actual_sig: Signature, **headers) -> dict:
         return {"on_group_start": True}
 
     # Should be applied on all chains
-    def on_chain_start(self, chain, **headers) -> dict:
+    def on_chain_start(self, actual_sig: Signature, **headers) -> dict:
         return {"on_chain_start": True}
 
     # Should be applied on all chords
-    def on_chord_header_start(self, chord, **header) -> dict:
-        s = super().on_chord_header_start(chord, **header)
+    def on_chord_header_start(self, actual_sig: Signature, **header) -> dict:
+        s = super().on_chord_header_start(actual_sig, **header)
         s.update({"on_chord_header_start": True})
         return s
 
     # Should be applied on all chords
-    def on_chord_body(self, chord, **header) -> dict:
+    def on_chord_body(self, actual_sig: Signature, **header) -> dict:
         return {"on_chord_body": True}
 
     # Should be applied on all links
-    def on_callback(self, callback, **header) -> dict:
+    def on_callback(self, actual_sig: Signature, **header) -> dict:
         return {"on_callback": True}
 
     # Should be applied on all link errors
-    def on_errback(self, errback, **header) -> dict:
+    def on_errback(self, actual_sig: Signature, **header) -> dict:
         return {"on_errback": True}
 
 
@@ -235,577 +235,29 @@ class CanvasCase:
         group(signature(f"sig{i}") for i in range(2)),
         group([signature("sig1"), signature("sig2")]),
         group((signature("sig1"), signature("sig2"))),
-        chord([signature("sig1"), signature("sig2")], signature("sig3")),
-        chord((signature("sig1"), signature("sig2")), signature("sig3")),
-        chord(group(signature("sig1"), signature("sig2")), signature("sig3")),
-        chord(group([signature("sig1"), signature("sig2")]), signature("sig3")),
-        chord(group((signature("sig1"), signature("sig2"))), signature("sig3")),
         chain(signature("sig1"), signature("sig2")),
-        chain([signature("sig1"), signature("sig2")]),
-        chain((signature("sig1"), signature("sig2"))),
-        chain(group(signature("sig1"), signature("sig2"))),
-        chain(group([signature("sig1"), signature("sig2")])),
-        chain(group((signature("sig1"), signature("sig2")))),
-        chain(group(signature("sig1"), signature("sig2")), signature("sig3")),
-        chain(group([signature("sig1"), signature("sig2")]), signature("sig3")),
-        chain(group((signature("sig1"), signature("sig2"))), signature("sig3")),
-        chain(signature("sig1"), group(signature("sig2"), signature("sig3"))),
-        chain(signature("sig1"), group([signature("sig2"), signature("sig3")])),
-        chain(signature("sig1"), group((signature("sig2"), signature("sig3")))),
-        chain(
-            group(signature("sig1"), signature("sig2")),
-            group(signature("sig3"), signature("sig4")),
-        ),
-        chain(
-            group([signature("sig1"), signature("sig2")]),
-            group([signature("sig3"), signature("sig4")]),
-        ),
-        chain(
-            group((signature("sig1"), signature("sig2"))),
-            group((signature("sig3"), signature("sig4"))),
-        ),
-        chain(
-            group(signature("sig1"), signature("sig2")),
-            group([signature("sig3"), signature("sig4")]),
-        ),
-        chain(
-            group([signature("sig1"), signature("sig2")]),
-            group((signature("sig3"), signature("sig4"))),
-        ),
-        chain(
-            group((signature("sig1"), signature("sig2"))),
-            group(signature("sig3"), signature("sig4")),
-        ),
+        chord(group(signature("sig1"), signature("sig2")), signature("sig3")),
+        chord(group(signature(f"sig{i}") for i in range(2)), group(signature("sig3"), signature("sig4"))),
         chain(
             group(signature("sig1"), signature("sig2")),
             group(signature("sig3"), signature("sig4")),
             signature("sig5"),
         ),
         chain(
-            group([signature("sig1"), signature("sig2")]),
-            group([signature("sig3"), signature("sig4")]),
-            signature("sig5"),
+            signature("sig1"),
+            group(signature("sig2"), signature("sig3")),
+            group(signature("sig4"), signature("sig5")),
         ),
         chain(
-            group((signature("sig1"), signature("sig2"))),
-            group((signature("sig3"), signature("sig4"))),
-            signature("sig5"),
-        ),
-        chain(
-            group(signature("sig1"), signature("sig2")),
-            group([signature("sig3"), signature("sig4")]),
-            signature("sig5"),
-        ),
-        chain(
-            group([signature("sig1"), signature("sig2")]),
-            group((signature("sig3"), signature("sig4"))),
-            signature("sig5"),
-        ),
-        chain(
-            group((signature("sig1"), signature("sig2"))),
-            group(signature("sig3"), signature("sig4")),
-            signature("sig5"),
-        ),
-        chord(
-            group(signature("sig1"), signature("sig2")),
-            group(signature("sig3"), signature("sig4")),
-        ),
-        chord(
-            group([signature("sig1"), signature("sig2")]),
-            group([signature("sig3"), signature("sig4")]),
-        ),
-        chord(
-            group((signature("sig1"), signature("sig2"))),
-            group((signature("sig3"), signature("sig4"))),
-        ),
-        chord(
-            group(signature("sig1"), signature("sig2")),
-            group([signature("sig3"), signature("sig4")]),
-        ),
-        chord(
-            group([signature("sig1"), signature("sig2")]),
-            group((signature("sig3"), signature("sig4"))),
-        ),
-        chord(
-            group((signature("sig1"), signature("sig2"))),
-            group(signature("sig3"), signature("sig4")),
-        ),
-        chord(
-            chain(
-                group(signature("sig1"), signature("sig2")),
-                group(signature("sig3"), signature("sig4")),
-            ),
-            signature("sig5"),
-        ),
-        chord(
-            chain(
-                group([signature("sig1"), signature("sig2")]),
+            group(
+                signature("sig1"),
+                group(signature("sig2")),
                 group([signature("sig3"), signature("sig4")]),
-            ),
-            signature("sig5"),
-        ),
-        chord(
-            chain(
-                group((signature("sig1"), signature("sig2"))),
-                group((signature("sig3"), signature("sig4"))),
-            ),
-            signature("sig5"),
-        ),
-        chord(
-            chain(
-                group(signature("sig1"), signature("sig2")),
-                group([signature("sig3"), signature("sig4")]),
-            ),
-            signature("sig5"),
-        ),
-        chord(
-            chain(
-                group([signature("sig1"), signature("sig2")]),
-                group((signature("sig3"), signature("sig4"))),
-            ),
-            signature("sig5"),
-        ),
-        chord(
-            chain(
-                group((signature("sig1"), signature("sig2"))),
-                group(signature("sig3"), signature("sig4")),
-            ),
-            signature("sig5"),
-        ),
-        chord(
-            chain(
-                group(signature("sig1"), signature("sig2")),
-                group(signature("sig3"), signature("sig4")),
-            ),
-            group(signature("sig5"), signature("sig6")),
-        ),
-        chord(
-            chain(
-                group([signature("sig1"), signature("sig2")]),
-                group([signature("sig3"), signature("sig4")]),
-            ),
-            group([signature("sig5"), signature("sig6")]),
-        ),
-        chord(
-            chain(
-                group((signature("sig1"), signature("sig2"))),
-                group((signature("sig3"), signature("sig4"))),
-            ),
-            group((signature("sig5"), signature("sig6"))),
-        ),
-        chord(
-            chain(
-                group(signature("sig1"), signature("sig2")),
-                group([signature("sig3"), signature("sig4")]),
-            ),
-            group(signature("sig5"), signature("sig6")),
-        ),
-        chord(
-            chain(
-                group([signature("sig1"), signature("sig2")]),
-                group((signature("sig3"), signature("sig4"))),
-            ),
-            group([signature("sig5"), signature("sig6")]),
-        ),
-        chord(
-            chain(
-                group((signature("sig1"), signature("sig2"))),
-                group(signature("sig3"), signature("sig4")),
-            ),
-            group((signature("sig5"), signature("sig6"))),
-        ),
-        chord(
-            chain(
-                group(signature("sig1"), signature("sig2")),
-                group(signature("sig3"), signature("sig4")),
+                group(signature(f"sig{i}") for i in range(5, 7)),
             ),
             chain(
-                group(signature("sig5"), signature("sig6")),
-                group(signature("sig7"), signature("sig8")),
-            ),
-        ),
-        chord(
-            chain(
-                group([signature("sig1"), signature("sig2")]),
-                group([signature("sig3"), signature("sig4")]),
-            ),
-            chain(
-                group([signature("sig5"), signature("sig6")]),
-                group([signature("sig7"), signature("sig8")]),
-            ),
-        ),
-        chord(
-            chain(
-                group((signature("sig1"), signature("sig2"))),
-                group((signature("sig3"), signature("sig4"))),
-            ),
-            chain(
-                group((signature("sig5"), signature("sig6"))),
-                group((signature("sig7"), signature("sig8"))),
-            ),
-        ),
-        chord(
-            chain(
-                group(signature("sig1"), signature("sig2")),
-                group([signature("sig3"), signature("sig4")]),
-            ),
-            chain(
-                group(signature("sig5"), signature("sig6")),
-                group([signature("sig7"), signature("sig8")]),
-            ),
-        ),
-        chord(
-            chain(
-                group([signature("sig1"), signature("sig2")]),
-                group((signature("sig3"), signature("sig4"))),
-            ),
-            chain(
-                group([signature("sig5"), signature("sig6")]),
-                group((signature("sig7"), signature("sig8"))),
-            ),
-        ),
-        chord(
-            chain(
-                group((signature("sig1"), signature("sig2"))),
-                group(signature("sig3"), signature("sig4")),
-            ),
-            chain(
-                group((signature("sig5"), signature("sig6"))),
-                group(signature("sig7"), signature("sig8")),
-            ),
-        ),
-        chord(
-            chain(
-                group(signature("sig1"), signature("sig2")),
-                group(signature("sig3"), signature("sig4")),
-            ),
-            chord(
-                chain(
-                    group(signature("sig5"), signature("sig6")),
-                    group(signature("sig7"), signature("sig8")),
-                ),
-                signature("sig9"),
-            ),
-        ),
-        chord(
-            chain(
-                group([signature("sig1"), signature("sig2")]),
-                group([signature("sig3"), signature("sig4")]),
-            ),
-            chord(
-                chain(
-                    group([signature("sig5"), signature("sig6")]),
-                    group([signature("sig7"), signature("sig8")]),
-                ),
-                signature("sig9"),
-            ),
-        ),
-        chord(
-            chain(
-                group((signature("sig1"), signature("sig2"))),
-                group((signature("sig3"), signature("sig4"))),
-            ),
-            chord(
-                chain(
-                    group((signature("sig5"), signature("sig6"))),
-                    group((signature("sig7"), signature("sig8"))),
-                ),
-                signature("sig9"),
-            ),
-        ),
-        chord(
-            chain(
-                group(signature("sig1"), signature("sig2")),
-                group([signature("sig3"), signature("sig4")]),
-            ),
-            chord(
-                chain(
-                    group(signature("sig5"), signature("sig6")),
-                    group([signature("sig7"), signature("sig8")]),
-                ),
-                signature("sig9"),
-            ),
-        ),
-        chord(
-            chain(
-                group([signature("sig1"), signature("sig2")]),
-                group((signature("sig3"), signature("sig4"))),
-            ),
-            chord(
-                chain(
-                    group([signature("sig5"), signature("sig6")]),
-                    group((signature("sig7"), signature("sig8"))),
-                ),
-                signature("sig9"),
-            ),
-        ),
-        chord(
-            chain(
-                group((signature("sig1"), signature("sig2"))),
-                group(signature("sig3"), signature("sig4")),
-            ),
-            chord(
-                chain(
-                    group((signature("sig5"), signature("sig6"))),
-                    group(signature("sig7"), signature("sig8")),
-                ),
-                signature("sig9"),
-            ),
-        ),
-        chord(
-            chain(
-                group(signature("sig1"), signature("sig2")),
-                group(signature("sig3"), signature("sig4")),
-            ),
-            chain(
-                chord(
-                    chain(
-                        group(signature("sig5"), signature("sig6")),
-                        group(signature("sig7"), signature("sig8")),
-                    ),
-                    signature("sig9"),
-                ),
-                signature("sig10"),
-            ),
-        ),
-        chord(
-            chain(
-                group([signature("sig1"), signature("sig2")]),
-                group([signature("sig3"), signature("sig4")]),
-            ),
-            chain(
-                chord(
-                    chain(
-                        group([signature("sig5"), signature("sig6")]),
-                        group([signature("sig7"), signature("sig8")]),
-                    ),
-                    signature("sig9"),
-                ),
-                signature("sig10"),
-            ),
-        ),
-        chord(
-            chain(
-                group((signature("sig1"), signature("sig2"))),
-                group((signature("sig3"), signature("sig4"))),
-            ),
-            chain(
-                chord(
-                    chain(
-                        group((signature("sig5"), signature("sig6"))),
-                        group((signature("sig7"), signature("sig8"))),
-                    ),
-                    signature("sig9"),
-                ),
-                signature("sig10"),
-            ),
-        ),
-        chord(
-            chain(
-                group(signature("sig1"), signature("sig2")),
-                group([signature("sig3"), signature("sig4")]),
-            ),
-            chain(
-                chord(
-                    chain(
-                        group(signature("sig5"), signature("sig6")),
-                        group([signature("sig7"), signature("sig8")]),
-                    ),
-                    signature("sig9"),
-                ),
-                signature("sig10"),
-            ),
-        ),
-        chord(
-            chain(
-                group([signature("sig1"), signature("sig2")]),
-                group((signature("sig3"), signature("sig4"))),
-            ),
-            chain(
-                chord(
-                    chain(
-                        group([signature("sig5"), signature("sig6")]),
-                        group((signature("sig7"), signature("sig8"))),
-                    ),
-                    signature("sig9"),
-                ),
-                signature("sig10"),
-            ),
-        ),
-        chord(
-            chain(
-                group((signature("sig1"), signature("sig2"))),
-                group(signature("sig3"), signature("sig4")),
-            ),
-            chain(
-                chord(
-                    chain(
-                        group((signature("sig5"), signature("sig6"))),
-                        group(signature("sig7"), signature("sig8")),
-                    ),
-                    signature("sig9"),
-                ),
-                signature("sig10"),
-            ),
-        ),
-        chord(
-            chain(
-                group(signature("sig1"), signature("sig2")),
-                group(signature("sig3"), signature("sig4")),
-            ),
-            chain(
-                chord(
-                    chain(
-                        group(signature("sig5"), signature("sig6")),
-                        group(signature("sig7"), signature("sig8")),
-                    ),
-                    signature("sig9"),
-                ),
-                signature("sig10"),
-            ),
-        ),
-        chord(
-            chain(
-                group([signature("sig1"), signature("sig2")]),
-                group([signature("sig3"), signature("sig4")]),
-            ),
-            chain(
-                chord(
-                    chain(
-                        group([signature("sig5"), signature("sig6")]),
-                        group([signature("sig7"), signature("sig8")]),
-                    ),
-                    signature("sig9"),
-                ),
-                signature("sig10"),
-            ),
-        ),
-        chord(
-            chain(
-                group((signature("sig1"), signature("sig2"))),
-                group((signature("sig3"), signature("sig4"))),
-            ),
-            chain(
-                chord(
-                    chain(
-                        group((signature("sig5"), signature("sig6"))),
-                        group((signature("sig7"), signature("sig8"))),
-                    ),
-                    signature("sig9"),
-                ),
-                signature("sig10"),
-            ),
-        ),
-        chord(
-            chain(
-                group(signature("sig1"), signature("sig2")),
-                group([signature("sig3"), signature("sig4")]),
-            ),
-            chain(
-                chord(
-                    chain(
-                        group(signature("sig5"), signature("sig6")),
-                        group([signature("sig7"), signature("sig8")]),
-                    ),
-                    signature("sig9"),
-                ),
-                signature("sig10"),
-            ),
-        ),
-        chord(
-            chain(
-                group([signature("sig1"), signature("sig2")]),
-                group((signature("sig3"), signature("sig4"))),
-            ),
-            chain(
-                chord(
-                    chain(
-                        group([signature("sig5"), signature("sig6")]),
-                        group((signature("sig7"), signature("sig8"))),
-                    ),
-                    signature("sig9"),
-                ),
-                signature("sig10"),
-            ),
-        ),
-        chord(
-            chain(
-                group((signature("sig1"), signature("sig2"))),
-                group(signature("sig3"), signature("sig4")),
-            ),
-            chain(
-                chord(
-                    chain(
-                        group((signature("sig5"), signature("sig6"))),
-                        group(signature("sig7"), signature("sig8")),
-                    ),
-                    signature("sig9"),
-                ),
-                signature("sig10"),
-            ),
-        ),
-        chord(
-            chain(
-                group(signature("sig1"), signature("sig2")),
-                group(signature("sig3"), signature("sig4")),
-            ),
-            chain(
-                chord(
-                    chain(
-                        group(signature("sig5"), signature("sig6")),
-                        group(signature("sig7"), signature("sig8")),
-                    ),
-                    signature("sig9"),
-                ),
-                signature("sig10"),
-            ),
-        ),
-        chord(
-            chain(
-                group([signature("sig1"), signature("sig2")]),
-                group([signature("sig3"), signature("sig4")]),
-            ),
-            chain(
-                chord(
-                    chain(
-                        group([signature("sig5"), signature("sig6")]),
-                        group([signature("sig7"), signature("sig8")]),
-                    ),
-                    signature("sig9"),
-                ),
-                signature("sig10"),
-            ),
-        ),
-        chord(
-            chain(
-                group((signature("sig1"), signature("sig2"))),
-                group(signature(f"sig{i}") for i in range(3, 5)),
-            ),
-            chain(
-                chord(
-                    chain(
-                        group(signature(f"sig{i}") for i in range(5, 7)),
-                        group(signature(f"sig{i}") for i in range(7, 9)),
-                    ),
-                    signature("sig9"),
-                ),
-                signature("sig10"),
-            ),
-        ),
-        chord(
-            chain(
-                group(signature(f"sig{i}") for i in range(1, 3)),
-                group(signature(f"sig{i}") for i in range(3, 5)),
-            ),
-            chain(
-                chord(
-                    chain(
-                        group(signature(f"sig{i}") for i in range(5, 7)),
-                        group(signature(f"sig{i}") for i in range(7, 9)),
-                    ),
-                    signature("sig9"),
-                ),
-                signature("sig10"),
+                signature("sig8"),
+                group(signature("sig9"), signature("sig10")),
             ),
         ),
     ],
@@ -840,13 +292,11 @@ class test_canvas_stamping(CanvasCase):
     @pytest.mark.usefixtures("depends_on_current_app")
     def test_stamp_in_options(self, workflow: Signature, subtests):
         """Test that all canvas signatures gets the stamp in options"""
-
         workflow.stamp(StampsAssersionVisitor(subtests))
 
     @pytest.mark.usefixtures("depends_on_current_app")
     def test_stamping_headers_in_options(self, workflow: Signature, subtests):
         """Test that all canvas signatures gets the stamp in options["stamped_headers"]"""
-
         workflow.stamp(StampedHeadersAssersionVisitor(subtests))
 
     @pytest.mark.usefixtures("depends_on_current_app")
@@ -1382,6 +832,9 @@ class test_stamping_mechanism(CanvasCase):
 
         g = chord([sig_1, sig_2], sig_sum, app=self.app)
         g.stamp(stamp="stamp")
+        assert "stamp" in g.options
+        assert "stamped_headers" in g.options
+        assert "stamp" in g.options["stamped_headers"]
         g.freeze()
         g.apply()
 
