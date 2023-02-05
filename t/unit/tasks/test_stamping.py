@@ -344,6 +344,15 @@ class CanvasCase:
 )
 class test_canvas_stamping(CanvasCase):
     @pytest.fixture
+    def boolean_stamping_visitor(self, canvas_workflow: Signature) -> BooleanStampingVisitor:
+        return BooleanStampingVisitor()
+
+    @pytest.fixture(params=["boolean_stamping_visitor"])
+    def stamping_visitor(self, request, canvas_workflow: Signature) -> StampingVisitor:
+        canvas_workflow = canvas_workflow
+        return request.getfixturevalue(request.param)
+
+    @pytest.fixture
     def linked_canvas(self, canvas_workflow: Signature) -> Signature:
         class LinkingVisitor(StampingVisitor):
             def on_signature(self, actual_sig: Signature, **headers) -> dict:
@@ -355,13 +364,13 @@ class test_canvas_stamping(CanvasCase):
         return canvas_workflow
 
     @pytest.fixture
-    def stamped_canvas(self, canvas_workflow: Signature) -> Signature:
-        canvas_workflow.stamp(BooleanStampingVisitor())
+    def stamped_canvas(self, stamping_visitor: StampingVisitor, canvas_workflow: Signature) -> Signature:
+        canvas_workflow.stamp(stamping_visitor)
         return canvas_workflow
 
     @pytest.fixture
-    def stamped_linked_canvas(self, linked_canvas: Signature) -> Signature:
-        linked_canvas.stamp(BooleanStampingVisitor())
+    def stamped_linked_canvas(self, stamping_visitor: StampingVisitor, linked_canvas: Signature) -> Signature:
+        linked_canvas.stamp(stamping_visitor)
         return linked_canvas
 
     @pytest.fixture(params=["stamped_canvas", "stamped_linked_canvas"])
@@ -370,18 +379,19 @@ class test_canvas_stamping(CanvasCase):
         return request.getfixturevalue(request.param)
 
     @pytest.mark.usefixtures("depends_on_current_app")
-    def test_stamp_in_options(self, workflow: Signature, subtests):
+    def test_stamp_in_options(self, workflow: Signature, stamping_visitor: StampingVisitor, subtests):
         """Test that all canvas signatures gets the stamp in options"""
-        workflow.stamp(StampsAssersionVisitor(subtests, BooleanStampingVisitor()))
+        workflow.stamp(StampsAssersionVisitor(subtests, stamping_visitor))
 
     @pytest.mark.usefixtures("depends_on_current_app")
-    def test_stamping_headers_in_options(self, workflow: Signature, subtests):
+    def test_stamping_headers_in_options(self, workflow: Signature, stamping_visitor: StampingVisitor, subtests):
         """Test that all canvas signatures gets the stamp in options["stamped_headers"]"""
-        workflow.stamp(StampedHeadersAssersionVisitor(subtests, BooleanStampingVisitor()))
+        workflow.stamp(StampedHeadersAssersionVisitor(subtests, stamping_visitor))
 
     @pytest.mark.usefixtures("depends_on_current_app")
     def test_stamping_with_replace(self, linked_canvas: Signature, subtests):
         workflow = linked_canvas
+        stamping_visitor = BooleanStampingVisitor()
 
         self.app.conf.task_always_eager = True
         self.app.conf.task_store_eager_result = True
@@ -389,12 +399,12 @@ class test_canvas_stamping(CanvasCase):
 
         class AssersionTask(Task):
             def on_replace_stamping(self, sig: Signature, visitor=None):
-                return super().on_replace_stamping(sig, visitor=BooleanStampingVisitor())
+                return super().on_replace_stamping(sig, visitor=stamping_visitor)
 
             def on_replace(self, sig: Signature):
                 nonlocal assertion_result
-                sig.stamp(StampsAssersionVisitor(subtests, BooleanStampingVisitor()))
-                sig.stamp(StampedHeadersAssersionVisitor(subtests, BooleanStampingVisitor()))
+                sig.stamp(StampsAssersionVisitor(subtests, stamping_visitor))
+                sig.stamp(StampedHeadersAssersionVisitor(subtests, stamping_visitor))
                 assertion_result = True
                 return super().on_replace(sig)
 
@@ -404,7 +414,7 @@ class test_canvas_stamping(CanvasCase):
 
         class StampingTask(Task):
             def on_replace(self, sig: Signature):
-                sig.stamp(BooleanStampingVisitor())
+                sig.stamp(stamping_visitor)
                 return super().on_replace(sig)
 
         @self.app.task(shared=False, bind=True, base=StampingTask)
