@@ -604,19 +604,16 @@ class Signature(dict):
             visitor (StampingVisitor): Visitor API object.
             headers (Dict): Stamps that should be added to headers.
         """
-        if not visitor:
-            return
-
         non_visitor_headers = deepcopy(headers)
 
         # Stamp all of the callbacks of this signature
         headers = deepcopy(non_visitor_headers)
         for link in self.options.get('link', []) or []:
-            visitor_headers = visitor.on_callback(signature(link), **headers)
-            if visitor_headers and "stamped_headers" not in visitor_headers:
-                visitor_headers["stamped_headers"] = list(visitor_headers.keys())
-            headers.update(visitor_headers or {})
             link = maybe_signature(link, app=self.app)
+            visitor_headers = None
+            if visitor is not None:
+                visitor_headers = visitor.on_callback(link, **headers) or {}
+            headers = self._stamp_headers(visitor_headers, **headers)
             link.stamp(visitor=visitor, **headers)
             # Stamping a link to a signature with previous stamps
             # may result in missing stamps in the link options, if the linking
@@ -628,11 +625,11 @@ class Signature(dict):
         # Stamp all of the errbacks of this signature
         headers = deepcopy(non_visitor_headers)
         for link in self.options.get('link_error', []) or []:
-            visitor_headers = visitor.on_errback(signature(link), **headers)
-            if visitor_headers and "stamped_headers" not in visitor_headers:
-                visitor_headers["stamped_headers"] = list(visitor_headers.keys())
-            headers.update(visitor_headers or {})
             link = maybe_signature(link, app=self.app)
+            visitor_headers = None
+            if visitor is not None:
+                visitor_headers = visitor.on_errback(link, **headers) or {}
+            headers = self._stamp_headers(visitor_headers, **headers)
             link.stamp(visitor=visitor, **headers)
             # Stamping a link to a signature with previous stamps
             # may result in missing stamps in the link options, if the linking
