@@ -1059,7 +1059,8 @@ class _chain(Signature):
         if visitor is not None:
             visitor_headers = visitor.on_chain_start(self, **headers) or {}
         headers = self._stamp_headers(visitor_headers, **headers)
-        super().stamp(visitor=visitor, **headers)
+        self.stamp_links(visitor, **headers)
+
         for task in self.tasks:
             task.stamp(visitor=visitor, **headers)
 
@@ -1594,7 +1595,7 @@ class group(Signature):
         if visitor is not None:
             visitor_headers = visitor.on_group_start(self, **headers) or {}
         headers = self._stamp_headers(visitor_headers, **headers)
-        super().stamp(visitor=visitor, **headers)
+        self.stamp_links(visitor, **headers)
 
         if isinstance(self.tasks, _regen):
             self.tasks.map(_partial(_stamp_regen_task, visitor=visitor, **headers))
@@ -2055,11 +2056,7 @@ class _chord(Signature):
         if visitor is not None:
             visitor_headers = visitor.on_chord_header_start(self, **headers) or {}
         headers = self._stamp_headers(visitor_headers, **headers)
-
-        if isinstance(self.tasks, group):
-            self.tasks.stamp(visitor=None, **headers)
-
-        super().stamp(visitor=visitor, **headers)
+        self.stamp_links(visitor, **headers)
 
         if isinstance(tasks, _regen):
             tasks.map(_partial(_stamp_regen_task, visitor=visitor, **headers))

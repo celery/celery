@@ -832,9 +832,6 @@ class test_stamping_mechanism(CanvasCase):
 
         g = chord([sig_1, sig_2], sig_sum, app=self.app)
         g.stamp(stamp="stamp")
-        assert "stamp" in g.options
-        assert "stamped_headers" in g.options
-        assert "stamp" in g.options["stamped_headers"]
         g.freeze()
         g.apply()
 
