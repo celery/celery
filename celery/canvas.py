@@ -553,7 +553,7 @@ class Signature(dict):
             headers (Dict): Stamps that should be added to headers.
         """
         self.stamp_links(visitor, **headers)
-        headers = deepcopy(headers)
+        headers = headers.copy()
         visitor_headers = None
         if visitor is not None:
             visitor_headers = visitor.on_signature(self, **headers) or {}
@@ -561,7 +561,7 @@ class Signature(dict):
         return self.set(**headers)
 
     def _stamp_headers(self, visitor_headers=None, **headers):
-        headers = deepcopy(headers)
+        headers = headers.copy()
         if visitor_headers is not None:
             visitor_headers = visitor_headers or {}
             if "stamped_headers" not in visitor_headers:
@@ -605,7 +605,7 @@ class Signature(dict):
             visitor (StampingVisitor): Visitor API object.
             headers (Dict): Stamps that should be added to headers.
         """
-        non_visitor_headers = deepcopy(headers)
+        non_visitor_headers = headers.copy()
 
         # Stamp all of the callbacks of this signature
         headers = deepcopy(non_visitor_headers)
@@ -2059,7 +2059,7 @@ class _chord(Signature):
         if isinstance(tasks, _regen):
             tasks.map(_partial(_stamp_regen_task, visitor=visitor, **headers))
         else:
-            stamps = deepcopy(headers)
+            stamps = headers.copy()
             for task in tasks:
                 task.stamp(visitor=visitor, **stamps)
 
