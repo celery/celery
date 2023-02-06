@@ -46,7 +46,7 @@ def await_redis_echo(expected_msgs, redis_key="redis-echo", timeout=TIMEOUT):
         maybe_key_msg = redis_connection.blpop(redis_key, timeout)
         if maybe_key_msg is None:
             raise TimeoutError(
-                "Fetching from {!r} timed out - still awaiting {!r}".format(redis_key, dict(+expected_msgs))
+                f"Fetching from {redis_key!r} timed out - still awaiting {dict(+expected_msgs)!r}"
             )
         retrieved_key, msg = maybe_key_msg
         assert retrieved_key.decode("utf-8") == redis_key
