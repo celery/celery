@@ -152,7 +152,7 @@ class UUIDStampingVisitor(StampingVisitor):
         return {"on_errback": UUIDStampingVisitor.frozen_uuid}
 
 
-class StampsAssersionVisitor(StampingVisitor):
+class StampsAssertionVisitor(StampingVisitor):
     """
     The canvas stamping mechanism traverses the canvas automatically, so we can ride
     it to traverse the canvas recursively and assert that all signatures have the correct stamp in options
@@ -172,15 +172,15 @@ class StampsAssersionVisitor(StampingVisitor):
         ):
             return
 
-        expected_stamp = getattr(self.visitor, method)(actual_sig, **headers)
+        expected_stamp = getattr(self.visitor, method)(actual_sig, **headers)[method]
         actual_stamp = actual_sig.options[method]
-        with self.subtests.test(f"Check if {actual_sig} has stamp: {expected_stamp[method]}"):
+        with self.subtests.test(f"Check if {actual_sig} has stamp: {expected_stamp}"):
             if isinstance(self.visitor, ListStampingVisitor) or isinstance(self.visitor, SetStampingVisitor):
-                asserstion_check = all([actual in expected_stamp[method] for actual in actual_stamp])
+                assertion_check = all([actual in expected_stamp for actual in actual_stamp])
             else:
-                asserstion_check = actual_stamp == expected_stamp[method]
-            asserstion_error = f"{actual_sig} has stamp {actual_stamp} instead of: {expected_stamp[method]}"
-            assert asserstion_check, asserstion_error
+                assertion_check = actual_stamp == expected_stamp
+            assertion_error = f"{actual_sig} has stamp {actual_stamp} instead of: {expected_stamp}"
+            assert assertion_check, assertion_error
 
     def on_signature(self, actual_sig: Signature, **headers) -> dict:
         self.assertion_check(actual_sig, "on_signature", **headers)
@@ -212,7 +212,7 @@ class StampsAssersionVisitor(StampingVisitor):
         return super().on_errback(actual_linkerr_sig, **header)
 
 
-class StampedHeadersAssersionVisitor(StampingVisitor):
+class StampedHeadersAssertionVisitor(StampingVisitor):
     """
     The canvas stamping mechanism traverses the canvas automatically, so we can ride
     it to traverse the canvas recursively and assert that all signatures have the correct
@@ -231,16 +231,20 @@ class StampedHeadersAssersionVisitor(StampingVisitor):
                 isinstance(actual_sig, _chord),
             ]
         ):
+            with self.subtests.test(f'Check if "stamped_headers" is not in {actual_sig.options}'):
+                assertion_check = "stamped_headers" not in actual_sig.options
+                assertion_error = f"{actual_sig} should not have stamped_headers in options"
+                assert assertion_check, assertion_error
             return
 
         actual_stamped_headers = actual_sig.options["stamped_headers"]
         with self.subtests.test(f'Check if {actual_sig}["stamped_headers"] has: {expected_stamped_header}'):
-            asserstion_check = expected_stamped_header in actual_stamped_headers
-            asserstion_error = (
+            assertion_check = expected_stamped_header in actual_stamped_headers
+            assertion_error = (
                 f'{actual_sig}["stamped_headers"] {actual_stamped_headers} does '
                 f"not contain {expected_stamped_header}"
             )
-            assert asserstion_check, asserstion_error
+            assert assertion_check, assertion_error
 
     def on_signature(self, actual_sig: Signature, **headers) -> dict:
         self.assertion_check(actual_sig, "on_signature")
@@ -378,14 +382,14 @@ class CanvasCase:
                 chain(
                     signature("sig3"),
                     chord(
-                        (signature(f"sig{i}") for i in range(2, 4)),
+                        (signature(f"sig{i}") for i in range(4, 6)),
                         chain(
-                            signature("sig4"),
+                            signature("sig6"),
                             chord(
-                                group(signature(f"sig{i}") for i in range(4, 6)),
+                                group(signature(f"sig{i}") for i in range(7, 9)),
                                 chain(
-                                    signature("sig6"),
-                                    chord(group(signature("sig6"), signature("sig7")), signature("sig8")),
+                                    signature("sig9"),
+                                    chord(group(signature("sig10"), signature("sig11")), signature("sig12")),
                                 ),
                             ),
                         ),
@@ -424,12 +428,12 @@ class test_canvas_stamping(CanvasCase):
     @pytest.mark.usefixtures("depends_on_current_app")
     def test_stamp_in_options(self, workflow: Signature, stamping_visitor: StampingVisitor, subtests):
         """Test that all canvas signatures gets the stamp in options"""
-        workflow.stamp(StampsAssersionVisitor(stamping_visitor, subtests))
+        workflow.stamp(StampsAssertionVisitor(stamping_visitor, subtests))
 
     @pytest.mark.usefixtures("depends_on_current_app")
     def test_stamping_headers_in_options(self, workflow: Signature, stamping_visitor: StampingVisitor, subtests):
         """Test that all canvas signatures gets the stamp in options["stamped_headers"]"""
-        workflow.stamp(StampedHeadersAssersionVisitor(stamping_visitor, subtests))
+        workflow.stamp(StampedHeadersAssertionVisitor(stamping_visitor, subtests))
 
     @pytest.mark.usefixtures("depends_on_current_app")
     def test_stamping_with_replace(self, workflow: Signature, stamping_visitor: StampingVisitor, subtests):
@@ -437,19 +441,19 @@ class test_canvas_stamping(CanvasCase):
         self.app.conf.task_store_eager_result = True
         self.app.conf.result_extended = True
 
-        class AssersionTask(Task):
+        class AssertionTask(Task):
             def on_replace_stamping(self, sig: Signature, visitor=None):
                 return super().on_replace_stamping(sig, visitor=stamping_visitor)
 
             def on_replace(self, sig: Signature):
                 nonlocal assertion_result
-                sig.stamp(StampsAssersionVisitor(stamping_visitor, subtests))
-                sig.stamp(StampedHeadersAssersionVisitor(stamping_visitor, subtests))
+                sig.stamp(StampsAssertionVisitor(stamping_visitor, subtests))
+                sig.stamp(StampedHeadersAssertionVisitor(stamping_visitor, subtests))
                 assertion_result = True
                 return super().on_replace(sig)
 
-        @self.app.task(shared=False, bind=True, base=AssersionTask)
-        def assert_using_replace(self: AssersionTask):
+        @self.app.task(shared=False, bind=True, base=AssertionTask)
+        def assert_using_replace(self: AssertionTask):
             return self.replace(workflow)
 
         class StampingTask(Task):
@@ -623,7 +627,7 @@ class test_stamping_mechanism(CanvasCase):
         chain_sig_res.get()
 
         with subtests.test("Confirm the chain was executed correctly", result=20):
-            # Before we run our assersions, let's confirm the base functionality of the chain is working
+            # Before we run our assertions, let's confirm the base functionality of the chain is working
             # as expected including the links stamping.
             assert chain_sig_res.result == 20
 
@@ -700,7 +704,7 @@ class test_stamping_mechanism(CanvasCase):
         chain_sig_res.get()
 
         with subtests.test("Confirm the chain was executed correctly", result=20):
-            # Before we run our assersions, let's confirm the base functionality of the chain is working
+            # Before we run our assertions, let's confirm the base functionality of the chain is working
             # as expected including the links stamping.
             assert chain_sig_res.result == 20
 
