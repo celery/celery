@@ -1081,7 +1081,7 @@ class Task:
         if self.request.stamps:
             stamps = self.request.stamps.copy()
             for header, stamp in stamps.items():
-                stamps[header] = stamp[0]
+                stamps[header] = stamp[0] if len(stamp) == 1 else stamp
             sig.stamp(visitor=visitor, **stamps)
 
     def on_replace(self, sig):

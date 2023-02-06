@@ -8,6 +8,22 @@ from celery.canvas import Signature, StampingVisitor, _chain, _chord, chain, cho
 from celery.exceptions import Ignore
 
 
+class LinkingVisitor(StampingVisitor):
+    def on_signature(self, actual_sig: Signature, **headers) -> dict:
+        actual_sig.link(signature(f"{actual_sig.name}_link"))
+        actual_sig.link_error(signature(f"{actual_sig.name}_link_error"))
+        return super().on_signature(actual_sig, **headers)
+
+
+class CleanupVisitor(StampingVisitor):
+    def on_signature(self, actual_sig: Signature, **headers) -> dict:
+        if "stamped_headers" in actual_sig.options and actual_sig.options["stamped_headers"]:
+            for stamp in actual_sig.options["stamped_headers"]:
+                if stamp in actual_sig.options:
+                    actual_sig.options.pop(stamp)
+        return super().on_signature(actual_sig, **headers)
+
+
 class BooleanStampingVisitor(StampingVisitor):
     def on_signature(self, actual_sig: Signature, **headers) -> dict:
         return {"on_signature": True}
@@ -33,15 +49,40 @@ class BooleanStampingVisitor(StampingVisitor):
         return {"on_errback": True}
 
 
+class ListStampingVisitor(StampingVisitor):
+    def on_signature(self, actual_sig: Signature, **headers) -> dict:
+        return {"on_signature": ["on_signature-item1", "on_signature-item2"]}
+
+    def on_group_start(self, actual_sig: Signature, **headers) -> dict:
+        return {"on_group_start": ["on_group_start-item1", "on_group_start-item2"]}
+
+    def on_chain_start(self, actual_sig: Signature, **headers) -> dict:
+        return {"on_chain_start": ["on_chain_start-item1", "on_chain_start-item2"]}
+
+    def on_chord_header_start(self, actual_sig: Signature, **header) -> dict:
+        s = super().on_chord_header_start(actual_sig, **header)
+        s.update({"on_chord_header_start": ["on_chord_header_start-item1", "on_chord_header_start-item2"]})
+        return s
+
+    def on_chord_body(self, actual_sig: Signature, **header) -> dict:
+        return {"on_chord_body": ["on_chord_body-item1", "on_chord_body-item2"]}
+
+    def on_callback(self, actual_sig: Signature, **header) -> dict:
+        return {"on_callback": ["on_callback-item1", "on_callback-item2"]}
+
+    def on_errback(self, actual_sig: Signature, **header) -> dict:
+        return {"on_errback": ["on_errback-item1", "on_errback-item2"]}
+
+
 class StampsAssersionVisitor(StampingVisitor):
     """
     The canvas stamping mechanism traverses the canvas automatically, so we can ride
     it to traverse the canvas recursively and assert that all signatures have the correct stamp in options
     """
 
-    def __init__(self, subtests, visitor: StampingVisitor):
-        self.subtests = subtests
+    def __init__(self, visitor: StampingVisitor, subtests):
         self.visitor = visitor
+        self.subtests = subtests
 
     def assertion_check(self, actual_sig: Signature, method: str, **headers) -> None:
         if any(
@@ -55,9 +96,14 @@ class StampsAssersionVisitor(StampingVisitor):
 
         expected_stamp = getattr(self.visitor, method)(actual_sig, **headers)
         actual_stamp = actual_sig.options[method]
-        with self.subtests.test(f"Check if {actual_sig} has stamp: {expected_stamp}"):
-            asserstion_check = actual_stamp in expected_stamp.values()
-            asserstion_error = f"{actual_sig} has stamp {actual_stamp} instead of {expected_stamp}"
+        with self.subtests.test(f"Check if {actual_sig} has stamp: {expected_stamp[method]}"):
+            if isinstance(self.visitor, ListStampingVisitor):
+                asserstion_check = all([actual in expected_stamp[method] for actual in actual_stamp])
+            elif isinstance(self.visitor, BooleanStampingVisitor):
+                asserstion_check = actual_stamp in expected_stamp.values()
+            else:
+                assert False, "Unknown visitor type"
+            asserstion_error = f"{actual_sig} has stamp {actual_stamp} instead of: {expected_stamp[method]}"
             assert asserstion_check, asserstion_error
 
     def on_signature(self, actual_sig: Signature, **headers) -> dict:
@@ -97,9 +143,9 @@ class StampedHeadersAssersionVisitor(StampingVisitor):
     stamp in options["stamped_headers"]
     """
 
-    def __init__(self, subtests, visitor: StampingVisitor):
-        self.subtests = subtests
+    def __init__(self, visitor: StampingVisitor, subtests):
         self.visitor = visitor
+        self.subtests = subtests
 
     def assertion_check(self, actual_sig: Signature, expected_stamped_header: str) -> None:
         if any(
@@ -219,6 +265,7 @@ class CanvasCase:
         self.xprod = xprod
 
 
+@pytest.mark.parametrize("stamping_visitor", [BooleanStampingVisitor(), ListStampingVisitor()])
 @pytest.mark.parametrize(
     "canvas_workflow",
     [
@@ -337,55 +384,42 @@ class CanvasCase:
 )
 class test_canvas_stamping(CanvasCase):
     @pytest.fixture
-    def boolean_stamping_visitor(self, canvas_workflow: Signature) -> BooleanStampingVisitor:
-        return BooleanStampingVisitor()
-
-    @pytest.fixture(params=["boolean_stamping_visitor"])
-    def stamping_visitor(self, request, canvas_workflow: Signature) -> StampingVisitor:
-        canvas_workflow = canvas_workflow
-        return request.getfixturevalue(request.param)
-
-    @pytest.fixture
     def linked_canvas(self, canvas_workflow: Signature) -> Signature:
-        class LinkingVisitor(StampingVisitor):
-            def on_signature(self, actual_sig: Signature, **headers) -> dict:
-                actual_sig.link(signature("link_sig"))
-                actual_sig.link_error(signature("link_error_sig"))
-                return super().on_signature(actual_sig, **headers)
-
-        canvas_workflow.stamp(LinkingVisitor())
-        return canvas_workflow
+        workflow = canvas_workflow.clone()
+        workflow.stamp(CleanupVisitor())
+        workflow.stamp(LinkingVisitor())
+        return workflow
 
     @pytest.fixture
     def stamped_canvas(self, stamping_visitor: StampingVisitor, canvas_workflow: Signature) -> Signature:
-        canvas_workflow.stamp(stamping_visitor)
-        return canvas_workflow
+        workflow = canvas_workflow.clone()
+        workflow.stamp(CleanupVisitor())
+        workflow.stamp(stamping_visitor)
+        return workflow
 
     @pytest.fixture
     def stamped_linked_canvas(self, stamping_visitor: StampingVisitor, linked_canvas: Signature) -> Signature:
-        linked_canvas.stamp(stamping_visitor)
-        return linked_canvas
+        workflow = linked_canvas.clone()
+        workflow.stamp(CleanupVisitor())
+        workflow.stamp(stamping_visitor)
+        return workflow
 
     @pytest.fixture(params=["stamped_canvas", "stamped_linked_canvas"])
     def workflow(self, request, canvas_workflow: Signature) -> Signature:
-        canvas_workflow = canvas_workflow
         return request.getfixturevalue(request.param)
 
     @pytest.mark.usefixtures("depends_on_current_app")
     def test_stamp_in_options(self, workflow: Signature, stamping_visitor: StampingVisitor, subtests):
         """Test that all canvas signatures gets the stamp in options"""
-        workflow.stamp(StampsAssersionVisitor(subtests, stamping_visitor))
+        workflow.stamp(StampsAssersionVisitor(stamping_visitor, subtests))
 
     @pytest.mark.usefixtures("depends_on_current_app")
     def test_stamping_headers_in_options(self, workflow: Signature, stamping_visitor: StampingVisitor, subtests):
         """Test that all canvas signatures gets the stamp in options["stamped_headers"]"""
-        workflow.stamp(StampedHeadersAssersionVisitor(subtests, stamping_visitor))
+        workflow.stamp(StampedHeadersAssersionVisitor(stamping_visitor, subtests))
 
     @pytest.mark.usefixtures("depends_on_current_app")
-    def test_stamping_with_replace(self, linked_canvas: Signature, subtests):
-        workflow = linked_canvas
-        stamping_visitor = BooleanStampingVisitor()
-
+    def test_stamping_with_replace(self, workflow: Signature, stamping_visitor: StampingVisitor, subtests):
         self.app.conf.task_always_eager = True
         self.app.conf.task_store_eager_result = True
         self.app.conf.result_extended = True
@@ -396,8 +430,8 @@ class test_canvas_stamping(CanvasCase):
 
             def on_replace(self, sig: Signature):
                 nonlocal assertion_result
-                sig.stamp(StampsAssersionVisitor(subtests, stamping_visitor))
-                sig.stamp(StampedHeadersAssersionVisitor(subtests, stamping_visitor))
+                sig.stamp(StampsAssersionVisitor(stamping_visitor, subtests))
+                sig.stamp(StampedHeadersAssersionVisitor(stamping_visitor, subtests))
                 assertion_result = True
                 return super().on_replace(sig)
 

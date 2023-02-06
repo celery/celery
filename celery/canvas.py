@@ -591,7 +591,7 @@ class Signature(dict):
         stamped_headers.update(headers.get("stamped_headers", []))
         headers["stamped_headers"] = list(stamped_headers)
         for previous_header in stamped_headers:
-            if previous_header not in headers:
+            if previous_header not in headers and previous_header in self.options:
                 headers[previous_header] = self.options[previous_header]
         return headers
 
