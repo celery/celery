@@ -305,10 +305,11 @@ def to_utc(dt):
     return make_aware(dt, timezone.utc)
 
 
-def maybe_make_aware(dt, tz=None):
+def maybe_make_aware(dt, tz=None, naive_as_utc=True):
     """Convert dt to aware datetime, do nothing if dt is already aware."""
     if is_naive(dt):
-        dt = to_utc(dt)
+        if naive_as_utc:
+            dt = to_utc(dt)
         return localize(
             dt, timezone.utc if tz is None else timezone.tz_or_local(tz),
         )
