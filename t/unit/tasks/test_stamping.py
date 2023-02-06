@@ -100,6 +100,31 @@ class SetStampingVisitor(StampingVisitor):
         return {"on_errback": {"on_errback-item1", "on_errback-item2"}}
 
 
+class StringStampingVisitor(StampingVisitor):
+    def on_signature(self, actual_sig: Signature, **headers) -> dict:
+        return {"on_signature": "on_signature-item1"}
+
+    def on_group_start(self, actual_sig: Signature, **headers) -> dict:
+        return {"on_group_start": "on_group_start-item1"}
+
+    def on_chain_start(self, actual_sig: Signature, **headers) -> dict:
+        return {"on_chain_start": "on_chain_start-item1"}
+
+    def on_chord_header_start(self, actual_sig: Signature, **header) -> dict:
+        s = super().on_chord_header_start(actual_sig, **header)
+        s.update({"on_chord_header_start": "on_chord_header_start-item1"})
+        return s
+
+    def on_chord_body(self, actual_sig: Signature, **header) -> dict:
+        return {"on_chord_body": "on_chord_body-item1"}
+
+    def on_callback(self, actual_sig: Signature, **header) -> dict:
+        return {"on_callback": "on_callback-item1"}
+
+    def on_errback(self, actual_sig: Signature, **header) -> dict:
+        return {"on_errback": "on_errback-item1"}
+
+
 class UUIDStampingVisitor(StampingVisitor):
     frozen_uuid = str(uuid.uuid4())
 
@@ -318,12 +343,19 @@ class CanvasCase:
 
 @pytest.mark.parametrize(
     "stamping_visitor",
-    [BooleanStampingVisitor(), ListStampingVisitor(), SetStampingVisitor(), UUIDStampingVisitor()],
+    [
+        BooleanStampingVisitor(),
+        ListStampingVisitor(),
+        SetStampingVisitor(),
+        StringStampingVisitor(),
+        UUIDStampingVisitor(),
+    ],
 )
 @pytest.mark.parametrize(
     "canvas_workflow",
     [
         signature("sig"),
+        group(signature("sig1"), signature("sig2")),
         chain(
             signature("sig1") | signature("sig2"),
             group(signature("sig3"), signature("sig4")) | group(signature(f"sig{i}") for i in range(5, 6)),
