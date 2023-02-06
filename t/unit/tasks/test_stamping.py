@@ -355,11 +355,43 @@ class CanvasCase:
     "canvas_workflow",
     [
         signature("sig"),
-        group(signature("sig1"), signature("sig2")),
+        chord((signature(f"sig{i}") for i in range(2)), signature("sig3")),
+        chord(group(signature(f"sig{i}") for i in range(2)), signature("sig3")),
+        chord(group(signature(f"sig{i}") for i in range(2)), signature("sig3") | signature("sig4")),
+        chord(signature("sig1"), signature("sig2") | signature("sig3")),
+        chain(
+            signature("sig"),
+            chord((signature(f"sig{i}") for i in range(2)), signature("sig3")),
+            chord(group(signature(f"sig{i}") for i in range(2)), signature("sig3")),
+            chord(group(signature(f"sig{i}") for i in range(2)), signature("sig3") | signature("sig4")),
+            chord(signature("sig1"), signature("sig2") | signature("sig3")),
+        ),
         chain(
             signature("sig1") | signature("sig2"),
             group(signature("sig3"), signature("sig4")) | group(signature(f"sig{i}") for i in range(5, 6)),
             chord(group(signature(f"sig{i}") for i in range(6, 8)), signature("sig8")) | signature("sig9"),
+        ),
+        chain(
+            signature("sig"),
+            chord(
+                group(signature(f"sig{i}") for i in range(2)),
+                chain(
+                    signature("sig3"),
+                    chord(
+                        (signature(f"sig{i}") for i in range(2, 4)),
+                        chain(
+                            signature("sig4"),
+                            chord(
+                                group(signature(f"sig{i}") for i in range(4, 6)),
+                                chain(
+                                    signature("sig6"),
+                                    chord(group(signature("sig6"), signature("sig7")), signature("sig8")),
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
         ),
     ],
 )
