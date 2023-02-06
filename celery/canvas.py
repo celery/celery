@@ -581,7 +581,9 @@ class Signature(dict):
             else:
                 headers["stamped_headers"] = stamped_headers
             for stamp in headers.keys():
-                if stamp != "stamped_headers" and stamp not in headers["stamped_headers"]:
+                if stamp == "stamped_headers":
+                    continue
+                if stamp not in headers["stamped_headers"]:
                     headers["stamped_headers"].append(stamp)
             headers["stamped_headers"] = list(set(headers["stamped_headers"]))
             _merge_dictionaries(headers, self.options, aggregate_duplicates=False)
