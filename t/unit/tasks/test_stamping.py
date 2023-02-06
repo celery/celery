@@ -1,4 +1,5 @@
 import math
+import uuid
 from collections.abc import Iterable
 
 import pytest
@@ -99,6 +100,33 @@ class SetStampingVisitor(StampingVisitor):
         return {"on_errback": {"on_errback-item1", "on_errback-item2"}}
 
 
+class UUIDStampingVisitor(StampingVisitor):
+    frozen_uuid = str(uuid.uuid4())
+
+    def on_signature(self, actual_sig: Signature, **headers) -> dict:
+        return {"on_signature": UUIDStampingVisitor.frozen_uuid}
+
+    def on_group_start(self, actual_sig: Signature, **headers) -> dict:
+        return {"on_group_start": UUIDStampingVisitor.frozen_uuid}
+
+    def on_chain_start(self, actual_sig: Signature, **headers) -> dict:
+        return {"on_chain_start": UUIDStampingVisitor.frozen_uuid}
+
+    def on_chord_header_start(self, actual_sig: Signature, **header) -> dict:
+        s = super().on_chord_header_start(actual_sig, **header)
+        s.update({"on_chord_header_start": UUIDStampingVisitor.frozen_uuid})
+        return s
+
+    def on_chord_body(self, actual_sig: Signature, **header) -> dict:
+        return {"on_chord_body": UUIDStampingVisitor.frozen_uuid}
+
+    def on_callback(self, actual_sig: Signature, **header) -> dict:
+        return {"on_callback": UUIDStampingVisitor.frozen_uuid}
+
+    def on_errback(self, actual_sig: Signature, **header) -> dict:
+        return {"on_errback": UUIDStampingVisitor.frozen_uuid}
+
+
 class StampsAssersionVisitor(StampingVisitor):
     """
     The canvas stamping mechanism traverses the canvas automatically, so we can ride
@@ -124,10 +152,8 @@ class StampsAssersionVisitor(StampingVisitor):
         with self.subtests.test(f"Check if {actual_sig} has stamp: {expected_stamp[method]}"):
             if isinstance(self.visitor, ListStampingVisitor) or isinstance(self.visitor, SetStampingVisitor):
                 asserstion_check = all([actual in expected_stamp[method] for actual in actual_stamp])
-            elif isinstance(self.visitor, BooleanStampingVisitor):
-                asserstion_check = actual_stamp in expected_stamp.values()
             else:
-                assert False, "Unknown visitor type"
+                asserstion_check = actual_stamp == expected_stamp[method]
             asserstion_error = f"{actual_sig} has stamp {actual_stamp} instead of: {expected_stamp[method]}"
             assert asserstion_check, asserstion_error
 
@@ -290,7 +316,10 @@ class CanvasCase:
         self.xprod = xprod
 
 
-@pytest.mark.parametrize("stamping_visitor", [BooleanStampingVisitor(), ListStampingVisitor(), SetStampingVisitor()])
+@pytest.mark.parametrize(
+    "stamping_visitor",
+    [BooleanStampingVisitor(), ListStampingVisitor(), SetStampingVisitor(), UUIDStampingVisitor()],
+)
 @pytest.mark.parametrize(
     "canvas_workflow",
     [
