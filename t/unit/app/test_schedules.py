@@ -472,6 +472,26 @@ class test_crontab_remaining_estimate:
         assert next.utcoffset().seconds == 7200
         assert next == tz.localize(datetime(2017, 3, 26, 9, 0))
 
+    def test_negative_utc_timezone_with_day_of_month(self):
+        # UTC-8
+        tzname = "America/Los_Angeles"
+        self.app.timezone = tzname
+        tz = pytz.timezone(tzname)
+
+        # set day_of_month to test on _delta_to_next
+        crontab = self.crontab(minute=0, day_of_month='27-31')
+
+        # last_run_at: '2023/01/28T23:00:00-08:00'
+        last_run_at = tz.localize(datetime(2023, 1, 28, 23, 0))
+
+        # now: '2023/01/29T00:00:00-08:00'
+        now = tz.localize(datetime(2023, 1, 29, 0, 0))
+
+        crontab.nowfun = lambda: now
+        next = now + crontab.remaining_estimate(last_run_at)
+
+        assert next == tz.localize(datetime(2023, 1, 29, 0, 0))
+
 
 class test_crontab_is_due:
 
@@ -933,3 +953,22 @@ class test_crontab_is_due:
             due, remaining = self.daily.is_due(last_run)
             assert remaining == expected_remaining
             assert not due
+
+    def test_execution_due_for_negative_utc_timezone_with_day_of_month(self):
+        # UTC-8
+        tzname = "America/Los_Angeles"
+        self.app.timezone = tzname
+        tz = pytz.timezone(tzname)
+
+        # set day_of_month to test on _delta_to_next
+        crontab = self.crontab(minute=0, day_of_month='27-31')
+
+        # last_run_at: '2023/01/28T23:00:00-08:00'
+        last_run_at = tz.localize(datetime(2023, 1, 28, 23, 0))
+
+        # now: '2023/01/29T00:00:00-08:00'
+        now = tz.localize(datetime(2023, 1, 29, 0, 0))
+
+        with patch_crontab_nowfun(crontab, now):
+            due, remaining = crontab.is_due(last_run_at)
+            assert (due, remaining) == (True, 3600)

@@ -72,8 +72,8 @@ class BaseSchedule:
     def is_due(self, last_run_at):
         raise NotImplementedError()
 
-    def maybe_make_aware(self, dt):
-        return maybe_make_aware(dt, self.tz)
+    def maybe_make_aware(self, dt, naive_as_utc=True):
+        return maybe_make_aware(dt, self.tz, naive_as_utc=naive_as_utc)
 
     @property
     def app(self):
@@ -468,9 +468,8 @@ class crontab(BaseSchedule):
             return False
 
         def is_before_last_run(year, month, day):
-            return self.maybe_make_aware(datetime(year,
-                                                  month,
-                                                  day)) < last_run_at
+            return self.maybe_make_aware(datetime(year, month, day, next_hour, next_minute),
+                                         naive_as_utc=False) < last_run_at
 
         def roll_over():
             for _ in range(2000):
