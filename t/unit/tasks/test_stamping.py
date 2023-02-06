@@ -74,6 +74,31 @@ class ListStampingVisitor(StampingVisitor):
         return {"on_errback": ["on_errback-item1", "on_errback-item2"]}
 
 
+class SetStampingVisitor(StampingVisitor):
+    def on_signature(self, actual_sig: Signature, **headers) -> dict:
+        return {"on_signature": {"on_signature-item1", "on_signature-item2"}}
+
+    def on_group_start(self, actual_sig: Signature, **headers) -> dict:
+        return {"on_group_start": {"on_group_start-item1", "on_group_start-item2"}}
+
+    def on_chain_start(self, actual_sig: Signature, **headers) -> dict:
+        return {"on_chain_start": {"on_chain_start-item1", "on_chain_start-item2"}}
+
+    def on_chord_header_start(self, actual_sig: Signature, **header) -> dict:
+        s = super().on_chord_header_start(actual_sig, **header)
+        s.update({"on_chord_header_start": {"on_chord_header_start-item1", "on_chord_header_start-item2"}})
+        return s
+
+    def on_chord_body(self, actual_sig: Signature, **header) -> dict:
+        return {"on_chord_body": {"on_chord_body-item1", "on_chord_body-item2"}}
+
+    def on_callback(self, actual_sig: Signature, **header) -> dict:
+        return {"on_callback": {"on_callback-item1", "on_callback-item2"}}
+
+    def on_errback(self, actual_sig: Signature, **header) -> dict:
+        return {"on_errback": {"on_errback-item1", "on_errback-item2"}}
+
+
 class StampsAssersionVisitor(StampingVisitor):
     """
     The canvas stamping mechanism traverses the canvas automatically, so we can ride
@@ -97,7 +122,7 @@ class StampsAssersionVisitor(StampingVisitor):
         expected_stamp = getattr(self.visitor, method)(actual_sig, **headers)
         actual_stamp = actual_sig.options[method]
         with self.subtests.test(f"Check if {actual_sig} has stamp: {expected_stamp[method]}"):
-            if isinstance(self.visitor, ListStampingVisitor):
+            if isinstance(self.visitor, ListStampingVisitor) or isinstance(self.visitor, SetStampingVisitor):
                 asserstion_check = all([actual in expected_stamp[method] for actual in actual_stamp])
             elif isinstance(self.visitor, BooleanStampingVisitor):
                 asserstion_check = actual_stamp in expected_stamp.values()
@@ -265,7 +290,7 @@ class CanvasCase:
         self.xprod = xprod
 
 
-@pytest.mark.parametrize("stamping_visitor", [BooleanStampingVisitor(), ListStampingVisitor()])
+@pytest.mark.parametrize("stamping_visitor", [BooleanStampingVisitor(), ListStampingVisitor(), SetStampingVisitor()])
 @pytest.mark.parametrize(
     "canvas_workflow",
     [
