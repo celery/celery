@@ -39,18 +39,14 @@ def await_redis_echo(expected_msgs, redis_key="redis-echo", timeout=TIMEOUT):
 
     if isinstance(expected_msgs, (str, bytes, bytearray)):
         expected_msgs = (expected_msgs,)
-    expected_msgs = collections.Counter(
-        e if not isinstance(e, str) else e.encode("utf-8") for e in expected_msgs
-    )
+    expected_msgs = collections.Counter(e if not isinstance(e, str) else e.encode("utf-8") for e in expected_msgs)
 
     # This can technically wait for `len(expected_msg_or_msgs) * timeout` :/
     while +expected_msgs:
         maybe_key_msg = redis_connection.blpop(redis_key, timeout)
         if maybe_key_msg is None:
             raise TimeoutError(
-                "Fetching from {!r} timed out - still awaiting {!r}".format(
-                    redis_key, dict(+expected_msgs)
-                )
+                "Fetching from {!r} timed out - still awaiting {!r}".format(redis_key, dict(+expected_msgs))
             )
         retrieved_key, msg = maybe_key_msg
         assert retrieved_key.decode("utf-8") == redis_key
@@ -60,9 +56,7 @@ def await_redis_echo(expected_msgs, redis_key="redis-echo", timeout=TIMEOUT):
     assert redis_connection.blpop(redis_key, min(1, timeout)) is None
 
 
-def await_redis_list_message_length(
-    expected_length, redis_key="redis-group-ids", timeout=TIMEOUT
-):
+def await_redis_list_message_length(expected_length, redis_key="redis-group-ids", timeout=TIMEOUT):
     """
     Helper to wait for a specified or well-known redis key to contain a string.
     """
@@ -80,9 +74,7 @@ def await_redis_list_message_length(
 
         sleep(check_interval)
     else:
-        raise TimeoutError(
-            f"{redis_key!r} has length of {length}, but expected to be of length {expected_length}"
-        )
+        raise TimeoutError(f"{redis_key!r} has length of {length}, but expected to be of length {expected_length}")
 
     sleep(min(1, timeout))
     assert redis_connection.llen(redis_key) == expected_length
@@ -218,16 +210,10 @@ class test_stamping_mechanism:
         assert "stamped_headers" in task_headers
         stamped_headers = task_headers["stamped_headers"]
 
-        with subtests.test(
-            msg="Test that the task properties are not dirty with stamping visitor entries"
-        ):
-            assert (
-                "stamped_headers" not in task_properties
-            ), "stamped_headers key should not be in task properties"
+        with subtests.test(msg="Test that the task properties are not dirty with stamping visitor entries"):
+            assert "stamped_headers" not in task_properties, "stamped_headers key should not be in task properties"
             for stamp in stamped_headers:
-                assert (
-                    stamp not in task_properties
-                ), f'The stamp "{stamp}" should not be in the task properties'
+                assert stamp not in task_properties, f'The stamp "{stamp}" should not be in the task properties'
 
     def test_task_received_has_access_to_stamps(self, manager):
         """Make sure that the request has the stamps using the task_received signal"""
@@ -237,12 +223,7 @@ class test_stamping_mechanism:
         @task_received.connect
         def task_received_handler(sender=None, request=None, signal=None, **kwargs):
             nonlocal assertion_result
-            assertion_result = all(
-                [
-                    stamped_header in request.stamps
-                    for stamped_header in request.stamped_headers
-                ]
-            )
+            assertion_result = all([stamped_header in request.stamps for stamped_header in request.stamped_headers])
 
         class CustomStampingVisitor(StampingVisitor):
             def on_signature(self, sig, **headers) -> dict:
@@ -268,12 +249,7 @@ class test_stamping_mechanism:
             assertion_result = all(
                 [
                     assertion_result,
-                    all(
-                        [
-                            stamped_header in request.stamps
-                            for stamped_header in request.stamped_headers
-                        ]
-                    ),
+                    all([stamped_header in request.stamps for stamped_header in request.stamped_headers]),
                     request.stamps["stamp"] == 42,
                 ]
             )
@@ -328,12 +304,7 @@ class test_stamping_mechanism:
             assertion_result = all(
                 [
                     assertion_result,
-                    all(
-                        [
-                            stamped_header in request.stamps
-                            for stamped_header in request.stamped_headers
-                        ]
-                    ),
+                    all([stamped_header in request.stamps for stamped_header in request.stamped_headers]),
                     request.stamps["stamp"] == 42,
                     request.stamps[expected_stamp_key] == expected_stamp_value
                     if "replaced_with_me" in request.task_name
@@ -365,10 +336,7 @@ class test_stamping_mechanism:
             nonlocal assertion_result
             link = request._Request__payload[2]["callbacks"][0]
             assertion_result = all(
-                [
-                    stamped_header in link["options"]
-                    for stamped_header in link["options"]["stamped_headers"]
-                ]
+                [stamped_header in link["options"] for stamped_header in link["options"]["stamped_headers"]]
             )
 
         class FixedMonitoringIdStampingVisitor(StampingVisitor):
@@ -381,9 +349,7 @@ class test_stamping_mechanism:
 
         link_sig = identity.si("link_sig")
         stamped_pass_sig = identity.si("passing sig")
-        stamped_pass_sig.stamp(
-            visitor=FixedMonitoringIdStampingVisitor(str(uuid.uuid4()))
-        )
+        stamped_pass_sig.stamp(visitor=FixedMonitoringIdStampingVisitor(str(uuid.uuid4())))
         stamped_pass_sig.link(link_sig)
         stamped_pass_sig.stamp(visitor=FixedMonitoringIdStampingVisitor("1234"))
         stamped_pass_sig.apply_async().get(timeout=2)
@@ -415,9 +381,7 @@ class test_stamping_mechanism:
 
         link_error_sig = identity.si("link_error")
         stamped_fail_sig = fail.si()
-        stamped_fail_sig.stamp(
-            visitor=FixedMonitoringIdStampingVisitor(str(uuid.uuid4()))
-        )
+        stamped_fail_sig.stamp(visitor=FixedMonitoringIdStampingVisitor(str(uuid.uuid4())))
         stamped_fail_sig.link_error(link_error_sig)
         with pytest.raises(ExpectedException):
             stamped_fail_sig.stamp(visitor=FixedMonitoringIdStampingVisitor("1234"))
