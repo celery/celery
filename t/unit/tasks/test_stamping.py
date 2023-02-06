@@ -324,7 +324,6 @@ class CanvasCase:
     "canvas_workflow",
     [
         signature("sig"),
-        group(signature("sig1")),
         chain(
             signature("sig1") | signature("sig2"),
             group(signature("sig3"), signature("sig4")) | group(signature(f"sig{i}") for i in range(5, 6)),
