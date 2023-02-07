@@ -17,11 +17,21 @@ class LinkingVisitor(StampingVisitor):
 
 
 class CleanupVisitor(StampingVisitor):
-    def on_signature(self, actual_sig: Signature, **headers) -> dict:
+    def clean_stamps(self, actual_sig: Signature) -> None:
         if "stamped_headers" in actual_sig.options and actual_sig.options["stamped_headers"]:
             for stamp in actual_sig.options["stamped_headers"]:
                 if stamp in actual_sig.options:
                     actual_sig.options.pop(stamp)
+
+    def clean_links(self, actual_sig: Signature) -> None:
+        if "link" in actual_sig.options:
+            actual_sig.options.pop("link")
+        if "link_error" in actual_sig.options:
+            actual_sig.options.pop("link_error")
+
+    def on_signature(self, actual_sig: Signature, **headers) -> dict:
+        self.clean_stamps(actual_sig)
+        self.clean_links(actual_sig)
         return super().on_signature(actual_sig, **headers)
 
 
