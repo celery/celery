@@ -601,30 +601,22 @@ class Signature(dict):
             visitor_headers = visitor_headers or {}
             if "stamped_headers" not in visitor_headers:
                 visitor_headers["stamped_headers"] = list(visitor_headers.keys())
+            # Prioritize visitor_headers over headers
             _merge_dictionaries(headers, visitor_headers, aggregate_duplicates=aggregate_duplicates)
             headers["stamped_headers"] = list(set(headers["stamped_headers"]))
+        # Merge headers with self.options
         else:
-            stamped_headers = [
+            headers["stamped_headers"] = [
                 header for header in headers.keys()
-                if all([
-                    header != "stamped_headers",
-                    header in self.options.get("stamped_headers", [])
-                ])
+                if header not in self.options and header != "stamped_headers"
             ]
-            if "stamped_headers" in headers:
-                headers["stamped_headers"].extend(stamped_headers)
-            else:
-                headers["stamped_headers"] = stamped_headers
-            stamped_headers = {
-                stamp for stamp in itertools.chain(headers, headers["stamped_headers"])
-                if stamp != "stamped_headers"
-            }
-            headers["stamped_headers"] = list(stamped_headers)
+
+            # Prioritize self.options over headers
             _merge_dictionaries(headers, self.options, aggregate_duplicates=aggregate_duplicates)
 
-        # Preserve previous stamped headers
-        stamped_headers = set(self.options.get("stamped_headers", []))
-        stamped_headers.update(headers.get("stamped_headers", []))
+        # Sync missing stamps from self.options (relevant for stamping during task replacement)
+        stamped_headers = set(headers.get("stamped_headers", []))
+        stamped_headers.update(self.options.get("stamped_headers", []))
         headers["stamped_headers"] = list(stamped_headers)
         for previous_header in stamped_headers:
             if previous_header not in headers and previous_header in self.options:
