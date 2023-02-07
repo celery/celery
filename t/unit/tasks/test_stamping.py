@@ -359,6 +359,7 @@ class CanvasCase:
     "canvas_workflow",
     [
         signature("sig"),
+        group(signature("sig")),
         chord((signature(f"sig{i}") for i in range(2)), signature("sig3")),
         chord(group(signature(f"sig{i}") for i in range(2)), signature("sig3")),
         chord(group(signature(f"sig{i}") for i in range(2)), signature("sig3") | signature("sig4")),
