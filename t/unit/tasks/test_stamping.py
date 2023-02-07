@@ -52,77 +52,142 @@ class BooleanStampingVisitor(StampingVisitor):
 
 class ListStampingVisitor(StampingVisitor):
     def on_signature(self, actual_sig: Signature, **headers) -> dict:
-        return {"on_signature": ["on_signature-item1", "on_signature-item2"]}
+        return {
+            "on_signature": ["ListStampingVisitor: on_signature-item1", "ListStampingVisitor: on_signature-item2"]
+        }
 
     def on_group_start(self, actual_sig: Signature, **headers) -> dict:
-        return {"on_group_start": ["on_group_start-item1", "on_group_start-item2"]}
+        return {
+            "on_group_start": [
+                "ListStampingVisitor: on_group_start-item1",
+                "ListStampingVisitor: on_group_start-item2",
+            ]
+        }
 
     def on_chain_start(self, actual_sig: Signature, **headers) -> dict:
-        return {"on_chain_start": ["on_chain_start-item1", "on_chain_start-item2"]}
+        return {
+            "on_chain_start": [
+                "ListStampingVisitor: on_chain_start-item1",
+                "ListStampingVisitor: on_chain_start-item2",
+            ]
+        }
 
     def on_chord_header_start(self, actual_sig: Signature, **header) -> dict:
         s = super().on_chord_header_start(actual_sig, **header)
-        s.update({"on_chord_header_start": ["on_chord_header_start-item1", "on_chord_header_start-item2"]})
+        s.update(
+            {
+                "on_chord_header_start": [
+                    "ListStampingVisitor: on_chord_header_start-item1",
+                    "ListStampingVisitor: on_chord_header_start-item2",
+                ]
+            }
+        )
         return s
 
     def on_chord_body(self, actual_sig: Signature, **header) -> dict:
-        return {"on_chord_body": ["on_chord_body-item1", "on_chord_body-item2"]}
+        return {
+            "on_chord_body": ["ListStampingVisitor: on_chord_body-item1", "ListStampingVisitor: on_chord_body-item2"]
+        }
 
     def on_callback(self, actual_sig: Signature, **header) -> dict:
-        return {"on_callback": ["on_callback-item1", "on_callback-item2"]}
+        return {"on_callback": ["ListStampingVisitor: on_callback-item1", "ListStampingVisitor: on_callback-item2"]}
 
     def on_errback(self, actual_sig: Signature, **header) -> dict:
-        return {"on_errback": ["on_errback-item1", "on_errback-item2"]}
+        return {"on_errback": ["ListStampingVisitor: on_errback-item1", "ListStampingVisitor: on_errback-item2"]}
 
 
 class SetStampingVisitor(StampingVisitor):
     def on_signature(self, actual_sig: Signature, **headers) -> dict:
-        return {"on_signature": {"on_signature-item1", "on_signature-item2"}}
+        return {
+            "on_signature": {
+                "SetStampingVisitor: on_signature-item1",
+                "SetStampingVisitor: on_signature-item2",
+                "SetStampingVisitor: on_signature-item3",
+            }
+        }
 
     def on_group_start(self, actual_sig: Signature, **headers) -> dict:
-        return {"on_group_start": {"on_group_start-item1", "on_group_start-item2"}}
+        return {
+            "on_group_start": {
+                "SetStampingVisitor: on_group_start-item1",
+                "SetStampingVisitor: on_group_start-item2",
+                "SetStampingVisitor: on_group_start-item3",
+            }
+        }
 
     def on_chain_start(self, actual_sig: Signature, **headers) -> dict:
-        return {"on_chain_start": {"on_chain_start-item1", "on_chain_start-item2"}}
+        return {
+            "on_chain_start": {
+                "SetStampingVisitor: on_chain_start-item1",
+                "SetStampingVisitor: on_chain_start-item2",
+                "SetStampingVisitor: on_chain_start-item3",
+            }
+        }
 
     def on_chord_header_start(self, actual_sig: Signature, **header) -> dict:
         s = super().on_chord_header_start(actual_sig, **header)
-        s.update({"on_chord_header_start": {"on_chord_header_start-item1", "on_chord_header_start-item2"}})
+        s.update(
+            {
+                "on_chord_header_start": {
+                    "SetStampingVisitor: on_chord_header_start-item1",
+                    "SetStampingVisitor: on_chord_header_start-item2",
+                    "SetStampingVisitor: on_chord_header_start-item3",
+                }
+            }
+        )
         return s
 
     def on_chord_body(self, actual_sig: Signature, **header) -> dict:
-        return {"on_chord_body": {"on_chord_body-item1", "on_chord_body-item2"}}
+        return {
+            "on_chord_body": {
+                "SetStampingVisitor: on_chord_body-item1",
+                "SetStampingVisitor: on_chord_body-item2",
+                "SetStampingVisitor: on_chord_body-item3",
+            }
+        }
 
     def on_callback(self, actual_sig: Signature, **header) -> dict:
-        return {"on_callback": {"on_callback-item1", "on_callback-item2"}}
+        return {
+            "on_callback": {
+                "SetStampingVisitor: on_callback-item1",
+                "SetStampingVisitor: on_callback-item2",
+                "SetStampingVisitor: on_callback-item3",
+            }
+        }
 
     def on_errback(self, actual_sig: Signature, **header) -> dict:
-        return {"on_errback": {"on_errback-item1", "on_errback-item2"}}
+        return {
+            "on_errback": {
+                "SetStampingVisitor: on_errback-item1",
+                "SetStampingVisitor: on_errback-item2",
+                "SetStampingVisitor: on_errback-item3",
+            }
+        }
 
 
 class StringStampingVisitor(StampingVisitor):
     def on_signature(self, actual_sig: Signature, **headers) -> dict:
-        return {"on_signature": "on_signature-item1"}
+        return {"on_signature": "StringStampingVisitor: on_signature-item1"}
 
     def on_group_start(self, actual_sig: Signature, **headers) -> dict:
-        return {"on_group_start": "on_group_start-item1"}
+        return {"on_group_start": "StringStampingVisitor: on_group_start-item1"}
 
     def on_chain_start(self, actual_sig: Signature, **headers) -> dict:
-        return {"on_chain_start": "on_chain_start-item1"}
+        return {"on_chain_start": "StringStampingVisitor: on_chain_start-item1"}
 
     def on_chord_header_start(self, actual_sig: Signature, **header) -> dict:
         s = super().on_chord_header_start(actual_sig, **header)
-        s.update({"on_chord_header_start": "on_chord_header_start-item1"})
+        s.update({"on_chord_header_start": "StringStampingVisitor: on_chord_header_start-item1"})
         return s
 
     def on_chord_body(self, actual_sig: Signature, **header) -> dict:
-        return {"on_chord_body": "on_chord_body-item1"}
+        return {"on_chord_body": "StringStampingVisitor: on_chord_body-item1"}
 
     def on_callback(self, actual_sig: Signature, **header) -> dict:
-        return {"on_callback": "on_callback-item1"}
+        return {"on_callback": "StringStampingVisitor: on_callback-item1"}
 
     def on_errback(self, actual_sig: Signature, **header) -> dict:
-        return {"on_errback": "on_errback-item1"}
+        return {"on_errback": "StringStampingVisitor: on_errback-item1"}
 
 
 class UUIDStampingVisitor(StampingVisitor):
