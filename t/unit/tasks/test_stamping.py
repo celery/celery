@@ -435,6 +435,8 @@ class CanvasCase:
     [
         signature("sig"),
         group(signature("sig")),
+        group(signature("sig1", signature("sig2"))),
+        group(signature(f"sig{i}") for i in range(2)),
         chord((signature(f"sig{i}") for i in range(2)), signature("sig3")),
         chord(group(signature(f"sig{i}") for i in range(2)), signature("sig3")),
         chord(group(signature(f"sig{i}") for i in range(2)), signature("sig3") | signature("sig4")),
@@ -471,6 +473,92 @@ class CanvasCase:
                         ),
                     ),
                 ),
+            ),
+        ),
+        group(
+            signature("sig"),
+            group(signature("sig1")),
+            group(signature("sig1"), signature("sig2")),
+            group(signature(f"sig{i}") for i in range(2)),
+            group([signature("sig1"), signature("sig2")]),
+            group((signature("sig1"), signature("sig2"))),
+            chain(signature("sig1"), signature("sig2")),
+            chord(group(signature("sig1"), signature("sig2")), signature("sig3")),
+            chord(group(signature(f"sig{i}") for i in range(2)), group(signature("sig3"), signature("sig4"))),
+            chain(
+                group(signature("sig1"), signature("sig2")),
+                group(signature("sig3"), signature("sig4")),
+                signature("sig5"),
+            ),
+            chain(
+                signature("sig1"),
+                group(signature("sig2"), signature("sig3")),
+                group(signature("sig4"), signature("sig5")),
+            ),
+            chain(
+                group(
+                    signature("sig1"),
+                    group(signature("sig2")),
+                    group([signature("sig3"), signature("sig4")]),
+                    group(signature(f"sig{i}") for i in range(5, 7)),
+                ),
+                chain(
+                    signature("sig8"),
+                    group(signature("sig9"), signature("sig10")),
+                ),
+            ),
+        ),
+        chain(
+            signature("sig"),
+            group(signature("sig1")),
+            group(signature("sig1"), signature("sig2")),
+            group(signature(f"sig{i}") for i in range(2)),
+            group([signature("sig1"), signature("sig2")]),
+            group((signature("sig1"), signature("sig2"))),
+            chain(signature("sig1"), signature("sig2")),
+            chord(group(signature("sig1"), signature("sig2")), signature("sig3")),
+            chord(group(signature(f"sig{i}") for i in range(2)), group(signature("sig3"), signature("sig4"))),
+            chain(
+                group(signature("sig1"), signature("sig2")),
+                group(signature("sig3"), signature("sig4")),
+                signature("sig5"),
+            ),
+            chain(
+                signature("sig1"),
+                group(signature("sig2"), signature("sig3")),
+                group(signature("sig4"), signature("sig5")),
+            ),
+            chain(
+                group(
+                    signature("sig1"),
+                    group(signature("sig2")),
+                    group([signature("sig3"), signature("sig4")]),
+                    group(signature(f"sig{i}") for i in range(5, 7)),
+                ),
+                chain(
+                    signature("sig8"),
+                    group(signature("sig9"), signature("sig10")),
+                ),
+            ),
+        ),
+        chord(
+            group(
+                group(signature(f"sig{i}") for i in range(2)),
+                group(signature(f"sig{i}") for i in range(2, 4)),
+                group(signature(f"sig{i}") for i in range(4, 6)),
+                group(signature(f"sig{i}") for i in range(6, 8)),
+            ),
+            chain(
+                chain(
+                    signature("sig8") | signature("sig9"),
+                    group(signature("sig10"), signature("sig11"))
+                    | group(signature(f"sig{i}") for i in range(12, 14)),
+                    chord(group(signature(f"sig{i}") for i in range(14, 16)), signature("sig16"))
+                    | signature("sig17"),
+                ),
+                signature("sig1") | signature("sig2"),
+                group(signature("sig3"), signature("sig4")) | group(signature(f"sig{i}") for i in range(5, 7)),
+                chord(group(signature(f"sig{i}") for i in range(7, 9)), signature("sig9")) | signature("sig10"),
             ),
         ),
     ],
