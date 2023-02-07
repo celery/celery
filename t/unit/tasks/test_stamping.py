@@ -442,8 +442,8 @@ class test_canvas_stamping(CanvasCase):
         self.app.conf.result_extended = True
 
         class AssertionTask(Task):
-            def on_replace_stamping(self, sig: Signature, visitor=None):
-                return super().on_replace_stamping(sig, visitor=stamping_visitor)
+            def on_stamp_replaced(self, sig: Signature, visitor=None):
+                return super().on_stamp_replaced(sig, visitor=stamping_visitor)
 
             def on_replace(self, sig: Signature):
                 nonlocal assertion_result
@@ -454,16 +454,13 @@ class test_canvas_stamping(CanvasCase):
 
         @self.app.task(shared=False, bind=True, base=AssertionTask)
         def assert_using_replace(self: AssertionTask):
+            assert self.request.stamped_headers is not None, "stamped_headers should be set"
+            assert self.request.stamps is not None, "stamps should be set"
             return self.replace(workflow)
 
-        class StampingTask(Task):
-            def on_replace(self, sig: Signature):
-                sig.stamp(stamping_visitor)
-                return super().on_replace(sig)
-
-        @self.app.task(shared=False, bind=True, base=StampingTask)
-        def stamp_using_replace(self: StampingTask):
-            return self.replace(assert_using_replace.s())
+        @self.app.task(shared=False, bind=True)
+        def stamp_using_replace(self: Task):
+            return self.replace(assert_using_replace.s(), visitor=stamping_visitor)
 
         replaced_sig = stamp_using_replace.s()
         assertion_result = False
