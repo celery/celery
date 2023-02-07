@@ -176,7 +176,8 @@ class CeleryDaemonCommand(CeleryCommand):
     def __init__(self, *args, **kwargs):
         """Initialize a Celery command with common daemon options."""
         super().__init__(*args, **kwargs)
-        self.params.append(CeleryOption(('-f', '--logfile'), help_group="Daemonization Options"))
+        self.params.append(CeleryOption(('-f', '--logfile'), help_group="Daemonization Options",
+                           help="Log destination; defaults to stderr"))
         self.params.append(CeleryOption(('--pidfile',), help_group="Daemonization Options"))
         self.params.append(CeleryOption(('--uid',), help_group="Daemonization Options"))
         self.params.append(CeleryOption(('--gid',), help_group="Daemonization Options"))
