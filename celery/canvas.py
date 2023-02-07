@@ -84,6 +84,13 @@ def _merge_dictionaries(d1, d2, aggregate_duplicates=True):
         'tuple': (1, 2),
         'set': {'a', 'b'}
     }
+
+    Arguments:
+        d1 (dict): Dictionary to merge into.
+        d2 (dict): Dictionary to merge from.
+        aggregate_duplicates (bool):
+            If True, aggregate duplicated items (by key) into a list of all values in d1 in the same key.
+            If False, duplicate keys will be taken from d2 and override the value in d1.
     """
     if not d2:
         return
@@ -548,6 +555,8 @@ class Signature(dict):
         Using a visitor will pass on responsibility for the stamping
         to the visitor.
 
+        .. versionadded:: 5.3
+
         Arguments:
             visitor (StampingVisitor): Visitor API object.
             headers (Dict): Stamps that should be added to headers.
@@ -561,12 +570,38 @@ class Signature(dict):
         return self.set(**headers)
 
     def _stamp_headers(self, visitor_headers=None, **headers):
+        """ Collect all stamps from visitor, headers and self,
+        and return an idempotent dictionary of stamps.
+
+        .. versionadded:: 5.3
+
+        Arguments:
+            visitor_headers (Dict): Stamps from a visitor method.
+            headers (Dict): Stamps that should be added to headers.
+
+        Returns:
+            Dict: Merged stamps.
+        """
+        # Use aggregate_duplicates=False to prioritize visitor_headers over headers in case of duplicated stamps.
+        # This will lose duplicated headers from the headers argument, but that is the best effort solution
+        # to avoid implicitly casting the duplicated stamp into a list of both stamps from headers and
+        # visitor_headers of the same key.
+        # Example:
+        #   headers = {"foo": "bar1"}
+        #   visitor_headers = {"foo": "bar2"}
+        #   _merge_dictionaries(headers, visitor_headers, aggregate_duplicates=True)
+        #   headers["foo"] == ["bar1", "bar2"] -> The stamp is now a list
+        #   _merge_dictionaries(headers, visitor_headers, aggregate_duplicates=False)
+        #   headers["foo"] == "bar2" -> "bar1" is lost, but the stamp is according to the visitor
+        aggregate_duplicates = False
+
         headers = headers.copy()
+        # Merge headers with visitor headers
         if visitor_headers is not None:
             visitor_headers = visitor_headers or {}
             if "stamped_headers" not in visitor_headers:
                 visitor_headers["stamped_headers"] = list(visitor_headers.keys())
-            _merge_dictionaries(headers, visitor_headers, aggregate_duplicates=False)
+            _merge_dictionaries(headers, visitor_headers, aggregate_duplicates=aggregate_duplicates)
             headers["stamped_headers"] = list(set(headers["stamped_headers"]))
         else:
             stamped_headers = [
@@ -585,7 +620,7 @@ class Signature(dict):
                 if stamp != "stamped_headers"
             }
             headers["stamped_headers"] = list(stamped_headers)
-            _merge_dictionaries(headers, self.options, aggregate_duplicates=False)
+            _merge_dictionaries(headers, self.options, aggregate_duplicates=aggregate_duplicates)
 
         # Preserve previous stamped headers
         stamped_headers = set(self.options.get("stamped_headers", []))
