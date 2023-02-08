@@ -277,7 +277,8 @@ class StampsAssertionVisitor(StampingVisitor):
 
     def on_chord_header_start(self, actual_sig: Signature, **header) -> dict:
         self.assertion_check(actual_sig, "on_chord_header_start", **header)
-        self.assertion_check(actual_sig.tasks, "on_chord_header_start", **header)
+        if issubclass(type(actual_sig.tasks), Signature):
+            self.assertion_check(actual_sig.tasks, "on_chord_header_start", **header)
         return super().on_chord_header_start(actual_sig, **header)
 
     def on_chord_body(self, actual_sig: chord, **header) -> dict:
@@ -341,7 +342,8 @@ class StampedHeadersAssertionVisitor(StampingVisitor):
 
     def on_chord_header_start(self, actual_sig: Signature, **header) -> dict:
         self.assertion_check(actual_sig, "on_chord_header_start")
-        self.assertion_check(actual_sig.tasks, "on_chord_header_start")
+        if issubclass(type(actual_sig.tasks), Signature):
+            self.assertion_check(actual_sig.tasks, "on_chord_header_start")
         return super().on_chord_header_start(actual_sig, **header)
 
     def on_chord_body(self, actual_sig: chord, **header) -> dict:
@@ -571,13 +573,6 @@ class CanvasCase:
 )
 class test_canvas_stamping(CanvasCase):
     @pytest.fixture
-    def linked_canvas(self, canvas_workflow: Signature) -> Signature:
-        workflow = canvas_workflow.clone()
-        workflow.stamp(CleanupVisitor())
-        workflow.stamp(LinkingVisitor())
-        return workflow
-
-    @pytest.fixture
     def stamped_canvas(self, stamping_visitor: StampingVisitor, canvas_workflow: Signature) -> Signature:
         workflow = canvas_workflow.clone()
         workflow.stamp(CleanupVisitor())
@@ -585,9 +580,10 @@ class test_canvas_stamping(CanvasCase):
         return workflow
 
     @pytest.fixture
-    def stamped_linked_canvas(self, stamping_visitor: StampingVisitor, linked_canvas: Signature) -> Signature:
-        workflow = linked_canvas.clone()
+    def stamped_linked_canvas(self, stamping_visitor: StampingVisitor, canvas_workflow: Signature) -> Signature:
+        workflow = canvas_workflow.clone()
         workflow.stamp(CleanupVisitor())
+        workflow.stamp(LinkingVisitor())
         workflow.stamp(stamping_visitor)
         return workflow
 
