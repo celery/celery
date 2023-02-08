@@ -8,7 +8,7 @@ from kombu.utils.uuid import uuid
 
 from celery import current_app, states
 from celery._state import _task_stack
-from celery.canvas import GroupStampingVisitor, _chain, group, signature
+from celery.canvas import _chain, group, signature
 from celery.exceptions import Ignore, ImproperlyConfigured, MaxRetriesExceededError, Reject, Retry
 from celery.local import class_property
 from celery.result import EagerResult, denied_join_result
@@ -896,7 +896,7 @@ class Task:
                 type_,
                 uuid=req.id, retry=retry, retry_policy=retry_policy, **fields)
 
-    def replace(self, sig):
+    def replace(self, sig, visitor=None):
         """Replace this task, with a new task inheriting the task id.
 
         Execution of the host task ends immediately and no subsequent statements
@@ -904,8 +904,14 @@ class Task:
 
         .. versionadded:: 4.0
 
+        .. versionchanged:: 5.3
+        Added new ``visitor`` argument, which is used when the task is
+        replaced to stamp the replaced task with the visitor's stamps.
+        In addition, any previous stamps will be passed to the replaced task.
+
         Arguments:
             sig (Signature): signature to replace with.
+            visitor (StampingVisitor): Visitor API object.
 
         Raises:
             ~@Ignore: This is always raised when called in asynchronous context.
@@ -953,41 +959,7 @@ class Task:
         for t in reversed(self.request.chain or []):
             sig |= signature(t, app=self.app)
         # Stamping sig with parents groups
-        if self.request.stamps:
-            groups = self.request.stamps.get("groups")
-            sig.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=self.request.stamped_headers))
-            stamped_headers = self.request.stamped_headers.copy()
-            stamps = self.request.stamps.copy()
-            stamped_headers.extend(sig.options.get('stamped_headers', []))
-            stamped_headers = list(set(stamped_headers))
-            stamps.update({
-                stamp: value
-                for stamp, value in sig.options.items() if stamp in sig.options.get('stamped_headers', [])
-            })
-            sig.options['stamped_headers'] = stamped_headers
-            sig.options.update(stamps)
-
-            # Collecting all of the links (callback/errback) to stamp them
-            links = sig.options['link'] if 'link' in sig.options else []
-            links.extend(sig.options['link_error'] if 'link_error' in sig.options else [])
-
-            if hasattr(sig, "tasks"):
-                tasks = sig.tasks
-                if isinstance(tasks, group):
-                    tasks = tasks.tasks
-                for task in tasks:
-                    task.options['stamped_headers'] = stamped_headers
-                    task.options.update(stamps)
-                    links.extend(task.options['link'] if 'link' in task.options else [])
-                    links.extend(task.options['link_error'] if 'link_error' in task.options else [])
-
-            for link in links:
-                link_stamped_headers = stamped_headers.copy()
-                link_stamped_headers.extend(link['options'].get('stamped_headers', []))
-                link_stamped_headers = list(set(link_stamped_headers))
-                link['options']['stamped_headers'] = link_stamped_headers
-                link['options'].update(stamps)
-
+        self.on_stamp_replaced(sig, visitor)
         return self.on_replace(sig)
 
     def add_to_chord(self, sig, lazy=False):
@@ -1103,6 +1075,34 @@ class Task:
         Returns:
             None: The return value of this handler is ignored.
         """
+
+    def on_stamp_replaced(self, sig, visitor=None):
+        """Handler called when the task is replaced and passes
+        the stamps from the original task to the replaced task.
+
+        .. versionadded:: 5.3
+
+        Arguments:
+            sig (Signature): signature to replace with.
+            visitor (StampingVisitor): Visitor API object.
+        """
+        stamps = {}
+
+        # If the original task had stamps
+        if self.request.stamps:
+            # Copy the stamps to the new signature
+            stamps = self.request.stamps.copy()
+            for header, stamp in stamps.items():
+                # The request will contain single stamps as a list of one element so we need to unpack them to
+                # keep consistency with stamping with a header of a single stamp (which will not be a list
+                # implicitly like in the request)
+                # This will also flat stamps that were originally a list of a single stamp to create consistency
+                # with stamping a single header stamp to always be a flattened
+                stamp = stamp[0] if len(stamp) == 1 else stamp
+                stamps[header] = stamp
+
+        if visitor:  # This check avoids infinite recursion when the visitor is None
+            sig.stamp(visitor=visitor, **stamps)
 
     def on_replace(self, sig):
         """Handler called when the task is replaced.
