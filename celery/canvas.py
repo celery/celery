@@ -643,12 +643,6 @@ class Signature(dict):
                 visitor_headers = visitor.on_callback(link, **headers) or {}
             headers = self._stamp_headers(visitor_headers, **headers)
             link.stamp(visitor=visitor, **headers)
-            # Stamping a link to a signature with previous stamps
-            # may result in missing stamps in the link options, if the linking
-            # was done AFTER the stamping of the signature
-            for stamp in link.options.get('stamped_headers', []):
-                if stamp in self.options and stamp not in link.options:
-                    link.options[stamp] = self.options[stamp]
 
         # Stamp all of the errbacks of this signature
         headers = deepcopy(non_visitor_headers)
@@ -659,12 +653,6 @@ class Signature(dict):
                 visitor_headers = visitor.on_errback(link, **headers) or {}
             headers = self._stamp_headers(visitor_headers, **headers)
             link.stamp(visitor=visitor, **headers)
-            # Stamping a link to a signature with previous stamps
-            # may result in missing stamps in the link options, if the linking
-            # was done AFTER the stamping of the signature
-            for stamp in link.options.get('stamped_headers', []):
-                if stamp in self.options and stamp not in link.options:
-                    link.options[stamp] = self.options[stamp]
 
     def _with_list_option(self, key):
         """Gets the value at the given self.options[key] as a list.
