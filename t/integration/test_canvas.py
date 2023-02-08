@@ -10,7 +10,7 @@ import pytest_subtests  # noqa
 
 from celery import chain, chord, group, signature
 from celery.backends.base import BaseKeyValueStoreBackend
-from celery.canvas import StampingVisitor  # noqa
+from celery.canvas import StampingVisitor
 from celery.exceptions import ImproperlyConfigured, TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet
 from celery.signals import before_task_publish, task_received
@@ -3052,6 +3052,77 @@ class test_signature_serialization:
 
 
 class test_stamping_mechanism:
+    def test_stamping_workflow(self, manager, subtests):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        workflow = group(
+            add.s(1, 2) | add.s(3),
+            add.s(4, 5) | add.s(6),
+            identity.si(21),
+        ) | group(
+            xsum.s(),
+            xsum.s(),
+        )
+
+        @task_received.connect
+        def task_received_handler(request=None, **kwargs):
+            nonlocal assertion_result
+            link = None
+            if request._Request__payload[2]["callbacks"]:
+                link = signature(request._Request__payload[2]["callbacks"][0])
+            link_error = None
+            if request._Request__payload[2]["errbacks"]:
+                link_error = signature(request._Request__payload[2]["errbacks"][0])
+
+            assertion_result = all(
+                [
+                    assertion_result,
+                    [stamped_header in request.stamps for stamped_header in request.stamped_headers],
+                    [
+                        stamped_header in link.options
+                        for stamped_header in link.options["stamped_headers"]
+                        if link  # the link itself doensn't have a link
+                    ],
+                    [
+                        stamped_header in link_error.options
+                        for stamped_header in link_error.options["stamped_headers"]
+                        if link_error  # the link_error itself doensn't have a link
+                    ],
+                ]
+            )
+
+        @before_task_publish.connect
+        def before_task_publish_handler(
+            body=None,
+            headers=None,
+            **kwargs,
+        ):
+            nonlocal assertion_result
+
+            assertion_result = all(
+                [stamped_header in headers["stamps"] for stamped_header in headers["stamped_headers"]]
+            )
+
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {"on_signature": 42}
+
+        with subtests.test("Prepare canvas workflow and stamp it"):
+            link_sig = identity.si("link")
+            link_error_sig = identity.si("link_error")
+            canvas_workflow = workflow
+            canvas_workflow.link(link_sig)
+            canvas_workflow.link_error(link_error_sig)
+            canvas_workflow.stamp(visitor=CustomStampingVisitor())
+
+        with subtests.test("Check canvas was executed successfully"):
+            assertion_result = False
+            assert canvas_workflow.apply_async().get() == [42] * 2
+            assert assertion_result
+
     def test_stamping_example_canvas(self, manager):
         """Test the stamping example canvas from the examples directory"""
         try:
