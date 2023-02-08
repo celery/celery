@@ -11,8 +11,14 @@ from celery.exceptions import Ignore
 
 class LinkingVisitor(StampingVisitor):
     def on_signature(self, actual_sig: Signature, **headers) -> dict:
-        actual_sig.link(signature(f"{actual_sig.name}_link"))
-        actual_sig.link_error(signature(f"{actual_sig.name}_link_error"))
+        link_workflow = chain(
+            group(signature("task1"), signature("task2")),
+            signature("task3"),
+        )
+        link = signature(f"{actual_sig.name}_link") | link_workflow.clone()
+        actual_sig.link(link)
+        link_error = signature(f"{actual_sig.name}_link_error") | link_workflow.clone()
+        actual_sig.link_error(link_error)
         return super().on_signature(actual_sig, **headers)
 
 
