@@ -1086,7 +1086,7 @@ class Task:
             sig (Signature): signature to replace with.
             visitor (StampingVisitor): Visitor API object.
         """
-        stamps = {}
+        headers = {}
 
         # If the original task had stamps
         if self.request.stamps:
@@ -1100,9 +1100,14 @@ class Task:
                 # with stamping a single header stamp to always be a flattened
                 stamp = stamp[0] if len(stamp) == 1 else stamp
                 stamps[header] = stamp
+            stamped_headers = self.request.stamped_headers
+            headers.update(stamps)
+            headers["stamped_headers"] = stamped_headers
 
         if visitor:  # This check avoids infinite recursion when the visitor is None
-            sig.stamp(visitor=visitor, **stamps)
+            sig.stamp(visitor=visitor, **headers)
+        elif headers:
+            sig.stamp(**headers)
 
     def on_replace(self, sig):
         """Handler called when the task is replaced.

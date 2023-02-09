@@ -609,7 +609,7 @@ class test_canvas_stamping(CanvasCase):
 
         class AssertionTask(Task):
             def on_stamp_replaced(self, sig: Signature, visitor=None):
-                return super().on_stamp_replaced(sig, visitor=stamping_visitor)
+                super().on_stamp_replaced(sig, visitor=stamping_visitor)
 
             def on_replace(self, sig: Signature):
                 nonlocal assertion_result
@@ -1227,3 +1227,81 @@ class test_stamping_mechanism(CanvasCase):
 
         with subtests.test("sig_2_res has stamped_headers", stamped_headers=["stamp"]):
             assert sorted(sig_2_res._get_task_meta()["stamped_headers"]) == sorted(["stamp"])
+
+    @pytest.mark.usefixtures("depends_on_current_app")
+    def test_on_stamp_replaced_with_visitor(self):
+        self.app.conf.task_always_eager = True
+        self.app.conf.task_store_eager_result = True
+        self.app.conf.result_extended = True
+
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {"header": "value"}
+
+        class CustomStampingVisitor2(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {"header2": "value2"}
+
+        mytask = self.app.task(shared=False)(return_True)
+
+        class AssertionTask(Task):
+            def on_stamp_replaced(self, sig: Signature, visitor=None):
+                assert "stamped_headers" not in sig.options
+                assert "header" not in sig.options
+                assert "header2" not in sig.options
+                # Here we make sure sig received the stamps from stamp_using_replace and assert_using_replace
+                # using the replace via on_stamp_replaced()
+                super().on_stamp_replaced(sig, visitor=visitor)
+                assert sorted(sig.options["stamped_headers"]) == sorted(["header", "header2"])
+                assert sig.options["header"] == "value"
+                assert sig.options["header2"] == "value2"
+
+        @self.app.task(shared=False, bind=True, base=AssertionTask)
+        def assert_using_replace(self: AssertionTask):
+            assert self.request.stamped_headers == ["header"]
+            assert self.request.stamps["header"] == ["value"]
+            return self.replace(mytask.s(), visitor=CustomStampingVisitor2())
+
+        @self.app.task(shared=False, bind=True)
+        def stamp_using_replace(self: Task):
+            assert self.request.stamped_headers is None, "stamped_headers should not be set"
+            assert self.request.stamps is None, "stamps should not be set"
+            return self.replace(assert_using_replace.s(), visitor=CustomStampingVisitor())
+
+        replaced_sig = group(stamp_using_replace.s(), self.add.s(1, 1)) | self.add.s(2, 2)
+        replaced_sig.apply()
+
+    @pytest.mark.usefixtures("depends_on_current_app")
+    def test_on_stamp_replaced_without_visitor(self):
+        self.app.conf.task_always_eager = True
+        self.app.conf.task_store_eager_result = True
+        self.app.conf.result_extended = True
+
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {"header": "value"}
+
+        mytask = self.app.task(shared=False)(return_True)
+
+        class AssertionTask(Task):
+            def on_stamp_replaced(self, sig: Signature, visitor=None):
+                assert "stamped_headers" not in sig.options
+                assert "header" not in sig.options
+                super().on_stamp_replaced(sig, visitor=visitor)
+                assert sig.options["stamped_headers"] == ["header"]
+                assert sig.options["header"] == "value"
+
+        @self.app.task(shared=False, bind=True, base=AssertionTask)
+        def assert_using_replace(self: AssertionTask):
+            assert self.request.stamped_headers == ["header"]
+            assert self.request.stamps["header"] == ["value"]
+            return self.replace(mytask.s(), visitor=None)
+
+        @self.app.task(shared=False, bind=True)
+        def stamp_using_replace(self: Task):
+            assert self.request.stamped_headers is None, "stamped_headers should not be set"
+            assert self.request.stamps is None, "stamps should not be set"
+            return self.replace(assert_using_replace.s(), visitor=CustomStampingVisitor())
+
+        replaced_sig = group(stamp_using_replace.s(), self.add.s(1, 1)) | self.add.s(2, 2)
+        replaced_sig.apply()
