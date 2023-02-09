@@ -1,6 +1,6 @@
 from time import sleep
 
-from tasks import identity, mul, wait_for_revoke, xsum
+from tasks import identity_task, mul, wait_for_revoke, xsum
 from visitors import MonitoringIdStampingVisitor
 
 from celery.canvas import Signature, chain, chord, group
@@ -12,7 +12,7 @@ def create_canvas(n: int) -> Signature:
     For example, if n = 3, the result is 3 * (1 + 2 + 3) * 10 = 180
     """
     canvas = chain(
-        group(identity.s(i) for i in range(1, n+1)) | xsum.s(),
+        group(identity_task.s(i) for i in range(1, n+1)) | xsum.s(),
         chord(group(mul.s(10) for _ in range(1, n+1)), xsum.s()),
     )
 
