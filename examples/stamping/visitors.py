@@ -52,11 +52,3 @@ class FullVisitor(StampingVisitor):
         return {
             "on_chord_body": "FullVisitor.on_chord_body()",
         }
-
-
-class LoggingVisitor(StampingVisitor):
-    def on_signature(self, sig: Signature, **headers) -> dict:
-        msg = f"Examining signature '{sig.name}' with stamps: {sig.options.get('stamped_headers', 'None')}"
-        print(msg)
-        print(f"Options: {sig.options}")
-        return super().on_signature(sig, **headers)
