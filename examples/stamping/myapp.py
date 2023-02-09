@@ -37,16 +37,14 @@ from celery.signals import task_received
 
 
 @task_received.connect
-def task_received_handler(
-    sender=None,
-    request=None,
-    signal=None,
-    **kwargs
-):
-    print(f'In {signal.name} for: {repr(request)}')
-    print(f'Found stamps: {request.stamped_headers}')
-    print(json.dumps(request.stamps, indent=4, sort_keys=True))
+def task_received_handler(sender=None, request=None, signal=None, **kwargs):
+    print(f"In {signal.name} for: {repr(request)}")
+    if hasattr(request, "stamped_headers") and request.stamped_headers:
+        print(f"Found stamps: {request.stamped_headers}")
+        print(json.dumps(request.stamps, indent=4, sort_keys=True))
+    else:
+        print("No stamps found")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.start()
