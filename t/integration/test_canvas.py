@@ -1031,6 +1031,35 @@ class test_chain:
         # Cleanup
         redis_connection.delete(redis_key, 'Done')
 
+    def test_chain_starting_with_group(self, manager, subtests):
+        """
+        This test is built to reproduce the issue mentioned on the GitHub discussion:
+        https://github.com/celery/celery/discussions/8027
+        In chains starting with a group, the AsyncResult does not contain a full list of tasks. Instead, the
+        group task is linked directly to the last task, and the others are short-circuited.
+        The first part of this test shows that there is a workaround, by adding a task in front of the pipeline.
+        """
+        workaround_pipeline = chain(identity.s(0), group([add.s(i, i+1) for i in range(3)]), tsum.s(), add.s(10))
+        last_task = workaround_pipeline.apply_async()
+        assert last_task.parent is not None
+        tsum_task = last_task.parent
+        assert not isinstance(tsum_task, GroupResult)
+        assert tsum_task.parent is not None
+        group_task = tsum_task.parent
+        assert isinstance(group_task, GroupResult)
+        assert len(group_task.children) == 3
+
+        pipeline = chain(group([add.s(i, i+1) for i in range(3)]), tsum.s(), add.s(10))
+        last_task = pipeline.apply_async()
+        assert last_task.parent is not None
+        tsum_task = last_task.parent
+        assert not isinstance(tsum_task, GroupResult)
+        assert tsum_task.parent is not None
+        group_task = tsum_task.parent
+        assert group_task.parent is None
+        assert isinstance(group_task, GroupResult)
+        assert len(group_task.children) == 3
+
 
 class test_result_set:
 
