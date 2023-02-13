@@ -896,18 +896,13 @@ class Task:
                 type_,
                 uuid=req.id, retry=retry, retry_policy=retry_policy, **fields)
 
-    def replace(self, sig, visitor=None):
+    def replace(self, sig):
         """Replace this task, with a new task inheriting the task id.
 
         Execution of the host task ends immediately and no subsequent statements
         will be run.
 
         .. versionadded:: 4.0
-
-        .. versionchanged:: 5.3
-        Added new ``visitor`` argument, which is used when the task is
-        replaced to stamp the replaced task with the visitor's stamps.
-        In addition, any previous stamps will be passed to the replaced task.
 
         Arguments:
             sig (Signature): signature to replace with.
@@ -958,8 +953,6 @@ class Task:
         # retain their original task IDs as well
         for t in reversed(self.request.chain or []):
             sig |= signature(t, app=self.app)
-        # Stamping sig with parents groups
-        self.on_stamp_replaced(sig, visitor)
         return self.on_replace(sig)
 
     def add_to_chord(self, sig, lazy=False):
@@ -1075,39 +1068,6 @@ class Task:
         Returns:
             None: The return value of this handler is ignored.
         """
-
-    def on_stamp_replaced(self, sig, visitor=None):
-        """Handler called when the task is replaced and passes
-        the stamps from the original task to the replaced task.
-
-        .. versionadded:: 5.3
-
-        Arguments:
-            sig (Signature): signature to replace with.
-            visitor (StampingVisitor): Visitor API object.
-        """
-        headers = {}
-
-        # If the original task had stamps
-        if self.request.stamps:
-            # Copy the stamps to the new signature
-            stamps = self.request.stamps.copy()
-            for header, stamp in stamps.items():
-                # The request will contain single stamps as a list of one element so we need to unpack them to
-                # keep consistency with stamping with a header of a single stamp (which will not be a list
-                # implicitly like in the request)
-                # This will also flat stamps that were originally a list of a single stamp to create consistency
-                # with stamping a single header stamp to always be a flattened
-                stamp = stamp[0] if len(stamp) == 1 else stamp
-                stamps[header] = stamp
-            stamped_headers = self.request.stamped_headers
-            headers.update(stamps)
-            headers["stamped_headers"] = stamped_headers
-
-        if visitor:  # This check avoids infinite recursion when the visitor is None
-            sig.stamp(visitor=visitor, **headers)
-        elif headers:
-            sig.stamp(**headers)
 
     def on_replace(self, sig):
         """Handler called when the task is replaced.
