@@ -614,13 +614,10 @@ class Signature(dict):
             # Prioritize self.options over headers
             _merge_dictionaries(headers, self.options, aggregate_duplicates=aggregate_duplicates)
 
-        # Sync missing stamps from self.options (relevant for stamping during task replacement)
+        # Sync stamped_headers from self.options
         stamped_headers = set(headers.get("stamped_headers", []))
         stamped_headers.update(self.options.get("stamped_headers", []))
         headers["stamped_headers"] = list(stamped_headers)
-        for previous_header in stamped_headers:
-            if previous_header not in headers and previous_header in self.options:
-                headers[previous_header] = self.options[previous_header]
         return headers
 
     def stamp_links(self, visitor, **headers):
