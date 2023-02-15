@@ -61,12 +61,12 @@ def task_name_from(task):
     return getattr(task, 'name', task)
 
 
-def _stamp_regen_task(task, visitor, **headers):
+def _stamp_regen_task(task, visitor, append_stamps, **headers):
     """When stamping a sequence of tasks created by a generator,
     we use this function to stamp each task in the generator
     without exhausting it."""
 
-    task.stamp(visitor=visitor, **headers)
+    task.stamp(visitor, append_stamps, **headers)
     return task
 
 
@@ -550,39 +550,26 @@ class Signature(dict):
     def set_immutable(self, immutable):
         self.immutable = immutable
 
-    def stamp(self, visitor=None, **headers):
-        """Stamp this signature with additional custom headers.
-        Using a visitor will pass on responsibility for the stamping
-        to the visitor.
-
-        .. versionadded:: 5.3
-
-        Arguments:
-            visitor (StampingVisitor): Visitor API object.
-            headers (Dict): Stamps that should be added to headers.
-        """
-        self.stamp_links(visitor, **headers)
-        headers = headers.copy()
-        visitor_headers = None
-        if visitor is not None:
-            visitor_headers = visitor.on_signature(self, **headers) or {}
-        headers = self._stamp_headers(visitor_headers, **headers)
-        return self.set(**headers)
-
-    def _stamp_headers(self, visitor_headers=None, **headers):
-        """ Collect all stamps from visitor, headers and self,
+    def _stamp_headers(self, visitor_headers=None, append_stamps=True, self_headers=True, **headers):
+        """Collect all stamps from visitor, headers and self,
         and return an idempotent dictionary of stamps.
 
         .. versionadded:: 5.3
 
         Arguments:
             visitor_headers (Dict): Stamps from a visitor method.
+            append_stamps (bool):
+                If True, duplicated stamps will be appended to a list.
+                If False, duplicated stamps will be replaced by the last stamp.
+            self_headers (bool):
+                If True, stamps from self.options will be added.
+                If False, stamps from self.options will be ignored.
             headers (Dict): Stamps that should be added to headers.
 
         Returns:
             Dict: Merged stamps.
         """
-        # Use aggregate_duplicates=False to prioritize visitor_headers over headers in case of duplicated stamps.
+        # Use append_stamps=True to prioritize visitor_headers over headers in case of duplicated stamps.
         # This will lose duplicated headers from the headers argument, but that is the best effort solution
         # to avoid implicitly casting the duplicated stamp into a list of both stamps from headers and
         # visitor_headers of the same key.
@@ -593,46 +580,76 @@ class Signature(dict):
         #   headers["foo"] == ["bar1", "bar2"] -> The stamp is now a list
         #   _merge_dictionaries(headers, visitor_headers, aggregate_duplicates=False)
         #   headers["foo"] == "bar2" -> "bar1" is lost, but the stamp is according to the visitor
-        aggregate_duplicates = False
 
         headers = headers.copy()
+
+        if "stamped_headers" not in headers:
+            headers["stamped_headers"] = list(headers.keys())
+
         # Merge headers with visitor headers
         if visitor_headers is not None:
             visitor_headers = visitor_headers or {}
             if "stamped_headers" not in visitor_headers:
                 visitor_headers["stamped_headers"] = list(visitor_headers.keys())
-            # Prioritize visitor_headers over headers
-            _merge_dictionaries(headers, visitor_headers, aggregate_duplicates=aggregate_duplicates)
+
+            # Sync from visitor
+            _merge_dictionaries(headers, visitor_headers, aggregate_duplicates=append_stamps)
             headers["stamped_headers"] = list(set(headers["stamped_headers"]))
+
         # Merge headers with self.options
-        else:
-            headers["stamped_headers"] = [
-                header for header in headers.keys()
-                if header not in self.options and header != "stamped_headers"
-            ]
+        if self_headers:
+            stamped_headers = set(headers.get("stamped_headers", []))
+            stamped_headers.update(self.options.get("stamped_headers", []))
+            headers["stamped_headers"] = list(stamped_headers)
+            # Only merge stamps that are in stamped_headers from self.options
+            redacted_options = {k: v for k, v in self.options.items() if k in headers["stamped_headers"]}
 
-            # Prioritize self.options over headers
-            _merge_dictionaries(headers, self.options, aggregate_duplicates=aggregate_duplicates)
+            # Sync from self.options
+            _merge_dictionaries(headers, redacted_options, aggregate_duplicates=append_stamps)
+            headers["stamped_headers"] = list(set(headers["stamped_headers"]))
 
-        # Sync missing stamps from self.options (relevant for stamping during task replacement)
-        stamped_headers = set(headers.get("stamped_headers", []))
-        stamped_headers.update(self.options.get("stamped_headers", []))
-        headers["stamped_headers"] = list(stamped_headers)
-        for previous_header in stamped_headers:
-            if previous_header not in headers and previous_header in self.options:
-                headers[previous_header] = self.options[previous_header]
         return headers
 
-    def stamp_links(self, visitor, **headers):
+    def stamp(self, visitor=None, append_stamps=True, **headers):
+        """Stamp this signature with additional custom headers.
+        Using a visitor will pass on responsibility for the stamping
+        to the visitor.
+
+        .. versionadded:: 5.3
+
+        Arguments:
+            visitor (StampingVisitor): Visitor API object.
+            append_stamps (bool):
+                If True, duplicated stamps will be appended to a list.
+                If False, duplicated stamps will be replaced by the last stamp.
+            headers (Dict): Stamps that should be added to headers.
+        """
+        self.stamp_links(visitor, append_stamps, **headers)
+        headers = headers.copy()
+        visitor_headers = None
+        if visitor is not None:
+            visitor_headers = visitor.on_signature(self, **headers) or {}
+        headers = self._stamp_headers(visitor_headers, append_stamps, **headers)
+        return self.set(**headers)
+
+    def stamp_links(self, visitor, append_stamps=True, **headers):
         """Stamp this signature links (callbacks and errbacks).
         Using a visitor will pass on responsibility for the stamping
         to the visitor.
 
         Arguments:
             visitor (StampingVisitor): Visitor API object.
+            append_stamps (bool):
+                If True, duplicated stamps will be appended to a list.
+                If False, duplicated stamps will be replaced by the last stamp.
             headers (Dict): Stamps that should be added to headers.
         """
         non_visitor_headers = headers.copy()
+
+        # When we are stamping links, we want to avoid adding stamps from the linked signature itself
+        # so we turn off self_headers to stamp the link only with the visitor and the headers.
+        # If it's enabled, the link copies the stamps of the linked signature, and we don't want that.
+        self_headers = False
 
         # Stamp all of the callbacks of this signature
         headers = deepcopy(non_visitor_headers)
@@ -641,8 +658,13 @@ class Signature(dict):
             visitor_headers = None
             if visitor is not None:
                 visitor_headers = visitor.on_callback(link, **headers) or {}
-            headers = self._stamp_headers(visitor_headers, **headers)
-            link.stamp(visitor=visitor, **headers)
+            headers = self._stamp_headers(
+                visitor_headers=visitor_headers,
+                append_stamps=append_stamps,
+                self_headers=self_headers,
+                **headers
+            )
+            link.stamp(visitor, append_stamps, **headers)
 
         # Stamp all of the errbacks of this signature
         headers = deepcopy(non_visitor_headers)
@@ -651,8 +673,13 @@ class Signature(dict):
             visitor_headers = None
             if visitor is not None:
                 visitor_headers = visitor.on_errback(link, **headers) or {}
-            headers = self._stamp_headers(visitor_headers, **headers)
-            link.stamp(visitor=visitor, **headers)
+            headers = self._stamp_headers(
+                visitor_headers=visitor_headers,
+                append_stamps=append_stamps,
+                self_headers=self_headers,
+                **headers
+            )
+            link.stamp(visitor, append_stamps, **headers)
 
     def _with_list_option(self, key):
         """Gets the value at the given self.options[key] as a list.
@@ -1067,15 +1094,15 @@ class _chain(Signature):
         )
         return results[0]
 
-    def stamp(self, visitor=None, **headers):
+    def stamp(self, visitor=None, append_stamps=True, **headers):
         visitor_headers = None
         if visitor is not None:
             visitor_headers = visitor.on_chain_start(self, **headers) or {}
-        headers = self._stamp_headers(visitor_headers, **headers)
+        headers = self._stamp_headers(visitor_headers, append_stamps, **headers)
         self.stamp_links(visitor, **headers)
 
         for task in self.tasks:
-            task.stamp(visitor=visitor, **headers)
+            task.stamp(visitor, append_stamps, **headers)
 
         if visitor is not None:
             visitor.on_chain_end(self, **headers)
@@ -1603,20 +1630,20 @@ class group(Signature):
         for task in self.tasks:
             task.set_immutable(immutable)
 
-    def stamp(self, visitor=None, **headers):
+    def stamp(self, visitor=None, append_stamps=True, **headers):
         visitor_headers = None
         if visitor is not None:
             visitor_headers = visitor.on_group_start(self, **headers) or {}
-        headers = self._stamp_headers(visitor_headers, **headers)
-        self.stamp_links(visitor, **headers)
+        headers = self._stamp_headers(visitor_headers, append_stamps, **headers)
+        self.stamp_links(visitor, append_stamps, **headers)
 
         if isinstance(self.tasks, _regen):
-            self.tasks.map(_partial(_stamp_regen_task, visitor=visitor, **headers))
+            self.tasks.map(_partial(_stamp_regen_task, visitor=visitor, append_stamps=append_stamps, **headers))
         else:
             new_tasks = []
             for task in self.tasks:
                 task = maybe_signature(task, app=self.app)
-                task.stamp(visitor=visitor, **headers)
+                task.stamp(visitor, append_stamps, **headers)
                 new_tasks.append(task)
             if isinstance(self.tasks, MutableSequence):
                 self.tasks[:] = new_tasks
@@ -2060,7 +2087,7 @@ class _chord(Signature):
 
         return body_result
 
-    def stamp(self, visitor=None, **headers):
+    def stamp(self, visitor=None, append_stamps=True, **headers):
         tasks = self.tasks
         if isinstance(tasks, group):
             tasks = tasks.tasks
@@ -2068,23 +2095,23 @@ class _chord(Signature):
         visitor_headers = None
         if visitor is not None:
             visitor_headers = visitor.on_chord_header_start(self, **headers) or {}
-        headers = self._stamp_headers(visitor_headers, **headers)
-        self.stamp_links(visitor, **headers)
+        headers = self._stamp_headers(visitor_headers, append_stamps, **headers)
+        self.stamp_links(visitor, append_stamps, **headers)
 
         if isinstance(tasks, _regen):
-            tasks.map(_partial(_stamp_regen_task, visitor=visitor, **headers))
+            tasks.map(_partial(_stamp_regen_task, visitor=visitor, append_stamps=append_stamps, **headers))
         else:
             stamps = headers.copy()
             for task in tasks:
-                task.stamp(visitor=visitor, **stamps)
+                task.stamp(visitor, append_stamps, **stamps)
 
         if visitor is not None:
             visitor.on_chord_header_end(self, **headers)
 
         if visitor is not None and self.body is not None:
             visitor_headers = visitor.on_chord_body(self, **headers) or {}
-            headers = self._stamp_headers(visitor_headers, **headers)
-            self.body.stamp(visitor=visitor, **headers)
+            headers = self._stamp_headers(visitor_headers, append_stamps, **headers)
+            self.body.stamp(visitor, append_stamps, **headers)
 
     def apply_async(self, args=None, kwargs=None, task_id=None,
                     producer=None, publisher=None, connection=None,
