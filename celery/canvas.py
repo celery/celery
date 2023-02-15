@@ -576,9 +576,9 @@ class Signature(dict):
         # Example:
         #   headers = {"foo": "bar1"}
         #   visitor_headers = {"foo": "bar2"}
-        #   _merge_dictionaries(headers, visitor_headers, append_stamps=True)
+        #   _merge_dictionaries(headers, visitor_headers, aggregate_duplicates=True)
         #   headers["foo"] == ["bar1", "bar2"] -> The stamp is now a list
-        #   _merge_dictionaries(headers, visitor_headers, append_stamps=False)
+        #   _merge_dictionaries(headers, visitor_headers, aggregate_duplicates=False)
         #   headers["foo"] == "bar2" -> "bar1" is lost, but the stamp is according to the visitor
 
         headers = headers.copy()
@@ -601,10 +601,11 @@ class Signature(dict):
             stamped_headers = set(headers.get("stamped_headers", []))
             stamped_headers.update(self.options.get("stamped_headers", []))
             headers["stamped_headers"] = list(stamped_headers)
-            reducted_options = {k: v for k, v in self.options.items() if k in headers["stamped_headers"]}
+            # Only merge stamps that are in stamped_headers from self.options
+            redacted_options = {k: v for k, v in self.options.items() if k in headers["stamped_headers"]}
 
             # Sync from self.options
-            _merge_dictionaries(headers, reducted_options, aggregate_duplicates=append_stamps)
+            _merge_dictionaries(headers, redacted_options, aggregate_duplicates=append_stamps)
             headers["stamped_headers"] = list(set(headers["stamped_headers"]))
 
         return headers
@@ -645,6 +646,11 @@ class Signature(dict):
         """
         non_visitor_headers = headers.copy()
 
+        # When we are stamping links, we want to avoid adding stamps from the linked signature itself
+        # so we turn off self_headers to stamp the link only with the visitor and the headers.
+        # If it's enabled, the link copies the stamps of the linked signature, and we don't want that.
+        self_headers = False
+
         # Stamp all of the callbacks of this signature
         headers = deepcopy(non_visitor_headers)
         for link in self.options.get('link', []) or []:
@@ -655,7 +661,7 @@ class Signature(dict):
             headers = self._stamp_headers(
                 visitor_headers=visitor_headers,
                 append_stamps=append_stamps,
-                self_headers=False,  # Don't stamp links with own stamps implicitly
+                self_headers=self_headers,
                 **headers
             )
             link.stamp(visitor, append_stamps, **headers)
@@ -670,7 +676,7 @@ class Signature(dict):
             headers = self._stamp_headers(
                 visitor_headers=visitor_headers,
                 append_stamps=append_stamps,
-                self_headers=False,  # Don't stamp links with own stamps implicitly
+                self_headers=self_headers,
                 **headers
             )
             link.stamp(visitor, append_stamps, **headers)
