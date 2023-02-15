@@ -572,8 +572,8 @@ class Signature(dict):
         headers = self._stamp_headers(visitor_headers, append_stamps, **headers)
         return self.set(**headers)
 
-    def _stamp_headers(self, visitor_headers=None, append_stamps=True, **headers):
-        """ Collect all stamps from visitor, headers and self,
+    def _stamp_headers(self, visitor_headers=None, append_stamps=True, self_headers=True, **headers):
+        """Collect all stamps from visitor, headers and self,
         and return an idempotent dictionary of stamps.
 
         .. versionadded:: 5.3
@@ -583,6 +583,9 @@ class Signature(dict):
             append_stamps (bool):
                 If True, duplicated stamps will be appended to a list.
                 If False, duplicated stamps will be replaced by the last stamp.
+            self_headers (bool):
+                If True, stamps from self.options will be added.
+                If False, stamps from self.options will be ignored.
             headers (Dict): Stamps that should be added to headers.
 
         Returns:
@@ -601,28 +604,31 @@ class Signature(dict):
         #   headers["foo"] == "bar2" -> "bar1" is lost, but the stamp is according to the visitor
 
         headers = headers.copy()
+
+        if "stamped_headers" not in headers:
+            headers["stamped_headers"] = list(headers.keys())
+
         # Merge headers with visitor headers
         if visitor_headers is not None:
             visitor_headers = visitor_headers or {}
             if "stamped_headers" not in visitor_headers:
                 visitor_headers["stamped_headers"] = list(visitor_headers.keys())
-            # Prioritize visitor_headers over headers
+
+            # Sync from visitor
             _merge_dictionaries(headers, visitor_headers, aggregate_duplicates=append_stamps)
             headers["stamped_headers"] = list(set(headers["stamped_headers"]))
+
         # Merge headers with self.options
-        else:
-            headers["stamped_headers"] = [
-                header for header in headers.keys()
-                if header not in self.options and header != "stamped_headers"
-            ]
+        if self_headers:
+            stamped_headers = set(headers.get("stamped_headers", []))
+            stamped_headers.update(self.options.get("stamped_headers", []))
+            headers["stamped_headers"] = list(stamped_headers)
+            reducted_options = {k: v for k, v in self.options.items() if k in headers["stamped_headers"]}
 
-            # Prioritize self.options over headers
-            _merge_dictionaries(headers, self.options, aggregate_duplicates=append_stamps)
+            # Sync from self.options
+            _merge_dictionaries(headers, reducted_options, aggregate_duplicates=append_stamps)
+            headers["stamped_headers"] = list(set(headers["stamped_headers"]))
 
-        # Sync stamped_headers from self.options
-        stamped_headers = set(headers.get("stamped_headers", []))
-        stamped_headers.update(self.options.get("stamped_headers", []))
-        headers["stamped_headers"] = list(stamped_headers)
         return headers
 
     def stamp_links(self, visitor, append_stamps=True, **headers):
@@ -646,7 +652,7 @@ class Signature(dict):
             visitor_headers = None
             if visitor is not None:
                 visitor_headers = visitor.on_callback(link, **headers) or {}
-            headers = self._stamp_headers(visitor_headers, append_stamps, **headers)
+            headers = self._stamp_headers(visitor_headers, append_stamps, False, **headers)
             link.stamp(visitor, append_stamps, **headers)
 
         # Stamp all of the errbacks of this signature
@@ -656,7 +662,7 @@ class Signature(dict):
             visitor_headers = None
             if visitor is not None:
                 visitor_headers = visitor.on_errback(link, **headers) or {}
-            headers = self._stamp_headers(visitor_headers, append_stamps, **headers)
+            headers = self._stamp_headers(visitor_headers, append_stamps, False, **headers)
             link.stamp(visitor, append_stamps, **headers)
 
     def _with_list_option(self, key):
