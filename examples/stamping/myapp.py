@@ -16,14 +16,15 @@ Usage::
    # The shell service is used to run the example.
     (window2)$ celery -A myapp shell
 
-   # Use (copy) the content of shell.py to run the workflow via the
+   # Use (copy) the content of the examples modules to run the workflow via the
    # shell service.
 
-   # Use one of two demo runs via the shell service:
+   # Use one of demo runs via the shell service:
    # 1) run_then_revoke(): Run the workflow and revoke the last task
    #    by its stamped header during its run.
    # 2) revoke_then_run(): Revoke the last task by its stamped header
    #    before its run, then run the workflow.
+   # 3) Any of the examples in examples.py
    #
    # See worker logs for output per defined in task_received_handler().
 """
