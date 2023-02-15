@@ -550,7 +550,7 @@ class Signature(dict):
     def set_immutable(self, immutable):
         self.immutable = immutable
 
-    def _stamp_headers(self, visitor_headers=None, append_stamps=True, self_headers=True, **headers):
+    def _stamp_headers(self, visitor_headers=None, append_stamps=False, self_headers=True, **headers):
         """Collect all stamps from visitor, headers and self,
         and return an idempotent dictionary of stamps.
 
@@ -569,7 +569,7 @@ class Signature(dict):
         Returns:
             Dict: Merged stamps.
         """
-        # Use append_stamps=True to prioritize visitor_headers over headers in case of duplicated stamps.
+        # Use append_stamps=False to prioritize visitor_headers over headers in case of duplicated stamps.
         # This will lose duplicated headers from the headers argument, but that is the best effort solution
         # to avoid implicitly casting the duplicated stamp into a list of both stamps from headers and
         # visitor_headers of the same key.
@@ -610,7 +610,7 @@ class Signature(dict):
 
         return headers
 
-    def stamp(self, visitor=None, append_stamps=True, **headers):
+    def stamp(self, visitor=None, append_stamps=False, **headers):
         """Stamp this signature with additional custom headers.
         Using a visitor will pass on responsibility for the stamping
         to the visitor.
@@ -632,7 +632,7 @@ class Signature(dict):
         headers = self._stamp_headers(visitor_headers, append_stamps, **headers)
         return self.set(**headers)
 
-    def stamp_links(self, visitor, append_stamps=True, **headers):
+    def stamp_links(self, visitor, append_stamps=False, **headers):
         """Stamp this signature links (callbacks and errbacks).
         Using a visitor will pass on responsibility for the stamping
         to the visitor.
@@ -1094,7 +1094,7 @@ class _chain(Signature):
         )
         return results[0]
 
-    def stamp(self, visitor=None, append_stamps=True, **headers):
+    def stamp(self, visitor=None, append_stamps=False, **headers):
         visitor_headers = None
         if visitor is not None:
             visitor_headers = visitor.on_chain_start(self, **headers) or {}
@@ -1630,7 +1630,7 @@ class group(Signature):
         for task in self.tasks:
             task.set_immutable(immutable)
 
-    def stamp(self, visitor=None, append_stamps=True, **headers):
+    def stamp(self, visitor=None, append_stamps=False, **headers):
         visitor_headers = None
         if visitor is not None:
             visitor_headers = visitor.on_group_start(self, **headers) or {}
@@ -2087,7 +2087,7 @@ class _chord(Signature):
 
         return body_result
 
-    def stamp(self, visitor=None, append_stamps=True, **headers):
+    def stamp(self, visitor=None, append_stamps=False, **headers):
         tasks = self.tasks
         if isinstance(tasks, group):
             tasks = tasks.tasks

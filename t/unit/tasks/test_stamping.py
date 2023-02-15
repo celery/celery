@@ -678,7 +678,7 @@ class test_stamping_mechanism(CanvasCase):
         sig_1 = self.add.s(2, 2)
         sig_1.stamp(stamp1="stamp1")
         sig_1.stamp(stamp2="stamp")
-        sig_1.stamp(stamp2="stamp2")
+        sig_1.stamp(stamp2="stamp2", append_stamps=True)
         sig_1.stamp(stamp3=["stamp3"])
         sig_1_res = sig_1.freeze()
         sig_1.apply()
@@ -702,7 +702,7 @@ class test_stamping_mechanism(CanvasCase):
         sig_1 = self.add.s(2, 2)
         stamps = ["stamp1", "stamp2"]
         sig_1.stamp(visitor=None, groups=[stamps[1]])
-        sig_1.stamp(visitor=None, groups=stamps[0])
+        sig_1.stamp(visitor=None, groups=stamps[0], append_stamps=True)
         sig_1_res = sig_1.freeze()
         sig_1.apply()
         assert sorted(sig_1_res._get_task_meta()["groups"]) == sorted(stamps)

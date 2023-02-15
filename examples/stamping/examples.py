@@ -36,7 +36,7 @@ def run_example3():
     sig1.link(sig1_link)
     sig1_link.stamp(FullVisitor())
     sig1_link.stamp(MonitoringIdStampingVisitor())
-    sig1.stamp(MonitoringIdStampingVisitor())
+    sig1.stamp(MonitoringIdStampingVisitor(), append_stamps=True)
     sig1.delay()
 
 
