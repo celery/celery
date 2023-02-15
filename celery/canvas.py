@@ -550,28 +550,6 @@ class Signature(dict):
     def set_immutable(self, immutable):
         self.immutable = immutable
 
-    def stamp(self, visitor=None, append_stamps=True, **headers):
-        """Stamp this signature with additional custom headers.
-        Using a visitor will pass on responsibility for the stamping
-        to the visitor.
-
-        .. versionadded:: 5.3
-
-        Arguments:
-            visitor (StampingVisitor): Visitor API object.
-            append_stamps (bool):
-                If True, duplicated stamps will be appended to a list.
-                If False, duplicated stamps will be replaced by the last stamp.
-            headers (Dict): Stamps that should be added to headers.
-        """
-        self.stamp_links(visitor, append_stamps, **headers)
-        headers = headers.copy()
-        visitor_headers = None
-        if visitor is not None:
-            visitor_headers = visitor.on_signature(self, **headers) or {}
-        headers = self._stamp_headers(visitor_headers, append_stamps, **headers)
-        return self.set(**headers)
-
     def _stamp_headers(self, visitor_headers=None, append_stamps=True, self_headers=True, **headers):
         """Collect all stamps from visitor, headers and self,
         and return an idempotent dictionary of stamps.
@@ -630,6 +608,28 @@ class Signature(dict):
             headers["stamped_headers"] = list(set(headers["stamped_headers"]))
 
         return headers
+
+    def stamp(self, visitor=None, append_stamps=True, **headers):
+        """Stamp this signature with additional custom headers.
+        Using a visitor will pass on responsibility for the stamping
+        to the visitor.
+
+        .. versionadded:: 5.3
+
+        Arguments:
+            visitor (StampingVisitor): Visitor API object.
+            append_stamps (bool):
+                If True, duplicated stamps will be appended to a list.
+                If False, duplicated stamps will be replaced by the last stamp.
+            headers (Dict): Stamps that should be added to headers.
+        """
+        self.stamp_links(visitor, append_stamps, **headers)
+        headers = headers.copy()
+        visitor_headers = None
+        if visitor is not None:
+            visitor_headers = visitor.on_signature(self, **headers) or {}
+        headers = self._stamp_headers(visitor_headers, append_stamps, **headers)
+        return self.set(**headers)
 
     def stamp_links(self, visitor, append_stamps=True, **headers):
         """Stamp this signature links (callbacks and errbacks).
