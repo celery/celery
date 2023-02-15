@@ -652,7 +652,12 @@ class Signature(dict):
             visitor_headers = None
             if visitor is not None:
                 visitor_headers = visitor.on_callback(link, **headers) or {}
-            headers = self._stamp_headers(visitor_headers, append_stamps, False, **headers)
+            headers = self._stamp_headers(
+                visitor_headers=visitor_headers,
+                append_stamps=append_stamps,
+                self_headers=False,  # Don't stamp links with own stamps implicitly
+                **headers
+            )
             link.stamp(visitor, append_stamps, **headers)
 
         # Stamp all of the errbacks of this signature
@@ -662,7 +667,12 @@ class Signature(dict):
             visitor_headers = None
             if visitor is not None:
                 visitor_headers = visitor.on_errback(link, **headers) or {}
-            headers = self._stamp_headers(visitor_headers, append_stamps, False, **headers)
+            headers = self._stamp_headers(
+                visitor_headers=visitor_headers,
+                append_stamps=append_stamps,
+                self_headers=False,  # Don't stamp links with own stamps implicitly
+                **headers
+            )
             link.stamp(visitor, append_stamps, **headers)
 
     def _with_list_option(self, key):
