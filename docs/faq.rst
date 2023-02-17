@@ -878,9 +878,10 @@ Can I schedule tasks to execute at a specific time?
 ---------------------------------------------------
 
 **Answer**: Yes. You can use the `eta` argument of :meth:`Task.apply_async`.
+Note that using distant `eta` times is not recommended, and in such case
+:ref:`periodic tasks<guide-beat>` should be preferred.
 
-See also :ref:`guide-beat`.
-
+See :ref:`calling-eta` for more details.
 
 .. _faq-safe-worker-shutdown:
 
