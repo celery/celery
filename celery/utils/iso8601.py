@@ -37,6 +37,10 @@ from datetime import datetime
 
 from pytz import FixedOffset
 
+from celery.utils import deprecated
+
+deprecated.warn(description="Module celery.iso8601", deprecation="5.4", removal="6.0.0", alternative="Use datetime.datetime.fromisoformat")
+
 __all__ = ('parse_iso8601',)
 
 # Adapted from http://delete.me.uk/2005/03/iso8601.html

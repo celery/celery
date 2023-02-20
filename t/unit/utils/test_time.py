@@ -1,15 +1,15 @@
 from datetime import datetime, timedelta, tzinfo
+# Avoid clashing with celery.utils.time.timezone
+from datetime import timezone as datetime_timezone
 from unittest.mock import Mock, patch
 
 import pytest
 import pytz
 from pytz import AmbiguousTimeError
 
-from celery.utils.iso8601 import parse_iso8601
 from celery.utils.time import (LocalTimezone, delta_resolution, ffwd, get_exponential_backoff_interval,
                                humanize_seconds, localize, make_aware, maybe_iso8601, maybe_make_aware,
-                               maybe_timedelta, rate, remaining, timezone, utcoffset)
-
+                               maybe_timedelta, rate, remaining, timezone, utcoffset, _fromisoformat)
 
 class test_LocalTimezone:
 
@@ -43,18 +43,18 @@ class test_iso8601:
 
     def test_parse_with_timezone(self):
         d = datetime.utcnow().replace(tzinfo=pytz.utc)
-        assert parse_iso8601(d.isoformat()) == d
+        assert _fromisoformat(d.isoformat()) == d
         # 2013-06-07T20:12:51.775877+00:00
         iso = d.isoformat()
         iso1 = iso.replace('+00:00', '-01:00')
-        d1 = parse_iso8601(iso1)
-        assert d1.tzinfo._minutes == -60
+        d1 = _fromisoformat(iso1)
+        assert d1.tzinfo == datetime_timezone(timedelta(minutes=-60))
         iso2 = iso.replace('+00:00', '+01:00')
-        d2 = parse_iso8601(iso2)
-        assert d2.tzinfo._minutes == +60
+        d2 = _fromisoformat(iso2)
+        assert d2.tzinfo == datetime_timezone(timedelta(minutes=60))
         iso3 = iso.replace('+00:00', 'Z')
-        d3 = parse_iso8601(iso3)
-        assert d3.tzinfo == pytz.UTC
+        d3 = _fromisoformat(iso3)
+        assert d3.tzinfo == datetime_timezone.utc
 
 
 @pytest.mark.parametrize('delta,expected', [

@@ -1,6 +1,7 @@
 """Utilities related to dates, times, intervals, and timezones."""
 import numbers
 import os
+import sys
 import random
 import time as _time
 from calendar import monthrange
@@ -13,7 +14,6 @@ from pytz import timezone as _timezone
 from pytz import utc
 
 from .functional import dictfilter
-from .iso8601 import parse_iso8601
 from .text import pluralize
 
 __all__ = (
@@ -257,7 +257,7 @@ def maybe_iso8601(dt):
         return
     if isinstance(dt, datetime):
         return dt
-    return parse_iso8601(dt)
+    return _fromisoformat(dt)
 
 
 def is_naive(dt):
@@ -387,3 +387,28 @@ def get_exponential_backoff_interval(
         countdown = random.randrange(countdown + 1)
     # Adjust according to maximum wait time and account for negative values.
     return max(0, countdown)
+
+def _fromisoformat(datestring:str) -> datetime:
+    """
+    Identical to `datetime.datetime.fromisoformat` with compatibility
+    to Python 3.7 - 3.10.
+
+    If a datetime string provided ends with "Z", it will be replaced by
+    "+00:00" if Python version is lower than 3.11.
+
+    Notes
+    -----
+    This function acts as replacement of `celery.utils.iso8601.parse_iso8601`,
+    because it is less important after `datetime.datetime.fromisoformat` being supported.
+
+    This function can be removed if
+    - supported Python version >= 3.11, or
+    - format of celery datetime string is parsable by Python 3.7 `datetime.datetime.fromisoformat`
+    """
+    if sys.version_info >= (3, 11):
+        pass
+    else:
+        # Python 3.7 - 3.10
+        if datestring.endswith("Z"):
+            datestring = datestring[:-1] + "+00:00"
+    return datetime.fromisoformat(datestring)
