@@ -1,8 +1,8 @@
 """Utilities related to dates, times, intervals, and timezones."""
 import numbers
 import os
-import sys
 import random
+import sys
 import time as _time
 from calendar import monthrange
 from datetime import date, datetime, timedelta, tzinfo

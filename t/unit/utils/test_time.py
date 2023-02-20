@@ -1,15 +1,18 @@
-from datetime import datetime, timedelta, tzinfo
 # Avoid clashing with celery.utils.time.timezone
+from datetime import datetime, timedelta
 from datetime import timezone as datetime_timezone
+from datetime import tzinfo
 from unittest.mock import Mock, patch
 
 import pytest
 import pytz
 from pytz import AmbiguousTimeError
 
-from celery.utils.time import (LocalTimezone, delta_resolution, ffwd, get_exponential_backoff_interval,
-                               humanize_seconds, localize, make_aware, maybe_iso8601, maybe_make_aware,
-                               maybe_timedelta, rate, remaining, timezone, utcoffset, _fromisoformat)
+from celery.utils.time import (LocalTimezone, _fromisoformat, delta_resolution, ffwd,
+                               get_exponential_backoff_interval, humanize_seconds, localize, make_aware,
+                               maybe_iso8601, maybe_make_aware, maybe_timedelta, rate, remaining, timezone,
+                               utcoffset)
+
 
 class test_LocalTimezone:
 
