@@ -388,7 +388,8 @@ def get_exponential_backoff_interval(
     # Adjust according to maximum wait time and account for negative values.
     return max(0, countdown)
 
-def _fromisoformat(datestring:str) -> datetime:
+
+def _fromisoformat(datestring: str) -> datetime:
     """
     Identical to `datetime.datetime.fromisoformat` with compatibility
     to Python 3.7 - 3.10.

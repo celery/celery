@@ -39,7 +39,12 @@ from pytz import FixedOffset
 
 from celery.utils import deprecated
 
-deprecated.warn(description="Module celery.iso8601", deprecation="5.4", removal="6.0.0", alternative="Use datetime.datetime.fromisoformat")
+deprecated.warn(
+    description="Module celery.iso8601",
+    deprecation="5.4",
+    removal="6.0.0",
+    alternative="Use datetime.datetime.fromisoformat",
+)
 
 __all__ = ('parse_iso8601',)
 
