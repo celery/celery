@@ -129,7 +129,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_SECURITY_KEY_PASSWORD``           :setting:`security_key_password`
 ``CELERY_ACKS_LATE``                       :setting:`task_acks_late`
 ``CELERY_ACKS_ON_FAILURE_OR_TIMEOUT``      :setting:`task_acks_on_failure_or_timeout`
-``CELERY_ALWAYS_EAGER``                    :setting:`task_always_eager`
+``CELERY_TASK_ALWAYS_EAGER``               :setting:`task_always_eager`
 ``CELERY_ANNOTATIONS``                     :setting:`task_annotations`
 ``CELERY_COMPRESSION``                     :setting:`task_compression`
 ``CELERY_CREATE_MISSING_QUEUES``           :setting:`task_create_missing_queues`
