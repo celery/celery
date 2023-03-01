@@ -1170,29 +1170,11 @@ will initialize a group ``g`` and mark its components with stamp ``your_custom_s
 For this feature to be useful, you need to set the :setting:`result_extended`
 configuration option to ``True`` or directive ``result_extended = True``.
 
-
-Group stamping
---------------
-
-When the ``apply`` and ``apply_async`` methods are called,
-there is an automatic stamping signature with group id.
-Stamps are stored in group header.
-For example, after
-
-.. code-block:: pycon
-
-    >>> g.apply_async()
-
-the header of task sig1 will store the stamp groups with g.id.
-In the case of nested groups, the order of the stamps corresponds
-to the nesting level. The group stamping is idempotent;
-the task cannot be stamped twice with the same group id.
-
 Canvas stamping
 ----------------
 
-In addition to the default group stamping, we can also stamp
-canvas with custom stamps, as shown in the example.
+We can also stamp the canvas with custom stamping logic, using the visitor class ``StampingVisitor``
+as the base class for the custom stamping visitor.
 
 Custom stamping
 ----------------
@@ -1200,7 +1182,7 @@ Custom stamping
 If more complex stamping logic is required, it is possible
 to implement custom stamping behavior based on the Visitor
 pattern. The class that implements this custom logic must
-inherit ``VisitorStamping`` and implement appropriate methods.
+inherit ``StampingVisitor`` and implement appropriate methods.
 
 For example, the following example ``InGroupVisitor`` will label
 tasks that are in side of some group by label ``in_group``.
@@ -1238,9 +1220,10 @@ the external monitoring system, etc.
 
 .. note::
 
-    The ``stamped_headers`` key returned in ``on_signature`` is used to specify the headers that will be
-    stamped on the task. If this key is not specified, the stamping visitor will assume all keys in the
-    returned dictionary are the stamped headers from the visitor.
+    The ``stamped_headers`` key returned in ``on_signature`` (or any other visitor method) is used to
+    specify the headers that will be stamped on the task. If this key is not specified, the stamping
+    visitor will assume all keys in the returned dictionary are the stamped headers from the visitor.
+
     This means the following code block will result in the same behavior as the previous example.
 
 .. code-block:: python
@@ -1320,21 +1303,3 @@ This example will result in the following stamps:
     {'header': 'value', 'on_callback': True, 'stamped_headers': ['header', 'on_callback']}
     >>> c.body.options['link_error'][0].options
     {'header': 'value', 'on_errback': True, 'stamped_headers': ['header', 'on_errback']}
-
-When calling ``apply_async()`` on ``c``, the group stamping will be applied on top of the above stamps.
-This will result in the following stamps:
-
-.. code-block:: python
-
-    >>> c.options
-    {'header': 'value', 'groups': ['1234'], 'stamped_headers': ['header', 'groups']}
-    >>> c.tasks.tasks[0].options
-    {'header': 'value', 'groups': ['1234'], 'stamped_headers': ['header', 'groups']}
-    >>> c.tasks.tasks[1].options
-    {'header': 'value', 'groups': ['1234'], 'stamped_headers': ['header', 'groups']}
-    >>> c.body.options
-    {'header': 'value', 'groups': [], 'stamped_headers': ['header', 'groups']}
-    >>> c.body.options['link'][0].options
-    {'header': 'value', 'on_callback': True, 'groups': [], 'stamped_headers': ['header', 'on_callback', 'groups']}
-    >>> c.body.options['link_error'][0].options
-    {'header': 'value', 'on_errback': True, 'groups': [], 'stamped_headers': ['header', 'on_errback', 'groups']}
