@@ -13,7 +13,6 @@ from celery.canvas import StampingVisitor, signature
 from celery.contrib.testing.mocks import ContextMock
 from celery.exceptions import Ignore, ImproperlyConfigured, Retry
 from celery.result import AsyncResult, EagerResult
-from celery.utils.time import parse_iso8601
 
 try:
     from urllib.error import HTTPError
@@ -889,11 +888,11 @@ class test_tasks(TasksCase):
         assert task_headers['task'] == task_name
         if test_eta:
             assert isinstance(task_headers.get('eta'), str)
-            to_datetime = parse_iso8601(task_headers.get('eta'))
+            to_datetime = datetime.fromisoformat(task_headers.get('eta'))
             assert isinstance(to_datetime, datetime)
         if test_expires:
             assert isinstance(task_headers.get('expires'), str)
-            to_datetime = parse_iso8601(task_headers.get('expires'))
+            to_datetime = datetime.fromisoformat(task_headers.get('expires'))
             assert isinstance(to_datetime, datetime)
         properties = properties or {}
         for arg_name, arg_value in properties.items():
