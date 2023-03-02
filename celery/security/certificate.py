@@ -31,7 +31,7 @@ __all__ = ('Certificate', 'CertStore', 'FSCertStore')
 class Certificate:
     """X.509 certificate."""
 
-    def __init__(self, cert: str):
+    def __init__(self, cert: str) -> None:
         with reraise_errors(
             'Invalid certificate: {0!r}', errors=(ValueError,)
         ):
