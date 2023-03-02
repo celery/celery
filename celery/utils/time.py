@@ -13,7 +13,6 @@ from pytz import timezone as _timezone
 from pytz import utc
 
 from .functional import dictfilter
-from .iso8601 import parse_iso8601
 from .text import pluralize
 
 __all__ = (
@@ -257,7 +256,7 @@ def maybe_iso8601(dt):
         return
     if isinstance(dt, datetime):
         return dt
-    return parse_iso8601(dt)
+    return datetime.fromisoformat(dt)
 
 
 def is_naive(dt):

@@ -37,6 +37,8 @@ from datetime import datetime
 
 from pytz import FixedOffset
 
+from celery.utils.deprecated import warn
+
 __all__ = ('parse_iso8601',)
 
 # Adapted from http://delete.me.uk/2005/03/iso8601.html
@@ -53,6 +55,7 @@ TIMEZONE_REGEX = re.compile(
 
 def parse_iso8601(datestring):
     """Parse and convert ISO-8601 string to datetime."""
+    warn("parse_iso8601", "v5.3", "v6", "datetime.datetime.fromisoformat")
     m = ISO8601_REGEX.match(datestring)
     if not m:
         raise ValueError('unable to parse date string %r' % datestring)

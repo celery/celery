@@ -14,7 +14,6 @@ from ._state import _set_task_join_will_block, task_join_will_block
 from .app import app_or_default
 from .exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
 from .utils.graph import DependencyGraph, GraphFormatter
-from .utils.iso8601 import parse_iso8601
 
 try:
     import tblib
@@ -530,7 +529,7 @@ class AsyncResult(ResultBase):
         """UTC date and time."""
         date_done = self._get_task_meta().get('date_done')
         if date_done and not isinstance(date_done, datetime.datetime):
-            return parse_iso8601(date_done)
+            return datetime.datetime.fromisoformat(date_done)
         return date_done
 
     @property
