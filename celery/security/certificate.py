@@ -4,7 +4,7 @@ from __future__ import annotations
 import datetime
 import glob
 import os
-from typing import TYPE_CHECKING, Dict, Iterator, Union
+from typing import TYPE_CHECKING, Iterator
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
@@ -70,7 +70,7 @@ class Certificate:
                 mgf=padding.MGF1(digest),
                 salt_length=padding.PSS.MAX_LENGTH)
 
-            self.get_pubkey().verify(signature, ensure_bytes(data), padd, digest)
+            self.get_pubkey().verify(signature, ensure_bytes(data), pad, digest)
 
 
 class CertStore:
