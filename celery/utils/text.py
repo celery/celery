@@ -5,7 +5,10 @@ from collections.abc import Callable
 from functools import partial
 from pprint import pformat
 from textwrap import fill
-from typing import Any, List, Mapping, Pattern
+from typing import Any, List, Mapping, Pattern, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from re import Match
 
 __all__ = (
     'abbr', 'abbrtask', 'dedent', 'dedent_initial',
@@ -121,7 +124,7 @@ def simple_format(
     if s:
         keys.setdefault('%', '%')
 
-        def resolve(match):
+        def resolve(match: Match):
             key = match.expand(expand)
             try:
                 resolver = keys[key]
@@ -190,5 +193,6 @@ class WhateverIO(StringIO):
             self, v: "bytes | str | None" = None, *a: Any, **kw: Any) -> None:
         _SIO_init(self, v.decode() if isinstance(v, bytes) else v, *a, **kw)
 
-    def write(self, data: "bytes | str") -> None:
-        _SIO_write(self, data.decode() if isinstance(data, bytes) else data)
+    def write(self, data: "bytes | str") -> int:
+        return _SIO_write(self, data.decode()
+                          if isinstance(data, bytes) else data)
