@@ -152,7 +152,6 @@ def remove_repeating_from_task(task_name: str, s: str) -> str:
 
 
 def remove_repeating(substr: str, s: str) -> str:
-    # type: (str, str) -> str
     """Remove repeating module names from string.
 
     Arguments:
