@@ -119,13 +119,13 @@ def match_case(s: str, other: str) -> str:
 
 
 def simple_format(
-        s: str, keys: dict[str, str | Callable],
+        s: str, keys: 'dict[str, str | Callable]',
         pattern: Pattern[str] = RE_FORMAT, expand: str = r'\1') -> str:
     """Format string, expanding abbreviations in keys'."""
     if s:
         keys.setdefault('%', '%')
 
-        def resolve(match: Match) -> str | Any:
+        def resolve(match: Match) -> 'str | Any':
             key = match.expand(expand)
             try:
                 resolver = keys[key]
