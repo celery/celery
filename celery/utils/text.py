@@ -5,7 +5,7 @@ from collections.abc import Callable
 from functools import partial
 from pprint import pformat
 from textwrap import fill
-from typing import Any, List, Mapping, Pattern  # noqa
+from typing import Any, List, Mapping, Pattern
 
 __all__ = (
     'abbr', 'abbrtask', 'dedent', 'dedent_initial',
