@@ -42,7 +42,11 @@ if TYPE_CHECKING:
     from celery.worker.request import Request
     from celery.platforms import Pidfile
     from celery.app.defaults import Option
-    import celery
+    from celery import Celery
+    from celery.utils.timer2 import Timer
+    from celery.worker.components import Hub
+
+    resource: ModuleType | None
 
 
 from . import state
@@ -75,12 +79,14 @@ defined in the `task_queues` setting.
 class WorkController:
     """Unmanaged worker instance."""
 
-    app: celery.Celery | None = None
+    app: Celery | None = None
 
     pidlock: Pidfile | None = None
     blueprint: Blueprint | None = None
     pool: Pool | None = None
     semaphore: LaxBoundedSemaphore | None = None
+    consumer: Consumer | None = None
+    timer: Timer | None = None
 
     #: contains the exit code if a :exc:`SystemExit` event is handled.
     exitcode: int | None = None
@@ -100,7 +106,7 @@ class WorkController:
         }
 
     def __init__(
-            self, app: celery.Celery | None = None, hostname: str | None = None, **
+            self, app: Celery | None = None, hostname: str | None = None, **
             kwargs: Any) -> None:
         self.app = app or self.app
         self.hostname = default_nodename(hostname)
@@ -112,11 +118,21 @@ class WorkController:
 
         self.setup_instance(**self.prepare_args(**kwargs))
 
+    @property
+    def app(self) -> Celery:
+        if self.app:
+            return self._app
+        raise ValueError("WorkController must be provided an app.")
+
+    @app.setter
+    def app(self, app: Celery) -> None:
+        self._app = app
+
     def setup_instance(
             self, queues: Sequence[str] | None = None, ready_callback: Callable |
             None = None, pidfile: str | None = None, include: str | None = None,
             use_eventloop: bool | None = None, exclude_queues: Sequence[str] |
-            None = None, **kwargs: Any):
+            None = None, **kwargs: Any) -> None:
         self.pidfile = pidfile
         self.setup_queues(queues, exclude_queues)
         self.setup_includes(str_to_list(include))
@@ -144,7 +160,7 @@ class WorkController:
 
         # Initialize bootsteps
         self.pool_cls = _concurrency.get_implementation(self.pool_cls)
-        self.steps = []
+        self.steps: list[int | None] = []
         self.on_init_blueprint()
         self.blueprint = self.Blueprint(
             steps=self.app.steps['worker'],
@@ -181,8 +197,8 @@ class WorkController:
             self.pidlock.release()
 
     def setup_queues(self, include: str, exclude: str | None = None) -> None:
-        include = str_to_list(include)
-        exclude = str_to_list(exclude)
+        include: list[str] = str_to_list(include)
+        exclude: list[str] = str_to_list(exclude)
         try:
             self.app.amqp.queues.select(include)
         except KeyError as exc:
@@ -227,7 +243,7 @@ class WorkController:
         except KeyboardInterrupt:
             self.stop(exitcode=EX_FAILURE)
 
-    def register_with_event_loop(self, hub) -> None:
+    def register_with_event_loop(self, hub: Hub) -> None:
         self.blueprint.send_all(
             self, 'register_with_event_loop', args=(hub,),
             description='hub.register',
@@ -235,6 +251,9 @@ class WorkController:
 
     def _process_task_sem(self, req: Request) -> bool | None:
         return self._quick_acquire(self._process_task, req)
+
+    def _quick_release(self) -> None:
+        pass
 
     def _process_task(self, req: Request) -> None:
         """Process task by sending it to the pool of workers."""
