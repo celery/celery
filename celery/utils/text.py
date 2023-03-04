@@ -4,7 +4,7 @@ import re
 from functools import partial
 from pprint import pformat
 from textwrap import fill
-from typing import TYPE_CHECKING, Any, List, Pattern, Callable
+from typing import TYPE_CHECKING, Any, Callable, List, Pattern
 
 if TYPE_CHECKING:
     from re import Match
