@@ -35,7 +35,7 @@ def dedent_initial(s: str, n: int = 4) -> str:
     return s[n:] if s[:n] == ' ' * n else s
 
 
-def dedent(s: str, _, sep: str = '\n') -> str:
+def dedent(s: str, sep: str = '\n') -> str:
     """Remove indentation."""
     return sep.join(dedent_initial(l) for l in s.splitlines())
 
