@@ -116,7 +116,7 @@ def match_case(s: str, other: str) -> str:
 
 
 def simple_format(
-        s: str, keys: dict[str, str],
+        s: str, keys: Mapping[str, str],
         pattern: Pattern[str] = RE_FORMAT, expand: str = r'\1') -> str:
     """Format string, expanding abbreviations in keys'."""
     if s:
