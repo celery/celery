@@ -1,11 +1,10 @@
 """Text formatting utilities."""
 import io
 import re
-from collections.abc import Callable
 from functools import partial
 from pprint import pformat
 from textwrap import fill
-from typing import TYPE_CHECKING, Any, List, Pattern
+from typing import TYPE_CHECKING, Any, List, Pattern, Callable
 
 if TYPE_CHECKING:
     from re import Match
