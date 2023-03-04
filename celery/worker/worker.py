@@ -37,14 +37,14 @@ from celery.utils.threads import default_socket_timeout
 
 if TYPE_CHECKING:
     from kombu.asynchronous.semaphore import LaxBoundedSemaphore
-    from celery.worker.components import Pool
+
+    from celery import Celery
+    from celery.app.defaults import Option
+    from celery.platforms import Pidfile
+    from celery.utils.timer2 import Timer
+    from celery.worker.components import Hub, Pool
     from celery.worker.consumer import Consumer
     from celery.worker.request import Request
-    from celery.platforms import Pidfile
-    from celery.app.defaults import Option
-    from celery import Celery
-    from celery.utils.timer2 import Timer
-    from celery.worker.components import Hub
 
     resource: ModuleType | None
 
