@@ -23,40 +23,34 @@ or did you escape and the value was expanded twice? (%%N -> %N -> %hostname)?
 RE_FORMAT = re.compile(r'%(\w)')
 
 
-def str_to_list(s):
-    # type: (str) -> List[str]
+def str_to_list(s: str) -> List[str]:
     """Convert string to list."""
     if isinstance(s, str):
         return s.split(',')
     return s
 
 
-def dedent_initial(s, n=4):
-    # type: (str, int) -> str
+def dedent_initial(s: str, n: int = 4) -> str:
     """Remove indentation from first line of text."""
     return s[n:] if s[:n] == ' ' * n else s
 
 
-def dedent(s, n=4, sep='\n'):
-    # type: (str, int, str) -> str
+def dedent(s: str, _, sep: str = '\n') -> str:
     """Remove indentation."""
     return sep.join(dedent_initial(l) for l in s.splitlines())
 
 
-def fill_paragraphs(s, width, sep='\n'):
-    # type: (str, int, str) -> str
+def fill_paragraphs(s: str, width: int, sep: str = '\n') -> str:
     """Fill paragraphs with newlines (or custom separator)."""
     return sep.join(fill(p, width) for p in s.split(sep))
 
 
-def join(l, sep='\n'):
-    # type: (str, str) -> str
+def join(l: list[str], sep: str = '\n') -> str:
     """Concatenate list of strings."""
     return sep.join(v for v in l if v)
 
 
-def ensure_sep(sep, s, n=2):
-    # type: (str, str, int) -> str
+def ensure_sep(sep: str, s: str, n: int = 2) -> str:
     """Ensure text s ends in separator sep'."""
     return s + sep * (n - s.count(sep))
 
@@ -64,8 +58,7 @@ def ensure_sep(sep, s, n=2):
 ensure_newlines = partial(ensure_sep, '\n')
 
 
-def abbr(S, max, ellipsis='...'):
-    # type: (str, int, str) -> str
+def abbr(S: str, max: int, ellipsis: str = '...'):
     """Abbreviate word."""
     if S is None:
         return '???'
@@ -74,8 +67,7 @@ def abbr(S, max, ellipsis='...'):
     return S
 
 
-def abbrtask(S, max):
-    # type: (str, int) -> str
+def abbrtask(S: str, max: int) -> str:
     """Abbreviate task name."""
     if S is None:
         return '???'
@@ -86,13 +78,12 @@ def abbrtask(S, max):
     return S
 
 
-def indent(t, indent=0, sep='\n'):
-    # type: (str, int, str) -> str
+def indent(t: str, indent: int = 0, sep: str = '\n'):
     """Indent text."""
     return sep.join(' ' * indent + p for p in t.split(sep))
 
 
-def truncate(s, maxlen=128, suffix='...'):
+def truncate(s: str, maxlen: int = 128, suffix: str = '...') -> str:
     # type: (str, int, str) -> str
     """Truncate text to a maximum number of characters."""
     if maxlen and len(s) >= maxlen:
@@ -100,19 +91,18 @@ def truncate(s, maxlen=128, suffix='...'):
     return s
 
 
-def pluralize(n, text, suffix='s'):
-    # type: (int, str, str) -> str
+def pluralize(n: int, text: str, suffix: str = 's') -> str:
     """Pluralize term when n is greater than one."""
     if n != 1:
         return text + suffix
     return text
 
 
-def pretty(value, width=80, nl_width=80, sep='\n', **kw):
-    # type: (str, int, int, str, **Any) -> str
+def pretty(value: str, width: int = 80, nl_width: int = 80, sep: str = '\n', **
+           kw: Any) -> str:
     """Format value for printing to console."""
     if isinstance(value, dict):
-        return f'{{{sep} {pformat(value, 4, nl_width)[1:]}'
+        return f'{sep} {pformat(value, 4, nl_width)[1:]}'
     elif isinstance(value, tuple):
         return '{}{}{}'.format(
             sep, ' ' * 4, pformat(value, width=nl_width, **kw),
@@ -121,13 +111,13 @@ def pretty(value, width=80, nl_width=80, sep='\n', **kw):
         return pformat(value, width=width, **kw)
 
 
-def match_case(s, other):
-    # type: (str, str) -> str
+def match_case(s: str, other: str) -> str:
     return s.upper() if other.isupper() else s.lower()
 
 
-def simple_format(s, keys, pattern=RE_FORMAT, expand=r'\1'):
-    # type: (str, Mapping[str, str], Pattern, str) -> str
+def simple_format(
+        s: str, keys: dict[str, str],
+        pattern: Pattern[str] = RE_FORMAT, expand: str = r'\1') -> str:
     """Format string, expanding abbreviations in keys'."""
     if s:
         keys.setdefault('%', '%')
@@ -146,8 +136,7 @@ def simple_format(s, keys, pattern=RE_FORMAT, expand=r'\1'):
     return s
 
 
-def remove_repeating_from_task(task_name, s):
-    # type: (str, str) -> str
+def remove_repeating_from_task(task_name: str, s: str) -> str:
     """Given task name, remove repeating module names.
 
     Example:
@@ -162,7 +151,7 @@ def remove_repeating_from_task(task_name, s):
     return remove_repeating(module, s)
 
 
-def remove_repeating(substr, s):
+def remove_repeating(substr: str, s: str) -> str:
     # type: (str, str) -> str
     """Remove repeating module names from string.
 
@@ -199,8 +188,8 @@ _SIO_init = StringIO.__init__
 class WhateverIO(StringIO):
     """StringIO that takes bytes or str."""
 
-    def __init__(self, v=None, *a, **kw):
+    def __init__(self, v=bytes | str, *a: Any, **kw: Any) -> None:
         _SIO_init(self, v.decode() if isinstance(v, bytes) else v, *a, **kw)
 
-    def write(self, data):
+    def write(self, data: bytes | str) -> None:
         _SIO_write(self, data.decode() if isinstance(data, bytes) else data)
