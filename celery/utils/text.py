@@ -5,7 +5,7 @@ from collections.abc import Callable
 from functools import partial
 from pprint import pformat
 from textwrap import fill
-from typing import Any, List, Mapping, Pattern, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, List, Mapping, Pattern
 
 if TYPE_CHECKING:
     from re import Match
