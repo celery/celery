@@ -11,26 +11,32 @@ global side-effects (i.e., except for the global state stored in
 The worker consists of several components, all managed by bootsteps
 (mod:`celery.bootsteps`).
 """
-
+from celery.app.defaults import Option
 import os
 import sys
 from datetime import datetime
+from typing import Any, Callable, List, Optional, Sequence, Tuple
 
 from billiard import cpu_count
 from kombu.utils.compat import detect_environment
 
+from kombu.asynchronous.semaphore import  LaxBoundedSemaphore
 from celery import bootsteps
 from celery import concurrency as _concurrency
 from celery import signals
+import celery
 from celery.bootsteps import RUN, TERMINATE
 from celery.exceptions import ImproperlyConfigured, TaskRevokedError, WorkerTerminate
-from celery.platforms import EX_FAILURE, create_pidlock
+from celery.platforms import EX_FAILURE, Pidfile, create_pidlock
 from celery.utils.imports import reload_from_cwd
 from celery.utils.log import mlevel
 from celery.utils.log import worker_logger as logger
 from celery.utils.nodenames import default_nodename, worker_direct
 from celery.utils.text import str_to_list
 from celery.utils.threads import default_socket_timeout
+from celery.worker.components import Pool
+from celery.worker.consumer import Consumer
+from celery.worker.request import Request
 
 from . import state
 
@@ -62,15 +68,15 @@ defined in the `task_queues` setting.
 class WorkController:
     """Unmanaged worker instance."""
 
-    app = None
+    app:Optional[celery.Celery] = None
 
-    pidlock = None
-    blueprint = None
-    pool = None
-    semaphore = None
+    pidlock:Optional[Pidfile] = None
+    blueprint:Optional["Blueprint"]= None
+    pool:Optional[Pool] = None
+    semaphore:Optional[LaxBoundedSemaphore] = None
 
     #: contains the exit code if a :exc:`SystemExit` event is handled.
-    exitcode = None
+    exitcode:Optional[int] = None
 
     class Blueprint(bootsteps.Blueprint):
         """Worker bootstep blueprint."""
@@ -86,7 +92,7 @@ class WorkController:
             'celery.worker.autoscale:WorkerComponent',
         }
 
-    def __init__(self, app=None, hostname=None, **kwargs):
+    def __init__(self, app: Optional[celery.Celery]=None, hostname: Optional[str]=None, **kwargs: Any):
         self.app = app or self.app
         self.hostname = default_nodename(hostname)
         self.startup_time = datetime.utcnow()
@@ -97,9 +103,9 @@ class WorkController:
 
         self.setup_instance(**self.prepare_args(**kwargs))
 
-    def setup_instance(self, queues=None, ready_callback=None, pidfile=None,
-                       include=None, use_eventloop=None, exclude_queues=None,
-                       **kwargs):
+    def setup_instance(self, queues:Optional[Sequence[str]]=None, ready_callback:Optional[Callable]=None, pidfile: Optional[str] =None,
+                       include:Optional[str]=None, use_eventloop:Optional[bool]=None, exclude_queues:Optional[Sequence[str]]=None,
+                       **kwargs: Any):
         self.pidfile = pidfile
         self.setup_queues(queues, exclude_queues)
         self.setup_includes(str_to_list(include))
@@ -140,17 +146,17 @@ class WorkController:
     def on_init_blueprint(self):
         pass
 
-    def on_before_init(self, **kwargs):
+    def on_before_init(self, **kwargs: Any):
         pass
 
-    def on_after_init(self, **kwargs):
+    def on_after_init(self, **kwargs: Any):
         pass
 
     def on_start(self):
         if self.pidfile:
             self.pidlock = create_pidlock(self.pidfile)
 
-    def on_consumer_ready(self, consumer):
+    def on_consumer_ready(self, consumer: Consumer):
         pass
 
     def on_close(self):
@@ -163,7 +169,7 @@ class WorkController:
         if self.pidlock:
             self.pidlock.release()
 
-    def setup_queues(self, include, exclude=None):
+    def setup_queues(self, include: str, exclude:Optional[str]=None):
         include = str_to_list(include)
         exclude = str_to_list(exclude)
         try:
@@ -179,7 +185,7 @@ class WorkController:
         if self.app.conf.worker_direct:
             self.app.amqp.queues.select_add(worker_direct(self.hostname))
 
-    def setup_includes(self, includes):
+    def setup_includes(self, includes: List[str]):
         # Update celery_include to have all known task modules, so that we
         # ensure all task modules are imported in case an execv happens.
         prev = tuple(self.app.conf.include)
@@ -191,7 +197,7 @@ class WorkController:
                         for task in self.app.tasks.values()}
         self.app.conf.include = tuple(set(prev) | task_modules)
 
-    def prepare_args(self, **kwargs):
+    def prepare_args(self, **kwargs: Any):
         return kwargs
 
     def _send_worker_shutdown(self):
@@ -216,10 +222,10 @@ class WorkController:
             description='hub.register',
         )
 
-    def _process_task_sem(self, req):
+    def _process_task_sem(self, req: Request):
         return self._quick_acquire(self._process_task, req)
 
-    def _process_task(self, req):
+    def _process_task(self, req: Request):
         """Process task by sending it to the pool of workers."""
         try:
             req.execute_using_pool(self.pool)
@@ -240,7 +246,7 @@ class WorkController:
                 self._conninfo.transport.implements.asynchronous and
                 not self.app.IS_WINDOWS)
 
-    def stop(self, in_sighandler=False, exitcode=None):
+    def stop(self, in_sighandler:bool=False, exitcode:Optional[int]=None):
         """Graceful shutdown of the worker server."""
         if exitcode is not None:
             self.exitcode = exitcode
@@ -250,14 +256,14 @@ class WorkController:
                 self._shutdown(warm=True)
         self._send_worker_shutdown()
 
-    def terminate(self, in_sighandler=False):
+    def terminate(self, in_sighandler:bool=False):
         """Not so graceful shutdown of the worker server."""
         if self.blueprint.state != TERMINATE:
             self.signal_consumer_close()
             if not in_sighandler or self.pool.signal_safe:
                 self._shutdown(warm=False)
 
-    def _shutdown(self, warm=True):
+    def _shutdown(self, warm:bool=True):
         # if blueprint does not exist it means that we had an
         # error before the bootsteps could be initialized.
         if self.blueprint is not None:
@@ -265,7 +271,7 @@ class WorkController:
                 self.blueprint.stop(self, terminate=not warm)
                 self.blueprint.join()
 
-    def reload(self, modules=None, reload=False, reloader=None):
+    def reload(self, modules:Sequence[str]=None, reload:bool=False, reloader:Optional[Callable]=None):
         list(self._reload_modules(
             modules, force_reload=reload, reloader=reloader))
 
@@ -277,14 +283,14 @@ class WorkController:
         except NotImplementedError:
             pass
 
-    def _reload_modules(self, modules=None, **kwargs):
+    def _reload_modules(self, modules:Sequence[str]=None, **kwargs: Any):
         return (
             self._maybe_reload_module(m, **kwargs)
             for m in set(self.app.loader.task_modules
                          if modules is None else (modules or ()))
         )
 
-    def _maybe_reload_module(self, module, force_reload=False, reloader=None):
+    def _maybe_reload_module(self, module:str, force_reload:bool=False, reloader:Optional[Callable]=None):
         if module not in sys.modules:
             logger.debug('importing module %s', module)
             return self.app.loader.import_from_cwd(module)
@@ -347,27 +353,27 @@ class WorkController:
     def state(self):
         return state
 
-    def setup_defaults(self, concurrency=None, loglevel='WARN', logfile=None,
-                       task_events=None, pool=None, consumer_cls=None,
-                       timer_cls=None, timer_precision=None,
-                       autoscaler_cls=None,
-                       pool_putlocks=None,
-                       pool_restarts=None,
-                       optimization=None, O=None,  # O maps to -O=fair
-                       statedb=None,
-                       time_limit=None,
-                       soft_time_limit=None,
-                       scheduler=None,
-                       pool_cls=None,              # XXX use pool
-                       state_db=None,              # XXX use statedb
-                       task_time_limit=None,       # XXX use time_limit
-                       task_soft_time_limit=None,  # XXX use soft_time_limit
-                       scheduler_cls=None,         # XXX use scheduler
-                       schedule_filename=None,
-                       max_tasks_per_child=None,
-                       prefetch_multiplier=None, disable_rate_limits=None,
-                       worker_lost_wait=None,
-                       max_memory_per_child=None, **_kw):
+    def setup_defaults(self, concurrency:Optional[int]=None, loglevel:str='WARN', logfile:Optional[str]=None,
+                       task_events:Optional[bool]=None, pool:Optional[str]=None, consumer_cls:Optional[str]=None,
+                       timer_cls:Optional[str]=None, timer_precision:Optional[float]=None,
+                       autoscaler_cls:Optional[str]=None,
+                       pool_putlocks:Optional[bool]=None,
+                       pool_restarts:Optional[bool]=None,
+                       optimization:Optional[int]=None, O:Optional[int]=None,  # O maps to -O=fair
+                       statedb:Optional[str]=None,
+                       time_limit:Optional[float]=None,
+                       soft_time_limit:Optional[float]=None,
+                       scheduler:Optional[str]=None,
+                       pool_cls:Optional[str]=None,              # XXX use pool
+                       state_db:Optional[Option]=None,              # XXX use statedb
+                       task_time_limit:Optional[float]=None,       # XXX use time_limit
+                       task_soft_time_limit:Optional[float]=None,  # XXX use soft_time_limit
+                       scheduler_cls:Optional[str]=None,         # XXX use scheduler
+                       schedule_filename:Optional[str]=None,
+                       max_tasks_per_child:Optional[int]=None,
+                       prefetch_multiplier:Optional[int]=None, disable_rate_limits:Optional[bool]=None,
+                       worker_lost_wait:Optional[float]=None,
+                       max_memory_per_child:Optional[int]=None, **_kw: Any):
         either = self.app.either
         self.loglevel = loglevel
         self.logfile = logfile
