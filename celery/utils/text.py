@@ -58,7 +58,7 @@ def ensure_sep(sep: str, s: str, n: int = 2) -> str:
 ensure_newlines = partial(ensure_sep, '\n')
 
 
-def abbr(S: str, max: int, ellipsis: str = '...'):
+def abbr(S: str, max: int, ellipsis: str = '...') -> str:
     """Abbreviate word."""
     if S is None:
         return '???'
@@ -78,7 +78,7 @@ def abbrtask(S: str, max: int) -> str:
     return S
 
 
-def indent(t: str, indent: int = 0, sep: str = '\n'):
+def indent(t: str, indent: int = 0, sep: str = '\n') -> str:
     """Indent text."""
     return sep.join(' ' * indent + p for p in t.split(sep))
 
