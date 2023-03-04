@@ -5,7 +5,7 @@ from collections.abc import Callable
 from functools import partial
 from pprint import pformat
 from textwrap import fill
-from typing import TYPE_CHECKING, Any, List, Mapping, Pattern
+from typing import TYPE_CHECKING, Any, List, Pattern
 
 if TYPE_CHECKING:
     from re import Match
@@ -61,12 +61,13 @@ def ensure_sep(sep: str, s: str, n: int = 2) -> str:
 ensure_newlines = partial(ensure_sep, '\n')
 
 
-def abbr(S: str, max: int, ellipsis: str = '...') -> str:
+def abbr(S: str, max: int, ellipsis: str | bool = '...') -> str:
     """Abbreviate word."""
     if S is None:
         return '???'
     if len(S) > max:
-        return ellipsis and (S[:max - len(ellipsis)] + ellipsis) or S[:max]
+        return isinstance(ellipsis, str) and (
+            S[: max - len(ellipsis)] + ellipsis) or S[: max]
     return S
 
 
@@ -118,19 +119,19 @@ def match_case(s: str, other: str) -> str:
 
 
 def simple_format(
-        s: str, keys: Mapping[str, str],
+        s: str, keys: dict[str, str | Callable],
         pattern: Pattern[str] = RE_FORMAT, expand: str = r'\1') -> str:
     """Format string, expanding abbreviations in keys'."""
     if s:
         keys.setdefault('%', '%')
 
-        def resolve(match: Match):
+        def resolve(match: Match) -> str | Any:
             key = match.expand(expand)
             try:
                 resolver = keys[key]
             except KeyError:
                 raise ValueError(UNKNOWN_SIMPLE_FORMAT_KEY.format(key, s))
-            if isinstance(resolver, Callable):
+            if callable(resolver):
                 return resolver()
             return resolver
 
