@@ -11,32 +11,39 @@ global side-effects (i.e., except for the global state stored in
 The worker consists of several components, all managed by bootsteps
 (mod:`celery.bootsteps`).
 """
-from celery.app.defaults import Option
+from __future__ import annotations
 import os
 import sys
 from datetime import datetime
-from typing import Any, Callable, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING
 
 from billiard import cpu_count
 from kombu.utils.compat import detect_environment
 
-from kombu.asynchronous.semaphore import  LaxBoundedSemaphore
 from celery import bootsteps
 from celery import concurrency as _concurrency
 from celery import signals
-import celery
 from celery.bootsteps import RUN, TERMINATE
 from celery.exceptions import ImproperlyConfigured, TaskRevokedError, WorkerTerminate
-from celery.platforms import EX_FAILURE, Pidfile, create_pidlock
+from celery.platforms import EX_FAILURE, create_pidlock
 from celery.utils.imports import reload_from_cwd
 from celery.utils.log import mlevel
 from celery.utils.log import worker_logger as logger
 from celery.utils.nodenames import default_nodename, worker_direct
 from celery.utils.text import str_to_list
 from celery.utils.threads import default_socket_timeout
-from celery.worker.components import Pool
-from celery.worker.consumer import Consumer
-from celery.worker.request import Request
+
+
+if TYPE_CHECKING:
+    from kombu.asynchronous.semaphore import  LaxBoundedSemaphore
+    from celery.worker.components import Pool
+    from celery.worker.consumer import Consumer
+    from celery.worker.request import Request
+    from celery.platforms import Pidfile
+    from celery.app.defaults import Option
+    import celery
+    from typing import Any, Callable, List, Optional, Sequence, Tuple
+    
 
 from . import state
 
