@@ -61,7 +61,7 @@ def ensure_sep(sep: str, s: str, n: int = 2) -> str:
 ensure_newlines = partial(ensure_sep, '\n')
 
 
-def abbr(S: str, max: int, ellipsis: str | bool = '...') -> str:
+def abbr(S: str, max: int, ellipsis: 'str | bool' = '...') -> str:
     """Abbreviate word."""
     if S is None:
         return '???'
