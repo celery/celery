@@ -47,7 +47,7 @@ def fill_paragraphs(s: str, width: int, sep: str = '\n') -> str:
     return sep.join(fill(p, width) for p in s.split(sep))
 
 
-def join(l: str, sep: str = '\n') -> str:
+def join(l: List[str], sep: str = '\n') -> str:
     """Concatenate list of strings."""
     return sep.join(v for v in l if v)
 
