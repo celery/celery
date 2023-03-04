@@ -79,10 +79,10 @@ defined in the `task_queues` setting.
 class WorkController:
     """Unmanaged worker instance."""
 
-    app: Celery | None = None
+    _app: Celery | None = None
 
     pidlock: Pidfile | None = None
-    blueprint: Blueprint | None = None
+    _blueprint: Blueprint | None = None
     pool: Pool | None = None
     semaphore: LaxBoundedSemaphore | None = None
     consumer: Consumer | None = None
@@ -127,6 +127,12 @@ class WorkController:
     @app.setter
     def app(self, app: Celery) -> None:
         self._app = app
+
+    @property
+    def blueprint(self) -> "Blueprint":
+        if self._blueprint:
+            return self._blueprint
+        raise ValueError("WorkController must be provided an blueprint.")
 
     def setup_instance(
             self, queues: Sequence[str] | None = None, ready_callback: Callable |
