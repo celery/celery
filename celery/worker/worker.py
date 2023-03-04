@@ -129,7 +129,7 @@ class WorkController:
         self._app = app
 
     @property
-    def blueprint(self) -> "Blueprint":
+    def blueprint(self) -> Blueprint:
         if self._blueprint:
             return self._blueprint
         raise ValueError("WorkController must be provided an blueprint.")
