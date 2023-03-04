@@ -84,7 +84,6 @@ def indent(t: str, indent: int = 0, sep: str = '\n') -> str:
 
 
 def truncate(s: str, maxlen: int = 128, suffix: str = '...') -> str:
-    # type: (str, int, str) -> str
     """Truncate text to a maximum number of characters."""
     if maxlen and len(s) >= maxlen:
         return s[:maxlen].rsplit(' ', 1)[0] + suffix
