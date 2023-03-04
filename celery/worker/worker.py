@@ -17,7 +17,7 @@ import os
 import sys
 from datetime import datetime
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterator, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Sequence
 
 from billiard import cpu_count
 from kombu.utils.compat import detect_environment
@@ -99,7 +99,9 @@ class WorkController:
             'celery.worker.autoscale:WorkerComponent',
         }
 
-    def __init__(self, app: celery.Celery | None = None, hostname: str | None = None, **kwargs: Any) -> None:
+    def __init__(
+            self, app: celery.Celery | None = None, hostname: str | None = None, **
+            kwargs: Any) -> None:
         self.app = app or self.app
         self.hostname = default_nodename(hostname)
         self.startup_time = datetime.utcnow()
@@ -110,9 +112,11 @@ class WorkController:
 
         self.setup_instance(**self.prepare_args(**kwargs))
 
-    def setup_instance(self, queues: Sequence[str] | None = None, ready_callback: Callable | None = None, pidfile: str | None = None,
-                       include: str | None = None, use_eventloop: bool | None = None, exclude_queues: Sequence[str] | None = None,
-                       **kwargs: Any):
+    def setup_instance(
+            self, queues: Sequence[str] | None = None, ready_callback: Callable |
+            None = None, pidfile: str | None = None, include: str | None = None,
+            use_eventloop: bool | None = None, exclude_queues: Sequence[str] |
+            None = None, **kwargs: Any):
         self.pidfile = pidfile
         self.setup_queues(queues, exclude_queues)
         self.setup_includes(str_to_list(include))
@@ -278,7 +282,9 @@ class WorkController:
                 self.blueprint.stop(self, terminate=not warm)
                 self.blueprint.join()
 
-    def reload(self, modules: Sequence[str] = None, reload: bool = False, reloader: Callable | None = None) -> None:
+    def reload(
+            self, modules: Sequence[str] = None, reload: bool = False,
+            reloader: Callable | None = None) -> None:
         list(self._reload_modules(
             modules, force_reload=reload, reloader=reloader))
 
@@ -297,7 +303,9 @@ class WorkController:
                          if modules is None else (modules or ()))
         )
 
-    def _maybe_reload_module(self, module: str, force_reload: bool = False, reloader: Callable | None = None) -> ModuleType | None:
+    def _maybe_reload_module(
+            self, module: str, force_reload: bool = False, reloader: Callable |
+            None = None) -> ModuleType | None:
         if module not in sys.modules:
             logger.debug('importing module %s', module)
             return self.app.loader.import_from_cwd(module)
