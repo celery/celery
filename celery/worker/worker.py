@@ -120,7 +120,7 @@ class WorkController:
 
     @property
     def app(self) -> Celery:
-        if self.app:
+        if self._app:
             return self._app
         raise ValueError("WorkController must be provided an app.")
 
