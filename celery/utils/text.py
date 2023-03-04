@@ -188,7 +188,7 @@ _SIO_init = StringIO.__init__
 class WhateverIO(StringIO):
     """StringIO that takes bytes or str."""
 
-    def __init__(self, v=bytes | str, *a: Any, **kw: Any) -> None:
+    def __init__(self, v: bytes | str, *a: Any, **kw: Any) -> None:
         _SIO_init(self, v.decode() if isinstance(v, bytes) else v, *a, **kw)
 
     def write(self, data: bytes | str) -> None:
