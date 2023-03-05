@@ -80,7 +80,7 @@ class Beat:
     def app(self) -> Celery:
         if self._app:
             return self._app
-        raise ValueError("App not provided.")
+        raise ValueError("Beat must provided a Celery app.")
 
     @app.setter
     def app(self, app: Celery) -> None:
