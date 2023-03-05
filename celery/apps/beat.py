@@ -17,7 +17,7 @@ from types import FrameType
 from typing import Any
 
 from celery import VERSION_BANNER, Celery, beat, platforms
-from celery.beat import Service
+from celery.beat import Scheduler, Service
 from celery.utils.imports import qualname
 from celery.utils.log import LOG_LEVELS, get_logger
 from celery.utils.time import humanize_seconds
@@ -46,8 +46,8 @@ class Beat:
     def __init__(self, max_interval: int | None = None, app: Celery | None = None,
                  socket_timeout: int = 30, pidfile: str | None = None, no_color: bool | None = None,
                  loglevel: str = 'WARN', logfile: str | None = None, schedule: str | None = None,
-                 scheduler: beat.Scheduler | None = None,
-                 scheduler_cls: beat.Scheduler | None = None,  # XXX use scheduler
+                 scheduler: Scheduler | None = None,
+                 scheduler_cls: Scheduler | None = None,  # XXX use scheduler
                  redirect_stdouts: bool | None = None,
                  redirect_stdouts_level: str | None = None,
                  quiet: bool = False, **kwargs: Any) -> None:
