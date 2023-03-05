@@ -124,7 +124,7 @@ def simple_format(
     if s:
         keys.setdefault('%', '%')
 
-        def resolve(match: Match) -> 'str | Any':
+        def resolve(match: "Match") -> 'str | Any':
             key = match.expand(expand)
             try:
                 resolver = keys[key]
