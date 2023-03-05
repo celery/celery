@@ -1,5 +1,6 @@
 """Text formatting utilities."""
 from __future__ import annotations
+
 import io
 import re
 from functools import partial
@@ -26,7 +27,7 @@ or did you escape and the value was expanded twice? (%%N -> %N -> %hostname)?
 RE_FORMAT = re.compile(r'%(\w)')
 
 
-def str_to_list(s: str) -> List[str]:
+def str_to_list(s: str) -> list[str]:
     """Convert string to list."""
     if isinstance(s, str):
         return s.split(',')
@@ -48,7 +49,7 @@ def fill_paragraphs(s: str, width: int, sep: str = '\n') -> str:
     return sep.join(fill(p, width) for p in s.split(sep))
 
 
-def join(l: List[str], sep: str = '\n') -> str:
+def join(l: list[str], sep: str = '\n') -> str:
     """Concatenate list of strings."""
     return sep.join(v for v in l if v)
 
@@ -61,7 +62,7 @@ def ensure_sep(sep: str, s: str, n: int = 2) -> str:
 ensure_newlines = partial(ensure_sep, '\n')
 
 
-def abbr(S: str, max: int, ellipsis: 'str | bool' = '...') -> str:
+def abbr(S: str, max: int, ellipsis: str | bool = '...') -> str:
     """Abbreviate word."""
     if S is None:
         return '???'
@@ -119,13 +120,13 @@ def match_case(s: str, other: str) -> str:
 
 
 def simple_format(
-        s: str, keys: 'dict[str, str | Callable]',
+        s: str, keys: dict[str, str | Callable],
         pattern: Pattern[str] = RE_FORMAT, expand: str = r'\1') -> str:
     """Format string, expanding abbreviations in keys'."""
     if s:
         keys.setdefault('%', '%')
 
-        def resolve(match: "Match") -> 'str | Any':
+        def resolve(match: Match) -> str | Any:
             key = match.expand(expand)
             try:
                 resolver = keys[key]
@@ -191,9 +192,9 @@ class WhateverIO(StringIO):
     """StringIO that takes bytes or str."""
 
     def __init__(
-            self, v: "bytes | str | None" = None, *a: Any, **kw: Any) -> None:
+            self, v: bytes | str | None = None, *a: Any, **kw: Any) -> None:
         _SIO_init(self, v.decode() if isinstance(v, bytes) else v, *a, **kw)
 
-    def write(self, data: "bytes | str") -> int:
+    def write(self, data: bytes | str) -> int:
         return _SIO_write(self, data.decode()
                           if isinstance(data, bytes) else data)
