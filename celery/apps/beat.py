@@ -16,8 +16,8 @@ from signal import Signals
 from types import FrameType
 from typing import Any
 
-from celery import VERSION_BANNER, Celery, platforms
-from celery.beat import Scheduler, Service
+from celery import VERSION_BANNER, Celery, platforms, beat
+from celery.beat import Scheduler
 from celery.utils.imports import qualname
 from celery.utils.log import LOG_LEVELS, get_logger
 from celery.utils.time import humanize_seconds
@@ -41,6 +41,7 @@ logger = get_logger('celery.beat')
 class Beat:
     """Beat as a service."""
 
+    Service = beat.Service
     _app: Celery | None = None
 
     def __init__(self, max_interval: int | None = None, app: Celery | None = None,
@@ -104,7 +105,7 @@ class Beat:
     def start_scheduler(self) -> None:
         if self.pidfile:
             platforms.create_pidlock(self.pidfile)
-        service = Service(
+        service = self.Service(
             app=self.app,
             max_interval=self.max_interval,
             scheduler_cls=self.scheduler_cls,
@@ -128,7 +129,7 @@ class Beat:
                             exc_info=True)
             raise
 
-    def banner(self, service: Service) -> str:
+    def banner(self, service: beat.Service) -> str:
         c = self.colored
         return str(
             c.blue('__    ', c.magenta('-'),
@@ -143,7 +144,7 @@ class Beat:
         self.app.loader.init_worker()
         self.app.finalize()
 
-    def startup_info(self, service: Service) -> str:
+    def startup_info(self, service: beat.Service) -> str:
         scheduler = service.get_scheduler(lazy=True)
         return STARTUP_INFO_FMT.format(
             conninfo=self.app.connection().as_uri(),
@@ -163,7 +164,7 @@ class Beat:
             'celery beat', info=' '.join(sys.argv[arg_start:]),
         )
 
-    def install_sync_handler(self, service: Service) -> None:
+    def install_sync_handler(self, service: beat.Service) -> None:
         """Install a `SIGTERM` + `SIGINT` handler saving the schedule."""
         def _sync(signum: Signals, frame: FrameType) -> None:
             service.sync()
