@@ -854,10 +854,10 @@ class test_Beat:
     def test_custom_getter_and_setter(self):
         beat = self.app.Beat()
 
-        # Test that custom getter works.
+        # Test custom getter.
         assert isinstance(beat.app, Celery)
 
-        # Test customer Setter.
+        # Test customer setter.
         beat.app = None
         assert beat._app is None
 
