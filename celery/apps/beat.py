@@ -41,7 +41,7 @@ logger = get_logger('celery.beat')
 class Beat:
     """Beat as a service."""
 
-    app: Celery | None = None
+    _app: Celery | None = None
 
     def __init__(self, max_interval: int | None = None, app: Celery | None = None,
                  socket_timeout: int = 30, pidfile: str | None = None, no_color: bool | None = None,
@@ -75,6 +75,16 @@ class Beat:
 
         if not isinstance(self.loglevel, numbers.Integral):
             self.loglevel = LOG_LEVELS[self.loglevel.upper()]
+
+    @property
+    def app(self) -> Celery:
+        if self._app:
+            return self._app
+        raise ValueError("App not provided.")
+
+    @app.setter
+    def app(self, app: Celery) -> None:
+        self._app = app
 
     def run(self) -> None:
         if not self.quiet:
@@ -153,9 +163,9 @@ class Beat:
             'celery beat', info=' '.join(sys.argv[arg_start:]),
         )
 
-    def install_sync_handler(self, service: Service):
+    def install_sync_handler(self, service: Service) -> None:
         """Install a `SIGTERM` + `SIGINT` handler saving the schedule."""
-        def _sync(signum: Signals, frame: FrameType):
+        def _sync(signum: Signals, frame: FrameType) -> None:
             service.sync()
             raise SystemExit()
         platforms.signals.update(SIGTERM=_sync, SIGINT=_sync)

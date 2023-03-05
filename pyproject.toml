@@ -20,6 +20,7 @@ files = [
     "celery/concurrency/thread.py",
     "celery/security/certificate.py",
     "celery/utils/text.py",
+    "celery/apps/beat.py",
 ]
 
 [tool.coverage.run]
