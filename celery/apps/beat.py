@@ -16,7 +16,7 @@ from signal import Signals
 from types import FrameType
 from typing import Any
 
-from celery import VERSION_BANNER, Celery, platforms, beat
+from celery import VERSION_BANNER, Celery, beat, platforms
 from celery.beat import Scheduler
 from celery.utils.imports import qualname
 from celery.utils.log import LOG_LEVELS, get_logger
