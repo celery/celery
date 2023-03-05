@@ -6,7 +6,7 @@ from unittest.mock import Mock, call, patch
 import pytest
 import pytz
 
-from celery import __version__, beat, uuid
+from celery import __version__, beat, uuid, Celery
 from celery.beat import BeatLazyFunc, event_t
 from celery.schedules import crontab, schedule
 from celery.utils.objects import Bunch
@@ -194,7 +194,9 @@ class test_Scheduler:
         foo.apply_async = Mock(name='foo.apply_async')
 
         scheduler = mScheduler(app=self.app)
-        scheduler.apply_async(scheduler.Entry(task=foo.name, app=self.app, args=None, kwargs=None))
+        scheduler.apply_async(
+            scheduler.Entry(
+                task=foo.name, app=self.app, args=None, kwargs=None))
         foo.apply_async.assert_called()
 
     def test_apply_async_with_null_args_set_to_none(self):
@@ -731,7 +733,8 @@ class test_Service:
 
     def get_service(self):
         Scheduler, mock_shelve = create_persistent_scheduler()
-        return beat.Service(app=self.app, scheduler_cls=Scheduler), mock_shelve
+        return beat.Service(
+            app=self.app, scheduler_cls=Scheduler), mock_shelve
 
     def test_pickleable(self):
         s = beat.Service(app=self.app, scheduler_cls=Mock)
@@ -845,3 +848,19 @@ class test_schedule:
         x.utc_enabled = False
         d = x.to_local(datetime.utcnow())
         assert d.tzinfo
+
+
+class test_Beat:
+    def test_custom_getter_and_setter(self):
+        beat = self.app.Beat()
+
+        # Test that custom getter works.
+        assert isinstance(beat.app, Celery)
+
+        # Test customer Setter.
+        beat.app = None
+        assert beat._app is None
+
+        # Value error should be raised as there is no app.
+        with pytest.raises(ValueError):
+            beat.app
