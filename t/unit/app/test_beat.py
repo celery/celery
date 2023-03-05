@@ -6,7 +6,7 @@ from unittest.mock import Mock, call, patch
 import pytest
 import pytz
 
-from celery import __version__, beat, uuid, Celery
+from celery import Celery, __version__, beat, uuid
 from celery.beat import BeatLazyFunc, event_t
 from celery.schedules import crontab, schedule
 from celery.utils.objects import Bunch
