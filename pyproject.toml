@@ -19,6 +19,7 @@ files = [
     "celery/fixups",
     "celery/concurrency/thread.py",
     "celery/security/certificate.py",
+    "celery/utils/text.py",
 ]
 
 [tool.coverage.run]
