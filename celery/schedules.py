@@ -14,8 +14,9 @@ from celery import Celery
 
 from . import current_app
 from .utils.collections import AttributeDict
-from .utils.time import (ffwd, humanize_seconds, localize, maybe_make_aware, maybe_timedelta, remaining, timezone,
-                         weekday)
+from .utils.time import (
+    ffwd, humanize_seconds, localize, maybe_make_aware, maybe_timedelta,
+    remaining, timezone, weekday)
 
 __all__ = (
     'ParseException', 'schedule', 'crontab', 'crontab_parser',
@@ -711,6 +712,15 @@ class solar(BaseSchedule):
             - ``dusk_civil``
             - ``dusk_nautical``
             - ``dusk_astronomical``
+
+    Arguments:
+        event (str): Solar event that triggers this task.
+            See note for available values.
+        lat (Union[int, float]): The latitude of the observer.
+        lon (Union[int, float]): The longitude of the observer.
+        nowfun (Callable): Function returning the current date and time
+            as a class:`~datetime.datetime`.
+        app (Celery): Celery app instance.
     """
 
     _all_events = {
