@@ -1230,8 +1230,9 @@ Use the ``rediss://`` protocol to connect to redis over TLS::
     result_backend = 'rediss://username:password@host:port/db?ssl_cert_reqs=required'
 
 Note that the ``ssl_cert_reqs`` string should be one of ``required``,
-``optional``, or ``none`` (though, for backwards compatibility, the string
-may also be one of ``CERT_REQUIRED``, ``CERT_OPTIONAL``, ``CERT_NONE``).
+``optional``, or ``none`` (though, for backwards compatibility with older Celery versions, the string
+may also be one of ``CERT_REQUIRED``, ``CERT_OPTIONAL``, ``CERT_NONE``, but those values
+only work for Celery, not for Redis directly).
 
 If a Unix socket connection should be used, the URL needs to be in the format:::
 
