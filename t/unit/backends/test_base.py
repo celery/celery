@@ -125,6 +125,18 @@ class test_Backend_interface:
         assert meta['kwargs'] == kwargs
         assert meta['queue'] == 'celery'
 
+    def test_get_result_meta_stamps_attribute_error(self):
+        class Request:
+            pass
+        self.app.conf.result_extended = True
+        b1 = BaseBackend(self.app)
+        meta = b1._get_result_meta(result={'fizz': 'buzz'},
+                                   state=states.SUCCESS, traceback=None,
+                                   request=Request())
+        assert meta['status'] == states.SUCCESS
+        assert meta['result'] == {'fizz': 'buzz'}
+        assert meta['traceback'] is None
+
     def test_get_result_meta_encoded(self):
         self.app.conf.result_extended = True
         b1 = BaseBackend(self.app)
