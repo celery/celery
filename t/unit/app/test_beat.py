@@ -6,7 +6,7 @@ from unittest.mock import Mock, call, patch
 import pytest
 import pytz
 
-from celery import Celery, __version__, beat, uuid
+from celery import __version__, beat, uuid
 from celery.beat import BeatLazyFunc, event_t
 from celery.schedules import crontab, schedule
 from celery.utils.objects import Bunch
@@ -848,19 +848,3 @@ class test_schedule:
         x.utc_enabled = False
         d = x.to_local(datetime.utcnow())
         assert d.tzinfo
-
-
-class test_Beat:
-    def test_custom_getter_and_setter(self):
-        beat = self.app.Beat()
-
-        # Test custom getter.
-        assert isinstance(beat.app, Celery)
-
-        # Test customer setter.
-        beat.app = None
-        assert beat._app is None
-
-        # Value error should be raised as there is no app.
-        with pytest.raises(ValueError):
-            beat.app

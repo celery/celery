@@ -41,7 +41,7 @@ class Beat:
     """Beat as a service."""
 
     Service = beat.Service
-    _app: Celery | None = None
+    app: Celery
 
     def __init__(self, max_interval: int | None = None, app: Celery | None = None,
                  socket_timeout: int = 30, pidfile: str | None = None, no_color: bool | None = None,
@@ -72,19 +72,8 @@ class Beat:
             enabled=not no_color if no_color is not None else no_color,
         )
         self.pidfile = pidfile
-
         if not isinstance(self.loglevel, numbers.Integral):
             self.loglevel = LOG_LEVELS[self.loglevel.upper()]
-
-    @property
-    def app(self) -> Celery:
-        if self._app:
-            return self._app
-        raise ValueError("Beat must provided a Celery app.")
-
-    @app.setter
-    def app(self, app: Celery) -> None:
-        self._app = app
 
     def run(self) -> None:
         if not self.quiet:
