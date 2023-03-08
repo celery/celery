@@ -1,4 +1,5 @@
 """Schedules define the intervals at which periodic tasks run."""
+from __future__ import annotations
 
 import numbers
 import re
@@ -11,8 +12,9 @@ from kombu.utils.objects import cached_property
 
 from . import current_app
 from .utils.collections import AttributeDict
-from .utils.time import (ffwd, humanize_seconds, localize, maybe_make_aware, maybe_timedelta, remaining, timezone,
-                         weekday)
+from .utils.time import (
+    ffwd, humanize_seconds, localize, maybe_make_aware, maybe_timedelta,
+    remaining, timezone, weekday)
 
 __all__ = (
     'ParseException', 'schedule', 'crontab', 'crontab_parser',
@@ -468,8 +470,9 @@ class crontab(BaseSchedule):
             return False
 
         def is_before_last_run(year, month, day):
-            return self.maybe_make_aware(datetime(year, month, day, next_hour, next_minute),
-                                         naive_as_utc=False) < last_run_at
+            return self.maybe_make_aware(
+                datetime(year, month, day, next_hour, next_minute),
+                naive_as_utc=False) < last_run_at
 
         def roll_over():
             for _ in range(2000):
