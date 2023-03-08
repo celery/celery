@@ -1,4 +1,5 @@
 """Schedules define the intervals at which periodic tasks run."""
+from __future__ import annotations
 
 import re
 from bisect import bisect, bisect_left
