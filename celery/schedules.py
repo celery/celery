@@ -72,7 +72,7 @@ class BaseSchedule:
     def remaining_estimate(self, last_run_at: datetime) -> timedelta:
         raise NotImplementedError()
 
-    def is_due(self, last_run_at: datetime) -> Tuple[bool, datetime]:
+    def is_due(self, last_run_at: datetime) -> tuple[bool, datetime]:
         raise NotImplementedError()
 
     def maybe_make_aware(
@@ -133,7 +133,7 @@ class schedule(BaseSchedule):
             self.maybe_make_aware(self.now()), self.relative,
         )
 
-    def is_due(self, last_run_at: datetime) -> Tuple[bool, datetime]:
+    def is_due(self, last_run_at: datetime) -> tuple[bool, datetime]:
         """Return tuple of ``(is_due, next_time_to_check)``.
 
         Notes:
@@ -178,8 +178,8 @@ class schedule(BaseSchedule):
             return self.run_every == other.run_every
         return self.run_every == other
 
-    def __reduce__(self) -> Tuple[type,
-                                  Tuple[timedelta, bool, Callable | None]]:
+    def __reduce__(self) -> tuple[type,
+                                  tuple[timedelta, bool, Callable | None]]:
         return self.__class__, (self.run_every, self.relative, self.nowfun)
 
     @property
@@ -248,14 +248,14 @@ class crontab_parser:
     def __init__(self, max_: int = 60, min_: int = 0):
         self.max_ = max_
         self.min_ = min_
-        self.pats: Tuple[Tuple[re.Pattern, Callable], ...] = (
+        self.pats: tuple[tuple[re.Pattern, Callable], ...] = (
             (re.compile(self._range + self._steps), self._range_steps),
             (re.compile(self._range), self._expand_range),
             (re.compile(self._star + self._steps), self._star_steps),
             (re.compile('^' + self._star + '$'), self._expand_star),
         )
 
-    def parse(self, spec: str) -> Set[int]:
+    def parse(self, spec: str) -> set[int]:
         acc = set()
         for part in spec.split(','):
             if not part:
@@ -263,14 +263,14 @@ class crontab_parser:
             acc |= set(self._parse_part(part))
         return acc
 
-    def _parse_part(self, part: str) -> List[int]:
+    def _parse_part(self, part: str) -> list[int]:
         for regex, handler in self.pats:
             m = regex.match(part)
             if m:
                 return handler(m.groups())
         return self._expand_range((part,))
 
-    def _expand_range(self, toks: Sequence[str]) -> List[int]:
+    def _expand_range(self, toks: Sequence[str]) -> list[int]:
         fr = self._expand_number(toks[0])
         if len(toks) > 1:
             to = self._expand_number(toks[1])
@@ -280,17 +280,17 @@ class crontab_parser:
             return list(range(fr, to + 1))
         return [fr]
 
-    def _range_steps(self, toks: Sequence[str]) -> List[int]:
+    def _range_steps(self, toks: Sequence[str]) -> list[int]:
         if len(toks) != 3 or not toks[2]:
             raise self.ParseException('empty filter')
         return self._expand_range(toks[:2])[::int(toks[2])]
 
-    def _star_steps(self, toks: Sequence[str]) -> List[int]:
+    def _star_steps(self, toks: Sequence[str]) -> list[int]:
         if not toks or not toks[0]:
             raise self.ParseException('empty filter')
         return self._expand_star()[::int(toks[0])]
 
-    def _expand_star(self, *args: Any) -> List[int]:
+    def _expand_star(self, *args: Any) -> list[int]:
         return list(range(self.min_, self.max_ + self.min_))
 
     def _expand_number(self, s: str) -> int:
@@ -411,7 +411,7 @@ class crontab(BaseSchedule):
     @staticmethod
     def _expand_cronspec(
             cronspec: int | str | Iterable,
-            max_: int, min_: int = 0) -> Set[Any]:
+            max_: int, min_: int = 0) -> set[Any]:
         """Expand cron specification.
 
         Takes the given cronspec argument in one of the forms:
@@ -535,7 +535,7 @@ class crontab(BaseSchedule):
     def __repr__(self) -> str:
         return CRON_REPR.format(self)
 
-    def __reduce__(self) -> Tuple[type, Tuple[str, str, str, str, str], Any]:
+    def __reduce__(self) -> tuple[type, tuple[str, str, str, str, str], Any]:
         return (self.__class__, (self._orig_minute,
                                  self._orig_hour,
                                  self._orig_day_of_week,
@@ -548,7 +548,7 @@ class crontab(BaseSchedule):
         super().__init__(**state)
 
     def remaining_delta(self, last_run_at: datetime, tz: tzinfo | None = None,
-                        ffwd: Type = ffwd) -> Tuple[datetime, Any, datetime]:
+                        ffwd: type = ffwd) -> tuple[datetime, Any, datetime]:
         # caching global ffwd
         last_run_at = self.maybe_make_aware(last_run_at)
         now = self.maybe_make_aware(self.now())
@@ -606,7 +606,7 @@ class crontab(BaseSchedule):
         return self.to_local(last_run_at), delta, self.to_local(now)
 
     def remaining_estimate(
-            self, last_run_at: datetime, ffwd: Type = ffwd) -> timedelta:
+            self, last_run_at: datetime, ffwd: type = ffwd) -> timedelta:
         """Estimate of next run time.
 
         Returns when the periodic task should run next as a
@@ -616,7 +616,7 @@ class crontab(BaseSchedule):
         # caching global ffwd
         return remaining(*self.remaining_delta(last_run_at, ffwd=ffwd))
 
-    def is_due(self, last_run_at: datetime) -> Tuple[bool, datetime]:
+    def is_due(self, last_run_at: datetime) -> tuple[bool, datetime]:
         """Return tuple of ``(is_due, next_time_to_run)``.
 
         If :setting:`beat_cron_starting_deadline`  has been specified, the
@@ -786,7 +786,7 @@ class solar(BaseSchedule):
         self.method = self._methods[event]
         self.use_center = self._use_center_l[event]
 
-    def __reduce__(self) -> Tuple[type, Tuple[str, int | float, int | float]]:
+    def __reduce__(self) -> tuple[type, tuple[str, int | float, int | float]]:
         return self.__class__, (self.event, self.lat, self.lon)
 
     def __repr__(self) -> str:
@@ -829,7 +829,7 @@ class solar(BaseSchedule):
         delta = next - now
         return delta
 
-    def is_due(self, last_run_at: datetime) -> Tuple[bool, datetime]:
+    def is_due(self, last_run_at: datetime) -> tuple[bool, datetime]:
         """Return tuple of ``(is_due, next_time_to_run)``.
 
         Note:
