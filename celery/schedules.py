@@ -1,5 +1,4 @@
 """Schedules define the intervals at which periodic tasks run."""
-from __future__ import annotations
 
 import numbers
 import re
