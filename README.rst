@@ -206,14 +206,14 @@ database connections at ``fork``.
 
 .. _`Django`: https://djangoproject.com/
 .. _`Pylons`: http://pylonsproject.org/
-.. _`Flask`: http://flask.pocoo.org/
+.. _`Flask`: https://flask.palletsprojects.com/
 .. _`web2py`: http://web2py.com/
 .. _`Bottle`: https://bottlepy.org/
-.. _`Pyramid`: http://docs.pylonsproject.org/en/latest/docs/pyramid.html
+.. _`Pyramid`: https://docs.pylonsproject.org/projects/pyramid/en/latest/
 .. _`pyramid_celery`: https://pypi.org/project/pyramid_celery/
 .. _`celery-pylons`: https://pypi.org/project/celery-pylons/
 .. _`web2py-celery`: https://code.google.com/p/web2py-celery/
-.. _`Tornado`: http://www.tornadoweb.org/
+.. _`Tornado`: https://www.tornadoweb.org/
 .. _`tornado-celery`: https://github.com/mher/tornado-celery/
 
 .. _celery-documentation:
@@ -461,7 +461,7 @@ Be sure to also read the `Contributing to Celery`_ section in the
 documentation.
 
 .. _`Contributing to Celery`:
-    https://docs.celeryq.dev/en/main/contributing.html
+    https://docs.celeryq.dev/en/stable/contributing.html
 
 |oc-contributors|
 
