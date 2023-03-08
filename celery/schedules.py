@@ -6,7 +6,7 @@ from bisect import bisect, bisect_left
 from collections import namedtuple
 from collections.abc import Iterable
 from datetime import datetime, timedelta, tzinfo
-from typing import Any, Callable, List, Mapping, Sequence, Set, Tuple, Type
+from typing import Any, Callable, Mapping, Sequence
 
 from kombu.utils.objects import cached_property
 
@@ -14,8 +14,9 @@ from celery import Celery
 
 from . import current_app
 from .utils.collections import AttributeDict
-from .utils.time import (ffwd, humanize_seconds, localize, maybe_make_aware, maybe_timedelta, remaining, timezone,
-                         weekday)
+from .utils.time import (
+    ffwd, humanize_seconds, localize, maybe_make_aware, maybe_timedelta,
+    remaining, timezone, weekday)
 
 __all__ = (
     'ParseException', 'schedule', 'crontab', 'crontab_parser',
