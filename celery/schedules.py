@@ -182,8 +182,8 @@ class schedule(BaseSchedule):
         return self.__class__, (self.run_every, self.relative, self.nowfun)
 
     @property
-    def seconds(self) -> float:
-        return max(self.run_every.total_seconds(), 0.0)
+    def seconds(self) -> int | float:
+        return max(self.run_every.total_seconds(), 0)
 
     @property
     def human_seconds(self) -> str:
