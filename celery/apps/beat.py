@@ -41,7 +41,7 @@ class Beat:
     """Beat as a service."""
 
     Service = beat.Service
-    app: Celery
+    app: Celery = None
 
     def __init__(self, max_interval: int | None = None, app: Celery | None = None,
                  socket_timeout: int = 30, pidfile: str | None = None, no_color: bool | None = None,
