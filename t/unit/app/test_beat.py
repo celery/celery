@@ -194,7 +194,9 @@ class test_Scheduler:
         foo.apply_async = Mock(name='foo.apply_async')
 
         scheduler = mScheduler(app=self.app)
-        scheduler.apply_async(scheduler.Entry(task=foo.name, app=self.app, args=None, kwargs=None))
+        scheduler.apply_async(
+            scheduler.Entry(
+                task=foo.name, app=self.app, args=None, kwargs=None))
         foo.apply_async.assert_called()
 
     def test_apply_async_with_null_args_set_to_none(self):
@@ -731,7 +733,8 @@ class test_Service:
 
     def get_service(self):
         Scheduler, mock_shelve = create_persistent_scheduler()
-        return beat.Service(app=self.app, scheduler_cls=Scheduler), mock_shelve
+        return beat.Service(
+            app=self.app, scheduler_cls=Scheduler), mock_shelve
 
     def test_pickleable(self):
         s = beat.Service(app=self.app, scheduler_cls=Mock)
