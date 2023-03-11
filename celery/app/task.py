@@ -125,7 +125,7 @@ class Context:
 
     def as_execution_options(self):
         limit_hard, limit_soft = self.timelimit or (None, None)
-        return {
+        execution_options = {
             'task_id': self.id,
             'root_id': self.root_id,
             'parent_id': self.parent_id,
@@ -145,6 +145,11 @@ class Context:
             'replaced_task_nesting': self.replaced_task_nesting,
             'origin': self.origin,
         }
+        if hasattr(self, 'stamps') and hasattr(self, 'stamped_headers'):
+            if self.stamps is not None and self.stamped_headers is not None:
+                execution_options['stamps'] = self.stamps
+                execution_options['stamped_headers'] = self.stamped_headers
+        return execution_options
 
     @property
     def children(self):
