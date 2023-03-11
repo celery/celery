@@ -715,8 +715,8 @@ class solar(BaseSchedule):
     Arguments:
         event (str): Solar event that triggers this task.
             See note for available values.
-        lat (Union[int, float]): The latitude of the observer.
-        lon (Union[int, float]): The longitude of the observer.
+        lat (float): The latitude of the observer.
+        lon (float): The longitude of the observer.
         nowfun (Callable): Function returning the current date and time
             as a class:`~datetime.datetime`.
         app (Celery): Celery app instance.
