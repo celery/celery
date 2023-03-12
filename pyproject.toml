@@ -21,6 +21,7 @@ files = [
     "celery/security/certificate.py",
     "celery/utils/text.py",
     "celery/schedules.py",
+    "celery/apps/beat.py",
 ]
 
 [tool.coverage.run]
