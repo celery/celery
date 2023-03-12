@@ -3402,3 +3402,32 @@ class test_stamping_mechanism:
             stamped_fail_sig.stamp(visitor=FixedMonitoringIdStampingVisitor("1234"))
             stamped_fail_sig.apply_async().get()
         assert assertion_result
+
+    @flaky
+    def test_stamps_remain_on_task_retry(self, manager):
+        @task_received.connect
+        def task_received_handler(request, **kwargs):
+            nonlocal assertion_result
+
+            try:
+                assertion_result = all(
+                    [
+                        assertion_result,
+                        all([stamped_header in request.stamps for stamped_header in request.stamped_headers]),
+                        request.stamps["stamp"] == 42,
+                    ]
+                )
+            except Exception:
+                assertion_result = False
+
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {"stamp": 42}
+
+        stamped_task = retry_once.si()
+        stamped_task.stamp(visitor=CustomStampingVisitor())
+        assertion_result = True
+        res = stamped_task.delay()
+        with pytest.raises(TimeoutError):
+            res.get(timeout=2)
+        assert assertion_result

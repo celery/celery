@@ -427,6 +427,20 @@ class CanvasCase:
 
         self.xprod = xprod
 
+        @self.app.task(bind=True, max_retries=3, iterations=0, shared=False)
+        def retry_task(self, arg1, arg2, kwarg=1, max_retries=None, care=True):
+            self.iterations += 1
+            rmax = self.max_retries if max_retries is None else max_retries
+
+            assert repr(self.request)
+            retries = self.request.retries
+            if care and retries >= rmax:
+                return arg1
+            else:
+                raise self.retry(countdown=0, max_retries=rmax)
+
+        self.retry_task = retry_task
+
 
 @pytest.mark.parametrize(
     "stamping_visitor",
@@ -1221,3 +1235,11 @@ class test_stamping_mechanism(CanvasCase):
 
         with subtests.test("sig_2_res has stamped_headers", stamped_headers=["stamp"]):
             assert sorted(sig_2_res._get_task_meta()["stamped_headers"]) == sorted(["stamp"])
+
+    def test_retry_stamping(self):
+        self.retry_task.push_request()
+        self.retry_task.request.stamped_headers = ['stamp']
+        self.retry_task.request.stamps = {'stamp': 'value'}
+        sig = self.retry_task.signature_from_request()
+        assert sig.options['stamped_headers'] == ['stamp']
+        assert sig.options['stamps'] == {'stamp': 'value'}
