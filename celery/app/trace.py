@@ -192,25 +192,23 @@ class TraceInfo:
         """Handle retry exception."""
         # the exception raised is the Retry semi-predicate,
         # and it's exc' attribute is the original exception raised (if any).
-        type_, _, tb = sys.exc_info()
-        try:
-            reason = self.retval
-            einfo = ExceptionInfo((type_, reason, tb))
-            if store_errors:
-                task.backend.mark_as_retry(
-                    req.id, reason.exc, einfo.traceback, request=req,
-                )
-            task.on_retry(reason.exc, req.id, req.args, req.kwargs, einfo)
-            signals.task_retry.send(sender=task, request=req,
-                                    reason=reason, einfo=einfo)
-            info(LOG_RETRY, {
-                'id': req.id,
-                'name': get_task_name(req, task.name),
-                'exc': str(reason),
-            })
-            return einfo
-        finally:
-            del tb
+        reason = self.retval
+        einfo = ExceptionInfo()
+        einfo.exception = get_pickleable_exception(einfo.exception)
+        einfo.type = get_pickleable_etype(einfo.type)
+        if store_errors:
+            task.backend.mark_as_retry(
+                req.id, reason.exc, einfo.traceback, request=req,
+            )
+        task.on_retry(reason.exc, req.id, req.args, req.kwargs, einfo)
+        signals.task_retry.send(sender=task, request=req,
+                                reason=reason, einfo=einfo)
+        info(LOG_RETRY, {
+            'id': req.id,
+            'name': get_task_name(req, task.name),
+            'exc': str(reason),
+        })
+        return einfo
 
     def handle_failure(self, task, req, store_errors=True, call_errbacks=True):
         """Handle exception."""
