@@ -5,7 +5,7 @@ import sys
 import threading
 import warnings
 from collections import UserDict, defaultdict, deque
-from datetime import datetime
+from datetime import datetime, fromisoformat
 from operator import attrgetter
 
 from click.exceptions import Exit
@@ -738,6 +738,9 @@ class Celery:
             if isinstance(expires, datetime):
                 expires_s = (maybe_make_aware(
                     expires) - self.now()).total_seconds()
+            if isinstance(expires, str):
+                expires_s = (maybe_make_aware(
+                    fromisoformat(expires)) - self,now()).total_seconds()
             else:
                 expires_s = expires
 
