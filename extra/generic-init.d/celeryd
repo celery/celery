@@ -77,7 +77,7 @@ _config_sanity() {
         echo
         echo "Resolution:"
         echo "Review the file carefully, and make sure it hasn't been "
-        echo "modified with mailicious intent.  When sure the "
+        echo "modified with malicious intent.  When sure the "
         echo "script is safe to execute with superuser privileges "
         echo "you can change ownership of the script:"
         echo "    $ sudo chown root '$path'"

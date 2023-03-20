@@ -16,14 +16,15 @@ Usage::
    # The shell service is used to run the example.
     (window2)$ celery -A myapp shell
 
-   # Use (copy) the content of shell.py to run the workflow via the
+   # Use (copy) the content of the examples modules to run the workflow via the
    # shell service.
 
-   # Use one of two demo runs via the shell service:
+   # Use one of demo runs via the shell service:
    # 1) run_then_revoke(): Run the workflow and revoke the last task
    #    by its stamped header during its run.
    # 2) revoke_then_run(): Revoke the last task by its stamped header
    #    before its run, then run the workflow.
+   # 3) Any of the examples in examples.py
    #
    # See worker logs for output per defined in task_received_handler().
 """
@@ -37,16 +38,14 @@ from celery.signals import task_received
 
 
 @task_received.connect
-def task_received_handler(
-    sender=None,
-    request=None,
-    signal=None,
-    **kwargs
-):
-    print(f'In {signal.name} for: {repr(request)}')
-    print(f'Found stamps: {request.stamped_headers}')
-    print(json.dumps(request.stamps, indent=4, sort_keys=True))
+def task_received_handler(sender=None, request=None, signal=None, **kwargs):
+    print(f"In {signal.name} for: {repr(request)}")
+    if hasattr(request, "stamped_headers") and request.stamped_headers:
+        print(f"Found stamps: {request.stamped_headers}")
+        print(json.dumps(request.stamps, indent=4, sort_keys=True))
+    else:
+        print("No stamps found")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.start()

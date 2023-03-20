@@ -129,7 +129,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_SECURITY_KEY_PASSWORD``           :setting:`security_key_password`
 ``CELERY_ACKS_LATE``                       :setting:`task_acks_late`
 ``CELERY_ACKS_ON_FAILURE_OR_TIMEOUT``      :setting:`task_acks_on_failure_or_timeout`
-``CELERY_ALWAYS_EAGER``                    :setting:`task_always_eager`
+``CELERY_TASK_ALWAYS_EAGER``               :setting:`task_always_eager`
 ``CELERY_ANNOTATIONS``                     :setting:`task_annotations`
 ``CELERY_COMPRESSION``                     :setting:`task_compression`
 ``CELERY_CREATE_MISSING_QUEUES``           :setting:`task_create_missing_queues`
@@ -792,6 +792,18 @@ Default: Inf
 This is the maximum of retries in case of recoverable exceptions.
 
 
+.. setting:: result_backend_thread_safe
+
+``result_backend_thread_safe``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: False
+
+If True, then the backend object is shared across threads.
+This may be useful for using a shared connection pool instead of creating
+a connection for every thread.
+
+
 .. setting:: result_backend_transport_options
 
 ``result_backend_transport_options``
@@ -1218,8 +1230,9 @@ Use the ``rediss://`` protocol to connect to redis over TLS::
     result_backend = 'rediss://username:password@host:port/db?ssl_cert_reqs=required'
 
 Note that the ``ssl_cert_reqs`` string should be one of ``required``,
-``optional``, or ``none`` (though, for backwards compatibility, the string
-may also be one of ``CERT_REQUIRED``, ``CERT_OPTIONAL``, ``CERT_NONE``).
+``optional``, or ``none`` (though, for backwards compatibility with older Celery versions, the string
+may also be one of ``CERT_REQUIRED``, ``CERT_OPTIONAL``, ``CERT_NONE``, but those values
+only work for Celery, not for Redis directly).
 
 If a Unix socket connection should be used, the URL needs to be in the format:::
 

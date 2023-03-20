@@ -131,6 +131,7 @@ class Backend:
         self.max_sleep_between_retries_ms = conf.get('result_backend_max_sleep_between_retries_ms', 10000)
         self.base_sleep_between_retries_ms = conf.get('result_backend_base_sleep_between_retries_ms', 10)
         self.max_retries = conf.get('result_backend_max_retries', float("inf"))
+        self.thread_safe = conf.get('result_backend_thread_safe', False)
 
         self._pending_results = pending_results_t({}, WeakValueDictionary())
         self._pending_messages = BufferMap(MESSAGE_BUFFER_MAX)
@@ -490,7 +491,7 @@ class Backend:
                     if hasattr(request, 'delivery_info') and
                     request.delivery_info else None,
                 }
-                if getattr(request, 'stamps'):
+                if getattr(request, 'stamps', None):
                     request_meta['stamped_headers'] = request.stamped_headers
                     request_meta.update(request.stamps)
 

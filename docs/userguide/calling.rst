@@ -257,6 +257,24 @@ and timezone information):
 
 .. warning::
 
+    Tasks with `eta` or `countdown` are immediately fetched by the worker
+    and until the scheduled time passes, they reside in the worker's memory.
+    When using those options to schedule lots of tasks for a distant future,
+    those tasks may accumulate in the worker and make a significant impact on
+    the RAM usage.
+
+    Moreover, tasks are not acknowledged until the worker starts executing
+    them. If using Redis as a broker, task will get redelivered when `countdown`
+    exceeds `visibility_timeout` (see :ref:`redis-caveats`).
+
+    Therefore, using `eta` and `countdown` **is not recommended** for
+    scheduling tasks for a distant future. Ideally, use values no longer
+    than several minutes. For longer durations, consider using
+    database-backed periodic tasks, e.g. with :pypi:`django-celery-beat` if
+    using Django (see :ref:`beat-custom-schedulers`).
+
+.. warning::
+
     When using RabbitMQ as a message broker when specifying a ``countdown``
     over 15 minutes, you may encounter the problem that the worker terminates
     with an :exc:`~amqp.exceptions.PreconditionFailed` error will be raised:

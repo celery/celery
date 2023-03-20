@@ -8,7 +8,7 @@ from kombu.utils.uuid import uuid
 
 from celery import current_app, states
 from celery._state import _task_stack
-from celery.canvas import GroupStampingVisitor, _chain, group, signature
+from celery.canvas import _chain, group, signature
 from celery.exceptions import Ignore, ImproperlyConfigured, MaxRetriesExceededError, Reject, Retry
 from celery.local import class_property
 from celery.result import EagerResult, denied_join_result
@@ -125,7 +125,7 @@ class Context:
 
     def as_execution_options(self):
         limit_hard, limit_soft = self.timelimit or (None, None)
-        return {
+        execution_options = {
             'task_id': self.id,
             'root_id': self.root_id,
             'parent_id': self.parent_id,
@@ -145,6 +145,11 @@ class Context:
             'replaced_task_nesting': self.replaced_task_nesting,
             'origin': self.origin,
         }
+        if hasattr(self, 'stamps') and hasattr(self, 'stamped_headers'):
+            if self.stamps is not None and self.stamped_headers is not None:
+                execution_options['stamps'] = self.stamps
+                execution_options['stamped_headers'] = self.stamped_headers
+        return execution_options
 
     @property
     def children(self):
@@ -906,6 +911,7 @@ class Task:
 
         Arguments:
             sig (Signature): signature to replace with.
+            visitor (StampingVisitor): Visitor API object.
 
         Raises:
             ~@Ignore: This is always raised when called in asynchronous context.
@@ -952,42 +958,6 @@ class Task:
         # retain their original task IDs as well
         for t in reversed(self.request.chain or []):
             sig |= signature(t, app=self.app)
-        # Stamping sig with parents groups
-        if self.request.stamps:
-            groups = self.request.stamps.get("groups")
-            sig.stamp(visitor=GroupStampingVisitor(groups=groups, stamped_headers=self.request.stamped_headers))
-            stamped_headers = self.request.stamped_headers.copy()
-            stamps = self.request.stamps.copy()
-            stamped_headers.extend(sig.options.get('stamped_headers', []))
-            stamped_headers = list(set(stamped_headers))
-            stamps.update({
-                stamp: value
-                for stamp, value in sig.options.items() if stamp in sig.options.get('stamped_headers', [])
-            })
-            sig.options['stamped_headers'] = stamped_headers
-            sig.options.update(stamps)
-
-            # Collecting all of the links (callback/errback) to stamp them
-            links = sig.options['link'] if 'link' in sig.options else []
-            links.extend(sig.options['link_error'] if 'link_error' in sig.options else [])
-
-            if hasattr(sig, "tasks"):
-                tasks = sig.tasks
-                if isinstance(tasks, group):
-                    tasks = tasks.tasks
-                for task in tasks:
-                    task.options['stamped_headers'] = stamped_headers
-                    task.options.update(stamps)
-                    links.extend(task.options['link'] if 'link' in task.options else [])
-                    links.extend(task.options['link_error'] if 'link_error' in task.options else [])
-
-            for link in links:
-                link_stamped_headers = stamped_headers.copy()
-                link_stamped_headers.extend(link['options'].get('stamped_headers', []))
-                link_stamped_headers = list(set(link_stamped_headers))
-                link['options']['stamped_headers'] = link_stamped_headers
-                link['options'].update(stamps)
-
         return self.on_replace(sig)
 
     def add_to_chord(self, sig, lazy=False):

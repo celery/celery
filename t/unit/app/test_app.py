@@ -1052,6 +1052,21 @@ class test_App:
         uuid.UUID(thread_oid)
         assert main_oid != thread_oid
 
+    def test_thread_backend_thread_safe(self):
+        # Should share the backend object across threads
+        from concurrent.futures import ThreadPoolExecutor
+
+        with self.Celery() as app:
+            app.conf.update(result_backend_thread_safe=True)
+            main_backend = app.backend
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(lambda: app.backend)
+
+            thread_backend = future.result()
+            assert isinstance(main_backend, Backend)
+            assert isinstance(thread_backend, Backend)
+            assert main_backend is thread_backend
+
 
 class test_defaults:
 

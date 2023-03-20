@@ -125,6 +125,18 @@ class test_Backend_interface:
         assert meta['kwargs'] == kwargs
         assert meta['queue'] == 'celery'
 
+    def test_get_result_meta_stamps_attribute_error(self):
+        class Request:
+            pass
+        self.app.conf.result_extended = True
+        b1 = BaseBackend(self.app)
+        meta = b1._get_result_meta(result={'fizz': 'buzz'},
+                                   state=states.SUCCESS, traceback=None,
+                                   request=Request())
+        assert meta['status'] == states.SUCCESS
+        assert meta['result'] == {'fizz': 'buzz'}
+        assert meta['traceback'] is None
+
     def test_get_result_meta_encoded(self):
         self.app.conf.result_extended = True
         b1 = BaseBackend(self.app)
@@ -1219,3 +1231,15 @@ class test_backend_retries:
         finally:
             self.app.conf.result_backend_always_retry = prev
             self.app.conf.result_backend_max_retries = prev_max_retries
+
+    def test_result_backend_thread_safe(self):
+        # Should identify the backend as thread safe
+        self.app.conf.result_backend_thread_safe = True
+        b = BaseBackend(app=self.app)
+        assert b.thread_safe is True
+
+    def test_result_backend_not_thread_safe(self):
+        # Should identify the backend as not being thread safe
+        self.app.conf.result_backend_thread_safe = False
+        b = BaseBackend(app=self.app)
+        assert b.thread_safe is False

@@ -13,7 +13,6 @@ from pytz import timezone as _timezone
 from pytz import utc
 
 from .functional import dictfilter
-from .iso8601 import parse_iso8601
 from .text import pluralize
 
 __all__ = (
@@ -257,7 +256,7 @@ def maybe_iso8601(dt):
         return
     if isinstance(dt, datetime):
         return dt
-    return parse_iso8601(dt)
+    return datetime.fromisoformat(dt)
 
 
 def is_naive(dt):
@@ -305,10 +304,11 @@ def to_utc(dt):
     return make_aware(dt, timezone.utc)
 
 
-def maybe_make_aware(dt, tz=None):
+def maybe_make_aware(dt, tz=None, naive_as_utc=True):
     """Convert dt to aware datetime, do nothing if dt is already aware."""
     if is_naive(dt):
-        dt = to_utc(dt)
+        if naive_as_utc:
+            dt = to_utc(dt)
         return localize(
             dt, timezone.utc if tz is None else timezone.tz_or_local(tz),
         )
