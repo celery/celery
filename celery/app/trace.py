@@ -219,7 +219,7 @@ class TraceInfo:
             exc = self.retval
             # make sure we only send pickleable exceptions back to parent.
             einfo = ExceptionInfo()
-            einfo.exception = get_pickleable_exception(einfo.exception)
+            einfo.exception.exc = get_pickleable_exception(einfo.exception.exc)
             einfo.type = get_pickleable_etype(einfo.type)
 
             task.backend.mark_as_failure(
