@@ -1067,13 +1067,13 @@ class test_App:
             assert isinstance(thread_backend, Backend)
             assert main_backend is thread_backend
 
-
     def test_send_task_expire_as_string(self):
         try:
             self.app.send_task('foo', (1, 2), expires='2023-03-16T17:21:20.663973')
         except TypeError as e:
             pytest.fail(f'raise unexcepted error {e}')
-    
+
+
 class test_defaults:
 
     def test_strtobool(self):
