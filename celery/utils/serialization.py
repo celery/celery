@@ -147,12 +147,15 @@ class UnpickleableExceptionWrapper(Exception):
 
     @classmethod
     def from_exception(cls, exc):
-        return cls(
+        res = cls(
             exc.__class__.__module__,
             exc.__class__.__name__,
             getattr(exc, 'args', []),
             safe_repr(exc)
-        ).with_traceback(exc.__traceback__)
+        )
+        if hasattr(exc, "__traceback__"):
+            res = res.with_traceback(exc.__traceback__)
+        return res
 
 
 def get_pickleable_exception(exc):
