@@ -217,7 +217,13 @@ class TraceInfo:
         orig_exc = self.retval
 
         exc = get_pickleable_exception(orig_exc)
+        if exc.__traceback__ is None:
+            # `get_pickleable_exception` may have created a new exception without
+            # a traceback.
+            _, _, exc.__traceback__ = sys.exc_info()
+
         exc_type = get_pickleable_etype(orig_exc)
+
         # make sure we only send pickleable exceptions back to parent.
         einfo = ExceptionInfo(exc_info=(exc_type, exc, exc.__traceback__))
 
