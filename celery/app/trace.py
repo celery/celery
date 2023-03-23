@@ -214,9 +214,10 @@ class TraceInfo:
 
     def handle_failure(self, task, req, store_errors=True, call_errbacks=True):
         """Handle exception."""
+        orig_exc = self.retval
 
-        exc = get_pickleable_exception(self.retval)
-        exc_type = get_pickleable_etype(self.retval)
+        exc = get_pickleable_exception(orig_exc)
+        exc_type = get_pickleable_etype(orig_exc)
         # make sure we only send pickleable exceptions back to parent.
         einfo = ExceptionInfo(exc_info=(exc_type, exc, exc.__traceback__))
 
