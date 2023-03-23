@@ -356,14 +356,19 @@ class test_tasks:
         assert result.get() == 'bar'
         assert result.status == 'SUCCESS'
 
-    def test_retry_with_unpickleable_exception_doesnt_fail(self, manager):
-        # TODO: Docstring
-        # Tests when max. retries is reached
+    def test_retry_with_unpickleable_exception(self, manager):
+        """Test a task that retries with an unpickleable exception.
+
+        We expect to be able to fetch the result (exception) correctly.
+        """
+
         job = retry_unpickleable.delay(
             "foo",
             "bar",
             retry_kwargs={"countdown": 10, "max_retries": 1},
         )
+
+        # Wait for the task to raise the Retry exception
         tik = time.monotonic()
         while time.monotonic() < tik + 5:
             status = job.status
@@ -375,15 +380,22 @@ class test_tasks:
 
         assert status == 'RETRY'
 
+        # Get the exception
         res = job.result
         assert job.status == 'RETRY'  # make sure that it wasn't completed yet
 
+        # Check it
         assert isinstance(res, UnpickleableExceptionWrapper)
         assert res.exc_cls_name == "UnpickleableException"
         assert res.exc_args == ("foo",)
 
+        job.revoke()
+
     def test_fail_with_unpickleable_exception(self, manager):
-        # TODO: Docstring
+        """Test a task that fails with an unpickleable exception.
+
+        We expect to be able to fetch the result (exception) correctly.
+        """
         result = fail_unpickleable.delay("foo", "bar")
 
         with pytest.raises(UnpickleableExceptionWrapper) as exc_info:

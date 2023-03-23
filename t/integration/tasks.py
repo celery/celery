@@ -213,7 +213,7 @@ def retry(self, return_value=None):
 
 @shared_task(bind=True, default_retry_delay=1)
 def retry_unpickleable(self, foo, bar, *, retry_kwargs):
-    # TODO: docstring
+    """Task that fails with an unpickleable exception and is retried."""
     raise self.retry(exc=UnpickleableException(foo, bar), **retry_kwargs)
 
 
@@ -347,7 +347,7 @@ def fail(*args):
 
 @shared_task()
 def fail_unpickleable(foo, bar):
-    # TODO: docstring
+    """Task that raises an unpickleable exception."""
     raise UnpickleableException(foo, bar)
 
 
