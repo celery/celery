@@ -738,6 +738,9 @@ class Celery:
             if isinstance(expires, datetime):
                 expires_s = (maybe_make_aware(
                     expires) - self.now()).total_seconds()
+            elif isinstance(expires, str):
+                expires_s = (maybe_make_aware(
+                    datetime.fromisoformat(expires)) - self.now()).total_seconds()
             else:
                 expires_s = expires
 
