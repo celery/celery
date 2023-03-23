@@ -211,6 +211,12 @@ def retry(self, return_value=None):
     raise self.retry(exc=ExpectedException(), countdown=5)
 
 
+@shared_task(bind=True, default_retry_delay=1)
+def retry_unpickleable(self, foo, bar, *, retry_kwargs):
+    # TODO: docstring
+    raise self.retry(exc=UnpickleableException(foo, bar), **retry_kwargs)
+
+
 @shared_task(bind=True, expires=120.0, max_retries=1)
 def retry_once(self, *args, expires=None, max_retries=1, countdown=0.1):
     """Task that fails and is retried. Returns the number of retries."""
@@ -319,11 +325,30 @@ class ExpectedException(Exception):
         return hash(self.args)
 
 
+class UnpickleableException(Exception):
+    """Exception that doesn't survive a pickling roundtrip (dump + load)."""
+    def __init__(self, foo, bar=None):
+        if bar is None:
+            # We define bar with a default value in the signature so that
+            # it's easier to add a break point here to find out when the
+            # exception is being unpickled.
+            raise TypeError("bar must be provided")
+
+        super().__init__(foo)
+        self.bar = bar
+
+
 @shared_task
 def fail(*args):
     """Task that simply raises ExpectedException."""
     args = ("Task expected to fail",) + args
     raise ExpectedException(*args)
+
+
+@shared_task()
+def fail_unpickleable(foo, bar):
+    # TODO: docstring
+    raise UnpickleableException(foo, bar)
 
 
 @shared_task(bind=True)
