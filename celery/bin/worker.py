@@ -300,8 +300,11 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
            **kwargs):
     """Start worker instance.
 
+    \b
     Examples
     --------
+
+    \b
     $ celery --app=proj worker -l INFO
     $ celery -A proj worker -l INFO -Q hipri,lopri
     $ celery -A proj worker --concurrency=4
