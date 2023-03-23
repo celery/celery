@@ -916,6 +916,33 @@ class test_App:
         assert 'add1' in self.app.conf.beat_schedule
         assert 'add2' in self.app.conf.beat_schedule
 
+    def test_add_periodic_task_expected_override(self):
+
+        @self.app.task
+        def add(x, y):
+            pass
+        sig = add.s(2, 2)
+        self.app.add_periodic_task(10, sig, name='add1', expires=3)
+        self.app.add_periodic_task(20, sig, name='add1', expires=3)
+        assert 'add1' in self.app.conf.beat_schedule
+        assert len(self.app.conf.beat_schedule) == 1
+
+    def test_add_periodic_task_unexpected_override(self, caplog):
+
+        @self.app.task
+        def add(x, y):
+            pass
+        sig = add.s(2, 2)
+        self.app.add_periodic_task(10, sig, expires=3)
+        self.app.add_periodic_task(20, sig, expires=3)
+
+        assert len(self.app.conf.beat_schedule) == 1
+        assert caplog.records[0].message == (
+            "Periodic task key='t.unit.app.test_app.add(2, 2)' shadowed a"
+            " previous unnamed periodic task. Pass a name kwarg to"
+            " add_periodic_task to silence this warning."
+        )
+
     @pytest.mark.masked_modules('multiprocessing.util')
     def test_pool_no_multiprocessing(self, mask_modules):
         pool = self.app.pool

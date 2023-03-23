@@ -1006,7 +1006,8 @@ class Celery:
         # load lazy periodic tasks
         pending_beat = self._pending_periodic_tasks
         while pending_beat:
-            self._add_periodic_task(*pending_beat.popleft())
+            periodic_task_args, periodic_task_kwargs = pending_beat.popleft()
+            self._add_periodic_task(*periodic_task_args, **periodic_task_kwargs)
 
         self.on_after_configure.send(sender=self, source=self._conf)
         return self._conf
@@ -1026,12 +1027,19 @@ class Celery:
 
     def add_periodic_task(self, schedule, sig,
                           args=(), kwargs=(), name=None, **opts):
+        """
+        Add a periodic task to beat schedule.
+
+        Celery beat store tasks based on `sig` or `name` if provided. Adding the
+        same signature twice make the second task override the first one. To
+        avoid the override, use distinct `name` for them.
+        """
         key, entry = self._sig_to_periodic_task_entry(
             schedule, sig, args, kwargs, name, **opts)
         if self.configured:
-            self._add_periodic_task(key, entry)
+            self._add_periodic_task(key, entry, name=name)
         else:
-            self._pending_periodic_tasks.append((key, entry))
+            self._pending_periodic_tasks.append([(key, entry), {"name": name}])
         return key
 
     def _sig_to_periodic_task_entry(self, schedule, sig,
@@ -1048,7 +1056,13 @@ class Celery:
             'options': dict(sig.options, **opts),
         }
 
-    def _add_periodic_task(self, key, entry):
+    def _add_periodic_task(self, key, entry, name=None):
+        if name is None and key in self._conf.beat_schedule:
+            logger.warning(
+                f"Periodic task key='{key}' shadowed a previous unnamed periodic task."
+                " Pass a name kwarg to add_periodic_task to silence this warning."
+            )
+
         self._conf.beat_schedule[key] = entry
 
     def create_task_cls(self):
