@@ -1024,6 +1024,13 @@ class Celery:
 
     def add_periodic_task(self, schedule, sig,
                           args=(), kwargs=(), name=None, **opts):
+        """
+        Add a periodic task to beat schedule.
+
+        Celery beat store tasks based on `sig` or `name` if provided. Adding the
+        same signature twice make the second task override the first one. To
+        avoid the override, use distinct `name` for them.
+        """
         key, entry = self._sig_to_periodic_task_entry(
             schedule, sig, args, kwargs, name, **opts)
         if self.configured:
