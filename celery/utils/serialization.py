@@ -128,7 +128,9 @@ class UnpickleableExceptionWrapper(Exception):
     exc_args = None
 
     def __init__(self, exc_module, exc_cls_name, exc_args, text=None):
-        safe_exc_args = ensure_serializable(exc_args, pickle.dumps)
+        safe_exc_args = ensure_serializable(
+            exc_args, lambda v: pickle.loads(pickle.dumps(v))
+        )
         self.exc_module = exc_module
         self.exc_cls_name = exc_cls_name
         self.exc_args = safe_exc_args
