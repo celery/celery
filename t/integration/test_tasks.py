@@ -333,7 +333,9 @@ class test_tasks:
         """Tests retrying of task."""
         # Tests when max. retries is reached
         result = retry.delay()
-        for _ in range(5):
+
+        tik = time.monotonic()
+        while time.monotonic() < tik + 5:
             status = result.status
             if status != 'PENDING':
                 break
