@@ -568,6 +568,7 @@ class test_task_retries(TasksCase):
         assert self.retry_task_unpickleable_exc.iterations == 3
 
         exc_wrapper = exc_info.value
+        assert exc_wrapper.exc_cls_name == "UnpickleableException"
         assert exc_wrapper.exc_args == ("foo", )
 
     def test_max_retries_exceeded(self):

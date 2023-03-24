@@ -214,30 +214,33 @@ class TraceInfo:
 
     def handle_failure(self, task, req, store_errors=True, call_errbacks=True):
         """Handle exception."""
-        _, _, tb = sys.exc_info()
-        try:
-            exc = self.retval
-            # make sure we only send pickleable exceptions back to parent.
-            einfo = ExceptionInfo()
-            einfo.exception.exc = get_pickleable_exception(einfo.exception.exc)
-            einfo.type = get_pickleable_etype(einfo.type)
+        orig_exc = self.retval
 
-            task.backend.mark_as_failure(
-                req.id, exc, einfo.traceback,
-                request=req, store_result=store_errors,
-                call_errbacks=call_errbacks,
-            )
+        exc = get_pickleable_exception(orig_exc)
+        if exc.__traceback__ is None:
+            # `get_pickleable_exception` may have created a new exception without
+            # a traceback.
+            _, _, exc.__traceback__ = sys.exc_info()
 
-            task.on_failure(exc, req.id, req.args, req.kwargs, einfo)
-            signals.task_failure.send(sender=task, task_id=req.id,
-                                      exception=exc, args=req.args,
-                                      kwargs=req.kwargs,
-                                      traceback=tb,
-                                      einfo=einfo)
-            self._log_error(task, req, einfo)
-            return einfo
-        finally:
-            del tb
+        exc_type = get_pickleable_etype(orig_exc)
+
+        # make sure we only send pickleable exceptions back to parent.
+        einfo = ExceptionInfo(exc_info=(exc_type, exc, exc.__traceback__))
+
+        task.backend.mark_as_failure(
+            req.id, exc, einfo.traceback,
+            request=req, store_result=store_errors,
+            call_errbacks=call_errbacks,
+        )
+
+        task.on_failure(exc, req.id, req.args, req.kwargs, einfo)
+        signals.task_failure.send(sender=task, task_id=req.id,
+                                  exception=exc, args=req.args,
+                                  kwargs=req.kwargs,
+                                  traceback=exc.__traceback__,
+                                  einfo=einfo)
+        self._log_error(task, req, einfo)
+        return einfo
 
     def _log_error(self, task, req, einfo):
         eobj = einfo.exception = get_pickled_exception(einfo.exception)
