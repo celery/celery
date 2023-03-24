@@ -349,11 +349,15 @@ class test_tasks:
 
         # Tests when task is retried but after returns correct result
         result = retry.delay(return_value='bar')
-        for _ in range(5):
+
+        tik = time.monotonic()
+        while time.monotonic() < tik + 5:
             status = result.status
             if status != 'PENDING':
                 break
-            sleep(1)
+            sleep(0.1)
+        else:
+            raise AssertionError("Timeout while waiting for the task to be retried")
         assert status == 'RETRY'
         assert result.get() == 'bar'
         assert result.status == 'SUCCESS'
