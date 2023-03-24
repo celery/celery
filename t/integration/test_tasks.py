@@ -351,7 +351,7 @@ class test_tasks:
         result = retry.delay(return_value='bar')
 
         tik = time.monotonic()
-        while time.monotonic() < tik + 50:
+        while time.monotonic() < tik + 5:
             status = result.status
             if status != 'PENDING':
                 break
