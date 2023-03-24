@@ -355,7 +355,7 @@ class test_tasks:
             status = result.status
             if status != 'PENDING':
                 break
-            sleep(1)
+            sleep(0.1)
         else:
             raise AssertionError("Timeout while waiting for the task to be retried")
         assert status == 'RETRY'
