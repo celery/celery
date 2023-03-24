@@ -3428,6 +3428,5 @@ class test_stamping_mechanism:
         stamped_task.stamp(visitor=CustomStampingVisitor())
         assertion_result = True
         res = stamped_task.delay()
-        with pytest.raises(TimeoutError):
-            res.get(timeout=2)
+        res.get(timeout=TIMEOUT)
         assert assertion_result
