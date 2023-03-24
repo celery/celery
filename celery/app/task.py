@@ -147,8 +147,9 @@ class Context:
         }
         if hasattr(self, 'stamps') and hasattr(self, 'stamped_headers'):
             if self.stamps is not None and self.stamped_headers is not None:
-                execution_options['stamps'] = self.stamps
                 execution_options['stamped_headers'] = self.stamped_headers
+                for k, v in self.stamps.items():
+                    execution_options[k] = v
         return execution_options
 
     @property
