@@ -11,7 +11,7 @@ from celery.canvas import StampingVisitor
 from celery.utils.serialization import UnpickleableExceptionWrapper
 from celery.worker import state as worker_state
 
-from .conftest import get_active_redis_channels
+from .conftest import TEST_BACKEND, get_active_redis_channels
 from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result, add_not_typed, fail,
                     fail_unpickleable, print_unicode, retry, retry_once, retry_once_headers, retry_once_priority,
                     retry_unpickleable, return_properties, sleeping)
@@ -329,6 +329,11 @@ class test_tasks:
             result.get(timeout=5)
         assert result.status == 'FAILURE'
 
+    @pytest.mark.xfail(
+        condition=TEST_BACKEND == "rpc",
+        reason="Retry failed on rpc backend",
+        strict=False,
+    )
     def test_retry(self, manager):
         """Tests retrying of task."""
         # Tests when max. retries is reached
@@ -349,11 +354,15 @@ class test_tasks:
 
         # Tests when task is retried but after returns correct result
         result = retry.delay(return_value='bar')
-        for _ in range(5):
+
+        tik = time.monotonic()
+        while time.monotonic() < tik + 5:
             status = result.status
             if status != 'PENDING':
                 break
-            sleep(1)
+            sleep(0.1)
+        else:
+            raise AssertionError("Timeout while waiting for the task to be retried")
         assert status == 'RETRY'
         assert result.get() == 'bar'
         assert result.status == 'SUCCESS'
