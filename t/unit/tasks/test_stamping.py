@@ -1242,4 +1242,4 @@ class test_stamping_mechanism(CanvasCase):
         self.retry_task.request.stamps = {'stamp': 'value'}
         sig = self.retry_task.signature_from_request()
         assert sig.options['stamped_headers'] == ['stamp']
-        assert sig.options['stamps'] == {'stamp': 'value'}
+        assert sig.options['stamp'] == 'value'
