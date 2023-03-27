@@ -12,9 +12,10 @@ else:
     from backports.zoneinfo import ZoneInfo
 
 from celery.utils.iso8601 import parse_iso8601
-from celery.utils.time import (LocalTimezone, delta_resolution, ffwd, get_exponential_backoff_interval,
-                               humanize_seconds, localize, make_aware, maybe_iso8601, maybe_make_aware,
-                               maybe_timedelta, rate, remaining, timezone, utcoffset)
+from celery.utils.time import (
+    LocalTimezone, delta_resolution, ffwd, get_exponential_backoff_interval,
+    humanize_seconds, localize, make_aware, maybe_iso8601, maybe_make_aware,
+    maybe_timedelta, rate, remaining, timezone, utcoffset)
 
 
 class test_LocalTimezone:
@@ -187,15 +188,13 @@ class test_timezone:
 
 class test_make_aware:
 
-    def test_tz_without_localize(self):
+    def test_standard_tz(self):
         tz = tzinfo()
-        assert not hasattr(tz, 'localize')
         wtz = make_aware(datetime.utcnow(), tz)
         assert wtz.tzinfo == tz
 
     def test_tz_when_zoneinfo(self):
         tz = ZoneInfo('US/Eastern')
-        assert not hasattr(tz, 'localize')
         wtz = make_aware(datetime.utcnow(), tz)
         assert wtz.tzinfo == tz
 
@@ -215,14 +214,13 @@ class test_make_aware:
 
 class test_localize:
 
-    def test_tz_without_normalize(self):
+    def test_standard_tz(self):
         class tzz(tzinfo):
 
             def utcoffset(self, dt):
                 return None  # Mock no utcoffset specified
 
         tz = tzz()
-        assert not hasattr(tz, 'normalize')
         assert localize(make_aware(datetime.utcnow(), tz), tz)
 
     @patch('dateutil.tz.datetime_ambiguous')
@@ -233,6 +231,24 @@ class test_localize:
 
         datetime_ambiguous_mock.return_value = True
         tz2 = ZoneInfo("US/Eastern")
+        assert localize(make_aware(datetime.utcnow(), tz2), tz2)
+
+    @patch('dateutil.tz.datetime_ambiguous')
+    def test_when_is_ambiguous(self, datetime_ambiguous_mock):
+        class tzz(tzinfo):
+
+            def utcoffset(self, dt):
+                return None  # Mock no utcoffset specified
+
+            def is_ambiguous(self, dt):
+                return True
+
+        datetime_ambiguous_mock.return_value = False
+        tz = tzz()
+        assert localize(make_aware(datetime.utcnow(), tz), tz)
+
+        datetime_ambiguous_mock.return_value = True
+        tz2 = tzz()
         assert localize(make_aware(datetime.utcnow(), tz2), tz2)
 
     def test_localize_changes_utc_dt(self):

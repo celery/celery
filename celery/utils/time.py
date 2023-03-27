@@ -275,10 +275,9 @@ def make_aware(dt, tz):
     """Set timezone for a :class:`~datetime.datetime` object."""
     dt = dt.replace(tzinfo=tz)
     # We must check for the dt being an instance of ZoneInfo
-    # since it must implement utcoffset() for datetime_ambiguous() to work.
-    if isinstance(tz, ZoneInfo) and dateutil_tz.datetime_ambiguous(dt):
-        dt = min(dt.replace(tzinfo=tz, fold=0),
-                 dt.replace(tzinfo=tz, fold=1))
+    # since it must implement utcoffset() and dst() for datetime_ambiguous() to work.
+    if (isinstance(tz, ZoneInfo) or hasattr(tz, "is_ambiguous")) and dateutil_tz.datetime_ambiguous(dt):
+        dt = min(dt.replace(fold=0), dt.replace(fold=1))
     return dt
 
 
