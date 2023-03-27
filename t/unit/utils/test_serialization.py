@@ -7,14 +7,13 @@ from unittest.mock import Mock
 import pytest
 from kombu import Queue
 
-from celery.utils.serialization import (
-    STRTOBOOL_DEFAULT_TABLE, UnpickleableExceptionWrapper, ensure_serializable,
-    get_pickleable_etype, jsonify, strtobool)
+from celery.utils.serialization import (STRTOBOOL_DEFAULT_TABLE, UnpickleableExceptionWrapper, ensure_serializable,
+                                        get_pickleable_etype, jsonify, strtobool)
 
 if sys.version_info >= (3, 9):
-    from zoneinfo import ZoneInfo  # noqa
+    from zoneinfo import ZoneInfo
 else:
-    from backports.zoneinfo import ZoneInfo  # noqa
+    from backports.zoneinfo import ZoneInfo
 
 
 class test_AAPickle:

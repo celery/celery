@@ -14,7 +14,7 @@ from celery.utils.objects import Bunch
 if sys.version_info >= (3, 9):
     from zoneinfo import ZoneInfo
 else:
-    from backports.zoneinfo import ZoneInfo  # noqa
+    from backports.zoneinfo import ZoneInfo
 
 
 class MockShelve(dict):

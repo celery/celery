@@ -18,7 +18,7 @@ import sys
 if sys.version_info >= (3, 9):
     from zoneinfo import ZoneInfo
 else:
-    from backports.zoneinfo import ZoneInfo  # noqa
+    from backports.zoneinfo import ZoneInfo
 
 from celery import states, uuid
 from celery.backends.mongodb import Binary, InvalidDocument, MongoBackend
