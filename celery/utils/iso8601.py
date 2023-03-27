@@ -7,7 +7,6 @@ Modified to match the behavior of ``dateutil.parser``:
 
     - raise :exc:`ValueError` instead of ``ParseError``
     - return naive :class:`~datetime.datetime` by default
-    - uses :class:`pytz.FixedOffset`
 
 This is the original License:
 
@@ -33,9 +32,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 import re
-from datetime import datetime
-
-from pytz import FixedOffset
+from datetime import datetime, timezone
 
 from celery.utils.deprecated import warn
 
@@ -62,7 +59,7 @@ def parse_iso8601(datestring):
     groups = m.groupdict()
     tz = groups['timezone']
     if tz == 'Z':
-        tz = FixedOffset(0)
+        tz = timezone(offset=0)
     elif tz:
         m = TIMEZONE_REGEX.match(tz)
         prefix, hours, minutes = m.groups()
@@ -70,7 +67,8 @@ def parse_iso8601(datestring):
         if prefix == '-':
             hours = -hours
             minutes = -minutes
-        tz = FixedOffset(minutes + hours * 60)
+        offset = minutes + hours * 60
+        tz = timezone(offset)
     return datetime(
         int(groups['year']), int(groups['month']),
         int(groups['day']), int(groups['hour'] or 0),

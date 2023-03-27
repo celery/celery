@@ -99,10 +99,6 @@ that these improvements will be merged back into Python one day.
 It's also used for compatibility with older Python versions
 that don't come with the multiprocessing module.
 
-- :pypi:`pytz`
-
-The pytz module provides timezone definitions and related tools.
-
 kombu
 ~~~~~
 
