@@ -1,3 +1,4 @@
+import sys
 import time
 from contextlib import contextmanager
 from datetime import datetime, timedelta
@@ -6,8 +7,9 @@ from unittest import TestCase
 from unittest.mock import Mock
 
 import pytest
-import sys
+
 from celery.schedules import ParseException, crontab, crontab_parser, schedule, solar
+
 if sys.version_info >= (3, 9):
     from zoneinfo import ZoneInfo
 else:

@@ -1,4 +1,5 @@
 import errno
+import sys
 from datetime import datetime, timedelta
 from pickle import dumps, loads
 from unittest.mock import Mock, call, patch
@@ -9,7 +10,7 @@ from celery import __version__, beat, uuid
 from celery.beat import BeatLazyFunc, event_t
 from celery.schedules import crontab, schedule
 from celery.utils.objects import Bunch
-import sys
+
 if sys.version_info >= (3, 9):
     from zoneinfo import ZoneInfo
 else:
