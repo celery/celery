@@ -92,7 +92,8 @@ class LocalTimezone(tzinfo):
         try:
             tz = self._offset_cache[offset]
         except KeyError:
-            tz = self._offset_cache[offset] = datetime.timezone(offset)
+            tz = self._offset_cache[offset] = datetime.timezone(
+                timedelta(minutes=offset))
         return tz.fromutc(dt.replace(tzinfo=tz))
 
     def _isdst(self, dt):
@@ -129,7 +130,7 @@ class _Zone:
 
     def get_timezone(self, zone):
         if isinstance(zone, str):
-            return _timezone(zone)
+            return ZoneInfo(zone)
         return zone
 
     @cached_property

@@ -32,7 +32,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from celery.utils.deprecated import warn
 
@@ -59,7 +59,7 @@ def parse_iso8601(datestring):
     groups = m.groupdict()
     tz = groups['timezone']
     if tz == 'Z':
-        tz = timezone(offset=0)
+        tz = timezone(timedelta(0))
     elif tz:
         m = TIMEZONE_REGEX.match(tz)
         prefix, hours, minutes = m.groups()
@@ -67,8 +67,7 @@ def parse_iso8601(datestring):
         if prefix == '-':
             hours = -hours
             minutes = -minutes
-        offset = minutes + hours * 60
-        tz = timezone(offset)
+        tz = timezone(timedelta(minutes=minutes, hours=hours))
     return datetime(
         int(groups['year']), int(groups['month']),
         int(groups['day']), int(groups['hour'] or 0),
