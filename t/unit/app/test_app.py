@@ -2,6 +2,7 @@ import gc
 import itertools
 import os
 import ssl
+import sys
 import uuid
 from copy import deepcopy
 from datetime import datetime, timedelta
@@ -26,7 +27,7 @@ from celery.utils.objects import Bunch
 from celery.utils.serialization import pickle
 from celery.utils.time import localize, timezone, to_utc
 from t.unit import conftest
-import sys
+
 if sys.version_info >= (3, 9):
     from zoneinfo import ZoneInfo
 else:
