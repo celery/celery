@@ -271,7 +271,7 @@ class test_localize:
         assert localized_utc_offset == local_zone.utcoffset(local_time)
 
 
-@ pytest.mark.parametrize('s,expected', [
+@pytest.mark.parametrize('s,expected', [
     (999, 999),
     (7.5, 7.5),
     ('2.5/s', 2.5),
@@ -312,7 +312,7 @@ class test_utcoffset:
 
 class test_get_exponential_backoff_interval:
 
-    @ patch('random.randrange', lambda n: n - 2)
+    @patch('random.randrange', lambda n: n - 2)
     def test_with_jitter(self):
         assert get_exponential_backoff_interval(
             factor=4,
@@ -337,7 +337,7 @@ class test_get_exponential_backoff_interval:
             maximum=maximum_boundary
         ) == maximum_boundary
 
-    @ patch('random.randrange', lambda n: n - 1)
+    @patch('random.randrange', lambda n: n - 1)
     def test_negative_values(self):
         assert get_exponential_backoff_interval(
             factor=-40,
@@ -345,7 +345,7 @@ class test_get_exponential_backoff_interval:
             maximum=100
         ) == 0
 
-    @ patch('random.randrange')
+    @patch('random.randrange')
     def test_valid_random_range(self, rr):
         rr.return_value = 0
         maximum = 100
