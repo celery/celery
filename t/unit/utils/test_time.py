@@ -1,8 +1,9 @@
+import sys
 from datetime import datetime, timedelta, tzinfo
 from unittest.mock import Mock, patch
 
 import pytest
-import sys
+
 if sys.version_info >= (3, 9):
     from zoneinfo import ZoneInfo
 else:
