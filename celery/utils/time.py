@@ -5,7 +5,9 @@ import random
 import sys
 import time as _time
 from calendar import monthrange
-from datetime import date, datetime, timedelta, tzinfo, timezone as datetime_timezone
+from datetime import date, datetime, timedelta
+from datetime import timezone as datetime_timezone
+from datetime import tzinfo
 
 from dateutil import tz as dateutil_tz
 from kombu.utils.functional import reprcall
