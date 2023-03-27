@@ -5,13 +5,20 @@ from unittest.mock import ANY, MagicMock, Mock, patch, sentinel
 import dns.version
 import pymongo
 import pytest
-import pytz
 from kombu.exceptions import EncodeError
 
 try:
     from pymongo.errors import ConfigurationError
 except ImportError:
     ConfigurationError = None
+
+
+import sys
+if sys.version_info >= (3, 9):
+    from zoneinfo import ZoneInfo
+else:
+    from backports.zoneinfo import ZoneInfo
+
 
 from celery import states, uuid
 from celery.backends.mongodb import Binary, InvalidDocument, MongoBackend
@@ -662,7 +669,7 @@ SUCCESS_RESULT_TEST_DATA = [
         "serializers": ["bson", "pickle", "yaml"],
     },
     {
-        "result": datetime.datetime(2000, 1, 1, 0, 0, 0, 0, tzinfo=pytz.utc),
+        "result": datetime.datetime(2000, 1, 1, 0, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
         "serializers": ["pickle", "yaml"],
     },
     # custom types

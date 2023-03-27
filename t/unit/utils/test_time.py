@@ -6,9 +6,10 @@ import pytz
 from pytz import AmbiguousTimeError
 
 from celery.utils.iso8601 import parse_iso8601
-from celery.utils.time import (LocalTimezone, delta_resolution, ffwd, get_exponential_backoff_interval,
-                               humanize_seconds, localize, make_aware, maybe_iso8601, maybe_make_aware,
-                               maybe_timedelta, rate, remaining, timezone, utcoffset)
+from celery.utils.time import (
+    LocalTimezone, delta_resolution, ffwd, get_exponential_backoff_interval,
+    humanize_seconds, localize, make_aware, maybe_iso8601, maybe_make_aware,
+    maybe_timedelta, rate, remaining, timezone, utcoffset)
 
 
 class test_LocalTimezone:
@@ -138,11 +139,19 @@ def test_remaining():
     start (i.e. there is not an hour diff due to DST).
     In 2019, DST starts on March 10
     """
-    start = eastern_tz.localize(datetime(month=3, day=9, year=2019, hour=10, minute=0))         # EST
-    now = eastern_tz.localize(datetime(day=11, month=3, year=2019, hour=1, minute=0))           # EDT
-    delta = ffwd(hour=10, year=2019, microsecond=0, minute=0, second=0, day=11, weeks=0, month=3)
+    start = eastern_tz.localize(
+        datetime(
+            month=3, day=9, year=2019, hour=10,
+            minute=0))  # EST
+    now = eastern_tz.localize(
+        datetime(
+            day=11, month=3, year=2019, hour=1,
+            minute=0))  # EDT
+    delta = ffwd(hour=10, year=2019, microsecond=0, minute=0,
+                 second=0, day=11, weeks=0, month=3)
     # `next_actual_time` is the next time to run (derived from delta)
-    next_actual_time = eastern_tz.localize(datetime(day=11, month=3, year=2019, hour=10, minute=0))         # EDT
+    next_actual_time = eastern_tz.localize(
+        datetime(day=11, month=3, year=2019, hour=10, minute=0))  # EDT
     assert start.tzname() == "EST"
     assert now.tzname() == "EDT"
     assert next_actual_time.tzname() == "EDT"
@@ -356,5 +365,6 @@ class test_get_exponential_backoff_interval:
     def test_valid_random_range(self, rr):
         rr.return_value = 0
         maximum = 100
-        get_exponential_backoff_interval(factor=40, retries=10, maximum=maximum, full_jitter=True)
+        get_exponential_backoff_interval(
+            factor=40, retries=10, maximum=maximum, full_jitter=True)
         rr.assert_called_once_with(maximum + 1)
