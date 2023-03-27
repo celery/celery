@@ -1,14 +1,13 @@
 """Utilities related to dates, times, intervals, and timezones."""
-import datetime
 import numbers
 import os
 import random
 import sys
 import time as _time
 from calendar import monthrange
-from datetime import date, datetime, timedelta, tzinfo
+from datetime import date, datetime, timedelta, tzinfo, timezone as datetime_timezone
 
-from dateutil import tz
+from dateutil import tz as dateutil_tz
 from kombu.utils.functional import reprcall
 from kombu.utils.objects import cached_property
 
@@ -92,7 +91,7 @@ class LocalTimezone(tzinfo):
         try:
             tz = self._offset_cache[offset]
         except KeyError:
-            tz = self._offset_cache[offset] = datetime.timezone(
+            tz = self._offset_cache[offset] = datetime_timezone(
                 timedelta(minutes=offset))
         return tz.fromutc(dt.replace(tzinfo=tz))
 
@@ -273,9 +272,11 @@ def is_naive(dt):
 def make_aware(dt, tz):
     """Set timezone for a :class:`~datetime.datetime` object."""
     dt = dt.replace(tzinfo=tz)
-    if tz.datetime_ambiguous(dt):
-        return min(dt.replace(tzinfo=tz, fold=0),
-                   dt.replace(tzinfo=tz, fold=1))
+    # We must check for the dt being an instance of ZoneInfo since it must implement utcoffset() for datetime_ambiguous() to work.
+    if isinstance(tz, ZoneInfo) and dateutil_tz.datetime_ambiguous(dt):
+        dt = min(dt.replace(tzinfo=tz, fold=0),
+                 dt.replace(tzinfo=tz, fold=1))
+    return dt
 
 
 def localize(dt, tz):

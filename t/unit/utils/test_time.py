@@ -1,5 +1,5 @@
 import sys
-from datetime import datetime, timedelta, tzinfo
+from datetime import datetime, timedelta, tzinfo, timezone as _timezone
 from unittest.mock import Mock, patch
 
 import pytest
@@ -52,13 +52,15 @@ class test_iso8601:
         iso = d.isoformat()
         iso1 = iso.replace('+00:00', '-01:00')
         d1 = parse_iso8601(iso1)
-        assert d1.tzinfo._minutes == -60
+        d1_offset_in_minutes = d1.utcoffset().total_seconds() / 60
+        assert d1_offset_in_minutes == -60
         iso2 = iso.replace('+00:00', '+01:00')
         d2 = parse_iso8601(iso2)
-        assert d2.tzinfo._minutes == +60
+        d2_offset_in_minutes = d2.utcoffset().total_seconds() / 60
+        assert d2_offset_in_minutes == +60
         iso3 = iso.replace('+00:00', 'Z')
         d3 = parse_iso8601(iso3)
-        assert d3.tzinfo == ZoneInfo("UTC")
+        assert d3.tzinfo == _timezone.utc
 
 
 @pytest.mark.parametrize('delta,expected', [
@@ -142,19 +144,18 @@ def test_remaining():
     start (i.e. there is not an hour diff due to DST).
     In 2019, DST starts on March 10
     """
-    start = eastern_tz.localize(
-        datetime(
-            month=3, day=9, year=2019, hour=10,
-            minute=0))  # EST
-    now = eastern_tz.localize(
-        datetime(
-            day=11, month=3, year=2019, hour=1,
-            minute=0))  # EDT
+    start = datetime(
+        month=3, day=9, year=2019, hour=10,
+        minute=0, tzinfo=eastern_tz)  # EST
+
+    now = datetime(
+        day=11, month=3, year=2019, hour=1,
+        minute=0, tzinfo=eastern_tz)  # EDT
     delta = ffwd(hour=10, year=2019, microsecond=0, minute=0,
                  second=0, day=11, weeks=0, month=3)
     # `next_actual_time` is the next time to run (derived from delta)
-    next_actual_time = eastern_tz.localize(
-        datetime(day=11, month=3, year=2019, hour=10, minute=0))  # EDT
+    next_actual_time = datetime(
+        day=11, month=3, year=2019, hour=10, minute=0, tzinfo=eastern_tz)  # EDT
     assert start.tzname() == "EST"
     assert now.tzname() == "EDT"
     assert next_actual_time.tzname() == "EDT"
@@ -190,27 +191,11 @@ class test_make_aware:
         wtz = make_aware(datetime.utcnow(), tz)
         assert wtz.tzinfo == tz
 
-    def test_when_has_localize(self):
-
-        class tzz(tzinfo):
-            raises = False
-
-            def localize(self, dt, is_dst=None):
-                self.localized = True
-                if self.raises and is_dst is None:
-                    self.raised = True
-                    # raise AmbiguousTimeError()
-                return 1  # needed by min() in Python 3 (None not hashable)
-
-        tz = tzz()
-        make_aware(datetime.utcnow(), tz)
-        assert tz.localized
-
-        tz2 = tzz()
-        tz2.raises = True
-        make_aware(datetime.utcnow(), tz2)
-        assert tz2.localized
-        assert tz2.raised
+    def test_tz_when_zoneinfo(self):
+        tz = ZoneInfo('US/Eastern')
+        assert not hasattr(tz, 'localize')
+        wtz = make_aware(datetime.utcnow(), tz)
+        assert wtz.tzinfo == tz
 
     def test_maybe_make_aware(self):
         aware = datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -238,36 +223,15 @@ class test_localize:
         assert not hasattr(tz, 'normalize')
         assert localize(make_aware(datetime.utcnow(), tz), tz)
 
-    def test_when_has_normalize(self):
+    @patch('dateutil.tz.datetime_ambiguous')
+    def test_when_zoneinfo(self, datetime_ambiguous_mock):
+        datetime_ambiguous_mock.return_value = False
+        tz = ZoneInfo("US/Eastern")
+        assert localize(make_aware(datetime.utcnow(), tz), tz)
 
-        class tzz(tzinfo):
-            raises = None
-
-            def utcoffset(self, dt):
-                return None
-
-            def normalize(self, dt, **kwargs):
-                self.normalized = True
-                if self.raises and kwargs and kwargs.get('is_dst') is None:
-                    self.raised = True
-                    raise self.raises
-                return 1  # needed by min() in Python 3 (None not hashable)
-
-        tz = tzz()
-        localize(make_aware(datetime.utcnow(), tz), tz)
-        assert tz.normalized
-
-        tz2 = tzz()
-        tz2.raises = AmbiguousTimeError()
-        localize(make_aware(datetime.utcnow(), tz2), tz2)
-        assert tz2.normalized
-        assert tz2.raised
-
-        tz3 = tzz()
-        tz3.raises = TypeError()
-        localize(make_aware(datetime.utcnow(), tz3), tz3)
-        assert tz3.normalized
-        assert tz3.raised
+        datetime_ambiguous_mock.return_value = True
+        tz2 = ZoneInfo("US/Eastern")
+        assert localize(make_aware(datetime.utcnow(), tz2), tz2)
 
     def test_localize_changes_utc_dt(self):
         now_utc_time = datetime.now(tz=ZoneInfo("UTC"))
@@ -290,7 +254,7 @@ class test_localize:
         assert localized_utc_offset == local_zone.utcoffset(local_time)
 
 
-@pytest.mark.parametrize('s,expected', [
+@ pytest.mark.parametrize('s,expected', [
     (999, 999),
     (7.5, 7.5),
     ('2.5/s', 2.5),
@@ -331,7 +295,7 @@ class test_utcoffset:
 
 class test_get_exponential_backoff_interval:
 
-    @patch('random.randrange', lambda n: n - 2)
+    @ patch('random.randrange', lambda n: n - 2)
     def test_with_jitter(self):
         assert get_exponential_backoff_interval(
             factor=4,
@@ -356,7 +320,7 @@ class test_get_exponential_backoff_interval:
             maximum=maximum_boundary
         ) == maximum_boundary
 
-    @patch('random.randrange', lambda n: n - 1)
+    @ patch('random.randrange', lambda n: n - 1)
     def test_negative_values(self):
         assert get_exponential_backoff_interval(
             factor=-40,
@@ -364,7 +328,7 @@ class test_get_exponential_backoff_interval:
             maximum=100
         ) == 0
 
-    @patch('random.randrange')
+    @ patch('random.randrange')
     def test_valid_random_range(self, rr):
         rr.return_value = 0
         maximum = 100
