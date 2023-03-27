@@ -31,7 +31,7 @@ from t.unit import conftest
 if sys.version_info >= (3, 9):
     from zoneinfo import ZoneInfo
 else:
-    from backports.zoneinfo import ZoneInfo
+    from backports.zoneinfo import ZoneInfo  # noqa
 
 THIS_IS_A_KEY = 'this is a value'
 
