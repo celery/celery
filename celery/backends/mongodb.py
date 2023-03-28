@@ -192,7 +192,8 @@ class MongoBackend(BaseBackend):
             result=self.encode(result),
             state=state,
             traceback=self.encode(traceback),
-            request=request
+            request=request,
+            format_date=False
         )
         # Add the _id for mongodb
         meta['_id'] = task_id
