@@ -148,6 +148,8 @@ def revoke(state, task_id, terminate=False, signal=None, **kwargs):
     # supports list argument since 3.1
     task_ids, task_id = set(maybe_list(task_id) or []), None
     task_ids = _revoke(state, task_ids, terminate, signal, **kwargs)
+    if isinstance(task_ids, dict) and 'ok' in task_ids:
+        return task_ids
     return ok(f'tasks {task_ids} flagged as revoked')
 
 
