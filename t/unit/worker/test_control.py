@@ -609,6 +609,31 @@ class test_ControlPanel:
         assert revoked_headers == header_to_revoke
         revoked_headers.clear()
 
+    def test_revoke_return_value_terminate_true(self):
+        header_to_revoke = {'foo': 'bar'}
+        headers = {
+            "id": uuid(),
+            "task": self.mytask.name,
+            "stamped_headers": header_to_revoke.keys(),
+            "stamps": header_to_revoke,
+        }
+        message = self.TaskMessage(
+            self.mytask.name,
+            "do re mi",
+        )
+        message.headers.update(headers)
+        request = Request(
+            message,
+            app=self.app,
+        )
+        worker_state.active_requests.add(request)
+        worker_state.task_reserved(request)
+        state = self.create_state()
+        state.consumer = Mock()
+        r = control.revoke(state, headers["id"], terminate=True)
+        r_headers = control.revoke_by_stamped_headers(state, header_to_revoke, terminate=True)
+        assert r["ok"] == r_headers["ok"]
+
     def test_autoscale(self):
         self.panel.state.consumer = Mock()
         self.panel.state.consumer.controller = Mock()
