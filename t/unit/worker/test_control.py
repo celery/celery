@@ -569,6 +569,7 @@ class test_ControlPanel:
             {'header_B': ['value_2', 'value_3']},
             {'header_C': ('value_2', 'value_3')},
             {'header_D': {'value_2', 'value_3'}},
+            {'header_E': [1, '2', 3.0]},
         ],
     )
     def test_revoke_by_stamped_headers(self, header_to_revoke):

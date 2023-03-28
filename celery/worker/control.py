@@ -167,7 +167,7 @@ def revoke_by_stamped_headers(state, headers, terminate=False, signal=None, **kw
     #     Outside of this scope that is a function.
     # supports list argument since 3.1
     if isinstance(headers, list):
-        headers = {h.split('=')[0]: h.split('=')[1] for h in headers}, None
+        headers = {h.split('=')[0]: h.split('=')[1] for h in headers}
 
     worker_state.revoked_headers.update(headers)
 
