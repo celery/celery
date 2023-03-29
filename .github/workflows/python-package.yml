@@ -46,19 +46,8 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-
-    - name: Get pip cache dir
-      id: pip-cache
-      run: |
-        echo "::set-output name=dir::$(pip cache dir)"
-    - name: Cache
-      uses: actions/cache@v3.0.2
-      with:
-        path: ${{ steps.pip-cache.outputs.dir }}
-        key:
-          ${{ matrix.python-version }}-${{matrix.os}}-${{ hashFiles('**/setup.py') }}
-        restore-keys: |
-          ${{ matrix.python-version }}-${{matrix.os}}
+        cache: 'pip'
+        cache-dependency-path: '**/setup.py'
 
     - name: Install tox
       run: python -m pip install --upgrade pip tox tox-gh-actions
@@ -114,11 +103,8 @@ jobs:
               uses: actions/setup-python@v4
               with:
                   python-version: ${{ matrix.python-version }}
-
-          -   name: Get pip cache dir
-              id: pip-cache
-              run: |
-                  echo "::set-output name=dir::$(pip cache dir)"
+                  cache: 'pip'
+                  cache-dependency-path: '**/setup.py'
           -   name: Install tox
               run: python -m pip install --upgrade pip tox tox-gh-actions
           -   name: >
