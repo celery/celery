@@ -57,7 +57,8 @@ _local_timezone = None
 
 
 class LocalTimezone(tzinfo):
-    """Local time implementation.
+    """Local time implementation. Provided in _Zone to the app when `enable_utc` is disabled.
+    Otherwise, _Zone provides ZoneInfo s the timezone provider for the application.
 
     Note:
         Used only when the :setting:`enable_utc` setting is disabled.
