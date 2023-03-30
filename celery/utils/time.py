@@ -307,9 +307,9 @@ def _is_ambigious(dt: datetime, tz: tzinfo) -> bool:
 
     Returns False if the timezone cannot detect ambiguity, or if there is no abiguity, otherwise True.
 
-    In order to detect ambiguous datetimes, the timezone must be built using ZoneInfo, or have an is_ambiguous method.
-    Previously, pytz timezones would throw an AmbiguousTimeError if the localized dt was ambigious, but now we need
-    to specifically check for ambiguity with dateutil, as pytz is deprecated.
+    In order to detect ambiguous datetimes, the timezone must be built using ZoneInfo, or have an is_ambiguous 
+    method. Previously, pytz timezones would throw an AmbiguousTimeError if the localized dt was ambigious,
+    but now we need to specifically check for ambiguity with dateutil, as pytz is deprecated.
     """
 
     return _can_detect_ambiguous(tz) and dateutil_tz.datetime_ambiguous(dt)
