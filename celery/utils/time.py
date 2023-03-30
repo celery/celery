@@ -126,6 +126,8 @@ class _Zone:
         return self.get_timezone(tzinfo)
 
     def to_local(self, dt: datetime, local=None, orig=None):
+        """Converts a datetime to the local timezone."""
+
         if is_naive(dt):
             dt = make_aware(dt, orig or self.utc)
         return localize(dt, self.tz_or_local(local))
@@ -153,6 +155,8 @@ class _Zone:
 
     @cached_property
     def local(self) -> LocalTimezone:
+        """Return LocalTimezone instance for the application."""
+
         return LocalTimezone()
 
     @cached_property
