@@ -292,18 +292,18 @@ def maybe_iso8601(dt: datetime | str | None) -> None | datetime:
 
 
 def is_naive(dt: datetime) -> bool:
-    """Return True if :class:`~datetime.datetime` is naive, meaning it doesn't timezone nfo set."""
+    """Return True if :class:`~datetime.datetime` is naive, meaning it doesn't timezone info set."""
     return dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None
 
 
 def _can_detect_ambiguous(tz: tzinfo) -> bool:
-    """Helper function to determine if a timezone can detect ambiguous times with dateutil."""
+    """Helper function to determine if a timezone can detect ambiguous times using dateutil."""
 
     return isinstance(tz, ZoneInfo) or hasattr(tz, "is_ambiguous")
 
 
 def _is_ambigious(dt: datetime, tz: tzinfo) -> bool:
-    """Helper function to determine if a timezone is ambigious with dateutil.
+    """Helper function to determine if a timezone is ambigious using dateutil.
 
     Returns False if the timezone cannot detect ambiguity, or if there is no abiguity, otherwise True.
 
