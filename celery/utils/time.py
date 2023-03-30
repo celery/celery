@@ -1,5 +1,6 @@
 """Utilities related to dates, times, intervals, and timezones."""
 from __future__ import annotations
+
 import numbers
 import os
 import random
@@ -65,7 +66,7 @@ class LocalTimezone(tzinfo):
         Used only when the :setting:`enable_utc` setting is disabled.
     """
 
-    _offset_cache: Dict[int, tzinfo] = {}
+    _offset_cache: dict[int, tzinfo] = {}
 
     def __init__(self) -> None:
         # This code is moved in __init__ to execute it as late as possible
@@ -388,7 +389,7 @@ class ffwd:
             ret += timedelta(days=(7 - ret.weekday() + self.weekday) % 7)
         return ret + timedelta(days=self.days)
 
-    def _fields(self, **extra: Any) -> Dict[str, Any]:
+    def _fields(self, **extra: Any) -> dict[str, Any]:
         return dictfilter({
             'year': self.year, 'month': self.month, 'day': self.day,
             'hour': self.hour, 'minute': self.minute,
