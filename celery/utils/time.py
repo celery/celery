@@ -112,7 +112,7 @@ class _Zone:
     """Timezone class that uses ZoneInfo to provide timezones to the application
         along with a utils for operating on datetime objects."""
 
-    def tz_or_local(self, tzinfo: tzinfo | None = None) -> tzinfo:
+    def tz_or_local(self, tzinfo: tzinfo = None) -> tzinfo:
         """Return either our local timezone or the provided timezone."""
 
         # pylint: disable=redefined-outer-name
