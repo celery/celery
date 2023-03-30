@@ -110,8 +110,12 @@ class LocalTimezone(tzinfo):
 
 
 class _Zone:
-    """Timezone class that uses ZoneInfo to provide timezones to the application
-        along with a utils for operating on datetime objects."""
+    """Timezone class that provides the timezone for the application.
+    If `enable_utc` is disabled, LocalTimezone is provided as the timezone provider through local().
+    Otherwise, this class provides UTC ZoneInfo instance as the timezone provider for the application.
+
+    Additionally this class provides a few utility methods for converting datetimes.
+    """
 
     def tz_or_local(self, tzinfo: tzinfo = None) -> tzinfo:
         """Return either our local timezone or the provided timezone."""
