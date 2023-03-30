@@ -1,4 +1,5 @@
 """Utilities related to dates, times, intervals, and timezones."""
+from __future__ import annotations
 import numbers
 import os
 import random
@@ -117,7 +118,7 @@ class _Zone:
     Additionally this class provides a few utility methods for converting datetimes.
     """
 
-    def tz_or_local(self, tzinfo: tzinfo = None) -> tzinfo:
+    def tz_or_local(self, tzinfo: tzinfo | None = None) -> tzinfo:
         """Return either our local timezone or the provided timezone."""
 
         # pylint: disable=redefined-outer-name
@@ -141,14 +142,12 @@ class _Zone:
 
     def to_local_fallback(self, dt: datetime) -> datetime:
         """Converts a datetime to the local timezone, or the system timezone."""
-
         if is_naive(dt):
             return make_aware(dt, self.local)
         return localize(dt, self.local)
 
     def get_timezone(self, zone: str | tzinfo) -> tzinfo:
         """Returns ZoneInfo timezone if the provided zone is a string, otherwise return the zone."""
-
         if isinstance(zone, str):
             return ZoneInfo(zone)
         return zone
@@ -156,13 +155,11 @@ class _Zone:
     @cached_property
     def local(self) -> LocalTimezone:
         """Return LocalTimezone instance for the application."""
-
         return LocalTimezone()
 
     @cached_property
     def utc(self) -> tzinfo:
         """Return UTC timezone created with ZoneInfo."""
-
         return self.get_timezone('UTC')
 
 
