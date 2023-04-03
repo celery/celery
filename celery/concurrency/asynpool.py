@@ -36,9 +36,9 @@ from kombu.utils.eventio import SELECT_BAD_FD
 from kombu.utils.functional import fxrange
 from vine import promise
 
+from celery.signals import worker_before_create_process
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
-from celery.signals import worker_before_create_process
 from celery.worker import state as worker_state
 
 # pylint: disable=redefined-outer-name
