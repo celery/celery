@@ -546,7 +546,7 @@ Dispatched before the worker is started.
 .. signal:: worker_before_create_process
 
 ``worker_before_create_process``
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Dispatched before new child process is created.
 
