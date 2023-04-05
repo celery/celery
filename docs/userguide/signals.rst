@@ -548,7 +548,14 @@ Dispatched before the worker is started.
 ``worker_before_create_process``
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Dispatched before new child process is created.
+Dispatched in the parent process, just before new child process is created in the prefork pool.
+It can be used to clean up instances that don't behave well when forking.
+
+.. code-block:: python
+
+    @signals.worker_before_create_process.connect
+    def clean_channels(**kwargs):
+        grpc_singleton.clean_channel()
 
 .. signal:: worker_ready
 
