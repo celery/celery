@@ -36,6 +36,7 @@ from kombu.utils.eventio import SELECT_BAD_FD
 from kombu.utils.functional import fxrange
 from vine import promise
 
+from celery.signals import worker_before_create_process
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.worker import state as worker_state
@@ -476,6 +477,7 @@ class AsynPool(_pool.Pool):
         )
 
     def _create_worker_process(self, i):
+        worker_before_create_process.send(sender=self)
         gc.collect()  # Issue #2927
         return super()._create_worker_process(i)
 
