@@ -365,6 +365,18 @@ class test_AsynPool:
         pool.register_with_event_loop(hub)
         hub.on_tick.add.assert_called_once()
 
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_before_create_process_signal(self, create_process):
+        from celery import signals
+        on_worker_before_create_process = Mock()
+        signals.worker_before_create_process.connect(on_worker_before_create_process)
+        pool = asynpool.AsynPool(processes=1, threads=False)
+        create_process.assert_called_once_with(0)
+        on_worker_before_create_process.assert_any_call(
+            signal=signals.worker_before_create_process,
+            sender=pool,
+        )
+
 
 @t.skip.if_win32
 class test_ResultHandler:

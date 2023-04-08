@@ -148,6 +148,8 @@ def revoke(state, task_id, terminate=False, signal=None, **kwargs):
     # supports list argument since 3.1
     task_ids, task_id = set(maybe_list(task_id) or []), None
     task_ids = _revoke(state, task_ids, terminate, signal, **kwargs)
+    if isinstance(task_ids, dict) and 'ok' in task_ids:
+        return task_ids
     return ok(f'tasks {task_ids} flagged as revoked')
 
 
@@ -167,7 +169,7 @@ def revoke_by_stamped_headers(state, headers, terminate=False, signal=None, **kw
     #     Outside of this scope that is a function.
     # supports list argument since 3.1
     if isinstance(headers, list):
-        headers = {h.split('=')[0]: h.split('=')[1] for h in headers}, None
+        headers = {h.split('=')[0]: h.split('=')[1] for h in headers}
 
     worker_state.revoked_headers.update(headers)
 
@@ -175,22 +177,31 @@ def revoke_by_stamped_headers(state, headers, terminate=False, signal=None, **kw
         return ok(f'headers {headers} flagged as revoked')
 
     task_ids = set()
-    requests = list(worker_state.active_requests)
+    active_requests = list(worker_state.active_requests)
 
     # Terminate all running tasks of matching headers
-    if requests:
+    if active_requests:
         warnings.warn(
             "Terminating tasks by headers does not scale well when worker concurrency is high",
             CeleryWarning
         )
 
-        for req in requests:
-            if req.stamped_headers:
-                for stamped_header_key, expected_header_value in headers.items():
-                    if stamped_header_key in req.stamped_headers and \
-                            stamped_header_key in req._message.headers['stamps']:
-                        actual_header = req._message.headers['stamps'][stamped_header_key]
-                        if expected_header_value in actual_header:
+        # Go through all active requests, and check if one of the
+        # requests has a stamped header that matches the given headers to revoke
+
+        req: Request
+        for req in active_requests:
+            # Check stamps exist
+            if req.stamped_headers and req.stamps:
+                # if so, check if any of the stamped headers match the given headers
+                for expected_header_key, expected_header_value in headers.items():
+                    if expected_header_key in req.stamps:
+                        actual_header = req.stamps[expected_header_key]
+                        # Check any possible match regardless if the stamps are a sequence or not
+                        if any([
+                            header in maybe_list(expected_header_value)
+                            for header in maybe_list(actual_header)
+                        ]):
                             task_ids.add(req.task_id)
                             continue
 

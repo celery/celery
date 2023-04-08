@@ -562,6 +562,78 @@ class test_ControlPanel:
         finally:
             worker_state.task_ready(request)
 
+    @pytest.mark.parametrize(
+        "header_to_revoke",
+        [
+            {'header_A': 'value_1'},
+            {'header_B': ['value_2', 'value_3']},
+            {'header_C': ('value_2', 'value_3')},
+            {'header_D': {'value_2', 'value_3'}},
+            {'header_E': [1, '2', 3.0]},
+        ],
+    )
+    def test_revoke_by_stamped_headers(self, header_to_revoke):
+        ids = []
+
+        # Create at least more than one request with the same stamped header
+        for _ in range(2):
+            headers = {
+                "id": uuid(),
+                "task": self.mytask.name,
+                "stamped_headers": header_to_revoke.keys(),
+                "stamps": header_to_revoke,
+            }
+            ids.append(headers["id"])
+            message = self.TaskMessage(
+                self.mytask.name,
+                "do re mi",
+            )
+            message.headers.update(headers)
+            request = Request(
+                message,
+                app=self.app,
+            )
+
+            # Add the request to the active_requests so the request is found
+            # when the revoke_by_stamped_headers is called
+            worker_state.active_requests.add(request)
+            worker_state.task_reserved(request)
+
+        state = self.create_state()
+        state.consumer = Mock()
+        # Revoke by header
+        revoked_headers.clear()
+        r = control.revoke_by_stamped_headers(state, header_to_revoke, terminate=True)
+        # Check all of the requests were revoked by a single header
+        assert all([id in r['ok'] for id in ids]), "All requests should be revoked"
+        assert revoked_headers == header_to_revoke
+        revoked_headers.clear()
+
+    def test_revoke_return_value_terminate_true(self):
+        header_to_revoke = {'foo': 'bar'}
+        headers = {
+            "id": uuid(),
+            "task": self.mytask.name,
+            "stamped_headers": header_to_revoke.keys(),
+            "stamps": header_to_revoke,
+        }
+        message = self.TaskMessage(
+            self.mytask.name,
+            "do re mi",
+        )
+        message.headers.update(headers)
+        request = Request(
+            message,
+            app=self.app,
+        )
+        worker_state.active_requests.add(request)
+        worker_state.task_reserved(request)
+        state = self.create_state()
+        state.consumer = Mock()
+        r = control.revoke(state, headers["id"], terminate=True)
+        r_headers = control.revoke_by_stamped_headers(state, header_to_revoke, terminate=True)
+        assert r["ok"] == r_headers["ok"]
+
     def test_autoscale(self):
         self.panel.state.consumer = Mock()
         self.panel.state.consumer.controller = Mock()
