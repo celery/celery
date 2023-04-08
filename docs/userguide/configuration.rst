@@ -268,7 +268,7 @@ upgraded.
 Default: ``"UTC"``.
 
 Configure Celery to use a custom time zone.
-The timezone value can be any time zone supported by the :pypi:`pytz`
+The timezone value can be any time zone supported by the `ZoneInfo <https://docs.python.org/3/library/zoneinfo.html>`_
 library.
 
 If not set the UTC timezone is used. For backwards compatibility
