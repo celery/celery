@@ -93,7 +93,7 @@ def truncate(s: str, maxlen: int = 128, suffix: str = '...') -> str:
     return s
 
 
-def pluralize(n: int, text: str, suffix: str = 's') -> str:
+def pluralize(n: float, text: str, suffix: str = 's') -> str:
     """Pluralize term when n is greater than one."""
     if n != 1:
         return text + suffix
