@@ -303,7 +303,7 @@ def _can_detect_ambiguous(tz: tzinfo) -> bool:
 
 
 def _is_ambigious(dt: datetime, tz: tzinfo) -> bool:
-    """Helper function to determine if a timezone is ambiguous using python-dateutil.
+    """Helper function to determine if a timezone is ambiguous using python's dateutil module.
 
     Returns False if the timezone cannot detect ambiguity, or if there is no ambiguity, otherwise True.
 
