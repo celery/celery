@@ -114,7 +114,7 @@ class LocalTimezone(tzinfo):
 class _Zone:
     """Timezone class that provides the timezone for the application.
     If `enable_utc` is disabled, LocalTimezone is provided as the timezone provider through local().
-    Otherwise, this class provides UTC ZoneInfo instance as the timezone provider for the application.
+    Otherwise, this class provides a UTC ZoneInfo instance as the timezone provider for the application.
 
     Additionally this class provides a few utility methods for converting datetimes.
     """
