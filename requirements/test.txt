@@ -4,7 +4,7 @@ pytest-subtests==0.10.0
 pytest-timeout==2.1.0
 pytest-click==1.1.0
 pytest-order==1.1.0
-boto3==1.26.104
+boto3==1.26.109
 moto==4.1.6
 # typing extensions
 mypy==1.1.1; platform_python_implementation=="CPython"
