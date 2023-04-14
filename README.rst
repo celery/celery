@@ -1,6 +1,6 @@
 .. image:: https://docs.celeryq.dev/en/latest/_images/celery-banner-small.png
 
-|build-status| |coverage| |license| |wheel| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
+|build-status| |coverage| |license| |wheel| |semgrep| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
 :Version: 5.3.0b2 (dawn-chorus)
 :Web: https://docs.celeryq.dev/en/stable/index.html
@@ -518,6 +518,10 @@ file in the top distribution directory for the full license text.
 .. |wheel| image:: https://img.shields.io/pypi/wheel/celery.svg
     :alt: Celery can be installed via wheel
     :target: https://pypi.org/project/celery/
+
+.. |semgrep| image:: https://img.shields.io/badge/semgrep-security-green.svg
+    :alt: Semgrep security
+    :target: https://go.semgrep.dev/home
 
 .. |pyversion| image:: https://img.shields.io/pypi/pyversions/celery.svg
     :alt: Supported Python versions.
