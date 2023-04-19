@@ -61,7 +61,7 @@ send_retry = signals.task_retry.send
 task_accepted = state.task_accepted
 task_ready = state.task_ready
 revoked_tasks = state.revoked
-revoked_headers = state.revoked_headers
+revoked_stamps = state.revoked_stamps
 
 
 class Request:
@@ -469,20 +469,20 @@ class Request:
         revoked_by_header, revoking_header = False, None
 
         if not revoked_by_id and self.stamped_headers:
-            for header in self.stamped_headers:
-                if header in revoked_headers:
-                    revoked_header = revoked_headers[header]
-                    stamped_header = self._message.headers['stamps'][header]
+            for stamp in self.stamped_headers:
+                if stamp in revoked_stamps:
+                    revoked_header = revoked_stamps[stamp]
+                    stamped_header = self._message.headers['stamps'][stamp]
 
                     if isinstance(stamped_header, (list, tuple)):
                         for stamped_value in stamped_header:
                             if stamped_value in maybe_list(revoked_header):
                                 revoked_by_header = True
-                                revoking_header = {header: stamped_value}
+                                revoking_header = {stamp: stamped_value}
                                 break
                     else:
-                        revoked_by_header = stamped_header in revoked_headers[header]
-                        revoking_header = {header: stamped_header}
+                        revoked_by_header = stamped_header in revoked_stamps[stamp]
+                        revoking_header = {stamp: stamped_header}
                     break
 
         if any((expired, revoked_by_id, revoked_by_header)):

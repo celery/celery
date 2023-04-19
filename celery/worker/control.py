@@ -171,7 +171,7 @@ def revoke_by_stamped_headers(state, headers, terminate=False, signal=None, **kw
     if isinstance(headers, list):
         headers = {h.split('=')[0]: h.split('=')[1] for h in headers}
 
-    worker_state.revoked_headers.update(headers)
+    worker_state.revoked_stamps.update(headers)
 
     if not terminate:
         return ok(f'headers {headers} flagged as revoked')

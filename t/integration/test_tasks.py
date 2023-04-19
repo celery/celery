@@ -234,7 +234,7 @@ class test_tasks:
                 assert result.ready() is True
                 assert result.failed() is False
                 assert result.successful() is True
-        worker_state.revoked_headers.clear()
+        worker_state.revoked_stamps.clear()
 
         # Try to purge the queue after we're done
         # to attempt to avoid interference to other tests
@@ -294,7 +294,7 @@ class test_tasks:
                     assert result.ready() is True
                     assert result.failed() is False
                     assert result.successful() is False
-            worker_state.revoked_headers.clear()
+            worker_state.revoked_stamps.clear()
 
         # Try to purge the queue after we're done
         # to attempt to avoid interference to other tests

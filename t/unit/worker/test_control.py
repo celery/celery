@@ -17,7 +17,7 @@ from celery.worker import consumer, control
 from celery.worker import state as worker_state
 from celery.worker.pidbox import Pidbox, gPidbox
 from celery.worker.request import Request
-from celery.worker.state import REVOKE_EXPIRES, revoked, revoked_headers
+from celery.worker.state import REVOKE_EXPIRES, revoked, revoked_stamps
 
 hostname = socket.gethostname()
 
@@ -554,7 +554,7 @@ class test_ControlPanel:
         worker_state.task_reserved(request)
         try:
             r = control.revoke_by_stamped_headers(state, stamped_header, terminate=True)
-            assert stamped_header == revoked_headers
+            assert stamped_header == revoked_stamps
             assert 'terminate:' in r['ok']
             # unknown task id only revokes
             r = control.revoke_by_stamped_headers(state, stamped_header, terminate=True)
@@ -602,12 +602,12 @@ class test_ControlPanel:
         state = self.create_state()
         state.consumer = Mock()
         # Revoke by header
-        revoked_headers.clear()
+        revoked_stamps.clear()
         r = control.revoke_by_stamped_headers(state, header_to_revoke, terminate=True)
         # Check all of the requests were revoked by a single header
         assert all([id in r['ok'] for id in ids]), "All requests should be revoked"
-        assert revoked_headers == header_to_revoke
-        revoked_headers.clear()
+        assert revoked_stamps == header_to_revoke
+        revoked_stamps.clear()
 
     def test_revoke_return_value_terminate_true(self):
         header_to_revoke = {'foo': 'bar'}
