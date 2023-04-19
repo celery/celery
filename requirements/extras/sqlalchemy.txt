@@ -1,2 +1,2 @@
-sqlalchemy>=1.4.47,<2.1
+sqlalchemy>=2.0.9,<2.1
 
