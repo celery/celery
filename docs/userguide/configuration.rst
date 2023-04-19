@@ -2924,8 +2924,8 @@ received the task.
 This cache can be made persistent by setting the :setting:`worker_state_db`
 setting.
 
-If the result backend is not persistent (the RPC backend, for example),
-this setting is ignored.
+If the result backend is not `persistent <https://github.com/celery/celery/blob/main/celery/backends/base.py#L102>`_
+(the RPC backend, for example), this setting is ignored.
 
 .. _conf-concurrency:
 
