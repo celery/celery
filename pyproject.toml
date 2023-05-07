@@ -49,3 +49,40 @@ omit = [
     "*celery/contrib/testing/*",
     "*celery/contrib/pytest.py"
 ]
+
+[tool.ruff]
+select = ["E", "F", "D", "I", "UP", "RUF100", "S"]
+ignore = ["S110", "S101", "S102", "S301", "S311", "S603", "S606", "I001", "UP024", "UP030", "D101", "D102", "D103", "D104", "D105", "D107", "D202", "D203", "D204", "D205", "D208", "D209", "D211", "D212", "D213", "D214", "D301", "D400", "D401", "D403", "D404", "D414", "D406", "D405", "D407", "D410","D411", "D412","D413","D415", "D416","D417", "E741", "E742"]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+line-length = 117
+target-version = "py37"
+
+[tool.ruff.per-file-ignores]
+"setup.py" = ["D"]
+"t/*" = ["D", "S"]
+"docs/*" = ["D"]
+"examples/*" = ["D", "S"]
+"extra/*" = ["D"]
+
