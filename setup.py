@@ -166,9 +166,9 @@ setuptools.setup(
     python_requires=">=3.7",
     tests_require=reqs('test.txt'),
     extras_require=extras_require(),
-    cmdclass={'test': pytest},
-    include_package_data=True,
-    zip_safe=False,
+    cmdclass={'test': pytest},  # python setup.py test ? TODO: check where this is used
+    include_package_data=True,  # https://setuptools.pypa.io/en/latest/userguide/datafiles.html
+    zip_safe=False,  # https://setuptools.pypa.io/en/latest/deprecated/zip_safe.html
     entry_points={
         'console_scripts': [
             'celery = celery.__main__:main',
