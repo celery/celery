@@ -196,7 +196,7 @@ class Worker:
             if type_ == 'offline':
                 heartbeats[:] = []
             else:
-                if not (local_received or timestamp or non_adjusted_timestamp):
+                if not (local_received and timestamp and non_adjusted_timestamp):
                     return
                 drift = abs(int(local_received) - int(non_adjusted_timestamp))
                 if drift > max_drift:
