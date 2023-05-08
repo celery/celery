@@ -614,8 +614,7 @@ class State:
 
                 if subject == 'received':
                     self.task_count += 1
-                task.event(subject, timestamp, non_adjusted_timestamp,
-                           local_received, event)
+                task.event(subject, timestamp, local_received, event)
                 task_name = task.name
                 if task_name is not None:
                     add_type(task_name)
