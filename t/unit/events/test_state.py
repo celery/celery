@@ -241,7 +241,7 @@ class test_Worker:
             local_received=time())
         assert len(worker.heartbeats) == 1
         h1 = worker.heartbeats[0]
-        worker.event(None, time(), time() - 10)
+        worker.event(None, time(), time(), time() - 10)
         assert len(worker.heartbeats) == 2
         assert worker.heartbeats[-1] == h1
 
