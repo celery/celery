@@ -120,6 +120,8 @@ class EventReceiver(ConsumerMixin):
                 pass
             else:
                 body['timestamp'] = adjust_timestamp(timestamp, offset)
+                # We need to store the non-adjusted timestamp for when we conduct time draft calculations.
+                body["non_adjusted_timestamp"] = timestamp
         body['local_received'] = now()
         return type, body
 
