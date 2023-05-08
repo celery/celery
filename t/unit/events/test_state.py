@@ -178,7 +178,7 @@ class test_Worker:
                 local_received,
                 fields={'hostname': 'george@vandelay.com',
                         'timestamp': timestamp,
-                        "non_adjusted_timestamp": timestamp,
+                        'non_adjusted_timestamp': timestamp,
                         'local_received': local_received,
                         'freq': Decimal(5.6335431), })
         assert w.alive
@@ -193,7 +193,7 @@ class test_Worker:
         w.event('worker-online', 10.0, 10.0, 13.0, fields={
             'hostname': 'george@vandelay.com',
             'timestamp': 10.0,
-            "non_adjusted_timestamp": 10.0,
+            'non_adjusted_timestamp': 10.0,
             'local_received': 13.0,
             'freq': 60,
         })
@@ -603,7 +603,7 @@ class test_State:
             'type': 'worker-offline',
             'hostname': 'unknown@vandelay.com',
             'timestamp': time(),
-            "non_adjusted_timestamp": time(),
+            'non_adjusted_timestamp': time(),
             'local_received': time(),
             'clock': 301030134894833,
         })
@@ -619,7 +619,7 @@ class test_State:
             'type': 'worker-online',
             'hostname': 'george@vandelay.com',
             'timestamp': time(),
-            "non_adjusted_timestamp": time(),
+            'non_adjusted_timestamp': time(),
             'local_received': time(),
             'clock': 34314,
         })
@@ -637,7 +637,7 @@ class test_State:
             'uuid': 'x',
             'hostname': 'y',
             'timestamp': time(),
-            "non_adjusted_timestamp": time(),
+            'non_adjusted_timestamp': time(),
             'local_received': time(),
             'clock': 0,
         })
@@ -652,7 +652,7 @@ class test_State:
             'hostname': 'y',
             'clock': 3,
             'timestamp': time(),
-            "non_adjusted_timestamp": time(),
+            'non_adjusted_timestamp': time(),
             'local_received': time(),
         })
         s.event({
@@ -662,7 +662,7 @@ class test_State:
             'hostname': 'y',
             'clock': 4,
             'timestamp': time(),
-            "non_adjusted_timestamp": time(),
+            'non_adjusted_timestamp': time(),
             'local_received': time(),
         })
         s.event({
@@ -672,7 +672,7 @@ class test_State:
             'hostname': 'y',
             'clock': 5,
             'timestamp': time(),
-            "non_adjusted_timestamp": time(),
+            'non_adjusted_timestamp': time(),
             'local_received': time(),
         })
         assert len(s._taskheap) == 2

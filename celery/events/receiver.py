@@ -114,7 +114,7 @@ class EventReceiver(ConsumerMixin):
                 self.adjust_clock(clock)
 
         # We need to store the non-adjusted timestamp for when we conduct time draft calculations.
-        body["non_adjusted_timestamp"] = body.get("timestamp", None)
+        body['non_adjusted_timestamp'] = body.get("timestamp", None)
         if localize:
             try:
                 offset, timestamp = tzfields(body)
