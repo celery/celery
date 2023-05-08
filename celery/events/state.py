@@ -516,10 +516,10 @@ class State:
         get_handler = self.handlers.__getitem__
         event_callback = self.event_callback
         wfields = itemgetter(
-            'hostname', "timestamp", 'non_adjusted_timestamp',
+            'hostname', "timestamp", "non_adjusted_timestamp",
             'local_received')
         tfields = itemgetter(
-            'uuid', 'hostname', "timestamp", 'non_adjusted_timestamp',
+            'uuid', 'hostname', "timestamp", "non_adjusted_timestamp",
             'local_received', 'clock')
         taskheap = self._taskheap
         th_append = taskheap.append
