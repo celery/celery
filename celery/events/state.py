@@ -516,9 +516,11 @@ class State:
         get_handler = self.handlers.__getitem__
         event_callback = self.event_callback
         wfields = itemgetter(
-            'hostname', 'non_adjusted_timestamp', 'local_received')
-        tfields = itemgetter('uuid', 'hostname', 'non_adjusted_timestamp',
-                             'local_received', 'clock')
+            'hostname', "timestamp", 'non_adjusted_timestamp',
+            'local_received')
+        tfields = itemgetter(
+            'uuid', 'hostname', "timestamp", 'non_adjusted_timestamp',
+            'local_received', 'clock')
         taskheap = self._taskheap
         th_append = taskheap.append
         th_pop = taskheap.pop
@@ -553,7 +555,7 @@ class State:
 
             if group == 'worker':
                 try:
-                    hostname, non_adjusted_timestamp, local_received = wfields(
+                    hostname, timestamp, non_adjusted_timestamp, local_received = wfields(
                         event)
                 except KeyError:
                     pass
@@ -566,7 +568,7 @@ class State:
                             worker, created = Worker(hostname), False
                         else:
                             worker = workers[hostname] = Worker(hostname)
-                    worker.event(subject, non_adjusted_timestamp,
+                    worker.event(subject, timestamp, non_adjusted_timestamp,
                                  local_received, event)
                     if on_node_join and (created or subject == 'online'):
                         on_node_join(worker)
@@ -575,7 +577,7 @@ class State:
                         workers.pop(hostname, None)
                     return (worker, created), subject
             elif group == 'task':
-                (uuid, hostname, non_adjusted_timestamp,
+                (uuid, hostname, timestamp, non_adjusted_timestamp,
                  local_received, clock) = tfields(event)
                 # task-sent event is sent by client, not worker
                 is_client_event = subject == 'sent'
@@ -593,7 +595,7 @@ class State:
                         worker = workers[hostname] = Worker(hostname)
                     task.worker = worker
                     if worker is not None and local_received:
-                        worker.event(None, local_received,
+                        worker.event(None, local_received, timestamp,
                                      non_adjusted_timestamp)
 
                 origin = hostname if is_client_event else worker.id
@@ -605,7 +607,8 @@ class State:
 
                 # most events will be dated later than the previous.
                 timetup = timetuple(
-                    clock, non_adjusted_timestamp, origin, ref(task))
+                    clock, timestamp, non_adjusted_timestamp, origin,
+                    ref(task))
                 if heaps and timetup > taskheap[-1]:
                     th_append(timetup)
                 else:
@@ -613,7 +616,7 @@ class State:
 
                 if subject == 'received':
                     self.task_count += 1
-                task.event(subject, non_adjusted_timestamp,
+                task.event(subject, timestamp, non_adjusted_timestamp,
                            local_received, event)
                 task_name = task.name
                 if task_name is not None:
