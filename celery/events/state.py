@@ -186,7 +186,7 @@ class Worker:
         hb_pop = self.heartbeats.pop
         hb_append = self.heartbeats.append
 
-        def event(type_, non_adjusted_timestamp=None,
+        def event(type_, timestamp=None, non_adjusted_timestamp=None,
                   local_received=None, fields=None,
                   max_drift=HEARTBEAT_DRIFT_MAX, abs=abs, int=int,
                   insort=bisect.insort, len=len):
@@ -196,12 +196,12 @@ class Worker:
             if type_ == 'offline':
                 heartbeats[:] = []
             else:
-                if not local_received or not non_adjusted_timestamp:
+                if not (local_received or timestamp or non_adjusted_timestamp):
                     return
                 drift = abs(int(local_received) - int(non_adjusted_timestamp))
                 if drift > max_drift:
                     _warn_drift(self.hostname, drift,
-                                local_received, non_adjusted_timestamp)
+                                local_received, timestamp)
                 if local_received:  # pragma: no cover
                     hearts = len(heartbeats)
                     if hearts > hbmax - 1:
