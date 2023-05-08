@@ -606,9 +606,7 @@ class State:
                     th_pop(0)
 
                 # most events will be dated later than the previous.
-                timetup = timetuple(
-                    clock, timestamp, non_adjusted_timestamp, origin,
-                    ref(task))
+                timetup = timetuple(clock, timestamp, origin, ref(task))
                 if heaps and timetup > taskheap[-1]:
                     th_append(timetup)
                 else:
