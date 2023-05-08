@@ -25,6 +25,8 @@ def Event(type, _fields=None, __dict__=dict, __now__=time.time, **fields):
     event = __dict__(_fields, **fields) if _fields else fields
     if 'timestamp' not in event:
         event.update(timestamp=__now__(), type=type)
+    if "non_adjusted_timestamp" not in event:
+        event.update(non_adjusted_timestamp=__now__(), type=type)
     else:
         event['type'] = type
     return event
