@@ -53,8 +53,7 @@ HEARTBEAT_DRIFT_MAX = 16
 
 DRIFT_WARNING = (
     "Substantial drift from %s may mean clocks are out of sync.  Current drift is "
-    "%s seconds.  [orig: %s recv: %s]"
-)
+    "%s seconds.  [orig: %s recv: %s]")
 
 logger = get_logger(__name__)
 warn = logger.warning
@@ -199,7 +198,11 @@ class Worker:
             else:
                 if not local_received or not timestamp:
                     return
-                drift = abs(int(local_received) - int(timestamp))
+
+                # To calculate drift, we should compare both timestamps in UTC.
+                utc_received = datetime.utcfromtimestamp(local_received)
+                utc_timestamp = datetime.utcfromtimestamp(timestamp)
+                drift = abs(int(utc_received) - int(utc_timestamp))
                 if drift > max_drift:
                     _warn_drift(self.hostname, drift,
                                 local_received, timestamp)
