@@ -1,0 +1,6 @@
+-e ../pytest-celery
+# git+https://github.com/celery/pytest-celery.git@celery_integration
+pytest-subtests
+pytest-rerunfailures
+pytest-sugar
+pytest-xdist
