@@ -16,7 +16,6 @@ an overview of what's new in Celery 5.2.
 :release-date: 2023-05-11 4:24 P.M GMT+2
 :release-by: Tomer Nosrati
 
-- [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in #8079
 - fix functiom name by @cuishuang in #8087
 - Update CELERY_TASK_EAGER setting in user guide by @thebalaa in #8085
 - Stamping documentation fixes & cleanups by @Nusnus in #8092
@@ -34,7 +33,6 @@ an overview of what's new in Celery 5.2.
 - Type annotations for celery/apps/beat.py by @max-muoto in #8108
 - Fixed bug where retrying a task loses its stamps by @Nusnus in #8120
 - Type hints for celery/schedules.py by @max-muoto in #8114
-- [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in #8122
 - Reference Gopher Celery in README by @marselester in #8131
 - Update sqlalchemy.txt by @auvipy in #8136
 - azure-storage-blob 12.15.0 by @auvipy in #8137
@@ -56,7 +54,6 @@ an overview of what's new in Celery 5.2.
 - Added signal triggered before fork by @jaroslawporada in #8177
 - Update documentation on SQLAlchemy by @max-muoto in #8188
 - Deprecate pytz and use zoneinfo by @max-muoto in #8159
-- [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in #8191
 - Update dev.txt by @auvipy in #8192
 - Update test.txt by @auvipy in #8193
 - Update test-integration.txt by @auvipy in #8194
@@ -72,9 +69,7 @@ an overview of what's new in Celery 5.2.
 - Update test.txt dependencies by @auvipy in #8205
 - Improved doc for: worker_deduplicate_successful_tasks by @Nusnus in #8209
 - Renamed revoked_headers to revoked_stamps by @Nusnus in #8210
-- [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in #8223
 - Ensure argument for map is JSON serializable by @candleindark in #8229
-- [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in #8239
 
 .. _version-5.3.0b2:
 
@@ -100,18 +95,15 @@ an overview of what's new in Celery 5.2.
 - Improved custom stamping visitor documentation by @Nusnus in #7745
 - Improved the coverage of test_chord_stamping_body_chord() by @Nusnus in #7748
 - billiard >= 3.6.3.0,<5.0 for rpm by @auvipy in #7764
-- [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in #7625
 - Fixed memory leak with ETA tasks at connection error when worker_cancel_long_running_tasks_on_connection_loss is enabled by @Nusnus in #7771
 - Fixed bug where a chord with header of type tuple was not supported in the link_error flow for task_allow_error_cb_on_chord_header flag by @Nusnus in #7772
 - Scheduled weekly dependency update for week 38 by @pyup-bot in #7767
 - recreate_module: set spec to the new module by @skshetry in #7773
-- [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in #7775
 - Override integration test config using integration-tests-config.json by @thedrow in #7778
 - Fixed error handling bugs due to upgrade to a newer version of billiard by @Nusnus in #7781
 - Do not recommend using easy_install anymore by @jugmac00 in #7789
 - GitHub Workflows security hardening by @sashashura in #7768
 - Update ambiguous acks_late doc by @Zhong-z in #7728
-- [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in #7799
 - billiard >=4.0.2,<5.0 by @auvipy in #7720
 - importlib_metadata remove deprecated entry point interfaces by @woutdenolf in #7785
 - Scheduled weekly dependency update for week 41 by @pyup-bot in #7798
@@ -125,7 +117,6 @@ an overview of what's new in Celery 5.2.
 - Remove unused variable _range by @Kludex in #7813
 - Add type annotation on concurrency/threads.py by @Kludex in #7808
 - Fix linter workflow by @Kludex in #7816
-- [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in #7822
 - Scheduled weekly dependency update for week 42 by @pyup-bot in #7821
 - Remove .cookiecutterrc by @Kludex in #7830
 - Remove .coveragerc file by @Kludex in #7826
@@ -141,7 +132,6 @@ an overview of what's new in Celery 5.2.
 - Update serializer docs by @sondrelg in #7858
 - Remove reference to old Python version by @Kludex in #7829
 - Added on_replace() to Task to allow manipulating the replaced sig with custom changes at the end of the task.replace() by @Nusnus in #7860
-- [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in #7869
 - Add clarifying information to completed_count documentation by @hankehly in #7873
 - Stabilized test_revoked_by_headers_complex_canvas by @Nusnus in #7877
 - StampingVisitor will visit the callbacks and errbacks of the signature by @Nusnus in #7867
@@ -160,14 +150,12 @@ an overview of what's new in Celery 5.2.
 - Canvas.py doc enhancement by @Nusnus in #7897
 - fix(sec): upgrade sqlalchemy to 1.2.18 by @chncaption in #7899
 - Canvas.py doc enhancement by @Nusnus in #7902
-- [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in #7904
 - Fix test warnings by @ShaheedHaque in #7906
 - Support for out-of-tree worker pool implementations by @ShaheedHaque in #7880
 - Canvas.py doc enhancement by @Nusnus in #7907
 - Use bound task in base task example. Closes #7909 by @WilliamDEdwards in #7910
 - Allow the stamping visitor itself to set the stamp value type instead of casting it to a list by @Nusnus in #7914
 - Stamping a task left the task properties dirty by @Nusnus in #7916
-- [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in #7917
 - Fixed bug when chaining a chord with a group by @Nusnus in #7919
 - Fixed bug in the stamping visitor mechanism where the request was lacking the stamps in the 'stamps' property by @Nusnus in #7928
 - Fixed bug in task_accepted() where the request was not added to the requests but only to the active_requests by @Nusnus in #7929
@@ -180,7 +168,6 @@ an overview of what's new in Celery 5.2.
 - Fixed a bug in losing chain links when unchaining an inner chain with links by @Nusnus in #7938
 - Removing as not mandatory by @auvipy in #7885
 - Housekeeping for Canvas.py by @Nusnus in #7942
-- [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in #7927
 - Scheduled weekly dependency update for week 50 by @pyup-bot in #7954
 - try pypy 3.9 in CI by @auvipy in #7956
 - sqlalchemy==1.4.45 by @auvipy in #7943
@@ -188,7 +175,6 @@ an overview of what's new in Celery 5.2.
 - feat(typecheck): allow changing type check behavior on the app level; by @moaddib666 in #7952
 - Add broker_channel_error_retry option by @nkns165 in #7951
 - Add beat_cron_starting_deadline_seconds to prevent unwanted cron runs by @abs25 in #7945
-- [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in #7966
 - Scheduled weekly dependency update for week 51 by @pyup-bot in #7965
 - Added doc to "retry_errors" newly supported field of "publish_retry_policy" of the task namespace by @Nusnus in #7967
 - Renamed from master to main in the docs and the CI workflows by @Nusnus in #7968
@@ -196,7 +182,6 @@ an overview of what's new in Celery 5.2.
 - Pin redis==4.3.4 by @auvipy in #7974
 - return list of nodes to make sphinx extension compatible with Sphinx 6.0 by @mathiasertl in #7978
 - use version range redis>=4.2.2,<4.4.0 by @auvipy in #7980
-- [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in #7982
 - Scheduled weekly dependency update for week 01 by @pyup-bot in #7987
 - Add annotations to minimise differences with celery-aio-pool's tracer.py. by @ShaheedHaque in #7925
 - Fixed bug where linking a stamped task did not add the stamp to the link's options by @Nusnus in #7992
@@ -206,7 +191,6 @@ an overview of what's new in Celery 5.2.
 - RabbitMQ links update by @arnisjuraga in #8031
 - Ignore files generated by tests by @Kludex in #7846
 - Revert "sqlalchemy==1.4.46 (#7995)" by @Nusnus in #8033
-- [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in #8039
 - Fixed bug with replacing a stamped task with a chain or a group (inc. links/errlinks) by @Nusnus in #8034
 - Fixed formatting in setup.cfg that caused flake8 to misbehave by @Nusnus in #8044
 - Removed duplicated import Iterable by @Nusnus in #8046
@@ -217,7 +201,6 @@ an overview of what's new in Celery 5.2.
 - Fix cronjob that use day of month and negative UTC timezone by @pkyosx in #8053
 - Stamping Mechanism Examples Refactoring by @Nusnus in #8060
 - Fixed bug in Task.on_stamp_replaced() by @Nusnus in #8061
-- [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in #8065
 - Stamping Mechanism Refactoring 2 by @Nusnus in #8064
 - Changed default append_stamps from True to False (meaning duplicates … by @Nusnus in #8068
 - typo in comment: mailicious => malicious by @yanick in #8072
