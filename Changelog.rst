@@ -8,6 +8,74 @@ This document contains change notes for bugfix & new features
 in the main branch & 5.2.x series, please see :ref:`whatsnew-5.2` for
 an overview of what's new in Celery 5.2.
 
+.. _version-5.3.0rc1:
+
+5.3.0rc1
+=======
+
+:release-date: 2023-05-11 4:24 P.M GMT+2
+:release-by: Tomer Nosrati
+
+- [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in #8079
+- fix functiom name by @cuishuang in #8087
+- Update CELERY_TASK_EAGER setting in user guide by @thebalaa in #8085
+- Stamping documentation fixes & cleanups by @Nusnus in #8092
+- switch to maintained pyro5 by @auvipy in #8093
+- udate dependencies of tests by @auvipy in #8095
+- cryptography==39.0.1 by @auvipy in #8096
+- Annotate celery/security/certificate.py by @Kludex in #7398
+- Deprecate parse_iso8601 in favor of fromisoformat by @stumpylog in #8098
+- pytest==7.2.2 by @auvipy in #8106
+- Type annotations for celery/utils/text.py by @max-muoto in #8107
+- Update web framework URLs by @sblondon in #8112
+- Fix contribution URL by @sblondon in #8111
+- Trying to clarify CERT_REQUIRED by @pamelafox in #8113
+- Fix potential AttributeError on 'stamps' by @Darkheir in #8115
+- Type annotations for celery/apps/beat.py by @max-muoto in #8108
+- Fixed bug where retrying a task loses its stamps by @Nusnus in #8120
+- Type hints for celery/schedules.py by @max-muoto in #8114
+- [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in #8122
+- Reference Gopher Celery in README by @marselester in #8131
+- Update sqlalchemy.txt by @auvipy in #8136
+- azure-storage-blob 12.15.0 by @auvipy in #8137
+- test kombu 5.3.0b3 by @auvipy in #8138
+- fix: add expire string parse. by @Bidaya0 in #8134
+- Fix worker crash on un-pickleable exceptions by @youtux in #8133
+- CLI help output: avoid text rewrapping by click by @woutdenolf in #8152
+- Warn when an unnamed periodic task override another one. by @iurisilvio in #8143
+- Fix Task.handle_ignore not wrapping exceptions properly by @youtux in #8149
+- Hotfix for (#8120) - Stamping bug with retry by @Nusnus in #8158
+- Fix integration test by @youtux in #8156
+- Fixed bug in revoke_by_stamped_headers where impl did not match doc by @Nusnus in #8162
+- Align revoke and revoke_by_stamped_headers return values (terminate=True) by @Nusnus in #8163
+- Update & simplify GHA pip caching by @stumpylog in #8164
+- Update auth.txt by @auvipy in #8167
+- Update test.txt versions by @auvipy in #8173
+- remove extra = from test.txt by @auvipy in #8179
+- Update sqs.txt kombu[sqs]>=5.3.0b3 by @auvipy in #8174
+- Added signal triggered before fork by @jaroslawporada in #8177
+- Update documentation on SQLAlchemy by @max-muoto in #8188
+- Deprecate pytz and use zoneinfo by @max-muoto in #8159
+- [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in #8191
+- Update dev.txt by @auvipy in #8192
+- Update test.txt by @auvipy in #8193
+- Update test-integration.txt by @auvipy in #8194
+- Update zstd.txt by @auvipy in #8195
+- Update s3.txt by @auvipy in #8196
+- Update msgpack.txt by @auvipy in #8199
+- Update solar.txt by @auvipy in #8198
+- Add Semgrep to CI by @Nusnus in #8201
+- Added semgrep to README.rst by @Nusnus in #8202
+- Update django.txt by @auvipy in #8197
+- Update redis.txt 4.3.6 by @auvipy in #8161
+- start removing codecov from pypi by @auvipy in #8206
+- Update test.txt dependencies by @auvipy in #8205
+- Improved doc for: worker_deduplicate_successful_tasks by @Nusnus in #8209
+- Renamed revoked_headers to revoked_stamps by @Nusnus in #8210
+- [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in #8223
+- Ensure argument for map is JSON serializable by @candleindark in #8229
+- [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in #8239
+
 .. _version-5.3.0b2:
 
 5.3.0b2
@@ -156,7 +224,6 @@ an overview of what's new in Celery 5.2.
 - Fix command for starting flower with specified broker URL by @ShukantPal in #8071
 - Improve documentation on ETA/countdown tasks (#8069) by @norbertcyran in #8075
 
-
 .. _version-5.3.0b1:
 
 5.3.0b1
@@ -175,7 +242,6 @@ an overview of what's new in Celery 5.2.
 - Make default worker state limits configurable (#7609).
 - Only clear the cache if there are no active writers.
 - Billiard 4.0.1
-
 
 .. _version-5.3.0a1:
 
@@ -222,8 +288,6 @@ an overview of what's new in Celery 5.2.
 - Improve workflow primitive subclassing (#7593).
 - test kombu>=5.3.0a1,<6.0 (#7598).
 - Canvas Header Stamping (#7384).
-
-
 
 .. _version-5.2.7:
 
