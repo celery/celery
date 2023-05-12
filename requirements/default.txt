@@ -8,3 +8,4 @@ click-plugins>=1.1.1
 importlib-metadata>=3.6; python_version < '3.8'
 backports.zoneinfo>=0.2.1; python_version < '3.9'
 tzdata>=2022.7
+python-dateutil>=2.8.2
