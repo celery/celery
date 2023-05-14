@@ -408,6 +408,14 @@ class crontab(BaseSchedule):
         self.month_of_year = self._expand_cronspec(month_of_year, 12, 1)
         super().__init__(**kwargs)
 
+    @classmethod
+    def from_string(cls, crontab: str):
+        """
+        Create a Crontab from a string. For example ``crontab='* * * * '``.
+        """
+        minute, hour, day_of_week, day_of_month, month_of_year = crontab.split(" ")
+        return cls(minute, hour, day_of_week, day_of_month, month_of_year)
+
     @staticmethod
     def _expand_cronspec(
             cronspec: int | str | Iterable,
