@@ -411,7 +411,7 @@ class crontab(BaseSchedule):
     @classmethod
     def from_string(cls, crontab: str):
         """
-        Create a Crontab from a string. For example ``crontab='* * * * '``.
+        Create a Crontab from a string. For example ``crontab='* * * * *'``.
         """
         minute, hour, day_of_week, day_of_month, month_of_year = crontab.split(" ")
         return cls(minute, hour, day_of_week, day_of_month, month_of_year)
