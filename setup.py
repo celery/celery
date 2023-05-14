@@ -2,7 +2,6 @@
 import codecs
 import os
 import re
-import sys
 
 import setuptools
 import setuptools.command.test
@@ -132,22 +131,6 @@ def long_description():
     except OSError:
         return 'Long description error: Missing README.rst file'
 
-# -*- Command: setup.py test -*-
-
-
-class pytest(setuptools.command.test.test):
-    user_options = [('pytest-args=', 'a', 'Arguments to pass to pytest')]
-
-    def initialize_options(self):
-        super().initialize_options()
-        self.pytest_args = []
-
-    def run_tests(self):
-        import pytest as _pytest
-        sys.exit(_pytest.main(self.pytest_args))
-
-# -*- %%% -*-
-
 
 meta = parse_dist_meta()
 setuptools.setup(
@@ -166,9 +149,6 @@ setuptools.setup(
     python_requires=">=3.7",
     tests_require=reqs('test.txt'),
     extras_require=extras_require(),
-    cmdclass={'test': pytest},
-    include_package_data=True,
-    zip_safe=False,
     entry_points={
         'console_scripts': [
             'celery = celery.__main__:main',
