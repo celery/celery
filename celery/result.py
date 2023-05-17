@@ -28,7 +28,7 @@ __all__ = (
 
 E_WOULDBLOCK = """\
 Never call result.get() within a task!
-See http://docs.celeryq.org/en/latest/userguide/tasks.html\
+See http://docs.celeryq.dev/en/latest/userguide/tasks.html\
 #task-synchronous-subtasks
 """
 
