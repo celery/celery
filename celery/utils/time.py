@@ -296,30 +296,28 @@ def is_naive(dt: datetime) -> bool:
     return dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None
 
 
-def _can_detect_ambiguous(tz: tzinfo) -> bool:
-    """Helper function to determine if a timezone can detect ambiguous times using dateutil."""
+def _datetime_exists(dt: datetime) -> bool:
+    """Check if a datetime exists. Taken from: https://pytz-deprecation-shim.readthedocs.io/en/latest/migration.html"""
+    # There are no non-existent times in UTC, and comparisons between
+    # aware time zones always compare absolute times; if a datetime is
+    # not equal to the same datetime represented in UTC, it is imaginary.
+    return dt.astimezone(timezone.utc) == dt
 
-    return isinstance(tz, ZoneInfo) or hasattr(tz, "is_ambiguous")
 
-
-def _is_ambigious(dt: datetime, tz: tzinfo) -> bool:
-    """Helper function to determine if a timezone is ambiguous using python's dateutil module.
-
-    Returns False if the timezone cannot detect ambiguity, or if there is no ambiguity, otherwise True.
-
-    In order to detect ambiguous datetimes, the timezone must be built using ZoneInfo, or have an is_ambiguous
-    method. Previously, pytz timezones would throw an AmbiguousTimeError if the localized dt was ambiguous,
-    but now we need to specifically check for ambiguity with dateutil, as pytz is deprecated.
-    """
-
-    return _can_detect_ambiguous(tz) and dateutil_tz.datetime_ambiguous(dt)
+def _datetime_is_ambiguous(dt: datetime) -> bool:
+    """Check whether a datetime is ambiguous. Taken from: https://pytz-deprecation-shim.readthedocs.io/en/latest/migration.html"""
+    # If a datetime exists and its UTC offset changes in response to
+    # changing `fold`, it is ambiguous in the zone specified.
+    return _datetime_exists(dt) and (
+        dt.replace(fold=not dt.fold).utcoffset() != dt.utcoffset()
+    )
 
 
 def make_aware(dt: datetime, tz: tzinfo) -> datetime:
     """Set timezone for a :class:`~datetime.datetime` object."""
 
     dt = dt.replace(tzinfo=tz)
-    if _is_ambigious(dt, tz):
+    if isinstance(tz, ZoneInfo) and _datetime_is_ambiguous(dt):
         dt = min(dt.replace(fold=0), dt.replace(fold=1))
     return dt
 
