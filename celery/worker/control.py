@@ -168,6 +168,8 @@ def revoke_by_stamped_headers(state, headers, terminate=False, signal=None, **kw
     # XXX Note that this redefines `terminate`:
     #     Outside of this scope that is a function.
     # supports list argument since 3.1
+    signum = _signals.signum(signal or TERM_SIGNAME)
+
     if isinstance(headers, list):
         headers = {h.split('=')[0]: h.split('=')[1] for h in headers}
 
@@ -176,8 +178,9 @@ def revoke_by_stamped_headers(state, headers, terminate=False, signal=None, **kw
     if not terminate:
         return ok(f'headers {headers} flagged as revoked')
 
-    task_ids = set()
     active_requests = list(worker_state.active_requests)
+
+    terminated_stamps = set()
 
     # Terminate all running tasks of matching headers
     if active_requests:
@@ -196,19 +199,18 @@ def revoke_by_stamped_headers(state, headers, terminate=False, signal=None, **kw
                 # if so, check if any of the stamped headers match the given headers
                 for expected_header_key, expected_header_value in headers.items():
                     if expected_header_key in req.stamps:
-                        actual_header = req.stamps[expected_header_key]
+                        expected_header_value = maybe_list(expected_header_value)
+                        actual_header = maybe_list(req.stamps[expected_header_key])
+                        matching_stamps_for_request = set(actual_header) & set(expected_header_value)
                         # Check any possible match regardless if the stamps are a sequence or not
-                        if any([
-                            header in maybe_list(expected_header_value)
-                            for header in maybe_list(actual_header)
-                        ]):
-                            task_ids.add(req.task_id)
+                        if matching_stamps_for_request:
+                            terminated_stamps.update(matching_stamps_for_request)
+                            req.terminate(state.consumer.pool, signal=signum)
                             continue
 
-    task_ids = _revoke(state, task_ids, terminate, signal, **kwargs)
-    if isinstance(task_ids, dict):
-        return task_ids
-    return ok(list(task_ids))
+    if not terminated_stamps:
+        return ok('terminate: Could not find tasks with matching stamps')
+    return ok('terminate: {}'.format(', '.join(terminated_stamps)))
 
 
 def _revoke(state, task_ids, terminate=False, signal=None, **kwargs):
