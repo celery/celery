@@ -482,7 +482,7 @@ class Request:
                                 revoking_header = {stamp: stamped_value}
                                 break
                     else:
-                        revoked_by_header = stamped_header in revoked_stamps[stamp]
+                        revoked_by_header = stamped_header in maybe_list(revoked_header)
                         revoking_header = {stamp: stamped_header}
                     break
 
