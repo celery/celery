@@ -11,6 +11,7 @@ from kombu import pidbox
 from kombu.utils.uuid import uuid
 
 from celery.utils.collections import AttributeDict
+from celery.utils.functional import maybe_list
 from celery.utils.timer2 import Timer
 from celery.worker import WorkController as _WC
 from celery.worker import consumer, control
@@ -553,12 +554,11 @@ class test_ControlPanel:
         state.consumer = Mock()
         worker_state.task_reserved(request)
         try:
-            r = control.revoke_by_stamped_headers(state, stamped_header, terminate=True)
-            assert stamped_header == revoked_stamps
-            assert 'terminate:' in r['ok']
-            # unknown task id only revokes
-            r = control.revoke_by_stamped_headers(state, stamped_header, terminate=True)
-            assert 'tasks unknown' in r['ok']
+            assert stamped_header.keys() != revoked_stamps.keys()
+            control.revoke_by_stamped_headers(state, stamped_header, terminate=True)
+            assert stamped_header.keys() == revoked_stamps.keys()
+            for key in stamped_header.keys():
+                assert maybe_list(stamped_header[key]) == revoked_stamps[key]
         finally:
             worker_state.task_ready(request)
 
