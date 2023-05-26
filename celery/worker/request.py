@@ -482,7 +482,10 @@ class Request:
                                 revoking_header = {stamp: stamped_value}
                                 break
                     else:
-                        revoked_by_header = stamped_header in maybe_list(revoked_header)
+                        revoked_by_header = any([
+                            stamped_header in maybe_list(revoked_header),
+                            stamped_header == revoked_header,  # When the header is a single set value
+                        ])
                         revoking_header = {stamp: stamped_header}
                     break
 
