@@ -21,7 +21,7 @@ from celery.worker import request as module
 from celery.worker import strategy
 from celery.worker.request import Request, create_request_cls
 from celery.worker.request import logger as req_logger
-from celery.worker.state import revoked
+from celery.worker.state import revoked, revoked_stamps
 
 
 class RequestCase:
@@ -575,6 +575,33 @@ class test_Request(RequestCase):
                 task_revoked, sender=job.task, request=job._context,
                 terminated=False, expired=False, signum=None):
             revoked.add(job.id)
+            assert job.revoked()
+            assert job._already_revoked
+            assert job.acknowledged
+
+    @pytest.mark.parametrize(
+        "header_to_revoke",
+        [
+            {'header_A': 'value_1'},
+            {'header_B': ['value_2', 'value_3']},
+            {'header_C': ('value_2', 'value_3')},
+            {'header_D': {'value_2', 'value_3'}},
+            {'header_E': [1, '2', 3.0]},
+        ],
+    )
+    def test_revoked_by_stamped_headers(self, header_to_revoke):
+        revoked_stamps.clear()
+        job = self.xRequest()
+        stamps = header_to_revoke
+        stamped_headers = list(header_to_revoke.keys())
+        job._message.headers['stamps'] = stamps
+        job._message.headers['stamped_headers'] = stamped_headers
+        job._request_dict['stamps'] = stamps
+        job._request_dict['stamped_headers'] = stamped_headers
+        with self.assert_signal_called(
+                task_revoked, sender=job.task, request=job._context,
+                terminated=False, expired=False, signum=None):
+            revoked_stamps.update(stamps)
             assert job.revoked()
             assert job._already_revoked
             assert job.acknowledged
