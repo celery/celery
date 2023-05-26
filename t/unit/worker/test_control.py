@@ -635,9 +635,9 @@ class test_ControlPanel:
         worker_state.task_reserved(request)
         state = self.create_state()
         state.consumer = Mock()
-        r = control.revoke(state, headers["id"], terminate=True)
         r_headers = control.revoke_by_stamped_headers(state, header_to_revoke, terminate=True)
-        assert r["ok"] == r_headers["ok"]
+        # revoke & revoke_by_stamped_headers are not aligned anymore in their return values
+        assert "{'foo': {'bar'}}" in r_headers["ok"]
 
     def test_autoscale(self):
         self.panel.state.consumer = Mock()
