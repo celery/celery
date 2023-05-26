@@ -545,7 +545,10 @@ class test_ControlPanel:
         finally:
             worker_state.task_ready(request)
 
-    def test_revoke_by_stamped_headers_terminate(self):
+    @pytest.mark.parametrize(
+        "terminate", [True, False],
+    )
+    def test_revoke_by_stamped_headers_terminate(self, terminate):
         request = Mock()
         request.id = uuid()
         request.options = stamped_header = {'stamp': 'foo'}
@@ -554,8 +557,9 @@ class test_ControlPanel:
         state.consumer = Mock()
         worker_state.task_reserved(request)
         try:
+            worker_state.revoked_stamps.clear()
             assert stamped_header.keys() != revoked_stamps.keys()
-            control.revoke_by_stamped_headers(state, stamped_header, terminate=True)
+            control.revoke_by_stamped_headers(state, stamped_header, terminate=terminate)
             assert stamped_header.keys() == revoked_stamps.keys()
             for key in stamped_header.keys():
                 assert maybe_list(stamped_header[key]) == revoked_stamps[key]
