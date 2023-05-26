@@ -234,7 +234,13 @@ class test_tasks:
                 assert result.ready() is True
                 assert result.failed() is False
                 assert result.successful() is True
-        worker_state.revoked_stamps.clear()
+
+            # Clear the set of revoked stamps in the worker state.
+            # This step is performed in each iteration of the loop to ensure that only tasks
+            # stamped with a specific monitoring ID will be revoked.
+            # For subsequent iterations with different monitoring IDs, the revoked stamps will
+            # not match the task's stamps, allowing those tasks to proceed successfully.
+            worker_state.revoked_stamps.clear()
 
         # Try to purge the queue after we're done
         # to attempt to avoid interference to other tests
