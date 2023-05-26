@@ -605,8 +605,13 @@ class test_ControlPanel:
         revoked_stamps.clear()
         r = control.revoke_by_stamped_headers(state, header_to_revoke, terminate=True)
         # Check all of the requests were revoked by a single header
-        assert all([id in r['ok'] for id in ids]), "All requests should be revoked"
-        assert revoked_stamps == header_to_revoke
+        for header, stamp in header_to_revoke.items():
+            assert header in r['ok']
+            for s in maybe_list(stamp):
+                assert str(s) in r['ok']
+        assert header_to_revoke.keys() == revoked_stamps.keys()
+        for key in header_to_revoke.keys():
+            assert list(maybe_list(header_to_revoke[key])) == revoked_stamps[key]
         revoked_stamps.clear()
 
     def test_revoke_return_value_terminate_true(self):

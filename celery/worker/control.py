@@ -177,7 +177,7 @@ def revoke_by_stamped_headers(state, headers, terminate=False, signal=None, **kw
         headers = {h.split('=')[0]: h.split('=')[1] for h in headers}
 
     for header, stamps in headers.items():
-        updated_stamps = maybe_list(worker_state.revoked_stamps.get(header) or []) + maybe_list(stamps)
+        updated_stamps = maybe_list(worker_state.revoked_stamps.get(header) or []) + list(maybe_list(stamps))
         worker_state.revoked_stamps[header] = updated_stamps
 
     if not terminate:
