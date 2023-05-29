@@ -68,7 +68,7 @@ all_total_count = [0]
 revoked = LimitedSet(maxlen=REVOKES_MAX, expires=REVOKE_EXPIRES)
 
 #: Mapping of stamped headers flagged for revoking.
-revoked_headers = {}
+revoked_stamps = {}
 
 should_stop = None
 should_terminate = None
@@ -82,7 +82,7 @@ def reset_state():
     total_count.clear()
     all_total_count[:] = [0]
     revoked.clear()
-    revoked_headers.clear()
+    revoked_stamps.clear()
 
 
 def maybe_shutdown():

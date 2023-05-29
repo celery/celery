@@ -2,6 +2,7 @@ import gc
 import itertools
 import os
 import ssl
+import sys
 import uuid
 from copy import deepcopy
 from datetime import datetime, timedelta
@@ -26,6 +27,11 @@ from celery.utils.objects import Bunch
 from celery.utils.serialization import pickle
 from celery.utils.time import localize, timezone, to_utc
 from t.unit import conftest
+
+if sys.version_info >= (3, 9):
+    from zoneinfo import ZoneInfo
+else:
+    from backports.zoneinfo import ZoneInfo  # noqa
 
 THIS_IS_A_KEY = 'this is a value'
 
@@ -93,7 +99,7 @@ class test_App:
 
         app_now = self.app.now()
 
-        assert app_now.tzinfo.zone == tz_us_eastern.zone
+        assert app_now.tzinfo == tz_us_eastern
 
         diff = to_utc(datetime.utcnow()) - localize(app_now, tz_utc)
         assert diff <= timedelta(seconds=1)
@@ -103,7 +109,7 @@ class test_App:
         del self.app.timezone
         app_now = self.app.now()
         assert self.app.timezone == tz_us_eastern
-        assert app_now.tzinfo.zone == tz_us_eastern.zone
+        assert app_now.tzinfo == tz_us_eastern
 
     @patch('celery.app.base.set_default_app')
     def test_set_default(self, set_default_app):
@@ -520,7 +526,8 @@ class test_App:
             def foo(parameter: int) -> None:
                 pass
 
-            assert typing.get_type_hints(foo) == {'parameter': int, 'return': type(None)}
+            assert typing.get_type_hints(foo) == {
+                'parameter': int, 'return': type(None)}
 
     def test_annotate_decorator(self):
         from celery.app.task import Task
@@ -916,6 +923,33 @@ class test_App:
         assert 'add1' in self.app.conf.beat_schedule
         assert 'add2' in self.app.conf.beat_schedule
 
+    def test_add_periodic_task_expected_override(self):
+
+        @self.app.task
+        def add(x, y):
+            pass
+        sig = add.s(2, 2)
+        self.app.add_periodic_task(10, sig, name='add1', expires=3)
+        self.app.add_periodic_task(20, sig, name='add1', expires=3)
+        assert 'add1' in self.app.conf.beat_schedule
+        assert len(self.app.conf.beat_schedule) == 1
+
+    def test_add_periodic_task_unexpected_override(self, caplog):
+
+        @self.app.task
+        def add(x, y):
+            pass
+        sig = add.s(2, 2)
+        self.app.add_periodic_task(10, sig, expires=3)
+        self.app.add_periodic_task(20, sig, expires=3)
+
+        assert len(self.app.conf.beat_schedule) == 1
+        assert caplog.records[0].message == (
+            "Periodic task key='t.unit.app.test_app.add(2, 2)' shadowed a"
+            " previous unnamed periodic task. Pass a name kwarg to"
+            " add_periodic_task to silence this warning."
+        )
+
     @pytest.mark.masked_modules('multiprocessing.util')
     def test_pool_no_multiprocessing(self, mask_modules):
         pool = self.app.pool
@@ -1066,6 +1100,14 @@ class test_App:
             assert isinstance(main_backend, Backend)
             assert isinstance(thread_backend, Backend)
             assert main_backend is thread_backend
+
+    def test_send_task_expire_as_string(self):
+        try:
+            self.app.send_task(
+                'foo', (1, 2),
+                expires='2023-03-16T17:21:20.663973')
+        except TypeError as e:
+            pytest.fail(f'raise unexcepted error {e}')
 
 
 class test_defaults:

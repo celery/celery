@@ -13,6 +13,7 @@ from celery.canvas import StampingVisitor, signature
 from celery.contrib.testing.mocks import ContextMock
 from celery.exceptions import Ignore, ImproperlyConfigured, Retry
 from celery.result import AsyncResult, EagerResult
+from celery.utils.serialization import UnpickleableExceptionWrapper
 
 try:
     from urllib.error import HTTPError
@@ -215,6 +216,13 @@ class TasksCase:
 
         self.retry_task_customexc = retry_task_customexc
 
+        @self.app.task(bind=True, max_retries=3, iterations=0, shared=False)
+        def retry_task_unpickleable_exc(self, foo, bar):
+            self.iterations += 1
+            raise self.retry(countdown=0, exc=UnpickleableException(foo, bar))
+
+        self.retry_task_unpickleable_exc = retry_task_unpickleable_exc
+
         @self.app.task(bind=True, autoretry_for=(ZeroDivisionError,),
                        shared=False)
         def autoretry_task_no_kwargs(self, a, b):
@@ -389,6 +397,13 @@ class MyCustomException(Exception):
     """Random custom exception."""
 
 
+class UnpickleableException(Exception):
+    """Exception that doesn't survive a pickling roundtrip (dump + load)."""
+    def __init__(self, foo, bar):
+        super().__init__(foo)
+        self.bar = bar
+
+
 class test_task_retries(TasksCase):
 
     def test_retry(self):
@@ -539,6 +554,22 @@ class test_task_retries(TasksCase):
         with pytest.raises(MyCustomException):
             result.get()
         assert self.retry_task_customexc.iterations == 3
+
+    def test_retry_with_unpickleable_exception(self):
+        self.retry_task_unpickleable_exc.max_retries = 2
+        self.retry_task_unpickleable_exc.iterations = 0
+
+        result = self.retry_task_unpickleable_exc.apply(
+            ["foo", "bar"]
+        )
+        with pytest.raises(UnpickleableExceptionWrapper) as exc_info:
+            result.get()
+
+        assert self.retry_task_unpickleable_exc.iterations == 3
+
+        exc_wrapper = exc_info.value
+        assert exc_wrapper.exc_cls_name == "UnpickleableException"
+        assert exc_wrapper.exc_args == ("foo", )
 
     def test_max_retries_exceeded(self):
         self.retry_task.max_retries = 2

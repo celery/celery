@@ -1,3 +1,4 @@
+import time
 from datetime import datetime, timedelta
 from time import perf_counter, sleep
 from uuid import uuid4
@@ -7,12 +8,13 @@ import pytest
 import celery
 from celery import chain, chord, group
 from celery.canvas import StampingVisitor
+from celery.utils.serialization import UnpickleableExceptionWrapper
 from celery.worker import state as worker_state
 
-from .conftest import get_active_redis_channels
+from .conftest import TEST_BACKEND, get_active_redis_channels
 from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result, add_not_typed, fail,
-                    print_unicode, retry, retry_once, retry_once_headers, retry_once_priority, return_properties,
-                    sleeping)
+                    fail_unpickleable, print_unicode, retry, retry_once, retry_once_headers, retry_once_priority,
+                    retry_unpickleable, return_properties, sleeping)
 
 TIMEOUT = 10
 
@@ -232,7 +234,13 @@ class test_tasks:
                 assert result.ready() is True
                 assert result.failed() is False
                 assert result.successful() is True
-        worker_state.revoked_headers.clear()
+
+            # Clear the set of revoked stamps in the worker state.
+            # This step is performed in each iteration of the loop to ensure that only tasks
+            # stamped with a specific monitoring ID will be revoked.
+            # For subsequent iterations with different monitoring IDs, the revoked stamps will
+            # not match the task's stamps, allowing those tasks to proceed successfully.
+            worker_state.revoked_stamps.clear()
 
         # Try to purge the queue after we're done
         # to attempt to avoid interference to other tests
@@ -292,7 +300,7 @@ class test_tasks:
                     assert result.ready() is True
                     assert result.failed() is False
                     assert result.successful() is False
-            worker_state.revoked_headers.clear()
+            worker_state.revoked_stamps.clear()
 
         # Try to purge the queue after we're done
         # to attempt to avoid interference to other tests
@@ -327,16 +335,24 @@ class test_tasks:
             result.get(timeout=5)
         assert result.status == 'FAILURE'
 
-    @pytest.mark.xfail(reason="Retry failed on rpc backend", strict=False)
+    @pytest.mark.xfail(
+        condition=TEST_BACKEND == "rpc",
+        reason="Retry failed on rpc backend",
+        strict=False,
+    )
     def test_retry(self, manager):
         """Tests retrying of task."""
         # Tests when max. retries is reached
         result = retry.delay()
-        for _ in range(5):
+
+        tik = time.monotonic()
+        while time.monotonic() < tik + 5:
             status = result.status
             if status != 'PENDING':
                 break
-            sleep(1)
+            sleep(0.1)
+        else:
+            raise AssertionError("Timeout while waiting for the task to be retried")
         assert status == 'RETRY'
         with pytest.raises(ExpectedException):
             result.get()
@@ -344,14 +360,69 @@ class test_tasks:
 
         # Tests when task is retried but after returns correct result
         result = retry.delay(return_value='bar')
-        for _ in range(5):
+
+        tik = time.monotonic()
+        while time.monotonic() < tik + 5:
             status = result.status
             if status != 'PENDING':
                 break
-            sleep(1)
+            sleep(0.1)
+        else:
+            raise AssertionError("Timeout while waiting for the task to be retried")
         assert status == 'RETRY'
         assert result.get() == 'bar'
         assert result.status == 'SUCCESS'
+
+    def test_retry_with_unpickleable_exception(self, manager):
+        """Test a task that retries with an unpickleable exception.
+
+        We expect to be able to fetch the result (exception) correctly.
+        """
+
+        job = retry_unpickleable.delay(
+            "foo",
+            "bar",
+            retry_kwargs={"countdown": 10, "max_retries": 1},
+        )
+
+        # Wait for the task to raise the Retry exception
+        tik = time.monotonic()
+        while time.monotonic() < tik + 5:
+            status = job.status
+            if status != 'PENDING':
+                break
+            sleep(0.1)
+        else:
+            raise AssertionError("Timeout while waiting for the task to be retried")
+
+        assert status == 'RETRY'
+
+        # Get the exception
+        res = job.result
+        assert job.status == 'RETRY'  # make sure that it wasn't completed yet
+
+        # Check it
+        assert isinstance(res, UnpickleableExceptionWrapper)
+        assert res.exc_cls_name == "UnpickleableException"
+        assert res.exc_args == ("foo",)
+
+        job.revoke()
+
+    def test_fail_with_unpickleable_exception(self, manager):
+        """Test a task that fails with an unpickleable exception.
+
+        We expect to be able to fetch the result (exception) correctly.
+        """
+        result = fail_unpickleable.delay("foo", "bar")
+
+        with pytest.raises(UnpickleableExceptionWrapper) as exc_info:
+            result.get()
+
+        exc_wrapper = exc_info.value
+        assert exc_wrapper.exc_cls_name == "UnpickleableException"
+        assert exc_wrapper.exc_args == ("foo",)
+
+        assert result.status == 'FAILURE'
 
     @flaky
     def test_task_accepted(self, manager, sleep=1):

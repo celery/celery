@@ -1,3 +1,4 @@
+import sys
 import time
 from contextlib import contextmanager
 from datetime import datetime, timedelta
@@ -6,9 +7,14 @@ from unittest import TestCase
 from unittest.mock import Mock
 
 import pytest
-import pytz
 
 from celery.schedules import ParseException, crontab, crontab_parser, schedule, solar
+
+if sys.version_info >= (3, 9):
+    from zoneinfo import ZoneInfo
+else:
+    from backports.zoneinfo import ZoneInfo
+
 
 assertions = TestCase('__init__')
 
@@ -78,8 +84,9 @@ class test_solar:
             try:
                 s.remaining_estimate(datetime.utcnow())
             except TypeError:
-                pytest.fail(f"{s.method} was called with 'use_center' which is not a "
-                            "valid keyword for the function.")
+                pytest.fail(
+                    f"{s.method} was called with 'use_center' which is not a "
+                    "valid keyword for the function.")
 
 
 class test_schedule:
@@ -442,55 +449,55 @@ class test_crontab_remaining_estimate:
         # Test for #1604 issue with region configuration using DST
         tzname = "Europe/Paris"
         self.app.timezone = tzname
-        tz = pytz.timezone(tzname)
+        tz = ZoneInfo(tzname)
         crontab = self.crontab(minute=0, hour=9)
 
         # Set last_run_at Before DST end
-        last_run_at = tz.localize(datetime(2017, 10, 28, 9, 0))
+        last_run_at = datetime(2017, 10, 28, 9, 0, tzinfo=tz)
         # Set now after DST end
-        now = tz.localize(datetime(2017, 10, 29, 7, 0))
+        now = datetime(2017, 10, 29, 7, 0, tzinfo=tz)
         crontab.nowfun = lambda: now
         next = now + crontab.remaining_estimate(last_run_at)
 
         assert next.utcoffset().seconds == 3600
-        assert next == tz.localize(datetime(2017, 10, 29, 9, 0))
+        assert next == datetime(2017, 10, 29, 9, 0, tzinfo=tz)
 
     def test_day_after_dst_start(self):
         # Test for #1604 issue with region configuration using DST
         tzname = "Europe/Paris"
         self.app.timezone = tzname
-        tz = pytz.timezone(tzname)
+        tz = ZoneInfo(tzname)
         crontab = self.crontab(minute=0, hour=9)
 
         # Set last_run_at Before DST start
-        last_run_at = tz.localize(datetime(2017, 3, 25, 9, 0))
+        last_run_at = datetime(2017, 3, 25, 9, 0, tzinfo=tz)
         # Set now after DST start
-        now = tz.localize(datetime(2017, 3, 26, 7, 0))
+        now = datetime(2017, 3, 26, 7, 0, tzinfo=tz)
         crontab.nowfun = lambda: now
         next = now + crontab.remaining_estimate(last_run_at)
 
         assert next.utcoffset().seconds == 7200
-        assert next == tz.localize(datetime(2017, 3, 26, 9, 0))
+        assert next == datetime(2017, 3, 26, 9, 0, tzinfo=tz)
 
     def test_negative_utc_timezone_with_day_of_month(self):
         # UTC-8
         tzname = "America/Los_Angeles"
         self.app.timezone = tzname
-        tz = pytz.timezone(tzname)
+        tz = ZoneInfo(tzname)
 
         # set day_of_month to test on _delta_to_next
         crontab = self.crontab(minute=0, day_of_month='27-31')
 
         # last_run_at: '2023/01/28T23:00:00-08:00'
-        last_run_at = tz.localize(datetime(2023, 1, 28, 23, 0))
+        last_run_at = datetime(2023, 1, 28, 23, 0, tzinfo=tz)
 
         # now: '2023/01/29T00:00:00-08:00'
-        now = tz.localize(datetime(2023, 1, 29, 0, 0))
+        now = datetime(2023, 1, 29, 0, 0, tzinfo=tz)
 
         crontab.nowfun = lambda: now
         next = now + crontab.remaining_estimate(last_run_at)
 
-        assert next == tz.localize(datetime(2023, 1, 29, 0, 0))
+        assert next == datetime(2023, 1, 29, 0, 0, tzinfo=tz)
 
 
 class test_crontab_is_due:
@@ -831,7 +838,7 @@ class test_crontab_is_due:
         now = datetime(2022, 12, 5, 10, 30)
         expected_next_execution_time = datetime(2022, 12, 6, 7, 30)
         expected_remaining = (
-                    expected_next_execution_time - now).total_seconds()
+            expected_next_execution_time - now).total_seconds()
 
         # Run the daily (7:30) crontab with the current date
         with patch_crontab_nowfun(self.daily, now):
@@ -847,7 +854,7 @@ class test_crontab_is_due:
         now = datetime(2022, 12, 5, 10, 30)
         expected_next_execution_time = datetime(2022, 12, 6, 7, 30)
         expected_remaining = (
-                    expected_next_execution_time - now).total_seconds()
+            expected_next_execution_time - now).total_seconds()
 
         # Run the daily (7:30) crontab with the current date
         with patch_crontab_nowfun(self.daily, now):
@@ -865,7 +872,7 @@ class test_crontab_is_due:
         now = datetime(2022, 12, 5, 8, 0)
         expected_next_execution_time = datetime(2022, 12, 6, 7, 30)
         expected_remaining = (
-                    expected_next_execution_time - now).total_seconds()
+            expected_next_execution_time - now).total_seconds()
 
         # run the daily (7:30) crontab with the current date
         with patch_crontab_nowfun(self.daily, now):
@@ -884,7 +891,7 @@ class test_crontab_is_due:
         now = datetime(2022, 12, 5, 8, 0)
         expected_next_execution_time = datetime(2022, 12, 6, 7, 30)
         expected_remaining = (
-                    expected_next_execution_time - now).total_seconds()
+            expected_next_execution_time - now).total_seconds()
 
         # Run the daily (7:30) crontab with the current date
         with patch_crontab_nowfun(self.daily, now):
@@ -904,7 +911,7 @@ class test_crontab_is_due:
         now = datetime(2022, 12, 5, 11, 0)
         expected_next_execution_time = datetime(2022, 12, 6, 7, 30)
         expected_remaining = (
-                    expected_next_execution_time - now).total_seconds()
+            expected_next_execution_time - now).total_seconds()
 
         # run the daily (7:30) crontab with the current date
         with patch_crontab_nowfun(self.daily, now):
@@ -918,7 +925,7 @@ class test_crontab_is_due:
         now = datetime(2022, 12, 5, 10, 30)
         expected_next_execution_time = datetime(2022, 12, 7, 7, 30)
         expected_remaining = (
-                    expected_next_execution_time - now).total_seconds()
+            expected_next_execution_time - now).total_seconds()
 
         # Run the daily (7:30) crontab with the current date
         with patch_crontab_nowfun(self.daily, now):
@@ -932,7 +939,7 @@ class test_crontab_is_due:
         now = datetime(2022, 12, 5, 10, 30)
         expected_next_execution_time = datetime(2022, 12, 6, 7, 30)
         expected_remaining = (
-                    expected_next_execution_time - now).total_seconds()
+            expected_next_execution_time - now).total_seconds()
 
         # Run the daily (7:30) crontab with the current date
         with patch_crontab_nowfun(self.daily, now):
@@ -946,7 +953,7 @@ class test_crontab_is_due:
         now = datetime(2022, 12, 5, 10, 30)
         expected_next_execution_time = datetime(2022, 12, 6, 7, 30)
         expected_remaining = (
-                    expected_next_execution_time - now).total_seconds()
+            expected_next_execution_time - now).total_seconds()
 
         # Run the daily (7:30) crontab with the current date
         with patch_crontab_nowfun(self.daily, now):
@@ -958,16 +965,16 @@ class test_crontab_is_due:
         # UTC-8
         tzname = "America/Los_Angeles"
         self.app.timezone = tzname
-        tz = pytz.timezone(tzname)
+        tz = ZoneInfo(tzname)
 
         # set day_of_month to test on _delta_to_next
         crontab = self.crontab(minute=0, day_of_month='27-31')
 
         # last_run_at: '2023/01/28T23:00:00-08:00'
-        last_run_at = tz.localize(datetime(2023, 1, 28, 23, 0))
+        last_run_at = datetime(2023, 1, 28, 23, 0, tzinfo=tz)
 
         # now: '2023/01/29T00:00:00-08:00'
-        now = tz.localize(datetime(2023, 1, 29, 0, 0))
+        now = datetime(2023, 1, 29, 0, 0, tzinfo=tz)
 
         with patch_crontab_nowfun(crontab, now):
             due, remaining = crontab.is_due(last_run_at)

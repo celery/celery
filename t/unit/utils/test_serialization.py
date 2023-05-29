@@ -5,11 +5,15 @@ from datetime import date, datetime, time, timedelta
 from unittest.mock import Mock
 
 import pytest
-import pytz
 from kombu import Queue
 
 from celery.utils.serialization import (STRTOBOOL_DEFAULT_TABLE, UnpickleableExceptionWrapper, ensure_serializable,
                                         get_pickleable_etype, jsonify, strtobool)
+
+if sys.version_info >= (3, 9):
+    from zoneinfo import ZoneInfo
+else:
+    from backports.zoneinfo import ZoneInfo
 
 
 class test_AAPickle:
@@ -64,7 +68,7 @@ class test_jsonify:
         ['foo', 'bar', 'baz'],
         {'foo': 'bar'},
         datetime.utcnow(),
-        datetime.utcnow().replace(tzinfo=pytz.utc),
+        datetime.utcnow().replace(tzinfo=ZoneInfo("UTC")),
         datetime.utcnow().replace(microsecond=0),
         date(2012, 1, 1),
         time(hour=1, minute=30),
