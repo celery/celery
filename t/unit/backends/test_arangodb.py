@@ -116,13 +116,17 @@ class test_ArangoDbBackend:
         self.backend._connection = {
             'celery': Mock(),
         }
-
         self.backend.cleanup()
-
+        expected_collection = 'celery'
         expected_date = (now - self.backend.expires_delta).isoformat()
-        expected_query = (
-            'FOR item IN celery '
-            'FILTER item.task.date_done < "{date}" '
-            'REMOVE item IN celery'
-        ).format(date=expected_date)
-        self.backend.db.AQLQuery.assert_called_once_with(expected_query)
+        self.backend.db.AQLQuery.assert_called_once_with(
+            """
+            FOR record IN @@collection
+                FILTER record.task.date_done < @checkpoint
+                REMOVE record IN @@collection
+            """,
+            bindVars={
+                "@collection": expected_collection,
+                "checkpoint": expected_date,
+            },
+        )
