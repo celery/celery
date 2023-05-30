@@ -736,23 +736,6 @@ Installing the dependencies:
 
     $ pip install -U -r requirements/pkgutils.txt
 
-pyflakes & PEP-8
-~~~~~~~~~~~~~~~~
-
-To ensure that your changes conform to :pep:`8` and to run pyflakes
-execute:
-
-.. code-block:: console
-
-    $ make flakecheck
-
-To not return a negative exit code when this command fails, use
-the ``flakes`` target instead:
-
-.. code-block:: console
-
-    $ make flakes
-
 API reference
 ~~~~~~~~~~~~~
 
