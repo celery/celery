@@ -8,8 +8,7 @@ from kombu.asynchronous import ERR, READ, WRITE, Hub
 from kombu.exceptions import DecodeError
 
 from celery.bootsteps import CLOSE, RUN
-from celery.exceptions import (InvalidTaskError, WorkerLostError,
-                               WorkerShutdown, WorkerTerminate)
+from celery.exceptions import InvalidTaskError, WorkerLostError, WorkerShutdown, WorkerTerminate
 from celery.platforms import EX_FAILURE, EX_OK
 from celery.worker import state
 from celery.worker.consumer import Consumer
@@ -134,7 +133,7 @@ def get_task_callback(*args, **kwargs):
 
 class test_asynloop:
 
-    def setup(self):
+    def setup_method(self):
         @self.app.task(shared=False)
         def add(x, y):
             return x + y
@@ -530,7 +529,7 @@ class test_synloop:
 
 class test_quick_drain:
 
-    def setup(self):
+    def setup_method(self):
         self.connection = Mock(name='connection')
 
     def test_drain(self):

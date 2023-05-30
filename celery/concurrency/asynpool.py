@@ -14,6 +14,7 @@ This code deals with three major challenges:
 """
 import errno
 import gc
+import inspect
 import os
 import select
 import time
@@ -26,7 +27,7 @@ from time import sleep
 from weakref import WeakValueDictionary, ref
 
 from billiard import pool as _pool
-from billiard.compat import buf_t, isblocking, setblocking
+from billiard.compat import isblocking, setblocking
 from billiard.pool import ACK, NACK, RUN, TERMINATE, WorkersJoined
 from billiard.queues import _SimpleQueue
 from kombu.asynchronous import ERR, WRITE
@@ -35,6 +36,7 @@ from kombu.utils.eventio import SELECT_BAD_FD
 from kombu.utils.functional import fxrange
 from vine import promise
 
+from celery.signals import worker_before_create_process
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.worker import state as worker_state
@@ -46,7 +48,7 @@ try:
     from _billiard import read as __read__
     readcanbuf = True
 
-except ImportError:  # pragma: no cover
+except ImportError:
 
     def __read__(fd, buf, size, read=os.read):
         chunk = read(fd, size)
@@ -89,8 +91,7 @@ Ack = namedtuple('Ack', ('id', 'fd', 'payload'))
 
 def gen_not_started(gen):
     """Return true if generator is not started."""
-    # gi_frame is None when generator stopped.
-    return gen.gi_frame and gen.gi_frame.f_lasti == -1
+    return inspect.getgeneratorstate(gen) == "GEN_CREATED"
 
 
 def _get_job_writer(job):
@@ -405,6 +406,9 @@ class AsynPool(_pool.Pool):
     ResultHandler = ResultHandler
     Worker = Worker
 
+    #: Set by :meth:`register_with_event_loop` after running the first time.
+    _registered_with_event_loop = False
+
     def WorkerProcess(self, worker):
         worker = super().WorkerProcess(worker)
         worker.dead = False
@@ -473,6 +477,7 @@ class AsynPool(_pool.Pool):
         )
 
     def _create_worker_process(self, i):
+        worker_before_create_process.send(sender=self)
         gc.collect()  # Issue #2927
         return super()._create_worker_process(i)
 
@@ -523,7 +528,11 @@ class AsynPool(_pool.Pool):
         for handler, interval in self.timers.items():
             hub.call_repeatedly(interval, handler)
 
-        hub.on_tick.add(self.on_poll_start)
+        # Add on_poll_start to the event loop only once to prevent duplication
+        # when the Consumer restarts due to a connection error.
+        if not self._registered_with_event_loop:
+            hub.on_tick.add(self.on_poll_start)
+            self._registered_with_event_loop = True
 
     def _create_timelimit_handlers(self, hub):
         """Create handlers used to implement time limits."""
@@ -861,7 +870,7 @@ class AsynPool(_pool.Pool):
             header = pack('>I', body_size)
             # index 1,0 is the job ID.
             job = get_job(tup[1][0])
-            job._payload = buf_t(header), buf_t(body), body_size
+            job._payload = memoryview(header), memoryview(body), body_size
             put_message(job)
         self._quick_put = send_job
 
@@ -980,12 +989,10 @@ class AsynPool(_pool.Pool):
             return
         # cancel all tasks that haven't been accepted so that NACK is sent
         # if synack is enabled.
-        for job in tuple(self._cache.values()):
-            if not job._accepted:
-                if self.synack:
+        if self.synack:
+            for job in self._cache.values():
+                if not job._accepted:
                     job._cancel()
-                else:
-                    job.discard()
 
         # clear the outgoing buffer as the tasks will be redelivered by
         # the broker anyway.
@@ -1001,37 +1008,45 @@ class AsynPool(_pool.Pool):
             if self._state == RUN:
                 # flush outgoing buffers
                 intervals = fxrange(0.01, 0.1, 0.01, repeatlast=True)
+
+                # TODO: Rewrite this as a dictionary comprehension once we drop support for Python 3.7
+                #       This dict comprehension requires the walrus operator which is only available in 3.8.
                 owned_by = {}
                 for job in self._cache.values():
                     writer = _get_job_writer(job)
                     if writer is not None:
                         owned_by[writer] = job
 
-                while self._active_writers:
-                    writers = list(self._active_writers)
-                    for gen in writers:
-                        if (gen.__name__ == '_write_job' and
-                                gen_not_started(gen)):
-                            # hasn't started writing the job so can
-                            # discard the task, but we must also remove
-                            # it from the Pool._cache.
-                            try:
-                                job = owned_by[gen]
-                            except KeyError:
-                                pass
+                if not self._active_writers:
+                    self._cache.clear()
+                else:
+                    while self._active_writers:
+                        writers = list(self._active_writers)
+                        for gen in writers:
+                            if (gen.__name__ == '_write_job' and
+                                    gen_not_started(gen)):
+                                # hasn't started writing the job so can
+                                # discard the task, but we must also remove
+                                # it from the Pool._cache.
+                                try:
+                                    job = owned_by[gen]
+                                except KeyError:
+                                    pass
+                                else:
+                                    # removes from Pool._cache
+                                    job.discard()
+                                self._active_writers.discard(gen)
                             else:
-                                # removes from Pool._cache
-                                job.discard()
-                            self._active_writers.discard(gen)
-                        else:
-                            try:
-                                job = owned_by[gen]
-                            except KeyError:
-                                pass
-                            else:
-                                job_proc = job._write_to
-                                if job_proc._is_alive():
-                                    self._flush_writer(job_proc, gen)
+                                try:
+                                    job = owned_by[gen]
+                                except KeyError:
+                                    pass
+                                else:
+                                    job_proc = job._write_to
+                                    if job_proc._is_alive():
+                                        self._flush_writer(job_proc, gen)
+
+                                    job.discard()
                     # workers may have exited in the meantime.
                     self.maintain_pool()
                     sleep(next(intervals))  # don't busyloop

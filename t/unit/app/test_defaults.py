@@ -1,17 +1,16 @@
 import sys
 from importlib import import_module
 
-from celery.app.defaults import (_OLD_DEFAULTS, _OLD_SETTING_KEYS,
-                                 _TO_NEW_KEY, _TO_OLD_KEY, DEFAULTS,
-                                 NAMESPACES, SETTING_KEYS)
+from celery.app.defaults import (_OLD_DEFAULTS, _OLD_SETTING_KEYS, _TO_NEW_KEY, _TO_OLD_KEY, DEFAULTS, NAMESPACES,
+                                 SETTING_KEYS)
 
 
 class test_defaults:
 
-    def setup(self):
+    def setup_method(self):
         self._prev = sys.modules.pop('celery.app.defaults', None)
 
-    def teardown(self):
+    def teardown_method(self):
         if self._prev:
             sys.modules['celery.app.defaults'] = self._prev
 

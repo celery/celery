@@ -126,8 +126,8 @@ $(CONTRIBUTING):
 contrib: clean-contrib $(CONTRIBUTING)
 
 clean-pyc:
-	-find . -type f -a \( -name "*.pyc" -o -name "*$$py.class" \) | xargs rm
-	-find . -type d -name "__pycache__" | xargs rm -r
+	-find . -type f -a \( -name "*.pyc" -o -name "*$$py.class" \) | xargs -r rm
+	-find . -type d -name "__pycache__" | xargs -r rm -r
 
 removepyc: clean-pyc
 

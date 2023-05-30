@@ -8,28 +8,28 @@ import os
 import sys
 import time
 from collections import namedtuple
+from typing import Any, Callable, Dict, FrozenSet, Optional, Sequence, Tuple, Type, Union
 from warnings import warn
 
-from billiard.einfo import ExceptionInfo
+from billiard.einfo import ExceptionInfo, ExceptionWithTraceback
 from kombu.exceptions import EncodeError
 from kombu.serialization import loads as loads_message
 from kombu.serialization import prepare_accept_content
 from kombu.utils.encoding import safe_repr, safe_str
 
+import celery
+import celery.loaders.app
 from celery import current_app, group, signals, states
 from celery._state import _task_stack
 from celery.app.task import Context
 from celery.app.task import Task as BaseTask
-from celery.exceptions import (BackendGetMetaError, Ignore, InvalidTaskError,
-                               Reject, Retry)
+from celery.exceptions import BackendGetMetaError, Ignore, InvalidTaskError, Reject, Retry
 from celery.result import AsyncResult
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.objects import mro_lookup
 from celery.utils.saferepr import saferepr
-from celery.utils.serialization import (get_pickleable_etype,
-                                        get_pickleable_exception,
-                                        get_pickled_exception)
+from celery.utils.serialization import get_pickleable_etype, get_pickleable_exception, get_pickled_exception
 
 # ## ---
 # This is the heart of the worker, the inner loop so to speak.
@@ -214,33 +214,38 @@ class TraceInfo:
 
     def handle_failure(self, task, req, store_errors=True, call_errbacks=True):
         """Handle exception."""
-        _, _, tb = sys.exc_info()
-        try:
-            exc = self.retval
-            # make sure we only send pickleable exceptions back to parent.
-            einfo = ExceptionInfo()
-            einfo.exception = get_pickleable_exception(einfo.exception)
-            einfo.type = get_pickleable_etype(einfo.type)
+        orig_exc = self.retval
 
-            task.backend.mark_as_failure(
-                req.id, exc, einfo.traceback,
-                request=req, store_result=store_errors,
-                call_errbacks=call_errbacks,
-            )
+        exc = get_pickleable_exception(orig_exc)
+        if exc.__traceback__ is None:
+            # `get_pickleable_exception` may have created a new exception without
+            # a traceback.
+            _, _, exc.__traceback__ = sys.exc_info()
 
-            task.on_failure(exc, req.id, req.args, req.kwargs, einfo)
-            signals.task_failure.send(sender=task, task_id=req.id,
-                                      exception=exc, args=req.args,
-                                      kwargs=req.kwargs,
-                                      traceback=tb,
-                                      einfo=einfo)
-            self._log_error(task, req, einfo)
-            return einfo
-        finally:
-            del tb
+        exc_type = get_pickleable_etype(type(orig_exc))
+
+        # make sure we only send pickleable exceptions back to parent.
+        einfo = ExceptionInfo(exc_info=(exc_type, exc, exc.__traceback__))
+
+        task.backend.mark_as_failure(
+            req.id, exc, einfo.traceback,
+            request=req, store_result=store_errors,
+            call_errbacks=call_errbacks,
+        )
+
+        task.on_failure(exc, req.id, req.args, req.kwargs, einfo)
+        signals.task_failure.send(sender=task, task_id=req.id,
+                                  exception=exc, args=req.args,
+                                  kwargs=req.kwargs,
+                                  traceback=exc.__traceback__,
+                                  einfo=einfo)
+        self._log_error(task, req, einfo)
+        return einfo
 
     def _log_error(self, task, req, einfo):
         eobj = einfo.exception = get_pickled_exception(einfo.exception)
+        if isinstance(eobj, ExceptionWithTraceback):
+            eobj = einfo.exception = eobj.exc
         exception, traceback, exc_info, sargs, skwargs = (
             safe_repr(eobj),
             safe_str(einfo.traceback),
@@ -289,10 +294,20 @@ def traceback_clear(exc=None):
         tb = tb.tb_next
 
 
-def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
-                 Info=TraceInfo, eager=False, propagate=False, app=None,
-                 monotonic=time.monotonic, trace_ok_t=trace_ok_t,
-                 IGNORE_STATES=IGNORE_STATES):
+def build_tracer(
+        name: str,
+        task: Union[celery.Task, celery.local.PromiseProxy],
+        loader: Optional[celery.loaders.app.AppLoader] = None,
+        hostname: Optional[str] = None,
+        store_errors: bool = True,
+        Info: Type[TraceInfo] = TraceInfo,
+        eager: bool = False,
+        propagate: bool = False,
+        app: Optional[celery.Celery] = None,
+        monotonic: Callable[[], int] = time.monotonic,
+        trace_ok_t: Type[trace_ok_t] = trace_ok_t,
+        IGNORE_STATES: FrozenSet[str] = IGNORE_STATES) -> \
+        Callable[[str, Tuple[Any, ...], Dict[str, Any], Any], trace_ok_t]:
     """Return a function that traces task execution.
 
     Catches all exceptions and updates result backend with the
@@ -372,7 +387,12 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     from celery import canvas
     signature = canvas.maybe_signature  # maybe_ does not clone if already
 
-    def on_error(request, exc, uuid, state=FAILURE, call_errbacks=True):
+    def on_error(
+            request: celery.app.task.Context,
+            exc: Union[Exception, Type[Exception]],
+            state: str = FAILURE,
+            call_errbacks: bool = True) -> Tuple[Info, Any, Any, Any]:
+        """Handle any errors raised by a `Task`'s execution."""
         if propagate:
             raise
         I = Info(state, exc)
@@ -381,7 +401,13 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         )
         return I, R, I.state, I.retval
 
-    def trace_task(uuid, args, kwargs, request=None):
+    def trace_task(
+            uuid: str,
+            args: Sequence[Any],
+            kwargs: Dict[str, Any],
+            request: Optional[Dict[str, Any]] = None) -> trace_ok_t:
+        """Execute and trace a `Task`."""
+
         # R      - is the possibly prepared return value.
         # I      - is the Info object.
         # T      - runtime
@@ -462,10 +488,10 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     traceback_clear(exc)
                 except Retry as exc:
                     I, R, state, retval = on_error(
-                        task_request, exc, uuid, RETRY, call_errbacks=False)
+                        task_request, exc, RETRY, call_errbacks=False)
                     traceback_clear(exc)
                 except Exception as exc:
-                    I, R, state, retval = on_error(task_request, exc, uuid)
+                    I, R, state, retval = on_error(task_request, exc)
                     traceback_clear(exc)
                 except BaseException:
                     raise
@@ -519,7 +545,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             uuid, retval, task_request, publish_result,
                         )
                     except EncodeError as exc:
-                        I, R, state, retval = on_error(task_request, exc, uuid)
+                        I, R, state, retval = on_error(task_request, exc)
                     else:
                         Rstr = saferepr(R, resultrepr_maxsize)
                         T = monotonic() - time_start
@@ -569,7 +595,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 raise
             R = report_internal_error(task, exc)
             if task_request is not None:
-                I, _, _, _ = on_error(task_request, exc, uuid)
+                I, _, _, _ = on_error(task_request, exc)
         return trace_ok_t(R, I, T, Rstr)
 
     return trace_task

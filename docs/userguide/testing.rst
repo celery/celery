@@ -47,7 +47,7 @@ Say we had a task like this:
             raise self.retry(exc=exc)
 
 
-``Note``: A task being `bound <http://docs.celeryproject.org/en/latest/userguide/tasks.html#bound-tasks>`_ means the first
+``Note``: A task being `bound <https://docs.celeryq.dev/en/latest/userguide/tasks.html#bound-tasks>`_ means the first
 argument to the task will always be the task instance (self). which means you do get a self argument as the
 first argument and can use the Task class methods and attributes.
 
@@ -160,7 +160,8 @@ Example:
         @celery_app.task
         def mul(x, y):
             return x * y
-
+        
+        celery_worker.reload()
         assert mul.delay(4, 4).get(timeout=10) == 16
 
 ``celery_worker`` - Embed live worker.
@@ -346,7 +347,7 @@ Example:
 
     # Do this in your tests.
     def test_add_task(celery_session_worker):
-        assert add.delay(2, 2) == 4
+        assert add.delay(2, 2).get() == 4
 
 .. warning::
 

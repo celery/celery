@@ -2,10 +2,10 @@
 import os
 import threading
 from contextlib import contextmanager
-from typing import Any, Iterable, Union
+from typing import Any, Iterable, Union  # noqa
 
-import celery.worker.consumer
-from celery import Celery, worker
+import celery.worker.consumer  # noqa
+from celery import Celery, worker  # noqa
 from celery.result import _set_task_join_will_block, allow_join_result
 from celery.utils.dispatch import Signal
 from celery.utils.nodenames import anon_nodename
@@ -72,21 +72,24 @@ def start_worker(
     """
     test_worker_starting.send(sender=app)
 
-    with _start_worker_thread(app,
-                              concurrency=concurrency,
-                              pool=pool,
-                              loglevel=loglevel,
-                              logfile=logfile,
-                              perform_ping_check=perform_ping_check,
-                              shutdown_timeout=shutdown_timeout,
-                              **kwargs) as worker:
-        if perform_ping_check:
-            from .tasks import ping
-            with allow_join_result():
-                assert ping.delay().get(timeout=ping_task_timeout) == 'pong'
+    worker = None
+    try:
+        with _start_worker_thread(app,
+                                  concurrency=concurrency,
+                                  pool=pool,
+                                  loglevel=loglevel,
+                                  logfile=logfile,
+                                  perform_ping_check=perform_ping_check,
+                                  shutdown_timeout=shutdown_timeout,
+                                  **kwargs) as worker:
+            if perform_ping_check:
+                from .tasks import ping
+                with allow_join_result():
+                    assert ping.delay().get(timeout=ping_task_timeout) == 'pong'
 
-        yield worker
-    test_worker_stopped.send(sender=app, worker=worker)
+            yield worker
+    finally:
+        test_worker_stopped.send(sender=app, worker=worker)
 
 
 @contextmanager
@@ -131,18 +134,19 @@ def _start_worker_thread(app,
     worker.ensure_started()
     _set_task_join_will_block(False)
 
-    yield worker
-
-    from celery.worker import state
-    state.should_terminate = 0
-    t.join(shutdown_timeout)
-    if t.is_alive():
-        raise RuntimeError(
-            "Worker thread failed to exit within the allocated timeout. "
-            "Consider raising `shutdown_timeout` if your tasks take longer "
-            "to execute."
-        )
-    state.should_terminate = None
+    try:
+        yield worker
+    finally:
+        from celery.worker import state
+        state.should_terminate = 0
+        t.join(shutdown_timeout)
+        if t.is_alive():
+            raise RuntimeError(
+                "Worker thread failed to exit within the allocated timeout. "
+                "Consider raising `shutdown_timeout` if your tasks take longer "
+                "to execute."
+            )
+        state.should_terminate = None
 
 
 @contextmanager
@@ -163,11 +167,13 @@ def _start_worker_process(app,
     app.set_current()
     cluster = Cluster([Node('testworker1@%h')])
     cluster.start()
-    yield
-    cluster.stopwait()
+    try:
+        yield
+    finally:
+        cluster.stopwait()
 
 
-def setup_app_for_worker(app, loglevel, logfile):
+def setup_app_for_worker(app, loglevel, logfile) -> None:
     # type: (Celery, Union[str, int], str) -> None
     """Setup the app to be used for starting an embedded worker."""
     app.finalize()

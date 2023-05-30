@@ -8,7 +8,7 @@ Index
 
 * :file:`requirements/default.txt`
 
-    Default requirements for Python 2.7+.
+    Default requirements for Python 3.7+.
 
 * :file:`requirements/jython.txt`
 
@@ -29,7 +29,7 @@ Index
 
 * :file:`requirements/test-ci-default.txt`
 
-    Extra test requirements required for Python 2.7 by the CI suite (Tox).
+    Extra test requirements required for Python 3.7 by the CI suite (Tox).
 
 * :file:`requirements/test-integration.txt`
 

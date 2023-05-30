@@ -5,7 +5,7 @@ globals().update(conf.build_config(
     project='Celery',
     version_dev='6.0',
     version_stable='5.0',
-    canonical_url='http://docs.celeryproject.org',
+    canonical_url='https://docs.celeryq.dev',
     webdomain='celeryproject.org',
     github_project='celery/celery',
     author='Ask Solem & contributors',

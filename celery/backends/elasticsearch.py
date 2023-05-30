@@ -11,7 +11,7 @@ from .base import KeyValueStoreBackend
 
 try:
     import elasticsearch
-except ImportError:  # pragma: no cover
+except ImportError:
     elasticsearch = None
 
 __all__ = ('ElasticsearchBackend',)

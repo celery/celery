@@ -1,10 +1,14 @@
 """Utilities related to importing modules and symbols by name."""
-import importlib
 import os
 import sys
 import warnings
 from contextlib import contextmanager
-from importlib import reload
+from importlib import import_module, reload
+
+try:
+    from importlib.metadata import entry_points
+except ImportError:
+    from importlib_metadata import entry_points
 
 from kombu.utils.imports import symbol_by_name
 
@@ -64,7 +68,7 @@ def cwd_in_path():
 def find_module(module, path=None, imp=None):
     """Version of :func:`imp.find_module` supporting dots."""
     if imp is None:
-        imp = importlib.import_module
+        imp = import_module
     with cwd_in_path():
         try:
             return imp(module)
@@ -95,7 +99,7 @@ def import_from_cwd(module, imp=None, package=None):
     precedence over modules located in `sys.path`.
     """
     if imp is None:
-        imp = importlib.import_module
+        imp = import_module
     with cwd_in_path():
         return imp(module, package=package)
 
@@ -137,13 +141,15 @@ def gen_task_name(app, name, module_name):
 
 
 def load_extension_class_names(namespace):
-    try:
-        from pkg_resources import iter_entry_points
-    except ImportError:  # pragma: no cover
-        return
-
-    for ep in iter_entry_points(namespace):
-        yield ep.name, ':'.join([ep.module_name, ep.attrs[0]])
+    if sys.version_info >= (3, 10):
+        _entry_points = entry_points(group=namespace)
+    else:
+        try:
+            _entry_points = entry_points().get(namespace, [])
+        except AttributeError:
+            _entry_points = entry_points().select(group=namespace)
+    for ep in _entry_points:
+        yield ep.name, ep.value
 
 
 def load_extension_classes(namespace):

@@ -3,7 +3,7 @@ on:
   workflow_dispatch: {}
   push:
     paths: [Changelog.rst]
-    branches: [master]
+    branches: [main]
     tags: ["*"]
 
 permissions:

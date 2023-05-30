@@ -6,7 +6,7 @@ import sys
 import threading
 import traceback
 from contextlib import contextmanager
-from typing import AnyStr, Sequence
+from typing import AnyStr, Sequence  # noqa
 
 from kombu.log import LOG_LEVELS
 from kombu.log import get_logger as _get_logger
@@ -264,7 +264,7 @@ def get_multiprocessing_logger():
     """Return the multiprocessing logger."""
     try:
         from billiard import util
-    except ImportError:  # pragma: no cover
+    except ImportError:
         pass
     else:
         return util.get_logger()
@@ -274,7 +274,7 @@ def reset_multiprocessing_logger():
     """Reset multiprocessing logging setup."""
     try:
         from billiard import util
-    except ImportError:  # pragma: no cover
+    except ImportError:
         pass
     else:
         if hasattr(util, '_logger'):  # pragma: no cover
@@ -284,7 +284,7 @@ def reset_multiprocessing_logger():
 def current_process():
     try:
         from billiard import process
-    except ImportError:  # pragma: no cover
+    except ImportError:
         pass
     else:
         return process.current_process()

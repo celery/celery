@@ -10,11 +10,9 @@ from celery.exceptions import ImproperlyConfigured
 
 pytest.importorskip('sqlalchemy')
 
-from celery.backends.database import (DatabaseBackend, retry, session,  # noqa
-                                      session_cleanup)
+from celery.backends.database import DatabaseBackend, retry, session, session_cleanup  # noqa
 from celery.backends.database.models import Task, TaskSet  # noqa
-from celery.backends.database.session import (  # noqa
-    PREPARE_MODELS_MAX_RETRIES, ResultModelBase, SessionManager)
+from celery.backends.database.session import PREPARE_MODELS_MAX_RETRIES, ResultModelBase, SessionManager  # noqa
 from t import skip  # noqa
 
 
@@ -47,7 +45,7 @@ class test_session_cleanup:
 @skip.if_pypy
 class test_DatabaseBackend:
 
-    def setup(self):
+    def setup_method(self):
         self.uri = 'sqlite:///test.db'
         self.app.conf.result_serializer = 'pickle'
 
@@ -221,7 +219,7 @@ class test_DatabaseBackend:
 
 @skip.if_pypy
 class test_DatabaseBackend_result_extended():
-    def setup(self):
+    def setup_method(self):
         self.uri = 'sqlite:///test.db'
         self.app.conf.result_serializer = 'pickle'
         self.app.conf.result_extended = True
@@ -410,7 +408,12 @@ class test_SessionManager:
         from sqlalchemy.dialects.sqlite import dialect
         from sqlalchemy.exc import DatabaseError
 
-        sqlite = dialect.dbapi()
+        if hasattr(dialect, 'dbapi'):
+            # Method name in SQLAlchemy < 2.0
+            sqlite = dialect.dbapi()
+        else:
+            # Newer method name in SQLAlchemy 2.0
+            sqlite = dialect.import_dbapi()
         manager = SessionManager()
         engine = manager.get_engine('dburi')
 

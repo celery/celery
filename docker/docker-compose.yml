@@ -27,16 +27,16 @@ services:
       - azurite
 
   rabbit:
-    image: rabbitmq:3.8.0
+    image: rabbitmq:3.9
 
   redis:
-    image: redis:5.0.6
+    image: redis:6.2
 
   dynamodb:
-    image: dwmkerr/dynamodb:38
+    image: amazon/dynamodb-local:latest
 
   azurite:
-    image: mcr.microsoft.com/azure-storage/azurite:3.10.0
+    image: mcr.microsoft.com/azure-storage/azurite:latest
 
   docs:
     image: celery/docs

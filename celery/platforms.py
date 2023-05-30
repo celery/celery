@@ -13,7 +13,6 @@ import platform as _platform
 import signal as _signal
 import sys
 import warnings
-from collections import namedtuple
 from contextlib import contextmanager
 
 from billiard.compat import close_open_fds, get_fdmax
@@ -27,7 +26,7 @@ from .local import try_import
 
 try:
     from billiard.process import current_process
-except ImportError:  # pragma: no cover
+except ImportError:
     current_process = None
 
 _setproctitle = try_import('setproctitle')
@@ -43,7 +42,7 @@ __all__ = (
     'DaemonContext', 'detached', 'parse_uid', 'parse_gid', 'setgroups',
     'initgroups', 'setgid', 'setuid', 'maybe_drop_privileges', 'signals',
     'signal_name', 'set_process_title', 'set_mp_process_title',
-    'get_errno_name', 'ignore_errno', 'fd_by_path', 'isatty',
+    'get_errno_name', 'ignore_errno', 'fd_by_path',
 )
 
 # exitcodes
@@ -64,8 +63,6 @@ PIDFILE_MODE = ((os.R_OK | os.W_OK) << 6) | ((os.R_OK) << 3) | (os.R_OK)
 
 PIDLOCKED = """ERROR: Pidfile ({0}) already exists.
 Seems we're already running? (pid: {1})"""
-
-_range = namedtuple('_range', ('start', 'stop'))
 
 ROOT_DISALLOWED = """\
 Running a worker with superuser privileges when the
@@ -96,14 +93,6 @@ SIGNAMES = {
     if sig.startswith('SIG') and '_' not in sig
 }
 SIGMAP = {getattr(_signal, name): name for name in SIGNAMES}
-
-
-def isatty(fh):
-    """Return true if the process has a controlling terminal."""
-    try:
-        return fh.isatty()
-    except AttributeError:
-        pass
 
 
 def pyimplementation():
@@ -186,7 +175,7 @@ class Pidfile:
     def remove_if_stale(self):
         """Remove the lock if the process isn't running.
 
-        I.e. process does not respons to signal.
+        I.e. process does not respond to signal.
         """
         try:
             pid = self.read_pid()

@@ -11,6 +11,10 @@ def add_autoretry_behaviour(task, **options):
         options.get('autoretry_for',
                     getattr(task, 'autoretry_for', ()))
     )
+    dont_autoretry_for = tuple(
+        options.get('dont_autoretry_for',
+                    getattr(task, 'dont_autoretry_for', ()))
+    )
     retry_kwargs = options.get(
         'retry_kwargs', getattr(task, 'retry_kwargs', {})
     )
@@ -37,6 +41,8 @@ def add_autoretry_behaviour(task, **options):
                 # even if it suits autoretry_for list
                 raise
             except Retry:
+                raise
+            except dont_autoretry_for:
                 raise
             except autoretry_for as exc:
                 if retry_backoff:

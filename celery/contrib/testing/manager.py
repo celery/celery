@@ -4,13 +4,13 @@ import sys
 from collections import defaultdict
 from functools import partial
 from itertools import count
-from typing import Any, Callable, Dict, Sequence, TextIO, Tuple
+from typing import Any, Callable, Dict, Sequence, TextIO, Tuple  # noqa
 
 from kombu.utils.functional import retry_over_time
 
 from celery import states
 from celery.exceptions import TimeoutError
-from celery.result import AsyncResult, ResultSet
+from celery.result import AsyncResult, ResultSet  # noqa
 from celery.utils.text import truncate
 from celery.utils.time import humanize_seconds as _humanize_seconds
 
@@ -153,7 +153,7 @@ class ManagerMixin:
     def assert_received(self, ids, interval=0.5,
                         desc='waiting for tasks to be received', **policy):
         return self.assert_task_worker_state(
-            self.is_accepted, ids, interval=interval, desc=desc, **policy
+            self.is_received, ids, interval=interval, desc=desc, **policy
         )
 
     def assert_result_tasks_in_progress_or_completed(

@@ -168,7 +168,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
             logging.debug(
                 """
                 FOR key in {keys}
-                    RETURN DOCUMENT(CONCAT("{collection}/", key).task
+                    RETURN DOCUMENT(CONCAT("{collection}/", key)).task
                 """.format(
                     collection=self.collection, keys=json_keys
                 )
@@ -176,7 +176,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
             query = self.db.AQLQuery(
                 """
                 FOR key in {keys}
-                    RETURN DOCUMENT(CONCAT("{collection}/", key).task
+                    RETURN DOCUMENT(CONCAT("{collection}/", key)).task
                 """.format(
                     collection=self.collection, keys=json_keys
                 )

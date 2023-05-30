@@ -3,12 +3,12 @@ import os
 from unittest.mock import Mock, patch
 
 import pytest
-from case import mock
 
 from celery.exceptions import SecurityError
 from celery.security.certificate import Certificate, CertStore, FSCertStore
+from t.unit import conftest
 
-from . import CERT1, CERT2, KEY1
+from . import CERT1, CERT2, CERT_ECDSA, KEY1
 from .case import SecurityCase
 
 
@@ -29,6 +29,8 @@ class test_Certificate(SecurityCase):
             Certificate(CERT1[:20] + CERT1[21:])
         with pytest.raises(SecurityError):
             Certificate(KEY1)
+        with pytest.raises(SecurityError):
+            Certificate(CERT_ECDSA)
 
     @pytest.mark.skip('TODO: cert expired')
     def test_has_expired(self):
@@ -84,7 +86,7 @@ class test_FSCertStore(SecurityCase):
         cert.has_expired.return_value = False
         isdir.return_value = True
         glob.return_value = ['foo.cert']
-        with mock.open():
+        with conftest.open():
             cert.get_id.return_value = 1
 
             path = os.path.join('var', 'certs')

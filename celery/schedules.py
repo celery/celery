@@ -1,18 +1,21 @@
 """Schedules define the intervals at which periodic tasks run."""
+from __future__ import annotations
 
-import numbers
 import re
 from bisect import bisect, bisect_left
 from collections import namedtuple
 from collections.abc import Iterable
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, tzinfo
+from typing import Any, Callable, Mapping, Sequence
 
 from kombu.utils.objects import cached_property
 
+from celery import Celery
+
 from . import current_app
 from .utils.collections import AttributeDict
-from .utils.time import (ffwd, humanize_seconds, localize, maybe_make_aware,
-                         maybe_timedelta, remaining, timezone, weekday)
+from .utils.time import (ffwd, humanize_seconds, localize, maybe_make_aware, maybe_timedelta, remaining, timezone,
+                         weekday)
 
 __all__ = (
     'ParseException', 'schedule', 'crontab', 'crontab_parser',
@@ -32,8 +35,8 @@ int, str, or an iterable type. {type!r} was given.\
 """
 
 CRON_REPR = """\
-<crontab: {0._orig_minute} {0._orig_hour} {0._orig_day_of_week} \
-{0._orig_day_of_month} {0._orig_month_of_year} (m/h/d/dM/MY)>\
+<crontab: {0._orig_minute} {0._orig_hour} {0._orig_day_of_month} {0._orig_month_of_year} \
+{0._orig_day_of_week} (m/h/dM/MY/d)>\
 """
 
 SOLAR_INVALID_LATITUDE = """\
@@ -49,7 +52,7 @@ Argument event "{event}" is invalid, must be one of {all_events}.\
 """
 
 
-def cronfield(s):
+def cronfield(s: str) -> str:
     return '*' if s is None else s
 
 
@@ -59,44 +62,45 @@ class ParseException(Exception):
 
 class BaseSchedule:
 
-    def __init__(self, nowfun=None, app=None):
+    def __init__(self, nowfun: Callable | None = None, app: Celery | None = None):
         self.nowfun = nowfun
         self._app = app
 
-    def now(self):
+    def now(self) -> datetime:
         return (self.nowfun or self.app.now)()
 
-    def remaining_estimate(self, last_run_at):
+    def remaining_estimate(self, last_run_at: datetime) -> timedelta:
         raise NotImplementedError()
 
-    def is_due(self, last_run_at):
+    def is_due(self, last_run_at: datetime) -> tuple[bool, datetime]:
         raise NotImplementedError()
 
-    def maybe_make_aware(self, dt):
-        return maybe_make_aware(dt, self.tz)
+    def maybe_make_aware(
+            self, dt: datetime, naive_as_utc: bool = True) -> datetime:
+        return maybe_make_aware(dt, self.tz, naive_as_utc=naive_as_utc)
 
     @property
-    def app(self):
+    def app(self) -> Celery:
         return self._app or current_app._get_current_object()
 
     @app.setter
-    def app(self, app):
+    def app(self, app: Celery) -> None:
         self._app = app
 
     @cached_property
-    def tz(self):
+    def tz(self) -> tzinfo:
         return self.app.timezone
 
     @cached_property
-    def utc_enabled(self):
+    def utc_enabled(self) -> bool:
         return self.app.conf.enable_utc
 
-    def to_local(self, dt):
+    def to_local(self, dt: datetime) -> datetime:
         if not self.utc_enabled:
             return timezone.to_local_fallback(dt)
         return dt
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, BaseSchedule):
             return other.nowfun == self.nowfun
         return NotImplemented
@@ -114,20 +118,22 @@ class schedule(BaseSchedule):
         app (Celery): Celery app instance.
     """
 
-    relative = False
+    relative: bool = False
 
-    def __init__(self, run_every=None, relative=False, nowfun=None, app=None):
+    def __init__(self, run_every: float | timedelta | None = None,
+                 relative: bool = False, nowfun: Callable | None = None, app: Celery
+                 | None = None) -> None:
         self.run_every = maybe_timedelta(run_every)
         self.relative = relative
         super().__init__(nowfun=nowfun, app=app)
 
-    def remaining_estimate(self, last_run_at):
+    def remaining_estimate(self, last_run_at: datetime) -> timedelta:
         return remaining(
             self.maybe_make_aware(last_run_at), self.run_every,
             self.maybe_make_aware(self.now()), self.relative,
         )
 
-    def is_due(self, last_run_at):
+    def is_due(self, last_run_at: datetime) -> tuple[bool, datetime]:
         """Return tuple of ``(is_due, next_time_to_check)``.
 
         Notes:
@@ -164,26 +170,24 @@ class schedule(BaseSchedule):
             return schedstate(is_due=True, next=self.seconds)
         return schedstate(is_due=False, next=remaining_s)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<freq: {self.human_seconds}>'
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, schedule):
             return self.run_every == other.run_every
         return self.run_every == other
 
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __reduce__(self):
+    def __reduce__(self) -> tuple[type,
+                                  tuple[timedelta, bool, Callable | None]]:
         return self.__class__, (self.run_every, self.relative, self.nowfun)
 
     @property
-    def seconds(self):
+    def seconds(self) -> int | float:
         return max(self.run_every.total_seconds(), 0)
 
     @property
-    def human_seconds(self):
+    def human_seconds(self) -> str:
         return humanize_seconds(self.seconds)
 
 
@@ -241,17 +245,17 @@ class crontab_parser:
     _steps = r'/(\w+)?'
     _star = r'\*'
 
-    def __init__(self, max_=60, min_=0):
+    def __init__(self, max_: int = 60, min_: int = 0):
         self.max_ = max_
         self.min_ = min_
-        self.pats = (
+        self.pats: tuple[tuple[re.Pattern, Callable], ...] = (
             (re.compile(self._range + self._steps), self._range_steps),
             (re.compile(self._range), self._expand_range),
             (re.compile(self._star + self._steps), self._star_steps),
             (re.compile('^' + self._star + '$'), self._expand_star),
         )
 
-    def parse(self, spec):
+    def parse(self, spec: str) -> set[int]:
         acc = set()
         for part in spec.split(','):
             if not part:
@@ -259,14 +263,14 @@ class crontab_parser:
             acc |= set(self._parse_part(part))
         return acc
 
-    def _parse_part(self, part):
+    def _parse_part(self, part: str) -> list[int]:
         for regex, handler in self.pats:
             m = regex.match(part)
             if m:
                 return handler(m.groups())
         return self._expand_range((part,))
 
-    def _expand_range(self, toks):
+    def _expand_range(self, toks: Sequence[str]) -> list[int]:
         fr = self._expand_number(toks[0])
         if len(toks) > 1:
             to = self._expand_number(toks[1])
@@ -276,20 +280,20 @@ class crontab_parser:
             return list(range(fr, to + 1))
         return [fr]
 
-    def _range_steps(self, toks):
+    def _range_steps(self, toks: Sequence[str]) -> list[int]:
         if len(toks) != 3 or not toks[2]:
             raise self.ParseException('empty filter')
         return self._expand_range(toks[:2])[::int(toks[2])]
 
-    def _star_steps(self, toks):
+    def _star_steps(self, toks: Sequence[str]) -> list[int]:
         if not toks or not toks[0]:
             raise self.ParseException('empty filter')
         return self._expand_star()[::int(toks[0])]
 
-    def _expand_star(self, *args):
+    def _expand_star(self, *args: Any) -> list[int]:
         return list(range(self.min_, self.max_ + self.min_))
 
-    def _expand_number(self, s):
+    def _expand_number(self, s: str) -> int:
         if isinstance(s, str) and s[0] == '-':
             raise self.ParseException('negative numbers not supported')
         try:
@@ -389,8 +393,8 @@ class crontab(BaseSchedule):
     present in ``month_of_year``.
     """
 
-    def __init__(self, minute='*', hour='*', day_of_week='*',
-                 day_of_month='*', month_of_year='*', **kwargs):
+    def __init__(self, minute: str = '*', hour: str = '*', day_of_week: str = '*',
+                 day_of_month: str = '*', month_of_year: str = '*', **kwargs: Any) -> None:
         self._orig_minute = cronfield(minute)
         self._orig_hour = cronfield(hour)
         self._orig_day_of_week = cronfield(day_of_week)
@@ -405,7 +409,9 @@ class crontab(BaseSchedule):
         super().__init__(**kwargs)
 
     @staticmethod
-    def _expand_cronspec(cronspec, max_, min_=0):
+    def _expand_cronspec(
+            cronspec: int | str | Iterable,
+            max_: int, min_: int = 0) -> set[Any]:
         """Expand cron specification.
 
         Takes the given cronspec argument in one of the forms:
@@ -431,25 +437,26 @@ class crontab(BaseSchedule):
         day of month or month of year.  The default is sufficient for minute,
         hour, and day of week.
         """
-        if isinstance(cronspec, numbers.Integral):
+        if isinstance(cronspec, int):
             result = {cronspec}
         elif isinstance(cronspec, str):
             result = crontab_parser(max_, min_).parse(cronspec)
         elif isinstance(cronspec, set):
             result = cronspec
         elif isinstance(cronspec, Iterable):
-            result = set(cronspec)
+            result = set(cronspec)  # type: ignore
         else:
             raise TypeError(CRON_INVALID_TYPE.format(type=type(cronspec)))
 
-        # assure the result does not preceed the min or exceed the max
+        # assure the result does not precede the min or exceed the max
         for number in result:
             if number >= max_ + min_ or number < min_:
                 raise ValueError(CRON_PATTERN_INVALID.format(
                     min=min_, max=max_ - 1 + min_, value=number))
         return result
 
-    def _delta_to_next(self, last_run_at, next_hour, next_minute):
+    def _delta_to_next(self, last_run_at: datetime, next_hour: int,
+                       next_minute: int) -> ffwd:
         """Find next delta.
 
         Takes a :class:`~datetime.datetime` of last run, next minute and hour,
@@ -463,19 +470,19 @@ class crontab(BaseSchedule):
         days_of_month = sorted(self.day_of_month)
         months_of_year = sorted(self.month_of_year)
 
-        def day_out_of_range(year, month, day):
+        def day_out_of_range(year: int, month: int, day: int) -> bool:
             try:
                 datetime(year=year, month=month, day=day)
             except ValueError:
                 return True
             return False
 
-        def is_before_last_run(year, month, day):
-            return self.maybe_make_aware(datetime(year,
-                                                  month,
-                                                  day)) < last_run_at
+        def is_before_last_run(year: int, month: int, day: int) -> bool:
+            return self.maybe_make_aware(
+                datetime(year, month, day, next_hour, next_minute),
+                naive_as_utc=False) < last_run_at
 
-        def roll_over():
+        def roll_over() -> None:
             for _ in range(2000):
                 flag = (datedata.dom == len(days_of_month) or
                         day_out_of_range(datedata.year,
@@ -525,25 +532,24 @@ class crontab(BaseSchedule):
                     second=0,
                     microsecond=0)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return CRON_REPR.format(self)
 
-    def __reduce__(self):
+    def __reduce__(self) -> tuple[type, tuple[str, str, str, str, str], Any]:
         return (self.__class__, (self._orig_minute,
                                  self._orig_hour,
                                  self._orig_day_of_week,
                                  self._orig_day_of_month,
                                  self._orig_month_of_year), self._orig_kwargs)
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: Mapping[str, Any]) -> None:
         # Calling super's init because the kwargs aren't necessarily passed in
         # the same form as they are stored by the superclass
         super().__init__(**state)
 
-    def remaining_delta(self, last_run_at, tz=None, ffwd=ffwd):
-        # pylint: disable=redefined-outer-name
+    def remaining_delta(self, last_run_at: datetime, tz: tzinfo | None = None,
+                        ffwd: type = ffwd) -> tuple[datetime, Any, datetime]:
         # caching global ffwd
-        tz = tz or self.tz
         last_run_at = self.maybe_make_aware(last_run_at)
         now = self.maybe_make_aware(self.now())
         dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7
@@ -599,7 +605,8 @@ class crontab(BaseSchedule):
                                                 next_hour, next_minute)
         return self.to_local(last_run_at), delta, self.to_local(now)
 
-    def remaining_estimate(self, last_run_at, ffwd=ffwd):
+    def remaining_estimate(
+            self, last_run_at: datetime, ffwd: type = ffwd) -> timedelta:
         """Estimate of next run time.
 
         Returns when the periodic task should run next as a
@@ -609,8 +616,13 @@ class crontab(BaseSchedule):
         # caching global ffwd
         return remaining(*self.remaining_delta(last_run_at, ffwd=ffwd))
 
-    def is_due(self, last_run_at):
+    def is_due(self, last_run_at: datetime) -> tuple[bool, datetime]:
         """Return tuple of ``(is_due, next_time_to_run)``.
+
+        If :setting:`beat_cron_starting_deadline`  has been specified, the
+        scheduler will make sure that the `last_run_at` time is within the
+        deadline. This prevents tasks that could have been run according to
+        the crontab, but didn't, from running again unexpectedly.
 
         Note:
             Next time to run is in seconds.
@@ -618,15 +630,42 @@ class crontab(BaseSchedule):
         SeeAlso:
             :meth:`celery.schedules.schedule.is_due` for more information.
         """
+
         rem_delta = self.remaining_estimate(last_run_at)
-        rem = max(rem_delta.total_seconds(), 0)
+        rem_secs = rem_delta.total_seconds()
+        rem = max(rem_secs, 0)
         due = rem == 0
-        if due:
+
+        deadline_secs = self.app.conf.beat_cron_starting_deadline
+        has_passed_deadline = False
+        if deadline_secs is not None:
+            # Make sure we're looking at the latest possible feasible run
+            # date when checking the deadline.
+            last_date_checked = last_run_at
+            last_feasible_rem_secs = rem_secs
+            while rem_secs < 0:
+                last_date_checked = last_date_checked + abs(rem_delta)
+                rem_delta = self.remaining_estimate(last_date_checked)
+                rem_secs = rem_delta.total_seconds()
+                if rem_secs < 0:
+                    last_feasible_rem_secs = rem_secs
+
+            # if rem_secs becomes 0 or positive, second-to-last
+            # last_date_checked must be the last feasible run date.
+            # Check if the last feasible date is within the deadline
+            # for running
+            has_passed_deadline = -last_feasible_rem_secs > deadline_secs
+            if has_passed_deadline:
+                # Should not be due if we've passed the deadline for looking
+                # at past runs
+                due = False
+
+        if due or has_passed_deadline:
             rem_delta = self.remaining_estimate(self.now())
             rem = max(rem_delta.total_seconds(), 0)
         return schedstate(due, rem)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, crontab):
             return (
                 other.month_of_year == self.month_of_year and
@@ -638,17 +677,13 @@ class crontab(BaseSchedule):
             )
         return NotImplemented
 
-    def __ne__(self, other):
-        res = self.__eq__(other)
-        if res is NotImplemented:
-            return True
-        return not res
 
-
-def maybe_schedule(s, relative=False, app=None):
+def maybe_schedule(
+        s: int | float | timedelta | BaseSchedule, relative: bool = False,
+        app: Celery | None = None) -> float | timedelta | BaseSchedule:
     """Return schedule from number, timedelta, or actual schedule."""
     if s is not None:
-        if isinstance(s, numbers.Number):
+        if isinstance(s, (float, int)):
             s = timedelta(seconds=s)
         if isinstance(s, timedelta):
             return schedule(s, relative, app=app)
@@ -665,7 +700,7 @@ class solar(BaseSchedule):
 
     Notes:
 
-        Available event valus are:
+        Available event values are:
 
             - ``dawn_astronomical``
             - ``dawn_nautical``
@@ -680,8 +715,8 @@ class solar(BaseSchedule):
     Arguments:
         event (str): Solar event that triggers this task.
             See note for available values.
-        lat (int): The latitude of the observer.
-        lon (int): The longitude of the observer.
+        lat (float): The latitude of the observer.
+        lon (float): The longitude of the observer.
         nowfun (Callable): Function returning the current date and time
             as a class:`~datetime.datetime`.
         app (Celery): Celery app instance.
@@ -732,7 +767,8 @@ class solar(BaseSchedule):
         'dusk_astronomical': True,
     }
 
-    def __init__(self, event, lat, lon, **kwargs):
+    def __init__(self, event: str, lat: int | float, lon: int | float, **
+                 kwargs: Any) -> None:
         self.ephem = __import__('ephem')
         self.event = event
         self.lat = lat
@@ -759,15 +795,15 @@ class solar(BaseSchedule):
         self.method = self._methods[event]
         self.use_center = self._use_center_l[event]
 
-    def __reduce__(self):
+    def __reduce__(self) -> tuple[type, tuple[str, int | float, int | float]]:
         return self.__class__, (self.event, self.lat, self.lon)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<solar: {} at latitude {}, longitude: {}>'.format(
             self.event, self.lat, self.lon,
         )
 
-    def remaining_estimate(self, last_run_at):
+    def remaining_estimate(self, last_run_at: datetime) -> timedelta:
         """Return estimate of next time to run.
 
         Returns:
@@ -802,7 +838,7 @@ class solar(BaseSchedule):
         delta = next - now
         return delta
 
-    def is_due(self, last_run_at):
+    def is_due(self, last_run_at: datetime) -> tuple[bool, datetime]:
         """Return tuple of ``(is_due, next_time_to_run)``.
 
         Note:
@@ -819,7 +855,7 @@ class solar(BaseSchedule):
             rem = max(rem_delta.total_seconds(), 0)
         return schedstate(due, rem)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, solar):
             return (
                 other.event == self.event and
@@ -827,9 +863,3 @@ class solar(BaseSchedule):
                 other.lon == self.lon
             )
         return NotImplemented
-
-    def __ne__(self, other):
-        res = self.__eq__(other)
-        if res is NotImplemented:
-            return True
-        return not res

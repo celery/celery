@@ -22,6 +22,7 @@ from kombu.utils.objects import cached_property
 from . import __version__, platforms, signals
 from .exceptions import reraise
 from .schedules import crontab, maybe_schedule
+from .utils.functional import is_numeric_value
 from .utils.imports import load_extension_class_names, symbol_by_name
 from .utils.log import get_logger, iter_open_logger_fds
 from .utils.time import humanize_seconds, maybe_make_aware
@@ -45,7 +46,7 @@ class SchedulingError(Exception):
 
 
 class BeatLazyFunc:
-    """An lazy function declared in 'beat_schedule' and called before sending to worker.
+    """A lazy function declared in 'beat_schedule' and called before sending to worker.
 
     Example:
 
@@ -156,7 +157,7 @@ class ScheduleEntry:
         })
 
     def is_due(self):
-        """See :meth:`~celery.schedule.schedule.is_due`."""
+        """See :meth:`~celery.schedules.schedule.is_due`."""
         return self.schedule.is_due(self.last_run_at)
 
     def __iter__(self):
@@ -193,14 +194,6 @@ class ScheduleEntry:
         ``task``, ``schedule``, ``args``, ``kwargs``, ``options``.
         """
         return self.editable_fields_equal(other)
-
-    def __ne__(self, other):
-        """Test schedule entries inequality.
-
-        Will only compare "editable" fields:
-        ``task``, ``schedule``, ``args``, ``kwargs``, ``options``.
-        """
-        return not self == other
 
 
 def _evaluate_entry_args(entry_args):
@@ -300,7 +293,7 @@ class Scheduler:
         return entry.is_due()
 
     def _when(self, entry, next_time_to_run, mktime=timegm):
-        """Return a utc timestamp, make sure heapq in currect order."""
+        """Return a utc timestamp, make sure heapq in correct order."""
         adjust = self.adjust
 
         as_now = maybe_make_aware(entry.default_now())
@@ -361,7 +354,9 @@ class Scheduler:
             else:
                 heappush(H, verify)
                 return min(verify[0], max_interval)
-        return min(adjust(next_time_to_run) or max_interval, max_interval)
+        adjusted_next_time_to_run = adjust(next_time_to_run)
+        return min(adjusted_next_time_to_run if is_numeric_value(adjusted_next_time_to_run) else max_interval,
+                   max_interval)
 
     def schedules_equal(self, old_schedules, new_schedules):
         if old_schedules is new_schedules is None:
@@ -666,8 +661,7 @@ class Service:
     def get_scheduler(self, lazy=False,
                       extension_namespace='celery.beat_schedulers'):
         filename = self.schedule_filename
-        aliases = dict(
-            load_extension_class_names(extension_namespace) or {})
+        aliases = dict(load_extension_class_names(extension_namespace))
         return symbol_by_name(self.scheduler_cls, aliases=aliases)(
             app=self.app,
             schedule_filename=filename,

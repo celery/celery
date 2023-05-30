@@ -1,14 +1,19 @@
 """Celery Command Line Interface."""
 import os
 import pathlib
+import sys
 import traceback
+
+try:
+    from importlib.metadata import entry_points
+except ImportError:
+    from importlib_metadata import entry_points
 
 import click
 import click.exceptions
 from click.types import ParamType
 from click_didyoumean import DYMGroup
 from click_plugins import with_plugins
-from pkg_resources import iter_entry_points
 
 from celery import VERSION_BANNER
 from celery.app.utils import find_app
@@ -71,7 +76,16 @@ class App(ParamType):
 APP = App()
 
 
-@with_plugins(iter_entry_points('celery.commands'))
+if sys.version_info >= (3, 10):
+    _PLUGINS = entry_points(group='celery.commands')
+else:
+    try:
+        _PLUGINS = entry_points().get('celery.commands', [])
+    except AttributeError:
+        _PLUGINS = entry_points().select(group='celery.commands')
+
+
+@with_plugins(_PLUGINS)
 @click.group(cls=DYMGroup, invoke_without_command=True)
 @click.option('-A',
               '--app',
@@ -117,9 +131,15 @@ APP = App()
               cls=CeleryOption,
               is_flag=True,
               help_group="Global Options")
+@click.option('--skip-checks',
+              envvar='SKIP_CHECKS',
+              cls=CeleryOption,
+              is_flag=True,
+              help_group="Global Options",
+              help="Skip Django core checks on startup.")
 @click.pass_context
 def celery(ctx, app, broker, result_backend, loader, config, workdir,
-           no_color, quiet, version):
+           no_color, quiet, version, skip_checks):
     """Celery command entrypoint."""
     if version:
         click.echo(VERSION_BANNER)
@@ -137,6 +157,8 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir,
         os.environ['CELERY_RESULT_BACKEND'] = result_backend
     if config:
         os.environ['CELERY_CONFIG_MODULE'] = config
+    if skip_checks:
+        os.environ['CELERY_SKIP_CHECKS'] = skip_checks
     ctx.obj = CLIContext(app=app, no_color=no_color, workdir=workdir,
                          quiet=quiet)
 

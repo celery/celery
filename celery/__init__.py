@@ -17,10 +17,10 @@ from . import local
 
 SERIES = 'dawn-chorus'
 
-__version__ = '5.2.0'
+__version__ = '5.3.0rc1'
 __author__ = 'Ask Solem'
 __contact__ = 'auvipy@gmail.com'
-__homepage__ = 'http://celeryproject.org'
+__homepage__ = 'https://docs.celeryq.dev/'
 __docformat__ = 'restructuredtext'
 __keywords__ = 'task job queue distributed messaging actor'
 
@@ -70,8 +70,7 @@ if STATICA_HACK:  # pragma: no cover
     from celery.app.base import Celery
     from celery.app.task import Task
     from celery.app.utils import bugreport
-    from celery.canvas import (chain, chord, chunks, group,  # noqa
-                               maybe_signature, signature, subtask, xmap,
+    from celery.canvas import (chain, chord, chunks, group, maybe_signature, signature, subtask, xmap,  # noqa
                                xstarmap)
     from celery.utils import uuid
 

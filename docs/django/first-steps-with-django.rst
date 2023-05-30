@@ -151,7 +151,7 @@ concrete app instance:
 .. seealso::
 
     You can find the full source code for the Django example project at:
-    https://github.com/celery/celery/tree/master/examples/django/
+    https://github.com/celery/celery/tree/main/examples/django/
 
 Extensions
 ==========
@@ -201,7 +201,7 @@ To use this with your project you need to follow these steps:
 
     .. code-block:: python
 
-        CELERY_RESULT_BACKEND = 'django-cache'
+        CELERY_CACHE_BACKEND = 'django-cache'
 
     We can also use the cache defined in the CACHES setting in django.
 

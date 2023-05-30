@@ -113,7 +113,8 @@ these can be specified as arguments to the decorator:
         User.objects.create(username=username, password=password)
 
 
-.. sidebar:: How do I import the task decorator? And what's "app"?
+How do I import the task decorator?
+-----------------------------------
 
     The task decorator is available on your :class:`@Celery` application instance,
     if you don't know what this is then please read :ref:`first-steps`.
@@ -129,7 +130,8 @@ these can be specified as arguments to the decorator:
         def add(x, y):
             return x + y
 
-.. sidebar:: Multiple decorators
+Multiple decorators
+-------------------
 
     When using multiple decorators in combination with the task
     decorator you must make sure that the `task`
@@ -236,6 +238,12 @@ named :file:`tasks.py`:
     >>> from tasks import add
     >>> add.name
     'tasks.add'
+
+.. note::
+
+   You can use the `inspect` command in a worker to view the names of
+   all registered tasks. See the `inspect registered` command in the
+   :ref:`monitoring-control` section of the User Guide.
 
 .. _task-name-generator-info:
 
@@ -345,7 +353,7 @@ The request defines the following attributes:
 
 :callbacks: A list of signatures to be called if this task returns successfully.
 
-:errback: A list of signatures to be called if this task fails.
+:errbacks: A list of signatures to be called if this task fails.
 
 :utc: Set to true the caller has UTC enabled (:setting:`enable_utc`).
 
@@ -696,7 +704,7 @@ in a :keyword:`try` ... :keyword:`except` statement:
         try:
             twitter.refresh_timeline(user)
         except FailWhaleError as exc:
-            raise div.retry(exc=exc, max_retries=5)
+            raise refresh_timeline.retry(exc=exc, max_retries=5)
 
 If you want to automatically retry on any error, simply use:
 
@@ -778,6 +786,15 @@ You can also set `autoretry_for`, `max_retries`, `retry_backoff`, `retry_backoff
     value calculated by :attr:`~Task.retry_backoff` is treated as a maximum,
     and the actual delay value will be a random number between zero and that
     maximum. By default, this option is set to ``True``.
+
+.. versionadded:: 5.3.0
+
+.. attribute:: Task.dont_autoretry_for
+
+    A list/tuple of exception classes.  These exceptions won't be autoretried.
+	This allows to exclude some exceptions that match `autoretry_for
+	<Task.autoretry_for>`:attr: but for which you don't want a retry.
+
 
 .. _task-options:
 
@@ -904,6 +921,9 @@ General
     Don't store task state. Note that this means you can't use
     :class:`~celery.result.AsyncResult` to check if the task is ready,
     or get its return value.
+
+    Note: Certain features will not work if task results are disabled.
+    For more details check the Canvas documentation.
 
 .. attribute:: Task.store_errors_even_if_ignored
 
@@ -1412,9 +1432,11 @@ The above can be added to each task like this:
 .. code-block:: python
 
 
-    @app.task(base=DatabaseTask)
-    def process_rows():
-        for row in process_rows.db.table.all():
+    from celery.app import task
+
+    @app.task(base=DatabaseTask, bind=True)
+    def process_rows(self: task):
+        for row in self.db.table.all():
             process_row(row)
 
 The ``db`` attribute of the ``process_rows`` task will then
@@ -1641,7 +1663,7 @@ setting.
 .. versionadded::4.2
 
 Results can be enabled/disabled on a per-execution basis, by passing the ``ignore_result`` boolean parameter,
-when calling ``apply_async`` or ``delay``.
+when calling ``apply_async``.
 
 .. code-block:: python
 
@@ -1689,7 +1711,7 @@ Make your design asynchronous instead, for example by using *callbacks*.
     @app.task
     def update_page_info(url):
         page = fetch_page.delay(url).get()
-        info = parse_page.delay(url, page).get()
+        info = parse_page.delay(page).get()
         store_page_info.delay(url, info)
 
     @app.task
@@ -1742,7 +1764,7 @@ enabling subtasks to run synchronously is not recommended!
     @app.task
     def update_page_info(url):
         page = fetch_page.delay(url).get(disable_sync_subtasks=False)
-        info = parse_page.delay(url, page).get(disable_sync_subtasks=False)
+        info = parse_page.delay(page).get(disable_sync_subtasks=False)
         store_page_info.delay(url, info)
 
     @app.task
@@ -1750,7 +1772,7 @@ enabling subtasks to run synchronously is not recommended!
         return myhttplib.get(url)
 
     @app.task
-    def parse_page(url, page):
+    def parse_page(page):
         return myparser.parse_document(page)
 
     @app.task
@@ -1914,11 +1936,14 @@ once all transactions have been committed successfully.
 
 .. code-block:: python
 
-    from django.db.transaction import on_commit
+    from django.db import transaction
+    from django.http import HttpResponseRedirect
 
+    @transaction.atomic
     def create_article(request):
         article = Article.objects.create()
-        on_commit(lambda: expand_abbreviations.delay(article.pk))
+        transaction.on_commit(lambda: expand_abbreviations.delay(article.pk))
+        return HttpResponseRedirect('/articles/')
 
 .. note::
     ``on_commit`` is available in Django 1.9 and above, if you are using a

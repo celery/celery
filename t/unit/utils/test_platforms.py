@@ -7,33 +7,22 @@ import tempfile
 from unittest.mock import Mock, call, patch
 
 import pytest
-from case import mock
 
 import t.skip
 from celery import _find_option_with_arg, platforms
 from celery.exceptions import SecurityError, SecurityWarning
-from celery.platforms import (ASSUMING_ROOT, ROOT_DISALLOWED,
-                              ROOT_DISCOURAGED, DaemonContext, LockFailed,
-                              Pidfile, _setgroups_hack, check_privileges,
-                              close_open_fds, create_pidlock, detached,
-                              fd_by_path, get_fdmax, ignore_errno, initgroups,
-                              isatty, maybe_drop_privileges, parse_gid,
-                              parse_uid, set_mp_process_title, set_pdeathsig,
-                              set_process_title, setgid, setgroups, setuid,
-                              signals)
+from celery.platforms import (ASSUMING_ROOT, ROOT_DISALLOWED, ROOT_DISCOURAGED, DaemonContext, LockFailed, Pidfile,
+                              _setgroups_hack, check_privileges, close_open_fds, create_pidlock, detached,
+                              fd_by_path, get_fdmax, ignore_errno, initgroups, maybe_drop_privileges, parse_gid,
+                              parse_uid, set_mp_process_title, set_pdeathsig, set_process_title, setgid, setgroups,
+                              setuid, signals)
 from celery.utils.text import WhateverIO
+from t.unit import conftest
 
 try:
     import resource
-except ImportError:  # pragma: no cover
+except ImportError:
     resource = None
-
-
-def test_isatty():
-    fh = Mock(name='fh')
-    assert isatty(fh) is fh.isatty()
-    fh.isatty.side_effect = AttributeError()
-    assert not isatty(fh)
 
 
 class test_find_option_with_arg:
@@ -429,7 +418,7 @@ class test_detached:
     @patch('celery.platforms.signals')
     @patch('celery.platforms.maybe_drop_privileges')
     @patch('os.geteuid')
-    @patch(mock.open_fqdn)
+    @patch('builtins.open')
     def test_default(self, open, geteuid, maybe_drop,
                      signals, pidlock):
         geteuid.return_value = 0
@@ -530,7 +519,7 @@ class test_Pidfile:
         p = Pidfile.return_value = Mock()
         p.is_locked.return_value = True
         p.remove_if_stale.return_value = False
-        with mock.stdouts() as (_, err):
+        with conftest.stdouts() as (_, err):
             with pytest.raises(SystemExit):
                 create_pidlock('/var/pid')
             assert 'already exists' in err.getvalue()
@@ -567,14 +556,14 @@ class test_Pidfile:
         assert not p.is_locked()
 
     def test_read_pid(self):
-        with mock.open() as s:
+        with conftest.open() as s:
             s.write('1816\n')
             s.seek(0)
             p = Pidfile('/var/pid')
             assert p.read_pid() == 1816
 
     def test_read_pid_partially_written(self):
-        with mock.open() as s:
+        with conftest.open() as s:
             s.write('1816')
             s.seek(0)
             p = Pidfile('/var/pid')
@@ -584,20 +573,20 @@ class test_Pidfile:
     def test_read_pid_raises_ENOENT(self):
         exc = IOError()
         exc.errno = errno.ENOENT
-        with mock.open(side_effect=exc):
+        with conftest.open(side_effect=exc):
             p = Pidfile('/var/pid')
             assert p.read_pid() is None
 
     def test_read_pid_raises_IOError(self):
         exc = IOError()
         exc.errno = errno.EAGAIN
-        with mock.open(side_effect=exc):
+        with conftest.open(side_effect=exc):
             p = Pidfile('/var/pid')
             with pytest.raises(IOError):
                 p.read_pid()
 
     def test_read_pid_bogus_pidfile(self):
-        with mock.open() as s:
+        with conftest.open() as s:
             s.write('eighteensixteen\n')
             s.seek(0)
             p = Pidfile('/var/pid')
@@ -655,7 +644,7 @@ class test_Pidfile:
 
     @patch('os.kill')
     def test_remove_if_stale_process_dead(self, kill):
-        with mock.stdouts():
+        with conftest.stdouts():
             p = Pidfile('/var/pid')
             p.read_pid = Mock()
             p.read_pid.return_value = 1816
@@ -668,7 +657,7 @@ class test_Pidfile:
             p.remove.assert_called_with()
 
     def test_remove_if_stale_broken_pid(self):
-        with mock.stdouts():
+        with conftest.stdouts():
             p = Pidfile('/var/pid')
             p.read_pid = Mock()
             p.read_pid.side_effect = ValueError()
@@ -679,7 +668,7 @@ class test_Pidfile:
 
     @patch('os.kill')
     def test_remove_if_stale_unprivileged_user(self, kill):
-        with mock.stdouts():
+        with conftest.stdouts():
             p = Pidfile('/var/pid')
             p.read_pid = Mock()
             p.read_pid.return_value = 1817
@@ -704,7 +693,7 @@ class test_Pidfile:
     @patch('os.getpid')
     @patch('os.open')
     @patch('os.fdopen')
-    @patch(mock.open_fqdn)
+    @patch('builtins.open')
     def test_write_pid(self, open_, fdopen, osopen, getpid, fsync):
         getpid.return_value = 1816
         osopen.return_value = 13
@@ -731,7 +720,7 @@ class test_Pidfile:
     @patch('os.getpid')
     @patch('os.open')
     @patch('os.fdopen')
-    @patch(mock.open_fqdn)
+    @patch('builtins.open')
     def test_write_reread_fails(self, open_, fdopen,
                                 osopen, getpid, fsync):
         getpid.return_value = 1816

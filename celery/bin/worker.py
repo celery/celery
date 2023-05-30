@@ -8,13 +8,11 @@ from click import ParamType
 from click.types import StringParamType
 
 from celery import concurrency
-from celery.bin.base import (COMMA_SEPARATED_LIST, LOG_LEVEL,
-                             CeleryDaemonCommand, CeleryOption,
+from celery.bin.base import (COMMA_SEPARATED_LIST, LOG_LEVEL, CeleryDaemonCommand, CeleryOption,
                              handle_preload_options)
 from celery.concurrency.base import BasePool
 from celery.exceptions import SecurityError
-from celery.platforms import (EX_FAILURE, EX_OK, detached,
-                              maybe_drop_privileges)
+from celery.platforms import EX_FAILURE, EX_OK, detached, maybe_drop_privileges
 from celery.utils.log import get_logger
 from celery.utils.nodenames import default_nodename, host_format, node_format
 
@@ -182,7 +180,7 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               value: value or ctx.obj.app.conf.worker_prefetch_multiplier,
               cls=CeleryOption,
               help_group="Worker Options",
-              help="Set custom prefetch multiplier value"
+              help="Set custom prefetch multiplier value "
                    "for this worker instance.")
 @click.option('-c',
               '--concurrency',
@@ -194,7 +192,7 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               help_group="Pool Options",
               help="Number of child processes processing the queue.  "
                    "The default is the number of CPUs available"
-                   "on your system.")
+                   " on your system.")
 @click.option('-P',
               '--pool',
               default='prefork',
@@ -302,8 +300,11 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
            **kwargs):
     """Start worker instance.
 
+    \b
     Examples
     --------
+
+    \b
     $ celery --app=proj worker -l INFO
     $ celery -A proj worker -l INFO -Q hipri,lopri
     $ celery -A proj worker --concurrency=4
@@ -327,6 +328,10 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
                 argv.remove('--detach')
             if '-D' in argv:
                 argv.remove('-D')
+            if "--uid" in argv:
+                argv.remove('--uid')
+            if "--gid" in argv:
+                argv.remove('--gid')
 
             return detach(sys.executable,
                           argv,
@@ -349,7 +354,7 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
             quiet=ctx.obj.quiet,
             **kwargs)
         worker.start()
-        return worker.exitcode
+        ctx.exit(worker.exitcode)
     except SecurityError as e:
         ctx.obj.error(e.args[0])
         ctx.exit(1)

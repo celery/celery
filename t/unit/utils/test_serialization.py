@@ -5,27 +5,27 @@ from datetime import date, datetime, time, timedelta
 from unittest.mock import Mock
 
 import pytest
-import pytz
-from case import mock
 from kombu import Queue
 
-from celery.utils.serialization import (STRTOBOOL_DEFAULT_TABLE,
-                                        UnpickleableExceptionWrapper,
-                                        ensure_serializable,
-                                        get_pickleable_etype, jsonify,
-                                        strtobool)
+from celery.utils.serialization import (STRTOBOOL_DEFAULT_TABLE, UnpickleableExceptionWrapper, ensure_serializable,
+                                        get_pickleable_etype, jsonify, strtobool)
+
+if sys.version_info >= (3, 9):
+    from zoneinfo import ZoneInfo
+else:
+    from backports.zoneinfo import ZoneInfo
 
 
 class test_AAPickle:
 
-    def test_no_cpickle(self):
+    @pytest.mark.masked_modules('cPickle')
+    def test_no_cpickle(self, mask_modules):
         prev = sys.modules.pop('celery.utils.serialization', None)
         try:
-            with mock.mask_modules('cPickle'):
-                import pickle as orig_pickle
+            import pickle as orig_pickle
 
-                from celery.utils.serialization import pickle
-                assert pickle.dumps is orig_pickle.dumps
+            from celery.utils.serialization import pickle
+            assert pickle.dumps is orig_pickle.dumps
         finally:
             sys.modules['celery.utils.serialization'] = prev
 
@@ -68,7 +68,7 @@ class test_jsonify:
         ['foo', 'bar', 'baz'],
         {'foo': 'bar'},
         datetime.utcnow(),
-        datetime.utcnow().replace(tzinfo=pytz.utc),
+        datetime.utcnow().replace(tzinfo=ZoneInfo("UTC")),
         datetime.utcnow().replace(microsecond=0),
         date(2012, 1, 1),
         time(hour=1, minute=30),
@@ -100,10 +100,7 @@ class test_strtobool:
         assert strtobool(s) == b
 
     def test_unknown_value(self):
-        with pytest.raises(TypeError,
-                           # todo replace below when dropping python 2.7
-                           # match="Cannot coerce 'foo' to type bool"):
-                           match=r"Cannot coerce u?'foo' to type bool"):
+        with pytest.raises(TypeError, match="Cannot coerce 'foo' to type bool"):
             strtobool('foo')
 
     def test_no_op(self):

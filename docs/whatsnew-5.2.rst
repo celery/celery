@@ -330,10 +330,10 @@ older `azure-servicebus` versions.
 
 .. _v520-news:
 
-Bug: Pymongo 3.12.1 is not compatible with Celery 5.2 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Bug: Pymongo 3.12.1 is not compatible with Celery 5.2
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For now we are limiting Pymongo version, only allowing for versions between 3.3.0 and 3.12.0.  
+For now we are limiting Pymongo version, only allowing for versions between 3.3.0 and 3.12.0.
 
 This will be fixed in the next patch.
 
@@ -390,4 +390,4 @@ You can now check the validity of the CA certificate while making
 a TLS connection to ArangoDB result backend.
 
 If you'd like to do so, set the ``verify`` key in the
-:setting:`arangodb_backend_settings`` dictionary to ``True``.
+:setting:`arangodb_backend_settings` dictionary to ``True``.

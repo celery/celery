@@ -13,7 +13,6 @@ Unknown result backend: {0!r}.  Did you spell that correctly? ({1!r})
 """
 
 BACKEND_ALIASES = {
-    'amqp': 'celery.backends.amqp:AMQPBackend',
     'rpc': 'celery.backends.rpc.RPCBackend',
     'cache': 'celery.backends.cache:CacheBackend',
     'redis': 'celery.backends.redis:RedisBackend',
@@ -44,8 +43,7 @@ def by_name(backend=None, loader=None,
     backend = backend or 'disabled'
     loader = loader or current_app.loader
     aliases = dict(BACKEND_ALIASES, **loader.override_backends)
-    aliases.update(
-        load_extension_class_names(extension_namespace) or {})
+    aliases.update(load_extension_class_names(extension_namespace))
     try:
         cls = symbol_by_name(backend, aliases)
     except ValueError as exc:

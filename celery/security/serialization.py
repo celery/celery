@@ -88,11 +88,11 @@ class SecureSerializer:
         }
 
 
-def register_auth(key=None, cert=None, store=None,
+def register_auth(key=None, key_password=None, cert=None, store=None,
                   digest=DEFAULT_SECURITY_DIGEST,
                   serializer='json'):
     """Register security serializer."""
-    s = SecureSerializer(key and PrivateKey(key),
+    s = SecureSerializer(key and PrivateKey(key, password=key_password),
                          cert and Certificate(cert),
                          store and FSCertStore(store),
                          digest, serializer=serializer)

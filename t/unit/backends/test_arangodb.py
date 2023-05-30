@@ -19,7 +19,7 @@ pytest.importorskip('pyArango')
 
 class test_ArangoDbBackend:
 
-    def setup(self):
+    def setup_method(self):
         self.backend = ArangoDbBackend(app=self.app)
 
     def test_init_no_arangodb(self):

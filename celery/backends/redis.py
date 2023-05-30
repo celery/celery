@@ -12,8 +12,7 @@ from kombu.utils.url import _parse_url, maybe_sanitize_url
 from celery import states
 from celery._state import task_join_will_block
 from celery.canvas import maybe_signature
-from celery.exceptions import (BackendStoreError, ChordError,
-                               ImproperlyConfigured)
+from celery.exceptions import BackendStoreError, ChordError, ImproperlyConfigured
 from celery.result import GroupResult, allow_join_result
 from celery.utils.functional import _regen, dictfilter
 from celery.utils.log import get_logger
@@ -25,7 +24,7 @@ from .base import BaseKeyValueStoreBackend
 try:
     import redis.connection
     from kombu.transport.redis import get_redis_error_classes
-except ImportError:  # pragma: no cover
+except ImportError:
     redis = None
     get_redis_error_classes = None
 
@@ -103,15 +102,24 @@ class ResultConsumer(BaseResultConsumer):
         self.backend.client.connection_pool.reset()
         # task state might have changed when the connection was down so we
         # retrieve meta for all subscribed tasks before going into pubsub mode
-        metas = self.backend.client.mget(self.subscribed_to)
-        metas = [meta for meta in metas if meta]
-        for meta in metas:
-            self.on_state_change(self._decode_result(meta), None)
+        if self.subscribed_to:
+            metas = self.backend.client.mget(self.subscribed_to)
+            metas = [meta for meta in metas if meta]
+            for meta in metas:
+                self.on_state_change(self._decode_result(meta), None)
         self._pubsub = self.backend.client.pubsub(
             ignore_subscribe_messages=True,
         )
+        # subscribed_to maybe empty after on_state_change
         if self.subscribed_to:
             self._pubsub.subscribe(*self.subscribed_to)
+        else:
+            self._pubsub.connection = self._pubsub.connection_pool.get_connection(
+                'pubsub', self._pubsub.shard_hint
+            )
+            # even if there is nothing to subscribe, we should not lose the callback after connecting.
+            # The on_connect callback will re-subscribe to any channels we previously subscribed to.
+            self._pubsub.connection.register_connect_callback(self._pubsub.on_connect)
 
     @contextmanager
     def reconnect_on_error(self):
@@ -568,8 +576,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     def __reduce__(self, args=(), kwargs=None):
         kwargs = {} if not kwargs else kwargs
         return super().__reduce__(
-            (self.url,), {'expires': self.expires},
-        )
+            args, dict(kwargs, expires=self.expires, url=self.url))
 
 
 if getattr(redis, "sentinel", None):

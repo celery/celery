@@ -100,6 +100,24 @@ If you are using Sentinel, you should specify the master_name using the :setting
 
     app.conf.result_backend_transport_options = {'master_name': "mymaster"}
 
+.. _redis-result-backend-global-keyprefix:
+
+Global keyprefix
+^^^^^^^^^^^^^^^^
+
+The global key prefix will be prepended to all keys used for the result backend,
+which can be useful when a redis database is shared by different users.
+By default, no prefix is prepended.
+
+To configure the global keyprefix for the Redis result backend, use the ``global_keyprefix`` key under :setting:`result_backend_transport_options`:
+
+
+.. code-block:: python
+
+    app.conf.result_backend_transport_options = {
+        'global_keyprefix': 'my_prefix_'
+    }
+
 .. _redis-result-backend-timeout:
 
 Connection timeouts
@@ -133,14 +151,16 @@ This causes problems with ETA/countdown/retry tasks where the
 time to execute exceeds the visibility timeout; in fact if that
 happens it will be executed again, and again in a loop.
 
-So you have to increase the visibility timeout to match
-the time of the longest ETA you're planning to use.
-
-Note that Celery will redeliver messages at worker shutdown,
+To remediate that, you can increase the visibility timeout to match
+the time of the longest ETA you're planning to use. However, this is not
+recommended as it may have negative impact on the reliability.
+Celery will redeliver messages at worker shutdown,
 so having a long visibility timeout will only delay the redelivery
 of 'lost' tasks in the event of a power failure or forcefully terminated
 workers.
 
+Broker is not a database, so if you are in need of scheduling tasks for
+a more distant future, database-backed periodic task might be a better choice.
 Periodic tasks won't be affected by the visibility timeout,
 as this is a concept separate from ETA/countdown.
 

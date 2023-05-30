@@ -3,8 +3,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from celery.utils.imports import (NotAPackage, find_module, gen_task_name,
-                                  module_file, qualname, reload_from_cwd)
+from celery.utils.imports import NotAPackage, find_module, gen_task_name, module_file, qualname, reload_from_cwd
 
 
 def test_find_module():

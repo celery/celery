@@ -162,6 +162,8 @@ the :setting:`security_key`,
 :setting:`security_certificate`, and :setting:`security_cert_store`
 settings respectively.
 You can tweak the signing algorithm with :setting:`security_digest`.
+If using an encrypted private key, the password can be configured with
+:setting:`security_key_password`.
 
 With these configured it's also necessary to call the
 :func:`celery.setup_security` function. Note that this will also
@@ -249,7 +251,7 @@ that can be used.
 .. _`OSSEC`: http://www.ossec.net/
 .. _`Samhain`: http://la-samhna.de/samhain/index.html
 .. _`AIDE`: http://aide.sourceforge.net/
-.. _`Open Source Tripwire`: http://sourceforge.net/projects/tripwire/
+.. _`Open Source Tripwire`: https://github.com/Tripwire/tripwire-open-source
 .. _`ZFS`: https://en.wikipedia.org/wiki/ZFS
 
 .. rubric:: Footnotes

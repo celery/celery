@@ -53,10 +53,9 @@ class FilesystemBackend(KeyValueStoreBackend):
         # Lets verify that we've everything setup right
         self._do_directory_test(b'.fs-backend-' + uuid().encode(encoding))
 
-    def __reduce__(self, args=(), kwargs={}):
-        kwargs.update(
-            dict(url=self.url))
-        return super().__reduce__(args, kwargs)
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
+        return super().__reduce__(args, {**kwargs, 'url': self.url})
 
     def _find_path(self, url):
         if not url:

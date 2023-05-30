@@ -19,9 +19,8 @@ from kombu.utils.encoding import safe_str
 
 from celery import VERSION_BANNER, platforms, signals
 from celery.app import trace
-from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.loaders.app import AppLoader
-from celery.platforms import EX_FAILURE, EX_OK, check_privileges, isatty
+from celery.platforms import EX_FAILURE, EX_OK, check_privileges
 from celery.utils import static, term
 from celery.utils.debug import cry
 from celery.utils.imports import qualname
@@ -107,7 +106,7 @@ class Worker(WorkController):
         super().setup_defaults(**kwargs)
         self.purge = purge
         self.no_color = no_color
-        self._isatty = isatty(sys.stdout)
+        self._isatty = sys.stdout.isatty()
         self.colored = self.app.log.colored(
             self.logfile,
             enabled=not no_color if no_color is not None else no_color
@@ -280,7 +279,7 @@ class Worker(WorkController):
 
 
 def _shutdown_handler(worker, sig='TERM', how='Warm',
-                      exc=WorkerShutdown, callback=None, exitcode=EX_OK):
+                      callback=None, exitcode=EX_OK):
     def _handle_request(*args):
         with in_sighandler():
             from celery.worker import state
@@ -292,27 +291,24 @@ def _shutdown_handler(worker, sig='TERM', how='Warm',
                     sender=worker.hostname, sig=sig, how=how,
                     exitcode=exitcode,
                 )
-            if active_thread_count() > 1:
-                setattr(state, {'Warm': 'should_stop',
-                                'Cold': 'should_terminate'}[how], exitcode)
-            else:
-                raise exc(exitcode)
+            setattr(state, {'Warm': 'should_stop',
+                            'Cold': 'should_terminate'}[how], exitcode)
     _handle_request.__name__ = str(f'worker_{how}')
     platforms.signals[sig] = _handle_request
 
 
 if REMAP_SIGTERM == "SIGQUIT":
     install_worker_term_handler = partial(
-        _shutdown_handler, sig='SIGTERM', how='Cold', exc=WorkerTerminate, exitcode=EX_FAILURE,
+        _shutdown_handler, sig='SIGTERM', how='Cold', exitcode=EX_FAILURE,
     )
 else:
     install_worker_term_handler = partial(
-        _shutdown_handler, sig='SIGTERM', how='Warm', exc=WorkerShutdown,
+        _shutdown_handler, sig='SIGTERM', how='Warm',
     )
 
 if not is_jython:  # pragma: no cover
     install_worker_term_hard_handler = partial(
-        _shutdown_handler, sig='SIGQUIT', how='Cold', exc=WorkerTerminate,
+        _shutdown_handler, sig='SIGQUIT', how='Cold',
         exitcode=EX_FAILURE,
     )
 else:  # pragma: no cover

@@ -25,8 +25,8 @@ class Tasks(bootsteps.StartStopStep):
         """Start task consumer."""
         c.update_strategies()
 
-        # - RabbitMQ 3.3 completely redefines how basic_qos works..
-        # This will detect if the new qos smenatics is in effect,
+        # - RabbitMQ 3.3 completely redefines how basic_qos works...
+        # This will detect if the new qos semantics is in effect,
         # and if so make sure the 'apply_global' flag is set on qos updates.
         qos_global = not c.connection.qos_semantics_matches_spec
 
