@@ -1,5 +1,5 @@
 boto3>=1.9.12
-pycurl>=7.43.0.5; sys_platform != 'win32'
+pycurl>=7.43.0.5; sys_platform != 'win32'; platform_python_implementation=="CPython"
 urllib3>=1.26.7
 kombu[sqs]>=5.3.0rc1
 
