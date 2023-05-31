@@ -60,8 +60,8 @@ What do I need?
 
 Celery version 5.3.0a1 runs on,
 
-- Python (3.7, 3.8, 3.9, 3.10)
-- PyPy3.7 (7.3.7+)
+- Python (3.8, 3.9, 3.10)
+- PyPy3.8+ (v7.3.11+)
 
 
 This is the version of celery which will support Python 3.7 or newer.
