@@ -10,11 +10,7 @@ __all__ = ('TaskPool',)
 
 if TYPE_CHECKING:
     import sys
-
-    if sys.version_info >= (3, 8):
-        from typing import TypedDict
-    else:
-        from typing_extensions import TypedDict
+    from typing import TypedDict
 
     PoolInfo = TypedDict('PoolInfo', {'max-concurrency': int, 'threads': int})
 
