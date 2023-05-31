@@ -5,5 +5,3 @@ pytest-subtests
 pytest-rerunfailures
 pytest-sugar
 pytest-xdist
-
--e .

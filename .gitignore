@@ -37,3 +37,4 @@ integration-tests-config.json
 [0-9]*
 statefilename.*
 dump.rdb
+.env

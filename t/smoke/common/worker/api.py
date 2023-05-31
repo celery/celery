@@ -2,6 +2,8 @@ from typing import Any
 
 from pytest_celery.containers.worker import CeleryWorkerContainer
 
+import celery
+
 
 class SmokeWorkerContainer(CeleryWorkerContainer):
     @property
@@ -10,7 +12,7 @@ class SmokeWorkerContainer(CeleryWorkerContainer):
 
     @classmethod
     def version(cls) -> str:
-        return "5.2.7"
+        return celery.__version__
 
     @classmethod
     def log_level(cls) -> str:

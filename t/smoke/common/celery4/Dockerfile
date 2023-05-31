@@ -1,4 +1,4 @@
-FROM python:3.9-slim-buster
+FROM python:3.10-slim-buster
 
 # Create a user to run the worker
 RUN adduser --disabled-password --gecos "" test_user
@@ -15,6 +15,9 @@ ENV PIP_VERSION=$CELERY_VERSION
 ENV LOG_LEVEL=$CELERY_LOG_LEVEL
 ENV WORKER_NAME=$CELERY_WORKER_NAME
 ENV WORKER_QUEUE=$CELERY_WORKER_QUEUE
+
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE 1
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip \

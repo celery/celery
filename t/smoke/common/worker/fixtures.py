@@ -8,10 +8,12 @@ from pytest_docker_tools import build, container, fxtr
 from t.smoke.common.worker.api import SmokeWorkerContainer
 
 smoke_worker_image = build(
-    path="t/smoke/common/worker",
+    path=".",
+    dockerfile="t/smoke/common/worker/Dockerfile",
     tag="t/smoke/worker:dev",
     buildargs=SmokeWorkerContainer.buildargs(),
 )
+
 
 default_worker_container = container(
     image="{smoke_worker_image.id}",
@@ -40,25 +42,3 @@ def default_worker_tasks() -> set:
     yield {
         common_tasks,
     }
-
-
-# @pytest.fixture
-# def smoke_worker(
-#     smoke_worker_container: CeleryWorkerContainer,
-#     celery_setup_app: Celery,
-# ) -> CeleryTestWorker:
-#     worker = CeleryTestWorker(
-#         smoke_worker_container,
-#         app=celery_setup_app,
-#     )
-#     yield worker
-
-
-# smoke_worker_container = container(
-#     image="{smoke_worker_image.id}",
-#     environment=fxtr("default_worker_env"),
-#     network="{DEFAULT_NETWORK.name}",
-#     volumes={"{default_worker_volume.name}": defaults.DEFAULT_WORKER_VOLUME},
-#     wrapper_class=SmokeWorkerContainer,
-#     timeout=defaults.DEFAULT_WORKER_CONTAINER_TIMEOUT,
-# )

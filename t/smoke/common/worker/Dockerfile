@@ -1,4 +1,4 @@
-FROM python:3.9-slim-buster
+FROM python:3.11-bookworm
 
 # Create a user to run the worker
 RUN adduser --disabled-password --gecos "" test_user
@@ -16,9 +16,15 @@ ENV LOG_LEVEL=$CELERY_LOG_LEVEL
 ENV WORKER_NAME=$CELERY_WORKER_NAME
 ENV WORKER_QUEUE=$CELERY_WORKER_QUEUE
 
-# Install Python dependencies
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir celery[redis]==$PIP_VERSION
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE 1
+
+# Install celery from source
+WORKDIR /celery
+
+COPY --chown=test_user:test_user . /celery
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -e /celery[redis]
 
 # The workdir must be /app
 WORKDIR /app
