@@ -2034,7 +2034,9 @@ class _chord(Signature):
                          )
         self.subtask_type = 'chord'
 
-    def __call__(self, body=None, **options):
+    def __call__(self, body=None, max_retries: None, **options):
+        """max_retries default None, fail task will retry forever!"""
+        options["max_retries"] = max_retries
         return self.apply_async((), {'body': body} if body else {}, **options)
 
     def __or__(self, other):
