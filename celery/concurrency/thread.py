@@ -9,7 +9,6 @@ from .base import BasePool, apply_target
 __all__ = ('TaskPool',)
 
 if TYPE_CHECKING:
-    import sys
     from typing import TypedDict
 
     PoolInfo = TypedDict('PoolInfo', {'max-concurrency': int, 'threads': int})
