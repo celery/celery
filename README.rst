@@ -58,7 +58,7 @@ in such a way that the client enqueues an URL to be requested by a worker.
 What do I need?
 ===============
 
-Celery version 5.3.0a1 runs on,
+Celery version 5.3.0rc2 runs on,
 
 - Python (3.8, 3.9, 3.10)
 - PyPy3.8+ (v7.3.11+)
@@ -69,6 +69,7 @@ This is the version of celery which will support Python 3.7 or newer.
 If you're running an older version of Python, you need to be running
 an older version of Celery:
 
+- Python 3.7: Celery 5.2 or earlier.
 - Python 3.6: Celery 5.1 or earlier.
 - Python 2.7: Celery 4.x series.
 - Python 2.6: Celery series 3.1 or earlier.
@@ -91,7 +92,7 @@ Get Started
 ===========
 
 If this is the first time you're trying to use Celery, or you're
-new to Celery v5.3.0a1 coming from previous versions then you should read our
+new to Celery v5.3.0rc2 coming from previous versions then you should read our
 getting started tutorials:
 
 - `First steps with Celery`_
