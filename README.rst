@@ -260,9 +260,9 @@ separating them by commas.
 ::
 
 
-    $ pip install "celery[amqp]"
+    $ pip install "celery[gevent]"
 
-    $ pip install "celery[amqp,redis,auth,msgpack]"
+    $ pip install "celery[gevent,redis,auth,msgpack]"
 
 The following bundles are available:
 
@@ -290,7 +290,7 @@ Concurrency
 Transports and Backends
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-:``celery[amqp]``:
+:``celery``:
     for using the RabbitMQ amqp python library.
 
 :``celery[redis]``:
