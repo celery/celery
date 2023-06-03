@@ -1,9 +1,9 @@
-.. _whatsnew-5.2:
+.. _whatsnew-5.3:
 
 =========================================
- What's new in Celery 5.2 (Dawn Chorus)
+ What's new in Celery 5.3 (?)
 =========================================
-:Author: Omer Katz (``omer.drow at gmail.com``)
+:Author: Asif Saif Uddin (``auvipy at gmail.com``), Tomer Nosrati ().
 
 .. sidebar:: Change history
 
@@ -37,7 +37,7 @@ While this version is **mostly** backward compatible with previous versions
 it's important that you read the following section as this release
 is a new major version.
 
-This version is officially supported on CPython 3.7 & 3.8 & 3.9
+This version is officially supported on CPython 3.8, 3.9 & 3.10
 and is also supported on PyPy3.
 
 .. _`website`: http://celeryproject.org/
@@ -58,16 +58,16 @@ Preface
     **This release contains fixes for two (potentially severe) memory leaks.
     We encourage our users to upgrade to this release as soon as possible.**
 
-The 5.2.0 release is a new minor release for Celery.
+The 5.3.0 release is a new minor release for Celery.
 
 Releases in the 5.x series are codenamed after songs of `Jon Hopkins <https://en.wikipedia.org/wiki/Jon_Hopkins>`_.
 This release has been codenamed `Dawn Chorus <https://www.youtube.com/watch?v=bvsZBdo5pEk>`_.
 
-From now on we only support Python 3.7 and above.
-We will maintain compatibility with Python 3.7 until it's
-EOL in June, 2023.
+From now on we only support Python 3.8 and above.
+We will maintain compatibility with Python 3.8 until it's
+EOL in 2024.
 
-*— Omer Katz*
+*— Asif Saif Uddin*
 
 Long Term Support Policy
 ------------------------
@@ -141,7 +141,7 @@ this effort.
 After the migration is done, run your test suite with Celery 4 to ensure
 nothing has been broken.
 
-Step 5: Upgrade to Celery 5.2
+Step 5: Upgrade to Celery 5.3
 -----------------------------
 
 At this point you can upgrade your workers and clients with the new version.
@@ -156,10 +156,10 @@ Supported Python Versions
 
 The supported Python versions are:
 
-- CPython 3.7
 - CPython 3.8
 - CPython 3.9
-- PyPy3.7 7.3 (``pypy3``)
+- CPython 3.10
+- PyPy3.8 7.3 (``pypy3``)
 
 Experimental support
 ~~~~~~~~~~~~~~~~~~~~
@@ -167,7 +167,7 @@ Experimental support
 Celery supports these Python versions provisionally as they are not production
 ready yet:
 
-- CPython 3.10 (currently in RC2)
+- CPython 3.11 (currently in RC2)
 
 Memory Leak Fixes
 -----------------
@@ -198,17 +198,17 @@ acknowledges them but that has never been the case.
 Instead, these jobs remain forever in memory.
 We now discard those jobs immediately while flushing.
 
-Dropped support for Python 3.6
+Dropped support for Python 3.7
 ------------------------------
 
-Celery now requires Python 3.7 and above.
+Celery now requires Python 3.8 and above.
 
 Python 3.6 will reach EOL in December, 2021.
 In order to focus our efforts we have dropped support for Python 3.6 in
 this version.
 
-If you still require to run Celery using Python 3.6
-you can still use Celery 5.1.
+If you still require to run Celery using Python 3.7
+you can still use Celery 5.2.
 However we encourage you to upgrade to a supported Python version since
 no further security patches will be applied for Python 3.6 after
 the 23th of December, 2021.
@@ -224,7 +224,7 @@ A task which was never replaced has a ``replaced_task_nesting`` value of 0.
 Kombu
 -----
 
-Starting from v5.2, the minimum required version is Kombu 5.2.0.
+Starting from v5.3, the minimum required version is Kombu 5.3.0.
 
 Prefork Workers Pool
 ---------------------
