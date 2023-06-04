@@ -8,10 +8,28 @@ This document contains change notes for bugfix & new features
 in the main branch & 5.2.x series, please see :ref:`whatsnew-5.2` for
 an overview of what's new in Celery 5.2.
 
+
+.. _version-5.3.0rc2:
+
+5.3.0rc2
+========
+
+:release-date: 2023-05-31 9:00 P.M GMT+6
+:release-by: Asif Saif Uddin
+
+- Add missing dependency.
+- Fix exc_type being the exception instance rather.
+- Fixed revoking tasks by stamped headers (#8269).
+- Support sqlalchemy 2.0 in tests (#8271).
+- Fix docker (#8275).
+- Update redis.txt to 4.5 (#8278).
+- Update kombu>=5.3.0rc2.
+
+
 .. _version-5.3.0rc1:
 
 5.3.0rc1
-=======
+========
 
 :release-date: 2023-05-11 4:24 P.M GMT+2
 :release-by: Tomer Nosrati
