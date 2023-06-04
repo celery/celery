@@ -146,7 +146,7 @@ Step 5: Upgrade to Celery 5.3
 
 At this point you can upgrade your workers and clients with the new version.
 
-.. _v520-important:
+.. _v530-important:
 
 Important Notes
 ===============
@@ -167,7 +167,7 @@ Experimental support
 Celery supports these Python versions provisionally as they are not production
 ready yet:
 
-- CPython 3.11 (currently in RC2)
+- CPython 3.11
 
 Memory Leak Fixes
 -----------------
@@ -203,15 +203,15 @@ Dropped support for Python 3.7
 
 Celery now requires Python 3.8 and above.
 
-Python 3.6 will reach EOL in December, 2021.
+Python 3.7 will reach EOL in June, 2023.
 In order to focus our efforts we have dropped support for Python 3.6 in
 this version.
 
 If you still require to run Celery using Python 3.7
 you can still use Celery 5.2.
 However we encourage you to upgrade to a supported Python version since
-no further security patches will be applied for Python 3.6 after
-the 23th of December, 2021.
+no further security patches will be applied for Python 3.7 after
+the 23th of June, 2023.
 
 Tasks
 -----
