@@ -3,7 +3,7 @@
 =========================================
  What's new in Celery 5.3 (?)
 =========================================
-:Author: Asif Saif Uddin (``auvipy at gmail.com``), Tomer Nosrati ().
+:Author: Asif Saif Uddin (``auvipy at gmail.com``), Tomer Nosrati (``tomer.nosrati at gmail.com``).
 
 .. sidebar:: Change history
 
