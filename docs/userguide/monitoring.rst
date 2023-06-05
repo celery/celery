@@ -204,6 +204,49 @@ You can specify a single, or a list of workers by using the
     $ celery -A proj control -d w1@e.com,w2@e.com enable_events
 
 
+.. _celery-insights:
+
+Celery Insights: Realtime Monitoring Tool
+-----------------------------------------
+
+With `Celery Insights`__, you can effortlessly track your Celery cluster in real-time. 
+Through a modern web interface, you can conveniently view worker status, task information, and workflow graphs, all updated using websockets.
+
+.. _Celery Insights: https://github.com/danyi1212/celery-insights
+
+It is provided as a Docker Image and can be launched using a single command:
+
+.. code-block:: console
+
+    $ docker run -p 8555:8555 --name celery-insights ghcr.io/danyi1212/celery-insights:latest
+
+Celery Insights comes pre-configured for localhost Redis as Result Backend and RabbitMQ as Broker.
+Check out the `Advanced Setup`__ guide to connect to a different Broker or Result Backend
+
+.. _Advanced Setup: https://github.com/danyi1212/celery-insights#advanced-setup
+
+**`View Demo`__**
+
+.. _View Demo: https://celery-insights.vercel.app/
+
+Features
+~~~~~~~~
+
+- Modern Web Interface
+- Realtime updates using WebSockets
+- Task workflows relations using Flowchart and Timeline views
+- Worker's active, reserved and scheduled tasks
+- Worker pool status, with active task on each process
+
+**Screenshots**
+
+.. figure:: ../images/celery-insights-home.jpg
+   :width: 700px
+
+.. figure:: ../images/celery-insights-workflow.jpg
+   :width: 700px
+
+
 .. _monitoring-flower:
 
 Flower: Real-time Celery web-monitor
