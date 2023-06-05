@@ -5,6 +5,7 @@ import ssl
 from contextlib import contextmanager
 from datetime import timedelta
 from pickle import dumps, loads
+from socket import TCP_KEEPCNT, TCP_KEEPIDLE, TCP_KEEPINTVL
 from unittest.mock import ANY, Mock, call, patch
 
 import pytest
@@ -16,7 +17,6 @@ from celery.exceptions import BackendStoreError, ChordError, ImproperlyConfigure
 from celery.result import AsyncResult, GroupResult
 from celery.utils.collections import AttributeDict
 from t.unit import conftest
-
 
 def raise_on_second_call(mock, exc, *retval):
     def on_first_call(*args, **kwargs):
@@ -452,7 +452,27 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['socket_timeout'] == 30.0
         assert 'socket_connect_timeout' not in x.connparams
         assert 'socket_keepalive' not in x.connparams
+        assert 'socket_keepalive_options' not in x.connparams
         assert x.connparams['db'] == 3
+
+    def test_socket_keepalive_options(self):
+        pytest.importorskip('redis') 
+
+        self.app.conf.redis_socket_keepalive = True
+        self.app.conf.result_backend_transport_options = {
+            'socket_keepalive_options': {
+                TCP_KEEPIDLE: 300,
+                TCP_KEEPCNT: 9,
+                TCP_KEEPINTVL: 45
+            }
+        }
+
+        x = self.Backend(
+            'socket:///tmp/redis.sock?virtual_host=/3', app=self.app,
+        )
+
+        assert x.connparams['socket_keepalive'] == True
+        assert x.connparams['socket_keepalive_options'] == {4: 300, 6: 9, 5: 45}
 
     def test_backend_ssl(self):
         pytest.importorskip('redis')
