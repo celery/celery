@@ -228,7 +228,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         socket_connect_timeout = _get('redis_socket_connect_timeout')
         retry_on_timeout = _get('redis_retry_on_timeout')
         socket_keepalive = _get('redis_socket_keepalive')
-        socket_keepalive_options = self._transport_options['socket_keepalive_options']
+        socket_keepalive_options = self._transport_options.get('socket_keepalive_options', None)
         health_check_interval = _get('redis_backend_health_check_interval')
 
         self.connparams = {
