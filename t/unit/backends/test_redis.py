@@ -456,7 +456,7 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['db'] == 3
 
     def test_socket_keepalive_options(self):
-        pytest.importorskip('redis') 
+        pytest.importorskip('redis')
 
         self.app.conf.redis_socket_keepalive = True
         self.app.conf.result_backend_transport_options = {
@@ -471,7 +471,7 @@ class test_RedisBackend(basetest_RedisBackend):
             'socket:///tmp/redis.sock?virtual_host=/3', app=self.app,
         )
 
-        assert x.connparams['socket_keepalive'] == True
+        assert x.connparams['socket_keepalive'] is True
         assert x.connparams['socket_keepalive_options'] == {4: 300, 6: 9, 5: 45}
 
     def test_backend_ssl(self):
