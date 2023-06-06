@@ -1,7 +1,7 @@
 .. _whatsnew-5.3:
 
 =========================================
- What's new in Celery 5.3 (?)
+ What's new in Celery 5.3 (Emerald Rush)
 =========================================
 :Author: Asif Saif Uddin (``auvipy at gmail.com``).
 
