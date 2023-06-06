@@ -3,7 +3,7 @@
 =========================================
  What's new in Celery 5.3 (?)
 =========================================
-:Author: Asif Saif Uddin (``auvipy at gmail.com``), Tomer Nosrati ().
+:Author: Asif Saif Uddin (``auvipy at gmail.com``).
 
 .. sidebar:: Change history
 
@@ -40,7 +40,7 @@ is a new major version.
 This version is officially supported on CPython 3.8, 3.9 & 3.10
 and is also supported on PyPy3.
 
-.. _`website`: http://celeryproject.org/
+.. _`website`: https://docs.celeryq.dev/en/stable/
 
 .. topic:: Table of Contents
 
@@ -159,7 +159,7 @@ The supported Python versions are:
 - CPython 3.8
 - CPython 3.9
 - CPython 3.10
-- PyPy3.8 7.3 (``pypy3``)
+- PyPy3.8 7.3.11 (``pypy3``)
 
 Experimental support
 ~~~~~~~~~~~~~~~~~~~~
@@ -169,34 +169,20 @@ ready yet:
 
 - CPython 3.11
 
-Memory Leak Fixes
------------------
+Quality Improvements and Stability Enhancements
+-----------------------------------------------
 
-Two severe memory leaks have been fixed in this version:
+Celery 5.3 focuses on elevating the overall quality and stability of the project. 
+We have dedicated significant efforts to address various bugs, enhance performance,
+and make improvements based on valuable user feedback.
 
-* :class:`celery.result.ResultSet` no longer holds a circular reference to itself.
-* The prefork pool no longer keeps messages in its cache forever when the master
-  process disconnects from the broker.
+Better Compatibility and Upgrade Confidence
+-------------------------------------------
 
-The first memory leak occurs when you use :class:`celery.result.ResultSet`.
-Each instance held a promise which provides that instance as an argument to
-the promise's callable.
-This caused a circular reference which kept the ResultSet instance in memory
-forever since the GC couldn't evict it.
-The provided argument is now a :func:`weakref.proxy` of the ResultSet's
-instance.
-The memory leak mainly occurs when you use :class:`celery.result.GroupResult`
-since it inherits from :class:`celery.result.ResultSet` which doesn't get used
-that often.
+Our goal with Celery 5.3 is to instill confidence in users who are currently 
+using Celery 4 or older versions. We want to assure you that upgrading to 
+Celery 5.3 will provide a more robust and reliable experience.
 
-The second memory leak exists since the inception of the project.
-The prefork pool maintains a cache of the jobs it executes.
-When they are complete, they are evicted from the cache.
-However, when Celery disconnects from the broker, we flush the pool
-and discard the jobs, expecting that they'll be cleared later once the worker
-acknowledges them but that has never been the case.
-Instead, these jobs remain forever in memory.
-We now discard those jobs immediately while flushing.
 
 Dropped support for Python 3.7
 ------------------------------
@@ -213,181 +199,64 @@ However we encourage you to upgrade to a supported Python version since
 no further security patches will be applied for Python 3.7 after
 the 23th of June, 2023.
 
-Tasks
------
-
-When replacing a task with another task, we now give an indication of the
-replacing nesting level through the ``replaced_task_nesting`` header.
-
-A task which was never replaced has a ``replaced_task_nesting`` value of 0.
 
 Kombu
 -----
 
-Starting from v5.3, the minimum required version is Kombu 5.3.0.
+Starting from v5.3.0, the minimum required version is Kombu 5.3.0.
 
-Prefork Workers Pool
+Redis
+-----
+
+redis-py 4.5.x is the new minimum required version.
+
+SQLAlchemy
 ---------------------
 
-Now all orphaned worker processes are killed automatically when main process exits.
+SQLAlchemy 1.4.x & 2.0.x is now supported in celery v5.3
 
-Eventlet Workers Pool
----------------------
-
-You can now terminate running revoked tasks while using the
-Eventlet Workers Pool.
-
-Custom Task Classes
+Billiard
 -------------------
 
-We introduced a custom handler which will be executed before the task
-is started called ``before_start``.
+Minimum required version is now 4.1.0
 
-See :ref:`custom-task-cls-app-wide` for more details.
 
-Important Notes From 5.0
-------------------------
+Deprecate pytz and use zoneinfo
+-------------------------------
 
-Dropped support for Python 2.7 & 3.5
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+A switch have been made to zoneinfo for handling timezone data instead of pytz.
 
-Celery now requires Python 3.6 and above.
 
-Python 2.7 has reached EOL in January 2020.
-In order to focus our efforts we have dropped support for Python 2.7 in
-this version.
+Support for out-of-tree worker pool implementations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Prior to version 5.3, Celery had a fixed notion of the worker pool types it supports.
+Celery v5.3.0 introduces the the possibility of an out-of-tree worker pool implementation.
+This feature ensure that the current worker pool implementations consistently call into
+BasePool._get_info(), and enhance it to report the work pool class in use via the 
+"celery inspect stats" command. For example:
 
-In addition, Python 3.5 has reached EOL in September 2020.
-Therefore, we are also dropping support for Python 3.5.
+$ celery -A ... inspect stats
+->  celery@freenas: OK
+    {
+        ...
+        "pool": {
+           ...
+            "implementation": "celery_aio_pool.pool:AsyncIOPool",
 
-If you still require to run Celery using Python 2.7 or Python 3.5
-you can still use Celery 4.x.
-However we encourage you to upgrade to a supported Python version since
-no further security patches will be applied for Python 2.7 or
-Python 3.5.
+It can be used as follows:
 
-Eventlet Workers Pool
-~~~~~~~~~~~~~~~~~~~~~
+    Set the environment variable CELERY_CUSTOM_WORKER_POOL to the name of
+    an implementation of :class:celery.concurrency.base.BasePool in the
+    standard Celery format of "package:class".
 
-Due to `eventlet/eventlet#526 <https://github.com/eventlet/eventlet/issues/526>`_
-the minimum required version is eventlet 0.26.1.
+    Select this pool using '--pool custom'.
 
-Gevent Workers Pool
-~~~~~~~~~~~~~~~~~~~
 
-Starting from v5.0, the minimum required version is gevent 1.0.0.
+Known Issues
+------------
+Canvas header stamping has issues in a hybrid Celery 4.x. & Celery 5.3.x 
+environment and is not safe for production use at the moment.
 
-Couchbase Result Backend
-~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Couchbase result backend now uses the V3 Couchbase SDK.
 
-As a result, we no longer support Couchbase Server 5.x.
 
-Also, starting from v5.0, the minimum required version
-for the database client is couchbase 3.0.0.
-
-To verify that your Couchbase Server is compatible with the V3 SDK,
-please refer to their `documentation <https://docs.couchbase.com/python-sdk/3.0/project-docs/compatibility.html>`_.
-
-Riak Result Backend
-~~~~~~~~~~~~~~~~~~~
-
-The Riak result backend has been removed as the database is no longer maintained.
-
-The Python client only supports Python 3.6 and below which prevents us from
-supporting it and it is also unmaintained.
-
-If you are still using Riak, refrain from upgrading to Celery 5.0 while you
-migrate your application to a different database.
-
-We apologize for the lack of notice in advance but we feel that the chance
-you'll be affected by this breaking change is minimal which is why we
-did it.
-
-AMQP Result Backend
-~~~~~~~~~~~~~~~~~~~
-
-The AMQP result backend has been removed as it was deprecated in version 4.0.
-
-Removed Deprecated Modules
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The `celery.utils.encoding` and the `celery.task` modules has been deprecated
-in version 4.0 and therefore are removed in 5.0.
-
-If you were using the `celery.utils.encoding` module before,
-you should import `kombu.utils.encoding` instead.
-
-If you were using the `celery.task` module before, you should import directly
-from the `celery` module instead.
-
-`azure-servicebus` 7.0.0 is now required
-----------------------------------------
-
-Given the SDK changes between 0.50.0 and 7.0.0 Kombu deprecates support for
-older `azure-servicebus` versions.
-
-.. _v520-news:
-
-Bug: Pymongo 3.12.1 is not compatible with Celery 5.2
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-For now we are limiting Pymongo version, only allowing for versions between 3.3.0 and 3.12.0.
-
-This will be fixed in the next patch.
-
-News
-====
-
-Support for invoking chords of unregistered tasks
--------------------------------------------------
-
-Previously if you attempted to publish a chord
-while providing a signature which wasn't registered in the Celery app publishing
-the chord as the body of the chord, an :exc:`celery.exceptions.NotRegistered`
-exception would be raised.
-
-From now on, you can publish these sort of chords and they would be executed
-correctly:
-
-.. code-block:: python
-
-    # movies.task.publish_movie is registered in the current app
-    movie_task = celery_app.signature('movies.task.publish_movie', task_id=str(uuid.uuid4()), immutable=True)
-    # news.task.publish_news is *not* registered in the current app
-    news_task = celery_app.signature('news.task.publish_news', task_id=str(uuid.uuid4()), immutable=True)
-
-    my_chord = chain(movie_task,
-                     group(movie_task.set(task_id=str(uuid.uuid4())),
-                           movie_task.set(task_id=str(uuid.uuid4()))),
-                     news_task)
-    my_chord.apply_async()  # <-- No longer raises an exception
-
-Consul Result Backend
----------------------
-
-We now create a new client per request to Consul to avoid a bug in the Consul
-client.
-
-The Consul Result Backend now accepts a new
-:setting:`result_backend_transport_options` key: ``one_client``.
-You can opt out of this behavior by setting ``one_client`` to True.
-
-Please refer to the documentation of the backend if you're using the Consul
-backend to find out which behavior suites you.
-
-Filesystem Result Backend
--------------------------
-
-We now cleanup expired task results while using the
-filesystem result backend as most result backends do.
-
-ArangoDB Result Backend
------------------------
-
-You can now check the validity of the CA certificate while making
-a TLS connection to ArangoDB result backend.
-
-If you'd like to do so, set the ``verify`` key in the
-:setting:`arangodb_backend_settings` dictionary to ``True``.
