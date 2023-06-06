@@ -5,8 +5,21 @@
 ================
 
 This document contains change notes for bugfix & new features
-in the main branch & 5.2.x series, please see :ref:`whatsnew-5.2` for
-an overview of what's new in Celery 5.2.
+in the main branch & 5.3.x series, please see :ref:`whatsnew-5.3` for
+an overview of what's new in Celery 5.3.
+
+
+.. _version-5.3.0:
+
+5.3.0
+=====
+
+:release-date: 2023-06-06 12:00 P.M GMT+6
+:release-by: Asif Saif Uddin
+
+- Test kombu 5.3.0 & minor doc update (#8294).
+- Update librabbitmq.txt > 2.0.0 (#8292).
+- Upgrade syntax to py3.8 (#8281).
 
 
 .. _version-5.3.0rc2:
