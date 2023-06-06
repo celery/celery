@@ -200,6 +200,23 @@ no further security patches will be applied for Python 3.7 after
 the 23th of June, 2023.
 
 
+Automatic re-connection on connection loss to broker
+----------------------------------------------------
+
+Unless :setting:`broker_connection_retry_on_startup` is set to False,
+Celery will automatically retry reconnecting to the broker after 
+the first connection loss. :setting:`broker_connection_retry` controls 
+whether to automatically retry reconnecting to the broker for subsequent
+reconnects.
+
+Since the message broker does not track how many tasks were already fetched 
+before the connection was lost, Celery will reduce the prefetch count by 
+the number of tasks that are currently running multiplied by 
+:setting:`worker_prefetch_multiplier`.
+The prefetch count will be gradually restored to the maximum allowed after
+each time a task that was running before the connection was lost is complete
+
+
 Kombu
 -----
 
@@ -210,10 +227,12 @@ Redis
 
 redis-py 4.5.x is the new minimum required version.
 
+
 SQLAlchemy
 ---------------------
 
 SQLAlchemy 1.4.x & 2.0.x is now supported in celery v5.3
+
 
 Billiard
 -------------------
@@ -250,6 +269,52 @@ It can be used as follows:
     standard Celery format of "package:class".
 
     Select this pool using '--pool custom'.
+
+
+Signal::``worker_before_create_process``
+----------------------------------------
+
+Dispatched in the parent process, just before new child process is created in the prefork pool.
+It can be used to clean up instances that don't behave well when forking.
+
+.. code-block:: python
+    @signals.worker_before_create_process.connect
+    def clean_channels(**kwargs):
+        grpc_singleton.clean_channel()
+
+
+Setting::``beat_cron_starting_deadline``
+----------------------------------------
+
+When using cron, the number of seconds :mod:`~celery.bin.beat` can look back
+when deciding whether a cron schedule is due. When set to `None`, cronjobs that
+are past due will always run immediately.
+
+
+Redis result backend Global keyprefix
+-------------------------------------
+
+The global key prefix will be prepended to all keys used for the result backend,
+which can be useful when a redis database is shared by different users.
+By default, no prefix is prepended.
+
+To configure the global keyprefix for the Redis result backend, use the 
+``global_keyprefix`` key under :setting:`result_backend_transport_options`:
+
+
+.. code-block:: python
+    app.conf.result_backend_transport_options = {
+        'global_keyprefix': 'my_prefix_'
+    }
+
+
+Django
+------
+
+Minimum django version is bumped to v2.2.28.
+Also added --skip-checks flag to bypass django core checks.
+
+
 
 
 Known Issues
