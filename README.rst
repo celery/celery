@@ -58,13 +58,13 @@ in such a way that the client enqueues an URL to be requested by a worker.
 What do I need?
 ===============
 
-Celery version 5.3.0rc2 runs on,
+Celery version 5.3.0 runs on,
 
 - Python (3.8, 3.9, 3.10)
 - PyPy3.8+ (v7.3.11+)
 
 
-This is the version of celery which will support Python 3.7 or newer.
+This is the version of celery which will support Python 3.8 or newer.
 
 If you're running an older version of Python, you need to be running
 an older version of Celery:
@@ -77,7 +77,7 @@ an older version of Celery:
 - Python 2.4: Celery series 2.2 or earlier.
 
 Celery is a project with minimal funding,
-so we don't support Microsoft Windows.
+so we don't support Microsoft Windows but it should be working.
 Please don't open any issues related to that platform.
 
 *Celery* is usually used with a message broker to send and receive messages.
@@ -92,7 +92,7 @@ Get Started
 ===========
 
 If this is the first time you're trying to use Celery, or you're
-new to Celery v5.3.0rc2 coming from previous versions then you should read our
+new to Celery v5.3.0 coming from previous versions then you should read our
 getting started tutorials:
 
 - `First steps with Celery`_
@@ -260,9 +260,9 @@ separating them by commas.
 ::
 
 
-    $ pip install "celery[amqp]"
+    $ pip install "celery[redis]"
 
-    $ pip install "celery[amqp,redis,auth,msgpack]"
+    $ pip install "celery[redis,auth,msgpack]"
 
 The following bundles are available:
 
