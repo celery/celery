@@ -315,6 +315,28 @@ Minimum django version is bumped to v2.2.28.
 Also added --skip-checks flag to bypass django core checks.
 
 
+Make default worker state limits configurable
+---------------------------------------------
+
+Previously, `REVOKES_MAX`, `REVOKE_EXPIRES`, `SUCCESSFUL_MAX` and
+`SUCCESSFUL_EXPIRES` were hardcoded in `celery.worker.state`. This 
+version introduces `CELERY_WORKER_` prefixed environment variables 
+with the same names that allow you to customize these values should
+you need to.
+
+
+Canvas stamping
+---------------
+
+The goal of the Stamping API is to give an ability to label the signature 
+and its components for debugging information purposes. For example, when 
+the canvas is a complex structure, it may be necessary to label some or 
+all elements of the formed structure. The complexity increases even more 
+when nested groups are rolled-out or chain elements are replaced. In such 
+cases, it may be necessary to understand which group an element is a part 
+of or on what nested level it is. This requires a mechanism that traverses 
+the canvas elements and marks them with specific metadata. The stamping API 
+allows doing that based on the Visitor pattern.
 
 
 Known Issues
