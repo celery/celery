@@ -38,7 +38,7 @@ it's important that you read the following section as this release
 is a new major version.
 
 This version is officially supported on CPython 3.8, 3.9 & 3.10
-and is also supported on PyPy3.
+and is also supported on PyPy3.8+.
 
 .. _`website`: https://docs.celeryq.dev/en/stable/
 
@@ -55,13 +55,13 @@ Preface
 
 .. note::
 
-    **This release contains fixes for two (potentially severe) memory leaks.
+    **This release contains fixes for many long standing bugs & stability issues.
     We encourage our users to upgrade to this release as soon as possible.**
 
-The 5.3.0 release is a new minor release for Celery.
+The 5.3.0 release is a new feature release for Celery.
 
 Releases in the 5.x series are codenamed after songs of `Jon Hopkins <https://en.wikipedia.org/wiki/Jon_Hopkins>`_.
-This release has been codenamed `Dawn Chorus <https://www.youtube.com/watch?v=bvsZBdo5pEk>`_.
+This release has been codenamed `Emerald Rush <https://www.youtube.com/watch?v=4sk0uDbM5lc>`_.
 
 From now on we only support Python 3.8 and above.
 We will maintain compatibility with Python 3.8 until it's
