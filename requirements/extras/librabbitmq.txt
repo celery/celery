@@ -1,1 +1,1 @@
-librabbitmq>=2.0.0
+librabbitmq>=2.0.0; python_version < '3.11'
