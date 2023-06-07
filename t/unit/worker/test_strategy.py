@@ -196,6 +196,22 @@ class test_default_strategy_proto2:
         else:
             raise ValueError("Expected message not in captured log records")
 
+    def test_log_task_arguments(self, caplog):
+        caplog.set_level(logging.INFO, logger="celery.worker.strategy")
+        args = "CUSTOM ARGS"
+        kwargs = "CUSTOM KWARGS"
+        with self._context(
+            self.add.s(2, 2).set(argsrepr=args, kwargsrepr=kwargs)
+        ) as C:
+            C()
+        for record in caplog.records:
+            if record.msg == LOG_RECEIVED:
+                assert record.args["args"] == args
+                assert record.args["kwargs"] == kwargs
+                break
+        else:
+            raise ValueError("Expected message not in captured log records")
+
     def test_signal_task_received(self):
         callback = Mock()
         with self._context(self.add.s(2, 2)) as C:
