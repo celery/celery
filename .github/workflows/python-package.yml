@@ -29,13 +29,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10', 'pypy-3.9', 'pypy-3.8']
+        python-version: ['3.8', '3.9', '3.10', '3.11', 'pypy-3.9']
         os: ["ubuntu-latest", "windows-latest"]
         exclude:
             - python-version: 'pypy-3.9'
               os: "windows-latest"
-            - python-version: 'pypy-3.8'
-              os: "windows-latest"
+            
     steps:
     - name: Install apt packages
       if: startsWith(matrix.os, 'ubuntu-')
@@ -74,7 +73,7 @@ jobs:
       strategy:
           fail-fast: false
           matrix:
-              python-version: ['3.8', '3.9', '3.10']
+              python-version: ['3.8', '3.9', '3.10', '3.11']
               toxenv: ['redis', 'rabbitmq', 'rabbitmq_redis']
 
       services:
