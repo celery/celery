@@ -206,7 +206,7 @@ class ChainMap(MutableMapping):
     changes = None
     defaults = None
     maps = None
-    _observers = []
+    _observers = ()
 
     def __init__(self, *maps, **kwargs):
         # type: (*Mapping, **Any) -> None
@@ -216,6 +216,7 @@ class ChainMap(MutableMapping):
             maps=maps,
             changes=maps[0],
             defaults=maps[1:],
+            _observers=[],
         )
 
     def add_defaults(self, d):

@@ -4,11 +4,12 @@ from itertools import count
 from time import monotonic
 
 import pytest
+from unittest.mock import Mock
 from billiard.einfo import ExceptionInfo
 
 import t.skip
 from celery.utils.collections import (AttributeDict, BufferMap, ConfigurationView, DictAttribute, LimitedSet,
-                                      Messagebuffer)
+                                      Messagebuffer, ChainMap)
 from celery.utils.objects import Bunch
 
 
@@ -448,3 +449,16 @@ class test_BufferMap:
 
     def test_repr(self):
         assert repr(Messagebuffer(10, [1, 2, 3]))
+
+
+class test_ChainMap:
+
+    def test_observers_not_shared(self):
+        a = ChainMap()
+        b = ChainMap()
+        callback = Mock()
+        a.bind_to(callback)
+        b.update(x=1)
+        callback.assert_not_called()
+        a.update(x=1)
+        callback.assert_called_once_with(x=1)
