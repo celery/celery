@@ -146,7 +146,7 @@ setuptools.setup(
     license='BSD-3-Clause',
     platforms=['any'],
     install_requires=install_requires(),
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     tests_require=reqs('test.txt'),
     extras_require=extras_require(),
     entry_points={
@@ -172,6 +172,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
         "Operating System :: OS Independent"
