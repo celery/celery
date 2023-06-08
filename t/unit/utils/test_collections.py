@@ -2,14 +2,14 @@ import pickle
 from collections.abc import Mapping
 from itertools import count
 from time import monotonic
+from unittest.mock import Mock
 
 import pytest
-from unittest.mock import Mock
 from billiard.einfo import ExceptionInfo
 
 import t.skip
-from celery.utils.collections import (AttributeDict, BufferMap, ConfigurationView, DictAttribute, LimitedSet,
-                                      Messagebuffer, ChainMap)
+from celery.utils.collections import (AttributeDict, BufferMap, ChainMap, ConfigurationView, DictAttribute,
+                                      LimitedSet, Messagebuffer)
 from celery.utils.objects import Bunch
 
 
