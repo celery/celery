@@ -249,17 +249,6 @@ class TasksCase:
         self.autoretry_arith_task = autoretry_arith_task
 
         @self.app.task(bind=True, autoretry_for=(HTTPError,),
-                       retry_backoff=True, shared=False)
-        def autoretry_backoff_task(self, url):
-            self.iterations += 1
-            if "error" in url:
-                fp = tempfile.TemporaryFile()
-                raise HTTPError(url, '500', 'Error', '', fp)
-            return url
-
-        self.autoretry_backoff_task = autoretry_backoff_task
-
-        @self.app.task(bind=True, autoretry_for=(HTTPError,),
                        retry_backoff=True, retry_jitter=True, shared=False)
         def autoretry_backoff_jitter_task(self, url):
             self.iterations += 1
@@ -616,20 +605,37 @@ class test_task_retries(TasksCase):
         self.autoretry_arith_task.apply((1, 0))
         assert self.autoretry_arith_task.iterations == 1
 
-    @patch('random.randrange', side_effect=lambda i: i - 1)
-    def test_autoretry_backoff(self, randrange):
-        task = self.autoretry_backoff_task
-        task.max_retries = 3
+    @pytest.mark.parametrize(
+        'retry_backoff, expected_countdowns',
+        [
+            (False, [None, None, None, None]),
+            (0, [None, None, None, None]),
+            (0.0, [None, None, None, None]),
+            (True, [1, 2, 4, 8]),
+            (-1, [1, 2, 4, 8]),
+            (0.1, [1, 2, 4, 8]),
+            (1, [1, 2, 4, 8]),
+            (1.9, [1, 2, 4, 8]),
+            (2, [2, 4, 8, 16]),
+        ]
+    )
+    def test_autoretry_backoff(self, retry_backoff, expected_countdowns):
+        @self.app.task(bind=True, shared=False, autoretry_for=(ValueError,),
+                       retry_backoff=retry_backoff, retry_jitter=False, max_retries=3)
+        def task(self_):
+            self_.iterations += 1
+            raise ValueError
+
         task.iterations = 0
 
         with patch.object(task, 'retry', wraps=task.retry) as fake_retry:
-            task.apply(("http://httpbin.org/error",))
+            task.apply()
 
         assert task.iterations == 4
         retry_call_countdowns = [
-            call_[1]['countdown'] for call_ in fake_retry.call_args_list
+            call_[1].get('countdown') for call_ in fake_retry.call_args_list
         ]
-        assert retry_call_countdowns == [1, 2, 4, 8]
+        assert retry_call_countdowns == expected_countdowns
 
     @patch('random.randrange', side_effect=lambda i: i - 2)
     def test_autoretry_backoff_jitter(self, randrange):
