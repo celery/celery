@@ -5,7 +5,7 @@ import ssl
 from contextlib import contextmanager
 from datetime import timedelta
 from pickle import dumps, loads
-from socket import TCP_KEEPCNT, TCP_KEEPIDLE, TCP_KEEPINTVL
+from socket import TCP_KEEPCNT, TCP_KEEPINTVL
 from unittest.mock import ANY, Mock, call, patch
 
 import pytest
@@ -461,7 +461,7 @@ class test_RedisBackend(basetest_RedisBackend):
         self.app.conf.redis_socket_keepalive = True
         self.app.conf.result_backend_transport_options = {
             'socket_keepalive_options': {
-                TCP_KEEPIDLE: 300,
+                0x10: 300,
                 TCP_KEEPCNT: 9,
                 TCP_KEEPINTVL: 45
             }

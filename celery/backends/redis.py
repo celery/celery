@@ -218,10 +218,12 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         if host and '://' in host:
             url, host = host, None
 
-        self.max_connections = (
-            max_connections or
-            _get('redis_max_connections') or
-            self.max_connections)
+        if max_connections is not None:
+            self.max_connections = max_connections
+        else:
+            self.max_connections = (
+                _get('redis_max_connections') or
+                self.max_connections)
         self._ConnectionPool = connection_pool
 
         socket_timeout = _get('redis_socket_timeout')
