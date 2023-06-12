@@ -19,8 +19,8 @@ Using Celery with Django
 
 .. note::
 
-    Celery 5.0.x supports Django 1.11 LTS or newer versions. Please use Celery 4.4.x
-    for versions older than Django 1.11.
+    Celery 5.3.x supports Django 2.2 LTS or newer versions.
+    Please use Celery 5.2.x for versions older than Django 2.2 or Celery 4.4.x if your Django version is older than 1.11.
 
 To use Celery with your Django project you must first define
 an instance of the Celery library (called an "app")

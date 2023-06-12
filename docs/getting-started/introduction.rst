@@ -39,10 +39,10 @@ What do I need?
 ===============
 
 .. sidebar:: Version Requirements
-    :subtitle: Celery version 5.2 runs on
+    :subtitle: Celery version 5.3 runs on
 
-    - Python ❨3.7, 3.8, 3.9, 3.10❩
-    - PyPy3.7, 3.8 ❨7.3.7❩
+    - Python ❨3.8, 3.9, 3.10, 3.11❩
+    - PyPy3.8+ ❨v7.3.11+❩
 
     Celery 4.x was the last version to support Python 2.7,
     Celery 5.x requires Python 3.6 or newer.
