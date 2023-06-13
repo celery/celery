@@ -248,17 +248,6 @@ class TasksCase:
 
         self.autoretry_arith_task = autoretry_arith_task
 
-        @self.app.task(bind=True, autoretry_for=(HTTPError,),
-                       retry_backoff=True, retry_jitter=True, shared=False)
-        def autoretry_backoff_jitter_task(self, url):
-            self.iterations += 1
-            if "error" in url:
-                fp = tempfile.TemporaryFile()
-                raise HTTPError(url, '500', 'Error', '', fp)
-            return url
-
-        self.autoretry_backoff_jitter_task = autoretry_backoff_jitter_task
-
         @self.app.task(bind=True, base=TaskWithRetry, shared=False)
         def autoretry_for_from_base_task(self, a, b):
             self.iterations += 1
@@ -617,19 +606,19 @@ class test_task_retries(TasksCase):
             (1, [1, 2, 4, 8]),
             (1.9, [1, 2, 4, 8]),
             (2, [2, 4, 8, 16]),
-        ]
+        ],
     )
     def test_autoretry_backoff(self, retry_backoff, expected_countdowns):
-        @self.app.task(bind=True, shared=False, autoretry_for=(ValueError,),
+        @self.app.task(bind=True, shared=False, autoretry_for=(ZeroDivisionError,),
                        retry_backoff=retry_backoff, retry_jitter=False, max_retries=3)
-        def task(self_):
+        def task(self_, x, y):
             self_.iterations += 1
-            raise ValueError
+            return x / y
 
         task.iterations = 0
 
         with patch.object(task, 'retry', wraps=task.retry) as fake_retry:
-            task.apply()
+            task.apply((1, 0))
 
         assert task.iterations == 4
         retry_call_countdowns = [
@@ -637,20 +626,38 @@ class test_task_retries(TasksCase):
         ]
         assert retry_call_countdowns == expected_countdowns
 
+    @pytest.mark.parametrize(
+        'retry_backoff, expected_countdowns',
+        [
+            (False, [None, None, None, None]),
+            (0, [None, None, None, None]),
+            (0.0, [None, None, None, None]),
+            (True, [0, 1, 3, 7]),
+            (-1, [0, 1, 3, 7]),
+            (0.1, [0, 1, 3, 7]),
+            (1, [0, 1, 3, 7]),
+            (1.9, [0, 1, 3, 7]),
+            (2, [1, 3, 7, 15]),
+        ],
+    )
     @patch('random.randrange', side_effect=lambda i: i - 2)
-    def test_autoretry_backoff_jitter(self, randrange):
-        task = self.autoretry_backoff_jitter_task
-        task.max_retries = 3
+    def test_autoretry_backoff_jitter(self, randrange, retry_backoff, expected_countdowns):
+        @self.app.task(bind=True, shared=False, autoretry_for=(ZeroDivisionError,),
+                       retry_backoff=retry_backoff, retry_jitter=True, max_retries=3)
+        def task(self_, x, y):
+            self_.iterations += 1
+            return x / y
+
         task.iterations = 0
 
         with patch.object(task, 'retry', wraps=task.retry) as fake_retry:
-            task.apply(("http://httpbin.org/error",))
+            task.apply((1, 0))
 
         assert task.iterations == 4
         retry_call_countdowns = [
-            call_[1]['countdown'] for call_ in fake_retry.call_args_list
+            call_[1].get('countdown') for call_ in fake_retry.call_args_list
         ]
-        assert retry_call_countdowns == [0, 1, 3, 7]
+        assert retry_call_countdowns == expected_countdowns
 
     def test_autoretry_for_from_base(self):
         self.autoretry_for_from_base_task.iterations = 0
@@ -750,12 +757,26 @@ class test_task_retries(TasksCase):
         self.autoretry_task.apply((1, 0))
         assert self.autoretry_task.iterations == 6
 
-    def test_autoretry_class_based_task(self):
+    @pytest.mark.parametrize(
+        'backoff_value, expected_countdowns',
+        [
+            (False, [None, None, None]),
+            (0, [None, None, None]),
+            (0.0, [None, None, None]),
+            (True, [1, 2, 4]),
+            (-1, [1, 2, 4]),
+            (0.1, [1, 2, 4]),
+            (1, [1, 2, 4]),
+            (1.9, [1, 2, 4]),
+            (2, [2, 4, 8]),
+        ],
+    )
+    def test_autoretry_class_based_task(self, backoff_value, expected_countdowns):
         class ClassBasedAutoRetryTask(Task):
             name = 'ClassBasedAutoRetryTask'
             autoretry_for = (ZeroDivisionError,)
-            retry_kwargs = {'max_retries': 5}
-            retry_backoff = True
+            retry_kwargs = {'max_retries': 2}
+            retry_backoff = backoff_value
             retry_backoff_max = 700
             retry_jitter = False
             iterations = 0
@@ -768,8 +789,15 @@ class test_task_retries(TasksCase):
         task = ClassBasedAutoRetryTask()
         self.app.tasks.register(task)
         task.iterations = 0
-        task.apply([1, 0])
-        assert task.iterations == 6
+
+        with patch.object(task, 'retry', wraps=task.retry) as fake_retry:
+            task.apply((1, 0))
+
+        assert task.iterations == 3
+        retry_call_countdowns = [
+            call_[1].get('countdown') for call_ in fake_retry.call_args_list
+        ]
+        assert retry_call_countdowns == expected_countdowns
 
 
 class test_canvas_utils(TasksCase):
