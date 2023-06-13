@@ -1,5 +1,4 @@
 import socket
-import tempfile
 from datetime import datetime, timedelta
 from unittest.mock import ANY, MagicMock, Mock, patch, sentinel
 
@@ -14,11 +13,6 @@ from celery.contrib.testing.mocks import ContextMock
 from celery.exceptions import Ignore, ImproperlyConfigured, Retry
 from celery.result import AsyncResult, EagerResult
 from celery.utils.serialization import UnpickleableExceptionWrapper
-
-try:
-    from urllib.error import HTTPError
-except ImportError:
-    from urllib2 import HTTPError
 
 
 def return_True(*args, **kwargs):
