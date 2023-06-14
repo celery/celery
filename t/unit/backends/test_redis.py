@@ -1111,10 +1111,21 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             }
         }
 
-        x = self.Backend('socket:///tmp/redis.sock?virtual_host=/3', app=self.app)
+        x = self.Backend('redis://:bosco@vandelay.com:123//1', app=self.app)
 
         assert x.connparams['socket_keepalive'] is True
         assert x.connparams['socket_keepalive_options'] == {4: 300, 6: 9, 5: 45}
+
+    def test_setup_proper_max_conenction_value_depends_on_passed_value(self):
+        x = self.Backend('redis://:bosco@vandelay.com:123//1', app=self.app)
+        assert x.connparams['max_connections'] is None
+
+        x = self.Backend('redis://:bosco@vandelay.com:123//1', app=self.app, max_connections=0)
+        assert x.connparams['max_connections'] == 0
+
+        self.app.conf.redis_max_connections = 10
+        x = self.Backend('redis://:bosco@vandelay.com:123//1', app=self.app)
+        assert x.connparams['max_connections'] == 10
 
 
 class test_RedisBackend_chords_complex(basetest_RedisBackend):
