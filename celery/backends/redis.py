@@ -230,7 +230,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         socket_connect_timeout = _get('redis_socket_connect_timeout')
         retry_on_timeout = _get('redis_retry_on_timeout')
         socket_keepalive = _get('redis_socket_keepalive')
-        socket_keepalive_options = self._transport_options.get('socket_keepalive_options', None)
+        socket_keepalive_options = self._transport_options.get('socket_keepalive_options', {})
         health_check_interval = _get('redis_backend_health_check_interval')
 
         self.connparams = {
@@ -458,7 +458,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     def _chord_zset(self):
         return self._transport_options.get('result_chord_ordered', True)
 
-    @cached_property
+    @property
     def _transport_options(self):
         return self.app.conf.get('result_backend_transport_options', {})
 
