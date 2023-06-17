@@ -1,4 +1,5 @@
 import socket
+import tempfile
 from datetime import datetime, timedelta
 from unittest.mock import ANY, MagicMock, Mock, patch, sentinel
 
@@ -13,6 +14,11 @@ from celery.contrib.testing.mocks import ContextMock
 from celery.exceptions import Ignore, ImproperlyConfigured, Retry
 from celery.result import AsyncResult, EagerResult
 from celery.utils.serialization import UnpickleableExceptionWrapper
+
+try:
+    from urllib.error import HTTPError
+except ImportError:
+    from urllib2 import HTTPError
 
 
 def return_True(*args, **kwargs):
@@ -636,16 +642,18 @@ class test_task_retries(TasksCase):
     )
     @patch('random.randrange', side_effect=lambda i: i - 2)
     def test_autoretry_backoff_jitter(self, randrange, retry_backoff, expected_countdowns):
-        @self.app.task(bind=True, shared=False, autoretry_for=(ZeroDivisionError,),
+        @self.app.task(bind=True, shared=False, autoretry_for=(HTTPError,),
                        retry_backoff=retry_backoff, retry_jitter=True, max_retries=3)
-        def task(self_, x, y):
+        def task(self_, url):
             self_.iterations += 1
-            return x / y
+            if "error" in url:
+                fp = tempfile.TemporaryFile()
+                raise HTTPError(url, '500', 'Error', '', fp)
 
         task.iterations = 0
 
         with patch.object(task, 'retry', wraps=task.retry) as fake_retry:
-            task.apply((1, 0))
+            task.apply(("http://httpbin.org/error",))
 
         assert task.iterations == 4
         retry_call_countdowns = [
