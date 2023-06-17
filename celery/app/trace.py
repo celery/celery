@@ -341,7 +341,6 @@ def build_tracer(
 
     loader = loader or app.loader
     ignore_result = task.ignore_result
-    track_started = task.track_started
     track_started = not eager and (task.track_started and not ignore_result)
 
     # #6476
