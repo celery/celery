@@ -9,6 +9,26 @@ in the main branch & 5.3.x series, please see :ref:`whatsnew-5.3` for
 an overview of what's new in Celery 5.3.
 
 
+.. _version-5.3.1:
+
+5.3.1
+=====
+
+:release-date: 2023-06-18  8:15 P.M GMT+6
+:release-by: Asif Saif Uddin
+
+- Upgrade to latest pycurl release (#7069).
+- Limit librabbitmq>=2.0.0; python_version < '3.11' (#8302).
+- Added initial support for python 3.11 (#8304).
+- ChainMap observers fix (#8305).
+- Revert optimization CLI flag behaviour back to original.
+- Restrict redis 4.5.5 as it has severe bugs (#8317).
+- Tested pypy 3.10 version in CI (#8320).
+- Bump new version of kombu to 5.3.1 (#8323).
+- Limit pyro4 up to python 3.10 only as it is (#8324).
+
+
+
 .. _version-5.3.0:
 
 5.3.0
