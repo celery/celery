@@ -25,6 +25,7 @@ an overview of what's new in Celery 5.3.
 - Restrict redis 4.5.5 as it has severe bugs (#8317).
 - Tested pypy 3.10 version in CI (#8320).
 - Bump new version of kombu to 5.3.1 (#8323).
+- Fixed a small float value of retry_backoff (#8295).
 - Limit pyro4 up to python 3.10 only as it is (#8324).
 
 
