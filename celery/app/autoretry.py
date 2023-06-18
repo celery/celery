@@ -18,7 +18,7 @@ def add_autoretry_behaviour(task, **options):
     retry_kwargs = options.get(
         'retry_kwargs', getattr(task, 'retry_kwargs', {})
     )
-    retry_backoff = int(
+    retry_backoff = float(
         options.get('retry_backoff',
                     getattr(task, 'retry_backoff', False))
     )
@@ -48,7 +48,7 @@ def add_autoretry_behaviour(task, **options):
                 if retry_backoff:
                     retry_kwargs['countdown'] = \
                         get_exponential_backoff_interval(
-                            factor=retry_backoff,
+                            factor=int(max(1.0, retry_backoff)),
                             retries=task.request.retries,
                             maximum=retry_backoff_max,
                             full_jitter=retry_jitter)
