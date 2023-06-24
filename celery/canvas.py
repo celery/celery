@@ -2216,9 +2216,6 @@ class _chord(Signature):
         options = dict(self.options, **options) if options else self.options
         if options:
             options.pop('task_id', None)
-            stamped_headers = set(body.options.get("stamped_headers", []))
-            stamped_headers.update(options.get("stamped_headers", []))
-            options["stamped_headers"] = list(stamped_headers)
             body.options.update(options)
 
         bodyres = body.freeze(task_id, root_id=root_id)
