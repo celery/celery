@@ -379,12 +379,6 @@ and can contain the following keys:
     `retry_errors` is a tuple of exception classes that should be retried.
     It will be ignored if not specified. Default is None (ignored).
 
-    .. warning::
-
-        If you specify a tuple of exception classes, you must make sure
-        that you also specify the ``max_retries`` option, otherwise
-        you will get an error.
-
     For example, if you want to retry only tasks that were timed out, you can use
     :exc:`~kombu.exceptions.TimeoutError`:
 
