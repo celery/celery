@@ -1295,13 +1295,11 @@ class test_stamping_mechanism(CanvasCase):
 
         with subtests.test("group"):
             canvas = group(tasks())
-            canvas.link(s("group_link"))
             canvas.link_error(s("group_link_error"))
             canvas.stamp(CustomStampingVisitor())
 
-        with subtests.test("chain"):
+        with subtests.test("chord header"):
             self.app.conf.task_allow_error_cb_on_chord_header = True
             canvas = chord(tasks(), self.identity.si("body"))
-            canvas.link(s("group_link"))
             canvas.link_error(s("group_link_error"))
             canvas.stamp(CustomStampingVisitor())
