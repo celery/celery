@@ -366,6 +366,19 @@ def return_True(*args, **kwargs):
 class CanvasCase:
     def setup_method(self):
         @self.app.task(shared=False)
+        def identity(x):
+            return x
+
+        self.identity = identity
+
+        @self.app.task(shared=False)
+        def fail(*args):
+            args = ("Task expected to fail",) + args
+            raise Exception(*args)
+
+        self.fail = fail
+
+        @self.app.task(shared=False)
         def add(x, y):
             return x + y
 
@@ -1243,3 +1256,52 @@ class test_stamping_mechanism(CanvasCase):
         sig = self.retry_task.signature_from_request()
         assert sig.options['stamped_headers'] == ['stamp']
         assert sig.options['stamp'] == 'value'
+
+    def test_link_error_does_not_duplicate_stamps(self, subtests):
+        class CustomStampingVisitor(StampingVisitor):
+            def on_group_start(self, group, **headers):
+                return {}
+
+            def on_chain_start(self, chain, **headers):
+                return {}
+
+            def on_signature(self, sig, **headers):
+                existing_headers = sig.options.get("headers") or {}
+                existing_stamps = existing_headers.get("stamps") or {}
+                existing_stamp = existing_stamps.get("stamp")
+                existing_stamp = existing_stamp or sig.options.get("stamp")
+                if existing_stamp is None:
+                    stamp = str(uuid.uuid4())
+                    return {"stamp": stamp}
+                else:
+                    assert False, "stamp already exists"
+
+        def s(n, fail_flag=False):
+            if not fail_flag:
+                return self.identity.si(str(n))
+            return self.fail.si(str(n))
+
+        def tasks():
+            tasks = []
+            for i in range(0, 4):
+                fail_flag = False
+                if i:
+                    fail_flag = True
+                sig = s(i, fail_flag)
+                sig.link(s(f"link{str(i)}"))
+                sig.link_error(s(f"link_error{str(i)}"))
+                tasks.append(sig)
+            return tasks
+
+        with subtests.test("group"):
+            canvas = group(tasks())
+            canvas.link(s("group_link"))
+            canvas.link_error(s("group_link_error"))
+            canvas.stamp(CustomStampingVisitor())
+
+        with subtests.test("chain"):
+            self.app.conf.task_allow_error_cb_on_chord_header = True
+            canvas = chord(tasks(), self.identity.si("body"))
+            canvas.link(s("group_link"))
+            canvas.link_error(s("group_link_error"))
+            canvas.stamp(CustomStampingVisitor())
