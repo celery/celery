@@ -1669,7 +1669,7 @@ class test_chord(CanvasCase):
             chord_sig.link_error(errback_sig)
             # header
             for child_sig in header_mock:
-                child_sig.link_error.assert_called_once_with(errback_sig)
+                child_sig.link_error.assert_called_once_with(errback_sig.clone(immutable=True))
             # body
             body.link_error.assert_has_calls([call(errback_sig), call(errback_sig)])
 
