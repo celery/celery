@@ -860,7 +860,7 @@ class test_group(CanvasCase):
         # We expect that all group children will be given the errback to ensure
         # it gets called
         for child_sig in g1.tasks:
-            child_sig.link_error.assert_called_with(sig)
+            child_sig.link_error.assert_called_with(sig.clone(immutable=True))
 
     def test_apply_empty(self):
         x = group(app=self.app)
