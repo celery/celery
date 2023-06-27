@@ -2273,7 +2273,7 @@ class _chord(Signature):
         """
         if self.app.conf.task_allow_error_cb_on_chord_header:
             for task in self.tasks:
-                task.link_error(errback)
+                task.link_error(errback.clone())
         else:
             # Once this warning is removed, the whole method needs to be refactored to:
             # 1. link the error callback to each task in the header
