@@ -1717,7 +1717,7 @@ class test_chord(CanvasCase):
         errback = c.link_error(err)
         assert errback == err
         for header_task in c.tasks:
-            assert header_task.options['link_error'] == [err]
+            assert header_task.options['link_error'] == [err.clone(immutable=True)]
         assert c.body.options['link_error'] == [err]
 
 
