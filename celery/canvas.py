@@ -1672,7 +1672,7 @@ class group(Signature):
         #
         # We return a concretised tuple of the signatures actually applied to
         # each child task signature, of which there might be none!
-        return tuple(child_task.link_error(sig) for child_task in self.tasks)
+        return tuple(child_task.link_error(sig.clone(immutable=True)) for child_task in self.tasks)
 
     def _prepared(self, tasks, partial_args, group_id, root_id, app,
                   CallableSignature=abstract.CallableSignature,
@@ -2273,7 +2273,7 @@ class _chord(Signature):
         """
         if self.app.conf.task_allow_error_cb_on_chord_header:
             for task in self.tasks:
-                task.link_error(errback)
+                task.link_error(errback.clone(immutable=True))
         else:
             # Once this warning is removed, the whole method needs to be refactored to:
             # 1. link the error callback to each task in the header

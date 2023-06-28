@@ -860,7 +860,7 @@ class test_group(CanvasCase):
         # We expect that all group children will be given the errback to ensure
         # it gets called
         for child_sig in g1.tasks:
-            child_sig.link_error.assert_called_with(sig)
+            child_sig.link_error.assert_called_with(sig.clone(immutable=True))
 
     def test_apply_empty(self):
         x = group(app=self.app)
@@ -1669,7 +1669,7 @@ class test_chord(CanvasCase):
             chord_sig.link_error(errback_sig)
             # header
             for child_sig in header_mock:
-                child_sig.link_error.assert_called_once_with(errback_sig)
+                child_sig.link_error.assert_called_once_with(errback_sig.clone(immutable=True))
             # body
             body.link_error.assert_has_calls([call(errback_sig), call(errback_sig)])
 
@@ -1717,7 +1717,7 @@ class test_chord(CanvasCase):
         errback = c.link_error(err)
         assert errback == err
         for header_task in c.tasks:
-            assert header_task.options['link_error'] == [err]
+            assert header_task.options['link_error'] == [err.clone(immutable=True)]
         assert c.body.options['link_error'] == [err]
 
 
