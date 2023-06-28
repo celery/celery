@@ -1303,3 +1303,14 @@ class test_stamping_mechanism(CanvasCase):
             canvas = chord(tasks(), self.identity.si("body"))
             canvas.link_error(s("group_link_error"))
             canvas.stamp(CustomStampingVisitor())
+
+        with subtests.test("chord body"):
+            self.app.conf.task_allow_error_cb_on_chord_header = False
+            canvas = chord(tasks(), self.identity.si("body"))
+            canvas.link_error(s("group_link_error"))
+            canvas.stamp(CustomStampingVisitor())
+
+        with subtests.test("chain"):
+            canvas = chain(tasks())
+            canvas.link_error(s("chain_link_error"))
+            canvas.stamp(CustomStampingVisitor())
