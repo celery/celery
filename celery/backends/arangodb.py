@@ -2,8 +2,6 @@
 
 # pylint: disable=W1202,W0703
 
-import json
-import logging
 from datetime import timedelta
 
 from kombu.utils.objects import cached_property
