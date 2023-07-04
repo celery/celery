@@ -157,6 +157,7 @@ def default(task, app, consumer,
                 'name': req.name,
                 'args': req.argsrepr,
                 'kwargs': req.kwargsrepr,
+                'eta': req.eta,
             }
             info(_app_trace.LOG_RECEIVED, context, extra={'data': context})
         if (req.expires or req.id in revoked_tasks) and req.revoked():
