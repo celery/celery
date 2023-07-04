@@ -250,8 +250,8 @@ class TraceInfo:
             safe_repr(eobj),
             safe_str(einfo.traceback),
             einfo.exc_info,
-            safe_repr(req.args),
-            safe_repr(req.kwargs),
+            req.get('argsrepr') or safe_repr(req.args),
+            req.get('kwargsrepr') or safe_repr(req.kwargs),
         )
         policy = get_log_policy(task, einfo, eobj)
 
@@ -559,8 +559,8 @@ def build_tracer(
                                 'name': get_task_name(task_request, name),
                                 'return_value': Rstr,
                                 'runtime': T,
-                                'args': safe_repr(args),
-                                'kwargs': safe_repr(kwargs),
+                                'args': task_request.get('argsrepr') or safe_repr(args),
+                                'kwargs': task_request.get('kwargsrepr') or safe_repr(kwargs),
                             })
 
                 # -* POST *-
