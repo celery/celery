@@ -188,6 +188,7 @@ def test_remaining():
     next_run = now + rem_time
     assert next_run == next_actual_time
 
+
 class test_timezone:
 
     def test_get_timezone_with_zoneinfo(self):
