@@ -1,3 +1,4 @@
+import logging
 import time
 from datetime import datetime, timedelta
 from time import perf_counter, sleep
@@ -463,6 +464,57 @@ class test_tasks:
     def test_properties(self, celery_session_worker):
         res = return_properties.apply_async(app_id="1234")
         assert res.get(timeout=TIMEOUT)["app_id"] == "1234"
+
+
+class test_trace_log_arguments:
+    args = "CUSTOM ARGS"
+    kwargs = "CUSTOM KWARGS"
+
+    def assert_trace_log(self, caplog, result, expected):
+        # wait for logs from worker
+        sleep(.01)
+
+        records = [(r.name, r.levelno, r.msg, r.data["args"], r.data["kwargs"])
+                   for r in caplog.records
+                   if r.name in {'celery.worker.strategy', 'celery.app.trace'}
+                   if r.data["id"] == result.task_id
+                   ]
+        assert records == [(*e, self.args, self.kwargs) for e in expected]
+
+    def call_task_with_reprs(self, task):
+        return task.set(argsrepr=self.args, kwargsrepr=self.kwargs).delay()
+
+    @flaky
+    def test_task_success(self, caplog):
+        result = self.call_task_with_reprs(add.s(2, 2))
+        value = result.get()
+        assert value == 4
+        assert result.successful() is True
+
+        self.assert_trace_log(caplog, result, [
+            ('celery.worker.strategy', logging.INFO,
+             celery.app.trace.LOG_RECEIVED,
+             ),
+            ('celery.app.trace', logging.INFO,
+             celery.app.trace.LOG_SUCCESS,
+             ),
+        ])
+
+    @flaky
+    def test_task_failed(self, caplog):
+        result = self.call_task_with_reprs(fail.s(2, 2))
+        with pytest.raises(ExpectedException):
+            result.get(timeout=5)
+        assert result.failed() is True
+
+        self.assert_trace_log(caplog, result, [
+            ('celery.worker.strategy', logging.INFO,
+             celery.app.trace.LOG_RECEIVED,
+             ),
+            ('celery.app.trace', logging.ERROR,
+             celery.app.trace.LOG_FAILURE,
+             ),
+        ])
 
 
 class test_task_redis_result_backend:
