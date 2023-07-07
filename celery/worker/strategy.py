@@ -2,7 +2,6 @@
 import logging
 
 from kombu.asynchronous.timer import to_timestamp
-from kombu.utils.encoding import safe_repr
 
 from celery import signals
 from celery.app import trace as _app_trace
