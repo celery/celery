@@ -43,6 +43,12 @@ class TestWorkController(worker.WorkController):
             self.logger_queue = Queue()
             self.pid = os.getpid()
 
+            try:
+                from tblib import pickling_support
+                pickling_support.install()
+            except ImportError:
+                pass
+
             # collect logs from forked process.
             # XXX: those logs will appear twice in the live log
             self.queue_listener = logging.handlers.QueueListener(self.logger_queue, logging.getLogger())
