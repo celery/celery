@@ -1,10 +1,9 @@
 """Embedded workers for integration tests."""
+import logging
 import os
 import threading
 from contextlib import contextmanager
 from typing import Any, Iterable, Union  # noqa
-
-import logging
 
 import celery.worker.consumer  # noqa
 from celery import Celery, worker  # noqa
