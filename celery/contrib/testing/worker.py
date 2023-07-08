@@ -39,7 +39,7 @@ class TestWorkController(worker.WorkController):
         super().__init__(*args, **kwargs)
 
         if self.pool_cls.__module__.split('.')[-1] == 'prefork':
-            from multiprocessing import Queue
+            from billiard import Queue
             self.logger_queue = Queue()
             self.pid = os.getpid()
 
