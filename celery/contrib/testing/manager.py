@@ -6,6 +6,7 @@ from functools import partial
 from itertools import count
 from typing import Any, Callable, Dict, Sequence, TextIO, Tuple  # noqa
 
+from kombu.exceptions import ContentDisallowed
 from kombu.utils.functional import retry_over_time
 
 from celery import states
@@ -206,6 +207,28 @@ class ManagerMixin:
         if not res:
             raise Sentinel()
         return res
+
+    def wait_until_idle(self):
+        control = self.app.control
+        with self.app.connection() as connection:
+            # Try to purge the queue before we start
+            # to attempt to avoid interference from other tests
+            while True:
+                count = control.purge(connection=connection)
+                if count == 0:
+                    break
+
+            # Wait until worker is idle
+            inspect = control.inspect()
+            inspect.connection = connection
+            while True:
+                try:
+                    count = sum(len(t) for t in inspect.active().values())
+                except ContentDisallowed:
+                    # test_security_task_done may trigger this exception
+                    break
+                if count == 0:
+                    break
 
 
 class Manager(ManagerMixin):

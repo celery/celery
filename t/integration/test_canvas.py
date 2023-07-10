@@ -153,8 +153,8 @@ class test_link_error:
         )
         assert result.get(timeout=TIMEOUT, propagate=False) == exception
 
-    @pytest.mark.xfail(raises=TimeoutError, reason="Task is timeout instead of returning exception")
-    def test_link_error_callback_retries(self):
+    @flaky
+    def test_link_error_callback_retries(self, manager):
         exception = ExpectedException("Task expected to fail", "test")
         result = fail.apply_async(
             args=("test",),
@@ -173,8 +173,7 @@ class test_link_error:
         assert (fail.apply().get(timeout=TIMEOUT, propagate=False), True) == (
             exception, True)
 
-    @pytest.mark.xfail(raises=TimeoutError, reason="Task is timeout instead of returning exception")
-    def test_link_error_using_signature(self):
+    def test_link_error_using_signature(self, manager):
         fail = signature('t.integration.tasks.fail', args=("test",))
         retrun_exception = signature('t.integration.tasks.return_exception')
 

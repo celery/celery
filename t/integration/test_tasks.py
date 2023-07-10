@@ -203,13 +203,6 @@ class test_tasks:
 
     def test_revoked_by_headers_simple_canvas(self, manager):
         """Testing revoking of task using a stamped header"""
-        # Try to purge the queue before we start
-        # to attempt to avoid interference from other tests
-        while True:
-            count = manager.app.control.purge()
-            if count == 0:
-                break
-
         target_monitoring_id = uuid4().hex
 
         class MonitoringIdStampingVisitor(StampingVisitor):
@@ -243,13 +236,6 @@ class test_tasks:
             # not match the task's stamps, allowing those tasks to proceed successfully.
             worker_state.revoked_stamps.clear()
 
-        # Try to purge the queue after we're done
-        # to attempt to avoid interference to other tests
-        while True:
-            count = manager.app.control.purge()
-            if count == 0:
-                break
-
     def test_revoked_by_headers_complex_canvas(self, manager, subtests):
         """Testing revoking of task using a stamped header"""
         try:
@@ -261,10 +247,7 @@ class test_tasks:
 
             # Try to purge the queue before we start
             # to attempt to avoid interference from other tests
-            while True:
-                count = manager.app.control.purge()
-                if count == 0:
-                    break
+            manager.wait_until_idle()
 
             target_monitoring_id = isinstance(monitoring_id, list) and monitoring_id[0] or monitoring_id
 
@@ -302,13 +285,6 @@ class test_tasks:
                     assert result.failed() is False
                     assert result.successful() is False
             worker_state.revoked_stamps.clear()
-
-        # Try to purge the queue after we're done
-        # to attempt to avoid interference to other tests
-        while True:
-            count = manager.app.control.purge()
-            if count == 0:
-                break
 
     @flaky
     def test_wrong_arguments(self, manager):
