@@ -234,7 +234,7 @@ a shortcut to set ETA by seconds into the future.
 
     >>> result = add.apply_async((2, 2), countdown=3)
     >>> result.get()    # this takes at least 3 seconds to return
-    20
+    4
 
 The task is guaranteed to be executed at some time *after* the
 specified date and time, but not necessarily at that exact time.
