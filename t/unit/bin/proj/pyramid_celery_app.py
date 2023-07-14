@@ -1,6 +1,8 @@
-from celery import Celery
+from unittest.mock import MagicMock, Mock
+
 from click import Option
-from unittest.mock import Mock, MagicMock
+
+from celery import Celery
 
 # This module defines a mocked Celery application to replicate
 # the behavior of Pyramid-Celery's configuration by preload options.
