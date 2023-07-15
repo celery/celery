@@ -204,7 +204,10 @@ class AsyncResult(ResultBase):
 
         Arguments:
             timeout (float): How long to wait, in seconds, before the
-                operation times out.
+                operation times out. This is the setting for the publisher
+                (celery client) and is different from `timeout` parameter of
+                `@app.task`, which is the setting for the worker. The task
+                isn't terminated even if timeout occurs.
             propagate (bool): Re-raise exception if the task failed.
             interval (float): Time to wait (in seconds) before retrying to
                 retrieve the result.  Note that this does not have any effect
