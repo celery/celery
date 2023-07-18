@@ -149,6 +149,7 @@ setuptools.setup(
     python_requires=">=3.8",
     tests_require=reqs('test.txt'),
     extras_require=extras_require(),
+    include_package_data=True,
     entry_points={
         'console_scripts': [
             'celery = celery.__main__:main',
