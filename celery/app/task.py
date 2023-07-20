@@ -788,6 +788,7 @@ class Task:
 
         request = {
             'id': task_id,
+            'task': self.name,
             'retries': retries,
             'is_eager': True,
             'logfile': logfile,
