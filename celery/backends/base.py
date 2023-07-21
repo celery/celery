@@ -9,7 +9,7 @@ import sys
 import time
 import warnings
 from collections import namedtuple
-from datetime import datetime, timedelta
+from datetime import timedelta
 from functools import partial
 from weakref import WeakValueDictionary
 
