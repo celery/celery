@@ -46,7 +46,7 @@ class TSR(GroupResult):
     def _failed_join_report(self):
         for value in self.value:
             if isinstance(value, Exception):
-                yield EagerResult('some_id', value, 'FAILURE')
+                yield EagerResult('some_id', 'test-task', value, 'FAILURE')
 
 
 class TSRNoReport(TSR):

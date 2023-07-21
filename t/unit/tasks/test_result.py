@@ -136,7 +136,7 @@ class test_AsyncResult:
 
     def test_children(self):
         x = self.app.AsyncResult('1')
-        children = [EagerResult(str(i), i, states.SUCCESS) for i in range(3)]
+        children = [EagerResult(str(i), 'test-task', i, states.SUCCESS) for i in range(3)]
         x._cache = {'children': children, 'status': states.SUCCESS}
         x.backend = Mock()
         assert x.children
@@ -147,12 +147,12 @@ class test_AsyncResult:
         x.backend = Mock(name='backend')
         x.backend.get_task_meta.return_value = {}
         x.backend.wait_for_pending.return_value = 84
-        x.parent = EagerResult(uuid(), KeyError('foo'), states.FAILURE)
+        x.parent = EagerResult(uuid(), 'test-task', KeyError('foo'), states.FAILURE)
         with pytest.raises(KeyError):
             x.get(propagate=True)
         x.backend.wait_for_pending.assert_not_called()
 
-        x.parent = EagerResult(uuid(), 42, states.SUCCESS)
+        x.parent = EagerResult(uuid(), 'test-task', 42, states.SUCCESS)
         assert x.get(propagate=True) == 84
         x.backend.wait_for_pending.assert_called()
 
@@ -172,7 +172,7 @@ class test_AsyncResult:
     def test_build_graph_get_leaf_collect(self):
         x = self.app.AsyncResult('1')
         x.backend._cache['1'] = {'status': states.SUCCESS, 'result': None}
-        c = [EagerResult(str(i), i, states.SUCCESS) for i in range(3)]
+        c = [EagerResult(str(i), 'test-task', i, states.SUCCESS) for i in range(3)]
         x.iterdeps = Mock()
         x.iterdeps.return_value = (
             (None, x),
@@ -194,7 +194,7 @@ class test_AsyncResult:
 
     def test_iterdeps(self):
         x = self.app.AsyncResult('1')
-        c = [EagerResult(str(i), i, states.SUCCESS) for i in range(3)]
+        c = [EagerResult(str(i), 'test-task', i, states.SUCCESS) for i in range(3)]
         x._cache = {'status': states.SUCCESS, 'result': None, 'children': c}
         for child in c:
             child.backend = Mock()
@@ -945,13 +945,13 @@ class test_EagerResult:
         assert res.wait(propagate=False)
 
     def test_wait(self):
-        res = EagerResult('x', 'x', states.RETRY)
+        res = EagerResult('x', 'test-task', 'x', states.RETRY)
         res.wait()
         assert res.state == states.RETRY
         assert res.status == states.RETRY
 
     def test_forget(self):
-        res = EagerResult('x', 'x', states.RETRY)
+        res = EagerResult('x', 'test-task', 'x', states.RETRY)
         res.forget()
 
     def test_revoke(self):
@@ -962,7 +962,7 @@ class test_EagerResult:
     def test_get_sync_subtask_option(self, task_join_will_block):
         task_join_will_block.return_value = True
         tid = uuid()
-        res_subtask_async = EagerResult(tid, 'x', 'x', states.SUCCESS)
+        res_subtask_async = EagerResult(tid, 'test-task', 'x', 'x', states.SUCCESS)
         with pytest.raises(RuntimeError):
             res_subtask_async.get()
         res_subtask_async.get(disable_sync_subtasks=False)
