@@ -460,8 +460,7 @@ class Backend:
                          state, traceback, request, format_date=True,
                          encode=False):
         if state in self.READY_STATES:
-            # TODO - fix it (self.app.now())
-            date_done = datetime.utcnow()
+            date_done = self.app.now()
             if format_date:
                 date_done = date_done.isoformat()
         else:
