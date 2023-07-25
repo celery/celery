@@ -146,7 +146,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
 
     def mget(self, keys):
         if keys is None:
-            return None
+            return
         query = self.db.AQLQuery(
             "FOR k IN @keys RETURN DOCUMENT(@@collection, k).task",
             rawResults=True,

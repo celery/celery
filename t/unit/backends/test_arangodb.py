@@ -65,8 +65,15 @@ class test_ArangoDbBackend:
         )
 
         self.backend.get = Mock(return_value=sentinel.retval)
-        assert self.backend.get('1f3fab') == sentinel.retval
-        self.backend.get.assert_called_once_with('1f3fab')
+        assert self.backend.get(sentinel.task_id) == sentinel.retval
+        self.backend.get.assert_called_once_with(sentinel.task_id)
+
+    def test_mget(self):
+        self.backend._connection = MagicMock(spec=["__getitem__"])
+
+        result = list(self.backend.mget(None))
+        expected_result = []
+        assert result == expected_result
 
     def test_delete(self):
         self.backend._connection = MagicMock(spec=["__getitem__"])
