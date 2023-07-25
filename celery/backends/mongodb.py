@@ -199,18 +199,18 @@ class MongoBackend(BaseBackend):
         if obj:
             if self.app.conf.find_value_for_key('extended', 'result'):
                 return self.meta_from_decoded({
-                'name': obj['name'],
-                'args': obj['args'],
-                'task_id': obj['_id'],
-                'queue': obj['queue'],
-                'kwargs': obj['kwargs'],
-                'status': obj['status'],
-                'worker': obj['worker'],
-                'retries': obj['retries'],
-                'children': obj['children'],
-                'date_done': obj['date_done'],
-                'traceback': obj['traceback'],
-                'result': self.decode(obj['result']),
+                    'name': obj['name'],
+                    'args': obj['args'],
+                    'task_id': obj['_id'],
+                    'queue': obj['queue'],
+                    'kwargs': obj['kwargs'],
+                    'status': obj['status'],
+                    'worker': obj['worker'],
+                    'retries': obj['retries'],
+                    'children': obj['children'],
+                    'date_done': obj['date_done'],
+                    'traceback': obj['traceback'],
+                    'result': self.decode(obj['result']),
             })
             return self.meta_from_decoded({
                 'task_id': obj['_id'],
