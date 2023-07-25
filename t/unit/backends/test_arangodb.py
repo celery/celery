@@ -123,14 +123,22 @@ class test_ArangoDbBackend:
             assert x.verify is False
 
     def test_backend_cleanup(self):
+        self.backend._connection = MagicMock(spec=["__getitem__"])
+
+        self.backend.expires = None
+        self.backend.cleanup()
+        self.backend.db.AQLQuery.assert_not_called()
+
+        self.backend.expires = 0
+        self.backend.cleanup()
+        self.backend.db.AQLQuery.assert_not_called()
+
         now = datetime.datetime.utcnow()
         self.backend.app.now = Mock(return_value=now)
-        self.backend._connection = {
-            'celery': Mock(),
-        }
+        self.backend.expires = 86400
+        expected_checkpoint = (now - self.backend.expires_delta).isoformat()
         self.backend.cleanup()
-        expected_collection = 'celery'
-        expected_date = (now - self.backend.expires_delta).isoformat()
+
         self.backend.db.AQLQuery.assert_called_once_with(
             """
             FOR record IN @@collection
@@ -138,7 +146,7 @@ class test_ArangoDbBackend:
                 REMOVE record IN @@collection
             """,
             bindVars={
-                "@collection": expected_collection,
-                "checkpoint": expected_date,
+                "@collection": self.backend.collection,
+                "checkpoint": expected_checkpoint,
             },
         )

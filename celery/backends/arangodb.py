@@ -115,7 +115,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
 
     @cached_property
     def expires_delta(self):
-        return timedelta(seconds=self.expires)
+        return timedelta(seconds=0 if self.expires is None else self.expires)
 
     def get(self, key):
         if key is None:
@@ -172,7 +172,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
         )
 
     def cleanup(self):
-        if self.expires_delta is None:
+        if not self.expires:
             return
         checkpoint = (self.app.now() - self.expires_delta).isoformat()
         self.db.AQLQuery(
