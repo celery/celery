@@ -1,6 +1,6 @@
 """Tests for the ArangoDb."""
 import datetime
-from unittest.mock import Mock, MagicMock, patch, sentinel
+from unittest.mock import MagicMock, Mock, patch, sentinel
 
 import pytest
 
