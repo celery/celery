@@ -163,6 +163,8 @@ class ArangoDbBackend(KeyValueStoreBackend):
                 break
 
     def delete(self, key):
+        if key is None:
+            return
         self.db.AQLQuery(
             "REMOVE {_key: @key} IN @@collection",
             bindVars={

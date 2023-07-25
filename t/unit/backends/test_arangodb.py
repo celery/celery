@@ -51,10 +51,10 @@ class test_ArangoDbBackend:
     def test_get(self):
         self.backend._connection = MagicMock(spec=["__getitem__"])
 
-        assert self.backend.get(None) == None
+        assert self.backend.get(None) is None
         self.backend.db.AQLQuery.assert_not_called()
 
-        assert self.backend.get(sentinel.task_id) == None
+        assert self.backend.get(sentinel.task_id) is None
         self.backend.db.AQLQuery.assert_called_once_with(
             "RETURN DOCUMENT(@@collection, @key).task",
             rawResults=True,
@@ -69,11 +69,19 @@ class test_ArangoDbBackend:
         self.backend.get.assert_called_once_with('1f3fab')
 
     def test_delete(self):
-        self.app.conf.arangodb_backend_settings = {}
-        x = ArangoDbBackend(app=self.app)
-        x.delete = Mock()
-        x.delete.return_value = None
-        assert x.delete('1f3fab') is None
+        self.backend._connection = MagicMock(spec=["__getitem__"])
+
+        assert self.backend.delete(None) is None
+        self.backend.db.AQLQuery.assert_not_called()
+
+        assert self.backend.delete(sentinel.task_id) is None
+        self.backend.db.AQLQuery.assert_called_once_with(
+            "REMOVE {_key: @key} IN @@collection",
+            bindVars={
+                "@collection": self.backend.collection,
+                "key": sentinel.task_id,
+            },
+        )
 
     def test_config_params(self):
         self.app.conf.arangodb_backend_settings = {
