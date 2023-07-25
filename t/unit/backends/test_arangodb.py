@@ -68,6 +68,23 @@ class test_ArangoDbBackend:
         assert self.backend.get(sentinel.task_id) == sentinel.retval
         self.backend.get.assert_called_once_with(sentinel.task_id)
 
+    def test_set(self):
+        self.backend._connection = MagicMock(spec=["__getitem__"])
+
+        assert self.backend.set(sentinel.key, sentinel.value) is None
+        self.backend.db.AQLQuery.assert_called_once_with(
+            """
+            UPSERT {_key: @key}
+            INSERT {_key: @key, task: @value}
+            UPDATE {task: @value} IN @@collection
+            """,
+            bindVars={
+                "@collection": self.backend.collection,
+                "key": sentinel.key,
+                "value": sentinel.value,
+            },
+        )
+
     def test_mget(self):
         self.backend._connection = MagicMock(spec=["__getitem__"])
 
