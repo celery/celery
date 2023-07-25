@@ -1,6 +1,6 @@
 """Tests for the ArangoDb."""
 import datetime
-from unittest.mock import Mock, patch, sentinel
+from unittest.mock import Mock, MagicMock, patch, sentinel
 
 import pytest
 
@@ -49,12 +49,24 @@ class test_ArangoDbBackend:
             mock_Connection.assert_not_called()
 
     def test_get(self):
-        self.app.conf.arangodb_backend_settings = {}
-        x = ArangoDbBackend(app=self.app)
-        x.get = Mock()
-        x.get.return_value = sentinel.retval
-        assert x.get('1f3fab') == sentinel.retval
-        x.get.assert_called_once_with('1f3fab')
+        self.backend._connection = MagicMock(spec=["__getitem__"])
+
+        assert self.backend.get(None) == None
+        self.backend.db.AQLQuery.assert_not_called()
+
+        assert self.backend.get(sentinel.task_id) == None
+        self.backend.db.AQLQuery.assert_called_once_with(
+            "RETURN DOCUMENT(@@collection, @key).task",
+            rawResults=True,
+            bindVars={
+                "@collection": self.backend.collection,
+                "key": sentinel.task_id,
+            },
+        )
+
+        self.backend.get = Mock(return_value=sentinel.retval)
+        assert self.backend.get('1f3fab') == sentinel.retval
+        self.backend.get.assert_called_once_with('1f3fab')
 
     def test_delete(self):
         self.app.conf.arangodb_backend_settings = {}

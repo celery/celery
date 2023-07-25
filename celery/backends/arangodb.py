@@ -118,6 +118,8 @@ class ArangoDbBackend(KeyValueStoreBackend):
         return timedelta(seconds=self.expires)
 
     def get(self, key):
+        if key is None:
+            return None
         query = self.db.AQLQuery(
             "RETURN DOCUMENT(@@collection, @key).task",
             rawResults=True,
