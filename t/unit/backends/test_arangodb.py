@@ -41,12 +41,17 @@ class test_ArangoDbBackend:
 
     def test_get_connection_connection_exists(self):
         with patch('pyArango.connection.Connection') as mock_Connection:
-            self.backend._connection = sentinel._connection
-
-            connection = self.backend._connection
-
-            assert sentinel._connection == connection
+            self.backend._connection = sentinel.connection
+            connection = self.backend.connection
+            assert connection == sentinel.connection
             mock_Connection.assert_not_called()
+
+            expected_connection = mock_Connection()
+            mock_Connection.reset_mock() # So the assert_called_once below is accurate.
+            self.backend._connection = None
+            connection = self.backend.connection
+            assert connection == expected_connection
+            mock_Connection.assert_called_once()
 
     def test_get(self):
         self.backend._connection = MagicMock(spec=["__getitem__"])
@@ -170,7 +175,6 @@ class test_ArangoDbBackend:
         self.backend.expires = 86400
         expected_checkpoint = (now - self.backend.expires_delta).isoformat()
         self.backend.cleanup()
-
         self.backend.db.AQLQuery.assert_called_once_with(
             """
             FOR record IN @@collection
