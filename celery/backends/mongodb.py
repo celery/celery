@@ -211,7 +211,7 @@ class MongoBackend(BaseBackend):
                     'date_done': obj['date_done'],
                     'traceback': obj['traceback'],
                     'result': self.decode(obj['result']),
-            })
+                })
             return self.meta_from_decoded({
                 'task_id': obj['_id'],
                 'status': obj['status'],
