@@ -39,6 +39,21 @@ class test_ArangoDbBackend:
         self.app.conf.arangodb_backend_settings = None
         ArangoDbBackend(app=self.app)
 
+    def test_init_url(self):
+        url = None
+        expected_database = "celery"
+        expected_collection = "celery"
+        backend = ArangoDbBackend(app=self.app, url=url)
+        assert backend.database == expected_database
+        assert backend.collection == expected_collection
+
+        url = "arangodb://localhost:27017/celery-database/celery-collection"
+        expected_database = "celery-database"
+        expected_collection = "celery-collection"
+        backend = ArangoDbBackend(app=self.app, url=url)
+        assert backend.database == expected_database
+        assert backend.collection == expected_collection
+
     def test_get_connection_connection_exists(self):
         with patch('pyArango.connection.Connection') as mock_Connection:
             self.backend._connection = sentinel.connection
@@ -47,7 +62,7 @@ class test_ArangoDbBackend:
             mock_Connection.assert_not_called()
 
             expected_connection = mock_Connection()
-            mock_Connection.reset_mock() # So the assert_called_once below is accurate.
+            mock_Connection.reset_mock()  # So the assert_called_once below is accurate.
             self.backend._connection = None
             connection = self.backend.connection
             assert connection == expected_connection
