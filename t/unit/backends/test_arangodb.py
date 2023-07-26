@@ -96,6 +96,31 @@ class test_ArangoDbBackend:
         result = list(self.backend.mget(None))
         expected_result = []
         assert result == expected_result
+        self.backend.db.AQLQuery.assert_not_called()
+
+        Query = MagicMock(spec=pyArango.query.Query)
+        query = Query()
+        query.nextBatch = MagicMock(side_effect=StopIteration())
+        self.backend.db.AQLQuery = Mock(return_value=query)
+
+        keys = [sentinel.task_id_0, sentinel.task_id_1]
+        result = list(self.backend.mget(keys))
+        expected_result = []
+        assert result == expected_result
+        self.backend.db.AQLQuery.assert_called_once_with(
+            "FOR k IN @keys RETURN DOCUMENT(@@collection, k).task",
+            rawResults=True,
+            bindVars={
+                "@collection": self.backend.collection,
+                "keys": keys,
+            },
+        )
+
+        values = [sentinel.value_0, sentinel.value_1]
+        query.__iter__.return_value = iter([sentinel.value_0, sentinel.value_1])
+        result = list(self.backend.mget(keys))
+        expected_result = values
+        assert result == expected_result
 
     def test_delete(self):
         self.backend._connection = MagicMock(spec=["__getitem__"])
