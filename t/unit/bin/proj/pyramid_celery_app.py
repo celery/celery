@@ -16,13 +16,16 @@ from unittest.mock import Mock, MagicMock
 app = Celery(set_as_current=False)
 app.config_from_object("t.integration.test_worker_config")
 
+
 class PurgeMock:
     def queue_purge(self, queue):
         return 0
 
+
 class ConnMock:
     default_channel = PurgeMock()
     channel_errors = KeyError
+
 
 mock = Mock()
 mock.__enter__ = Mock(return_value=ConnMock())
@@ -31,21 +34,18 @@ mock.__exit__ = Mock(return_value=False)
 app.connection_for_write = MagicMock(return_value=mock)
 
 # Below are taken from pyramid-celery's __init__.py
-# Ref: https://github.com/sontek/pyramid_celery/blob/cf8aa80980e42f7235ad361874d3c35e19963b60/pyramid_celery/__init__.py#L25-L36
+# Ref: https://github.com/sontek/pyramid_celery/blob/cf8aa80980e42f7235ad361874d3c35e19963b60/pyramid_celery/__init__.py#L25-L36 # noqa: E501
 ini_option = Option(
-    ('--ini', '-i',),
-    help='Paste ini configuration file.'
+    (
+        "--ini",
+        "-i",
+    ),
+    help="Paste ini configuration file.",
 )
 
 ini_var_option = Option(
-    ('--ini-var',),
-    help='Comma separated list of key=value to pass to ini.'
+    ("--ini-var",), help="Comma separated list of key=value to pass to ini."
 )
 
-app.user_options['preload'].add(
-        ini_option
-)
-app.user_options['preload'].add(
-    ini_var_option
-)
-
+app.user_options["preload"].add(ini_option)
+app.user_options["preload"].add(ini_var_option)
