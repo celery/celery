@@ -7,6 +7,14 @@ def test_preload_options(isolated_cli_runner: CliRunner):
     # Projects like Pyramid-Celery's ini option should be valid preload
     # options.
 
+    # TODO: Find a way to run these separate invoke and assertions
+    # such that order does not matter. Currently, running
+    # the "t.unit.bin.proj.pyramid_celery_app" first seems
+    # to result in cache or memoization of the option.
+    # As a result, the expected exception is not raised when
+    # the invoke on "t.unit.bin.proj.app" is run as a second
+    # call.
+
     res_without_preload = isolated_cli_runner.invoke(
         celery,
         ["-A", "t.unit.bin.proj.app", "purge", "-f", "--ini", "some_ini.ini"],
