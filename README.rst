@@ -363,7 +363,7 @@ Download the latest version of Celery from PyPI:
 
 https://pypi.org/project/celery/
 
-You can install it by doing the following,:
+You can install it by doing the following:
 
 ::
 
