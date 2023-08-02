@@ -730,7 +730,7 @@ class test_MongoBackend_store_get_result:
         backend = mongo_backend_factory(serializer=serializer)
         backend.store_result(TASK_ID, result, 'SUCCESS')
         recovered = backend.get_result(TASK_ID)
-        assert type(recovered) == result_type
+        assert isinstance(recovered, result_type)
         assert recovered == result
 
     @pytest.mark.parametrize("serializer",
@@ -754,5 +754,5 @@ class test_MongoBackend_store_get_result:
         traceback = 'Traceback:\n  Exception: Basic Exception\n'
         backend.store_result(TASK_ID, exception, 'FAILURE', traceback)
         recovered = backend.get_result(TASK_ID)
-        assert type(recovered) == type(exception)
+        assert isinstance(recovered, type(exception))
         assert recovered.args == exception.args

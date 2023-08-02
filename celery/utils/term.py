@@ -168,7 +168,7 @@ def supports_images():
 def _read_as_base64(path):
     with codecs.open(path, mode='rb') as fh:
         encoded = base64.b64encode(fh.read())
-        return encoded if type(encoded) == 'str' else encoded.decode('ascii')
+        return encoded if isinstance(encoded, str) else encoded.decode('ascii')
 
 
 def imgcat(path, inline=1, preserve_aspect_ratio=0, **kwargs):

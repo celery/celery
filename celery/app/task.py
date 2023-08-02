@@ -1127,7 +1127,7 @@ class Task:
         return self._exec_options
 
     @property
-    def backend(self):
+    def backend(self):  # noqa: F811
         backend = self._backend
         if backend is None:
             return self.app.backend
