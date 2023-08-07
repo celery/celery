@@ -1519,6 +1519,18 @@ class test_chord:
         result = c()
         assert result.get(timeout=TIMEOUT) == 4
 
+    def test_chord_order(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        inputs = [i for i in range(10)]
+
+        c = chord((identity.si(i) for i in inputs), identity.s())
+        result = c()
+        assert result.get() == inputs
+
     @pytest.mark.xfail(reason="async_results aren't performed in async way")
     def test_redis_subscribed_channels_leak(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
