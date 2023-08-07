@@ -1704,7 +1704,7 @@ class group(Signature):
             generator: A generator for the unrolled group tasks.
                 The generator yields tuples of the form ``(task, AsyncResult, group_id)``.
         """
-        for task in tasks:
+        for index, task in enumerate(tasks):
             if isinstance(task, CallableSignature):
                 # local sigs are always of type Signature, and we
                 # clone them to make sure we don't modify the originals.
@@ -1721,7 +1721,7 @@ class group(Signature):
             else:
                 if partial_args and not task.immutable:
                     task.args = tuple(partial_args) + tuple(task.args)
-                yield task, task.freeze(group_id=group_id, root_id=root_id), group_id
+                yield task, task.freeze(group_id=group_id, root_id=root_id, group_index=index), group_id
 
     def _apply_tasks(self, tasks, producer=None, app=None, p=None,
                      add_to_parent=None, chord=None,
