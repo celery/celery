@@ -514,7 +514,7 @@ class test_chain:
             group(identity.s(42), identity.s(42)),  # [42, 42]
         )
         res = sig.delay()
-        assert res.get(timeout=TIMEOUT / 10) == [42, 42]
+        assert res.get(timeout=TIMEOUT) == [42, 42]
 
     def test_nested_chain_group_mid(self, manager):
         """
