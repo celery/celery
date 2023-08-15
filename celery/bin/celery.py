@@ -173,7 +173,7 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir,
 
 @celery.command(cls=CeleryCommand)
 @click.pass_context
-def report(ctx):
+def report(ctx, **kwargs):
     """Shows information useful to include in bug-reports."""
     app = ctx.obj.app
     app.loader.import_default_modules()
