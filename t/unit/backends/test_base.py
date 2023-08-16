@@ -187,7 +187,7 @@ class test_Backend_interface:
         meta = b1._get_result_meta(result={'fizz': 'buzz'},
                                    state=states.SUCCESS, traceback=None,
                                    request=request, format_date=True)
-        assert type(meta['date_done']) == str
+        assert isinstance(meta['date_done'], str)
 
         self.app.conf.result_extended = True
         b2 = BaseBackend(self.app)
@@ -198,7 +198,7 @@ class test_Backend_interface:
         meta = b2._get_result_meta(result={'fizz': 'buzz'},
                                    state=states.SUCCESS, traceback=None,
                                    request=request, format_date=False)
-        assert type(meta['date_done']) == datetime.datetime
+        assert isinstance(meta['date_done'], datetime.datetime)
 
 
 class test_BaseBackend_interface:
