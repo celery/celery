@@ -176,6 +176,30 @@ class test_Backend_interface:
         assert meta['kwargs'] == kwargs
         assert meta['queue'] == 'celery'
 
+    def test_get_result_meta_format_date(self):
+        import datetime
+        self.app.conf.result_extended = True
+        b1 = BaseBackend(self.app)
+        args = ['a', 'b']
+        kwargs = {'foo': 'bar'}
+
+        request = Context(args=args, kwargs=kwargs)
+        meta = b1._get_result_meta(result={'fizz': 'buzz'},
+                                   state=states.SUCCESS, traceback=None,
+                                   request=request, format_date=True)
+        assert isinstance(meta['date_done'], str)
+
+        self.app.conf.result_extended = True
+        b2 = BaseBackend(self.app)
+        args = ['a', 'b']
+        kwargs = {'foo': 'bar'}
+
+        request = Context(args=args, kwargs=kwargs)
+        meta = b2._get_result_meta(result={'fizz': 'buzz'},
+                                   state=states.SUCCESS, traceback=None,
+                                   request=request, format_date=False)
+        assert isinstance(meta['date_done'], datetime.datetime)
+
 
 class test_BaseBackend_interface:
 

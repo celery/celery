@@ -182,7 +182,8 @@ class MongoBackend(BaseBackend):
                       traceback=None, request=None, **kwargs):
         """Store return value and state of an executed task."""
         meta = self._get_result_meta(result=self.encode(result), state=state,
-                                     traceback=traceback, request=request)
+                                     traceback=traceback, request=request,
+                                     format_date=False)
         # Add the _id for mongodb
         meta['_id'] = task_id
 
