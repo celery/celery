@@ -506,7 +506,7 @@ class test_chain:
         assert res.get(timeout=TIMEOUT) == [8, 8]
 
     @pytest.mark.xfail(raises=TimeoutError, reason="Task is timeout")
-    def test_nested_chain_group_lone(self, manager):
+    def test_nested_chain_group_lone(self, manager):  # Fails with Redis 5.x
         """
         Test that a lone group in a chain completes.
         """
