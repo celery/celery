@@ -422,8 +422,11 @@ class test_Consumer(ConsumerTestCase):
 
     @pytest.mark.parametrize("broker_connection_retry", [True, False])
     @pytest.mark.parametrize("broker_connection_retry_on_startup", [None, False])
-    def test_ensure_connected(self, subtests, broker_connection_retry, broker_connection_retry_on_startup):
+    @pytest.mark.parametrize("first_connection_attempt", [True, False])
+    def test_ensure_connected(self, subtests, broker_connection_retry, broker_connection_retry_on_startup,
+                              first_connection_attempt):
         c = self.get_consumer()
+        c.first_connection_attempt = first_connection_attempt
         c.app.conf.broker_connection_retry_on_startup = broker_connection_retry_on_startup
         c.app.conf.broker_connection_retry = broker_connection_retry
 
@@ -457,9 +460,7 @@ class test_Consumer_WorkerShutdown(ConsumerTestCase):
                                            is_connection_loss_on_startup,
                                            caplog, subtests):
         c = self.get_consumer()
-        # in order to reproduce the actual behavior: if this is the startup, then restart count has not been
-        # incremented yet, and is therefore -1.
-        c.restart_count = -1 if is_connection_loss_on_startup else 1
+        c.first_connection_attempt = True if is_connection_loss_on_startup else False
         c.app.conf['broker_connection_retry'] = False
         c.app.conf['broker_connection_retry_on_startup'] = broker_connection_retry_on_startup
         c.blueprint.start.side_effect = ConnectionError()
