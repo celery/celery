@@ -1,9 +1,10 @@
+import os
 import sys
 from unittest.mock import Mock, patch
 
 import pytest
 
-from celery.utils.imports import NotAPackage, find_module, gen_task_name, module_file, qualname, reload_from_cwd
+from celery.utils.imports import NotAPackage, find_module, gen_task_name, module_file, qualname, reload_from_cwd, cwd_in_path
 
 
 def test_find_module():
@@ -90,6 +91,15 @@ def test_module_file():
     m2 = Mock()
     m2.__file__ = '/opt/foo/xyz.py'
     assert module_file(m1) == '/opt/foo/xyz.py'
+
+
+def test_cwd_in_path(tmp_path, monkeypatch):
+    test_tmp_path = str(tmp_path) + "/foo"
+    os.mkdir(test_tmp_path)
+    os.chdir(test_tmp_path)
+    os.rmdir(test_tmp_path)
+    with cwd_in_path():
+        pass
 
 
 class test_gen_task_name:
