@@ -164,12 +164,14 @@ a more distant future, database-backed periodic task might be a better choice.
 Periodic tasks won't be affected by the visibility timeout,
 as this is a concept separate from ETA/countdown.
 
-You can increase this timeout by configuring a transport option
+You can increase this timeout by configuring several options
 with the same name:
 
 .. code-block:: python
 
     app.conf.broker_transport_options = {'visibility_timeout': 43200}
+    app.conf.result_backend_transport_options = {'visibility_timeout': 43200}
+    app.conf.visibility_timeout = 43200
 
 The value must be an int describing the number of seconds.
 
