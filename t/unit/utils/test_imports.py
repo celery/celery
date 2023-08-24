@@ -95,12 +95,14 @@ def test_module_file():
 
 
 def test_cwd_in_path(tmp_path, monkeypatch):
-    os.chdir(tmp_path)
+    t = str(tmp_path) + "/foo"
+    os.mkdir(t)
+    os.chdir(t)
     with cwd_in_path():
-        assert os.path.exists(tmp_path) is True
-    os.rmdir(tmp_path)
+        assert os.path.exists(t) is True
+    os.rmdir(t)
     with cwd_in_path():
-        assert os.path.exists(tmp_path) is False
+        assert os.path.exists(t) is False
 
 
 class test_gen_task_name:
