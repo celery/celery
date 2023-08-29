@@ -2272,7 +2272,7 @@ class _chord(Signature):
             applied to the body.
         """
         if self.app.conf.task_allow_error_cb_on_chord_header:
-            for task in maybe_list(self.tasks):
+            for task in maybe_list(self.tasks) or []:
                 task.link_error(errback.clone(immutable=True))
         else:
             # Once this warning is removed, the whole method needs to be refactored to:
