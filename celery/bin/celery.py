@@ -158,7 +158,7 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir,
     if config:
         os.environ['CELERY_CONFIG_MODULE'] = config
     if skip_checks:
-        os.environ['CELERY_SKIP_CHECKS'] = skip_checks
+        os.environ['CELERY_SKIP_CHECKS'] = 'true'
     ctx.obj = CLIContext(app=app, no_color=no_color, workdir=workdir,
                          quiet=quiet)
 
