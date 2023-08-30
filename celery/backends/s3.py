@@ -1,5 +1,7 @@
 """s3 result store backend."""
 
+from datetime import datetime
+
 from kombu.utils.encoding import bytes_to_str
 
 from celery.exceptions import ImproperlyConfigured
@@ -48,9 +50,13 @@ class S3Backend(KeyValueStoreBackend):
 
         self.base_path = conf.get('s3_base_path', None)
 
+        self.partition_by_date = conf.get('s3_partition_by_date', False)
+
         self._s3_resource = self._connect_to_s3()
 
     def _get_s3_object(self, key):
+        if self.partition_by_date:
+            key = "date=" + str(datetime.utcnow().date()) + "/" + key
         key_bucket_path = self.base_path + key if self.base_path else key
         return self._s3_resource.Object(self.bucket_name, key_bucket_path)
 
