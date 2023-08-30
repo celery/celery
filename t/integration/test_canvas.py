@@ -3478,3 +3478,27 @@ class test_stamping_mechanism:
         res = stamped_task.delay()
         res.get(timeout=TIMEOUT)
         assert assertion_result
+
+    def test_stamp_canvas_with_dictionary_link(self, manager, subtests):
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {"on_signature": 42}
+
+        with subtests.test("Stamp canvas with dictionary link"):
+            canvas = identity.si(42)
+            canvas.options["link"] = dict(identity.si(42))
+            canvas.stamp(visitor=CustomStampingVisitor())
+
+    def test_stamp_canvas_with_dictionary_link_error(self, manager, subtests):
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {"on_signature": 42}
+
+        with subtests.test("Stamp canvas with dictionary link error"):
+            canvas = fail.si()
+            canvas.options["link_error"] = dict(fail.si())
+            canvas.stamp(visitor=CustomStampingVisitor())
+
+        with subtests.test(msg='Expect canvas to fail'):
+            with pytest.raises(ExpectedException):
+                canvas.apply_async().get(timeout=TIMEOUT)
