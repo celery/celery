@@ -653,7 +653,7 @@ class Signature(dict):
 
         # Stamp all of the callbacks of this signature
         headers = deepcopy(non_visitor_headers)
-        for link in self.options.get('link', []) or []:
+        for link in maybe_list(self.options.get('link')) or []:
             link = maybe_signature(link, app=self.app)
             visitor_headers = None
             if visitor is not None:
@@ -668,7 +668,7 @@ class Signature(dict):
 
         # Stamp all of the errbacks of this signature
         headers = deepcopy(non_visitor_headers)
-        for link in self.options.get('link_error', []) or []:
+        for link in maybe_list(self.options.get('link_error')) or []:
             link = maybe_signature(link, app=self.app)
             visitor_headers = None
             if visitor is not None:
@@ -1016,9 +1016,9 @@ class _chain(Signature):
         # Clone chain's tasks assigning signatures from link_error
         # to each task and adding the chain's links to the last task.
         tasks = [t.clone() for t in self.tasks]
-        for sig in self.options.get('link', []):
+        for sig in maybe_list(self.options.get('link')) or []:
             tasks[-1].link(sig)
-        for sig in self.options.get('link_error', []):
+        for sig in maybe_list(self.options.get('link_error')) or []:
             for task in tasks:
                 task.link_error(sig)
         return tasks
