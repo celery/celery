@@ -2962,6 +2962,43 @@ class test_chord:
             # Cleanup
             redis_connection.delete(errback_key)
 
+    def test_upgraded_chord_link_error_with_header_errback_enabled(self, manager, subtests):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+        redis_connection = get_redis_connection()
+
+        manager.app.conf.task_allow_error_cb_on_chord_header = True
+
+        body_msg = 'chord body called'
+        body_key = 'echo_body'
+        body_sig = redis_echo.si(body_msg, redis_key=body_key)
+
+        errback_msg = 'errback called'
+        errback_key = 'echo_errback'
+        errback_sig = redis_echo.si(errback_msg, redis_key=errback_key)
+
+        redis_connection.delete(errback_key, body_key)
+
+        sig = chain(
+            identity.si(42),
+            group(
+                fail.si(),
+                fail.si(),
+            ),
+            body_sig,
+        ).on_error(errback_sig)
+
+        with subtests.test(msg='Error propagates from failure in header'):
+            with pytest.raises(ExpectedException):
+                sig.apply_async().get(timeout=TIMEOUT)
+
+        redis_connection.delete(errback_key, body_key)
+
 
 class test_signature_serialization:
     """
@@ -3441,3 +3478,27 @@ class test_stamping_mechanism:
         res = stamped_task.delay()
         res.get(timeout=TIMEOUT)
         assert assertion_result
+
+    def test_stamp_canvas_with_dictionary_link(self, manager, subtests):
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {"on_signature": 42}
+
+        with subtests.test("Stamp canvas with dictionary link"):
+            canvas = identity.si(42)
+            canvas.options["link"] = dict(identity.si(42))
+            canvas.stamp(visitor=CustomStampingVisitor())
+
+    def test_stamp_canvas_with_dictionary_link_error(self, manager, subtests):
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {"on_signature": 42}
+
+        with subtests.test("Stamp canvas with dictionary link error"):
+            canvas = fail.si()
+            canvas.options["link_error"] = dict(fail.si())
+            canvas.stamp(visitor=CustomStampingVisitor())
+
+        with subtests.test(msg='Expect canvas to fail'):
+            with pytest.raises(ExpectedException):
+                canvas.apply_async().get(timeout=TIMEOUT)
