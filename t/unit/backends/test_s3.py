@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest.mock import patch
 
 import boto3
@@ -170,6 +171,23 @@ class test_S3Backend:
         with pytest.raises(ClientError,
                            match=r'.*The specified bucket does not exist'):
             s3_backend._set_with_state('uuid', 'another_status', states.SUCCESS)
+
+    @mock_s3
+    def test_partition_by_date(self):
+        self._mock_s3_resource()
+
+        self.app.conf.s3_access_key_id = 'somekeyid'
+        self.app.conf.s3_secret_access_key = 'somesecret'
+        self.app.conf.s3_bucket = 'bucket'
+        self.app.conf.s3_partition_by_date = True
+
+        s3_backend = S3Backend(app=self.app)
+        date = datetime.utcnow().date()
+        s3_backend.set("somekey", "somevalue")
+        assert s3_backend.get("somekey") == "somevalue"
+        s3_object = s3_backend._get_s3_object("somekey")
+        assert s3_object.key.endswith("date=" + str(date) + "/" + "somekey")
+
 
     def _mock_s3_resource(self):
         # Create AWS s3 Bucket for moto.
