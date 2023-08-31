@@ -8,47 +8,78 @@ This document contains change notes for bugfix & new features
 in the main branch & 5.3.x series, please see :ref:`whatsnew-5.3` for
 an overview of what's new in Celery 5.3.
 
+.. _version-5.3.3:
+
+v5.3.3
+=====
+
+:release-date: 2023-08-31 1:47 P.M GMT+2
+:release-by: Tomer Nosrati
+
+* Fixed changelog for 5.3.2 release docs.
+
 .. _version-5.3.2:
 
-5.3.2
+v5.3.2
 =====
 
 :release-date: 2023-08-31 1:30 P.M GMT+2
 :release-by: Tomer Nosrati
 
-- Bugfix: Removed unecessary stamping code from _chord.run() (#8339)
-- User guide fix (hotfix for #1755) (#8342)
-- store children with database backend (#8338)
-- Stamping bugfix with group/chord header errback linking (#8347)
-- Use argsrepr and kwargsrepr in LOG_RECEIVED (#8301)
-- Fixing minor typo in code example in calling.rst (#8366)
-- add documents for timeout settings (#8373)
-- fix: copyright year (#8380)
-- setup.py: enable include_package_data (#8379)
-- Fix eager tasks does not populate name field (#8383)
-- Update test.txt dependencies (#8389)
-- Update auth.txt deps (#8392)
-- Fix backend.get_task_meta ignores the result_extended config parameter in mongodb backend (#8391)
-- Support preload options for shell and purge commands (#8374)
-- Implement safer ArangoDB queries (#8351)
-- integration test: cleanup worker after test case (#8361)
-- Added "Tomer Nosrati" to CONTRIBUTORS.txt (#8400)
-- Update README.rst (#8404)
-- Update README.rst (#8408)
-- fix(canvas): add group index when unrolling tasks (#8427)
-- fix(beat): debug statement should only log AsyncResult.id if it exists (#8428)
-- Update auth.txt (#8435)
-- Update mypy on test.txt (#8438)
-- added missing kwargs arguments in some cli cmd (#8049)
-- Fix #8431: Set format_date to False when calling _get_result_meta on mongo backend (#8432)
-- Docs: rewrite out-of-date code (#8441)
-- Limit redis client to 4.x since 5.x fails the test suite (#8442)
-- Limit tox to < 4.9 (#8443)
-- Fixed issue: Flags broker_connection_retry_on_startup & broker_connection_retry aren’t reliable #8433 (#8446)
-- doc update from #7651 (#8451)
-- Remove tox version limit (#8464)
-- Fixed AttributeError: 'str' object has no attribute (#8463)
-- Upgraded Kombu from 5.3.1 -> 5.3.2 (#8468)
+## What's Changed
+* Bugfix: Removed unecessary stamping code from _chord.run() by @Nusnus in https://github.com/celery/celery/pull/8339
+* User guide fix (hotfix for #1755) by @Nusnus in https://github.com/celery/celery/pull/8342
+* store children with database backend by @aaronst in https://github.com/celery/celery/pull/8338
+* Stamping bugfix with group/chord header errback linking by @Nusnus in https://github.com/celery/celery/pull/8347
+* Use argsrepr and kwargsrepr in LOG_RECEIVED by @zhu in https://github.com/celery/celery/pull/8301
+* Fixing minor typo in code example in calling.rst by @dwysocki in https://github.com/celery/celery/pull/8366
+* add documents for timeout settings by @ooyamatakehisa in https://github.com/celery/celery/pull/8373
+* fix: copyright year by @karanganesan in https://github.com/celery/celery/pull/8380
+* setup.py: enable include_package_data by @elohmeier in https://github.com/celery/celery/pull/8379
+* Fix eager tasks does not populate name field by @KOliver94 in https://github.com/celery/celery/pull/8383
+* Update test.txt dependencies by @auvipy in https://github.com/celery/celery/pull/8389
+* Update auth.txt deps by @auvipy in https://github.com/celery/celery/pull/8392
+* Fix backend.get_task_meta ignores the result_extended config parameter in mongodb backend by @ycc140 in https://github.com/celery/celery/pull/8391
+* Support preload options for shell and purge commands  by @dpdoughe in https://github.com/celery/celery/pull/8374
+* Implement safer ArangoDB queries by @othieno in https://github.com/celery/celery/pull/8351
+* integration test: cleanup worker after test case by @zhu in https://github.com/celery/celery/pull/8361
+* Added "Tomer Nosrati" to CONTRIBUTORS.txt by @Nusnus in https://github.com/celery/celery/pull/8400
+* Update README.rst by @sourabhligade in https://github.com/celery/celery/pull/8404
+* Update README.rst by @sourabhligade in https://github.com/celery/celery/pull/8408
+* fix(canvas): add group index when unrolling tasks by @mkniewallner in https://github.com/celery/celery/pull/8427
+* fix(beat): debug statement should only log AsyncResult.id if it exists by @bmrobin in https://github.com/celery/celery/pull/8428
+* Lint fixes & pre-commit autoupdate by @Nusnus in https://github.com/celery/celery/pull/8414
+* Update auth.txt by @auvipy in https://github.com/celery/celery/pull/8435
+* Update mypy on test.txt by @auvipy in https://github.com/celery/celery/pull/8438
+* added missing kwargs arguments in some cli cmd by @auvipy in https://github.com/celery/celery/pull/8049
+* Fix #8431: Set format_date to False when calling _get_result_meta on mongo backend by @asukero in https://github.com/celery/celery/pull/8432
+* Docs: rewrite out-of-date code by @paradox-lab in https://github.com/celery/celery/pull/8441
+* Limit redis client to 4.x since 5.x fails the test suite by @thedrow in https://github.com/celery/celery/pull/8442
+* Limit tox to < 4.9 by @Nusnus in https://github.com/celery/celery/pull/8443
+* Fixed issue: Flags broker_connection_retry_on_startup & broker_connection_retry aren’t reliable #8433 by @Nusnus in https://github.com/celery/celery/pull/8446
+* doc update from #7651 by @rainnnnny in https://github.com/celery/celery/pull/8451
+* Remove tox version limit by @Nusnus in https://github.com/celery/celery/pull/8464
+* Fixed AttributeError: 'str' object has no attribute by @Nusnus in https://github.com/celery/celery/pull/8463
+* Upgraded Kombu from 5.3.1 -> 5.3.2 by @Nusnus in https://github.com/celery/celery/pull/8468
+
+## New Contributors
+* @aaronst made their first contribution in https://github.com/celery/celery/pull/8338
+* @zhu made their first contribution in https://github.com/celery/celery/pull/8301
+* @dwysocki made their first contribution in https://github.com/celery/celery/pull/8366
+* @ooyamatakehisa made their first contribution in https://github.com/celery/celery/pull/8373
+* @karanganesan made their first contribution in https://github.com/celery/celery/pull/8380
+* @elohmeier made their first contribution in https://github.com/celery/celery/pull/8379
+* @KOliver94 made their first contribution in https://github.com/celery/celery/pull/8383
+* @ycc140 made their first contribution in https://github.com/celery/celery/pull/8391
+* @dpdoughe made their first contribution in https://github.com/celery/celery/pull/8374
+* @othieno made their first contribution in https://github.com/celery/celery/pull/8351
+* @sourabhligade made their first contribution in https://github.com/celery/celery/pull/8404
+* @mkniewallner made their first contribution in https://github.com/celery/celery/pull/8427
+* @bmrobin made their first contribution in https://github.com/celery/celery/pull/8428
+* @asukero made their first contribution in https://github.com/celery/celery/pull/8432
+* @rainnnnny made their first contribution in https://github.com/celery/celery/pull/8451
+
+**Full Changelog**: https://github.com/celery/celery/compare/v5.3.1...v5.3.2
 
 .. _version-5.3.1:
 
