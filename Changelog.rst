@@ -26,7 +26,8 @@ v5.3.2
 :release-date: 2023-08-31 1:30 P.M GMT+2
 :release-by: Tomer Nosrati
 
-## What's Changed
+What's Changed
+--------------
 * Bugfix: Removed unecessary stamping code from _chord.run() by @Nusnus in https://github.com/celery/celery/pull/8339
 * User guide fix (hotfix for #1755) by @Nusnus in https://github.com/celery/celery/pull/8342
 * store children with database backend by @aaronst in https://github.com/celery/celery/pull/8338
@@ -62,7 +63,8 @@ v5.3.2
 * Fixed AttributeError: 'str' object has no attribute by @Nusnus in https://github.com/celery/celery/pull/8463
 * Upgraded Kombu from 5.3.1 -> 5.3.2 by @Nusnus in https://github.com/celery/celery/pull/8468
 
-## New Contributors
+New Contributors
+----------------
 * @aaronst made their first contribution in https://github.com/celery/celery/pull/8338
 * @zhu made their first contribution in https://github.com/celery/celery/pull/8301
 * @dwysocki made their first contribution in https://github.com/celery/celery/pull/8366
