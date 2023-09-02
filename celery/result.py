@@ -983,11 +983,10 @@ class GroupResult(ResultSet):
 class EagerResult(AsyncResult):
     """Result that we know has already been executed."""
 
-    def __init__(self, id, name, ret_value, state, traceback=None):
+    def __init__(self, id, ret_value, state, traceback=None):
         # pylint: disable=super-init-not-called
         # XXX should really not be inheriting from AsyncResult
         self.id = id
-        self._name = name
         self._result = ret_value
         self._state = state
         self._traceback = traceback
@@ -1039,7 +1038,6 @@ class EagerResult(AsyncResult):
     @property
     def _cache(self):
         return {
-            'name': self._name,
             'task_id': self.id,
             'result': self._result,
             'status': self._state,
