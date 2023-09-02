@@ -788,7 +788,6 @@ class Task:
 
         request = {
             'id': task_id,
-            'task': self.name,
             'retries': retries,
             'is_eager': True,
             'logfile': logfile,
@@ -825,7 +824,7 @@ class Task:
         if isinstance(retval, Retry) and retval.sig is not None:
             return retval.sig.apply(retries=retries + 1)
         state = states.SUCCESS if ret.info is None else ret.info.state
-        return EagerResult(task_id, self.name, retval, state, traceback=tb)
+        return EagerResult(task_id, retval, state, traceback=tb)
 
     def AsyncResult(self, task_id, **kwargs):
         """Get AsyncResult instance for the specified task.
