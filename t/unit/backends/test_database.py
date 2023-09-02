@@ -99,7 +99,6 @@ class test_DatabaseBackend:
         assert meta['task_id'] == 'xxx-does-not-exist-at-all'
         assert meta['result'] is None
         assert meta['traceback'] is None
-        assert meta['children'] is None
 
     def test_mark_as_done(self):
         tb = DatabaseBackend(self.uri, app=self.app)

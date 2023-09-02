@@ -25,7 +25,6 @@ class Task(ResultModelBase):
     date_done = sa.Column(sa.DateTime, default=datetime.utcnow,
                           onupdate=datetime.utcnow, nullable=True)
     traceback = sa.Column(sa.Text, nullable=True)
-    children = sa.Column(PickleType, nullable=True)
 
     def __init__(self, task_id):
         self.task_id = task_id
@@ -37,7 +36,6 @@ class Task(ResultModelBase):
             'result': self.result,
             'traceback': self.traceback,
             'date_done': self.date_done,
-            'children': self.children,
         }
 
     def __repr__(self):
