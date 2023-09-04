@@ -161,7 +161,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_ENABLE_REMOTE_CONTROL``           :setting:`worker_enable_remote_control`
 ``CELERYD_HIJACK_ROOT_LOGGER``             :setting:`worker_hijack_root_logger`
 ``CELERYD_LOG_COLOR``                      :setting:`worker_log_color`
-``CELERYD_LOG_FORMAT``                     :setting:`worker_log_format`
+``CELERY_WORKER_LOG_FORMAT``               :setting:`worker_log_format`
 ``CELERYD_WORKER_LOST_WAIT``               :setting:`worker_lost_wait`
 ``CELERYD_MAX_TASKS_PER_CHILD``            :setting:`worker_max_tasks_per_child`
 ``CELERYD_POOL``                           :setting:`worker_pool`
@@ -172,7 +172,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERYD_REDIRECT_STDOUTS_LEVEL``         :setting:`worker_redirect_stdouts_level`
 ``CELERY_SEND_EVENTS``                     :setting:`worker_send_task_events`
 ``CELERYD_STATE_DB``                       :setting:`worker_state_db`
-``CELERYD_TASK_LOG_FORMAT``                :setting:`worker_task_log_format`
+``CELERY_WORKER_TASK_LOG_FORMAT``          :setting:`worker_task_log_format`
 ``CELERYD_TIMER``                          :setting:`worker_timer`
 ``CELERYD_TIMER_PRECISION``                :setting:`worker_timer_precision`
 ========================================== ==============================================
