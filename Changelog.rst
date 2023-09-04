@@ -8,6 +8,127 @@ This document contains change notes for bugfix & new features
 in the main branch & 5.3.x series, please see :ref:`whatsnew-5.3` for
 an overview of what's new in Celery 5.3.
 
+.. _version-5.3.4:
+
+5.3.4
+=====
+
+:release-date: 2023-09-03 10:10 P.M GMT+2
+:release-by: Tomer Nosrati
+
+.. warning::
+   This version has reverted the breaking changes introduced in 5.3.2 and 5.3.3:
+
+   - Revert "store children with database backend" (#8475)
+   - Revert "Fix eager tasks does not populate name field" (#8476)
+
+- Bugfix: Removed unecessary stamping code from _chord.run() (#8339)
+- User guide fix (hotfix for #1755) (#8342)
+- store children with database backend (#8338)
+- Stamping bugfix with group/chord header errback linking (#8347)
+- Use argsrepr and kwargsrepr in LOG_RECEIVED (#8301)
+- Fixing minor typo in code example in calling.rst (#8366)
+- add documents for timeout settings (#8373)
+- fix: copyright year (#8380)
+- setup.py: enable include_package_data (#8379)
+- Fix eager tasks does not populate name field (#8383)
+- Update test.txt dependencies (#8389)
+- Update auth.txt deps (#8392)
+- Fix backend.get_task_meta ignores the result_extended config parameter in mongodb backend (#8391)
+- Support preload options for shell and purge commands (#8374)
+- Implement safer ArangoDB queries (#8351)
+- integration test: cleanup worker after test case (#8361)
+- Added "Tomer Nosrati" to CONTRIBUTORS.txt (#8400)
+- Update README.rst (#8404)
+- Update README.rst (#8408)
+- fix(canvas): add group index when unrolling tasks (#8427)
+- fix(beat): debug statement should only log AsyncResult.id if it exists (#8428)
+- Lint fixes & pre-commit autoupdate (#8414)
+- Update auth.txt (#8435)
+- Update mypy on test.txt (#8438)
+- added missing kwargs arguments in some cli cmd (#8049)
+- Fix #8431: Set format_date to False when calling _get_result_meta on mongo backend (#8432)
+- Docs: rewrite out-of-date code (#8441)
+- Limit redis client to 4.x since 5.x fails the test suite (#8442)
+- Limit tox to < 4.9 (#8443)
+- Fixed issue: Flags broker_connection_retry_on_startup & broker_connection_retry aren’t reliable (#8446)
+- doc update from #7651 (#8451)
+- Remove tox version limit (#8464)
+- Fixed AttributeError: 'str' object has no attribute (#8463)
+- Upgraded Kombu from 5.3.1 -> 5.3.2 (#8468)
+- Document need for CELERY_ prefix on CLI env vars (#8469)
+- Use string value for CELERY_SKIP_CHECKS envvar (#8462)
+- Revert "store children with database backend" (#8475)
+- Revert "Fix eager tasks does not populate name field" (#8476)
+- Update Changelog (#8474)
+- Remove as it seems to be buggy. (#8340)
+- Revert "Add Semgrep to CI" (#8477)
+- Revert "Revert "Add Semgrep to CI"" (#8478)
+
+.. _version-5.3.3:
+
+5.3.3 (Yanked)
+==============
+
+:release-date: 2023-08-31 1:47 P.M GMT+2
+:release-by: Tomer Nosrati
+
+.. warning::
+   This version has been yanked due to breaking API changes. The breaking changes include:
+
+   - Store children with database backend (#8338)
+   - Fix eager tasks does not populate name field (#8383)
+
+- Fixed changelog for 5.3.2 release docs.
+
+.. _version-5.3.2:
+
+5.3.2 (Yanked)
+==============
+
+:release-date: 2023-08-31 1:30 P.M GMT+2
+:release-by: Tomer Nosrati
+
+.. warning::
+   This version has been yanked due to breaking API changes. The breaking changes include:
+
+   - Store children with database backend (#8338)
+   - Fix eager tasks does not populate name field (#8383)
+
+- Bugfix: Removed unecessary stamping code from _chord.run() (#8339)
+- User guide fix (hotfix for #1755) (#8342)
+- Store children with database backend (#8338)
+- Stamping bugfix with group/chord header errback linking (#8347)
+- Use argsrepr and kwargsrepr in LOG_RECEIVED (#8301)
+- Fixing minor typo in code example in calling.rst (#8366)
+- Add documents for timeout settings (#8373)
+- Fix: copyright year (#8380)
+- Setup.py: enable include_package_data (#8379)
+- Fix eager tasks does not populate name field (#8383)
+- Update test.txt dependencies (#8389)
+- Update auth.txt deps (#8392)
+- Fix backend.get_task_meta ignores the result_extended config parameter in mongodb backend (#8391)
+- Support preload options for shell and purge commands (#8374)
+- Implement safer ArangoDB queries (#8351)
+- Integration test: cleanup worker after test case (#8361)
+- Added "Tomer Nosrati" to CONTRIBUTORS.txt (#8400)
+- Update README.rst (#8404)
+- Update README.rst (#8408)
+- Fix(canvas): add group index when unrolling tasks (#8427)
+- Fix(beat): debug statement should only log AsyncResult.id if it exists (#8428)
+- Lint fixes & pre-commit autoupdate (#8414)
+- Update auth.txt (#8435)
+- Update mypy on test.txt (#8438)
+- Added missing kwargs arguments in some cli cmd (#8049)
+- Fix #8431: Set format_date to False when calling _get_result_meta on mongo backend (#8432)
+- Docs: rewrite out-of-date code (#8441)
+- Limit redis client to 4.x since 5.x fails the test suite (#8442)
+- Limit tox to < 4.9 (#8443)
+- Fixed issue: Flags broker_connection_retry_on_startup & broker_connection_retry aren’t reliable (#8446)
+- Doc update from #7651 (#8451)
+- Remove tox version limit (#8464)
+- Fixed AttributeError: 'str' object has no attribute (#8463)
+- Upgraded Kombu from 5.3.1 -> 5.3.2 (#8468)
 
 .. _version-5.3.1:
 
@@ -28,8 +149,6 @@ an overview of what's new in Celery 5.3.
 - Fixed a small float value of retry_backoff (#8295).
 - Limit pyro4 up to python 3.10 only as it is (#8324).
 
-
-
 .. _version-5.3.0:
 
 5.3.0
@@ -41,7 +160,6 @@ an overview of what's new in Celery 5.3.
 - Test kombu 5.3.0 & minor doc update (#8294).
 - Update librabbitmq.txt > 2.0.0 (#8292).
 - Upgrade syntax to py3.8 (#8281).
-
 
 .. _version-5.3.0rc2:
 

@@ -51,7 +51,7 @@ jobs:
         cache-dependency-path: '**/setup.py'
 
     - name: Install tox
-      run: python -m pip install --upgrade pip 'tox<4.9' tox-gh-actions
+      run: python -m pip install --upgrade pip 'tox' tox-gh-actions
     - name: >
         Run tox for
         "${{ matrix.python-version }}-unit"
@@ -107,7 +107,7 @@ jobs:
                   cache: 'pip'
                   cache-dependency-path: '**/setup.py'
           -   name: Install tox
-              run: python -m pip install --upgrade pip 'tox<4.9' tox-gh-actions
+              run: python -m pip install --upgrade pip 'tox' tox-gh-actions
           -   name: >
                   Run tox for
                   "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}"

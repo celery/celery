@@ -1,4 +1,4 @@
-:Version: 5.3.1 (emerald-rush)
+:Version: 5.3.4 (emerald-rush)
 :Web: https://docs.celeryq.dev/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
