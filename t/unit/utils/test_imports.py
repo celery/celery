@@ -1,5 +1,6 @@
 import os
 import sys
+import platform
 from unittest.mock import Mock, patch
 
 import pytest
@@ -101,9 +102,14 @@ def test_cwd_in_path(tmp_path, monkeypatch):
     os.chdir(t)
     with cwd_in_path():
         assert os.path.exists(t) is True
-    os.rmdir(t)
-    with cwd_in_path():
-        assert os.path.exists(t) is False
+
+    if sys.platform == "win32" or "Windows" in platform.platform():
+        # If it is a Windows server, other processes cannot delete the current working directory being used by celery
+        pass
+    else:
+        os.rmdir(t)
+        with cwd_in_path():
+            assert os.path.exists(t) is False
     os.chdir(now_cwd)
 
 
