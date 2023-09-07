@@ -226,9 +226,7 @@ def inspect(ctx, command, timeout, destination, json, **kwargs):
               help='Use json as output format.')
 @click.pass_context
 @handle_preload_options
-def control(ctx, command, timeout, destination, json, **kwargs):
-    # TODO: Hvorfor trengs **kwargs bare når jeg kjører alle testene?
-    # TODO: Få testene til å kjøre. Hjelper kanskje å oppdatere mot main?
+def control(ctx, command, timeout, destination, json):
     """Send the COMMAND control command to the workers.
 
     Availability: RabbitMQ (AMQP), Redis, and MongoDB transports.
