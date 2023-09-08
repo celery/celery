@@ -153,6 +153,60 @@ concrete app instance:
     You can find the full source code for the Django example project at:
     https://github.com/celery/celery/tree/main/examples/django/
 
+Trigger tasks at the end of the database transaction
+----------------------------------------------------
+
+A common pitfall with Django is trigger a task immediately and not wait until
+the end of the database transaction, which means that the Celery task may run
+before all changes are persisted to the database. For example:
+
+.. code-block:: python
+
+    # views.py
+    def create_user(request):
+        # Note: this is a simplified example, in reality you should use a form
+        user = User.objects.create(username=request.POST['username'])
+        send_email.delay(user.pk)
+        return HttpResponse('User created')
+
+    # task.py
+    @shared_task
+    def send_email(user_pk):
+        user = User.objects.get(pk=user_pk)
+        # send email ...
+
+In this case, the ``send_email`` task could start before the view has committed
+the transaction to the database, and therefore the task may not be able to find
+the user.
+
+A common solution is to use Django's ``on_commit`` hook to trigger the task
+after the transaction has been committed:
+
+.. code-block:: diff
+
+    - send_email.delay(user.pk)
+    + transaction.on_commit(lambda: send_email.delay(user.pk))
+
+However, since this is such a common pattern, Celery provides a handy shortcut
+for this. It requires to use a task specialised for Django
+``celery.contrib.django.task.Task``. To use it, first override the task class
+used in your application, using the ``task_cls`` argument to :class:`Celery`:
+
+.. code-block:: diff
+
+    - app = Celery('proj')
+    + app = Celery('proj', task_cls='celery.contrib.django.task:Task')
+
+Then, instead of calling ``.delay()``, you'd call ``.delay_on_commit()``:
+
+.. code-block:: diff
+
+    - send_email.delay(user.pk)
+    + send_email.delay_on_commit(user.pk)
+
+
+This API takes care of wrapping the call into the ``on_commit`` hook for you.
+
 Extensions
 ==========
 
