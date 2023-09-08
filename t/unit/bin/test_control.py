@@ -1,4 +1,6 @@
+import os
 import re
+from unittest.mock import patch
 
 import pytest
 from click.testing import CliRunner
@@ -8,6 +10,14 @@ from celery.platforms import EX_UNAVAILABLE
 
 _GLOBAL_OPTIONS = ['-A', 't.unit.bin.proj.app_with_custom_cmds', '--broker', 'memory://']
 _INSPECT_OPTIONS = ['--timeout', '0']  # Avoid waiting for the zero workers to reply
+
+
+@pytest.fixture(autouse=True)
+def clean_os_environ():
+    # Celery modifies os.environ when given the CLI option --broker memory://
+    # This interferes with other tests, so we need to reset os.environ
+    with patch.dict(os.environ, clear=True):
+        yield
 
 
 @pytest.mark.parametrize(
