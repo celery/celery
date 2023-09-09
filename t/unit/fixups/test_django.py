@@ -87,7 +87,12 @@ class test_DjangoFixup(FixupCase):
         with self.fixup_context(self.app) as (f, importmod, sym):
             assert f
 
-    def test_install(self, patching):
+    @pytest.mark.patched_module(
+        'django',
+        'django.db',
+        'django.db.transaction',
+    )
+    def test_install(self, patching, module):
         self.app.loader = Mock()
         self.cw = patching('os.getcwd')
         self.p = patching('sys.path')
@@ -97,6 +102,14 @@ class test_DjangoFixup(FixupCase):
             f.install()
             self.sigs.worker_init.connect.assert_called_with(f.on_worker_init)
             assert self.app.loader.now == f.now
+
+            # Specialized Task class is used
+            assert self.app.task_cls == 'celery.contrib.django.task:Task'
+            from celery.contrib.django.task import Task as DjangoTask
+            assert issubclass(f.app.Task, DjangoTask)
+            assert hasattr(f.app.Task, 'delay_on_commit')
+            assert hasattr(f.app.Task, 'apply_async_on_commit')
+
             self.p.insert.assert_called_with(0, '/opt/vandelay')
 
     def test_now(self):
@@ -122,7 +135,12 @@ class test_DjangoWorkerFixup(FixupCase):
         with self.fixup_context(self.app) as (f, importmod, sym):
             assert f
 
-    def test_install(self):
+    @pytest.mark.patched_module(
+        'django',
+        'django.db',
+        'django.db.transaction',
+    )
+    def test_install(self, module):
         self.app.conf = {'CELERY_DB_REUSE_MAX': None}
         self.app.loader = Mock()
         with self.fixup_context(self.app) as (f, _, _):
@@ -136,6 +154,12 @@ class test_DjangoWorkerFixup(FixupCase):
                 sigs.worker_process_init.connect.assert_called_with(
                     f.on_worker_process_init,
                 )
+                # Specialized Task class is used
+                assert f.app.task_cls == 'celery.contrib.django.task:Task'
+                from celery.contrib.django.task import Task as DjangoTask
+                assert issubclass(f.app.Task, DjangoTask)
+                assert hasattr(f.app.Task, 'delay_on_commit')
+                assert hasattr(f.app.Task, 'apply_async_on_commit')
 
     def test_on_worker_process_init(self, patching):
         with self.fixup_context(self.app) as (f, _, _):

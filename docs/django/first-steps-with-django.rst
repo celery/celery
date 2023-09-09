@@ -188,16 +188,11 @@ after the transaction has been committed:
     + transaction.on_commit(lambda: send_email.delay(user.pk))
 
 However, since this is such a common pattern, Celery provides a handy shortcut
-for this. It requires to use a task specialised for Django
-``celery.contrib.django.task.Task``. To use it, first override the task class
-used in your application, using the ``task_cls`` argument to :class:`Celery`:
+for this. It uses a task specialised for Django
+:class:``celery.contrib.django.task.Task``.
 
-.. code-block:: diff
-
-    - app = Celery('proj')
-    + app = Celery('proj', task_cls='celery.contrib.django.task:Task')
-
-Then, instead of calling ``.delay()``, you'd call ``.delay_on_commit()``:
+This task should be used automatically. Instead of calling ``.delay()``, you'd
+call ``.delay_on_commit()``:
 
 .. code-block:: diff
 
@@ -206,6 +201,8 @@ Then, instead of calling ``.delay()``, you'd call ``.delay_on_commit()``:
 
 
 This API takes care of wrapping the call into the ``on_commit`` hook for you.
+In rare cases where you want to trigger a task without waiting, the existing
+``.delay()`` API is still available.
 
 Extensions
 ==========
