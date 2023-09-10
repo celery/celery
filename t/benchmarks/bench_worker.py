@@ -87,7 +87,6 @@ def bench_work(n=DEFAULT_ITS, loglevel='CRITICAL'):
         raise
         
 
-
 def bench_both(n=DEFAULT_ITS):
     bench_apply(n)
     bench_work(n)
