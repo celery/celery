@@ -3137,7 +3137,7 @@ class test_stamping_mechanism:
                     [
                         stamped_header in link_error.options
                         for stamped_header in link_error.options["stamped_headers"]
-                        if link_error  # the link_error itself doesn't have a link
+                        if link_error  # the link_error itself doesn't have a link_error
                     ],
                 ]
             )
