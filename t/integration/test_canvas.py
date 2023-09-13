@@ -1877,7 +1877,7 @@ class test_chord:
         backend = fail.app.backend
         j_key = backend.get_key_for_group(original_group_id, '.j')
         redis_connection = get_redis_connection()
-        # The redis key is either a list or a set depending on configuration
+        # The redis key is either a list or a zset (a redis sorted set) depending on configuration
         if manager.app.conf.result_backend_transport_options.get(
             'result_chord_ordered', True
         ):
