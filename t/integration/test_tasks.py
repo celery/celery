@@ -9,13 +9,14 @@ import pytest
 import celery
 from celery import chain, chord, group
 from celery.canvas import StampingVisitor
+from celery.signals import task_received
 from celery.utils.serialization import UnpickleableExceptionWrapper
 from celery.worker import state as worker_state
 
-from .conftest import TEST_BACKEND, get_active_redis_channels
+from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connection
 from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result, add_not_typed, fail,
                     fail_unpickleable, print_unicode, retry, retry_once, retry_once_headers, retry_once_priority,
-                    retry_unpickleable, return_properties, sleeping)
+                    retry_unpickleable, return_properties, second_order_replace1, sleeping)
 
 TIMEOUT = 10
 
@@ -533,3 +534,47 @@ class test_task_redis_result_backend:
 
         new_channels = [channel for channel in get_active_redis_channels() if channel not in channels_before_test]
         assert new_channels == []
+
+
+class test_task_replacement:
+    def test_replaced_task_nesting_level_0(self, manager):
+        @task_received.connect
+        def task_received_handler(request, **kwargs):
+            nonlocal assertion_result
+
+            try:
+                # This tests mainly that the field even exists and set to default 0
+                assertion_result = request.replaced_task_nesting < 1
+            except Exception:
+                assertion_result = False
+
+        non_replaced_task = add.si(4, 2)
+        res = non_replaced_task.delay()
+        assertion_result = False
+        assert res.get(timeout=TIMEOUT) == 6
+        assert assertion_result
+
+    def test_replaced_task_nesting_level_1(self, manager):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+
+        redis_connection = get_redis_connection()
+        redis_connection.delete("redis-echo")
+
+        @task_received.connect
+        def task_received_handler(request, **kwargs):
+            nonlocal assertion_result
+
+            try:
+                assertion_result = request.replaced_task_nesting < 2
+            except Exception:
+                assertion_result = False
+
+        replaced_task = second_order_replace1.si()
+        res = replaced_task.delay()
+        assertion_result = False
+        res.get(timeout=TIMEOUT)
+        assert assertion_result
+        redis_messages = list(redis_connection.lrange("redis-echo", 0, -1))
+        expected_messages = [b"In A", b"In B", b"In/Out C", b"Out B", b"Out A"]
+        assert redis_messages == expected_messages
