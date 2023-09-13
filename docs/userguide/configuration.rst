@@ -2349,8 +2349,8 @@ Where ``myapp.tasks.route_task`` could be:
 .. code-block:: python
 
     def route_task(self, name, args, kwargs, options, task=None, **kw):
-            if task == 'celery.ping':
-                return {'queue': 'default'}
+        if task == 'celery.ping':
+            return {'queue': 'default'}
 
 ``route_task`` may return a string or a dict. A string then means
 it's a queue name in :setting:`task_queues`, a dict means it's a custom route.
