@@ -118,6 +118,7 @@ twine upload dist/celery-X.Y.Z*
 
 > ⚠️ **Warning:** The release manager should double check that the release details are correct (project/version) before publishing the release to PyPI.
 
+> ⚠️ **Critical Reminder:** Should the released package prove to be faulty or need retraction for any reason, do not delete it from PyPI. The appropriate course of action is to "yank" the release.
 
 ## Release Announcement
 After the release is published, the release manager should create a new GitHub Release and set it as the latest release.
