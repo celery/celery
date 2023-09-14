@@ -83,7 +83,7 @@ Before moving forward with the release, the release manager should ensure that b
 ### 4.2 Bump version
 The release manager should bump the version using the following command:
 ```bash
-bumpversion patch --new-version "x.y.z"
+bumpversion patch
 ```
 The changes should be pushed directly to main by the release manager.
 
@@ -103,7 +103,7 @@ Date:   YYY
 ```
 If everything looks good, the bump version commit can be directly pushed to `main`:
 ```bash
-git push upstream main --tags
+git push origin main --tags
 ```
 
 ### 4.3 Publish release to PyPI
