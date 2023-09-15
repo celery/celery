@@ -112,7 +112,9 @@ class test_DjangoFixup(FixupCase):
 
             self.p.insert.assert_called_with(0, '/opt/vandelay')
 
-    def test_install_custom_user_task(self):
+    def test_install_custom_user_task(self, patching):
+        patching('celery.fixups.django.signals')
+
         self.app.task_cls = 'myapp.celery.tasks:Task'
         self.app._custom_task_cls_used = True
 
