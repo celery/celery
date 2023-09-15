@@ -165,9 +165,9 @@ class test_link_error:
     @flaky
     def test_link_error_using_signature_eager(self):
         fail = signature('t.integration.tasks.fail', args=("test",))
-        retrun_exception = signature('t.integration.tasks.return_exception')
+        return_exception = signature('t.integration.tasks.return_exception')
 
-        fail.link_error(retrun_exception)
+        fail.link_error(return_exception)
 
         exception = ExpectedException("Task expected to fail", "test")
         assert (fail.apply().get(timeout=TIMEOUT, propagate=False), True) == (
@@ -175,9 +175,9 @@ class test_link_error:
 
     def test_link_error_using_signature(self, manager):
         fail = signature('t.integration.tasks.fail', args=("test",))
-        retrun_exception = signature('t.integration.tasks.return_exception')
+        return_exception = signature('t.integration.tasks.return_exception')
 
-        fail.link_error(retrun_exception)
+        fail.link_error(return_exception)
 
         exception = ExpectedException("Task expected to fail", "test")
         assert (fail.delay().get(timeout=TIMEOUT / 10, propagate=False), True) == (
@@ -1877,7 +1877,7 @@ class test_chord:
         backend = fail.app.backend
         j_key = backend.get_key_for_group(original_group_id, '.j')
         redis_connection = get_redis_connection()
-        # The redis key is either a list or zset depending on configuration
+        # The redis key is either a list or a zset (a redis sorted set) depending on configuration
         if manager.app.conf.result_backend_transport_options.get(
             'result_chord_ordered', True
         ):
@@ -3132,12 +3132,12 @@ class test_stamping_mechanism:
                     [
                         stamped_header in link.options
                         for stamped_header in link.options["stamped_headers"]
-                        if link  # the link itself doensn't have a link
+                        if link  # the link itself doesn't have a link
                     ],
                     [
                         stamped_header in link_error.options
                         for stamped_header in link_error.options["stamped_headers"]
-                        if link_error  # the link_error itself doensn't have a link
+                        if link_error  # the link_error itself doesn't have a link_error
                     ],
                 ]
             )
