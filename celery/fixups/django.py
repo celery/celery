@@ -77,7 +77,9 @@ class DjangoFixup:
 
         self._settings = symbol_by_name('django.conf:settings')
         self.app.loader.now = self.now
-        self.app.task_cls = 'celery.contrib.django.task:Task'
+
+        if not self.app._custom_task_cls_used:
+            self.app.task_cls = 'celery.contrib.django.task:Task'
 
         signals.import_modules.connect(self.on_import_modules)
         signals.worker_init.connect(self.on_worker_init)
@@ -138,7 +140,6 @@ class DjangoWorkerFixup:
             run_checks()
 
     def install(self) -> "DjangoWorkerFixup":
-        self.app.task_cls = 'celery.contrib.django.task:Task'
         signals.beat_embedded_init.connect(self.close_database)
         signals.task_prerun.connect(self.on_task_prerun)
         signals.task_postrun.connect(self.on_task_postrun)

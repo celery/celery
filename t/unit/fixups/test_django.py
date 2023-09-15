@@ -112,6 +112,15 @@ class test_DjangoFixup(FixupCase):
 
             self.p.insert.assert_called_with(0, '/opt/vandelay')
 
+    def test_install_custom_user_task(self):
+        self.app.task_cls = 'myapp.celery.tasks:Task'
+        self.app._custom_task_cls_used = True
+
+        with self.fixup_context(self.app) as (f, _, _):
+            f.install()
+            # Specialized Task class is NOT used
+            assert self.app.task_cls == 'myapp.celery.tasks:Task'
+
     def test_now(self):
         with self.fixup_context(self.app) as (f, _, _):
             assert f.now(utc=True)
@@ -135,12 +144,7 @@ class test_DjangoWorkerFixup(FixupCase):
         with self.fixup_context(self.app) as (f, importmod, sym):
             assert f
 
-    @pytest.mark.patched_module(
-        'django',
-        'django.db',
-        'django.db.transaction',
-    )
-    def test_install(self, module):
+    def test_install(self):
         self.app.conf = {'CELERY_DB_REUSE_MAX': None}
         self.app.loader = Mock()
         with self.fixup_context(self.app) as (f, _, _):
@@ -154,12 +158,6 @@ class test_DjangoWorkerFixup(FixupCase):
                 sigs.worker_process_init.connect.assert_called_with(
                     f.on_worker_process_init,
                 )
-                # Specialized Task class is used
-                assert f.app.task_cls == 'celery.contrib.django.task:Task'
-                from celery.contrib.django.task import Task as DjangoTask
-                assert issubclass(f.app.Task, DjangoTask)
-                assert hasattr(f.app.Task, 'delay_on_commit')
-                assert hasattr(f.app.Task, 'apply_async_on_commit')
 
     def test_on_worker_process_init(self, patching):
         with self.fixup_context(self.app) as (f, _, _):
