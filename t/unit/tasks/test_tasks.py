@@ -7,7 +7,7 @@ import pytest
 from kombu import Queue
 from kombu.exceptions import EncodeError
 
-from celery import Task, group, uuid
+from celery import Task, chain, group, uuid
 from celery.app.task import _reprtask
 from celery.canvas import StampingVisitor, signature
 from celery.contrib.testing.mocks import ContextMock
@@ -1195,6 +1195,15 @@ class test_tasks(TasksCase):
         self.mytask.request.id = 'id'
         self.mytask.request.group = 'group'
         self.mytask.request.root_id = 'root_id',
+        with pytest.raises(Ignore):
+            self.mytask.replace(c)
+
+    def test_replace_chain(self):
+        c = chain([self.mytask.si(), self.mytask.si()], app=self.app)
+        c.freeze = Mock(name='freeze')
+        c.delay = Mock(name='delay')
+        self.mytask.request.id = 'id'
+        self.mytask.request.chain = c
         with pytest.raises(Ignore):
             self.mytask.replace(c)
 
