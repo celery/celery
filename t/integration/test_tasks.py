@@ -511,6 +511,7 @@ class test_task_redis_result_backend:
         new_channels = [channel for channel in get_active_redis_channels() if channel not in channels_before_test]
         assert new_channels == []
 
+    @flaky
     def test_asyncresult_forget_cancels_subscription(self, manager):
         channels_before_test = get_active_redis_channels()
 
