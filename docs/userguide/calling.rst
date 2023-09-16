@@ -315,7 +315,7 @@ either as seconds after task publish, or a specific date and time using
     >>> # Also supports datetime
     >>> from datetime import datetime, timedelta
     >>> add.apply_async((10, 10), kwargs,
-    ...                 expires=datetime.now() + timedelta(days=1)
+    ...                 expires=datetime.now() + timedelta(days=1))
 
 
 When a worker receives an expired task it will mark
@@ -555,7 +555,7 @@ msgpack -- msgpack is a binary serialization format that's closer to JSON
 
     See http://msgpack.org/ for more information.
 
-To use a custom serializer you need add the content type to
+To use a custom serializer you need to add the content type to
 :setting:`accept_content`. By default, only JSON is accepted,
 and tasks containing other content headers are rejected.
 
