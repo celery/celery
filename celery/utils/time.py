@@ -14,6 +14,7 @@ from types import ModuleType
 from typing import Any, Callable
 
 from dateutil import tz as dateutil_tz
+from dateutil.parser import isoparse
 from kombu.utils.functional import reprcall
 from kombu.utils.objects import cached_property
 
@@ -288,7 +289,7 @@ def maybe_iso8601(dt: datetime | str | None) -> None | datetime:
         return
     if isinstance(dt, datetime):
         return dt
-    return datetime.fromisoformat(dt)
+    return isoparse(dt)
 
 
 def is_naive(dt: datetime) -> bool:

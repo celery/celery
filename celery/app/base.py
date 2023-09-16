@@ -9,6 +9,7 @@ from datetime import datetime
 from operator import attrgetter
 
 from click.exceptions import Exit
+from dateutil.parser import isoparse
 from kombu import pools
 from kombu.clocks import LamportClock
 from kombu.common import oid_from
@@ -740,7 +741,7 @@ class Celery:
                     expires) - self.now()).total_seconds()
             elif isinstance(expires, str):
                 expires_s = (maybe_make_aware(
-                    datetime.fromisoformat(expires)) - self.now()).total_seconds()
+                    isoparse(expires)) - self.now()).total_seconds()
             else:
                 expires_s = expires
 
