@@ -954,11 +954,20 @@ class Task:
             root_id=self.request.root_id,
             replaced_task_nesting=replaced_task_nesting
         )
+
+        # If the replaced task is a chain, we want to set all of the chain tasks
+        # with the same replaced_task_nesting value to mark their replacement nesting level
+        if isinstance(sig, _chain):
+            for chain_task in maybe_list(sig.tasks) or []:
+                chain_task.set(replaced_task_nesting=replaced_task_nesting)
+
         # If the task being replaced is part of a chain, we need to re-create
         # it with the replacement signature - these subsequent tasks will
         # retain their original task IDs as well
         for t in reversed(self.request.chain or []):
-            sig |= signature(t, app=self.app)
+            chain_task = signature(t, app=self.app)
+            chain_task.set(replaced_task_nesting=replaced_task_nesting)
+            sig |= chain_task
         return self.on_replace(sig)
 
     def add_to_chord(self, sig, lazy=False):
