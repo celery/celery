@@ -164,7 +164,8 @@ before all changes are persisted to the database. For example:
 
     # views.py
     def create_user(request):
-        # Note: this is a simplified example, in reality you should use a form
+        # Note: this is a simplified example
+        # in reality you should use a form
         user = User.objects.create(username=request.POST['username'])
         send_email.delay(user.pk)
         return HttpResponse('User created')
@@ -208,7 +209,7 @@ In rare cases where you want to trigger a task without waiting, the existing
 
 If your app :ref:`uses a custom task base class <task-custom-classes>`, you'll
 need inherit from :class:`~celery.contrib.django.task.DjangoTask` instead of
-:class:`~celery.app.Task` to get this behaviour.
+:class:`~celery.app.task.Task` to get this behaviour.
 
 Extensions
 ==========
