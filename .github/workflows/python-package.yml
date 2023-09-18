@@ -36,7 +36,7 @@ jobs:
               os: "windows-latest"
             - python-version: 'pypy-3.10'
               os: "windows-latest"
-            
+
     steps:
     - name: Install apt packages
       if: startsWith(matrix.os, 'ubuntu-')
