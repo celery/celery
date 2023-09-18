@@ -187,6 +187,8 @@ after the transaction has been committed:
     - send_email.delay(user.pk)
     + transaction.on_commit(lambda: send_email.delay(user.pk))
 
+.. versionadded:: 5.4
+
 However, since this is such a common pattern, Celery provides a handy shortcut
 for this. It uses a task specialised for Django
 :class:``celery.contrib.django.task.DjangoTask``.
