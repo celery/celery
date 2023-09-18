@@ -308,7 +308,7 @@ The Primitives
 The primitives are also signature objects themselves, so that they can be combined
 in any number of ways to compose complex work-flows.
 
-Here's some examples:
+Here're some examples:
 
 - Simple chain
 
@@ -389,7 +389,7 @@ Here's some examples:
         >>> res.get()
         90
 
-    The above example creates 10 task that all start in parallel,
+    The above example creates 10 tasks that all start in parallel,
     and when all of them are complete the return values are combined
     into a list and sent to the ``tsum`` task.
 
@@ -706,7 +706,7 @@ a linked callback signature.
 Additionally, linking the task will *not* guarantee that it will activate only
 when all group tasks have finished.
 As an example, the following snippet using a simple `add(a, b)` task is faulty
-since the linked `add.s()` signature will not received the finalised group
+since the linked `add.s()` signature will not receive the finalised group
 result as one might expect.
 
 .. code-block:: pycon
@@ -1085,7 +1085,7 @@ of parallelism, but this is rarely true for a busy cluster
 and in practice since you're avoiding the overhead  of messaging
 it may considerably increase performance.
 
-To create a chunks signature you can use :meth:`@Task.chunks`:
+To create a chunks' signature you can use :meth:`@Task.chunks`:
 
 .. code-block:: pycon
 
@@ -1232,7 +1232,7 @@ the external monitoring system, etc.
         def on_signature(self, sig, **headers) -> dict:
             return {'monitoring_id': uuid4().hex, 'stamped_headers': ['monitoring_id']}
 
-Next, lets see how to use the ``MonitoringIdStampingVisitor`` example stamping visitor.
+Next, let's see how to use the ``MonitoringIdStampingVisitor`` example stamping visitor.
 
 .. code-block:: python
 
@@ -1261,7 +1261,7 @@ visitor will be applied to the callback as well.
 
     The callback must be linked to the signature before stamping.
 
-For example, lets examine the following custom stamping visitor.
+For example, let's examine the following custom stamping visitor.
 
 .. code-block:: python
 
