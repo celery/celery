@@ -190,11 +190,11 @@ after the transaction has been committed:
 .. versionadded:: 5.4
 
 However, since this is such a common pattern, Celery provides a handy shortcut
-for this. It uses a task specialised for Django
-:class:``celery.contrib.django.task.DjangoTask``.
+for this. It uses a task :class:`~celery.contrib.django.task.DjangoTask`, specialised
+for Django usage.
 
-This task should be used automatically. Instead of calling ``.delay()``, you'd
-call ``.delay_on_commit()``:
+This task should be used automatically if you follow the setup steps above.
+Instead of calling ``.delay()``, you'd call ``.delay_on_commit()``:
 
 .. code-block:: diff
 
@@ -205,6 +205,10 @@ call ``.delay_on_commit()``:
 This API takes care of wrapping the call into the ``on_commit`` hook for you.
 In rare cases where you want to trigger a task without waiting, the existing
 ``.delay()`` API is still available.
+
+If your app :ref:`uses a custom task base class <task-custom-classes>`, you'll
+need inherit from :class:`~celery.contrib.django.task.DjangoTask` instead of
+:class:`~celery.app.Task` to get this behaviour.
 
 Extensions
 ==========

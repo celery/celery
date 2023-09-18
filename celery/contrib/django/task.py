@@ -10,9 +10,9 @@ from celery.app.task import Task as BaseTask
 
 class DjangoTask(BaseTask):
     """
-    Extend the base task to work nicely with Django.
+    Extend the base :class:`~celery.app.task.Task` for Django.
 
-    Provide a better API to trigger tasks at the end of the DB transaction.
+    Provide a nicer API to trigger tasks at the end of the DB transaction.
     """
 
     def delay_on_commit(self, *args, **kwargs):
