@@ -5,7 +5,7 @@ from django.db import transaction
 from celery.app.task import Task as BaseTask
 
 
-class Task(BaseTask):
+class DjangoTask(BaseTask):
     """
     Extend the base task to work nicely with Django.
 

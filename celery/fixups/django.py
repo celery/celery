@@ -79,7 +79,7 @@ class DjangoFixup:
         self.app.loader.now = self.now
 
         if not self.app._custom_task_cls_used:
-            self.app.task_cls = 'celery.contrib.django.task:Task'
+            self.app.task_cls = 'celery.contrib.django.task:DjangoTask'
 
         signals.import_modules.connect(self.on_import_modules)
         signals.worker_init.connect(self.on_worker_init)

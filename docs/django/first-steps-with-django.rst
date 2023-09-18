@@ -189,7 +189,7 @@ after the transaction has been committed:
 
 However, since this is such a common pattern, Celery provides a handy shortcut
 for this. It uses a task specialised for Django
-:class:``celery.contrib.django.task.Task``.
+:class:``celery.contrib.django.task.DjangoTask``.
 
 This task should be used automatically. Instead of calling ``.delay()``, you'd
 call ``.delay_on_commit()``:

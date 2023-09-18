@@ -104,8 +104,8 @@ class test_DjangoFixup(FixupCase):
             assert self.app.loader.now == f.now
 
             # Specialized Task class is used
-            assert self.app.task_cls == 'celery.contrib.django.task:Task'
-            from celery.contrib.django.task import Task as DjangoTask
+            assert self.app.task_cls == 'celery.contrib.django.task:DjangoTask'
+            from celery.contrib.django.task import DjangoTask
             assert issubclass(f.app.Task, DjangoTask)
             assert hasattr(f.app.Task, 'delay_on_commit')
             assert hasattr(f.app.Task, 'apply_async_on_commit')

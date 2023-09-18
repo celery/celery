@@ -12,8 +12,8 @@ import pytest
 class test_DjangoTask:
     @pytest.fixture
     def task_instance(self):
-        from celery.contrib.django.task import Task
-        yield Task()
+        from celery.contrib.django.task import DjangoTask
+        yield DjangoTask()
 
     @pytest.fixture(name="on_commit")
     def on_commit(self):
