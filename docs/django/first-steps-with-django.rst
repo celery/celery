@@ -156,7 +156,7 @@ concrete app instance:
 Trigger tasks at the end of the database transaction
 ----------------------------------------------------
 
-A common pitfall with Django is trigger a task immediately and not wait until
+A common pitfall with Django is triggering a task immediately and not wait until
 the end of the database transaction, which means that the Celery task may run
 before all changes are persisted to the database. For example:
 
@@ -164,8 +164,7 @@ before all changes are persisted to the database. For example:
 
     # views.py
     def create_user(request):
-        # Note: this is a simplified example
-        # in reality you should use a form
+        # Note: simplified example, use a form to validate input
         user = User.objects.create(username=request.POST['username'])
         send_email.delay(user.pk)
         return HttpResponse('User created')
@@ -194,7 +193,8 @@ after the transaction has been committed:
 
 Since this is such a common pattern, Celery 5.4 introduced a handy shortcut for this,
 using a :class:`~celery.contrib.django.task.DjangoTask`. Instead of calling
-``.delay()``, you should call ``.delay_on_commit()``:
+:meth:`~celery.app.task.Task.delay`, you should call
+:meth:`~celery.contrib.django.task.DjangoTask.delay_on_commit`:
 
 .. code-block:: diff
 
@@ -202,9 +202,9 @@ using a :class:`~celery.contrib.django.task.DjangoTask`. Instead of calling
     + send_email.delay_on_commit(user.pk)
 
 
-This API takes care of wrapping the call into the ``on_commit`` hook for you.
+This API takes care of wrapping the call into the `on_commit`_ hook for you.
 In rare cases where you want to trigger a task without waiting, the existing
-``.delay()`` API is still available.
+:meth:`~celery.app.task.Task.delay` API is still available.
 
 This task class should be used automatically if you've follow the setup steps above.
 However, if your app :ref:`uses a custom task base class <task-custom-classes>`,
