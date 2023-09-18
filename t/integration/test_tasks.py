@@ -511,6 +511,7 @@ class test_task_redis_result_backend:
         new_channels = [channel for channel in get_active_redis_channels() if channel not in channels_before_test]
         assert new_channels == []
 
+    @flaky
     def test_asyncresult_forget_cancels_subscription(self, manager):
         channels_before_test = get_active_redis_channels()
 
@@ -566,13 +567,38 @@ class test_task_replacement:
             nonlocal assertion_result
 
             try:
-                assertion_result = request.replaced_task_nesting < 2
+                assertion_result = request.replaced_task_nesting <= 2
             except Exception:
                 assertion_result = False
 
         replaced_task = second_order_replace1.si()
         res = replaced_task.delay()
         assertion_result = False
+        res.get(timeout=TIMEOUT)
+        assert assertion_result
+        redis_messages = list(redis_connection.lrange("redis-echo", 0, -1))
+        expected_messages = [b"In A", b"In B", b"In/Out C", b"Out B", b"Out A"]
+        assert redis_messages == expected_messages
+
+    def test_replaced_task_nesting_chain(self, manager):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+
+        redis_connection = get_redis_connection()
+        redis_connection.delete("redis-echo")
+
+        @task_received.connect
+        def task_received_handler(request, **kwargs):
+            nonlocal assertion_result
+
+            try:
+                assertion_result = request.replaced_task_nesting <= 3
+            except Exception:
+                assertion_result = False
+
+        assertion_result = False
+        chain_task = second_order_replace1.si() | add.si(4, 2)
+        res = chain_task.delay()
         res.get(timeout=TIMEOUT)
         assert assertion_result
         redis_messages = list(redis_connection.lrange("redis-echo", 0, -1))

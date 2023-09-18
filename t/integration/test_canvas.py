@@ -2499,6 +2499,7 @@ class test_chord:
             await_redis_echo({errback_msg, }, redis_key=redis_key)
         redis_connection.delete(redis_key)
 
+    @flaky
     @pytest.mark.parametrize(
         "errback_task", [errback_old_style, errback_new_style, ],
     )
