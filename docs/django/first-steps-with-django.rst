@@ -180,8 +180,10 @@ In this case, the ``send_email`` task could start before the view has committed
 the transaction to the database, and therefore the task may not be able to find
 the user.
 
-A common solution is to use Django's ``on_commit`` hook to trigger the task
+A common solution is to use Django's `on_commit`_ hook to trigger the task
 after the transaction has been committed:
+
+.. _on_commit: https://docs.djangoproject.com/en/stable/topics/db/transactions/#django.db.transaction.on_commit
 
 .. code-block:: diff
 
@@ -190,12 +192,9 @@ after the transaction has been committed:
 
 .. versionadded:: 5.4
 
-However, since this is such a common pattern, Celery provides a handy shortcut
-for this. It uses a task :class:`~celery.contrib.django.task.DjangoTask`, specialised
-for Django usage.
-
-This task should be used automatically if you follow the setup steps above.
-Instead of calling ``.delay()``, you'd call ``.delay_on_commit()``:
+Since this is such a common pattern, Celery 5.4 introduced a handy shortcut for this,
+using a :class:`~celery.contrib.django.task.DjangoTask`. Instead of calling
+``.delay()``, you should call ``.delay_on_commit()``:
 
 .. code-block:: diff
 
@@ -207,8 +206,9 @@ This API takes care of wrapping the call into the ``on_commit`` hook for you.
 In rare cases where you want to trigger a task without waiting, the existing
 ``.delay()`` API is still available.
 
-If your app :ref:`uses a custom task base class <task-custom-classes>`, you'll
-need inherit from :class:`~celery.contrib.django.task.DjangoTask` instead of
+This task class should be used automatically if you've follow the setup steps above.
+However, if your app :ref:`uses a custom task base class <task-custom-classes>`,
+you'll need inherit from :class:`~celery.contrib.django.task.DjangoTask` instead of
 :class:`~celery.app.task.Task` to get this behaviour.
 
 Extensions
