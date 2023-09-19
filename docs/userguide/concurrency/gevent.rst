@@ -55,6 +55,13 @@ Examples
 See the `gevent examples`_ directory in the Celery distribution for
 some examples taking use of Eventlet support.
 
+Known issues
+============
+There is a known issue using python 3.11 and gevent.
+The issue is documented `here`_ and addressed in a `gevent issue`_.
+Upgrading to greenlet 3.0 solves it.
+
+
 .. _events: http://www.gevent.org/api/gevent.event.html#gevent.event.Event
 .. _queues: http://www.gevent.org/api/gevent.queue.html#gevent.queue.Queue
 .. _`gevent`: http://www.gevent.org/
@@ -71,3 +78,5 @@ some examples taking use of Eventlet support.
 .. _open source projects based on gevent: https://github.com/gevent/gevent/wiki/Projects
 .. _what's new: http://www.gevent.org/whatsnew_1_5.html
 .. _changelog: http://www.gevent.org/changelog.html
+.. _here: https://github.com/celery/celery/issues/8425
+.. _gevent issue: https://github.com/gevent/gevent/issues/1985
