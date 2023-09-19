@@ -31,7 +31,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
     """
 
     index = 'celery'
-    doc_type = 'backend'
+    doc_type = None
     scheme = 'http'
     host = 'localhost'
     port = 9200
@@ -108,11 +108,17 @@ class ElasticsearchBackend(KeyValueStoreBackend):
             pass
 
     def _get(self, key):
-        return self.server.get(
-            index=self.index,
-            doc_type=self.doc_type,
-            id=key,
-        )
+        if self.doc_type:
+            return self.server.get(
+                index=self.index,
+                id=key,
+                doc_type=self.doc_type,
+            )
+        else:
+            return self.server.get(
+                index=self.index,
+                id=key,
+            )
 
     def _set_with_state(self, key, value, state):
         body = {
@@ -135,14 +141,23 @@ class ElasticsearchBackend(KeyValueStoreBackend):
 
     def _index(self, id, body, **kwargs):
         body = {bytes_to_str(k): v for k, v in body.items()}
-        return self.server.index(
-            id=bytes_to_str(id),
-            index=self.index,
-            doc_type=self.doc_type,
-            body=body,
-            params={'op_type': 'create'},
-            **kwargs
-        )
+        if self.doc_type:
+            return self.server.index(
+                id=bytes_to_str(id),
+                index=self.index,
+                doc_type=self.doc_type,
+                body=body,
+                params={'op_type': 'create'},
+                **kwargs
+            )
+        else:
+            return self.server.index(
+                id=bytes_to_str(id),
+                index=self.index,
+                body=body,
+                params={'op_type': 'create'},
+                **kwargs
+            )
 
     def _update(self, id, body, state, **kwargs):
         """Update state in a conflict free manner.
@@ -182,14 +197,23 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         prim_term = res_get.get('_primary_term', 1)
 
         # try to update document with current seq_no and primary_term
-        res = self.server.update(
-            id=bytes_to_str(id),
-            index=self.index,
-            doc_type=self.doc_type,
-            body={'doc': body},
-            params={'if_primary_term': prim_term, 'if_seq_no': seq_no},
-            **kwargs
-        )
+        if self.doc_type:
+            res = self.server.update(
+                id=bytes_to_str(id),
+                index=self.index,
+                doc_type=self.doc_type,
+                body={'doc': body},
+                params={'if_primary_term': prim_term, 'if_seq_no': seq_no},
+                **kwargs
+            )
+        else:
+            res = self.server.update(
+                id=bytes_to_str(id),
+                index=self.index,
+                body={'doc': body},
+                params={'if_primary_term': prim_term, 'if_seq_no': seq_no},
+                **kwargs
+            )
         # result is elastic search update query result
         # noop = query did not update any document
         # updated = at least one document got updated
@@ -225,21 +249,33 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         return [self.get(key) for key in keys]
 
     def delete(self, key):
-        self.server.delete(index=self.index, doc_type=self.doc_type, id=key)
+        if self.doc_type:
+            self.server.delete(index=self.index, id=key, doc_type=self.doc_type)
+        else:
+            self.server.delete(index=self.index, id=key)
 
     def _get_server(self):
         """Connect to the Elasticsearch server."""
         http_auth = None
         if self.username and self.password:
             http_auth = (self.username, self.password)
-        return elasticsearch.Elasticsearch(
-            f'{self.host}:{self.port}',
-            retry_on_timeout=self.es_retry_on_timeout,
-            max_retries=self.es_max_retries,
-            timeout=self.es_timeout,
-            scheme=self.scheme,
-            http_auth=http_auth,
-        )
+        if elasticsearch.VERSION[0] <= 7:
+            return elasticsearch.Elasticsearch(
+                f'{self.host}:{self.port}',
+                retry_on_timeout=self.es_retry_on_timeout,
+                max_retries=self.es_max_retries,
+                timeout=self.es_timeout,
+                scheme=self.scheme,
+                http_auth=http_auth,
+            )
+        else:
+            return elasticsearch.Elasticsearch(
+                f'{self.scheme}://{self.host}:{self.port}',
+                retry_on_timeout=self.es_retry_on_timeout,
+                max_retries=self.es_max_retries,
+                timeout=self.es_timeout,
+                http_auth=http_auth,
+            )
 
     @property
     def server(self):
