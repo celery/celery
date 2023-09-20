@@ -119,16 +119,16 @@ RUN pyenv exec python3.8 -m pip install \
   -r requirements/test-integration.txt \
   -r requirements/test-pypy3.txt \
   -r requirements/test.txt && \
-    pyenv exec python3.11 -m pip install \
-    -r requirements/default.txt \
-    -r requirements/dev.txt \
-    -r requirements/docs.txt \
-    -r requirements/pkgutils.txt \
-    -r requirements/test-ci-base.txt \
-    -r requirements/test-ci-default.txt \
-    -r requirements/test-integration.txt \
-    -r requirements/test-pypy3.txt \
-    -r requirements/test.txt
+  pyenv exec python3.11 -m pip install \
+  -r requirements/default.txt \
+  -r requirements/dev.txt \
+  -r requirements/docs.txt \
+  -r requirements/pkgutils.txt \
+  -r requirements/test-ci-base.txt \
+  -r requirements/test-ci-default.txt \
+  -r requirements/test-integration.txt \
+  -r requirements/test-pypy3.txt \
+  -r requirements/test.txt
 
 WORKDIR $HOME/celery
 
