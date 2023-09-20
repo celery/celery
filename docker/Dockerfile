@@ -132,6 +132,8 @@ RUN pyenv exec python3.8 -m pip install \
 
 WORKDIR $HOME/celery
 
+RUN git config --global --add safe.directory /home/developer/celery
+
 # Setup the entrypoint, this ensures pyenv is initialized when a container is started
 # and that any compiled files from earlier steps or from mounts are removed to avoid
 # pytest failing with an ImportMismatchError
