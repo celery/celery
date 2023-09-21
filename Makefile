@@ -188,7 +188,7 @@ docker-unit-tests:
 
 # Integration tests are not fully supported when running in a docker container yet so we allow them to
 # gracefully fail until fully supported.
-# TODO: Add CI & Documentation (in help command) when fully supported.
+# TODO: Add documentation (in help command) when fully supported.
 .PHONY: docker-integration-tests
 docker-integration-tests:
 	@docker-compose -f docker/docker-compose.yml run --rm -w /home/developer/celery celery tox -e 3.11-integration-docker -- --maxfail=1000
