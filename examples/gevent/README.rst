@@ -46,7 +46,6 @@ To open several URLs at once you can do::
     ...     print(incoming_result)
 
 
-
 This is a simple recursive web crawler.  It will only crawl
 URLs for the current host name.  Please see comments in the
 `webcrawler.py` file.
