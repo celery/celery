@@ -74,7 +74,7 @@ COPY --chown=1000:1000 docker/entrypoint /entrypoint
 RUN chmod gu+x /entrypoint
 
 # Define the local pyenvs
-RUN pyenv local 3.8 3.9 3.10 3.11
+RUN pyenv local 3.11 3.10 3.9 3.8
 
 RUN pyenv exec python3.8 -m pip install --upgrade pip setuptools wheel && \
     pyenv exec python3.9 -m pip install --upgrade pip setuptools wheel && \
