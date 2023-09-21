@@ -59,7 +59,6 @@ There is a known issue using python 3.11 and gevent.
 The issue is documented `here`_ and addressed in a `gevent issue`_.
 Upgrading to greenlet 3.0 solves it.
 
-
 .. _events: http://www.gevent.org/api/gevent.event.html#gevent.event.Event
 .. _queues: http://www.gevent.org/api/gevent.queue.html#gevent.queue.Queue
 .. _`gevent`: http://www.gevent.org/
