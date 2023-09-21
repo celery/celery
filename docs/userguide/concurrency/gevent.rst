@@ -38,7 +38,6 @@ gevent`_.
 Enabling gevent
 =================
 
-
 You can enable the gevent pool by using the
 :option:`celery worker -P gevent` or  :option:`celery worker --pool=gevent`
 worker option.
