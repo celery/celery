@@ -15,7 +15,6 @@ or `libuv`_ event loop.
 
 Features include:
 
-
 * Fast event loop based on `libev`_ or `libuv`_.
 * Lightweight execution units based on greenlets.
 * API that re-uses concepts from the Python standard library (for
