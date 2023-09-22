@@ -5,10 +5,10 @@ try:
 except ImportError:
     transaction = None
 
-from celery.app.task import Task as BaseTask
+from celery.app.task import Task
 
 
-class DjangoTask(BaseTask):
+class DjangoTask(Task):
     """
     Extend the base :class:`~celery.app.task.Task` for Django.
 
