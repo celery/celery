@@ -33,8 +33,8 @@ jobs:
     timeout-minutes: 10
     steps:
     - uses: actions/checkout@v4
-    - name: "Build smoke tests container: celery4"
-      run: docker build -f t/smoke/workers/celery4 .
+    - name: "Build smoke tests container: pypi - celery 4"
+      run: docker build -f t/smoke/workers/pypi --build-arg CELERY_VERSION="4" .
 
   smoke-tests_dev:
     runs-on: ubuntu-latest

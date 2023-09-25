@@ -9,13 +9,13 @@ from pytest_celery.containers.worker import CeleryWorkerContainer
 from pytest_docker_tools import build, container, fxtr
 
 from celery import Celery
-from t.smoke.workers import Celery4WorkerContainer, SmokeWorkerContainer
+from t.smoke.workers import Celery4WorkerContainer, CeleryLatestWorkerContainer, SmokeWorkerContainer
 
 # Celery 4.x
 
 celery4_worker_image = build(
     path=".",
-    dockerfile="t/smoke/workers/celery4",
+    dockerfile="t/smoke/workers/pypi",
     tag="t/smoke/worker:celery4",
     buildargs=Celery4WorkerContainer.buildargs(),
 )
@@ -32,13 +32,44 @@ celery4_worker_container = container(
 
 
 @pytest.fixture
-def celery4_worker(celery4_worker_container: CeleryWorkerContainer, celery_setup_app: Celery) -> CeleryTestWorker:
+def celery4_worker(
+    celery4_worker_container: Celery4WorkerContainer,
+    celery_setup_app: Celery,
+) -> CeleryTestWorker:
     yield CeleryTestWorker(celery4_worker_container, app=celery_setup_app)
 
 
-# Dev worker
+# Celery Latest (last officially released version)
 
-smoke_worker_image = build(
+celery_latest_worker_image = build(
+    path=".",
+    dockerfile="t/smoke/workers/latest",
+    tag="t/smoke/worker:latest",
+    buildargs=CeleryLatestWorkerContainer.buildargs(),
+)
+
+
+celery_latest_worker_container = container(
+    image="{celery_latest_worker_image.id}",
+    environment=fxtr("default_worker_env"),
+    network="{DEFAULT_NETWORK.name}",
+    volumes={"{default_worker_volume.name}": defaults.DEFAULT_WORKER_VOLUME},
+    wrapper_class=CeleryLatestWorkerContainer,
+    timeout=defaults.DEFAULT_WORKER_CONTAINER_TIMEOUT,
+)
+
+
+@pytest.fixture
+def celery_latest_worker(
+    celery_latest_worker_container: CeleryLatestWorkerContainer,
+    celery_setup_app: Celery,
+) -> CeleryTestWorker:
+    yield CeleryTestWorker(celery_latest_worker_container, app=celery_setup_app)
+
+
+# Dev worker that overrides the default pytest-celery worker
+
+celery_dev_worker_image = build(
     path=".",
     dockerfile="t/smoke/workers/dev",
     tag="t/smoke/worker:dev",
@@ -47,7 +78,7 @@ smoke_worker_image = build(
 
 
 default_worker_container = container(
-    image="{smoke_worker_image.id}",
+    image="{celery_dev_worker_image.id}",
     environment=fxtr("default_worker_env"),
     network="{DEFAULT_NETWORK.name}",
     volumes={
@@ -95,7 +126,7 @@ def default_worker_tasks() -> set:
     # Each param item is a list of workers to be used in the cluster
     params=[
         ["celery_setup_worker"],
-        ["celery_setup_worker", "celery4_worker"],
+        ["celery_setup_worker", "celery4_worker", "celery_latest_worker"],
     ]
 )
 def celery_worker_cluster(request: pytest.FixtureRequest) -> CeleryWorkerCluster:
