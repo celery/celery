@@ -126,6 +126,8 @@ def default_worker_tasks() -> set:
     # Each param item is a list of workers to be used in the cluster
     params=[
         ["celery_setup_worker"],
+        ["celery_setup_worker", "celery4_worker"],
+        ["celery_setup_worker", "celery_latest_worker"],
         ["celery_setup_worker", "celery4_worker", "celery_latest_worker"],
     ]
 )
