@@ -1,3 +1,4 @@
+import os
 from collections.abc import Iterable
 from time import sleep
 
@@ -6,7 +7,12 @@ from celery.canvas import StampingVisitor, signature
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 
-from .conftest import get_redis_connection
+
+def get_redis_connection():
+    from redis import StrictRedis
+
+    return StrictRedis(host=os.environ.get("REDIS_HOST"))
+
 
 logger = get_task_logger(__name__)
 

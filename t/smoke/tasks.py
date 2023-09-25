@@ -1,11 +1,8 @@
 from celery import shared_task
+from celery.utils import noop as celery_noop
+from t.integration.tasks import *  # noqa
 
 
 @shared_task
-def identity(x):
-    return x
-
-
-@shared_task
-def add(x, y):
-    return x + y
+def noop(*args, **kwargs) -> None:
+    return celery_noop(*args, **kwargs)
