@@ -2,17 +2,15 @@ from typing import Any
 
 from pytest_celery.containers.worker import CeleryWorkerContainer
 
-import celery
 
-
-class SmokeWorkerContainer(CeleryWorkerContainer):
+class Celery4WorkerContainer(CeleryWorkerContainer):
     @property
     def client(self) -> Any:
         return self
 
     @classmethod
     def version(cls) -> str:
-        return celery.__version__
+        return "4.4.7"  # Last version of 4.x
 
     @classmethod
     def log_level(cls) -> str:
@@ -20,8 +18,8 @@ class SmokeWorkerContainer(CeleryWorkerContainer):
 
     @classmethod
     def worker_name(cls) -> str:
-        return "celery_smoke_worker"
+        return "celery4_tests_worker"
 
     @classmethod
     def worker_queue(cls) -> str:
-        return "celery_smoke_tests"
+        return "celery4_tests_queue"
