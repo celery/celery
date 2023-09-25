@@ -53,6 +53,12 @@ help:
 	@echo "bump-minor           - Bump minor version number."
 	@echo "bump-major           - Bump major version number."
 	@echo "release              - Make PyPI release."
+	@echo ""
+	@echo "Docker-specific commands:"
+	@echo "  docker-build			- Build celery docker container."
+	@echo "  docker-lint        		- Run tox -e lint on docker container."
+	@echo "  docker-unit-tests		- Run unit tests on docker container, use '-- -k <TEST NAME>' for specific test run."
+	@echo "  docker-bash        		- Get a bash shell inside the container."
 
 clean: clean-docs clean-pyc clean-build
 
@@ -167,3 +173,30 @@ graph: clean-graph $(WORKER_GRAPH)
 
 authorcheck:
 	git shortlog -se | cut -f2 | extra/release/attribution.py
+
+.PHONY: docker-build
+docker-build:
+	@docker-compose -f docker/docker-compose.yml build
+
+.PHONY: docker-lint
+docker-lint:
+	@docker-compose -f docker/docker-compose.yml run --rm -w /home/developer/celery celery tox -e lint
+
+.PHONY: docker-unit-tests
+docker-unit-tests:
+	@docker-compose -f docker/docker-compose.yml run --rm -w /home/developer/celery celery tox -e 3.11-unit -- $(filter-out $@,$(MAKECMDGOALS))
+
+# Integration tests are not fully supported when running in a docker container yet so we allow them to
+# gracefully fail until fully supported.
+# TODO: Add documentation (in help command) when fully supported.
+.PHONY: docker-integration-tests
+docker-integration-tests:
+	@docker-compose -f docker/docker-compose.yml run --rm -w /home/developer/celery celery tox -e 3.11-integration-docker -- --maxfail=1000
+
+.PHONY: docker-bash
+docker-bash:
+	@docker-compose -f docker/docker-compose.yml run --rm -w /home/developer/celery celery bash
+
+.PHONY: catch-all
+%: catch-all
+	@:

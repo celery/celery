@@ -74,7 +74,7 @@ COPY --chown=1000:1000 docker/entrypoint /entrypoint
 RUN chmod gu+x /entrypoint
 
 # Define the local pyenvs
-RUN pyenv local 3.8 3.9 3.10 3.11
+RUN pyenv local 3.11 3.10 3.9 3.8
 
 RUN pyenv exec python3.8 -m pip install --upgrade pip setuptools wheel && \
     pyenv exec python3.9 -m pip install --upgrade pip setuptools wheel && \
@@ -119,18 +119,20 @@ RUN pyenv exec python3.8 -m pip install \
   -r requirements/test-integration.txt \
   -r requirements/test-pypy3.txt \
   -r requirements/test.txt && \
-    pyenv exec python3.11 -m pip install \
-    -r requirements/default.txt \
-    -r requirements/dev.txt \
-    -r requirements/docs.txt \
-    -r requirements/pkgutils.txt \
-    -r requirements/test-ci-base.txt \
-    -r requirements/test-ci-default.txt \
-    -r requirements/test-integration.txt \
-    -r requirements/test-pypy3.txt \
-    -r requirements/test.txt
+  pyenv exec python3.11 -m pip install \
+  -r requirements/default.txt \
+  -r requirements/dev.txt \
+  -r requirements/docs.txt \
+  -r requirements/pkgutils.txt \
+  -r requirements/test-ci-base.txt \
+  -r requirements/test-ci-default.txt \
+  -r requirements/test-integration.txt \
+  -r requirements/test-pypy3.txt \
+  -r requirements/test.txt
 
 WORKDIR $HOME/celery
+
+RUN git config --global --add safe.directory /home/developer/celery
 
 # Setup the entrypoint, this ensures pyenv is initialized when a container is started
 # and that any compiled files from earlier steps or from mounts are removed to avoid

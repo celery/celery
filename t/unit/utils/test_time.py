@@ -101,6 +101,18 @@ def test_maybe_iso8601_datetime():
     assert maybe_iso8601(now) is now
 
 
+@pytest.mark.parametrize('date_str,expected', [
+    ('2011-11-04T00:05:23', datetime(2011, 11, 4, 0, 5, 23)),
+    ('2011-11-04T00:05:23Z', datetime(2011, 11, 4, 0, 5, 23, tzinfo=_timezone.utc)),
+    ('2011-11-04 00:05:23.283+00:00',
+     datetime(2011, 11, 4, 0, 5, 23, 283000, tzinfo=_timezone.utc)),
+    ('2011-11-04T00:05:23+04:00',
+     datetime(2011, 11, 4, 0, 5, 23,  tzinfo=_timezone(timedelta(seconds=14400)))),
+])
+def test_iso8601_string_datetime(date_str, expected):
+    assert maybe_iso8601(date_str) == expected
+
+
 @pytest.mark.parametrize('arg,expected', [
     (30, timedelta(seconds=30)),
     (30.6, timedelta(seconds=30.6)),
