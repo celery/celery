@@ -15,7 +15,7 @@ from t.smoke.workers import Celery4WorkerContainer, SmokeWorkerContainer
 
 celery4_worker_image = build(
     path=".",
-    dockerfile="t/smoke/workers/4.4.7",
+    dockerfile="t/smoke/workers/celery4",
     tag="t/smoke/worker:celery4",
     buildargs=Celery4WorkerContainer.buildargs(),
 )
