@@ -1,3 +1,4 @@
+import os
 from typing import Type
 
 import pytest
@@ -14,12 +15,21 @@ smoke_worker_image = build(
     buildargs=SmokeWorkerContainer.buildargs(),
 )
 
+worker_volume = {
+    # Volume: Worker /app
+    "{default_worker_volume.name}": defaults.DEFAULT_WORKER_VOLUME,
+    # Mount: Celery source
+    os.path.abspath(os.getcwd()): {
+        "bind": "/celery",
+        "mode": "rw",
+    },
+}
 
 default_worker_container = container(
     image="{smoke_worker_image.id}",
     environment=fxtr("default_worker_env"),
     network="{DEFAULT_NETWORK.name}",
-    volumes={"{default_worker_volume.name}": defaults.DEFAULT_WORKER_VOLUME},
+    volumes=worker_volume,
     wrapper_class=SmokeWorkerContainer,
     timeout=defaults.DEFAULT_WORKER_CONTAINER_TIMEOUT,
 )
