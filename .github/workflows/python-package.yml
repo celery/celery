@@ -153,4 +153,4 @@ jobs:
               timeout-minutes: 10
               run: >
                   tox --verbose --verbose -e
-                  "${{ matrix.python-version }}-smoke" -- -n auto --reruns 3 --rerun-except AssertionError
+                  "${{ matrix.python-version }}-smoke" -- --reruns 3 --rerun-except AssertionError

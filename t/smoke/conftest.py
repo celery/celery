@@ -67,7 +67,7 @@ def celery_latest_worker(
     yield CeleryTestWorker(celery_latest_worker_container, app=celery_setup_app)
 
 
-# Dev worker that overrides the default pytest-celery worker
+# Dev worker that overrides the default plugin worker
 
 celery_dev_worker_image = build(
     path=".",
