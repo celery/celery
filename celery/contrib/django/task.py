@@ -1,9 +1,6 @@
 import functools
 
-try:
-    from django.db import transaction
-except ImportError:
-    transaction = None
+from django.db import transaction
 
 from celery.app.task import Task
 
