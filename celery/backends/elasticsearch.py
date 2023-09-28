@@ -14,6 +14,11 @@ try:
 except ImportError:
     elasticsearch = None
 
+try:
+    import elastic_transport
+except ImportError:
+    elastic_transport = None
+
 __all__ = ('ElasticsearchBackend',)
 
 E_LIB_MISSING = """\
@@ -83,17 +88,17 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         self._server = None
 
     def exception_safe_to_retry(self, exc):
-        if isinstance(exc, (elasticsearch.exceptions.TransportError)):
+        if isinstance(exc, elasticsearch.exceptions.ApiError):
             # 401: Unauthorized
             # 409: Conflict
-            # 429: Too Many Requests
             # 500: Internal Server Error
             # 502: Bad Gateway
-            # 503: Service Unavailable
             # 504: Gateway Timeout
             # N/A: Low level exception (i.e. socket exception)
-            if exc.status_code in {401, 409, 429, 500, 502, 503, 504, 'N/A'}:
+            if exc.status_code in {401, 409, 500, 502, 504, 'N/A'}:
                 return True
+        if isinstance(exc , elasticsearch.exceptions.TransportError):
+            return True
         return False
 
     def get(self, key):
@@ -218,7 +223,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         # noop = query did not update any document
         # updated = at least one document got updated
         if res['result'] == 'noop':
-            raise elasticsearch.exceptions.ConflictError(409, 'conflicting update occurred concurrently', {})
+            raise elasticsearch.exceptions.ConflictError("conflicting update occurred concurrently", elastic_transport.ApiResponseMeta(409, "HTTP/1.1", elastic_transport.HttpHeaders(), 0, elastic_transport.NodeConfig(self.scheme ,self.host, self.port)), None)
         return res
 
     def encode(self, data):
