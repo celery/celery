@@ -82,7 +82,8 @@ class test_ElasticsearchBackend:
         x._server = Mock()
         x._server.get.side_effect = [
             exceptions.NotFoundError('{"_index":"celery","_type":"_doc","_id":"toto","found":false}',
-                                     ApiResponseMeta(404, "HTTP/1.1", HttpHeaders(), 0, NodeConfig("https","localhost",9200)),
+                                     ApiResponseMeta(404, "HTTP/1.1", HttpHeaders(), 0,
+                                                     NodeConfig("https", "localhost", 9200)),
                                      {'_index': 'celery', '_type': '_doc', '_id': 'toto', 'found': False})
         ]
 
@@ -125,7 +126,9 @@ class test_ElasticsearchBackend:
         x = ElasticsearchBackend(app=self.app)
         x._server = Mock()
         x._server.index.side_effect = [
-            exceptions.ConflictError("concurrent update", ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0, NodeConfig("https","localhost",9200)), None)
+            exceptions.ConflictError("concurrent update",
+                                     ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0,
+                                                     NodeConfig("https", "localhost", 9200)), None)
         ]
 
         x._server.get.return_value = {
@@ -163,7 +166,9 @@ class test_ElasticsearchBackend:
         x = ElasticsearchBackend(app=self.app)
         x._server = Mock()
         x._server.index.side_effect = [
-            exceptions.ConflictError("concurrent update", ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0, NodeConfig("https","localhost",9200)), None)
+            exceptions.ConflictError("concurrent update",
+                                     ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0,
+                                                     NodeConfig("https", "localhost", 9200)), None)
         ]
 
         x._server.get.return_value = {
@@ -206,7 +211,9 @@ class test_ElasticsearchBackend:
         x = ElasticsearchBackend(app=self.app)
         x._server = Mock()
         x._server.index.side_effect = [
-            exceptions.ConflictError("concurrent update", ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0, NodeConfig("https","localhost",9200)), None)
+            exceptions.ConflictError("concurrent update",
+                                     ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0,
+                                                     NodeConfig("https", "localhost", 9200)), None)
         ]
 
         x._server.get.return_value = {
@@ -244,7 +251,9 @@ class test_ElasticsearchBackend:
         x = ElasticsearchBackend(app=self.app)
         x._server = Mock()
         x._server.index.side_effect = [
-            exceptions.ConflictError("concurrent update", ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0, NodeConfig("https","localhost",9200)), None)
+            exceptions.ConflictError("concurrent update",
+                                     ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0,
+                                                     NodeConfig("https", "localhost", 9200)), None)
         ]
 
         x._server.get.return_value = {
@@ -279,7 +288,9 @@ class test_ElasticsearchBackend:
         x = ElasticsearchBackend(app=self.app)
         x._server = Mock()
         x._server.index.side_effect = [
-            exceptions.ConflictError("concurrent update", ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0, NodeConfig("https","localhost",9200)), None)
+            exceptions.ConflictError("concurrent update",
+                                     ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0,
+                                                     NodeConfig("https", "localhost", 9200)), None)
         ]
 
         x._server.get.return_value = {
@@ -351,7 +362,10 @@ class test_ElasticsearchBackend:
             sleep_mock = Mock()
             x._sleep = sleep_mock
             x._server = Mock()
-            x._server.index.side_effect = exceptions.ConflictError("concurrent update", ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0, NodeConfig("https","localhost",9200)), None)
+            x._server.index.side_effect = exceptions.ConflictError(
+                "concurrent update",
+                ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0, NodeConfig("https", "localhost", 9200)),
+                None)
             x._server.get.side_effect = x_server_get_side_effect
             x._server.update.side_effect = [
                 {'result': 'noop'},
@@ -433,7 +447,9 @@ class test_ElasticsearchBackend:
             x._sleep = sleep_mock
             x._server = Mock()
             x._server.index.side_effect = [
-                exceptions.ConflictError("concurrent update", ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0, NodeConfig("https","localhost",9200)), None),
+                exceptions.ConflictError("concurrent update",
+                                         ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0,
+                                                         NodeConfig("https", "localhost", 9200)), None),
                 {'result': 'created'}
             ]
 
@@ -444,11 +460,10 @@ class test_ElasticsearchBackend:
                     '_seq_no': 2,
                     '_primary_term': 1,
                 },
-                
                 exceptions.NotFoundError('{"_index":"celery","_type":"_doc","_id":"toto","found":false}',
-                                         ApiResponseMeta(404, "HTTP/1.1", HttpHeaders(), 0, NodeConfig("https","localhost",9200)),
-                                         {'_index': 'celery', '_type': '_doc',
-                                          '_id': 'toto', 'found': False}),
+                                         ApiResponseMeta(404, "HTTP/1.1", HttpHeaders(), 0,
+                                                         NodeConfig("https", "localhost", 9200)),
+                                         {'_index': 'celery', '_type': '_doc', '_id': 'toto', 'found': False}),
             ]
 
             result_meta = x._get_result_meta(result, states.SUCCESS, None, None)
@@ -503,7 +518,9 @@ class test_ElasticsearchBackend:
             x._sleep = sleep_mock
             x._server = Mock()
             x._server.index.side_effect = [
-                exceptions.ConflictError("concurrent update", ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0, NodeConfig("https","localhost",9200)), None),
+                exceptions.ConflictError("concurrent update",
+                                         ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0,
+                                                         NodeConfig("https", "localhost", 9200)), None),
                 {'result': 'created'}
             ]
 
@@ -569,7 +586,9 @@ class test_ElasticsearchBackend:
         x._sleep = sleep_mock
         x._server = Mock()
         x._server.index.side_effect = [
-            exceptions.ConflictError("concurrent update", ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0, NodeConfig("https","localhost",9200)), None)
+            exceptions.ConflictError("concurrent update",
+                                     ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0,
+                                                     NodeConfig("https", "localhost", 9200)), None)
         ]
 
         x._server.update.side_effect = [
@@ -628,7 +647,7 @@ class test_ElasticsearchBackend:
             x = app.backend
 
             assert x.index == 'celery'
-            assert x.doc_type == None
+            assert x.doc_type is None
             assert x.scheme == 'http'
             assert x.host == 'localhost'
             assert x.port == 9200
@@ -844,11 +863,13 @@ class test_ElasticsearchBackend:
         x = ElasticsearchBackend(app=self.app)
         assert not x.exception_safe_to_retry(Exception("failed"))
         assert not x.exception_safe_to_retry(BaseException("failed"))
-        #409
-        assert x.exception_safe_to_retry(exceptions.ConflictError("concurrent update", ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0, NodeConfig("https","localhost",9200)), None))
-        #503
+        assert x.exception_safe_to_retry(
+            exceptions.ConflictError("concurrent update",
+                                     ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0,
+                                                     NodeConfig("https", "localhost", 9200)), None))
         assert x.exception_safe_to_retry(exceptions.ConnectionError("service unavailable"))
-        #429
         assert x.exception_safe_to_retry(exceptions.TransportError("too many requests"))
-        #404
-        assert not x.exception_safe_to_retry(exceptions.NotFoundError("not found", ApiResponseMeta(404, "HTTP/1.1", HttpHeaders(), 0, NodeConfig("https","localhost",9200)), None))
+        assert not x.exception_safe_to_retry(
+            exceptions.NotFoundError("not found",
+                                     ApiResponseMeta(404, "HTTP/1.1", HttpHeaders(), 0,
+                                                     NodeConfig("https", "localhost", 9200)), None))

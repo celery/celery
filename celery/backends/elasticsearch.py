@@ -223,7 +223,11 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         # noop = query did not update any document
         # updated = at least one document got updated
         if res['result'] == 'noop':
-            raise elasticsearch.exceptions.ConflictError("conflicting update occurred concurrently", elastic_transport.ApiResponseMeta(409, "HTTP/1.1", elastic_transport.HttpHeaders(), 0, elastic_transport.NodeConfig(self.scheme ,self.host, self.port)), None)
+            raise elasticsearch.exceptions.ConflictError(
+                "conflicting update occurred concurrently",
+                elastic_transport.ApiResponseMeta(409, "HTTP/1.1",
+                                                  elastic_transport.HttpHeaders(), 0, elastic_transport.NodeConfig(
+                                                      self.scheme, self.host, self.port)), None)
         return res
 
     def encode(self, data):
