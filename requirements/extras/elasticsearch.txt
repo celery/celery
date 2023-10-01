@@ -1,2 +1,2 @@
 elasticsearch<=8.0.1
-elastic-transport
+elastic-transport==8.4.1
