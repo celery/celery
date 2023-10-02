@@ -1,1 +1,1 @@
-msgpack==1.0.6
+msgpack==1.0.7
