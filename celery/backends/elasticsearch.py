@@ -232,14 +232,24 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         http_auth = None
         if self.username and self.password:
             http_auth = (self.username, self.password)
-        return elasticsearch.Elasticsearch(
-            f'{self.host}:{self.port}',
-            retry_on_timeout=self.es_retry_on_timeout,
-            max_retries=self.es_max_retries,
-            timeout=self.es_timeout,
-            scheme=self.scheme,
-            http_auth=http_auth,
-        )
+        if ":" in self.host:
+            return elasticsearch.Elasticsearch(
+                f'[{self.host}]:{self.port}',
+                retry_on_timeout=self.es_retry_on_timeout,
+                max_retries=self.es_max_retries,
+                timeout=self.es_timeout,
+                scheme=self.scheme,
+                http_auth=http_auth,
+            )
+        else:
+            return elasticsearch.Elasticsearch(
+                f'{self.host}:{self.port}',
+                retry_on_timeout=self.es_retry_on_timeout,
+                max_retries=self.es_max_retries,
+                timeout=self.es_timeout,
+                scheme=self.scheme,
+                http_auth=http_auth,
+            )
 
     @property
     def server(self):
