@@ -656,6 +656,25 @@ beat` is started as an embedded process.
 
 Sender is the :class:`celery.beat.Service` instance.
 
+.. signal:: beat_shutting_down
+
+``beat_shutting_down``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Dispatched when the :program:`celery beat` begins the shutdown process.
+
+Sender is the :class:`celery.beat.Service` instance.
+
+.. signal:: beat_shutdown
+
+``beat_shutdown``
+~~~~~~~~~~~~~~~~~~~
+
+Dispatched when the :program:`celery beat` finished its shutdown process.
+
+Sender is the :class:`celery.beat.Service` instance.
+
+
 Eventlet Signals
 ----------------
 
