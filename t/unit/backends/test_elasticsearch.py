@@ -64,6 +64,23 @@ class test_ElasticsearchBackend:
             index=x.index,
         )
 
+    def test_get_with_doctype(self):
+        x = ElasticsearchBackend(app=self.app)
+        x._server = Mock()
+        x._server.get = Mock()
+        # expected result
+        x.doc_type = "_doc"
+        r = {'found': True, '_source': {'result': sentinel.result}}
+        x._server.get.return_value = r
+        dict_result = x.get(sentinel.task_id)
+
+        assert dict_result == sentinel.result
+        x._server.get.assert_called_once_with(
+            id=sentinel.task_id,
+            index=x.index,
+            doc_type=x.doc_type,
+        )
+
     def test_get_none(self):
         x = ElasticsearchBackend(app=self.app)
         x._server = Mock()
@@ -112,6 +129,19 @@ class test_ElasticsearchBackend:
             index=x.index,
         )
 
+    def test_delete_with_doctype(self):
+        x = ElasticsearchBackend(app=self.app)
+        x._server = Mock()
+        x._server.delete = Mock()
+        x._server.delete.return_value = sentinel.result
+        x.doc_type = "_doc"
+        assert x.delete(sentinel.task_id) is None
+        x._server.delete.assert_called_once_with(
+            id=sentinel.task_id,
+            index=x.index,
+            doc_type=x.doc_type,
+        )
+
     def test_backend_by_url(self, url='elasticsearch://localhost:9200/index'):
         backend, url_ = backends.by_url(url, self.app.loader)
 
@@ -154,6 +184,48 @@ class test_ElasticsearchBackend:
         x._server.update.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
+            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'}},
+            params={'if_seq_no': 2, 'if_primary_term': 1}
+        )
+
+    @patch('celery.backends.elasticsearch.datetime')
+    def test_index_conflict_with_doctype(self, datetime_mock):
+        expected_dt = datetime.datetime(2020, 6, 1, 18, 43, 24, 123456, None)
+        datetime_mock.utcnow.return_value = expected_dt
+
+        x = ElasticsearchBackend(app=self.app)
+        x._server = Mock()
+        x._server.index.side_effect = [
+            exceptions.ConflictError("concurrent update",
+                                     ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0,
+                                                     NodeConfig("https", "localhost", 9200)), None)
+        ]
+        x.doc_type = "_doc"
+        x._server.get.return_value = {
+            'found': True,
+            '_source': {"result": _RESULT_RETRY},
+            '_seq_no': 2,
+            '_primary_term': 1,
+        }
+
+        x._server.update.return_value = {
+            'result': 'updated'
+        }
+
+        x._set_with_state(sentinel.task_id, sentinel.result, sentinel.state)
+
+        assert x._server.get.call_count == 1
+        x._server.index.assert_called_once_with(
+            id=sentinel.task_id,
+            index=x.index,
+            doc_type=x.doc_type,
+            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'},
+            params={'op_type': 'create'},
+        )
+        x._server.update.assert_called_once_with(
+            id=sentinel.task_id,
+            index=x.index,
+            doc_type=x.doc_type,
             body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'}},
             params={'if_seq_no': 2, 'if_primary_term': 1}
         )
@@ -704,6 +776,31 @@ class test_ElasticsearchBackend:
         x._server.index.assert_called_once_with(
             id=str(sentinel.task_id),
             index=x.index,
+            body=body,
+            params={'op_type': 'create'},
+            kwarg1='test1'
+        )
+
+    def test_index_with_doctype(self):
+        x = ElasticsearchBackend(app=self.app)
+        x._server = Mock()
+        x._server.index = Mock()
+        expected_result = {
+            '_id': sentinel.task_id,
+            '_source': {'result': sentinel.result}
+        }
+        x._server.index.return_value = expected_result
+        x.doc_type = "_doc"
+        body = {"field1": "value1"}
+        x._index(
+            id=str(sentinel.task_id).encode(),
+            body=body,
+            kwarg1='test1'
+        )
+        x._server.index.assert_called_once_with(
+            id=str(sentinel.task_id),
+            index=x.index,
+            doc_type=x.doc_type,
             body=body,
             params={'op_type': 'create'},
             kwarg1='test1'
