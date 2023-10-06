@@ -46,7 +46,7 @@ class Mingle(bootsteps.StartStopStep):
              for nodename, reply in replies.items() if reply]
             info('mingle: sync complete')
         else:
-            info('mingle: all alone')
+            info('mingle: all alone 🥲')
 
     def send_hello(self, c):
         inspect = c.app.control.inspect(timeout=1.0, connection=c.connection)
