@@ -967,6 +967,13 @@ class test_EagerResult:
             res_subtask_async.get()
         res_subtask_async.get(disable_sync_subtasks=False)
 
+    def test_populate_name(self):
+        res = EagerResult('x', 'x', states.SUCCESS, None, 'test_task')
+        assert res.name == 'test_task'
+
+        res = EagerResult('x', 'x', states.SUCCESS, name='test_task_named_argument')
+        assert res.name == 'test_task_named_argument'
+
 
 class test_tuples:
 
