@@ -1432,6 +1432,7 @@ class test_apply_task(TasksCase):
 
         assert e.successful()
         assert e.ready()
+        assert e.name == 't.unit.tasks.test_tasks.increment_counter'
         assert repr(e).startswith('<EagerResult:')
 
         f = self.raising.apply()
