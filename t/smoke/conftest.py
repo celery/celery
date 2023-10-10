@@ -21,7 +21,7 @@ celery4_worker_image = build(
 celery4_worker_container = container(
     image="{celery4_worker_image.id}",
     environment=fxtr("default_worker_env"),
-    network="{DEFAULT_NETWORK.name}",
+    network="{default_pytest_celery_network.name}",
     volumes={"{default_worker_volume.name}": defaults.DEFAULT_WORKER_VOLUME},
     wrapper_class=Celery4WorkerContainer,
     timeout=defaults.DEFAULT_WORKER_CONTAINER_TIMEOUT,
@@ -49,7 +49,7 @@ celery_latest_worker_image = build(
 celery_latest_worker_container = container(
     image="{celery_latest_worker_image.id}",
     environment=fxtr("default_worker_env"),
-    network="{DEFAULT_NETWORK.name}",
+    network="{default_pytest_celery_network.name}",
     volumes={"{default_worker_volume.name}": defaults.DEFAULT_WORKER_VOLUME},
     wrapper_class=CeleryLatestWorkerContainer,
     timeout=defaults.DEFAULT_WORKER_CONTAINER_TIMEOUT,
@@ -77,7 +77,7 @@ celery_dev_worker_image = build(
 default_worker_container = container(
     image="{celery_dev_worker_image.id}",
     environment=fxtr("default_worker_env"),
-    network="{DEFAULT_NETWORK.name}",
+    network="{default_pytest_celery_network.name}",
     volumes={
         # Volume: Worker /app
         "{default_worker_volume.name}": defaults.DEFAULT_WORKER_VOLUME,
