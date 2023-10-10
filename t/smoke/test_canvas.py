@@ -1,6 +1,5 @@
 import pytest
-from pytest_celery import CeleryTestSetup, defaults
-from pytest_celery.api.components.worker.node import CeleryTestWorker
+from pytest_celery import CeleryTestSetup, CeleryTestWorker, defaults
 from pytest_docker_tools.wrappers.container import wait_for_callable
 
 from celery.canvas import chain, chord, group, signature

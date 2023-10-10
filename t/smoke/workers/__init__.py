@@ -1,6 +1,6 @@
 from typing import Any
 
-from pytest_celery.containers.worker import CeleryWorkerContainer
+from pytest_celery import CeleryWorkerContainer
 
 import celery
 
