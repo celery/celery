@@ -33,10 +33,6 @@ class CeleryLatestWorkerContainer(CeleryWorkerContainer):
         return self
 
     @classmethod
-    def version(cls) -> str:
-        return "latest"
-
-    @classmethod
     def log_level(cls) -> str:
         return "INFO"
 

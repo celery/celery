@@ -50,7 +50,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: "Build smoke tests container: latest"
-      run: docker build -f t/smoke/workers/latest .
+      run: docker build -f t/smoke/workers/pypi .
 
   smoke-tests_pypi:
     runs-on: ubuntu-latest

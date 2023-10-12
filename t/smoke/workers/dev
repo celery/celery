@@ -22,7 +22,7 @@ WORKDIR /celery
 
 COPY --chown=test_user:test_user . /celery
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -e /celery[redis]
+    pip install --no-cache-dir -e /celery[redis,memcache,pymemcache]
 
 # The workdir must be /app
 WORKDIR /app

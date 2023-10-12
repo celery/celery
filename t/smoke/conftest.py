@@ -40,7 +40,7 @@ def celery4_worker(
 
 celery_latest_worker_image = build(
     path=".",
-    dockerfile="t/smoke/workers/latest",
+    dockerfile="t/smoke/workers/pypi",
     tag="t/smoke/worker:latest",
     buildargs=CeleryLatestWorkerContainer.buildargs(),
 )
