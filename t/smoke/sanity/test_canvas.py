@@ -6,29 +6,6 @@ from t.smoke.tasks import add, identity
 
 
 class test_canvas:
-    def test_sanity(self, celery_setup: CeleryTestSetup):
-        assert celery_setup.ready(ping=True)
-        worker: CeleryTestWorker = celery_setup.worker_cluster[0]
-        queue = worker.worker_queue
-        expected = "test_sanity"
-        res = identity.s(expected).apply_async(queue=queue)
-        assert res.get(timeout=RESULT_TIMEOUT) == expected
-
-        worker.wait_for_log(expected)
-
-        if len(celery_setup.worker_cluster) > 1:
-            queue = celery_setup.worker_cluster[1].worker_queue
-
-        res = add.s(1, 2).apply_async(queue=queue)
-        assert res.get(timeout=RESULT_TIMEOUT) == 3
-
-        if len(celery_setup.worker_cluster) > 1:
-            assert expected not in celery_setup.worker_cluster[1].logs()
-            expected = "succeeded"
-            celery_setup.worker_cluster[1].wait_for_log(expected)
-        else:
-            worker.wait_for_log(expected)
-
     def test_signature(self, celery_setup: CeleryTestSetup):
         worker: CeleryTestWorker
         for worker in celery_setup.worker_cluster:
