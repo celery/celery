@@ -5,15 +5,17 @@ from celery.canvas import chain, chord, group, signature
 from t.smoke.tasks import add, identity
 
 
-class test_canvas:
-    def test_signature(self, celery_setup: CeleryTestSetup):
+class test_signature:
+    def test_sanity(self, celery_setup: CeleryTestSetup):
         worker: CeleryTestWorker
         for worker in celery_setup.worker_cluster:
             queue = worker.worker_queue
             sig = signature(identity, args=("test_signature",), queue=queue)
             assert sig.delay().get(timeout=RESULT_TIMEOUT) == "test_signature"
 
-    def test_group(self, celery_setup: CeleryTestSetup):
+
+class test_group:
+    def test_sanity(self, celery_setup: CeleryTestSetup):
         worker: CeleryTestWorker
         for worker in celery_setup.worker_cluster:
             queue = worker.worker_queue
@@ -25,7 +27,9 @@ class test_canvas:
             res = sig.apply_async(queue=queue)
             assert res.get(timeout=RESULT_TIMEOUT) == [2, 4, 2, 4, 2, 4]
 
-    def test_chain(self, celery_setup: CeleryTestSetup):
+
+class test_chain:
+    def test_sanity(self, celery_setup: CeleryTestSetup):
         worker: CeleryTestWorker
         for worker in celery_setup.worker_cluster:
             queue = worker.worker_queue
@@ -36,7 +40,9 @@ class test_canvas:
             res = sig.apply_async()
             assert res.get(timeout=RESULT_TIMEOUT) == "test_chain"
 
-    def test_chord(self, celery_setup: CeleryTestSetup):
+
+class test_chord:
+    def test_sanity(self, celery_setup: CeleryTestSetup):
         worker: CeleryTestWorker
         if not celery_setup.chords_allowed():
             pytest.skip("Chords are not supported")
