@@ -2,7 +2,7 @@ import pytest
 from pytest_celery import CeleryTestSetup
 
 from celery.signals import after_task_publish, before_task_publish
-from t.smoke.tasks import identity
+from t.smoke.tasks import noop
 
 
 @pytest.fixture
@@ -38,7 +38,7 @@ class test_before_task_publish:
             signal_was_called = True
 
         signal_was_called = False
-        identity.s("identity_task").apply_async(queue=celery_setup.worker.worker_queue)
+        noop.s().apply_async(queue=celery_setup.worker.worker_queue)
         assert signal_was_called is True
 
 
@@ -50,5 +50,5 @@ class test_after_task_publish:
             signal_was_called = True
 
         signal_was_called = False
-        identity.s("identity_task").apply_async(queue=celery_setup.worker.worker_queue)
+        noop.s().apply_async(queue=celery_setup.worker.worker_queue)
         assert signal_was_called is True
