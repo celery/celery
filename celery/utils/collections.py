@@ -595,8 +595,7 @@ class LimitedSet:
                     break  # oldest item hasn't expired yet
                 self.pop()
 
-    def pop(self, default=None) -> Any:
-        # type: (Any) -> Any
+    def pop(self, default: Any = None) -> Any:
         """Remove and return the oldest item, or :const:`None` when empty."""
         while self._heap:
             _, item = heappop(self._heap)
