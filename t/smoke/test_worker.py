@@ -18,16 +18,17 @@ def default_worker_app(default_worker_app: Celery) -> Celery:
 
 
 class test_consumer:
-    def test_reducing_prefetch_count(self, celery_setup: CeleryTestSetup):
+    @pytest.mark.parametrize("expected_running_tasks_count", range(1, WORKER_CONCURRENCY + 1))
+    def test_reducing_prefetch_count(self, celery_setup: CeleryTestSetup, expected_running_tasks_count: int):
         assert celery_setup.app.conf.worker_prefetch_multiplier == WORKER_PREFETCH_MULTIPLIER
         assert celery_setup.app.conf.worker_concurrency == WORKER_CONCURRENCY
 
-        long_running_task.s().apply_async(queue=celery_setup.worker.worker_queue)
+        for _ in range(expected_running_tasks_count):
+            long_running_task.s().apply_async(queue=celery_setup.worker.worker_queue)
         celery_setup.broker.restart()
 
-        expected_running_tasks_count = 1
-        expected_reduced_prefetch = (WORKER_PREFETCH_MULTIPLIER * WORKER_CONCURRENCY) - (
-            WORKER_PREFETCH_MULTIPLIER * expected_running_tasks_count
+        expected_reduced_prefetch = max(
+            WORKER_PREFETCH_MULTIPLIER, MAX_PREFETCH - expected_running_tasks_count * WORKER_PREFETCH_MULTIPLIER
         )
 
         expected_prefetch_reduce_message = (
