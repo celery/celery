@@ -6,7 +6,7 @@ from celery.canvas import group
 from t.smoke.tasks import long_running_task
 
 WORKER_PREFETCH_MULTIPLIER = 2
-WORKER_CONCURRENCY = 3
+WORKER_CONCURRENCY = 5
 MAX_PREFETCH = WORKER_PREFETCH_MULTIPLIER * WORKER_CONCURRENCY
 
 
