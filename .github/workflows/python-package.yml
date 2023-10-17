@@ -119,3 +119,42 @@ jobs:
               run: >
                   tox --verbose --verbose -e
                   "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -vv
+
+  Smoke:
+      # needs:
+      # - Integration
+      # if: needs.Integration.result == 'success'
+      # timeout-minutes: 240
+
+      runs-on: ubuntu-latest
+      strategy:
+          fail-fast: false
+          matrix:
+              python-version: ['3.8', '3.9', '3.10', '3.11']
+
+      steps:
+          -   name: Fetch Docker Images
+              run: |
+                docker pull redis:latest
+                docker pull rabbitmq:latest
+
+          -   name: Install apt packages
+              run: |
+                  sudo apt update
+
+          -   uses: actions/checkout@v3
+          -   name: Set up Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v4
+              with:
+                  python-version: ${{ matrix.python-version }}
+                  cache: 'pip'
+                  cache-dependency-path: '**/setup.py'
+          -   name: Install tox
+              run: python -m pip install --upgrade pip tox tox-gh-actions
+          -   name: >
+                  Run tox for
+                  "${{ matrix.python-version }}-smoke"
+              timeout-minutes: 30
+              run: >
+                  tox --verbose --verbose -e
+                  "${{ matrix.python-version }}-smoke" -- --reruns 5 --reruns-delay 60 --rerun-except AssertionError -n auto

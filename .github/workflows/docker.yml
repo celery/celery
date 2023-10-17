@@ -28,3 +28,35 @@ jobs:
     - uses: actions/checkout@v4
     - name: Build Docker container
       run: make docker-build
+
+  smoke-tests_dev:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@v4
+    - name: "Build smoke tests container: dev"
+      run: docker build -f t/smoke/workers/docker/dev .
+
+  smoke-tests_latest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@v4
+    - name: "Build smoke tests container: latest"
+      run: docker build -f t/smoke/workers/docker/pypi .
+
+  smoke-tests_pypi:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@v4
+    - name: "Build smoke tests container: pypi"
+      run: docker build -f t/smoke/workers/docker/pypi --build-arg CELERY_VERSION="5" .
+
+  smoke-tests_legacy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@v4
+    - name: "Build smoke tests container: legacy"
+      run: docker build -f t/smoke/workers/docker/pypi --build-arg CELERY_VERSION="4" .
