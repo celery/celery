@@ -1,12 +1,18 @@
+import os
 from collections.abc import Iterable
 from time import sleep
 
 from celery import Signature, Task, chain, chord, group, shared_task
-from celery.canvas import StampingVisitor, signature
+from celery.canvas import signature
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 
-from .conftest import get_redis_connection
+
+def get_redis_connection():
+    from redis import StrictRedis
+
+    return StrictRedis(host=os.environ.get("REDIS_HOST"))
+
 
 logger = get_task_logger(__name__)
 
@@ -455,28 +461,30 @@ def errback_new_style(request, exc, tb):
     return request.id
 
 
-class StampOnReplace(StampingVisitor):
-    stamp = {'StampOnReplace': 'This is the replaced task'}
+try:
+    from celery.canvas import StampingVisitor
 
-    def on_signature(self, sig, **headers) -> dict:
-        return self.stamp
+    class StampOnReplace(StampingVisitor):
+        stamp = {'StampOnReplace': 'This is the replaced task'}
 
+        def on_signature(self, sig, **headers) -> dict:
+            return self.stamp
 
-class StampedTaskOnReplace(Task):
-    """Custom task for stamping on replace"""
+    class StampedTaskOnReplace(Task):
+        """Custom task for stamping on replace"""
 
-    def on_replace(self, sig):
-        sig.stamp(StampOnReplace())
-        return super().on_replace(sig)
+        def on_replace(self, sig):
+            sig.stamp(StampOnReplace())
+            return super().on_replace(sig)
 
+    @shared_task
+    def replaced_with_me():
+        return True
 
-@shared_task
-def replaced_with_me():
-    return True
-
-
-@shared_task(bind=True, base=StampedTaskOnReplace)
-def replace_with_stamped_task(self: StampedTaskOnReplace, replace_with=None):
-    if replace_with is None:
-        replace_with = replaced_with_me.s()
-    self.replace(signature(replace_with))
+    @shared_task(bind=True, base=StampedTaskOnReplace)
+    def replace_with_stamped_task(self: StampedTaskOnReplace, replace_with=None):
+        if replace_with is None:
+            replace_with = replaced_with_me.s()
+        self.replace(signature(replace_with))
+except ImportError:
+    pass
