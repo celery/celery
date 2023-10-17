@@ -8,6 +8,7 @@ import pytest
 # that installs the pytest plugin into the setuptools registry.
 from celery.contrib.pytest import celery_app, celery_session_worker
 from celery.contrib.testing.manager import Manager
+from t.integration.tasks import get_redis_connection
 
 TEST_BROKER = os.environ.get('TEST_BROKER', 'pyamqp://')
 TEST_BACKEND = os.environ.get('TEST_BACKEND', 'redis://')
@@ -17,13 +18,7 @@ __all__ = (
     'celery_app',
     'celery_session_worker',
     'get_active_redis_channels',
-    'get_redis_connection',
 )
-
-
-def get_redis_connection():
-    from redis import StrictRedis
-    return StrictRedis(host=os.environ.get('REDIS_HOST'))
 
 
 def get_active_redis_channels():
