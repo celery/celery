@@ -1,0 +1,3 @@
+# -e ../pytest-celery
+git+https://github.com/celery/pytest-celery.git
+# git+https://github.com/Katz-Consulting-Group/pytest-celery.git@BRANCH_NAME#egg=pytest-celery
