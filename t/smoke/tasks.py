@@ -11,5 +11,5 @@ def noop(*args, **kwargs) -> None:
 
 
 @shared_task
-def long_running_task(*args, **kwargs) -> None:
-    sleep(3600)  # 1h
+def long_running_task(seconds: float = 1) -> None:
+    sleep(seconds)
