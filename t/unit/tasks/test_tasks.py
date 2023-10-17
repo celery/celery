@@ -1441,6 +1441,7 @@ class test_apply_task(TasksCase):
 
         assert e.successful()
         assert e.ready()
+        assert e.name == 't.unit.tasks.test_tasks.increment_counter'
         assert repr(e).startswith('<EagerResult:')
 
         f = self.raising.apply()
@@ -1449,6 +1450,21 @@ class test_apply_task(TasksCase):
         assert f.traceback
         with pytest.raises(KeyError):
             f.get()
+
+    def test_apply_eager_populates_request_task(self):
+        task_to_apply = self.task_check_request_context
+        with patch.object(
+            task_to_apply.request_stack, "push",
+            wraps=task_to_apply.request_stack.push,
+        ) as mock_push:
+            task_to_apply.apply()
+
+        mock_push.assert_called_once()
+
+        request = mock_push.call_args[0][0]
+
+        assert request.is_eager is True
+        assert request.task == 't.unit.tasks.test_tasks.task_check_request_context'
 
     def test_apply_simulates_delivery_info(self):
         task_to_apply = self.task_check_request_context

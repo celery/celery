@@ -360,7 +360,7 @@ class Inspect:
                 * ``routing_key`` - Routing key used when task was published
                 * ``priority`` - Priority used when task was published
                 * ``redelivered`` - True if the task was redelivered
-            * ``worker_pid`` - PID of worker processin the task
+            * ``worker_pid`` - PID of worker processing the task
 
         """
         # signature used be unary: query_task(ids=[id1, id2])
