@@ -1,1 +1,4 @@
 pytest-celery==0.0.0
+# pytest-celery==1.0.0a1
+# git+https://github.com/celery/pytest-celery.git
+# git+https://github.com/Katz-Consulting-Group/pytest-celery.git@celery_integration#egg=pytest-celery
