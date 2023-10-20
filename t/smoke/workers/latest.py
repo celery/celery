@@ -14,7 +14,7 @@ class CeleryLatestWorkerContainer(CeleryWorkerContainer):
 
     @classmethod
     def log_level(cls) -> str:
-        return "INFO"
+        return "DEBUG"
 
     @classmethod
     def worker_name(cls) -> str:
