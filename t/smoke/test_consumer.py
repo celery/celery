@@ -1,5 +1,5 @@
 import pytest
-from pytest_celery import CeleryTestSetup, RedisTestBroker
+from pytest_celery import CeleryTestSetup
 
 from celery import Celery
 from celery.canvas import group
@@ -33,18 +33,15 @@ class test_consumer:
             f"Temporarily reducing the prefetch count to {expected_reduced_prefetch} "
             f"to avoid over-fetching since {expected_running_tasks_count} tasks are currently being processed."
         )
-        celery_setup.worker.wait_for_log(expected_prefetch_reduce_message)
+        celery_setup.worker.assert_log_exists(expected_prefetch_reduce_message)
 
         expected_prefetch_restore_message = (
-            f"The prefetch count will be gradually restored to {MAX_PREFETCH} " f"as the tasks complete processing."
+            f"The prefetch count will be gradually restored to {MAX_PREFETCH} as the tasks complete processing."
         )
-        celery_setup.worker.wait_for_log(expected_prefetch_restore_message)
+        celery_setup.worker.assert_log_exists(expected_prefetch_restore_message)
 
     def test_prefetch_count_restored(self, celery_setup: CeleryTestSetup):
-        if isinstance(celery_setup.broker, RedisTestBroker):
-            pytest.xfail("Real bug in Redis broker")
-
-        expected_running_tasks_count = MAX_PREFETCH+1
+        expected_running_tasks_count = MAX_PREFETCH * WORKER_PREFETCH_MULTIPLIER
         sig = group(long_running_task.s(10) for _ in range(expected_running_tasks_count))
         sig.apply_async(queue=celery_setup.worker.worker_queue)
         celery_setup.broker.restart()
@@ -52,4 +49,4 @@ class test_consumer:
             f"Resuming normal operations following a restart.\n"
             f"Prefetch count has been restored to the maximum of {MAX_PREFETCH}"
         )
-        celery_setup.worker.wait_for_log(expected_prefetch_restore_message)
+        celery_setup.worker.assert_log_exists(expected_prefetch_restore_message)
