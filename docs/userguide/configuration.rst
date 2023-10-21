@@ -168,6 +168,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERYD_POOL_PUTLOCKS``                  :setting:`worker_pool_putlocks`
 ``CELERYD_POOL_RESTARTS``                  :setting:`worker_pool_restarts`
 ``CELERYD_PREFETCH_MULTIPLIER``            :setting:`worker_prefetch_multiplier`
+``CELERYD_ENABLE_PREFETCH_COUNT``          :setting:`worker_enable_prefetch_count`
 ``CELERYD_REDIRECT_STDOUTS``               :setting:`worker_redirect_stdouts`
 ``CELERYD_REDIRECT_STDOUTS_LEVEL``         :setting:`worker_redirect_stdouts_level`
 ``CELERY_SEND_EVENTS``                     :setting:`worker_send_task_events`
@@ -2968,6 +2969,17 @@ For more on prefetching, read :ref:`optimizing-prefetch-limit`
 .. note::
 
     Tasks with ETA/countdown aren't affected by prefetch limits.
+
+.. setting:: worker_enable_prefetch_count
+
+``worker_enable_prefetch_count``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.3
+
+Default: Disabled.
+
+TBD
 
 .. setting:: worker_lost_wait
 

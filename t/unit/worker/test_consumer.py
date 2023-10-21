@@ -92,16 +92,21 @@ class test_Consumer(ConsumerTestCase):
         assert c.initial_prefetch_count == 10 * 10
 
     @pytest.mark.parametrize(
-        'active_requests_count,expected_initial,expected_maximum',
+        'active_requests_count,expected_initial,expected_maximum,enabled',
         [
-            [0, 2, True],
-            [1, 1, False],
-            [2, 1, False]
+            [0, 2, True, True],
+            [1, 1, False, True],
+            [2, 1, False, True],
+            [0, 2, True, False],
+            [1, 2, True, False],
+            [2, 2, True, False],
         ]
     )
     @patch('celery.worker.consumer.consumer.active_requests', new_callable=set)
     def test_restore_prefetch_count_on_restart(self, active_requests_mock, active_requests_count,
-                                               expected_initial, expected_maximum, subtests):
+                                               expected_initial, expected_maximum, enabled, subtests):
+        self.app.conf.worker_enable_prefetch_count = enabled
+
         reqs = {Mock() for _ in range(active_requests_count)}
         active_requests_mock.update(reqs)
 
