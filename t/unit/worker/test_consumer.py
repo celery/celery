@@ -133,6 +133,23 @@ class test_Consumer(ConsumerTestCase):
         with subtests.test("maximum prefetch is reached"):
             assert c._maximum_prefetch_restored is expected_maximum
 
+    def test_restore_prefetch_count_after_connection_restart_negative(self):
+        self.app.conf.worker_enable_prefetch_count = False
+
+        c = self.get_consumer()
+        c.qos = Mock()
+
+        # Overcome TypeError: 'Mock' object does not support the context manager protocol
+        class MutexMock:
+            def __enter__(self):
+                pass
+
+            def __exit__(self, *args):
+                pass
+        c.qos._mutex = MutexMock()
+
+        assert c._restore_prefetch_count_after_connection_restart(None) is None
+
     def test_create_task_handler(self, subtests):
         c = self.get_consumer()
         c.qos = MagicMock()
