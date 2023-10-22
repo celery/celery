@@ -2977,9 +2977,40 @@ For more on prefetching, read :ref:`optimizing-prefetch-limit`
 
 .. versionadded:: 5.3
 
-Default: Disabled.
+Default: Enabled.
 
-TBD
+The ``worker_enable_prefetch_count`` setting governs the restoration behavior of the
+prefetch count to its maximum allowable value following a connection loss to the message
+broker. By default, this setting is enabled.
+
+Upon a connection loss, Celery will attempt to reconnect to the broker automatically,
+provided the :setting:`broker_connection_retry_on_startup` or :setting:`broker_connection_retry` 
+is not set to False. During the period of lost connection, the message broker does not keep track
+of the number of tasks already fetched. Therefore, to manage the task load effectively and prevent
+overloading, Celery reduces the prefetch count based on the number of tasks that are
+currently running.
+
+The prefetch count is the number of messages that a worker will fetch from the broker at
+a time. The reduced prefetch count helps ensure that tasks are not fetched excessively
+during periods of reconnection.
+
+With ``worker_enable_prefetch_count`` set to its default value (Enabled), the prefetch
+count will be gradually restored to its maximum allowed value each time a task that was
+running before the connection was lost is completed. This behavior helps maintain a
+balanced distribution of tasks among the workers while managing the load effectively.
+
+To disable the reduction and restoration of the prefetch count to its maximum allowed value on
+reconnection, set ``worker_enable_prefetch_count`` to False. Disabling this setting might
+be useful in scenarios where a fixed prefetch count is desired to control the rate of task
+processing or manage the worker load, especially in environments with fluctuating connectivity.
+
+.. code-block:: python
+
+    worker_enable_prefetch_count = False
+
+In summary, the ``worker_enable_prefetch_count`` setting provides a way to control the
+restoration behavior of the prefetch count following a connection loss, aiding in
+maintaining a balanced task distribution and effective load management across the workers.
 
 .. setting:: worker_lost_wait
 
