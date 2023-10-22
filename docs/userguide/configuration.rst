@@ -168,7 +168,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERYD_POOL_PUTLOCKS``                  :setting:`worker_pool_putlocks`
 ``CELERYD_POOL_RESTARTS``                  :setting:`worker_pool_restarts`
 ``CELERYD_PREFETCH_MULTIPLIER``            :setting:`worker_prefetch_multiplier`
-``CELERYD_ENABLE_PREFETCH_COUNT``          :setting:`worker_enable_prefetch_count`
+``CELERYD_ENABLE_PREFETCH_COUNT_REDUCTION``:setting:`worker_enable_prefetch_count_reduction`
 ``CELERYD_REDIRECT_STDOUTS``               :setting:`worker_redirect_stdouts`
 ``CELERYD_REDIRECT_STDOUTS_LEVEL``         :setting:`worker_redirect_stdouts_level`
 ``CELERY_SEND_EVENTS``                     :setting:`worker_send_task_events`
@@ -2970,16 +2970,16 @@ For more on prefetching, read :ref:`optimizing-prefetch-limit`
 
     Tasks with ETA/countdown aren't affected by prefetch limits.
 
-.. setting:: worker_enable_prefetch_count
+.. setting:: worker_enable_prefetch_count_reduction
 
-``worker_enable_prefetch_count``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``worker_enable_prefetch_count_reduction``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 5.3
+.. versionadded:: 5.4
 
 Default: Enabled.
 
-The ``worker_enable_prefetch_count`` setting governs the restoration behavior of the
+The ``worker_enable_prefetch_count_reduction`` setting governs the restoration behavior of the
 prefetch count to its maximum allowable value following a connection loss to the message
 broker. By default, this setting is enabled.
 
@@ -2994,21 +2994,17 @@ The prefetch count is the number of messages that a worker will fetch from the b
 a time. The reduced prefetch count helps ensure that tasks are not fetched excessively
 during periods of reconnection.
 
-With ``worker_enable_prefetch_count`` set to its default value (Enabled), the prefetch
+With ``worker_enable_prefetch_count_reduction`` set to its default value (Enabled), the prefetch
 count will be gradually restored to its maximum allowed value each time a task that was
 running before the connection was lost is completed. This behavior helps maintain a
 balanced distribution of tasks among the workers while managing the load effectively.
 
 To disable the reduction and restoration of the prefetch count to its maximum allowed value on
-reconnection, set ``worker_enable_prefetch_count`` to False. Disabling this setting might
+reconnection, set ``worker_enable_prefetch_count_reduction`` to False. Disabling this setting might
 be useful in scenarios where a fixed prefetch count is desired to control the rate of task
 processing or manage the worker load, especially in environments with fluctuating connectivity.
 
-.. code-block:: python
-
-    worker_enable_prefetch_count = False
-
-In summary, the ``worker_enable_prefetch_count`` setting provides a way to control the
+The ``worker_enable_prefetch_count_reduction`` setting provides a way to control the
 restoration behavior of the prefetch count following a connection loss, aiding in
 maintaining a balanced task distribution and effective load management across the workers.
 

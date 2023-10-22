@@ -105,7 +105,7 @@ class test_Consumer(ConsumerTestCase):
     @patch('celery.worker.consumer.consumer.active_requests', new_callable=set)
     def test_restore_prefetch_count_on_restart(self, active_requests_mock, active_requests_count,
                                                expected_initial, expected_maximum, enabled, subtests):
-        self.app.conf.worker_enable_prefetch_count = enabled
+        self.app.conf.worker_enable_prefetch_count_reduction = enabled
 
         reqs = {Mock() for _ in range(active_requests_count)}
         active_requests_mock.update(reqs)
@@ -134,7 +134,7 @@ class test_Consumer(ConsumerTestCase):
             assert c._maximum_prefetch_restored is expected_maximum
 
     def test_restore_prefetch_count_after_connection_restart_negative(self):
-        self.app.conf.worker_enable_prefetch_count = False
+        self.app.conf.worker_enable_prefetch_count_reduction = False
 
         c = self.get_consumer()
         c.qos = Mock()

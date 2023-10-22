@@ -390,7 +390,7 @@ class Consumer:
         else:
             warnings.warn(CANCEL_TASKS_BY_DEFAULT, CPendingDeprecationWarning)
 
-        if self.app.conf.worker_enable_prefetch_count:
+        if self.app.conf.worker_enable_prefetch_count_reduction:
             self.initial_prefetch_count = max(
                 self.prefetch_multiplier,
                 self.max_prefetch_count - len(tuple(active_requests)) * self.prefetch_multiplier
@@ -698,7 +698,7 @@ class Consumer:
     def _restore_prefetch_count_after_connection_restart(self, p, *args):
         with self.qos._mutex:
             if any((
-                not self.app.conf.worker_enable_prefetch_count,
+                not self.app.conf.worker_enable_prefetch_count_reduction,
                 self._maximum_prefetch_restored,
             )):
                 return
