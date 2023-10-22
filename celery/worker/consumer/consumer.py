@@ -697,10 +697,10 @@ class Consumer:
 
     def _restore_prefetch_count_after_connection_restart(self, p, *args):
         with self.qos._mutex:
-            if any([
+            if any((
                 not self.app.conf.worker_enable_prefetch_count,
                 self._maximum_prefetch_restored,
-            ]):
+            )):
                 return
 
             new_prefetch_count = min(self.max_prefetch_count, self._new_prefetch_count)
