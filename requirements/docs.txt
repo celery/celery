@@ -1,5 +1,5 @@
 sphinx_celery>=2.0.0
-Sphinx==7.2.6
+Sphinx==5.3.0
 sphinx-testing~=1.0.1
 sphinx-click==5.0.1
 -r extras/sqlalchemy.txt
