@@ -696,6 +696,7 @@ class test_Gossip:
         c.app.connection = _amqp_connection()
         c.hostname = hostname
         c.pid = pid
+        c.app.events.Receiver.return_value = Mock(accept=[])
         return c
 
     def setup_election(self, g, c):
