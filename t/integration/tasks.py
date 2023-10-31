@@ -11,7 +11,9 @@ from celery.utils.log import get_task_logger
 def get_redis_connection():
     from redis import StrictRedis
 
-    return StrictRedis(host=os.environ.get("REDIS_HOST"))
+    host = os.environ.get("REDIS_HOST", "localhost")
+    port = os.environ.get("REDIS_PORT", 6379)
+    return StrictRedis(host=host, port=port)
 
 
 logger = get_task_logger(__name__)
@@ -461,6 +463,11 @@ def errback_new_style(request, exc, tb):
     return request.id
 
 
+@shared_task
+def replaced_with_me():
+    return True
+
+
 try:
     from celery.canvas import StampingVisitor
 
@@ -476,10 +483,6 @@ try:
         def on_replace(self, sig):
             sig.stamp(StampOnReplace())
             return super().on_replace(sig)
-
-    @shared_task
-    def replaced_with_me():
-        return True
 
     @shared_task(bind=True, base=StampedTaskOnReplace)
     def replace_with_stamped_task(self: StampedTaskOnReplace, replace_with=None):
