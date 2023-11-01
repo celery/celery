@@ -52,4 +52,6 @@ def celery_legacy_worker(
     celery_legacy_worker_container: CeleryLegacyWorkerContainer,
     celery_setup_app: Celery,
 ) -> CeleryTestWorker:
-    yield CeleryTestWorker(celery_legacy_worker_container, app=celery_setup_app)
+    worker = CeleryTestWorker(celery_legacy_worker_container, app=celery_setup_app)
+    yield worker
+    worker.teardown()

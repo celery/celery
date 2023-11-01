@@ -48,4 +48,6 @@ def celery_latest_worker(
     celery_latest_worker_container: CeleryLatestWorkerContainer,
     celery_setup_app: Celery,
 ) -> CeleryTestWorker:
-    yield CeleryTestWorker(celery_latest_worker_container, app=celery_setup_app)
+    worker = CeleryTestWorker(celery_latest_worker_container, app=celery_setup_app)
+    yield worker
+    worker.teardown()
