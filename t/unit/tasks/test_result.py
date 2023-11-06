@@ -392,9 +392,10 @@ class test_AsyncResult:
     def test_del(self):
         with patch('celery.result.AsyncResult.backend') as backend:
             result = self.app.AsyncResult(self.task1['id'])
+            result.backend = backend
             result_clone = copy.copy(result)
             del result
-            assert backend.remove_pending_result.called_once_with(
+            backend.remove_pending_result.assert_called_once_with(
                 result_clone
             )
 
