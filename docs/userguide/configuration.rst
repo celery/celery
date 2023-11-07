@@ -3214,7 +3214,7 @@ An optional user ID to use when events :program:`celery events` drops its privil
 
 Default: :const:`None`
 
-An optionnal group ID to use when :program:`celery events` daemon drops its privileges (default to no GID change).
+An optional group ID to use when :program:`celery events` daemon drops its privileges (defaults to no GID change).
 
 .. setting:: events_umask
 
