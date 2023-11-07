@@ -3223,7 +3223,7 @@ An optional group ID to use when :program:`celery events` daemon drops its privi
 
 Default: :const:`None`
 
-An optionnal `umask` to use when :program:`celery events` creates files (log, pid...) when daemonizing.
+An optional `umask` to use when :program:`celery events` creates files (log, pid...) when daemonizing.
 
 .. setting:: events_executable
 
