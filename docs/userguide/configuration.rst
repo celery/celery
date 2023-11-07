@@ -3196,7 +3196,7 @@ An optionnal file path for :program:`celery events` to log into (default to `std
 
 Default: :const:`None`
 
-An optionnal file path for :program:`celery events` to create/store it PID file (default to no PID file created).
+An optional file path for :program:`celery events` to create/store its PID file (default to no PID file created).
 
 .. setting:: events_uid
 
