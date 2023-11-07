@@ -31,8 +31,7 @@ RUN apt-get update && apt-get install -y build-essential \
     zlib1g-dev \
     pkg-config \
     libssl-dev \
-    sudo \
-    && apt-get clean
+    sudo
 
 # Setup variables. Even though changing these may cause unnecessary invalidation of
 # unrelated elements, grouping them together makes the Dockerfile read better.
@@ -72,7 +71,6 @@ RUN pyenv install 3.8
 
 
 
-
 # Set global Python versions
 RUN pyenv global 3.12 3.11 3.10 3.9 3.8
 
@@ -100,8 +98,7 @@ RUN pyenv exec python3.12 -m pip install -e $HOME/celery && \
     pyenv exec python3.8 -m pip install -e $HOME/celery
 
 # Setup one celery environment for basic development use
-RUN pyenv exec python3.12 -m pip install \
-  -r requirements/default.txt \
+RUN pyenv exec python3.12 -m pip install -r requirements/default.txt \
   -r requirements/dev.txt \
   -r requirements/docs.txt \
   -r requirements/pkgutils.txt \
@@ -110,8 +107,7 @@ RUN pyenv exec python3.12 -m pip install \
   -r requirements/test-integration.txt \
   -r requirements/test-pypy3.txt \
   -r requirements/test.txt && \
-  pyenv exec python3.11 -m pip install \
-  -r requirements/default.txt \
+  pyenv exec python3.11 -m pip install -r requirements/default.txt \
   -r requirements/dev.txt \
   -r requirements/docs.txt \
   -r requirements/pkgutils.txt \
@@ -120,8 +116,7 @@ RUN pyenv exec python3.12 -m pip install \
   -r requirements/test-integration.txt \
   -r requirements/test-pypy3.txt \
   -r requirements/test.txt && \
-  pyenv exec python3.10 -m pip install \
-  -r requirements/default.txt \
+  pyenv exec python3.10 -m pip install -r requirements/default.txt \
   -r requirements/dev.txt \
   -r requirements/docs.txt \
   -r requirements/pkgutils.txt \
@@ -130,8 +125,7 @@ RUN pyenv exec python3.12 -m pip install \
   -r requirements/test-integration.txt \
   -r requirements/test-pypy3.txt \
   -r requirements/test.txt && \
-  pyenv exec python3.9 -m pip install \
-  -r requirements/default.txt \
+  pyenv exec python3.9 -m pip install -r requirements/default.txt \
   -r requirements/dev.txt \
   -r requirements/docs.txt \
   -r requirements/pkgutils.txt \
@@ -139,9 +133,8 @@ RUN pyenv exec python3.12 -m pip install \
   -r requirements/test-ci-default.txt \
   -r requirements/test-integration.txt \
   -r requirements/test-pypy3.txt \
-  -r requirements/test.txt \
-  pyenv exec python3.8 -m pip install \
-  -r requirements/default.txt \
+  -r requirements/test.txt && \
+  pyenv exec python3.8 -m pip install -r requirements/default.txt \
   -r requirements/dev.txt \
   -r requirements/docs.txt \
   -r requirements/pkgutils.txt \
