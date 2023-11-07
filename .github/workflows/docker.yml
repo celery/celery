@@ -7,7 +7,7 @@ on:
           - '**.py'
           - '**.txt'
           - '**.toml'
-          - './docker/**'
+          - '/docker/**'
           - '.github/workflows/docker.yml'
     pull_request:
       branches: [ 'main']
@@ -15,7 +15,7 @@ on:
           - '**.py'
           - '**.txt'
           - '**.toml'
-          - './docker/**'
+          - '/docker/**'
           - '.github/workflows/docker.yml'
 
 
