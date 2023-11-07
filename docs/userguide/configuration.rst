@@ -3698,4 +3698,4 @@ An optional `umask` to use when :program:`celery beat` creates files (log, pid..
 
 Default: :const:`None`
 
-An optionnal `python` executable path for :program:`celery beat` to use when deaemonizing (default to :data:`sys.executable`).
+An optional `python` executable path for :program:`celery beat` to use when deaemonizing (defaults to :data:`sys.executable`).
