@@ -58,10 +58,10 @@ in such a way that the client enqueues an URL to be requested by a worker.
 What do I need?
 ===============
 
-Celery version 5.3.4 runs on:
+Celery version 5.3.5 runs on:
 
-- Python (3.8, 3.9, 3.10, 3.11)
-- PyPy3.8+ (v7.3.11+)
+- Python (3.8, 3.9, 3.10, 3.11, 3.12)
+- PyPy3.9+ (v7.3.12+)
 
 
 This is the version of celery which will support Python 3.8 or newer.
@@ -92,7 +92,7 @@ Get Started
 ===========
 
 If this is the first time you're trying to use Celery, or you're
-new to Celery v5.3.4 coming from previous versions then you should read our
+new to Celery v5.3.5 coming from previous versions then you should read our
 getting started tutorials:
 
 - `First steps with Celery`_
