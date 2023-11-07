@@ -696,6 +696,13 @@ class test_App:
             assert exc.args[0].startswith('task_default_delivery_mode')
             assert 'CELERY_DEFAULT_DELIVERY_MODE' in exc.args[0]
 
+    def test_config_form_object__module_attr_does_not_exist(self):
+        with pytest.raises(ModuleNotFoundError) as exc:
+            self.app.config_from_object(f'{__name__}.bar')
+            # the module must exist, but it should not have the config attr
+            assert self.app.conf.broker_url is None
+            assert f'{__name__}.bar' in exc.args[0]
+
     def test_config_from_cmdline(self):
         cmdline = ['task_always_eager=no',
                    'result_backend=/dev/null',
