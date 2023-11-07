@@ -3187,7 +3187,7 @@ Message serialization format used when sending event messages.
 
 Default: :const:`None`
 
-An optionnal file path for :program:`celery events` to log into (default to `stdout`).
+An optional file path for :program:`celery events` to log into (defaults to `stdout`).
 
 .. setting:: events_pidfile
 
