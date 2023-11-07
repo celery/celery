@@ -3662,7 +3662,7 @@ An optionnal file path for :program:`celery beat` to log into (default to `stdou
 
 Default: :const:`None`
 
-An optionnal file path for :program:`celery beat` to create/store it PID file (default to no PID file created).
+An optional file path for :program:`celery beat` to create/store it PID file (defaults to no PID file created).
 
 .. setting:: beat_uid
 
