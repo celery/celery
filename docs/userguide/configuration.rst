@@ -3205,7 +3205,7 @@ An optional file path for :program:`celery events` to create/store its PID file 
 
 Default: :const:`None`
 
-An optionnal user ID to use when events :program:`celery events` drops its privileges (default to no UID change).
+An optional user ID to use when events :program:`celery events` drops its privileges (defaults to no UID change).
 
 .. setting:: events_gid
 
