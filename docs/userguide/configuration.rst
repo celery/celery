@@ -3689,7 +3689,7 @@ An optional group ID to use when :program:`celery beat` daemon drops its privile
 
 Default: :const:`None`
 
-An optionnal `umask` to use when :program:`celery beat` creates files (log, pid...) when daemonizing.
+An optional `umask` to use when :program:`celery beat` creates files (log, pid...) when daemonizing.
 
 .. setting:: beat_executable
 
