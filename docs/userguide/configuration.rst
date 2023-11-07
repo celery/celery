@@ -3671,7 +3671,7 @@ An optional file path for :program:`celery beat` to create/store it PID file (de
 
 Default: :const:`None`
 
-An optionnal user ID to use when beat :program:`celery beat` drops its privileges (default to no UID change).
+An optional user ID to use when beat :program:`celery beat` drops its privileges (defaults to no UID change).
 
 .. setting:: beat_gid
 
