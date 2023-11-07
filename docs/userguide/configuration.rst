@@ -3680,7 +3680,7 @@ An optional user ID to use when beat :program:`celery beat` drops its privileges
 
 Default: :const:`None`
 
-An optionnal group ID to use when :program:`celery beat` daemon drops its privileges (default to no GID change).
+An optional group ID to use when :program:`celery beat` daemon drops its privileges (defaults to no GID change).
 
 .. setting:: beat_umask
 
