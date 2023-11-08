@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 
-# Patch Release Overview: v<!-- Insert Version Here, e.g. 1.2.3 -->
+# Minor Release Overview: v<!-- Insert Version Here, e.g. 1.2.3 -->
 
 This issue will summarize the status and discussion in preparation for the new release. It will be used to track the progress of the release and to ensure that all the necessary steps are taken. It will serve as a checklist for the release and will be used to communicate the status of the release to the community.
 
