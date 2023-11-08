@@ -36,7 +36,6 @@ an overview of what's new in Celery 5.3.
 * Added Python 3.11 support to Dockerfile by @Nusnus in https://github.com/celery/celery/pull/8511
 * Dependabot (Celery) by @Nusnus in https://github.com/celery/celery/pull/8510
 * Bump actions/checkout from 3 to 4 by @dependabot in https://github.com/celery/celery/pull/8512
-* [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in https://github.com/celery/celery/pull/8515
 * Update ETA example to include timezone by @amantri in https://github.com/celery/celery/pull/8516
 * Replaces datetime.fromisoformat with the more lenient dateutil parser by @stumpylog in https://github.com/celery/celery/pull/8507
 * Fixed indentation in Dockerfile for Python 3.11 by @Nusnus in https://github.com/celery/celery/pull/8527
@@ -51,15 +50,12 @@ an overview of what's new in Celery 5.3.
 * Update msgpack.txt to fix build issues by @auvipy in https://github.com/celery/celery/pull/8552
 * Basic ElasticSearch / ElasticClient 8.x Support by @q2justin in https://github.com/celery/celery/pull/8519
 * Fix eager tasks does not populate name field by @KOliver94 in https://github.com/celery/celery/pull/8486
-* [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in https://github.com/celery/celery/pull/8559
 * Fix typo in celery.app.control by @Spaceface16518 in https://github.com/celery/celery/pull/8563
 * Update solar.txt ephem by @auvipy in https://github.com/celery/celery/pull/8566
 * Update test.txt pytest-timeout by @auvipy in https://github.com/celery/celery/pull/8565
 * Correct some mypy errors by @rbtcollins in https://github.com/celery/celery/pull/8570
-* [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in https://github.com/celery/celery/pull/8572
 * Update elasticsearch.txt by @auvipy in https://github.com/celery/celery/pull/8573
 * Update test.txt deps by @auvipy in https://github.com/celery/celery/pull/8574
-* [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in https://github.com/celery/celery/pull/8587
 * Update test.txt by @auvipy in https://github.com/celery/celery/pull/8590
 * Improved the "Next steps" documentation (#8561). by @frolenkov-nikita in https://github.com/celery/celery/pull/8600
 * Disabled couchbase tests due to broken package breaking main by @Nusnus in https://github.com/celery/celery/pull/8602
