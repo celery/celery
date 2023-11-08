@@ -975,7 +975,14 @@ class Celery:
             This is used by PendingConfiguration:
                 as soon as you access a key the configuration is read.
         """
-        conf = self._conf = self._load_config()
+        try:
+            conf = self._conf = self._load_config()
+        except AttributeError as err:
+            # AttributeError is not propagated, it is "handled" by
+            # PendingConfiguration parent class. This causes
+            # confusing RecursionError.
+            raise ModuleNotFoundError(*err.args) from err
+
         return conf
 
     def _load_config(self):
