@@ -223,8 +223,9 @@ def remaining(
             now.tzinfo) and now.utcoffset() != start.utcoffset():
         if now.utcoffset() > start.utcoffset() or isinstance(ends_in, ffwd):
             # DST started
-            start = start.replace(tzinfo=now.tzinfo)
+            start = start.replace(tzinfo=now.tzinfo, fold=now.fold)
     end_date = start + ends_in
+    print(start, end_date)
     if relative:
         end_date = delta_resolution(end_date, ends_in).replace(microsecond=0)
     ret = end_date - now
