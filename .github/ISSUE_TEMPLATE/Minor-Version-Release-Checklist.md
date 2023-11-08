@@ -1,6 +1,6 @@
 ---
 name: Minor Version Release Checklist
-about: About to release a new patch version? (Maintainers Only!)
+about: About to release a new minor version? (Maintainers Only!)
 title: ''
 labels: ''
 assignees: ''
