@@ -1,5 +1,5 @@
 ---
-name: Patch Version Release Checklist
+name: Minor Version Release Checklist
 about: About to release a new patch version? (Maintainers Only!)
 title: ''
 labels: ''
