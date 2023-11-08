@@ -977,11 +977,11 @@ class Celery:
         """
         try:
             conf = self._conf = self._load_config()
-        except AttributeError as e:
+        except AttributeError as err:
             # AttributeError is not propagated, it is "handled" by
             # PendingConfiguration parent class. This causes
             # confusing RecursionError.
-            raise ModuleNotFoundError(*e.args)
+            raise ModuleNotFoundError(*err.args) from err
 
         return conf
 
