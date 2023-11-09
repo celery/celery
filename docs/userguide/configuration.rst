@@ -2817,7 +2817,7 @@ Default: 100.
 Maximum number of retries before we give up re-establishing a connection
 to the AMQP broker.
 
-If this is set to :const:`0` or :const:`None`, we'll retry forever.
+If this is set to :const:`None`, we'll retry forever.
 
 ``broker_channel_error_retry``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
