@@ -1,11 +1,11 @@
 import sys
-import pytz
 from datetime import datetime, timedelta
 from datetime import timezone as _timezone
 from datetime import tzinfo
 from unittest.mock import Mock, patch
 
 import pytest
+import pytz
 
 if sys.version_info >= (3, 9):
     from zoneinfo import ZoneInfo
