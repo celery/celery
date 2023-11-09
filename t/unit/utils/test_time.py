@@ -188,7 +188,6 @@ def test_remaining():
     assert now.tzname() == "EST"
     assert next_actual_time.tzname() == "EST"
     rem_time = remaining(start, ends_in, now)
-    print(start + ends_in - now)
     next_run = now + rem_time
     assert next_run == next_actual_time
     
@@ -226,7 +225,6 @@ def test_remaining():
     assert now.tzname() == "EST"
     assert next_actual_time.tzname() == "EST"
     rem_time = remaining(start, ends_in, now)
-    print(start + ends_in - now)
     next_run = now + rem_time
     assert next_run == next_actual_time
     
