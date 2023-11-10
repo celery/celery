@@ -274,7 +274,7 @@ class test_autodiscovery:
             imp.assert_any_call('foo')
             imp.assert_any_call('foo.tasks')
 
-    def test_find_related_module__when_neither_package_nor_related_name_exists(self):
+    def test_find_related_module__when_existent_package_parent_but_not_related_name(self):
         with patch('importlib.import_module') as imp:
             first_import = ModuleNotFoundError(name='foo.bar')
             second_import = ModuleNotFoundError(name='foo.tasks')
