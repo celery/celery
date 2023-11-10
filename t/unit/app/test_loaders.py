@@ -240,7 +240,7 @@ class test_autodiscovery:
             imp.return_value = Mock()
             imp.return_value.__path__ = 'foo'
             assert base.find_related_module('foo', None).__path__ == 'foo'
-            imp.assert_any_call('foo')
+            imp.assert_called_once_with('foo')
 
     def test_find_related_module__when_existent_package_and_related_name(self):
         with patch('importlib.import_module') as imp:
