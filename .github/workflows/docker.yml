@@ -1,7 +1,7 @@
 name: Docker
 
 on:
-    push:
+    pull_request:
       branches: [ 'main']
       paths:
           - '**.py'
@@ -9,7 +9,8 @@ on:
           - '**.toml'
           - '/docker/**'
           - '.github/workflows/docker.yml'
-    pull_request:
+          - 'Dockerfile'
+    push:
       branches: [ 'main']
       paths:
           - '**.py'
