@@ -104,7 +104,7 @@ class Context:
     def _get_custom_headers(self, *args, **kwargs):
         headers = {}
         headers.update(*args, **kwargs)
-        celery_keys = {*Context.__dict__.keys(), 'lang', 'task', 'argsrepr', 'kwargsrepr'}
+        celery_keys = {*Context.__dict__.keys(), 'lang', 'task', 'argsrepr', 'kwargsrepr', 'compression'}
         for key in celery_keys:
             headers.pop(key, None)
         if not headers:
