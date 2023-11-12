@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 
-# Minor Release Overview: v<!-- Insert Version Here, e.g. 1.2.3 -->
+# Minor Release Overview: v<!-- Insert Version Here, e.g. 5.4.0 -->
 
 This issue will summarize the status and discussion in preparation for the new release. It will be used to track the progress of the release and to ensure that all the necessary steps are taken. It will serve as a checklist for the release and will be used to communicate the status of the release to the community.
 
@@ -29,6 +29,8 @@ The release manager is responsible for completing the release end-to-end ensurin
 
 # Release Steps
 The release manager is expected to execute the checklist below. The release manager is also responsible for ensuring that the checklist is updated as the release progresses. Any changes or issues should be communicated under this issue for centralized tracking.
+
+# Potential Release Blockers
 
 ## 1. Codebase Stability
 - [ ] The `main` branch build passes
