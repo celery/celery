@@ -288,20 +288,20 @@ class test_autodiscovery:
         with patch('importlib.import_module') as imp:
             non_existent_import = ModuleNotFoundError(name='foo')
             imp.side_effect = non_existent_import
-            with pytest.raises(ImportError) as exc:
+            with pytest.raises(ModuleNotFoundError) as exc:
                 base.find_related_module('foo', 'tasks')
 
             assert exc.value.name == 'foo'
             imp.assert_called_once_with('foo')
 
     def test_find_related_module__when_nested_import_missing(self):
-        expected_error = 'nested import error - e.g. missing library'
+        expected_error = 'dummy import error - e.g. missing nested package'
         with patch('importlib.import_module') as imp:
             first_import = Mock()
             first_import.__path__ = 'foo'
-            second_import = ImportError(expected_error)
+            second_import = ModuleNotFoundError(expected_error)
             imp.side_effect = [first_import, second_import]
-            with pytest.raises(ImportError) as exc:
+            with pytest.raises(ModuleNotFoundError) as exc:
                 base.find_related_module('foo', 'tasks')
 
             assert exc.value.msg == expected_error
