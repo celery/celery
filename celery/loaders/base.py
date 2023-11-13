@@ -270,7 +270,7 @@ def find_related_module(package, related_name):
         return importlib.import_module(module_name)
     except ModuleNotFoundError as e:
         import_exc_name = getattr(e, 'name', module_name)
-        # If sibling does not exist return None.
+        # If candidate does not exist, then return None.
         if import_exc_name == module_name:
             return
 
