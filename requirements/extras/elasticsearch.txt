@@ -1,2 +1,2 @@
-elasticsearch<=8.10.1
+elasticsearch==8.11.0
 elastic-transport<=8.10.0
