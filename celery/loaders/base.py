@@ -271,7 +271,7 @@ def find_related_module(package, related_name):
     except ModuleNotFoundError as e:
         import_exc_name = getattr(e, 'name', module_name)
         # If candidate does not exist, then return None.
-        if import_exc_name == module_name:
+        if module_name.startswith(import_exc_name):
             return
 
         # Otherwise, raise because error probably originated from a nested import.
