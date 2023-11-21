@@ -19,9 +19,7 @@ an overview of what's new in Celery 5.3.
 
 What's Changed
 ==============
-- Update Minor-Version-Release-Checklist.md by @auvipy in https://github.com/celery/celery/pull/8624
 - Increased docker-build CI job timeout from 30m -> 60m by @Nusnus in https://github.com/celery/celery/pull/8635
-- [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in https://github.com/celery/celery/pull/8639
 - Incredibly minor spelling fix. by @Asday in https://github.com/celery/celery/pull/8649
 - Fix non-zero exit code when receiving remote shutdown by @lyzlisa in https://github.com/celery/celery/pull/8650
 - Update task.py get_custom_headers missing 'compression' key by @auvipy in https://github.com/celery/celery/pull/8633
