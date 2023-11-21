@@ -1,3 +1,5 @@
+import pytest
+
 from celery import shared_task
 
 
@@ -7,10 +9,11 @@ def dummy_task(x, y):
 
 
 class test_loader:
-    def test_autodiscovery(self, manager):
+    def test_autodiscovery__when_packages_exist(self, manager):
         # Arrange
         expected_package_name, _, module_name = __name__.rpartition('.')
-        unexpected_package_name = 'nonexistent.package.name'
+        # Expect built-in to neither have test_loader.py module nor define a Celery task.
+        unexpected_package_name = 'datetime.datetime'
 
         # Act
         manager.app.autodiscover_tasks([expected_package_name, unexpected_package_name], module_name, force=True)
@@ -20,3 +23,14 @@ class test_loader:
         assert not any(
             task.startswith(unexpected_package_name) for task in manager.app.tasks
         )
+
+    def test_autodiscovery__when_packages_do_not_exist(self, manager):
+        # Arrange
+        nonexistent_package_name = 'nonexistent.package.name'
+
+        # Act
+        with pytest.raises(ModuleNotFoundError) as exc:
+            manager.app.autodiscover_tasks([nonexistent_package_name], force=True)
+
+        # Assert
+        assert nonexistent_package_name.startswith(exc.value.name), "Expected to fail on importing 'nonexistent'"
