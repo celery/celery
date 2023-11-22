@@ -26,11 +26,14 @@ class test_loader:
 
     def test_autodiscovery__when_packages_do_not_exist(self, manager):
         # Arrange
+        existent_package_name, _, module_name = __name__.rpartition('.')
         nonexistent_package_name = 'nonexistent.package.name'
 
         # Act
         with pytest.raises(ModuleNotFoundError) as exc:
-            manager.app.autodiscover_tasks([nonexistent_package_name], force=True)
+            manager.app.autodiscover_tasks(
+                [existent_package_name, nonexistent_package_name], module_name, force=True
+            )
 
         # Assert
-        assert nonexistent_package_name.startswith(exc.value.name), "Expected to fail on importing 'nonexistent'"
+        assert nonexistent_package_name.startswith(exc.value.name), 'Expected to fail on importing "nonexistent"'
