@@ -18,6 +18,7 @@ from celery.result import AsyncResult, GroupResult
 from celery.utils.collections import AttributeDict
 from t.unit import conftest
 
+
 def raise_on_second_call(mock, exc, *retval):
     def on_first_call(*args, **kwargs):
         mock.side_effect = exc
@@ -1100,7 +1101,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
     @pytest.mark.skipif(system() != 'Linux', reason="Test supported only for Linux setup")
     def test_socket_keepalive_options(self):
         pytest.importorskip('redis')
-        from socket import TCP_KEEPCNT, TCP_KEEPINTVL, TCP_KEEPIDLE
+        from socket import TCP_KEEPCNT, TCP_KEEPIDLE, TCP_KEEPINTVL
 
         self.app.conf.redis_socket_keepalive = True
         self.app.conf.result_backend_transport_options = {
