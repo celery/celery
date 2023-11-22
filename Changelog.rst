@@ -14,7 +14,7 @@ an overview of what's new in Celery 5.3.
 5.3.6
 =====
 
-:release-date: 2023-11-22  7:15 P.M GMT+6
+:release-date: 2023-11-22  9:15 P.M GMT+6
 :release-by: Asif Saif Uddin
 
 
