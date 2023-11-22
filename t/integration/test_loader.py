@@ -12,7 +12,6 @@ class test_loader:
     def test_autodiscovery__when_packages_exist(self, manager):
         # Arrange
         expected_package_name, _, module_name = __name__.rpartition('.')
-        # Expect built-in to neither have test_loader.py module nor define a Celery task.
         unexpected_package_name = 'datetime.datetime'
 
         # Act
@@ -22,7 +21,7 @@ class test_loader:
         assert f'{expected_package_name}.{module_name}.dummy_task' in manager.app.tasks
         assert not any(
             task.startswith(unexpected_package_name) for task in manager.app.tasks
-        )
+        ), 'Expected datetime.datetime to neither have test_loader module nor define a Celery task.'
 
     def test_autodiscovery__when_packages_do_not_exist(self, manager):
         # Arrange
