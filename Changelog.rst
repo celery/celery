@@ -17,13 +17,17 @@ an overview of what's new in Celery 5.3.
 :release-date: 2023-11-22  7:15 P.M GMT+6
 :release-by: Asif Saif Uddin
 
+
+This release is focused mainly to fix AWS SQS new feature comatibility issue and old regressions. 
+The code changes are mostly fix for regressions. More details can be found below.
+
 What's Changed
 ==============
 - Increased docker-build CI job timeout from 30m -> 60m by @Nusnus in https://github.com/celery/celery/pull/8635
 - Incredibly minor spelling fix. by @Asday in https://github.com/celery/celery/pull/8649
 - Fix non-zero exit code when receiving remote shutdown by @lyzlisa in https://github.com/celery/celery/pull/8650
 - Update task.py get_custom_headers missing 'compression' key by @auvipy in https://github.com/celery/celery/pull/8633
-- Update kombu>=5.3.4 to fix SQS request compatibility by @auvipy in https://github.com/celery/celery/pull/8646
+- Update kombu>=5.3.4 to fix SQS request compatibility with boto JSON serializer by @auvipy in https://github.com/celery/celery/pull/8646
 - test requirements version update by @auvipy in https://github.com/celery/celery/pull/8655
 - Update elasticsearch version by @auvipy in https://github.com/celery/celery/pull/8656
 - Propagates more ImportErrors during autodiscovery by @johnjameswhitman in https://github.com/celery/celery/pull/8632
