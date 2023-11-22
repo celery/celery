@@ -117,7 +117,7 @@ class test_default_strategy_proto2:
             if self.was_rate_limited():
                 return self.consumer._limit_task.call_args[0][0]
             if self.was_scheduled():
-                return self.consumer.timer.call_at.call_args[0][0]
+                return self.consumer.timer.call_at.call_args[0][2][0]
             raise ValueError('request not handled')
 
     @contextmanager
@@ -176,9 +176,22 @@ class test_default_strategy_proto2:
         for record in caplog.records:
             if record.msg == LOG_RECEIVED:
                 assert record.levelno == logging.INFO
+                assert record.args['eta'] is None
                 break
         else:
             raise ValueError("Expected message not in captured log records")
+
+    def test_log_eta_task_received(self, caplog):
+        caplog.set_level(logging.INFO, logger="celery.worker.strategy")
+        with self._context(self.add.s(2, 2).set(countdown=10)) as C:
+            C()
+            req = C.get_request()
+            for record in caplog.records:
+                if record.msg == LOG_RECEIVED:
+                    assert record.args['eta'] == req.eta
+                    break
+            else:
+                raise ValueError("Expected message not in captured log records")
 
     def test_log_task_received_custom(self, caplog):
         caplog.set_level(logging.INFO, logger="celery.worker.strategy")
@@ -191,7 +204,23 @@ class test_default_strategy_proto2:
             C()
         for record in caplog.records:
             if record.msg == custom_fmt:
-                assert set(record.args) == {"id", "name", "kwargs", "args"}
+                assert set(record.args) == {"id", "name", "kwargs", "args", "eta"}
+                break
+        else:
+            raise ValueError("Expected message not in captured log records")
+
+    def test_log_task_arguments(self, caplog):
+        caplog.set_level(logging.INFO, logger="celery.worker.strategy")
+        args = "CUSTOM ARGS"
+        kwargs = "CUSTOM KWARGS"
+        with self._context(
+            self.add.s(2, 2).set(argsrepr=args, kwargsrepr=kwargs)
+        ) as C:
+            C()
+        for record in caplog.records:
+            if record.msg == LOG_RECEIVED:
+                assert record.args["args"] == args
+                assert record.args["kwargs"] == kwargs
                 break
         else:
             raise ValueError("Expected message not in captured log records")

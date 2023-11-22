@@ -301,6 +301,29 @@ class test_Scheduler:
         scheduler = mScheduler(app=self.app)
         assert isinstance(scheduler.info, str)
 
+    def test_apply_entry_handles_empty_result(self):
+        s = mScheduler(app=self.app)
+        entry = s.Entry(name='a name', task='foo', app=self.app)
+
+        with patch.object(s, 'apply_async') as mock_apply_async:
+            with patch("celery.beat.debug") as mock_debug:
+                mock_apply_async.return_value = None
+                s.apply_entry(entry)
+        mock_debug.assert_called_once_with('%s sent.', entry.task)
+
+        with patch.object(s, 'apply_async') as mock_apply_async:
+            with patch("celery.beat.debug") as mock_debug:
+                mock_apply_async.return_value = object()
+                s.apply_entry(entry)
+        mock_debug.assert_called_once_with('%s sent.', entry.task)
+
+        task_id = 'taskId123456'
+        with patch.object(s, 'apply_async') as mock_apply_async:
+            with patch("celery.beat.debug") as mock_debug:
+                mock_apply_async.return_value = self.app.AsyncResult(task_id)
+                s.apply_entry(entry)
+        mock_debug.assert_called_once_with('%s sent. id->%s', entry.task, task_id)
+
     def test_maybe_entry(self):
         s = mScheduler(app=self.app)
         entry = s.Entry(name='add every', task='tasks.add', app=self.app)

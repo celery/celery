@@ -573,7 +573,9 @@ time limit kills it:
             clean_up_in_a_hurry()
 
 Time limits can also be set using the :setting:`task_time_limit` /
-:setting:`task_soft_time_limit` settings.
+:setting:`task_soft_time_limit` settings. You can also specify time
+limits for client side operation using ``timeout`` argument of
+``AsyncResult.get()`` function.
 
 .. note::
 

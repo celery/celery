@@ -362,7 +362,7 @@ Provides arguments:
 
 * ``request``
 
-    This is a :class:`~celery.worker.request.Request` instance, and not
+    This is a :class:`~celery.app.task.Context` instance, and not
     ``task.request``. When using the prefork pool this signal
     is dispatched in the parent process, so ``task.request`` isn't available
     and shouldn't be used. Use this object instead, as they share many

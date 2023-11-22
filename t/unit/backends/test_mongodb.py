@@ -429,6 +429,28 @@ class test_MongoBackend:
         ])) == list(sorted(ret_val.keys()))
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
+    def test_get_task_meta_for_result_extended(self, mock_get_database):
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
+
+        mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
+        mock_collection = Mock()
+        mock_collection.find_one.return_value = MagicMock()
+
+        mock_get_database.return_value = mock_database
+        mock_database.__getitem__.return_value = mock_collection
+
+        self.app.conf.result_extended = True
+        ret_val = self.backend._get_task_meta_for(sentinel.task_id)
+
+        mock_get_database.assert_called_once_with()
+        mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
+        assert list(sorted([
+            'status', 'task_id', 'date_done',
+            'traceback', 'result', 'children',
+            'name', 'args', 'queue', 'kwargs', 'worker', 'retries',
+        ])) == list(sorted(ret_val.keys()))
+
+    @patch('celery.backends.mongodb.MongoBackend._get_database')
     def test_get_task_meta_for_no_result(self, mock_get_database):
         self.backend.taskmeta_collection = MONGODB_COLLECTION
 
@@ -708,7 +730,7 @@ class test_MongoBackend_store_get_result:
         backend = mongo_backend_factory(serializer=serializer)
         backend.store_result(TASK_ID, result, 'SUCCESS')
         recovered = backend.get_result(TASK_ID)
-        assert type(recovered) == result_type
+        assert isinstance(recovered, result_type)
         assert recovered == result
 
     @pytest.mark.parametrize("serializer",
@@ -732,5 +754,5 @@ class test_MongoBackend_store_get_result:
         traceback = 'Traceback:\n  Exception: Basic Exception\n'
         backend.store_result(TASK_ID, exception, 'FAILURE', traceback)
         recovered = backend.get_result(TASK_ID)
-        assert type(recovered) == type(exception)
+        assert isinstance(recovered, type(exception))
         assert recovered.args == exception.args

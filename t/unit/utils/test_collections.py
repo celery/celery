@@ -2,13 +2,14 @@ import pickle
 from collections.abc import Mapping
 from itertools import count
 from time import monotonic
+from unittest.mock import Mock
 
 import pytest
 from billiard.einfo import ExceptionInfo
 
 import t.skip
-from celery.utils.collections import (AttributeDict, BufferMap, ConfigurationView, DictAttribute, LimitedSet,
-                                      Messagebuffer)
+from celery.utils.collections import (AttributeDict, BufferMap, ChainMap, ConfigurationView, DictAttribute,
+                                      LimitedSet, Messagebuffer)
 from celery.utils.objects import Bunch
 
 
@@ -448,3 +449,16 @@ class test_BufferMap:
 
     def test_repr(self):
         assert repr(Messagebuffer(10, [1, 2, 3]))
+
+
+class test_ChainMap:
+
+    def test_observers_not_shared(self):
+        a = ChainMap()
+        b = ChainMap()
+        callback = Mock()
+        a.bind_to(callback)
+        b.update(x=1)
+        callback.assert_not_called()
+        a.update(x=1)
+        callback.assert_called_once_with(x=1)

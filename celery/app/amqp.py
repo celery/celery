@@ -285,7 +285,7 @@ class AMQP:
                    create_sent_event=False, root_id=None, parent_id=None,
                    shadow=None, chain=None, now=None, timezone=None,
                    origin=None, ignore_result=False, argsrepr=None, kwargsrepr=None, stamped_headers=None,
-                   **options):
+                   replaced_task_nesting=0, **options):
 
         args = args or ()
         kwargs = kwargs or {}
@@ -339,6 +339,7 @@ class AMQP:
             'kwargsrepr': kwargsrepr,
             'origin': origin or anon_nodename(),
             'ignore_result': ignore_result,
+            'replaced_task_nesting': replaced_task_nesting,
             'stamped_headers': stamped_headers,
             'stamps': stamps,
         }

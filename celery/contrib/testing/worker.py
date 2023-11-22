@@ -1,11 +1,12 @@
 """Embedded workers for integration tests."""
+import logging
 import os
 import threading
 from contextlib import contextmanager
-from typing import Any, Iterable, Union  # noqa
+from typing import Any, Iterable, Optional, Union
 
 import celery.worker.consumer  # noqa
-from celery import Celery, worker  # noqa
+from celery import Celery, worker
 from celery.result import _set_task_join_will_block, allow_join_result
 from celery.utils.dispatch import Signal
 from celery.utils.nodenames import anon_nodename
@@ -29,10 +30,47 @@ test_worker_stopped = Signal(
 class TestWorkController(worker.WorkController):
     """Worker that can synchronize on being fully started."""
 
+    logger_queue = None
+
     def __init__(self, *args, **kwargs):
         # type: (*Any, **Any) -> None
         self._on_started = threading.Event()
+
         super().__init__(*args, **kwargs)
+
+        if self.pool_cls.__module__.split('.')[-1] == 'prefork':
+            from billiard import Queue
+            self.logger_queue = Queue()
+            self.pid = os.getpid()
+
+            try:
+                from tblib import pickling_support
+                pickling_support.install()
+            except ImportError:
+                pass
+
+            # collect logs from forked process.
+            # XXX: those logs will appear twice in the live log
+            self.queue_listener = logging.handlers.QueueListener(self.logger_queue, logging.getLogger())
+            self.queue_listener.start()
+
+    class QueueHandler(logging.handlers.QueueHandler):
+        def prepare(self, record):
+            record.from_queue = True
+            # Keep origin record.
+            return record
+
+        def handleError(self, record):
+            if logging.raiseExceptions:
+                raise
+
+    def start(self):
+        if self.logger_queue:
+            handler = self.QueueHandler(self.logger_queue)
+            handler.addFilter(lambda r: r.process != self.pid and not getattr(r, 'from_queue', False))
+            logger = logging.getLogger()
+            logger.addHandler(handler)
+        return super().start()
 
     def on_consumer_ready(self, consumer):
         # type: (celery.worker.consumer.Consumer) -> None
@@ -93,16 +131,15 @@ def start_worker(
 
 
 @contextmanager
-def _start_worker_thread(app,
-                         concurrency=1,
-                         pool='solo',
-                         loglevel=WORKER_LOGLEVEL,
-                         logfile=None,
-                         WorkController=TestWorkController,
-                         perform_ping_check=True,
-                         shutdown_timeout=10.0,
-                         **kwargs):
-    # type: (Celery, int, str, Union[str, int], str, Any, **Any) -> Iterable
+def _start_worker_thread(app: Celery,
+                         concurrency: int = 1,
+                         pool: str = 'solo',
+                         loglevel: Union[str, int] = WORKER_LOGLEVEL,
+                         logfile: Optional[str] = None,
+                         WorkController: Any = TestWorkController,
+                         perform_ping_check: bool = True,
+                         shutdown_timeout: float = 10.0,
+                         **kwargs) -> Iterable[worker.WorkController]:
     """Start Celery worker in a thread.
 
     Yields:
@@ -173,8 +210,7 @@ def _start_worker_process(app,
         cluster.stopwait()
 
 
-def setup_app_for_worker(app, loglevel, logfile) -> None:
-    # type: (Celery, Union[str, int], str) -> None
+def setup_app_for_worker(app: Celery, loglevel: Union[str, int], logfile: str) -> None:
     """Setup the app to be used for starting an embedded worker."""
     app.finalize()
     app.set_current()

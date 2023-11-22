@@ -272,7 +272,7 @@ class test_DjangoWorkerFixup(FixupCase):
         f.django_setup.reset_mock()
         run_checks.reset_mock()
 
-        patching.setenv('CELERY_SKIP_CHECKS', True)
+        patching.setenv('CELERY_SKIP_CHECKS', 'true')
         f.validate_models()
         f.django_setup.assert_called_with()
         run_checks.assert_not_called()

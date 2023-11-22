@@ -1,0 +1,30 @@
+name: Docker
+
+on:
+    pull_request:
+      branches: [ 'main']
+      paths:
+          - '**.py'
+          - '**.txt'
+          - '**.toml'
+          - '/docker/**'
+          - '.github/workflows/docker.yml'
+          - 'Dockerfile'
+    push:
+      branches: [ 'main']
+      paths:
+          - '**.py'
+          - '**.txt'
+          - '**.toml'
+          - '/docker/**'
+          - '.github/workflows/docker.yml'
+
+
+jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build Docker container
+      run: make docker-build

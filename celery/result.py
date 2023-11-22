@@ -6,6 +6,7 @@ from collections import deque
 from contextlib import contextmanager
 from weakref import proxy
 
+from dateutil.parser import isoparse
 from kombu.utils.objects import cached_property
 from vine import Thenable, barrier, promise
 
@@ -204,7 +205,10 @@ class AsyncResult(ResultBase):
 
         Arguments:
             timeout (float): How long to wait, in seconds, before the
-                operation times out.
+                operation times out. This is the setting for the publisher
+                (celery client) and is different from `timeout` parameter of
+                `@app.task`, which is the setting for the worker. The task
+                isn't terminated even if timeout occurs.
             propagate (bool): Re-raise exception if the task failed.
             interval (float): Time to wait (in seconds) before retrying to
                 retrieve the result.  Note that this does not have any effect
@@ -529,7 +533,7 @@ class AsyncResult(ResultBase):
         """UTC date and time."""
         date_done = self._get_task_meta().get('date_done')
         if date_done and not isinstance(date_done, datetime.datetime):
-            return datetime.datetime.fromisoformat(date_done)
+            return isoparse(date_done)
         return date_done
 
     @property
@@ -980,13 +984,14 @@ class GroupResult(ResultSet):
 class EagerResult(AsyncResult):
     """Result that we know has already been executed."""
 
-    def __init__(self, id, ret_value, state, traceback=None):
+    def __init__(self, id, ret_value, state, traceback=None, name=None):
         # pylint: disable=super-init-not-called
         # XXX should really not be inheriting from AsyncResult
         self.id = id
         self._result = ret_value
         self._state = state
         self._traceback = traceback
+        self._name = name
         self.on_ready = promise()
         self.on_ready(self)
 
@@ -1039,6 +1044,7 @@ class EagerResult(AsyncResult):
             'result': self._result,
             'status': self._state,
             'traceback': self._traceback,
+            'name': self._name,
         }
 
     @property

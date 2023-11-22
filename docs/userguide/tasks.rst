@@ -1672,12 +1672,12 @@ when calling ``apply_async``.
         return x + y
 
     # No result will be stored
-    result = mytask.apply_async(1, 2, ignore_result=True)
-    print result.get() # -> None
+    result = mytask.apply_async((1, 2), ignore_result=True)
+    print(result.get()) # -> None
 
     # Result will be stored
-    result = mytask.apply_async(1, 2, ignore_result=False)
-    print result.get() # -> 3
+    result = mytask.apply_async((1, 2), ignore_result=False)
+    print(result.get()) # -> 3
 
 By default tasks will *not ignore results* (``ignore_result=False``) when a result backend is configured.
 

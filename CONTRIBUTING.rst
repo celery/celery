@@ -825,7 +825,7 @@ had to be modified.
 
 .. _`Isort`: https://isort.readthedocs.io/en/latest/
 
-.. _contributing-pull-requets:
+.. _contributing-pull-requests:
 
 Creating pull requests
 ----------------------

@@ -75,7 +75,9 @@ def app(celery_app):
 
 @pytest.fixture
 def manager(app, celery_session_worker):
-    return Manager(app)
+    manager = Manager(app)
+    yield manager
+    manager.wait_until_idle()
 
 
 @pytest.fixture(autouse=True)

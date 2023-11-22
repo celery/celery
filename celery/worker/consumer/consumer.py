@@ -153,6 +153,10 @@ class Consumer:
 
     restart_count = -1  # first start is the same as a restart
 
+    #: This flag will be turned off after the first failed
+    #: connection attempt.
+    first_connection_attempt = True
+
     class Blueprint(bootsteps.Blueprint):
         """Consumer blueprint."""
 
@@ -337,7 +341,8 @@ class Consumer:
             except recoverable_errors as exc:
                 # If we're not retrying connections, we need to properly shutdown or terminate
                 # the Celery main process instead of abruptly aborting the process without any cleanup.
-                is_connection_loss_on_startup = self.restart_count == 0
+                is_connection_loss_on_startup = self.first_connection_attempt
+                self.first_connection_attempt = False
                 connection_retry_type = self._get_connection_retry_type(is_connection_loss_on_startup)
                 connection_retry = self.app.conf[connection_retry_type]
                 if not connection_retry:
@@ -488,13 +493,17 @@ class Consumer:
 
         # Remember that the connection is lazy, it won't establish
         # until needed.
-        # If broker_connection_retry_on_startup is not set, revert to broker_connection_retry
-        # to determine whether connection retries are disabled.
 
         # TODO: Rely only on broker_connection_retry_on_startup to determine whether connection retries are disabled.
         #       We will make the switch in Celery 6.0.
 
+        retry_disabled = False
+
         if self.app.conf.broker_connection_retry_on_startup is None:
+            # If broker_connection_retry_on_startup is not set, revert to broker_connection_retry
+            # to determine whether connection retries are disabled.
+            retry_disabled = not self.app.conf.broker_connection_retry
+
             warnings.warn(
                 CPendingDeprecationWarning(
                     f"The broker_connection_retry configuration setting will no longer determine\n"
@@ -502,16 +511,23 @@ class Consumer:
                     f"If you wish to retain the existing behavior for retrying connections on startup,\n"
                     f"you should set broker_connection_retry_on_startup to {self.app.conf.broker_connection_retry}.")
             )
+        else:
+            if self.first_connection_attempt:
+                retry_disabled = not self.app.conf.broker_connection_retry_on_startup
+            else:
+                retry_disabled = not self.app.conf.broker_connection_retry
 
-        if not self.app.conf.broker_connection_retry and not self.app.conf.broker_connection_retry_on_startup:
+        if retry_disabled:
             # Retry disabled, just call connect directly.
             conn.connect()
+            self.first_connection_attempt = False
             return conn
 
         conn = conn.ensure_connection(
             _error_handler, self.app.conf.broker_connection_max_retries,
             callback=maybe_shutdown,
         )
+        self.first_connection_attempt = False
         return conn
 
     def _flush_events(self):

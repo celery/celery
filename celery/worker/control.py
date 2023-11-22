@@ -580,7 +580,7 @@ def autoscale(state, max=None, min=None):
 def shutdown(state, msg='Got shutdown from remote', **kwargs):
     """Shutdown worker(s)."""
     logger.warning(msg)
-    raise WorkerShutdown(msg)
+    raise WorkerShutdown(0)
 
 
 # -- Queues
