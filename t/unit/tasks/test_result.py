@@ -391,10 +391,12 @@ class test_AsyncResult:
 
     def test_del(self):
         with patch('celery.result.AsyncResult.backend') as backend:
-            result = self.app.AsyncResult(self.task1['id'])
+            result = self.app.AsyncResult(self.task1['id'], backend=backend)
             result_clone = copy.copy(result)
-            del result
-            assert backend.remove_pending_result.called_once_with(
+            # del result do not exacly call __del__ method. The gc does.
+            # https://docs.python.org/3/reference/datamodel.html#object.__del__
+            result.__del__()
+            backend.remove_pending_result.assert_called_once_with(
                 result_clone
             )
 
