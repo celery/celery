@@ -490,10 +490,16 @@ link to your website. [`Become a sponsor`_]
 
 .. _`Become a sponsor`: https://opencollective.com/celery#sponsor
 
-|oc-sponsors|
+|oc-sponsor-1| |oc-sponsor-2|
 
-.. |oc-sponsors| image:: https://opencollective.com/celery/sponsor/0/avatar.svg
+.. |oc-sponsor-1| image:: https://opencollective.com/celery/sponsor/0/avatar.svg
     :target: https://opencollective.com/celery/sponsor/0/website
+
+.. |oc-sponsor-2| image:: https://upstash.com/logo/upstash-dark-bg.svg
+    :target: http://upstash.com/?code=celery
+    :alt: Upstash
+    :width: 200
+    :height: 57
 
 .. _license:
 
