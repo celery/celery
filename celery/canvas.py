@@ -1221,7 +1221,9 @@ class _chain(Signature):
                 # chord | task -> attach to body
                 tasks.pop()
                 results.pop()
-                task = task.clone(body=task.body | prev_task)
+                new_task = task.clone()
+                new_task.body = new_task.body | prev_task
+                task = new_task
 
             if is_last_task:
                 # chain(task_id=id) means task id is set for the last task
