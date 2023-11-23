@@ -22,4 +22,4 @@ def long_running_task(seconds: float = 1) -> bool:
 def replace_with_task(self: Task, replace_with: Signature = None):
     if replace_with is None:
         replace_with = replaced_with_me.s()
-    self.replace(signature(replace_with))
+    return self.replace(signature(replace_with))
