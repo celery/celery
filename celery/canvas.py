@@ -989,7 +989,7 @@ class _chain(Signature):
                 # This would involve chaining the body of the second-to-last chord with the last chord."
                 if len(sig.tasks) > 1 and isinstance(sig.tasks[-2], chord):
                     sig.tasks[-2].body = sig.tasks[-2].body | sig.tasks[-1]
-                    sig.tasks.pop(-1)
+                    sig.tasks = sig.tasks[:-1]
                 return sig
             elif self.tasks and isinstance(self.tasks[-1], chord):
                 # CHAIN [last item is chord] -> chain with chord body.
