@@ -158,7 +158,7 @@ with an eventual consistency model and durable storage, facilitated
 through a multi-tier storage architecture.
 
 Integration with Celery is straightforward as demonstrated
-in an `example provided by Upstash <https://github.com/upstash/redis-examples/tree/master/using-celery>`_.
+in an `example provided by Upstash <https://github.com/upstash/examples/tree/main/examples/using-celery>`_.
 
 .. _redis-caveats:
 
