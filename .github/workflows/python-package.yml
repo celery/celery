@@ -12,7 +12,7 @@ on:
         - '.github/workflows/python-package.yml'
         - '**.toml'
   pull_request:
-    branches: [ 'main']
+    branches: [ 'main', 'smoke_tests' ]
     paths:
         - '**.py'
         - '**.txt'
