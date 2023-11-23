@@ -571,6 +571,24 @@ class test_chain(CanvasCase):
         assert isinstance(new_chain, _chain)
         assert isinstance(new_chain.tasks[0].body, chord)
 
+    def test_chain_of_chord_upgrade_on_chaining__protocol_2(self):
+        c = chain(
+            group([self.add.s(i, i) for i in range(5)], app=self.app),
+            group([self.add.s(i, i) for i in range(10, 15)], app=self.app),
+            group([self.add.s(i, i) for i in range(20, 25)], app=self.app),
+            self.add.s(30)
+        )
+        assert isinstance(c, _chain)
+        assert not isinstance(c, chord)
+
+        assert len(c.tasks) == 2
+        assert isinstance(c.tasks[0], chord)
+        assert isinstance(c.tasks[1], chord)
+
+        tasks, _ = c.prepare_steps((), {}, c.tasks)
+        assert len(tasks) == 1
+        assert isinstance(tasks[0], chord)
+
     def test_apply_options(self):
 
         class static(Signature):

@@ -1219,7 +1219,7 @@ class _chain(Signature):
 
             if isinstance(task, chord) and prev_task and not isinstance(
                     prev_task,
-                (group, _chain)) and isinstance(prev_task, Signature):
+                    (group, _chain)) and isinstance(prev_task, Signature):
                 # chord | task -> attach to body
                 tasks.pop()
                 results.pop()
