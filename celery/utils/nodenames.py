@@ -100,7 +100,7 @@ def _fmt_process_index(prefix: str = '', default: str = '0') -> str:
 _fmt_process_index_with_prefix = partial(_fmt_process_index, '-', '')
 
 
-def host_format(s: str, host: str | None = None, name: str | None = None, **extra: "Any") -> str:
+def host_format(s: str, host: str | None = None, name: str | None = None, **extra: Any) -> str:
     """Format host %x abbreviations."""
     host = host or gethostname()
     hname, _, domain = host.partition('.')
