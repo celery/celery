@@ -579,15 +579,7 @@ class test_chain(CanvasCase):
             self.add.s(30)
         )
         assert isinstance(c, _chain)
-        assert not isinstance(c, chord)
-
-        assert len(c.tasks) == 2
-        assert isinstance(c.tasks[0], chord)
-        assert isinstance(c.tasks[1], chord)
-
-        tasks, _ = c.prepare_steps((), {}, c.tasks)
-        assert len(tasks) == 1
-        assert isinstance(tasks[0], chord)
+        assert len(c.tasks) == 1
 
     def test_apply_options(self):
 

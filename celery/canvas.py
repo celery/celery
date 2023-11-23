@@ -981,6 +981,11 @@ class _chain(Signature):
                 sig = self.clone()
                 sig.tasks[-1] = chord(
                     sig.tasks[-1], other, app=self._app)
+                for task_idx in range(len(sig.tasks) - 2, -1, -1):
+                    if isinstance(sig.tasks[task_idx], chord):
+                        sig.tasks[task_idx].body = sig.tasks[task_idx].body | sig.tasks.pop(task_idx + 1)
+                    else:
+                        break
                 return sig
             elif self.tasks and isinstance(self.tasks[-1], chord):
                 # CHAIN [last item is chord] -> chain with chord body.
@@ -1216,14 +1221,6 @@ class _chain(Signature):
                         task, body=prev_task,
                         root_id=root_id, app=app,
                     )
-            elif isinstance(task, chord) and prev_task and not isinstance(
-                    prev_task, (group, _chain)):
-                # chord | task -> attach to body
-                tasks.pop()
-                results.pop()
-                new_task = task.clone()
-                new_task.body = new_task.body | prev_task
-                task = new_task
 
             if is_last_task:
                 # chain(task_id=id) means task id is set for the last task
