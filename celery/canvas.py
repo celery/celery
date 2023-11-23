@@ -1216,14 +1216,12 @@ class _chain(Signature):
                         task, body=prev_task,
                         root_id=root_id, app=app,
                     )
-
-            if isinstance(task, chord) and prev_task and not isinstance(
-                    prev_task,
-                    (group, _chain)) and isinstance(prev_task, Signature):
+            elif isinstance(task, chord) and prev_task and not isinstance(
+                    prev_task, (group, _chain)):
                 # chord | task -> attach to body
                 tasks.pop()
                 results.pop()
-                task.body = task.body | prev_task
+                task = task.clone(body=task.body | prev_task)
 
             if is_last_task:
                 # chain(task_id=id) means task id is set for the last task
