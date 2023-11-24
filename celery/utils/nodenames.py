@@ -84,7 +84,7 @@ def default_nodename(hostname: str) -> str:
     return nodename(name or NODENAME_DEFAULT, host or gethostname())
 
 
-def node_format(s: str, name: str, **extra: Any) -> str:
+def node_format(s: str, name: str, **extra: dict) -> str:
     """Format worker node name (name@host.com)."""
     shortname, host = nodesplit(name)
     return host_format(s, host, shortname or NODENAME_DEFAULT, p=name, **extra)
@@ -100,7 +100,7 @@ def _fmt_process_index(prefix: str = '', default: str = '0') -> str:
 _fmt_process_index_with_prefix = partial(_fmt_process_index, '-', '')
 
 
-def host_format(s: str, host: str | None = None, name: str | None = None, **extra: Any) -> str:
+def host_format(s: str, host: str | None = None, name: str | None = None, **extra: dict) -> str:
     """Format host %x abbreviations."""
     host = host or gethostname()
     hname, _, domain = host.partition('.')
