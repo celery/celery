@@ -571,36 +571,35 @@ class test_chain(CanvasCase):
         assert isinstance(new_chain, _chain)
         assert isinstance(new_chain.tasks[0].body, chord)
 
-    def test_chain_of_chord_upgrade_on_chaining__protocol_2(self):
+    @pytest.mark.parametrize(
+        "group_last_task",
+        [False, True],
+    )
+    def test_chain_of_chord_upgrade_on_chaining__protocol_2(
+            self, group_last_task):
         c = chain(
             group([self.add.s(i, i) for i in range(5)], app=self.app),
             group([self.add.s(i, i) for i in range(10, 15)], app=self.app),
             group([self.add.s(i, i) for i in range(20, 25)], app=self.app),
-            self.add.s(30)
-        )
+            self.add.s(30) if not group_last_task else group(self.add.s(30),
+                                                             app=self.app))
         assert isinstance(c, _chain)
-        assert len(c.tasks) == 1
+        assert len(
+            c.tasks
+        ) == 1, "Consecutive chords should be further upgraded to a single chord."
+        assert isinstance(c.tasks[0], chord)
 
     def test_chain_of_chord_upgrade_on_chaining__protocol_3(self):
-        c = chain(
-            group([self.add.s(i, i) for i in range(5)], app=self.app),
-            group([self.add.s(i, i) for i in range(10, 15)], app=self.app),
-            group([self.add.s(i, i) for i in range(20, 25)], app=self.app),
-            group(self.add.s(30), app=self.app)
-        )
-        assert isinstance(c, _chain)
-        assert len(c.tasks) == 1
-
-    def test_chain_of_chord_upgrade_on_chaining__protocol_4(self):
         c = chain(
             chain([self.add.s(i, i) for i in range(5)]),
             group([self.add.s(i, i) for i in range(10, 15)], app=self.app),
             chord([signature('header')], signature('body'), app=self.app),
-            group([self.add.s(i, i) for i in range(20, 25)], app=self.app)
-        )
+            group([self.add.s(i, i) for i in range(20, 25)], app=self.app))
         assert isinstance(c, _chain)
+        assert isinstance(
+            c.tasks[-1], chord
+        ), "Chord followed by a group should be upgraded to a single chord with chained body."
         assert len(c.tasks) == 6
-        assert isinstance(c.tasks[-1], chord)
 
     def test_apply_options(self):
 
