@@ -1,12 +1,33 @@
 import json
 
 import pytest
-from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup, CeleryTestWorker
+from pytest_celery import (RESULT_TIMEOUT, CeleryBackendCluster, CeleryTestSetup, CeleryTestWorker,
+                           CeleryWorkerCluster)
 
-from celery.canvas import StampingVisitor, chain
+from celery.canvas import Signature, StampingVisitor, chain
+from celery.result import AsyncResult
 from t.integration.tasks import StampOnReplace, identity, replace_with_stamped_task
+from t.smoke.tests.stamping.tasks import wait_for_revoke
 from t.smoke.workers.dev import SmokeWorkerContainer
 from t.smoke.workers.legacy import CeleryLegacyWorkerContainer
+
+
+@pytest.fixture
+def dev_worker(celery_setup: CeleryTestSetup) -> CeleryTestWorker:
+    worker: CeleryTestWorker
+    for worker in celery_setup.worker_cluster:
+        if worker.version == SmokeWorkerContainer.version():
+            return worker
+    return None
+
+
+@pytest.fixture
+def legacy_worker(celery_setup: CeleryTestSetup) -> CeleryTestWorker:
+    worker: CeleryTestWorker
+    for worker in celery_setup.worker_cluster:
+        if worker.version == CeleryLegacyWorkerContainer.version():
+            return worker
+    return None
 
 
 class test_stamping:
@@ -79,6 +100,8 @@ class test_stamping:
     def test_stamping_on_replace_with_legacy_worker_in_cluster(
         self,
         celery_setup: CeleryTestSetup,
+        dev_worker: CeleryTestWorker,
+        legacy_worker: CeleryTestWorker,
     ):
         if len(celery_setup.worker_cluster) < 2:
             pytest.skip("Not enough workers in cluster")
@@ -86,13 +109,6 @@ class test_stamping:
         stamp = {"stamp": "Only for dev worker tasks"}
         stamp1 = {**StampOnReplace.stamp, "stamp1": "1) Only for legacy worker tasks"}
         stamp2 = {**StampOnReplace.stamp, "stamp2": "2) Only for legacy worker tasks"}
-
-        worker: CeleryTestWorker
-        for worker in celery_setup.worker_cluster:
-            if worker.version == SmokeWorkerContainer.version():
-                dev_worker = worker
-            elif worker.version == CeleryLegacyWorkerContainer.version():
-                legacy_worker = worker
 
         replaced_sig1 = (
             identity.si(4)
@@ -127,3 +143,57 @@ class test_stamping:
         assert legacy_worker.logs().count(stamp) == 0
         assert legacy_worker.logs().count(stamp1)
         assert legacy_worker.logs().count(stamp2)
+
+
+class test_revoke_by_stamped_headers:
+    @pytest.fixture
+    def celery_worker_cluster(
+        self,
+        celery_worker: CeleryTestWorker,
+        celery_latest_worker: CeleryTestWorker,
+    ) -> CeleryWorkerCluster:
+        cluster = CeleryWorkerCluster(celery_worker, celery_latest_worker)
+        yield cluster
+        cluster.teardown()
+
+    @pytest.fixture
+    def celery_backend_cluster(self) -> CeleryBackendCluster:
+        # Disable backend
+        return None
+
+    @pytest.fixture
+    def canvas(self, celery_worker: CeleryTestWorker) -> Signature:
+        return chain(
+            identity.s(42),
+            wait_for_revoke.s(waitfor_worker_queue=celery_worker.worker_queue).set(
+                queue=celery_worker.worker_queue
+            ),
+        )
+
+    def test_revoke_by_stamped_headers_after_publish(
+        self,
+        celery_setup: CeleryTestSetup,
+        celery_latest_worker: CeleryTestWorker,
+        celery_worker: CeleryTestWorker,
+        canvas: Signature,
+    ):
+        result: AsyncResult = canvas.apply_async(
+            queue=celery_latest_worker.worker_queue
+        )
+        result.revoke_by_stamped_headers(StampOnReplace.stamp, terminate=True)
+        assert celery_worker.logs().count("Done waiting") == 0
+
+    def test_revoke_by_stamped_headers_before_publish(
+        self,
+        celery_setup: CeleryTestSetup,
+        celery_latest_worker: CeleryTestWorker,
+        celery_worker: CeleryTestWorker,
+        canvas: Signature,
+    ):
+        result = canvas.freeze()
+        result.revoke_by_stamped_headers(StampOnReplace.stamp)
+        result: AsyncResult = canvas.apply_async(
+            queue=celery_latest_worker.worker_queue
+        )
+        celery_worker.assert_log_exists("Discarding revoked task")
+        celery_worker.assert_log_exists(f"revoked by header: {StampOnReplace.stamp}")
