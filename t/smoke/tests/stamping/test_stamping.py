@@ -6,7 +6,7 @@ from pytest_celery import (RESULT_TIMEOUT, CeleryBackendCluster, CeleryTestSetup
 
 from celery.canvas import Signature, StampingVisitor, chain
 from celery.result import AsyncResult
-from t.integration.tasks import StampOnReplace, identity, replace_with_stamped_task
+from t.integration.tasks import StampOnReplace, add, identity, replace_with_stamped_task
 from t.smoke.tests.stamping.tasks import wait_for_revoke
 from t.smoke.workers.dev import SmokeWorkerContainer
 from t.smoke.workers.legacy import CeleryLegacyWorkerContainer
@@ -31,6 +31,47 @@ def legacy_worker(celery_setup: CeleryTestSetup) -> CeleryTestWorker:
 
 
 class test_stamping:
+    @pytest.fixture
+    def celery_worker_cluster(
+        self,
+        celery_worker: CeleryTestWorker,
+    ) -> CeleryWorkerCluster:
+        cluster = CeleryWorkerCluster(celery_worker)
+        yield cluster
+        cluster.teardown()
+
+    def test_callback(self, dev_worker: CeleryTestWorker):
+        on_signature_stamp = {"on_signature_stamp": 4}
+        no_visitor_stamp = {"no_visitor_stamp": "Stamp without visitor"}
+        on_callback_stamp = {"on_callback_stamp": 2}
+        link_stamp = {
+            **on_signature_stamp,
+            **no_visitor_stamp,
+            **on_callback_stamp,
+        }
+
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return on_signature_stamp.copy()
+
+            def on_callback(self, callback, **header) -> dict:
+                return on_callback_stamp.copy()
+
+        stamped_task = identity.si(123).set(queue=dev_worker.worker_queue)
+        stamped_task.link(
+            add.s(0)
+            .stamp(no_visitor_stamp=no_visitor_stamp["no_visitor_stamp"])
+            .set(queue=dev_worker.worker_queue)
+        )
+        stamped_task.stamp(visitor=CustomStampingVisitor())
+        stamped_task.delay().get(timeout=RESULT_TIMEOUT)
+        assert dev_worker.logs().count(
+            json.dumps(on_signature_stamp, indent=4, sort_keys=True)
+        )
+        assert dev_worker.logs().count(json.dumps(link_stamp, indent=4, sort_keys=True))
+
+
+class test_stamping_hybrid_worker_cluster:
     def test_sanity(self, celery_setup: CeleryTestSetup):
         stamp = {"stamp": 42}
 
@@ -43,8 +84,8 @@ class test_stamping:
             queue = worker.worker_queue
             stamped_task = identity.si(123)
             stamped_task.stamp(visitor=CustomStampingVisitor())
-            stamped_task.apply_async(queue=queue).get(timeout=RESULT_TIMEOUT)
-            assert worker.logs().count(json.dumps(stamp, indent=4))
+            assert stamped_task.apply_async(queue=queue).get(timeout=RESULT_TIMEOUT)
+            assert worker.logs().count(json.dumps(stamp, indent=4, sort_keys=True))
 
     def test_sanity_worker_hop(self, celery_setup: CeleryTestSetup):
         if len(celery_setup.worker_cluster) < 2:
@@ -166,20 +207,21 @@ class test_revoke_by_stamped_headers:
 
     @pytest.fixture
     def canvas(
-        self, celery_worker: CeleryTestWorker, wait_for_revoke_timeout: int
+        self,
+        dev_worker: CeleryTestWorker,
+        wait_for_revoke_timeout: int,
     ) -> Signature:
         return chain(
             identity.s(wait_for_revoke_timeout),
-            wait_for_revoke.s(waitfor_worker_queue=celery_worker.worker_queue).set(
-                queue=celery_worker.worker_queue
+            wait_for_revoke.s(waitfor_worker_queue=dev_worker.worker_queue).set(
+                queue=dev_worker.worker_queue
             ),
         )
 
     def test_revoke_by_stamped_headers_after_publish(
         self,
-        celery_setup: CeleryTestSetup,
+        dev_worker: CeleryTestWorker,
         celery_latest_worker: CeleryTestWorker,
-        celery_worker: CeleryTestWorker,
         wait_for_revoke_timeout: int,
         canvas: Signature,
     ):
@@ -187,16 +229,15 @@ class test_revoke_by_stamped_headers:
             queue=celery_latest_worker.worker_queue
         )
         result.revoke_by_stamped_headers(StampOnReplace.stamp, terminate=True)
-        celery_worker.assert_log_does_not_exist(
+        dev_worker.assert_log_does_not_exist(
             "Done waiting",
             timeout=wait_for_revoke_timeout,
         )
 
     def test_revoke_by_stamped_headers_before_publish(
         self,
-        celery_setup: CeleryTestSetup,
+        dev_worker: CeleryTestWorker,
         celery_latest_worker: CeleryTestWorker,
-        celery_worker: CeleryTestWorker,
         canvas: Signature,
     ):
         result = canvas.freeze()
@@ -204,5 +245,5 @@ class test_revoke_by_stamped_headers:
         result: AsyncResult = canvas.apply_async(
             queue=celery_latest_worker.worker_queue
         )
-        celery_worker.assert_log_exists("Discarding revoked task")
-        celery_worker.assert_log_exists(f"revoked by header: {StampOnReplace.stamp}")
+        dev_worker.assert_log_exists("Discarding revoked task")
+        dev_worker.assert_log_exists(f"revoked by header: {StampOnReplace.stamp}")
