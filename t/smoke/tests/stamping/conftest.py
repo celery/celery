@@ -7,7 +7,7 @@ from pytest_celery import CeleryTestWorker, CeleryWorkerCluster
 @pytest.fixture(
     # Each param item is a list of workers to be used in the cluster
     params=[
-        # ["celery_setup_worker"],
+        ["celery_setup_worker"],
         ["celery_setup_worker", "celery_legacy_worker"],
     ]
 )
