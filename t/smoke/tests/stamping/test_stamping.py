@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 
 import pytest
@@ -31,15 +33,6 @@ def legacy_worker(celery_setup: CeleryTestSetup) -> CeleryTestWorker:
 
 
 class test_stamping:
-    @pytest.fixture
-    def celery_worker_cluster(
-        self,
-        celery_worker: CeleryTestWorker,
-    ) -> CeleryWorkerCluster:
-        cluster = CeleryWorkerCluster(celery_worker)
-        yield cluster
-        cluster.teardown()
-
     def test_callback(self, dev_worker: CeleryTestWorker):
         on_signature_stamp = {"on_signature_stamp": 4}
         no_visitor_stamp = {"no_visitor_stamp": "Stamp without visitor"}
@@ -72,6 +65,25 @@ class test_stamping:
 
 
 class test_stamping_hybrid_worker_cluster:
+    @pytest.fixture(
+        # Each param item is a list of workers to be used in the cluster
+        # and each cluster will be tested separately (with parallel support)
+        params=[
+            ["celery_setup_worker"],
+            ["celery_setup_worker", "celery_legacy_worker"],
+        ]
+    )
+    def celery_worker_cluster(
+        self,
+        request: pytest.FixtureRequest,
+    ) -> CeleryWorkerCluster:
+        nodes: tuple[CeleryTestWorker] = [
+            request.getfixturevalue(worker) for worker in request.param
+        ]
+        cluster = CeleryWorkerCluster(*nodes)
+        yield cluster
+        cluster.teardown()
+
     def test_sanity(self, celery_setup: CeleryTestSetup):
         stamp = {"stamp": 42}
 
