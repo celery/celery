@@ -162,9 +162,15 @@ class test_revoke_by_stamped_headers:
         return None
 
     @pytest.fixture
-    def canvas(self, celery_worker: CeleryTestWorker) -> Signature:
+    def wait_for_revoke_timeout(self) -> int:
+        return 4
+
+    @pytest.fixture
+    def canvas(
+        self, celery_worker: CeleryTestWorker, wait_for_revoke_timeout: int
+    ) -> Signature:
         return chain(
-            identity.s(42),
+            identity.s(wait_for_revoke_timeout),
             wait_for_revoke.s(waitfor_worker_queue=celery_worker.worker_queue).set(
                 queue=celery_worker.worker_queue
             ),
@@ -175,13 +181,17 @@ class test_revoke_by_stamped_headers:
         celery_setup: CeleryTestSetup,
         celery_latest_worker: CeleryTestWorker,
         celery_worker: CeleryTestWorker,
+        wait_for_revoke_timeout: int,
         canvas: Signature,
     ):
         result: AsyncResult = canvas.apply_async(
             queue=celery_latest_worker.worker_queue
         )
         result.revoke_by_stamped_headers(StampOnReplace.stamp, terminate=True)
-        assert celery_worker.logs().count("Done waiting") == 0
+        celery_worker.assert_log_does_not_exist(
+            "Done waiting",
+            timeout=wait_for_revoke_timeout,
+        )
 
     def test_revoke_by_stamped_headers_before_publish(
         self,
