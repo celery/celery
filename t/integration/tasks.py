@@ -7,6 +7,13 @@ from celery.canvas import signature
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 
+LEGACY_TASKS_DISABLED = True
+try:
+    # Imports that are not available in Celery 4
+    from celery.canvas import StampingVisitor
+except ImportError:
+    LEGACY_TASKS_DISABLED = False
+
 
 def get_redis_connection():
     from redis import StrictRedis
@@ -468,11 +475,9 @@ def replaced_with_me():
     return True
 
 
-try:
-    from celery.canvas import StampingVisitor
-
+if LEGACY_TASKS_DISABLED:
     class StampOnReplace(StampingVisitor):
-        stamp = {'StampOnReplace': 'This is the replaced task'}
+        stamp = {"StampOnReplace": "This is the replaced task"}
 
         def on_signature(self, sig, **headers) -> dict:
             return self.stamp
@@ -489,5 +494,3 @@ try:
         if replace_with is None:
             replace_with = replaced_with_me.s()
         self.replace(signature(replace_with))
-except ImportError:
-    pass
