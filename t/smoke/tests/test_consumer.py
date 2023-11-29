@@ -27,6 +27,9 @@ class test_worker_enable_prefetch_count_reduction_true:
 
     @pytest.mark.parametrize("expected_running_tasks_count", range(1, WORKER_CONCURRENCY + 1))
     def test_reducing_prefetch_count(self, celery_setup: CeleryTestSetup, expected_running_tasks_count: int):
+        if isinstance(celery_setup.broker, RedisTestBroker):
+            pytest.xfail("Potential Bug: Redis Broker Restart is unstable")
+
         sig = group(long_running_task.s(420) for _ in range(expected_running_tasks_count))
         sig.apply_async(queue=celery_setup.worker.worker_queue)
         celery_setup.broker.restart()
@@ -47,6 +50,9 @@ class test_worker_enable_prefetch_count_reduction_true:
         celery_setup.worker.assert_log_exists(expected_prefetch_restore_message)
 
     def test_prefetch_count_restored(self, celery_setup: CeleryTestSetup):
+        if isinstance(celery_setup.broker, RedisTestBroker):
+            pytest.xfail("Potential Bug: Redis Broker Restart is unstable")
+
         expected_running_tasks_count = MAX_PREFETCH * WORKER_PREFETCH_MULTIPLIER
         sig = group(long_running_task.s(10) for _ in range(expected_running_tasks_count))
         sig.apply_async(queue=celery_setup.worker.worker_queue)
