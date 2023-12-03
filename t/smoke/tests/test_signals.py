@@ -1,5 +1,5 @@
 import pytest
-from pytest_celery import CeleryTestSetup
+from pytest_celery import CeleryBackendCluster, CeleryTestSetup
 
 from celery.signals import after_task_publish, before_task_publish
 from t.smoke.tasks import noop
@@ -11,6 +11,12 @@ def default_worker_signals(default_worker_signals: set) -> set:
 
     default_worker_signals.add(signals)
     yield default_worker_signals
+
+
+@pytest.fixture
+def celery_backend_cluster() -> CeleryBackendCluster:
+    # Disable backend
+    return None
 
 
 class test_signals:
