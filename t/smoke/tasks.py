@@ -13,8 +13,21 @@ def noop(*args, **kwargs) -> None:
 
 
 @shared_task
-def long_running_task(seconds: float = 1) -> bool:
-    sleep(seconds)
+def long_running_task(seconds: float = 1, verbose: bool = False) -> bool:
+    from celery import current_task
+    from celery.utils.log import get_task_logger
+
+    logger = get_task_logger(current_task.name)
+
+    logger.info('Starting long running task')
+
+    for i in range(0, int(seconds)):
+        sleep(1)
+        if verbose:
+            logger.info(f'Sleeping: {i}')
+
+    logger.info('Finished long running task')
+
     return True
 
 
