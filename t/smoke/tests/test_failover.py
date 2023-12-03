@@ -32,10 +32,21 @@ def celery_broker_cluster(
     cluster.teardown()
 
 
-class test_failover:
-    def test_sanity(self, celery_setup: CeleryTestSetup):
+class test_broker_failover:
+    def test_killing_first_broker(self, celery_setup: CeleryTestSetup):
         assert len(celery_setup.broker_cluster) > 1
         celery_setup.broker.kill()
         expected = "test_broker_failover"
+        res = identity.s(expected).apply_async(queue=celery_setup.worker.worker_queue)
+        assert res.get(timeout=RESULT_TIMEOUT) == expected
+
+    def test_reconnect_to_main(self, celery_setup: CeleryTestSetup):
+        assert len(celery_setup.broker_cluster) > 1
+        celery_setup.broker_cluster[0].kill()
+        expected = "test_broker_failover"
+        res = identity.s(expected).apply_async(queue=celery_setup.worker.worker_queue)
+        assert res.get(timeout=RESULT_TIMEOUT) == expected
+        celery_setup.broker_cluster[1].kill()
+        celery_setup.broker_cluster[0].restart()
         res = identity.s(expected).apply_async(queue=celery_setup.worker.worker_queue)
         assert res.get(timeout=RESULT_TIMEOUT) == expected
