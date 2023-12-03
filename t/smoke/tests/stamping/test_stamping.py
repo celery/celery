@@ -70,7 +70,9 @@ class test_stamping_hybrid_worker_cluster:
         # and each cluster will be tested separately (with parallel support)
         params=[
             ["celery_setup_worker"],
+            ["celery_legacy_worker"],
             ["celery_setup_worker", "celery_legacy_worker"],
+            ["celery_setup_worker", "celery_latest_worker", "celery_legacy_worker"],
         ]
     )
     def celery_worker_cluster(
@@ -120,7 +122,7 @@ class test_stamping_hybrid_worker_cluster:
 
         stamp = json.dumps(stamp, indent=4)
         worker: CeleryTestWorker
-        for worker in celery_setup.worker_cluster:
+        for worker in (w1, w2):
             assert worker.logs().count(stamp)
 
     def test_multiple_stamps_multiple_workers(self, celery_setup: CeleryTestSetup):
@@ -252,10 +254,10 @@ class test_revoke_by_stamped_headers:
         celery_latest_worker: CeleryTestWorker,
         canvas: Signature,
     ):
-        result = canvas.freeze()
-        result.revoke_by_stamped_headers(StampOnReplace.stamp)
-        result: AsyncResult = canvas.apply_async(
-            queue=celery_latest_worker.worker_queue
+        dev_worker.app.control.revoke_by_stamped_headers(
+            StampOnReplace.stamp,
+            terminate=True,
         )
+        canvas.apply_async(queue=celery_latest_worker.worker_queue)
         dev_worker.assert_log_exists("Discarding revoked task")
         dev_worker.assert_log_exists(f"revoked by header: {StampOnReplace.stamp}")
