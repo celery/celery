@@ -72,7 +72,7 @@ def anon_nodename(hostname: str | None = None, prefix: str = 'gen') -> str:
 
 def nodesplit(name: str) -> tuple[None, str] | list[str]:
     """Split node name into tuple of name/hostname."""
-    parts: list[str] = name.split(NODENAME_SEP, 1)
+    parts = name.split(NODENAME_SEP, 1)
     if len(parts) == 1:
         return None, parts[0]
     return parts
