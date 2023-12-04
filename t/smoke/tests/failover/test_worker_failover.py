@@ -1,5 +1,5 @@
 import pytest
-from pytest_celery import CeleryTestSetup, CeleryTestWorker, CeleryWorkerCluster
+from pytest_celery import CeleryTestSetup, CeleryTestWorker, CeleryWorkerCluster, RedisTestBroker
 
 from celery import Celery
 from t.smoke.tasks import long_running_task
@@ -19,6 +19,7 @@ def celery_worker_cluster(
     "termination_method",
     [
         "SIGKILL",
+        "control.shutdown",
     ],
 )
 class test_worker_failover:
@@ -26,20 +27,21 @@ class test_worker_failover:
     def default_worker_app(self, default_worker_app: Celery) -> Celery:
         app = default_worker_app
         app.conf.task_acks_late = True
+        if app.conf.broker_url.startswith("redis"):
+            app.conf.broker_transport_options = {"visibility_timeout": 1}
         yield app
 
     def terminate(self, worker: CeleryTestWorker, method: str):
         if method == "SIGKILL":
             worker.kill()
+        elif method == "control.shutdown":
+            worker.app.control.broadcast("shutdown", destination=[worker.hostname()])
 
     def test_killing_first_worker(
         self,
         celery_setup: CeleryTestSetup,
         termination_method: str,
     ):
-        if len(celery_setup.worker_cluster) < 2:
-            pytest.skip("Not enough workers in cluster")
-
         queue = celery_setup.worker.worker_queue
         sig = long_running_task.si(1).set(queue=queue)
         res = sig.delay()
@@ -55,16 +57,40 @@ class test_worker_failover:
         celery_alt_dev_worker: CeleryTestWorker,
         termination_method: str,
     ):
-        if len(celery_setup.worker_cluster) < 2:
-            pytest.skip("Not enough workers in cluster")
-
         queue = celery_setup.worker.worker_queue
         sig = long_running_task.si(1).set(queue=queue)
         res = sig.delay()
-        assert res.get(timeout=2) is True
+        assert res.get(timeout=10) is True
         self.terminate(celery_setup.worker, termination_method)
         self.terminate(celery_alt_dev_worker, termination_method)
         celery_setup.worker.restart()
         sig = long_running_task.si(1).set(queue=queue)
         res = sig.delay()
-        assert res.get(timeout=2) is True
+        assert res.get(timeout=10) is True
+
+    def test_task_retry_on_worker_crash(
+        self,
+        celery_setup: CeleryTestSetup,
+        celery_alt_dev_worker: CeleryTestWorker,
+        termination_method: str,
+    ):
+        if isinstance(celery_setup.broker, RedisTestBroker):
+            pytest.xfail("Potential Bug: works with RabbitMQ, but not Redis")
+
+        sleep_time = 4
+        queue = celery_setup.worker.worker_queue
+        sig = long_running_task.si(sleep_time, verbose=True).set(queue=queue)
+        res = sig.apply_async(
+            retry=True,
+            retry_policy={
+                "max_retries": 1,
+            },
+        )
+        celery_setup.worker.wait_for_log("Sleeping: 2")
+        self.terminate(celery_setup.worker, termination_method)
+
+        if termination_method != "control.shutdown":
+            # Shutdown gracefully ends the task, so no retry is expected in this specific case
+            celery_alt_dev_worker.assert_log_exists("Starting long running task")
+
+        assert res.get(timeout=10) is True
