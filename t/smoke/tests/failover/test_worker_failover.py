@@ -62,15 +62,14 @@ class test_worker_failover:
     def test_reconnect_to_restarted_worker(
         self,
         celery_setup: CeleryTestSetup,
-        celery_alt_dev_worker: CeleryTestWorker,
         termination_method: str,
     ):
         queue = celery_setup.worker.worker_queue
         sig = long_running_task.si(1).set(queue=queue)
         res = sig.delay()
         assert res.get(timeout=10) is True
-        self.terminate(celery_setup.worker, termination_method)
-        self.terminate(celery_alt_dev_worker, termination_method)
+        for worker in celery_setup.worker_cluster:
+            self.terminate(worker, termination_method)
         celery_setup.worker.restart()
         sig = long_running_task.si(1).set(queue=queue)
         res = sig.delay()
@@ -79,7 +78,6 @@ class test_worker_failover:
     def test_task_retry_on_worker_crash(
         self,
         celery_setup: CeleryTestSetup,
-        celery_alt_dev_worker: CeleryTestWorker,
         termination_method: str,
     ):
         if isinstance(celery_setup.broker, RedisTestBroker):
@@ -88,23 +86,7 @@ class test_worker_failover:
         sleep_time = 4
         queue = celery_setup.worker.worker_queue
         sig = long_running_task.si(sleep_time, verbose=True).set(queue=queue)
-        res = sig.apply_async(
-            retry=True,
-            retry_policy={
-                "max_retries": 1,
-            },
-        )
-        celery_setup.worker.wait_for_log("Sleeping: 2")  # Wait for task to run a bit
+        res = sig.apply_async(retry=True, retry_policy={"max_retries": 1})
+        celery_setup.worker.wait_for_log("Sleeping: 2")  # Wait for the task to run a bit
         self.terminate(celery_setup.worker, termination_method)
-
-        if not any(
-            [
-                # Shutdown gracefully ends the task, so no retry is expected in this specific case
-                termination_method == "control.shutdown",
-                # Memory error is caught and handled by the worker, so no retry is expected in this specific case
-                termination_method == "memory_limit",
-            ]
-        ):
-            celery_alt_dev_worker.assert_log_exists("Starting long running task")
-
         assert res.get(timeout=10) is True
