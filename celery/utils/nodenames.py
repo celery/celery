@@ -4,15 +4,11 @@ from __future__ import annotations
 import os
 import socket
 from functools import partial
-from typing import TYPE_CHECKING
 
 from kombu.entity import Exchange, Queue
 
 from .functional import memoize
 from .text import simple_format
-
-if TYPE_CHECKING:
-    from typing import Any
 
 #: Exchange for worker direct queues.
 WORKER_DIRECT_EXCHANGE = Exchange('C.dq2')
