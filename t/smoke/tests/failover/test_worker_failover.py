@@ -37,10 +37,13 @@ class test_worker_failover:
 
     def terminate(self, worker: CeleryTestWorker, method: str):
         if method == "SIGKILL":
+            # Reduces actual workers count by 1
             worker.kill()
         elif method == "control.shutdown":
+            # Completes the task and then shuts down the worker
             worker.app.control.broadcast("shutdown", destination=[worker.hostname()])
         elif method == "memory_limit":
+            # Child process is killed and a new one is spawned, but the worker is not terminated
             allocate = worker.app.conf.worker_max_memory_per_child * 1_000_000_000
             sig = long_running_task.si(allocate=allocate).set(queue=worker.worker_queue)
             sig.delay()
