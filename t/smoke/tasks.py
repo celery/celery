@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from sys import getsizeof
 from time import sleep
 
 import celery.utils
@@ -13,20 +16,28 @@ def noop(*args, **kwargs) -> None:
 
 
 @shared_task
-def long_running_task(seconds: float = 1, verbose: bool = False) -> bool:
+def long_running_task(
+    seconds: float = 1,
+    verbose: bool = False,
+    allocate: int | None = None,
+) -> bool:
     from celery import current_task
     from celery.utils.log import get_task_logger
 
     logger = get_task_logger(current_task.name)
 
-    logger.info('Starting long running task')
+    logger.info("Starting long running task")
+
+    if allocate:
+        # Attempt to allocate megabytes in memory
+        _ = [0] * (allocate * 1024 * 1024 // getsizeof(int()))
 
     for i in range(0, int(seconds)):
         sleep(1)
         if verbose:
-            logger.info(f'Sleeping: {i}')
+            logger.info(f"Sleeping: {i}")
 
-    logger.info('Finished long running task')
+    logger.info("Finished long running task")
 
     return True
 
