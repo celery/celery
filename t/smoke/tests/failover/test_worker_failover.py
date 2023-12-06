@@ -4,6 +4,7 @@ import pytest
 from pytest_celery import CeleryTestSetup, CeleryTestWorker, CeleryWorkerCluster, RedisTestBroker
 
 from celery import Celery
+from celery.app.control import Control
 from t.smoke.tasks import long_running_task
 
 
@@ -41,7 +42,8 @@ class test_worker_failover:
             worker.kill()
         elif method == "control.shutdown":
             # Completes the task and then shuts down the worker
-            worker.app.control.broadcast("shutdown", destination=[worker.hostname()])
+            control: Control = worker.app.control
+            control.broadcast("shutdown", destination=[worker.hostname()])
         elif method == "memory_limit":
             # Child process is killed and a new one is spawned, but the worker is not terminated
             allocate = worker.app.conf.worker_max_memory_per_child * 1_000_000_000
