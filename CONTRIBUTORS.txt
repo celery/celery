@@ -295,3 +295,4 @@ JoonHwan Kim, 2022/08/01
 Kaustav Banerjee, 2022/11/10
 Austin Snoeyink 2022/12/06
 Jeremy Z. Othieno 2023/07/27
+Nikolai Vidov 2023/12/12
