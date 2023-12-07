@@ -11,14 +11,13 @@ from t.smoke.workers.legacy import *  # noqa
 
 
 @pytest.fixture
-def default_worker_tasks() -> set:
+def default_worker_tasks(default_worker_tasks: set) -> set:
     from t.integration import tasks as integration_tests_tasks
     from t.smoke import tasks as smoke_tests_tasks
 
-    yield {
-        integration_tests_tasks,
-        smoke_tests_tasks,
-    }
+    default_worker_tasks.add(integration_tests_tasks)
+    default_worker_tasks.add(smoke_tests_tasks)
+    yield default_worker_tasks
 
 
 redis_image = fetch(repository=REDIS_IMAGE)
