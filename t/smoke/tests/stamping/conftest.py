@@ -1,4 +1,9 @@
 import pytest
+from pytest_celery import CeleryTestSetup, CeleryTestWorker
+
+from t.smoke.tests.stamping.workers.legacy import *  # noqa
+from t.smoke.tests.stamping.workers.legacy import LegacyWorkerContainer
+from t.smoke.workers.dev import SmokeWorkerContainer
 
 
 @pytest.fixture
@@ -15,3 +20,21 @@ def default_worker_signals(default_worker_signals: set) -> set:
 
     default_worker_signals.add(signals)
     yield default_worker_signals
+
+
+@pytest.fixture
+def dev_worker(celery_setup: CeleryTestSetup) -> CeleryTestWorker:
+    worker: CeleryTestWorker
+    for worker in celery_setup.worker_cluster:
+        if worker.version == SmokeWorkerContainer.version():
+            return worker
+    return None
+
+
+@pytest.fixture
+def legacy_worker(celery_setup: CeleryTestSetup) -> CeleryTestWorker:
+    worker: CeleryTestWorker
+    for worker in celery_setup.worker_cluster:
+        if worker.version == LegacyWorkerContainer.version():
+            return worker
+    return None
