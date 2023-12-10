@@ -30,7 +30,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', 'pypy-3.10']
-        os: ["ubuntu-latest", "windows-latest"]
+        os: ["ubuntu-latest", "windows-latest", "macos-latest-xlarge"]
         exclude:
             - python-version: '3.9'
               os: "windows-latest"
