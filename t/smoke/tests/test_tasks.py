@@ -11,9 +11,9 @@ class test_replace:
     def celery_worker_cluster(
         self,
         celery_worker: CeleryTestWorker,
-        celery_latest_worker: CeleryTestWorker,
+        celery_other_dev_worker: CeleryTestWorker,
     ) -> CeleryWorkerCluster:
-        cluster = CeleryWorkerCluster(celery_worker, celery_latest_worker)
+        cluster = CeleryWorkerCluster(celery_worker, celery_other_dev_worker)
         yield cluster
         cluster.teardown()
 
