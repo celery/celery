@@ -4,10 +4,21 @@ import pytest
 from pytest_celery import REDIS_CONTAINER_TIMEOUT, REDIS_ENV, REDIS_IMAGE, REDIS_PORTS, RedisContainer
 from pytest_docker_tools import container, fetch, network
 
+from t.smoke.operations.task_termination import TaskTermination
+from t.smoke.operations.worker_kill import WorkerKill
+from t.smoke.operations.worker_restart import WorkerRestart
 from t.smoke.workers.alt import *  # noqa
 from t.smoke.workers.dev import *  # noqa
 from t.smoke.workers.latest import *  # noqa
 from t.smoke.workers.other import *  # noqa
+
+
+class SuiteOperations(
+    TaskTermination,
+    WorkerKill,
+    WorkerRestart,
+):
+    pass
 
 
 @pytest.fixture
