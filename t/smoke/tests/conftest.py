@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from enum import Enum, auto
 
 from pytest_celery import CeleryTestSetup, CeleryTestWorker
@@ -20,26 +21,33 @@ class WorkerTermination:
         CONTROL_SHUTDOWN = auto()
         FORCEFUL_TERMINATION = auto()
 
+    @dataclass
+    class Options:
+        worker: CeleryTestWorker
+        method: str
+        allocate: int
+        large_file_name: str
+        hostname: str
+        try_eager: bool = True
+        time_limit: int = 4
+        cpu_load_factor: int = 420
+
     def terminate(
         self,
         worker: CeleryTestWorker,
         method: WorkerTermination.Methods,
-        try_eager: bool = True,
-        **kwargs: dict,
+        **options: dict,
     ):
-        options = dict(
-            worker=worker,
-            method=method.name,
-            try_eager=try_eager,
-            time_limit=kwargs.get("time_limit", 4),
-            cpu_load_factor=kwargs.get("cpu_load_factor", 420),
-            allocate=kwargs.get(
-                "allocate",
-                worker.app.conf.worker_max_memory_per_child * 10**9,
-            ),
-            large_file_name=kwargs.get("large_file_name", worker.name()),
-            hostname=kwargs.get("hostname", worker.hostname()),
-        )
+        # Update kwargs with default values for missing keys
+        defaults = {
+            "worker": worker,
+            "method": method.name,
+            "allocate": worker.app.conf.worker_max_memory_per_child * 10**9,
+            "large_file_name": worker.name(),
+            "hostname": worker.hostname(),
+        }
+        options = {**defaults, **options}
+        options = WorkerTermination.Options(**options)
 
         expected_error = {
             WorkerTermination.Methods.DELAY_TIMEOUT: TimeLimitExceeded,
@@ -60,7 +68,7 @@ class WorkerTermination:
         }.get(method)
 
         try:
-            suicide(**options)
+            suicide(**options.__dict__)
         except BaseException as e:
             if expected_error is None:
                 # No specific error expected, this is an unexpected exception
@@ -84,7 +92,7 @@ class WorkerRestart:
     def restart(
         self,
         celery_setup: CeleryTestSetup,
-        method: WorkerRestart,
+        method: WorkerRestart.Methods,
     ):
         if method == WorkerRestart.Methods.POOL_RESTART:
             celery_setup.app.control.pool_restart()
