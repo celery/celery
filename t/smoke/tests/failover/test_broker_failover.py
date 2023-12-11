@@ -3,7 +3,7 @@ from pytest_celery import (RABBITMQ_CONTAINER_TIMEOUT, RESULT_TIMEOUT, CeleryBro
                            RabbitMQContainer, RabbitMQTestBroker)
 from pytest_docker_tools import container, fxtr
 
-from t.smoke.tasks import identity
+from t.integration.tasks import identity
 
 failover_broker = container(
     image="{default_rabbitmq_broker_image}",
