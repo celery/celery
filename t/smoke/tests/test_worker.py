@@ -3,8 +3,8 @@ from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup
 
 from celery import Celery
 from celery.canvas import chain
+from t.smoke.conftest import SuiteOperations, WorkerRestart
 from t.smoke.tasks import long_running_task
-from t.smoke.tests.conftest import SuiteOperations, WorkerRestart
 
 
 @pytest.mark.parametrize("method", list(WorkerRestart.Method))

@@ -4,8 +4,8 @@ import pytest
 from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup, CeleryTestWorker, CeleryWorkerCluster, RedisTestBroker
 
 from celery import Celery
+from t.smoke.conftest import SuiteOperations, WorkerKill
 from t.smoke.tasks import long_running_task
-from t.smoke.tests.conftest import SuiteOperations, WorkerKill
 
 MB = 1024 * 1024
 
