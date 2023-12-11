@@ -3,14 +3,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum, auto
 
-from pytest_celery import CeleryTestSetup, CeleryTestWorker
+from pytest_celery import CeleryTestWorker
 
+from celery.app.control import Control
 from celery.exceptions import TimeLimitExceeded, WorkerLostError
 from t.smoke.tasks import suicide
 
 
 class TaskTermination:
-    class Methods(Enum):
+    class Method(Enum):
         DELAY_TIMEOUT = auto()
         CPU_OVERLOAD = auto()
         EXCEPTION = auto()
@@ -32,10 +33,10 @@ class TaskTermination:
         time_limit: int = 4
         cpu_load_factor: int = 420
 
-    def terminate(
+    def run_suicide_task(
         self,
         worker: CeleryTestWorker,
-        method: TaskTermination.Methods,
+        method: TaskTermination.Method,
         **options: dict,
     ):
         # Update kwargs with default values for missing keys
@@ -50,14 +51,14 @@ class TaskTermination:
         options = TaskTermination.Options(**options)
 
         expected_error = {
-            TaskTermination.Methods.DELAY_TIMEOUT: TimeLimitExceeded,
-            TaskTermination.Methods.CPU_OVERLOAD: RecursionError,
-            TaskTermination.Methods.EXCEPTION: Exception,
-            TaskTermination.Methods.SYSTEM_EXIT: WorkerLostError,
-            TaskTermination.Methods.ALLOCATE_MAX_MEMORY: MemoryError,
-            TaskTermination.Methods.EXHAUST_MEMORY: WorkerLostError,
-            TaskTermination.Methods.EXHAUST_HDD: OSError,
-            TaskTermination.Methods.SIGKILL: WorkerLostError,
+            TaskTermination.Method.DELAY_TIMEOUT: TimeLimitExceeded,
+            TaskTermination.Method.CPU_OVERLOAD: RecursionError,
+            TaskTermination.Method.EXCEPTION: Exception,
+            TaskTermination.Method.SYSTEM_EXIT: WorkerLostError,
+            TaskTermination.Method.ALLOCATE_MAX_MEMORY: MemoryError,
+            TaskTermination.Method.EXHAUST_MEMORY: WorkerLostError,
+            TaskTermination.Method.EXHAUST_HDD: OSError,
+            TaskTermination.Method.SIGKILL: WorkerLostError,
         }.get(method)
 
         try:
@@ -78,28 +79,64 @@ class TaskTermination:
             worker.container.reload()
 
 
+class WorkerKill:
+    class Method(Enum):
+        DOCKER_KILL = auto()
+        CONTROL_SHUTDOWN = auto()
+
+    def kill_worker(
+        self,
+        worker: CeleryTestWorker,
+        method: WorkerRestart.Method,
+        assertion: bool = True,
+    ):
+        if method == WorkerKill.Method.DOCKER_KILL:
+            worker.kill()
+
+        if method == WorkerKill.Method.CONTROL_SHUTDOWN:
+            control: Control = worker.app.control
+            control.shutdown(destination=[worker.hostname()])
+            worker.container.reload()
+
+        if assertion:
+            assert worker.container.status == "exited", (
+                f"Worker container should be in 'exited' state after kill, "
+                f"but is in '{worker.container.status}' state instead."
+            )
+
+
 class WorkerRestart:
-    class Methods(Enum):
+    class Method(Enum):
         POOL_RESTART = auto()
         DOCKER_RESTART_GRACEFULLY = auto()
         DOCKER_RESTART_FORCE = auto()
 
-    def restart(
+    def restart_worker(
         self,
-        celery_setup: CeleryTestSetup,
-        # TODO: Receive worker instead of setup
-        method: WorkerRestart.Methods,
+        worker: CeleryTestWorker,
+        method: WorkerRestart.Method,
+        assertion: bool = True,
     ):
-        if method == WorkerRestart.Methods.POOL_RESTART:
-            celery_setup.app.control.pool_restart()
-        elif method == WorkerRestart.Methods.DOCKER_RESTART_GRACEFULLY:
-            celery_setup.worker.restart()
-        elif method == WorkerRestart.Methods.DOCKER_RESTART_FORCE:
-            celery_setup.worker.restart(force=True)
+        if method == WorkerRestart.Method.POOL_RESTART:
+            worker.app.control.pool_restart()
+            worker.container.reload()
+
+        if method == WorkerRestart.Method.DOCKER_RESTART_GRACEFULLY:
+            worker.restart()
+
+        if method == WorkerRestart.Method.DOCKER_RESTART_FORCE:
+            worker.restart(force=True)
+
+        if assertion:
+            assert worker.container.status == "running", (
+                f"Worker container should be in 'running' state after restart, "
+                f"but is in '{worker.container.status}' state instead."
+            )
 
 
 class WorkerOperations(
     TaskTermination,
+    WorkerKill,
     WorkerRestart,
 ):
     pass

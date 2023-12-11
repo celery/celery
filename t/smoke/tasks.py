@@ -47,11 +47,7 @@ def replace_with_task(self: Task, replace_with: Signature = None):
 
 
 @shared_task
-def suicide(
-    method: str,
-    try_eager: bool = True,
-    **options,
-):
+def suicide(method: str, try_eager: bool = True, **options: dict):
     termination_method = {
         "DELAY_TIMEOUT": suicide_delay_timeout.si(
             time_limit=options["time_limit"],
@@ -151,7 +147,7 @@ def suicide_exhaust_hdd(large_file_name: str = "large_file"):
 
 @shared_task
 def suicide_control_shutdown(hostname: str):
-    """Initiates a controlled shutdown via the Control API, simulating a graceful termination."""
+    """Initiates a controlled shutdown via the Control API."""
     from celery.app.base import get_current_app
 
     app = get_current_app()
@@ -161,5 +157,5 @@ def suicide_control_shutdown(hostname: str):
 
 @shared_task
 def suicide_sigkill():
-    """Terminates the worker, simulating a forceful shutdown similar to a SIGKILL signal."""
+    """Forceful termination."""
     os.kill(os.getpid(), SIGKILL)
