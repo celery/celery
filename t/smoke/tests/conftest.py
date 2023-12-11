@@ -9,7 +9,7 @@ from celery.exceptions import TimeLimitExceeded, WorkerLostError
 from t.smoke.tasks import suicide
 
 
-class WorkerTermination:
+class TaskTermination:
     class Methods(Enum):
         DELAY_TIMEOUT = auto()
         CPU_OVERLOAD = auto()
@@ -19,7 +19,7 @@ class WorkerTermination:
         EXHAUST_MEMORY = auto()
         EXHAUST_HDD = auto()
         CONTROL_SHUTDOWN = auto()
-        FORCEFUL_TERMINATION = auto()
+        SIGKILL = auto()
 
     @dataclass
     class Options:
@@ -35,7 +35,7 @@ class WorkerTermination:
     def terminate(
         self,
         worker: CeleryTestWorker,
-        method: WorkerTermination.Methods,
+        method: TaskTermination.Methods,
         **options: dict,
     ):
         # Update kwargs with default values for missing keys
@@ -47,24 +47,17 @@ class WorkerTermination:
             "hostname": worker.hostname(),
         }
         options = {**defaults, **options}
-        options = WorkerTermination.Options(**options)
+        options = TaskTermination.Options(**options)
 
         expected_error = {
-            WorkerTermination.Methods.DELAY_TIMEOUT: TimeLimitExceeded,
-            WorkerTermination.Methods.CPU_OVERLOAD: RecursionError,
-            WorkerTermination.Methods.EXCEPTION: Exception,
-            WorkerTermination.Methods.SYSTEM_EXIT: WorkerLostError,
-            WorkerTermination.Methods.ALLOCATE_MAX_MEMORY: MemoryError,
-            WorkerTermination.Methods.EXHAUST_MEMORY: WorkerLostError,
-            WorkerTermination.Methods.EXHAUST_HDD: (
-                # When HD is getting full
-                OSError,
-                # When HD is full already before we start allocating
-                WorkerLostError,
-                # When the allocation is bigger than the available memory
-                MemoryError,  # Dependent on local docker memory settings
-            ),
-            WorkerTermination.Methods.FORCEFUL_TERMINATION: WorkerLostError,
+            TaskTermination.Methods.DELAY_TIMEOUT: TimeLimitExceeded,
+            TaskTermination.Methods.CPU_OVERLOAD: RecursionError,
+            TaskTermination.Methods.EXCEPTION: Exception,
+            TaskTermination.Methods.SYSTEM_EXIT: WorkerLostError,
+            TaskTermination.Methods.ALLOCATE_MAX_MEMORY: MemoryError,
+            TaskTermination.Methods.EXHAUST_MEMORY: WorkerLostError,
+            TaskTermination.Methods.EXHAUST_HDD: OSError,
+            TaskTermination.Methods.SIGKILL: WorkerLostError,
         }.get(method)
 
         try:
@@ -106,7 +99,7 @@ class WorkerRestart:
 
 
 class WorkerOperations(
-    WorkerTermination,
+    TaskTermination,
     WorkerRestart,
 ):
     pass

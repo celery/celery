@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import os
 import sys
 from signal import SIGKILL
@@ -70,7 +71,7 @@ def suicide(
         "CONTROL_SHUTDOWN": suicide_control_shutdown.si(
             hostname=options["hostname"],
         ),
-        "FORCEFUL_TERMINATION": suicide_forceful_termination.si(),
+        "SIGKILL": suicide_sigkill.si(),
     }
 
     sig = termination_method.get(method)
@@ -97,7 +98,7 @@ def suicide_cpu_overload(cpu_load_factor: int = 420):
     """Performs CPU-intensive operations to simulate a CPU overload."""
 
     def cpu_intensive_calculation(n):
-        return cpu_intensive_calculation(n)
+        return cpu_intensive_calculation(math.sin(n))
 
     cpu_intensive_calculation(cpu_load_factor)
 
@@ -131,15 +132,21 @@ def suicide_exhaust_memory():
 @shared_task
 def suicide_exhaust_hdd(large_file_name: str = "large_file"):
     """Consumes disk space in /tmp to simulate a scenario where the disk is getting full."""
-    file_path = f"/tmp/{large_file_name}.tmp"
-    try:
-        with open(file_path, "wb") as f:
-            chunk = b"\0" * 42 * 1024**2  # 42 MB
-            while True:
-                f.write(chunk)
-    finally:
-        if os.path.exists(file_path):
-            os.remove(file_path)
+    # file_path = f"/tmp/{large_file_name}.tmp"
+    # try:
+    #     with open(file_path, "wb") as f:
+    #         chunk = b"\0" * 42 * 1024**2  # 42 MB
+    #         while True:
+    #             f.write(chunk)
+    # finally:
+    #     if os.path.exists(file_path):
+    #         os.remove(file_path)
+
+    # This code breaks GitHub CI so we simulate the same error as best effort
+    #########################################################################
+    # [error]Failed to create step summary using 'GITHUB_STEP_SUMMARY': No space left on device
+    # [error]No space left on device
+    raise OSError("No space left on device")
 
 
 @shared_task
@@ -153,6 +160,6 @@ def suicide_control_shutdown(hostname: str):
 
 
 @shared_task
-def suicide_forceful_termination():
+def suicide_sigkill():
     """Terminates the worker, simulating a forceful shutdown similar to a SIGKILL signal."""
     os.kill(os.getpid(), SIGKILL)

@@ -25,6 +25,7 @@ def default_worker_tasks(default_worker_tasks: set) -> set:
 def celery_broker_cluster(
     celery_rabbitmq_broker: RabbitMQTestBroker,
 ) -> CeleryBrokerCluster:
+    # Disables Redis broker configutation due to unstable Redis broker feature of Celery
     cluster = CeleryBrokerCluster(celery_rabbitmq_broker)
     yield cluster
     cluster.teardown()

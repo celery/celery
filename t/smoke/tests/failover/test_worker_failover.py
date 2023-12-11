@@ -5,7 +5,7 @@ from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup, CeleryTestWorker, Cel
 
 from celery import Celery
 from t.smoke.tasks import long_running_task
-from t.smoke.tests.conftest import WorkerOperations, WorkerTermination
+from t.smoke.tests.conftest import TaskTermination, WorkerOperations
 
 
 @pytest.fixture
@@ -18,7 +18,7 @@ def celery_worker_cluster(
     cluster.teardown()
 
 
-@pytest.mark.parametrize("termination_method", list(WorkerTermination.Methods))
+@pytest.mark.parametrize("termination_method", list(TaskTermination.Methods))
 class test_worker_failover(WorkerOperations):
     @pytest.fixture
     def default_worker_app(self, default_worker_app: Celery) -> Celery:
@@ -32,7 +32,7 @@ class test_worker_failover(WorkerOperations):
     def test_killing_first_worker(
         self,
         celery_setup: CeleryTestSetup,
-        termination_method: WorkerTermination,
+        termination_method: TaskTermination,
     ):
         queue = celery_setup.worker.worker_queue
         sig = long_running_task.si(1).set(queue=queue)
@@ -46,7 +46,7 @@ class test_worker_failover(WorkerOperations):
     def test_reconnect_to_restarted_worker(
         self,
         celery_setup: CeleryTestSetup,
-        termination_method: WorkerTermination,
+        termination_method: TaskTermination,
     ):
         queue = celery_setup.worker.worker_queue
         sig = long_running_task.si(1).set(queue=queue)
@@ -62,7 +62,7 @@ class test_worker_failover(WorkerOperations):
     def test_task_retry_on_worker_crash(
         self,
         celery_setup: CeleryTestSetup,
-        termination_method: WorkerTermination,
+        termination_method: TaskTermination,
     ):
         if isinstance(celery_setup.broker, RedisTestBroker):
             pytest.xfail("Potential Bug: works with RabbitMQ, but not Redis")
