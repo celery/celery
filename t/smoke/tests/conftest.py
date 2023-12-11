@@ -81,6 +81,8 @@ class WorkerTermination:
                 assert (
                     False
                 ), f"Worker termination by '{method.name}' failed due to a different error: {e}"
+        finally:
+            worker.container.reload()
 
 
 class WorkerRestart:
@@ -92,6 +94,7 @@ class WorkerRestart:
     def restart(
         self,
         celery_setup: CeleryTestSetup,
+        # TODO: Receive worker instead of setup
         method: WorkerRestart.Methods,
     ):
         if method == WorkerRestart.Methods.POOL_RESTART:
