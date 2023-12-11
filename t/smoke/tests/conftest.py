@@ -134,7 +134,7 @@ class WorkerRestart:
             )
 
 
-class WorkerOperations(
+class SuiteOperations(
     TaskTermination,
     WorkerKill,
     WorkerRestart,

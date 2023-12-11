@@ -4,11 +4,11 @@ from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup
 from celery import Celery
 from celery.canvas import chain
 from t.smoke.tasks import long_running_task
-from t.smoke.tests.conftest import WorkerOperations, WorkerRestart
+from t.smoke.tests.conftest import SuiteOperations, WorkerRestart
 
 
 @pytest.mark.parametrize("method", list(WorkerRestart.Method))
-class test_worker_restart(WorkerOperations):
+class test_worker_restart(SuiteOperations):
     @pytest.fixture
     def default_worker_app(self, default_worker_app: Celery) -> Celery:
         app = default_worker_app

@@ -5,7 +5,7 @@ from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup, CeleryTestWorker, Cel
 
 from celery import Celery
 from t.smoke.tasks import long_running_task
-from t.smoke.tests.conftest import WorkerKill, WorkerOperations
+from t.smoke.tests.conftest import SuiteOperations, WorkerKill
 
 MB = 1024 * 1024
 
@@ -21,7 +21,7 @@ def celery_worker_cluster(
 
 
 @pytest.mark.parametrize("method", [WorkerKill.Method.DOCKER_KILL])
-class test_worker_failover(WorkerOperations):
+class test_worker_failover(SuiteOperations):
     @pytest.fixture
     def default_worker_app(self, default_worker_app: Celery) -> Celery:
         app = default_worker_app
