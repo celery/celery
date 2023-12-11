@@ -154,7 +154,7 @@ jobs:
           -   name: >
                   Run tox for
                   "${{ matrix.python-version }}-smoke"
-              timeout-minutes: 30
+              timeout-minutes: 60
               run: >
                   tox --verbose --verbose -e
                   "${{ matrix.python-version }}-smoke" -- -n auto

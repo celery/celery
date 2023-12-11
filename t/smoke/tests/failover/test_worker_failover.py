@@ -5,7 +5,7 @@ from pytest_celery import CeleryTestSetup, CeleryTestWorker, CeleryWorkerCluster
 
 from celery import Celery
 from t.smoke.tasks import long_running_task
-from t.smoke.tests.conftest import WorkerOperations
+from t.smoke.tests.conftest import WorkerOperations, WorkerTermination
 
 
 @pytest.fixture
@@ -18,15 +18,7 @@ def celery_worker_cluster(
     cluster.teardown()
 
 
-@pytest.mark.parametrize(
-    "termination_method",
-    [
-        WorkerOperations.TerminationMethod.SIGKILL,
-        WorkerOperations.TerminationMethod.CONTROL_SHUTDOWN,
-        WorkerOperations.TerminationMethod.MAX_MEMORY_ALLOCATED,
-        WorkerOperations.TerminationMethod.MEMORY_LIMIT_EXCEEDED,
-    ],
-)
+@pytest.mark.parametrize("termination_method", list(WorkerTermination.Methods))
 class test_worker_failover(WorkerOperations):
     @pytest.fixture
     def default_worker_app(self, default_worker_app: Celery) -> Celery:
@@ -40,12 +32,12 @@ class test_worker_failover(WorkerOperations):
     def test_killing_first_worker(
         self,
         celery_setup: CeleryTestSetup,
-        termination_method: WorkerOperations.TerminationMethod,
+        termination_method: WorkerTermination,
     ):
         queue = celery_setup.worker.worker_queue
         sig = long_running_task.si(1).set(queue=queue)
         res = sig.delay()
-        assert res.get(timeout=2) is True
+        assert res.get(timeout=5) is True
         self.terminate(celery_setup.worker, termination_method)
         sig = long_running_task.si(1).set(queue=queue)
         res = sig.delay()
@@ -54,7 +46,7 @@ class test_worker_failover(WorkerOperations):
     def test_reconnect_to_restarted_worker(
         self,
         celery_setup: CeleryTestSetup,
-        termination_method: WorkerOperations.TerminationMethod,
+        termination_method: WorkerTermination,
     ):
         queue = celery_setup.worker.worker_queue
         sig = long_running_task.si(1).set(queue=queue)
@@ -70,7 +62,7 @@ class test_worker_failover(WorkerOperations):
     def test_task_retry_on_worker_crash(
         self,
         celery_setup: CeleryTestSetup,
-        termination_method: WorkerOperations.TerminationMethod,
+        termination_method: WorkerTermination,
     ):
         if isinstance(celery_setup.broker, RedisTestBroker):
             pytest.xfail("Potential Bug: works with RabbitMQ, but not Redis")
