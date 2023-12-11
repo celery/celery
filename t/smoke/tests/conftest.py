@@ -69,7 +69,7 @@ class WorkerTermination:
 
         try:
             suicide(**options.__dict__)
-        except BaseException as e:
+        except Exception as e:
             if expected_error is None:
                 # No specific error expected, this is an unexpected exception
                 assert (
