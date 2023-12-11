@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pytest
-from pytest_celery import CeleryTestSetup, CeleryTestWorker, CeleryWorkerCluster, RedisTestBroker
+from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup, CeleryTestWorker, CeleryWorkerCluster, RedisTestBroker
 
 from celery import Celery
 from t.smoke.tasks import long_running_task
@@ -37,11 +37,11 @@ class test_worker_failover(WorkerOperations):
         queue = celery_setup.worker.worker_queue
         sig = long_running_task.si(1).set(queue=queue)
         res = sig.delay()
-        assert res.get(timeout=5) is True
+        assert res.get(timeout=RESULT_TIMEOUT) is True
         self.terminate(celery_setup.worker, termination_method)
         sig = long_running_task.si(1).set(queue=queue)
         res = sig.delay()
-        assert res.get(timeout=2) is True
+        assert res.get(timeout=RESULT_TIMEOUT) is True
 
     def test_reconnect_to_restarted_worker(
         self,
