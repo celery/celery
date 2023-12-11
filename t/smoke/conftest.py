@@ -1,8 +1,7 @@
 import os
 
 import pytest
-from pytest_celery import (REDIS_CONTAINER_TIMEOUT, REDIS_ENV, REDIS_IMAGE, REDIS_PORTS, CeleryBrokerCluster,
-                           RabbitMQTestBroker, RedisContainer)
+from pytest_celery import REDIS_CONTAINER_TIMEOUT, REDIS_ENV, REDIS_IMAGE, REDIS_PORTS, RedisContainer
 from pytest_docker_tools import container, fetch, network
 
 from t.smoke.workers.alt import *  # noqa
@@ -19,16 +18,6 @@ def default_worker_tasks(default_worker_tasks: set) -> set:
     default_worker_tasks.add(integration_tests_tasks)
     default_worker_tasks.add(smoke_tests_tasks)
     yield default_worker_tasks
-
-
-@pytest.fixture
-def celery_broker_cluster(
-    celery_rabbitmq_broker: RabbitMQTestBroker,
-) -> CeleryBrokerCluster:
-    # Disables Redis broker configutation due to unstable Redis broker feature of Celery
-    cluster = CeleryBrokerCluster(celery_rabbitmq_broker)
-    yield cluster
-    cluster.teardown()
 
 
 redis_image = fetch(repository=REDIS_IMAGE)
