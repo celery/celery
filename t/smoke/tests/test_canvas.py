@@ -2,7 +2,7 @@ import pytest
 from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup
 
 from celery.canvas import chain, chord, group, signature
-from t.smoke.tasks import add, identity
+from t.integration.tasks import add, identity
 
 
 class test_signature:
