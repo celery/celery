@@ -70,10 +70,10 @@ jobs:
         verbose: true # optional (default = false)
 
   Integration:
-      # needs:
-      # - Unit
-      # if: needs.Unit.result == 'success'
-      # timeout-minutes: 240
+      needs:
+      - Unit
+      if: needs.Unit.result == 'success'
+      timeout-minutes: 240
 
       runs-on: ubuntu-latest
       strategy:
