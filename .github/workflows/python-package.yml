@@ -121,10 +121,10 @@ jobs:
                   "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -vv
 
   Smoke:
-      # needs:
-      # - Integration
-      # if: needs.Integration.result == 'success'
-      # timeout-minutes: 240
+      needs:
+      - Integration
+      if: needs.Integration.result == 'success'
+      timeout-minutes: 240
 
       runs-on: ubuntu-latest
       strategy:
