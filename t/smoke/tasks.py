@@ -131,10 +131,15 @@ def suicide_exhaust_memory():
 @shared_task
 def suicide_exhaust_hdd(large_file_name: str = "large_file"):
     """Consumes disk space in /tmp to simulate a scenario where the disk is getting full."""
-    with open(f"/tmp/{large_file_name}.tmp", "wb") as f:
-        chunk = b"\0" * 420 * 1024**2  # 420 MB
-        while True:
-            f.write(chunk)
+    file_path = f"/tmp/{large_file_name}.tmp"
+    try:
+        with open(file_path, "wb") as f:
+            chunk = b"\0" * 42 * 1024**2  # 42 MB
+            while True:
+                f.write(chunk)
+    finally:
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
 
 @shared_task
