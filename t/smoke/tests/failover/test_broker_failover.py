@@ -50,3 +50,11 @@ class test_broker_failover:
         celery_setup.broker_cluster[0].restart()
         res = identity.s(expected).apply_async(queue=celery_setup.worker.worker_queue)
         assert res.get(timeout=RESULT_TIMEOUT) == expected
+
+    def test_broker_failover_ui(self, celery_setup: CeleryTestSetup):
+        assert len(celery_setup.broker_cluster) > 1
+        celery_setup.broker_cluster[0].kill()
+        celery_setup.worker.assert_log_exists("Will retry using next failover.")
+        celery_setup.worker.assert_log_exists(
+            f"Connected to amqp://guest:**@{celery_setup.broker_cluster[1].hostname()}:5672//"
+        )
