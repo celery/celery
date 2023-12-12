@@ -26,7 +26,7 @@ class test_worker_failover(SuiteOperations):
     def default_worker_app(self, default_worker_app: Celery) -> Celery:
         app = default_worker_app
         app.conf.task_acks_late = True
-        app.conf.worker_max_memory_per_child = 10 * MB
+        app.conf.worker_max_memory_per_child = 100 * MB
         if app.conf.broker_url.startswith("redis"):
             # Redis Broker optimization to speed up the tests
             app.conf.broker_transport_options = {"visibility_timeout": 1}
