@@ -11,6 +11,7 @@ on:
         - '**.txt'
         - '.github/workflows/python-package.yml'
         - '**.toml'
+        - "tox.ini"
   pull_request:
     branches: [ 'main', 'smoke_tests' ]
     paths:
@@ -18,6 +19,7 @@ on:
         - '**.txt'
         - '**.toml'
         - '.github/workflows/python-package.yml'
+        - "tox.ini"
 
 permissions:
   contents: read # to fetch code (actions/checkout)
