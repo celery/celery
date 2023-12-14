@@ -2,7 +2,7 @@ import numbers
 import os
 import signal
 import socket
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from time import monotonic, time
 from unittest.mock import Mock, patch
 
@@ -537,7 +537,7 @@ class test_Request(RequestCase):
 
     def test_revoked_expires_expired(self):
         job = self.get_request(self.mytask.s(1, f='x').set(
-            expires=datetime.utcnow() - timedelta(days=1)
+            expires=datetime.now(timezone.utc) - timedelta(days=1)
         ))
         with self.assert_signal_called(
                 task_revoked, sender=job.task, request=job._context,
@@ -549,7 +549,7 @@ class test_Request(RequestCase):
 
     def test_revoked_expires_not_expired(self):
         job = self.xRequest(
-            expires=datetime.utcnow() + timedelta(days=1),
+            expires=datetime.now(timezone.utc) + timedelta(days=1),
         )
         job.revoked()
         assert job.id not in revoked
@@ -558,7 +558,7 @@ class test_Request(RequestCase):
     def test_revoked_expires_ignore_result(self):
         self.mytask.ignore_result = True
         job = self.xRequest(
-            expires=datetime.utcnow() - timedelta(days=1),
+            expires=datetime.now(timezone.utc) - timedelta(days=1),
         )
         job.revoked()
         assert job.id in revoked

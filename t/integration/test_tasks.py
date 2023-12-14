@@ -1,6 +1,6 @@
 import logging
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from time import perf_counter, sleep
 from uuid import uuid4
 
@@ -138,7 +138,7 @@ class test_tasks:
         for _ in range(4):
             sleeping.delay(2)
         # Execute task with expiration at now + 1 sec
-        result = add.apply_async((1, 1), expires=datetime.utcnow() + timedelta(seconds=1))
+        result = add.apply_async((1, 1), expires=datetime.now(timezone.utc) + timedelta(seconds=1))
         with pytest.raises(celery.exceptions.TaskRevokedError):
             result.get()
         assert result.status == 'REVOKED'
@@ -164,7 +164,7 @@ class test_tasks:
 
         start = perf_counter()
         # Schedule task to be executed at time now + 3 seconds
-        result = add.apply_async((2, 2), eta=datetime.utcnow() + timedelta(seconds=3))
+        result = add.apply_async((2, 2), eta=datetime.now(timezone.utc) + timedelta(seconds=3))
         sleep(1)
         assert result.status == 'PENDING'
         assert result.ready() is False

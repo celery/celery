@@ -43,7 +43,7 @@ class Certificate:
 
     def has_expired(self) -> bool:
         """Check if the certificate has expired."""
-        return datetime.datetime.utcnow() >= self._cert.not_valid_after
+        return datetime.datetime.now(datetime.timezone.utc) >= self._cert.not_valid_after
 
     def get_pubkey(self) -> (
         DSAPublicKey | EllipticCurvePublicKey | Ed448PublicKey | Ed25519PublicKey | RSAPublicKey

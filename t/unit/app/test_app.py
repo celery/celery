@@ -6,6 +6,7 @@ import sys
 import uuid
 from copy import deepcopy
 from datetime import datetime, timedelta
+from datetime import timezone as datetime_timezone
 from pickle import dumps, loads
 from unittest.mock import Mock, patch
 
@@ -85,7 +86,7 @@ class test_App:
         tz_utc = timezone.get_timezone('UTC')
         tz_us_eastern = timezone.get_timezone(timezone_setting_value)
 
-        now = to_utc(datetime.utcnow())
+        now = to_utc(datetime.now(datetime_timezone.utc))
         app_now = self.app.now()
 
         assert app_now.tzinfo is tz_utc
@@ -101,7 +102,7 @@ class test_App:
 
         assert app_now.tzinfo == tz_us_eastern
 
-        diff = to_utc(datetime.utcnow()) - localize(app_now, tz_utc)
+        diff = to_utc(datetime.now(datetime_timezone.utc)) - localize(app_now, tz_utc)
         assert diff <= timedelta(seconds=1)
 
         # Verify that timezone setting overrides enable_utc=on setting
