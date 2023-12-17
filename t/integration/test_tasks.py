@@ -1,6 +1,8 @@
 import logging
+import platform
 import time
 from datetime import datetime, timedelta
+from multiprocessing import set_start_method
 from time import perf_counter, sleep
 from uuid import uuid4
 
@@ -27,6 +29,16 @@ _timeout = pytest.mark.timeout(timeout=300)
 
 def flaky(fn):
     return _timeout(_flaky(fn))
+
+
+def set_multiprocessing_start_method():
+    """Set multiprocessing start method to 'fork' if not on Linux."""
+    if platform.system() != 'Linux':
+        try:
+            set_start_method('fork')
+        except RuntimeError:
+            # The method is already set
+            pass
 
 
 class test_class_based_tasks:
@@ -89,6 +101,8 @@ class test_tasks:
     @flaky
     def test_multiprocess_producer(self, manager):
         """Testing multiple processes calling tasks."""
+        set_multiprocessing_start_method()
+
         from multiprocessing import Pool
         pool = Pool(20)
         ret = pool.map(_producer, range(120))
@@ -97,6 +111,8 @@ class test_tasks:
     @flaky
     def test_multithread_producer(self, manager):
         """Testing multiple threads calling tasks."""
+        set_multiprocessing_start_method()
+
         from multiprocessing.pool import ThreadPool
         pool = ThreadPool(20)
         ret = pool.map(_producer, range(120))
