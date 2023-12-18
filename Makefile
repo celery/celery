@@ -204,7 +204,8 @@ docker-docs:
 	@echo "Waiting for docs service to build..."
 	@timeout 10 sh -c 'until docker logs $$(docker-compose -f docker/docker-compose.yml ps -q docs) 2>&1 | \
 		grep "build succeeded"; do sleep 1; done' || \
-		(echo "Error! - Diagnose Manually: docker compose -f ./docker/docker-compose.yml up --build docs" && false)
+		(echo "Error! - run manually: docker compose -f ./docker/docker-compose.yml up --build docs"; \
+	docker-compose -f docker/docker-compose.yml logs --tail=50 docs; false)
 	@docker-compose -f docker/docker-compose.yml down
 
 .PHONY: catch-all
