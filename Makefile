@@ -201,7 +201,7 @@ docker-bash:
 .PHONY: docker-docs
 docker-docs:
 	@docker-compose -f docker/docker-compose.yml up --build -d docs
-	@echo "Waiting for docs service to build..."
+	@echo "Waiting 60 seconds for docs service to build the documentation inside the container..."
 	@timeout 60 sh -c 'until docker logs $$(docker-compose -f docker/docker-compose.yml ps -q docs) 2>&1 | \
 		grep "build succeeded"; do sleep 1; done' || \
 		(echo "Error! - run manually: docker compose -f ./docker/docker-compose.yml up --build docs"; \
