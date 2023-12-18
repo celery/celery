@@ -59,6 +59,7 @@ help:
 	@echo "  docker-lint        		- Run tox -e lint on docker container."
 	@echo "  docker-unit-tests		- Run unit tests on docker container, use '-- -k <TEST NAME>' for specific test run."
 	@echo "  docker-bash        		- Get a bash shell inside the container."
+	@echo "  docker-docs			- Build documentation with docker."
 
 clean: clean-docs clean-pyc clean-build
 
@@ -196,6 +197,15 @@ docker-integration-tests:
 .PHONY: docker-bash
 docker-bash:
 	@docker-compose -f docker/docker-compose.yml run --rm -w /home/developer/celery celery bash
+
+.PHONY: docker-docs
+docker-docs:
+	@docker-compose -f docker/docker-compose.yml up --build -d docs
+	@echo "Waiting for docs service to build..."
+	@timeout 10 sh -c 'until docker logs $$(docker-compose -f docker/docker-compose.yml ps -q docs) 2>&1 | \
+		grep "build succeeded"; do sleep 1; done' || \
+		(echo "Error! - Diagnose Manually: docker compose -f ./docker/docker-compose.yml up --build docs" && false)
+	@docker-compose -f docker/docker-compose.yml down
 
 .PHONY: catch-all
 %: catch-all
