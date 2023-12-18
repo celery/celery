@@ -28,3 +28,11 @@ jobs:
     - uses: actions/checkout@v4
     - name: Build Docker container
       run: make docker-build
+
+  docker-docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build Documentation
+      run: make docker-docs
