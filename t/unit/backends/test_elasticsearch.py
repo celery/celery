@@ -178,13 +178,13 @@ class test_ElasticsearchBackend:
         x._server.index.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
-            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'},
+            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'},
             params={'op_type': 'create'},
         )
         x._server.update.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
-            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'}},
+            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'}},
             params={'if_seq_no': 2, 'if_primary_term': 1}
         )
 
@@ -219,14 +219,14 @@ class test_ElasticsearchBackend:
             id=sentinel.task_id,
             index=x.index,
             doc_type=x.doc_type,
-            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'},
+            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'},
             params={'op_type': 'create'},
         )
         x._server.update.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
             doc_type=x.doc_type,
-            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'}},
+            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'}},
             params={'if_seq_no': 2, 'if_primary_term': 1}
         )
 
@@ -260,13 +260,13 @@ class test_ElasticsearchBackend:
         x._server.index.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
-            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'},
+            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'},
             params={'op_type': 'create'},
         )
         x._server.update.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
-            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'}},
+            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'}},
             params={'if_seq_no': 2, 'if_primary_term': 1}
         )
 
@@ -305,13 +305,13 @@ class test_ElasticsearchBackend:
         x._server.index.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
-            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'},
+            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'},
             params={'op_type': 'create'},
         )
         x._server.update.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
-            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'}},
+            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'}},
             params={'if_seq_no': 2, 'if_primary_term': 1}
         )
 
@@ -347,7 +347,7 @@ class test_ElasticsearchBackend:
         x._server.index.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
-            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'},
+            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'},
             params={'op_type': 'create'},
         )
         x._server.update.assert_not_called()
@@ -382,7 +382,7 @@ class test_ElasticsearchBackend:
         x._server.index.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
-            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'},
+            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'},
             params={'op_type': 'create'},
         )
         x._server.update.assert_not_called()
@@ -455,7 +455,7 @@ class test_ElasticsearchBackend:
                     index=x.index,
                     body={
                         'result': expected_result,
-                        '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                        '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                     },
                     params={'op_type': 'create'}
                 ),
@@ -464,7 +464,7 @@ class test_ElasticsearchBackend:
                     index=x.index,
                     body={
                         'result': expected_result,
-                        '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                        '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                     },
                     params={'op_type': 'create'}
                 ),
@@ -476,7 +476,7 @@ class test_ElasticsearchBackend:
                     body={
                         'doc': {
                             'result': expected_result,
-                            '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                            '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                         }
                     },
                     params={'if_seq_no': 2, 'if_primary_term': 1}
@@ -487,7 +487,7 @@ class test_ElasticsearchBackend:
                     body={
                         'doc': {
                             'result': expected_result,
-                            '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                            '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                         }
                     },
                     params={'if_seq_no': 3, 'if_primary_term': 1}
@@ -550,7 +550,7 @@ class test_ElasticsearchBackend:
                     index=x.index,
                     body={
                         'result': expected_result,
-                        '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                        '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                     },
                     params={'op_type': 'create'}
                 ),
@@ -559,7 +559,7 @@ class test_ElasticsearchBackend:
                     index=x.index,
                     body={
                         'result': expected_result,
-                        '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                        '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                     },
                     params={'op_type': 'create'}
                 ),
@@ -618,7 +618,7 @@ class test_ElasticsearchBackend:
                     index=x.index,
                     body={
                         'result': expected_result,
-                        '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                        '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                     },
                     params={'op_type': 'create'}
                 ),
@@ -627,7 +627,7 @@ class test_ElasticsearchBackend:
                     index=x.index,
                     body={
                         'result': expected_result,
-                        '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                        '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                     },
                     params={'op_type': 'create'}
                 ),
@@ -685,7 +685,7 @@ class test_ElasticsearchBackend:
             index=x.index,
             body={
                 'result': expected_result,
-                '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
             },
             params={'op_type': 'create'}
         )
@@ -695,7 +695,7 @@ class test_ElasticsearchBackend:
             body={
                 'doc': {
                     'result': expected_result,
-                    '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                    '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                 }
             },
             params={'if_primary_term': 1, 'if_seq_no': 2}
