@@ -6,6 +6,7 @@ import threading
 import warnings
 from collections import UserDict, defaultdict, deque
 from datetime import datetime
+from datetime import timezone as datetime_timezone
 from operator import attrgetter
 
 from click.exceptions import Exit
@@ -937,7 +938,7 @@ class Celery:
 
     def now(self):
         """Return the current time and date as a datetime."""
-        now_in_utc = to_utc(datetime.utcnow())
+        now_in_utc = to_utc(datetime.now(datetime_timezone.utc))
         return now_in_utc.astimezone(self.timezone)
 
     def select_queues(self, queues=None):
