@@ -8,6 +8,126 @@ This document contains change notes for bugfix & new features
 in the main branch & 5.3.x series, please see :ref:`whatsnew-5.3` for
 an overview of what's new in Celery 5.3.
 
+
+.. _version-5.3.6:
+
+5.3.6
+=====
+
+:release-date: 2023-11-22  9:15 P.M GMT+6
+:release-by: Asif Saif Uddin
+
+
+This release is focused mainly to fix AWS SQS new feature comatibility issue and old regressions. 
+The code changes are mostly fix for regressions. More details can be found below.
+
+What's Changed
+==============
+- Increased docker-build CI job timeout from 30m -> 60m by @Nusnus in https://github.com/celery/celery/pull/8635
+- Incredibly minor spelling fix. by @Asday in https://github.com/celery/celery/pull/8649
+- Fix non-zero exit code when receiving remote shutdown by @lyzlisa in https://github.com/celery/celery/pull/8650
+- Update task.py get_custom_headers missing 'compression' key by @auvipy in https://github.com/celery/celery/pull/8633
+- Update kombu>=5.3.4 to fix SQS request compatibility with boto JSON serializer by @auvipy in https://github.com/celery/celery/pull/8646
+- test requirements version update by @auvipy in https://github.com/celery/celery/pull/8655
+- Update elasticsearch version by @auvipy in https://github.com/celery/celery/pull/8656
+- Propagates more ImportErrors during autodiscovery by @johnjameswhitman in https://github.com/celery/celery/pull/8632
+
+New Contributors
+================
+- @Asday made their first contribution in https://github.com/celery/celery/pull/8649
+- @lyzlisa made their first contribution in https://github.com/celery/celery/pull/8650
+- @johnjameswhitman made their first contribution in https://github.com/celery/celery/pull/8632
+
+
+.. _version-5.3.5:
+
+5.3.5
+=====
+
+:release-date: 2023-11-10  7:15 P.M GMT+6
+:release-by: Asif Saif Uddin
+
+
+What's Changed
+==============
+- Update test.txt versions by @auvipy in https://github.com/celery/celery/pull/8481
+- fix os.getcwd() FileNotFoundError by @mortimer2015 in https://github.com/celery/celery/pull/8448
+- Fix typo in CONTRIBUTING.rst by @monteiro-renato in https://github.com/celery/celery/pull/8494
+- typo(doc): configuration.rst by @shifenhutu in https://github.com/celery/celery/pull/8484
+- assert before raise by @monteiro-renato in https://github.com/celery/celery/pull/8495
+- Update GHA checkout version by @auvipy in https://github.com/celery/celery/pull/8496
+- Fixed replaced_task_nesting by @Nusnus in https://github.com/celery/celery/pull/8500
+- Fix code indentation for route_task() example by @stefmolin in https://github.com/celery/celery/pull/8502
+- support redis 5.x by @dulmandakh in https://github.com/celery/celery/pull/8504
+- Fix typos in test_canvas.py by @monteiro-renato in https://github.com/celery/celery/pull/8498
+- Marked flaky tests by @Nusnus in https://github.com/celery/celery/pull/8508
+- Fix typos in calling.rst by @visitorckw in https://github.com/celery/celery/pull/8506
+- Added support for replaced_task_nesting in chains by @Nusnus in https://github.com/celery/celery/pull/8501
+- Fix typos in canvas.rst by @visitorckw in https://github.com/celery/celery/pull/8509
+- Patch Version Release Checklist by @Nusnus in https://github.com/celery/celery/pull/8488
+- Added Python 3.11 support to Dockerfile by @Nusnus in https://github.com/celery/celery/pull/8511
+- Dependabot (Celery) by @Nusnus in https://github.com/celery/celery/pull/8510
+- Bump actions/checkout from 3 to 4 by @dependabot in https://github.com/celery/celery/pull/8512
+- Update ETA example to include timezone by @amantri in https://github.com/celery/celery/pull/8516
+- Replaces datetime.fromisoformat with the more lenient dateutil parser by @stumpylog in https://github.com/celery/celery/pull/8507
+- Fixed indentation in Dockerfile for Python 3.11 by @Nusnus in https://github.com/celery/celery/pull/8527
+- Fix git bug in Dockerfile by @Nusnus in https://github.com/celery/celery/pull/8528
+- Tox lint upgrade from Python 3.9 to Python 3.11 by @Nusnus in https://github.com/celery/celery/pull/8526
+- Document gevent concurrency by @cunla in https://github.com/celery/celery/pull/8520
+- Update test.txt by @auvipy in https://github.com/celery/celery/pull/8530
+- Celery Docker Upgrades by @Nusnus in https://github.com/celery/celery/pull/8531
+- pyupgrade upgrade v3.11.0 -> v3.13.0 by @Nusnus in https://github.com/celery/celery/pull/8535
+- Update msgpack.txt by @auvipy in https://github.com/celery/celery/pull/8548
+- Update auth.txt by @auvipy in https://github.com/celery/celery/pull/8547
+- Update msgpack.txt to fix build issues by @auvipy in https://github.com/celery/celery/pull/8552
+- Basic ElasticSearch / ElasticClient 8.x Support by @q2justin in https://github.com/celery/celery/pull/8519
+- Fix eager tasks does not populate name field by @KOliver94 in https://github.com/celery/celery/pull/8486
+- Fix typo in celery.app.control by @Spaceface16518 in https://github.com/celery/celery/pull/8563
+- Update solar.txt ephem by @auvipy in https://github.com/celery/celery/pull/8566
+- Update test.txt pytest-timeout by @auvipy in https://github.com/celery/celery/pull/8565
+- Correct some mypy errors by @rbtcollins in https://github.com/celery/celery/pull/8570
+- Update elasticsearch.txt by @auvipy in https://github.com/celery/celery/pull/8573
+- Update test.txt deps by @auvipy in https://github.com/celery/celery/pull/8574
+- Update test.txt by @auvipy in https://github.com/celery/celery/pull/8590
+- Improved the "Next steps" documentation (#8561). by @frolenkov-nikita in https://github.com/celery/celery/pull/8600
+- Disabled couchbase tests due to broken package breaking main by @Nusnus in https://github.com/celery/celery/pull/8602
+- Update elasticsearch deps by @auvipy in https://github.com/celery/celery/pull/8605
+- Update cryptography==41.0.5 by @auvipy in https://github.com/celery/celery/pull/8604
+- Update pytest==7.4.3 by @auvipy in https://github.com/celery/celery/pull/8606
+- test initial support of python 3.12.x by @auvipy in https://github.com/celery/celery/pull/8549
+- updated new versions to fix CI by @auvipy in https://github.com/celery/celery/pull/8607
+- Update zstd.txt by @auvipy in https://github.com/celery/celery/pull/8609
+- Fixed CI Support with Python 3.12 by @Nusnus in https://github.com/celery/celery/pull/8611
+- updated CI, docs and classifier for next release by @auvipy in https://github.com/celery/celery/pull/8613
+- updated dockerfile to add python 3.12 by @auvipy in https://github.com/celery/celery/pull/8614
+- lint,mypy,docker-unit-tests -> Python 3.12 by @Nusnus in https://github.com/celery/celery/pull/8617
+- Correct type of `request` in `task_revoked` documentation by @RJPercival in https://github.com/celery/celery/pull/8616
+- update docs docker image by @auvipy in https://github.com/celery/celery/pull/8618
+- Fixed RecursionError caused by giving `config_from_object` nested mod… by @frolenkov-nikita in https://github.com/celery/celery/pull/8619
+- Fix: serialization error when gossip working by @kitsuyui in https://github.com/celery/celery/pull/6566
+* [documentation] broker_connection_max_retries of 0 does not mean "retry forever" by @jakila in https://github.com/celery/celery/pull/8626
+- added 2  debian package for better stability in Docker by @auvipy in https://github.com/celery/celery/pull/8629
+
+
+New Contributors
+================
+- @mortimer2015 made their first contribution in https://github.com/celery/celery/pull/8448
+- @monteiro-renato made their first contribution in https://github.com/celery/celery/pull/8494
+- @shifenhutu made their first contribution in https://github.com/celery/celery/pull/8484
+- @stefmolin made their first contribution in https://github.com/celery/celery/pull/8502
+- @visitorckw made their first contribution in https://github.com/celery/celery/pull/8506
+- @dependabot made their first contribution in https://github.com/celery/celery/pull/8512
+- @amantri made their first contribution in https://github.com/celery/celery/pull/8516
+- @cunla made their first contribution in https://github.com/celery/celery/pull/8520
+- @q2justin made their first contribution in https://github.com/celery/celery/pull/8519
+- @Spaceface16518 made their first contribution in https://github.com/celery/celery/pull/8563
+- @rbtcollins made their first contribution in https://github.com/celery/celery/pull/8570
+- @frolenkov-nikita made their first contribution in https://github.com/celery/celery/pull/8600
+- @RJPercival made their first contribution in https://github.com/celery/celery/pull/8616
+- @kitsuyui made their first contribution in https://github.com/celery/celery/pull/6566
+- @jakila made their first contribution in https://github.com/celery/celery/pull/8626
+
+
 .. _version-5.3.4:
 
 5.3.4

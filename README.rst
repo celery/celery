@@ -2,7 +2,7 @@
 
 |build-status| |coverage| |license| |wheel| |semgrep| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 5.3.4 (emerald-rush)
+:Version: 5.3.6 (emerald-rush)
 :Web: https://docs.celeryq.dev/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -490,10 +490,16 @@ link to your website. [`Become a sponsor`_]
 
 .. _`Become a sponsor`: https://opencollective.com/celery#sponsor
 
-|oc-sponsors|
+|oc-sponsor-1| |oc-sponsor-2|
 
-.. |oc-sponsors| image:: https://opencollective.com/celery/sponsor/0/avatar.svg
+.. |oc-sponsor-1| image:: https://opencollective.com/celery/sponsor/0/avatar.svg
     :target: https://opencollective.com/celery/sponsor/0/website
+
+.. |oc-sponsor-2| image:: https://upstash.com/logo/upstash-dark-bg.svg
+    :target: http://upstash.com/?code=celery
+    :alt: Upstash
+    :width: 200
+    :height: 57
 
 .. _license:
 

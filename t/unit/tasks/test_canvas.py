@@ -1688,6 +1688,14 @@ class test_chord(CanvasCase):
             errback = c.link_error(sig)
             assert errback == sig
 
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_flag_allow_error_cb_on_chord_header_with_dict_callback(self):
+        self.app.conf.task_allow_error_cb_on_chord_header = True
+        c = chord(group(signature('th1'), signature('th2')), signature('tbody'))
+        errback_dict = dict(signature('tcb'))
+        errback = c.link_error(errback_dict)
+        assert errback == errback_dict
+
     def test_chord__or__group_of_single_task(self):
         """ Test chaining a chord to a group of a single task. """
         c = chord([signature('header')], signature('body'))

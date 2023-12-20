@@ -46,5 +46,5 @@ services:
     volumes:
         - ../docs:/docs:z
     ports:
-      - "7000:7000"
+      - "7001:7000"
     command: /start-docs

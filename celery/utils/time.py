@@ -217,8 +217,9 @@ def remaining(
     Returns:
         ~datetime.timedelta: Remaining time.
     """
-    now = now or datetime.utcnow()
+    now = now or datetime.now(datetime_timezone.utc)
     transition_offset = timedelta(hours=0)
+
     if str(
             start.tzinfo) == str(
             now.tzinfo) and now.utcoffset() != start.utcoffset():

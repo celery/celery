@@ -2271,6 +2271,8 @@ class _chord(Signature):
             ``False`` (the current default), then the error callback will only be
             applied to the body.
         """
+        errback = maybe_signature(errback)
+
         if self.app.conf.task_allow_error_cb_on_chord_header:
             for task in maybe_list(self.tasks) or []:
                 task.link_error(errback.clone(immutable=True))

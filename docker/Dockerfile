@@ -8,6 +8,8 @@ ARG DEBIAN_FRONTEND=noninteractive
 # Pypy3 is installed from a package manager because it takes so long to build.
 RUN apt-get update && apt-get install -y build-essential \
     libcurl4-openssl-dev \
+    apt-utils \
+    debconf \
     libffi-dev \
     tk-dev \
     xz-utils \

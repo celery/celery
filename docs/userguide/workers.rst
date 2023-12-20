@@ -160,6 +160,9 @@ tasks that are currently running multiplied by :setting:`worker_prefetch_multipl
 The prefetch count will be gradually restored to the maximum allowed after
 each time a task that was running before the connection was lost is complete.
 
+This feature is enabled by default, but can be disabled by setting False
+to :setting:`worker_enable_prefetch_count_reduction`.
+
 .. _worker-process-signals:
 
 Process Signals
