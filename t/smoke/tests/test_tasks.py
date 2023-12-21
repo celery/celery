@@ -1,9 +1,38 @@
 import pytest
 from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup, CeleryTestWorker, CeleryWorkerCluster
 
-from celery import signature
+from celery import Celery, signature
+from celery.exceptions import TimeLimitExceeded, WorkerLostError
 from t.integration.tasks import add, identity
+from t.smoke.conftest import SuiteOperations, TaskTermination
 from t.smoke.tasks import replace_with_task
+
+
+@pytest.mark.parametrize(
+    "method,expected_error",
+    [
+        (TaskTermination.Method.SIGKILL, WorkerLostError),
+        (TaskTermination.Method.SYSTEM_EXIT, WorkerLostError),
+        (TaskTermination.Method.DELAY_TIMEOUT, TimeLimitExceeded),
+        (TaskTermination.Method.EXHAUST_MEMORY, WorkerLostError),
+    ],
+)
+class test_task_termination(SuiteOperations):
+    @pytest.fixture
+    def default_worker_app(self, default_worker_app: Celery) -> Celery:
+        app = default_worker_app
+        app.conf.worker_prefetch_multiplier = 1
+        app.conf.worker_concurrency = 1
+        yield app
+
+    def test_child_process_respawn(
+        self,
+        celery_setup: CeleryTestSetup,
+        method: TaskTermination.Method,
+        expected_error: Exception,
+    ):
+        with pytest.raises(expected_error):
+            self.apply_suicide_task(celery_setup.worker, method)
 
 
 class test_replace:
