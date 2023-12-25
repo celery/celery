@@ -1,5 +1,10 @@
 import pytest
-from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup, CeleryTestWorker, CeleryWorkerCluster
+from pytest_celery import (
+    RESULT_TIMEOUT,
+    CeleryTestSetup,
+    CeleryTestWorker,
+    CeleryWorkerCluster,
+)
 
 from celery import Celery, signature
 from celery.exceptions import TimeLimitExceeded, WorkerLostError
@@ -31,8 +36,22 @@ class test_task_termination(SuiteOperations):
         method: TaskTermination.Method,
         expected_error: Exception,
     ):
+        pinfo_before = celery_setup.worker.get_running_processes_info(
+            ["pid", "name"],
+            filters={"name": "celery"},
+        )
+
         with pytest.raises(expected_error):
             self.apply_suicide_task(celery_setup.worker, method)
+
+        pinfo_after = celery_setup.worker.get_running_processes_info(
+            ["pid", "name"],
+            filters={"name": "celery"},
+        )
+
+        pids_before = set(item["pid"] for item in pinfo_before)
+        pids_after = set(item["pid"] for item in pinfo_after)
+        assert len(pids_before | pids_after) == 3
 
 
 class test_replace:

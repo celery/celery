@@ -52,7 +52,7 @@ def suicide_sigkill():
 @shared_task
 def suicide_system_exit():
     """Triggers a system exit to simulate a critical stop of the Celery worker."""
-    sys.exit("Simulated Celery worker stop via system exit.")
+    sys.exit(1)
 
 
 @shared_task(time_limit=2)
