@@ -44,8 +44,8 @@ class test_task_termination(SuiteOperations):
             filters={"name": "celery"},
         )
 
-        pids_before = set(item["pid"] for item in pinfo_before)
-        pids_after = set(item["pid"] for item in pinfo_after)
+        pids_before = {item["pid"] for item in pinfo_before}
+        pids_after = {item["pid"] for item in pinfo_after}
         assert len(pids_before | pids_after) == 3
 
     @pytest.mark.parametrize(
