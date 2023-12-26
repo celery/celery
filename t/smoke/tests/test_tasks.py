@@ -37,7 +37,7 @@ class test_task_termination(SuiteOperations):
         )
 
         with pytest.raises(expected_error):
-            self.apply_suicide_task(celery_setup.worker, method)
+            self.apply_suicide_task(celery_setup.worker, method).get()
 
         pinfo_after = celery_setup.worker.get_running_processes_info(
             ["pid", "name"],
@@ -76,7 +76,7 @@ class test_task_termination(SuiteOperations):
         expected_log: str,
     ):
         with pytest.raises(Exception):
-            self.apply_suicide_task(celery_setup.worker, method)
+            self.apply_suicide_task(celery_setup.worker, method).get()
 
         celery_setup.worker.assert_log_exists(expected_log)
 
