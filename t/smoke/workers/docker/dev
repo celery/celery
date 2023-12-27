@@ -21,8 +21,10 @@ ENV PYTHONDONTWRITEBYTECODE=1
 WORKDIR /celery
 
 COPY --chown=test_user:test_user . /celery
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -e /celery[redis,memcache,pymemcache]
+RUN pip install --no-cache-dir --upgrade \
+    pip \
+    -e /celery[redis,memcache,pymemcache] \
+    psutil
 
 # The workdir must be /app
 WORKDIR /app

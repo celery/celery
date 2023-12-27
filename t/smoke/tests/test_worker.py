@@ -19,7 +19,7 @@ class test_worker_restart(SuiteOperations):
     def test_restart_during_task_execution(
         self,
         celery_setup: CeleryTestSetup,
-        method: WorkerRestart,
+        method: WorkerRestart.Method,
     ):
         queue = celery_setup.worker.worker_queue
         sig = long_running_task.si(5, verbose=True).set(queue=queue)
@@ -30,7 +30,7 @@ class test_worker_restart(SuiteOperations):
     def test_restart_between_task_execution(
         self,
         celery_setup: CeleryTestSetup,
-        method: WorkerRestart,
+        method: WorkerRestart.Method,
     ):
         # We use freeze() to control the order of execution for the restart operation
         queue = celery_setup.worker.worker_queue
