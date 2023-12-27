@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from enum import Enum, auto
-from time import sleep
 
 from pytest_celery import CeleryTestWorker
 
@@ -36,6 +35,3 @@ class TaskTermination:
             # to crash, this will refresh the container object with the updated container status
             # which can be asserted/checked during a test (for dev/debug)
             worker.container.reload()
-
-            # Allowing the worker to respawn the child process before we continue
-            sleep(0.5)
