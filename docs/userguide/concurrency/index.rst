@@ -30,7 +30,7 @@ Overview of Concurrency Options
 - `custom`: Enables specifying a custom worker pool implementation through
   environment variables.
 
-For a detailed  look at these options, visit the [Celery Worker Pools
+For a detailed look at these options, there is an excellent overview at [Celery Worker Pools
 Overview](https://celery.school/celery-worker-pools).
 
 .. toctree::
@@ -41,6 +41,5 @@ Overview](https://celery.school/celery-worker-pools).
 
 .. note::
     While alternative models like `eventlet` and `gevent` are available, they
-    may lack certain features and are less robust compared to `prefork`. We
-    recommend `prefork` as the starting point unless specific requirements dictate
-    otherwise.
+    may lack certain features compared to `prefork`. We recommend `prefork` as
+    the starting point unless specific requirements dictate otherwise.
