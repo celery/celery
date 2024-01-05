@@ -1,7 +1,7 @@
 import sys
 import time
 from contextlib import contextmanager
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pickle import dumps, loads
 from unittest import TestCase
 from unittest.mock import Mock
@@ -50,17 +50,17 @@ class test_solar:
     def test_is_due(self):
         self.s.remaining_estimate = Mock(name='rem')
         self.s.remaining_estimate.return_value = timedelta(seconds=0)
-        assert self.s.is_due(datetime.utcnow()).is_due
+        assert self.s.is_due(datetime.now(timezone.utc)).is_due
 
     def test_is_due__not_due(self):
         self.s.remaining_estimate = Mock(name='rem')
         self.s.remaining_estimate.return_value = timedelta(hours=10)
-        assert not self.s.is_due(datetime.utcnow()).is_due
+        assert not self.s.is_due(datetime.now(timezone.utc)).is_due
 
     def test_remaining_estimate(self):
         self.s.cal = Mock(name='cal')
-        self.s.cal.next_rising().datetime.return_value = datetime.utcnow()
-        self.s.remaining_estimate(datetime.utcnow())
+        self.s.cal.next_rising().datetime.return_value = datetime.now(timezone.utc)
+        self.s.remaining_estimate(datetime.now(timezone.utc))
 
     def test_coordinates(self):
         with pytest.raises(ValueError):
@@ -82,7 +82,7 @@ class test_solar:
             s.method = s._methods[ev]
             s.is_center = s._use_center_l[ev]
             try:
-                s.remaining_estimate(datetime.utcnow())
+                s.remaining_estimate(datetime.now(timezone.utc))
             except TypeError:
                 pytest.fail(
                     f"{s.method} was called with 'use_center' which is not a "
@@ -108,7 +108,7 @@ class test_schedule:
 # This is needed for test_crontab_parser because datetime.utcnow doesn't pickle
 # in python 2
 def utcnow():
-    return datetime.utcnow()
+    return datetime.now(timezone.utc)
 
 
 class test_crontab_parser:

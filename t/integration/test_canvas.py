@@ -2,7 +2,7 @@ import collections
 import re
 import tempfile
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from time import monotonic, sleep
 
 import pytest
@@ -366,7 +366,7 @@ class test_chain:
         except NotImplementedError as e:
             raise pytest.skip(e.args[0])
 
-        eta = datetime.utcnow() + timedelta(seconds=10)
+        eta = datetime.now(timezone.utc) + timedelta(seconds=10)
         c = chain(
             group(
                 add.s(1, 2),

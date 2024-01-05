@@ -14,7 +14,7 @@ The worker consists of several components, all managed by bootsteps
 
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 
 from billiard import cpu_count
 from kombu.utils.compat import detect_environment
@@ -89,7 +89,7 @@ class WorkController:
     def __init__(self, app=None, hostname=None, **kwargs):
         self.app = app or self.app
         self.hostname = default_nodename(hostname)
-        self.startup_time = datetime.utcnow()
+        self.startup_time = datetime.now(timezone.utc)
         self.app.loader.init_worker()
         self.on_before_init(**kwargs)
         self.setup_defaults(**kwargs)
@@ -293,7 +293,7 @@ class WorkController:
             return reload_from_cwd(sys.modules[module], reloader)
 
     def info(self):
-        uptime = datetime.utcnow() - self.startup_time
+        uptime = datetime.now(timezone.utc) - self.startup_time
         return {'total': self.state.total_count,
                 'pid': os.getpid(),
                 'clock': str(self.app.clock),
