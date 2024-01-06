@@ -1246,6 +1246,11 @@ Josue Balandrano Coronel
 :github: https://github.com/xirdneh
 :twitter: https://twitter.com/eusoj_xirdneh
 
+Tomer Nosrati
+~~~~~~~~~~~~~
+:github: https://github.com/Nusnus
+:twitter: https://x.com/tomer_nosrati
+
 Website
 -------
 
