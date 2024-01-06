@@ -256,6 +256,7 @@ issue tracker.
 * :pypi:`kombu`: https://github.com/celery/kombu/issues
 * :pypi:`amqp`: https://github.com/celery/py-amqp/issues
 * :pypi:`vine`: https://github.com/celery/vine/issues
+* :pypi:`pytest-celery`: https://github.com/celery/pytest-celery/issues
 * :pypi:`librabbitmq`: https://github.com/celery/librabbitmq/issues
 * :pypi:`django-celery-beat`: https://github.com/celery/django-celery-beat/issues
 * :pypi:`django-celery-results`: https://github.com/celery/django-celery-results/issues
@@ -1311,6 +1312,15 @@ Promise/deferred implementation.
 :Windows-CI: https://ci.appveyor.com/project/ask/vine
 :PyPI: :pypi:`vine`
 :docs: https://vine.readthedocs.io
+
+``pytest-celery``
+-----------------
+
+Pytest plugin for Celery.
+
+:git: https://github.com/celery/pytest-celery
+:PyPI: :pypi:`pytest-celery`
+:docs: https://pytest-celery.readthedocs.io
 
 ``billiard``
 ------------
