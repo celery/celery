@@ -1,6 +1,5 @@
 """Terminals and colors."""
 import base64
-import codecs
 import os
 import platform
 import sys
@@ -166,9 +165,9 @@ def supports_images():
 
 
 def _read_as_base64(path):
-    with codecs.open(path, mode='rb') as fh:
+    with open(path, mode='rb') as fh:
         encoded = base64.b64encode(fh.read())
-        return encoded if isinstance(encoded, str) else encoded.decode('ascii')
+        return encoded.decode('ascii')
 
 
 def imgcat(path, inline=1, preserve_aspect_ratio=0, **kwargs):
