@@ -57,7 +57,7 @@ class colored:
         }
 
     def _add(self, a, b):
-        return str(a) + str(b)
+        return f"{a}{b}"
 
     def _fold_no_color(self, a, b):
         try:
@@ -69,7 +69,7 @@ class colored:
         except AttributeError:
             B = str(b)
 
-        return ''.join((str(A), str(B)))
+        return f"{A}{B}"
 
     def no_color(self):
         if self.s:
@@ -80,13 +80,13 @@ class colored:
         prefix = ''
         if self.enabled:
             prefix = self.op
-        return ''.join((str(prefix), str(reduce(self._add, self.s))))
+        return f"{prefix}{reduce(self._add, self.s)}"
 
     def __str__(self):
         suffix = ''
         if self.enabled:
             suffix = RESET_SEQ
-        return str(''.join((self.embed(), str(suffix))))
+        return f"{self.embed()}{suffix}"
 
     def node(self, s, op):
         return self.__class__(enabled=self.enabled, op=op, *s)
@@ -158,7 +158,7 @@ class colored:
         return self.node(s or [''], RESET_SEQ)
 
     def __add__(self, other):
-        return str(self) + str(other)
+        return f"{self}{other}"
 
 
 def supports_images():
