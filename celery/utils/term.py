@@ -60,7 +60,7 @@ class colored:
         }
 
     def _add(self, a: object, b: object) -> str:
-        return str(a) + str(b)
+        return f"{a}{b}"
 
     def _fold_no_color(self, a: Any, b: Any) -> str:
         try:
@@ -72,7 +72,7 @@ class colored:
         except AttributeError:
             B = str(b)
 
-        return ''.join((str(A), str(B)))
+        return f"{A}{B}"
 
     def no_color(self) -> str:
         if self.s:
@@ -83,13 +83,13 @@ class colored:
         prefix = ''
         if self.enabled:
             prefix = self.op
-        return ''.join((str(prefix), str(reduce(self._add, self.s))))
+        return f"{prefix}{reduce(self._add, self.s)}"
 
     def __str__(self) -> str:
         suffix = ''
         if self.enabled:
             suffix = RESET_SEQ
-        return str(''.join((self.embed(), str(suffix))))
+        return f"{self.embed()}{suffix}"
 
     def node(self, s: tuple[object, ...], op: str) -> colored:
         return self.__class__(enabled=self.enabled, op=op, *s)
@@ -161,7 +161,7 @@ class colored:
         return self.node(s or ('',), RESET_SEQ)
 
     def __add__(self, other: object) -> str:
-        return str(self) + str(other)
+        return f"{self}{other}"
 
 
 def supports_images() -> bool:
@@ -171,7 +171,7 @@ def supports_images() -> bool:
 def _read_as_base64(path: str) -> str:
     with open(path, mode='rb') as fh:
         encoded = base64.b64encode(fh.read())
-        return encoded if isinstance(encoded, str) else encoded.decode('ascii')
+        return encoded.decode('ascii')
 
 
 def imgcat(path: str, inline: int = 1, preserve_aspect_ratio: int = 0, **kwargs: Any) -> str:
