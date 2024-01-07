@@ -418,7 +418,8 @@ class test_tasks:
 
         assert result.status == 'FAILURE'
 
-    @flaky
+    # Requires investigation why it randomly succeeds/fails
+    @pytest.mark.skip(reason="Randomly fails")
     def test_task_accepted(self, manager, sleep=1):
         r1 = sleeping.delay(sleep)
         sleeping.delay(sleep)
