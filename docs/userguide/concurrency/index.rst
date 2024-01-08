@@ -30,9 +30,6 @@ Overview of Concurrency Options
 - `custom`: Enables specifying a custom worker pool implementation through
   environment variables.
 
-For a detailed look at these options, there is an excellent overview at [Celery Worker Pools
-Overview](https://celery.school/celery-worker-pools).
-
 .. toctree::
     :maxdepth: 2
 
