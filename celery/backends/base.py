@@ -1080,7 +1080,7 @@ class BaseKeyValueStoreBackend(Backend):
                     )
             finally:
                 deps.delete()
-                self.client.delete(key)
+                self.delete(key)
         else:
             self.expire(key, self.expires)
 
