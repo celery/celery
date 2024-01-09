@@ -84,7 +84,7 @@ class test_task_termination(SuiteOperations):
             ),
         ],
     )
-    def test_terminated_task_logs(
+    def test_terminated_task_logs_correct_error(
         self,
         celery_setup: CeleryTestSetup,
         method: TaskTermination.Method,
