@@ -91,7 +91,10 @@ class test_task_termination(SuiteOperations):
         expected_log: str,
     ):
         with pytest.raises(Exception):
-            self.apply_suicide_task(celery_setup.worker, method).get()
+            try:
+                self.apply_suicide_task(celery_setup.worker, method).get()
+            except Exception as err:
+                assert expected_log in str(err)
 
         celery_setup.worker.assert_log_exists(expected_log)
 
