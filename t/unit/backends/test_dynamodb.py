@@ -426,6 +426,34 @@ class test_DynamoDBBackend:
             result = self.backend._prepare_put_request('abcdef', 'val')
         assert result == expected
 
+    def test_prepare_init_count_request(self):
+        expected = {
+            'TableName': 'celery',
+            'Item': {
+                'id': {'S': 'abcdef'},
+                'chord_count': {'N': '0'},
+                'timestamp': {
+                    'N': str(Decimal(self._static_timestamp))
+                },
+            }
+        }
+        with patch('celery.backends.dynamodb.time', self._mock_time):
+            result = self.backend._prepare_init_count_request('abcdef')
+        assert result == expected
+
+    def test_prepare_inc_count_request(self):
+        expected = {
+            'TableName': 'celery',
+            'Key': {
+                'id': {'S': 'abcdef'},
+            },
+            'UpdateExpression': 'set chord_count = chord_count + :num',
+            'ExpressionAttributeValues': {":num": {"N": "1"}},
+            'ReturnValues': 'UPDATED_NEW',
+        }
+        result = self.backend._prepare_inc_count_request('abcdef')
+        assert result == expected
+
     def test_item_to_dict(self):
         boto_response = {
             'Item': {
@@ -515,6 +543,39 @@ class test_DynamoDBBackend:
         self.backend.client.delete_item.assert_called_once_with(
             Key={'id': {'S': '1f3fab'}},
             TableName='celery'
+        )
+
+    def test_inc(self):
+        mocked_incr_response = {
+            'Attributes': {
+                'chord_count': {
+                    'N': '1'
+                }
+            },
+            'ResponseMetadata': {
+                'RequestId': '16d31c72-51f6-4538-9415-499f1135dc59',
+                'HTTPStatusCode': 200,
+                'HTTPHeaders': {
+                    'date': 'Wed, 10 Jan 2024 17:53:41 GMT',
+                    'x-amzn-requestid': '16d31c72-51f6-4538-9415-499f1135dc59',
+                    'content-type': 'application/x-amz-json-1.0',
+                    'x-amz-crc32': '3438282865',
+                    'content-length': '40',
+                    'server': 'Jetty(11.0.17)'
+                },
+                'RetryAttempts': 0
+            }
+        }
+        self.backend._client = MagicMock()
+        self.backend._client.update_item = MagicMock(return_value=mocked_incr_response)
+
+        assert self.backend.incr('1f3fab') == 1
+        self.backend.client.update_item.assert_called_once_with(
+            Key={'id': {'S': '1f3fab'}},
+            TableName='celery',
+            UpdateExpression='set chord_count = chord_count + :num',
+            ExpressionAttributeValues={":num": {"N": "1"}},
+            ReturnValues='UPDATED_NEW',
         )
 
     def test_backend_by_url(self, url='dynamodb://'):

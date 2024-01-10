@@ -1,6 +1,7 @@
 """AWS DynamoDB result store backend."""
 from collections import namedtuple
 from time import sleep, time
+from typing import Any, Dict
 
 from kombu.utils.url import _parse_url as parse_url
 
@@ -463,7 +464,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
             })
         return put_request
 
-    def _prepare_init_count_request(self, key):
+    def _prepare_init_count_request(self, key: str) -> Dict[str, Any]:
         """Construct the counter initialization request parameters"""
         timestamp = time()
         return {
@@ -481,7 +482,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
             }
         }
 
-    def _prepare_inc_count_request(self, key: str):
+    def _prepare_inc_count_request(self, key: str) -> Dict[str, Any]:
         """Construct the counter increment request parameters"""
         return {
             'TableName': self.table_name,
@@ -530,7 +531,8 @@ class DynamoDBBackend(KeyValueStoreBackend):
         request_parameters = self._prepare_get_request(key)
         self.client.delete_item(**request_parameters)
 
-    def incr(self, key) -> int:
+    def incr(self, key: bytes) -> int:
+        """Atomically increase the chord_count and return the new count"""
         key = str(key)
         request_parameters = self._prepare_inc_count_request(key)
         item_response = self.client.update_item(**request_parameters)
