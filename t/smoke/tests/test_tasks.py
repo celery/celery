@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup, CeleryTestWorker, CeleryWorkerCluster
 from retry import retry
@@ -64,34 +66,41 @@ class test_task_termination(SuiteOperations):
         assert len(pids_before | pids_after) == 3
 
     @pytest.mark.parametrize(
-        "method,expected_log",
+        "method,expected_log,expected_exception_msg",
         [
             (
                 TaskTermination.Method.SIGKILL,
                 "Worker exited prematurely: signal 9 (SIGKILL)",
+                None,
             ),
             (
                 TaskTermination.Method.SYSTEM_EXIT,
                 "Worker exited prematurely: exitcode 1",
+                None,
             ),
             (
                 TaskTermination.Method.DELAY_TIMEOUT,
                 "Hard time limit (2s) exceeded for t.smoke.tasks.suicide_delay_timeout",
+                'TimeLimitExceeded(2,)',
             ),
             (
                 TaskTermination.Method.EXHAUST_MEMORY,
                 "Worker exited prematurely: signal 9 (SIGKILL)",
+                None,
             ),
         ],
     )
-    def test_terminated_task_logs(
+    def test_terminated_task_logs_correct_error(
         self,
         celery_setup: CeleryTestSetup,
         method: TaskTermination.Method,
         expected_log: str,
+        expected_exception_msg: str | None,
     ):
-        with pytest.raises(Exception):
+        try:
             self.apply_suicide_task(celery_setup.worker, method).get()
+        except Exception as err:
+            assert expected_exception_msg or expected_log in str(err)
 
         celery_setup.worker.assert_log_exists(expected_log)
 
