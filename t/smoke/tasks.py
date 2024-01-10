@@ -44,25 +44,25 @@ def replace_with_task(self: Task, replace_with: Signature = None):
 
 
 @shared_task
-def suicide_sigkill():
+def self_termination_sigkill():
     """Forceful termination."""
     os.kill(os.getpid(), SIGKILL)
 
 
 @shared_task
-def suicide_system_exit():
+def self_termination_system_exit():
     """Triggers a system exit to simulate a critical stop of the Celery worker."""
     sys.exit(1)
 
 
 @shared_task(time_limit=2)
-def suicide_delay_timeout():
+def self_termination_delay_timeout():
     """Delays the execution to simulate a task timeout."""
     sleep(4)
 
 
 @shared_task
-def suicide_exhaust_memory():
+def self_termination_exhaust_memory():
     """Continuously allocates memory to simulate memory exhaustion."""
     mem = []
     while True:
