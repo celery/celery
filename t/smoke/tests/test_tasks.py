@@ -40,7 +40,7 @@ class test_task_termination(SuiteOperations):
         )
 
         with pytest.raises(expected_error):
-            self.apply_suicide_task(celery_setup.worker, method).get()
+            self.apply_self_termination_task(celery_setup.worker, method).get()
 
         # Allowing the worker to respawn the child process before we continue
         @retry(tries=42, delay=0.1)  # 4.2 seconds
@@ -80,7 +80,7 @@ class test_task_termination(SuiteOperations):
             ),
             (
                 TaskTermination.Method.DELAY_TIMEOUT,
-                "Hard time limit (2s) exceeded for t.smoke.tasks.suicide_delay_timeout",
+                "Hard time limit (2s) exceeded for t.smoke.tasks.self_termination_delay_timeout",
                 'TimeLimitExceeded(2,)',
             ),
             (
@@ -98,7 +98,7 @@ class test_task_termination(SuiteOperations):
         expected_exception_msg: str | None,
     ):
         try:
-            self.apply_suicide_task(celery_setup.worker, method).get()
+            self.apply_self_termination_task(celery_setup.worker, method).get()
         except Exception as err:
             assert expected_exception_msg or expected_log in str(err)
 
