@@ -3189,6 +3189,8 @@ Default: :const:`None`
 
 An optional file path for :program:`celery events` to log into (defaults to `stdout`).
 
+.. versionadded:: 5.4
+
 .. setting:: events_pidfile
 
 ``events_pidfile``
@@ -3197,6 +3199,8 @@ An optional file path for :program:`celery events` to log into (defaults to `std
 Default: :const:`None`
 
 An optional file path for :program:`celery events` to create/store its PID file (default to no PID file created).
+
+.. versionadded:: 5.4
 
 .. setting:: events_uid
 
@@ -3207,6 +3211,8 @@ Default: :const:`None`
 
 An optional user ID to use when events :program:`celery events` drops its privileges (defaults to no UID change).
 
+.. versionadded:: 5.4
+
 .. setting:: events_gid
 
 ``events_gid``
@@ -3216,6 +3222,8 @@ Default: :const:`None`
 
 An optional group ID to use when :program:`celery events` daemon drops its privileges (defaults to no GID change).
 
+.. versionadded:: 5.4
+
 .. setting:: events_umask
 
 ``events_umask``
@@ -3224,6 +3232,8 @@ An optional group ID to use when :program:`celery events` daemon drops its privi
 Default: :const:`None`
 
 An optional `umask` to use when :program:`celery events` creates files (log, pid...) when daemonizing.
+
+.. versionadded:: 5.4
 
 .. setting:: events_executable
 
@@ -3512,6 +3522,8 @@ Default: :const:`None`
 
 An optional file path for :program:`celery worker` to log into (defaults to `stdout`).
 
+.. versionadded:: 5.4
+
 .. setting:: worker_pidfile
 
 ``worker_pidfile``
@@ -3520,6 +3532,8 @@ An optional file path for :program:`celery worker` to log into (defaults to `std
 Default: :const:`None`
 
 An optional file path for :program:`celery worker` to create/store its PID file (defaults to no PID file created).
+
+.. versionadded:: 5.4
 
 .. setting:: worker_uid
 
@@ -3530,6 +3544,8 @@ Default: :const:`None`
 
 An optional user ID to use when :program:`celery worker` daemon drops its privileges (defaults to no UID change).
 
+.. versionadded:: 5.4
+
 .. setting:: worker_gid
 
 ``worker_gid``
@@ -3538,6 +3554,8 @@ An optional user ID to use when :program:`celery worker` daemon drops its privil
 Default: :const:`None`
 
 An optional group ID to use when :program:`celery worker` daemon drops its privileges (defaults to no GID change).
+
+.. versionadded:: 5.4
 
 .. setting:: worker_umask
 
@@ -3548,6 +3566,8 @@ Default: :const:`None`
 
 An optional `umask` to use when :program:`celery worker` creates files (log, pid...) when daemonizing.
 
+.. versionadded:: 5.4
+
 .. setting:: worker_executable
 
 ``worker_executable``
@@ -3556,6 +3576,8 @@ An optional `umask` to use when :program:`celery worker` creates files (log, pid
 Default: :const:`None`
 
 An optional `python` executable path for :program:`celery worker` to use when deaemonizing (defaults to :data:`sys.executable`).
+
+.. versionadded:: 5.4
 
 
 
@@ -3655,6 +3677,8 @@ Default: :const:`None`
 
 An optional file path for :program:`celery beat` to log into (defaults to `stdout`).
 
+.. versionadded:: 5.4
+
 .. setting:: beat_pidfile
 
 ``beat_pidfile``
@@ -3663,6 +3687,8 @@ An optional file path for :program:`celery beat` to log into (defaults to `stdou
 Default: :const:`None`
 
 An optional file path for :program:`celery beat` to create/store it PID file (defaults to no PID file created).
+
+.. versionadded:: 5.4
 
 .. setting:: beat_uid
 
@@ -3673,6 +3699,8 @@ Default: :const:`None`
 
 An optional user ID to use when beat :program:`celery beat` drops its privileges (defaults to no UID change).
 
+.. versionadded:: 5.4
+
 .. setting:: beat_gid
 
 ``beat_gid``
@@ -3681,6 +3709,8 @@ An optional user ID to use when beat :program:`celery beat` drops its privileges
 Default: :const:`None`
 
 An optional group ID to use when :program:`celery beat` daemon drops its privileges (defaults to no GID change).
+
+.. versionadded:: 5.4
 
 .. setting:: beat_umask
 
@@ -3691,6 +3721,8 @@ Default: :const:`None`
 
 An optional `umask` to use when :program:`celery beat` creates files (log, pid...) when daemonizing.
 
+.. versionadded:: 5.4
+
 .. setting:: beat_executable
 
 ``beat_executable``
@@ -3699,3 +3731,5 @@ An optional `umask` to use when :program:`celery beat` creates files (log, pid..
 Default: :const:`None`
 
 An optional `python` executable path for :program:`celery beat` to use when deaemonizing (defaults to :data:`sys.executable`).
+
+.. versionadded:: 5.4
