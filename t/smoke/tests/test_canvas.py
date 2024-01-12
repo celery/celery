@@ -1,4 +1,3 @@
-import pytest
 from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup
 
 from celery.canvas import chain, chord, group, signature
@@ -35,9 +34,6 @@ class test_chain:
 
 class test_chord:
     def test_sanity(self, celery_setup: CeleryTestSetup):
-        if not celery_setup.chords_allowed():
-            pytest.skip("Chords are not supported")
-
         upgraded_chord = signature(
             group(
                 identity.si("header_task1"),
