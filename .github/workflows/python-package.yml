@@ -13,7 +13,7 @@ on:
         - '**.toml'
         - "tox.ini"
   pull_request:
-    branches: [ 'main', 'smoke_tests' ]
+    branches: [ 'main' ]
     paths:
         - '**.py'
         - '**.txt'
