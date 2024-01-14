@@ -156,7 +156,10 @@ class mSchedulerRuntimeError(mScheduler):
 
 class mocked_schedule(schedule):
 
-    def __init__(self, is_due, next_run_at, nowfun=datetime.utcnow):
+    def now_func():
+        return datetime.now(timezone.utc)
+
+    def __init__(self, is_due, next_run_at, nowfun=now_func):
         self._is_due = is_due
         self._next_run_at = next_run_at
         self.run_every = timedelta(seconds=1)
@@ -872,7 +875,7 @@ class test_schedule:
     def test_to_local(self):
         x = schedule(10, app=self.app)
         x.utc_enabled = True
-        d = x.to_local(datetime.utcnow())  # datetime.utcnow() is deprecated in Python 3.12
+        d = x.to_local(datetime.now())
         assert d.tzinfo is None
         x.utc_enabled = False
         d = x.to_local(datetime.now(timezone.utc))

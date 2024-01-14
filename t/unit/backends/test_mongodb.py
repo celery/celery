@@ -563,7 +563,10 @@ class test_MongoBackend:
         mock_database.__getitem__ = Mock(name='MD.__getitem__')
         mock_database.__getitem__.return_value = mock_collection
 
-        self.backend.app.now = datetime.datetime.utcnow
+        def now_func():
+            return datetime.datetime.now(datetime.timezone.utc)
+
+        self.backend.app.now = now_func
         self.backend.cleanup()
 
         mock_get_database.assert_called_once_with()
