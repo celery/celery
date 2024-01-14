@@ -17,7 +17,7 @@ class test_task_termination(SuiteOperations):
         app = default_worker_app
         app.conf.worker_prefetch_multiplier = 1
         app.conf.worker_concurrency = 1
-        yield app
+        return app
 
     @pytest.mark.parametrize(
         "method,expected_error",
