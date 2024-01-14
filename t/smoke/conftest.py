@@ -28,7 +28,7 @@ def default_worker_tasks(default_worker_tasks: set) -> set:
 
     default_worker_tasks.add(integration_tests_tasks)
     default_worker_tasks.add(smoke_tests_tasks)
-    yield default_worker_tasks
+    return default_worker_tasks
 
 
 redis_image = fetch(repository=REDIS_IMAGE)

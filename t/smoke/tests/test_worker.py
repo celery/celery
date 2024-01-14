@@ -14,7 +14,7 @@ class test_worker_restart(SuiteOperations):
         app = default_worker_app
         app.conf.worker_pool_restarts = True
         app.conf.task_acks_late = True
-        yield app
+        return app
 
     def test_restart_during_task_execution(
         self,
