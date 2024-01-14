@@ -25,108 +25,108 @@ permissions:
   contents: read # to fetch code (actions/checkout)
 
 jobs:
-  # Unit:
+  Unit:
 
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', 'pypy-3.10']
-  #       os: ["ubuntu-latest", "windows-latest"]
-  #       exclude:
-  #           - python-version: '3.9'
-  #             os: "windows-latest"
-  #           - python-version: 'pypy-3.10'
-  #             os: "windows-latest"
-  #           - python-version: '3.10'
-  #             os: "windows-latest"
-  #           - python-version: '3.11'
-  #             os: "windows-latest"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', 'pypy-3.10']
+        os: ["ubuntu-latest", "windows-latest"]
+        exclude:
+            - python-version: '3.9'
+              os: "windows-latest"
+            - python-version: 'pypy-3.10'
+              os: "windows-latest"
+            - python-version: '3.10'
+              os: "windows-latest"
+            - python-version: '3.11'
+              os: "windows-latest"
 
-  #   steps:
-  #   - name: Install apt packages
-  #     if: startsWith(matrix.os, 'ubuntu-')
-  #     run: |
-  #       sudo apt-get update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
-  #   - uses: actions/checkout@v4
-  #   - name: Set up Python ${{ matrix.python-version }}
-  #     uses: actions/setup-python@v5
-  #     with:
-  #       python-version: ${{ matrix.python-version }}
-  #       cache: 'pip'
-  #       cache-dependency-path: '**/setup.py'
+    steps:
+    - name: Install apt packages
+      if: startsWith(matrix.os, 'ubuntu-')
+      run: |
+        sudo apt-get update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+        cache-dependency-path: '**/setup.py'
 
-  #   - name: Install tox
-  #     run: python -m pip install --upgrade pip 'tox' tox-gh-actions
-  #   - name: >
-  #       Run tox for
-  #       "${{ matrix.python-version }}-unit"
-  #     timeout-minutes: 30
-  #     run: |
-  #       tox --verbose --verbose
+    - name: Install tox
+      run: python -m pip install --upgrade pip 'tox' tox-gh-actions
+    - name: >
+        Run tox for
+        "${{ matrix.python-version }}-unit"
+      timeout-minutes: 30
+      run: |
+        tox --verbose --verbose
 
-  #   - uses: codecov/codecov-action@v3
-  #     with:
-  #       flags: unittests # optional
-  #       fail_ci_if_error: true # optional (default = false)
-  #       verbose: true # optional (default = false)
+    - uses: codecov/codecov-action@v3
+      with:
+        flags: unittests # optional
+        fail_ci_if_error: true # optional (default = false)
+        verbose: true # optional (default = false)
 
-  # Integration:
-  #     needs:
-  #     - Unit
-  #     if: needs.Unit.result == 'success'
-  #     timeout-minutes: 240
+  Integration:
+      needs:
+      - Unit
+      if: needs.Unit.result == 'success'
+      timeout-minutes: 240
 
-  #     runs-on: ubuntu-latest
-  #     strategy:
-  #         fail-fast: false
-  #         matrix:
-  #             python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
-  #             toxenv: ['redis', 'rabbitmq', 'rabbitmq_redis']
+      runs-on: ubuntu-latest
+      strategy:
+          fail-fast: false
+          matrix:
+              python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+              toxenv: ['redis', 'rabbitmq', 'rabbitmq_redis']
 
-  #     services:
-  #         redis:
-  #             image: redis
-  #             ports:
-  #                 - 6379:6379
-  #             env:
-  #                 REDIS_HOST: localhost
-  #                 REDIS_PORT: 6379
-  #         rabbitmq:
-  #             image: rabbitmq
-  #             ports:
-  #                 - 5672:5672
-  #             env:
-  #                 RABBITMQ_DEFAULT_USER: guest
-  #                 RABBITMQ_DEFAULT_PASS: guest
+      services:
+          redis:
+              image: redis
+              ports:
+                  - 6379:6379
+              env:
+                  REDIS_HOST: localhost
+                  REDIS_PORT: 6379
+          rabbitmq:
+              image: rabbitmq
+              ports:
+                  - 5672:5672
+              env:
+                  RABBITMQ_DEFAULT_USER: guest
+                  RABBITMQ_DEFAULT_PASS: guest
 
-  #     steps:
-  #         -   name: Install apt packages
-  #             run: |
-  #                 sudo apt-get update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
+      steps:
+          -   name: Install apt packages
+              run: |
+                  sudo apt-get update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
 
-  #         -   uses: actions/checkout@v4
-  #         -   name: Set up Python ${{ matrix.python-version }}
-  #             uses: actions/setup-python@v5
-  #             with:
-  #                 python-version: ${{ matrix.python-version }}
-  #                 cache: 'pip'
-  #                 cache-dependency-path: '**/setup.py'
-  #         -   name: Install tox
-  #             run: python -m pip install --upgrade pip 'tox' tox-gh-actions
-  #         -   name: >
-  #                 Run tox for
-  #                 "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}"
-  #             timeout-minutes: 60
-  #             run: >
-  #                 tox --verbose --verbose -e
-  #                 "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -vv
+          -   uses: actions/checkout@v4
+          -   name: Set up Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v5
+              with:
+                  python-version: ${{ matrix.python-version }}
+                  cache: 'pip'
+                  cache-dependency-path: '**/setup.py'
+          -   name: Install tox
+              run: python -m pip install --upgrade pip 'tox' tox-gh-actions
+          -   name: >
+                  Run tox for
+                  "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}"
+              timeout-minutes: 60
+              run: >
+                  tox --verbose --verbose -e
+                  "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -vv
 
   Smoke:
-      # needs:
-      # - Integration
-      # if: needs.Integration.result == 'success'
-      # timeout-minutes: 240
+      needs:
+      - Integration
+      if: needs.Integration.result == 'success'
+      timeout-minutes: 240
 
       runs-on: ubuntu-latest
       strategy:
