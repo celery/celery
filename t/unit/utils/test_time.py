@@ -212,14 +212,14 @@ class test_make_aware:
     def test_maybe_make_aware(self):
         aware = datetime.now(_timezone.utc).replace(tzinfo=timezone.utc)
         assert maybe_make_aware(aware)
-        naive = datetime.utcnow()  # datetime.utcnow() is deprecated in Python 3.12
+        naive = datetime.now()
         assert maybe_make_aware(naive)
         assert maybe_make_aware(naive).tzinfo is ZoneInfo("UTC")
 
         tz = ZoneInfo('US/Eastern')
         eastern = datetime.now(_timezone.utc).replace(tzinfo=tz)
         assert maybe_make_aware(eastern).tzinfo is tz
-        utcnow = datetime.utcnow()  # datetime.utcnow() is deprecated in Python 3.12
+        utcnow = datetime.now()
         assert maybe_make_aware(utcnow, 'UTC').tzinfo is ZoneInfo("UTC")
 
 

@@ -212,7 +212,7 @@ def remaining(
             using :func:`delta_resolution` (i.e., rounded to the
             resolution of `ends_in`).
         now (Callable): Function returning the current time and date.
-            Defaults to :func:`datetime.utcnow`.
+            Defaults to :func:`datetime.now(timezone.utc)`.
 
     Returns:
         ~datetime.timedelta: Remaining time.
