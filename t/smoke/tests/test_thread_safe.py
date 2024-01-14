@@ -34,7 +34,7 @@ class test_thread_safety:
     def default_worker_app(self, default_worker_app: Celery) -> Celery:
         app = default_worker_app
         app.conf.broker_pool_limit = 42
-        yield app
+        return app
 
     @pytest.mark.parametrize(
         "threads_count",

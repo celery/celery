@@ -15,7 +15,7 @@ def default_worker_app(default_worker_app: Celery) -> Celery:
     app = default_worker_app
     app.conf.worker_prefetch_multiplier = WORKER_PREFETCH_MULTIPLIER
     app.conf.worker_concurrency = WORKER_CONCURRENCY
-    yield app
+    return app
 
 
 class test_worker_enable_prefetch_count_reduction_true:
@@ -23,7 +23,7 @@ class test_worker_enable_prefetch_count_reduction_true:
     def default_worker_app(self, default_worker_app: Celery) -> Celery:
         app = default_worker_app
         app.conf.worker_enable_prefetch_count_reduction = True
-        yield app
+        return app
 
     @pytest.mark.parametrize("expected_running_tasks_count", range(1, WORKER_CONCURRENCY + 1))
     def test_reducing_prefetch_count(self, celery_setup: CeleryTestSetup, expected_running_tasks_count: int):
@@ -70,7 +70,7 @@ class test_worker_enable_prefetch_count_reduction_true:
             app.conf.worker_prefetch_multiplier = 2
             app.conf.worker_cancel_long_running_tasks_on_connection_loss = True
             app.conf.task_acks_late = True
-            yield app
+            return app
 
         def test_max_prefetch_passed_on_broker_restart(self, celery_setup: CeleryTestSetup):
             if isinstance(celery_setup.broker, RedisTestBroker):
@@ -91,7 +91,7 @@ class test_worker_enable_prefetch_count_reduction_false:
         app.conf.worker_enable_prefetch_count_reduction = False
         app.conf.worker_cancel_long_running_tasks_on_connection_loss = True
         app.conf.task_acks_late = True
-        yield app
+        return app
 
     def test_max_prefetch_not_passed_on_broker_restart(self, celery_setup: CeleryTestSetup):
         if isinstance(celery_setup.broker, RedisTestBroker):

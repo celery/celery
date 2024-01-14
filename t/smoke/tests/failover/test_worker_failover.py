@@ -28,7 +28,7 @@ class test_worker_failover(SuiteOperations):
         app.conf.task_acks_late = True
         if app.conf.broker_url.startswith("redis"):
             app.conf.broker_transport_options = {"visibility_timeout": 1}
-        yield app
+        return app
 
     def test_killing_first_worker(
         self,
