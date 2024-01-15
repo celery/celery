@@ -6,6 +6,7 @@ from collections import deque
 from contextlib import contextmanager
 from weakref import proxy
 
+from dateutil.parser import isoparse
 from kombu.utils.objects import cached_property
 from vine import Thenable, barrier, promise
 
@@ -532,7 +533,7 @@ class AsyncResult(ResultBase):
         """UTC date and time."""
         date_done = self._get_task_meta().get('date_done')
         if date_done and not isinstance(date_done, datetime.datetime):
-            return datetime.datetime.fromisoformat(date_done)
+            return isoparse(date_done)
         return date_done
 
     @property
@@ -983,13 +984,14 @@ class GroupResult(ResultSet):
 class EagerResult(AsyncResult):
     """Result that we know has already been executed."""
 
-    def __init__(self, id, ret_value, state, traceback=None):
+    def __init__(self, id, ret_value, state, traceback=None, name=None):
         # pylint: disable=super-init-not-called
         # XXX should really not be inheriting from AsyncResult
         self.id = id
         self._result = ret_value
         self._state = state
         self._traceback = traceback
+        self._name = name
         self.on_ready = promise()
         self.on_ready(self)
 
@@ -1042,6 +1044,7 @@ class EagerResult(AsyncResult):
             'result': self._result,
             'status': self._state,
             'traceback': self._traceback,
+            'name': self._name,
         }
 
     @property

@@ -2,7 +2,7 @@
 import os
 import sys
 import warnings
-from datetime import datetime
+from datetime import datetime, timezone
 from importlib import import_module
 from typing import IO, TYPE_CHECKING, Any, List, Optional, cast
 
@@ -100,7 +100,7 @@ class DjangoFixup:
         self.worker_fixup.install()
 
     def now(self, utc: bool = False) -> datetime:
-        return datetime.utcnow() if utc else self._now()
+        return datetime.now(timezone.utc) if utc else self._now()
 
     def autodiscover_tasks(self) -> List[str]:
         from django.apps import apps

@@ -653,7 +653,7 @@ class Signature(dict):
 
         # Stamp all of the callbacks of this signature
         headers = deepcopy(non_visitor_headers)
-        for link in self.options.get('link', []) or []:
+        for link in maybe_list(self.options.get('link')) or []:
             link = maybe_signature(link, app=self.app)
             visitor_headers = None
             if visitor is not None:
@@ -668,7 +668,7 @@ class Signature(dict):
 
         # Stamp all of the errbacks of this signature
         headers = deepcopy(non_visitor_headers)
-        for link in self.options.get('link_error', []) or []:
+        for link in maybe_list(self.options.get('link_error')) or []:
             link = maybe_signature(link, app=self.app)
             visitor_headers = None
             if visitor is not None:
@@ -1016,9 +1016,9 @@ class _chain(Signature):
         # Clone chain's tasks assigning signatures from link_error
         # to each task and adding the chain's links to the last task.
         tasks = [t.clone() for t in self.tasks]
-        for sig in self.options.get('link', []):
+        for sig in maybe_list(self.options.get('link')) or []:
             tasks[-1].link(sig)
-        for sig in self.options.get('link_error', []):
+        for sig in maybe_list(self.options.get('link_error')) or []:
             for task in tasks:
                 task.link_error(sig)
         return tasks
@@ -1704,7 +1704,7 @@ class group(Signature):
             generator: A generator for the unrolled group tasks.
                 The generator yields tuples of the form ``(task, AsyncResult, group_id)``.
         """
-        for task in tasks:
+        for index, task in enumerate(tasks):
             if isinstance(task, CallableSignature):
                 # local sigs are always of type Signature, and we
                 # clone them to make sure we don't modify the originals.
@@ -1721,7 +1721,7 @@ class group(Signature):
             else:
                 if partial_args and not task.immutable:
                     task.args = tuple(partial_args) + tuple(task.args)
-                yield task, task.freeze(group_id=group_id, root_id=root_id), group_id
+                yield task, task.freeze(group_id=group_id, root_id=root_id, group_index=index), group_id
 
     def _apply_tasks(self, tasks, producer=None, app=None, p=None,
                      add_to_parent=None, chord=None,
@@ -2271,8 +2271,10 @@ class _chord(Signature):
             ``False`` (the current default), then the error callback will only be
             applied to the body.
         """
+        errback = maybe_signature(errback)
+
         if self.app.conf.task_allow_error_cb_on_chord_header:
-            for task in self.tasks:
+            for task in maybe_list(self.tasks) or []:
                 task.link_error(errback.clone(immutable=True))
         else:
             # Once this warning is removed, the whole method needs to be refactored to:

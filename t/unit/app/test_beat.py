@@ -1,6 +1,6 @@
 import errno
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pickle import dumps, loads
 from unittest.mock import Mock, call, patch
 
@@ -156,7 +156,10 @@ class mSchedulerRuntimeError(mScheduler):
 
 class mocked_schedule(schedule):
 
-    def __init__(self, is_due, next_run_at, nowfun=datetime.utcnow):
+    def now_func():
+        return datetime.now(timezone.utc)
+
+    def __init__(self, is_due, next_run_at, nowfun=now_func):
         self._is_due = is_due
         self._next_run_at = next_run_at
         self.run_every = timedelta(seconds=1)
@@ -300,6 +303,29 @@ class test_Scheduler:
     def test_info(self):
         scheduler = mScheduler(app=self.app)
         assert isinstance(scheduler.info, str)
+
+    def test_apply_entry_handles_empty_result(self):
+        s = mScheduler(app=self.app)
+        entry = s.Entry(name='a name', task='foo', app=self.app)
+
+        with patch.object(s, 'apply_async') as mock_apply_async:
+            with patch("celery.beat.debug") as mock_debug:
+                mock_apply_async.return_value = None
+                s.apply_entry(entry)
+        mock_debug.assert_called_once_with('%s sent.', entry.task)
+
+        with patch.object(s, 'apply_async') as mock_apply_async:
+            with patch("celery.beat.debug") as mock_debug:
+                mock_apply_async.return_value = object()
+                s.apply_entry(entry)
+        mock_debug.assert_called_once_with('%s sent.', entry.task)
+
+        task_id = 'taskId123456'
+        with patch.object(s, 'apply_async') as mock_apply_async:
+            with patch("celery.beat.debug") as mock_debug:
+                mock_apply_async.return_value = self.app.AsyncResult(task_id)
+                s.apply_entry(entry)
+        mock_debug.assert_called_once_with('%s sent. id->%s', entry.task, task_id)
 
     def test_maybe_entry(self):
         s = mScheduler(app=self.app)
@@ -840,17 +866,17 @@ class test_schedule:
     def test_maybe_make_aware(self):
         x = schedule(10, app=self.app)
         x.utc_enabled = True
-        d = x.maybe_make_aware(datetime.utcnow())
+        d = x.maybe_make_aware(datetime.now(timezone.utc))
         assert d.tzinfo
         x.utc_enabled = False
-        d2 = x.maybe_make_aware(datetime.utcnow())
+        d2 = x.maybe_make_aware(datetime.now(timezone.utc))
         assert d2.tzinfo
 
     def test_to_local(self):
         x = schedule(10, app=self.app)
         x.utc_enabled = True
-        d = x.to_local(datetime.utcnow())
+        d = x.to_local(datetime.now())
         assert d.tzinfo is None
         x.utc_enabled = False
-        d = x.to_local(datetime.utcnow())
+        d = x.to_local(datetime.now(timezone.utc))
         assert d.tzinfo

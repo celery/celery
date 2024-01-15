@@ -282,7 +282,10 @@ class Scheduler:
             error('Message Error: %s\n%s',
                   exc, traceback.format_stack(), exc_info=True)
         else:
-            debug('%s sent. id->%s', entry.task, result.id)
+            if result and hasattr(result, 'id'):
+                debug('%s sent. id->%s', entry.task, result.id)
+            else:
+                debug('%s sent.', entry.task)
 
     def adjust(self, n, drift=-0.010):
         if n and n > 0:
