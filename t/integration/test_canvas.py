@@ -1030,6 +1030,13 @@ class test_chain:
         # Cleanup
         redis_connection.delete(redis_key, 'Done')
 
+    def test_freezing_chain_sets_id_of_last_task(self, manager):
+        last_task = add.s(2).set(task_id='42')
+        c = add.s(4) | last_task
+        assert c.id is None
+        c.freeze(last_task.id)
+        assert c.id == last_task.id
+
 
 class test_result_set:
 
