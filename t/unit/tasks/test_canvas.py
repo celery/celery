@@ -476,6 +476,13 @@ class test_chain(CanvasCase):
         c = g1 | g2
         assert isinstance(c, chord)
 
+    def test_prepare_steps_set_last_task_id_to_chain(self):
+        last_task = self.add.s(2).set(task_id='42')
+        c = self.add.s(4) | last_task
+        assert c.id is None
+        tasks, _ = c.prepare_steps((), {}, c.tasks, last_task_id=last_task.id)
+        assert c.id == last_task.id
+
     def test_group_to_chord(self):
         c = (
             self.add.s(5) |
