@@ -2,7 +2,7 @@ import pytest
 from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup, RedisTestBroker
 
 from celery import Celery
-from celery.canvas import group
+from celery.canvas import chain, group
 from t.smoke.tasks import long_running_task, noop
 
 WORKER_PREFETCH_MULTIPLIER = 2
@@ -75,7 +75,6 @@ class test_worker_enable_prefetch_count_reduction_true:
         def test_max_prefetch_passed_on_broker_restart(self, celery_setup: CeleryTestSetup):
             if isinstance(celery_setup.broker, RedisTestBroker):
                 pytest.xfail("Real Bug: Broker does not fetch messages after restart")
-
             sig = group(long_running_task.s(420) for _ in range(WORKER_CONCURRENCY))
             sig.apply_async(queue=celery_setup.worker.worker_queue)
             celery_setup.broker.restart()
@@ -96,7 +95,6 @@ class test_worker_enable_prefetch_count_reduction_false:
     def test_max_prefetch_not_passed_on_broker_restart(self, celery_setup: CeleryTestSetup):
         if isinstance(celery_setup.broker, RedisTestBroker):
             pytest.xfail("Real Bug: Broker does not fetch messages after restart")
-
         sig = group(long_running_task.s(10) for _ in range(WORKER_CONCURRENCY))
         r = sig.apply_async(queue=celery_setup.worker.worker_queue)
         celery_setup.broker.restart()
@@ -104,3 +102,33 @@ class test_worker_enable_prefetch_count_reduction_false:
         assert "Task t.smoke.tasks.noop" not in celery_setup.worker.logs()
         r.get(timeout=RESULT_TIMEOUT)
         assert "Task t.smoke.tasks.noop" in celery_setup.worker.logs()
+
+
+class test_consumer:
+    def test_worker_consume_tasks_after_redis_broker_restart(
+        self,
+        celery_setup: CeleryTestSetup,
+    ):
+        queue = celery_setup.worker.worker_queue
+        assert noop.s().apply_async(queue=queue).get(timeout=RESULT_TIMEOUT) is None
+        celery_setup.broker.kill()
+        celery_setup.worker.wait_for_log("Trying again in 8.00 seconds... (4/100)")
+        celery_setup.broker.restart()
+
+        count = 5
+        assert (
+            group(noop.s() for _ in range(count))
+            .apply_async(queue=queue)
+            .get(timeout=RESULT_TIMEOUT)
+            == [None] * count
+        )
+
+        assert (
+            chain(
+                group(noop.si() for _ in range(count)),
+                group(noop.si() for _ in range(count)),
+            )
+            .apply_async(queue=queue)
+            .get(timeout=RESULT_TIMEOUT)
+            == [None] * count
+        )
