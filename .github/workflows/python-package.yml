@@ -122,7 +122,7 @@ jobs:
                   tox --verbose --verbose -e
                   "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -vv
 
-  failover:
+  Smoke-failover:
     needs:
     - Integration
     if: needs.Integration.result == 'success'
@@ -160,7 +160,7 @@ jobs:
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k failover
 
-  stamping:
+  Smoke-stamping:
     needs:
     - Integration
     if: needs.Integration.result == 'success'
@@ -198,7 +198,7 @@ jobs:
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k stamping
 
-  canvas:
+  Smoke-canvas:
     needs:
     - Integration
     if: needs.Integration.result == 'success'
@@ -236,7 +236,7 @@ jobs:
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k test_canvas.py
 
-  consumer:
+  Smoke-consumer:
     needs:
     - Integration
     if: needs.Integration.result == 'success'
@@ -274,7 +274,7 @@ jobs:
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k test_consumer.py
 
-  control:
+  Smoke-control:
     needs:
     - Integration
     if: needs.Integration.result == 'success'
@@ -312,7 +312,7 @@ jobs:
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k test_control.py
 
-  signals:
+  Smoke-signals:
     needs:
     - Integration
     if: needs.Integration.result == 'success'
@@ -350,7 +350,7 @@ jobs:
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k test_signals.py
 
-  tasks:
+  Smoke-tasks:
     needs:
     - Integration
     if: needs.Integration.result == 'success'
@@ -388,7 +388,7 @@ jobs:
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k test_tasks.py
 
-  thread_safe:
+  Smoke-thread_safe:
     needs:
     - Integration
     if: needs.Integration.result == 'success'
@@ -426,7 +426,7 @@ jobs:
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k test_thread_safe.py
 
-  worker:
+  Smoke-worker:
     needs:
     - Integration
     if: needs.Integration.result == 'success'
