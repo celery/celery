@@ -1261,6 +1261,7 @@ class _chain(Signature):
                 while node.parent:
                     node = node.parent
                 prev_res = node
+        self.id = last_task_id
         return tasks, results
 
     def apply(self, args=None, kwargs=None, **options):
