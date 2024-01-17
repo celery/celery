@@ -8,6 +8,54 @@ This document contains change notes for bugfix & new features
 in the main branch & 5.3.x series, please see :ref:`whatsnew-5.3` for
 an overview of what's new in Celery 5.3.
 
+.. _version-5.4.0rc1:
+
+5.4.0rc1
+========
+
+:release-date: 2024-01-17 7:00 P.M GMT+2
+:release-by: Tomer Nosrati
+
+Celery v5.4 continues our effort to provide improved stability in production
+environments. The release candidate version is available for testing.
+The official release is planned for March-April 2024.
+
+- New Config: worker_enable_prefetch_count_reduction (#8581)
+- Added "Serverless" section to Redis doc (redis.rst) (#8640)
+- Upstash's Celery example repo link fix (#8665)
+- Update mypy version (#8679)
+- Update cryptography dependency to 41.0.7 (#8690)
+- Add type annotations to celery/utils/nodenames.py (#8667)
+- Issue 3426. Adding myself to the contributors. (#8696)
+- Bump actions/setup-python from 4 to 5 (#8701)
+- Fixed bug where chord.link_error() throws an exception on a dict type errback object (#8702)
+- Bump github/codeql-action from 2 to 3 (#8725)
+- Fixed multiprocessing integration tests not running on Mac (#8727)
+- Added make docker-docs (#8729)
+- Fix DeprecationWarning: datetime.datetime.utcnow() (#8726)
+- Remove `new` adjective in docs (#8743)
+- add type annotation to celery/utils/sysinfo.py (#8747)
+- add type annotation to celery/utils/iso8601.py (#8750)
+- Change type annotation to celery/utils/iso8601.py (#8752)
+- Update test deps (#8754)
+- Mark flaky: test_asyncresult_get_cancels_subscription() (#8757)
+- change _read_as_base64 (b64encode returns bytes) on celery/utils/term.py (#8759)
+- Replace string concatenation with fstring on celery/utils/term.py (#8760)
+- Add type annotation to celery/utils/term.py (#8755)
+- Skipping test_tasks::test_task_accepted (#8761)
+- Updated concurrency docs page. (#8753)
+- Changed pyup -> dependabot for updating dependencies (#8764)
+- Bump isort from 5.12.0 to 5.13.2 (#8772)
+- Update elasticsearch requirement from <=8.11.0 to <=8.11.1 (#8775)
+- Bump sphinx-click from 4.4.0 to 5.1.0 (#8774)
+- Bump python-memcached from 1.59 to 1.61 (#8776)
+- Update elastic-transport requirement from <=8.10.0 to <=8.11.0 (#8780)
+- python-memcached==1.61 -> python-memcached>=1.61 (#8787)
+- Remove usage of utcnow (#8791)
+- Smoke Tests (#8793)
+- Moved smoke tests to their own workflow (#8797)
+- Bugfix: Worker not consuming tasks after Redis broker restart (#8796)
+- Bugfix: Missing id on chain (#8798)
 
 .. _version-5.3.6:
 
