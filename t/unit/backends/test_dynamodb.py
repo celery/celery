@@ -1,12 +1,12 @@
 from decimal import Decimal
-from unittest.mock import MagicMock, Mock, patch, sentinel, call, ANY
+from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
 
+from celery import states, uuid
 from celery.backends import dynamodb as module
 from celery.backends.dynamodb import DynamoDBBackend
 from celery.exceptions import ImproperlyConfigured
-from celery import states, uuid
 
 pytest.importorskip('boto3')
 
