@@ -1,12 +1,12 @@
 from decimal import Decimal
-from unittest.mock import MagicMock, Mock, patch, sentinel
+from unittest.mock import MagicMock, Mock, patch, sentinel, call, ANY
 
 import pytest
 
-from celery import states
 from celery.backends import dynamodb as module
 from celery.backends.dynamodb import DynamoDBBackend
 from celery.exceptions import ImproperlyConfigured
+from celery import states, uuid
 
 pytest.importorskip('boto3')
 
@@ -598,3 +598,33 @@ class test_DynamoDBBackend:
         assert self.backend.write_capacity_units == 20
         assert self.backend.time_to_live_seconds == 600
         assert self.backend.endpoint_url is None
+
+    def test_apply_chord(self, unlock="celery.chord_unlock"):
+        self.app.tasks[unlock] = Mock()
+        chord_uuid = uuid()
+        header_result_args = (
+            chord_uuid,
+            [self.app.AsyncResult(x) for x in range(3)],
+        )
+        self.backend._client = MagicMock()
+        self.backend.apply_chord(header_result_args, None)
+        assert self.backend._client.put_item.call_args_list == [
+            call(
+                TableName="celery",
+                Item={
+                    "id": {"S": f"b'chord-unlock-{chord_uuid}'"},
+                    "chord_count": {"N": "0"},
+                    "timestamp": {"N": ANY},
+                },
+            ),
+            call(
+                TableName="celery",
+                Item={
+                    "id": {"S": f"b'celery-taskset-meta-{chord_uuid}'"},
+                    "result": {
+                        "B": ANY,
+                    },
+                    "timestamp": {"N": ANY},
+                },
+            ),
+        ]

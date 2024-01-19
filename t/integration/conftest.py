@@ -29,13 +29,15 @@ def get_active_redis_channels():
 def celery_config(request):
     config = {
         'broker_url': TEST_BROKER,
-        'result_backend': TEST_BACKEND,
+        # 'result_backend': TEST_BACKEND,
+        'result_backend': f"dynamodb://xx:yy@us-east-1",
         'cassandra_servers': ['localhost'],
         'cassandra_keyspace': 'tests',
         'cassandra_table': 'tests',
         'cassandra_read_consistency': 'ONE',
         'cassandra_write_consistency': 'ONE',
-        'result_extended': True
+        'result_extended': True,
+        "dynamodb_endpoint_url": 'http://dynamodb:8000',
     }
     try:
         # To override the default configuration, create the integration-tests-config.json file
