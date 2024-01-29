@@ -1,7 +1,8 @@
+import pytest
 from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup
 
 from celery.canvas import chain, chord, group, signature
-from t.integration.tasks import add, identity
+from t.integration.tasks import ExpectedException, add, fail, identity
 
 
 class test_signature:
@@ -30,6 +31,26 @@ class test_chain:
         ) | identity.si("test_chain").set(queue=queue)
         res = sig.apply_async()
         assert res.get(timeout=RESULT_TIMEOUT) == "test_chain"
+
+    def test_chain_gets_last_task_id_with_failing_tasks_in_chain(self, celery_setup: CeleryTestSetup):
+        """https://github.com/celery/celery/issues/8786"""
+        queue = celery_setup.worker.worker_queue
+        sig = chain(
+            identity.si("start").set(queue=queue),
+            group(
+                identity.si("a").set(queue=queue),
+                fail.si().set(queue=queue),
+            ),
+            identity.si("break").set(queue=queue),
+            identity.si("end").set(queue=queue),
+        )
+        res = sig.apply_async()
+        celery_setup.worker.assert_log_does_not_exist(
+            "ValueError: task_id must not be empty. Got None instead."
+        )
+
+        with pytest.raises(ExpectedException):
+            res.get(timeout=RESULT_TIMEOUT)
 
 
 class test_chord:

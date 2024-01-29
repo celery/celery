@@ -568,11 +568,11 @@ class PersistentScheduler(Scheduler):
         for _ in (1, 2):
             try:
                 self._store['entries']
-            except KeyError:
+            except (KeyError, UnicodeDecodeError, TypeError):
                 # new schedule db
                 try:
                     self._store['entries'] = {}
-                except KeyError as exc:
+                except (KeyError, UnicodeDecodeError, TypeError) as exc:
                     self._store = self._destroy_open_corrupted_schedule(exc)
                     continue
             else:
