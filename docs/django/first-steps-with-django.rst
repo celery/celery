@@ -153,6 +153,64 @@ concrete app instance:
     You can find the full source code for the Django example project at:
     https://github.com/celery/celery/tree/main/examples/django/
 
+Trigger tasks at the end of the database transaction
+----------------------------------------------------
+
+A common pitfall with Django is triggering a task immediately and not wait until
+the end of the database transaction, which means that the Celery task may run
+before all changes are persisted to the database. For example:
+
+.. code-block:: python
+
+    # views.py
+    def create_user(request):
+        # Note: simplified example, use a form to validate input
+        user = User.objects.create(username=request.POST['username'])
+        send_email.delay(user.pk)
+        return HttpResponse('User created')
+
+    # task.py
+    @shared_task
+    def send_email(user_pk):
+        user = User.objects.get(pk=user_pk)
+        # send email ...
+
+In this case, the ``send_email`` task could start before the view has committed
+the transaction to the database, and therefore the task may not be able to find
+the user.
+
+A common solution is to use Django's `on_commit`_ hook to trigger the task
+after the transaction has been committed:
+
+.. _on_commit: https://docs.djangoproject.com/en/stable/topics/db/transactions/#django.db.transaction.on_commit
+
+.. code-block:: diff
+
+    - send_email.delay(user.pk)
+    + transaction.on_commit(lambda: send_email.delay(user.pk))
+
+.. versionadded:: 5.4
+
+Since this is such a common pattern, Celery 5.4 introduced a handy shortcut for this,
+using a :class:`~celery.contrib.django.task.DjangoTask`. Instead of calling
+:meth:`~celery.app.task.Task.delay`, you should call
+:meth:`~celery.contrib.django.task.DjangoTask.delay_on_commit`:
+
+.. code-block:: diff
+
+    - send_email.delay(user.pk)
+    + send_email.delay_on_commit(user.pk)
+
+
+This API takes care of wrapping the call into the `on_commit`_ hook for you.
+In rare cases where you want to trigger a task without waiting, the existing
+:meth:`~celery.app.task.Task.delay` API is still available.
+
+This task class should be used automatically if you've follow the setup steps above.
+However, if your app :ref:`uses a custom task base class <task-custom-classes>`,
+you'll need inherit from :class:`~celery.contrib.django.task.DjangoTask` instead of
+:class:`~celery.app.task.Task` to get this behaviour.
+
 Extensions
 ==========
 

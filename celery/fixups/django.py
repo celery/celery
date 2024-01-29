@@ -2,7 +2,7 @@
 import os
 import sys
 import warnings
-from datetime import datetime
+from datetime import datetime, timezone
 from importlib import import_module
 from typing import IO, TYPE_CHECKING, Any, List, Optional, cast
 
@@ -78,6 +78,9 @@ class DjangoFixup:
         self._settings = symbol_by_name('django.conf:settings')
         self.app.loader.now = self.now
 
+        if not self.app._custom_task_cls_used:
+            self.app.task_cls = 'celery.contrib.django.task:DjangoTask'
+
         signals.import_modules.connect(self.on_import_modules)
         signals.worker_init.connect(self.on_worker_init)
         return self
@@ -100,7 +103,7 @@ class DjangoFixup:
         self.worker_fixup.install()
 
     def now(self, utc: bool = False) -> datetime:
-        return datetime.utcnow() if utc else self._now()
+        return datetime.now(timezone.utc) if utc else self._now()
 
     def autodiscover_tasks(self) -> List[str]:
         from django.apps import apps

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 
 import pytest
@@ -349,14 +349,14 @@ class test_as_task_v2(test_AMQP_Base):
             self.app.amqp.as_task_v2(uuid(), 'foo', kwargs=(1, 2, 3))
 
     def test_countdown_to_eta(self):
-        now = to_utc(datetime.utcnow()).astimezone(self.app.timezone)
+        now = to_utc(datetime.now(timezone.utc)).astimezone(self.app.timezone)
         m = self.app.amqp.as_task_v2(
             uuid(), 'foo', countdown=10, now=now,
         )
         assert m.headers['eta'] == (now + timedelta(seconds=10)).isoformat()
 
     def test_expires_to_datetime(self):
-        now = to_utc(datetime.utcnow()).astimezone(self.app.timezone)
+        now = to_utc(datetime.now(timezone.utc)).astimezone(self.app.timezone)
         m = self.app.amqp.as_task_v2(
             uuid(), 'foo', expires=30, now=now,
         )
@@ -364,7 +364,7 @@ class test_as_task_v2(test_AMQP_Base):
             now + timedelta(seconds=30)).isoformat()
 
     def test_eta_to_datetime(self):
-        eta = datetime.utcnow()
+        eta = datetime.now(timezone.utc)
         m = self.app.amqp.as_task_v2(
             uuid(), 'foo', eta=eta,
         )

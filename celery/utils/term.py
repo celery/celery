@@ -1,12 +1,15 @@
 """Terminals and colors."""
+from __future__ import annotations
+
 import base64
-import codecs
 import os
 import platform
 import sys
 from functools import reduce
 
 __all__ = ('colored',)
+
+from typing import Any
 
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 OP_SEQ = '\033[%dm'
@@ -26,7 +29,7 @@ _IMG_PRE = '\033Ptmux;\033\033]' if TERM_IS_SCREEN else '\033]'
 _IMG_POST = '\a\033\\' if TERM_IS_SCREEN else '\a'
 
 
-def fg(s):
+def fg(s: int) -> str:
     return COLOR_SEQ % s
 
 
@@ -41,11 +44,11 @@ class colored:
         ...       c.green('dog ')))
     """
 
-    def __init__(self, *s, **kwargs):
-        self.s = s
-        self.enabled = not IS_WINDOWS and kwargs.get('enabled', True)
-        self.op = kwargs.get('op', '')
-        self.names = {
+    def __init__(self, *s: object, **kwargs: Any) -> None:
+        self.s: tuple[object, ...] = s
+        self.enabled: bool = not IS_WINDOWS and kwargs.get('enabled', True)
+        self.op: str = kwargs.get('op', '')
+        self.names: dict[str, Any] = {
             'black': self.black,
             'red': self.red,
             'green': self.green,
@@ -56,10 +59,10 @@ class colored:
             'white': self.white,
         }
 
-    def _add(self, a, b):
-        return str(a) + str(b)
+    def _add(self, a: object, b: object) -> str:
+        return f"{a}{b}"
 
-    def _fold_no_color(self, a, b):
+    def _fold_no_color(self, a: Any, b: Any) -> str:
         try:
             A = a.no_color()
         except AttributeError:
@@ -69,109 +72,109 @@ class colored:
         except AttributeError:
             B = str(b)
 
-        return ''.join((str(A), str(B)))
+        return f"{A}{B}"
 
-    def no_color(self):
+    def no_color(self) -> str:
         if self.s:
             return str(reduce(self._fold_no_color, self.s))
         return ''
 
-    def embed(self):
+    def embed(self) -> str:
         prefix = ''
         if self.enabled:
             prefix = self.op
-        return ''.join((str(prefix), str(reduce(self._add, self.s))))
+        return f"{prefix}{reduce(self._add, self.s)}"
 
-    def __str__(self):
+    def __str__(self) -> str:
         suffix = ''
         if self.enabled:
             suffix = RESET_SEQ
-        return str(''.join((self.embed(), str(suffix))))
+        return f"{self.embed()}{suffix}"
 
-    def node(self, s, op):
+    def node(self, s: tuple[object, ...], op: str) -> colored:
         return self.__class__(enabled=self.enabled, op=op, *s)
 
-    def black(self, *s):
+    def black(self, *s: object) -> colored:
         return self.node(s, fg(30 + BLACK))
 
-    def red(self, *s):
+    def red(self, *s: object) -> colored:
         return self.node(s, fg(30 + RED))
 
-    def green(self, *s):
+    def green(self, *s: object) -> colored:
         return self.node(s, fg(30 + GREEN))
 
-    def yellow(self, *s):
+    def yellow(self, *s: object) -> colored:
         return self.node(s, fg(30 + YELLOW))
 
-    def blue(self, *s):
+    def blue(self, *s: object) -> colored:
         return self.node(s, fg(30 + BLUE))
 
-    def magenta(self, *s):
+    def magenta(self, *s: object) -> colored:
         return self.node(s, fg(30 + MAGENTA))
 
-    def cyan(self, *s):
+    def cyan(self, *s: object) -> colored:
         return self.node(s, fg(30 + CYAN))
 
-    def white(self, *s):
+    def white(self, *s: object) -> colored:
         return self.node(s, fg(30 + WHITE))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self.no_color())
 
-    def bold(self, *s):
+    def bold(self, *s: object) -> colored:
         return self.node(s, OP_SEQ % 1)
 
-    def underline(self, *s):
+    def underline(self, *s: object) -> colored:
         return self.node(s, OP_SEQ % 4)
 
-    def blink(self, *s):
+    def blink(self, *s: object) -> colored:
         return self.node(s, OP_SEQ % 5)
 
-    def reverse(self, *s):
+    def reverse(self, *s: object) -> colored:
         return self.node(s, OP_SEQ % 7)
 
-    def bright(self, *s):
+    def bright(self, *s: object) -> colored:
         return self.node(s, OP_SEQ % 8)
 
-    def ired(self, *s):
+    def ired(self, *s: object) -> colored:
         return self.node(s, fg(40 + RED))
 
-    def igreen(self, *s):
+    def igreen(self, *s: object) -> colored:
         return self.node(s, fg(40 + GREEN))
 
-    def iyellow(self, *s):
+    def iyellow(self, *s: object) -> colored:
         return self.node(s, fg(40 + YELLOW))
 
-    def iblue(self, *s):
+    def iblue(self, *s: colored) -> colored:
         return self.node(s, fg(40 + BLUE))
 
-    def imagenta(self, *s):
+    def imagenta(self, *s: object) -> colored:
         return self.node(s, fg(40 + MAGENTA))
 
-    def icyan(self, *s):
+    def icyan(self, *s: object) -> colored:
         return self.node(s, fg(40 + CYAN))
 
-    def iwhite(self, *s):
+    def iwhite(self, *s: object) -> colored:
         return self.node(s, fg(40 + WHITE))
 
-    def reset(self, *s):
-        return self.node(s or [''], RESET_SEQ)
+    def reset(self, *s: object) -> colored:
+        return self.node(s or ('',), RESET_SEQ)
 
-    def __add__(self, other):
-        return str(self) + str(other)
-
-
-def supports_images():
-    return sys.stdin.isatty() and ITERM_PROFILE
+    def __add__(self, other: object) -> str:
+        return f"{self}{other}"
 
 
-def _read_as_base64(path):
-    with codecs.open(path, mode='rb') as fh:
+def supports_images() -> bool:
+    return sys.stdin.isatty() and ITERM_PROFILE is not None
+
+
+def _read_as_base64(path: str) -> str:
+    with open(path, mode='rb') as fh:
         encoded = base64.b64encode(fh.read())
-        return encoded if isinstance(encoded, str) else encoded.decode('ascii')
+        return encoded.decode('ascii')
 
 
-def imgcat(path, inline=1, preserve_aspect_ratio=0, **kwargs):
+def imgcat(path: str, inline: int = 1, preserve_aspect_ratio: int = 0, **kwargs: Any) -> str:
     return '\n%s1337;File=inline=%d;preserveAspectRatio=%d:%s%s' % (
         _IMG_PRE, inline, preserve_aspect_ratio,
         _read_as_base64(path), _IMG_POST)

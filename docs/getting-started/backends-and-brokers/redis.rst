@@ -136,6 +136,30 @@ To configure the connection timeouts for the Redis result backend, use the ``ret
 
 See :func:`~kombu.utils.functional.retry_over_time` for the possible retry policy options.
 
+.. _redis-serverless:
+
+Serverless
+==========
+
+Celery supports utilizing a remote serverless Redis, which can significantly
+reduce the operational overhead and cost, making it a favorable choice in
+microservice architectures or environments where minimizing operational
+expenses is crucial. Serverless Redis provides the necessary functionalities
+without the need for manual setup, configuration, and management, thus
+aligning well with the principles of automation and scalability that Celery promotes.
+
+Upstash
+-------
+
+`Upstash <http://upstash.com/?code=celery>`_ offers a serverless Redis database service,
+providing a seamless solution for Celery users looking to leverage
+serverless architectures. Upstash's serverless Redis service is designed
+with an eventual consistency model and durable storage, facilitated
+through a multi-tier storage architecture.
+
+Integration with Celery is straightforward as demonstrated
+in an `example provided by Upstash <https://github.com/upstash/examples/tree/main/examples/using-celery>`_.
+
 .. _redis-caveats:
 
 Caveats

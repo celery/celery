@@ -168,6 +168,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERYD_POOL_PUTLOCKS``                  :setting:`worker_pool_putlocks`
 ``CELERYD_POOL_RESTARTS``                  :setting:`worker_pool_restarts`
 ``CELERYD_PREFETCH_MULTIPLIER``            :setting:`worker_prefetch_multiplier`
+``CELERYD_ENABLE_PREFETCH_COUNT_REDUCTION``:setting:`worker_enable_prefetch_count_reduction`
 ``CELERYD_REDIRECT_STDOUTS``               :setting:`worker_redirect_stdouts`
 ``CELERYD_REDIRECT_STDOUTS_LEVEL``         :setting:`worker_redirect_stdouts_level`
 ``CELERY_SEND_EVENTS``                     :setting:`worker_send_task_events`
@@ -2969,6 +2970,44 @@ For more on prefetching, read :ref:`optimizing-prefetch-limit`
 
     Tasks with ETA/countdown aren't affected by prefetch limits.
 
+.. setting:: worker_enable_prefetch_count_reduction
+
+``worker_enable_prefetch_count_reduction``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: Enabled.
+
+The ``worker_enable_prefetch_count_reduction`` setting governs the restoration behavior of the
+prefetch count to its maximum allowable value following a connection loss to the message
+broker. By default, this setting is enabled.
+
+Upon a connection loss, Celery will attempt to reconnect to the broker automatically,
+provided the :setting:`broker_connection_retry_on_startup` or :setting:`broker_connection_retry` 
+is not set to False. During the period of lost connection, the message broker does not keep track
+of the number of tasks already fetched. Therefore, to manage the task load effectively and prevent
+overloading, Celery reduces the prefetch count based on the number of tasks that are
+currently running.
+
+The prefetch count is the number of messages that a worker will fetch from the broker at
+a time. The reduced prefetch count helps ensure that tasks are not fetched excessively
+during periods of reconnection.
+
+With ``worker_enable_prefetch_count_reduction`` set to its default value (Enabled), the prefetch
+count will be gradually restored to its maximum allowed value each time a task that was
+running before the connection was lost is completed. This behavior helps maintain a
+balanced distribution of tasks among the workers while managing the load effectively.
+
+To disable the reduction and restoration of the prefetch count to its maximum allowed value on
+reconnection, set ``worker_enable_prefetch_count_reduction`` to False. Disabling this setting might
+be useful in scenarios where a fixed prefetch count is desired to control the rate of task
+processing or manage the worker load, especially in environments with fluctuating connectivity.
+
+The ``worker_enable_prefetch_count_reduction`` setting provides a way to control the
+restoration behavior of the prefetch count following a connection loss, aiding in
+maintaining a balanced task distribution and effective load management across the workers.
+
 .. setting:: worker_lost_wait
 
 ``worker_lost_wait``
@@ -3178,6 +3217,73 @@ Message serialization format used when sending event messages.
 .. seealso::
 
     :ref:`calling-serializers`.
+
+
+.. setting:: events_logfile
+
+``events_logfile``
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional file path for :program:`celery events` to log into (defaults to `stdout`).
+
+.. setting:: events_pidfile
+
+``events_pidfile``
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional file path for :program:`celery events` to create/store its PID file (default to no PID file created).
+
+.. setting:: events_uid
+
+``events_uid``
+~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional user ID to use when events :program:`celery events` drops its privileges (defaults to no UID change).
+
+.. setting:: events_gid
+
+``events_gid``
+~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional group ID to use when :program:`celery events` daemon drops its privileges (defaults to no GID change).
+
+.. setting:: events_umask
+
+``events_umask``
+~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional `umask` to use when :program:`celery events` creates files (log, pid...) when daemonizing.
+
+.. setting:: events_executable
+
+``events_executable``
+~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional `python` executable path for :program:`celery events` to use when deaemonizing (defaults to :data:`sys.executable`).
 
 
 .. _conf-control:
@@ -3448,6 +3554,72 @@ Default: ``"kombu.asynchronous.hub.timer:Timer"``.
 Name of the ETA scheduler class used by the worker.
 Default is or set by the pool implementation.
 
+.. setting:: worker_logfile
+
+``worker_logfile``
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional file path for :program:`celery worker` to log into (defaults to `stdout`).
+
+.. setting:: worker_pidfile
+
+``worker_pidfile``
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional file path for :program:`celery worker` to create/store its PID file (defaults to no PID file created).
+
+.. setting:: worker_uid
+
+``worker_uid``
+~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional user ID to use when :program:`celery worker` daemon drops its privileges (defaults to no UID change).
+
+.. setting:: worker_gid
+
+``worker_gid``
+~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional group ID to use when :program:`celery worker` daemon drops its privileges (defaults to no GID change).
+
+.. setting:: worker_umask
+
+``worker_umask``
+~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional `umask` to use when :program:`celery worker` creates files (log, pid...) when daemonizing.
+
+.. setting:: worker_executable
+
+``worker_executable``
+~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional `python` executable path for :program:`celery worker` to use when deaemonizing (defaults to :data:`sys.executable`).
+
 .. _conf-celerybeat:
 
 Beat Settings (:program:`celery beat`)
@@ -3534,3 +3706,69 @@ Default: None.
 When using cron, the number of seconds :mod:`~celery.bin.beat` can look back
 when deciding whether a cron schedule is due. When set to `None`, cronjobs that
 are past due will always run immediately.
+
+.. setting:: beat_logfile
+
+``beat_logfile``
+~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional file path for :program:`celery beat` to log into (defaults to `stdout`).
+
+.. setting:: beat_pidfile
+
+``beat_pidfile``
+~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional file path for :program:`celery beat` to create/store it PID file (defaults to no PID file created).
+
+.. setting:: beat_uid
+
+``beat_uid``
+~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional user ID to use when beat :program:`celery beat` drops its privileges (defaults to no UID change).
+
+.. setting:: beat_gid
+
+``beat_gid``
+~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional group ID to use when :program:`celery beat` daemon drops its privileges (defaults to no GID change).
+
+.. setting:: beat_umask
+
+``beat_umask``
+~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional `umask` to use when :program:`celery beat` creates files (log, pid...) when daemonizing.
+
+.. setting:: beat_executable
+
+``beat_executable``
+~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional `python` executable path for :program:`celery beat` to use when deaemonizing (defaults to :data:`sys.executable`).

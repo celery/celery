@@ -87,7 +87,12 @@ class test_DjangoFixup(FixupCase):
         with self.fixup_context(self.app) as (f, importmod, sym):
             assert f
 
-    def test_install(self, patching):
+    @pytest.mark.patched_module(
+        'django',
+        'django.db',
+        'django.db.transaction',
+    )
+    def test_install(self, patching, module):
         self.app.loader = Mock()
         self.cw = patching('os.getcwd')
         self.p = patching('sys.path')
@@ -97,7 +102,26 @@ class test_DjangoFixup(FixupCase):
             f.install()
             self.sigs.worker_init.connect.assert_called_with(f.on_worker_init)
             assert self.app.loader.now == f.now
+
+            # Specialized Task class is used
+            assert self.app.task_cls == 'celery.contrib.django.task:DjangoTask'
+            from celery.contrib.django.task import DjangoTask
+            assert issubclass(f.app.Task, DjangoTask)
+            assert hasattr(f.app.Task, 'delay_on_commit')
+            assert hasattr(f.app.Task, 'apply_async_on_commit')
+
             self.p.insert.assert_called_with(0, '/opt/vandelay')
+
+    def test_install_custom_user_task(self, patching):
+        patching('celery.fixups.django.signals')
+
+        self.app.task_cls = 'myapp.celery.tasks:Task'
+        self.app._custom_task_cls_used = True
+
+        with self.fixup_context(self.app) as (f, _, _):
+            f.install()
+            # Specialized Task class is NOT used
+            assert self.app.task_cls == 'myapp.celery.tasks:Task'
 
     def test_now(self):
         with self.fixup_context(self.app) as (f, _, _):

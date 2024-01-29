@@ -390,19 +390,20 @@ class Consumer:
         else:
             warnings.warn(CANCEL_TASKS_BY_DEFAULT, CPendingDeprecationWarning)
 
-        self.initial_prefetch_count = max(
-            self.prefetch_multiplier,
-            self.max_prefetch_count - len(tuple(active_requests)) * self.prefetch_multiplier
-        )
-
-        self._maximum_prefetch_restored = self.initial_prefetch_count == self.max_prefetch_count
-        if not self._maximum_prefetch_restored:
-            logger.info(
-                f"Temporarily reducing the prefetch count to {self.initial_prefetch_count} to avoid over-fetching "
-                f"since {len(tuple(active_requests))} tasks are currently being processed.\n"
-                f"The prefetch count will be gradually restored to {self.max_prefetch_count} as the tasks "
-                "complete processing."
+        if self.app.conf.worker_enable_prefetch_count_reduction:
+            self.initial_prefetch_count = max(
+                self.prefetch_multiplier,
+                self.max_prefetch_count - len(tuple(active_requests)) * self.prefetch_multiplier
             )
+
+            self._maximum_prefetch_restored = self.initial_prefetch_count == self.max_prefetch_count
+            if not self._maximum_prefetch_restored:
+                logger.info(
+                    f"Temporarily reducing the prefetch count to {self.initial_prefetch_count} to avoid "
+                    f"over-fetching since {len(tuple(active_requests))} tasks are currently being processed.\n"
+                    f"The prefetch count will be gradually restored to {self.max_prefetch_count} as the tasks "
+                    "complete processing."
+                )
 
     def register_with_event_loop(self, hub):
         self.blueprint.send_all(
@@ -696,7 +697,10 @@ class Consumer:
 
     def _restore_prefetch_count_after_connection_restart(self, p, *args):
         with self.qos._mutex:
-            if self._maximum_prefetch_restored:
+            if any((
+                not self.app.conf.worker_enable_prefetch_count_reduction,
+                self._maximum_prefetch_restored,
+            )):
                 return
 
             new_prefetch_count = min(self.max_prefetch_count, self._new_prefetch_count)

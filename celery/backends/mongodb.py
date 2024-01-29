@@ -1,5 +1,5 @@
 """MongoDB result store backend."""
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from kombu.exceptions import EncodeError
 from kombu.utils.objects import cached_property
@@ -228,7 +228,7 @@ class MongoBackend(BaseBackend):
         meta = {
             '_id': group_id,
             'result': self.encode([i.id for i in result]),
-            'date_done': datetime.utcnow(),
+            'date_done': datetime.now(timezone.utc),
         }
         self.group_collection.replace_one({'_id': group_id}, meta, upsert=True)
         return result

@@ -1,0 +1,56 @@
+from __future__ import annotations
+
+import os
+
+import pytest
+from pytest_celery import CeleryTestWorker, defaults
+from pytest_docker_tools import build, container, fxtr
+
+from celery import Celery
+from t.smoke.workers.dev import SmokeWorkerContainer
+
+
+class OtherSmokeWorkerContainer(SmokeWorkerContainer):
+    @classmethod
+    def worker_name(cls) -> str:
+        return "other_smoke_tests_worker"
+
+    @classmethod
+    def worker_queue(cls) -> str:
+        return "other_smoke_tests_queue"
+
+
+celery_other_dev_worker_image = build(
+    path=".",
+    dockerfile="t/smoke/workers/docker/dev",
+    tag="t/smoke/worker:other",
+    buildargs=OtherSmokeWorkerContainer.buildargs(),
+)
+
+
+other_dev_worker_container = container(
+    image="{celery_other_dev_worker_image.id}",
+    environment=fxtr("default_worker_env"),
+    network="{default_pytest_celery_network.name}",
+    volumes={
+        # Volume: Worker /app
+        "{default_worker_volume.name}": defaults.DEFAULT_WORKER_VOLUME,
+        # Mount: Celery source
+        os.path.abspath(os.getcwd()): {
+            "bind": "/celery",
+            "mode": "rw",
+        },
+    },
+    wrapper_class=OtherSmokeWorkerContainer,
+    timeout=defaults.DEFAULT_WORKER_CONTAINER_TIMEOUT,
+)
+
+
+@pytest.fixture
+def celery_other_dev_worker(
+    other_dev_worker_container: OtherSmokeWorkerContainer,
+    celery_setup_app: Celery,
+) -> CeleryTestWorker:
+    worker = CeleryTestWorker(other_dev_worker_container, app=celery_setup_app)
+    yield worker
+    worker.teardown()
