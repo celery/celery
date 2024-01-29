@@ -45,7 +45,8 @@ globals().update(conf.build_config(
         r'^http://localhost'
     ],
     autodoc_mock_imports=[
-        'riak'
+        'riak',
+        'django',
     ]
 ))
 
