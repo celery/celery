@@ -3,7 +3,7 @@ import importlib
 import os
 import re
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 
 from kombu.utils import json
 from kombu.utils.objects import cached_property
@@ -62,7 +62,7 @@ class BaseLoader:
 
     def now(self, utc=True):
         if utc:
-            return datetime.utcnow()
+            return datetime.now(timezone.utc)
         return datetime.now()
 
     def on_task_init(self, task_id, task):

@@ -614,6 +614,13 @@ Chains can also be made using the ``|`` (pipe) operator:
 
     >>> (add.s(2, 2) | mul.s(8) | mul.s(10)).apply_async()
 
+Task ID
+~~~~~~~
+
+.. versionadded:: 5.4
+
+A chain will inherit the task id of the last task in the chain.
+
 Graphs
 ~~~~~~
 

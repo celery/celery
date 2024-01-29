@@ -1,6 +1,8 @@
 import logging
+import platform
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from multiprocessing import set_start_method
 from time import perf_counter, sleep
 from uuid import uuid4
 
@@ -27,6 +29,16 @@ _timeout = pytest.mark.timeout(timeout=300)
 
 def flaky(fn):
     return _timeout(_flaky(fn))
+
+
+def set_multiprocessing_start_method():
+    """Set multiprocessing start method to 'fork' if not on Linux."""
+    if platform.system() != 'Linux':
+        try:
+            set_start_method('fork')
+        except RuntimeError:
+            # The method is already set
+            pass
 
 
 class test_class_based_tasks:
@@ -89,6 +101,8 @@ class test_tasks:
     @flaky
     def test_multiprocess_producer(self, manager):
         """Testing multiple processes calling tasks."""
+        set_multiprocessing_start_method()
+
         from multiprocessing import Pool
         pool = Pool(20)
         ret = pool.map(_producer, range(120))
@@ -97,6 +111,8 @@ class test_tasks:
     @flaky
     def test_multithread_producer(self, manager):
         """Testing multiple threads calling tasks."""
+        set_multiprocessing_start_method()
+
         from multiprocessing.pool import ThreadPool
         pool = ThreadPool(20)
         ret = pool.map(_producer, range(120))
@@ -138,7 +154,7 @@ class test_tasks:
         for _ in range(4):
             sleeping.delay(2)
         # Execute task with expiration at now + 1 sec
-        result = add.apply_async((1, 1), expires=datetime.utcnow() + timedelta(seconds=1))
+        result = add.apply_async((1, 1), expires=datetime.now(timezone.utc) + timedelta(seconds=1))
         with pytest.raises(celery.exceptions.TaskRevokedError):
             result.get()
         assert result.status == 'REVOKED'
@@ -164,7 +180,7 @@ class test_tasks:
 
         start = perf_counter()
         # Schedule task to be executed at time now + 3 seconds
-        result = add.apply_async((2, 2), eta=datetime.utcnow() + timedelta(seconds=3))
+        result = add.apply_async((2, 2), eta=datetime.now(timezone.utc) + timedelta(seconds=3))
         sleep(1)
         assert result.status == 'PENDING'
         assert result.ready() is False
@@ -402,7 +418,8 @@ class test_tasks:
 
         assert result.status == 'FAILURE'
 
-    @flaky
+    # Requires investigation why it randomly succeeds/fails
+    @pytest.mark.skip(reason="Randomly fails")
     def test_task_accepted(self, manager, sleep=1):
         r1 = sleeping.delay(sleep)
         sleeping.delay(sleep)
@@ -524,6 +541,7 @@ class test_task_redis_result_backend:
         new_channels = [channel for channel in get_active_redis_channels() if channel not in channels_before_test]
         assert new_channels == []
 
+    @flaky
     def test_asyncresult_get_cancels_subscription(self, manager):
         channels_before_test = get_active_redis_channels()
 

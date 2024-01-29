@@ -1,5 +1,5 @@
 """Elasticsearch result store backend."""
-from datetime import datetime
+from datetime import datetime, timezone
 
 from kombu.utils.encoding import bytes_to_str
 from kombu.utils.url import _parse_url
@@ -129,7 +129,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         body = {
             'result': value,
             '@timestamp': '{}Z'.format(
-                datetime.utcnow().isoformat()[:-3]
+                datetime.now(timezone.utc).isoformat()[:-9]
             ),
         }
         try:

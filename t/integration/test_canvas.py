@@ -2,7 +2,7 @@ import collections
 import re
 import tempfile
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from time import monotonic, sleep
 
 import pytest
@@ -366,7 +366,7 @@ class test_chain:
         except NotImplementedError as e:
             raise pytest.skip(e.args[0])
 
-        eta = datetime.utcnow() + timedelta(seconds=10)
+        eta = datetime.now(timezone.utc) + timedelta(seconds=10)
         c = chain(
             group(
                 add.s(1, 2),
@@ -1029,6 +1029,13 @@ class test_chain:
 
         # Cleanup
         redis_connection.delete(redis_key, 'Done')
+
+    def test_freezing_chain_sets_id_of_last_task(self, manager):
+        last_task = add.s(2).set(task_id='42')
+        c = add.s(4) | last_task
+        assert c.id is None
+        c.freeze(last_task.id)
+        assert c.id == last_task.id
 
 
 class test_result_set:

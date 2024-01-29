@@ -296,3 +296,5 @@ Kaustav Banerjee, 2022/11/10
 Austin Snoeyink 2022/12/06
 Jeremy Z. Othieno 2023/07/27
 Nikolai Vidov 2023/12/12
+Tomer Nosrati, 2022/17/07
+Andy Zickler, 2024/01/18
