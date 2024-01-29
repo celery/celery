@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timezone
 from unittest.mock import Mock, call, patch, sentinel
 
 import pytest
@@ -150,8 +150,8 @@ class test_ElasticsearchBackend:
 
     @patch('celery.backends.elasticsearch.datetime')
     def test_index_conflict(self, datetime_mock):
-        expected_dt = datetime.datetime(2020, 6, 1, 18, 43, 24, 123456, None)
-        datetime_mock.utcnow.return_value = expected_dt
+        expected_dt = datetime(2020, 6, 1, 18, 43, 24, 123456, timezone.utc)
+        datetime_mock.now.return_value = expected_dt
 
         x = ElasticsearchBackend(app=self.app)
         x._server = Mock()
@@ -178,20 +178,20 @@ class test_ElasticsearchBackend:
         x._server.index.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
-            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'},
+            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'},
             params={'op_type': 'create'},
         )
         x._server.update.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
-            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'}},
+            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'}},
             params={'if_seq_no': 2, 'if_primary_term': 1}
         )
 
     @patch('celery.backends.elasticsearch.datetime')
     def test_index_conflict_with_doctype(self, datetime_mock):
-        expected_dt = datetime.datetime(2020, 6, 1, 18, 43, 24, 123456, None)
-        datetime_mock.utcnow.return_value = expected_dt
+        expected_dt = datetime(2020, 6, 1, 18, 43, 24, 123456, timezone.utc)
+        datetime_mock.now.return_value = expected_dt
 
         x = ElasticsearchBackend(app=self.app)
         x._server = Mock()
@@ -219,21 +219,21 @@ class test_ElasticsearchBackend:
             id=sentinel.task_id,
             index=x.index,
             doc_type=x.doc_type,
-            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'},
+            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'},
             params={'op_type': 'create'},
         )
         x._server.update.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
             doc_type=x.doc_type,
-            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'}},
+            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'}},
             params={'if_seq_no': 2, 'if_primary_term': 1}
         )
 
     @patch('celery.backends.elasticsearch.datetime')
     def test_index_conflict_without_state(self, datetime_mock):
-        expected_dt = datetime.datetime(2020, 6, 1, 18, 43, 24, 123456, None)
-        datetime_mock.utcnow.return_value = expected_dt
+        expected_dt = datetime(2020, 6, 1, 18, 43, 24, 123456, timezone.utc)
+        datetime_mock.now.return_value = expected_dt
 
         x = ElasticsearchBackend(app=self.app)
         x._server = Mock()
@@ -260,13 +260,13 @@ class test_ElasticsearchBackend:
         x._server.index.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
-            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'},
+            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'},
             params={'op_type': 'create'},
         )
         x._server.update.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
-            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'}},
+            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'}},
             params={'if_seq_no': 2, 'if_primary_term': 1}
         )
 
@@ -277,8 +277,8 @@ class test_ElasticsearchBackend:
         so it cannot protect overriding a ready state by any other state.
         As a result, server.update will be called no matter what.
         """
-        expected_dt = datetime.datetime(2020, 6, 1, 18, 43, 24, 123456, None)
-        datetime_mock.utcnow.return_value = expected_dt
+        expected_dt = datetime(2020, 6, 1, 18, 43, 24, 123456, timezone.utc)
+        datetime_mock.now.return_value = expected_dt
 
         x = ElasticsearchBackend(app=self.app)
         x._server = Mock()
@@ -305,20 +305,20 @@ class test_ElasticsearchBackend:
         x._server.index.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
-            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'},
+            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'},
             params={'op_type': 'create'},
         )
         x._server.update.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
-            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'}},
+            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'}},
             params={'if_seq_no': 2, 'if_primary_term': 1}
         )
 
     @patch('celery.backends.elasticsearch.datetime')
     def test_index_conflict_with_existing_success(self, datetime_mock):
-        expected_dt = datetime.datetime(2020, 6, 1, 18, 43, 24, 123456, None)
-        datetime_mock.utcnow.return_value = expected_dt
+        expected_dt = datetime(2020, 6, 1, 18, 43, 24, 123456, timezone.utc)
+        datetime_mock.now.return_value = expected_dt
 
         x = ElasticsearchBackend(app=self.app)
         x._server = Mock()
@@ -347,15 +347,15 @@ class test_ElasticsearchBackend:
         x._server.index.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
-            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'},
+            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'},
             params={'op_type': 'create'},
         )
         x._server.update.assert_not_called()
 
     @patch('celery.backends.elasticsearch.datetime')
     def test_index_conflict_with_existing_ready_state(self, datetime_mock):
-        expected_dt = datetime.datetime(2020, 6, 1, 18, 43, 24, 123456, None)
-        datetime_mock.utcnow.return_value = expected_dt
+        expected_dt = datetime(2020, 6, 1, 18, 43, 24, 123456, timezone.utc)
+        datetime_mock.now.return_value = expected_dt
 
         x = ElasticsearchBackend(app=self.app)
         x._server = Mock()
@@ -382,7 +382,7 @@ class test_ElasticsearchBackend:
         x._server.index.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
-            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'},
+            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'},
             params={'op_type': 'create'},
         )
         x._server.update.assert_not_called()
@@ -390,11 +390,11 @@ class test_ElasticsearchBackend:
     @patch('celery.backends.elasticsearch.datetime')
     @patch('celery.backends.base.datetime')
     def test_backend_concurrent_update(self, base_datetime_mock, es_datetime_mock):
-        expected_dt = datetime.datetime(2020, 6, 1, 18, 43, 24, 123456, None)
-        es_datetime_mock.utcnow.return_value = expected_dt
+        expected_dt = datetime(2020, 6, 1, 18, 43, 24, 123456, timezone.utc)
+        es_datetime_mock.now.return_value = expected_dt
 
-        expected_done_dt = datetime.datetime(2020, 6, 1, 18, 45, 34, 654321, None)
-        base_datetime_mock.utcnow.return_value = expected_done_dt
+        expected_done_dt = datetime(2020, 6, 1, 18, 45, 34, 654321, timezone.utc)
+        base_datetime_mock.now.return_value = expected_done_dt
 
         self.app.conf.result_backend_always_retry, prev = True, self.app.conf.result_backend_always_retry
         x_server_get_side_effect = [
@@ -455,7 +455,7 @@ class test_ElasticsearchBackend:
                     index=x.index,
                     body={
                         'result': expected_result,
-                        '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                        '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                     },
                     params={'op_type': 'create'}
                 ),
@@ -464,7 +464,7 @@ class test_ElasticsearchBackend:
                     index=x.index,
                     body={
                         'result': expected_result,
-                        '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                        '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                     },
                     params={'op_type': 'create'}
                 ),
@@ -476,7 +476,7 @@ class test_ElasticsearchBackend:
                     body={
                         'doc': {
                             'result': expected_result,
-                            '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                            '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                         }
                     },
                     params={'if_seq_no': 2, 'if_primary_term': 1}
@@ -487,7 +487,7 @@ class test_ElasticsearchBackend:
                     body={
                         'doc': {
                             'result': expected_result,
-                            '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                            '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                         }
                     },
                     params={'if_seq_no': 3, 'if_primary_term': 1}
@@ -501,11 +501,11 @@ class test_ElasticsearchBackend:
     @patch('celery.backends.elasticsearch.datetime')
     @patch('celery.backends.base.datetime')
     def test_backend_index_conflicting_document_removed(self, base_datetime_mock, es_datetime_mock):
-        expected_dt = datetime.datetime(2020, 6, 1, 18, 43, 24, 123456, None)
-        es_datetime_mock.utcnow.return_value = expected_dt
+        expected_dt = datetime(2020, 6, 1, 18, 43, 24, 123456, timezone.utc)
+        es_datetime_mock.now.return_value = expected_dt
 
-        expected_done_dt = datetime.datetime(2020, 6, 1, 18, 45, 34, 654321, None)
-        base_datetime_mock.utcnow.return_value = expected_done_dt
+        expected_done_dt = datetime(2020, 6, 1, 18, 45, 34, 654321, timezone.utc)
+        base_datetime_mock.now.return_value = expected_done_dt
 
         self.app.conf.result_backend_always_retry, prev = True, self.app.conf.result_backend_always_retry
         try:
@@ -550,7 +550,7 @@ class test_ElasticsearchBackend:
                     index=x.index,
                     body={
                         'result': expected_result,
-                        '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                        '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                     },
                     params={'op_type': 'create'}
                 ),
@@ -559,7 +559,7 @@ class test_ElasticsearchBackend:
                     index=x.index,
                     body={
                         'result': expected_result,
-                        '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                        '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                     },
                     params={'op_type': 'create'}
                 ),
@@ -572,11 +572,11 @@ class test_ElasticsearchBackend:
     @patch('celery.backends.elasticsearch.datetime')
     @patch('celery.backends.base.datetime')
     def test_backend_index_conflicting_document_removed_not_throwing(self, base_datetime_mock, es_datetime_mock):
-        expected_dt = datetime.datetime(2020, 6, 1, 18, 43, 24, 123456, None)
-        es_datetime_mock.utcnow.return_value = expected_dt
+        expected_dt = datetime(2020, 6, 1, 18, 43, 24, 123456, timezone.utc)
+        es_datetime_mock.now.return_value = expected_dt
 
-        expected_done_dt = datetime.datetime(2020, 6, 1, 18, 45, 34, 654321, None)
-        base_datetime_mock.utcnow.return_value = expected_done_dt
+        expected_done_dt = datetime(2020, 6, 1, 18, 45, 34, 654321, timezone.utc)
+        base_datetime_mock.now.return_value = expected_done_dt
 
         self.app.conf.result_backend_always_retry, prev = True, self.app.conf.result_backend_always_retry
         try:
@@ -618,7 +618,7 @@ class test_ElasticsearchBackend:
                     index=x.index,
                     body={
                         'result': expected_result,
-                        '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                        '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                     },
                     params={'op_type': 'create'}
                 ),
@@ -627,7 +627,7 @@ class test_ElasticsearchBackend:
                     index=x.index,
                     body={
                         'result': expected_result,
-                        '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                        '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                     },
                     params={'op_type': 'create'}
                 ),
@@ -640,11 +640,11 @@ class test_ElasticsearchBackend:
     @patch('celery.backends.elasticsearch.datetime')
     @patch('celery.backends.base.datetime')
     def test_backend_index_corrupted_conflicting_document(self, base_datetime_mock, es_datetime_mock):
-        expected_dt = datetime.datetime(2020, 6, 1, 18, 43, 24, 123456, None)
-        es_datetime_mock.utcnow.return_value = expected_dt
+        expected_dt = datetime(2020, 6, 1, 18, 43, 24, 123456, timezone.utc)
+        es_datetime_mock.now.return_value = expected_dt
 
-        expected_done_dt = datetime.datetime(2020, 6, 1, 18, 45, 34, 654321, None)
-        base_datetime_mock.utcnow.return_value = expected_done_dt
+        expected_done_dt = datetime(2020, 6, 1, 18, 45, 34, 654321, timezone.utc)
+        base_datetime_mock.now.return_value = expected_done_dt
 
         # self.app.conf.result_backend_always_retry, prev = True, self.app.conf.result_backend_always_retry
         # try:
@@ -685,7 +685,7 @@ class test_ElasticsearchBackend:
             index=x.index,
             body={
                 'result': expected_result,
-                '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
             },
             params={'op_type': 'create'}
         )
@@ -695,7 +695,7 @@ class test_ElasticsearchBackend:
             body={
                 'doc': {
                     'result': expected_result,
-                    '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                    '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                 }
             },
             params={'if_primary_term': 1, 'if_seq_no': 2}

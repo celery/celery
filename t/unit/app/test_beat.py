@@ -2,7 +2,7 @@ import errno
 import sys
 from datetime import datetime, timedelta, timezone
 from pickle import dumps, loads
-from unittest.mock import Mock, call, patch
+from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
 
@@ -156,7 +156,10 @@ class mSchedulerRuntimeError(mScheduler):
 
 class mocked_schedule(schedule):
 
-    def __init__(self, is_due, next_run_at, nowfun=datetime.utcnow):
+    def now_func():
+        return datetime.now(timezone.utc)
+
+    def __init__(self, is_due, next_run_at, nowfun=now_func):
         self._is_due = is_due
         self._next_run_at = next_run_at
         self.run_every = timedelta(seconds=1)
@@ -666,6 +669,38 @@ class test_PersistentScheduler:
         with pytest.raises(OSError):
             s._remove_db()
 
+    def test_create_schedule_corrupted(self):
+        """
+        Test that any decoding errors that might happen when opening beat-schedule.db are caught
+        """
+        s = create_persistent_scheduler()[0](app=self.app,
+                                             schedule_filename='schedule')
+        s._store = MagicMock()
+        s._destroy_open_corrupted_schedule = Mock()
+        s._destroy_open_corrupted_schedule.return_value = MagicMock()
+
+        # self._store['entries'] will throw a KeyError
+        s._store.__getitem__.side_effect = KeyError()
+        # then, when _create_schedule tries to reset _store['entries'], throw another error
+        expected_error = UnicodeDecodeError("ascii", b"ordinal not in range(128)", 0, 0, "")
+        s._store.__setitem__.side_effect = expected_error
+
+        s._create_schedule()
+        s._destroy_open_corrupted_schedule.assert_called_with(expected_error)
+
+    def test_create_schedule_missing_entries(self):
+        """
+        Test that if _create_schedule can't find the key "entries" in _store it will recreate it
+        """
+        s = create_persistent_scheduler()[0](app=self.app, schedule_filename="schedule")
+        s._store = MagicMock()
+
+        # self._store['entries'] will throw a KeyError
+        s._store.__getitem__.side_effect = TypeError()
+
+        s._create_schedule()
+        s._store.__setitem__.assert_called_with("entries", {})
+
     def test_setup_schedule(self):
         s = create_persistent_scheduler()[0](app=self.app,
                                              schedule_filename='schedule')
@@ -872,7 +907,7 @@ class test_schedule:
     def test_to_local(self):
         x = schedule(10, app=self.app)
         x.utc_enabled = True
-        d = x.to_local(datetime.utcnow())  # datetime.utcnow() is deprecated in Python 3.12
+        d = x.to_local(datetime.now())
         assert d.tzinfo is None
         x.utc_enabled = False
         d = x.to_local(datetime.now(timezone.utc))

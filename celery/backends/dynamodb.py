@@ -1,6 +1,7 @@
 """AWS DynamoDB result store backend."""
 from collections import namedtuple
 from time import sleep, time
+from typing import Any, Dict
 
 from kombu.utils.url import _parse_url as parse_url
 
@@ -54,10 +55,14 @@ class DynamoDBBackend(KeyValueStoreBackend):
     supports_autoexpire = True
 
     _key_field = DynamoDBAttribute(name='id', data_type='S')
+    # Each record has either a value field or count field
     _value_field = DynamoDBAttribute(name='result', data_type='B')
+    _count_filed = DynamoDBAttribute(name="chord_count", data_type='N')
     _timestamp_field = DynamoDBAttribute(name='timestamp', data_type='N')
     _ttl_field = DynamoDBAttribute(name='ttl', data_type='N')
     _available_fields = None
+
+    implements_incr = True
 
     def __init__(self, url=None, table_name=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -459,6 +464,40 @@ class DynamoDBBackend(KeyValueStoreBackend):
             })
         return put_request
 
+    def _prepare_init_count_request(self, key: str) -> Dict[str, Any]:
+        """Construct the counter initialization request parameters"""
+        timestamp = time()
+        return {
+            'TableName': self.table_name,
+            'Item': {
+                self._key_field.name: {
+                    self._key_field.data_type: key
+                },
+                self._count_filed.name: {
+                    self._count_filed.data_type: "0"
+                },
+                self._timestamp_field.name: {
+                    self._timestamp_field.data_type: str(timestamp)
+                }
+            }
+        }
+
+    def _prepare_inc_count_request(self, key: str) -> Dict[str, Any]:
+        """Construct the counter increment request parameters"""
+        return {
+            'TableName': self.table_name,
+            'Key': {
+                self._key_field.name: {
+                    self._key_field.data_type: key
+                }
+            },
+            'UpdateExpression': f"set {self._count_filed.name} = {self._count_filed.name} + :num",
+            "ExpressionAttributeValues": {
+                ":num": {"N": "1"},
+            },
+            "ReturnValues" : "UPDATED_NEW",
+        }
+
     def _item_to_dict(self, raw_response):
         """Convert get_item() response to field-value pairs."""
         if 'Item' not in raw_response:
@@ -491,3 +530,18 @@ class DynamoDBBackend(KeyValueStoreBackend):
         key = str(key)
         request_parameters = self._prepare_get_request(key)
         self.client.delete_item(**request_parameters)
+
+    def incr(self, key: bytes) -> int:
+        """Atomically increase the chord_count and return the new count"""
+        key = str(key)
+        request_parameters = self._prepare_inc_count_request(key)
+        item_response = self.client.update_item(**request_parameters)
+        new_count: str = item_response["Attributes"][self._count_filed.name][self._count_filed.data_type]
+        return int(new_count)
+
+    def _apply_chord_incr(self, header_result_args, body, **kwargs):
+        chord_key = self.get_key_for_chord(header_result_args[0])
+        init_count_request = self._prepare_init_count_request(str(chord_key))
+        self.client.put_item(**init_count_request)
+        return super()._apply_chord_incr(
+            header_result_args, body, **kwargs)
