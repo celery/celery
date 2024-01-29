@@ -6,7 +6,7 @@ pytest-timeout==2.2.0
 pytest-click==1.1.0
 pytest-order==1.2.0
 boto3>=1.26.143
-moto>=4.1.11,<5.0.0
+moto>=4.1.11,<6.0.0
 # typing extensions
 mypy==1.8.0; platform_python_implementation=="CPython"
 pre-commit==3.5.0
