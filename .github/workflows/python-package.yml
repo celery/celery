@@ -20,6 +20,8 @@ on:
         - '**.toml'
         - '.github/workflows/python-package.yml'
         - "tox.ini"
+  workflow_dispatch:
+
 
 permissions:
   contents: read # to fetch code (actions/checkout)
