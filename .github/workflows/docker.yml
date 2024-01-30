@@ -18,6 +18,7 @@ on:
           - '**.toml'
           - '/docker/**'
           - '.github/workflows/docker.yml'
+    workflow_dispatch:
 
 
 jobs:
