@@ -1000,11 +1000,11 @@ Example implementation:
         raise self.retry(countdown=interval, max_retries=max_retries)
 
 
-This is used by all result backends except Redis and Memcached: they
+This is used by all result backends except Redis, Memcached and DynamoDB: they
 increment a counter after each task in the header, then applies the callback
 when the counter exceeds the number of tasks in the set.
 
-The Redis and Memcached approach is a much better solution, but not easily
+The Redis, Memcached and DynamoDB approach is a much better solution, but not easily
 implemented in other backends (suggestions welcome!).
 
 .. note::
