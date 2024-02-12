@@ -722,7 +722,7 @@ class Signature(dict):
         """
         return self.append_to_list_option('link', callback)
 
-    def link_error(self, errback):
+    (self, errback):
         """Add callback task to be applied on error in task execution.
 
         Returns:
@@ -1674,7 +1674,7 @@ class group(Signature):
         # We return a concretised tuple of the signatures actually applied to
         # each child task signature, of which there might be none!
         sig = maybe_signature(sig)
-        
+
         return tuple(child_task.link_error(sig.clone(immutable=True)) for child_task in self.tasks)
 
     def _prepared(self, tasks, partial_args, group_id, root_id, app,
