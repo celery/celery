@@ -873,7 +873,7 @@ class test_group(CanvasCase):
         g1 = group(Mock(name='t1'), Mock(name='t2'), app=self.app)
         errback = signature('tcb')
         errback_dict = dict(errback)
-        x.link_error(errback_dict)
+        g1.link_error(errback_dict)
         # We expect that all group children will be given the errback to ensure
         # it gets called
         for child_sig in g1.tasks:
