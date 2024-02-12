@@ -722,7 +722,7 @@ class Signature(dict):
         """
         return self.append_to_list_option('link', callback)
 
-    (self, errback):
+    def link_error(self, errback):
         """Add callback task to be applied on error in task execution.
 
         Returns:
