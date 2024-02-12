@@ -67,7 +67,7 @@ jobs:
       run: |
         tox --verbose --verbose
 
-    - uses: codecov/codecov-action@v3
+    - uses: codecov/codecov-action@v4
       with:
         flags: unittests # optional
         fail_ci_if_error: true # optional (default = false)
