@@ -1,5 +1,5 @@
 pytest==7.4.4
-pytest-celery==1.0.0b1
+pytest-celery==1.0.0b2
 pytest-rerunfailures==13.0.0
 pytest-subtests==0.11.0
 pytest-timeout==2.2.0
