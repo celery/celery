@@ -20,7 +20,7 @@ from . import local  # noqa
 
 SERIES = 'cliffs'
 
-__version__ = '4.5.0.1'
+__version__ = '4.5.1'
 __author__ = 'Ask Solem'
 __contact__ = 'auvipy@gmail.com'
 __homepage__ = 'http://celeryproject.org'
