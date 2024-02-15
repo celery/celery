@@ -140,6 +140,14 @@ NAMESPACES = Namespace(
         connection_timeout=Option(20, type='int'),
         read_timeout=Option(120, type='int'),
     ),
+    gcs=Namespace(
+        bucket=Option(type='string'),
+        project=Option(type='string'),
+        base_path=Option('/celery', type='string'),
+        ttl=Option(0, type='float'),
+        connect_timeout=Option(60, type='float'),
+        read_timeout=Option(60, type='float'),
+    ),
     control=Namespace(
         queue_ttl=Option(300.0, type='float'),
         queue_expires=Option(10.0, type='float'),

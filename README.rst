@@ -317,6 +317,9 @@ Transports and Backends
 :``celery[s3]``:
     for using S3 Storage as a result backend.
 
+:``celery[gcs]``:
+    for using Google Cloud Storage as a result backend.
+
 :``celery[couchbase]``:
     for using Couchbase as a result backend.
 
