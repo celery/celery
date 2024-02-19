@@ -869,6 +869,16 @@ class test_group(CanvasCase):
         for child_sig in g1.tasks:
             child_sig.link_error.assert_called_with(sig.clone(immutable=True))
 
+    def test_link_error_with_dict_sig(self):
+        g1 = group(Mock(name='t1'), Mock(name='t2'), app=self.app)
+        errback = signature('tcb')
+        errback_dict = dict(errback)
+        g1.link_error(errback_dict)
+        # We expect that all group children will be given the errback to ensure
+        # it gets called
+        for child_sig in g1.tasks:
+            child_sig.link_error.assert_called_with(errback.clone(immutable=True))
+
     def test_apply_empty(self):
         x = group(app=self.app)
         x.apply()

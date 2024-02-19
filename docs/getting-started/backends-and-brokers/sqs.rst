@@ -15,7 +15,7 @@ the ``celery[sqs]`` :ref:`bundle <bundles>`:
 
 .. code-block:: console
 
-    $ pip install celery[sqs]
+    $ pip install "celery[sqs]"
 
 .. _broker-sqs-configuration:
 

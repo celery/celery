@@ -1,6 +1,6 @@
 name: Linter
 
-on: [pull_request]
+on: [pull_request, workflow_dispatch]
 
 jobs:
   linter:
@@ -11,4 +11,4 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run pre-commit
-        uses: pre-commit/action@v3.0.0
+        uses: pre-commit/action@v3.0.1
