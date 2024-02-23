@@ -1,5 +1,5 @@
 from datetime import datetime
-from unittest.mock import patch, Mock, call
+from unittest.mock import Mock, call, patch
 
 import pytest
 from google.cloud.exceptions import NotFound

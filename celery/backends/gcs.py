@@ -4,17 +4,19 @@ from datetime import datetime, timedelta
 from os import getpid
 from threading import RLock
 
-from celery.exceptions import ImproperlyConfigured
 from kombu.utils.encoding import bytes_to_str
 from kombu.utils.functional import dictfilter
 from kombu.utils.url import url_to_parts
+
+from celery.exceptions import ImproperlyConfigured
+
 from .base import KeyValueStoreBackend
 
 try:
     import requests
     from google.cloud import storage
-    from google.cloud.storage.retry import DEFAULT_RETRY
     from google.cloud.storage import Client
+    from google.cloud.storage.retry import DEFAULT_RETRY
 except ImportError:
     storage = None
 
