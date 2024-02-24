@@ -21,6 +21,11 @@ class test_GCSBackend:
     def ttl(self, request):
         return request.param
 
+    def test_missing_storage_module(self):
+        with patch('celery.backends.gcs.storage', None):
+            with pytest.raises(ImproperlyConfigured, match='You must install'):
+                GCSBackend(app=self.app)
+
     def test_missing_bucket(self):
         self.app.conf.gcs_bucket = None
 
