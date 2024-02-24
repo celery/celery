@@ -1860,8 +1860,6 @@ A base path in the gcs bucket to use to store all result keys. For example::
 
     gcs_base_path = '/prefix'
 
-.. setting:: gcs_endpoint_url
-
 ``gcs_ttl``
 ~~~~~~~~~~~
 
