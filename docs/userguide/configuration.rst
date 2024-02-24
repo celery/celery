@@ -1806,7 +1806,7 @@ Timeout in seconds for reading of an azure block blob.
 .. _conf-gcs-result-backend:
 
 GCS backend settings
--------------------
+--------------------
 
 .. note::
 
@@ -2918,7 +2918,7 @@ to the AMQP broker.
 If this is set to :const:`None`, we'll retry forever.
 
 ``broker_channel_error_retry``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 5.3
 
