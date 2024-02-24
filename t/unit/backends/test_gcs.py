@@ -46,6 +46,16 @@ class test_GCSBackend:
         with pytest.raises(ImproperlyConfigured, match='Invalid ttl'):
             GCSBackend(app=self.app)
 
+    def test_parse_url(self, base_path):
+        self.app.conf.gcs_bucket = None
+        self.app.conf.gcs_project = None
+
+        backend = GCSBackend(
+            app=self.app, url=f'gcs://bucket/{base_path}?gcs_project=project'
+        )
+        assert backend.bucket_name == 'bucket'
+        assert backend.base_path == base_path.strip('/')
+
     @patch.object(GCSBackend, '_is_bucket_lifecycle_rule_exists')
     def test_ttl_missing_lifecycle_rule(self, mock_lifecycle):
         self.app.conf.gcs_ttl = 86400

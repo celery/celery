@@ -143,7 +143,7 @@ NAMESPACES = Namespace(
     gcs=Namespace(
         bucket=Option(type='string'),
         project=Option(type='string'),
-        base_path=Option('/celery', type='string'),
+        base_path=Option('', type='string'),
         ttl=Option(0, type='float'),
         connect_timeout=Option(60, type='float'),
         read_timeout=Option(60, type='float'),
