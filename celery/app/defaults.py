@@ -145,8 +145,6 @@ NAMESPACES = Namespace(
         project=Option(type='string'),
         base_path=Option('', type='string'),
         ttl=Option(0, type='float'),
-        connect_timeout=Option(60, type='float'),
-        read_timeout=Option(60, type='float'),
     ),
     control=Namespace(
         queue_ttl=Option(300.0, type='float'),
