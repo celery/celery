@@ -132,3 +132,16 @@ class test_GCSBackend:
         result = backend.mget([b'key1', b'key2'])
         mock_get.assert_has_calls([call(b'key1'), call(b'key2')])
         assert result == ['value1', 'value2']
+
+    @patch('celery.backends.gcs.Client')
+    @patch('celery.backends.gcs.getpid')
+    def test_new_client_after_fork(self, mock_pid, mock_client):
+        mock_pid.return_value = 123
+        backend = GCSBackend(app=self.app)
+        client1 = backend.client
+        mock_pid.assert_called()
+        mock_client.assert_called()
+        mock_pid.return_value = 456
+        mock_client.return_value = Mock()
+        assert client1 != backend.client
+        mock_client.assert_called_with(project='project')
