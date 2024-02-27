@@ -958,6 +958,8 @@ class _chain(Signature):
         if isinstance(other, group):
             # unroll group with one member
             other = maybe_unroll_group(other)
+            if not isinstance(other, group):
+                return self.__or__(other)
             # chain | group() -> chain
             tasks = self.unchain_tasks()
             if not tasks:
@@ -981,6 +983,13 @@ class _chain(Signature):
                 sig = self.clone()
                 sig.tasks[-1] = chord(
                     sig.tasks[-1], other, app=self._app)
+                # In the scenario where the second-to-last item in a chain is a chord,
+                # it leads to a situation where two consecutive chords are formed.
+                # In such cases, a further upgrade can be considered.
+                # This would involve chaining the body of the second-to-last chord with the last chord."
+                if len(sig.tasks) > 1 and isinstance(sig.tasks[-2], chord):
+                    sig.tasks[-2].body = sig.tasks[-2].body | sig.tasks[-1]
+                    sig.tasks = sig.tasks[:-1]
                 return sig
             elif self.tasks and isinstance(self.tasks[-1], chord):
                 # CHAIN [last item is chord] -> chain with chord body.
