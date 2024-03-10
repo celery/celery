@@ -1096,6 +1096,18 @@ class test_chain:
         # Cleanup
         redis_connection.delete(redis_key, 'Done')
 
+    def test_group_in_center_of_chain(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        t1 = chain(tsum.s(), group(add.s(8), add.s(16)), tsum.s() | add.s(32))
+        t2 = chord([tsum, tsum], t1)
+        t3 = chord([add.s(0, 1)], t2)
+        res = t3.apply_async()  # should not raise
+        assert res.get(timeout=TIMEOUT) == 60
+
 
 class test_result_set:
 
