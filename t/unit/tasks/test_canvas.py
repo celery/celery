@@ -819,6 +819,12 @@ class test_chain(CanvasCase):
         assert signature(flat_chain.tasks[1].options['link'][0]) == signature('link_b')
         assert signature(flat_chain.tasks[1].options['link_error'][0]) == signature('link_ab')
 
+    def test_group_in_center_of_chain(self):
+        t1 = chain(self.add.si(1, 1), group(self.add.si(1, 1), self.add.si(1, 1)),
+                   self.add.si(1, 1) | self.add.si(1, 1))
+        t2 = chord([self.add.si(1, 1), self.add.si(1, 1)], t1)
+        t2.freeze()  # should not raise
+
 
 class test_group(CanvasCase):
     def test_repr(self):

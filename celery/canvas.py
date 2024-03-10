@@ -1225,6 +1225,12 @@ class _chain(Signature):
                         task, body=prev_task,
                         root_id=root_id, app=app,
                     )
+                if tasks:
+                    prev_task = tasks[-1]
+                    prev_res = results[-1]
+                else:
+                    prev_task = None
+                    prev_res = None
 
             if is_last_task:
                 # chain(task_id=id) means task id is set for the last task
