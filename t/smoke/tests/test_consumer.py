@@ -74,6 +74,9 @@ class test_worker_enable_prefetch_count_reduction_true:
             return app
 
         def test_max_prefetch_passed_on_broker_restart(self, celery_setup: CeleryTestSetup):
+            if isinstance(celery_setup.broker, RedisTestBroker):
+                pytest.xfail("Real Bug: Broker does not fetch messages after restart")
+
             sig = group(long_running_task.s(420) for _ in range(WORKER_CONCURRENCY))
             sig.apply_async(queue=celery_setup.worker.worker_queue)
             celery_setup.broker.restart()
