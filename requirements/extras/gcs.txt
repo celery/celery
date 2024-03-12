@@ -1,0 +1,1 @@
+google-cloud-storage>=2.10.0

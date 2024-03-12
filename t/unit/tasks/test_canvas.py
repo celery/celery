@@ -571,6 +571,36 @@ class test_chain(CanvasCase):
         assert isinstance(new_chain, _chain)
         assert isinstance(new_chain.tasks[0].body, chord)
 
+    @pytest.mark.parametrize(
+        "group_last_task",
+        [False, True],
+    )
+    def test_chain_of_chord_upgrade_on_chaining__protocol_2(
+            self, group_last_task):
+        c = chain(
+            group([self.add.s(i, i) for i in range(5)], app=self.app),
+            group([self.add.s(i, i) for i in range(10, 15)], app=self.app),
+            group([self.add.s(i, i) for i in range(20, 25)], app=self.app),
+            self.add.s(30) if not group_last_task else group(self.add.s(30),
+                                                             app=self.app))
+        assert isinstance(c, _chain)
+        assert len(
+            c.tasks
+        ) == 1, "Consecutive chords should be further upgraded to a single chord."
+        assert isinstance(c.tasks[0], chord)
+
+    def test_chain_of_chord_upgrade_on_chaining__protocol_3(self):
+        c = chain(
+            chain([self.add.s(i, i) for i in range(5)]),
+            group([self.add.s(i, i) for i in range(10, 15)], app=self.app),
+            chord([signature('header')], signature('body'), app=self.app),
+            group([self.add.s(i, i) for i in range(20, 25)], app=self.app))
+        assert isinstance(c, _chain)
+        assert isinstance(
+            c.tasks[-1], chord
+        ), "Chord followed by a group should be upgraded to a single chord with chained body."
+        assert len(c.tasks) == 6
+
     def test_apply_options(self):
 
         class static(Signature):
@@ -789,6 +819,12 @@ class test_chain(CanvasCase):
         assert signature(flat_chain.tasks[1].options['link'][0]) == signature('link_b')
         assert signature(flat_chain.tasks[1].options['link_error'][0]) == signature('link_ab')
 
+    def test_group_in_center_of_chain(self):
+        t1 = chain(self.add.si(1, 1), group(self.add.si(1, 1), self.add.si(1, 1)),
+                   self.add.si(1, 1) | self.add.si(1, 1))
+        t2 = chord([self.add.si(1, 1), self.add.si(1, 1)], t1)
+        t2.freeze()  # should not raise
+
 
 class test_group(CanvasCase):
     def test_repr(self):
@@ -868,6 +904,16 @@ class test_group(CanvasCase):
         # it gets called
         for child_sig in g1.tasks:
             child_sig.link_error.assert_called_with(sig.clone(immutable=True))
+
+    def test_link_error_with_dict_sig(self):
+        g1 = group(Mock(name='t1'), Mock(name='t2'), app=self.app)
+        errback = signature('tcb')
+        errback_dict = dict(errback)
+        g1.link_error(errback_dict)
+        # We expect that all group children will be given the errback to ensure
+        # it gets called
+        for child_sig in g1.tasks:
+            child_sig.link_error.assert_called_with(errback.clone(immutable=True))
 
     def test_apply_empty(self):
         x = group(app=self.app)

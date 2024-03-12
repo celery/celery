@@ -423,7 +423,7 @@ to upstream changes:
 .. code-block:: console
 
     $ cd celery
-    $ git remote add upstream git://github.com/celery/celery.git
+    $ git remote add upstream git@github.com:celery/celery.git
     $ git fetch upstream
 
 If you need to pull in new changes from upstream you should
