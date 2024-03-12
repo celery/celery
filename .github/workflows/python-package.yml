@@ -158,7 +158,7 @@ jobs:
         -   name: >
                 Run tox for
                 "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 60
+            timeout-minutes: 10
             run: >
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k failover
@@ -196,7 +196,7 @@ jobs:
         -   name: >
                 Run tox for
                 "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 60
+            timeout-minutes: 15
             run: >
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k stamping
@@ -234,7 +234,7 @@ jobs:
         -   name: >
                 Run tox for
                 "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 60
+            timeout-minutes: 5
             run: >
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k test_canvas.py
@@ -272,7 +272,7 @@ jobs:
         -   name: >
                 Run tox for
                 "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 60
+            timeout-minutes: 10
             run: >
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k test_consumer.py
@@ -310,7 +310,7 @@ jobs:
         -   name: >
                 Run tox for
                 "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 60
+            timeout-minutes: 5
             run: >
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k test_control.py
@@ -348,7 +348,7 @@ jobs:
         -   name: >
                 Run tox for
                 "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 60
+            timeout-minutes: 5
             run: >
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k test_signals.py
@@ -386,7 +386,7 @@ jobs:
         -   name: >
                 Run tox for
                 "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 60
+            timeout-minutes: 10
             run: >
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k test_tasks.py
@@ -424,7 +424,7 @@ jobs:
         -   name: >
                 Run tox for
                 "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 60
+            timeout-minutes: 10
             run: >
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k test_thread_safe.py
@@ -462,7 +462,7 @@ jobs:
         -   name: >
                 Run tox for
                 "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 60
+            timeout-minutes: 20
             run: >
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k test_worker.py
