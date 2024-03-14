@@ -1,1 +1,1 @@
-pytest-celery==1.0.0b4
+pytest-celery[all]==1.0.0b4
