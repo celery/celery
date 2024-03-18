@@ -396,7 +396,7 @@ class Signature(dict):
         else:
             args, kwargs, options = self.args, self.kwargs, self.options
         # pylint: disable=too-many-function-args
-        #   Borks on this, as it's a property
+        #   Works on this, as it's a property
         return _apply(args, kwargs, **options)
 
     def _merge(self, args=None, kwargs=None, options=None, force=False):
@@ -515,7 +515,7 @@ class Signature(dict):
         if group_index is not None:
             opts['group_index'] = group_index
         # pylint: disable=too-many-function-args
-        #   Borks on this, as it's a property.
+        #   Works on this, as it's a property.
         return self.AsyncResult(tid)
 
     _freeze = freeze
