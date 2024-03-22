@@ -17,8 +17,9 @@ class Task(ResultModelBase):
     __tablename__ = 'celery_taskmeta'
     __table_args__ = {'sqlite_autoincrement': True}
 
-    id = sa.Column(sa.Integer, sa.Sequence('task_id_sequence'),
-                   primary_key=True, autoincrement=True)
+    id = sa.Column(sa.Integer, sa.Sequence('task_id_sequence',
+                    start=1, increment=1, minvalue=1, cycle=False),
+                    primary_key=True, autoincrement=True)
     task_id = sa.Column(sa.String(155), unique=True)
     status = sa.Column(sa.String(50), default=states.PENDING)
     result = sa.Column(PickleType, nullable=True)
@@ -80,8 +81,9 @@ class TaskSet(ResultModelBase):
     __tablename__ = 'celery_tasksetmeta'
     __table_args__ = {'sqlite_autoincrement': True}
 
-    id = sa.Column(sa.Integer, sa.Sequence('taskset_id_sequence'),
-                   autoincrement=True, primary_key=True)
+    id = sa.Column(sa.Integer, sa.Sequence('taskset_id_sequence',
+                    start=1, increment=1, minvalue=1, cycle=False),
+                    autoincrement=True, primary_key=True)
     taskset_id = sa.Column(sa.String(155), unique=True)
     result = sa.Column(PickleType, nullable=True)
     date_done = sa.Column(sa.DateTime, default=datetime.now(timezone.utc),
