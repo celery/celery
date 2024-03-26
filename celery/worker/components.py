@@ -222,7 +222,7 @@ class Consumer(bootsteps.StartStopStep):
             prefetch_count = max(w.max_concurrency, 1) * w.prefetch_multiplier
         else:
             prefetch_count = w.concurrency * w.prefetch_multiplier
-        c = w.consumer = self.instantiate(
+        c = w.consumer = [self.instantiate(
             w.consumer_cls, w.process_task,
             hostname=w.hostname,
             task_events=w.task_events,
@@ -236,5 +236,22 @@ class Consumer(bootsteps.StartStopStep):
             worker_options=w.options,
             disable_rate_limits=w.disable_rate_limits,
             prefetch_multiplier=w.prefetch_multiplier,
-        )
+            url='redis://localhost/0'
+        ),
+            self.instantiate(
+                w.consumer_cls, w.process_task,
+                hostname=w.hostname,
+                task_events=w.task_events,
+                init_callback=w.ready_callback,
+                initial_prefetch_count=prefetch_count,
+                pool=w.pool,
+                timer=w.timer,
+                app=w.app,
+                controller=w,
+                hub=w.hub,
+                worker_options=w.options,
+                disable_rate_limits=w.disable_rate_limits,
+                prefetch_multiplier=w.prefetch_multiplier,
+                url='redis://localhost/1'
+            )]
         return c

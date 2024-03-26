@@ -158,7 +158,7 @@ class WorkController:
 
     def on_stopped(self):
         self.timer.stop()
-        self.consumer.shutdown()
+        self.consumer[0].shutdown()
 
         if self.pidlock:
             self.pidlock.release()
