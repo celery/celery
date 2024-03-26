@@ -234,6 +234,35 @@ class test_default_strategy_proto2:
                                              request=ANY,
                                              signal=signals.task_received)
 
+    def test_log_task_received_meta(self, caplog):
+        class Formatter:
+            def __init__(self, base_formatter):
+                self.base_formatter = base_formatter
+
+            def format(self, record):
+                record.foo = "bar"
+                return self.base_formatter.format(record)
+
+        old_formatter = caplog.handler.formatter
+
+        def callback(*args, **kwargs):
+            caplog.handler.setFormatter(Formatter(old_formatter))
+
+        caplog.set_level(logging.INFO, logger="celery.worker.strategy")
+
+        with self._context(
+            self.add.s(2, 2)
+        ) as C:
+            signals.task_received.connect(callback)
+            C()
+        for record in caplog.records:
+            if record.msg == LOG_RECEIVED:
+                assert record.foo == "bar"
+                caplog.handler.setFormatter(old_formatter)
+                break
+        else:
+            raise ValueError("Expected message not in captured log records")
+
     def test_when_events_disabled(self):
         with self._context(self.add.s(2, 2), events=False) as C:
             C()
