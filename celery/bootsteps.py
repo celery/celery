@@ -362,10 +362,19 @@ class StartStopStep(Step):
 
     def start(self, parent):
         if self.obj:
+            if isinstance(self.obj, list):
+                from threading import Thread
+                y = Thread(target=self.obj[1].start)
+                x = Thread(target=self.obj[0].start)
+                x.start()
+                y.start()
+                return [x,y]
             return self.obj.start()
 
     def stop(self, parent):
         if self.obj:
+            if isinstance(self.obj, list):
+                return [o.stop() for o in self.obj]
             return self.obj.stop()
 
     def close(self, parent):
