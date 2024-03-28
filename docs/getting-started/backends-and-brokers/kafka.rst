@@ -17,7 +17,9 @@ For celeryconfig.py:
     result_backend = 'redis://localhost:6379/0'
     broker_transport_options = {"allow_create_topics": True}
     task_serializer = 'json'
-    result_serializer = 'json'
+
+Please note that "allow_create_topics" is needed if the topic does not exist
+yet but is not necessary otherwise.
 
 For tasks.py:
 
