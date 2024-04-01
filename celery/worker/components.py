@@ -236,7 +236,7 @@ class Consumer(bootsteps.StartStopStep):
             worker_options=w.options,
             disable_rate_limits=w.disable_rate_limits,
             prefetch_multiplier=w.prefetch_multiplier,
-            url='redis://localhost/0'
+            url=w.app.conf.broker_url.split(';')[0]
         ),
             self.instantiate(
                 w.consumer_cls, w.process_task,
@@ -252,6 +252,6 @@ class Consumer(bootsteps.StartStopStep):
                 worker_options=w.options,
                 disable_rate_limits=w.disable_rate_limits,
                 prefetch_multiplier=w.prefetch_multiplier,
-                url='redis://localhost/1'
+                url=w.app.conf.broker_url.split(';')[1]
             )]
         return c
