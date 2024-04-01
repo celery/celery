@@ -4,7 +4,20 @@ FROM python:3.10-bookworm
 RUN adduser --disabled-password --gecos "" test_user
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y build-essential
+RUN apt-get update && apt-get install -y build-essential \
+    git \
+    wget \
+    make \
+    curl \
+    apt-utils \
+    debconf \
+    lsb-release \
+    libmemcached-dev \
+    libffi-dev \
+    ca-certificates \
+    pypy3 \
+    pypy3-lib \
+    sudo
 
 # Set arguments
 ARG CELERY_VERSION=""
