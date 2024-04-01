@@ -34,3 +34,17 @@ For tasks.py:
     @app.task
     def add(x, y):
         return x + y
+
+Auth
+====
+
+TODO: Document how to properly authenticate with a kafka broker that uses SASL, for example.
+
+Further Info
+============
+
+Celery queues get routed to Kafka topics. For example, if a queue is named "add_queue",
+then a topic named "add_queue" will be created/used in Kafka.
+
+For canvas, when using a backend that supports it, the typical mechanisms like
+chain, group, and chord seem to work.
