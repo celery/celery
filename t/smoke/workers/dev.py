@@ -53,6 +53,7 @@ default_worker_container = container(
     },
     wrapper_class=SmokeWorkerContainer,
     timeout=defaults.DEFAULT_WORKER_CONTAINER_TIMEOUT,
+    command=fxtr("default_worker_command"),
 )
 
 
