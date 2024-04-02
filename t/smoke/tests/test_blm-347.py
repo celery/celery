@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import pytest
-from pytest_celery import (RABBITMQ_CONTAINER_TIMEOUT, RABBITMQ_PORTS, CeleryBackendCluster, CeleryBrokerCluster,
-                           CeleryTestSetup, RabbitMQContainer, RabbitMQTestBroker, RedisTestBackend)
+from pytest_celery import (RABBITMQ_CONTAINER_TIMEOUT, RABBITMQ_PORTS, RESULT_TIMEOUT, CeleryBackendCluster,
+                           CeleryBrokerCluster, CeleryTestSetup, RabbitMQContainer, RabbitMQTestBroker,
+                           RedisTestBackend)
 from pytest_docker_tools import build, container, fxtr
 
 from celery import Celery
@@ -209,13 +210,15 @@ def test_blm_348(
     broker2: RabbitMQManagementTestBroker,
 ):
     # Publish to broker1
-    app1 = Celery(celery_setup.app.main)
-    app1.conf = celery_setup.app.conf
-    app1.conf["broker_url"] = broker1.config()["host_url"]
-    assert identity.s("test_blm_348").apply_async(app=app1).get(timeout=5) == "test_blm_348"
+    app = Celery(celery_setup.app.main)
+    app.conf = celery_setup.app.conf
+    app.conf["broker_url"] = broker1.config()["host_url"]
+    assert identity.s("test_blm_348").apply_async(app=app).get(timeout=RESULT_TIMEOUT) == "test_blm_348"
+    print(celery_setup.worker.logs())
 
     # Publish to broker2
-    app2 = Celery(celery_setup.app.main)
-    app2.conf = celery_setup.app.conf
-    app2.conf["broker_url"] = broker2.config()["host_url"]
-    assert identity.s("test_blm_348").apply_async(app=app1).get(timeout=5) == "test_blm_348"
+    app = Celery(celery_setup.app.main)
+    app.conf = celery_setup.app.conf
+    app.conf["broker_url"] = broker2.config()["host_url"]
+    assert identity.s("test_blm_348").apply_async(app=app).get(timeout=RESULT_TIMEOUT) == "test_blm_348"
+    print(celery_setup.worker.logs())
