@@ -63,7 +63,7 @@ For tasks.py:
 Auth
 ====
 
-TODO: Document how to properly authenticate with a kafka broker that uses SASL, for example.
+See above. The SASL username and password are passed in as environment variables.
 
 Further Info
 ============
