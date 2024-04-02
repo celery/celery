@@ -4,7 +4,7 @@ pytest-rerunfailures==14.0
 pytest-subtests==0.12.1
 pytest-timeout==2.3.1
 pytest-click==1.1.0
-pytest-order==1.2.0
+pytest-order==1.2.1
 boto3>=1.26.143
 moto>=4.1.11,<5.1.0
 # typing extensions
