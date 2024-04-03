@@ -12,7 +12,6 @@ from celery._state import _set_task_join_will_block
 from celery.exceptions import ImproperlyConfigured
 from celery.platforms import IS_WINDOWS
 from celery.utils.log import worker_logger as logger
-from celery.utils.threads import bgThread
 
 __all__ = ('Timer', 'Hub', 'Pool', 'Beat', 'StateDB', 'Consumer')
 
@@ -259,29 +258,11 @@ class Consumer(bootsteps.StartStopStep):
 
     def start(self, parent):
         if self.obj:
-            # self.obj[0].start()
-            # self.obj[1].start()
-            # return True
             if isinstance(self.obj, list):
-                # from threading import Thread
-                # y = Thread(target=self.obj[1].start)
-                # x = Thread(target=self.obj[0].start)
-                # x.start()
-                # y.start()
-                # return [x,y]
-                broker0 = StartConsumerThread(name='broker0', obj=self.obj[0])
-                broker1 = StartConsumerThread(name='broker1', obj=self.obj[1])
-                broker0.start()
-                broker1.start()
-                return [broker0, broker1]
+                from threading import Thread
+                y = Thread(target=self.obj[0].start)
+                x = Thread(target=self.obj[1].start)
+                x.start()
+                y.start()
+                return [x, y]
             return self.obj.start()
-
-
-
-class StartConsumerThread(bgThread):
-    def __init__(self, name=None, obj=None, **kwargs):
-        super().__init__(name, **kwargs)
-        self.obj = obj
-
-    def body(self):
-        self.obj.start()
