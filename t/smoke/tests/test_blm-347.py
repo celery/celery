@@ -120,8 +120,8 @@ class WorkerContainer(SmokeWorkerContainer):
             "--without-gossip",
             "--without-mingle",
             "--without-heartbeat",
-            "-P",
-            "gevent",
+            # "-P",
+            # "gevent",
         )
 
     @classmethod
