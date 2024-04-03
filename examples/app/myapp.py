@@ -1,45 +1,35 @@
-"""myapp.py
-
-Usage::
-
-   (window1)$ python myapp.py worker -l INFO
-
-   (window2)$ python
-   >>> from myapp import add
-   >>> add.delay(16, 16).get()
-   32
-
-
-You can also specify the app to use with the `celery` command,
-using the `-A` / `--app` option::
-
-    $ celery -A myapp worker -l INFO
-
-With the `-A myproj` argument the program will search for an app
-instance in the module ``myproj``.  You can also specify an explicit
-name using the fully qualified form::
-
-    $ celery -A myapp:app worker -l INFO
-
-"""
-from time import sleep
-
 from celery import Celery
+from celery.canvas import chain, group
 
 app = Celery(
-    'myapp',
-    broker='amqp://guest@localhost//',
-    # ## add result backend here if needed.
-    # backend='rpc'
-    task_acks_late=True
+    "myapp",
+    broker="redis://localhost/1",
 )
 
 
 @app.task
-def add(x, y):
-    sleep(10)
-    return x + y
+def identity(x):
+    return x
 
 
-if __name__ == '__main__':
+@app.task
+def fail():
+    raise Exception("fail")
+
+
+chain_sig = chain(
+    identity.si("start"),
+    group(
+        identity.si("a"),
+        fail.si(),
+    ),
+    identity.si("break"),
+    identity.si("end"),
+)
+
+# chain_sig = identity.si("break") | identity.si("end")
+# chain_sig.freeze()
+# result = chain_sig.apply_async()
+
+if __name__ == "__main__":
     app.start()

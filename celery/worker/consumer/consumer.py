@@ -181,7 +181,8 @@ class Consumer:
                  pool=None, app=None,
                  timer=None, controller=None, hub=None, amqheartbeat=None,
                  worker_options=None, disable_rate_limits=False,
-                 initial_prefetch_count=2, prefetch_multiplier=1, **kwargs):
+                 initial_prefetch_count=2, prefetch_multiplier=1, url=None, **kwargs):
+        self.url = url
         self.app = app
         self.controller = controller
         self.init_callback = init_callback
@@ -474,7 +475,7 @@ class Consumer:
 
     def connection_for_read(self, heartbeat=None):
         return self.ensure_connected(
-            self.app.connection_for_read(heartbeat=heartbeat))
+            self.app.connection_for_read(url=self.url, heartbeat=heartbeat))
 
     def connection_for_write(self, heartbeat=None):
         return self.ensure_connected(

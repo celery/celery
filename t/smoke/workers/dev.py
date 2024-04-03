@@ -40,6 +40,7 @@ celery_dev_worker_image = build(
 
 default_worker_container = container(
     image="{celery_dev_worker_image.id}",
+    ports={"5678/tcp": "5678"},
     environment=fxtr("default_worker_env"),
     network="{default_pytest_celery_network.name}",
     volumes={
