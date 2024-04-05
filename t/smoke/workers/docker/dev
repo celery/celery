@@ -30,6 +30,8 @@ ENV WORKER_QUEUE=$CELERY_WORKER_QUEUE
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
+EXPOSE 5678
+
 # Install celery from source
 WORKDIR /celery
 
@@ -37,7 +39,7 @@ COPY --chown=test_user:test_user . /celery
 RUN pip install --no-cache-dir --upgrade \
     pip \
     -e /celery[redis,pymemcache] \
-    pytest-celery==1.0.0rc2
+    pytest-celery==1.0.0rc3
 
 # The workdir must be /app
 WORKDIR /app
