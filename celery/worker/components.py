@@ -255,3 +255,14 @@ class Consumer(bootsteps.StartStopStep):
                 url=w.app.conf.broker_url.split(';')[1]
             )]
         return c
+
+    def start(self, parent):
+        if self.obj:
+            if isinstance(self.obj, list):
+                from threading import Thread
+                y = Thread(target=self.obj[0].start)
+                x = Thread(target=self.obj[1].start)
+                x.start()
+                y.start()
+                return [x, y]
+            return self.obj.start()
