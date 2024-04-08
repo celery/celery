@@ -158,7 +158,11 @@ class WorkController:
 
     def on_stopped(self):
         self.timer.stop()
-        self.consumer[0].shutdown()
+        if isinstance(self.consumer, list):
+            for consumer in self.consumer:
+                consumer.shutdown()
+        else:
+            self.consumer.shutdown()
 
         if self.pidlock:
             self.pidlock.release()
