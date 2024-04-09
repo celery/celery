@@ -222,7 +222,39 @@ class Consumer(bootsteps.StartStopStep):
             prefetch_count = max(w.max_concurrency, 1) * w.prefetch_multiplier
         else:
             prefetch_count = w.concurrency * w.prefetch_multiplier
-        c = w.consumer = [self.instantiate(
+        # c = w.consumer = [self.instantiate(
+        #     w.consumer_cls, w.process_task,
+        #     hostname=w.hostname,
+        #     task_events=w.task_events,
+        #     init_callback=w.ready_callback,
+        #     initial_prefetch_count=prefetch_count,
+        #     pool=w.pool,
+        #     timer=w.timer,
+        #     app=w.app,
+        #     controller=w,
+        #     hub=w.hub,
+        #     worker_options=w.options,
+        #     disable_rate_limits=w.disable_rate_limits,
+        #     prefetch_multiplier=w.prefetch_multiplier,
+        #     url=w.app.conf.broker_url.split(';')[0]
+        # ),
+        #     self.instantiate(
+        #         w.consumer_cls, w.process_task,
+        #         hostname=w.hostname,
+        #         task_events=w.task_events,
+        #         init_callback=w.ready_callback,
+        #         initial_prefetch_count=prefetch_count,
+        #         pool=w.pool,
+        #         timer=w.timer,
+        #         app=w.app,
+        #         controller=w,
+        #         hub=w.hub,
+        #         worker_options=w.options,
+        #         disable_rate_limits=w.disable_rate_limits,
+        #         prefetch_multiplier=w.prefetch_multiplier,
+        #         url=w.app.conf.broker_url.split(';')[1]
+        #     )]
+        c = w.consumer = self.instantiate(
             w.consumer_cls, w.process_task,
             hostname=w.hostname,
             task_events=w.task_events,
@@ -236,33 +268,13 @@ class Consumer(bootsteps.StartStopStep):
             worker_options=w.options,
             disable_rate_limits=w.disable_rate_limits,
             prefetch_multiplier=w.prefetch_multiplier,
-            url=w.app.conf.broker_url.split(';')[0]
-        ),
-            self.instantiate(
-                w.consumer_cls, w.process_task,
-                hostname=w.hostname,
-                task_events=w.task_events,
-                init_callback=w.ready_callback,
-                initial_prefetch_count=prefetch_count,
-                pool=w.pool,
-                timer=w.timer,
-                app=w.app,
-                controller=w,
-                hub=w.hub,
-                worker_options=w.options,
-                disable_rate_limits=w.disable_rate_limits,
-                prefetch_multiplier=w.prefetch_multiplier,
-                url=w.app.conf.broker_url.split(';')[1]
-            )]
+            url=w.app.conf.broker_url
+        )
         return c
 
-    def start(self, parent):
-        if self.obj:
-            if isinstance(self.obj, list):
-                from threading import Thread
-                y = Thread(target=self.obj[0].start)
-                x = Thread(target=self.obj[1].start)
-                x.start()
-                y.start()
-                return [x, y]
-            return self.obj.start()
+    # def start(self, parent):
+    #     if self.obj:
+    #         obj = self.obj
+    #         if isinstance(self.obj, list):
+    #             obj = self.obj[0]
+    #         return obj.start()

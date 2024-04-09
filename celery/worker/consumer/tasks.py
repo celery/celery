@@ -18,7 +18,8 @@ class Tasks(bootsteps.StartStopStep):
     requires = (Mingle,)
 
     def __init__(self, c, **kwargs):
-        c.task_consumer = c.qos = None
+        c.qos = None
+        c.task_consumer = []
         super().__init__(c, **kwargs)
 
     def start(self, c):
@@ -28,37 +29,40 @@ class Tasks(bootsteps.StartStopStep):
         # - RabbitMQ 3.3 completely redefines how basic_qos works...
         # This will detect if the new qos semantics is in effect,
         # and if so make sure the 'apply_global' flag is set on qos updates.
-        qos_global = not c.connection.qos_semantics_matches_spec
+        qos_global = all(not conn.qos_semantics_matches_spec for conn in c.connection)
 
         # set initial prefetch count
-        c.connection.default_channel.basic_qos(
-            0, c.initial_prefetch_count, qos_global,
-        )
-
-        c.task_consumer = c.app.amqp.TaskConsumer(
-            c.connection, on_decode_error=c.on_decode_error,
-        )
-
-        def set_prefetch_count(prefetch_count):
-            return c.task_consumer.qos(
-                prefetch_count=prefetch_count,
-                apply_global=qos_global,
+        for conn in c.connection:
+            conn.default_channel.basic_qos(
+                0, c.initial_prefetch_count, qos_global,
             )
-        c.qos = QoS(set_prefetch_count, c.initial_prefetch_count)
+
+            c.task_consumer.append(c.app.amqp.TaskConsumer(
+                conn, on_decode_error=c.on_decode_error,
+            ))
+
+        for task_consumer in c.task_consumer:
+            def set_prefetch_count(prefetch_count):
+                return task_consumer.qos(
+                    prefetch_count=prefetch_count,
+                    apply_global=qos_global,
+                )
+            c.qos = QoS(set_prefetch_count, c.initial_prefetch_count)
 
     def stop(self, c):
         """Stop task consumer."""
-        if c.task_consumer:
+        for task_consumer in c.task_consumer:
             debug('Canceling task consumer...')
-            ignore_errors(c, c.task_consumer.cancel)
+            ignore_errors(c, task_consumer.cancel)
 
     def shutdown(self, c):
         """Shutdown task consumer."""
         if c.task_consumer:
             self.stop(c)
-            debug('Closing consumer channel...')
-            ignore_errors(c, c.task_consumer.close)
-            c.task_consumer = None
+            for task_consumer in c.task_consumer:
+                debug('Closing consumer channel...')
+                ignore_errors(c, task_consumer.close)
+                task_consumer = None
 
     def info(self, c):
         """Return task consumer info."""

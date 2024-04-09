@@ -468,14 +468,17 @@ class Consumer:
         Retries establishing the connection if the
         :setting:`broker_connection_retry` setting is enabled
         """
-        conn = self.connection_for_read(heartbeat=self.amqheartbeat)
-        if self.hub:
-            conn.transport.register_with_event_loop(conn.connection, self.hub)
-        return conn
+        connections = list()
+        for url in self.app.conf.broker_url.split(';'):
+            conn = self.connection_for_read(heartbeat=self.amqheartbeat, url=url)
+            if self.hub:
+                conn.transport.register_with_event_loop(conn.connection, self.hub)
+            connections.append(conn)
+        return connections
 
-    def connection_for_read(self, heartbeat=None):
+    def connection_for_read(self, heartbeat=None, url=None):
         return self.ensure_connected(
-            self.app.connection_for_read(url=self.url, heartbeat=heartbeat))
+            self.app.connection_for_read(url=url, heartbeat=heartbeat))
 
     def connection_for_write(self, heartbeat=None):
         return self.ensure_connected(
@@ -542,30 +545,33 @@ class Consumer:
 
     def add_task_queue(self, queue, exchange=None, exchange_type=None,
                        routing_key=None, **options):
-        cset = self.task_consumer
-        queues = self.app.amqp.queues
-        # Must use in' here, as __missing__ will automatically
-        # create queues when :setting:`task_create_missing_queues` is enabled.
-        # (Issue #1079)
-        if queue in queues:
-            q = queues[queue]
-        else:
-            exchange = queue if exchange is None else exchange
-            exchange_type = ('direct' if exchange_type is None
-                             else exchange_type)
-            q = queues.select_add(queue,
-                                  exchange=exchange,
-                                  exchange_type=exchange_type,
-                                  routing_key=routing_key, **options)
-        if not cset.consuming_from(queue):
-            cset.add_queue(q)
-            cset.consume()
-            info('Started consuming from %s', queue)
+        for cset in self.task_consumer:
+            queues = self.app.amqp.queues
+            # Must use in' here, as __missing__ will automatically
+            # create queues when :setting:`task_create_missing_queues` is enabled.
+            # (Issue #1079)
+            if queue in queues:
+                q = queues[queue]
+            else:
+                exchange = queue if exchange is None else exchange
+                exchange_type = "direct" if exchange_type is None else exchange_type
+                q = queues.select_add(
+                    queue,
+                    exchange=exchange,
+                    exchange_type=exchange_type,
+                    routing_key=routing_key,
+                    **options,
+                )
+            if not cset.consuming_from(queue):
+                cset.add_queue(q)
+                cset.consume()
+                info("Started consuming from %s", queue)
 
     def cancel_task_queue(self, queue):
         info('Canceling queue %s', queue)
         self.app.amqp.queues.deselect(queue)
-        self.task_consumer.cancel_by_queue(queue)
+        for c in self.task_consumer:
+            c.cancel_by_queue(queue)
 
     def apply_eta_task(self, task):
         """Method called by the timer to apply a task with an ETA/countdown."""

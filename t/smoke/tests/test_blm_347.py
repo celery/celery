@@ -112,8 +112,8 @@ class WorkerContainer(SmokeWorkerContainer):
             "--without-gossip",
             "--without-mingle",
             "--without-heartbeat",
-            "-P",
-            "gevent",
+            # "-P",
+            # "gevent",
             debugpy=True,
             wait_for_client=False,
         )
@@ -250,6 +250,7 @@ def test_blm_348_publish_to_two_brokers(
     assert res.get(timeout=RESULT_TIMEOUT) == "test_blm_348"
 
     print("Done\n" + celery_setup.worker.logs())
+    pass
 
 
 def test_blm_348_large_traffic(
