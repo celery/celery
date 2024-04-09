@@ -90,8 +90,8 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
             # We only update QoS when there's no more messages to read.
             # This groups together qos calls, and makes sure that remote
             # control commands will be prioritized over task messages.
-            if qos.prev != qos.value:
-                update_qos()
+            # if qos.prev != qos.value:
+            #     update_qos()
 
             try:
                 next(loop)
