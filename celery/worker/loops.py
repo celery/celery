@@ -52,19 +52,16 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     """Non-blocking event loop."""
     RUN = bootsteps.RUN
     update_qos = qos.update
-    errors = connection[0].connection_errors
+    errors = connection.connection_errors
 
     on_task_received = obj.create_task_handler()
 
-    heartbeat_error0 = _enable_amqheartbeats(hub.timer, connection[0], rate=hbrate)
-    heartbeat_error1 = _enable_amqheartbeats(hub.timer, connection[1], rate=hbrate)
+    heartbeat_error = _enable_amqheartbeats(hub.timer, connection, rate=hbrate)
 
-    for c in consumer:
-        c.on_message = on_task_received
+    consumer.on_message = on_task_received
     obj.controller.register_with_event_loop(hub)
     obj.register_with_event_loop(hub)
-    for c in consumer:
-        c.consume()
+    consumer.consume()
     obj.on_ready()
 
     # did_start_ok will verify that pool processes were able to start,
@@ -76,9 +73,8 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     # consumer.consume() may have prefetched up to our
     # limit - drain an event so we're in a clean state
     # prior to starting our event loop.
-    for conn in connection:
-        if conn.transport.driver_type == 'amqp':
-            hub.call_soon(_quick_drain, conn)
+    if connection.transport.driver_type == 'amqp':
+        hub.call_soon(_quick_drain, connection)
 
     # FIXME: Use loop.run_forever
     # Tried and works, but no time to test properly before release.
@@ -88,10 +84,8 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     try:
         while blueprint.state == RUN and obj.connection:
             state.maybe_shutdown()
-            if heartbeat_error0[0] is not None:
-                raise heartbeat_error0[0]
-            if heartbeat_error1[0] is not None:
-                raise heartbeat_error1[0]
+            if heartbeat_error[0] is not None:
+                raise heartbeat_error[0]
 
             # We only update QoS when there's no more messages to read.
             # This groups together qos calls, and makes sure that remote

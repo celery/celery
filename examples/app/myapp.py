@@ -3,7 +3,7 @@ from celery.canvas import chain, group
 
 app = Celery(
     "myapp",
-    broker="amqp://localhost:5672;amqp://localhost:5673",
+    broker="redis://localhost/1",
 )
 
 

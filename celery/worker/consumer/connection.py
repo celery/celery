@@ -18,18 +18,15 @@ class Connection(bootsteps.StartStopStep):
         super().__init__(c, **kwargs)
 
     def start(self, c):
-        c.connection = c.connection
         c.connection = c.connect()
-        for conn in c.connection:
-            info('Connected to %s', conn.as_uri())
+        info('Connected to %s', c.connection.as_uri())
 
     def shutdown(self, c):
         # We must set self.connection to None here, so
         # that the green pidbox thread exits.
         connection, c.connection = c.connection, None
         if connection:
-            for conn in connection:
-                ignore_errors(conn, conn.close)
+            ignore_errors(connection, connection.close)
 
     def info(self, c):
         params = 'N/A'
