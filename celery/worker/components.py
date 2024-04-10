@@ -95,6 +95,56 @@ class Hub(bootsteps.StartStopStep):
             pool.Lock = DummyLock
 
 
+class Hub2(bootsteps.StartStopStep):
+    """Worker starts the event loop."""
+
+    requires = (Timer,)
+
+    def __init__(self, w, **kwargs):
+        w.hub2 = None
+        super().__init__(w, **kwargs)
+
+    def include_if(self, w):
+        return w.use_eventloop
+
+    def create(self, w):
+        # def get_event_loop() -> Hub | None:
+        #     """Get current event loop object."""
+        #     return _current_loop
+        # def set_event_loop(loop: Hub | None) -> Hub | None:
+        #     """Set the current event loop object."""
+        #     global _current_loop
+        #     _current_loop = loop
+        #     return loop
+        # w.hub2 = get_event_loop()
+        if w.hub2 is None:
+            required_hub = getattr(w._conninfo, 'requires_hub', None)
+            w.hub2 = set_event_loop((
+                required_hub if required_hub else _Hub)(w.timer))
+        self._patch_thread_primitives(w)
+        return self
+
+    def start(self, w):
+        pass
+
+    def stop(self, w):
+        w.hub2.close()
+
+    def terminate(self, w):
+        w.hub2.close()
+
+    def _patch_thread_primitives(self, w):
+        # make clock use dummy lock
+        w.app.clock.mutex = DummyLock()
+        # multiprocessing's ApplyResult uses this lock.
+        try:
+            from billiard import pool
+        except ImportError:
+            pass
+        else:
+            pool.Lock = DummyLock
+
+
 class Pool(bootsteps.StartStopStep):
     """Bootstep managing the worker pool.
 
@@ -215,6 +265,8 @@ class StateDB(bootsteps.Step):
 class Consumer(bootsteps.StartStopStep):
     """Bootstep starting the Consumer blueprint."""
 
+    requires = ('celery.worker.components:Hub2',)
+
     last = True
 
     def create(self, w):
@@ -248,7 +300,7 @@ class Consumer(bootsteps.StartStopStep):
                 timer=w.timer,
                 app=w.app,
                 controller=w,
-                hub=w.hub,
+                hub=w.hub2,
                 worker_options=w.options,
                 disable_rate_limits=w.disable_rate_limits,
                 prefetch_multiplier=w.prefetch_multiplier,
