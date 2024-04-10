@@ -479,7 +479,7 @@ class Consumer:
 
     def connection_for_write(self, heartbeat=None):
         return self.ensure_connected(
-            self.app.connection_for_write(heartbeat=heartbeat))
+            self.app.connection_for_write(url=self.url, heartbeat=heartbeat))
 
     def ensure_connected(self, conn):
         # Callback called for each retry while the connection
