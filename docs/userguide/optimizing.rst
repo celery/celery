@@ -18,7 +18,7 @@ responsiveness at times of high load.
 Ensuring Operations
 ===================
 
-In the book `Programming Pearls`_, Jon Bentley presents the concept of
+In the book Programming Pearls, Jon Bentley presents the concept of
 back-of-the-envelope calculations by asking the question;
 
     ❝ How much water flows out of the Mississippi River in a day? ❞
@@ -37,8 +37,6 @@ A way to do this is by :ref:`using Munin <monitoring-munin>`.
 You should set up alerts, that'll notify you as soon as any queue has
 reached an unacceptable size. This way you can take appropriate action
 like adding new worker nodes, or revoking unnecessary tasks.
-
-.. _`Programming Pearls`: http://www.cs.bell-labs.com/cm/cs/pearls/
 
 .. _`The back of the envelope`:
     http://books.google.com/books?id=kse_7qbWbjsC&pg=PA67
