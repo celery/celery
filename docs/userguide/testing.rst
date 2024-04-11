@@ -4,6 +4,23 @@
  Testing with Celery
 ================================================================
 
+Testing with Celery is divided into two parts:
+
+    * Unit & Integration: Using ``celery.contrib.pytest``.
+    * Smoke / Production: Using :pypi:`pytest-celery <pytest-celery>` >= 1.0.0
+
+Installing the pytest-celery plugin will install the ``celery.contrib.pytest`` infrastructure as well,
+alongside the pytest plugin infrastructure. The difference is how you use it.
+
+.. warning::
+
+     Both APIs are NOT compatible with each other. The pytest-celery plugin is Docker based
+     and the ``celery.contrib.pytest`` is mock based.
+
+To use the ``celery.contrib.pytest`` infrastructure, follow the instructions below.
+
+The pytest-celery plugin has its `own documentation <https://pytest-celery.readthedocs.io/>`_.
+
 Tasks and unit tests
 ====================
 
