@@ -112,8 +112,8 @@ class WorkerContainer(SmokeWorkerContainer):
             "--without-gossip",
             "--without-mingle",
             "--without-heartbeat",
-            "-P",
-            "gevent",
+            # "-P",
+            # "gevent",
             debugpy=True,
             wait_for_client=False,
         )
@@ -239,15 +239,13 @@ def test_blm_348_publish_to_two_brokers(
     broker2: RabbitMQManagementTestBroker,
     publish_to_broker,
 ):
-    sig: Signature = identity.s("test_blm_348")
-
     # Publish to broker1
-    res: AsyncResult = publish_to_broker(broker1, sig)
-    assert res.get(timeout=RESULT_TIMEOUT) == "test_blm_348"
+    res: AsyncResult = publish_to_broker(broker1, identity.s("broker1"))
+    assert res.get(timeout=RESULT_TIMEOUT) == "broker1"
 
     # Publish to broker2
-    res: AsyncResult = publish_to_broker(broker2, sig)
-    assert res.get(timeout=RESULT_TIMEOUT) == "test_blm_348"
+    res: AsyncResult = publish_to_broker(broker2, identity.s("broker2"))
+    assert res.get(timeout=RESULT_TIMEOUT) == "broker2"
 
     print("Done\n" + celery_setup.worker.logs())
 
