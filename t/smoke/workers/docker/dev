@@ -39,7 +39,7 @@ COPY --chown=test_user:test_user . /celery
 RUN pip install --no-cache-dir --upgrade \
     pip \
     -e /celery[redis,pymemcache] \
-    pytest-celery==1.0.0rc3
+    pytest-celery>=1.0.0
 
 # The workdir must be /app
 WORKDIR /app
