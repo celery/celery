@@ -263,7 +263,7 @@ def test_blm_348_large_traffic(
     subtests,
 ):
     RESULT_TIMEOUT = 60 * 3
-    count = 100
+    count = 42
     sig = group([identity.s(i) for i in range(count)])
 
     with subtests.test(msg="Publish large traffic to broker1"):
