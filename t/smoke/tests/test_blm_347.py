@@ -238,14 +238,19 @@ def test_blm_348_publish_to_two_brokers(
     broker1: RabbitMQManagementTestBroker,
     broker2: RabbitMQManagementTestBroker,
     publish_to_broker,
+    subtests,
 ):
-    # Publish to broker1
-    res: AsyncResult = publish_to_broker(broker1, identity.s("broker1"))
-    assert res.get(timeout=RESULT_TIMEOUT) == "broker1"
+    with subtests.test(msg="Publish to broker1"):
+        res: AsyncResult = publish_to_broker(broker1, identity.s("broker1"))
 
-    # Publish to broker2
-    res: AsyncResult = publish_to_broker(broker2, identity.s("broker2"))
-    assert res.get(timeout=RESULT_TIMEOUT) == "broker2"
+    with subtests.test(msg="Assert get() == 'broker1'"):
+        assert res.get(timeout=RESULT_TIMEOUT) == "broker1"
+
+    with subtests.test(msg="Publish to broker2"):
+        res: AsyncResult = publish_to_broker(broker2, identity.s("broker2"))
+
+    with subtests.test(msg="Assert get() == 'broker2'"):
+        assert res.get(timeout=RESULT_TIMEOUT) == "broker2"
 
     print("Done\n" + celery_setup.worker.logs())
 
@@ -255,26 +260,35 @@ def test_blm_348_large_traffic(
     broker1: RabbitMQManagementTestBroker,
     broker2: RabbitMQManagementTestBroker,
     publish_to_broker,
+    subtests,
 ):
     RESULT_TIMEOUT = 60 * 3
     count = 100
     sig = group([identity.s(i) for i in range(count)])
 
-    # Publish large traffic to broker1
-    res: AsyncResult = publish_to_broker(broker1, sig)
-    assert res.get(timeout=RESULT_TIMEOUT) == list(range(count))
+    with subtests.test(msg="Publish large traffic to broker1"):
+        res: AsyncResult = publish_to_broker(broker1, sig)
 
-    # Publish large traffic to broker2
-    res: AsyncResult = publish_to_broker(broker2, sig)
-    assert res.get(timeout=RESULT_TIMEOUT) == list(range(count))
+    with subtests.test(msg="Assert get() == list(range(count))"):
+        assert res.get(timeout=RESULT_TIMEOUT) == list(range(count))
 
-    # Publish to both brokers
-    sig1 = group(identity.s(i) for i in range(count // 2))
-    sig2 = group(identity.s(i) for i in range(count // 2, count))
-    res1: AsyncResult = publish_to_broker(broker1, sig1)
-    res2: AsyncResult = publish_to_broker(broker2, sig2)
-    assert res1.get(timeout=RESULT_TIMEOUT) == list(range(count // 2))
-    assert res2.get(timeout=RESULT_TIMEOUT) == list(range(count // 2, count))
+    with subtests.test(msg="Publish large traffic to broker2"):
+        res: AsyncResult = publish_to_broker(broker2, sig)
+
+    with subtests.test(msg="Assert get() == list(range(count))"):
+        assert res.get(timeout=RESULT_TIMEOUT) == list(range(count))
+
+    with subtests.test(msg="Publish to both brokers"):
+        sig1 = group(identity.s(i) for i in range(count // 2))
+        sig2 = group(identity.s(i) for i in range(count // 2, count))
+        res1: AsyncResult = publish_to_broker(broker1, sig1)
+        res2: AsyncResult = publish_to_broker(broker2, sig2)
+
+    with subtests.test(msg="Assert get() == list(range(count // 2))"):
+        assert res1.get(timeout=RESULT_TIMEOUT) == list(range(count // 2))
+
+    with subtests.test(msg="Assert get() == list(range(count // 2, count))"):
+        assert res2.get(timeout=RESULT_TIMEOUT) == list(range(count // 2, count))
 
     print("Done\n" + celery_setup.worker.logs())
 
@@ -284,13 +298,18 @@ def test_blm_348_broker2_only(
     broker1: RabbitMQManagementTestBroker,
     broker2: RabbitMQManagementTestBroker,
     publish_to_broker,
+    subtests,
 ):
     count = 10
     sig = group([identity.s(i) for i in range(count)])
 
-    # Publish large traffic to broker2
-    broker1.kill()
-    res: AsyncResult = publish_to_broker(broker2, sig)
-    assert res.get(timeout=RESULT_TIMEOUT) == list(range(count))
+    with subtests.test(msg="Kill broker1"):
+        broker1.kill()
+
+    with subtests.test(msg="Publish large traffic to broker2"):
+        res: AsyncResult = publish_to_broker(broker2, sig)
+
+    with subtests.test(msg="Assert get() == list(range(count))"):
+        assert res.get(timeout=RESULT_TIMEOUT) == list(range(count))
 
     print("Done\n" + celery_setup.worker.logs())
