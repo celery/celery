@@ -108,15 +108,6 @@ class Hub2(bootsteps.StartStopStep):
         return w.use_eventloop
 
     def create(self, w):
-        # def get_event_loop() -> Hub | None:
-        #     """Get current event loop object."""
-        #     return _current_loop
-        # def set_event_loop(loop: Hub | None) -> Hub | None:
-        #     """Set the current event loop object."""
-        #     global _current_loop
-        #     _current_loop = loop
-        #     return loop
-        # w.hub2 = get_event_loop()
         if w.hub2 is None:
             required_hub = getattr(w._conninfo, 'requires_hub', None)
             w.hub2 = set_event_loop((
