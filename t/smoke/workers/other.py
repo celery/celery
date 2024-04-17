@@ -11,6 +11,8 @@ from t.smoke.workers.dev import SmokeWorkerContainer
 
 
 class OtherSmokeWorkerContainer(SmokeWorkerContainer):
+    """Alternative worker with different name and queue, but same configurations for the rest."""
+
     @classmethod
     def worker_name(cls) -> str:
         return "other_smoke_tests_worker"
@@ -20,6 +22,7 @@ class OtherSmokeWorkerContainer(SmokeWorkerContainer):
         return "other_smoke_tests_queue"
 
 
+# Build the image like the dev worker
 celery_other_dev_worker_image = build(
     path=".",
     dockerfile="t/smoke/workers/docker/dev",
@@ -28,6 +31,7 @@ celery_other_dev_worker_image = build(
 )
 
 
+# Define container settings like the dev worker
 other_dev_worker_container = container(
     image="{celery_other_dev_worker_image.id}",
     environment=fxtr("default_worker_env"),
@@ -43,6 +47,7 @@ other_dev_worker_container = container(
     },
     wrapper_class=OtherSmokeWorkerContainer,
     timeout=defaults.DEFAULT_WORKER_CONTAINER_TIMEOUT,
+    command=OtherSmokeWorkerContainer.command(),
 )
 
 
@@ -51,6 +56,7 @@ def celery_other_dev_worker(
     other_dev_worker_container: OtherSmokeWorkerContainer,
     celery_setup_app: Celery,
 ) -> CeleryTestWorker:
+    """Creates a pytest-celery worker node from the worker container."""
     worker = CeleryTestWorker(other_dev_worker_container, app=celery_setup_app)
     yield worker
     worker.teardown()

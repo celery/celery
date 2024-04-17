@@ -11,11 +11,14 @@ from t.smoke.workers.dev import SmokeWorkerContainer
 
 
 class AltSmokeWorkerContainer(SmokeWorkerContainer):
+    """Alternative worker with different name, but same configurations."""
+
     @classmethod
     def worker_name(cls) -> str:
         return "alt_smoke_tests_worker"
 
 
+# Build the image like the dev worker
 celery_alt_dev_worker_image = build(
     path=".",
     dockerfile="t/smoke/workers/docker/dev",
@@ -24,6 +27,7 @@ celery_alt_dev_worker_image = build(
 )
 
 
+# Define container settings like the dev worker
 alt_dev_worker_container = container(
     image="{celery_alt_dev_worker_image.id}",
     environment=fxtr("default_worker_env"),
@@ -39,6 +43,7 @@ alt_dev_worker_container = container(
     },
     wrapper_class=AltSmokeWorkerContainer,
     timeout=defaults.DEFAULT_WORKER_CONTAINER_TIMEOUT,
+    command=AltSmokeWorkerContainer.command(),
 )
 
 
@@ -47,6 +52,7 @@ def celery_alt_dev_worker(
     alt_dev_worker_container: AltSmokeWorkerContainer,
     celery_setup_app: Celery,
 ) -> CeleryTestWorker:
+    """Creates a pytest-celery worker node from the worker container."""
     worker = CeleryTestWorker(alt_dev_worker_container, app=celery_setup_app)
     yield worker
     worker.teardown()

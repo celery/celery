@@ -11,6 +11,7 @@ from t.smoke.tasks import (self_termination_delay_timeout, self_termination_exha
 
 
 class TaskTermination:
+    """Terminates a task in different ways."""
     class Method(Enum):
         SIGKILL = auto()
         SYSTEM_EXIT = auto()
@@ -22,6 +23,15 @@ class TaskTermination:
         worker: CeleryTestWorker,
         method: TaskTermination.Method,
     ) -> AsyncResult:
+        """Apply a task that will terminate itself.
+
+        Args:
+            worker (CeleryTestWorker): Take the queue of this worker.
+            method (TaskTermination.Method): The method to terminate the task.
+
+        Returns:
+            AsyncResult: The result of applying the task.
+        """
         try:
             self_termination_sig: Signature = {
                 TaskTermination.Method.SIGKILL: self_termination_sigkill.si(),

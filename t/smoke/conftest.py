@@ -18,11 +18,20 @@ class SuiteOperations(
     WorkerKill,
     WorkerRestart,
 ):
-    pass
+    """Optional operations that can be performed with different methods,
+    shared across the smoke tests suite.
+
+    Example Usage:
+    >>> class test_mysuite(SuiteOperations):
+    >>>     def test_something(self):
+    >>>         self.prepare_worker_with_conditions()
+    >>>         assert condition are met
+    """
 
 
 @pytest.fixture
 def default_worker_tasks(default_worker_tasks: set) -> set:
+    """Use all of the integration and smoke suites tasks in the smoke tests workers."""
     from t.integration import tasks as integration_tests_tasks
     from t.smoke import tasks as smoke_tests_tasks
 
@@ -30,6 +39,10 @@ def default_worker_tasks(default_worker_tasks: set) -> set:
     default_worker_tasks.add(smoke_tests_tasks)
     return default_worker_tasks
 
+
+# When using integration tests tasks that requires a Redis instance,
+# we use pytest-celery to raise a dedicated Redis container for the smoke tests suite that is configured
+# to be used by the integration tests tasks.
 
 redis_image = fetch(repository=REDIS_IMAGE)
 redis_test_container_network = network(scope="session")
@@ -44,6 +57,10 @@ redis_test_container: RedisContainer = container(
 )
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(
+    scope="session",
+    autouse=True,  # Ensure the configuration is applied automatically
+)
 def set_redis_test_container(redis_test_container: RedisContainer):
+    """Configure the Redis test container to be used by the integration tests tasks."""
     os.environ["REDIS_PORT"] = str(redis_test_container.port)

@@ -9,6 +9,11 @@ import celery
 
 
 class SmokeWorkerContainer(CeleryWorkerContainer):
+    """Defines the configurations for the smoke tests worker container.
+
+    This worker will install Celery from the current source code.
+    """
+
     @property
     def client(self) -> Any:
         return self
@@ -30,6 +35,7 @@ class SmokeWorkerContainer(CeleryWorkerContainer):
         return "smoke_tests_queue"
 
 
+# Build the image from the current source code
 celery_dev_worker_image = build(
     path=".",
     dockerfile="t/smoke/workers/docker/dev",
@@ -38,6 +44,7 @@ celery_dev_worker_image = build(
 )
 
 
+# Define container settings
 default_worker_container = container(
     image="{celery_dev_worker_image.id}",
     ports=fxtr("default_worker_ports"),
@@ -60,9 +67,19 @@ default_worker_container = container(
 
 @pytest.fixture
 def default_worker_container_cls() -> Type[CeleryWorkerContainer]:
+    """Replace the default pytest-celery worker container with the smoke tests worker container.
+
+    This will allow the default fixtures of pytest-celery to use the custom worker
+    configuration using the vendor class.
+    """
     return SmokeWorkerContainer
 
 
 @pytest.fixture(scope="session")
 def default_worker_container_session_cls() -> Type[CeleryWorkerContainer]:
+    """Replace the default pytest-celery worker container with the smoke tests worker container.
+
+    This will allow the default fixtures of pytest-celery to use the custom worker
+    configuration using the vendor class.
+    """
     return SmokeWorkerContainer
