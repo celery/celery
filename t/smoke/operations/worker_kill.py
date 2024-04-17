@@ -8,6 +8,7 @@ from celery.app.control import Control
 
 
 class WorkerKill:
+    """Kills a worker in different ways."""
     class Method(Enum):
         DOCKER_KILL = auto()
         CONTROL_SHUTDOWN = auto()
@@ -17,7 +18,14 @@ class WorkerKill:
         worker: CeleryTestWorker,
         method: WorkerKill.Method,
         assertion: bool = True,
-    ):
+    ) -> None:
+        """Kill a Celery worker.
+
+        Args:
+            worker (CeleryTestWorker): Worker to kill.
+            method (WorkerKill.Method): The method to kill the worker.
+            assertion (bool, optional): Whether to assert the worker state after kill. Defaults to True.
+        """
         if method == WorkerKill.Method.DOCKER_KILL:
             worker.kill()
 
