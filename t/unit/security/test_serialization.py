@@ -16,15 +16,19 @@ from .case import SecurityCase
 
 class test_secureserializer(SecurityCase):
 
-    def _get_s(self, key, cert, certs):
+    def _get_s(self, key, cert, certs, serializer="json"):
         store = CertStore()
         for c in certs:
             store.add_cert(Certificate(c))
-        return SecureSerializer(PrivateKey(key), Certificate(cert), store)
+        return SecureSerializer(
+            PrivateKey(key), Certificate(cert), store, serializer=serializer
+        )
 
-    def test_serialize(self):
-        s = self._get_s(KEY1, CERT1, [CERT1])
-        assert s.deserialize(s.serialize('foo')) == 'foo'
+    @pytest.mark.parametrize("data", [1, "foo", b"foo", {"foo": 1}])
+    @pytest.mark.parametrize("serializer", ["json", "pickle"])
+    def test_serialize(self, data, serializer):
+        s = self._get_s(KEY1, CERT1, [CERT1], serializer=serializer)
+        assert s.deserialize(s.serialize(data)) == data
 
     def test_deserialize(self):
         s = self._get_s(KEY1, CERT1, [CERT1])
