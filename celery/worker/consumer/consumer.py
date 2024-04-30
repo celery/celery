@@ -181,7 +181,9 @@ class Consumer:
                  pool=None, app=None,
                  timer=None, controller=None, hub=None, amqheartbeat=None,
                  worker_options=None, disable_rate_limits=False,
-                 initial_prefetch_count=2, prefetch_multiplier=1, **kwargs):
+                 initial_prefetch_count=2, prefetch_multiplier=1,
+                 connection_url=None, allocated_processes=None,
+                 **kwargs):
         self.app = app
         self.controller = controller
         self.init_callback = init_callback
@@ -194,7 +196,6 @@ class Consumer:
         self.connection_errors = self.conninfo.connection_errors
         self.channel_errors = self.conninfo.channel_errors
         self._restart_state = restart_state(maxR=5, maxT=1)
-
         self._does_info = logger.isEnabledFor(logging.INFO)
         self._limit_order = 0
         self.on_task_request = on_task_request
@@ -204,6 +205,8 @@ class Consumer:
         self.initial_prefetch_count = initial_prefetch_count
         self.prefetch_multiplier = prefetch_multiplier
         self._maximum_prefetch_restored = True
+        self.read_write_url = connection_url
+        self.available_processes = allocated_processes or self.pool.num_processes
 
         # this contains a tokenbucket for each task type by name, used for
         # rate limits, or None if rate limits are disabled for that task.
@@ -271,11 +274,10 @@ class Consumer:
             of +1 if the initial size of the pool was 0 (e.g.
             :option:`--autoscale=1,0 <celery worker --autoscale>`).
         """
-        num_processes = self.pool.num_processes
-        if not self.initial_prefetch_count or not num_processes:
+        if not self.initial_prefetch_count or not self.available_processes:
             return  # prefetch disabled
         self.initial_prefetch_count = (
-            self.pool.num_processes * self.prefetch_multiplier
+            self.available_processes * self.prefetch_multiplier
         )
         return self._update_qos_eventually(index)
 
@@ -474,11 +476,11 @@ class Consumer:
 
     def connection_for_read(self, heartbeat=None):
         return self.ensure_connected(
-            self.app.connection_for_read(heartbeat=heartbeat))
+            self.app.connection_for_read(url=self.read_write_url, heartbeat=heartbeat))
 
     def connection_for_write(self, heartbeat=None):
         return self.ensure_connected(
-            self.app.connection_for_write(heartbeat=heartbeat))
+            self.app.connection_for_write(url=self.read_write_url, heartbeat=heartbeat))
 
     def ensure_connected(self, conn):
         # Callback called for each retry while the connection
@@ -718,7 +720,7 @@ class Consumer:
 
     @property
     def max_prefetch_count(self):
-        return self.pool.num_processes * self.prefetch_multiplier
+        return self.available_processes * self.prefetch_multiplier
 
     @property
     def _new_prefetch_count(self):
