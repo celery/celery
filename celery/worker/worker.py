@@ -158,7 +158,9 @@ class WorkController:
 
     def on_stopped(self):
         self.timer.stop()
-        self.consumer.shutdown()
+
+        for c in self.consumers:
+            c.shutdown()
 
         if self.pidlock:
             self.pidlock.release()
@@ -230,10 +232,11 @@ class WorkController:
                 pass
 
     def signal_consumer_close(self):
-        try:
-            self.consumer.close()
-        except AttributeError:
-            pass
+        for c in self.consumers:
+            try:
+                c.close()
+            except AttributeError:
+                pass
 
     def should_use_eventloop(self):
         return (detect_environment() == 'default' and
@@ -269,9 +272,10 @@ class WorkController:
         list(self._reload_modules(
             modules, force_reload=reload, reloader=reloader))
 
-        if self.consumer:
-            self.consumer.update_strategies()
-            self.consumer.reset_rate_limits()
+        if self.consumers:
+            for consumer in self.consumers:
+                consumer.update_strategies()
+                consumer.reset_rate_limits()
         try:
             self.pool.restart()
         except NotImplementedError:
@@ -325,7 +329,8 @@ class WorkController:
     def stats(self):
         info = self.info()
         info.update(self.blueprint.info(self))
-        info.update(self.consumer.blueprint.info(self.consumer))
+        for consumer in self.consumers:
+            info.update(consumer.blueprint.info(consumer))
         try:
             info['rusage'] = self.rusage()
         except NotImplementedError:
