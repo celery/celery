@@ -59,18 +59,17 @@ class Hub(bootsteps.StartStopStep):
     requires = (Timer,)
 
     def __init__(self, w, **kwargs):
-        w.hub = None
         super().__init__(w, **kwargs)
+        self._init_event_loop_per_broker(w)
 
     def include_if(self, w):
         return w.use_eventloop
 
     def create(self, w):
-        w.hub = get_event_loop()
-        if w.hub is None:
-            required_hub = getattr(w._conninfo, 'requires_hub', None)
-            w.hub = set_event_loop((
-                required_hub if required_hub else _Hub)(w.timer))
+        if self._is_concurrency_needed(w):
+            self._create_concurrent_hubs(w)
+        else:
+            self._create_global_hub(w)
         self._patch_thread_primitives(w)
         return self
 
@@ -78,10 +77,14 @@ class Hub(bootsteps.StartStopStep):
         pass
 
     def stop(self, w):
-        w.hub.close()
+        if self._is_concurrency_needed(w):
+            for hub in w.hubs:
+                hub.close()
+        else:
+            w.hub.close()
 
     def terminate(self, w):
-        w.hub.close()
+        self.stop(w)
 
     def _patch_thread_primitives(self, w):
         # make clock use dummy lock
@@ -93,6 +96,32 @@ class Hub(bootsteps.StartStopStep):
             pass
         else:
             pool.Lock = DummyLock
+
+    def _is_concurrency_needed(self, w):
+        return w.app.conf.concurrent_readers_delimiter in w.app.conf.broker_url
+
+    def _init_event_loop_per_broker(self, w):
+        if self._is_concurrency_needed(w):
+            broker_url = w.app.conf.broker_url
+            concurrency_delimiter = w.app.conf.concurrent_readers_delimiter
+            concurrent_readers = len(broker_url.split(concurrency_delimiter))
+            w.app.conf.concurrent_readers = concurrent_readers
+            w.hubs = [None]
+        else:
+            w.hub = None
+
+    def _create_concurrent_hubs(self, w):
+        w.hubs.clear()
+        concurrent_readers = w.app.conf.concurrent_readers
+        for _ in range(concurrent_readers):
+            w.hubs.append(_Hub(w.timer))
+        set_event_loop(None)  # Avoid using the global loop
+
+    def _create_global_hub(self, w):
+        w.hub = get_event_loop()
+        if w.hub is None:
+            required_hub = getattr(w._conninfo, "requires_hub", None)
+            w.hub = set_event_loop((required_hub if required_hub else _Hub)(w.timer))
 
 
 class Pool(bootsteps.StartStopStep):
