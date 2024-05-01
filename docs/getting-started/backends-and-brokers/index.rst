@@ -20,6 +20,7 @@ Broker Instructions
     rabbitmq
     redis
     sqs
+    kafka
 
 .. _broker-overview:
 
@@ -40,6 +41,8 @@ individual transport (see :ref:`broker_toc`).
 | *Amazon SQS*  | Stable       | No             | No                 |
 +---------------+--------------+----------------+--------------------+
 | *Zookeeper*   | Experimental | No             | No                 |
++---------------+--------------+----------------+--------------------+
+| *Kafka*       | Experimental | No             | No                 |
 +---------------+--------------+----------------+--------------------+
 
 Experimental brokers may be functional but they don't have
