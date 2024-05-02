@@ -1,2 +1,1 @@
-pymongo[srv]>=4.0.2; python_version > '3.10'
-pymongo[srv]<4.7; python_version <= '3.10'
+pymongo[srv]>=4.0.2, <4.7
