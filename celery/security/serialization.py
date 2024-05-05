@@ -29,7 +29,8 @@ class SecureSerializer:
         assert self._cert is not None
         with reraise_errors('Unable to serialize: {0!r}', (Exception,)):
             content_type, content_encoding, body = dumps(
-                bytes_to_str(data), serializer=self._serializer)
+                data, serializer=self._serializer)
+
             # What we sign is the serialized body, not the body itself.
             # this way the receiver doesn't have to decode the contents
             # to verify the signature (and thus avoiding potential flaws
@@ -48,7 +49,7 @@ class SecureSerializer:
                                        payload['signer'],
                                        payload['body'])
             self._cert_store[signer].verify(body, signature, self._digest)
-        return loads(bytes_to_str(body), payload['content_type'],
+        return loads(body, payload['content_type'],
                      payload['content_encoding'], force=True)
 
     def _pack(self, body, content_type, content_encoding, signer, signature,
@@ -84,7 +85,7 @@ class SecureSerializer:
             'signature': signature,
             'content_type': bytes_to_str(v[0]),
             'content_encoding': bytes_to_str(v[1]),
-            'body': bytes_to_str(v[2]),
+            'body': v[2],
         }
 
 
