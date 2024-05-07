@@ -24,7 +24,7 @@ class test_secureserializer(SecurityCase):
             PrivateKey(key), Certificate(cert), store, serializer=serializer
         )
 
-    @pytest.mark.parametrize("data", [1, "foo", b"foo", {"foo": 1}])
+    @pytest.mark.parametrize("data", [1, "foo", b"foo", {"foo": 1}, {"foo": "\x00\x01"}])
     @pytest.mark.parametrize("serializer", ["json", "pickle"])
     def test_serialize(self, data, serializer):
         s = self._get_s(KEY1, CERT1, [CERT1], serializer=serializer)
