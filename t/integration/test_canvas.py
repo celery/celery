@@ -1108,6 +1108,57 @@ class test_chain:
         res = t3.apply_async()  # should not raise
         assert res.get(timeout=TIMEOUT) == 60
 
+    def test_chained_groups_within_chain_ending_with_group_inside_chain(self, manager, subtests):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_connection = get_redis_connection()
+        redis_key = 'echo_chamber'
+
+        c = chain(
+            chain(
+                group(
+                    redis_echo.si('1', redis_key=redis_key),
+                    redis_echo.si('2', redis_key=redis_key),
+                    redis_echo.si('3', redis_key=redis_key)
+                ),
+                group(
+                    redis_echo.si('4', redis_key=redis_key),
+                    redis_echo.si('5', redis_key=redis_key)
+                ),
+            ),
+            chain(
+                group(
+                    redis_echo.si('6', redis_key=redis_key),
+                    redis_echo.si('7', redis_key=redis_key),
+                    redis_echo.si('8', redis_key=redis_key),
+                ),
+            ),
+            chain(redis_echo.si('Done', redis_key='Done')),
+        )
+
+        with subtests.test(msg='Run the chain and wait for completion'):
+            redis_connection.delete(redis_key, 'Done')
+            c.delay().get(timeout=TIMEOUT)
+            await_redis_list_message_length(1, redis_key='Done', timeout=10)
+
+        with subtests.test(msg='All tasks are executed once'):
+            actual = [
+                sig.decode('utf-8')
+                for sig in redis_connection.lrange(redis_key, 0, -1)
+            ]
+            expected = [str(i) for i in range(1, 9)]
+            with subtests.test(msg='All tasks are executed once'):
+                assert sorted(actual) == sorted(expected)
+
+        # Cleanup
+        redis_connection.delete(redis_key, 'Done')
+
 
 class test_result_set:
 
