@@ -11,6 +11,11 @@ from .utils import get_digest_algorithm, reraise_errors
 
 __all__ = ('SecureSerializer', 'register_auth')
 
+# Note: we guarantee that this value won't appear in the serialized data,
+# so we can use it as a separator.
+# If you change this value, make sure it's not present in the serialized data.
+DEFAULT_SEPARATOR = str_to_bytes("\x00\x01")
+
 
 class SecureSerializer:
     """Signed serializer."""
@@ -53,14 +58,14 @@ class SecureSerializer:
                      payload['content_encoding'], force=True)
 
     def _pack(self, body, content_type, content_encoding, signer, signature,
-              sep=str_to_bytes('\x00\x01')):
+              sep=DEFAULT_SEPARATOR):
         fields = sep.join(
             ensure_bytes(s) for s in [b64encode(signer), b64encode(signature),
                                       content_type, content_encoding, body]
         )
         return b64encode(fields)
 
-    def _unpack(self, payload, sep=str_to_bytes('\x00\x01')):
+    def _unpack(self, payload, sep=DEFAULT_SEPARATOR):
         raw_payload = b64decode(ensure_bytes(payload))
         v = raw_payload.split(sep, maxsplit=4)
         return {

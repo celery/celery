@@ -8,7 +8,7 @@ from kombu.utils.encoding import bytes_to_str
 from celery.exceptions import SecurityError
 from celery.security.certificate import Certificate, CertStore
 from celery.security.key import PrivateKey
-from celery.security.serialization import SecureSerializer, register_auth
+from celery.security.serialization import DEFAULT_SEPARATOR, SecureSerializer, register_auth
 
 from . import CERT1, CERT2, KEY1, KEY2
 from .case import SecurityCase
@@ -24,7 +24,9 @@ class test_secureserializer(SecurityCase):
             PrivateKey(key), Certificate(cert), store, serializer=serializer
         )
 
-    @pytest.mark.parametrize("data", [1, "foo", b"foo", {"foo": 1}, {"foo": "\x00\x01"}])
+    @pytest.mark.parametrize(
+        "data", [1, "foo", b"foo", {"foo": 1}, {"foo": DEFAULT_SEPARATOR}]
+    )
     @pytest.mark.parametrize("serializer", ["json", "pickle"])
     def test_serialize(self, data, serializer):
         s = self._get_s(KEY1, CERT1, [CERT1], serializer=serializer)
