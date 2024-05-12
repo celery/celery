@@ -825,6 +825,16 @@ class test_chain(CanvasCase):
         t2 = chord([self.add.si(1, 1), self.add.si(1, 1)], t1)
         t2.freeze()  # should not raise
 
+    def test_upgrade_to_chord_on_chain(self):
+        group1 = group(self.add.si(10, 10), self.add.si(10, 10))
+        group2 = group(self.xsum.s(), self.xsum.s())
+        chord1 = group1 | group2
+        chain1 = (self.xsum.si([5]) | self.add.s(1))
+        final_task = chain(chord1, chain1)
+        assert len(final_task.tasks) == 1 and isinstance(final_task.tasks[0], chord)
+        assert isinstance(final_task.tasks[0].body, chord)
+        assert final_task.tasks[0].body.body == chain1
+
 
 class test_group(CanvasCase):
     def test_repr(self):
