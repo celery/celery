@@ -696,7 +696,7 @@ class test_Pidfile:
         p.remove = Mock()
 
         assert p.remove_if_stale()
-        p.remove.assert_not_called()
+        p.remove.assert_called_with()
 
     @patch('os.fsync')
     @patch('os.getpid')
