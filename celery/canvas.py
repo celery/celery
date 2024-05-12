@@ -975,8 +975,7 @@ class _chain(Signature):
         elif isinstance(other, _chain):
             # chain | chain -> chain
             # use type(self) for _chain subclasses
-            return reduce(operator.or_, seq_concat_seq(
-                self.unchain_tasks(), other.unchain_tasks()), _chain())
+            return reduce(operator.or_, other.unchain_tasks(), self)
         elif isinstance(other, Signature):
             if self.tasks and isinstance(self.tasks[-1], group):
                 # CHAIN [last item is group] | TASK -> chord
