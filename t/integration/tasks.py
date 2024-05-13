@@ -2,6 +2,8 @@ import os
 from collections.abc import Iterable
 from time import sleep
 
+from pydantic import BaseModel
+
 from celery import Signature, Task, chain, chord, group, shared_task
 from celery.canvas import signature
 from celery.exceptions import SoftTimeLimitExceeded
@@ -473,6 +475,22 @@ def errback_new_style(request, exc, tb):
 @shared_task
 def replaced_with_me():
     return True
+
+
+class AddParameterModel(BaseModel):
+    x: int
+    y: int
+
+
+class AddResultModel(BaseModel):
+    result: int
+
+
+@shared_task(pydantic=True)
+def add_pydantic(data: AddParameterModel) -> AddResultModel:
+    """Add two numbers, but with parameters and results using Pydantic model serialization."""
+    value = data.x + data.y
+    return AddResultModel(result=value)
 
 
 if LEGACY_TASKS_DISABLED:
