@@ -1120,7 +1120,8 @@ class test_chain:
         group1 = group(redis_echo.si('a', redis_key), redis_echo.si('a', redis_key))
         group2 = group(redis_echo.si('a', redis_key), redis_echo.si('a', redis_key))
         chord1 = group1 | group2
-        chain(chord1, (redis_echo.si('a', redis_key) | redis_echo.si('b', redis_key))).apply_async().get(timeout=TIMEOUT)
+        chain1 = chain(chord1, (redis_echo.si('a', redis_key) | redis_echo.si('b', redis_key)))
+        chain1.apply_async().get(timeout=TIMEOUT)
         redis_connection = get_redis_connection()
         actual = redis_connection.lrange(redis_key, 0, -1)
         assert actual.count(b'b') == 1
