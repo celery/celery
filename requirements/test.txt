@@ -1,3 +1,6 @@
+# Temporary fix until requests is fixed - to be reverted afterwards:
+# https://github.com/docker/docker-py/issues/3256
+requests==2.31.0
 pytest==8.2.0
 pytest-celery[all]>=1.0.0
 pytest-rerunfailures==14.0
