@@ -240,7 +240,12 @@ class Celery:
         self.loader_cls = loader or self._get_default_loader()
         self.log_cls = log or self.log_cls
         self.control_cls = control or self.control_cls
-        self._custom_task_cls_used = bool(task_cls)
+        self._custom_task_cls_used = (
+            # Custom task class provided as argument
+            bool(task_cls)
+            # subclass of Celery with a task_cls attribute
+            or self.__class__ is not Celery and hasattr(self.__class__, 'task_cls')
+        )
         self.task_cls = task_cls or self.task_cls
         self.set_as_current = set_as_current
         self.registry_cls = symbol_by_name(self.registry_cls)
