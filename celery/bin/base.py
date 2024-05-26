@@ -4,9 +4,10 @@ import numbers
 from collections import OrderedDict
 from functools import update_wrapper
 from pprint import pformat
+from typing import Any
 
 import click
-from click import ParamType
+from click import Context, ParamType
 from kombu.utils.objects import cached_property
 
 from celery._state import get_current_app
@@ -170,19 +171,36 @@ class CeleryCommand(click.Command):
                 formatter.write_dl(opts_group)
 
 
+class DaemonOption(CeleryOption):
+    """Common daemonization option"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(args,
+                         help_group=kwargs.pop("help_group", "Daemonization Options"),
+                         callback=kwargs.pop("callback", self.daemon_setting),
+                         **kwargs)
+
+    def daemon_setting(self, ctx: Context, opt: CeleryOption, value: Any) -> Any:
+        """
+        Try to fetch deamonization option from applications settings.
+        Use the daemon command name as prefix (eg. `worker` -> `worker_pidfile`)
+        """
+        return value or getattr(ctx.obj.app.conf, f"{ctx.command.name}_{self.name}", None)
+
+
 class CeleryDaemonCommand(CeleryCommand):
     """Daemon commands."""
 
     def __init__(self, *args, **kwargs):
         """Initialize a Celery command with common daemon options."""
         super().__init__(*args, **kwargs)
-        self.params.append(CeleryOption(('-f', '--logfile'), help_group="Daemonization Options",
-                           help="Log destination; defaults to stderr"))
-        self.params.append(CeleryOption(('--pidfile',), help_group="Daemonization Options"))
-        self.params.append(CeleryOption(('--uid',), help_group="Daemonization Options"))
-        self.params.append(CeleryOption(('--gid',), help_group="Daemonization Options"))
-        self.params.append(CeleryOption(('--umask',), help_group="Daemonization Options"))
-        self.params.append(CeleryOption(('--executable',), help_group="Daemonization Options"))
+        self.params.extend((
+            DaemonOption("--logfile", "-f", help="Log destination; defaults to stderr"),
+            DaemonOption("--pidfile", help="PID file path; defaults to no PID file"),
+            DaemonOption("--uid", help="Drops privileges to this user ID"),
+            DaemonOption("--gid", help="Drops privileges to this group ID"),
+            DaemonOption("--umask", help="Create files and directories with this umask"),
+            DaemonOption("--executable", help="Override path to the Python executable"),
+        ))
 
 
 class CommaSeparatedList(ParamType):

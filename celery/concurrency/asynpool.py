@@ -194,7 +194,7 @@ def iterate_file_descriptors_safely(fds_iter, source_data,
     or possibly other reasons, so safely manage our lists of FDs.
     :param fds_iter: the file descriptors to iterate and apply hub_method
     :param source_data: data source to remove FD if it renders OSError
-    :param hub_method: the method to call with with each fd and kwargs
+    :param hub_method: the method to call with each fd and kwargs
     :*args to pass through to the hub_method;
     with a special syntax string '*fd*' represents a substitution
     for the current fd object in the iteration (for some callers).

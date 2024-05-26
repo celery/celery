@@ -408,7 +408,12 @@ class test_SessionManager:
         from sqlalchemy.dialects.sqlite import dialect
         from sqlalchemy.exc import DatabaseError
 
-        sqlite = dialect.dbapi()
+        if hasattr(dialect, 'dbapi'):
+            # Method name in SQLAlchemy < 2.0
+            sqlite = dialect.dbapi()
+        else:
+            # Newer method name in SQLAlchemy 2.0
+            sqlite = dialect.import_dbapi()
         manager = SessionManager()
         engine = manager.get_engine('dburi')
 

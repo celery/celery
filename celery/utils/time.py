@@ -14,6 +14,7 @@ from types import ModuleType
 from typing import Any, Callable
 
 from dateutil import tz as dateutil_tz
+from dateutil.parser import isoparse
 from kombu.utils.functional import reprcall
 from kombu.utils.objects import cached_property
 
@@ -211,12 +212,12 @@ def remaining(
             using :func:`delta_resolution` (i.e., rounded to the
             resolution of `ends_in`).
         now (Callable): Function returning the current time and date.
-            Defaults to :func:`datetime.utcnow`.
+            Defaults to :func:`datetime.now(timezone.utc)`.
 
     Returns:
         ~datetime.timedelta: Remaining time.
     """
-    now = now or datetime.utcnow()
+    now = now or datetime.now(datetime_timezone.utc)
     if str(
             start.tzinfo) == str(
             now.tzinfo) and now.utcoffset() != start.utcoffset():
@@ -288,7 +289,7 @@ def maybe_iso8601(dt: datetime | str | None) -> None | datetime:
         return
     if isinstance(dt, datetime):
         return dt
-    return datetime.fromisoformat(dt)
+    return isoparse(dt)
 
 
 def is_naive(dt: datetime) -> bool:

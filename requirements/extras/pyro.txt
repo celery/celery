@@ -1,1 +1,1 @@
-pyro5
+pyro4==4.82; python_version < '3.11'

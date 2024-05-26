@@ -11,6 +11,7 @@ from kombu import pidbox
 from kombu.utils.uuid import uuid
 
 from celery.utils.collections import AttributeDict
+from celery.utils.functional import maybe_list
 from celery.utils.timer2 import Timer
 from celery.worker import WorkController as _WC
 from celery.worker import consumer, control
@@ -544,7 +545,10 @@ class test_ControlPanel:
         finally:
             worker_state.task_ready(request)
 
-    def test_revoke_by_stamped_headers_terminate(self):
+    @pytest.mark.parametrize(
+        "terminate", [True, False],
+    )
+    def test_revoke_by_stamped_headers_terminate(self, terminate):
         request = Mock()
         request.id = uuid()
         request.options = stamped_header = {'stamp': 'foo'}
@@ -553,12 +557,12 @@ class test_ControlPanel:
         state.consumer = Mock()
         worker_state.task_reserved(request)
         try:
-            r = control.revoke_by_stamped_headers(state, stamped_header, terminate=True)
-            assert stamped_header == revoked_stamps
-            assert 'terminate:' in r['ok']
-            # unknown task id only revokes
-            r = control.revoke_by_stamped_headers(state, stamped_header, terminate=True)
-            assert 'tasks unknown' in r['ok']
+            worker_state.revoked_stamps.clear()
+            assert stamped_header.keys() != revoked_stamps.keys()
+            control.revoke_by_stamped_headers(state, stamped_header, terminate=terminate)
+            assert stamped_header.keys() == revoked_stamps.keys()
+            for key in stamped_header.keys():
+                assert maybe_list(stamped_header[key]) == revoked_stamps[key]
         finally:
             worker_state.task_ready(request)
 
@@ -605,8 +609,13 @@ class test_ControlPanel:
         revoked_stamps.clear()
         r = control.revoke_by_stamped_headers(state, header_to_revoke, terminate=True)
         # Check all of the requests were revoked by a single header
-        assert all([id in r['ok'] for id in ids]), "All requests should be revoked"
-        assert revoked_stamps == header_to_revoke
+        for header, stamp in header_to_revoke.items():
+            assert header in r['ok']
+            for s in maybe_list(stamp):
+                assert str(s) in r['ok']
+        assert header_to_revoke.keys() == revoked_stamps.keys()
+        for key in header_to_revoke.keys():
+            assert list(maybe_list(header_to_revoke[key])) == revoked_stamps[key]
         revoked_stamps.clear()
 
     def test_revoke_return_value_terminate_true(self):
@@ -630,9 +639,9 @@ class test_ControlPanel:
         worker_state.task_reserved(request)
         state = self.create_state()
         state.consumer = Mock()
-        r = control.revoke(state, headers["id"], terminate=True)
         r_headers = control.revoke_by_stamped_headers(state, header_to_revoke, terminate=True)
-        assert r["ok"] == r_headers["ok"]
+        # revoke & revoke_by_stamped_headers are not aligned anymore in their return values
+        assert "{'foo': {'bar'}}" in r_headers["ok"]
 
     def test_autoscale(self):
         self.panel.state.consumer = Mock()

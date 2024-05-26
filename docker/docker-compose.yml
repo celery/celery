@@ -27,10 +27,10 @@ services:
       - azurite
 
   rabbit:
-    image: rabbitmq:3.9
+    image: rabbitmq:latest
 
   redis:
-    image: redis:6.2
+    image: redis:latest
 
   dynamodb:
     image: amazon/dynamodb-local:latest
@@ -46,5 +46,5 @@ services:
     volumes:
         - ../docs:/docs:z
     ports:
-      - "7000:7000"
+      - "7001:7000"
     command: /start-docs

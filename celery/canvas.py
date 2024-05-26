@@ -396,7 +396,7 @@ class Signature(dict):
         else:
             args, kwargs, options = self.args, self.kwargs, self.options
         # pylint: disable=too-many-function-args
-        #   Borks on this, as it's a property
+        #   Works on this, as it's a property
         return _apply(args, kwargs, **options)
 
     def _merge(self, args=None, kwargs=None, options=None, force=False):
@@ -515,7 +515,7 @@ class Signature(dict):
         if group_index is not None:
             opts['group_index'] = group_index
         # pylint: disable=too-many-function-args
-        #   Borks on this, as it's a property.
+        #   Works on this, as it's a property.
         return self.AsyncResult(tid)
 
     _freeze = freeze
@@ -653,7 +653,7 @@ class Signature(dict):
 
         # Stamp all of the callbacks of this signature
         headers = deepcopy(non_visitor_headers)
-        for link in self.options.get('link', []) or []:
+        for link in maybe_list(self.options.get('link')) or []:
             link = maybe_signature(link, app=self.app)
             visitor_headers = None
             if visitor is not None:
@@ -668,7 +668,7 @@ class Signature(dict):
 
         # Stamp all of the errbacks of this signature
         headers = deepcopy(non_visitor_headers)
-        for link in self.options.get('link_error', []) or []:
+        for link in maybe_list(self.options.get('link_error')) or []:
             link = maybe_signature(link, app=self.app)
             visitor_headers = None
             if visitor is not None:
@@ -958,6 +958,8 @@ class _chain(Signature):
         if isinstance(other, group):
             # unroll group with one member
             other = maybe_unroll_group(other)
+            if not isinstance(other, group):
+                return self.__or__(other)
             # chain | group() -> chain
             tasks = self.unchain_tasks()
             if not tasks:
@@ -981,6 +983,13 @@ class _chain(Signature):
                 sig = self.clone()
                 sig.tasks[-1] = chord(
                     sig.tasks[-1], other, app=self._app)
+                # In the scenario where the second-to-last item in a chain is a chord,
+                # it leads to a situation where two consecutive chords are formed.
+                # In such cases, a further upgrade can be considered.
+                # This would involve chaining the body of the second-to-last chord with the last chord."
+                if len(sig.tasks) > 1 and isinstance(sig.tasks[-2], chord):
+                    sig.tasks[-2].body = sig.tasks[-2].body | sig.tasks[-1]
+                    sig.tasks = sig.tasks[:-1]
                 return sig
             elif self.tasks and isinstance(self.tasks[-1], chord):
                 # CHAIN [last item is chord] -> chain with chord body.
@@ -1016,9 +1025,9 @@ class _chain(Signature):
         # Clone chain's tasks assigning signatures from link_error
         # to each task and adding the chain's links to the last task.
         tasks = [t.clone() for t in self.tasks]
-        for sig in self.options.get('link', []):
+        for sig in maybe_list(self.options.get('link')) or []:
             tasks[-1].link(sig)
-        for sig in self.options.get('link_error', []):
+        for sig in maybe_list(self.options.get('link_error')) or []:
             for task in tasks:
                 task.link_error(sig)
         return tasks
@@ -1216,6 +1225,12 @@ class _chain(Signature):
                         task, body=prev_task,
                         root_id=root_id, app=app,
                     )
+                if tasks:
+                    prev_task = tasks[-1]
+                    prev_res = results[-1]
+                else:
+                    prev_task = None
+                    prev_res = None
 
             if is_last_task:
                 # chain(task_id=id) means task id is set for the last task
@@ -1261,6 +1276,7 @@ class _chain(Signature):
                 while node.parent:
                     node = node.parent
                 prev_res = node
+        self.id = last_task_id
         return tasks, results
 
     def apply(self, args=None, kwargs=None, **options):
@@ -1672,7 +1688,9 @@ class group(Signature):
         #
         # We return a concretised tuple of the signatures actually applied to
         # each child task signature, of which there might be none!
-        return tuple(child_task.link_error(sig) for child_task in self.tasks)
+        sig = maybe_signature(sig)
+
+        return tuple(child_task.link_error(sig.clone(immutable=True)) for child_task in self.tasks)
 
     def _prepared(self, tasks, partial_args, group_id, root_id, app,
                   CallableSignature=abstract.CallableSignature,
@@ -1704,7 +1722,7 @@ class group(Signature):
             generator: A generator for the unrolled group tasks.
                 The generator yields tuples of the form ``(task, AsyncResult, group_id)``.
         """
-        for task in tasks:
+        for index, task in enumerate(tasks):
             if isinstance(task, CallableSignature):
                 # local sigs are always of type Signature, and we
                 # clone them to make sure we don't modify the originals.
@@ -1721,7 +1739,7 @@ class group(Signature):
             else:
                 if partial_args and not task.immutable:
                     task.args = tuple(partial_args) + tuple(task.args)
-                yield task, task.freeze(group_id=group_id, root_id=root_id), group_id
+                yield task, task.freeze(group_id=group_id, root_id=root_id, group_index=index), group_id
 
     def _apply_tasks(self, tasks, producer=None, app=None, p=None,
                      add_to_parent=None, chord=None,
@@ -2216,9 +2234,6 @@ class _chord(Signature):
         options = dict(self.options, **options) if options else self.options
         if options:
             options.pop('task_id', None)
-            stamped_headers = set(body.options.get("stamped_headers", []))
-            stamped_headers.update(options.get("stamped_headers", []))
-            options["stamped_headers"] = list(stamped_headers)
             body.options.update(options)
 
         bodyres = body.freeze(task_id, root_id=root_id)
@@ -2274,9 +2289,11 @@ class _chord(Signature):
             ``False`` (the current default), then the error callback will only be
             applied to the body.
         """
+        errback = maybe_signature(errback)
+
         if self.app.conf.task_allow_error_cb_on_chord_header:
-            for task in self.tasks:
-                task.link_error(errback)
+            for task in maybe_list(self.tasks) or []:
+                task.link_error(errback.clone(immutable=True))
         else:
             # Once this warning is removed, the whole method needs to be refactored to:
             # 1. link the error callback to each task in the header

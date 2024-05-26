@@ -2,7 +2,7 @@ import numbers
 import os
 import signal
 import socket
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from time import monotonic, time
 from unittest.mock import Mock, patch
 
@@ -21,7 +21,7 @@ from celery.worker import request as module
 from celery.worker import strategy
 from celery.worker.request import Request, create_request_cls
 from celery.worker.request import logger as req_logger
-from celery.worker.state import revoked
+from celery.worker.state import revoked, revoked_stamps
 
 
 class RequestCase:
@@ -537,7 +537,7 @@ class test_Request(RequestCase):
 
     def test_revoked_expires_expired(self):
         job = self.get_request(self.mytask.s(1, f='x').set(
-            expires=datetime.utcnow() - timedelta(days=1)
+            expires=datetime.now(timezone.utc) - timedelta(days=1)
         ))
         with self.assert_signal_called(
                 task_revoked, sender=job.task, request=job._context,
@@ -549,7 +549,7 @@ class test_Request(RequestCase):
 
     def test_revoked_expires_not_expired(self):
         job = self.xRequest(
-            expires=datetime.utcnow() + timedelta(days=1),
+            expires=datetime.now(timezone.utc) + timedelta(days=1),
         )
         job.revoked()
         assert job.id not in revoked
@@ -558,7 +558,7 @@ class test_Request(RequestCase):
     def test_revoked_expires_ignore_result(self):
         self.mytask.ignore_result = True
         job = self.xRequest(
-            expires=datetime.utcnow() - timedelta(days=1),
+            expires=datetime.now(timezone.utc) - timedelta(days=1),
         )
         job.revoked()
         assert job.id in revoked
@@ -575,6 +575,33 @@ class test_Request(RequestCase):
                 task_revoked, sender=job.task, request=job._context,
                 terminated=False, expired=False, signum=None):
             revoked.add(job.id)
+            assert job.revoked()
+            assert job._already_revoked
+            assert job.acknowledged
+
+    @pytest.mark.parametrize(
+        "header_to_revoke",
+        [
+            {'header_A': 'value_1'},
+            {'header_B': ['value_2', 'value_3']},
+            {'header_C': ('value_2', 'value_3')},
+            {'header_D': {'value_2', 'value_3'}},
+            {'header_E': [1, '2', 3.0]},
+        ],
+    )
+    def test_revoked_by_stamped_headers(self, header_to_revoke):
+        revoked_stamps.clear()
+        job = self.xRequest()
+        stamps = header_to_revoke
+        stamped_headers = list(header_to_revoke.keys())
+        job._message.headers['stamps'] = stamps
+        job._message.headers['stamped_headers'] = stamped_headers
+        job._request_dict['stamps'] = stamps
+        job._request_dict['stamped_headers'] = stamped_headers
+        with self.assert_signal_called(
+                task_revoked, sender=job.task, request=job._context,
+                terminated=False, expired=False, signum=None):
+            revoked_stamps.update(stamps)
             assert job.revoked()
             assert job._already_revoked
             assert job.acknowledged

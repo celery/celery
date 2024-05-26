@@ -6,9 +6,11 @@ import threading
 import warnings
 from collections import UserDict, defaultdict, deque
 from datetime import datetime
+from datetime import timezone as datetime_timezone
 from operator import attrgetter
 
 from click.exceptions import Exit
+from dateutil.parser import isoparse
 from kombu import pools
 from kombu.clocks import LamportClock
 from kombu.common import oid_from
@@ -238,6 +240,7 @@ class Celery:
         self.loader_cls = loader or self._get_default_loader()
         self.log_cls = log or self.log_cls
         self.control_cls = control or self.control_cls
+        self._custom_task_cls_used = bool(task_cls)
         self.task_cls = task_cls or self.task_cls
         self.set_as_current = set_as_current
         self.registry_cls = symbol_by_name(self.registry_cls)
@@ -711,7 +714,7 @@ class Celery:
                   retries=0, chord=None,
                   reply_to=None, time_limit=None, soft_time_limit=None,
                   root_id=None, parent_id=None, route_name=None,
-                  shadow=None, chain=None, task_type=None, **options):
+                  shadow=None, chain=None, task_type=None, replaced_task_nesting=0, **options):
         """Send task by name.
 
         Supports the same arguments as :meth:`@-Task.apply_async`.
@@ -740,7 +743,7 @@ class Celery:
                     expires) - self.now()).total_seconds()
             elif isinstance(expires, str):
                 expires_s = (maybe_make_aware(
-                    datetime.fromisoformat(expires)) - self.now()).total_seconds()
+                    isoparse(expires)) - self.now()).total_seconds()
             else:
                 expires_s = expires
 
@@ -781,7 +784,7 @@ class Celery:
             self.conf.task_send_sent_event,
             root_id, parent_id, shadow, chain,
             ignore_result=ignore_result,
-            **options
+            replaced_task_nesting=replaced_task_nesting, **options
         )
 
         stamped_headers = options.pop('stamped_headers', [])
@@ -936,7 +939,7 @@ class Celery:
 
     def now(self):
         """Return the current time and date as a datetime."""
-        now_in_utc = to_utc(datetime.utcnow())
+        now_in_utc = to_utc(datetime.now(datetime_timezone.utc))
         return now_in_utc.astimezone(self.timezone)
 
     def select_queues(self, queues=None):
@@ -974,7 +977,14 @@ class Celery:
             This is used by PendingConfiguration:
                 as soon as you access a key the configuration is read.
         """
-        conf = self._conf = self._load_config()
+        try:
+            conf = self._conf = self._load_config()
+        except AttributeError as err:
+            # AttributeError is not propagated, it is "handled" by
+            # PendingConfiguration parent class. This causes
+            # confusing RecursionError.
+            raise ModuleNotFoundError(*err.args) from err
+
         return conf
 
     def _load_config(self):

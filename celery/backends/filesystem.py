@@ -50,7 +50,7 @@ class FilesystemBackend(KeyValueStoreBackend):
         self.open = open
         self.unlink = unlink
 
-        # Lets verify that we've everything setup right
+        # Let's verify that we've everything setup right
         self._do_directory_test(b'.fs-backend-' + uuid().encode(encoding))
 
     def __reduce__(self, args=(), kwargs=None):

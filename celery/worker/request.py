@@ -323,11 +323,12 @@ class Request:
 
     @property
     def stamped_headers(self) -> list:
-        return self._request_dict.get('stamped_headers', [])
+        return self._request_dict.get('stamped_headers') or []
 
     @property
     def stamps(self) -> dict:
-        return {header: self._request_dict['stamps'][header] for header in self.stamped_headers}
+        stamps = self._request_dict.get('stamps') or {}
+        return {header: stamps.get(header) for header in self.stamped_headers}
 
     @property
     def correlation_id(self):
@@ -481,7 +482,10 @@ class Request:
                                 revoking_header = {stamp: stamped_value}
                                 break
                     else:
-                        revoked_by_header = stamped_header in revoked_stamps[stamp]
+                        revoked_by_header = any([
+                            stamped_header in maybe_list(revoked_header),
+                            stamped_header == revoked_header,  # When the header is a single set value
+                        ])
                         revoking_header = {stamp: stamped_header}
                     break
 

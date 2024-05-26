@@ -282,7 +282,10 @@ class Scheduler:
             error('Message Error: %s\n%s',
                   exc, traceback.format_stack(), exc_info=True)
         else:
-            debug('%s sent. id->%s', entry.task, result.id)
+            if result and hasattr(result, 'id'):
+                debug('%s sent. id->%s', entry.task, result.id)
+            else:
+                debug('%s sent.', entry.task)
 
     def adjust(self, n, drift=-0.010):
         if n and n > 0:
@@ -565,11 +568,11 @@ class PersistentScheduler(Scheduler):
         for _ in (1, 2):
             try:
                 self._store['entries']
-            except KeyError:
+            except (KeyError, UnicodeDecodeError, TypeError):
                 # new schedule db
                 try:
                     self._store['entries'] = {}
-                except KeyError as exc:
+                except (KeyError, UnicodeDecodeError, TypeError) as exc:
                     self._store = self._destroy_open_corrupted_schedule(exc)
                     continue
             else:

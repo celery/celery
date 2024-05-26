@@ -140,6 +140,12 @@ NAMESPACES = Namespace(
         connection_timeout=Option(20, type='int'),
         read_timeout=Option(120, type='int'),
     ),
+    gcs=Namespace(
+        bucket=Option(type='string'),
+        project=Option(type='string'),
+        base_path=Option('', type='string'),
+        ttl=Option(0, type='float'),
+    ),
     control=Namespace(
         queue_ttl=Option(300.0, type='float'),
         queue_expires=Option(10.0, type='float'),
@@ -325,6 +331,7 @@ NAMESPACES = Namespace(
         pool_restarts=Option(False, type='bool'),
         proc_alive_timeout=Option(4.0, type='float'),
         prefetch_multiplier=Option(4, type='int'),
+        enable_prefetch_count_reduction=Option(True, type='bool'),
         redirect_stdouts=Option(
             True, type='bool', old={'celery_redirect_stdouts'},
         ),
