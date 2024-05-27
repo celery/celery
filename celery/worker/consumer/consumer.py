@@ -206,7 +206,9 @@ class Consumer:
         self.prefetch_multiplier = prefetch_multiplier
         self._maximum_prefetch_restored = True
         self.read_write_url = connection_url
-        self.available_processes = allocated_processes or self.pool.num_processes
+
+        if allocated_processes is not None:
+            self.available_processes = allocated_processes
 
         # this contains a tokenbucket for each task type by name, used for
         # rate limits, or None if rate limits are disabled for that task.
@@ -274,10 +276,10 @@ class Consumer:
             of +1 if the initial size of the pool was 0 (e.g.
             :option:`--autoscale=1,0 <celery worker --autoscale>`).
         """
-        if not self.initial_prefetch_count or not self.available_processes:
+        if not self.initial_prefetch_count or not self.num_processes:
             return  # prefetch disabled
         self.initial_prefetch_count = (
-            self.available_processes * self.prefetch_multiplier
+            self.num_processes * self.prefetch_multiplier
         )
         return self._update_qos_eventually(index)
 
@@ -720,11 +722,19 @@ class Consumer:
 
     @property
     def max_prefetch_count(self):
-        return self.available_processes * self.prefetch_multiplier
+        return self.num_processes * self.prefetch_multiplier
 
     @property
     def _new_prefetch_count(self):
         return self.qos.value + self.prefetch_multiplier
+
+    @property
+    def num_processes(self):
+        if hasattr(self, 'available_processes'):
+            available_processes = self.available_processes
+        else:
+            available_processes = self.pool.num_processes
+        return available_processes
 
     def __repr__(self):
         """``repr(self)``."""

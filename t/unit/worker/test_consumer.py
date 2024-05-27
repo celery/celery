@@ -464,6 +464,21 @@ class test_Consumer(ConsumerTestCase):
                 with pytest.raises(ConnectionError):
                     c.ensure_connected(conn)
 
+    def test_connection_url(self):
+        c = self.get_consumer()
+        assert c.read_write_url is None
+        c = self.get_consumer(connection_url='123')
+        assert c.read_write_url == '123'
+
+    def test_num_processes(self):
+        c = self.get_consumer()
+        assert not hasattr(c, 'available_processes')
+        assert c.num_processes == 2
+        c = self.get_consumer(allocated_processes=4)
+        assert c.pool.num_processes == 2, 'Pool processes should be ignored when using allocated_processes'
+        assert c.available_processes == 4
+        assert c.num_processes == 4
+
 
 @pytest.mark.parametrize(
     "broker_connection_retry_on_startup,is_connection_loss_on_startup",

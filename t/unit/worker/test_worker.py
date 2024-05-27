@@ -112,7 +112,7 @@ class test_Consumer(ConsumerCase):
         c.connection = Mock(name='.connection')
         c.controller = c.app.WorkController()
         c.heart = Mock(name='.heart')
-        c.controller.consumer = c
+        c.controller.consumers = [c]
         c.pool = c.controller.pool = Mock(name='.controller.pool')
         c.node = Mock(name='.node')
         c.event_dispatcher = mock_event_dispatcher()
@@ -293,7 +293,7 @@ class test_Consumer(ConsumerCase):
             yield SyntaxError('bar')
         c = self.NoopConsumer(task_events=False, pool=BasePool())
         c.loop.side_effect = loop_side_effect()
-        c.pool.num_processes = 2
+        c.pool.num_processes = c.available_processes = 2
         c.connection_errors = (KeyError,)
         try:
             with pytest.raises(SyntaxError):
@@ -787,7 +787,7 @@ class test_WorkController(ConsumerCase):
         assert worker.timer is not None
         assert isinstance(worker.timer, Timer)
         assert worker.pool is not None
-        assert worker.consumer is not None
+        assert worker.consumers is not None
         assert worker.steps
 
     def test_with_embedded_beat(self):
@@ -812,7 +812,7 @@ class test_WorkController(ConsumerCase):
             threads=False,
         )
         # Given: This test requires a QoS defined on the worker consumer
-        worker.consumer.qos = qos = QoS(lambda prefetch_count: prefetch_count, 2)
+        worker.consumers[0].qos = qos = QoS(lambda prefetch_count: prefetch_count, 2)
         qos.update()
 
         # Given: We have started the worker pool
@@ -862,7 +862,7 @@ class test_WorkController(ConsumerCase):
         )
 
         # Given: This test requires a QoS defined on the worker consumer
-        worker.consumer.qos = qos = QoS(lambda prefetch_count: prefetch_count, 2)
+        worker.consumers[0].qos = qos = QoS(lambda prefetch_count: prefetch_count, 2)
         qos.update()
 
         # Given: We have started the worker pool
@@ -1039,12 +1039,12 @@ class test_WorkController(ConsumerCase):
 
     def test_signal_consumer_close(self):
         worker = self.worker
-        worker.consumer = Mock()
+        worker.consumers = [Mock()]
 
         worker.signal_consumer_close()
-        worker.consumer.close.assert_called_with()
+        worker.consumers[0].close.assert_called_with()
 
-        worker.consumer.close.side_effect = AttributeError()
+        worker.consumers[0].close.side_effect = AttributeError()
         worker.signal_consumer_close()
 
     def test_rusage__no_resource(self):
@@ -1158,12 +1158,14 @@ class test_WorkController(ConsumerCase):
     def test_Pool_pool_no_sem(self):
         w = Mock()
         w.pool_cls.uses_semaphore = False
+        w.concurrent_readers = 1
         components.Pool(w).create(w)
         assert w.process_task is w._process_task
 
     def test_Pool_create(self):
         from kombu.asynchronous.semaphore import LaxBoundedSemaphore
         w = Mock()
+        w.concurrent_readers = 1
         w._conninfo.connection_errors = w._conninfo.channel_errors = ()
         w.hub = Mock()
 
