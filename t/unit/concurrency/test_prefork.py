@@ -5,6 +5,8 @@ from itertools import cycle
 from unittest.mock import Mock, patch
 
 import pytest
+from billiard.pool import ApplyResult
+from kombu.asynchronous import Hub
 
 import t.skip
 from celery.app.defaults import DEFAULTS
@@ -353,6 +355,100 @@ class test_AsynPool:
 
         # Then: all items were removed from the managed data source
         assert fd_iter == {}, "Expected all items removed from managed dict"
+
+    def _get_hub(self):
+        hub = Hub()
+        hub.readers = {}
+        hub.writers = {}
+        hub.timer = Mock(name='hub.timer')
+        hub.timer._queue = [Mock()]
+        hub.fire_timers = Mock(name='hub.fire_timers')
+        hub.fire_timers.return_value = 1.7
+        hub.poller = Mock(name='hub.poller')
+        hub.close = Mock(name='hub.close()')
+        return hub
+
+    def test_schedule_writes_hub_remove_writer_ready_fd_not_in_all_inqueues(self):
+        pool = asynpool.AsynPool(threads=False)
+        hub = self._get_hub()
+
+        writer = Mock(name='writer')
+        reader = Mock(name='reader')
+
+        # add 2 fake fds with the same id
+        hub.add_reader(6, reader, 6)
+        hub.add_writer(6, writer, 6)
+        pool._all_inqueues.clear()
+        pool._create_write_handlers(hub)
+
+        # check schedule_writes write fds remove not remove the reader one from the hub.
+        hub.consolidate_callback(ready_fds=[6])
+        assert 6 in hub.readers
+        assert 6 not in hub.writers
+
+    def test_schedule_writes_hub_remove_writers_from_active_writers_when_get_index_error(self):
+        pool = asynpool.AsynPool(threads=False)
+        hub = self._get_hub()
+
+        writer = Mock(name='writer')
+        reader = Mock(name='reader')
+
+        # add 3 fake fds with the same id to reader and writer
+        hub.add_reader(6, reader, 6)
+        hub.add_reader(8, reader, 8)
+        hub.add_reader(9, reader, 9)
+        hub.add_writer(6, writer, 6)
+        hub.add_writer(8, writer, 8)
+        hub.add_writer(9, writer, 9)
+
+        # add fake fd to pool _all_inqueues to make sure we try to read from outbound_buffer
+        # set active_writes to 6 to make sure we remove all write fds except 6
+        pool._active_writes = {6}
+        pool._all_inqueues = {2, 6, 8, 9}
+
+        pool._create_write_handlers(hub)
+
+        # clear outbound_buffer to get IndexError when trying to pop any message
+        # in this case all active_writers fds will be removed from the hub
+        pool.outbound_buffer.clear()
+
+        hub.consolidate_callback(ready_fds=[2])
+        if {6, 8, 9} <= hub.readers.keys() and not {8, 9} <= hub.writers.keys():
+            assert True
+        else:
+            assert False
+
+        assert 6 in hub.writers
+
+    def test_schedule_writes_hub_remove_fd_only_from_writers_when_write_job_is_done(self):
+        pool = asynpool.AsynPool(threads=False)
+        hub = self._get_hub()
+
+        writer = Mock(name='writer')
+        reader = Mock(name='reader')
+
+        # add one writer and one reader with the same fd
+        hub.add_writer(2, writer, 2)
+        hub.add_reader(2, reader, 2)
+        assert 2 in hub.writers
+
+        # For test purposes to reach _write_job in schedule writes
+        pool._all_inqueues = {2}
+        worker = Mock("worker")
+        # this lambda need to return a number higher than 4
+        # to pass the while loop in _write_job function and to reach the hub.remove_writer
+        worker.send_job_offset = lambda header, HW: 5
+
+        pool._fileno_to_inq[2] = worker
+        pool._create_write_handlers(hub)
+
+        result = ApplyResult({}, lambda x: True)
+        result._payload = [None, None, -1]
+        pool.outbound_buffer.appendleft(result)
+
+        hub.consolidate_callback(ready_fds=[2])
+        assert 2 not in hub.writers
+        assert 2 in hub.readers
 
     def test_register_with_event_loop__no_on_tick_dupes(self):
         """Ensure AsynPool's register_with_event_loop only registers
