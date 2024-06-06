@@ -1,4 +1,4 @@
-pytest==8.2.0
+pytest==8.2.2
 pytest-celery[all]>=1.0.0
 pytest-rerunfailures==14.0
 pytest-subtests==0.12.1
