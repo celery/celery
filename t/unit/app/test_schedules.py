@@ -307,6 +307,20 @@ class test_crontab_remaining_estimate:
             datetime(2010, 9, 11, 14, 30, 15),
         )
         assert next == datetime(2010, 9, 13, 0, 5)
+    
+    def test_monthyear(self):
+        next = self.next_occurrence(
+            self.crontab(minute=30, hour=14, month_of_year='oct', day_of_month=18),
+            datetime(2010, 9, 11, 14, 30, 15),
+        )
+        assert next == datetime(2010, 10, 18, 14, 30)
+
+    def test_not_monthyear(self):
+        next = self.next_occurrence(
+            self.crontab(minute=[5, 42], month_of_year='nov-dec', day_of_month=13),
+            datetime(2010, 9, 11, 14, 30, 15),
+        )
+        assert next == datetime(2010, 11, 13, 0, 5)
 
     def test_monthday(self):
         next = self.next_occurrence(
@@ -607,6 +621,11 @@ class test_crontab_is_due:
     @pytest.mark.parametrize('month_of_year,expected', [
         (1, {1}),
         ('1', {1}),
+        ('feb', {2}),
+        ('Mar', {3}),
+        ('april', {4}),
+        ('may,jun,jul', {5, 6, 7}),
+        ('aug-oct', {8, 9, 10}),
         ('2,4,6', {2, 4, 6}),
         ('*/2', {1, 3, 5, 7, 9, 11}),
         ('2-12/2', {2, 4, 6, 8, 10, 12}),
@@ -615,7 +634,7 @@ class test_crontab_is_due:
         c = self.crontab(month_of_year=month_of_year)
         assert c.month_of_year == expected
 
-    @pytest.mark.parametrize('month_of_year', [0, '0-5', 13, '12,13'])
+    @pytest.mark.parametrize('month_of_year', [0, '0-5', 13, '12,13', 'jaan', 'sebtember'])
     def test_crontab_spec_invalid_moy(self, month_of_year):
         with pytest.raises(ValueError):
             self.crontab(month_of_year=month_of_year)
