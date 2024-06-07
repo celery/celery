@@ -307,7 +307,7 @@ class test_crontab_remaining_estimate:
             datetime(2010, 9, 11, 14, 30, 15),
         )
         assert next == datetime(2010, 9, 13, 0, 5)
-    
+
     def test_monthyear(self):
         next = self.next_occurrence(
             self.crontab(minute=30, hour=14, month_of_year='oct', day_of_month=18),
