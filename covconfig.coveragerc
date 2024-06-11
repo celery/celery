@@ -1,0 +1,9 @@
+[run]
+branch = True
+omit = t
+
+[report]
+show_missing = True
+
+[html]
+directory = coverage_html
