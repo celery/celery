@@ -148,6 +148,15 @@ The task message is only deleted from the queue after the task is
 :term:`acknowledged`, so if the worker crashes before acknowledging the task,
 it can be redelivered to another worker (or the same after recovery).
 
+Note that an exception is considered normal operation in Celery and it will be acknowledged.
+Acknowledgments are really used to safeguard against failures that can not be normally
+handled by the Python exception system (i.e. power failure, memory corruption, hardware failure, fatal signal, etc.).
+For normal exceptions you should use task.retry() to retry the task.
+
+.. seealso::
+
+    Notes at :ref:`faq-acks_late-vs-retry`.
+
 When using the default of early acknowledgment, having a prefetch multiplier setting
 of *one*, means the worker will reserve at most one extra task for every
 worker process: or in other words, if the worker is started with
@@ -155,20 +164,15 @@ worker process: or in other words, if the worker is started with
 tasks (10 acknowledged tasks executing, and 10 unacknowledged reserved
 tasks) at any time.
 
-Often users ask if disabling "prefetching of tasks" is possible, but what
-they really mean by that, is to have a worker only reserve as many tasks as
-there are worker processes (10 unacknowledged tasks for
-:option:`-c 10 <celery worker -c>`)
+Often users ask if disabling "prefetching of tasks" is possible, and it is
+possible with a catch. You can have a worker only reserve as many tasks as
+there are worker processes, with the condition that they are acknowledged
+late (10 unacknowledged tasks executing for :option:`-c 10 <celery worker -c>`)
 
-That's possible, but not without also enabling
-:term:`late acknowledgment`. Using this option over the
+For that, you need to enable  :term:`late acknowledgment`. Using this option over the
 default behavior means a task that's already started executing will be
 retried in the event of a power failure or the worker instance being killed
 abruptly, so this also means the task must be :term:`idempotent`
-
-.. seealso::
-
-    Notes at :ref:`faq-acks_late-vs-retry`.
 
 You can enable this behavior by using the following configuration options:
 
@@ -176,6 +180,10 @@ You can enable this behavior by using the following configuration options:
 
     task_acks_late = True
     worker_prefetch_multiplier = 1
+
+If you want to disable "prefetching of tasks" without using ack_late (because
+your tasks are not idempotent) that's impossible right now and you can join the
+discussion here https://github.com/celery/celery/discussions/7106
 
 Memory Usage
 ------------
