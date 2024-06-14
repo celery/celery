@@ -3,16 +3,17 @@ import os
 
 import pytest
 from kombu.serialization import registry
-from kombu.utils.encoding import bytes_to_str
+from kombu.utils.encoding import bytes_to_str, str_to_bytes
 
 from celery.exceptions import SecurityError
 from celery.security.certificate import Certificate, CertStore
 from celery.security.key import PrivateKey
-from celery.security.serialization import DEFAULT_SEPARATOR, SecureSerializer, register_auth
+from celery.security.serialization import SecureSerializer, register_auth
 
 from . import CERT1, CERT2, KEY1, KEY2
 from .case import SecurityCase
 
+DEFAULT_SEPARATOR = str_to_bytes("\x00\x01")
 
 class test_secureserializer(SecurityCase):
 

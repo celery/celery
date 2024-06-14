@@ -1,6 +1,7 @@
 [run]
 branch = True
 omit = t
+source = .
 
 [report]
 show_missing = True
