@@ -15,7 +15,7 @@ from celery import Celery
 from . import current_app
 from .utils.collections import AttributeDict
 from .utils.time import (ffwd, humanize_seconds, localize, maybe_make_aware, maybe_timedelta, remaining, timezone,
-                         weekday)
+                         weekday, yearmonth)
 
 __all__ = (
     'ParseException', 'schedule', 'crontab', 'crontab_parser',
@@ -300,9 +300,12 @@ class crontab_parser:
             i = int(s)
         except ValueError:
             try:
-                i = weekday(s)
+                i = yearmonth(s)
             except KeyError:
-                raise ValueError(f'Invalid weekday literal {s!r}.')
+                try:
+                    i = weekday(s)
+                except KeyError:
+                    raise ValueError(f'Invalid weekday literal {s!r}.')
 
         max_val = self.min_ + self.max_ - 1
         if i > max_val:

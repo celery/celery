@@ -139,7 +139,7 @@ clean-pyc:
 removepyc: clean-pyc
 
 clean-build:
-	rm -rf build/ dist/ .eggs/ *.egg-info/ .tox/ .coverage cover/
+	rm -rf build/ dist/ .eggs/ *.egg-info/ .coverage cover/
 
 clean-git:
 	$(GIT) clean -xdn
