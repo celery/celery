@@ -246,6 +246,22 @@ class test_crontab_parser:
         assert crontab(month_of_year='1') != schedule(10)
 
 
+class test_crontab_from_string:
+
+    def test_every_minute(self):
+        assert crontab.from_string('* * * * *') == crontab()
+
+    def test_every_minute_on_sunday(self):
+        assert crontab.from_string('* * * * SUN') == crontab(day_of_week='SUN')
+
+    def test_once_per_month(self):
+        assert crontab.from_string('0 8 5 * *') == crontab(minute=0, hour=8, day_of_month=5)
+
+    def test_invalid_crontab_string(self):
+        with pytest.raises(ValueError):
+            crontab.from_string('*')
+
+
 class test_crontab_remaining_estimate:
 
     def crontab(self, *args, **kwargs):

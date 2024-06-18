@@ -412,7 +412,7 @@ class crontab(BaseSchedule):
         super().__init__(**kwargs)
 
     @classmethod
-    def from_string(cls, crontab: str):
+    def from_string(cls, crontab: str) -> crontab:
         """
         Create a Crontab from a string. For example ``crontab='* * * * *'``.
         """
