@@ -148,17 +148,7 @@ def default(task, app, consumer,
             eventer=eventer, task=task, connection_errors=connection_errors,
             body=body, headers=headers, decoded=decoded, utc=utc,
         )
-        if _does_info:
-            # Similar to `app.trace.info()`, we pass the formatting args as the
-            # `extra` kwarg for custom log handlers
-            context = {
-                'id': req.id,
-                'name': req.name,
-                'args': req.argsrepr,
-                'kwargs': req.kwargsrepr,
-                'eta': req.eta,
-            }
-            info(_app_trace.LOG_RECEIVED, context, extra={'data': context})
+
         if (req.expires or req.id in revoked_tasks) and req.revoked():
             return
 
@@ -174,6 +164,18 @@ def default(task, app, consumer,
                 eta=req.eta and req.eta.isoformat(),
                 expires=req.expires and req.expires.isoformat(),
             )
+
+        if _does_info:
+            # Similar to `app.trace.info()`, we pass the formatting args as the
+            # `extra` kwarg for custom log handlers
+            context = {
+                'id': req.id,
+                'name': req.name,
+                'args': req.argsrepr,
+                'kwargs': req.kwargsrepr,
+                'eta': req.eta,
+            }
+            info(_app_trace.LOG_RECEIVED, context, extra={'data': context})
 
         bucket = None
         eta = None
