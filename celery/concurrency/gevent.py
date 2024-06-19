@@ -25,14 +25,14 @@ def apply_target(target, args=(), kwargs=None, callback=None,
 
 
 def apply_timeout(target, args=(), kwargs=None, callback=None,
-                  accept_callback=None, pid=None, timeout=None,
+                  accept_callback=None, getpid=None, timeout=None,
                   timeout_callback=None, Timeout=Timeout,
                   apply_target=base.apply_target, **rest):
     kwargs = {} if not kwargs else kwargs
     try:
         with Timeout(timeout):
             return apply_target(target, args, kwargs, callback,
-                                accept_callback, pid,
+                                accept_callback, getpid(),
                                 propagate=(Timeout,), **rest)
     except Timeout:
         return timeout_callback(False, timeout)
