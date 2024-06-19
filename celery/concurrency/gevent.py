@@ -18,10 +18,10 @@ __all__ = ('TaskPool',)
 
 
 def apply_target(target, args=(), kwargs=None, callback=None,
-                 accept_callback=None, getpid=None):
+                 accept_callback=None, getpid=None, **_):
     kwargs = {} if not kwargs else kwargs
     return base.apply_target(target, args, kwargs, callback, accept_callback,
-                             pid=getpid())
+                             pid=getpid(), **_)
 
 
 def apply_timeout(target, args=(), kwargs=None, callback=None,
