@@ -1823,7 +1823,7 @@ GCS backend settings
 
 GCS could be configured via the URL provided in :setting:`result_backend`, for example::
 
-    result_backend = 'gcs://mybucket/some-prefix?project=myproject&ttl=600'
+    result_backend = 'gs://mybucket/some-prefix?gcs_project=myproject&ttl=600'
 
 This backend requires the following configuration directives to be set:
 
