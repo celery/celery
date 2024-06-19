@@ -82,6 +82,7 @@ class TaskPool(base.BasePool):
     is_green = True
     task_join_will_block = False
     _pool = None
+    _pool_map = None
     _quick_put = None
 
     def __init__(self, *args, **kwargs):
@@ -94,6 +95,7 @@ class TaskPool(base.BasePool):
 
     def on_start(self):
         self._pool = self.Pool(self.limit)
+        self._pool_map = {}
         self._quick_put = self._pool.spawn
 
     def on_stop(self):
@@ -104,10 +106,12 @@ class TaskPool(base.BasePool):
                  accept_callback=None, timeout=None,
                  timeout_callback=None, apply_target=base.apply_target, **_):
         timeout = self.timeout if timeout is None else timeout
-        return self._quick_put(apply_timeout if timeout else apply_target,
+        greenlet = self._quick_put(apply_timeout if timeout else apply_target,
                                target, args, kwargs, callback, accept_callback,
                                timeout=timeout,
                                timeout_callback=timeout_callback)
+        self._add_to_pool_map(id(greenlet), greenlet)
+        return greenlet
 
     def grow(self, n=1):
         self._pool._semaphore.counter += n
@@ -117,6 +121,24 @@ class TaskPool(base.BasePool):
         self._pool._semaphore.counter -= n
         self._pool.size -= n
 
+    def terminate_job(self, pid, signal=None):
+        if pid in self._pool_map.keys():
+            greenlet = self._pool_map[pid]
+            greenlet.kill()
+            greenlet.wait()
+
     @property
     def num_processes(self):
         return len(self._pool)
+
+    def _add_to_pool_map(self, pid, greenlet):
+        self._pool_map[pid] = greenlet
+        greenlet.link(
+            TaskPool._cleanup_after_job_finish,
+            self._pool_map,
+            pid
+        )
+
+    @staticmethod
+    def _cleanup_after_job_finish(greenlet, pool_map, pid):
+        del pool_map[pid]
