@@ -94,7 +94,7 @@ class TaskPool(base.BasePool):
     _quick_put = None
 
     def __init__(self, *args, **kwargs):
-        from gevent import spawn_raw, getcurrent
+        from gevent import getcurrent, spawn_raw
         from gevent.pool import Pool
         self.Pool = Pool
         self.getcurrent = getcurrent
