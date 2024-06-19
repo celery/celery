@@ -86,9 +86,11 @@ class TaskPool(base.BasePool):
     _quick_put = None
 
     def __init__(self, *args, **kwargs):
-        from gevent import spawn_raw
+        from gevent import spawn_raw, getcurrent
         from gevent.pool import Pool
         self.Pool = Pool
+        self.getcurrent = getcurrent
+        self.getpid = lambda: id(getcurrent())
         self.spawn_n = spawn_raw
         self.timeout = kwargs.get('timeout')
         super().__init__(*args, **kwargs)
