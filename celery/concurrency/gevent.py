@@ -1,4 +1,5 @@
 """Gevent execution pool."""
+import functools
 from time import monotonic
 
 from kombu.asynchronous import timer as _timer
@@ -115,6 +116,7 @@ class TaskPool(base.BasePool):
                  accept_callback=None, timeout=None,
                  timeout_callback=None, apply_target=base.apply_target, **_):
         timeout = self.timeout if timeout is None else timeout
+        target = self._make_killable_target(target)
         greenlet = self._quick_put(apply_timeout if timeout else apply_target,
                                target, args, kwargs, callback, accept_callback,
                                timeout=timeout,
@@ -131,21 +133,32 @@ class TaskPool(base.BasePool):
         self._pool.size -= n
 
     def terminate_job(self, pid, signal=None):
-        if pid in self._pool_map.keys():
+        import gevent
+
+        if pid in self._pool_map:
             greenlet = self._pool_map[pid]
-            greenlet.kill()
-            greenlet.wait()
+            gevent.kill(greenlet)
 
     @property
     def num_processes(self):
         return len(self._pool)
 
+    @staticmethod
+    def _make_killable_target(target):
+        def killable_target(*args, **kwargs):
+            from gevent import GreenletExit
+
+            try:
+                return target(*args, **kwargs)
+            except GreenletExit:
+                return (False, None, None)
+
+        return killable_target
+
     def _add_to_pool_map(self, pid, greenlet):
         self._pool_map[pid] = greenlet
         greenlet.link(
-            TaskPool._cleanup_after_job_finish,
-            self._pool_map,
-            pid
+            functools.partial(self._cleanup_after_job_finish, pid=pid, pool_map=self._pool_map),
         )
 
     @staticmethod
