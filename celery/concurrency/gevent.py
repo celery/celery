@@ -145,8 +145,7 @@ class TaskPool(base.BasePool):
     @staticmethod
     def _make_killable_target(target):
         def killable_target(*args, **kwargs):
-            from gevent import GreenletExit
-
+            from greenlet import GreenletExit
             try:
                 return target(*args, **kwargs)
             except GreenletExit:

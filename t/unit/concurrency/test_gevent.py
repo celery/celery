@@ -8,7 +8,6 @@ gevent_modules = (
     'gevent.monkey',
     'gevent.pool',
     'gevent.signal',
-    'greenlet',
 )
 
 
@@ -98,6 +97,17 @@ class test_TaskPool:
         import gevent
 
         gevent.kill.assert_called_once()
+
+    def test_make_killable_target(self):
+        def valid_target():
+            return "some result..."
+
+        def terminating_target():
+            from greenlet import GreenletExit
+            raise GreenletExit
+
+        assert TaskPool._make_killable_target(valid_target)() == "some result..."
+        assert TaskPool._make_killable_target(terminating_target)() == (False, None, None)
 
     def test_cleanup_after_job_finish(self):
         testMap = {'1': None}
