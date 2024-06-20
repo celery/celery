@@ -92,10 +92,12 @@ class test_TaskPool:
         assert len(pool._pool_map.keys()) == 1
         pid = list(pool._pool_map.keys())[0]
         greenlet = pool._pool_map[pid]
+        greenlet.link.assert_called_once()
 
         pool.terminate_job(pid)
-        greenlet.link.assert_called_once()
-        greenlet.kill.assert_called_once()
+        import gevent
+
+        gevent.kill.assert_called_once()
 
     def test_cleanup_after_job_finish(self):
         testMap = {'1': None}
