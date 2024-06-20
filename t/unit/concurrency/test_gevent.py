@@ -121,9 +121,10 @@ class test_apply_timeout:
                 pass
         timeout_callback = Mock(name='timeout_callback')
         apply_target = Mock(name='apply_target')
+        getpid = Mock(name='getpid')
         apply_timeout(
             Mock(), timeout=10, callback=Mock(name='callback'),
-            timeout_callback=timeout_callback,
+            timeout_callback=timeout_callback, getpid=getpid,
             apply_target=apply_target, Timeout=Timeout,
         )
         assert Timeout.value == 10
@@ -132,7 +133,7 @@ class test_apply_timeout:
         apply_target.side_effect = Timeout(10)
         apply_timeout(
             Mock(), timeout=10, callback=Mock(),
-            timeout_callback=timeout_callback,
+            timeout_callback=timeout_callback, getpid=getpid,
             apply_target=apply_target, Timeout=Timeout,
         )
         timeout_callback.assert_called_with(False, 10)
