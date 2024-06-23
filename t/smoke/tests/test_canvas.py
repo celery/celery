@@ -1,8 +1,11 @@
+import uuid
+
 import pytest
 from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup
 
 from celery.canvas import chain, chord, group, signature
-from t.integration.tasks import ExpectedException, add, fail, identity
+from t.integration.conftest import get_redis_connection
+from t.integration.tasks import ExpectedException, add, fail, identity, redis_echo
 
 
 class test_signature:
@@ -51,6 +54,22 @@ class test_chain:
 
         with pytest.raises(ExpectedException):
             res.get(timeout=RESULT_TIMEOUT)
+
+    def test_upgrade_to_chord_inside_chains(self, celery_setup: CeleryTestSetup):
+        redis_key = str(uuid.uuid4())
+        queue = celery_setup.worker.worker_queue
+        group1 = group(redis_echo.si("a", redis_key), redis_echo.si("a", redis_key))
+        group2 = group(redis_echo.si("a", redis_key), redis_echo.si("a", redis_key))
+        chord1 = group1 | group2
+        chain1 = chain(
+            chord1, (redis_echo.si("a", redis_key) | redis_echo.si("b", redis_key).set(queue=queue))
+        )
+        chain1.apply_async(queue=queue).get(timeout=RESULT_TIMEOUT)
+        redis_connection = get_redis_connection()
+        actual = redis_connection.lrange(redis_key, 0, -1)
+        assert actual.count(b"a") == 5
+        assert actual.count(b"b") == 1
+        redis_connection.delete(redis_key)
 
 
 class test_chord:
