@@ -1108,6 +1108,25 @@ class test_chain:
         res = t3.apply_async()  # should not raise
         assert res.get(timeout=TIMEOUT) == 60
 
+    def test_upgrade_to_chord_inside_chains(self, manager):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        redis_key = str(uuid.uuid4())
+        group1 = group(redis_echo.si('a', redis_key), redis_echo.si('a', redis_key))
+        group2 = group(redis_echo.si('a', redis_key), redis_echo.si('a', redis_key))
+        chord1 = group1 | group2
+        chain1 = chain(chord1, (redis_echo.si('a', redis_key) | redis_echo.si('b', redis_key)))
+        chain1.apply_async().get(timeout=TIMEOUT)
+        redis_connection = get_redis_connection()
+        actual = redis_connection.lrange(redis_key, 0, -1)
+        assert actual.count(b'b') == 1
+        redis_connection.delete(redis_key)
+
 
 class test_result_set:
 
