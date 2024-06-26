@@ -21,12 +21,12 @@ import time
 from collections import Counter, deque, namedtuple
 from io import BytesIO
 from numbers import Integral
-import dill
 from pickle import HIGHEST_PROTOCOL
 from struct import pack, unpack, unpack_from
 from time import sleep
 from weakref import WeakValueDictionary, ref
 
+import dill
 from billiard import pool as _pool
 from billiard.compat import isblocking, setblocking
 from billiard.pool import ACK, NACK, RUN, TERMINATE, WorkersJoined
