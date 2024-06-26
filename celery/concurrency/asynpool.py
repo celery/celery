@@ -21,6 +21,7 @@ import time
 from collections import Counter, deque, namedtuple
 from io import BytesIO
 from numbers import Integral
+import dill
 from pickle import HIGHEST_PROTOCOL
 from struct import pack, unpack, unpack_from
 from time import sleep
@@ -31,7 +32,6 @@ from billiard.compat import isblocking, setblocking
 from billiard.pool import ACK, NACK, RUN, TERMINATE, WorkersJoined
 from billiard.queues import _SimpleQueue
 from kombu.asynchronous import ERR, WRITE
-from kombu.serialization import pickle as _pickle
 from kombu.utils.eventio import SELECT_BAD_FD
 from kombu.utils.functional import fxrange
 from vine import promise
@@ -254,7 +254,7 @@ class ResultHandler(_pool.ResultHandler):
     def _recv_message(self, add_reader, fd, callback,
                       __read__=__read__, readcanbuf=readcanbuf,
                       BytesIO=BytesIO, unpack_from=unpack_from,
-                      load=_pickle.load):
+                      load=dill.load):
         Hr = Br = 0
         if readcanbuf:
             buf = bytearray(4)
@@ -702,7 +702,7 @@ class AsynPool(_pool.Pool):
         self.on_process_down = on_process_down
 
     def _create_write_handlers(self, hub,
-                               pack=pack, dumps=_pickle.dumps,
+                               pack=pack, dumps=dill.dumps,
                                protocol=HIGHEST_PROTOCOL):
         """Create handlers used to write data to child processes."""
         fileno_to_inq = self._fileno_to_inq
@@ -1313,7 +1313,7 @@ class AsynPool(_pool.Pool):
         return removed
 
     def _create_payload(self, type_, args,
-                        dumps=_pickle.dumps, pack=pack,
+                        dumps=dill.dumps, pack=pack,
                         protocol=HIGHEST_PROTOCOL):
         body = dumps((type_, args), protocol=protocol)
         size = len(body)
