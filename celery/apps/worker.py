@@ -28,6 +28,8 @@ from celery.utils.log import get_logger, in_sighandler, set_in_sighandler
 from celery.utils.text import pluralize
 from celery.worker import WorkController
 
+from branch_dictionary import branch_coverage
+
 __all__ = ('Worker',)
 
 logger = get_logger(__name__)
@@ -118,15 +120,10 @@ class Worker(WorkController):
         # -- This will finalize the app!
         trace.setup_worker_optimizations(self.app, self.hostname)
 
+    #test 2
     def on_start(self):
-        func_activation = {'function_called': False} # yuh
-
-        func_activation['function_called'] = True # hihi
-
         app = self.app
         super().on_start()
-
-    
 
         # this signal can be used to, for example, change queues after
         # the -Q option has been applied.
@@ -135,40 +132,52 @@ class Worker(WorkController):
         )
 
         if self.purge:
+            branch_coverage["Worker.on_start1"] = True
             self.purge_messages()
+        else:
+            branch_coverage["Worker.on_start2"] = True
 
         if not self.quiet:
+            branch_coverage["Worker.on_start3"] = True
             self.emit_banner()
+        else:
+            branch_coverage["Worker.on_start4"] = True
 
         self.set_process_status('-active-')
         self.install_platform_tweaks(self)
         if not self._custom_logging and self.redirect_stdouts:
+            branch_coverage["Worker.on_start5"] = True
             app.log.redirect_stdouts(self.redirect_stdouts_level)
+        else:
+            branch_coverage["Worker.on_start6"] = True
 
         # TODO: Remove the following code in Celery 6.0
         # This qualifies as a hack for issue #6366.
         warn_deprecated = True
         config_source = app._config_source
         if isinstance(config_source, str):
+            branch_coverage["Worker.on_start7"] = True
             # Don't raise the warning when the settings originate from
             # django.conf:settings
             warn_deprecated = config_source.lower() not in [
                 'django.conf:settings',
             ]
+        else:
+            branch_coverage["Worker.on_start8"] = True
 
         if warn_deprecated:
+            branch_coverage["Worker.on_start9"] = True
             if app.conf.maybe_warn_deprecated_settings():
+                branch_coverage["Worker.on_start11"] = True
                 logger.warning(
                     "Please run `celery upgrade settings path/to/settings.py` "
                     "to avoid these warnings and to allow a smoother upgrade "
                     "to Celery 6.0."
                 )
-
-        if self.purge:
-            func_activation['purge_called'] = True 
-            self.purge_messages() 
-
-        print("Function Activation:", func_activation) 
+            else:
+                branch_coverage["Worker.on_start12"] = True
+        else:
+            branch_coverage["Worker.on_start10"] = True
 
     def emit_banner(self):
         # Dump configuration to screen so we have some basic information
