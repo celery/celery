@@ -16,6 +16,8 @@ from celery.utils import text
 from celery.utils.log import mlevel
 from celery.utils.time import maybe_iso8601
 
+from branch_dictionary import branch_coverage
+
 try:
     from pygments import highlight
     from pygments.formatters import Terminal256Formatter
@@ -140,9 +142,14 @@ def handle_preload_options(f):
 class CeleryOption(click.Option):
     """Customized option for Celery."""
 
+    #test2
     def get_default(self, ctx, *args, **kwargs):
+        branch_coverage["CeleryOption.get_default1"] = True
         if self.default_value_from_context:
+            branch_coverage["CeleryOption.get_default1"] = True
             self.default = ctx.obj[self.default_value_from_context]
+        else:
+            branch_coverage["CeleryOption.get_default2"] = True
         return super().get_default(ctx, *args, **kwargs)
 
     def __init__(self, *args, **kwargs):

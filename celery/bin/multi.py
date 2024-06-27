@@ -113,6 +113,8 @@ from celery.platforms import EX_FAILURE, EX_OK, signals
 from celery.utils import term
 from celery.utils.text import pluralize
 
+from branch_dictionary import branch_coverage
+
 __all__ = ('MultiTool',)
 
 USAGE = """\
@@ -201,9 +203,13 @@ class TermLogger:
         self.usage()
         return EX_FAILURE
 
+    #test 1
     def info(self, msg, newline=True):
         if self.verbose:
+            branch_coverage["TermLogger.info1"] = True
             self.note(msg, newline=newline)
+        else:
+            branch_coverage["TermLogger.info2"] = True
 
     def note(self, msg, newline=True):
         if not self.quiet:

@@ -2,9 +2,9 @@ import pytest
 import celery
 from unittest.mock import Mock
 
-from multi.py import TermLogger
+from celery.bin.multi import TermLogger
 
-class TestTermLogger:
+class test_TermLogger:
 
     @pytest.fixture
     def term_logger(self):

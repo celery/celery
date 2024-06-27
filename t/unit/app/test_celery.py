@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 import click
 
 # Assuming the CeleryOption class is defined in a module named celery_option
-from multi.py import CeleryOption
+from celery.bin.base import CeleryOption
 
 def test_version():
     assert celery.VERSION
@@ -19,8 +19,7 @@ def test_version():
 def test_meta(attr):
     assert getattr(celery, attr, None)
 
-
-class TestCeleryOption:
+class test_CeleryOption:
 
     @pytest.fixture
     def mock_ctx(self):
