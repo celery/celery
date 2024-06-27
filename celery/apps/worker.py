@@ -119,8 +119,14 @@ class Worker(WorkController):
         trace.setup_worker_optimizations(self.app, self.hostname)
 
     def on_start(self):
+        func_activation = {'function_called': False} # yuh
+
+        func_activation['function_called'] = True # hihi
+
         app = self.app
         super().on_start()
+
+    
 
         # this signal can be used to, for example, change queues after
         # the -Q option has been applied.
@@ -157,6 +163,12 @@ class Worker(WorkController):
                     "to avoid these warnings and to allow a smoother upgrade "
                     "to Celery 6.0."
                 )
+
+        if self.purge:
+            func_activation['purge_called'] = True 
+            self.purge_messages() 
+
+        print("Function Activation:", func_activation) 
 
     def emit_banner(self):
         # Dump configuration to screen so we have some basic information

@@ -70,6 +70,44 @@ class test_inspect:
         i = self.app.control.inspect(destination='w1')
         assert i._prepare([{'w1': {'ok': 1}}]) == {'ok': 1}
 
+    def test_prepare_with_reply_and_destination(self):
+        reply = {"key1": "value1"}
+        self.inspect.destination = "some_destination"  # rah
+        result = self.inspect._prepare(reply)
+        assert result is not None
+        assert self.inspect.func_coverage['reply_check']  # rah
+        assert self.inspect.func_coverage['destination_check']  # rah
+        assert not self.inspect.func_coverage['pattern_check']  # rah
+
+    def test_prepare_with_reply_and_pattern(self):  # rah
+        reply = {"key1": "value1"}
+        self.inspect.destination = None  # rah
+        self.inspect.pattern = "some_pattern"  # rah
+        self.inspect.matcher = "some_matcher"  # rah
+        result = self.inspect._prepare(reply)
+        assert result is not None
+        assert self.inspect.func_coverage['reply_check']  # rah
+        assert not self.inspect.func_coverage['destination_check']  # rah
+        assert self.inspect.func_coverage['pattern_check']  # rah
+
+    def test_prepare_with_reply_no_destination_no_pattern(self):  # rah
+        reply = {"key1": "value1"}
+        self.inspect.destination = None  # rah
+        self.inspect.pattern = None  # rah
+        result = self.inspect._prepare(reply)
+        assert result is not None
+        assert self.inspect.func_coverage['reply_check']  # rah
+        assert not self.inspect.func_coverage['destination_check']  # rah
+        assert not self.inspect.func_coverage['pattern_check']  # rah
+
+    def test_prepare_without_reply(self):  # rah
+        reply = None
+        result = self.inspect._prepare(reply)
+        assert result is None
+        assert not self.inspect.func_coverage['reply_check']  # rah
+        assert not self.inspect.func_coverage['destination_check']  # rah
+        assert not self.inspect.func_coverage['pattern_check']  # rah
+
     def assert_broadcast_called(self, command,
                                 destination=None,
                                 callback=None,

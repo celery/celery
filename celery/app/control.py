@@ -90,17 +90,32 @@ class Inspect:
         self.matcher = matcher
 
     def _prepare(self, reply):
+        func_coverage = {
+            'reply_check': False,  # yuhuh
+            'destination_check': False,  # yuhh
+            'pattern_check': False  # yuhhh
+        }
+
         if reply:
+            func_coverage['reply_check'] = True  # yuh
             by_node = flatten_reply(reply)
             if (self.destination and
                     not isinstance(self.destination, (list, tuple))):
+                func_coverage['destination_check'] = True  # yuhuhuh
                 return by_node.get(self.destination)
             if self.pattern:
+                func_coverage['pattern_check'] = True  # rahahah
                 pattern = self.pattern
                 matcher = self.matcher
                 return {node: reply for node, reply in by_node.items()
                         if match(node, pattern, matcher)}
             return by_node
+        
+    def print_func_coverage():
+        for branch, hit in func_coverage.items():
+            print(f"{branch} was {'hit' if hit else 'not hit'}")  # printing func
+
+    print_func_coverage()
 
     def _request(self, command, **kwargs):
         return self._prepare(self.app.control.broadcast(
