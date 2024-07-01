@@ -336,12 +336,12 @@ class Celery:
         # simplify pickling of the app object.
         self._preconf = changes or {}
         self._preconf_set_by_auto = set()
-        self.__autoset('broker_url', broker)
-        self.__autoset('result_backend', backend)
-        self.__autoset('include', include)
+        self._autoset('broker_url', broker)
+        self._autoset('result_backend', backend)
+        self._autoset('include', include)
 
         for key, value in kwargs.items():
-            self.__autoset(key, value)
+            self._autoset(key, value)
 
         self._conf = Settings(
             PendingConfiguration(
@@ -387,7 +387,7 @@ class Celery:
     def on_init(self):
         """Optional callback called at init."""
 
-    def __autoset(self, key, value):
+    def _autoset(self, key, value):
         if value is not None:
             self._preconf[key] = value
             self._preconf_set_by_auto.add(key)

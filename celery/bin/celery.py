@@ -153,9 +153,9 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir,
         # Default app takes loader from this env (Issue #1066).
         os.environ['CELERY_LOADER'] = loader
     if broker:
-        os.environ['CELERY_BROKER_URL'] = broker
+        app._autoset('broker_url', broker)
     if result_backend:
-        os.environ['CELERY_RESULT_BACKEND'] = result_backend
+        app._autoset('result_backend', result_backend)
     if config:
         os.environ['CELERY_CONFIG_MODULE'] = config
     if skip_checks:

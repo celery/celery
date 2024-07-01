@@ -100,8 +100,8 @@ class Settings(ConfigurationView):
     @property
     def broker_url(self):
         return (
-            self.first('broker_url', 'broker_host')
-            or os.environ.get('CELERY_BROKER_URL')
+            self.first('broker_url', 'broker_host') or
+            os.environ.get('CELERY_BROKER_URL')
         )
 
     @property
