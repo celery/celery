@@ -3,6 +3,7 @@ import itertools
 import os
 import ssl
 import sys
+import typing
 import uuid
 from copy import deepcopy
 from datetime import datetime, timedelta
@@ -11,6 +12,7 @@ from pickle import dumps, loads
 from unittest.mock import Mock, patch
 
 import pytest
+from pydantic import BaseModel, ValidationInfo, model_validator
 from vine import promise
 
 from celery import Celery, _state
@@ -504,6 +506,166 @@ class test_App:
             def foo():
                 pass
             check.assert_called_with(foo)
+
+    def test_task_with_pydantic_with_no_args(self):
+        """Test a pydantic task with no arguments or return value."""
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo():
+                check()
+
+            assert foo() is None
+            check.assert_called_once()
+
+    def test_task_with_pydantic_with_arg_and_kwarg(self):
+        """Test a pydantic task with simple (non-pydantic) arg/kwarg and return value."""
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo(arg: int, kwarg: bool = True) -> int:
+                check(arg, kwarg=kwarg)
+                return 1
+
+            assert foo(0) == 1
+            check.assert_called_once_with(0, kwarg=True)
+
+    def test_task_with_pydantic_with_pydantic_arg_and_default_kwarg(self):
+        """Test a pydantic task with pydantic arg/kwarg and return value."""
+
+        class ArgModel(BaseModel):
+            arg_value: int
+
+        class KwargModel(BaseModel):
+            kwarg_value: int
+
+        kwarg_default = KwargModel(kwarg_value=1)
+
+        class ReturnModel(BaseModel):
+            ret_value: int
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo(arg: ArgModel, kwarg: KwargModel = kwarg_default) -> ReturnModel:
+                check(arg, kwarg=kwarg)
+                return ReturnModel(ret_value=2)
+
+            assert foo({'arg_value': 0}) == {'ret_value': 2}
+            check.assert_called_once_with(ArgModel(arg_value=0), kwarg=kwarg_default)
+            check.reset_mock()
+
+            # Explicitly pass kwarg (but as argument)
+            assert foo({'arg_value': 3}, {'kwarg_value': 4}) == {'ret_value': 2}
+            check.assert_called_once_with(ArgModel(arg_value=3), kwarg=KwargModel(kwarg_value=4))
+            check.reset_mock()
+
+            # Explicitly pass all arguments as kwarg
+            assert foo(arg={'arg_value': 5}, kwarg={'kwarg_value': 6}) == {'ret_value': 2}
+            check.assert_called_once_with(ArgModel(arg_value=5), kwarg=KwargModel(kwarg_value=6))
+
+    def test_task_with_pydantic_with_task_name_in_context(self):
+        """Test that the task name is passed to as additional context."""
+
+        class ArgModel(BaseModel):
+            value: int
+
+            @model_validator(mode='after')
+            def validate_context(self, info: ValidationInfo):
+                context = info.context
+                assert context
+                assert context.get('celery_task_name') == 't.unit.app.test_app.task'
+                return self
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def task(arg: ArgModel):
+                check(arg)
+                return 1
+
+            assert task({'value': 1}) == 1
+
+    def test_task_with_pydantic_with_strict_validation(self):
+        """Test a pydantic task with/without strict model validation."""
+
+        class ArgModel(BaseModel):
+            value: int
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True, pydantic_strict=True)
+            def strict(arg: ArgModel):
+                check(arg)
+
+            @app.task(pydantic=True, pydantic_strict=False)
+            def loose(arg: ArgModel):
+                check(arg)
+
+            # In Pydantic, passing an "exact int" as float works without strict validation
+            assert loose({'value': 1.0}) is None
+            check.assert_called_once_with(ArgModel(value=1))
+            check.reset_mock()
+
+            # ... but a non-strict value will raise an exception
+            with pytest.raises(ValueError):
+                loose({'value': 1.1})
+            check.assert_not_called()
+
+            # ... with strict validation, even an "exact int" will not work:
+            with pytest.raises(ValueError):
+                strict({'value': 1.0})
+            check.assert_not_called()
+
+    def test_task_with_pydantic_with_extra_context(self):
+        """Test passing additional validation context to the model."""
+
+        class ArgModel(BaseModel):
+            value: int
+
+            @model_validator(mode='after')
+            def validate_context(self, info: ValidationInfo):
+                context = info.context
+                assert context, context
+                assert context.get('foo') == 'bar'
+                return self
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True, pydantic_context={'foo': 'bar'})
+            def task(arg: ArgModel):
+                check(arg.value)
+                return 1
+
+            assert task({'value': 1}) == 1
+            check.assert_called_once_with(1)
+
+    def test_task_with_pydantic_with_dump_kwargs(self):
+        """Test passing keyword arguments to model_dump()."""
+
+        class ArgModel(BaseModel):
+            value: int
+
+        class RetModel(BaseModel):
+            value: datetime
+            unset_value: typing.Optional[int] = 99  # this would be in the output, if exclude_unset weren't True
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True, pydantic_dump_kwargs={'mode': 'python', 'exclude_unset': True})
+            def task(arg: ArgModel) -> RetModel:
+                check(arg)
+                return RetModel(value=datetime(2024, 5, 14, tzinfo=timezone.utc))
+
+            assert task({'value': 1}) == {'value': datetime(2024, 5, 14, tzinfo=timezone.utc)}
+            check.assert_called_once_with(ArgModel(value=1))
 
     def test_task_sets_main_name_MP_MAIN_FILE(self):
         from celery.utils import imports as _imports

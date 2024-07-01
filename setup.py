@@ -31,6 +31,7 @@ EXTENSIONS = {
     'mongodb',
     'msgpack',
     'pymemcache',
+    'pydantic',
     'pyro',
     'pytest',
     'redis',

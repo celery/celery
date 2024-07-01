@@ -15,3 +15,4 @@ pre-commit>=3.6.1; python_version >= '3.9'
 -r extras/msgpack.txt
 -r extras/mongodb.txt
 -r extras/gcs.txt
+-r extras/pydantic.txt
