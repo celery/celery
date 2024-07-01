@@ -53,8 +53,7 @@ HEARTBEAT_DRIFT_MAX = 16
 
 DRIFT_WARNING = (
     "Substantial drift from %s may mean clocks are out of sync.  Current drift is "
-    "%s seconds.  [orig: %s recv: %s]"
-)
+    "%s seconds.  [orig: %s recv: %s]")
 
 logger = get_logger(__name__)
 warn = logger.warning
@@ -187,7 +186,7 @@ class Worker:
         hb_pop = self.heartbeats.pop
         hb_append = self.heartbeats.append
 
-        def event(type_, timestamp=None,
+        def event(type_, timestamp=None, non_adjusted_timestamp=None,
                   local_received=None, fields=None,
                   max_drift=HEARTBEAT_DRIFT_MAX, abs=abs, int=int,
                   insort=bisect.insort, len=len):
@@ -197,9 +196,9 @@ class Worker:
             if type_ == 'offline':
                 heartbeats[:] = []
             else:
-                if not local_received or not timestamp:
+                if not (local_received and timestamp and non_adjusted_timestamp):
                     return
-                drift = abs(int(local_received) - int(timestamp))
+                drift = abs(int(local_received) - int(non_adjusted_timestamp))
                 if drift > max_drift:
                     _warn_drift(self.hostname, drift,
                                 local_received, timestamp)
@@ -516,9 +515,12 @@ class State:
         # This code is highly optimized, but not for reusability.
         get_handler = self.handlers.__getitem__
         event_callback = self.event_callback
-        wfields = itemgetter('hostname', 'timestamp', 'local_received')
-        tfields = itemgetter('uuid', 'hostname', 'timestamp',
-                             'local_received', 'clock')
+        wfields = itemgetter(
+            'hostname', "timestamp", "non_adjusted_timestamp",
+            'local_received')
+        tfields = itemgetter(
+            'uuid', 'hostname', "timestamp", "non_adjusted_timestamp",
+            'local_received', 'clock')
         taskheap = self._taskheap
         th_append = taskheap.append
         th_pop = taskheap.pop
@@ -553,7 +555,8 @@ class State:
 
             if group == 'worker':
                 try:
-                    hostname, timestamp, local_received = wfields(event)
+                    hostname, timestamp, non_adjusted_timestamp, local_received = wfields(
+                        event)
                 except KeyError:
                     pass
                 else:
@@ -565,7 +568,8 @@ class State:
                             worker, created = Worker(hostname), False
                         else:
                             worker = workers[hostname] = Worker(hostname)
-                    worker.event(subject, timestamp, local_received, event)
+                    worker.event(subject, timestamp, non_adjusted_timestamp,
+                                 local_received, event)
                     if on_node_join and (created or subject == 'online'):
                         on_node_join(worker)
                     if on_node_leave and is_offline:
@@ -573,7 +577,7 @@ class State:
                         workers.pop(hostname, None)
                     return (worker, created), subject
             elif group == 'task':
-                (uuid, hostname, timestamp,
+                (uuid, hostname, timestamp, non_adjusted_timestamp,
                  local_received, clock) = tfields(event)
                 # task-sent event is sent by client, not worker
                 is_client_event = subject == 'sent'
@@ -591,7 +595,8 @@ class State:
                         worker = workers[hostname] = Worker(hostname)
                     task.worker = worker
                     if worker is not None and local_received:
-                        worker.event(None, local_received, timestamp)
+                        worker.event(None, local_received, timestamp,
+                                     non_adjusted_timestamp)
 
                 origin = hostname if is_client_event else worker.id
 
