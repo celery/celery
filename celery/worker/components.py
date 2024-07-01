@@ -95,6 +95,47 @@ class Hub(bootsteps.StartStopStep):
             pool.Lock = DummyLock
 
 
+class Hub2(bootsteps.StartStopStep):
+    """Worker starts the event loop."""
+
+    requires = (Timer,)
+
+    def __init__(self, w, **kwargs):
+        w.hub2 = None
+        super().__init__(w, **kwargs)
+
+    def include_if(self, w):
+        return w.use_eventloop
+
+    def create(self, w):
+        if w.hub2 is None:
+            required_hub = getattr(w._conninfo, 'requires_hub', None)
+            w.hub2 = set_event_loop((
+                required_hub if required_hub else _Hub)(w.timer))
+        self._patch_thread_primitives(w)
+        return self
+
+    def start(self, w):
+        pass
+
+    def stop(self, w):
+        w.hub2.close()
+
+    def terminate(self, w):
+        w.hub2.close()
+
+    def _patch_thread_primitives(self, w):
+        # make clock use dummy lock
+        w.app.clock.mutex = DummyLock()
+        # multiprocessing's ApplyResult uses this lock.
+        try:
+            from billiard import pool
+        except ImportError:
+            pass
+        else:
+            pool.Lock = DummyLock
+
+
 class Pool(bootsteps.StartStopStep):
     """Bootstep managing the worker pool.
 
@@ -137,7 +178,8 @@ class Pool(bootsteps.StartStopStep):
         max_restarts = None
         if w.app.conf.worker_pool in GREEN_POOLS:  # pragma: no cover
             warnings.warn(UserWarning(W_POOL_SETTING))
-        threaded = not w.use_eventloop or IS_WINDOWS
+        # threaded = not w.use_eventloop or IS_WINDOWS
+        threaded = True  # WORKS WITH PREFORK
         procs = w.min_concurrency
         w.process_task = w._process_task
         if not threaded:
@@ -215,6 +257,8 @@ class StateDB(bootsteps.Step):
 class Consumer(bootsteps.StartStopStep):
     """Bootstep starting the Consumer blueprint."""
 
+    requires = ('celery.worker.components:Hub2',)
+
     last = True
 
     def create(self, w):
@@ -222,7 +266,7 @@ class Consumer(bootsteps.StartStopStep):
             prefetch_count = max(w.max_concurrency, 1) * w.prefetch_multiplier
         else:
             prefetch_count = w.concurrency * w.prefetch_multiplier
-        c = w.consumer = self.instantiate(
+        c = w.consumer = [self.instantiate(
             w.consumer_cls, w.process_task,
             hostname=w.hostname,
             task_events=w.task_events,
@@ -236,5 +280,33 @@ class Consumer(bootsteps.StartStopStep):
             worker_options=w.options,
             disable_rate_limits=w.disable_rate_limits,
             prefetch_multiplier=w.prefetch_multiplier,
-        )
+            url=w.app.conf.broker_url.split(';')[0]
+        ),
+            self.instantiate(
+                w.consumer_cls, w.process_task,
+                hostname=w.hostname,
+                task_events=w.task_events,
+                init_callback=w.ready_callback,
+                initial_prefetch_count=prefetch_count,
+                pool=w.pool,
+                timer=w.timer,
+                app=w.app,
+                controller=w,
+                hub=w.hub2,
+                worker_options=w.options,
+                disable_rate_limits=w.disable_rate_limits,
+                prefetch_multiplier=w.prefetch_multiplier,
+                url=w.app.conf.broker_url.split(';')[1]
+            )]
         return c
+
+    def start(self, parent):
+        if self.obj:
+            if isinstance(self.obj, list):
+                from threading import Thread
+                y = Thread(target=self.obj[0].start)
+                x = Thread(target=self.obj[1].start)
+                x.start()
+                y.start()
+                return [x, y]
+            return self.obj.start()
