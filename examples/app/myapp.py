@@ -28,7 +28,7 @@ from celery import Celery
 
 app = Celery(
     'myapp',
-    broker='amqp://guest@localhost//',
+    broker='redis:///0|redis:///1',
     # ## add result backend here if needed.
     # backend='rpc'
     task_acks_late=True

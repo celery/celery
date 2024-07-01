@@ -1,6 +1,7 @@
 """Worker-level Bootsteps."""
 import atexit
 import warnings
+from threading import Thread
 
 from kombu.asynchronous import Hub as _Hub
 from kombu.asynchronous import get_event_loop, set_event_loop
@@ -59,18 +60,25 @@ class Hub(bootsteps.StartStopStep):
     requires = (Timer,)
 
     def __init__(self, w, **kwargs):
-        w.hub = None
+        w.concurrent_readers_delimiter = '|'
+
+        if self._is_concurrency_needed(w):
+            w.concurrent_readers = len(w.app.conf.broker_url.split(w.concurrent_readers_delimiter))
+        else:
+            w.concurrent_readers = 1
+
+        w.hubs = []
+
         super().__init__(w, **kwargs)
 
     def include_if(self, w):
         return w.use_eventloop
 
     def create(self, w):
-        w.hub = get_event_loop()
-        if w.hub is None:
-            required_hub = getattr(w._conninfo, 'requires_hub', None)
-            w.hub = set_event_loop((
-                required_hub if required_hub else _Hub)(w.timer))
+        if self._is_concurrency_needed(w):
+            self._create_concurrent_hubs(w)
+        else:
+            self._create_global_hub(w)
         self._patch_thread_primitives(w)
         return self
 
@@ -78,10 +86,11 @@ class Hub(bootsteps.StartStopStep):
         pass
 
     def stop(self, w):
-        w.hub.close()
+        for hub in w.hubs:
+            hub.close()
 
     def terminate(self, w):
-        w.hub.close()
+        self.stop(w)
 
     def _patch_thread_primitives(self, w):
         # make clock use dummy lock
@@ -93,6 +102,22 @@ class Hub(bootsteps.StartStopStep):
             pass
         else:
             pool.Lock = DummyLock
+
+    def _is_concurrency_needed(self, w):
+        if isinstance(w.app.conf.broker_url, str):
+            return w.concurrent_readers_delimiter in w.app.conf.broker_url
+        return False
+
+    def _create_concurrent_hubs(self, w):
+        for _ in range(w.concurrent_readers):
+            w.hubs.append(_Hub(w.timer))
+        set_event_loop(None)  # Avoid using the global loop
+
+    def _create_global_hub(self, w):
+        w.hubs.append(get_event_loop())
+        if w.hubs[0] is None:
+            required_hub = getattr(w._conninfo, "requires_hub", None)
+            w.hubs[0] = set_event_loop((required_hub if required_hub else _Hub)(w.timer))
 
 
 class Pool(bootsteps.StartStopStep):
@@ -137,7 +162,7 @@ class Pool(bootsteps.StartStopStep):
         max_restarts = None
         if w.app.conf.worker_pool in GREEN_POOLS:  # pragma: no cover
             warnings.warn(UserWarning(W_POOL_SETTING))
-        threaded = not w.use_eventloop or IS_WINDOWS
+        threaded = not w.use_eventloop or IS_WINDOWS or w.concurrent_readers > 1
         procs = w.min_concurrency
         w.process_task = w._process_task
         if not threaded:
@@ -222,19 +247,130 @@ class Consumer(bootsteps.StartStopStep):
             prefetch_count = max(w.max_concurrency, 1) * w.prefetch_multiplier
         else:
             prefetch_count = w.concurrency * w.prefetch_multiplier
-        c = w.consumer = self.instantiate(
-            w.consumer_cls, w.process_task,
-            hostname=w.hostname,
-            task_events=w.task_events,
-            init_callback=w.ready_callback,
-            initial_prefetch_count=prefetch_count,
-            pool=w.pool,
-            timer=w.timer,
-            app=w.app,
-            controller=w,
-            hub=w.hub,
-            worker_options=w.options,
-            disable_rate_limits=w.disable_rate_limits,
+
+        w.consumers = self._create_consumers(
+            w,
+            concurrency=prefetch_count / w.prefetch_multiplier,
             prefetch_multiplier=w.prefetch_multiplier,
+            consumers_count=w.concurrent_readers,
         )
-        return c
+        return w.consumers
+
+    def start(self, parent):
+        if len(self.obj) == 1:
+            return self.obj[0].start()
+
+        consumer_threads = []
+        for consumer in self.obj:
+            t = Thread(target=consumer.start)
+            consumer_threads.append(t)
+            t.start()
+        return consumer_threads
+
+    def stop(self, parent):
+        if len(self.obj) == 1:
+            return self.obj[0].stop()
+
+        stopped_consumers = []
+        for consumer in self.obj:
+            stopped_consumers.append(consumer.stop())
+        return stopped_consumers
+
+    def terminate(self, parent):
+        return self.stop(parent)
+
+    def distribute_prefetch(
+        self,
+        concurrency: int,
+        prefetch_multiplier: int,
+        consumers_count: int,
+    ) -> list:
+        """Distribute the available prefetch count among consumers.
+
+        Each consumer will have its own concurrency and a multiplier of 1, so the prefetch count
+        will be distributed among consumers as evenly as possible. This algorithm
+        will calculate the distribution of the concurrency itself and initial prefetch count for the consumers.
+
+        Args:
+            concurrency (int): Original concurrency value. Greater than 0.
+            prefetch_multiplier (int): Original prefetch_multiplier value. Greater than 0.
+            consumers_count (int): Number of consumers. Greater than 0.
+
+        Returns:
+            list: Distribution values for the consumers.
+        """
+        if concurrency <= 0 or prefetch_multiplier <= 0 or consumers_count <= 0:
+            raise ValueError(
+                "concurrency, prefetch_multiplier and consumers_count should be greater than 0."
+            )
+
+        # Original prefetch count that needs to be distributed
+        full_prefetch_count = concurrency * prefetch_multiplier
+
+        # Calculate "full" chunks and "remainder" chunks
+        chunks = min(consumers_count, full_prefetch_count)
+        dist_chunk = full_prefetch_count // chunks
+        remainder = full_prefetch_count % chunks
+
+        # Distribute evently between "full" chunks
+        distribution = [
+            dist_chunk + 1 if i < remainder else dist_chunk for i in range(chunks)
+        ]
+
+        # Padding with prefetch count of 1s if there are more consumers than available concurrency
+        if consumers_count > full_prefetch_count:
+            distribution.extend([1] * (consumers_count - full_prefetch_count))
+
+        return distribution
+
+    def _create_consumers(
+        self,
+        w,
+        concurrency: int,
+        prefetch_multiplier: int,
+        consumers_count: int,
+    ) -> list:
+        consumers = []
+        distribution = self.distribute_prefetch(
+            concurrency=concurrency,
+            prefetch_multiplier=prefetch_multiplier,
+            consumers_count=consumers_count,
+        )
+        hubs = w.hubs or [None]
+        urls = w.app.conf.broker_url.split(w.concurrent_readers_delimiter)
+
+        if len(urls) != consumers_count:
+            raise ValueError(
+                f"Number of consumers ({consumers_count}) does not match the number of brokers ({len(urls)})."
+            )
+
+        for dist, hub, url in zip(distribution, hubs, urls):
+            dist = int(dist)
+            if consumers_count > 1:
+                multiplier = 1
+                allocated_processes = dist
+            else:
+                multiplier = prefetch_multiplier
+                allocated_processes = None
+                url = None
+
+            c = self.instantiate(
+                w.consumer_cls,
+                w.process_task,
+                hostname=w.hostname,
+                task_events=w.task_events,
+                init_callback=w.ready_callback,
+                initial_prefetch_count=dist,
+                pool=w.pool,
+                timer=w.timer,
+                app=w.app,
+                controller=w,
+                hub=hub,
+                worker_options=w.options,
+                disable_rate_limits=w.disable_rate_limits,
+                prefetch_multiplier=multiplier,
+                connection_url=url,
+                allocated_processes=allocated_processes,
+            )
+            consumers.append(c)
+        return consumers

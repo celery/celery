@@ -227,7 +227,7 @@ class Worker(WorkController):
             hostname=safe_str(self.hostname),
             timestamp=datetime.now().replace(microsecond=0),
             version=VERSION_BANNER,
-            conninfo=self.app.connection().as_uri(),
+            conninfo='|'.join(c.read_write_url or c.app.connection().as_uri() for c in self.consumers),
             results=self.app.backend.as_uri(),
             concurrency=concurrency,
             platform=safe_str(_platform.platform()),
