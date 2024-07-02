@@ -261,6 +261,7 @@ NAMESPACES = Namespace(
         inherit_parent_priority=Option(False, type='bool'),
         default_delivery_mode=Option(2, type='string'),
         default_queue=Option('celery'),
+        default_queue_type=Option('classic', type='string'),
         default_exchange=Option(None, type='string'),  # taken from queue
         default_exchange_type=Option('direct'),
         default_routing_key=Option(None, type='string'),  # taken from queue
