@@ -249,9 +249,13 @@ class AMQP:
         if max_priority is None:
             max_priority = conf.task_queue_max_priority
         if not queues and conf.task_default_queue:
+            queue_arguments = None
+            if conf.task_default_queue_type == 'quorum':
+                queue_arguments = {'x-queue-type': 'quorum'}
             queues = (Queue(conf.task_default_queue,
                             exchange=self.default_exchange,
-                            routing_key=default_routing_key),)
+                            routing_key=default_routing_key,
+                            queue_arguments=queue_arguments),)
         autoexchange = (self.autoexchange if autoexchange is None
                         else autoexchange)
         return self.queues_cls(
