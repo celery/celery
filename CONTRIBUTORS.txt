@@ -298,3 +298,4 @@ Jeremy Z. Othieno 2023/07/27
 Tomer Nosrati, 2022/17/07
 Andy Zickler, 2024/01/18
 Johannes Faigle, 2024/06/18
+Giovanni Giampauli, 2024/06/26
