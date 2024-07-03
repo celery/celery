@@ -772,7 +772,7 @@ class AsynPool(_pool.Pool):
                     None, WRITE | ERR, consolidate=True)
             else:
                 iterate_file_descriptors_safely(
-                    inactive, all_inqueues, hub_remove)
+                    inactive, all_inqueues, hub.remove_writer)
         self.on_poll_start = on_poll_start
 
         def on_inqueue_close(fd, proc):
@@ -818,7 +818,7 @@ class AsynPool(_pool.Pool):
                     # worker is already busy with another task
                     continue
                 if ready_fd not in all_inqueues:
-                    hub_remove(ready_fd)
+                    hub.remove_writer(ready_fd)
                     continue
                 try:
                     job = pop_message()
@@ -829,7 +829,7 @@ class AsynPool(_pool.Pool):
                     # this may create a spinloop where the event loop
                     # always wakes up.
                     for inqfd in diff(active_writes):
-                        hub_remove(inqfd)
+                        hub.remove_writer(inqfd)
                     break
 
                 else:
@@ -927,7 +927,7 @@ class AsynPool(_pool.Pool):
                     else:
                         errors = 0
             finally:
-                hub_remove(fd)
+                hub.remove_writer(fd)
                 write_stats[proc.index] += 1
                 # message written, so this fd is now available
                 active_writes.discard(fd)

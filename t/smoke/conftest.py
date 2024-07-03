@@ -2,7 +2,7 @@ import os
 
 import pytest
 from pytest_celery import REDIS_CONTAINER_TIMEOUT, REDIS_ENV, REDIS_IMAGE, REDIS_PORTS, RedisContainer
-from pytest_docker_tools import container, fetch, network
+from pytest_docker_tools import container, fetch
 
 from t.smoke.operations.task_termination import TaskTermination
 from t.smoke.operations.worker_kill import WorkerKill
@@ -45,22 +45,30 @@ def default_worker_tasks(default_worker_tasks: set) -> set:
 # to be used by the integration tests tasks.
 
 redis_image = fetch(repository=REDIS_IMAGE)
-redis_test_container_network = network(scope="session")
 redis_test_container: RedisContainer = container(
     image="{redis_image.id}",
-    scope="session",
     ports=REDIS_PORTS,
     environment=REDIS_ENV,
-    network="{redis_test_container_network.name}",
+    network="{default_pytest_celery_network.name}",
     wrapper_class=RedisContainer,
     timeout=REDIS_CONTAINER_TIMEOUT,
 )
 
 
-@pytest.fixture(
-    scope="session",
-    autouse=True,  # Ensure the configuration is applied automatically
-)
+@pytest.fixture(autouse=True)
 def set_redis_test_container(redis_test_container: RedisContainer):
     """Configure the Redis test container to be used by the integration tests tasks."""
+    # get_redis_connection(): will use these settings in the tests environment
+    os.environ["REDIS_HOST"] = "localhost"
     os.environ["REDIS_PORT"] = str(redis_test_container.port)
+
+
+@pytest.fixture
+def default_worker_env(default_worker_env: dict, redis_test_container: RedisContainer) -> dict:
+    """Add the Redis connection details to the worker environment."""
+    # get_redis_connection(): will use these settings when executing tasks in the worker
+    default_worker_env.update({
+        "REDIS_HOST": redis_test_container.hostname,
+        "REDIS_PORT": 6379,
+    })
+    return default_worker_env
