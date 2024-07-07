@@ -1,7 +1,7 @@
 pytest==8.2.2
 pytest-celery[all]>=1.0.0
 pytest-rerunfailures==14.0
-pytest-subtests==0.12.1
+pytest-subtests==0.13.0
 pytest-timeout==2.3.1
 pytest-click==1.1.0
 pytest-order==1.2.1
