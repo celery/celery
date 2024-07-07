@@ -137,6 +137,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_DEFAULT_EXCHANGE``                :setting:`task_default_exchange`
 ``CELERY_DEFAULT_EXCHANGE_TYPE``           :setting:`task_default_exchange_type`
 ``CELERY_DEFAULT_QUEUE``                   :setting:`task_default_queue`
+``CELERY_DEFAULT_QUEUE_TYPE``              :setting:`task_default_queue_type`
 ``CELERY_DEFAULT_RATE_LIMIT``              :setting:`task_default_rate_limit`
 ``CELERY_DEFAULT_ROUTING_KEY``             :setting:`task_default_routing_key`
 ``CELERY_EAGER_PROPAGATES``                :setting:`task_eager_propagates`
@@ -176,6 +177,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_WORKER_TASK_LOG_FORMAT``          :setting:`worker_task_log_format`
 ``CELERYD_TIMER``                          :setting:`worker_timer`
 ``CELERYD_TIMER_PRECISION``                :setting:`worker_timer_precision`
+``CELERYD_DETECT_QUORUM_QUEUES``           :setting:`worker_detect_quorum_queues`
 ========================================== ==============================================
 
 Configuration Directives
@@ -2606,6 +2608,40 @@ that queue.
 
     :ref:`routing-changing-default-queue`
 
+.. setting:: task_default_queue_type
+
+``task_default_queue_type``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.5
+
+Default: ``"classic"``.
+
+This setting is used to allow changing the default queue type for the
+:setting:`task_default_queue` queue. The other viable option is ``"quorum"`` which
+is only supported by RabbitMQ and sets the queue type to ``quorum`` using the ``x-queue-type``
+queue argument.
+
+If the :setting:`worker_detect_quorum_queues` setting is enabled, the worker will
+automatically detect the queue type and disable the global QoS accordingly.
+
+.. warning::
+
+    When using quorum queues, ETA tasks may not function as expected. Instead of adjusting
+    the prefetch count dynamically, ETA tasks will occupy the prefetch buffer, potentially
+    blocking other tasks from being consumed. To mitigate this, either set a high prefetch
+    count or avoid using quorum queues until the ETA mechanism is updated to support a
+    disabled global QoS, which is required for quorum queues.
+
+.. warning::
+
+    Quorum queues require confirm publish to be enabled.
+    Use :setting:`broker_transport_options` to enable confirm publish by setting:
+
+    .. code-block:: python
+
+        broker_transport_options = {"confirm_publish": True}
+
 .. setting:: task_default_exchange
 
 ``task_default_exchange``
@@ -3224,6 +3260,18 @@ are recorded as such in the result backend as long as :setting:`task_ignore_resu
     In Celery 6.0, the :setting:`worker_cancel_long_running_tasks_on_connection_loss`
     will be set to ``True`` by default as the current behavior leads to more
     problems than it solves.
+
+.. setting:: worker_detect_quorum_queues
+
+``worker_detect_quorum_queues``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.5
+
+Default: Enabled.
+
+Automatically detect if any of the queues in :setting:`task_queues` are quorum queues
+(including the :setting:`task_default_queue`) and disable the global QoS if any quorum queue is detected.
 
 .. _conf-events:
 
