@@ -689,6 +689,15 @@ class test_Pidfile:
         assert p.remove_if_stale()
         p.remove.assert_called_with()
 
+    def test_remove_if_stale_same_pid(self):
+        p = Pidfile('/var/pid')
+        p.read_pid = Mock()
+        p.read_pid.return_value = os.getpid()
+        p.remove = Mock()
+
+        assert p.remove_if_stale()
+        p.remove.assert_called_with()
+
     @patch('os.fsync')
     @patch('os.getpid')
     @patch('os.open')

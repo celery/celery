@@ -19,7 +19,7 @@ Using Celery with Django
 
 .. note::
 
-    Celery 5.3.x supports Django 2.2 LTS or newer versions.
+    Celery 5.4.x supports Django 2.2 LTS or newer versions.
     Please use Celery 5.2.x for versions older than Django 2.2 or Celery 4.4.x if your Django version is older than 1.11.
 
 To use Celery with your Django project you must first define
@@ -206,6 +206,11 @@ This API takes care of wrapping the call into the `on_commit`_ hook for you.
 In rare cases where you want to trigger a task without waiting, the existing
 :meth:`~celery.app.task.Task.delay` API is still available.
 
+One key difference compared to the ``delay`` method, is that ``delay_on_commit``
+will NOT return the task ID back to the caller. The task is not sent to the broker
+when you call the method, only when the Django transaction finishes. If you need the
+task ID, best to stick to :meth:`~celery.app.task.Task.delay`.
+
 This task class should be used automatically if you've follow the setup steps above.
 However, if your app :ref:`uses a custom task base class <task-custom-classes>`,
 you'll need inherit from :class:`~celery.contrib.django.task.DjangoTask` instead of
@@ -303,7 +308,7 @@ use the help command:
 
 .. code-block:: console
 
-    $ celery help
+    $ celery --help
 
 Where to go from here
 =====================

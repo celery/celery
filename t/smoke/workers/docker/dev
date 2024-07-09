@@ -4,7 +4,20 @@ FROM python:3.11-bookworm
 RUN adduser --disabled-password --gecos "" test_user
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y build-essential
+RUN apt-get update && apt-get install -y build-essential \
+    git \
+    wget \
+    make \
+    curl \
+    apt-utils \
+    debconf \
+    lsb-release \
+    libmemcached-dev \
+    libffi-dev \
+    ca-certificates \
+    pypy3 \
+    pypy3-lib \
+    sudo
 
 # Set arguments
 ARG CELERY_LOG_LEVEL=INFO
@@ -17,6 +30,8 @@ ENV WORKER_QUEUE=$CELERY_WORKER_QUEUE
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
+EXPOSE 5678
+
 # Install celery from source
 WORKDIR /celery
 
@@ -24,7 +39,7 @@ COPY --chown=test_user:test_user . /celery
 RUN pip install --no-cache-dir --upgrade \
     pip \
     -e /celery[redis,pymemcache] \
-    psutil
+    pytest-celery>=1.0.0
 
 # The workdir must be /app
 WORKDIR /app

@@ -2,7 +2,7 @@
 
 |build-status| |coverage| |license| |wheel| |semgrep| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 5.4.0rc1 (opalescent)
+:Version: 5.4.0 (opalescent)
 :Web: https://docs.celeryq.dev/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -92,7 +92,7 @@ Get Started
 ===========
 
 If this is the first time you're trying to use Celery, or you're
-new to Celery v5.3.5 coming from previous versions then you should read our
+new to Celery v5.4.x coming from previous versions then you should read our
 getting started tutorials:
 
 - `First steps with Celery`_
@@ -201,6 +201,8 @@ integration packages:
     +--------------------+------------------------+
     | `Tornado`_         | `tornado-celery`_      |
     +--------------------+------------------------+
+    | `FastAPI`_         | not needed             |
+    +--------------------+------------------------+
 
 The integration packages aren't strictly necessary, but they can make
 development easier, and sometimes they add important hooks like closing
@@ -217,6 +219,7 @@ database connections at ``fork``.
 .. _`web2py-celery`: https://code.google.com/p/web2py-celery/
 .. _`Tornado`: https://www.tornadoweb.org/
 .. _`tornado-celery`: https://github.com/mher/tornado-celery/
+.. _`FastAPI`: https://fastapi.tiangolo.com/
 
 .. _celery-documentation:
 
@@ -316,6 +319,9 @@ Transports and Backends
 
 :``celery[s3]``:
     for using S3 Storage as a result backend.
+
+:``celery[gcs]``:
+    for using Google Cloud Storage as a result backend.
 
 :``celery[couchbase]``:
     for using Couchbase as a result backend.

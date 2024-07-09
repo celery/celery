@@ -6,6 +6,7 @@ from pytest_celery import CeleryTestWorker
 
 
 class WorkerRestart:
+    """Restarts a worker in different ways."""
     class Method(Enum):
         POOL_RESTART = auto()
         DOCKER_RESTART_GRACEFULLY = auto()
@@ -16,7 +17,14 @@ class WorkerRestart:
         worker: CeleryTestWorker,
         method: WorkerRestart.Method,
         assertion: bool = True,
-    ):
+    ) -> None:
+        """Restart a Celery worker.
+
+        Args:
+            worker (CeleryTestWorker): Worker to restart.
+            method (WorkerRestart.Method): The method to restart the worker.
+            assertion (bool, optional): Whether to assert the worker state after restart. Defaults to True.
+        """
         if method == WorkerRestart.Method.POOL_RESTART:
             worker.app.control.pool_restart()
             worker.container.reload()

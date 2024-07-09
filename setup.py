@@ -25,6 +25,7 @@ EXTENSIONS = {
     'elasticsearch',
     'eventlet',
     'gevent',
+    'gcs',
     'librabbitmq',
     'memcache',
     'mongodb',

@@ -25,8 +25,8 @@ class test_DjangoTask:
 
     def test_delay_on_commit(self, task_instance, on_commit):
         result = task_instance.delay_on_commit()
-        assert result is not None
+        assert result is None
 
     def test_apply_async_on_commit(self, task_instance, on_commit):
         result = task_instance.apply_async_on_commit()
-        assert result is not None
+        assert result is None

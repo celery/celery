@@ -77,8 +77,8 @@ def active_thread_count():
                if not t.name.startswith('Dummy-'))
 
 
-def safe_say(msg):
-    print(f'\n{msg}', file=sys.__stderr__, flush=True)
+def safe_say(msg, f=sys.__stderr__):
+    print(f'\n{msg}', file=f, flush=True)
 
 
 class Worker(WorkController):
@@ -286,7 +286,7 @@ def _shutdown_handler(worker, sig='TERM', how='Warm',
             if current_process()._name == 'MainProcess':
                 if callback:
                     callback(worker)
-                safe_say(f'worker: {how} shutdown (MainProcess)')
+                safe_say(f'worker: {how} shutdown (MainProcess)', sys.__stdout__)
                 signals.worker_shutting_down.send(
                     sender=worker.hostname, sig=sig, how=how,
                     exitcode=exitcode,
@@ -317,7 +317,8 @@ else:  # pragma: no cover
 
 
 def on_SIGINT(worker):
-    safe_say('worker: Hitting Ctrl+C again will terminate all running tasks!')
+    safe_say('worker: Hitting Ctrl+C again will terminate all running tasks!',
+             sys.__stdout__)
     install_worker_term_hard_handler(worker, sig='SIGINT')
 
 
@@ -343,7 +344,8 @@ def install_worker_restart_handler(worker, sig='SIGHUP'):
     def restart_worker_sig_handler(*args):
         """Signal handler restarting the current python program."""
         set_in_sighandler(True)
-        safe_say(f"Restarting celery worker ({' '.join(sys.argv)})")
+        safe_say(f"Restarting celery worker ({' '.join(sys.argv)})",
+                 sys.__stdout__)
         import atexit
         atexit.register(_reload_current_worker)
         from celery.worker import state

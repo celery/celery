@@ -1,5 +1,5 @@
 import pytest
-from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup, RedisTestBroker
+from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup
 
 from celery import Celery
 from celery.canvas import chain, group
@@ -51,9 +51,6 @@ class test_worker_enable_prefetch_count_reduction_true:
         celery_setup.worker.assert_log_exists(expected_prefetch_restore_message)
 
     def test_prefetch_count_restored(self, celery_setup: CeleryTestSetup):
-        if isinstance(celery_setup.broker, RedisTestBroker):
-            pytest.xfail("Potential Bug with Redis Broker")
-
         expected_running_tasks_count = MAX_PREFETCH * WORKER_PREFETCH_MULTIPLIER
         sig = group(long_running_task.s(10) for _ in range(expected_running_tasks_count))
         sig.apply_async(queue=celery_setup.worker.worker_queue)
