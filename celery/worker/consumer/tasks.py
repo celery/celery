@@ -27,11 +27,6 @@ count or avoid using quorum queues until the ETA mechanism is updated to support
 disabled global QoS, which is required for quorum queues.
 """
 
-CONFIRM_PUBLISH_QUORUM_QUEUE_WARNING = """
-Quorum queues require confirm_publish to be enabled.
-Please enable confirm_publish to avoid potential data loss.
-"""
-
 
 class Tasks(bootsteps.StartStopStep):
     """Bootstep starting the task message consumer."""
@@ -102,10 +97,6 @@ class Tasks(bootsteps.StartStopStep):
                 # quorum queues. Warn the user that ETA tasks may not function as expected until
                 # this is done so we can at least support quorum queues partially for now.
                 warnings.warn(ETA_TASKS_NO_GLOBAL_QOS_WARNING % (qname,), CeleryWarning)
-
-                broker_transport_options = c.app.conf.broker_transport_options or {}
-                if not broker_transport_options.get("confirm_publish"):
-                    warnings.warn(CONFIRM_PUBLISH_QUORUM_QUEUE_WARNING, CeleryWarning)
 
         return qos_global
 

@@ -16,7 +16,7 @@ from celery.worker.consumer.consumer import CANCEL_TASKS_BY_DEFAULT, CLOSE, TERM
 from celery.worker.consumer.gossip import Gossip
 from celery.worker.consumer.heart import Heart
 from celery.worker.consumer.mingle import Mingle
-from celery.worker.consumer.tasks import CONFIRM_PUBLISH_QUORUM_QUEUE_WARNING, ETA_TASKS_NO_GLOBAL_QOS_WARNING, Tasks
+from celery.worker.consumer.tasks import ETA_TASKS_NO_GLOBAL_QOS_WARNING, Tasks
 from celery.worker.state import active_requests
 
 
@@ -609,14 +609,6 @@ class test_Tasks:
         c.app.amqp.queues = {"celery": Mock(queue_arguments={"x-queue-type": "quorum"})}
         tasks = Tasks(c)
         with pytest.warns(CeleryWarning, match=ETA_TASKS_NO_GLOBAL_QOS_WARNING % "celery"):
-            tasks.qos_global(c)
-
-    def test_qos_global_confirm_publish_warning(self):
-        c = self.c
-        c.app.amqp.queues = {"celery": Mock(queue_arguments={"x-queue-type": "quorum"})}
-        c.app.conf.broker_transport_options = {}
-        tasks = Tasks(c)
-        with pytest.warns(CeleryWarning, match=CONFIRM_PUBLISH_QUORUM_QUEUE_WARNING):
             tasks.qos_global(c)
 
 

@@ -2642,6 +2642,8 @@ automatically detect the queue type and disable the global QoS accordingly.
 
         broker_transport_options = {"confirm_publish": True}
 
+    For more information, see `RabbitMQ documentation <https://www.rabbitmq.com/docs/quorum-queues#use-cases>`_.
+
 .. setting:: task_default_exchange
 
 ``task_default_exchange``
