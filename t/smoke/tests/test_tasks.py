@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup, CeleryTestWorker, CeleryWorkerCluster
-from retry import retry
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 from celery import Celery, signature
 from celery.exceptions import TimeLimitExceeded, WorkerLostError
@@ -43,7 +43,11 @@ class test_task_termination(SuiteOperations):
             self.apply_self_termination_task(celery_setup.worker, method).get()
 
         # Allowing the worker to respawn the child process before we continue
-        @retry(tries=42, delay=0.1)  # 4.2 seconds
+        @retry(
+            stop=stop_after_attempt(42),
+            wait=wait_fixed(0.1),
+            reraise=True,
+        )
         def wait_for_two_celery_processes():
             pinfo_current = celery_setup.worker.get_running_processes_info(
                 ["pid", "name"],
