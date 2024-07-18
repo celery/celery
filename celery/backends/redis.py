@@ -69,6 +69,8 @@ CERT_REQUIRED, CERT_OPTIONAL, or CERT_NONE
 
 E_LOST = 'Connection to Redis lost: Retry (%s/%s) %s.'
 
+E_CLIENT = "Error creating to Redis client: (%s)."
+
 E_RETRY_LIMIT_EXCEEDED = """
 Retry limit exceeded while trying to reconnect to the Celery redis result \
 store backend. The Celery application must be restarted.
@@ -137,22 +139,33 @@ class ResultConsumer(BaseResultConsumer):
             self.cancel_for(meta['task_id'])
 
     def on_state_change(self, meta, message):
-        super().on_state_change(meta, message)
-        self._maybe_cancel_ready_task(meta)
+        try:
+            super().on_state_change(meta, message)
+            self._maybe_cancel_ready_task(meta)
+        except Exception as e:
+            logger.error("Error in on_state_change method: %s", e)
+            raise
 
     def start(self, initial_task_id, **kwargs):
+        logger.info(f"Starting with initial_task_id: {initial_task_id} and kwargs: {kwargs}")
         self._pubsub = self.backend.client.pubsub(
             ignore_subscribe_messages=True,
         )
         self._consume_from(initial_task_id)
 
     def on_wait_for_pending(self, result, **kwargs):
-        for meta in result._iter_meta(**kwargs):
-            if meta is not None:
-                self.on_state_change(meta, None)
+        logger.info("Waiting for pending results with kwargs: %s", kwargs)
+        try:
+            for meta in result._iter_meta(**kwargs):
+                if meta is not None:
+                    self.on_state_change(meta, None)
+        except Exception as e:
+            logger.error("Error in on_wait_for_pending method: %s", e)
+            raise
 
     def stop(self):
         if self._pubsub is not None:
+            logger.info("Stopping and closing pubsub")
             self._pubsub.close()
 
     def drain_events(self, timeout=None):
@@ -170,11 +183,15 @@ class ResultConsumer(BaseResultConsumer):
         self._consume_from(task_id)
 
     def _consume_from(self, task_id):
-        key = self._get_key_for_task(task_id)
-        if key not in self.subscribed_to:
-            self.subscribed_to.add(key)
-            with self.reconnect_on_error():
-                self._pubsub.subscribe(key)
+        try:
+            key = self._get_key_for_task(task_id)
+            if key not in self.subscribed_to:
+                self.subscribed_to.add(key)
+                with self.reconnect_on_error():
+                    self._pubsub.subscribe(key)
+        except Exception as e:
+            logger.error("Error in _consume_from method: %s", e)
+            raise
 
     def cancel_for(self, task_id):
         key = self._get_key_for_task(task_id)
@@ -210,6 +227,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     def __init__(self, host=None, port=None, db=None, password=None,
                  max_connections=None, url=None,
                  connection_pool=None, **kwargs):
+        logger.info("Initializing RedisBackend with args: %s, kwargs: %s", args, kwargs)
         super().__init__(expires_type=int, **kwargs)
         _get = self.app.conf.get
         if self.redis is None:
@@ -553,12 +571,24 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                 )
 
     def _create_client(self, **params):
-        return self._get_client()(
-            connection_pool=self._get_pool(**params),
-        )
+        try:
+            cr_client = self._get_client()(
+                connection_pool=self._get_pool(**params),
+            )
+        except self.connection_errors as exc:
+            logger.error(E_CLIENT.strip(), exc)
+            raise BackendStoreError(f'Error creating to Redis client: {exc!r}')
+        
+        return cr_client
 
     def _get_client(self):
-        return self.redis.StrictRedis
+        try:
+            gt_client = self.redis.StrictRedis
+        except AttributeError:
+            logger.error(E_REDIS_MISSING.strip())
+            raise ImproperlyConfigured(E_REDIS_MISSING.strip())
+
+        return gt_client
 
     def _get_pool(self, **params):
         return self.ConnectionPool(**params)
