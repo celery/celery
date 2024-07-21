@@ -261,6 +261,7 @@ NAMESPACES = Namespace(
         inherit_parent_priority=Option(False, type='bool'),
         default_delivery_mode=Option(2, type='string'),
         default_queue=Option('celery'),
+        default_queue_type=Option('classic', type='string'),
         default_exchange=Option(None, type='string'),  # taken from queue
         default_exchange_type=Option('direct'),
         default_routing_key=Option(None, type='string'),  # taken from queue
@@ -345,6 +346,7 @@ NAMESPACES = Namespace(
         task_log_format=Option(DEFAULT_TASK_LOG_FMT),
         timer=Option(type='string'),
         timer_precision=Option(1.0, type='float'),
+        detect_quorum_queues=Option(True, type='bool'),
     ),
 )
 
