@@ -90,6 +90,8 @@ Changes since 5.4.0rc2
 - Bump pytest-order from 1.2.0 to 1.2.1 (#8941)
 - Added documentation to the smoke tests infra (#8970)
 - Added a checklist item for using pytest-celery in a bug report (#8971)
+- Added changelog for v5.4.0 (#8973)
+- Bump version: 5.4.0rc2 → 5.4.0 (#8974)
 
 .. _version-5.4.0rc2:
 
@@ -217,7 +219,6 @@ The code changes are mostly fix for regressions. More details can be found below
 - Update elasticsearch version (#8656)
 - Propagates more ImportErrors during autodiscovery (#8632)
 
-
 .. _version-5.3.5:
 
 5.3.5
@@ -340,8 +341,6 @@ The code changes are mostly fix for regressions. More details can be found below
 - Remove as it seems to be buggy. (#8340)
 - Revert "Add Semgrep to CI" (#8477)
 - Revert "Revert "Add Semgrep to CI"" (#8478)
-
-.. _CELERY:
 
 .. _version-5.3.3:
 
