@@ -8,8 +8,6 @@ This document contains change notes for bugfix & new features
 in the & 5.3.x series, please see :ref:`whatsnew-5.3` for
 an overview of what's new in Celery 5.3.
 
-.. _version-5.3.6:
-
 5.3.6
 =====
 
@@ -27,8 +25,6 @@ The code changes are mostly fix for regressions. More details can be found below
 - test requirements version update (#8655)
 - Update elasticsearch version (#8656)
 - Propagates more ImportErrors during autodiscovery (#8632)
-
-.. _version-5.3.5:
 
 5.3.5
 =====
@@ -94,8 +90,6 @@ The code changes are mostly fix for regressions. More details can be found below
 - [documentation] broker_connection_max_retries of 0 does not mean "retry forever" (#8626)
 - added 2 debian package for better stability in Docker (#8629)
 
-.. _version-5.3.4:
-
 5.3.4
 =====
 
@@ -151,8 +145,6 @@ The code changes are mostly fix for regressions. More details can be found below
 - Revert "Add Semgrep to CI" (#8477)
 - Revert "Revert "Add Semgrep to CI"" (#8478)
 
-.. _version-5.3.3:
-
 5.3.3 (Yanked)
 ==============
 
@@ -166,8 +158,6 @@ The code changes are mostly fix for regressions. More details can be found below
    - Fix eager tasks does not populate name field (#8383)
 
 - Fixed changelog for 5.3.2 release docs.
-
-.. _version-5.3.2:
 
 5.3.2 (Yanked)
 ==============
@@ -216,8 +206,6 @@ The code changes are mostly fix for regressions. More details can be found below
 - Fixed AttributeError: 'str' object has no attribute (#8463)
 - Upgraded Kombu from 5.3.1 -> 5.3.2 (#8468)
 
-.. _version-5.3.1:
-
 5.3.1
 =====
 
@@ -235,8 +223,6 @@ The code changes are mostly fix for regressions. More details can be found below
 - Fixed a small float value of retry_backoff (#8295).
 - Limit pyro4 up to python 3.10 only as it is (#8324).
 
-.. _version-5.3.0:
-
 5.3.0
 =====
 
@@ -246,8 +232,6 @@ The code changes are mostly fix for regressions. More details can be found below
 - Test kombu 5.3.0 & minor doc update (#8294).
 - Update librabbitmq.txt > 2.0.0 (#8292).
 - Upgrade syntax to py3.8 (#8281).
-
-.. _version-5.3.0rc2:
 
 5.3.0rc2
 ========
@@ -262,9 +246,6 @@ The code changes are mostly fix for regressions. More details can be found below
 - Fix docker (#8275).
 - Update redis.txt to 4.5 (#8278).
 - Update kombu>=5.3.0rc2.
-
-
-.. _version-5.3.0rc1:
 
 5.3.0rc1
 ========
@@ -326,8 +307,6 @@ The code changes are mostly fix for regressions. More details can be found below
 - Improved doc for: worker_deduplicate_successful_tasks by @Nusnus in #8209
 - Renamed revoked_headers to revoked_stamps by @Nusnus in #8210
 - Ensure argument for map is JSON serializable by @candleindark in #8229
-
-.. _version-5.3.0b2:
 
 5.3.0b2
 =======
@@ -463,8 +442,6 @@ The code changes are mostly fix for regressions. More details can be found below
 - Fix command for starting flower with specified broker URL by @ShukantPal in #8071
 - Improve documentation on ETA/countdown tasks (#8069) by @norbertcyran in #8075
 
-.. _version-5.3.0b1:
-
 5.3.0b1
 =======
 
@@ -481,8 +458,6 @@ The code changes are mostly fix for regressions. More details can be found below
 - Make default worker state limits configurable (#7609).
 - Only clear the cache if there are no active writers.
 - Billiard 4.0.1
-
-.. _version-5.3.0a1:
 
 5.3.0a1
 =======
