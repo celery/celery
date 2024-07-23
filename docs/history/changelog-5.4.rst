@@ -8,8 +8,6 @@ This document contains change notes for bugfix & new features
 in the & 5.4.x series, please see :ref:`whatsnew-5.4` for
 an overview of what's new in Celery 5.4.
 
-.. _version-5.4.0:
-
 5.4.0
 =====
 
@@ -93,8 +91,6 @@ Changes since 5.4.0rc2
 - Added changelog for v5.4.0 (#8973)
 - Bump version: 5.4.0rc2 → 5.4.0 (#8974)
 
-.. _version-5.4.0rc2:
-
 5.4.0rc2
 ========
 
@@ -149,8 +145,6 @@ Changes since 5.4.0rc2
 - Print safe_say() to stdout for non-error flows (#8919)
 - Update pytest-cov to 5.0.0 (#8924)
 - Bump pytest-celery to 1.0.0rc2 (#8928)
-
-.. _version-5.4.0rc1:
 
 5.4.0rc1
 ========
