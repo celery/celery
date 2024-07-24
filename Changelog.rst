@@ -5,8 +5,116 @@
 ================
 
 This document contains change notes for bugfix & new features
-in the main branch & 5.4.x series, please see :ref:`whatsnew-5.4` for
-an overview of what's new in Celery 5.4.
+in the main branch & 5.5.x series, please see :ref:`whatsnew-5.5` for
+an overview of what's new in Celery 5.5.
+
+.. _version-5.5.0b1:
+
+5.5.0b1
+=======
+
+:release-date: 2024-07-24
+:release-by: Tomer Nosrati
+
+Celery v5.5.0 Beta 1 is now available for testing.
+Please help us test this version and report any issues.
+
+Key Highlights
+~~~~~~~~~~~~~~
+
+Redis Broker Stability Improvements
+-----------------------------------
+The root cause of the Redis broker instability issue has been `identified and resolved <https://github.com/celery/kombu/pull/2007>`_
+in the release-candidate for Kombu v5.4.0. This beta release has been upgraded to use the new
+Kombu RC version, which should resolve the disconnections bug and offer additional improvements.
+
+After upgrading to this version, please share your feedback on the Redis broker stability.
+
+Relevant Issues:
+`#7276 <https://github.com/celery/celery/discussions/7276>`_,
+`#8091 <https://github.com/celery/celery/discussions/8091>`_,
+`#8030 <https://github.com/celery/celery/discussions/8030>`_,
+`#8384 <https://github.com/celery/celery/discussions/8384>`_
+
+Quorum Queues Initial Support
+-----------------------------
+This release introduces the initial support for Quorum Queues with Celery. 
+
+See new configuration options for more details:
+
+- :setting:`task_default_queue_type`
+- :setting:`worker_detect_quorum_queues`
+
+After upgrading to this version, please share your feedback on the Quorum Queues support.
+
+Relevant Issues:
+`#6067 <https://github.com/celery/celery/discussions/6067>`_,
+`#9121 <https://github.com/celery/celery/discussions/9121>`_
+
+What's Changed
+~~~~~~~~~~~~~~
+
+- (docs): use correct version celery v.5.4.x (#8975)
+- Update mypy to 1.10.0 (#8977)
+- Limit pymongo<4.7 when Python <= 3.10 due to breaking changes in 4.7 (#8988)
+- Bump pytest from 8.1.1 to 8.2.0 (#8987)
+- Update README to Include FastAPI in Framework Integration Section (#8978)
+- Clarify return values of ..._on_commit methods (#8984)
+- add kafka broker docs (#8935)
+- Limit pymongo<4.7 regardless of Python version (#8999)
+- Update pymongo[srv] requirement from <4.7,>=4.0.2 to >=4.0.2,<4.8 (#9000)
+- Update elasticsearch requirement from <=8.13.0 to <=8.13.1 (#9004)
+- security: SecureSerializer: support generic low-level serializers (#8982)
+- don't kill if pid same as file (#8997) (#8998)
+- Update cryptography to 42.0.6 (#9005)
+- Bump cryptography from 42.0.6 to 42.0.7 (#9009)
+- Added -vv to unit, integration and smoke tests (#9014)
+- SecuritySerializer: ensure pack separator will not be conflicted with serialized fields (#9010)
+- Update sphinx-click to 5.2.2 (#9025)
+- Bump sphinx-click from 5.2.2 to 6.0.0 (#9029)
+- Fix a typo to display the help message in first-steps-with-django (#9036)
+- Pinned requests to v2.31.0 due to docker-py bug #3256 (#9039)
+- Fix certificate validity check (#9037)
+- Revert "Pinned requests to v2.31.0 due to docker-py bug #3256" (#9043)
+- Bump pytest from 8.2.0 to 8.2.1 (#9035)
+- Update elasticsearch requirement from <=8.13.1 to <=8.13.2 (#9045)
+- Fix detection of custom task set as class attribute with Django (#9038)
+- Update elastic-transport requirement from <=8.13.0 to <=8.13.1 (#9050)
+- Bump pycouchdb from 1.14.2 to 1.16.0 (#9052)
+- Update pytest to 8.2.2 (#9060)
+- Bump cryptography from 42.0.7 to 42.0.8 (#9061)
+- Update elasticsearch requirement from <=8.13.2 to <=8.14.0 (#9069)
+- [enhance feature] Crontab schedule: allow using month names (#9068)
+- Enhance tox environment: [testenv:clean] (#9072)
+- Clarify docs about Reserve one task at a time (#9073)
+- GCS docs fixes (#9075)
+- Use hub.remove_writer instead of hub.remove for write fds (#4185) (#9055)
+- Class method to process crontab string (#9079)
+- Fixed smoke tests env bug when using integration tasks that rely on Redis (#9090)
+- Bugfix - a task will run multiple times when chaining chains with groups (#9021)
+- Bump mypy from 1.10.0 to 1.10.1 (#9096)
+- Don't add a separator to global_keyprefix if it already has one (#9080)
+- Update pymongo[srv] requirement from <4.8,>=4.0.2 to >=4.0.2,<4.9 (#9111)
+- Added missing import in examples for Django (#9099)
+- Bump Kombu to v5.4.0rc1 (#9117)
+- Removed skipping Redis in t/smoke/tests/test_consumer.py tests (#9118)
+- Update pytest-subtests to 0.13.0 (#9120)
+- Increased smoke tests CI timeout (#9122)
+- Bump Kombu to v5.4.0rc2 (#9127)
+- Update zstandard to 0.23.0 (#9129)
+- Update pytest-subtests to 0.13.1 (#9130)
+- Changed retry to tenacity in smoke tests (#9133)
+- Bump mypy from 1.10.1 to 1.11.0 (#9135)
+- Update cryptography to 43.0.0 (#9138)
+- Update pytest to 8.3.1 (#9137)
+- Added support for Quorum Queues (#9121)
+- Bump Kombu to v5.4.0rc3 (#9139)
+- Cleanup in Changelog.rst (#9141)
+- Update Django docs for CELERY_CACHE_BACKEND (#9143)
+- Added missing docs to previous releases (#9144)
+- Fixed a few documentation build warnings (#9145)
+- docs(README): link invalid (#9148)
+- Prepare for (pre) release: v5.5.0b1 (#9146)
 
 .. _version-5.4.0:
 
@@ -31,7 +139,7 @@ With our enhanced QA capabilities, we are now prepared to address the core issue
 The rest of the changes for this release are grouped below, with the changes from the latest release candidate listed at the end.
 
 Changes
--------
+~~~~~~~
 - Add a Task class specialised for Django (#8491)
 - Add Google Cloud Storage (GCS) backend (#8868)
 - Added documentation to the smoke tests infra (#8970)
@@ -57,7 +165,7 @@ Changes
 - Updated concurrency docs page. (#8753)
 
 Dependencies Updates
---------------------
+~~~~~~~~~~~~~~~~~~~~
 - Bump actions/setup-python from 4 to 5 (#8701)
 - Bump codecov/codecov-action from 3 to 4 (#8831)
 - Bump isort from 5.12.0 to 5.13.2 (#8772)
@@ -79,7 +187,7 @@ Dependencies Updates
 - Upgraded Sphinx from v5.3.0 to v7.x.x (#8803)
 
 Changes since 5.4.0rc2
-----------------------
+~~~~~~~~~~~~~~~~~~~~~~~
 - Update elastic-transport requirement from <=8.12.0 to <=8.13.0 (#8933)
 - Update elasticsearch requirement from <=8.12.1 to <=8.13.0 (#8934)
 - Hotfix: Smoke tests didn't allow customizing the worker's command arguments, now it does (#8937)
