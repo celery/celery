@@ -19,7 +19,7 @@ Using Celery with Django
 
 .. note::
 
-    Celery 5.4.x supports Django 2.2 LTS or newer versions.
+    Celery 5.5.x supports Django 2.2 LTS or newer versions.
     Please use Celery 5.2.x for versions older than Django 2.2 or Celery 4.4.x if your Django version is older than 1.11.
 
 To use Celery with your Django project you must first define
@@ -260,17 +260,14 @@ To use this with your project you need to follow these steps:
 
         CELERY_RESULT_BACKEND = 'django-db'
 
-    For the cache backend you can use:
+    When using the cache backend, you can specify a cache defined within
+    Django's CACHES setting.
 
     .. code-block:: python
 
-        CELERY_CACHE_BACKEND = 'django-cache'
+        CELERY_RESULT_BACKEND = 'django-cache'
 
-    We can also use the cache defined in the CACHES setting in django.
-
-    .. code-block:: python
-
-        # celery setting.
+        # pick which cache from the CACHES setting.
         CELERY_CACHE_BACKEND = 'default'
 
         # django setting.
