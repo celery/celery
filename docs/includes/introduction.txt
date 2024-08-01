@@ -1,4 +1,4 @@
-:Version: 5.4.0 (opalescent)
+:Version: 5.5.0b1 (immunity)
 :Web: https://docs.celeryq.dev/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
