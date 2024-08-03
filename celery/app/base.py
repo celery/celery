@@ -1,8 +1,11 @@
 """Actual App instance implementation."""
+import functools
+import importlib
 import inspect
 import os
 import sys
 import threading
+import typing
 import warnings
 from collections import UserDict, defaultdict, deque
 from datetime import datetime
@@ -42,6 +45,10 @@ from .defaults import DEFAULT_SECURITY_DIGEST, find_deprecated_settings
 from .registry import TaskRegistry
 from .utils import (AppPickler, Settings, _new_key_to_old, _old_key_to_new, _unpickle_app, _unpickle_app_v2, appstr,
                     bugreport, detect_settings)
+
+if typing.TYPE_CHECKING:  # pragma: no cover  # codecov does not capture this
+    # flake8 marks the BaseModel import as unused, because the actual typehint is quoted.
+    from pydantic import BaseModel  # noqa: F401
 
 __all__ = ('Celery',)
 
@@ -90,6 +97,59 @@ def _after_fork_cleanup_app(app):
         app._after_fork()
     except Exception as exc:  # pylint: disable=broad-except
         logger.info('after forker raised exception: %r', exc, exc_info=1)
+
+
+def pydantic_wrapper(
+    app: "Celery",
+    task_fun: typing.Callable[..., typing.Any],
+    task_name: str,
+    strict: bool = True,
+    context: typing.Optional[typing.Dict[str, typing.Any]] = None,
+    dump_kwargs: typing.Optional[typing.Dict[str, typing.Any]] = None
+):
+    """Wrapper to validate arguments and serialize return values using Pydantic."""
+    try:
+        pydantic = importlib.import_module('pydantic')
+    except ModuleNotFoundError as ex:
+        raise ImproperlyConfigured('You need to install pydantic to use pydantic model serialization.') from ex
+
+    BaseModel: typing.Type['BaseModel'] = pydantic.BaseModel  # noqa: F811  # only defined when type checking
+
+    if context is None:
+        context = {}
+    if dump_kwargs is None:
+        dump_kwargs = {}
+    dump_kwargs.setdefault('mode', 'json')
+
+    task_signature = inspect.signature(task_fun)
+
+    @functools.wraps(task_fun)
+    def wrapper(*task_args, **task_kwargs):
+        # Validate task parameters if type hinted as BaseModel
+        bound_args = task_signature.bind(*task_args, **task_kwargs)
+        for arg_name, arg_value in bound_args.arguments.items():
+            arg_annotation = task_signature.parameters[arg_name].annotation
+            if issubclass(arg_annotation, BaseModel):
+                bound_args.arguments[arg_name] = arg_annotation.model_validate(
+                    arg_value,
+                    strict=strict,
+                    context={**context, 'celery_app': app, 'celery_task_name': task_name},
+                )
+
+        # Call the task with (potentially) converted arguments
+        returned_value = task_fun(*bound_args.args, **bound_args.kwargs)
+
+        # Dump Pydantic model if the returned value is an instance of pydantic.BaseModel *and* its
+        # class matches the typehint
+        if (
+            isinstance(returned_value, BaseModel)
+            and isinstance(returned_value, task_signature.return_annotation)
+        ):
+            return returned_value.model_dump(**dump_kwargs)
+
+        return returned_value
+
+    return wrapper
 
 
 class PendingConfiguration(UserDict, AttributeDictMixin):
@@ -469,13 +529,27 @@ class Celery:
     def type_checker(self, fun, bound=False):
         return staticmethod(head_from_fun(fun, bound=bound))
 
-    def _task_from_fun(self, fun, name=None, base=None, bind=False, **options):
+    def _task_from_fun(
+        self,
+        fun,
+        name=None,
+        base=None,
+        bind=False,
+        pydantic: bool = False,
+        pydantic_strict: bool = True,
+        pydantic_context: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        pydantic_dump_kwargs: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        **options,
+    ):
         if not self.finalized and not self.autofinalize:
             raise RuntimeError('Contract breach: app not finalized')
         name = name or self.gen_task_name(fun.__name__, fun.__module__)
         base = base or self.Task
 
         if name not in self._tasks:
+            if pydantic is True:
+                fun = pydantic_wrapper(self, fun, name, pydantic_strict, pydantic_context, pydantic_dump_kwargs)
+
             run = fun if bind else staticmethod(fun)
             task = type(fun.__name__, (base,), dict({
                 'app': self,
