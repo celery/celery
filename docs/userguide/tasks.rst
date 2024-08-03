@@ -795,6 +795,62 @@ You can also set `autoretry_for`, `max_retries`, `retry_backoff`, `retry_backoff
 	This allows to exclude some exceptions that match `autoretry_for
 	<Task.autoretry_for>`:attr: but for which you don't want a retry.
 
+.. _task-pydantic:
+
+Argument validation with Pydantic
+=================================
+
+.. versionadded:: 5.5.0
+
+You can use Pydantic_ to validate and convert arguments as well as serializing
+results based on typehints by passing ``pydantic=True``. For example:
+
+.. code-block:: python
+
+    from pydantic import BaseModel
+
+    class ArgModel(BaseModel):
+        value: int
+
+    class ReturnModel(BaseModel):
+        value: str
+
+    @app.task(pydantic=True)
+    def x(arg: ArgModel) -> ReturnModel:
+        # args/kwargs type hinted as Pydantic model will be converted
+        assert isinstance(arg, ArgModel)
+
+        # The returned model will be converted to a dict automatically
+        return ReturnModel(value=f"example: {arg.value}")
+
+The task can then be called using a dict matching the model, and you'll receive
+the returned model "dumped" (serialized using ``BaseModel.model_dump()``):
+
+.. code-block:: python
+
+   >>> result = x.delay({'value': 1})
+   >>> result.get(timeout=1)
+   {'value': 'example: 1'}
+
+There are a few more options influencing Pydantic behavior:
+
+.. attribute:: Task.pydantic_strict
+
+   By default, `strict mode <https://docs.pydantic.dev/dev/concepts/strict_mode/>`_
+   is enabled. You can pass ``False`` to disable strict model validation.
+
+.. attribute:: Task.pydantic_context
+
+   Pass `additional validation context
+   <https://docs.pydantic.dev/dev/concepts/validators/#validation-context>`_ during
+   Pydantic model validation. The context already includes the application object as
+   ``celery_app`` and the task name as ``celery_task_name`` by default.
+
+.. attribute:: Task.pydantic_dump_kwargs
+
+   When serializing a result, pass these additional arguments to ``dump_kwargs()``.
+   By default, only ``mode='json'`` is passed.
+
 
 .. _task-options:
 
@@ -2091,3 +2147,4 @@ To make API calls to `Akismet`_ I use the `akismet.py`_ library written by
 .. _`Michael Foord`: http://www.voidspace.org.uk/
 .. _`exponential backoff`: https://en.wikipedia.org/wiki/Exponential_backoff
 .. _`jitter`: https://en.wikipedia.org/wiki/Jitter
+.. _`Pydantic`: https://docs.pydantic.dev/
