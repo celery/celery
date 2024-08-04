@@ -458,6 +458,14 @@ class Consumer:
             if request_id in requests:
                 del requests[request_id]
         reserved_requests.clear()
+
+        if self.app.conf.worker_sqspoc:
+            for request in tuple(active_requests):
+                if request.task.acks_late and not request.acknowledged:
+                    warn("worker_sqspoc is enabled, rejecting task %s",
+                         request)
+                    request.cancel(self.pool)
+
         if self.pool and self.pool.flush:
             self.pool.flush()
 
