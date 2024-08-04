@@ -4,7 +4,6 @@ import os
 import re
 
 import setuptools
-import setuptools.command.test
 
 NAME = 'celery'
 
@@ -31,6 +30,7 @@ EXTENSIONS = {
     'mongodb',
     'msgpack',
     'pymemcache',
+    'pydantic',
     'pyro',
     'pytest',
     'redis',

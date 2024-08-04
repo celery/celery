@@ -137,17 +137,19 @@ class test_Queues:
 
 class test_default_queues:
 
+    @pytest.mark.parametrize('default_queue_type', ['classic', 'quorum'])
     @pytest.mark.parametrize('name,exchange,rkey', [
         ('default', None, None),
         ('default', 'exchange', None),
         ('default', 'exchange', 'routing_key'),
         ('default', None, 'routing_key'),
     ])
-    def test_setting_default_queue(self, name, exchange, rkey):
+    def test_setting_default_queue(self, name, exchange, rkey, default_queue_type):
         self.app.conf.task_queues = {}
         self.app.conf.task_default_exchange = exchange
         self.app.conf.task_default_routing_key = rkey
         self.app.conf.task_default_queue = name
+        self.app.conf.task_default_queue_type = default_queue_type
         assert self.app.amqp.queues.default_exchange.name == exchange or name
         queues = dict(self.app.amqp.queues)
         assert len(queues) == 1
@@ -155,6 +157,11 @@ class test_default_queues:
         assert queue.exchange.name == exchange or name
         assert queue.exchange.type == 'direct'
         assert queue.routing_key == rkey or name
+
+        if default_queue_type == 'quorum':
+            assert queue.queue_arguments == {'x-queue-type': 'quorum'}
+        else:
+            assert queue.queue_arguments is None
 
 
 class test_default_exchange:

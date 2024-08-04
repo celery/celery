@@ -16,9 +16,9 @@ from celery.utils.serialization import UnpickleableExceptionWrapper
 from celery.worker import state as worker_state
 
 from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connection
-from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result, add_not_typed, fail,
-                    fail_unpickleable, print_unicode, retry, retry_once, retry_once_headers, retry_once_priority,
-                    retry_unpickleable, return_properties, second_order_replace1, sleeping)
+from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result, add_not_typed, add_pydantic,
+                    fail, fail_unpickleable, print_unicode, retry, retry_once, retry_once_headers,
+                    retry_once_priority, retry_unpickleable, return_properties, second_order_replace1, sleeping)
 
 TIMEOUT = 10
 
@@ -127,6 +127,20 @@ class test_tasks:
         # persisted in the result backend.
         sleep(1)
         assert result.result is None
+
+    @flaky
+    def test_pydantic_annotations(self, manager):
+        """Tests task call with Pydantic model serialization."""
+        results = []
+        # Tests calling task only with args
+        for i in range(10):
+            results.append([i + i, add_pydantic.delay({'x': i, 'y': i})])
+        for expected, result in results:
+            value = result.get(timeout=10)
+            assert value == {'result': expected}
+            assert result.status == 'SUCCESS'
+            assert result.ready() is True
+            assert result.successful() is True
 
     @flaky
     def test_timeout(self, manager):
