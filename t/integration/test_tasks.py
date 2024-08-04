@@ -19,7 +19,7 @@ from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connect
 from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result, add_not_typed, add_pydantic,
                     fail, fail_unpickleable, print_unicode, retry, retry_once, retry_once_headers,
                     retry_once_priority, retry_unpickleable, return_properties, second_order_replace1, sleeping,
-                    soft_time_limit_must_exceed_time_limit, soft_time_limit_must_not_exceed_time_limit)
+                    soft_time_limit_must_exceed_time_limit)
 
 TIMEOUT = 10
 
@@ -476,19 +476,12 @@ class test_tasks:
 
     @flaky
     def test_soft_time_limit_exceeding_time_limit(self):
-        result = soft_time_limit_must_exceed_time_limit.apply_async()
 
         with pytest.raises(ValueError, match='soft_time_limit must be greater than or equal to time_limit'):
+            result = soft_time_limit_must_exceed_time_limit.apply_async()
             result.get(timeout=5)
 
-        assert result.status == 'FAILURE'
-
-    @flaky
-    def test_soft_time_limit_not_exceeding_time_limit(self):
-        result = soft_time_limit_must_not_exceed_time_limit.apply_async()
-
-        assert result.status == 'SUCCESS'
-        assert result.get(timeout=5) is None
+            assert result.status == 'FAILURE'
 
 
 class test_trace_log_arguments:

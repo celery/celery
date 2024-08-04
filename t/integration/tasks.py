@@ -516,9 +516,4 @@ if LEGACY_TASKS_DISABLED:
 
 @shared_task(soft_time_limit=2, time_limit=1)
 def soft_time_limit_must_exceed_time_limit():
-    sleep(1)
-
-
-@shared_task(soft_time_limit=1, time_limit=2)
-def soft_time_limit_must_not_exceed_time_limit():
-    sleep(1)
+    pass

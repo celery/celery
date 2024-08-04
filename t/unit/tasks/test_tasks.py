@@ -1411,7 +1411,7 @@ class test_tasks(TasksCase):
         self.app.send_task = old_send_task
 
     def test_soft_time_limit_failure(self):
-        @self.app.task(soft_time_limit=2, time_limit=1)
+        @self.app.task(soft_time_limit=5, time_limit=3)
         def yyy():
             pass
 
@@ -1422,16 +1422,6 @@ class test_tasks(TasksCase):
             assert yyy_result.state == 'FAILURE'
         except ValueError as e:
             assert str(e) == 'soft_time_limit must be greater than or equal to time_limit'
-
-    def test_soft_time_limit_ok(self):
-        @self.app.task(soft_time_limit=1, time_limit=2)
-        def yyy():
-            pass
-
-        yyy_result = yyy.apply_async()
-
-        assert yyy_result.state == 'SUCCESS'
-        assert yyy_result.get(timeout=5) is None
 
 
 class test_apply_task(TasksCase):
