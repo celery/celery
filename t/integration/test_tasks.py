@@ -474,17 +474,21 @@ class test_tasks:
         res = return_properties.apply_async(app_id="1234")
         assert res.get(timeout=TIMEOUT)["app_id"] == "1234"
 
-    def test_soft_time_limit_exceeding_time_limit():
+    @flaky
+    def test_soft_time_limit_exceeding_time_limit(self):
         result = soft_time_limit_must_exceed_time_limit.apply_async()
 
         with pytest.raises(ValueError, match='soft_time_limit must be greater than or equal to time_limit'):
-            result.get(timeout=10)
+            result.get(timeout=5)
 
-    def test_soft_time_limit_not_exceeding_time_limit():
+        assert result.status == 'FAILURE'
+
+    @flaky
+    def test_soft_time_limit_not_exceeding_time_limit(self):
         result = soft_time_limit_must_not_exceed_time_limit.apply_async()
 
         assert result.status == 'SUCCESS'
-        assert result.get(timeout=10) is None
+        assert result.get(timeout=5) is None
 
 
 class test_trace_log_arguments:

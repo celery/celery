@@ -552,7 +552,7 @@ class Task:
             Also supports all keyword arguments supported by
             :meth:`kombu.Producer.publish`.
         """
-        if self.soft_time_limit and self.time_limit and self.soft_time_limit < self.time_limit:
+        if self.soft_time_limit and self.time_limit and self.soft_time_limit > self.time_limit:
             raise ValueError('soft_time_limit must be greater than or equal to time_limit')
 
         if self.typing:
