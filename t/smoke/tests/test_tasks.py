@@ -8,11 +8,8 @@ from celery import Celery, signature
 from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded, WorkerLostError
 from t.integration.tasks import add, identity
 from t.smoke.conftest import SuiteOperations, TaskTermination
-from t.smoke.tasks import (
-    replace_with_task,
-    soft_time_limit_lower_than_time_limit,
-    soft_time_limit_must_exceed_time_limit,
-)
+from t.smoke.tasks import (replace_with_task, soft_time_limit_lower_than_time_limit,
+                           soft_time_limit_must_exceed_time_limit)
 
 
 class test_task_termination(SuiteOperations):
