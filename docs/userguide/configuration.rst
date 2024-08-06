@@ -3233,6 +3233,16 @@ Default: 4.0.
 
 The timeout in seconds (int/float) when waiting for a new worker process to start up.
 
+.. setting:: worker_proc_use_process_group
+
+``worker_proc_use_process_group``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: Disabled by default.
+
+Use a fresh process group for each new worker process. If the worker process fails to start up,
+send a kill signal to its process group instead of the worker process only.
+
 .. setting:: worker_cancel_long_running_tasks_on_connection_loss
 
 ``worker_cancel_long_running_tasks_on_connection_loss``
