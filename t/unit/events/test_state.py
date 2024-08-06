@@ -96,10 +96,14 @@ class ev_task_states(replay):
         ]
 
 
-def QTEV(type, uuid, hostname, clock, name=None, timestamp=None):
+def QTEV(
+        type, uuid, hostname, clock, name=None, timestamp=None,
+        non_adjusted_timestamp=None):
     """Quick task event."""
-    return Event(f'task-{type}', uuid=uuid, hostname=hostname,
-                 clock=clock, name=name, timestamp=timestamp or time())
+    return Event(
+        f'task-{type}', uuid=uuid, hostname=hostname, clock=clock, name=name,
+        timestamp=timestamp or time(),
+        non_adjusted_timestamp=non_adjusted_timestamp or time())
 
 
 class ev_logical_clock_ordering(replay):
@@ -168,13 +172,15 @@ class test_Worker:
 
     def test_compatible_with_Decimal(self):
         w = Worker('george@vandelay.com')
-        timestamp, local_received = Decimal(time()), time()
-        w.event('worker-online', timestamp, local_received, fields={
-            'hostname': 'george@vandelay.com',
-            'timestamp': timestamp,
-            'local_received': local_received,
-            'freq': Decimal(5.6335431),
-        })
+        timestamp = non_adjusted_timestamp = Decimal(time())
+        local_received = time()
+        w.event('worker-online', timestamp, non_adjusted_timestamp,
+                local_received,
+                fields={'hostname': 'george@vandelay.com',
+                        'timestamp': timestamp,
+                        'non_adjusted_timestamp': timestamp,
+                        'local_received': local_received,
+                        'freq': Decimal(5.6335431), })
         assert w.alive
 
     def test_eq_ne_other(self):
@@ -184,9 +190,10 @@ class test_Worker:
 
     def test_reduce_direct(self):
         w = Worker('george@vandelay.com')
-        w.event('worker-online', 10.0, 13.0, fields={
+        w.event('worker-online', 10.0, 10.0, 13.0, fields={
             'hostname': 'george@vandelay.com',
             'timestamp': 10.0,
+            'non_adjusted_timestamp': 10.0,
             'local_received': 13.0,
             'freq': 60,
         })
@@ -221,16 +228,20 @@ class test_Worker:
     def test_drift_warning(self):
         worker = Worker(hostname='foo')
         with patch('celery.events.state.warn') as warn:
-            worker.event(None, time() + (HEARTBEAT_DRIFT_MAX * 2), time())
+            worker.event(None, time() + (HEARTBEAT_DRIFT_MAX * 2),
+                         time() + (HEARTBEAT_DRIFT_MAX * 2), time())
             warn.assert_called()
             assert 'Substantial drift' in warn.call_args[0][0]
 
     def test_updates_heartbeat(self):
         worker = Worker(hostname='foo')
-        worker.event(None, time(), time())
+        worker.event(
+            type_=None, timestamp=time(),
+            non_adjusted_timestamp=time(),
+            local_received=time())
         assert len(worker.heartbeats) == 1
         h1 = worker.heartbeats[0]
-        worker.event(None, time(), time() - 10)
+        worker.event(None, time(), time(), time() - 10)
         assert len(worker.heartbeats) == 2
         assert worker.heartbeats[-1] == h1
 
@@ -592,6 +603,7 @@ class test_State:
             'type': 'worker-offline',
             'hostname': 'unknown@vandelay.com',
             'timestamp': time(),
+            'non_adjusted_timestamp': time(),
             'local_received': time(),
             'clock': 301030134894833,
         })
@@ -607,6 +619,7 @@ class test_State:
             'type': 'worker-online',
             'hostname': 'george@vandelay.com',
             'timestamp': time(),
+            'non_adjusted_timestamp': time(),
             'local_received': time(),
             'clock': 34314,
         })
@@ -624,6 +637,7 @@ class test_State:
             'uuid': 'x',
             'hostname': 'y',
             'timestamp': time(),
+            'non_adjusted_timestamp': time(),
             'local_received': time(),
             'clock': 0,
         })
@@ -638,6 +652,7 @@ class test_State:
             'hostname': 'y',
             'clock': 3,
             'timestamp': time(),
+            'non_adjusted_timestamp': time(),
             'local_received': time(),
         })
         s.event({
@@ -647,6 +662,7 @@ class test_State:
             'hostname': 'y',
             'clock': 4,
             'timestamp': time(),
+            'non_adjusted_timestamp': time(),
             'local_received': time(),
         })
         s.event({
@@ -656,6 +672,7 @@ class test_State:
             'hostname': 'y',
             'clock': 5,
             'timestamp': time(),
+            'non_adjusted_timestamp': time(),
             'local_received': time(),
         })
         assert len(s._taskheap) == 2
@@ -685,6 +702,7 @@ class test_State:
             'hostname': 'y',
             'clock': 3,
             'timestamp': time(),
+            'non_adjusted_timestamp': time(),
             'local_received': time(),
         })
         s.event({
@@ -694,6 +712,7 @@ class test_State:
             'hostname': 'y',
             'clock': 4,
             'timestamp': time(),
+            'non_adjusted_timestamp': time(),
             'local_received': time(),
         })
         copy.deepcopy(s)
