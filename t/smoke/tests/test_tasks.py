@@ -5,10 +5,14 @@ from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup, CeleryTestWorker, Cel
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 from celery import Celery, signature
-from celery.exceptions import TimeLimitExceeded, WorkerLostError
+from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded, WorkerLostError
 from t.integration.tasks import add, identity
 from t.smoke.conftest import SuiteOperations, TaskTermination
-from t.smoke.tasks import replace_with_task
+from t.smoke.tasks import (
+    replace_with_task,
+    soft_time_limit_lower_than_time_limit,
+    soft_time_limit_must_exceed_time_limit,
+)
 
 
 class test_task_termination(SuiteOperations):
@@ -54,9 +58,7 @@ class test_task_termination(SuiteOperations):
                 filters={"name": "celery"},
             )
             if len(pinfo_current) != 2:
-                assert (
-                    False
-                ), f"Child process did not respawn with method: {method.name}"
+                assert False, f"Child process did not respawn with method: {method.name}"
 
         wait_for_two_celery_processes()
 
@@ -85,7 +87,7 @@ class test_task_termination(SuiteOperations):
             (
                 TaskTermination.Method.DELAY_TIMEOUT,
                 "Hard time limit (2s) exceeded for t.smoke.tasks.self_termination_delay_timeout",
-                'TimeLimitExceeded(2,)',
+                "TimeLimitExceeded(2,)",
             ),
             (
                 TaskTermination.Method.EXHAUST_MEMORY,
@@ -130,3 +132,16 @@ class test_replace:
         c = sig1 | sig2
         r = c.apply_async(queue=queues[0])
         assert r.get(timeout=RESULT_TIMEOUT) == 42
+
+
+class test_time_limit:
+    def test_soft_time_limit_lower_than_time_limit(self, celery_setup: CeleryTestSetup):
+        sig = soft_time_limit_lower_than_time_limit.s()
+        result = sig.apply_async(queue=celery_setup.worker.worker_queue)
+        with pytest.raises(SoftTimeLimitExceeded):
+            result.get(timeout=RESULT_TIMEOUT) is None
+
+    def test_soft_time_limit_must_exceed_time_limit(self, celery_setup: CeleryTestSetup):
+        sig = soft_time_limit_must_exceed_time_limit.s()
+        with pytest.raises(ValueError, match="soft_time_limit must be greater than or equal to time_limit"):
+            sig.apply_async(queue=celery_setup.worker.worker_queue)
