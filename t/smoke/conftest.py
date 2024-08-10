@@ -1,9 +1,11 @@
 import os
 
 import pytest
-from pytest_celery import REDIS_CONTAINER_TIMEOUT, REDIS_ENV, REDIS_IMAGE, REDIS_PORTS, RedisContainer
+from pytest_celery import (LOCALSTACK_CREDS, REDIS_CONTAINER_TIMEOUT, REDIS_ENV, REDIS_IMAGE, REDIS_PORTS,
+                           RedisContainer)
 from pytest_docker_tools import container, fetch
 
+from celery import Celery
 from t.smoke.operations.task_termination import TaskTermination
 from t.smoke.operations.worker_kill import WorkerKill
 from t.smoke.operations.worker_restart import WorkerRestart
@@ -67,8 +69,24 @@ def set_redis_test_container(redis_test_container: RedisContainer):
 def default_worker_env(default_worker_env: dict, redis_test_container: RedisContainer) -> dict:
     """Add the Redis connection details to the worker environment."""
     # get_redis_connection(): will use these settings when executing tasks in the worker
-    default_worker_env.update({
-        "REDIS_HOST": redis_test_container.hostname,
-        "REDIS_PORT": 6379,
-    })
+    default_worker_env.update(
+        {
+            "REDIS_HOST": redis_test_container.hostname,
+            "REDIS_PORT": 6379,
+            **LOCALSTACK_CREDS,
+        }
+    )
     return default_worker_env
+
+
+@pytest.fixture(scope="session", autouse=True)
+def set_aws_credentials():
+    os.environ.update(LOCALSTACK_CREDS)
+
+
+@pytest.fixture
+def default_worker_app(default_worker_app: Celery) -> Celery:
+    app = default_worker_app
+    if app.conf.broker_url and app.conf.broker_url.startswith("sqs"):
+        app.conf.broker_transport_options["region"] = LOCALSTACK_CREDS["AWS_DEFAULT_REGION"]
+    return app

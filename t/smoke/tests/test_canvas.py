@@ -1,11 +1,22 @@
 import uuid
 
 import pytest
-from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup
+from pytest_celery import (ALL_CELERY_BROKERS, CELERY_LOCALSTACK_BROKER, RESULT_TIMEOUT, CeleryTestBroker,
+                           CeleryTestSetup, _is_vendor_installed)
 
 from celery.canvas import chain, chord, group, signature
 from t.integration.conftest import get_redis_connection
 from t.integration.tasks import ExpectedException, add, fail, identity, redis_echo
+
+if _is_vendor_installed("localstack"):
+    ALL_CELERY_BROKERS.add(CELERY_LOCALSTACK_BROKER)
+
+
+@pytest.fixture(params=ALL_CELERY_BROKERS)
+def celery_broker(request: pytest.FixtureRequest) -> CeleryTestBroker:  # type: ignore
+    broker: CeleryTestBroker = request.getfixturevalue(request.param)
+    yield broker
+    broker.teardown()
 
 
 class test_signature:
