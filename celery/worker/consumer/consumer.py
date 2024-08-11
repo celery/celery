@@ -460,7 +460,8 @@ class Consumer:
         reserved_requests.clear()
 
         if self.app.conf.worker_sqspoc:
-            for request in tuple(active_requests):
+            all_requests = list(requests.values())
+            for request in all_requests:
                 if request.task.acks_late and not request.acknowledged:
                     warn("worker_sqspoc is enabled, rejecting task %s",
                          request)

@@ -38,7 +38,7 @@ app = Celery(
 
 app.conf.update(
     worker_prefetch_multiplier=1,
-    worker_concurrency=1,
+    worker_concurrency=2,
     worker_heartbeat=None,
     broker_heartbeat=0,
     task_acks_late=True,
