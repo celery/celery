@@ -8,6 +8,75 @@ This document contains change notes for bugfix & new features
 in the main branch & 5.5.x series, please see :ref:`whatsnew-5.5` for
 an overview of what's new in Celery 5.5.
 
+.. _version-5.5.0b2:
+
+5.5.0b2
+=======
+
+:release-date: 2024-08-06
+:release-by: Tomer Nosrati
+
+Celery v5.5.0 Beta 2 is now available for testing.
+Please help us test this version and report any issues.
+
+Key Highlights
+~~~~~~~~~~~~~~
+
+Pydantic Support
+----------------
+
+This release introduces support for Pydantic models in Celery tasks.
+For more info, see the new pydantic example and PR `#9023 <https://github.com/celery/celery/pull/9023>`_ by @mathiasertl.
+
+After upgrading to this version, please share your feedback on the new Pydantic support.
+
+Previous Beta Highlights
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Redis Broker Stability Improvements
+-----------------------------------
+The root cause of the Redis broker instability issue has been `identified and resolved <https://github.com/celery/kombu/pull/2007>`_
+in the v5.4.0 release of Kombu, which should resolve the disconnections bug and offer additional improvements.
+
+After upgrading to this version, please share your feedback on the Redis broker stability.
+
+Relevant Issues:
+`#7276 <https://github.com/celery/celery/discussions/7276>`_,
+`#8091 <https://github.com/celery/celery/discussions/8091>`_,
+`#8030 <https://github.com/celery/celery/discussions/8030>`_,
+`#8384 <https://github.com/celery/celery/discussions/8384>`_
+
+Quorum Queues Initial Support
+-----------------------------
+This release introduces the initial support for Quorum Queues with Celery. 
+
+See new configuration options for more details:
+
+- :setting:`task_default_queue_type`
+- :setting:`worker_detect_quorum_queues`
+
+After upgrading to this version, please share your feedback on the Quorum Queues support.
+
+Relevant Issues:
+`#6067 <https://github.com/celery/celery/discussions/6067>`_,
+`#9121 <https://github.com/celery/celery/discussions/9121>`_
+
+What's Changed
+~~~~~~~~~~~~~~
+
+- Bump pytest from 8.3.1 to 8.3.2 (#9153)
+- Remove setuptools deprecated test command from setup.py (#9159)
+- Pin pre-commit to latest version 3.8.0 from Python 3.9 (#9156)
+- Bump mypy from 1.11.0 to 1.11.1 (#9164)
+- Change "docker-compose" to "docker compose" in Makefile (#9169)
+- update python versions and docker compose (#9171)
+- Add support for Pydantic model validation/serialization (fixes #8751) (#9023)
+- Allow local dynamodb to be installed on another host than localhost (#8965)
+- Terminate job implementation for gevent concurrency backend (#9083)
+- Bump Kombu to v5.4.0 (#9177)
+- Add check for soft_time_limit and time_limit values (#9173)
+- Prepare for (pre) release: v5.5.0b2 (#9178)
+
 .. _version-5.5.0b1:
 
 5.5.0b1

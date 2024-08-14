@@ -63,23 +63,26 @@ class test_DynamoDBBackend:
             )
             assert backend.endpoint_url == 'http://my.domain.com:666'
 
-    def test_get_client_local(self):
+    @pytest.mark.parametrize("dynamodb_host", [
+        'localhost', '127.0.0.1',
+    ])
+    def test_get_client_local(self, dynamodb_host):
         table_creation_path = \
             'celery.backends.dynamodb.DynamoDBBackend._get_or_create_table'
         with patch('boto3.client') as mock_boto_client, \
                 patch(table_creation_path):
             backend = DynamoDBBackend(
                 app=self.app,
-                url='dynamodb://@localhost:8000'
+                url=f'dynamodb://@{dynamodb_host}:8000'
             )
             client = backend._get_client()
             assert backend.client is client
             mock_boto_client.assert_called_once_with(
                 'dynamodb',
-                endpoint_url='http://localhost:8000',
+                endpoint_url=f'http://{dynamodb_host}:8000',
                 region_name='us-east-1'
             )
-            assert backend.endpoint_url == 'http://localhost:8000'
+            assert backend.endpoint_url == f'http://{dynamodb_host}:8000'
 
     def test_get_client_credentials(self):
         table_creation_path = \

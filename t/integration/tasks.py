@@ -512,3 +512,8 @@ if LEGACY_TASKS_DISABLED:
         if replace_with is None:
             replace_with = replaced_with_me.s()
         self.replace(signature(replace_with))
+
+
+@shared_task(soft_time_limit=2, time_limit=1)
+def soft_time_limit_must_exceed_time_limit():
+    pass
