@@ -169,6 +169,7 @@ class Consumer:
             'celery.worker.consumer.heart:Heart',
             'celery.worker.consumer.control:Control',
             'celery.worker.consumer.tasks:Tasks',
+            'celery.worker.consumer.delayed_delivery:DelayedDelivery',
             'celery.worker.consumer.consumer:Evloop',
             'celery.worker.consumer.agent:Agent',
         ]
