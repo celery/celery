@@ -22,6 +22,7 @@ repos:
       - id: check-merge-conflict
       - id: check-toml
       - id: check-yaml
+        exclude: helm-chart/templates/
       - id: mixed-line-ending
 
   - repo: https://github.com/pycqa/isort
