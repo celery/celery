@@ -2,11 +2,65 @@ from datetime import timedelta
 from datetime import timezone as datetime_timezone
 
 import pytest
+import requests
 from future.backports.datetime import datetime
 from pytest_celery import CeleryTestSetup
+from requests.auth import HTTPBasicAuth
 
 from celery import Celery
 from t.smoke.tasks import noop
+from t.smoke.tests.quorum_queues.conftest import RabbitMQManagementBroker
+
+
+class test_broker_configuration:
+    @pytest.fixture
+    def default_worker_app(self, default_worker_app: Celery) -> Celery:
+        app = default_worker_app
+        app.conf.broker_transport_options = {"confirm_publish": True}
+        app.conf.task_default_queue_type = "quorum"
+        app.conf.broker_native_delayed_delivery = True
+        app.conf.task_default_exchange_type = 'topic'
+        app.conf.task_default_routing_key = 'celery'
+
+        return app
+
+    def test_native_delayed_delivery_queue_configuration(self, celery_setup: CeleryTestSetup):
+        broker: RabbitMQManagementBroker = celery_setup.broker
+        api = broker.get_management_url() + "/api/queues"
+        response = requests.get(api, auth=HTTPBasicAuth("guest", "guest"))
+        assert response.status_code == 200
+        res = response.json()
+        assert isinstance(res, list)
+
+        res = [queue for queue in res if queue["name"].startswith('celery_delayed')]
+
+        assert len(res) == 28
+
+        for queue in res:
+            queue_level = int(queue["name"].split("_")[-1])
+
+            queue_arguments = queue["arguments"]
+            if queue_level == 0:
+                assert queue_arguments["x-dead-letter-exchange"] == "celery_delayed_delivery"
+            else:
+                assert queue_arguments["x-dead-letter-exchange"] == f"celery_delayed_{queue_level - 1}"
+
+            assert queue_arguments["x-message-ttl"] == pow(2, queue_level) * 1000
+
+    def test_native_delayed_delivery_exchange_configuration(self, celery_setup: CeleryTestSetup):
+        broker: RabbitMQManagementBroker = celery_setup.broker
+        api = broker.get_management_url() + "/api/exchanges"
+        response = requests.get(api, auth=HTTPBasicAuth("guest", "guest"))
+        assert response.status_code == 200
+        res = response.json()
+        assert isinstance(res, list)
+
+        res = [exchange for exchange in res if exchange["name"].startswith('celery_delayed')]
+
+        assert len(res) == 29
+
+        for exchange in res:
+            assert exchange["type"] == "topic"
 
 
 class test_native_delayed_delivery:
