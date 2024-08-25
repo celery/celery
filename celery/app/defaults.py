@@ -95,6 +95,7 @@ NAMESPACES = Namespace(
         heartbeat=Option(120, type='int'),
         heartbeat_checkrate=Option(3.0, type='int'),
         login_method=Option(None, type='string'),
+        native_delayed_delivery=Option(False, type='bool'),
         pool_limit=Option(10, type='int'),
         use_ssl=Option(False, type='bool'),
 
