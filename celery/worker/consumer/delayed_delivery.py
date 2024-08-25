@@ -5,6 +5,7 @@ from celery.worker.consumer import Consumer, Tasks
 
 __all__ = ('DelayedDelivery',)
 
+
 class DelayedDelivery(bootsteps.StartStopStep):
     requires = (Tasks,)
 

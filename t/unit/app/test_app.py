@@ -1477,6 +1477,7 @@ class test_App:
             }
         ))
 
+
 class test_defaults:
 
     def test_strtobool(self):
