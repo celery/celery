@@ -14,7 +14,7 @@ from operator import attrgetter
 
 from click.exceptions import Exit
 from dateutil.parser import isoparse
-from kombu import pools
+from kombu import pools, Queue, Exchange
 from kombu.clocks import LamportClock
 from kombu.common import oid_from
 from kombu.utils.compat import register_after_fork
@@ -828,6 +828,33 @@ class Celery:
         ignore_result = options.pop('ignore_result', False)
         options = router.route(
             options, route_name or name, args, kwargs, task_type)
+
+        if conf.broker_native_delayed_delivery and (
+            conf.broker_url.startswith('amqp://')
+            or conf.broker_url.startswith('py-amqp://')
+        ):
+            if eta:
+                countdown = (maybe_make_aware(eta) - self.now()).total_seconds()
+
+            if countdown:
+                routing_key = '.'.join(list(f'{int(countdown):028b}')) + f'.{options["queue"].routing_key}'
+                exchange = Exchange(
+                    'celery_delayed_27',
+                    type='topic',
+                )
+                options['queue'] = Queue(
+                    'celery_delayed_27',
+                    exchange=exchange,
+                    routing_key=routing_key,
+                    queue_arguments={
+                        "x-queue-type": "quorum",
+                        "x-dead-letter-strategy": "at-least-once",
+                        "x-overflow": "reject-publish",
+                        "x-message-ttl": pow(2, 27) * 1000,
+                        "x-dead-letter-exchange": 'celery_delayed_26',
+                    }
+                )
+
         if expires is not None:
             if isinstance(expires, datetime):
                 expires_s = (maybe_make_aware(
