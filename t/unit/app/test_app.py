@@ -1499,6 +1499,19 @@ class test_App:
             }
         ))
 
+    def test_native_delayed_delivery_no_eta_or_countdown(self):
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {'queue': Queue('testcelery', routing_key='testcelery')}
+        self.app.conf.broker_url = 'amqp://'
+        self.app.conf.broker_native_delayed_delivery = True
+
+        self.app.send_task('foo', (1, 2))
+
+        self.app.amqp.send_task_message.assert_called_once_with(ANY, ANY, ANY, queue=Queue(
+            'testcelery',
+            routing_key='testcelery'
+        ))
+
 
 class test_defaults:
 
