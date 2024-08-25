@@ -834,6 +834,8 @@ class Celery:
             or conf.broker_url.startswith('py-amqp://')
         ):
             if eta:
+                if isinstance(eta, str):
+                    eta = isoparse(eta)
                 countdown = (maybe_make_aware(eta) - self.now()).total_seconds()
 
             if countdown:
