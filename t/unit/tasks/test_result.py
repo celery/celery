@@ -11,7 +11,7 @@ import pytest
 
 from celery import states, uuid
 from celery.app.task import Context
-from celery.backends.base import SyncBackendMixin, Backend
+from celery.backends.base import Backend, SyncBackendMixin
 from celery.exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
 from celery.result import AsyncResult, EagerResult, GroupResult, ResultSet, assert_will_not_block, result_from_tuple
 from celery.utils.serialization import pickle
