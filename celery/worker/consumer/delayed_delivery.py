@@ -32,7 +32,6 @@ class DelayedDelivery(bootsteps.StartStopStep):
             next_level = self.level_name(level - 1)
 
             delayed_exchange: Exchange = Exchange(current_level, type="topic").bind(channel)
-            # delayed_exchange.delete()  # POC Code only
             delayed_exchange.declare()
 
             delayed_queue: Queue = Queue(
@@ -45,7 +44,6 @@ class DelayedDelivery(bootsteps.StartStopStep):
                     "x-dead-letter-exchange": next_level if level > 0 else self.CELERY_DELAYED_DELIVERY_EXCHANGE,
                 }
             ).bind(channel)
-            # delayed_queue.delete()  # POC Code only
             delayed_queue.declare()
             delayed_queue.bind_to(current_level, routing_key)
 
@@ -63,7 +61,6 @@ class DelayedDelivery(bootsteps.StartStopStep):
             routing_key = "*." + routing_key
 
         delivery_exchange: Exchange = Exchange(self.CELERY_DELAYED_DELIVERY_EXCHANGE, type="topic").bind(channel)
-        # delivery_exchange.delete()  # POC Code only
         delivery_exchange.declare()
         delivery_exchange.bind_to(self.level_name(0), routing_key)
 
