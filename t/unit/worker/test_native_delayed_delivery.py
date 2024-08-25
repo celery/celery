@@ -1,7 +1,7 @@
 from logging import LogRecord
 from unittest.mock import Mock
 
-from kombu import Queue, Exchange
+from kombu import Exchange, Queue
 
 from celery.worker.consumer.delayed_delivery import DelayedDelivery
 
@@ -73,9 +73,12 @@ class test_DelayedDelivery:
         assert len(caplog.records) == 1
         record: LogRecord = caplog.records[0]
         assert record.levelname == "WARNING"
-        assert record.message == ("Exchange celery is a direct exchange "
-                                         "and native delayed delivery do not support direct exchanges.\n"
-                                         "ETA tasks published to this exchange will block the worker until the ETA arrives.")
+        assert record.message == (
+            "Exchange celery is a direct exchange "
+            "and native delayed delivery do not support direct exchanges.\n"
+            "ETA tasks published to this exchange "
+            "will block the worker until the ETA arrives."
+        )
 
     def test_start_native_delayed_delivery_topic_exchange(self, caplog):
         consumer_mock = Mock()
