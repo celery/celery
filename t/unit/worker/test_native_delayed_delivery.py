@@ -48,7 +48,7 @@ class test_DelayedDelivery:
 
         assert delayed_delivery.include_if(consumer_mock) is True
 
-    def test_include_if_delivery_set_to_True_and_rabbitmq_broker2(self):
+    def test_include_if_delivery_set_to_true_and_rabbitmq_broker2(self):
         consumer_mock = Mock()
         consumer_mock.app.conf.broker_native_delayed_delivery = True
         consumer_mock.app.conf.broker_url = 'py-amqp://'
