@@ -214,7 +214,7 @@ class test_DatabaseBackend:
         assert 'foo' in repr(Task('foo'))
 
     def test_TaskSet__repr__(self):
-        assert 'foo', repr(TaskSet('foo' in None))
+        assert 'foo' in repr(TaskSet('foo'))
 
 
 @skip.if_pypy
