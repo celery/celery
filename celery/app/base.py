@@ -14,7 +14,7 @@ from operator import attrgetter
 
 from click.exceptions import Exit
 from dateutil.parser import isoparse
-from kombu import pools, Queue, Exchange
+from kombu import Exchange, Queue, pools
 from kombu.clocks import LamportClock
 from kombu.common import oid_from
 from kombu.utils.compat import register_after_fork
