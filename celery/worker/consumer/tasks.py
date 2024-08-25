@@ -22,9 +22,8 @@ ETA_TASKS_NO_GLOBAL_QOS_WARNING = """
 Detected quorum queue "%r", disabling global QoS.
 With global QoS disabled, ETA tasks may not function as expected. Instead of adjusting
 the prefetch count dynamically, ETA tasks will occupy the prefetch buffer, potentially
-blocking other tasks from being consumed. To mitigate this, either set a high prefetch
-count or avoid using quorum queues until the ETA mechanism is updated to support a
-disabled global QoS, which is required for quorum queues.
+blocking other tasks from being consumed.
+Please enable native delayed delivery so that ETA tasks will not block the worker.
 """
 
 
@@ -91,13 +90,18 @@ class Tasks(bootsteps.StartStopStep):
 
         if c.app.conf.worker_detect_quorum_queues:
             using_quorum_queues, qname = self.detect_quorum_queues(c)
+
+            if c.app.conf.broker_native_delayed_delivery is True:
+                using_quorum_queues = True
+
             if using_quorum_queues:
                 qos_global = False
                 logger.info("Global QoS is disabled. Prefetch count in now static.")
                 # The ETA tasks mechanism requires additional work for Celery to fully support
                 # quorum queues. Warn the user that ETA tasks may not function as expected until
                 # this is done so we can at least support quorum queues partially for now.
-                warnings.warn(ETA_TASKS_NO_GLOBAL_QOS_WARNING % (qname,), CeleryWarning)
+                if c.app.conf.broker_native_delayed_delivery is False:
+                    warnings.warn(ETA_TASKS_NO_GLOBAL_QOS_WARNING % (qname,), CeleryWarning)
 
         return qos_global
 
