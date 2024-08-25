@@ -1,9 +1,12 @@
 from kombu import Exchange, Queue
 
 from celery import Celery, bootsteps
+from celery.utils.log import get_logger
 from celery.worker.consumer import Consumer, Tasks
 
 __all__ = ('DelayedDelivery',)
+
+logger = get_logger(__name__)
 
 
 class DelayedDelivery(bootsteps.StartStopStep):
@@ -72,7 +75,9 @@ class DelayedDelivery(bootsteps.StartStopStep):
             exchange: Exchange = queue.exchange.bind(channel)
 
             if exchange.type == 'direct':
-                # TODO: Add warning
+                logger.warn(f"Exchange {exchange.name} is a direct exchange "
+                            f"and native delayed delivery do not support direct exchanges.\n"
+                            f"ETA tasks published to this exchange will block the worker until the ETA arrives.")
                 continue
 
             routing_key = queue.routing_key if queue.routing_key.startswith('#') else f"#.{queue.routing_key}"
