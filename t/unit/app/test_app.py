@@ -11,10 +11,10 @@ from datetime import datetime, timedelta
 from datetime import timezone as datetime_timezone
 from pickle import dumps, loads
 from typing import Optional
-from unittest.mock import DEFAULT, Mock, patch, ANY, MagicMock
+from unittest.mock import ANY, DEFAULT, MagicMock, Mock, patch
 
 import pytest
-from kombu import Queue, Exchange
+from kombu import Exchange, Queue
 from pydantic import BaseModel, ValidationInfo, model_validator
 from vine import promise
 

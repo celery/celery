@@ -1,6 +1,6 @@
 from kombu import Exchange, Queue
 
-from celery import bootsteps, Celery
+from celery import Celery, bootsteps
 from celery.worker.consumer import Consumer, Tasks
 
 __all__ = ('DelayedDelivery',)
