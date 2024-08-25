@@ -115,8 +115,8 @@ class test_backends:
 
     @pytest.mark.celery(
         result_backend=f'{CachedBackendWithTreadTrucking.__module__}.'
-                       f'{CachedBackendWithTreadTrucking.__qualname__}'
-                       f'+memory://')
+        f'{CachedBackendWithTreadTrucking.__qualname__}'
+        f'+memory://')
     def test_backend_thread_safety(self):
         @self.app.task
         def dummy_add_task(x, y):
