@@ -439,7 +439,7 @@ class test_AsyncResult:
     @patch('celery.app.base.to_utc')
     @patch('celery.app.base.Celery.timezone', new_callable=mock.PropertyMock)
     @pytest.mark.parametrize('timezone, date', [
-        ("utc", "2024-08-24T00:00:00+00:00"),
+        (None, "2024-08-24T00:00:00+00:00"),
         ("America/Los_Angeles", "2024-08-23T17:00:00-07:00"),
         ("Pacific/Kwajalein", "2024-08-24T12:00:00+12:00"),
         ("Europe/Berlin", "2024-08-24T02:00:00+02:00"),
