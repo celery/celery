@@ -466,7 +466,7 @@ class Task:
             shadow (str): Override task name used in logs/monitoring.
                 Default is retrieved from :meth:`shadow_name`.
 
-            connection (kombu.Connection): Re-use existing broker connection
+            connection (kombu.Connection): Reuse existing broker connection
                 instead of acquiring one from the connection pool.
 
             retry (bool): If enabled sending of the task message will be
