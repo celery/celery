@@ -1578,7 +1578,7 @@ Example configuration (Astra DB)
 Additional configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Cassandra driver, when estabilishing the connection, undergoes a stage
+The Cassandra driver, when establishing the connection, undergoes a stage
 of negotiating the protocol version with the server(s). Similarly,
 a load-balancing policy is automatically supplied (by default
 ``DCAwareRoundRobinPolicy``, which in turn has a ``local_dc`` setting, also
