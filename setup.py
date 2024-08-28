@@ -4,7 +4,6 @@ import os
 import re
 
 import setuptools
-import setuptools.command.test
 
 NAME = 'celery'
 
@@ -25,11 +24,13 @@ EXTENSIONS = {
     'elasticsearch',
     'eventlet',
     'gevent',
+    'gcs',
     'librabbitmq',
     'memcache',
     'mongodb',
     'msgpack',
     'pymemcache',
+    'pydantic',
     'pyro',
     'pytest',
     'redis',
@@ -146,9 +147,10 @@ setuptools.setup(
     license='BSD-3-Clause',
     platforms=['any'],
     install_requires=install_requires(),
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     tests_require=reqs('test.txt'),
     extras_require=extras_require(),
+    include_package_data=True,
     entry_points={
         'console_scripts': [
             'celery = celery.__main__:main',
@@ -172,6 +174,8 @@ setuptools.setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
         "Operating System :: OS Independent"

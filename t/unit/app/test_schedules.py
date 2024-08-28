@@ -1,7 +1,7 @@
 import sys
 import time
 from contextlib import contextmanager
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pickle import dumps, loads
 from unittest import TestCase
 from unittest.mock import Mock
@@ -50,17 +50,17 @@ class test_solar:
     def test_is_due(self):
         self.s.remaining_estimate = Mock(name='rem')
         self.s.remaining_estimate.return_value = timedelta(seconds=0)
-        assert self.s.is_due(datetime.utcnow()).is_due
+        assert self.s.is_due(datetime.now(timezone.utc)).is_due
 
     def test_is_due__not_due(self):
         self.s.remaining_estimate = Mock(name='rem')
         self.s.remaining_estimate.return_value = timedelta(hours=10)
-        assert not self.s.is_due(datetime.utcnow()).is_due
+        assert not self.s.is_due(datetime.now(timezone.utc)).is_due
 
     def test_remaining_estimate(self):
         self.s.cal = Mock(name='cal')
-        self.s.cal.next_rising().datetime.return_value = datetime.utcnow()
-        self.s.remaining_estimate(datetime.utcnow())
+        self.s.cal.next_rising().datetime.return_value = datetime.now(timezone.utc)
+        self.s.remaining_estimate(datetime.now(timezone.utc))
 
     def test_coordinates(self):
         with pytest.raises(ValueError):
@@ -82,7 +82,7 @@ class test_solar:
             s.method = s._methods[ev]
             s.is_center = s._use_center_l[ev]
             try:
-                s.remaining_estimate(datetime.utcnow())
+                s.remaining_estimate(datetime.now(timezone.utc))
             except TypeError:
                 pytest.fail(
                     f"{s.method} was called with 'use_center' which is not a "
@@ -108,7 +108,7 @@ class test_schedule:
 # This is needed for test_crontab_parser because datetime.utcnow doesn't pickle
 # in python 2
 def utcnow():
-    return datetime.utcnow()
+    return datetime.now(timezone.utc)
 
 
 class test_crontab_parser:
@@ -246,6 +246,22 @@ class test_crontab_parser:
         assert crontab(month_of_year='1') != schedule(10)
 
 
+class test_crontab_from_string:
+
+    def test_every_minute(self):
+        assert crontab.from_string('* * * * *') == crontab()
+
+    def test_every_minute_on_sunday(self):
+        assert crontab.from_string('* * * * SUN') == crontab(day_of_week='SUN')
+
+    def test_once_per_month(self):
+        assert crontab.from_string('0 8 5 * *') == crontab(minute=0, hour=8, day_of_month=5)
+
+    def test_invalid_crontab_string(self):
+        with pytest.raises(ValueError):
+            crontab.from_string('*')
+
+
 class test_crontab_remaining_estimate:
 
     def crontab(self, *args, **kwargs):
@@ -307,6 +323,20 @@ class test_crontab_remaining_estimate:
             datetime(2010, 9, 11, 14, 30, 15),
         )
         assert next == datetime(2010, 9, 13, 0, 5)
+
+    def test_monthyear(self):
+        next = self.next_occurrence(
+            self.crontab(minute=30, hour=14, month_of_year='oct', day_of_month=18),
+            datetime(2010, 9, 11, 14, 30, 15),
+        )
+        assert next == datetime(2010, 10, 18, 14, 30)
+
+    def test_not_monthyear(self):
+        next = self.next_occurrence(
+            self.crontab(minute=[5, 42], month_of_year='nov-dec', day_of_month=13),
+            datetime(2010, 9, 11, 14, 30, 15),
+        )
+        assert next == datetime(2010, 11, 13, 0, 5)
 
     def test_monthday(self):
         next = self.next_occurrence(
@@ -607,6 +637,11 @@ class test_crontab_is_due:
     @pytest.mark.parametrize('month_of_year,expected', [
         (1, {1}),
         ('1', {1}),
+        ('feb', {2}),
+        ('Mar', {3}),
+        ('april', {4}),
+        ('may,jun,jul', {5, 6, 7}),
+        ('aug-oct', {8, 9, 10}),
         ('2,4,6', {2, 4, 6}),
         ('*/2', {1, 3, 5, 7, 9, 11}),
         ('2-12/2', {2, 4, 6, 8, 10, 12}),
@@ -615,7 +650,7 @@ class test_crontab_is_due:
         c = self.crontab(month_of_year=month_of_year)
         assert c.month_of_year == expected
 
-    @pytest.mark.parametrize('month_of_year', [0, '0-5', 13, '12,13'])
+    @pytest.mark.parametrize('month_of_year', [0, '0-5', 13, '12,13', 'jaan', 'sebtember'])
     def test_crontab_spec_invalid_moy(self, month_of_year):
         with pytest.raises(ValueError):
             self.crontab(month_of_year=month_of_year)

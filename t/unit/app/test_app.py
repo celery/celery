@@ -1,15 +1,19 @@
 import gc
+import importlib
 import itertools
 import os
 import ssl
 import sys
+import typing
 import uuid
 from copy import deepcopy
 from datetime import datetime, timedelta
+from datetime import timezone as datetime_timezone
 from pickle import dumps, loads
-from unittest.mock import Mock, patch
+from unittest.mock import DEFAULT, Mock, patch
 
 import pytest
+from pydantic import BaseModel, ValidationInfo, model_validator
 from vine import promise
 
 from celery import Celery, _state
@@ -85,7 +89,7 @@ class test_App:
         tz_utc = timezone.get_timezone('UTC')
         tz_us_eastern = timezone.get_timezone(timezone_setting_value)
 
-        now = to_utc(datetime.utcnow())
+        now = to_utc(datetime.now(datetime_timezone.utc))
         app_now = self.app.now()
 
         assert app_now.tzinfo is tz_utc
@@ -101,7 +105,7 @@ class test_App:
 
         assert app_now.tzinfo == tz_us_eastern
 
-        diff = to_utc(datetime.utcnow()) - localize(app_now, tz_utc)
+        diff = to_utc(datetime.now(datetime_timezone.utc)) - localize(app_now, tz_utc)
         assert diff <= timedelta(seconds=1)
 
         # Verify that timezone setting overrides enable_utc=on setting
@@ -504,6 +508,189 @@ class test_App:
                 pass
             check.assert_called_with(foo)
 
+    def test_task_with_pydantic_with_no_args(self):
+        """Test a pydantic task with no arguments or return value."""
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo():
+                check()
+
+            assert foo() is None
+            check.assert_called_once()
+
+    def test_task_with_pydantic_with_arg_and_kwarg(self):
+        """Test a pydantic task with simple (non-pydantic) arg/kwarg and return value."""
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo(arg: int, kwarg: bool = True) -> int:
+                check(arg, kwarg=kwarg)
+                return 1
+
+            assert foo(0) == 1
+            check.assert_called_once_with(0, kwarg=True)
+
+    def test_task_with_pydantic_with_pydantic_arg_and_default_kwarg(self):
+        """Test a pydantic task with pydantic arg/kwarg and return value."""
+
+        class ArgModel(BaseModel):
+            arg_value: int
+
+        class KwargModel(BaseModel):
+            kwarg_value: int
+
+        kwarg_default = KwargModel(kwarg_value=1)
+
+        class ReturnModel(BaseModel):
+            ret_value: int
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo(arg: ArgModel, kwarg: KwargModel = kwarg_default) -> ReturnModel:
+                check(arg, kwarg=kwarg)
+                return ReturnModel(ret_value=2)
+
+            assert foo({'arg_value': 0}) == {'ret_value': 2}
+            check.assert_called_once_with(ArgModel(arg_value=0), kwarg=kwarg_default)
+            check.reset_mock()
+
+            # Explicitly pass kwarg (but as argument)
+            assert foo({'arg_value': 3}, {'kwarg_value': 4}) == {'ret_value': 2}
+            check.assert_called_once_with(ArgModel(arg_value=3), kwarg=KwargModel(kwarg_value=4))
+            check.reset_mock()
+
+            # Explicitly pass all arguments as kwarg
+            assert foo(arg={'arg_value': 5}, kwarg={'kwarg_value': 6}) == {'ret_value': 2}
+            check.assert_called_once_with(ArgModel(arg_value=5), kwarg=KwargModel(kwarg_value=6))
+
+    def test_task_with_pydantic_with_task_name_in_context(self):
+        """Test that the task name is passed to as additional context."""
+
+        class ArgModel(BaseModel):
+            value: int
+
+            @model_validator(mode='after')
+            def validate_context(self, info: ValidationInfo):
+                context = info.context
+                assert context
+                assert context.get('celery_task_name') == 't.unit.app.test_app.task'
+                return self
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def task(arg: ArgModel):
+                check(arg)
+                return 1
+
+            assert task({'value': 1}) == 1
+
+    def test_task_with_pydantic_with_strict_validation(self):
+        """Test a pydantic task with/without strict model validation."""
+
+        class ArgModel(BaseModel):
+            value: int
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True, pydantic_strict=True)
+            def strict(arg: ArgModel):
+                check(arg)
+
+            @app.task(pydantic=True, pydantic_strict=False)
+            def loose(arg: ArgModel):
+                check(arg)
+
+            # In Pydantic, passing an "exact int" as float works without strict validation
+            assert loose({'value': 1.0}) is None
+            check.assert_called_once_with(ArgModel(value=1))
+            check.reset_mock()
+
+            # ... but a non-strict value will raise an exception
+            with pytest.raises(ValueError):
+                loose({'value': 1.1})
+            check.assert_not_called()
+
+            # ... with strict validation, even an "exact int" will not work:
+            with pytest.raises(ValueError):
+                strict({'value': 1.0})
+            check.assert_not_called()
+
+    def test_task_with_pydantic_with_extra_context(self):
+        """Test passing additional validation context to the model."""
+
+        class ArgModel(BaseModel):
+            value: int
+
+            @model_validator(mode='after')
+            def validate_context(self, info: ValidationInfo):
+                context = info.context
+                assert context, context
+                assert context.get('foo') == 'bar'
+                return self
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True, pydantic_context={'foo': 'bar'})
+            def task(arg: ArgModel):
+                check(arg.value)
+                return 1
+
+            assert task({'value': 1}) == 1
+            check.assert_called_once_with(1)
+
+    def test_task_with_pydantic_with_dump_kwargs(self):
+        """Test passing keyword arguments to model_dump()."""
+
+        class ArgModel(BaseModel):
+            value: int
+
+        class RetModel(BaseModel):
+            value: datetime
+            unset_value: typing.Optional[int] = 99  # this would be in the output, if exclude_unset weren't True
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True, pydantic_dump_kwargs={'mode': 'python', 'exclude_unset': True})
+            def task(arg: ArgModel) -> RetModel:
+                check(arg)
+                return RetModel(value=datetime(2024, 5, 14, tzinfo=timezone.utc))
+
+            assert task({'value': 1}) == {'value': datetime(2024, 5, 14, tzinfo=timezone.utc)}
+            check.assert_called_once_with(ArgModel(value=1))
+
+    def test_task_with_pydantic_with_pydantic_not_installed(self):
+        """Test configuring a task with Pydantic when pydantic is not installed."""
+
+        with self.Celery() as app:
+            @app.task(pydantic=True)
+            def task():
+                return
+
+            # mock function will raise ModuleNotFoundError only if pydantic is imported
+            def import_module(name, *args, **kwargs):
+                if name == 'pydantic':
+                    raise ModuleNotFoundError('Module not found.')
+                return DEFAULT
+
+            msg = r'^You need to install pydantic to use pydantic model serialization\.$'
+            with patch(
+                'celery.app.base.importlib.import_module',
+                side_effect=import_module,
+                wraps=importlib.import_module
+            ):
+                with pytest.raises(ImproperlyConfigured, match=msg):
+                    task()
+
     def test_task_sets_main_name_MP_MAIN_FILE(self):
         from celery.utils import imports as _imports
         _imports.MP_MAIN_FILE = __file__
@@ -695,6 +882,18 @@ class test_App:
             self.app.config_from_object(Config(), force=True)
             assert exc.args[0].startswith('task_default_delivery_mode')
             assert 'CELERY_DEFAULT_DELIVERY_MODE' in exc.args[0]
+
+    def test_config_form_object__module_attr_does_not_exist(self):
+        module_name = __name__
+        attr_name = 'bar'
+        # the module must exist, but it should not have the config attr
+        self.app.config_from_object(f'{module_name}.{attr_name}')
+
+        with pytest.raises(ModuleNotFoundError) as exc:
+            assert self.app.conf.broker_url is None
+
+        assert module_name in exc.value.args[0]
+        assert attr_name in exc.value.args[0]
 
     def test_config_from_cmdline(self):
         cmdline = ['task_always_eager=no',

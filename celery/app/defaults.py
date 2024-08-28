@@ -140,6 +140,12 @@ NAMESPACES = Namespace(
         connection_timeout=Option(20, type='int'),
         read_timeout=Option(120, type='int'),
     ),
+    gcs=Namespace(
+        bucket=Option(type='string'),
+        project=Option(type='string'),
+        base_path=Option('', type='string'),
+        ttl=Option(0, type='float'),
+    ),
     control=Namespace(
         queue_ttl=Option(300.0, type='float'),
         queue_expires=Option(10.0, type='float'),
@@ -255,6 +261,7 @@ NAMESPACES = Namespace(
         inherit_parent_priority=Option(False, type='bool'),
         default_delivery_mode=Option(2, type='string'),
         default_queue=Option('celery'),
+        default_queue_type=Option('classic', type='string'),
         default_exchange=Option(None, type='string'),  # taken from queue
         default_exchange_type=Option('direct'),
         default_routing_key=Option(None, type='string'),  # taken from queue
@@ -325,6 +332,7 @@ NAMESPACES = Namespace(
         pool_restarts=Option(False, type='bool'),
         proc_alive_timeout=Option(4.0, type='float'),
         prefetch_multiplier=Option(4, type='int'),
+        enable_prefetch_count_reduction=Option(True, type='bool'),
         redirect_stdouts=Option(
             True, type='bool', old={'celery_redirect_stdouts'},
         ),
@@ -338,6 +346,7 @@ NAMESPACES = Namespace(
         task_log_format=Option(DEFAULT_TASK_LOG_FMT),
         timer=Option(type='string'),
         timer_precision=Option(1.0, type='float'),
+        detect_quorum_queues=Option(True, type='bool'),
     ),
 )
 

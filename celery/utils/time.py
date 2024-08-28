@@ -14,6 +14,7 @@ from types import ModuleType
 from typing import Any, Callable
 
 from dateutil import tz as dateutil_tz
+from dateutil.parser import isoparse
 from kombu.utils.functional import reprcall
 from kombu.utils.objects import cached_property
 
@@ -39,6 +40,9 @@ C_REMDEBUG = os.environ.get('C_REMDEBUG', False)
 
 DAYNAMES = 'sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'
 WEEKDAYS = dict(zip(DAYNAMES, range(7)))
+
+MONTHNAMES = 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'
+YEARMONTHS = dict(zip(MONTHNAMES, range(1, 13)))
 
 RATE_MODIFIER_MAP = {
     's': lambda n: n,
@@ -211,12 +215,12 @@ def remaining(
             using :func:`delta_resolution` (i.e., rounded to the
             resolution of `ends_in`).
         now (Callable): Function returning the current time and date.
-            Defaults to :func:`datetime.utcnow`.
+            Defaults to :func:`datetime.now(timezone.utc)`.
 
     Returns:
         ~datetime.timedelta: Remaining time.
     """
-    now = now or datetime.utcnow()
+    now = now or datetime.now(datetime_timezone.utc)
     if str(
             start.tzinfo) == str(
             now.tzinfo) and now.utcoffset() != start.utcoffset():
@@ -257,6 +261,21 @@ def weekday(name: str) -> int:
         raise KeyError(name)
 
 
+def yearmonth(name: str) -> int:
+    """Return the position of a month: 1 - 12, where 1 is January.
+
+    Example:
+        >>> yearmonth('january'), yearmonth('jan'), yearmonth('may')
+        (1, 1, 5)
+    """
+    abbreviation = name[0:3].lower()
+    try:
+        return YEARMONTHS[abbreviation]
+    except KeyError:
+        # Show original day name in exception, instead of abbr.
+        raise KeyError(name)
+
+
 def humanize_seconds(
         secs: int, prefix: str = '', sep: str = '', now: str = 'now',
         microseconds: bool = False) -> str:
@@ -288,7 +307,7 @@ def maybe_iso8601(dt: datetime | str | None) -> None | datetime:
         return
     if isinstance(dt, datetime):
         return dt
-    return datetime.fromisoformat(dt)
+    return isoparse(dt)
 
 
 def is_naive(dt: datetime) -> bool:

@@ -15,7 +15,7 @@ from celery import Celery
 from . import current_app
 from .utils.collections import AttributeDict
 from .utils.time import (ffwd, humanize_seconds, localize, maybe_make_aware, maybe_timedelta, remaining, timezone,
-                         weekday)
+                         weekday, yearmonth)
 
 __all__ = (
     'ParseException', 'schedule', 'crontab', 'crontab_parser',
@@ -300,9 +300,12 @@ class crontab_parser:
             i = int(s)
         except ValueError:
             try:
-                i = weekday(s)
+                i = yearmonth(s)
             except KeyError:
-                raise ValueError(f'Invalid weekday literal {s!r}.')
+                try:
+                    i = weekday(s)
+                except KeyError:
+                    raise ValueError(f'Invalid weekday literal {s!r}.')
 
         max_val = self.min_ + self.max_ - 1
         if i > max_val:
@@ -407,6 +410,23 @@ class crontab(BaseSchedule):
         self.day_of_month = self._expand_cronspec(day_of_month, 31, 1)
         self.month_of_year = self._expand_cronspec(month_of_year, 12, 1)
         super().__init__(**kwargs)
+
+    @classmethod
+    def from_string(cls, crontab: str) -> crontab:
+        """
+        Create a Crontab from a cron expression string. For example ``crontab.from_string('* * * * *')``.
+
+        .. code-block:: text
+
+            ┌───────────── minute (0–59)
+            │ ┌───────────── hour (0–23)
+            │ │ ┌───────────── day of the month (1–31)
+            │ │ │ ┌───────────── month (1–12)
+            │ │ │ │ ┌───────────── day of the week (0–6) (Sunday to Saturday)
+            * * * * *
+        """
+        minute, hour, day_of_month, month_of_year, day_of_week = crontab.split(" ")
+        return cls(minute, hour, day_of_week, day_of_month, month_of_year)
 
     @staticmethod
     def _expand_cronspec(

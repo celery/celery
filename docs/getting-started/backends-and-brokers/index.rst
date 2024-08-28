@@ -20,6 +20,7 @@ Broker Instructions
     rabbitmq
     redis
     sqs
+    kafka
 
 .. _broker-overview:
 
@@ -40,6 +41,8 @@ individual transport (see :ref:`broker_toc`).
 | *Amazon SQS*  | Stable       | No             | No                 |
 +---------------+--------------+----------------+--------------------+
 | *Zookeeper*   | Experimental | No             | No                 |
++---------------+--------------+----------------+--------------------+
+| *Kafka*       | Experimental | No             | No                 |
 +---------------+--------------+----------------+--------------------+
 
 Experimental brokers may be functional but they don't have
@@ -98,6 +101,6 @@ SQLAlchemy
 
 SQLAlchemy is a backend.
 
-It allows Celery to interface with MySQL, PostgreSQL, SQlite, and more. It is a ORM, and is the way Celery can use a SQL DB as a result backend.
+It allows Celery to interface with MySQL, PostgreSQL, SQlite, and more. It is an ORM, and is the way Celery can use a SQL DB as a result backend.
 
 :ref:`See documentation for details <conf-database-result-backend>`

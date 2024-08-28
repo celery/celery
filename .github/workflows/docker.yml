@@ -1,0 +1,71 @@
+name: Docker
+
+on:
+    pull_request:
+      branches: [ 'main']
+      paths:
+          - '**.py'
+          - '**.txt'
+          - '**.toml'
+          - '/docker/**'
+          - '.github/workflows/docker.yml'
+          - 'Dockerfile'
+    push:
+      branches: [ 'main']
+      paths:
+          - '**.py'
+          - '**.txt'
+          - '**.toml'
+          - '/docker/**'
+          - '.github/workflows/docker.yml'
+    workflow_dispatch:
+
+
+jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build Docker container
+      run: make docker-build
+
+  docker-docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build Documentation
+      run: make docker-docs
+
+  smoke-tests_dev:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@v4
+    - name: "Build smoke tests container: dev"
+      run: docker build -f t/smoke/workers/docker/dev .
+
+  smoke-tests_latest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@v4
+    - name: "Build smoke tests container: latest"
+      run: docker build -f t/smoke/workers/docker/pypi .
+
+  smoke-tests_pypi:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@v4
+    - name: "Build smoke tests container: pypi"
+      run: docker build -f t/smoke/workers/docker/pypi --build-arg CELERY_VERSION="5" .
+
+  smoke-tests_legacy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@v4
+    - name: "Build smoke tests container: legacy"
+      run: docker build -f t/smoke/workers/docker/pypi --build-arg CELERY_VERSION="4" .

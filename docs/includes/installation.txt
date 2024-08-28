@@ -115,6 +115,10 @@ Transports and Backends
     You should probably not use this in your requirements, it's here
     for informational purposes only.
 
+:``celery[gcs]``:
+    for using the Google Cloud Storage as a result backend (*experimental*).
+
+
 
 .. _celery-installing-from-source:
 

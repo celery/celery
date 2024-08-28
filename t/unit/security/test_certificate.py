@@ -40,8 +40,8 @@ class test_Certificate(SecurityCase):
         x = Certificate(CERT1)
 
         x._cert = Mock(name='cert')
-        time_after = datetime.datetime.utcnow() + datetime.timedelta(days=-1)
-        x._cert.not_valid_after = time_after
+        time_after = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=-1)
+        x._cert.not_valid_after_utc = time_after
 
         assert x.has_expired() is True
 
@@ -49,8 +49,8 @@ class test_Certificate(SecurityCase):
         x = Certificate(CERT1)
 
         x._cert = Mock(name='cert')
-        time_after = datetime.datetime.utcnow() + datetime.timedelta(days=1)
-        x._cert.not_valid_after = time_after
+        time_after = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)
+        x._cert.not_valid_after_utc = time_after
 
         assert x.has_expired() is False
 

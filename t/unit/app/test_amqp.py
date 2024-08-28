@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 
 import pytest
@@ -137,17 +137,19 @@ class test_Queues:
 
 class test_default_queues:
 
+    @pytest.mark.parametrize('default_queue_type', ['classic', 'quorum'])
     @pytest.mark.parametrize('name,exchange,rkey', [
         ('default', None, None),
         ('default', 'exchange', None),
         ('default', 'exchange', 'routing_key'),
         ('default', None, 'routing_key'),
     ])
-    def test_setting_default_queue(self, name, exchange, rkey):
+    def test_setting_default_queue(self, name, exchange, rkey, default_queue_type):
         self.app.conf.task_queues = {}
         self.app.conf.task_default_exchange = exchange
         self.app.conf.task_default_routing_key = rkey
         self.app.conf.task_default_queue = name
+        self.app.conf.task_default_queue_type = default_queue_type
         assert self.app.amqp.queues.default_exchange.name == exchange or name
         queues = dict(self.app.amqp.queues)
         assert len(queues) == 1
@@ -155,6 +157,11 @@ class test_default_queues:
         assert queue.exchange.name == exchange or name
         assert queue.exchange.type == 'direct'
         assert queue.routing_key == rkey or name
+
+        if default_queue_type == 'quorum':
+            assert queue.queue_arguments == {'x-queue-type': 'quorum'}
+        else:
+            assert queue.queue_arguments is None
 
 
 class test_default_exchange:
@@ -349,14 +356,14 @@ class test_as_task_v2(test_AMQP_Base):
             self.app.amqp.as_task_v2(uuid(), 'foo', kwargs=(1, 2, 3))
 
     def test_countdown_to_eta(self):
-        now = to_utc(datetime.utcnow()).astimezone(self.app.timezone)
+        now = to_utc(datetime.now(timezone.utc)).astimezone(self.app.timezone)
         m = self.app.amqp.as_task_v2(
             uuid(), 'foo', countdown=10, now=now,
         )
         assert m.headers['eta'] == (now + timedelta(seconds=10)).isoformat()
 
     def test_expires_to_datetime(self):
-        now = to_utc(datetime.utcnow()).astimezone(self.app.timezone)
+        now = to_utc(datetime.now(timezone.utc)).astimezone(self.app.timezone)
         m = self.app.amqp.as_task_v2(
             uuid(), 'foo', expires=30, now=now,
         )
@@ -364,7 +371,7 @@ class test_as_task_v2(test_AMQP_Base):
             now + timedelta(seconds=30)).isoformat()
 
     def test_eta_to_datetime(self):
-        eta = datetime.utcnow()
+        eta = datetime.now(timezone.utc)
         m = self.app.amqp.as_task_v2(
             uuid(), 'foo', eta=eta,
         )

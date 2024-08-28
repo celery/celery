@@ -28,7 +28,7 @@ class test_worker:
         })
 
         # to avoid changing the root logger level to ERROR,
-        # we have we have to set both app.log.loglevel start_worker arg to 0
+        # we have to set both app.log.loglevel start_worker arg to 0
         # (see celery.app.log.setup_logging_subsystem)
         self.app.log.loglevel = 0
 

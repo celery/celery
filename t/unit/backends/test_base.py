@@ -176,6 +176,30 @@ class test_Backend_interface:
         assert meta['kwargs'] == kwargs
         assert meta['queue'] == 'celery'
 
+    def test_get_result_meta_format_date(self):
+        import datetime
+        self.app.conf.result_extended = True
+        b1 = BaseBackend(self.app)
+        args = ['a', 'b']
+        kwargs = {'foo': 'bar'}
+
+        request = Context(args=args, kwargs=kwargs)
+        meta = b1._get_result_meta(result={'fizz': 'buzz'},
+                                   state=states.SUCCESS, traceback=None,
+                                   request=request, format_date=True)
+        assert isinstance(meta['date_done'], str)
+
+        self.app.conf.result_extended = True
+        b2 = BaseBackend(self.app)
+        args = ['a', 'b']
+        kwargs = {'foo': 'bar'}
+
+        request = Context(args=args, kwargs=kwargs)
+        meta = b2._get_result_meta(result={'fizz': 'buzz'},
+                                   state=states.SUCCESS, traceback=None,
+                                   request=request, format_date=False)
+        assert isinstance(meta['date_done'], datetime.datetime)
+
 
 class test_BaseBackend_interface:
 
@@ -736,7 +760,7 @@ class test_KeyValueStoreBackend:
         assert self.b._strip_prefix('x1b34') == 'x1b34'
 
     def test_global_keyprefix(self):
-        global_keyprefix = "test_global_keyprefix_"
+        global_keyprefix = "test_global_keyprefix"
         app = copy.deepcopy(self.app)
         app.conf.get('result_backend_transport_options', {}).update({"global_keyprefix": global_keyprefix})
         b = KVBackend(app=app)
@@ -744,6 +768,24 @@ class test_KeyValueStoreBackend:
         assert bytes_to_str(b.get_key_for_task(tid)) == f"{global_keyprefix}_celery-task-meta-{tid}"
         assert bytes_to_str(b.get_key_for_group(tid)) == f"{global_keyprefix}_celery-taskset-meta-{tid}"
         assert bytes_to_str(b.get_key_for_chord(tid)) == f"{global_keyprefix}_chord-unlock-{tid}"
+
+        global_keyprefix = "test_global_keyprefix_"
+        app = copy.deepcopy(self.app)
+        app.conf.get('result_backend_transport_options', {}).update({"global_keyprefix": global_keyprefix})
+        b = KVBackend(app=app)
+        tid = uuid()
+        assert bytes_to_str(b.get_key_for_task(tid)) == f"{global_keyprefix}celery-task-meta-{tid}"
+        assert bytes_to_str(b.get_key_for_group(tid)) == f"{global_keyprefix}celery-taskset-meta-{tid}"
+        assert bytes_to_str(b.get_key_for_chord(tid)) == f"{global_keyprefix}chord-unlock-{tid}"
+
+        global_keyprefix = "test_global_keyprefix:"
+        app = copy.deepcopy(self.app)
+        app.conf.get('result_backend_transport_options', {}).update({"global_keyprefix": global_keyprefix})
+        b = KVBackend(app=app)
+        tid = uuid()
+        assert bytes_to_str(b.get_key_for_task(tid)) == f"{global_keyprefix}celery-task-meta-{tid}"
+        assert bytes_to_str(b.get_key_for_group(tid)) == f"{global_keyprefix}celery-taskset-meta-{tid}"
+        assert bytes_to_str(b.get_key_for_chord(tid)) == f"{global_keyprefix}chord-unlock-{tid}"
 
     def test_global_keyprefix_missing(self):
         tid = uuid()

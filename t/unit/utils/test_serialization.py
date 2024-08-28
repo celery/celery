@@ -1,7 +1,7 @@
 import json
 import pickle
 import sys
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 from unittest.mock import Mock
 
 import pytest
@@ -67,9 +67,9 @@ class test_jsonify:
         Queue('foo'),
         ['foo', 'bar', 'baz'],
         {'foo': 'bar'},
-        datetime.utcnow(),
-        datetime.utcnow().replace(tzinfo=ZoneInfo("UTC")),
-        datetime.utcnow().replace(microsecond=0),
+        datetime.now(timezone.utc),
+        datetime.now(timezone.utc).replace(tzinfo=ZoneInfo("UTC")),
+        datetime.now(timezone.utc).replace(microsecond=0),
         date(2012, 1, 1),
         time(hour=1, minute=30),
         time(hour=1, minute=30, microsecond=3),
