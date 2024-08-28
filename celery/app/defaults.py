@@ -10,7 +10,7 @@ __all__ = ('Option', 'NAMESPACES', 'flatten', 'find')
 
 DEFAULT_POOL = 'prefork'
 
-DEFAULT_ACCEPT_CONTENT = ['json']
+DEFAULT_ACCEPT_CONTENT = ('json',)
 DEFAULT_PROCESS_LOG_FMT = """
     [%(asctime)s: %(levelname)s/%(processName)s] %(message)s
 """.strip()
@@ -78,6 +78,7 @@ NAMESPACES = Namespace(
         scheduler=Option('celery.beat:PersistentScheduler'),
         schedule_filename=Option('celerybeat-schedule'),
         sync_every=Option(0, type='int'),
+        cron_starting_deadline=Option(None, type=int)
     ),
     broker=Namespace(
         url=Option(None, type='string'),
@@ -87,7 +88,9 @@ NAMESPACES = Namespace(
         transport_options=Option({}, type='dict'),
         connection_timeout=Option(4, type='float'),
         connection_retry=Option(True, type='bool'),
+        connection_retry_on_startup=Option(None, type='bool'),
         connection_max_retries=Option(100, type='int'),
+        channel_error_retry=Option(False, type='bool'),
         failover_strategy=Option(None, type='string'),
         heartbeat=Option(120, type='int'),
         heartbeat_checkrate=Option(3.0, type='int'),
@@ -113,6 +116,7 @@ NAMESPACES = Namespace(
         port=Option(type='string'),
         read_consistency=Option(type='string'),
         servers=Option(type='list'),
+        bundle_path=Option(type='string'),
         table=Option(type='string'),
         write_consistency=Option(type='string'),
         auth_provider=Option(type='string'),
@@ -135,6 +139,12 @@ NAMESPACES = Namespace(
         base_path=Option('', type='string'),
         connection_timeout=Option(20, type='int'),
         read_timeout=Option(120, type='int'),
+    ),
+    gcs=Namespace(
+        bucket=Option(type='string'),
+        project=Option(type='string'),
+        base_path=Option('', type='string'),
+        ttl=Option(0, type='float'),
     ),
     control=Namespace(
         queue_ttl=Option(300.0, type='float'),
@@ -226,6 +236,7 @@ NAMESPACES = Namespace(
         certificate=Option(type='string'),
         cert_store=Option(type='string'),
         key=Option(type='string'),
+        key_password=Option(type='bytes'),
         digest=Option(DEFAULT_SECURITY_DIGEST, type='string'),
     ),
     database=Namespace(
@@ -250,6 +261,7 @@ NAMESPACES = Namespace(
         inherit_parent_priority=Option(False, type='bool'),
         default_delivery_mode=Option(2, type='string'),
         default_queue=Option('celery'),
+        default_queue_type=Option('classic', type='string'),
         default_exchange=Option(None, type='string'),  # taken from queue
         default_exchange_type=Option('direct'),
         default_routing_key=Option(None, type='string'),  # taken from queue
@@ -288,6 +300,7 @@ NAMESPACES = Namespace(
         ),
         store_errors_even_if_ignored=Option(False, type='bool'),
         track_started=Option(False, type='bool'),
+        allow_error_cb_on_chord_header=Option(False, type='bool'),
     ),
     worker=Namespace(
         __old__=OLD_NS_WORKER,
@@ -319,6 +332,7 @@ NAMESPACES = Namespace(
         pool_restarts=Option(False, type='bool'),
         proc_alive_timeout=Option(4.0, type='float'),
         prefetch_multiplier=Option(4, type='int'),
+        enable_prefetch_count_reduction=Option(True, type='bool'),
         redirect_stdouts=Option(
             True, type='bool', old={'celery_redirect_stdouts'},
         ),
@@ -332,6 +346,7 @@ NAMESPACES = Namespace(
         task_log_format=Option(DEFAULT_TASK_LOG_FMT),
         timer=Option(type='string'),
         timer_precision=Option(1.0, type='float'),
+        detect_quorum_queues=Option(True, type='bool'),
     ),
 )
 

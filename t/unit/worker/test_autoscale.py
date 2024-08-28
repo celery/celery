@@ -73,7 +73,7 @@ class test_WorkerComponent:
 
 class test_Autoscaler:
 
-    def setup(self):
+    def setup_method(self):
         self.pool = MockPool(3)
 
     def test_stop(self):

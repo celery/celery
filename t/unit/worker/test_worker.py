@@ -21,8 +21,7 @@ from kombu.utils.uuid import uuid
 import t.skip
 from celery.bootsteps import CLOSE, RUN, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
-from celery.exceptions import (ImproperlyConfigured, InvalidTaskError,
-                               TaskRevokedError, WorkerShutdown,
+from celery.exceptions import (ImproperlyConfigured, InvalidTaskError, TaskRevokedError, WorkerShutdown,
                                WorkerTerminate)
 from celery.platforms import EX_FAILURE
 from celery.utils.nodenames import worker_direct
@@ -78,7 +77,7 @@ class ConsumerCase:
 
 class test_Consumer(ConsumerCase):
 
-    def setup(self):
+    def setup_method(self):
         self.buffer = FastQueue()
         self.timer = Timer()
 
@@ -87,7 +86,7 @@ class test_Consumer(ConsumerCase):
             return x * y * z
         self.foo_task = foo_task
 
-    def teardown(self):
+    def teardown_method(self):
         self.timer.stop()
 
     def LoopConsumer(self, buffer=None, controller=None, timer=None, app=None,
@@ -221,8 +220,8 @@ class test_Consumer(ConsumerCase):
             Mock(), self.foo_task.name,
             args=(1, 2), kwargs='foobarbaz', id=1)
         c.update_strategies()
-        strat = c.strategies[self.foo_task.name] = Mock(name='strategy')
-        strat.side_effect = InvalidTaskError()
+        strategy = c.strategies[self.foo_task.name] = Mock(name='strategy')
+        strategy.side_effect = InvalidTaskError()
 
         callback = self._get_on_message(c)
         callback(m)
@@ -294,6 +293,7 @@ class test_Consumer(ConsumerCase):
             yield SyntaxError('bar')
         c = self.NoopConsumer(task_events=False, pool=BasePool())
         c.loop.side_effect = loop_side_effect()
+        c.pool.num_processes = 2
         c.connection_errors = (KeyError,)
         try:
             with pytest.raises(SyntaxError):
@@ -697,7 +697,7 @@ class test_Consumer(ConsumerCase):
 
 class test_WorkController(ConsumerCase):
 
-    def setup(self):
+    def setup_method(self):
         self.worker = self.create_worker()
         self._logger = worker_module.logger
         self._comp_logger = components.logger
@@ -709,7 +709,7 @@ class test_WorkController(ConsumerCase):
             return x * y * z
         self.foo_task = foo_task
 
-    def teardown(self):
+    def teardown_method(self):
         worker_module.logger = self._logger
         components.logger = self._comp_logger
 

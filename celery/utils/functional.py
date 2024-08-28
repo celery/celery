@@ -1,13 +1,16 @@
 """Functional-style utilities."""
 import inspect
-import sys
 from collections import UserList
 from functools import partial
 from itertools import islice, tee, zip_longest
+from typing import Any, Callable
 
-from kombu.utils.functional import (LRUCache, dictfilter, is_list, lazy,
-                                    maybe_evaluate, maybe_list, memoize)
+from kombu.utils.functional import LRUCache, dictfilter, is_list, lazy, maybe_evaluate, maybe_list, memoize
 from vine import promise
+
+from celery.utils.log import get_logger
+
+logger = get_logger(__name__)
 
 __all__ = (
     'LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
@@ -201,6 +204,10 @@ class _regen(UserList, list):
     def __reduce__(self):
         return list, (self.data,)
 
+    def map(self, func):
+        self.__consumed = [func(el) for el in self.__consumed]
+        self.__it = map(func, self.__it)
+
     def __length_hint__(self):
         return self.__it.__length_hint__()
 
@@ -304,7 +311,7 @@ def _argsfromspec(spec, replace_defaults=True):
     ]))
 
 
-def head_from_fun(fun, bound=False, debug=False):
+def head_from_fun(fun: Callable[..., Any], bound: bool = False) -> str:
     """Generate signature function from actual function."""
     # we could use inspect.Signature here, but that implementation
     # is very slow since it implements the argument checking
@@ -312,7 +319,7 @@ def head_from_fun(fun, bound=False, debug=False):
     # with an empty body, meaning it has the same performance as
     # as just calling a function.
     is_function = inspect.isfunction(fun)
-    is_callable = hasattr(fun, '__call__')
+    is_callable = callable(fun)
     is_cython = fun.__class__.__name__ == 'cython_function_or_method'
     is_method = inspect.ismethod(fun)
 
@@ -325,8 +332,7 @@ def head_from_fun(fun, bound=False, debug=False):
         fun_args=_argsfromspec(inspect.getfullargspec(fun)),
         fun_value=1,
     )
-    if debug:  # pragma: no cover
-        print(definition, file=sys.stderr)
+    logger.debug(definition)
     namespace = {'__name__': fun.__module__}
     # pylint: disable=exec-used
     # Tasks are rarely, if ever, created at runtime - exec here is fine.
@@ -390,3 +396,7 @@ def seq_concat_seq(a, b):
     if not isinstance(b, prefer):
         b = prefer(b)
     return a + b
+
+
+def is_numeric_value(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool)

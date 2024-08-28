@@ -5,8 +5,939 @@
 ================
 
 This document contains change notes for bugfix & new features
-in the & 5.2.x series, please see :ref:`whatsnew-5.2` for
-an overview of what's new in Celery 5.2.
+in the main branch & 5.5.x series, please see :ref:`whatsnew-5.5` for
+an overview of what's new in Celery 5.5.
+
+.. _version-5.5.0b2:
+
+5.5.0b2
+=======
+
+:release-date: 2024-08-06
+:release-by: Tomer Nosrati
+
+Celery v5.5.0 Beta 2 is now available for testing.
+Please help us test this version and report any issues.
+
+Key Highlights
+~~~~~~~~~~~~~~
+
+Pydantic Support
+----------------
+
+This release introduces support for Pydantic models in Celery tasks.
+For more info, see the new pydantic example and PR `#9023 <https://github.com/celery/celery/pull/9023>`_ by @mathiasertl.
+
+After upgrading to this version, please share your feedback on the new Pydantic support.
+
+Previous Beta Highlights
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Redis Broker Stability Improvements
+-----------------------------------
+The root cause of the Redis broker instability issue has been `identified and resolved <https://github.com/celery/kombu/pull/2007>`_
+in the v5.4.0 release of Kombu, which should resolve the disconnections bug and offer additional improvements.
+
+After upgrading to this version, please share your feedback on the Redis broker stability.
+
+Relevant Issues:
+`#7276 <https://github.com/celery/celery/discussions/7276>`_,
+`#8091 <https://github.com/celery/celery/discussions/8091>`_,
+`#8030 <https://github.com/celery/celery/discussions/8030>`_,
+`#8384 <https://github.com/celery/celery/discussions/8384>`_
+
+Quorum Queues Initial Support
+-----------------------------
+This release introduces the initial support for Quorum Queues with Celery. 
+
+See new configuration options for more details:
+
+- :setting:`task_default_queue_type`
+- :setting:`worker_detect_quorum_queues`
+
+After upgrading to this version, please share your feedback on the Quorum Queues support.
+
+Relevant Issues:
+`#6067 <https://github.com/celery/celery/discussions/6067>`_,
+`#9121 <https://github.com/celery/celery/discussions/9121>`_
+
+What's Changed
+~~~~~~~~~~~~~~
+
+- Bump pytest from 8.3.1 to 8.3.2 (#9153)
+- Remove setuptools deprecated test command from setup.py (#9159)
+- Pin pre-commit to latest version 3.8.0 from Python 3.9 (#9156)
+- Bump mypy from 1.11.0 to 1.11.1 (#9164)
+- Change "docker-compose" to "docker compose" in Makefile (#9169)
+- update python versions and docker compose (#9171)
+- Add support for Pydantic model validation/serialization (fixes #8751) (#9023)
+- Allow local dynamodb to be installed on another host than localhost (#8965)
+- Terminate job implementation for gevent concurrency backend (#9083)
+- Bump Kombu to v5.4.0 (#9177)
+- Add check for soft_time_limit and time_limit values (#9173)
+- Prepare for (pre) release: v5.5.0b2 (#9178)
+
+.. _version-5.5.0b1:
+
+5.5.0b1
+=======
+
+:release-date: 2024-07-24
+:release-by: Tomer Nosrati
+
+Celery v5.5.0 Beta 1 is now available for testing.
+Please help us test this version and report any issues.
+
+Key Highlights
+~~~~~~~~~~~~~~
+
+Redis Broker Stability Improvements
+-----------------------------------
+The root cause of the Redis broker instability issue has been `identified and resolved <https://github.com/celery/kombu/pull/2007>`_
+in the release-candidate for Kombu v5.4.0. This beta release has been upgraded to use the new
+Kombu RC version, which should resolve the disconnections bug and offer additional improvements.
+
+After upgrading to this version, please share your feedback on the Redis broker stability.
+
+Relevant Issues:
+`#7276 <https://github.com/celery/celery/discussions/7276>`_,
+`#8091 <https://github.com/celery/celery/discussions/8091>`_,
+`#8030 <https://github.com/celery/celery/discussions/8030>`_,
+`#8384 <https://github.com/celery/celery/discussions/8384>`_
+
+Quorum Queues Initial Support
+-----------------------------
+This release introduces the initial support for Quorum Queues with Celery. 
+
+See new configuration options for more details:
+
+- :setting:`task_default_queue_type`
+- :setting:`worker_detect_quorum_queues`
+
+After upgrading to this version, please share your feedback on the Quorum Queues support.
+
+Relevant Issues:
+`#6067 <https://github.com/celery/celery/discussions/6067>`_,
+`#9121 <https://github.com/celery/celery/discussions/9121>`_
+
+What's Changed
+~~~~~~~~~~~~~~
+
+- (docs): use correct version celery v.5.4.x (#8975)
+- Update mypy to 1.10.0 (#8977)
+- Limit pymongo<4.7 when Python <= 3.10 due to breaking changes in 4.7 (#8988)
+- Bump pytest from 8.1.1 to 8.2.0 (#8987)
+- Update README to Include FastAPI in Framework Integration Section (#8978)
+- Clarify return values of ..._on_commit methods (#8984)
+- add kafka broker docs (#8935)
+- Limit pymongo<4.7 regardless of Python version (#8999)
+- Update pymongo[srv] requirement from <4.7,>=4.0.2 to >=4.0.2,<4.8 (#9000)
+- Update elasticsearch requirement from <=8.13.0 to <=8.13.1 (#9004)
+- security: SecureSerializer: support generic low-level serializers (#8982)
+- don't kill if pid same as file (#8997) (#8998)
+- Update cryptography to 42.0.6 (#9005)
+- Bump cryptography from 42.0.6 to 42.0.7 (#9009)
+- Added -vv to unit, integration and smoke tests (#9014)
+- SecuritySerializer: ensure pack separator will not be conflicted with serialized fields (#9010)
+- Update sphinx-click to 5.2.2 (#9025)
+- Bump sphinx-click from 5.2.2 to 6.0.0 (#9029)
+- Fix a typo to display the help message in first-steps-with-django (#9036)
+- Pinned requests to v2.31.0 due to docker-py bug #3256 (#9039)
+- Fix certificate validity check (#9037)
+- Revert "Pinned requests to v2.31.0 due to docker-py bug #3256" (#9043)
+- Bump pytest from 8.2.0 to 8.2.1 (#9035)
+- Update elasticsearch requirement from <=8.13.1 to <=8.13.2 (#9045)
+- Fix detection of custom task set as class attribute with Django (#9038)
+- Update elastic-transport requirement from <=8.13.0 to <=8.13.1 (#9050)
+- Bump pycouchdb from 1.14.2 to 1.16.0 (#9052)
+- Update pytest to 8.2.2 (#9060)
+- Bump cryptography from 42.0.7 to 42.0.8 (#9061)
+- Update elasticsearch requirement from <=8.13.2 to <=8.14.0 (#9069)
+- [enhance feature] Crontab schedule: allow using month names (#9068)
+- Enhance tox environment: [testenv:clean] (#9072)
+- Clarify docs about Reserve one task at a time (#9073)
+- GCS docs fixes (#9075)
+- Use hub.remove_writer instead of hub.remove for write fds (#4185) (#9055)
+- Class method to process crontab string (#9079)
+- Fixed smoke tests env bug when using integration tasks that rely on Redis (#9090)
+- Bugfix - a task will run multiple times when chaining chains with groups (#9021)
+- Bump mypy from 1.10.0 to 1.10.1 (#9096)
+- Don't add a separator to global_keyprefix if it already has one (#9080)
+- Update pymongo[srv] requirement from <4.8,>=4.0.2 to >=4.0.2,<4.9 (#9111)
+- Added missing import in examples for Django (#9099)
+- Bump Kombu to v5.4.0rc1 (#9117)
+- Removed skipping Redis in t/smoke/tests/test_consumer.py tests (#9118)
+- Update pytest-subtests to 0.13.0 (#9120)
+- Increased smoke tests CI timeout (#9122)
+- Bump Kombu to v5.4.0rc2 (#9127)
+- Update zstandard to 0.23.0 (#9129)
+- Update pytest-subtests to 0.13.1 (#9130)
+- Changed retry to tenacity in smoke tests (#9133)
+- Bump mypy from 1.10.1 to 1.11.0 (#9135)
+- Update cryptography to 43.0.0 (#9138)
+- Update pytest to 8.3.1 (#9137)
+- Added support for Quorum Queues (#9121)
+- Bump Kombu to v5.4.0rc3 (#9139)
+- Cleanup in Changelog.rst (#9141)
+- Update Django docs for CELERY_CACHE_BACKEND (#9143)
+- Added missing docs to previous releases (#9144)
+- Fixed a few documentation build warnings (#9145)
+- docs(README): link invalid (#9148)
+- Prepare for (pre) release: v5.5.0b1 (#9146)
+
+.. _version-5.4.0:
+
+5.4.0
+=====
+
+:release-date: 2024-04-17
+:release-by: Tomer Nosrati
+
+Celery v5.4.0 and v5.3.x have consistently focused on enhancing the overall QA, both internally and externally.
+This effort led to the new pytest-celery v1.0.0 release, developed concurrently with v5.3.0 & v5.4.0.
+
+This release introduces two significant QA enhancements:
+
+- **Smoke Tests**: A new layer of automatic tests has been added to Celery's standard CI. These tests are designed to handle production scenarios and complex conditions efficiently. While new contributions will not be halted due to the lack of smoke tests, we will request smoke tests for advanced changes where appropriate.
+- `Standalone Bug Report Script <https://docs.celeryq.dev/projects/pytest-celery/en/latest/userguide/celery-bug-report.html>`_: The new pytest-celery plugin now allows for encapsulating a complete Celery dockerized setup within a single pytest script. Incorporating these into new bug reports will enable us to reproduce reported bugs deterministically, potentially speeding up the resolution process.
+
+Contrary to the positive developments above, there have been numerous reports about issues with the Redis broker malfunctioning
+upon restarts and disconnections. Our initial attempts to resolve this were not successful (#8796).
+With our enhanced QA capabilities, we are now prepared to address the core issue with Redis (as a broker) again.
+
+The rest of the changes for this release are grouped below, with the changes from the latest release candidate listed at the end.
+
+Changes
+~~~~~~~
+- Add a Task class specialised for Django (#8491)
+- Add Google Cloud Storage (GCS) backend (#8868)
+- Added documentation to the smoke tests infra (#8970)
+- Added a checklist item for using pytest-celery in a bug report (#8971)
+- Bugfix: Missing id on chain (#8798)
+- Bugfix: Worker not consuming tasks after Redis broker restart (#8796)
+- Catch UnicodeDecodeError when opening corrupt beat-schedule.db (#8806)
+- chore(ci): Enhance CI with `workflow_dispatch` for targeted debugging and testing (#8826)
+- Doc: Enhance "Testing with Celery" section (#8955)
+- Docfix: pip install celery[sqs] -> pip install "celery[sqs]" (#8829)
+- Enable efficient `chord` when using dynamicdb as backend store (#8783)
+- feat(daemon): allows daemonization options to be fetched from app settings (#8553)
+- Fix DeprecationWarning: datetime.datetime.utcnow() (#8726)
+- Fix recursive result parents on group in middle of chain (#8903)
+- Fix typos and grammar (#8915)
+- Fixed version documentation tag from #8553 in configuration.rst (#8802)
+- Hotfix: Smoke tests didn't allow customizing the worker's command arguments, now it does (#8937)
+- Make custom remote control commands available in CLI (#8489)
+- Print safe_say() to stdout for non-error flows (#8919)
+- Support moto 5.0 (#8838)
+- Update contributing guide to use ssh upstream url (#8881)
+- Update optimizing.rst (#8945)
+- Updated concurrency docs page. (#8753)
+
+Dependencies Updates
+~~~~~~~~~~~~~~~~~~~~
+- Bump actions/setup-python from 4 to 5 (#8701)
+- Bump codecov/codecov-action from 3 to 4 (#8831)
+- Bump isort from 5.12.0 to 5.13.2 (#8772)
+- Bump msgpack from 1.0.7 to 1.0.8 (#8885)
+- Bump mypy from 1.8.0 to 1.9.0 (#8898)
+- Bump pre-commit to 3.6.1 (#8839)
+- Bump pre-commit/action from 3.0.0 to 3.0.1 (#8835)
+- Bump pytest from 8.0.2 to 8.1.1 (#8901)
+- Bump pytest-celery to v1.0.0 (#8962)
+- Bump pytest-cov to 5.0.0 (#8924)
+- Bump pytest-order from 1.2.0 to 1.2.1 (#8941)
+- Bump pytest-subtests from 0.11.0 to 0.12.1 (#8896)
+- Bump pytest-timeout from 2.2.0 to 2.3.1 (#8894)
+- Bump python-memcached from 1.59 to 1.61 (#8776)
+- Bump sphinx-click from 4.4.0 to 5.1.0 (#8774)
+- Update cryptography to 42.0.5 (#8869)
+- Update elastic-transport requirement from <=8.12.0 to <=8.13.0 (#8933)
+- Update elasticsearch requirement from <=8.12.1 to <=8.13.0 (#8934)
+- Upgraded Sphinx from v5.3.0 to v7.x.x (#8803)
+
+Changes since 5.4.0rc2
+~~~~~~~~~~~~~~~~~~~~~~~
+- Update elastic-transport requirement from <=8.12.0 to <=8.13.0 (#8933)
+- Update elasticsearch requirement from <=8.12.1 to <=8.13.0 (#8934)
+- Hotfix: Smoke tests didn't allow customizing the worker's command arguments, now it does (#8937)
+- Bump pytest-celery to 1.0.0rc3 (#8946)
+- Update optimizing.rst (#8945)
+- Doc: Enhance "Testing with Celery" section (#8955)
+- Bump pytest-celery to v1.0.0 (#8962)
+- Bump pytest-order from 1.2.0 to 1.2.1 (#8941)
+- Added documentation to the smoke tests infra (#8970)
+- Added a checklist item for using pytest-celery in a bug report (#8971)
+- Added changelog for v5.4.0 (#8973)
+- Bump version: 5.4.0rc2 → 5.4.0 (#8974)
+
+.. _version-5.4.0rc2:
+
+5.4.0rc2
+========
+
+:release-date: 2024-03-27
+:release-by: Tomer Nosrati
+
+- feat(daemon): allows daemonization options to be fetched from app settings (#8553)
+- Fixed version documentation tag from #8553 in configuration.rst (#8802)
+- Upgraded Sphinx from v5.3.0 to v7.x.x (#8803)
+- Update elasticsearch requirement from <=8.11.1 to <=8.12.0 (#8810)
+- Update elastic-transport requirement from <=8.11.0 to <=8.12.0 (#8811)
+- Update cryptography to 42.0.0 (#8814)
+- Catch UnicodeDecodeError when opening corrupt beat-schedule.db (#8806)
+- Update cryptography to 42.0.1 (#8817)
+- Limit moto to <5.0.0 until the breaking issues are fixed (#8820)
+- Enable efficient `chord` when using dynamicdb as backend store (#8783)
+- Add a Task class specialised for Django (#8491)
+- Sync kombu versions in requirements and setup.cfg (#8825)
+- chore(ci): Enhance CI with `workflow_dispatch` for targeted debugging and testing (#8826)
+- Update cryptography to 42.0.2 (#8827)
+- Docfix: pip install celery[sqs] -> pip install "celery[sqs]" (#8829)
+- Bump pre-commit/action from 3.0.0 to 3.0.1 (#8835)
+- Support moto 5.0 (#8838)
+- Another fix for `link_error` signatures being `dict`s instead of `Signature` s (#8841)
+- Bump codecov/codecov-action from 3 to 4 (#8831)
+- Upgrade from pytest-celery v1.0.0b1 -> v1.0.0b2 (#8843)
+- Bump pytest from 7.4.4 to 8.0.0 (#8823)
+- Update pre-commit to 3.6.1 (#8839)
+- Update cryptography to 42.0.3 (#8854)
+- Bump pytest from 8.0.0 to 8.0.1 (#8855)
+- Update cryptography to 42.0.4 (#8864)
+- Update pytest to 8.0.2 (#8870)
+- Update cryptography to 42.0.5 (#8869)
+- Update elasticsearch requirement from <=8.12.0 to <=8.12.1 (#8867)
+- Eliminate consecutive chords generated by group | task upgrade (#8663)
+- Make custom remote control commands available in CLI (#8489)
+- Add Google Cloud Storage (GCS) backend (#8868)
+- Bump msgpack from 1.0.7 to 1.0.8 (#8885)
+- Update pytest to 8.1.0 (#8886)
+- Bump pytest-timeout from 2.2.0 to 2.3.1 (#8894)
+- Bump pytest-subtests from 0.11.0 to 0.12.1 (#8896)
+- Bump mypy from 1.8.0 to 1.9.0 (#8898)
+- Update pytest to 8.1.1 (#8901)
+- Update contributing guide to use ssh upstream url (#8881)
+- Fix recursive result parents on group in middle of chain (#8903)
+- Bump pytest-celery to 1.0.0b4 (#8899)
+- Adjusted smoke tests CI time limit (#8907)
+- Update pytest-rerunfailures to 14.0 (#8910)
+- Use the "all" extra for pytest-celery (#8911)
+- Fix typos and grammar (#8915)
+- Bump pytest-celery to 1.0.0rc1 (#8918)
+- Print safe_say() to stdout for non-error flows (#8919)
+- Update pytest-cov to 5.0.0 (#8924)
+- Bump pytest-celery to 1.0.0rc2 (#8928)
+
+.. _version-5.4.0rc1:
+
+5.4.0rc1
+========
+
+:release-date: 2024-01-17 7:00 P.M GMT+2
+:release-by: Tomer Nosrati
+
+Celery v5.4 continues our effort to provide improved stability in production
+environments. The release candidate version is available for testing.
+The official release is planned for March-April 2024.
+
+- New Config: worker_enable_prefetch_count_reduction (#8581)
+- Added "Serverless" section to Redis doc (redis.rst) (#8640)
+- Upstash's Celery example repo link fix (#8665)
+- Update mypy version (#8679)
+- Update cryptography dependency to 41.0.7 (#8690)
+- Add type annotations to celery/utils/nodenames.py (#8667)
+- Issue 3426. Adding myself to the contributors. (#8696)
+- Bump actions/setup-python from 4 to 5 (#8701)
+- Fixed bug where chord.link_error() throws an exception on a dict type errback object (#8702)
+- Bump github/codeql-action from 2 to 3 (#8725)
+- Fixed multiprocessing integration tests not running on Mac (#8727)
+- Added make docker-docs (#8729)
+- Fix DeprecationWarning: datetime.datetime.utcnow() (#8726)
+- Remove `new` adjective in docs (#8743)
+- add type annotation to celery/utils/sysinfo.py (#8747)
+- add type annotation to celery/utils/iso8601.py (#8750)
+- Change type annotation to celery/utils/iso8601.py (#8752)
+- Update test deps (#8754)
+- Mark flaky: test_asyncresult_get_cancels_subscription() (#8757)
+- change _read_as_base64 (b64encode returns bytes) on celery/utils/term.py (#8759)
+- Replace string concatenation with fstring on celery/utils/term.py (#8760)
+- Add type annotation to celery/utils/term.py (#8755)
+- Skipping test_tasks::test_task_accepted (#8761)
+- Updated concurrency docs page. (#8753)
+- Changed pyup -> dependabot for updating dependencies (#8764)
+- Bump isort from 5.12.0 to 5.13.2 (#8772)
+- Update elasticsearch requirement from <=8.11.0 to <=8.11.1 (#8775)
+- Bump sphinx-click from 4.4.0 to 5.1.0 (#8774)
+- Bump python-memcached from 1.59 to 1.61 (#8776)
+- Update elastic-transport requirement from <=8.10.0 to <=8.11.0 (#8780)
+- python-memcached==1.61 -> python-memcached>=1.61 (#8787)
+- Remove usage of utcnow (#8791)
+- Smoke Tests (#8793)
+- Moved smoke tests to their own workflow (#8797)
+- Bugfix: Worker not consuming tasks after Redis broker restart (#8796)
+- Bugfix: Missing id on chain (#8798)
+
+.. _version-5.3.6:
+
+5.3.6
+=====
+
+:release-date: 2023-11-22  9:15 P.M GMT+6
+:release-by: Asif Saif Uddin
+
+This release is focused mainly to fix AWS SQS new feature comatibility issue and old regressions. 
+The code changes are mostly fix for regressions. More details can be found below.
+
+- Increased docker-build CI job timeout from 30m -> 60m (#8635)
+- Incredibly minor spelling fix. (#8649)
+- Fix non-zero exit code when receiving remote shutdown (#8650)
+- Update task.py get_custom_headers missing 'compression' key (#8633)
+- Update kombu>=5.3.4 to fix SQS request compatibility with boto JSON serializer (#8646)
+- test requirements version update (#8655)
+- Update elasticsearch version (#8656)
+- Propagates more ImportErrors during autodiscovery (#8632)
+
+.. _version-5.3.5:
+
+5.3.5
+=====
+
+:release-date: 2023-11-10  7:15 P.M GMT+6
+:release-by: Asif Saif Uddin
+
+- Update test.txt versions (#8481)
+- fix os.getcwd() FileNotFoundError (#8448)
+- Fix typo in CONTRIBUTING.rst (#8494)
+- typo(doc): configuration.rst (#8484)
+- assert before raise (#8495)
+- Update GHA checkout version (#8496)
+- Fixed replaced_task_nesting (#8500)
+- Fix code indentation for route_task() example (#8502)
+- support redis 5.x (#8504)
+- Fix typos in test_canvas.py (#8498)
+- Marked flaky tests (#8508)
+- Fix typos in calling.rst (#8506)
+- Added support for replaced_task_nesting in chains (#8501)
+- Fix typos in canvas.rst (#8509)
+- Patch Version Release Checklist (#8488)
+- Added Python 3.11 support to Dockerfile (#8511)
+- Dependabot (Celery) (#8510)
+- Bump actions/checkout from 3 to 4 (#8512)
+- Update ETA example to include timezone (#8516)
+- Replaces datetime.fromisoformat with the more lenient dateutil parser (#8507)
+- Fixed indentation in Dockerfile for Python 3.11 (#8527)
+- Fix git bug in Dockerfile (#8528)
+- Tox lint upgrade from Python 3.9 to Python 3.11 (#8526)
+- Document gevent concurrency (#8520)
+- Update test.txt (#8530)
+- Celery Docker Upgrades (#8531)
+- pyupgrade upgrade v3.11.0 -> v3.13.0 (#8535)
+- Update msgpack.txt (#8548)
+- Update auth.txt (#8547)
+- Update msgpack.txt to fix build issues (#8552)
+- Basic ElasticSearch / ElasticClient 8.x Support (#8519)
+- Fix eager tasks does not populate name field (#8486)
+- Fix typo in celery.app.control (#8563)
+- Update solar.txt ephem (#8566)
+- Update test.txt pytest-timeout (#8565)
+- Correct some mypy errors (#8570)
+- Update elasticsearch.txt (#8573)
+- Update test.txt deps (#8574)
+- Update test.txt (#8590)
+- Improved the "Next steps" documentation (#8561). (#8600)
+- Disabled couchbase tests due to broken package breaking main (#8602)
+- Update elasticsearch deps (#8605)
+- Update cryptography==41.0.5 (#8604)
+- Update pytest==7.4.3 (#8606)
+- test initial support of python 3.12.x (#8549)
+- updated new versions to fix CI (#8607)
+- Update zstd.txt (#8609)
+- Fixed CI Support with Python 3.12 (#8611)
+- updated CI, docs and classifier for next release (#8613)
+- updated dockerfile to add python 3.12 (#8614)
+- lint,mypy,docker-unit-tests -> Python 3.12 (#8617)
+- Correct type of `request` in `task_revoked` documentation (#8616)
+- update docs docker image (#8618)
+- Fixed RecursionError caused by giving `config_from_object` nested mod… (#8619)
+- Fix: serialization error when gossip working (#6566)
+- [documentation] broker_connection_max_retries of 0 does not mean "retry forever" (#8626)
+- added 2 debian package for better stability in Docker (#8629)
+
+.. _version-5.3.4:
+
+5.3.4
+=====
+
+:release-date: 2023-09-03 10:10 P.M GMT+2
+:release-by: Tomer Nosrati
+
+.. warning::
+   This version has reverted the breaking changes introduced in 5.3.2 and 5.3.3:
+
+   - Revert "store children with database backend" (#8475)
+   - Revert "Fix eager tasks does not populate name field" (#8476)
+
+- Bugfix: Removed unecessary stamping code from _chord.run() (#8339)
+- User guide fix (hotfix for #1755) (#8342)
+- store children with database backend (#8338)
+- Stamping bugfix with group/chord header errback linking (#8347)
+- Use argsrepr and kwargsrepr in LOG_RECEIVED (#8301)
+- Fixing minor typo in code example in calling.rst (#8366)
+- add documents for timeout settings (#8373)
+- fix: copyright year (#8380)
+- setup.py: enable include_package_data (#8379)
+- Fix eager tasks does not populate name field (#8383)
+- Update test.txt dependencies (#8389)
+- Update auth.txt deps (#8392)
+- Fix backend.get_task_meta ignores the result_extended config parameter in mongodb backend (#8391)
+- Support preload options for shell and purge commands (#8374)
+- Implement safer ArangoDB queries (#8351)
+- integration test: cleanup worker after test case (#8361)
+- Added "Tomer Nosrati" to CONTRIBUTORS.txt (#8400)
+- Update README.rst (#8404)
+- Update README.rst (#8408)
+- fix(canvas): add group index when unrolling tasks (#8427)
+- fix(beat): debug statement should only log AsyncResult.id if it exists (#8428)
+- Lint fixes & pre-commit autoupdate (#8414)
+- Update auth.txt (#8435)
+- Update mypy on test.txt (#8438)
+- added missing kwargs arguments in some cli cmd (#8049)
+- Fix #8431: Set format_date to False when calling _get_result_meta on mongo backend (#8432)
+- Docs: rewrite out-of-date code (#8441)
+- Limit redis client to 4.x since 5.x fails the test suite (#8442)
+- Limit tox to < 4.9 (#8443)
+- Fixed issue: Flags broker_connection_retry_on_startup & broker_connection_retry aren’t reliable (#8446)
+- doc update from #7651 (#8451)
+- Remove tox version limit (#8464)
+- Fixed AttributeError: 'str' object has no attribute (#8463)
+- Upgraded Kombu from 5.3.1 -> 5.3.2 (#8468)
+- Document need for CELERY_ prefix on CLI env vars (#8469)
+- Use string value for CELERY_SKIP_CHECKS envvar (#8462)
+- Revert "store children with database backend" (#8475)
+- Revert "Fix eager tasks does not populate name field" (#8476)
+- Update Changelog (#8474)
+- Remove as it seems to be buggy. (#8340)
+- Revert "Add Semgrep to CI" (#8477)
+- Revert "Revert "Add Semgrep to CI"" (#8478)
+
+.. _version-5.3.3:
+
+5.3.3 (Yanked)
+==============
+
+:release-date: 2023-08-31 1:47 P.M GMT+2
+:release-by: Tomer Nosrati
+
+.. warning::
+   This version has been yanked due to breaking API changes. The breaking changes include:
+
+   - Store children with database backend (#8338)
+   - Fix eager tasks does not populate name field (#8383)
+
+- Fixed changelog for 5.3.2 release docs.
+
+.. _version-5.3.2:
+
+5.3.2 (Yanked)
+==============
+
+:release-date: 2023-08-31 1:30 P.M GMT+2
+:release-by: Tomer Nosrati
+
+.. warning::
+   This version has been yanked due to breaking API changes. The breaking changes include:
+
+   - Store children with database backend (#8338)
+   - Fix eager tasks does not populate name field (#8383)
+
+- Bugfix: Removed unecessary stamping code from _chord.run() (#8339)
+- User guide fix (hotfix for #1755) (#8342)
+- Store children with database backend (#8338)
+- Stamping bugfix with group/chord header errback linking (#8347)
+- Use argsrepr and kwargsrepr in LOG_RECEIVED (#8301)
+- Fixing minor typo in code example in calling.rst (#8366)
+- Add documents for timeout settings (#8373)
+- Fix: copyright year (#8380)
+- Setup.py: enable include_package_data (#8379)
+- Fix eager tasks does not populate name field (#8383)
+- Update test.txt dependencies (#8389)
+- Update auth.txt deps (#8392)
+- Fix backend.get_task_meta ignores the result_extended config parameter in mongodb backend (#8391)
+- Support preload options for shell and purge commands (#8374)
+- Implement safer ArangoDB queries (#8351)
+- Integration test: cleanup worker after test case (#8361)
+- Added "Tomer Nosrati" to CONTRIBUTORS.txt (#8400)
+- Update README.rst (#8404)
+- Update README.rst (#8408)
+- Fix(canvas): add group index when unrolling tasks (#8427)
+- Fix(beat): debug statement should only log AsyncResult.id if it exists (#8428)
+- Lint fixes & pre-commit autoupdate (#8414)
+- Update auth.txt (#8435)
+- Update mypy on test.txt (#8438)
+- Added missing kwargs arguments in some cli cmd (#8049)
+- Fix #8431: Set format_date to False when calling _get_result_meta on mongo backend (#8432)
+- Docs: rewrite out-of-date code (#8441)
+- Limit redis client to 4.x since 5.x fails the test suite (#8442)
+- Limit tox to < 4.9 (#8443)
+- Fixed issue: Flags broker_connection_retry_on_startup & broker_connection_retry aren’t reliable (#8446)
+- Doc update from #7651 (#8451)
+- Remove tox version limit (#8464)
+- Fixed AttributeError: 'str' object has no attribute (#8463)
+- Upgraded Kombu from 5.3.1 -> 5.3.2 (#8468)
+
+.. _version-5.3.1:
+
+5.3.1
+=====
+
+:release-date: 2023-06-18  8:15 P.M GMT+6
+:release-by: Asif Saif Uddin
+
+- Upgrade to latest pycurl release (#7069).
+- Limit librabbitmq>=2.0.0; python_version < '3.11' (#8302).
+- Added initial support for python 3.11 (#8304).
+- ChainMap observers fix (#8305).
+- Revert optimization CLI flag behaviour back to original.
+- Restrict redis 4.5.5 as it has severe bugs (#8317).
+- Tested pypy 3.10 version in CI (#8320).
+- Bump new version of kombu to 5.3.1 (#8323).
+- Fixed a small float value of retry_backoff (#8295).
+- Limit pyro4 up to python 3.10 only as it is (#8324).
+
+.. _version-5.3.0:
+
+5.3.0
+=====
+
+:release-date: 2023-06-06 12:00 P.M GMT+6
+:release-by: Asif Saif Uddin
+
+- Test kombu 5.3.0 & minor doc update (#8294).
+- Update librabbitmq.txt > 2.0.0 (#8292).
+- Upgrade syntax to py3.8 (#8281).
+
+.. _version-5.3.0rc2:
+
+5.3.0rc2
+========
+
+:release-date: 2023-05-31 9:00 P.M GMT+6
+:release-by: Asif Saif Uddin
+
+- Add missing dependency.
+- Fix exc_type being the exception instance rather.
+- Fixed revoking tasks by stamped headers (#8269).
+- Support sqlalchemy 2.0 in tests (#8271).
+- Fix docker (#8275).
+- Update redis.txt to 4.5 (#8278).
+- Update kombu>=5.3.0rc2.
+
+
+.. _version-5.3.0rc1:
+
+5.3.0rc1
+========
+
+:release-date: 2023-05-11 4:24 P.M GMT+2
+:release-by: Tomer Nosrati
+
+- fix functiom name by @cuishuang in #8087
+- Update CELERY_TASK_EAGER setting in user guide by @thebalaa in #8085
+- Stamping documentation fixes & cleanups by @Nusnus in #8092
+- switch to maintained pyro5 by @auvipy in #8093
+- udate dependencies of tests by @auvipy in #8095
+- cryptography==39.0.1 by @auvipy in #8096
+- Annotate celery/security/certificate.py by @Kludex in #7398
+- Deprecate parse_iso8601 in favor of fromisoformat by @stumpylog in #8098
+- pytest==7.2.2 by @auvipy in #8106
+- Type annotations for celery/utils/text.py by @max-muoto in #8107
+- Update web framework URLs by @sblondon in #8112
+- Fix contribution URL by @sblondon in #8111
+- Trying to clarify CERT_REQUIRED by @pamelafox in #8113
+- Fix potential AttributeError on 'stamps' by @Darkheir in #8115
+- Type annotations for celery/apps/beat.py by @max-muoto in #8108
+- Fixed bug where retrying a task loses its stamps by @Nusnus in #8120
+- Type hints for celery/schedules.py by @max-muoto in #8114
+- Reference Gopher Celery in README by @marselester in #8131
+- Update sqlalchemy.txt by @auvipy in #8136
+- azure-storage-blob 12.15.0 by @auvipy in #8137
+- test kombu 5.3.0b3 by @auvipy in #8138
+- fix: add expire string parse. by @Bidaya0 in #8134
+- Fix worker crash on un-pickleable exceptions by @youtux in #8133
+- CLI help output: avoid text rewrapping by click by @woutdenolf in #8152
+- Warn when an unnamed periodic task override another one. by @iurisilvio in #8143
+- Fix Task.handle_ignore not wrapping exceptions properly by @youtux in #8149
+- Hotfix for (#8120) - Stamping bug with retry by @Nusnus in #8158
+- Fix integration test by @youtux in #8156
+- Fixed bug in revoke_by_stamped_headers where impl did not match doc by @Nusnus in #8162
+- Align revoke and revoke_by_stamped_headers return values (terminate=True) by @Nusnus in #8163
+- Update & simplify GHA pip caching by @stumpylog in #8164
+- Update auth.txt by @auvipy in #8167
+- Update test.txt versions by @auvipy in #8173
+- remove extra = from test.txt by @auvipy in #8179
+- Update sqs.txt kombu[sqs]>=5.3.0b3 by @auvipy in #8174
+- Added signal triggered before fork by @jaroslawporada in #8177
+- Update documentation on SQLAlchemy by @max-muoto in #8188
+- Deprecate pytz and use zoneinfo by @max-muoto in #8159
+- Update dev.txt by @auvipy in #8192
+- Update test.txt by @auvipy in #8193
+- Update test-integration.txt by @auvipy in #8194
+- Update zstd.txt by @auvipy in #8195
+- Update s3.txt by @auvipy in #8196
+- Update msgpack.txt by @auvipy in #8199
+- Update solar.txt by @auvipy in #8198
+- Add Semgrep to CI by @Nusnus in #8201
+- Added semgrep to README.rst by @Nusnus in #8202
+- Update django.txt by @auvipy in #8197
+- Update redis.txt 4.3.6 by @auvipy in #8161
+- start removing codecov from pypi by @auvipy in #8206
+- Update test.txt dependencies by @auvipy in #8205
+- Improved doc for: worker_deduplicate_successful_tasks by @Nusnus in #8209
+- Renamed revoked_headers to revoked_stamps by @Nusnus in #8210
+- Ensure argument for map is JSON serializable by @candleindark in #8229
+
+.. _version-5.3.0b2:
+
+5.3.0b2
+=======
+
+:release-date: 2023-02-19 1:47 P.M GMT+2
+:release-by: Asif Saif Uddin
+
+- BLM-2: Adding unit tests to chord clone by @Nusnus in #7668
+- Fix unknown task error typo by @dcecile in #7675
+- rename redis integration test class so that tests are executed by @wochinge in #7684
+- Check certificate/private key type when loading them by @qrmt in #7680
+- Added integration test_chord_header_id_duplicated_on_rabbitmq_msg_duplication() by @Nusnus in #7692
+- New feature flag: allow_error_cb_on_chord_header - allowing setting an error callback on chord header by @Nusnus in #7712
+- Update README.rst sorting Python/Celery versions by @andrebr in #7714
+- Fixed a bug where stamping a chord body would not use the correct stamping method by @Nusnus in #7722
+- Fixed doc duplication typo for Signature.stamp() by @Nusnus in #7725
+- Fix issue 7726: variable used in finally block may not be instantiated by @woutdenolf in #7727
+- Fixed bug in chord stamping with another chord as a body + unit test by @Nusnus in #7730
+- Use "describe_table" not "create_table" to check for existence of DynamoDB table by @maxfirman in #7734
+- Enhancements for task_allow_error_cb_on_chord_header tests and docs by @Nusnus in #7744
+- Improved custom stamping visitor documentation by @Nusnus in #7745
+- Improved the coverage of test_chord_stamping_body_chord() by @Nusnus in #7748
+- billiard >= 3.6.3.0,<5.0 for rpm by @auvipy in #7764
+- Fixed memory leak with ETA tasks at connection error when worker_cancel_long_running_tasks_on_connection_loss is enabled by @Nusnus in #7771
+- Fixed bug where a chord with header of type tuple was not supported in the link_error flow for task_allow_error_cb_on_chord_header flag by @Nusnus in #7772
+- Scheduled weekly dependency update for week 38 by @pyup-bot in #7767
+- recreate_module: set spec to the new module by @skshetry in #7773
+- Override integration test config using integration-tests-config.json by @thedrow in #7778
+- Fixed error handling bugs due to upgrade to a newer version of billiard by @Nusnus in #7781
+- Do not recommend using easy_install anymore by @jugmac00 in #7789
+- GitHub Workflows security hardening by @sashashura in #7768
+- Update ambiguous acks_late doc by @Zhong-z in #7728
+- billiard >=4.0.2,<5.0 by @auvipy in #7720
+- importlib_metadata remove deprecated entry point interfaces by @woutdenolf in #7785
+- Scheduled weekly dependency update for week 41 by @pyup-bot in #7798
+- pyzmq>=22.3.0 by @auvipy in #7497
+- Remove amqp from the BACKEND_ALISES list by @Kludex in #7805
+- Replace print by logger.debug by @Kludex in #7809
+- Ignore coverage on except ImportError by @Kludex in #7812
+- Add mongodb dependencies to test.txt by @Kludex in #7810
+- Fix grammar typos on the whole project by @Kludex in #7815
+- Remove isatty wrapper function by @Kludex in #7814
+- Remove unused variable _range by @Kludex in #7813
+- Add type annotation on concurrency/threads.py by @Kludex in #7808
+- Fix linter workflow by @Kludex in #7816
+- Scheduled weekly dependency update for week 42 by @pyup-bot in #7821
+- Remove .cookiecutterrc by @Kludex in #7830
+- Remove .coveragerc file by @Kludex in #7826
+- kombu>=5.3.0b2 by @auvipy in #7834
+- Fix readthedocs build failure by @woutdenolf in #7835
+- Fixed bug in group, chord, chain stamp() method, where the visitor overrides the previously stamps in tasks of these objects by @Nusnus in #7825
+- Stabilized test_mutable_errback_called_by_chord_from_group_fail_multiple by @Nusnus in #7837
+- Use SPDX license expression in project metadata by @RazerM in #7845
+- New control command revoke_by_stamped_headers by @Nusnus in #7838
+- Clarify wording in Redis priority docs by @strugee in #7853
+- Fix non working example of using celery_worker pytest fixture by @paradox-lab in #7857
+- Removed the mandatory requirement to include stamped_headers key when implementing on_signature() by @Nusnus in #7856
+- Update serializer docs by @sondrelg in #7858
+- Remove reference to old Python version by @Kludex in #7829
+- Added on_replace() to Task to allow manipulating the replaced sig with custom changes at the end of the task.replace() by @Nusnus in #7860
+- Add clarifying information to completed_count documentation by @hankehly in #7873
+- Stabilized test_revoked_by_headers_complex_canvas by @Nusnus in #7877
+- StampingVisitor will visit the callbacks and errbacks of the signature by @Nusnus in #7867
+- Fix "rm: no operand" error in clean-pyc script by @hankehly in #7878
+- Add --skip-checks flag to bypass django core checks by @mudetz in #7859
+- Scheduled weekly dependency update for week 44 by @pyup-bot in #7868
+- Added two new unit tests to callback stamping by @Nusnus in #7882
+- Sphinx extension: use inspect.signature to make it Python 3.11 compatible by @mathiasertl in #7879
+- cryptography==38.0.3 by @auvipy in #7886
+- Canvas.py doc enhancement by @Nusnus in #7889
+- Fix typo by @sondrelg in #7890
+- fix typos in optional tests by @hsk17 in #7876
+- Canvas.py doc enhancement by @Nusnus in #7891
+- Fix revoke by headers tests stability by @Nusnus in #7892
+- feat: add global keyprefix for backend result keys by @kaustavb12 in #7620
+- Canvas.py doc enhancement by @Nusnus in #7897
+- fix(sec): upgrade sqlalchemy to 1.2.18 by @chncaption in #7899
+- Canvas.py doc enhancement by @Nusnus in #7902
+- Fix test warnings by @ShaheedHaque in #7906
+- Support for out-of-tree worker pool implementations by @ShaheedHaque in #7880
+- Canvas.py doc enhancement by @Nusnus in #7907
+- Use bound task in base task example. Closes #7909 by @WilliamDEdwards in #7910
+- Allow the stamping visitor itself to set the stamp value type instead of casting it to a list by @Nusnus in #7914
+- Stamping a task left the task properties dirty by @Nusnus in #7916
+- Fixed bug when chaining a chord with a group by @Nusnus in #7919
+- Fixed bug in the stamping visitor mechanism where the request was lacking the stamps in the 'stamps' property by @Nusnus in #7928
+- Fixed bug in task_accepted() where the request was not added to the requests but only to the active_requests by @Nusnus in #7929
+- Fix bug in TraceInfo._log_error() where the real exception obj was hiding behind 'ExceptionWithTraceback' by @Nusnus in #7930
+- Added integration test: test_all_tasks_of_canvas_are_stamped() by @Nusnus in #7931
+- Added new example for the stamping mechanism: examples/stamping by @Nusnus in #7933
+- Fixed a bug where replacing a stamped task and stamping it again by @Nusnus in #7934
+- Bugfix for nested group stamping on task replace by @Nusnus in #7935
+- Added integration test test_stamping_example_canvas() by @Nusnus in #7937
+- Fixed a bug in losing chain links when unchaining an inner chain with links by @Nusnus in #7938
+- Removing as not mandatory by @auvipy in #7885
+- Housekeeping for Canvas.py by @Nusnus in #7942
+- Scheduled weekly dependency update for week 50 by @pyup-bot in #7954
+- try pypy 3.9 in CI by @auvipy in #7956
+- sqlalchemy==1.4.45 by @auvipy in #7943
+- billiard>=4.1.0,<5.0 by @auvipy in #7957
+- feat(typecheck): allow changing type check behavior on the app level; by @moaddib666 in #7952
+- Add broker_channel_error_retry option by @nkns165 in #7951
+- Add beat_cron_starting_deadline_seconds to prevent unwanted cron runs by @abs25 in #7945
+- Scheduled weekly dependency update for week 51 by @pyup-bot in #7965
+- Added doc to "retry_errors" newly supported field of "publish_retry_policy" of the task namespace by @Nusnus in #7967
+- Renamed from master to main in the docs and the CI workflows by @Nusnus in #7968
+- Fix docs for the exchange to use with worker_direct by @alessio-b2c2 in #7973
+- Pin redis==4.3.4 by @auvipy in #7974
+- return list of nodes to make sphinx extension compatible with Sphinx 6.0 by @mathiasertl in #7978
+- use version range redis>=4.2.2,<4.4.0 by @auvipy in #7980
+- Scheduled weekly dependency update for week 01 by @pyup-bot in #7987
+- Add annotations to minimise differences with celery-aio-pool's tracer.py. by @ShaheedHaque in #7925
+- Fixed bug where linking a stamped task did not add the stamp to the link's options by @Nusnus in #7992
+- sqlalchemy==1.4.46 by @auvipy in #7995
+- pytz by @auvipy in #8002
+- Fix few typos, provide configuration + workflow for codespell to catch any new by @yarikoptic in #8023
+- RabbitMQ links update by @arnisjuraga in #8031
+- Ignore files generated by tests by @Kludex in #7846
+- Revert "sqlalchemy==1.4.46 (#7995)" by @Nusnus in #8033
+- Fixed bug with replacing a stamped task with a chain or a group (inc. links/errlinks) by @Nusnus in #8034
+- Fixed formatting in setup.cfg that caused flake8 to misbehave by @Nusnus in #8044
+- Removed duplicated import Iterable by @Nusnus in #8046
+- Fix docs by @Nusnus in #8047
+- Document --logfile default by @strugee in #8057
+- Stamping Mechanism Refactoring by @Nusnus in #8045
+- result_backend_thread_safe config shares backend across threads by @CharlieTruong in #8058
+- Fix cronjob that use day of month and negative UTC timezone by @pkyosx in #8053
+- Stamping Mechanism Examples Refactoring by @Nusnus in #8060
+- Fixed bug in Task.on_stamp_replaced() by @Nusnus in #8061
+- Stamping Mechanism Refactoring 2 by @Nusnus in #8064
+- Changed default append_stamps from True to False (meaning duplicates … by @Nusnus in #8068
+- typo in comment: mailicious => malicious by @yanick in #8072
+- Fix command for starting flower with specified broker URL by @ShukantPal in #8071
+- Improve documentation on ETA/countdown tasks (#8069) by @norbertcyran in #8075
+
+.. _version-5.3.0b1:
+
+5.3.0b1
+=======
+
+:release-date: 2022-08-01 5:15 P.M UTC+6:00
+:release-by: Asif Saif Uddin
+
+- Canvas Header Stamping (#7384).
+- async chords should pass it's kwargs to the group/body.
+- beat: Suppress banner output with the quiet option (#7608).
+- Fix honor Django's TIME_ZONE setting.
+- Don't warn about DEBUG=True for Django.
+- Fixed the on_after_finalize cannot access tasks due to deadlock.
+- Bump kombu>=5.3.0b1,<6.0.
+- Make default worker state limits configurable (#7609).
+- Only clear the cache if there are no active writers.
+- Billiard 4.0.1
+
+.. _version-5.3.0a1:
+
+5.3.0a1
+=======
+
+:release-date: 2022-06-29 5:15 P.M UTC+6:00
+:release-by: Asif Saif Uddin
+
+- Remove Python 3.4 compatibility code.
+- call ping to set connection attr for avoiding redis parse_response error.
+- Use importlib instead of deprecated pkg_resources.
+- fix #7245 uid duplicated in command params.
+- Fix subscribed_to maybe empty (#7232).
+- Fix: Celery beat sleeps 300 seconds sometimes even when it should run a task within a few seconds (e.g. 13 seconds) #7290.
+- Add security_key_password option (#7292).
+- Limit elasticsearch support to below version 8.0.
+- try new major release of pytest 7 (#7330).
+- broker_connection_retry should no longer apply on startup (#7300).
+- Remove __ne__ methods (#7257).
+- fix #7200 uid and gid.
+- Remove exception-throwing from the signal handler.
+- Add mypy to the pipeline (#7383).
+- Expose more debugging information when receiving unknown tasks. (#7405)
+- Avoid importing buf_t from billiard's compat module as it was removed.
+- Avoid negating a constant in a loop. (#7443)
+- Ensure expiration is of float type when migrating tasks (#7385).
+- load_extension_class_names - correct module_name (#7406)
+- Bump pymongo[srv]>=4.0.2.
+- Use inspect.getgeneratorstate in asynpool.gen_not_started (#7476).
+- Fix test with missing .get() (#7479).
+- azure-storage-blob>=12.11.0
+- Make start_worker, setup_default_app reusable outside of pytest.
+- Ensure a proper error message is raised when id for key is empty (#7447).
+- Crontab string representation does not match UNIX crontab expression.
+- Worker should exit with ctx.exit to get the right exitcode for non-zero.
+- Fix expiration check (#7552).
+- Use callable built-in.
+- Include dont_autoretry_for option in tasks. (#7556)
+- fix: Syntax error in arango query.
+- Fix custom headers propagation on task retries (#7555).
+- Silence backend warning when eager results are stored.
+- Reduce prefetch count on restart and gradually restore it (#7350).
+- Improve workflow primitive subclassing (#7593).
+- test kombu>=5.3.0a1,<6.0 (#7598).
+- Canvas Header Stamping (#7384).
+
+.. _version-5.2.7:
+
+5.2.7
+=====
+
+:release-date: 2022-5-26 12:15 P.M UTC+2:00
+:release-by: Omer Katz
+
+- Fix packaging issue which causes poetry 1.2b1 and above to fail install Celery (#7534).
+
+.. _version-5.2.6:
+
+5.2.6
+=====
+
+:release-date: 2022-4-04 21:15 P.M UTC+2:00
+:release-by: Omer Katz
+
+- load_extension_class_names - correct module_name (#7433).
+    This fixes a regression caused by #7218.
+
+.. _version-5.2.5:
+
+5.2.5
+=====
+
+:release-date: 2022-4-03 20:42 P.M UTC+2:00
+:release-by: Omer Katz
+
+**This release was yanked due to a regression caused by the PR below**
+
+- Use importlib instead of deprecated pkg_resources (#7218).
+
+.. _version-5.2.4:
+
+5.2.4
+=====
+
+:release-date: 2022-4-03 20:30 P.M UTC+2:00
+:release-by: Omer Katz
+
+- Expose more debugging information when receiving unknown tasks (#7404).
 
 .. _version-5.2.3:
 

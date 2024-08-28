@@ -12,8 +12,7 @@ import pytest
 from celery import signature, states, uuid
 from celery.canvas import Signature
 from celery.contrib.testing.mocks import ContextMock
-from celery.exceptions import (BackendStoreError, ChordError,
-                               ImproperlyConfigured)
+from celery.exceptions import BackendStoreError, ChordError, ImproperlyConfigured
 from celery.result import AsyncResult, GroupResult
 from celery.utils.collections import AttributeDict
 from t.unit import conftest
@@ -286,6 +285,35 @@ class test_RedisResultConsumer:
         consumer.drain_events()
         consumer._pubsub.subscribe.assert_not_called()
 
+    def test__reconnect_pubsub_no_subscribed(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.subscribed_to = set()
+        consumer._reconnect_pubsub()
+        consumer.backend.client.mget.assert_not_called()
+        consumer._pubsub.subscribe.assert_not_called()
+        consumer._pubsub.connection.register_connect_callback.assert_called_once()
+
+    def test__reconnect_pubsub_with_state_change(self):
+        meta = {'task_id': 'initial', 'status': states.SUCCESS}
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.backend._set_with_state(b'celery-task-meta-initial', json.dumps(meta), states.SUCCESS)
+        consumer._reconnect_pubsub()
+        consumer.backend.client.mget.assert_called_once()
+        consumer._pubsub.subscribe.assert_not_called()
+        consumer._pubsub.connection.register_connect_callback.assert_called_once()
+
+    def test__reconnect_pubsub_without_state_change(self):
+        meta = {'task_id': 'initial', 'status': states.STARTED}
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.backend._set_with_state(b'celery-task-meta-initial', json.dumps(meta), states.SUCCESS)
+        consumer._reconnect_pubsub()
+        consumer.backend.client.mget.assert_called_once()
+        consumer._pubsub.subscribe.assert_called_once()
+        consumer._pubsub.connection.register_connect_callback.assert_not_called()
+
 
 class basetest_RedisBackend:
     def get_backend(self):
@@ -330,7 +358,7 @@ class basetest_RedisBackend:
             callback.delay = Mock(name='callback.delay')
             yield tasks, request, callback
 
-    def setup(self):
+    def setup_method(self):
         self.Backend = self.get_backend()
         self.E_LOST = self.get_E_LOST()
         self.b = self.Backend(app=self.app)
@@ -1143,7 +1171,7 @@ class test_RedisBackend_chords_complex(basetest_RedisBackend):
         self.b.client.lrange.assert_not_called()
         # Confirm that the `GroupResult.restore` mock was called
         complex_header_result.assert_called_once_with(request.group)
-        # Confirm the the callback was called with the `join()`ed group result
+        # Confirm that the callback was called with the `join()`ed group result
         if supports_native_join:
             expected_join = mock_result_obj.join_native
         else:
@@ -1165,7 +1193,7 @@ class test_SentinelBackend:
         from celery.backends.redis import E_LOST
         return E_LOST
 
-    def setup(self):
+    def setup_method(self):
         self.Backend = self.get_backend()
         self.E_LOST = self.get_E_LOST()
         self.b = self.Backend(app=self.app)

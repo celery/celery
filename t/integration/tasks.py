@@ -1,10 +1,29 @@
+import os
+from collections.abc import Iterable
 from time import sleep
 
+from pydantic import BaseModel
+
 from celery import Signature, Task, chain, chord, group, shared_task
+from celery.canvas import signature
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 
-from .conftest import get_redis_connection
+LEGACY_TASKS_DISABLED = True
+try:
+    # Imports that are not available in Celery 4
+    from celery.canvas import StampingVisitor
+except ImportError:
+    LEGACY_TASKS_DISABLED = False
+
+
+def get_redis_connection():
+    from redis import StrictRedis
+
+    host = os.environ.get("REDIS_HOST", "localhost")
+    port = os.environ.get("REDIS_PORT", 6379)
+    return StrictRedis(host=host, port=port)
+
 
 logger = get_task_logger(__name__)
 
@@ -22,6 +41,12 @@ def add(x, y, z=None):
         return x + y + z
     else:
         return x + y
+
+
+@shared_task
+def mul(x: int, y: int) -> int:
+    """Multiply two numbers"""
+    return x * y
 
 
 @shared_task
@@ -85,6 +110,12 @@ def delayed_sum_with_soft_guard(numbers, pause_time=1):
 def tsum(nums):
     """Sum an iterable of numbers."""
     return sum(nums)
+
+
+@shared_task
+def xsum(nums):
+    """Sum of ints and lists."""
+    return sum(sum(num) if isinstance(num, Iterable) else num for num in nums)
 
 
 @shared_task(bind=True)
@@ -197,16 +228,23 @@ def retry(self, return_value=None):
     raise self.retry(exc=ExpectedException(), countdown=5)
 
 
-@shared_task(bind=True, expires=60.0, max_retries=1)
-def retry_once(self, *args, expires=60.0, max_retries=1, countdown=0.1):
+@shared_task(bind=True, default_retry_delay=1)
+def retry_unpickleable(self, foo, bar, *, retry_kwargs):
+    """Task that fails with an unpickleable exception and is retried."""
+    raise self.retry(exc=UnpickleableException(foo, bar), **retry_kwargs)
+
+
+@shared_task(bind=True, expires=120.0, max_retries=1)
+def retry_once(self, *args, expires=None, max_retries=1, countdown=0.1):
     """Task that fails and is retried. Returns the number of retries."""
     if self.request.retries:
         return self.request.retries
     raise self.retry(countdown=countdown,
+                     expires=expires,
                      max_retries=max_retries)
 
 
-@shared_task(bind=True, expires=60.0, max_retries=1)
+@shared_task(bind=True, max_retries=1)
 def retry_once_priority(self, *args, expires=60.0, max_retries=1,
                         countdown=0.1):
     """Task that fails and is retried. Returns the priority."""
@@ -216,11 +254,27 @@ def retry_once_priority(self, *args, expires=60.0, max_retries=1,
                      max_retries=max_retries)
 
 
+@shared_task(bind=True, max_retries=1)
+def retry_once_headers(self, *args, max_retries=1,
+                       countdown=0.1):
+    """Task that fails and is retried. Returns headers."""
+    if self.request.retries:
+        return self.request.headers
+    raise self.retry(countdown=countdown,
+                     max_retries=max_retries)
+
+
 @shared_task
 def redis_echo(message, redis_key="redis-echo"):
     """Task that appends the message to a redis list."""
     redis_connection = get_redis_connection()
     redis_connection.rpush(redis_key, message)
+
+
+@shared_task(bind=True)
+def redis_echo_group_id(self, _, redis_key="redis-group-ids"):
+    redis_connection = get_redis_connection()
+    redis_connection.rpush(redis_key, self.request.group)
 
 
 @shared_task
@@ -288,11 +342,30 @@ class ExpectedException(Exception):
         return hash(self.args)
 
 
+class UnpickleableException(Exception):
+    """Exception that doesn't survive a pickling roundtrip (dump + load)."""
+    def __init__(self, foo, bar=None):
+        if bar is None:
+            # We define bar with a default value in the signature so that
+            # it's easier to add a break point here to find out when the
+            # exception is being unpickled.
+            raise TypeError("bar must be provided")
+
+        super().__init__(foo)
+        self.bar = bar
+
+
 @shared_task
 def fail(*args):
     """Task that simply raises ExpectedException."""
     args = ("Task expected to fail",) + args
     raise ExpectedException(*args)
+
+
+@shared_task()
+def fail_unpickleable(foo, bar):
+    """Task that raises an unpickleable exception."""
+    raise UnpickleableException(foo, bar)
 
 
 @shared_task(bind=True)
@@ -397,3 +470,50 @@ def errback_old_style(request_id):
 def errback_new_style(request, exc, tb):
     redis_count(request.id)
     return request.id
+
+
+@shared_task
+def replaced_with_me():
+    return True
+
+
+class AddParameterModel(BaseModel):
+    x: int
+    y: int
+
+
+class AddResultModel(BaseModel):
+    result: int
+
+
+@shared_task(pydantic=True)
+def add_pydantic(data: AddParameterModel) -> AddResultModel:
+    """Add two numbers, but with parameters and results using Pydantic model serialization."""
+    value = data.x + data.y
+    return AddResultModel(result=value)
+
+
+if LEGACY_TASKS_DISABLED:
+    class StampOnReplace(StampingVisitor):
+        stamp = {"StampOnReplace": "This is the replaced task"}
+
+        def on_signature(self, sig, **headers) -> dict:
+            return self.stamp
+
+    class StampedTaskOnReplace(Task):
+        """Custom task for stamping on replace"""
+
+        def on_replace(self, sig):
+            sig.stamp(StampOnReplace())
+            return super().on_replace(sig)
+
+    @shared_task(bind=True, base=StampedTaskOnReplace)
+    def replace_with_stamped_task(self: StampedTaskOnReplace, replace_with=None):
+        if replace_with is None:
+            replace_with = replaced_with_me.s()
+        self.replace(signature(replace_with))
+
+
+@shared_task(soft_time_limit=2, time_limit=1)
+def soft_time_limit_must_exceed_time_limit():
+    pass

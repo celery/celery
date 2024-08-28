@@ -10,17 +10,18 @@ from time import monotonic, time
 from weakref import ref
 
 from billiard.common import TERM_SIGNAME
+from billiard.einfo import ExceptionWithTraceback
 from kombu.utils.encoding import safe_repr, safe_str
 from kombu.utils.objects import cached_property
 
 from celery import current_app, signals
 from celery.app.task import Context
 from celery.app.trace import fast_trace_task, trace_task, trace_task_ret
-from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
-                               TaskRevokedError, Terminated,
+from celery.concurrency.base import BasePool
+from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError, Terminated,
                                TimeLimitExceeded, WorkerLostError)
 from celery.platforms import signals as _signals
-from celery.utils.functional import maybe, noop
+from celery.utils.functional import maybe, maybe_list, noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.serialization import get_pickled_exception
@@ -60,6 +61,7 @@ send_retry = signals.task_retry.send
 task_accepted = state.task_accepted
 task_ready = state.task_ready
 revoked_tasks = state.revoked
+revoked_stamps = state.revoked_stamps
 
 
 class Request:
@@ -155,7 +157,7 @@ class Request:
             'exchange': delivery_info.get('exchange'),
             'routing_key': delivery_info.get('routing_key'),
             'priority': properties.get('priority'),
-            'redelivered': delivery_info.get('redelivered'),
+            'redelivered': delivery_info.get('redelivered', False),
         }
         self._request_dict.update({
             'properties': properties,
@@ -316,11 +318,24 @@ class Request:
         return self._request_dict.get('replaced_task_nesting', 0)
 
     @property
+    def groups(self):
+        return self._request_dict.get('groups', [])
+
+    @property
+    def stamped_headers(self) -> list:
+        return self._request_dict.get('stamped_headers') or []
+
+    @property
+    def stamps(self) -> dict:
+        stamps = self._request_dict.get('stamps') or {}
+        return {header: stamps.get(header) for header in self.stamped_headers}
+
+    @property
     def correlation_id(self):
         # used similarly to reply_to
         return self._request_dict['correlation_id']
 
-    def execute_using_pool(self, pool, **kwargs):
+    def execute_using_pool(self, pool: BasePool, **kwargs):
         """Used by the worker to send this task to the pool.
 
         Arguments:
@@ -389,9 +404,9 @@ class Request:
 
     def maybe_expire(self):
         """If expired, mark the task as revoked."""
-        if self._expires:
-            now = datetime.now(self._expires.tzinfo)
-            if now > self._expires:
+        if self.expires:
+            now = datetime.now(self.expires.tzinfo)
+            if now > self.expires:
                 revoked_tasks.add(self.id)
                 return True
 
@@ -449,10 +464,36 @@ class Request:
         expired = False
         if self._already_revoked:
             return True
-        if self._expires:
+        if self.expires:
             expired = self.maybe_expire()
-        if self.id in revoked_tasks:
-            info('Discarding revoked task: %s[%s]', self.name, self.id)
+        revoked_by_id = self.id in revoked_tasks
+        revoked_by_header, revoking_header = False, None
+
+        if not revoked_by_id and self.stamped_headers:
+            for stamp in self.stamped_headers:
+                if stamp in revoked_stamps:
+                    revoked_header = revoked_stamps[stamp]
+                    stamped_header = self._message.headers['stamps'][stamp]
+
+                    if isinstance(stamped_header, (list, tuple)):
+                        for stamped_value in stamped_header:
+                            if stamped_value in maybe_list(revoked_header):
+                                revoked_by_header = True
+                                revoking_header = {stamp: stamped_value}
+                                break
+                    else:
+                        revoked_by_header = any([
+                            stamped_header in maybe_list(revoked_header),
+                            stamped_header == revoked_header,  # When the header is a single set value
+                        ])
+                        revoking_header = {stamp: stamped_header}
+                    break
+
+        if any((expired, revoked_by_id, revoked_by_header)):
+            log_msg = 'Discarding revoked task: %s[%s]'
+            if revoked_by_header:
+                log_msg += ' (revoked by header: %s)' % revoking_header
+            info(log_msg, self.name, self.id)
             self._announce_revoked(
                 'expired' if expired else 'revoked', False, None, expired,
             )
@@ -500,8 +541,11 @@ class Request:
         """Handler called if the task was successfully processed."""
         failed, retval, runtime = failed__retval__runtime
         if failed:
-            if isinstance(retval.exception, (SystemExit, KeyboardInterrupt)):
-                raise retval.exception
+            exc = retval.exception
+            if isinstance(exc, ExceptionWithTraceback):
+                exc = exc.exc
+            if isinstance(exc, (SystemExit, KeyboardInterrupt)):
+                raise exc
             return self.on_failure(retval, return_ok=True)
         task_ready(self, successful=True)
 
@@ -523,6 +567,9 @@ class Request:
         """Handler called if the task raised an exception."""
         task_ready(self)
         exc = exc_info.exception
+
+        if isinstance(exc, ExceptionWithTraceback):
+            exc = exc.exc
 
         is_terminated = isinstance(exc, Terminated)
         if is_terminated:
@@ -700,7 +747,7 @@ def create_request_cls(base, task, pool, hostname, eventer,
 
         def execute_using_pool(self, pool, **kwargs):
             task_id = self.task_id
-            if (self.expires or task_id in revoked_tasks) and self.revoked():
+            if self.revoked():
                 raise TaskRevokedError(task_id)
 
             time_limit, soft_time_limit = self.time_limits
@@ -724,9 +771,11 @@ def create_request_cls(base, task, pool, hostname, eventer,
         def on_success(self, failed__retval__runtime, **kwargs):
             failed, retval, runtime = failed__retval__runtime
             if failed:
-                if isinstance(retval.exception, (
-                        SystemExit, KeyboardInterrupt)):
-                    raise retval.exception
+                exc = retval.exception
+                if isinstance(exc, ExceptionWithTraceback):
+                    exc = exc.exc
+                if isinstance(exc, (SystemExit, KeyboardInterrupt)):
+                    raise exc
                 return self.on_failure(retval, return_ok=True)
             task_ready(self)
 

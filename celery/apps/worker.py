@@ -19,9 +19,8 @@ from kombu.utils.encoding import safe_str
 
 from celery import VERSION_BANNER, platforms, signals
 from celery.app import trace
-from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.loaders.app import AppLoader
-from celery.platforms import EX_FAILURE, EX_OK, check_privileges, isatty
+from celery.platforms import EX_FAILURE, EX_OK, check_privileges
 from celery.utils import static, term
 from celery.utils.debug import cry
 from celery.utils.imports import qualname
@@ -78,8 +77,8 @@ def active_thread_count():
                if not t.name.startswith('Dummy-'))
 
 
-def safe_say(msg):
-    print(f'\n{msg}', file=sys.__stderr__, flush=True)
+def safe_say(msg, f=sys.__stderr__):
+    print(f'\n{msg}', file=f, flush=True)
 
 
 class Worker(WorkController):
@@ -107,7 +106,7 @@ class Worker(WorkController):
         super().setup_defaults(**kwargs)
         self.purge = purge
         self.no_color = no_color
-        self._isatty = isatty(sys.stdout)
+        self._isatty = sys.stdout.isatty()
         self.colored = self.app.log.colored(
             self.logfile,
             enabled=not no_color if no_color is not None else no_color
@@ -280,39 +279,36 @@ class Worker(WorkController):
 
 
 def _shutdown_handler(worker, sig='TERM', how='Warm',
-                      exc=WorkerShutdown, callback=None, exitcode=EX_OK):
+                      callback=None, exitcode=EX_OK):
     def _handle_request(*args):
         with in_sighandler():
             from celery.worker import state
             if current_process()._name == 'MainProcess':
                 if callback:
                     callback(worker)
-                safe_say(f'worker: {how} shutdown (MainProcess)')
+                safe_say(f'worker: {how} shutdown (MainProcess)', sys.__stdout__)
                 signals.worker_shutting_down.send(
                     sender=worker.hostname, sig=sig, how=how,
                     exitcode=exitcode,
                 )
-            if active_thread_count() > 1:
-                setattr(state, {'Warm': 'should_stop',
-                                'Cold': 'should_terminate'}[how], exitcode)
-            else:
-                raise exc(exitcode)
+            setattr(state, {'Warm': 'should_stop',
+                            'Cold': 'should_terminate'}[how], exitcode)
     _handle_request.__name__ = str(f'worker_{how}')
     platforms.signals[sig] = _handle_request
 
 
 if REMAP_SIGTERM == "SIGQUIT":
     install_worker_term_handler = partial(
-        _shutdown_handler, sig='SIGTERM', how='Cold', exc=WorkerTerminate, exitcode=EX_FAILURE,
+        _shutdown_handler, sig='SIGTERM', how='Cold', exitcode=EX_FAILURE,
     )
 else:
     install_worker_term_handler = partial(
-        _shutdown_handler, sig='SIGTERM', how='Warm', exc=WorkerShutdown,
+        _shutdown_handler, sig='SIGTERM', how='Warm',
     )
 
 if not is_jython:  # pragma: no cover
     install_worker_term_hard_handler = partial(
-        _shutdown_handler, sig='SIGQUIT', how='Cold', exc=WorkerTerminate,
+        _shutdown_handler, sig='SIGQUIT', how='Cold',
         exitcode=EX_FAILURE,
     )
 else:  # pragma: no cover
@@ -321,7 +317,8 @@ else:  # pragma: no cover
 
 
 def on_SIGINT(worker):
-    safe_say('worker: Hitting Ctrl+C again will terminate all running tasks!')
+    safe_say('worker: Hitting Ctrl+C again will terminate all running tasks!',
+             sys.__stdout__)
     install_worker_term_hard_handler(worker, sig='SIGINT')
 
 
@@ -347,7 +344,8 @@ def install_worker_restart_handler(worker, sig='SIGHUP'):
     def restart_worker_sig_handler(*args):
         """Signal handler restarting the current python program."""
         set_in_sighandler(True)
-        safe_say(f"Restarting celery worker ({' '.join(sys.argv)})")
+        safe_say(f"Restarting celery worker ({' '.join(sys.argv)})",
+                 sys.__stdout__)
         import atexit
         atexit.register(_reload_current_worker)
         from celery.worker import state

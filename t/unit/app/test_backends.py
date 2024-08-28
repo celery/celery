@@ -48,7 +48,7 @@ def embed_worker(app,
     Helper embedded worker for testing.
 
     It's based on a :func:`celery.contrib.testing.worker.start_worker`,
-    but doesn't modifies logging settings and additionally shutdown
+    but doesn't modify logging settings and additionally shutdown
     worker pool.
     """
     # prepare application for worker

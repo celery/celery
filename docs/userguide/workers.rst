@@ -137,6 +137,31 @@ isn't recommended in production:
     :sig:`HUP` is disabled on macOS because of a limitation on
     that platform.
 
+Automatic re-connection on connection loss to broker
+====================================================
+
+.. versionadded:: 5.3
+
+Unless :setting:`broker_connection_retry_on_startup` is set to False,
+Celery will automatically retry reconnecting to the broker after the first
+connection loss. :setting:`broker_connection_retry` controls whether to automatically
+retry reconnecting to the broker for subsequent reconnects.
+
+.. versionadded:: 5.1
+
+If :setting:`worker_cancel_long_running_tasks_on_connection_loss` is set to True,
+Celery will also cancel any long running task that is currently running.
+
+.. versionadded:: 5.3
+
+Since the message broker does not track how many tasks were already fetched before
+the connection was lost, Celery will reduce the prefetch count by the number of
+tasks that are currently running multiplied by :setting:`worker_prefetch_multiplier`.
+The prefetch count will be gradually restored to the maximum allowed after
+each time a task that was running before the connection was lost is complete.
+
+This feature is enabled by default, but can be disabled by setting False
+to :setting:`worker_enable_prefetch_count_reduction`.
 
 .. _worker-process-signals:
 
@@ -329,12 +354,26 @@ Commands
 
 ``revoke``: Revoking tasks
 --------------------------
-:pool support: all, terminate only supported by prefork and eventlet
+:pool support: all, terminate only supported by prefork, eventlet and gevent
 :broker support: *amqp, redis*
 :command: :program:`celery -A proj control revoke <task_id>`
 
 All worker nodes keeps a memory of revoked task ids, either in-memory or
 persistent on disk (see :ref:`worker-persistent-revokes`).
+
+.. note::
+
+    The maximum number of revoked tasks to keep in memory can be
+    specified using the ``CELERY_WORKER_REVOKES_MAX`` environment
+    variable, which defaults to 50000. When the limit has been exceeded,
+    the revokes will be active for 10800 seconds (3 hours) before being
+    expired. This value can be changed using the
+    ``CELERY_WORKER_REVOKE_EXPIRES`` environment variable.
+
+    Memory limits can also be set for successful tasks through the
+    ``CELERY_WORKER_SUCCESSFUL_MAX`` and
+    ``CELERY_WORKER_SUCCESSFUL_EXPIRES`` environment variables, and
+    default to 1000 and 10800 respectively.
 
 When a worker receives a revoke request it will skip executing
 the task, but it won't terminate an already executing task unless
@@ -432,6 +471,71 @@ Note that remote control commands must be working for revokes to work.
 Remote control commands are only supported by the RabbitMQ (amqp) and Redis
 at this point.
 
+.. control:: revoke_by_stamped_header
+
+``revoke_by_stamped_header``: Revoking tasks by their stamped headers
+---------------------------------------------------------------------
+:pool support: all, terminate only supported by prefork and eventlet
+:broker support: *amqp, redis*
+:command: :program:`celery -A proj control revoke_by_stamped_header <header=value>`
+
+This command is similar to :meth:`~@control.revoke`, but instead of
+specifying the task id(s), you specify the stamped header(s) as key-value pair(s),
+and each task that has a stamped header matching the key-value pair(s) will be revoked.
+
+.. warning::
+
+    The revoked headers mapping is not persistent across restarts, so if you
+    restart the workers, the revoked headers will be lost and need to be
+    mapped again.
+
+.. warning::
+
+    This command may perform poorly if your worker pool concurrency is high
+    and terminate is enabled, since it will have to iterate over all the running
+    tasks to find the ones with the specified stamped header.
+
+**Example**
+
+.. code-block:: pycon
+
+    >>> app.control.revoke_by_stamped_header({'header': 'value'})
+
+    >>> app.control.revoke_by_stamped_header({'header': 'value'}, terminate=True)
+
+    >>> app.control.revoke_by_stamped_header({'header': 'value'}, terminate=True, signal='SIGKILL')
+
+
+Revoking multiple tasks by stamped headers
+------------------------------------------
+
+.. versionadded:: 5.3
+
+The ``revoke_by_stamped_header`` method also accepts a list argument, where it will revoke
+by several headers or several values.
+
+**Example**
+
+.. code-block:: pycon
+
+    >> app.control.revoke_by_stamped_header({
+    ...    'header_A': 'value_1',
+    ...    'header_B': ['value_2', 'value_3'],
+    })
+
+This will revoke all of the tasks that have a stamped header ``header_A`` with value ``value_1``,
+and all of the tasks that have a stamped header ``header_B`` with values ``value_2`` or ``value_3``.
+
+**CLI Example**
+
+.. code-block:: console
+
+    $ celery -A proj control revoke_by_stamped_header stamped_header_key_A=stamped_header_value_1 stamped_header_key_B=stamped_header_value_2
+
+    $ celery -A proj control revoke_by_stamped_header stamped_header_key_A=stamped_header_value_1 stamped_header_key_B=stamped_header_value_2 --terminate
+
+    $ celery -A proj control revoke_by_stamped_header stamped_header_key_A=stamped_header_value_1 stamped_header_key_B=stamped_header_value_2 --terminate --signal=SIGKILL
+
 .. _worker-time-limits:
 
 Time Limits
@@ -472,7 +576,9 @@ time limit kills it:
             clean_up_in_a_hurry()
 
 Time limits can also be set using the :setting:`task_time_limit` /
-:setting:`task_soft_time_limit` settings.
+:setting:`task_soft_time_limit` settings. You can also specify time
+limits for client side operation using ``timeout`` argument of
+``AsyncResult.get()`` function.
 
 .. note::
 
@@ -602,7 +708,7 @@ which needs two numbers: the maximum and minimum number of pool processes:
               10 if necessary).
 
 You can also define your own rules for the autoscaler by subclassing
-:class:`~celery.worker.autoscaler.Autoscaler`.
+:class:`~celery.worker.autoscale.Autoscaler`.
 Some ideas for metrics include load average or the amount of memory available.
 You can specify a custom autoscaler with the :setting:`worker_autoscaler` setting.
 
@@ -948,7 +1054,7 @@ There are two types of remote control commands:
 
 Remote control commands are registered in the control panel and
 they take a single argument: the current
-:class:`~celery.worker.control.ControlDispatch` instance.
+:class:`!celery.worker.control.ControlDispatch` instance.
 From there you have access to the active
 :class:`~celery.worker.consumer.Consumer` if needed.
 

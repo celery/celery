@@ -22,8 +22,8 @@ from vine import ppartial, promise
 
 from celery import bootsteps, signals
 from celery.app.trace import build_tracer
-from celery.exceptions import (CPendingDeprecationWarning, InvalidTaskError,
-                               NotRegistered)
+from celery.exceptions import (CPendingDeprecationWarning, InvalidTaskError, NotRegistered, WorkerShutdown,
+                               WorkerTerminate)
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
@@ -31,8 +31,7 @@ from celery.utils.objects import Bunch
 from celery.utils.text import truncate
 from celery.utils.time import humanize_seconds, rate
 from celery.worker import loops
-from celery.worker.state import (active_requests, maybe_shutdown,
-                                 reserved_requests, task_reserved)
+from celery.worker.state import active_requests, maybe_shutdown, requests, reserved_requests, task_reserved
 
 __all__ = ('Consumer', 'Evloop', 'dump_body')
 
@@ -76,10 +75,16 @@ Did you remember to import the module containing this task?
 Or maybe you're using relative imports?
 
 Please see
-http://docs.celeryq.org/en/latest/internals/protocol.html
+https://docs.celeryq.dev/en/latest/internals/protocol.html
 for more information.
 
 The full contents of the message body was:
+%s
+
+The full contents of the message headers:
+%s
+
+The delivery info for this task is:
 %s
 """
 
@@ -90,7 +95,7 @@ The message has been ignored and discarded.
 
 Please ensure your message conforms to the task
 message protocol as described here:
-http://docs.celeryq.org/en/latest/internals/protocol.html
+https://docs.celeryq.dev/en/latest/internals/protocol.html
 
 The full contents of the message body was:
 %s
@@ -116,10 +121,10 @@ Terminating it instead.
 CANCEL_TASKS_BY_DEFAULT = """
 In Celery 5.1 we introduced an optional breaking change which
 on connection loss cancels all currently executed tasks with late acknowledgement enabled.
-These tasks cannot be acknowledged as the connection is gone, and the tasks are automatically redelivered back to the queue.
-You can enable this behavior using the worker_cancel_long_running_tasks_on_connection_loss setting.
-In Celery 5.1 it is set to False by default. The setting will be set to True by default in Celery 6.0.
-"""  # noqa: E501
+These tasks cannot be acknowledged as the connection is gone, and the tasks are automatically redelivered
+back to the queue. You can enable this behavior using the worker_cancel_long_running_tasks_on_connection_loss
+setting. In Celery 5.1 it is set to False by default. The setting will be set to True by default in Celery 6.0.
+"""
 
 
 def dump_body(m, body):
@@ -147,6 +152,10 @@ class Consumer:
     timer = None
 
     restart_count = -1  # first start is the same as a restart
+
+    #: This flag will be turned off after the first failed
+    #: connection attempt.
+    first_connection_attempt = True
 
     class Blueprint(bootsteps.Blueprint):
         """Consumer blueprint."""
@@ -194,6 +203,7 @@ class Consumer:
         self.disable_rate_limits = disable_rate_limits
         self.initial_prefetch_count = initial_prefetch_count
         self.prefetch_multiplier = prefetch_multiplier
+        self._maximum_prefetch_restored = True
 
         # this contains a tokenbucket for each task type by name, used for
         # rate limits, or None if rate limits are disabled for that task.
@@ -322,15 +332,29 @@ class Consumer:
                     crit('Frequent restarts detected: %r', exc, exc_info=1)
                     sleep(1)
             self.restart_count += 1
+            if self.app.conf.broker_channel_error_retry:
+                recoverable_errors = (self.connection_errors + self.channel_errors)
+            else:
+                recoverable_errors = self.connection_errors
             try:
                 blueprint.start(self)
-            except self.connection_errors as exc:
-                # If we're not retrying connections, no need to catch
-                # connection errors
-                if not self.app.conf.broker_connection_retry:
-                    raise
+            except recoverable_errors as exc:
+                # If we're not retrying connections, we need to properly shutdown or terminate
+                # the Celery main process instead of abruptly aborting the process without any cleanup.
+                is_connection_loss_on_startup = self.first_connection_attempt
+                self.first_connection_attempt = False
+                connection_retry_type = self._get_connection_retry_type(is_connection_loss_on_startup)
+                connection_retry = self.app.conf[connection_retry_type]
+                if not connection_retry:
+                    crit(
+                        f"Retrying to {'establish' if is_connection_loss_on_startup else 're-establish'} "
+                        f"a connection to the message broker after a connection loss has "
+                        f"been disabled (app.conf.{connection_retry_type}=False). Shutting down..."
+                    )
+                    raise WorkerShutdown(1) from exc
                 if isinstance(exc, OSError) and exc.errno == errno.EMFILE:
-                    raise  # Too many open files
+                    crit("Too many open files. Aborting...")
+                    raise WorkerTerminate(1) from exc
                 maybe_shutdown()
                 if blueprint.state not in STOP_CONDITIONS:
                     if self.connection:
@@ -339,6 +363,12 @@ class Consumer:
                         self.on_connection_error_before_connected(exc)
                     self.on_close()
                     blueprint.restart(self)
+
+    def _get_connection_retry_type(self, is_connection_loss_on_startup):
+        return ('broker_connection_retry_on_startup'
+                if (is_connection_loss_on_startup
+                    and self.app.conf.broker_connection_retry_on_startup is not None)
+                else 'broker_connection_retry')
 
     def on_connection_error_before_connected(self, exc):
         error(CONNECTION_ERROR, self.conninfo.as_uri(), exc,
@@ -359,6 +389,21 @@ class Consumer:
                     request.cancel(self.pool)
         else:
             warnings.warn(CANCEL_TASKS_BY_DEFAULT, CPendingDeprecationWarning)
+
+        if self.app.conf.worker_enable_prefetch_count_reduction:
+            self.initial_prefetch_count = max(
+                self.prefetch_multiplier,
+                self.max_prefetch_count - len(tuple(active_requests)) * self.prefetch_multiplier
+            )
+
+            self._maximum_prefetch_restored = self.initial_prefetch_count == self.max_prefetch_count
+            if not self._maximum_prefetch_restored:
+                logger.info(
+                    f"Temporarily reducing the prefetch count to {self.initial_prefetch_count} to avoid "
+                    f"over-fetching since {len(tuple(active_requests))} tasks are currently being processed.\n"
+                    f"The prefetch count will be gradually restored to {self.max_prefetch_count} as the tasks "
+                    "complete processing."
+                )
 
     def register_with_event_loop(self, hub):
         self.blueprint.send_all(
@@ -409,6 +454,9 @@ class Consumer:
         for bucket in self.task_buckets.values():
             if bucket:
                 bucket.clear_pending()
+        for request_id in reserved_requests:
+            if request_id in requests:
+                del requests[request_id]
         reserved_requests.clear()
         if self.pool and self.pool.flush:
             self.pool.flush()
@@ -444,17 +492,43 @@ class Consumer:
                 max_retries=self.app.conf.broker_connection_max_retries)
             error(CONNECTION_ERROR, conn.as_uri(), exc, next_step)
 
-        # remember that the connection is lazy, it won't establish
+        # Remember that the connection is lazy, it won't establish
         # until needed.
-        if not self.app.conf.broker_connection_retry:
-            # retry disabled, just call connect directly.
+
+        # TODO: Rely only on broker_connection_retry_on_startup to determine whether connection retries are disabled.
+        #       We will make the switch in Celery 6.0.
+
+        retry_disabled = False
+
+        if self.app.conf.broker_connection_retry_on_startup is None:
+            # If broker_connection_retry_on_startup is not set, revert to broker_connection_retry
+            # to determine whether connection retries are disabled.
+            retry_disabled = not self.app.conf.broker_connection_retry
+
+            warnings.warn(
+                CPendingDeprecationWarning(
+                    f"The broker_connection_retry configuration setting will no longer determine\n"
+                    f"whether broker connection retries are made during startup in Celery 6.0 and above.\n"
+                    f"If you wish to retain the existing behavior for retrying connections on startup,\n"
+                    f"you should set broker_connection_retry_on_startup to {self.app.conf.broker_connection_retry}.")
+            )
+        else:
+            if self.first_connection_attempt:
+                retry_disabled = not self.app.conf.broker_connection_retry_on_startup
+            else:
+                retry_disabled = not self.app.conf.broker_connection_retry
+
+        if retry_disabled:
+            # Retry disabled, just call connect directly.
             conn.connect()
+            self.first_connection_attempt = False
             return conn
 
         conn = conn.ensure_connection(
             _error_handler, self.app.conf.broker_connection_max_retries,
             callback=maybe_shutdown,
         )
+        self.first_connection_attempt = False
         return conn
 
     def _flush_events(self):
@@ -511,7 +585,11 @@ class Consumer:
         signals.task_rejected.send(sender=self, message=message, exc=None)
 
     def on_unknown_task(self, body, message, exc):
-        error(UNKNOWN_TASK_ERROR, exc, dump_body(message, body),
+        error(UNKNOWN_TASK_ERROR,
+              exc,
+              dump_body(message, body),
+              message.headers,
+              message.delivery_info,
               exc_info=True)
         try:
             id_, name = message.headers['id'], message.headers['task']
@@ -583,10 +661,31 @@ class Consumer:
                 return on_unknown_task(None, message, exc)
             else:
                 try:
+                    ack_log_error_promise = promise(
+                        call_soon,
+                        (message.ack_log_error,),
+                        on_error=self._restore_prefetch_count_after_connection_restart,
+                    )
+                    reject_log_error_promise = promise(
+                        call_soon,
+                        (message.reject_log_error,),
+                        on_error=self._restore_prefetch_count_after_connection_restart,
+                    )
+
+                    if (
+                        not self._maximum_prefetch_restored
+                        and self.restart_count > 0
+                        and self._new_prefetch_count <= self.max_prefetch_count
+                    ):
+                        ack_log_error_promise.then(self._restore_prefetch_count_after_connection_restart,
+                                                   on_error=self._restore_prefetch_count_after_connection_restart)
+                        reject_log_error_promise.then(self._restore_prefetch_count_after_connection_restart,
+                                                      on_error=self._restore_prefetch_count_after_connection_restart)
+
                     strategy(
                         message, payload,
-                        promise(call_soon, (message.ack_log_error,)),
-                        promise(call_soon, (message.reject_log_error,)),
+                        ack_log_error_promise,
+                        reject_log_error_promise,
                         callbacks,
                     )
                 except (InvalidTaskError, ContentDisallowed) as exc:
@@ -595,6 +694,35 @@ class Consumer:
                     return self.on_decode_error(message, exc)
 
         return on_task_received
+
+    def _restore_prefetch_count_after_connection_restart(self, p, *args):
+        with self.qos._mutex:
+            if any((
+                not self.app.conf.worker_enable_prefetch_count_reduction,
+                self._maximum_prefetch_restored,
+            )):
+                return
+
+            new_prefetch_count = min(self.max_prefetch_count, self._new_prefetch_count)
+            self.qos.value = self.initial_prefetch_count = new_prefetch_count
+            self.qos.set(self.qos.value)
+
+            already_restored = self._maximum_prefetch_restored
+            self._maximum_prefetch_restored = new_prefetch_count == self.max_prefetch_count
+
+            if already_restored is False and self._maximum_prefetch_restored is True:
+                logger.info(
+                    "Resuming normal operations following a restart.\n"
+                    f"Prefetch count has been restored to the maximum of {self.max_prefetch_count}"
+                )
+
+    @property
+    def max_prefetch_count(self):
+        return self.pool.num_processes * self.prefetch_multiplier
+
+    @property
+    def _new_prefetch_count(self):
+        return self.qos.value + self.prefetch_multiplier
 
     def __repr__(self):
         """``repr(self)``."""

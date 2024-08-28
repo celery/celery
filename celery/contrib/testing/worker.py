@@ -1,10 +1,11 @@
 """Embedded workers for integration tests."""
+import logging
 import os
 import threading
 from contextlib import contextmanager
-from typing import Any, Iterable, Union
+from typing import Any, Iterable, Optional, Union
 
-import celery.worker.consumer
+import celery.worker.consumer  # noqa
 from celery import Celery, worker
 from celery.result import _set_task_join_will_block, allow_join_result
 from celery.utils.dispatch import Signal
@@ -29,10 +30,47 @@ test_worker_stopped = Signal(
 class TestWorkController(worker.WorkController):
     """Worker that can synchronize on being fully started."""
 
+    logger_queue = None
+
     def __init__(self, *args, **kwargs):
         # type: (*Any, **Any) -> None
         self._on_started = threading.Event()
+
         super().__init__(*args, **kwargs)
+
+        if self.pool_cls.__module__.split('.')[-1] == 'prefork':
+            from billiard import Queue
+            self.logger_queue = Queue()
+            self.pid = os.getpid()
+
+            try:
+                from tblib import pickling_support
+                pickling_support.install()
+            except ImportError:
+                pass
+
+            # collect logs from forked process.
+            # XXX: those logs will appear twice in the live log
+            self.queue_listener = logging.handlers.QueueListener(self.logger_queue, logging.getLogger())
+            self.queue_listener.start()
+
+    class QueueHandler(logging.handlers.QueueHandler):
+        def prepare(self, record):
+            record.from_queue = True
+            # Keep origin record.
+            return record
+
+        def handleError(self, record):
+            if logging.raiseExceptions:
+                raise
+
+    def start(self):
+        if self.logger_queue:
+            handler = self.QueueHandler(self.logger_queue)
+            handler.addFilter(lambda r: r.process != self.pid and not getattr(r, 'from_queue', False))
+            logger = logging.getLogger()
+            logger.addHandler(handler)
+        return super().start()
 
     def on_consumer_ready(self, consumer):
         # type: (celery.worker.consumer.Consumer) -> None
@@ -72,34 +110,36 @@ def start_worker(
     """
     test_worker_starting.send(sender=app)
 
-    with _start_worker_thread(app,
-                              concurrency=concurrency,
-                              pool=pool,
-                              loglevel=loglevel,
-                              logfile=logfile,
-                              perform_ping_check=perform_ping_check,
-                              shutdown_timeout=shutdown_timeout,
-                              **kwargs) as worker:
-        if perform_ping_check:
-            from .tasks import ping
-            with allow_join_result():
-                assert ping.delay().get(timeout=ping_task_timeout) == 'pong'
+    worker = None
+    try:
+        with _start_worker_thread(app,
+                                  concurrency=concurrency,
+                                  pool=pool,
+                                  loglevel=loglevel,
+                                  logfile=logfile,
+                                  perform_ping_check=perform_ping_check,
+                                  shutdown_timeout=shutdown_timeout,
+                                  **kwargs) as worker:
+            if perform_ping_check:
+                from .tasks import ping
+                with allow_join_result():
+                    assert ping.delay().get(timeout=ping_task_timeout) == 'pong'
 
-        yield worker
-    test_worker_stopped.send(sender=app, worker=worker)
+            yield worker
+    finally:
+        test_worker_stopped.send(sender=app, worker=worker)
 
 
 @contextmanager
-def _start_worker_thread(app,
-                         concurrency=1,
-                         pool='solo',
-                         loglevel=WORKER_LOGLEVEL,
-                         logfile=None,
-                         WorkController=TestWorkController,
-                         perform_ping_check=True,
-                         shutdown_timeout=10.0,
-                         **kwargs):
-    # type: (Celery, int, str, Union[str, int], str, Any, **Any) -> Iterable
+def _start_worker_thread(app: Celery,
+                         concurrency: int = 1,
+                         pool: str = 'solo',
+                         loglevel: Union[str, int] = WORKER_LOGLEVEL,
+                         logfile: Optional[str] = None,
+                         WorkController: Any = TestWorkController,
+                         perform_ping_check: bool = True,
+                         shutdown_timeout: float = 10.0,
+                         **kwargs) -> Iterable[worker.WorkController]:
     """Start Celery worker in a thread.
 
     Yields:
@@ -131,18 +171,19 @@ def _start_worker_thread(app,
     worker.ensure_started()
     _set_task_join_will_block(False)
 
-    yield worker
-
-    from celery.worker import state
-    state.should_terminate = 0
-    t.join(shutdown_timeout)
-    if t.is_alive():
-        raise RuntimeError(
-            "Worker thread failed to exit within the allocated timeout. "
-            "Consider raising `shutdown_timeout` if your tasks take longer "
-            "to execute."
-        )
-    state.should_terminate = None
+    try:
+        yield worker
+    finally:
+        from celery.worker import state
+        state.should_terminate = 0
+        t.join(shutdown_timeout)
+        if t.is_alive():
+            raise RuntimeError(
+                "Worker thread failed to exit within the allocated timeout. "
+                "Consider raising `shutdown_timeout` if your tasks take longer "
+                "to execute."
+            )
+        state.should_terminate = None
 
 
 @contextmanager
@@ -163,12 +204,13 @@ def _start_worker_process(app,
     app.set_current()
     cluster = Cluster([Node('testworker1@%h')])
     cluster.start()
-    yield
-    cluster.stopwait()
+    try:
+        yield
+    finally:
+        cluster.stopwait()
 
 
-def setup_app_for_worker(app, loglevel, logfile):
-    # type: (Celery, Union[str, int], str) -> None
+def setup_app_for_worker(app: Celery, loglevel: Union[str, int], logfile: str) -> None:
     """Setup the app to be used for starting an embedded worker."""
     app.finalize()
     app.set_current()

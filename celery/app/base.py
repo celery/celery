@@ -1,14 +1,19 @@
 """Actual App instance implementation."""
+import functools
+import importlib
 import inspect
 import os
 import sys
 import threading
+import typing
 import warnings
 from collections import UserDict, defaultdict, deque
 from datetime import datetime
+from datetime import timezone as datetime_timezone
 from operator import attrgetter
 
 from click.exceptions import Exit
+from dateutil.parser import isoparse
 from kombu import pools
 from kombu.clocks import LamportClock
 from kombu.common import oid_from
@@ -18,10 +23,8 @@ from kombu.utils.uuid import uuid
 from vine import starpromise
 
 from celery import platforms, signals
-from celery._state import (_announce_app_finalized, _deregister_app,
-                           _register_app, _set_current_app, _task_stack,
-                           connect_on_app_finalize, get_current_app,
-                           get_current_worker_task, set_default_app)
+from celery._state import (_announce_app_finalized, _deregister_app, _register_app, _set_current_app, _task_stack,
+                           connect_on_app_finalize, get_current_app, get_current_worker_task, set_default_app)
 from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
@@ -35,15 +38,17 @@ from celery.utils.objects import FallbackContext, mro_lookup
 from celery.utils.time import maybe_make_aware, timezone, to_utc
 
 # Load all builtin tasks
-from . import builtins  # noqa
-from . import backends
+from . import backends, builtins  # noqa
 from .annotations import prepare as prepare_annotations
 from .autoretry import add_autoretry_behaviour
 from .defaults import DEFAULT_SECURITY_DIGEST, find_deprecated_settings
 from .registry import TaskRegistry
-from .utils import (AppPickler, Settings, _new_key_to_old, _old_key_to_new,
-                    _unpickle_app, _unpickle_app_v2, appstr, bugreport,
-                    detect_settings)
+from .utils import (AppPickler, Settings, _new_key_to_old, _old_key_to_new, _unpickle_app, _unpickle_app_v2, appstr,
+                    bugreport, detect_settings)
+
+if typing.TYPE_CHECKING:  # pragma: no cover  # codecov does not capture this
+    # flake8 marks the BaseModel import as unused, because the actual typehint is quoted.
+    from pydantic import BaseModel  # noqa: F401
 
 __all__ = ('Celery',)
 
@@ -92,6 +97,59 @@ def _after_fork_cleanup_app(app):
         app._after_fork()
     except Exception as exc:  # pylint: disable=broad-except
         logger.info('after forker raised exception: %r', exc, exc_info=1)
+
+
+def pydantic_wrapper(
+    app: "Celery",
+    task_fun: typing.Callable[..., typing.Any],
+    task_name: str,
+    strict: bool = True,
+    context: typing.Optional[typing.Dict[str, typing.Any]] = None,
+    dump_kwargs: typing.Optional[typing.Dict[str, typing.Any]] = None
+):
+    """Wrapper to validate arguments and serialize return values using Pydantic."""
+    try:
+        pydantic = importlib.import_module('pydantic')
+    except ModuleNotFoundError as ex:
+        raise ImproperlyConfigured('You need to install pydantic to use pydantic model serialization.') from ex
+
+    BaseModel: typing.Type['BaseModel'] = pydantic.BaseModel  # noqa: F811  # only defined when type checking
+
+    if context is None:
+        context = {}
+    if dump_kwargs is None:
+        dump_kwargs = {}
+    dump_kwargs.setdefault('mode', 'json')
+
+    task_signature = inspect.signature(task_fun)
+
+    @functools.wraps(task_fun)
+    def wrapper(*task_args, **task_kwargs):
+        # Validate task parameters if type hinted as BaseModel
+        bound_args = task_signature.bind(*task_args, **task_kwargs)
+        for arg_name, arg_value in bound_args.arguments.items():
+            arg_annotation = task_signature.parameters[arg_name].annotation
+            if issubclass(arg_annotation, BaseModel):
+                bound_args.arguments[arg_name] = arg_annotation.model_validate(
+                    arg_value,
+                    strict=strict,
+                    context={**context, 'celery_app': app, 'celery_task_name': task_name},
+                )
+
+        # Call the task with (potentially) converted arguments
+        returned_value = task_fun(*bound_args.args, **bound_args.kwargs)
+
+        # Dump Pydantic model if the returned value is an instance of pydantic.BaseModel *and* its
+        # class matches the typehint
+        if (
+            isinstance(returned_value, BaseModel)
+            and isinstance(returned_value, task_signature.return_annotation)
+        ):
+            return returned_value.model_dump(**dump_kwargs)
+
+        return returned_value
+
+    return wrapper
 
 
 class PendingConfiguration(UserDict, AttributeDictMixin):
@@ -233,6 +291,7 @@ class Celery:
                  **kwargs):
 
         self._local = threading.local()
+        self._backend_cache = None
 
         self.clock = LamportClock()
         self.main = main
@@ -241,6 +300,12 @@ class Celery:
         self.loader_cls = loader or self._get_default_loader()
         self.log_cls = log or self.log_cls
         self.control_cls = control or self.control_cls
+        self._custom_task_cls_used = (
+            # Custom task class provided as argument
+            bool(task_cls)
+            # subclass of Celery with a task_cls attribute
+            or self.__class__ is not Celery and hasattr(self.__class__, 'task_cls')
+        )
         self.task_cls = task_cls or self.task_cls
         self.set_as_current = set_as_current
         self.registry_cls = symbol_by_name(self.registry_cls)
@@ -256,7 +321,7 @@ class Celery:
         self._pending_periodic_tasks = deque()
 
         self.finalized = False
-        self._finalize_mutex = threading.Lock()
+        self._finalize_mutex = threading.RLock()
         self._pending = deque()
         self._tasks = tasks
         if not isinstance(self._tasks, TaskRegistry):
@@ -461,13 +526,30 @@ class Celery:
                     sum([len(args), len(opts)])))
         return inner_create_task_cls(**opts)
 
-    def _task_from_fun(self, fun, name=None, base=None, bind=False, **options):
+    def type_checker(self, fun, bound=False):
+        return staticmethod(head_from_fun(fun, bound=bound))
+
+    def _task_from_fun(
+        self,
+        fun,
+        name=None,
+        base=None,
+        bind=False,
+        pydantic: bool = False,
+        pydantic_strict: bool = True,
+        pydantic_context: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        pydantic_dump_kwargs: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        **options,
+    ):
         if not self.finalized and not self.autofinalize:
             raise RuntimeError('Contract breach: app not finalized')
         name = name or self.gen_task_name(fun.__name__, fun.__module__)
         base = base or self.Task
 
         if name not in self._tasks:
+            if pydantic is True:
+                fun = pydantic_wrapper(self, fun, name, pydantic_strict, pydantic_context, pydantic_dump_kwargs)
+
             run = fun if bind else staticmethod(fun)
             task = type(fun.__name__, (base,), dict({
                 'app': self,
@@ -477,7 +559,7 @@ class Celery:
                 '__doc__': fun.__doc__,
                 '__module__': fun.__module__,
                 '__annotations__': fun.__annotations__,
-                '__header__': staticmethod(head_from_fun(fun, bound=bind)),
+                '__header__': self.type_checker(fun, bound=bind),
                 '__wrapped__': run}, **options))()
             # for some reason __qualname__ cannot be set in type()
             # so we have to set it here.
@@ -607,7 +689,7 @@ class Celery:
             self.loader.cmdline_config_parser(argv, namespace)
         )
 
-    def setup_security(self, allowed_serializers=None, key=None, cert=None,
+    def setup_security(self, allowed_serializers=None, key=None, key_password=None, cert=None,
                        store=None, digest=DEFAULT_SECURITY_DIGEST,
                        serializer='json'):
         """Setup the message-signing serializer.
@@ -623,6 +705,8 @@ class Celery:
                 content_types that should be exempt from being disabled.
             key (str): Name of private key file to use.
                 Defaults to the :setting:`security_key` setting.
+            key_password (bytes): Password to decrypt the private key.
+                Defaults to the :setting:`security_key_password` setting.
             cert (str): Name of certificate file to use.
                 Defaults to the :setting:`security_certificate` setting.
             store (str): Directory containing certificates.
@@ -634,7 +718,7 @@ class Celery:
                 the serializers supported.  Default is ``json``.
         """
         from celery.security import setup_security
-        return setup_security(allowed_serializers, key, cert,
+        return setup_security(allowed_serializers, key, key_password, cert,
                               store, digest, serializer, app=self)
 
     def autodiscover_tasks(self, packages=None,
@@ -709,7 +793,7 @@ class Celery:
                   retries=0, chord=None,
                   reply_to=None, time_limit=None, soft_time_limit=None,
                   root_id=None, parent_id=None, route_name=None,
-                  shadow=None, chain=None, task_type=None, **options):
+                  shadow=None, chain=None, task_type=None, replaced_task_nesting=0, **options):
         """Send task by name.
 
         Supports the same arguments as :meth:`@-Task.apply_async`.
@@ -734,7 +818,11 @@ class Celery:
             options, route_name or name, args, kwargs, task_type)
         if expires is not None:
             if isinstance(expires, datetime):
-                expires_s = (maybe_make_aware(expires) - self.now()).total_seconds()
+                expires_s = (maybe_make_aware(
+                    expires) - self.now()).total_seconds()
+            elif isinstance(expires, str):
+                expires_s = (maybe_make_aware(
+                    isoparse(expires)) - self.now()).total_seconds()
             else:
                 expires_s = expires
 
@@ -766,6 +854,7 @@ class Celery:
                     options.setdefault('priority',
                                        parent.request.delivery_info.get('priority'))
 
+        # alias for 'task_as_v2'
         message = amqp.create_task_message(
             task_id, name, args, kwargs, countdown, eta, group_id, group_index,
             expires, retries, chord,
@@ -774,9 +863,12 @@ class Celery:
             self.conf.task_send_sent_event,
             root_id, parent_id, shadow, chain,
             ignore_result=ignore_result,
-            argsrepr=options.get('argsrepr'),
-            kwargsrepr=options.get('kwargsrepr'),
+            replaced_task_nesting=replaced_task_nesting, **options
         )
+
+        stamped_headers = options.pop('stamped_headers', [])
+        for stamp in stamped_headers:
+            options.pop(stamp)
 
         if connection:
             producer = amqp.Producer(connection, auto_declare=False)
@@ -926,7 +1018,7 @@ class Celery:
 
     def now(self):
         """Return the current time and date as a datetime."""
-        now_in_utc = to_utc(datetime.utcnow())
+        now_in_utc = to_utc(datetime.now(datetime_timezone.utc))
         return now_in_utc.astimezone(self.timezone)
 
     def select_queues(self, queues=None):
@@ -964,7 +1056,14 @@ class Celery:
             This is used by PendingConfiguration:
                 as soon as you access a key the configuration is read.
         """
-        conf = self._conf = self._load_config()
+        try:
+            conf = self._conf = self._load_config()
+        except AttributeError as err:
+            # AttributeError is not propagated, it is "handled" by
+            # PendingConfiguration parent class. This causes
+            # confusing RecursionError.
+            raise ModuleNotFoundError(*err.args) from err
+
         return conf
 
     def _load_config(self):
@@ -996,7 +1095,8 @@ class Celery:
         # load lazy periodic tasks
         pending_beat = self._pending_periodic_tasks
         while pending_beat:
-            self._add_periodic_task(*pending_beat.popleft())
+            periodic_task_args, periodic_task_kwargs = pending_beat.popleft()
+            self._add_periodic_task(*periodic_task_args, **periodic_task_kwargs)
 
         self.on_after_configure.send(sender=self, source=self._conf)
         return self._conf
@@ -1016,12 +1116,19 @@ class Celery:
 
     def add_periodic_task(self, schedule, sig,
                           args=(), kwargs=(), name=None, **opts):
+        """
+        Add a periodic task to beat schedule.
+
+        Celery beat store tasks based on `sig` or `name` if provided. Adding the
+        same signature twice make the second task override the first one. To
+        avoid the override, use distinct `name` for them.
+        """
         key, entry = self._sig_to_periodic_task_entry(
             schedule, sig, args, kwargs, name, **opts)
         if self.configured:
-            self._add_periodic_task(key, entry)
+            self._add_periodic_task(key, entry, name=name)
         else:
-            self._pending_periodic_tasks.append((key, entry))
+            self._pending_periodic_tasks.append([(key, entry), {"name": name}])
         return key
 
     def _sig_to_periodic_task_entry(self, schedule, sig,
@@ -1038,7 +1145,13 @@ class Celery:
             'options': dict(sig.options, **opts),
         }
 
-    def _add_periodic_task(self, key, entry):
+    def _add_periodic_task(self, key, entry, name=None):
+        if name is None and key in self._conf.beat_schedule:
+            logger.warning(
+                f"Periodic task key='{key}' shadowed a previous unnamed periodic task."
+                " Pass a name kwarg to add_periodic_task to silence this warning."
+            )
+
         self._conf.beat_schedule[key] = entry
 
     def create_task_cls(self):
@@ -1244,13 +1357,30 @@ class Celery:
         return instantiate(self.amqp_cls, app=self)
 
     @property
+    def _backend(self):
+        """A reference to the backend object
+
+        Uses self._backend_cache if it is thread safe.
+        Otherwise, use self._local
+        """
+        if self._backend_cache is not None:
+            return self._backend_cache
+        return getattr(self._local, "backend", None)
+
+    @_backend.setter
+    def _backend(self, backend):
+        """Set the backend object on the app"""
+        if backend.thread_safe:
+            self._backend_cache = backend
+        else:
+            self._local.backend = backend
+
+    @property
     def backend(self):
         """Current backend instance."""
-        try:
-            return self._local.backend
-        except AttributeError:
-            self._local.backend = new_backend = self._get_backend()
-            return new_backend
+        if self._backend is None:
+            self._backend = self._get_backend()
+        return self._backend
 
     @property
     def conf(self):

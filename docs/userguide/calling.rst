@@ -167,6 +167,9 @@ The callbacks/errbacks will then be called in order, and all
 callbacks will be called with the return value of the parent task
 as a partial argument.
 
+In the case of a chord, we can handle errors using multiple handling strategies.
+See :ref:`chord error handling <chord-errors>` for more information.
+
 .. _calling-on-message:
 
 On message
@@ -231,7 +234,7 @@ a shortcut to set ETA by seconds into the future.
 
     >>> result = add.apply_async((2, 2), countdown=3)
     >>> result.get()    # this takes at least 3 seconds to return
-    20
+    4
 
 The task is guaranteed to be executed at some time *after* the
 specified date and time, but not necessarily at that exact time.
@@ -247,10 +250,28 @@ and timezone information):
 
 .. code-block:: pycon
 
-    >>> from datetime import datetime, timedelta
+    >>> from datetime import datetime, timedelta, timezone
 
-    >>> tomorrow = datetime.utcnow() + timedelta(days=1)
+    >>> tomorrow = datetime.now(timezone.utc) + timedelta(days=1)
     >>> add.apply_async((2, 2), eta=tomorrow)
+
+.. warning::
+
+    Tasks with `eta` or `countdown` are immediately fetched by the worker
+    and until the scheduled time passes, they reside in the worker's memory.
+    When using those options to schedule lots of tasks for a distant future,
+    those tasks may accumulate in the worker and make a significant impact on
+    the RAM usage.
+
+    Moreover, tasks are not acknowledged until the worker starts executing
+    them. If using Redis as a broker, task will get redelivered when `countdown`
+    exceeds `visibility_timeout` (see :ref:`redis-caveats`).
+
+    Therefore, using `eta` and `countdown` **is not recommended** for
+    scheduling tasks for a distant future. Ideally, use values no longer
+    than several minutes. For longer durations, consider using
+    database-backed periodic tasks, e.g. with :pypi:`django-celery-beat` if
+    using Django (see :ref:`beat-custom-schedulers`).
 
 .. warning::
 
@@ -292,9 +313,9 @@ either as seconds after task publish, or a specific date and time using
     >>> add.apply_async((10, 10), expires=60)
 
     >>> # Also supports datetime
-    >>> from datetime import datetime, timedelta
+    >>> from datetime import datetime, timedelta, timezone
     >>> add.apply_async((10, 10), kwargs,
-    ...                 expires=datetime.now() + timedelta(days=1)
+    ...                 expires=datetime.now(timezone.utc) + timedelta(days=1))
 
 
 When a worker receives an expired task it will mark
@@ -353,6 +374,25 @@ and can contain the following keys:
     Maximum number of seconds (float or integer) to wait between
     retries. Default is 0.2.
 
+- `retry_errors`
+
+    `retry_errors` is a tuple of exception classes that should be retried.
+    It will be ignored if not specified. Default is None (ignored).
+
+    For example, if you want to retry only tasks that were timed out, you can use
+    :exc:`~kombu.exceptions.TimeoutError`:
+
+    .. code-block:: python
+
+        from kombu.exceptions import TimeoutError
+
+        add.apply_async((2, 2), retry=True, retry_policy={
+            'max_retries': 3,
+            'retry_errors': (TimeoutError, ),
+        })
+
+    .. versionadded:: 5.3
+
 For example, the default policy correlates to:
 
 .. code-block:: python
@@ -362,6 +402,7 @@ For example, the default policy correlates to:
         'interval_start': 0,
         'interval_step': 0.2,
         'interval_max': 0.2,
+        'retry_errors': None,
     })
 
 the maximum time spent retrying will be 0.4 seconds. It's set relatively
@@ -450,8 +491,7 @@ them into the Kombu serializer registry
 Each option has its advantages and disadvantages.
 
 json -- JSON is supported in many programming languages, is now
-    a standard part of Python (since 2.6), and is fairly fast to decode
-    using the modern Python libraries, such as :pypi:`simplejson`.
+    a standard part of Python (since 2.6), and is fairly fast to decode.
 
     The primary disadvantage to JSON is that it limits you to the following
     data types: strings, Unicode, floats, Boolean, dictionaries, and lists.
@@ -495,17 +535,29 @@ yaml -- YAML has many of the same characteristics as json,
     If you need a more expressive set of data types and need to maintain
     cross-language compatibility, then YAML may be a better fit than the above.
 
+    To use it, install Celery with:
+
+    .. code-block:: console
+
+      $ pip install celery[yaml]
+
     See http://yaml.org/ for more information.
 
 msgpack -- msgpack is a binary serialization format that's closer to JSON
-    in features. It's very young however, and support should be considered
-    experimental at this point.
+    in features. The format compresses better, so is a faster to parse and
+    encode compared to JSON.
+
+    To use it, install Celery with:
+
+    .. code-block:: console
+
+      $ pip install celery[msgpack]
 
     See http://msgpack.org/ for more information.
 
-The encoding used is available as a message header, so the worker knows how to
-deserialize any task. If you use a custom serializer, this serializer must
-be available for the worker.
+To use a custom serializer you need to add the content type to
+:setting:`accept_content`. By default, only JSON is accepted,
+and tasks containing other content headers are rejected.
 
 The following order is used to decide the serializer
 used when sending a task:
@@ -673,13 +725,13 @@ publisher:
 
 .. code-block:: python
 
-
+    numbers = [(2, 2), (4, 4), (8, 8), (16, 16)]
     results = []
     with add.app.pool.acquire(block=True) as connection:
         with add.get_publisher(connection) as publisher:
             try:
-                for args in numbers:
-                    res = add.apply_async((2, 2), publisher=publisher)
+                for i, j in numbers:
+                    res = add.apply_async((i, j), publisher=publisher)
                     results.append(res)
     print([res.get() for res in results])
 

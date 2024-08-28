@@ -3,8 +3,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from celery.fixups.django import (DjangoFixup, DjangoWorkerFixup,
-                                  FixupWarning, _maybe_close_fd, fixup)
+from celery.fixups.django import DjangoFixup, DjangoWorkerFixup, FixupWarning, _maybe_close_fd, fixup
 from t.unit import conftest
 
 
@@ -88,7 +87,12 @@ class test_DjangoFixup(FixupCase):
         with self.fixup_context(self.app) as (f, importmod, sym):
             assert f
 
-    def test_install(self, patching):
+    @pytest.mark.patched_module(
+        'django',
+        'django.db',
+        'django.db.transaction',
+    )
+    def test_install(self, patching, module):
         self.app.loader = Mock()
         self.cw = patching('os.getcwd')
         self.p = patching('sys.path')
@@ -98,7 +102,43 @@ class test_DjangoFixup(FixupCase):
             f.install()
             self.sigs.worker_init.connect.assert_called_with(f.on_worker_init)
             assert self.app.loader.now == f.now
+
+            # Specialized DjangoTask class is used
+            assert self.app.task_cls == 'celery.contrib.django.task:DjangoTask'
+            from celery.contrib.django.task import DjangoTask
+            assert issubclass(f.app.Task, DjangoTask)
+            assert hasattr(f.app.Task, 'delay_on_commit')
+            assert hasattr(f.app.Task, 'apply_async_on_commit')
+
             self.p.insert.assert_called_with(0, '/opt/vandelay')
+
+    def test_install_custom_user_task(self, patching):
+        patching('celery.fixups.django.signals')
+
+        self.app.task_cls = 'myapp.celery.tasks:Task'
+        self.app._custom_task_cls_used = True
+
+        with self.fixup_context(self.app) as (f, _, _):
+            f.install()
+            # Specialized DjangoTask class is NOT used,
+            # The one from the user's class is
+            assert self.app.task_cls == 'myapp.celery.tasks:Task'
+
+    def test_install_custom_user_task_as_class_attribute(self, patching):
+        patching('celery.fixups.django.signals')
+
+        from celery.app import Celery
+
+        class MyCeleryApp(Celery):
+            task_cls = 'myapp.celery.tasks:Task'
+
+        app = MyCeleryApp('mytestapp')
+
+        with self.fixup_context(app) as (f, _, _):
+            f.install()
+            # Specialized DjangoTask class is NOT used,
+            # The one from the user's class is
+            assert app.task_cls == 'myapp.celery.tasks:Task'
 
     def test_now(self):
         with self.fixup_context(self.app) as (f, _, _):
@@ -132,7 +172,6 @@ class test_DjangoWorkerFixup(FixupCase):
                 sigs.beat_embedded_init.connect.assert_called_with(
                     f.close_database,
                 )
-                sigs.worker_ready.connect.assert_called_with(f.on_worker_ready)
                 sigs.task_prerun.connect.assert_called_with(f.on_task_prerun)
                 sigs.task_postrun.connect.assert_called_with(f.on_task_postrun)
                 sigs.worker_process_init.connect.assert_called_with(
@@ -257,14 +296,6 @@ class test_DjangoWorkerFixup(FixupCase):
             f.close_cache()
             f._cache.close_caches.assert_called_with()
 
-    def test_on_worker_ready(self):
-        with self.fixup_context(self.app) as (f, _, _):
-            f._settings.DEBUG = False
-            f.on_worker_ready()
-            with pytest.warns(UserWarning):
-                f._settings.DEBUG = True
-                f.on_worker_ready()
-
     @pytest.mark.patched_module('django', 'django.db', 'django.core',
                                 'django.core.cache', 'django.conf',
                                 'django.db.utils')
@@ -273,9 +304,19 @@ class test_DjangoWorkerFixup(FixupCase):
         f.django_setup = Mock(name='django.setup')
         patching.modules('django.core.checks')
         from django.core.checks import run_checks
+
         f.validate_models()
         f.django_setup.assert_called_with()
         run_checks.assert_called_with()
+
+        # test --skip-checks flag
+        f.django_setup.reset_mock()
+        run_checks.reset_mock()
+
+        patching.setenv('CELERY_SKIP_CHECKS', 'true')
+        f.validate_models()
+        f.django_setup.assert_called_with()
+        run_checks.assert_not_called()
 
     def test_django_setup(self, patching):
         patching('celery.fixups.django.symbol_by_name')

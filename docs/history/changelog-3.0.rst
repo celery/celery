@@ -822,7 +822,7 @@ If you're looking for versions prior to 3.0.x you should go to :ref:`history`.
 
 - Development documentation has moved to Read The Docs.
 
-    The new URL is: http://docs.celeryproject.org/en/master
+    The new URL is: https://docs.celeryq.dev/en/master
 
 - New :setting:`CELERY_QUEUE_HA_POLICY` setting used to set the default
   HA policy for queues when using RabbitMQ.

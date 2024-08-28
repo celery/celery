@@ -1,13 +1,14 @@
 import json
+import math
+from collections.abc import Iterable
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
-import pytest_subtests  # noqa: F401
+import pytest_subtests  # noqa
 
 from celery._state import _task_stack
-from celery.canvas import (Signature, _chain, _maybe_group, chain, chord,
-                           chunks, group, maybe_signature, maybe_unroll_group,
-                           signature, xmap, xstarmap)
+from celery.canvas import (Signature, _chain, _maybe_group, _merge_dictionaries, chain, chord, chunks, group,
+                           maybe_signature, maybe_unroll_group, signature, xmap, xstarmap)
 from celery.result import AsyncResult, EagerResult, GroupResult
 
 SIG = Signature({
@@ -17,6 +18,11 @@ SIG = Signature({
     'options': {'task_id': 'TASK_ID'},
     'subtask_type': ''},
 )
+
+
+def return_True(*args, **kwargs):
+    # Task run functions can't be closures/lambdas, as they're pickled.
+    return True
 
 
 class test_maybe_unroll_group:
@@ -33,25 +39,99 @@ class test_maybe_unroll_group:
 
 class CanvasCase:
 
-    def setup(self):
+    def setup_method(self):
         @self.app.task(shared=False)
         def add(x, y):
             return x + y
+
         self.add = add
 
         @self.app.task(shared=False)
         def mul(x, y):
             return x * y
+
         self.mul = mul
 
         @self.app.task(shared=False)
         def div(x, y):
             return x / y
+
         self.div = div
+
+        @self.app.task(shared=False)
+        def xsum(numbers):
+            return sum(sum(num) if isinstance(num, Iterable) else num for num in numbers)
+
+        self.xsum = xsum
+
+        @self.app.task(shared=False, bind=True)
+        def replaced(self, x, y):
+            return self.replace(add.si(x, y))
+
+        self.replaced = replaced
+
+        @self.app.task(shared=False, bind=True)
+        def replaced_group(self, x, y):
+            return self.replace(group(add.si(x, y), mul.si(x, y)))
+
+        self.replaced_group = replaced_group
+
+        @self.app.task(shared=False, bind=True)
+        def replace_with_group(self, x, y):
+            return self.replace(group(add.si(x, y), mul.si(x, y)))
+
+        self.replace_with_group = replace_with_group
+
+        @self.app.task(shared=False, bind=True)
+        def replace_with_chain(self, x, y):
+            return self.replace(group(add.si(x, y) | mul.s(y), add.si(x, y)))
+
+        self.replace_with_chain = replace_with_chain
+
+        @self.app.task(shared=False)
+        def xprod(numbers):
+            try:
+                return math.prod(numbers)
+            except AttributeError:
+                #  TODO: Drop this backport once
+                #        we drop support for Python 3.7
+                import operator
+                from functools import reduce
+
+                return reduce(operator.mul, numbers)
+
+        self.xprod = xprod
+
+
+@Signature.register_type()
+class chord_subclass(chord):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.subtask_type = "chord_subclass"
+
+
+@Signature.register_type()
+class group_subclass(group):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.subtask_type = "group_subclass"
+
+
+@Signature.register_type()
+class chain_subclass(chain):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.subtask_type = "chain_subclass"
+
+
+@Signature.register_type()
+class chunks_subclass(chunks):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.subtask_type = "chunks_subclass"
 
 
 class test_Signature(CanvasCase):
-
     def test_getitem_property_class(self):
         assert Signature.task
         assert Signature.args
@@ -125,7 +205,7 @@ class test_Signature(CanvasCase):
         tasks[1].link(tasks[2])
         assert tasks[0].flatten_links() == tasks
 
-    def test_OR(self):
+    def test_OR(self, subtests):
         x = self.add.s(2, 2) | self.mul.s(4)
         assert isinstance(x, _chain)
         y = self.add.s(4, 4) | self.div.s(2)
@@ -138,6 +218,10 @@ class test_Signature(CanvasCase):
         ax = self.add.s(2, 2) | (self.add.s(4) | self.add.s(8))
         assert isinstance(ax, _chain)
         assert len(ax.tasks), 3 == 'consolidates chain to chain'
+
+        with subtests.test('Test chaining with a non-signature object'):
+            with pytest.raises(TypeError):
+                assert signature('foo') | None
 
     def test_INVERT(self):
         x = self.add.s(2, 2)
@@ -248,6 +332,32 @@ class test_Signature(CanvasCase):
         assert SIG in x.options['link_error']
         assert not x.tasks[0].options.get('link_error')
 
+    def test_signature_on_error_adds_error_callback(self):
+        sig = signature('sig').on_error(signature('on_error'))
+        assert sig.options['link_error'] == [signature('on_error')]
+
+    @pytest.mark.parametrize('_id, group_id, chord, root_id, parent_id, group_index', [
+        ('_id', 'group_id', 'chord', 'root_id', 'parent_id', 1),
+    ])
+    def test_freezing_args_set_in_options(self, _id, group_id, chord, root_id, parent_id, group_index):
+        sig = self.add.s(1, 1)
+        sig.freeze(
+            _id=_id,
+            group_id=group_id,
+            chord=chord,
+            root_id=root_id,
+            parent_id=parent_id,
+            group_index=group_index,
+        )
+        options = sig.options
+
+        assert options['task_id'] == _id
+        assert options['group_id'] == group_id
+        assert options['chord'] == chord
+        assert options['root_id'] == root_id
+        assert options['parent_id'] == parent_id
+        assert options['group_index'] == group_index
+
 
 class test_xmap_xstarmap(CanvasCase):
 
@@ -268,6 +378,13 @@ class test_xmap_xstarmap(CanvasCase):
 
 
 class test_chunks(CanvasCase):
+
+    def test_chunks_preserves_state(self):
+        x = self.add.chunks(range(100), 10)
+        d = dict(x)
+        d['subtask_type'] = "chunks_subclass"
+        isinstance(chunks_subclass.from_dict(d), chunks_subclass)
+        isinstance(chunks_subclass.from_dict(d).clone(), chunks_subclass)
 
     def test_chunks(self):
         x = self.add.chunks(range(100), 10)
@@ -295,11 +412,13 @@ class test_chain(CanvasCase):
         s = self.add.s(1, 1)
         assert chain([chain(s)]).tasks == list(chain(s).tasks)
 
-    def test_clone_preserves_state(self):
-        x = chain(self.add.s(i, i) for i in range(10))
+    @pytest.mark.parametrize("chain_type", (_chain, chain_subclass))
+    def test_clone_preserves_state(self, chain_type):
+        x = chain_type(self.add.s(i, i) for i in range(10))
         assert x.clone().tasks == x.tasks
         assert x.clone().kwargs == x.kwargs
         assert x.clone().args == x.args
+        assert isinstance(x.clone(), chain_type)
 
     def test_repr(self):
         x = self.add.s(2, 2) | self.add.s(2)
@@ -312,24 +431,30 @@ class test_chain(CanvasCase):
         assert result.parent.parent
         assert result.parent.parent.parent is None
 
-    def test_splices_chains(self):
-        c = chain(
+    @pytest.mark.parametrize("chain_type", (_chain, chain_subclass))
+    def test_splices_chains(self, chain_type):
+        c = chain_type(
             self.add.s(5, 5),
-            chain(self.add.s(6), self.add.s(7), self.add.s(8), app=self.app),
+            chain_type(self.add.s(6), self.add.s(7), self.add.s(8), app=self.app),
             app=self.app,
         )
         c.freeze()
         tasks, _ = c._frozen
         assert len(tasks) == 4
+        assert isinstance(c, chain_type)
 
-    def test_from_dict_no_tasks(self):
-        assert chain.from_dict(dict(chain(app=self.app)), app=self.app)
+    @pytest.mark.parametrize("chain_type", [_chain, chain_subclass])
+    def test_from_dict_no_tasks(self, chain_type):
+        assert chain_type.from_dict(dict(chain_type(app=self.app)), app=self.app)
+        assert isinstance(chain_type.from_dict(dict(chain_type(app=self.app)), app=self.app), chain_type)
 
-    def test_from_dict_full_subtasks(self):
-        c = chain(self.add.si(1, 2), self.add.si(3, 4), self.add.si(5, 6))
+    @pytest.mark.parametrize("chain_type", [_chain, chain_subclass])
+    def test_from_dict_full_subtasks(self, chain_type):
+        c = chain_type(self.add.si(1, 2), self.add.si(3, 4), self.add.si(5, 6))
         serialized = json.loads(json.dumps(c))
-        deserialized = chain.from_dict(serialized)
+        deserialized = chain_type.from_dict(serialized)
         assert all(isinstance(task, Signature) for task in deserialized.tasks)
+        assert isinstance(deserialized, chain_type)
 
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_app_falls_back_to_default(self):
@@ -350,6 +475,13 @@ class test_chain(CanvasCase):
         g2 = group([self.add.s(3, 3), self.add.s(5, 5)])
         c = g1 | g2
         assert isinstance(c, chord)
+
+    def test_prepare_steps_set_last_task_id_to_chain(self):
+        last_task = self.add.s(2).set(task_id='42')
+        c = self.add.s(4) | last_task
+        assert c.id is None
+        tasks, _ = c.prepare_steps((), {}, c.tasks, last_task_id=last_task.id)
+        assert c.id == last_task.id
 
     def test_group_to_chord(self):
         c = (
@@ -422,6 +554,52 @@ class test_chain(CanvasCase):
             ['x0y0', 'x1y1', 'foo', 'y'],
             ['x0y0', 'x1y1', 'foo', 'z']
         ]
+
+    def test_chain_of_chord__or__group_of_single_task(self):
+        c = chord([signature('header')], signature('body'))
+        c = chain(c)
+        g = group(signature('t'))
+        new_chain = c | g  # g should be chained with the body of c[0]
+        assert isinstance(new_chain, _chain)
+        assert isinstance(new_chain.tasks[0].body, _chain)
+
+    def test_chain_of_chord_upgrade_on_chaining(self):
+        c = chord([signature('header')], group(signature('body')))
+        c = chain(c)
+        t = signature('t')
+        new_chain = c | t  # t should be chained with the body of c[0] and create a new chord
+        assert isinstance(new_chain, _chain)
+        assert isinstance(new_chain.tasks[0].body, chord)
+
+    @pytest.mark.parametrize(
+        "group_last_task",
+        [False, True],
+    )
+    def test_chain_of_chord_upgrade_on_chaining__protocol_2(
+            self, group_last_task):
+        c = chain(
+            group([self.add.s(i, i) for i in range(5)], app=self.app),
+            group([self.add.s(i, i) for i in range(10, 15)], app=self.app),
+            group([self.add.s(i, i) for i in range(20, 25)], app=self.app),
+            self.add.s(30) if not group_last_task else group(self.add.s(30),
+                                                             app=self.app))
+        assert isinstance(c, _chain)
+        assert len(
+            c.tasks
+        ) == 1, "Consecutive chords should be further upgraded to a single chord."
+        assert isinstance(c.tasks[0], chord)
+
+    def test_chain_of_chord_upgrade_on_chaining__protocol_3(self):
+        c = chain(
+            chain([self.add.s(i, i) for i in range(5)]),
+            group([self.add.s(i, i) for i in range(10, 15)], app=self.app),
+            chord([signature('header')], signature('body'), app=self.app),
+            group([self.add.s(i, i) for i in range(20, 25)], app=self.app))
+        assert isinstance(c, _chain)
+        assert isinstance(
+            c.tasks[-1], chord
+        ), "Chord followed by a group should be upgraded to a single chord with chained body."
+        assert len(c.tasks) == 6
 
     def test_apply_options(self):
 
@@ -617,17 +795,65 @@ class test_chain(CanvasCase):
         mock_apply.assert_called_once_with(chain=[])
         assert res is mock_apply.return_value
 
+    def test_chain_flattening_keep_links_of_inner_chain(self):
+        def link_chain(sig):
+            sig.link(signature('link_b'))
+            sig.link_error(signature('link_ab'))
+            return sig
+
+        inner_chain = link_chain(chain(signature('a'), signature('b')))
+        assert inner_chain.options['link'][0] == signature('link_b')
+        assert inner_chain.options['link_error'][0] == signature('link_ab')
+        assert inner_chain.tasks[0] == signature('a')
+        assert inner_chain.tasks[0].options == {}
+        assert inner_chain.tasks[1] == signature('b')
+        assert inner_chain.tasks[1].options == {}
+
+        flat_chain = chain(inner_chain, signature('c'))
+        assert flat_chain.options == {}
+        assert flat_chain.tasks[0].name == 'a'
+        assert 'link' not in flat_chain.tasks[0].options
+        assert signature(flat_chain.tasks[0].options['link_error'][0]) == signature('link_ab')
+        assert flat_chain.tasks[1].name == 'b'
+        assert 'link' in flat_chain.tasks[1].options, "b is missing the link from inner_chain.options['link'][0]"
+        assert signature(flat_chain.tasks[1].options['link'][0]) == signature('link_b')
+        assert signature(flat_chain.tasks[1].options['link_error'][0]) == signature('link_ab')
+
+    def test_group_in_center_of_chain(self):
+        t1 = chain(self.add.si(1, 1), group(self.add.si(1, 1), self.add.si(1, 1)),
+                   self.add.si(1, 1) | self.add.si(1, 1))
+        t2 = chord([self.add.si(1, 1), self.add.si(1, 1)], t1)
+        t2.freeze()  # should not raise
+
+    def test_upgrade_to_chord_on_chain(self):
+        group1 = group(self.add.si(10, 10), self.add.si(10, 10))
+        group2 = group(self.xsum.s(), self.xsum.s())
+        chord1 = group1 | group2
+        chain1 = (self.xsum.si([5]) | self.add.s(1))
+        final_task = chain(chord1, chain1)
+        assert len(final_task.tasks) == 1 and isinstance(final_task.tasks[0], chord)
+        assert isinstance(final_task.tasks[0].body, chord)
+        assert final_task.tasks[0].body.body == chain1
+
 
 class test_group(CanvasCase):
-
     def test_repr(self):
         x = group([self.add.s(2, 2), self.add.s(4, 4)])
         assert repr(x)
+
+    def test_repr_empty_group(self):
+        x = group([])
+        assert repr(x) == 'group(<empty>)'
 
     def test_reverse(self):
         x = group([self.add.s(2, 2), self.add.s(4, 4)])
         assert isinstance(signature(x), group)
         assert isinstance(signature(dict(x)), group)
+
+    def test_reverse_with_subclass(self):
+        x = group_subclass([self.add.s(2, 2), self.add.s(4, 4)])
+        assert isinstance(signature(x), group_subclass)
+        assert isinstance(signature(dict(x)), group_subclass)
 
     def test_cannot_link_on_group(self):
         x = group([self.add.s(2, 2), self.add.s(4, 4)])
@@ -687,7 +913,17 @@ class test_group(CanvasCase):
         # We expect that all group children will be given the errback to ensure
         # it gets called
         for child_sig in g1.tasks:
-            child_sig.link_error.assert_called_with(sig)
+            child_sig.link_error.assert_called_with(sig.clone(immutable=True))
+
+    def test_link_error_with_dict_sig(self):
+        g1 = group(Mock(name='t1'), Mock(name='t2'), app=self.app)
+        errback = signature('tcb')
+        errback_dict = dict(errback)
+        g1.link_error(errback_dict)
+        # We expect that all group children will be given the errback to ensure
+        # it gets called
+        for child_sig in g1.tasks:
+            child_sig.link_error.assert_called_with(errback.clone(immutable=True))
 
     def test_apply_empty(self):
         x = group(app=self.app)
@@ -712,29 +948,36 @@ class test_group(CanvasCase):
         finally:
             _task_stack.pop()
 
-    def test_from_dict(self):
-        x = group([self.add.s(2, 2), self.add.s(4, 4)])
+    @pytest.mark.parametrize("group_type", (group, group_subclass))
+    def test_from_dict(self, group_type):
+        x = group_type([self.add.s(2, 2), self.add.s(4, 4)])
         x['args'] = (2, 2)
-        assert group.from_dict(dict(x))
+        value = group_type.from_dict(dict(x))
+        assert value and isinstance(value, group_type)
         x['args'] = None
-        assert group.from_dict(dict(x))
+        value = group_type.from_dict(dict(x))
+        assert value and isinstance(value, group_type)
 
-    def test_from_dict_deep_deserialize(self):
-        original_group = group([self.add.s(1, 2)] * 42)
+    @pytest.mark.parametrize("group_type", (group, group_subclass))
+    def test_from_dict_deep_deserialize(self, group_type):
+        original_group = group_type([self.add.s(1, 2)] * 42)
         serialized_group = json.loads(json.dumps(original_group))
-        deserialized_group = group.from_dict(serialized_group)
+        deserialized_group = group_type.from_dict(serialized_group)
+        assert isinstance(deserialized_group, group_type)
         assert all(
             isinstance(child_task, Signature)
             for child_task in deserialized_group.tasks
         )
 
-    def test_from_dict_deeper_deserialize(self):
-        inner_group = group([self.add.s(1, 2)] * 42)
-        outer_group = group([inner_group] * 42)
+    @pytest.mark.parametrize("group_type", (group, group_subclass))
+    def test_from_dict_deeper_deserialize(self, group_type):
+        inner_group = group_type([self.add.s(1, 2)] * 42)
+        outer_group = group_type([inner_group] * 42)
         serialized_group = json.loads(json.dumps(outer_group))
-        deserialized_group = group.from_dict(serialized_group)
+        deserialized_group = group_type.from_dict(serialized_group)
+        assert isinstance(deserialized_group, group_type)
         assert all(
-            isinstance(child_task, Signature)
+            isinstance(child_task, group_type)
             for child_task in deserialized_group.tasks
         )
         assert all(
@@ -832,9 +1075,9 @@ class test_group(CanvasCase):
     def test_apply_contains_chord(self):
         gchild_count = 42
         gchild_sig = self.add.si(0, 0)
-        gchild_sigs = (gchild_sig, ) * gchild_count
+        gchild_sigs = (gchild_sig,) * gchild_count
         child_chord = chord(gchild_sigs, gchild_sig)
-        group_sig = group((child_chord, ))
+        group_sig = group((child_chord,))
         with patch.object(
             self.app.backend, "set_chord_size",
         ) as mock_set_chord_size, patch(
@@ -852,10 +1095,10 @@ class test_group(CanvasCase):
     def test_apply_contains_chords_containing_chain(self):
         ggchild_count = 42
         ggchild_sig = self.add.si(0, 0)
-        gchild_sig = chain((ggchild_sig, ) * ggchild_count)
+        gchild_sig = chain((ggchild_sig,) * ggchild_count)
         child_count = 24
-        child_chord = chord((gchild_sig, ), ggchild_sig)
-        group_sig = group((child_chord, ) * child_count)
+        child_chord = chord((gchild_sig,), ggchild_sig)
+        group_sig = group((child_chord,) * child_count)
         with patch.object(
             self.app.backend, "set_chord_size",
         ) as mock_set_chord_size, patch(
@@ -868,14 +1111,14 @@ class test_group(CanvasCase):
         assert len(res_obj.children) == child_count
         # We must have set the chord sizes based on the number of tail tasks of
         # the encapsulated chains - in this case 1 for each child chord
-        mock_set_chord_size.assert_has_calls((call(ANY, 1), ) * child_count)
+        mock_set_chord_size.assert_has_calls((call(ANY, 1),) * child_count)
 
     @pytest.mark.xfail(reason="Invalid canvas setup with bad exception")
     def test_apply_contains_chords_containing_empty_chain(self):
         gchild_sig = chain(tuple())
         child_count = 24
-        child_chord = chord((gchild_sig, ), self.add.si(0, 0))
-        group_sig = group((child_chord, ) * child_count)
+        child_chord = chord((gchild_sig,), self.add.si(0, 0))
+        group_sig = group((child_chord,) * child_count)
         # This is an invalid setup because we can't complete a chord header if
         # there are no actual tasks which will run in it. However, the current
         # behaviour of an `IndexError` isn't particularly helpful to a user.
@@ -886,11 +1129,11 @@ class test_group(CanvasCase):
         ggchild_sig = self.add.si(0, 0)
         tail_count = 24
         gchild_sig = chain(
-            (ggchild_sig, ) * ggchild_count +
-            (group((ggchild_sig, ) * tail_count), group(tuple()), ),
+            (ggchild_sig,) * ggchild_count +
+            (group((ggchild_sig,) * tail_count), group(tuple()),),
         )
-        child_chord = chord((gchild_sig, ), ggchild_sig)
-        group_sig = group((child_chord, ))
+        child_chord = chord((gchild_sig,), ggchild_sig)
+        group_sig = group((child_chord,))
         with patch.object(
             self.app.backend, "set_chord_size",
         ) as mock_set_chord_size, patch(
@@ -909,10 +1152,10 @@ class test_group(CanvasCase):
     def test_apply_contains_chords_containing_group(self):
         ggchild_count = 42
         ggchild_sig = self.add.si(0, 0)
-        gchild_sig = group((ggchild_sig, ) * ggchild_count)
+        gchild_sig = group((ggchild_sig,) * ggchild_count)
         child_count = 24
-        child_chord = chord((gchild_sig, ), ggchild_sig)
-        group_sig = group((child_chord, ) * child_count)
+        child_chord = chord((gchild_sig,), ggchild_sig)
+        group_sig = group((child_chord,) * child_count)
         with patch.object(
             self.app.backend, "set_chord_size",
         ) as mock_set_chord_size, patch(
@@ -926,15 +1169,15 @@ class test_group(CanvasCase):
         # We must have set the chord sizes based on the number of tail tasks of
         # the encapsulated groups - in this case `ggchild_count`
         mock_set_chord_size.assert_has_calls(
-            (call(ANY, ggchild_count), ) * child_count,
+            (call(ANY, ggchild_count),) * child_count,
         )
 
     @pytest.mark.xfail(reason="Invalid canvas setup but poor behaviour")
     def test_apply_contains_chords_containing_empty_group(self):
         gchild_sig = group(tuple())
         child_count = 24
-        child_chord = chord((gchild_sig, ), self.add.si(0, 0))
-        group_sig = group((child_chord, ) * child_count)
+        child_chord = chord((gchild_sig,), self.add.si(0, 0))
+        group_sig = group((child_chord,) * child_count)
         with patch.object(
             self.app.backend, "set_chord_size",
         ) as mock_set_chord_size, patch(
@@ -949,15 +1192,15 @@ class test_group(CanvasCase):
         # chain test, this is an invalid setup. However, we should probably
         # expect that the chords are dealt with in some other way the probably
         # being left incomplete forever...
-        mock_set_chord_size.assert_has_calls((call(ANY, 0), ) * child_count)
+        mock_set_chord_size.assert_has_calls((call(ANY, 0),) * child_count)
 
     def test_apply_contains_chords_containing_chord(self):
         ggchild_count = 42
         ggchild_sig = self.add.si(0, 0)
-        gchild_sig = chord((ggchild_sig, ) * ggchild_count, ggchild_sig)
+        gchild_sig = chord((ggchild_sig,) * ggchild_count, ggchild_sig)
         child_count = 24
-        child_chord = chord((gchild_sig, ), ggchild_sig)
-        group_sig = group((child_chord, ) * child_count)
+        child_chord = chord((gchild_sig,), ggchild_sig)
+        group_sig = group((child_chord,) * child_count)
         with patch.object(
             self.app.backend, "set_chord_size",
         ) as mock_set_chord_size, patch(
@@ -973,14 +1216,14 @@ class test_group(CanvasCase):
         # child chord. This means we have `child_count` interleaved calls to
         # set chord sizes of 1 and `ggchild_count`.
         mock_set_chord_size.assert_has_calls(
-            (call(ANY, 1), call(ANY, ggchild_count), ) * child_count,
+            (call(ANY, 1), call(ANY, ggchild_count),) * child_count,
         )
 
     def test_apply_contains_chords_containing_empty_chord(self):
         gchild_sig = chord(tuple(), self.add.si(0, 0))
         child_count = 24
-        child_chord = chord((gchild_sig, ), self.add.si(0, 0))
-        group_sig = group((child_chord, ) * child_count)
+        child_chord = chord((gchild_sig,), self.add.si(0, 0))
+        group_sig = group((child_chord,) * child_count)
         with patch.object(
             self.app.backend, "set_chord_size",
         ) as mock_set_chord_size, patch(
@@ -993,11 +1236,23 @@ class test_group(CanvasCase):
         assert len(res_obj.children) == child_count
         # We must have set the chord sizes based on the number of tail tasks of
         # the encapsulated chains - in this case 1 for each child chord
-        mock_set_chord_size.assert_has_calls((call(ANY, 1), ) * child_count)
+        mock_set_chord_size.assert_has_calls((call(ANY, 1),) * child_count)
+
+    def test_group_prepared(self):
+        # Using both partial and dict based signatures
+        sig = group(dict(self.add.s(0)), self.add.s(0))
+        _, group_id, root_id = sig._freeze_gid({})
+        tasks = sig._prepared(sig.tasks, [42], group_id, root_id, self.app)
+
+        for task, result, group_id in tasks:
+            assert isinstance(task, Signature)
+            assert task.args[0] == 42
+            assert task.args[1] == 0
+            assert isinstance(result, AsyncResult)
+            assert group_id is not None
 
 
 class test_chord(CanvasCase):
-
     def test__get_app_does_not_exhaust_generator(self):
         def build_generator():
             yield self.add.s(1, 1)
@@ -1013,10 +1268,11 @@ class test_chord(CanvasCase):
         # Access it again to make sure the generator is not further evaluated
         c.app
 
-    def test_reverse(self):
-        x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))
-        assert isinstance(signature(x), chord)
-        assert isinstance(signature(dict(x)), chord)
+    @pytest.mark.parametrize("chord_type", [chord, chord_subclass])
+    def test_reverse(self, chord_type):
+        x = chord_type([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))
+        assert isinstance(signature(x), chord_type)
+        assert isinstance(signature(dict(x)), chord_type)
 
     def test_clone_clones_body(self):
         x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))
@@ -1213,7 +1469,7 @@ class test_chord(CanvasCase):
         with patch(
             "celery.canvas.Signature.from_dict", return_value=child_sig
         ) as mock_from_dict:
-            assert chord_sig. __length_hint__() == 1
+            assert chord_sig.__length_hint__() == 1
         mock_from_dict.assert_called_once_with(deserialized_child_sig)
 
     def test_chord_size_deserialized_element_many(self):
@@ -1227,7 +1483,7 @@ class test_chord(CanvasCase):
         with patch(
             "celery.canvas.Signature.from_dict", return_value=child_sig
         ) as mock_from_dict:
-            assert chord_sig. __length_hint__() == 42
+            assert chord_sig.__length_hint__() == 42
         mock_from_dict.assert_has_calls([call(deserialized_child_sig)] * 42)
 
     def test_set_immutable(self):
@@ -1253,15 +1509,18 @@ class test_chord(CanvasCase):
         x.kwargs['body'] = None
         assert 'without body' in repr(x)
 
-    def test_freeze_tasks_body_is_group(self, subtests):
+    @pytest.mark.parametrize("group_type", [group,  group_subclass])
+    def test_freeze_tasks_body_is_group(self, subtests, group_type):
         # Confirm that `group index` values counting up from 0 are set for
         # elements of a chord's body when the chord is encapsulated in a group
         body_elem = self.add.s()
-        chord_body = group([body_elem] * 42)
+        chord_body = group_type([body_elem] * 42)
         chord_obj = chord(self.add.s(), body=chord_body)
-        top_group = group([chord_obj])
+        top_group = group_type([chord_obj])
+
         # We expect the body to be the signature we passed in before we freeze
-        with subtests.test(msg="Validate body tasks are retained"):
+        with subtests.test(msg="Validate body type and tasks are retained"):
+            assert isinstance(chord_obj.body, group_type)
             assert all(
                 embedded_body_elem is body_elem
                 for embedded_body_elem in chord_obj.body.tasks
@@ -1274,6 +1533,8 @@ class test_chord(CanvasCase):
         with subtests.test(
             msg="Validate body group indices count from 0 after freezing"
         ):
+            assert isinstance(chord_obj.body, group_type)
+
             assert all(
                 embedded_body_elem is not body_elem
                 for embedded_body_elem in chord_obj.body.tasks
@@ -1311,17 +1572,19 @@ class test_chord(CanvasCase):
             _state.task_join_will_block = fixture_task_join_will_block
             result.task_join_will_block = fixture_task_join_will_block
 
-    def test_from_dict(self):
+    @pytest.mark.parametrize("chord_type", [chord, chord_subclass])
+    def test_from_dict(self, chord_type):
         header = self.add.s(1, 2)
-        original_chord = chord(header=header)
-        rebuilt_chord = chord.from_dict(dict(original_chord))
-        assert isinstance(rebuilt_chord, chord)
+        original_chord = chord_type(header=header)
+        rebuilt_chord = chord_type.from_dict(dict(original_chord))
+        assert isinstance(rebuilt_chord, chord_type)
 
-    def test_from_dict_with_body(self):
+    @pytest.mark.parametrize("chord_type", [chord, chord_subclass])
+    def test_from_dict_with_body(self, chord_type):
         header = body = self.add.s(1, 2)
-        original_chord = chord(header=header, body=body)
-        rebuilt_chord = chord.from_dict(dict(original_chord))
-        assert isinstance(rebuilt_chord, chord)
+        original_chord = chord_type(header=header, body=body)
+        rebuilt_chord = chord_type.from_dict(dict(original_chord))
+        assert isinstance(rebuilt_chord, chord_type)
 
     def test_from_dict_deep_deserialize(self, subtests):
         header = body = self.add.s(1, 2)
@@ -1338,8 +1601,9 @@ class test_chord(CanvasCase):
         with subtests.test(msg="Verify chord body is deserialized"):
             assert isinstance(deserialized_chord.body, Signature)
 
-    def test_from_dict_deep_deserialize_group(self, subtests):
-        header = body = group([self.add.s(1, 2)] * 42)
+    @pytest.mark.parametrize("group_type", [group, group_subclass])
+    def test_from_dict_deep_deserialize_group(self, subtests, group_type):
+        header = body = group_type([self.add.s(1, 2)] * 42)
         original_chord = chord(header=header, body=body)
         serialized_chord = json.loads(json.dumps(original_chord))
         deserialized_chord = chord.from_dict(serialized_chord)
@@ -1351,22 +1615,23 @@ class test_chord(CanvasCase):
         ):
             assert all(
                 isinstance(child_task, Signature)
-                and not isinstance(child_task, group)
+                and not isinstance(child_task, group_type)
                 for child_task in deserialized_chord.tasks
             )
         # A body which is a group remains as it we passed in
         with subtests.test(
             msg="Validate chord body is deserialized and not unpacked"
         ):
-            assert isinstance(deserialized_chord.body, group)
+            assert isinstance(deserialized_chord.body, group_type)
             assert all(
                 isinstance(body_child_task, Signature)
                 for body_child_task in deserialized_chord.body.tasks
             )
 
-    def test_from_dict_deeper_deserialize_group(self, subtests):
-        inner_group = group([self.add.s(1, 2)] * 42)
-        header = body = group([inner_group] * 42)
+    @pytest.mark.parametrize("group_type", [group, group_subclass])
+    def test_from_dict_deeper_deserialize_group(self, subtests, group_type):
+        inner_group = group_type([self.add.s(1, 2)] * 42)
+        header = body = group_type([inner_group] * 42)
         original_chord = chord(header=header, body=body)
         serialized_chord = json.loads(json.dumps(original_chord))
         deserialized_chord = chord.from_dict(serialized_chord)
@@ -1377,7 +1642,7 @@ class test_chord(CanvasCase):
             msg="Validate chord header tasks are deserialized and unpacked"
         ):
             assert all(
-                isinstance(child_task, group)
+                isinstance(child_task, group_type)
                 for child_task in deserialized_chord.tasks
             )
             assert all(
@@ -1422,6 +1687,110 @@ class test_chord(CanvasCase):
         ):
             assert isinstance(deserialized_chord.body, _chain)
 
+    def test_chord_clone_kwargs(self, subtests):
+        """ Test that chord clone ensures the kwargs are the same """
+
+        with subtests.test(msg='Verify chord cloning clones kwargs correctly'):
+            c = chord([signature('g'), signature('h')], signature('i'), kwargs={'U': 6})
+            c2 = c.clone()
+            assert c2.kwargs == c.kwargs
+
+        with subtests.test(msg='Cloning the chord with overridden kwargs'):
+            override_kw = {'X': 2}
+            c3 = c.clone(args=(1,), kwargs=override_kw)
+
+        with subtests.test(msg='Verify the overridden kwargs were cloned correctly'):
+            new_kw = c.kwargs.copy()
+            new_kw.update(override_kw)
+            assert c3.kwargs == new_kw
+
+    def test_flag_allow_error_cb_on_chord_header(self, subtests):
+        header_mock = [Mock(name='t1'), Mock(name='t2')]
+        header = group(header_mock)
+        body = Mock(name='tbody')
+        errback_sig = Mock(name='errback_sig')
+        chord_sig = chord(header, body, app=self.app)
+
+        with subtests.test(msg='Verify the errback is not linked'):
+            # header
+            for child_sig in header_mock:
+                child_sig.link_error.assert_not_called()
+            # body
+            body.link_error.assert_not_called()
+
+        with subtests.test(msg='Verify flag turned off links only the body'):
+            self.app.conf.task_allow_error_cb_on_chord_header = False
+            chord_sig.link_error(errback_sig)
+            # header
+            for child_sig in header_mock:
+                child_sig.link_error.assert_not_called()
+            # body
+            body.link_error.assert_called_once_with(errback_sig)
+
+        with subtests.test(msg='Verify flag turned on links the header'):
+            self.app.conf.task_allow_error_cb_on_chord_header = True
+            chord_sig.link_error(errback_sig)
+            # header
+            for child_sig in header_mock:
+                child_sig.link_error.assert_called_once_with(errback_sig.clone(immutable=True))
+            # body
+            body.link_error.assert_has_calls([call(errback_sig), call(errback_sig)])
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_flag_allow_error_cb_on_chord_header_various_header_types(self):
+        """ Test chord link_error with various header types. """
+        self.app.conf.task_allow_error_cb_on_chord_header = True
+        headers = [
+            signature('t'),
+            [signature('t'), signature('t')],
+            group(signature('t'), signature('t'))
+        ]
+        for chord_header in headers:
+            c = chord(chord_header, signature('t'))
+            sig = signature('t')
+            errback = c.link_error(sig)
+            assert errback == sig
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_flag_allow_error_cb_on_chord_header_with_dict_callback(self):
+        self.app.conf.task_allow_error_cb_on_chord_header = True
+        c = chord(group(signature('th1'), signature('th2')), signature('tbody'))
+        errback_dict = dict(signature('tcb'))
+        errback = c.link_error(errback_dict)
+        assert errback == errback_dict
+
+    def test_chord__or__group_of_single_task(self):
+        """ Test chaining a chord to a group of a single task. """
+        c = chord([signature('header')], signature('body'))
+        g = group(signature('t'))
+        stil_chord = c | g  # g should be chained with the body of c
+        assert isinstance(stil_chord, chord)
+        assert isinstance(stil_chord.body, _chain)
+
+    def test_chord_upgrade_on_chaining(self):
+        """ Test that chaining a chord with a group body upgrades to a new chord """
+        c = chord([signature('header')], group(signature('body')))
+        t = signature('t')
+        stil_chord = c | t  # t should be chained with the body of c and create a new chord
+        assert isinstance(stil_chord, chord)
+        assert isinstance(stil_chord.body, chord)
+
+    @pytest.mark.parametrize('header', [
+        [signature('s1'), signature('s2')],
+        group(signature('s1'), signature('s2'))
+    ])
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_link_error_on_chord_header(self, header):
+        """ Test that link_error on a chord also links the header """
+        self.app.conf.task_allow_error_cb_on_chord_header = True
+        c = chord(header, signature('body'))
+        err = signature('err')
+        errback = c.link_error(err)
+        assert errback == err
+        for header_task in c.tasks:
+            assert header_task.options['link_error'] == [err.clone(immutable=True)]
+        assert c.body.options['link_error'] == [err]
+
 
 class test_maybe_signature(CanvasCase):
 
@@ -1435,3 +1804,63 @@ class test_maybe_signature(CanvasCase):
     def test_when_sig(self):
         s = self.add.s()
         assert maybe_signature(s, app=self.app) is s
+
+
+class test_merge_dictionaries(CanvasCase):
+
+    def test_docstring_example(self):
+        d1 = {'dict': {'a': 1}, 'list': [1, 2], 'tuple': (1, 2)}
+        d2 = {'dict': {'b': 2}, 'list': [3, 4], 'set': {'a', 'b'}}
+        _merge_dictionaries(d1, d2)
+        assert d1 == {
+            'dict': {'a': 1, 'b': 2},
+            'list': [1, 2, 3, 4],
+            'tuple': (1, 2),
+            'set': {'a', 'b'}
+        }
+
+    @pytest.mark.parametrize('d1,d2,expected_result', [
+        (
+            {'None': None},
+            {'None': None},
+            {'None': [None]}
+        ),
+        (
+            {'None': None},
+            {'None': [None]},
+            {'None': [[None]]}
+        ),
+        (
+            {'None': None},
+            {'None': 'Not None'},
+            {'None': ['Not None']}
+        ),
+        (
+            {'None': None},
+            {'None': ['Not None']},
+            {'None': [['Not None']]}
+        ),
+        (
+            {'None': [None]},
+            {'None': None},
+            {'None': [None, None]}
+        ),
+        (
+            {'None': [None]},
+            {'None': [None]},
+            {'None': [None, None]}
+        ),
+        (
+            {'None': [None]},
+            {'None': 'Not None'},
+            {'None': [None, 'Not None']}
+        ),
+        (
+            {'None': [None]},
+            {'None': ['Not None']},
+            {'None': [None, 'Not None']}
+        ),
+    ])
+    def test_none_values(self, d1, d2, expected_result):
+        _merge_dictionaries(d1, d2)
+        assert d1 == expected_result

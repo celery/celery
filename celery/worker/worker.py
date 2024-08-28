@@ -14,7 +14,7 @@ The worker consists of several components, all managed by bootsteps
 
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 
 from billiard import cpu_count
 from kombu.utils.compat import detect_environment
@@ -23,8 +23,7 @@ from celery import bootsteps
 from celery import concurrency as _concurrency
 from celery import signals
 from celery.bootsteps import RUN, TERMINATE
-from celery.exceptions import (ImproperlyConfigured, TaskRevokedError,
-                               WorkerTerminate)
+from celery.exceptions import ImproperlyConfigured, TaskRevokedError, WorkerTerminate
 from celery.platforms import EX_FAILURE, create_pidlock
 from celery.utils.imports import reload_from_cwd
 from celery.utils.log import mlevel
@@ -37,7 +36,7 @@ from . import state
 
 try:
     import resource
-except ImportError:  # pragma: no cover
+except ImportError:
     resource = None
 
 
@@ -90,7 +89,7 @@ class WorkController:
     def __init__(self, app=None, hostname=None, **kwargs):
         self.app = app or self.app
         self.hostname = default_nodename(hostname)
-        self.startup_time = datetime.utcnow()
+        self.startup_time = datetime.now(timezone.utc)
         self.app.loader.init_worker()
         self.on_before_init(**kwargs)
         self.setup_defaults(**kwargs)
@@ -294,7 +293,7 @@ class WorkController:
             return reload_from_cwd(sys.modules[module], reloader)
 
     def info(self):
-        uptime = datetime.utcnow() - self.startup_time
+        uptime = datetime.now(timezone.utc) - self.startup_time
         return {'total': self.state.total_count,
                 'pid': os.getpid(),
                 'clock': str(self.app.clock),

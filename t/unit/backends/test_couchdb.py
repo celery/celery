@@ -20,7 +20,7 @@ pytest.importorskip('pycouchdb')
 
 class test_CouchBackend:
 
-    def setup(self):
+    def setup_method(self):
         self.Server = self.patching('pycouchdb.Server')
         self.backend = CouchBackend(app=self.app)
 

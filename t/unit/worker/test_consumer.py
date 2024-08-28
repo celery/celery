@@ -1,25 +1,26 @@
 import errno
 import socket
 from collections import deque
-from unittest.mock import Mock, call, patch
+from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
+from amqp import ChannelError
 from billiard.exceptions import RestartFreqExceeded
 
+from celery import bootsteps
 from celery.contrib.testing.mocks import ContextMock
+from celery.exceptions import CeleryWarning, WorkerShutdown, WorkerTerminate
 from celery.utils.collections import LimitedSet
 from celery.worker.consumer.agent import Agent
-from celery.worker.consumer.consumer import (CANCEL_TASKS_BY_DEFAULT, CLOSE,
-                                             TERMINATE, Consumer)
+from celery.worker.consumer.consumer import CANCEL_TASKS_BY_DEFAULT, CLOSE, TERMINATE, Consumer
 from celery.worker.consumer.gossip import Gossip
 from celery.worker.consumer.heart import Heart
 from celery.worker.consumer.mingle import Mingle
-from celery.worker.consumer.tasks import Tasks
+from celery.worker.consumer.tasks import ETA_TASKS_NO_GLOBAL_QOS_WARNING, Tasks
 from celery.worker.state import active_requests
 
 
-class test_Consumer:
-
+class ConsumerTestCase:
     def get_consumer(self, no_hub=False, **kwargs):
         consumer = Consumer(
             on_task_request=Mock(),
@@ -32,11 +33,20 @@ class test_Consumer:
             **kwargs
         )
         consumer.blueprint = Mock(name='blueprint')
+        consumer.pool.num_processes = 2
         consumer._restart_state = Mock(name='_restart_state')
         consumer.connection = _amqp_connection()
         consumer.connection_errors = (socket.error, OSError,)
         consumer.conninfo = consumer.connection
         return consumer
+
+
+class test_Consumer(ConsumerTestCase):
+    def setup_method(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+        self.add = add
 
     def test_repr(self):
         assert repr(self.get_consumer())
@@ -60,12 +70,12 @@ class test_Consumer:
             assert self.app.conf.broker_connection_timeout is None
 
     def test_limit_moved_to_pool(self):
-        with patch('celery.worker.consumer.consumer.task_reserved') as reserv:
+        with patch('celery.worker.consumer.consumer.task_reserved') as task_reserved:
             c = self.get_consumer()
             c.on_task_request = Mock(name='on_task_request')
             request = Mock(name='request')
             c._limit_move_to_pool(request)
-            reserv.assert_called_with(request)
+            task_reserved.assert_called_with(request)
             c.on_task_request.assert_called_with(request)
 
     def test_update_prefetch_count(self):
@@ -80,6 +90,94 @@ class test_Consumer:
         c._update_prefetch_count(8)
         c._update_qos_eventually.assert_called_with(8)
         assert c.initial_prefetch_count == 10 * 10
+
+    @pytest.mark.parametrize(
+        'active_requests_count,expected_initial,expected_maximum,enabled',
+        [
+            [0, 2, True, True],
+            [1, 1, False, True],
+            [2, 1, False, True],
+            [0, 2, True, False],
+            [1, 2, True, False],
+            [2, 2, True, False],
+        ]
+    )
+    @patch('celery.worker.consumer.consumer.active_requests', new_callable=set)
+    def test_restore_prefetch_count_on_restart(self, active_requests_mock, active_requests_count,
+                                               expected_initial, expected_maximum, enabled, subtests):
+        self.app.conf.worker_enable_prefetch_count_reduction = enabled
+
+        reqs = {Mock() for _ in range(active_requests_count)}
+        active_requests_mock.update(reqs)
+
+        c = self.get_consumer()
+        c.qos = Mock()
+        c.blueprint = Mock()
+
+        def bp_start(*_, **__):
+            if c.restart_count > 1:
+                c.blueprint.state = CLOSE
+            else:
+                raise ConnectionError
+
+        c.blueprint.start.side_effect = bp_start
+
+        c.start()
+
+        with subtests.test("initial prefetch count is never 0"):
+            assert c.initial_prefetch_count != 0
+
+        with subtests.test(f"initial prefetch count is equal to {expected_initial}"):
+            assert c.initial_prefetch_count == expected_initial
+
+        with subtests.test("maximum prefetch is reached"):
+            assert c._maximum_prefetch_restored is expected_maximum
+
+    def test_restore_prefetch_count_after_connection_restart_negative(self):
+        self.app.conf.worker_enable_prefetch_count_reduction = False
+
+        c = self.get_consumer()
+        c.qos = Mock()
+
+        # Overcome TypeError: 'Mock' object does not support the context manager protocol
+        class MutexMock:
+            def __enter__(self):
+                pass
+
+            def __exit__(self, *args):
+                pass
+        c.qos._mutex = MutexMock()
+
+        assert c._restore_prefetch_count_after_connection_restart(None) is None
+
+    def test_create_task_handler(self, subtests):
+        c = self.get_consumer()
+        c.qos = MagicMock()
+        c.qos.value = 1
+        c._maximum_prefetch_restored = False
+
+        sig = self.add.s(2, 2)
+        message = self.task_message_from_sig(self.app, sig)
+
+        def raise_exception():
+            raise KeyError('Foo')
+
+        def strategy(_, __, ack_log_error_promise, ___, ____):
+            ack_log_error_promise()
+
+        c.strategies[sig.task] = strategy
+        c.call_soon = raise_exception
+        on_task_received = c.create_task_handler()
+        on_task_received(message)
+
+        with subtests.test("initial prefetch count is never 0"):
+            assert c.initial_prefetch_count != 0
+
+        with subtests.test("initial prefetch count is 2"):
+            assert c.initial_prefetch_count == 2
+
+        with subtests.test("maximum prefetch is reached"):
+            assert c._maximum_prefetch_restored is True
 
     def test_flush_events(self):
         c = self.get_consumer()
@@ -109,11 +207,11 @@ class test_Consumer:
 
         with patch(
             'celery.worker.consumer.consumer.Consumer._limit_move_to_pool'
-        ) as reserv:
+        ) as task_reserved:
             bucket.contents.append((request, 3))
             c._schedule_bucket_request(bucket)
             bucket.can_consume.assert_called_with(3)
-            reserv.assert_called_with(request)
+            task_reserved.assert_called_with(request)
 
         bucket.can_consume.return_value = False
         bucket.contents = deque()
@@ -142,10 +240,10 @@ class test_Consumer:
 
         with patch(
             'celery.worker.consumer.consumer.Consumer._schedule_bucket_request'
-        ) as reserv:
+        ) as task_reserved:
             c._limit_task(request, bucket, 1)
             bucket.add.assert_called_with((request, 1))
-            reserv.assert_called_with(bucket)
+            task_reserved.assert_called_with(bucket)
 
     def test_post_eta(self):
         c = self.get_consumer()
@@ -155,19 +253,11 @@ class test_Consumer:
 
         with patch(
             'celery.worker.consumer.consumer.Consumer._schedule_bucket_request'
-        ) as reserv:
+        ) as task_reserved:
             c._limit_post_eta(request, bucket, 1)
             c.qos.decrement_eventually.assert_called_with()
             bucket.add.assert_called_with((request, 1))
-            reserv.assert_called_with(bucket)
-
-    def test_start_blueprint_raises_EMFILE(self):
-        c = self.get_consumer()
-        exc = c.blueprint.start.side_effect = OSError()
-        exc.errno = errno.EMFILE
-
-        with pytest.raises(OSError):
-            c.start()
+            task_reserved.assert_called_with(bucket)
 
     def test_max_restarts_exceeded(self):
         c = self.get_consumer()
@@ -211,17 +301,62 @@ class test_Consumer:
 
         c.blueprint.start.assert_called_once_with(c)
 
-    def test_no_retry_raises_error(self):
-        self.app.conf.broker_connection_retry = False
+    def test_too_many_open_files_raises_error(self):
         c = self.get_consumer()
-        c.blueprint.start.side_effect = socket.error()
-        with pytest.raises(socket.error):
+        err = OSError()
+        err.errno = errno.EMFILE
+        c.blueprint.start.side_effect = err
+        with pytest.raises(WorkerTerminate):
             c.start()
 
     def _closer(self, c):
         def se(*args, **kwargs):
             c.blueprint.state = CLOSE
         return se
+
+    @pytest.mark.parametrize("broker_connection_retry", [True, False])
+    def test_blueprint_restart_when_state_not_in_stop_conditions(self, broker_connection_retry):
+        c = self.get_consumer()
+
+        # ensure that WorkerShutdown is not raised
+        c.app.conf['broker_connection_retry'] = broker_connection_retry
+        c.app.conf['broker_connection_retry_on_startup'] = True
+        c.restart_count = -1
+
+        # ensure that blueprint state is not in stop conditions
+        c.blueprint.state = bootsteps.RUN
+        c.blueprint.start.side_effect = ConnectionError()
+
+        # stops test from running indefinitely in the while loop
+        c.blueprint.restart.side_effect = self._closer(c)
+
+        c.start()
+        c.blueprint.restart.assert_called_once()
+
+    @pytest.mark.parametrize("broker_channel_error_retry", [True, False])
+    def test_blueprint_restart_for_channel_errors(self, broker_channel_error_retry):
+        c = self.get_consumer()
+
+        # ensure that WorkerShutdown is not raised
+        c.app.conf['broker_connection_retry'] = True
+        c.app.conf['broker_connection_retry_on_startup'] = True
+        c.app.conf['broker_channel_error_retry'] = broker_channel_error_retry
+        c.restart_count = -1
+
+        # ensure that blueprint state is not in stop conditions
+        c.blueprint.state = bootsteps.RUN
+        c.blueprint.start.side_effect = ChannelError()
+
+        # stops test from running indefinitely in the while loop
+        c.blueprint.restart.side_effect = self._closer(c)
+
+        # restarted only when broker_channel_error_retry is True
+        if broker_channel_error_retry:
+            c.start()
+            c.blueprint.restart.assert_called_once()
+        else:
+            with pytest.raises(ChannelError):
+                c.start()
 
     def test_collects_at_restart(self):
         c = self.get_consumer()
@@ -307,6 +442,67 @@ class test_Consumer:
         with pytest.deprecated_call(match=CANCEL_TASKS_BY_DEFAULT):
             c.on_connection_error_after_connected(Mock())
 
+    @pytest.mark.parametrize("broker_connection_retry", [True, False])
+    @pytest.mark.parametrize("broker_connection_retry_on_startup", [None, False])
+    @pytest.mark.parametrize("first_connection_attempt", [True, False])
+    def test_ensure_connected(self, subtests, broker_connection_retry, broker_connection_retry_on_startup,
+                              first_connection_attempt):
+        c = self.get_consumer()
+        c.first_connection_attempt = first_connection_attempt
+        c.app.conf.broker_connection_retry_on_startup = broker_connection_retry_on_startup
+        c.app.conf.broker_connection_retry = broker_connection_retry
+
+        if broker_connection_retry_on_startup is None:
+            with subtests.test("Deprecation warning when startup is None"):
+                with pytest.deprecated_call():
+                    c.ensure_connected(Mock())
+
+        if broker_connection_retry is False:
+            with subtests.test("Does not retry when connect throws an error and retry is set to false"):
+                conn = Mock()
+                conn.connect.side_effect = ConnectionError()
+                with pytest.raises(ConnectionError):
+                    c.ensure_connected(conn)
+
+
+@pytest.mark.parametrize(
+    "broker_connection_retry_on_startup,is_connection_loss_on_startup",
+    [
+        pytest.param(False, True, id='shutdown on connection loss on startup'),
+        pytest.param(None, True, id='shutdown on connection loss on startup when retry on startup is undefined'),
+        pytest.param(False, False, id='shutdown on connection loss not on startup but startup is defined as false'),
+        pytest.param(None, False, id='shutdown on connection loss not on startup and startup is not defined'),
+        pytest.param(True, False, id='shutdown on connection loss not on startup but startup is defined as true'),
+    ]
+)
+class test_Consumer_WorkerShutdown(ConsumerTestCase):
+
+    def test_start_raises_connection_error(self,
+                                           broker_connection_retry_on_startup,
+                                           is_connection_loss_on_startup,
+                                           caplog, subtests):
+        c = self.get_consumer()
+        c.first_connection_attempt = True if is_connection_loss_on_startup else False
+        c.app.conf['broker_connection_retry'] = False
+        c.app.conf['broker_connection_retry_on_startup'] = broker_connection_retry_on_startup
+        c.blueprint.start.side_effect = ConnectionError()
+
+        with subtests.test("Consumer raises WorkerShutdown on connection restart"):
+            with pytest.raises(WorkerShutdown):
+                c.start()
+
+        record = caplog.records[0]
+        with subtests.test("Critical error log message is outputted to the screen"):
+            assert record.levelname == "CRITICAL"
+            action = "establish" if is_connection_loss_on_startup else "re-establish"
+            expected_prefix = f"Retrying to {action}"
+            assert record.msg.startswith(expected_prefix)
+            conn_type_name = c._get_connection_retry_type(
+                is_connection_loss_on_startup
+            )
+            expected_connection_retry_type = f"app.conf.{conn_type_name}=False"
+            assert expected_connection_retry_type in record.msg
+
 
 class test_Heart:
 
@@ -347,8 +543,13 @@ class test_Heart:
 
 class test_Tasks:
 
+    def setup_method(self):
+        self.c = Mock()
+        self.c.app.conf.worker_detect_quorum_queues = True
+        self.c.connection.qos_semantics_matches_spec = False
+
     def test_stop(self):
-        c = Mock()
+        c = self.c
         tasks = Tasks(c)
         assert c.task_consumer is None
         assert c.qos is None
@@ -357,9 +558,58 @@ class test_Tasks:
         tasks.stop(c)
 
     def test_stop_already_stopped(self):
-        c = Mock()
+        c = self.c
         tasks = Tasks(c)
         tasks.stop(c)
+
+    def test_detect_quorum_queues_positive(self):
+        c = self.c
+        c.app.amqp.queues = {"celery": Mock(queue_arguments={"x-queue-type": "quorum"})}
+        tasks = Tasks(c)
+        result, name = tasks.detect_quorum_queues(c)
+        assert result
+        assert name == "celery"
+
+    def test_detect_quorum_queues_negative(self):
+        c = self.c
+        c.app.amqp.queues = {"celery": Mock(queue_arguments=None)}
+        tasks = Tasks(c)
+        result, name = tasks.detect_quorum_queues(c)
+        assert not result
+        assert name == ""
+
+    def test_detect_quorum_queues_not_rabbitmq(self):
+        c = self.c
+        c.app.conf.broker_url = "redis://"
+        tasks = Tasks(c)
+        result, name = tasks.detect_quorum_queues(c)
+        assert not result
+        assert name == ""
+
+    def test_qos_global_worker_detect_quorum_queues_false(self):
+        c = self.c
+        c.app.conf.worker_detect_quorum_queues = False
+        tasks = Tasks(c)
+        assert tasks.qos_global(c) is True
+
+    def test_qos_global_worker_detect_quorum_queues_true_no_quorum_queues(self):
+        c = self.c
+        c.app.amqp.queues = {"celery": Mock(queue_arguments=None)}
+        tasks = Tasks(c)
+        assert tasks.qos_global(c) is True
+
+    def test_qos_global_worker_detect_quorum_queues_true_with_quorum_queues(self):
+        c = self.c
+        c.app.amqp.queues = {"celery": Mock(queue_arguments={"x-queue-type": "quorum"})}
+        tasks = Tasks(c)
+        assert tasks.qos_global(c) is False
+
+    def test_qos_global_eta_warning(self):
+        c = self.c
+        c.app.amqp.queues = {"celery": Mock(queue_arguments={"x-queue-type": "quorum"})}
+        tasks = Tasks(c)
+        with pytest.warns(CeleryWarning, match=ETA_TASKS_NO_GLOBAL_QOS_WARNING % "celery"):
+            tasks.qos_global(c)
 
 
 class test_Agent:
@@ -522,6 +772,7 @@ class test_Gossip:
         c.app.connection = _amqp_connection()
         c.hostname = hostname
         c.pid = pid
+        c.app.events.Receiver.return_value = Mock(accept=[])
         return c
 
     def setup_election(self, g, c):

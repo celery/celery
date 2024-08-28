@@ -1,5 +1,6 @@
 import copy
 import datetime
+import platform
 import traceback
 from contextlib import contextmanager
 from unittest.mock import Mock, call, patch
@@ -9,10 +10,8 @@ import pytest
 from celery import states, uuid
 from celery.app.task import Context
 from celery.backends.base import SyncBackendMixin
-from celery.exceptions import (ImproperlyConfigured, IncompleteStream,
-                               TimeoutError)
-from celery.result import (AsyncResult, EagerResult, GroupResult, ResultSet,
-                           assert_will_not_block, result_from_tuple)
+from celery.exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
+from celery.result import AsyncResult, EagerResult, GroupResult, ResultSet, assert_will_not_block, result_from_tuple
 from celery.utils.serialization import pickle
 
 PYTRACEBACK = """\
@@ -65,7 +64,7 @@ class _MockBackend:
 
 class test_AsyncResult:
 
-    def setup(self):
+    def setup_method(self):
         self.app.conf.result_cache_max = 100
         self.app.conf.result_serializer = 'pickle'
         self.app.conf.result_extended = True
@@ -391,12 +390,17 @@ class test_AsyncResult:
 
         assert not self.app.AsyncResult(uuid()).ready()
 
+    @pytest.mark.skipif(
+        platform.python_implementation() == "PyPy",
+        reason="Mocking here doesn't play well with PyPy",
+    )
     def test_del(self):
         with patch('celery.result.AsyncResult.backend') as backend:
             result = self.app.AsyncResult(self.task1['id'])
+            result.backend = backend
             result_clone = copy.copy(result)
             del result
-            assert backend.remove_pending_result.called_once_with(
+            backend.remove_pending_result.assert_called_once_with(
                 result_clone
             )
 
@@ -552,9 +556,9 @@ class test_ResultSet:
     def dummy_copy(self):
         with patch('celery.result.copy') as copy:
 
-            def passt(arg):
+            def pass_value(arg):
                 return arg
-            copy.side_effect = passt
+            copy.side_effect = pass_value
 
             yield
 
@@ -630,7 +634,7 @@ class SimpleBackend(SyncBackendMixin):
 
 class test_GroupResult:
 
-    def setup(self):
+    def setup_method(self):
         self.size = 10
         self.ts = self.app.GroupResult(
             uuid(), make_mock_group(self.app, self.size),
@@ -884,7 +888,7 @@ class test_pending_AsyncResult:
 
 class test_failed_AsyncResult:
 
-    def setup(self):
+    def setup_method(self):
         self.size = 11
         self.app.conf.result_serializer = 'pickle'
         results = make_mock_group(self.app, 10)
@@ -909,7 +913,7 @@ class test_failed_AsyncResult:
 
 class test_pending_Group:
 
-    def setup(self):
+    def setup_method(self):
         self.ts = self.app.GroupResult(
             uuid(), [self.app.AsyncResult(uuid()),
                      self.app.AsyncResult(uuid())])
@@ -934,7 +938,7 @@ class test_pending_Group:
 
 class test_EagerResult:
 
-    def setup(self):
+    def setup_method(self):
         @self.app.task(shared=False)
         def raising(x, y):
             raise KeyError(x, y)
@@ -968,6 +972,13 @@ class test_EagerResult:
         with pytest.raises(RuntimeError):
             res_subtask_async.get()
         res_subtask_async.get(disable_sync_subtasks=False)
+
+    def test_populate_name(self):
+        res = EagerResult('x', 'x', states.SUCCESS, None, 'test_task')
+        assert res.name == 'test_task'
+
+        res = EagerResult('x', 'x', states.SUCCESS, name='test_task_named_argument')
+        assert res.name == 'test_task_named_argument'
 
 
 class test_tuples:

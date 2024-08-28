@@ -20,11 +20,9 @@ from celery.backends.cache import CacheBackend, DummyClient
 # we have to import the pytest plugin fixtures here,
 # in case user did not do the `python setup.py develop` yet,
 # that installs the pytest plugin into the setuptools registry.
-from celery.contrib.pytest import (celery_app, celery_enable_logging,
-                                   celery_parameters, depends_on_current_app)
+from celery.contrib.pytest import celery_app, celery_enable_logging, celery_parameters, depends_on_current_app
 from celery.contrib.testing.app import TestApp, Trap
-from celery.contrib.testing.mocks import (TaskMessage, TaskMessage1,
-                                          task_message_from_sig)
+from celery.contrib.testing.mocks import TaskMessage, TaskMessage1, task_message_from_sig
 
 # Tricks flake8 into silencing redefining fixtures warnings.
 __all__ = (
@@ -32,12 +30,6 @@ __all__ = (
     'celery_parameters'
 )
 
-try:
-    WindowsError = WindowsError
-except NameError:
-
-    class WindowsError(Exception):
-        pass
 
 PYPY3 = getattr(sys, 'pypy_version_info', None) and sys.version_info[0] > 3
 
@@ -114,7 +106,7 @@ def reset_cache_backend_state(celery_app):
 
 @contextmanager
 def assert_signal_called(signal, **expected):
-    """Context that verifes signal is called before exiting."""
+    """Context that verifies signal is called before exiting."""
     handler = Mock()
 
     def on_call(**kwargs):
@@ -362,7 +354,7 @@ def sleepdeprived(request):
         >>>     pass
     """
     module = request.node.get_closest_marker(
-            "sleepdeprived_patched_module").args[0]
+        "sleepdeprived_patched_module").args[0]
     old_sleep, module.sleep = module.sleep, noop
     try:
         yield
@@ -555,7 +547,7 @@ def _module(*names):
                 sys.modules[name] = prev[name]
             except KeyError:
                 try:
-                    del(sys.modules[name])
+                    del (sys.modules[name])
                 except KeyError:
                     pass
 

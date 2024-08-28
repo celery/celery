@@ -256,6 +256,7 @@ issue tracker.
 * :pypi:`kombu`: https://github.com/celery/kombu/issues
 * :pypi:`amqp`: https://github.com/celery/py-amqp/issues
 * :pypi:`vine`: https://github.com/celery/vine/issues
+* :pypi:`pytest-celery`: https://github.com/celery/pytest-celery/issues
 * :pypi:`librabbitmq`: https://github.com/celery/librabbitmq/issues
 * :pypi:`django-celery-beat`: https://github.com/celery/django-celery-beat/issues
 * :pypi:`django-celery-results`: https://github.com/celery/django-celery-results/issues
@@ -291,13 +292,13 @@ Branches
 
 Current active version branches:
 
-* dev (which git calls "master") (https://github.com/celery/celery/tree/master)
+* dev (which git calls "main") (https://github.com/celery/celery/tree/main)
 * 4.5 (https://github.com/celery/celery/tree/v4.5)
 * 3.1 (https://github.com/celery/celery/tree/3.1)
 
 You can see the state of any branch by looking at the Changelog:
 
-    https://github.com/celery/celery/blob/master/Changelog.rst
+    https://github.com/celery/celery/blob/main/Changelog.rst
 
 If the branch is in active development the topmost version info should
 contain meta-data like:
@@ -308,7 +309,7 @@ contain meta-data like:
     ======
     :release-date: TBA
     :status: DEVELOPMENT
-    :branch: dev (git calls this master)
+    :branch: dev (git calls this main)
 
 The ``status`` field can be one of:
 
@@ -330,7 +331,7 @@ The ``status`` field can be one of:
 dev branch
 ----------
 
-The dev branch (called "master" by git), is where development of the next
+The dev branch (called "main" by git), is where development of the next
 version happens.
 
 Maintenance branches
@@ -422,7 +423,7 @@ to upstream changes:
 .. code-block:: console
 
     $ cd celery
-    $ git remote add upstream git://github.com/celery/celery.git
+    $ git remote add upstream git@github.com:celery/celery.git
     $ git fetch upstream
 
 If you need to pull in new changes from upstream you should
@@ -430,19 +431,19 @@ always use the ``--rebase`` option to ``git pull``:
 
 .. code-block:: console
 
-    git pull --rebase upstream master
+    git pull --rebase upstream main
 
 With this option, you don't clutter the history with merging
 commit notes. See `Rebasing merge commits in git`_.
 If you want to learn more about rebasing, see the `Rebase`_
 section in the GitHub guides.
 
-If you need to work on a different branch than the one git calls ``master``, you can
+If you need to work on a different branch than the one git calls ``main``, you can
 fetch and checkout a remote branch like this::
 
     git checkout --track -b 5.0-devel upstream/5.0-devel
 
-**Note:** Any feature or fix branch should be created from ``upstream/master``.
+**Note:** Any feature or fix branch should be created from ``upstream/main``.
 
 .. _`Fork a Repo`: https://help.github.com/fork-a-repo/
 .. _`Rebasing merge commits in git`:
@@ -464,13 +465,13 @@ Docker image can be built via:
 
 .. code-block:: console
 
-    $ docker-compose build celery
+    $ docker compose build celery
 
 and run via:
 
 .. code-block:: console
 
-    $ docker-compose run --rm celery <command>
+    $ docker compose run --rm celery <command>
 
 where <command> is a command to execute in a Docker container. The `--rm` flag
 indicates that the container should be removed after it is exited and is useful
@@ -485,7 +486,7 @@ Some useful commands to run:
 * ``make test``
 
     To run the test suite.
-    **Note:** This will run tests using python 3.8 by default.
+    **Note:** This will run tests using python 3.12 by default.
 
 * ``tox``
 
@@ -493,30 +494,30 @@ Some useful commands to run:
     **Note:** This command will run tests for every environment defined in :file:`tox.ini`.
     It takes a while.
 
-* ``pyenv exec python{3.6,3.7,3.8,3.9} -m pytest t/unit``
+* ``pyenv exec python{3.8,3.9,3.10,3.11,3.12} -m pytest t/unit``
 
     To run unit tests using pytest.
 
-    **Note:** ``{3.6,3.7,3.8,3.9}`` means you can use any of those options.
-    e.g. ``pyenv exec python3.7 -m pytest t/unit``
+    **Note:** ``{3.8,3.9,3.10,3.11,3.12}`` means you can use any of those options.
+    e.g. ``pyenv exec python3.12 -m pytest t/unit``
 
-* ``pyenv exec python{3.6,3.7,3.8,3.9} -m pytest t/integration``
+* ``pyenv exec python{3.8,3.9,3.10,3.11,3.12} -m pytest t/integration``
 
     To run integration tests using pytest
 
-    **Note:** ``{3.6,3.7,3.8,3.9}`` means you can use any of those options.
-    e.g. ``pyenv exec python3.7 -m pytest t/unit``
+    **Note:** ``{3.8,3.9,3.10,3.11,3.12}`` means you can use any of those options.
+    e.g. ``pyenv exec python3.12 -m pytest t/unit``
 
 By default, docker-compose will mount the Celery and test folders in the Docker
 container, allowing code changes and testing to be immediately visible inside
 the Docker container. Environment variables, such as the broker and backend to
 use are also defined in the :file:`docker/docker-compose.yml` file.
 
-By running ``docker-compose build celery`` an image will be created with the
+By running ``docker compose build celery`` an image will be created with the
 name ``celery/celery:dev``. This docker image has every dependency needed
 for development installed. ``pyenv`` is used to install multiple python
-versions, the docker image offers python 3.6, 3.7, 3.8 and 3.9.
-The default python version is set to 3.8.
+versions, the docker image offers python 3.8, 3.9, 3.10, 3.11 and 3.12.
+The default python version is set to 3.12.
 
 The :file:`docker-compose.yml` file defines the necessary environment variables
 to run integration tests. The ``celery`` service also mounts the codebase
@@ -526,7 +527,7 @@ as global module for development. If you prefer, you can also run
 ``python -m pip install -e .`` to install the codebase in development mode.
 
 If you would like to run a Django or stand alone project to manually test or
-debug a feature, you can use the image built by `docker-compose` and mount
+debug a feature, you can use the image built by `docker compose` and mount
 your custom code. Here's an example:
 
 Assuming a folder structure such as:
@@ -825,7 +826,7 @@ had to be modified.
 
 .. _`Isort`: https://isort.readthedocs.io/en/latest/
 
-.. _contributing-pull-requets:
+.. _contributing-pull-requests:
 
 Creating pull requests
 ----------------------
@@ -953,8 +954,8 @@ Here is a summary of such statuses:
 
 - **Status: Needs Rebase**
 
-  The PR has not been rebased with ``master``. It is very important to rebase
-  PRs before they can be merged to ``master`` to solve any merge conflicts.
+  The PR has not been rebased with ``main``. It is very important to rebase
+  PRs before they can be merged to ``main`` to solve any merge conflicts.
 
 - **Status: Needs Test Coverage**
 
@@ -1170,7 +1171,7 @@ that require third-party libraries must be added.
 
     .. code-block:: console
 
-        $ pip install -U requirements/pkgutils.txt
+        $ pip install -U -r requirements/pkgutils.txt
         $ make readme
 
 
@@ -1245,6 +1246,11 @@ Josue Balandrano Coronel
 :github: https://github.com/xirdneh
 :twitter: https://twitter.com/eusoj_xirdneh
 
+Tomer Nosrati
+~~~~~~~~~~~~~
+:github: https://github.com/Nusnus
+:twitter: https://x.com/tomer_nosrati
+
 Website
 -------
 
@@ -1277,7 +1283,7 @@ Packages
 :CI: https://travis-ci.org/#!/celery/celery
 :Windows-CI: https://ci.appveyor.com/project/ask/celery
 :PyPI: :pypi:`celery`
-:docs: http://docs.celeryproject.org
+:docs: https://docs.celeryq.dev
 
 ``kombu``
 ---------
@@ -1311,6 +1317,15 @@ Promise/deferred implementation.
 :Windows-CI: https://ci.appveyor.com/project/ask/vine
 :PyPI: :pypi:`vine`
 :docs: https://vine.readthedocs.io
+
+``pytest-celery``
+-----------------
+
+Pytest plugin for Celery.
+
+:git: https://github.com/celery/pytest-celery
+:PyPI: :pypi:`pytest-celery`
+:docs: https://pytest-celery.readthedocs.io
 
 ``billiard``
 ------------
@@ -1376,7 +1391,7 @@ Deprecated
 
 :git: https://github.com/celery/django-celery
 :PyPI: :pypi:`django-celery`
-:docs: http://docs.celeryproject.org/en/latest/django
+:docs: https://docs.celeryq.dev/en/latest/django
 
 - ``Flask-Celery``
 
@@ -1487,11 +1502,11 @@ following:
 
 .. _`mailing-list`: https://groups.google.com/group/celery-users
 
-.. _`irc-channel`: http://docs.celeryproject.org/en/latest/getting-started/resources.html#irc
+.. _`irc-channel`: https://docs.celeryq.dev/en/latest/getting-started/resources.html#irc
 
-.. _`internals-guide`: http://docs.celeryproject.org/en/latest/internals/guide.html
+.. _`internals-guide`: https://docs.celeryq.dev/en/latest/internals/guide.html
 
-.. _`bundles`: http://docs.celeryproject.org/en/latest/getting-started/introduction.html#bundles
+.. _`bundles`: https://docs.celeryq.dev/en/latest/getting-started/introduction.html#bundles
 
-.. _`report an issue`: http://docs.celeryproject.org/en/latest/contributing.html#reporting-bugs
+.. _`report an issue`: https://docs.celeryq.dev/en/latest/contributing.html#reporting-bugs
 

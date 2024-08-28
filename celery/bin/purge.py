@@ -1,12 +1,13 @@
 """The ``celery purge`` program, used to delete messages from queues."""
 import click
 
-from celery.bin.base import (COMMA_SEPARATED_LIST, CeleryCommand,
-                             CeleryOption, handle_preload_options)
+from celery.bin.base import COMMA_SEPARATED_LIST, CeleryCommand, CeleryOption, handle_preload_options
 from celery.utils import text
 
 
-@click.command(cls=CeleryCommand)
+@click.command(cls=CeleryCommand, context_settings={
+    'allow_extra_args': True
+})
 @click.option('-f',
               '--force',
               cls=CeleryOption,
@@ -27,7 +28,7 @@ from celery.utils import text
               help="Comma separated list of queues names not to purge.")
 @click.pass_context
 @handle_preload_options
-def purge(ctx, force, queues, exclude_queues):
+def purge(ctx, force, queues, exclude_queues, **kwargs):
     """Erase all messages from all known task queues.
 
     Warning:

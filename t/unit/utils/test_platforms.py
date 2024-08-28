@@ -11,29 +11,18 @@ import pytest
 import t.skip
 from celery import _find_option_with_arg, platforms
 from celery.exceptions import SecurityError, SecurityWarning
-from celery.platforms import (ASSUMING_ROOT, ROOT_DISALLOWED,
-                              ROOT_DISCOURAGED, DaemonContext, LockFailed,
-                              Pidfile, _setgroups_hack, check_privileges,
-                              close_open_fds, create_pidlock, detached,
-                              fd_by_path, get_fdmax, ignore_errno, initgroups,
-                              isatty, maybe_drop_privileges, parse_gid,
-                              parse_uid, set_mp_process_title, set_pdeathsig,
-                              set_process_title, setgid, setgroups, setuid,
-                              signals)
+from celery.platforms import (ASSUMING_ROOT, ROOT_DISALLOWED, ROOT_DISCOURAGED, DaemonContext, LockFailed, Pidfile,
+                              _setgroups_hack, check_privileges, close_open_fds, create_pidlock, detached,
+                              fd_by_path, get_fdmax, ignore_errno, initgroups, maybe_drop_privileges, parse_gid,
+                              parse_uid, set_mp_process_title, set_pdeathsig, set_process_title, setgid, setgroups,
+                              setuid, signals)
 from celery.utils.text import WhateverIO
 from t.unit import conftest
 
 try:
     import resource
-except ImportError:  # pragma: no cover
+except ImportError:
     resource = None
-
-
-def test_isatty():
-    fh = Mock(name='fh')
-    assert isatty(fh) is fh.isatty()
-    fh.isatty.side_effect = AttributeError()
-    assert not isatty(fh)
 
 
 class test_find_option_with_arg:
@@ -695,6 +684,15 @@ class test_Pidfile:
         p = Pidfile('/var/pid')
         p.read_pid = Mock()
         p.read_pid.return_value = None
+        p.remove = Mock()
+
+        assert p.remove_if_stale()
+        p.remove.assert_called_with()
+
+    def test_remove_if_stale_same_pid(self):
+        p = Pidfile('/var/pid')
+        p.read_pid = Mock()
+        p.read_pid.return_value = os.getpid()
         p.remove = Mock()
 
         assert p.remove_if_stale()

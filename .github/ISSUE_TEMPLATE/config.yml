@@ -9,3 +9,5 @@ contact_links:
   - name: py-amqp Issue Tracker
     url: https://github.com/celery/py-amqp/issues/
     about: If this issue only involves py-amqp, please open a new issue there.
+  - name: pytest-celery Issue Tracker
+    url: https://github.com/celery/pytest-celery/issues/

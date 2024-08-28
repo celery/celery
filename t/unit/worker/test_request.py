@@ -2,7 +2,7 @@ import numbers
 import os
 import signal
 import socket
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from time import monotonic, time
 from unittest.mock import Mock, patch
 
@@ -12,24 +12,21 @@ from kombu.utils.encoding import from_utf8, safe_repr, safe_str
 from kombu.utils.uuid import uuid
 
 from celery import states
-from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task,
-                              mro_lookup, reset_worker_optimizations,
-                              setup_worker_optimizations, trace_task,
-                              trace_task_ret)
+from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task, mro_lookup, reset_worker_optimizations,
+                              setup_worker_optimizations, trace_task, trace_task_ret)
 from celery.backends.base import BaseDictBackend
-from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
-                               TaskRevokedError, Terminated, WorkerLostError)
+from celery.exceptions import Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError, Terminated, WorkerLostError
 from celery.signals import task_failure, task_retry, task_revoked
 from celery.worker import request as module
 from celery.worker import strategy
 from celery.worker.request import Request, create_request_cls
 from celery.worker.request import logger as req_logger
-from celery.worker.state import revoked
+from celery.worker.state import revoked, revoked_stamps
 
 
 class RequestCase:
 
-    def setup(self):
+    def setup_method(self):
         self.app.conf.result_serializer = 'pickle'
 
         @self.app.task(shared=False)
@@ -388,7 +385,7 @@ class test_Request(RequestCase):
             task_failure,
             sender=req.task,
             task_id=req.id,
-            exception=einfo.exception,
+            exception=einfo.exception.exc,
             args=req.args,
             kwargs=req.kwargs,
             traceback=einfo.traceback,
@@ -397,7 +394,7 @@ class test_Request(RequestCase):
             req.on_failure(einfo)
 
         req.task.backend.mark_as_failure.assert_called_once_with(req.id,
-                                                                 einfo.exception,
+                                                                 einfo.exception.exc,
                                                                  request=req._context,
                                                                  store_result=True)
 
@@ -540,7 +537,7 @@ class test_Request(RequestCase):
 
     def test_revoked_expires_expired(self):
         job = self.get_request(self.mytask.s(1, f='x').set(
-            expires=datetime.utcnow() - timedelta(days=1)
+            expires=datetime.now(timezone.utc) - timedelta(days=1)
         ))
         with self.assert_signal_called(
                 task_revoked, sender=job.task, request=job._context,
@@ -552,7 +549,7 @@ class test_Request(RequestCase):
 
     def test_revoked_expires_not_expired(self):
         job = self.xRequest(
-            expires=datetime.utcnow() + timedelta(days=1),
+            expires=datetime.now(timezone.utc) + timedelta(days=1),
         )
         job.revoked()
         assert job.id not in revoked
@@ -561,7 +558,7 @@ class test_Request(RequestCase):
     def test_revoked_expires_ignore_result(self):
         self.mytask.ignore_result = True
         job = self.xRequest(
-            expires=datetime.utcnow() - timedelta(days=1),
+            expires=datetime.now(timezone.utc) - timedelta(days=1),
         )
         job.revoked()
         assert job.id in revoked
@@ -578,6 +575,33 @@ class test_Request(RequestCase):
                 task_revoked, sender=job.task, request=job._context,
                 terminated=False, expired=False, signum=None):
             revoked.add(job.id)
+            assert job.revoked()
+            assert job._already_revoked
+            assert job.acknowledged
+
+    @pytest.mark.parametrize(
+        "header_to_revoke",
+        [
+            {'header_A': 'value_1'},
+            {'header_B': ['value_2', 'value_3']},
+            {'header_C': ('value_2', 'value_3')},
+            {'header_D': {'value_2', 'value_3'}},
+            {'header_E': [1, '2', 3.0]},
+        ],
+    )
+    def test_revoked_by_stamped_headers(self, header_to_revoke):
+        revoked_stamps.clear()
+        job = self.xRequest()
+        stamps = header_to_revoke
+        stamped_headers = list(header_to_revoke.keys())
+        job._message.headers['stamps'] = stamps
+        job._message.headers['stamped_headers'] = stamped_headers
+        job._request_dict['stamps'] = stamps
+        job._request_dict['stamped_headers'] = stamped_headers
+        with self.assert_signal_called(
+                task_revoked, sender=job.task, request=job._context,
+                terminated=False, expired=False, signum=None):
+            revoked_stamps.update(stamps)
             assert job.revoked()
             assert job._already_revoked
             assert job.acknowledged
@@ -810,7 +834,7 @@ class test_Request(RequestCase):
         m = self.TaskMessage(self.mytask.name, args=(), kwargs='foo')
         req = Request(m, app=self.app)
         with pytest.raises(InvalidTaskError):
-            raise req.execute().exception
+            raise req.execute().exception.exc
 
     def test_on_hard_timeout_acks_late(self, patching):
         error = patching('celery.worker.request.error')
@@ -1176,11 +1200,11 @@ class test_Request(RequestCase):
 
 class test_create_request_class(RequestCase):
 
-    def setup(self):
+    def setup_method(self):
         self.task = Mock(name='task')
         self.pool = Mock(name='pool')
         self.eventer = Mock(name='eventer')
-        super().setup()
+        super().setup_method()
 
     def create_request_cls(self, **kwargs):
         return create_request_cls(

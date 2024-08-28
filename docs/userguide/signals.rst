@@ -362,7 +362,7 @@ Provides arguments:
 
 * ``request``
 
-    This is a :class:`~celery.worker.request.Request` instance, and not
+    This is a :class:`~celery.app.task.Context` instance, and not
     ``task.request``. When using the prefork pool this signal
     is dispatched in the parent process, so ``task.request`` isn't available
     and shouldn't be used. Use this object instead, as they share many
@@ -542,6 +542,20 @@ Provides arguments:
 ~~~~~~~~~~~~~~~
 
 Dispatched before the worker is started.
+
+.. signal:: worker_before_create_process
+
+``worker_before_create_process``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Dispatched in the parent process, just before new child process is created in the prefork pool.
+It can be used to clean up instances that don't behave well when forking.
+
+.. code-block:: python
+
+    @signals.worker_before_create_process.connect
+    def clean_channels(**kwargs):
+        grpc_singleton.clean_channel()
 
 .. signal:: worker_ready
 
