@@ -101,6 +101,136 @@ longer version:
     On Linux systems, Celery now supports sending :sig:`KILL` signal to all child processes
     after worker termination. This is done via `PR_SET_PDEATHSIG` option of ``prctl(2)``.
 
+.. _worker_shutdown:
+
+Worker Shutdown
+---------------
+
+We will use the terms *Warm, Soft, Cold, Hard* to describe the different stages of worker shutdown.
+The worker will initiate the shutdown process when it receives the :sig:`TERM` or :sig:`QUIT` signal.
+The :sig:`INT` (Ctrl-C) signal is also handled during the shutdown process and always triggers the 
+next stage of the shutdown process.
+
+.. _worker-warm-shutdown:
+
+Warm Shutdown
+~~~~~~~~~~~~~
+
+When the worker receives the :sig:`TERM` signal, it will initiate a warm shutdown. The worker will
+finish all currently executing tasks before it actually terminates. The first time the worker receives
+the :sig:`INT` (Ctrl-C) signal, it will initiate a warm shutdown as well.
+
+The warm shutdown will stop the call to :func:`WorkController.start() <celery.worker.worker.WorkController.start>`
+and will call :func:`WorkController.stop() <celery.worker.worker.WorkController.stop>`.
+
+- Additional :sig:`TERM` signals will be ignored during the warm shutdown process.
+- The next :sig:`INT` signal will trigger the next stage of the shutdown process.
+
+.. _worker-cold-shutdown:
+
+Cold Shutdown
+~~~~~~~~~~~~~
+
+Cold shutdown is initiated when the worker receives the :sig:`QUIT` signal. The worker will stop
+all currently executing tasks and terminate immediately.
+
+.. note::
+
+    If the environment variable ``REMAP_SIGTERM`` is set to ``SIGQUIT``, the worker will also initiate
+    a cold shutdown when it receives the :sig:`TERM` signal instead of a warm shutdown.
+
+The cold shutdown will stop the call to :func:`WorkController.start() <celery.worker.worker.WorkController.start>`
+and will call :func:`WorkController.terminate() <celery.worker.worker.WorkController.terminate>`.
+
+If the warm shutdown already started, the transition to cold shutdown will run a signal handler ``on_cold_shutdown``
+to cancel all currently executing tasks from the MainProcess and potentially trigger the :ref:`worker-soft-shutdown`.
+
+.. _worker-soft-shutdown:
+
+Soft Shutdown
+~~~~~~~~~~~~~
+
+.. versionadded:: 5.5
+
+Soft shutdown is a time limited warm shutdown, initiated just before the cold shutdown. The worker will
+allow :setting:`worker_soft_shutdown_timeout` seconds for all currently executing tasks to finish before
+it terminates. If the time limit is reached, the worker will initiate a cold shutdown and cancel all currently
+executing tasks. If the :sig:`QUIT` signal is received during the soft shutdown, the worker will cancel all
+currently executing tasks but still wait for the time limit to finish before terminating, giving a chance for
+the worker to perform the cold shutdown a little more gracefully.
+
+The soft shutdown is disabled by default to maintain backward compatibility with the :ref:`worker-cold-shutdown`
+behavior. To enable the soft shutdown, set :setting:`worker_soft_shutdown_timeout` to a positive float value.
+
+For example, when setting ``worker_soft_shutdown_timeout=3``, the worker will allow 3 seconds for all currently
+executing tasks to finish before it terminates. If the time limit is reached, the worker will initiate a cold shutdown
+and cancel all currently executing tasks.
+
+.. code-block:: console
+
+    [INFO/MainProcess] Task myapp.long_running_task[6f748357-b2c7-456a-95de-f05c00504042] received
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 1/2000s
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 2/2000s
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 3/2000s
+    ^C
+    worker: Hitting Ctrl+C again will initiate cold shutdown, terminating all running tasks!
+
+    worker: Warm shutdown (MainProcess)
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 4/2000s
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 5/2000s
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 6/2000s
+    ^C
+    worker: Hitting Ctrl+C again will terminate all running tasks!
+    [WARNING/MainProcess] Initiating Soft Shutdown, terminating in 3 seconds
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 7/2000s
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 8/2000s
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 9/2000s
+    [WARNING/MainProcess] Restoring 1 unacknowledged message(s)
+
+- The next :sig:`QUIT` signal will cancel the tasks that are still running in the soft shutdown, but the worker
+  will still wait for the time limit to finish before terminating.
+- The next (2nd) :sig:`QUIT` or :sig:`INT` signal will trigger the next stage of the shutdown process.
+
+.. _worker-hard-shutdown:
+
+Hard Shutdown
+~~~~~~~~~~~~~
+
+.. versionadded:: 5.5
+
+Hard shutdown is mostly for local or debug purposes, allowing to spam the :sig:`INT` (Ctrl-C) signal
+to force the worker to terminate immediately. The worker will stop all currently executing tasks and
+terminate immediately by raising a :exc:`@WorkerTerminate` exception in the MainProcess.
+
+For example, notice the ``^C`` in the logs below (using the :sig:`INT` signal to move from stage to stage):
+
+.. code-block:: console
+
+    [INFO/MainProcess] Task myapp.long_running_task[7235ac16-543d-4fd5-a9e1-2d2bb8ab630a] received
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 1/2000s
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 2/2000s
+    ^C
+    worker: Hitting Ctrl+C again will initiate cold shutdown, terminating all running tasks!
+
+    worker: Warm shutdown (MainProcess)
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 3/2000s
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 4/2000s
+    ^C
+    worker: Hitting Ctrl+C again will terminate all running tasks!
+    [WARNING/MainProcess] Initiating Soft Shutdown, terminating in 10 seconds
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 5/2000s
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 6/2000s
+    ^C
+    Waiting gracefully for cold shutdown to complete...
+
+    worker: Cold shutdown (MainProcess)
+    ^C[WARNING/MainProcess] Restoring 1 unacknowledged message(s)
+
+.. warning::
+
+    The log ``Restoring 1 unacknowledged message(s)`` is misleading as it is not guaranteed that the message
+    will be restored after a hard shutdown. The :ref:`worker-soft-shutdown` allows adding a time window just between
+    the warm and the cold shutdown that improves the gracefulness of the shutdown process.
 
 .. _worker-restarting:
 
