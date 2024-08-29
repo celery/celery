@@ -437,16 +437,16 @@ class test_AsyncResult:
         assert result.date_done is None
 
     @patch('celery.app.base.to_utc')
-    @patch('celery.app.base.Celery.timezone', new_callable=mock.PropertyMock)
     @pytest.mark.parametrize('timezone, date', [
         ("utc", "2024-08-24T00:00:00+00:00"),
         ("America/Los_Angeles", "2024-08-23T17:00:00-07:00"),
         ("Pacific/Kwajalein", "2024-08-24T12:00:00+12:00"),
         ("Europe/Berlin", "2024-08-24T02:00:00+02:00"),
     ])
-    def test_date_done(self, timezone_mock, utc_datetime_mock, timezone, date):
-        timezone_mock.return_value = ZoneInfo(timezone)
+    def test_date_done(self, utc_datetime_mock, timezone, date):
         utc_datetime_mock.return_value = datetime.datetime(2024, 8, 24, 0, 0, 0, 0, datetime.timezone.utc)
+        self.app.conf.timezone = timezone
+        del self.app.timezone  # reset cached timezone
 
         result = Backend(app=self.app)._get_result_meta(None, states.SUCCESS, None, None)
         assert result.get('date_done') == date
