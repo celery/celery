@@ -1,13 +1,24 @@
 from time import sleep
 
 import pytest
-from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup, CeleryTestWorker, RabbitMQTestBroker
+from pytest_celery import (ALL_CELERY_BROKERS, CELERY_LOCALSTACK_BROKER, RESULT_TIMEOUT, CeleryTestBroker,
+                           CeleryTestSetup, CeleryTestWorker, RabbitMQTestBroker, _is_vendor_installed)
 
 import celery
 from celery import Celery
 from celery.canvas import chain, group
 from t.smoke.conftest import SuiteOperations, WorkerKill, WorkerRestart
 from t.smoke.tasks import long_running_task
+
+if _is_vendor_installed("localstack"):
+    ALL_CELERY_BROKERS.add(CELERY_LOCALSTACK_BROKER)
+
+
+@pytest.fixture(params=ALL_CELERY_BROKERS)
+def celery_broker(request: pytest.FixtureRequest) -> CeleryTestBroker:  # type: ignore
+    broker: CeleryTestBroker = request.getfixturevalue(request.param)
+    yield broker
+    broker.teardown()
 
 
 def assert_container_exited(worker: CeleryTestWorker, attempts: int = RESULT_TIMEOUT):
