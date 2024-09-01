@@ -77,8 +77,10 @@ def active_thread_count():
                if not t.name.startswith('Dummy-'))
 
 
-def safe_say(msg, fd=sys.stderr):
-    os.write(fd.fileno(), f'\n{msg}\n'.encode())
+def safe_say(msg, fd=None):
+    if fd is None:
+        fd = sys.stderr
+    os.write(fd.fileno(), f'\n{msg}\n'.encode('utf-8'))
 
 
 class Worker(WorkController):
