@@ -19,6 +19,7 @@ from kombu.transport.memory import Transport
 from kombu.utils.uuid import uuid
 
 import t.skip
+from celery.apps.worker import safe_say
 from celery.bootsteps import CLOSE, RUN, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
 from celery.exceptions import (ImproperlyConfigured, InvalidTaskError, TaskRevokedError, WorkerShutdown,
@@ -1193,3 +1194,17 @@ class test_WorkController(ConsumerCase):
             assert isinstance(w.semaphore, LaxBoundedSemaphore)
             P = w.pool
             P.start()
+
+
+def test_safe_say_defaults_to_stderr(capfd):
+    safe_say("hello")
+    captured = capfd.readouterr()
+    assert "\nhello\n" == captured.err
+    assert "" == captured.out
+
+
+def test_safe_say_writes_to_std_out(capfd):
+    safe_say("out", sys.stdout)
+    captured = capfd.readouterr()
+    assert "\nout\n" == captured.out
+    assert "" == captured.err
