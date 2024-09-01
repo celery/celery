@@ -1441,18 +1441,13 @@ class test_App:
             'celery_delayed_27',
             type='topic',
         )
-        self.app.amqp.send_task_message.assert_called_once_with(ANY, ANY, ANY, queue=Queue(
-            'celery_delayed_27',
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
             exchange=exchange,
-            routing_key='0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.1.1.1.0.testcelery',
-            queue_arguments={
-                "x-queue-type": "quorum",
-                "x-dead-letter-strategy": "at-least-once",
-                "x-overflow": "reject-publish",
-                "x-message-ttl": pow(2, 27) * 1000,
-                "x-dead-letter-exchange": 'celery_delayed_26',
-            }
-        ))
+            routing_key='0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.1.1.1.0.testcelery'
+        )
 
     def test_native_delayed_delivery_eta_datetime(self):
         self.app.amqp = MagicMock(name='amqp')
@@ -1473,18 +1468,13 @@ class test_App:
             'celery_delayed_27',
             type='topic',
         )
-        self.app.amqp.send_task_message.assert_called_once_with(ANY, ANY, ANY, queue=Queue(
-            'celery_delayed_27',
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
             exchange=exchange,
-            routing_key='0.0.0.0.0.0.0.0.0.0.0.1.0.1.0.1.0.0.0.1.1.0.0.0.0.0.0.0.testcelery',
-            queue_arguments={
-                "x-queue-type": "quorum",
-                "x-dead-letter-strategy": "at-least-once",
-                "x-overflow": "reject-publish",
-                "x-message-ttl": pow(2, 27) * 1000,
-                "x-dead-letter-exchange": 'celery_delayed_26',
-            }
-        ))
+            routing_key='0.0.0.0.0.0.0.0.0.0.0.1.0.1.0.1.0.0.0.1.1.0.0.0.0.0.0.0.testcelery'
+        )
 
     def test_native_delayed_delivery_eta_str(self):
         self.app.amqp = MagicMock(name='amqp')
@@ -1505,18 +1495,13 @@ class test_App:
             'celery_delayed_27',
             type='topic',
         )
-        self.app.amqp.send_task_message.assert_called_once_with(ANY, ANY, ANY, queue=Queue(
-            'celery_delayed_27',
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
             exchange=exchange,
             routing_key='0.0.0.0.0.0.0.0.0.0.0.1.0.1.0.1.0.0.0.1.1.0.0.0.0.0.0.0.testcelery',
-            queue_arguments={
-                "x-queue-type": "quorum",
-                "x-dead-letter-strategy": "at-least-once",
-                "x-overflow": "reject-publish",
-                "x-message-ttl": pow(2, 27) * 1000,
-                "x-dead-letter-exchange": 'celery_delayed_26',
-            }
-        ))
+        )
 
     def test_native_delayed_delivery_no_eta_or_countdown(self):
         self.app.amqp = MagicMock(name='amqp')
@@ -1526,10 +1511,15 @@ class test_App:
 
         self.app.send_task('foo', (1, 2), countdown=-10)
 
-        self.app.amqp.send_task_message.assert_called_once_with(ANY, ANY, ANY, queue=Queue(
-            'testcelery',
-            routing_key='testcelery'
-        ))
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            queue=Queue(
+                'testcelery',
+                routing_key='testcelery'
+            )
+        )
 
     def test_native_delayed_delivery_countdown_in_the_past(self):
         self.app.amqp = MagicMock(name='amqp')
@@ -1545,11 +1535,16 @@ class test_App:
 
         self.app.send_task('foo', (1, 2))
 
-        self.app.amqp.send_task_message.assert_called_once_with(ANY, ANY, ANY, queue=Queue(
-            'testcelery',
-            routing_key='testcelery',
-            exchange=Exchange('testcelery', type='topic')
-        ))
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            queue=Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        )
 
     def test_native_delayed_delivery_eta_in_the_past(self):
         self.app.amqp = MagicMock(name='amqp')
@@ -1566,11 +1561,16 @@ class test_App:
 
         self.app.send_task('foo', (1, 2), eta=datetime(2024, 8, 23).isoformat())
 
-        self.app.amqp.send_task_message.assert_called_once_with(ANY, ANY, ANY, queue=Queue(
-            'testcelery',
-            routing_key='testcelery',
-            exchange=Exchange('testcelery', type='topic')
-        ))
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            queue=Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        )
 
     def test_native_delayed_delivery_direct_exchange(self, caplog):
         self.app.amqp = MagicMock(name='amqp')
@@ -1586,11 +1586,16 @@ class test_App:
 
         self.app.send_task('foo', (1, 2), countdown=10)
 
-        self.app.amqp.send_task_message.assert_called_once_with(ANY, ANY, ANY, queue=Queue(
-            'testcelery',
-            routing_key='testcelery',
-            exchange=Exchange('testcelery', type='direct')
-        ))
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            queue=Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='direct')
+            )
+        )
 
         assert len(caplog.records) == 1
         record: LogRecord = caplog.records[0]

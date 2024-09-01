@@ -14,7 +14,7 @@ from operator import attrgetter
 
 from click.exceptions import Exit
 from dateutil.parser import isoparse
-from kombu import Exchange, Queue, pools
+from kombu import Exchange, pools
 from kombu.clocks import LamportClock
 from kombu.common import oid_from
 from kombu.utils.compat import register_after_fork
@@ -844,18 +844,9 @@ class Celery:
                         'celery_delayed_27',
                         type='topic',
                     )
-                    options['queue'] = Queue(
-                        'celery_delayed_27',
-                        exchange=exchange,
-                        routing_key=routing_key,
-                        queue_arguments={
-                            "x-queue-type": "quorum",
-                            "x-dead-letter-strategy": "at-least-once",
-                            "x-overflow": "reject-publish",
-                            "x-message-ttl": pow(2, 27) * 1000,
-                            "x-dead-letter-exchange": 'celery_delayed_26',
-                        }
-                    )
+                    del options['queue']
+                    options['routing_key'] = routing_key
+                    options['exchange'] = exchange
         elif is_native_delayed_delivery and options['queue'].exchange.type == 'direct':
             logger.warn("Direct exchanges are not supported with native delayed delivery.\n"
                         f"{options['queue'].exchange.name} is a direct exchange but should be a topic exchange or "
