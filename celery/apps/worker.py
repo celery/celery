@@ -78,7 +78,7 @@ def active_thread_count():
 
 
 def safe_say(msg, fd=sys.stderr):
-    os.write(fd.fileno(), f'\n{msg}\n'.encode('utf-8'))
+    os.write(fd.fileno(), f'\n{msg}\n'.encode())
 
 
 class Worker(WorkController):
