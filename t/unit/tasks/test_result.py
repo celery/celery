@@ -3,9 +3,7 @@ import datetime
 import platform
 import traceback
 from contextlib import contextmanager
-from unittest import mock
 from unittest.mock import Mock, call, patch
-from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -438,7 +436,7 @@ class test_AsyncResult:
 
     @patch('celery.app.base.to_utc')
     @pytest.mark.parametrize('timezone, date', [
-        ("utc", "2024-08-24T00:00:00+00:00"),
+        ("UTC", "2024-08-24T00:00:00+00:00"),
         ("America/Los_Angeles", "2024-08-23T17:00:00-07:00"),
         ("Pacific/Kwajalein", "2024-08-24T12:00:00+12:00"),
         ("Europe/Berlin", "2024-08-24T02:00:00+02:00"),
