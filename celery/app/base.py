@@ -856,6 +856,11 @@ class Celery:
                             "x-dead-letter-exchange": 'celery_delayed_26',
                         }
                     )
+        elif is_native_delayed_delivery and options['queue'].exchange.type == 'direct':
+            logger.warn("Direct exchanges are not supported with native delayed delivery.\n"
+                        f"{options['queue'].exchange.name} is a direct exchange but should be a topic exchange or "
+                        f"a fanout exchange in order for native delayed delivery to work properly.\n"
+                        f"If quorum queues are used, this task may block the worker process until the ETA arrives.")
 
         if expires is not None:
             if isinstance(expires, datetime):

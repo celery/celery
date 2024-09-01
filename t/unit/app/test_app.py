@@ -9,6 +9,7 @@ import uuid
 from copy import deepcopy
 from datetime import datetime, timedelta
 from datetime import timezone as datetime_timezone
+from logging import LogRecord
 from pickle import dumps, loads
 from typing import Optional
 from unittest.mock import ANY, DEFAULT, MagicMock, Mock, patch
@@ -1570,6 +1571,36 @@ class test_App:
             routing_key='testcelery',
             exchange=Exchange('testcelery', type='topic')
         ))
+
+    def test_native_delayed_delivery_direct_exchange(self, caplog):
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {
+            'queue': Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='direct')
+            )
+        }
+        self.app.conf.broker_url = 'amqp://'
+        self.app.conf.broker_native_delayed_delivery = True
+
+        self.app.send_task('foo', (1, 2), countdown=10)
+
+        self.app.amqp.send_task_message.assert_called_once_with(ANY, ANY, ANY, queue=Queue(
+            'testcelery',
+            routing_key='testcelery',
+            exchange=Exchange('testcelery', type='direct')
+        ))
+
+        assert len(caplog.records) == 1
+        record: LogRecord = caplog.records[0]
+        assert record.levelname == "WARNING"
+        assert record.message == (
+            "Direct exchanges are not supported with native delayed delivery.\n"
+            "testcelery is a direct exchange but should be a topic exchange or "
+            "a fanout exchange in order for native delayed delivery to work properly.\n"
+            "If quorum queues are used, this task may block the worker process until the ETA arrives."
+        )
 
 
 class test_defaults:
