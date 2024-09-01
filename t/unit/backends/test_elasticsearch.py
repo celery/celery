@@ -388,7 +388,7 @@ class test_ElasticsearchBackend:
         x._server.update.assert_not_called()
 
     @patch('celery.backends.elasticsearch.datetime')
-    @patch('celery.backends.base.datetime')
+    @patch('celery.app.base.datetime')
     def test_backend_concurrent_update(self, base_datetime_mock, es_datetime_mock):
         expected_dt = datetime(2020, 6, 1, 18, 43, 24, 123456, timezone.utc)
         es_datetime_mock.now.return_value = expected_dt
@@ -499,7 +499,7 @@ class test_ElasticsearchBackend:
             self.app.conf.result_backend_always_retry = prev
 
     @patch('celery.backends.elasticsearch.datetime')
-    @patch('celery.backends.base.datetime')
+    @patch('celery.app.base.datetime')
     def test_backend_index_conflicting_document_removed(self, base_datetime_mock, es_datetime_mock):
         expected_dt = datetime(2020, 6, 1, 18, 43, 24, 123456, timezone.utc)
         es_datetime_mock.now.return_value = expected_dt
@@ -570,7 +570,7 @@ class test_ElasticsearchBackend:
             self.app.conf.result_backend_always_retry = prev
 
     @patch('celery.backends.elasticsearch.datetime')
-    @patch('celery.backends.base.datetime')
+    @patch('celery.app.base.datetime')
     def test_backend_index_conflicting_document_removed_not_throwing(self, base_datetime_mock, es_datetime_mock):
         expected_dt = datetime(2020, 6, 1, 18, 43, 24, 123456, timezone.utc)
         es_datetime_mock.now.return_value = expected_dt
@@ -638,7 +638,7 @@ class test_ElasticsearchBackend:
             self.app.conf.result_backend_always_retry = prev
 
     @patch('celery.backends.elasticsearch.datetime')
-    @patch('celery.backends.base.datetime')
+    @patch('celery.app.base.datetime')
     def test_backend_index_corrupted_conflicting_document(self, base_datetime_mock, es_datetime_mock):
         expected_dt = datetime(2020, 6, 1, 18, 43, 24, 123456, timezone.utc)
         es_datetime_mock.now.return_value = expected_dt
