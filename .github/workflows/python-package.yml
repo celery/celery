@@ -238,8 +238,8 @@ jobs:
 
   Smoke-canvas:
     needs:
-    - Integration
-    if: needs.Integration.result == 'success'
+    - Smoke-stamping
+    if: needs.Smoke-stamping.result == 'success'
     runs-on: ubuntu-latest
     strategy:
         fail-fast: false
@@ -275,8 +275,8 @@ jobs:
 
   Smoke-consumer:
     needs:
-    - Integration
-    if: needs.Integration.result == 'success'
+    - Smoke-stamping
+    if: needs.Smoke-stamping.result == 'success'
     runs-on: ubuntu-latest
     strategy:
         fail-fast: false
@@ -312,8 +312,8 @@ jobs:
 
   Smoke-control:
     needs:
-    - Integration
-    if: needs.Integration.result == 'success'
+    - Smoke-stamping
+    if: needs.Smoke-stamping.result == 'success'
     runs-on: ubuntu-latest
     strategy:
         fail-fast: false
@@ -349,8 +349,8 @@ jobs:
 
   Smoke-signals:
     needs:
-    - Integration
-    if: needs.Integration.result == 'success'
+    - Smoke-stamping
+    if: needs.Smoke-stamping.result == 'success'
     runs-on: ubuntu-latest
     strategy:
         fail-fast: false
@@ -386,8 +386,8 @@ jobs:
 
   Smoke-tasks:
     needs:
-    - Integration
-    if: needs.Integration.result == 'success'
+    - Smoke-control
+    if: needs.Smoke-control.result == 'success'
     runs-on: ubuntu-latest
     strategy:
         fail-fast: false
@@ -423,8 +423,8 @@ jobs:
 
   Smoke-thread_safe:
     needs:
-    - Integration
-    if: needs.Integration.result == 'success'
+    - Smoke-control
+    if: needs.Smoke-control.result == 'success'
     runs-on: ubuntu-latest
     strategy:
         fail-fast: false
@@ -460,8 +460,8 @@ jobs:
 
   Smoke-worker:
     needs:
-    - Integration
-    if: needs.Integration.result == 'success'
+    - Smoke-control
+    if: needs.Smoke-control.result == 'success'
     runs-on: ubuntu-latest
     strategy:
         fail-fast: false
