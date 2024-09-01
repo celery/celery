@@ -718,7 +718,7 @@ Build the documentation by running:
 
 .. code-block:: console
 
-    $ docker-compose -f docker/docker-compose.yml up --build docs
+    $ docker compose -f docker/docker-compose.yml up --build docs
 
 The service will start a local docs server at ``:7000``. The server is using
 ``sphinx-autobuild`` with the ``--watch`` option enabled, so you can live
