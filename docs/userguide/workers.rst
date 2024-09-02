@@ -134,6 +134,8 @@ Cold Shutdown
 Cold shutdown is initiated when the worker receives the :sig:`QUIT` signal. The worker will stop
 all currently executing tasks and terminate immediately.
 
+.. _worker-REMAP_SIGTERM:
+
 .. note::
 
     If the environment variable ``REMAP_SIGTERM`` is set to ``SIGQUIT``, the worker will also initiate
