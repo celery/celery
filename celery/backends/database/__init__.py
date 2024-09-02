@@ -84,6 +84,10 @@ class DatabaseBackend(BaseBackend):
             'short_lived_sessions',
             conf.database_short_lived_sessions)
 
+        create_tables_at_setup = conf.get("database_create_tables_at_setup", True)
+        if create_tables_at_setup is True:
+            self._create_tables()
+
         schemas = conf.database_table_schemas or {}
         tablenames = conf.database_table_names or {}
         self.task_cls.configure(
@@ -101,6 +105,10 @@ class DatabaseBackend(BaseBackend):
     @property
     def extended_result(self):
         return self.app.conf.find_value_for_key('extended', 'result')
+
+    def _create_tables(self):
+        """Create the task and taskset tables."""
+        self.ResultSession()
 
     def ResultSession(self, session_manager=SessionManager()):
         return session_manager.session_factory(
