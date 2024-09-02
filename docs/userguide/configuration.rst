@@ -987,6 +987,17 @@ strings (this is the part of the URI that comes after the ``db+`` prefix).
 .. _`Connection String`:
     http://www.sqlalchemy.org/docs/core/engines.html#database-urls
 
+.. setting:: database_create_tables_at_setup
+
+``database_create_tables_at_setup``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: True by default.
+
+Celery will create the tables in the database at startup. If you want
+Celery to create the tables lazily, i.e. wait for the first task to
+be executed before creating the tables, set this setting to False.
+
 .. setting:: database_engine_options
 
 ``database_engine_options``
