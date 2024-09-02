@@ -452,12 +452,12 @@ class test_Consumer(ConsumerTestCase):
         c.app.conf.broker_connection_retry_on_startup = broker_connection_retry_on_startup
         c.app.conf.broker_connection_retry = broker_connection_retry
 
-        if broker_connection_retry_on_startup is None:
-            with subtests.test("Deprecation warning when startup is None"):
-                with pytest.deprecated_call():
-                    c.ensure_connected(Mock())
-
         if broker_connection_retry is False:
+            if broker_connection_retry_on_startup is None:
+                with subtests.test("Deprecation warning when startup is None"):
+                    with pytest.deprecated_call():
+                        c.ensure_connected(Mock())
+
             with subtests.test("Does not retry when connect throws an error and retry is set to false"):
                 conn = Mock()
                 conn.connect.side_effect = ConnectionError()
