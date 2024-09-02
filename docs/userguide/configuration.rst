@@ -79,6 +79,7 @@ have been moved into a new  ``task_`` prefix.
 ``BROKER_FAILOVER_STRATEGY``               :setting:`broker_failover_strategy`
 ``BROKER_HEARTBEAT``                       :setting:`broker_heartbeat`
 ``BROKER_LOGIN_METHOD``                    :setting:`broker_login_method`
+``BROKER_NATIVE_DELAYED_DELIVERY``         :setting:`broker_native_delayed_delivery`
 ``BROKER_POOL_LIMIT``                      :setting:`broker_pool_limit`
 ``BROKER_USE_SSL``                         :setting:`broker_use_ssl`
 ``CELERY_CACHE_BACKEND``                   :setting:`cache_backend`
@@ -3003,6 +3004,15 @@ Also, this option doesn't work when `broker_connection_retry` is `False`.
 Default: ``"AMQPLAIN"``.
 
 Set custom amqp login method.
+
+.. setting:: broker_native_delayed_delivery
+
+``broker_native_delayed_delivery``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.5
+
+Default: Disabled.
 
 .. setting:: broker_transport_options
 
