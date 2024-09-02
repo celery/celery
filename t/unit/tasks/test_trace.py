@@ -629,3 +629,37 @@ class test_stackprotection:
             assert foo(1).called_directly
         finally:
             reset_worker_optimizations(self.app)
+
+    def test_stackprotection_headers_passed_on_new_request_stack(self):
+        setup_worker_optimizations(self.app)
+        try:
+
+            @self.app.task(shared=False, bind=True)
+            def foo(self, i):
+                if i:
+                    return foo.apply(args=(i-1,), headers=456)
+                return self.request
+
+            task = foo.apply(args=(2,), headers=123, loglevel=5)
+            assert task.result.result.result.args == (0,)
+            assert task.result.result.result.headers == 456
+            assert task.result.result.result.loglevel == 0
+        finally:
+            reset_worker_optimizations(self.app)
+
+    def test_stackprotection_headers_persisted_calling_task_directly(self):
+        setup_worker_optimizations(self.app)
+        try:
+
+            @self.app.task(shared=False, bind=True)
+            def foo(self, i):
+                if i:
+                    return foo(i-1)
+                return self.request
+
+            task = foo.apply(args=(2,), headers=123, loglevel=5)
+            assert task.result.args == (0,)
+            assert task.result.headers == 123
+            assert task.result.loglevel == 5
+        finally:
+            reset_worker_optimizations(self.app)
