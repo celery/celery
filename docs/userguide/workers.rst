@@ -163,6 +163,8 @@ the worker to perform the cold shutdown a little more gracefully.
 
 The soft shutdown is disabled by default to maintain backward compatibility with the :ref:`worker-cold-shutdown`
 behavior. To enable the soft shutdown, set :setting:`worker_soft_shutdown_timeout` to a positive float value.
+The soft shutdown will be skipped if there are no tasks running. To force the soft shutdown, *also* enable the
+:setting:`worker_enable_soft_shutdown_on_idle` setting.
 
 For example, when setting ``worker_soft_shutdown_timeout=3``, the worker will allow 3 seconds for all currently
 executing tasks to finish before it terminates. If the time limit is reached, the worker will initiate a cold shutdown

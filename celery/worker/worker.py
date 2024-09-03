@@ -423,8 +423,12 @@ class WorkController:
             soft shutdown timeout even if it is set as it makes no sense to wait for
             the timeout when there are no tasks to process.
         """
-        requests = tuple(state.active_requests)
         app = self.app
+        requests = tuple(state.active_requests)
+
+        if app.conf.worker_enable_soft_shutdown_on_idle:
+            requests = True
+
         if app.conf.worker_soft_shutdown_timeout > 0 and requests:
             log = f"Initiating Soft Shutdown, terminating in {app.conf.worker_soft_shutdown_timeout} seconds"
             logger.warning(log)
