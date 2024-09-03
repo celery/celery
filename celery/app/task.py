@@ -1115,7 +1115,7 @@ class Task:
         return result
 
     def push_request(self, *args, **kwargs):
-        self.request_stack.push(Context(*args, **kwargs))
+        self.request_stack.push(Context(*args, **{**self.request.__dict__, **kwargs}))
 
     def pop_request(self):
         self.request_stack.pop()

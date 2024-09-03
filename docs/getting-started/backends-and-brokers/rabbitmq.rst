@@ -28,7 +28,7 @@ username, password and vhost.
 Installing the RabbitMQ Server
 ==============================
 
-See `Installing RabbitMQ`_ over at RabbitMQ's website. For macOS
+See `Downloading and Installing RabbitMQ`_ over at RabbitMQ's website. For macOS
 see `Installing RabbitMQ on macOS`_.
 
 .. _`Downloading and Installing RabbitMQ`: https://www.rabbitmq.com/download.html

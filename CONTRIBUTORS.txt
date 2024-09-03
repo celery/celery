@@ -300,3 +300,4 @@ Andy Zickler, 2024/01/18
 Johannes Faigle, 2024/06/18
 Giovanni Giampauli, 2024/06/26
 Shamil Abdulaev, 2024/08/05
+Nikos Atlas, 2024/08/26
