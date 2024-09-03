@@ -1193,3 +1193,12 @@ class test_WorkController(ConsumerCase):
             assert isinstance(w.semaphore, LaxBoundedSemaphore)
             P = w.pool
             P.start()
+
+    def test_wait_for_soft_shutdown(self):
+        worker = self.worker
+        worker.app.conf.worker_soft_shutdown_timeout = 10
+        request = Mock(name='task', id='1234213')
+        state.task_accepted(request)
+        with patch("celery.worker.worker.sleep") as sleep:
+            worker.wait_for_soft_shutdown()
+            sleep.assert_called_with(worker.app.conf.worker_soft_shutdown_timeout)

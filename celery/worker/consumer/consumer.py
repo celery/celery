@@ -730,6 +730,18 @@ class Consumer:
             self=self, state=self.blueprint.human_state(),
         )
 
+    def cancel_all_unacked_requests(self):
+        """Cancel all unacked requests with late acknowledgement enabled."""
+
+        def should_cancel(request):
+            return request.task.acks_late and not request.acknowledged
+
+        requests_to_cancel = tuple(filter(should_cancel, active_requests))
+
+        if requests_to_cancel:
+            for request in requests_to_cancel:
+                request.cancel(self.pool)
+
 
 class Evloop(bootsteps.StartStopStep):
     """Event loop service.
