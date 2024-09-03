@@ -408,3 +408,43 @@ class test_worker_shutdown(SuiteOperations):
                     worker.wait_for_log("Restoring 1 unacknowledged message(s)")
                     assert_container_exited(worker)
                     assert short_task_res.get(RESULT_TIMEOUT)
+
+            class test_worker_enable_soft_shutdown_on_idle(SuiteOperations):
+                @pytest.fixture
+                def default_worker_app(self, default_worker_app: Celery) -> Celery:
+                    app = default_worker_app
+                    app.conf.worker_enable_soft_shutdown_on_idle = True
+                    return app
+
+                def test_soft_shutdown(self, celery_setup: CeleryTestSetup):
+                    app = celery_setup.app
+                    worker = celery_setup.worker
+
+                    self.kill_worker(worker, WorkerKill.Method.SIGQUIT)
+                    worker.wait_for_log(
+                        f"Initiating Soft Shutdown, terminating in {app.conf.worker_soft_shutdown_timeout} seconds",
+                    )
+                    worker.wait_for_log("worker: Cold shutdown (MainProcess)")
+
+                    assert_container_exited(worker)
+
+                def test_soft_shutdown_eta(self, celery_setup: CeleryTestSetup):
+                    if isinstance(celery_setup.broker, RabbitMQTestBroker):
+                        pytest.skip("RabbitMQ does not support visibility timeout")
+
+                    app = celery_setup.app
+                    queue = celery_setup.worker.worker_queue
+                    worker = celery_setup.worker
+                    sig = long_running_task.si(5, verbose=True).set(queue=queue)
+                    res = sig.apply_async(countdown=app.conf.worker_soft_shutdown_timeout + 5)
+
+                    worker.wait_for_log(f"long_running_task[{res.id}] received")
+                    self.kill_worker(worker, WorkerKill.Method.SIGQUIT)
+                    worker.wait_for_log(
+                        f"Initiating Soft Shutdown, terminating in {app.conf.worker_soft_shutdown_timeout} seconds"
+                    )
+                    worker.wait_for_log("worker: Cold shutdown (MainProcess)")
+                    worker.wait_for_log("Restoring 1 unacknowledged message(s)")
+                    assert_container_exited(worker)
+                    worker.restart()
+                    assert res.get(RESULT_TIMEOUT)
