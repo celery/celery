@@ -79,7 +79,7 @@ def active_thread_count():
 
 def safe_say(msg, fd=None):
     if fd is None:
-        fd = sys.stderr
+        fd = sys.__stderr__
     if hasattr(fd, 'fileno') and fd.fileno() is not None:
         os.write(fd.fileno(), f'\n{msg}\n'.encode())
 
@@ -301,7 +301,7 @@ def _shutdown_handler(worker: Worker, sig='TERM', how='Warm', callback=None, exi
                 if callback:
                     callback(worker)
                 if verbose:
-                    safe_say(f'worker: {how} shutdown (MainProcess)', sys.stdout)
+                    safe_say(f'worker: {how} shutdown (MainProcess)', sys.__stdout__)
                 signals.worker_shutting_down.send(
                     sender=worker.hostname, sig=sig, how=how,
                     exitcode=exitcode,
@@ -359,7 +359,7 @@ def during_soft_shutdown(worker: Worker):
     # waiting for tasks to finish, and the user decides to still cancel the running tasks.
     # We give the worker the last chance to gracefully terminate by letting the soft shutdown
     # waiting time to finish, which is running in the MainProcess from the previous signal handler call.
-    safe_say('Waiting gracefully for cold shutdown to complete...', sys.stdout)
+    safe_say('Waiting gracefully for cold shutdown to complete...', sys.__stdout__)
 
 
 def on_cold_shutdown(worker: Worker):
@@ -399,7 +399,7 @@ def on_cold_shutdown(worker: Worker):
     Args:
         worker (Worker): The worker that received the signal.
     """
-    safe_say('worker: Hitting Ctrl+C again will terminate all running tasks!', sys.stdout)
+    safe_say('worker: Hitting Ctrl+C again will terminate all running tasks!', sys.__stdout__)
 
     # Replace the signal handler for SIGINT (Ctrl+C) and SIGQUIT (and possibly SIGTERM)
     install_worker_term_hard_handler(worker, sig='SIGINT', callback=during_soft_shutdown)
@@ -440,7 +440,7 @@ else:  # pragma: no cover
 
 def on_SIGINT(worker):
     safe_say('worker: Hitting Ctrl+C again will initiate cold shutdown, terminating all running tasks!',
-             sys.stdout)
+             sys.__stdout__)
     install_worker_term_hard_handler(worker, sig='SIGINT', verbose=False)
 
 
@@ -466,7 +466,7 @@ def install_worker_restart_handler(worker, sig='SIGHUP'):
     def restart_worker_sig_handler(*args):
         """Signal handler restarting the current python program."""
         set_in_sighandler(True)
-        safe_say(f"Restarting celery worker ({' '.join(sys.argv)})", sys.stdout)
+        safe_say(f"Restarting celery worker ({' '.join(sys.argv)})", sys.__stdout__)
         import atexit
         atexit.register(_reload_current_worker)
         from celery.worker import state
