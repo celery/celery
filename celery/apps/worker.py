@@ -464,7 +464,8 @@ def install_worker_restart_handler(worker, sig='SIGHUP'):
     def restart_worker_sig_handler(*args):
         """Signal handler restarting the current python program."""
         set_in_sighandler(True)
-        safe_say(f"Restarting celery worker ({' '.join(sys.argv)})", sys.__stdout__)
+        safe_say(f"Restarting celery worker ({' '.join(sys.argv)})",
+                 sys.__stdout__)
         import atexit
         atexit.register(_reload_current_worker)
         from celery.worker import state
