@@ -1229,15 +1229,16 @@ class test_WorkController(ConsumerCase):
             sleep.assert_not_called()
 
 
-def test_safe_say_defaults_to_stderr(capfd):
-    safe_say("hello")
-    captured = capfd.readouterr()
-    assert "\nhello\n" == captured.err
-    assert "" == captured.out
+class test_WorkerApp:
 
+    def test_safe_say_defaults_to_stderr(self, capfd):
+        safe_say("hello")
+        captured = capfd.readouterr()
+        assert "\nhello\n" == captured.err
+        assert "" == captured.out
 
-def test_safe_say_writes_to_std_out(capfd):
-    safe_say("out", sys.stdout)
-    captured = capfd.readouterr()
-    assert "\nout\n" == captured.out
-    assert "" == captured.err
+    def test_safe_say_writes_to_std_out(self, capfd):
+        safe_say("out", sys.stdout)
+        captured = capfd.readouterr()
+        assert "\nout\n" == captured.out
+        assert "" == captured.err
