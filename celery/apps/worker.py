@@ -77,9 +77,7 @@ def active_thread_count():
                if not t.name.startswith('Dummy-'))
 
 
-def safe_say(msg, fd=None):
-    if fd is None:
-        fd = sys.__stderr__
+def safe_say(msg, fd=sys.__stderr__):
     if hasattr(fd, 'fileno') and fd.fileno() is not None:
         os.write(fd.fileno(), f'\n{msg}\n'.encode())
 
