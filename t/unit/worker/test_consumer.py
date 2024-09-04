@@ -442,6 +442,32 @@ class test_Consumer(ConsumerTestCase):
         with pytest.deprecated_call(match=CANCEL_TASKS_BY_DEFAULT):
             c.on_connection_error_after_connected(Mock())
 
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_cancel_all_unacked_requests(self):
+        c = self.get_consumer()
+
+        mock_request_acks_late_not_acknowledged = Mock(id='1')
+        mock_request_acks_late_not_acknowledged.task.acks_late = True
+        mock_request_acks_late_not_acknowledged.acknowledged = False
+        mock_request_acks_late_acknowledged = Mock(id='2')
+        mock_request_acks_late_acknowledged.task.acks_late = True
+        mock_request_acks_late_acknowledged.acknowledged = True
+        mock_request_acks_early = Mock(id='3')
+        mock_request_acks_early.task.acks_late = False
+        mock_request_acks_early.acknowledged = False
+
+        active_requests.add(mock_request_acks_late_not_acknowledged)
+        active_requests.add(mock_request_acks_late_acknowledged)
+        active_requests.add(mock_request_acks_early)
+
+        c.cancel_all_unacked_requests()
+
+        mock_request_acks_late_not_acknowledged.cancel.assert_called_once_with(c.pool)
+        mock_request_acks_late_acknowledged.cancel.assert_not_called()
+        mock_request_acks_early.cancel.assert_not_called()
+
+        active_requests.clear()
+
     @pytest.mark.parametrize("broker_connection_retry", [True, False])
     @pytest.mark.parametrize("broker_connection_retry_on_startup", [None, False])
     @pytest.mark.parametrize("first_connection_attempt", [True, False])

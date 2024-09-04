@@ -9,7 +9,7 @@ import sys
 import time
 import warnings
 from collections import namedtuple
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from functools import partial
 from weakref import WeakValueDictionary
 
@@ -460,7 +460,7 @@ class Backend:
                          state, traceback, request, format_date=True,
                          encode=False):
         if state in self.READY_STATES:
-            date_done = datetime.now(timezone.utc)
+            date_done = self.app.now()
             if format_date:
                 date_done = date_done.isoformat()
         else:

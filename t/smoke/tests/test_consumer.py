@@ -16,9 +16,15 @@ def default_worker_app(default_worker_app: Celery) -> Celery:
     app.conf.worker_prefetch_multiplier = WORKER_PREFETCH_MULTIPLIER
     app.conf.worker_concurrency = WORKER_CONCURRENCY
     if app.conf.broker_url.startswith("redis"):
-        app.conf.broker_transport_options = {"visibility_timeout": 1}
+        app.conf.broker_transport_options = {
+            "visibility_timeout": 1,
+            "polling_interval": 1,
+        }
     if app.conf.result_backend.startswith("redis"):
-        app.conf.result_backend_transport_options = {"visibility_timeout": 1}
+        app.conf.result_backend_transport_options = {
+            "visibility_timeout": 1,
+            "polling_interval": 1,
+        }
     return app
 
 

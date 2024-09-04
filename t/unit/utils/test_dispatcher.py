@@ -2,6 +2,8 @@ import gc
 import sys
 import time
 
+import pytest
+
 from celery.utils.dispatch import Signal
 
 if sys.platform.startswith('java'):
@@ -181,4 +183,18 @@ class test_Signal:
         assert result == expected
         del a, result, expected
         garbage_collect()
+        self._testIsClean(a_signal)
+
+    @pytest.mark.xfail(reason="Issue #9119")
+    def test_disconnect_retryable_decorator(self):
+        # Regression test for https://github.com/celery/celery/issues/9119
+
+        @a_signal.connect(sender=self, retry=True)
+        def succeeds_eventually(val, **kwargs):
+            return val
+
+        try:
+            a_signal.send(sender=self, val='test')
+        finally:
+            a_signal.disconnect(succeeds_eventually, sender=self)
         self._testIsClean(a_signal)

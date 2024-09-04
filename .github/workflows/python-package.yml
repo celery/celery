@@ -157,10 +157,47 @@ jobs:
         -   name: >
                 Run tox for
                 "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 20
+            timeout-minutes: 30
             run: >
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k failover
+
+  Smoke-quorum_queues:
+    needs:
+    - Integration
+    if: needs.Integration.result == 'success'
+    runs-on: ubuntu-latest
+    strategy:
+        fail-fast: false
+        matrix:
+            python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+
+    steps:
+        -   name: Fetch Docker Images
+            run: |
+              docker pull redis:latest
+              docker pull rabbitmq:latest
+
+        -   name: Install apt packages
+            run: |
+                sudo apt update
+
+        -   uses: actions/checkout@v4
+        -   name: Set up Python ${{ matrix.python-version }}
+            uses: actions/setup-python@v5
+            with:
+                python-version: ${{ matrix.python-version }}
+                cache: 'pip'
+                cache-dependency-path: '**/setup.py'
+        -   name: Install tox
+            run: python -m pip install --upgrade pip tox tox-gh-actions
+        -   name: >
+                Run tox for
+                "${{ matrix.python-version }}-smoke"
+            timeout-minutes: 20
+            run: >
+                tox --verbose --verbose -e
+                "${{ matrix.python-version }}-smoke" -- -n auto -k quorum_queues
 
   Smoke-stamping:
     needs:
@@ -194,15 +231,15 @@ jobs:
         -   name: >
                 Run tox for
                 "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 20
+            timeout-minutes: 30
             run: >
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k stamping
 
   Smoke-canvas:
     needs:
-    - Integration
-    if: needs.Integration.result == 'success'
+    - Smoke-stamping
+    if: needs.Smoke-stamping.result == 'success'
     runs-on: ubuntu-latest
     strategy:
         fail-fast: false
@@ -231,15 +268,15 @@ jobs:
         -   name: >
                 Run tox for
                 "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 20
+            timeout-minutes: 30
             run: >
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k test_canvas.py
 
   Smoke-consumer:
     needs:
-    - Integration
-    if: needs.Integration.result == 'success'
+    - Smoke-stamping
+    if: needs.Smoke-stamping.result == 'success'
     runs-on: ubuntu-latest
     strategy:
         fail-fast: false
@@ -268,15 +305,15 @@ jobs:
         -   name: >
                 Run tox for
                 "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 20
+            timeout-minutes: 30
             run: >
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k test_consumer.py
 
   Smoke-control:
     needs:
-    - Integration
-    if: needs.Integration.result == 'success'
+    - Smoke-stamping
+    if: needs.Smoke-stamping.result == 'success'
     runs-on: ubuntu-latest
     strategy:
         fail-fast: false
@@ -305,15 +342,15 @@ jobs:
         -   name: >
                 Run tox for
                 "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 20
+            timeout-minutes: 30
             run: >
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k test_control.py
 
   Smoke-signals:
     needs:
-    - Integration
-    if: needs.Integration.result == 'success'
+    - Smoke-stamping
+    if: needs.Smoke-stamping.result == 'success'
     runs-on: ubuntu-latest
     strategy:
         fail-fast: false
@@ -342,15 +379,15 @@ jobs:
         -   name: >
                 Run tox for
                 "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 20
+            timeout-minutes: 30
             run: >
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k test_signals.py
 
   Smoke-tasks:
     needs:
-    - Integration
-    if: needs.Integration.result == 'success'
+    - Smoke-control
+    if: needs.Smoke-control.result == 'success'
     runs-on: ubuntu-latest
     strategy:
         fail-fast: false
@@ -379,15 +416,15 @@ jobs:
         -   name: >
                 Run tox for
                 "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 20
+            timeout-minutes: 30
             run: >
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k test_tasks.py
 
   Smoke-thread_safe:
     needs:
-    - Integration
-    if: needs.Integration.result == 'success'
+    - Smoke-control
+    if: needs.Smoke-control.result == 'success'
     runs-on: ubuntu-latest
     strategy:
         fail-fast: false
@@ -416,15 +453,15 @@ jobs:
         -   name: >
                 Run tox for
                 "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 20
+            timeout-minutes: 30
             run: >
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k test_thread_safe.py
 
   Smoke-worker:
     needs:
-    - Integration
-    if: needs.Integration.result == 'success'
+    - Smoke-control
+    if: needs.Smoke-control.result == 'success'
     runs-on: ubuntu-latest
     strategy:
         fail-fast: false
@@ -453,7 +490,7 @@ jobs:
         -   name: >
                 Run tox for
                 "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 20
+            timeout-minutes: 30
             run: >
                 tox --verbose --verbose -e
                 "${{ matrix.python-version }}-smoke" -- -n auto -k test_worker.py
