@@ -166,6 +166,14 @@ behavior. To enable the soft shutdown, set :setting:`worker_soft_shutdown_timeou
 The soft shutdown will be skipped if there are no tasks running. To force the soft shutdown, *also* enable the
 :setting:`worker_enable_soft_shutdown_on_idle` setting.
 
+.. warning::
+
+    If the worker is not running any task but has ETA tasks reserved, the soft shutdown will not be initiated
+    unless the :setting:`worker_enable_soft_shutdown_on_idle` setting is enabled, which may lead to task loss
+    during the cold shutdown. When using ETA tasks, it is recommended to enable the soft shutdown on idle.
+    Experiment which :setting:`worker_soft_shutdown_timeout` value works best for your setup to reduce the risk
+    of task loss to a minimum.
+
 For example, when setting ``worker_soft_shutdown_timeout=3``, the worker will allow 3 seconds for all currently
 executing tasks to finish before it terminates. If the time limit is reached, the worker will initiate a cold shutdown
 and cancel all currently executing tasks.

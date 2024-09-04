@@ -3311,6 +3311,14 @@ If the :setting:`worker_soft_shutdown_timeout` is set to a value greater than 0.
 the :ref:`soft shutdown <worker-soft-shutdown>` anyways if there are no tasks running. This setting will
 enable the soft shutdown even if there are no tasks running.
 
+.. tip::
+
+    When the worker received ETA tasks, but the ETA has not been reached yet, and a shutdown is initiated,
+    the worker will **skip** the soft shutdown and initiate the cold shutdown immediately if there are no
+    tasks running. This may lead to failure in re-queueing the ETA tasks during worker teardown. To mitigate
+    this, enable this configuration to ensure the worker waits regadless, which gives enough time for a
+    graceful shutdown and successful re-queueing of the ETA tasks.
+
 .. _conf-events:
 
 Events
