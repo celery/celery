@@ -84,10 +84,6 @@ class DatabaseBackend(BaseBackend):
             'short_lived_sessions',
             conf.database_short_lived_sessions)
 
-        create_tables_at_setup = conf.get("database_create_tables_at_setup", True)
-        if create_tables_at_setup is True:
-            self._create_tables()
-
         schemas = conf.database_table_schemas or {}
         tablenames = conf.database_table_names or {}
         self.task_cls.configure(
@@ -101,6 +97,10 @@ class DatabaseBackend(BaseBackend):
             raise ImproperlyConfigured(
                 'Missing connection string! Do you have the'
                 ' database_url setting set to a real value?')
+
+        create_tables_at_setup = conf.get("database_create_tables_at_setup", True)
+        if create_tables_at_setup is True:
+            self._create_tables()
 
     @property
     def extended_result(self):
