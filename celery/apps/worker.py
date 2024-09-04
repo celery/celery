@@ -80,7 +80,8 @@ def active_thread_count():
 def safe_say(msg, fd=None):
     if fd is None:
         fd = sys.stderr
-    os.write(fd.fileno(), f'\n{msg}\n'.encode())
+    if hasattr(fd, 'fileno') and fd.fileno() is not None:
+        os.write(fd.fileno(), f'\n{msg}\n'.encode())
 
 
 class Worker(WorkController):
