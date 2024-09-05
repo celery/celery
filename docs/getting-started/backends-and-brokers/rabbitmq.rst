@@ -172,3 +172,6 @@ but rather use the :command:`rabbitmqctl` command:
     $ sudo rabbitmqctl stop
 
 When the server is running, you can continue reading `Setting up RabbitMQ`_.
+
+Using Quorum Queues
+===================
