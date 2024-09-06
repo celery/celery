@@ -184,11 +184,6 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
         # By default we don't have to declare anything when sending a result.
         pass
 
-    def on_result_fulfilled(self, result):
-        # This usually cancels the queue after the result is received,
-        # but we don't have to cancel since we have one queue per process.
-        pass
-
     def as_uri(self, include_password=True):
         return 'rpc://'
 
