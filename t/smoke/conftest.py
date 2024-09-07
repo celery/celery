@@ -1,11 +1,11 @@
 import os
-import subprocess
 
 import pytest
 from pytest_celery import (LOCALSTACK_CREDS, REDIS_CONTAINER_TIMEOUT, REDIS_ENV, REDIS_IMAGE, REDIS_PORTS,
                            RedisContainer)
 from pytest_docker_tools import container, fetch
 
+import docker
 from celery import Celery
 from t.smoke.operations.task_termination import TaskTermination
 from t.smoke.operations.worker_kill import WorkerKill
@@ -95,27 +95,49 @@ def default_worker_app(default_worker_app: Celery) -> Celery:
 
 @pytest.fixture(scope="module", autouse=True)
 def auto_clean_docker_resources():
-    """Clean up docker resources after each test module."""
+    """Clean up Docker resources after each test module."""
+    # Used for debugging
+    verbose = False
 
-    def run_shell_command(command):
+    def log(message):
+        if verbose:
+            print(message)
+
+    def cleanup_docker_resources():
+        """Function to clean up Docker containers, networks, and volumes based on labels."""
+        docker_client = docker.from_env()
+
         try:
-            subprocess.run(
-                command,
-                shell=True,
-                check=False,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-        except Exception:
-            pass
+            # Clean up containers with the label 'creator=pytest-docker-tools'
+            containers = docker_client.containers.list(all=True, filters={"label": "creator=pytest-docker-tools"})
+            for con in containers:
+                con.reload()  # Ensure we have the latest status
+                if con.status != "running":  # Only remove non-running containers
+                    log(f"Removing container {con.name}")
+                    con.remove(force=True)
+                else:
+                    log(f"Skipping running container {con.name}")
 
-    docker_cleanup_commands = [
-        "containers=$(docker ps -aq --filter label=creator=pytest-docker-tools); "
-        'if [ -n "$containers" ]; then docker rm -f $containers; fi',
-        "networks=$(docker network ls --filter name=pytest- -q); "
-        'if [ -n "$networks" ]; then docker network rm $networks; fi',
-        "volumes=$(docker volume ls --filter name=pytest- -q); "
-        'if [ -n "$volumes" ]; then docker volume rm $volumes; fi',
-    ]
-    for command in docker_cleanup_commands:
-        run_shell_command(command)
+            # Clean up networks with names starting with 'pytest-'
+            networks = docker_client.networks.list(names=["pytest-*"])
+            for network in networks:
+                if not network.containers:  # Check if the network is in use
+                    log(f"Removing network {network.name}")
+                    network.remove()
+                else:
+                    log(f"Skipping network {network.name}, still in use")
+
+            # Clean up volumes with names starting with 'pytest-*'
+            volumes = docker_client.volumes.list(filters={"name": "pytest-*"})
+            for volume in volumes:
+                if not volume.attrs.get("UsageData", {}).get("RefCount", 0):  # Check if volume is not in use
+                    log(f"Removing volume {volume.name}")
+                    volume.remove()
+                else:
+                    log(f"Skipping volume {volume.name}, still in use")
+
+        except Exception as e:
+            log(f"Error occurred while cleaning up Docker resources: {e}")
+
+    log("--- Running Docker resource cleanup ---")
+    cleanup_docker_resources()
