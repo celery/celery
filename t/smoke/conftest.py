@@ -1,4 +1,5 @@
 import os
+import subprocess
 
 import pytest
 from pytest_celery import (LOCALSTACK_CREDS, REDIS_CONTAINER_TIMEOUT, REDIS_ENV, REDIS_IMAGE, REDIS_PORTS,
@@ -90,3 +91,31 @@ def default_worker_app(default_worker_app: Celery) -> Celery:
     if app.conf.broker_url and app.conf.broker_url.startswith("sqs"):
         app.conf.broker_transport_options["region"] = LOCALSTACK_CREDS["AWS_DEFAULT_REGION"]
     return app
+
+
+@pytest.fixture(scope="module", autouse=True)
+def auto_clean_docker_resources():
+    """Clean up docker resources after each test module."""
+
+    def run_shell_command(command):
+        try:
+            subprocess.run(
+                command,
+                shell=True,
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except Exception:
+            pass
+
+    docker_cleanup_commands = [
+        "containers=$(docker ps -aq --filter label=creator=pytest-docker-tools); "
+        'if [ -n "$containers" ]; then docker rm -f $containers; fi',
+        "networks=$(docker network ls --filter name=pytest- -q); "
+        'if [ -n "$networks" ]; then docker network rm $networks; fi',
+        "volumes=$(docker volume ls --filter name=pytest- -q); "
+        'if [ -n "$volumes" ]; then docker volume rm $volumes; fi',
+    ]
+    for command in docker_cleanup_commands:
+        run_shell_command(command)
