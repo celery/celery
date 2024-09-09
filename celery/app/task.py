@@ -543,7 +543,7 @@ class Task:
             TypeError: If not enough arguments are passed, or too many
                 arguments are passed.  Note that signature checks may
                 be disabled by specifying ``@task(typing=False)``.
-            ValueError: If soft_time_limit and time_limit both set
+            ValueError: If soft_time_limit and time_limit both are set
                 but soft_time_limit is greater than time_limit
             kombu.exceptions.OperationalError: If a connection to the
                transport cannot be made, or if the connection is lost.
