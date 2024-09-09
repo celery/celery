@@ -140,5 +140,5 @@ class test_time_limit:
 
     def test_soft_time_limit_must_exceed_time_limit(self, celery_setup: CeleryTestSetup):
         sig = soft_time_limit_must_exceed_time_limit.s()
-        with pytest.raises(ValueError, match="soft_time_limit must be greater than or equal to time_limit"):
+        with pytest.raises(ValueError, match="soft_time_limit must be less than or equal to time_limit"):
             sig.apply_async(queue=celery_setup.worker.worker_queue)
