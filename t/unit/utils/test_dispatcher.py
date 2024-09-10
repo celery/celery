@@ -2,8 +2,6 @@ import gc
 import sys
 import time
 
-import pytest
-
 from celery.utils.dispatch import Signal
 
 if sys.platform.startswith('java'):
@@ -185,7 +183,6 @@ class test_Signal:
         garbage_collect()
         self._testIsClean(a_signal)
 
-    # @pytest.mark.xfail(reason="Issue #9119")
     def test_disconnect_retryable_decorator(self):
         # Regression test for https://github.com/celery/celery/issues/9119
 
