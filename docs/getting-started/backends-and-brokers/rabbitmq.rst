@@ -173,5 +173,7 @@ but rather use the :command:`rabbitmqctl` command:
 
 When the server is running, you can continue reading `Setting up RabbitMQ`_.
 
+.. _using-quorum-queues:
+
 Using Quorum Queues
 ===================
