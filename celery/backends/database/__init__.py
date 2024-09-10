@@ -100,7 +100,7 @@ class DatabaseBackend(BaseBackend):
 
         self.session_manager = SessionManager()
 
-        create_tables_at_setup = conf.get("database_create_tables_at_setup", True)
+        create_tables_at_setup = conf.get("database_create_tables_at_setup", False)
         if create_tables_at_setup is True:
             self._create_tables()
 
