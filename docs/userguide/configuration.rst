@@ -3008,11 +3008,17 @@ Set custom amqp login method.
 .. setting:: broker_native_delayed_delivery
 
 ``broker_native_delayed_delivery``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 5.5
 
+:transports supported: ``pyamqp``
+
 Default: Disabled.
+
+When enabled, tasks with ETAs and Countdowns will use the native delayed delivery mechanism for RabbitMQ.
+
+See :ref:`using-quorum-queues` for details regarding native delayed delivery.
 
 .. setting:: broker_transport_options
 
