@@ -13,18 +13,23 @@ from t.smoke.tests.quorum_queues.conftest import RabbitMQManagementBroker
 
 
 class test_broker_configuration:
-    @pytest.fixture
-    def default_worker_app(self, default_worker_app: Celery) -> Celery:
+    @pytest.fixture(params=['classic', 'quorum'])
+    def default_worker_app(self, default_worker_app: Celery, request) -> Celery:
         app = default_worker_app
         app.conf.broker_transport_options = {"confirm_publish": True}
         app.conf.task_default_queue_type = "quorum"
         app.conf.broker_native_delayed_delivery = True
+        app.conf.broker_native_delayed_delivery_queue_type = request.param
         app.conf.task_default_exchange_type = 'topic'
         app.conf.task_default_routing_key = 'celery'
 
         return app
 
-    def test_native_delayed_delivery_queue_configuration(self, celery_setup: CeleryTestSetup):
+    def test_native_delayed_delivery_queue_configuration(
+        self,
+        celery_setup: CeleryTestSetup,
+        default_worker_app: Celery
+    ):
         broker: RabbitMQManagementBroker = celery_setup.broker
         api = broker.get_management_url() + "/api/queues"
         response = requests.get(api, auth=HTTPBasicAuth("guest", "guest"))
@@ -46,6 +51,9 @@ class test_broker_configuration:
                 assert queue_arguments["x-dead-letter-exchange"] == f"celery_delayed_{queue_level - 1}"
 
             assert queue_arguments["x-message-ttl"] == pow(2, queue_level) * 1000
+
+            conf = default_worker_app.conf
+            assert queue_arguments["x-queue-type"] == conf.broker_native_delayed_delivery_queue_type
 
     def test_native_delayed_delivery_exchange_configuration(self, celery_setup: CeleryTestSetup):
         broker: RabbitMQManagementBroker = celery_setup.broker
