@@ -41,7 +41,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
             delayed_queue: Queue = Queue(
                 current_level,
                 queue_arguments={
-                    "x-queue-type": "quorum",
+                    "x-queue-type": c.app.conf.broker_native_delayed_delivery_queue_type,
                     "x-dead-letter-strategy": "at-least-once",
                     "x-overflow": "reject-publish",
                     "x-message-ttl": pow(2, level) * 1000,
