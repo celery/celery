@@ -477,7 +477,7 @@ class test_tasks:
     @flaky
     def test_soft_time_limit_exceeding_time_limit(self):
 
-        with pytest.raises(ValueError, match='soft_time_limit must be greater than or equal to time_limit'):
+        with pytest.raises(ValueError, match='soft_time_limit must be less than or equal to time_limit'):
             result = soft_time_limit_must_exceed_time_limit.apply_async()
             result.get(timeout=5)
 
