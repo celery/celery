@@ -321,7 +321,7 @@ def _can_detect_ambiguous(tz: tzinfo) -> bool:
     return isinstance(tz, ZoneInfo) or hasattr(tz, "is_ambiguous")
 
 
-def _is_ambigious(dt: datetime, tz: tzinfo) -> bool:
+def _is_ambiguous(dt: datetime, tz: tzinfo) -> bool:
     """Helper function to determine if a timezone is ambiguous using python's dateutil module.
 
     Returns False if the timezone cannot detect ambiguity, or if there is no ambiguity, otherwise True.
@@ -338,7 +338,7 @@ def make_aware(dt: datetime, tz: tzinfo) -> datetime:
     """Set timezone for a :class:`~datetime.datetime` object."""
 
     dt = dt.replace(tzinfo=tz)
-    if _is_ambigious(dt, tz):
+    if _is_ambiguous(dt, tz):
         dt = min(dt.replace(fold=0), dt.replace(fold=1))
     return dt
 
