@@ -185,7 +185,7 @@ class test_Signal:
         garbage_collect()
         self._testIsClean(a_signal)
 
-    @pytest.mark.xfail(reason="Issue #9119")
+    # @pytest.mark.xfail(reason="Issue #9119")
     def test_disconnect_retryable_decorator(self):
         # Regression test for https://github.com/celery/celery/issues/9119
 
