@@ -98,6 +98,8 @@ class DatabaseBackend(BaseBackend):
                 'Missing connection string! Do you have the'
                 ' database_url setting set to a real value?')
 
+        self.session_manager = SessionManager()
+
         create_tables_at_setup = conf.get("database_create_tables_at_setup", True)
         if create_tables_at_setup is True:
             self._create_tables()
@@ -110,7 +112,9 @@ class DatabaseBackend(BaseBackend):
         """Create the task and taskset tables."""
         self.ResultSession()
 
-    def ResultSession(self, session_manager=SessionManager()):
+    def ResultSession(self, session_manager=None):
+        if session_manager is None:
+            session_manager = self.session_manager
         return session_manager.session_factory(
             dburi=self.url,
             short_lived_sessions=self.short_lived_sessions,
