@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from pickle import dumps, loads
 from unittest.mock import Mock, patch
@@ -14,6 +15,8 @@ from celery.backends.database import DatabaseBackend, retry, session, session_cl
 from celery.backends.database.models import Task, TaskSet  # noqa
 from celery.backends.database.session import PREPARE_MODELS_MAX_RETRIES, ResultModelBase, SessionManager  # noqa
 from t import skip  # noqa
+
+DB_PATH = "test.db"
 
 
 class SomeClass:
@@ -45,8 +48,14 @@ class test_session_cleanup:
 @skip.if_pypy
 class test_DatabaseBackend:
 
+    @pytest.fixture(autouse=True)
+    def remmove_db(self):
+        yield
+        if os.path.exists(DB_PATH):
+            os.remove(DB_PATH)
+
     def setup_method(self):
-        self.uri = 'sqlite:///test.db'
+        self.uri = 'sqlite:///' + DB_PATH
         self.app.conf.result_serializer = 'pickle'
 
     def test_retry_helper(self):
@@ -222,7 +231,7 @@ class test_DatabaseBackend:
 @skip.if_pypy
 class test_DatabaseBackend_result_extended():
     def setup_method(self):
-        self.uri = 'sqlite:///test.db'
+        self.uri = 'sqlite:///' + DB_PATH
         self.app.conf.result_serializer = 'pickle'
         self.app.conf.result_extended = True
 
