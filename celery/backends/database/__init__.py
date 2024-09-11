@@ -107,7 +107,7 @@ class DatabaseBackend(BaseBackend):
             warn(
                 "configuration option `database_create_tables_at_setup` is not "
                 "set, defaulting to False. Default value will change to True in "
-                "celery 5.7",
+                "celery 6.0 or later",
             )
 
         if create_tables_at_setup is True:
