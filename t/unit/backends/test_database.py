@@ -99,6 +99,14 @@ class test_DatabaseBackend:
         assert tb.task_cls.__table__.name == 'foo'
         assert tb.taskset_cls.__table__.name == 'bar'
 
+    def test_table_creation_at_setup_config(self):
+        from sqlalchemy import inspect
+        self.app.conf.database_create_tables_at_setup = True
+        tb = DatabaseBackend(self.uri, app=self.app)
+        engine = tb.session_manager.get_engine(tb.url)
+        inspect(engine).has_table("celery_taskmeta")
+        inspect(engine).has_table("celery_tasksetmeta")
+
     def test_missing_task_id_is_PENDING(self):
         tb = DatabaseBackend(self.uri, app=self.app)
         assert tb.get_state('xxx-does-not-exist') == states.PENDING
