@@ -1421,7 +1421,7 @@ class test_tasks(TasksCase):
 
             assert yyy_result.state == 'FAILURE'
         except ValueError as e:
-            assert str(e) == 'soft_time_limit must be greater than or equal to time_limit'
+            assert str(e) == 'soft_time_limit must be less than or equal to time_limit'
 
 
 class test_apply_task(TasksCase):
