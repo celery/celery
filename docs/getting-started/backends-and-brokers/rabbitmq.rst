@@ -177,3 +177,47 @@ When the server is running, you can continue reading `Setting up RabbitMQ`_.
 
 Using Quorum Queues
 ===================
+
+.. warning::
+
+    Quorum Queues require disabling global QoS which means some features won't work as expected.
+    See `limitations`_ for details.
+
+Celery supports `Quorum Queues`_ by setting the ``x-queue-type`` header to ``quorum` like so:
+
+.. code-block:: python
+
+    from kombu import Queue
+
+    task_queues = [Queue('my-queue', queue_arguments={'x-queue-type': 'quorum'})]
+
+If you'd like to change the type of the default queue, set the :setting:`task_default_queue_type` setting to ``quorum``.
+
+Celery automatically detects if quorum queues are used using the :setting:`worker_detect_quorum_queues` setting.
+We recommend to keep the default behavior turned on.
+
+.. _`Quorum Queues`: https://www.rabbitmq.com/docs/quorum-queues
+
+.. _limitations:
+
+Limitations
+-----------
+
+Disabling global QoS means that the the per-channel QoS is now static.
+This means that some Celery features won't work when using Quorum Queues.
+
+Autoscaling relies on increasing and decreasing the prefetch count whenever a new process is instantiated
+or terminated so it won't work when Quorum Queues are detected.
+
+Similarly, the :setting:`worker_enable_prefetch_count_reduction` setting will be a no-op even when set to ``True``
+when Quorum Queues are detected.
+
+In addition, :ref:`ETA/Countdown <calling-eta>` will block the worker when received until the ETA arrives since
+we can no longer increase the prefetch count and fetch another task from the queue.
+
+In order to properly schedule ETA/Countdown tasks you need to enable :ref:`Native Delayed Delivery <native-delayed-delivery>`.
+
+.. _native-delayed-delivery:
+
+Native Delayed Delivery
+-----------------------
