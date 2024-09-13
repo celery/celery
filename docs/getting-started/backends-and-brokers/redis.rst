@@ -188,8 +188,8 @@ a more distant future, database-backed periodic task might be a better choice.
 Periodic tasks won't be affected by the visibility timeout,
 as this is a concept separate from ETA/countdown.
 
-You can increase this timeout by configuring several options
-with the same name:
+You can increase this timeout by configuring all of the following options
+with the same name (required to set all of them):
 
 .. code-block:: python
 
@@ -198,6 +198,9 @@ with the same name:
     app.conf.visibility_timeout = 43200
 
 The value must be an int describing the number of seconds.
+
+Note: If multiple applications are sharing the same Broker, with different settings, the _shortest_ value will be used.
+This include if the value is not set, and the default is sent
 
 Soft Shutdown
 -------------
