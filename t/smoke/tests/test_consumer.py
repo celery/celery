@@ -98,6 +98,9 @@ class test_worker_enable_prefetch_count_reduction_false:
         return app
 
     def test_max_prefetch_not_passed_on_broker_restart(self, celery_setup: CeleryTestSetup):
+        if isinstance(celery_setup.broker, RedisTestBroker):
+            # When running in debug it works, when running from CLI it sometimes works
+            pytest.xfail("Test is flaky with Redis broker")
         sig = group(long_running_task.s(10) for _ in range(WORKER_CONCURRENCY))
         r = sig.apply_async(queue=celery_setup.worker.worker_queue)
         celery_setup.broker.restart()
