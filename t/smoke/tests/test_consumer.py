@@ -25,6 +25,7 @@ def default_worker_app(default_worker_app: Celery) -> Celery:
             "visibility_timeout": 1,
             "polling_interval": 1,
         }
+    app.conf.visibility_timeout = 1
     return app
 
 

@@ -276,6 +276,8 @@ class test_worker_shutdown(SuiteOperations):
                     "visibility_timeout": 3600,  # 1 hour
                     "polling_interval": 1,
                 }
+                app.conf.result_backend_transport_options = {'visibility_timeout': 3600}
+                app.conf.visibility_timeout = 3600
                 return app
 
             def test_soft_shutdown_reset_visibility_timeout(self, celery_setup: CeleryTestSetup):
