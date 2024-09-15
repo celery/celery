@@ -190,6 +190,7 @@ Celery supports `Quorum Queues`_ by setting the ``x-queue-type`` header to ``quo
     from kombu import Queue
 
     task_queues = [Queue('my-queue', queue_arguments={'x-queue-type': 'quorum'})]
+    broker_transport_options = {"confirm_publish": True}
 
 If you'd like to change the type of the default queue, set the :setting:`task_default_queue_type` setting to ``quorum``.
 
