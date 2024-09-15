@@ -38,7 +38,7 @@ EXPOSE 5678
 RUN pip install --no-cache-dir --upgrade \
     pip \
     celery[redis,pymemcache]${CELERY_VERSION:+==$CELERY_VERSION} \
-    pytest-celery[sqs]>=1.1.1 \
+    pytest-celery[sqs]>=1.1.2 \
     pydantic>=2.4
 
 # The workdir must be /app
