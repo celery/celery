@@ -221,3 +221,12 @@ In order to properly schedule ETA/Countdown tasks you need to enable :ref:`Nativ
 
 Native Delayed Delivery
 -----------------------
+
+Since tasks with ETA/Countdown will block the worker until they are scheduled for execution,
+we need to use RabbitMQ's native capabilities to schedule the execution of tasks.
+
+The design is borrowed from NServiceBus. If you are interested in the implementation details, refer to their `documentation`_.
+
+.. _documentation: https://docs.particular.net/transports/rabbitmq/delayed-delivery
+
+To enable Native Delayed Delivery set the :setting:`broker_native_delayed_delivery` setting to ``True``.
