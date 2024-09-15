@@ -3,7 +3,7 @@ import os
 import pytest
 from pytest_celery import (LOCALSTACK_CREDS, REDIS_CONTAINER_TIMEOUT, REDIS_ENV, REDIS_IMAGE, REDIS_PORTS,
                            RedisContainer)
-from pytest_docker_tools import container, fetch
+from pytest_docker_tools import container, fetch, fxtr
 
 from celery import Celery
 from t.smoke.operations.task_termination import TaskTermination
@@ -54,6 +54,7 @@ redis_test_container: RedisContainer = container(
     network="{default_pytest_celery_network.name}",
     wrapper_class=RedisContainer,
     timeout=REDIS_CONTAINER_TIMEOUT,
+    command=fxtr("default_redis_broker_command"),
 )
 
 
@@ -90,3 +91,27 @@ def default_worker_app(default_worker_app: Celery) -> Celery:
     if app.conf.broker_url and app.conf.broker_url.startswith("sqs"):
         app.conf.broker_transport_options["region"] = LOCALSTACK_CREDS["AWS_DEFAULT_REGION"]
     return app
+
+
+# Override the default redis broker container from pytest-celery
+default_redis_broker = container(
+    image="{default_redis_broker_image}",
+    ports=fxtr("default_redis_broker_ports"),
+    environment=fxtr("default_redis_broker_env"),
+    network="{default_pytest_celery_network.name}",
+    wrapper_class=RedisContainer,
+    timeout=REDIS_CONTAINER_TIMEOUT,
+    command=fxtr("default_redis_broker_command"),
+)
+
+
+# Override the default redis backend container from pytest-celery
+default_redis_backend = container(
+    image="{default_redis_backend_image}",
+    ports=fxtr("default_redis_backend_ports"),
+    environment=fxtr("default_redis_backend_env"),
+    network="{default_pytest_celery_network.name}",
+    wrapper_class=RedisContainer,
+    timeout=REDIS_CONTAINER_TIMEOUT,
+    command=fxtr("default_redis_backend_command"),
+)
