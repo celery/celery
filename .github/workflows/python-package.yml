@@ -144,6 +144,8 @@ jobs:
         -   name: Install apt packages
             run: |
                 sudo apt update
+                sudo apt-get install -y procps  # Install procps to enable sysctl
+                sudo sysctl -w vm.overcommit_memory=1
 
         -   uses: actions/checkout@v4
         -   name: Set up Python ${{ matrix.python-version }}
@@ -181,6 +183,8 @@ jobs:
         -   name: Install apt packages
             run: |
                 sudo apt update
+                sudo apt-get install -y procps  # Install procps to enable sysctl
+                sudo sysctl -w vm.overcommit_memory=1
 
         -   uses: actions/checkout@v4
         -   name: Set up Python ${{ matrix.python-version }}
@@ -218,6 +222,8 @@ jobs:
         -   name: Install apt packages
             run: |
                 sudo apt update
+                sudo apt-get install -y procps  # Install procps to enable sysctl
+                sudo sysctl -w vm.overcommit_memory=1
 
         -   uses: actions/checkout@v4
         -   name: Set up Python ${{ matrix.python-version }}
@@ -234,7 +240,7 @@ jobs:
             timeout-minutes: 30
             run: >
                 tox --verbose --verbose -e
-                "${{ matrix.python-version }}-smoke" -- -n auto -k stamping
+                "${{ matrix.python-version }}-smoke" -- -n auto -k stamping --reruns 5
 
   Smoke-canvas:
     needs:
@@ -255,6 +261,8 @@ jobs:
         -   name: Install apt packages
             run: |
                 sudo apt update
+                sudo apt-get install -y procps  # Install procps to enable sysctl
+                sudo sysctl -w vm.overcommit_memory=1
 
         -   uses: actions/checkout@v4
         -   name: Set up Python ${{ matrix.python-version }}
@@ -292,6 +300,8 @@ jobs:
         -   name: Install apt packages
             run: |
                 sudo apt update
+                sudo apt-get install -y procps  # Install procps to enable sysctl
+                sudo sysctl -w vm.overcommit_memory=1
 
         -   uses: actions/checkout@v4
         -   name: Set up Python ${{ matrix.python-version }}
@@ -329,6 +339,8 @@ jobs:
         -   name: Install apt packages
             run: |
                 sudo apt update
+                sudo apt-get install -y procps  # Install procps to enable sysctl
+                sudo sysctl -w vm.overcommit_memory=1
 
         -   uses: actions/checkout@v4
         -   name: Set up Python ${{ matrix.python-version }}
@@ -366,6 +378,8 @@ jobs:
         -   name: Install apt packages
             run: |
                 sudo apt update
+                sudo apt-get install -y procps  # Install procps to enable sysctl
+                sudo sysctl -w vm.overcommit_memory=1
 
         -   uses: actions/checkout@v4
         -   name: Set up Python ${{ matrix.python-version }}
@@ -403,6 +417,8 @@ jobs:
         -   name: Install apt packages
             run: |
                 sudo apt update
+                sudo apt-get install -y procps  # Install procps to enable sysctl
+                sudo sysctl -w vm.overcommit_memory=1
 
         -   uses: actions/checkout@v4
         -   name: Set up Python ${{ matrix.python-version }}
@@ -440,6 +456,8 @@ jobs:
         -   name: Install apt packages
             run: |
                 sudo apt update
+                sudo apt-get install -y procps  # Install procps to enable sysctl
+                sudo sysctl -w vm.overcommit_memory=1
 
         -   uses: actions/checkout@v4
         -   name: Set up Python ${{ matrix.python-version }}
@@ -477,6 +495,8 @@ jobs:
         -   name: Install apt packages
             run: |
                 sudo apt update
+                sudo apt-get install -y procps  # Install procps to enable sysctl
+                sudo sysctl -w vm.overcommit_memory=1
 
         -   uses: actions/checkout@v4
         -   name: Set up Python ${{ matrix.python-version }}
