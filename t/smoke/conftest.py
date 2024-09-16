@@ -2,7 +2,7 @@ import os
 
 import pytest
 from pytest_celery import (LOCALSTACK_CREDS, REDIS_CONTAINER_TIMEOUT, REDIS_ENV, REDIS_IMAGE, REDIS_PORTS,
-                           CeleryTestBackend, RedisContainer, RedisTestBackend)
+                           RedisContainer)
 from pytest_docker_tools import container, fetch, fxtr
 
 from celery import Celery
@@ -46,6 +46,9 @@ def default_worker_tasks(default_worker_tasks: set) -> set:
 # we use pytest-celery to raise a dedicated Redis container for the smoke tests suite that is configured
 # to be used by the integration tests tasks.
 
+redis_command = RedisContainer.command()
+redis_command.insert(1, "/usr/local/etc/redis/redis.conf")
+
 redis_image = fetch(repository=REDIS_IMAGE)
 redis_test_container: RedisContainer = container(
     image="{redis_image.id}",
@@ -54,7 +57,13 @@ redis_test_container: RedisContainer = container(
     network="{default_pytest_celery_network.name}",
     wrapper_class=RedisContainer,
     timeout=REDIS_CONTAINER_TIMEOUT,
-    command=fxtr("default_redis_broker_command"),
+    command=redis_command,
+    volumes={
+        os.path.abspath("t/smoke/redis.conf"): {
+            "bind": "/usr/local/etc/redis/redis.conf",
+            "mode": "ro",  # Mount as read-only
+        }
+    },
 )
 
 
@@ -101,7 +110,13 @@ default_redis_broker = container(
     network="{default_pytest_celery_network.name}",
     wrapper_class=RedisContainer,
     timeout=REDIS_CONTAINER_TIMEOUT,
-    command=fxtr("default_redis_broker_command"),
+    command=redis_command,
+    volumes={
+        os.path.abspath("t/smoke/redis.conf"): {
+            "bind": "/usr/local/etc/redis/redis.conf",
+            "mode": "ro",  # Mount as read-only
+        }
+    },
 )
 
 
@@ -113,18 +128,11 @@ default_redis_backend = container(
     network="{default_pytest_celery_network.name}",
     wrapper_class=RedisContainer,
     timeout=REDIS_CONTAINER_TIMEOUT,
-    command=fxtr("default_redis_backend_command"),
+    command=redis_command,
+    volumes={
+        os.path.abspath("t/smoke/redis.conf"): {
+            "bind": "/usr/local/etc/redis/redis.conf",
+            "mode": "ro",  # Mount as read-only
+        }
+    },
 )
-
-
-class NoGCRedisTestBackend(CeleryTestBackend):
-    def teardown(self) -> None:
-        # The default teardown calls gc.collect(1)
-        super().teardown()
-
-
-@pytest.fixture
-def celery_redis_backend(default_redis_backend: RedisContainer) -> RedisTestBackend:  # type: ignore
-    backend = NoGCRedisTestBackend(default_redis_backend)
-    yield backend
-    backend.teardown()
