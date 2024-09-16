@@ -38,6 +38,9 @@ class test_worker_enable_prefetch_count_reduction_true:
 
     @pytest.mark.parametrize("expected_running_tasks_count", range(1, WORKER_CONCURRENCY + 1))
     def test_reducing_prefetch_count(self, celery_setup: CeleryTestSetup, expected_running_tasks_count: int):
+        if isinstance(celery_setup.broker, RedisTestBroker):
+            # When running in debug it works, when running from CLI it sometimes works
+            pytest.xfail("Test is flaky with Redis broker")
         sig = group(long_running_task.s(420) for _ in range(expected_running_tasks_count))
         sig.apply_async(queue=celery_setup.worker.worker_queue)
         celery_setup.broker.restart()
