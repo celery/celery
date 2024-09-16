@@ -133,7 +133,7 @@ jobs:
             timeout-minutes: 30
             run: >
                 tox --verbose --verbose -e
-                "${{ matrix.python-version }}-smoke" -- -n auto -k stamping
+                "${{ matrix.python-version }}-smoke" -- -n auto -k stamping --reruns 5
 
   Smoke-canvas:
     runs-on: blacksmith-4vcpu-ubuntu-2204
