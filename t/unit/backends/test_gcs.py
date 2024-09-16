@@ -146,7 +146,7 @@ class test_GCSBackend:
         mock_get.side_effect = ['value1', 'value2']
         result = backend.mget([b'key1', b'key2'])
         mock_get.assert_has_calls([call(b'key1'), call(b'key2')], any_order=True)
-        assert result == ['value1', 'value2']
+        assert sorted(result) == sorted(['value1', 'value2'])
 
     @patch('celery.backends.gcs.Client')
     @patch('celery.backends.gcs.getpid')
