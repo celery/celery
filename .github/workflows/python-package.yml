@@ -127,8 +127,8 @@ jobs:
 
   Smoke-failover:
     needs:
-    - Integration
-    if: needs.Integration.result == 'success'
+    - Unit
+    if: needs.Unit.result == 'success'
     runs-on: blacksmith-4vcpu-ubuntu-2204
     strategy:
         fail-fast: false
@@ -166,8 +166,8 @@ jobs:
 
   Smoke-quorum_queues:
     needs:
-    - Integration
-    if: needs.Integration.result == 'success'
+    - Unit
+    if: needs.Unit.result == 'success'
     runs-on: blacksmith-4vcpu-ubuntu-2204
     strategy:
         fail-fast: false
@@ -205,8 +205,8 @@ jobs:
 
   Smoke-stamping:
     needs:
-    - Integration
-    if: needs.Integration.result == 'success'
+    - Unit
+    if: needs.Unit.result == 'success'
     runs-on: blacksmith-4vcpu-ubuntu-2204
     strategy:
         fail-fast: false
@@ -244,8 +244,8 @@ jobs:
 
   Smoke-canvas:
     needs:
-    - Integration
-    if: needs.Integration.result == 'success'
+    - Unit
+    if: needs.Unit.result == 'success'
     runs-on: blacksmith-4vcpu-ubuntu-2204
     strategy:
         fail-fast: false
@@ -283,8 +283,8 @@ jobs:
 
   Smoke-consumer:
     needs:
-    - Integration
-    if: needs.Integration.result == 'success'
+    - Unit
+    if: needs.Unit.result == 'success'
     runs-on: blacksmith-4vcpu-ubuntu-2204
     strategy:
         fail-fast: false
@@ -322,8 +322,8 @@ jobs:
 
   Smoke-control:
     needs:
-    - Integration
-    if: needs.Integration.result == 'success'
+    - Unit
+    if: needs.Unit.result == 'success'
     runs-on: blacksmith-4vcpu-ubuntu-2204
     strategy:
         fail-fast: false
@@ -361,8 +361,8 @@ jobs:
 
   Smoke-signals:
     needs:
-    - Integration
-    if: needs.Integration.result == 'success'
+    - Unit
+    if: needs.Unit.result == 'success'
     runs-on: blacksmith-4vcpu-ubuntu-2204
     strategy:
         fail-fast: false
@@ -400,8 +400,8 @@ jobs:
 
   Smoke-tasks:
     needs:
-    - Integration
-    if: needs.Integration.result == 'success'
+    - Unit
+    if: needs.Unit.result == 'success'
     runs-on: blacksmith-4vcpu-ubuntu-2204
     strategy:
         fail-fast: false
@@ -439,8 +439,8 @@ jobs:
 
   Smoke-thread_safe:
     needs:
-    - Integration
-    if: needs.Integration.result == 'success'
+    - Unit
+    if: needs.Unit.result == 'success'
     runs-on: blacksmith-4vcpu-ubuntu-2204
     strategy:
         fail-fast: false
@@ -478,8 +478,8 @@ jobs:
 
   Smoke-worker:
     needs:
-    - Integration
-    if: needs.Integration.result == 'success'
+    - Unit
+    if: needs.Unit.result == 'success'
     runs-on: blacksmith-4vcpu-ubuntu-2204
     strategy:
         fail-fast: false
