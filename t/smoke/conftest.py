@@ -2,7 +2,7 @@ import os
 
 import pytest
 from pytest_celery import (LOCALSTACK_CREDS, REDIS_CONTAINER_TIMEOUT, REDIS_ENV, REDIS_IMAGE, REDIS_PORTS,
-                           RedisContainer)
+                           CeleryTestBackend, RedisContainer, RedisTestBackend)
 from pytest_docker_tools import container, fetch, fxtr
 
 from celery import Celery
@@ -115,3 +115,16 @@ default_redis_backend = container(
     timeout=REDIS_CONTAINER_TIMEOUT,
     command=fxtr("default_redis_backend_command"),
 )
+
+
+class NoGCRedisTestBackend(CeleryTestBackend):
+    def teardown(self) -> None:
+        # The default teardown calls gc.collect(1)
+        super().teardown()
+
+
+@pytest.fixture
+def celery_redis_backend(default_redis_backend: RedisContainer) -> RedisTestBackend:  # type: ignore
+    backend = NoGCRedisTestBackend(default_redis_backend)
+    yield backend
+    backend.teardown()
