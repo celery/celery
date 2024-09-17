@@ -137,13 +137,13 @@ jobs:
           'failover',
           'quorum_queues',
           'stamping',
-          'canvas',
-          'consumer',
-          'control',
-          'signals',
-          'tasks',
-          'thread_safe',
-          'worker'
+          'test_canvas.py',
+          'test_consumer.py',
+          'test_control.py',
+          'test_signals.py',
+          'test_tasks.py',
+          'test_thread_safe.py',
+          'test_worker.py'
         ]
 
     steps:
