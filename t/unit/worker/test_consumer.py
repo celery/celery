@@ -590,6 +590,7 @@ class test_Tasks:
 
     def test_detect_quorum_queues_positive(self):
         c = self.c
+        self.c.connection.transport.driver_type = 'amqp'
         c.app.amqp.queues = {"celery": Mock(queue_arguments={"x-queue-type": "quorum"})}
         tasks = Tasks(c)
         result, name = tasks.detect_quorum_queues(c)
@@ -598,6 +599,7 @@ class test_Tasks:
 
     def test_detect_quorum_queues_negative(self):
         c = self.c
+        self.c.connection.transport.driver_type = 'amqp'
         c.app.amqp.queues = {"celery": Mock(queue_arguments=None)}
         tasks = Tasks(c)
         result, name = tasks.detect_quorum_queues(c)
@@ -606,7 +608,7 @@ class test_Tasks:
 
     def test_detect_quorum_queues_not_rabbitmq(self):
         c = self.c
-        c.app.conf.broker_url = "redis://"
+        self.c.connection.transport.driver_type = 'redis'
         tasks = Tasks(c)
         result, name = tasks.detect_quorum_queues(c)
         assert not result
@@ -626,12 +628,14 @@ class test_Tasks:
 
     def test_qos_global_worker_detect_quorum_queues_true_with_quorum_queues(self):
         c = self.c
+        self.c.connection.transport.driver_type = 'amqp'
         c.app.amqp.queues = {"celery": Mock(queue_arguments={"x-queue-type": "quorum"})}
         tasks = Tasks(c)
         assert tasks.qos_global(c) is False
 
     def test_qos_global_eta_warning(self):
         c = self.c
+        self.c.connection.transport.driver_type = 'amqp'
         c.app.amqp.queues = {"celery": Mock(queue_arguments={"x-queue-type": "quorum"})}
         tasks = Tasks(c)
         with pytest.warns(CeleryWarning, match=ETA_TASKS_NO_GLOBAL_QOS_WARNING % "celery"):
