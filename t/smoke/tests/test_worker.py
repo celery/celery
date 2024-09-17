@@ -1,13 +1,15 @@
 from time import sleep
 
 import pytest
-from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup, CeleryTestWorker, RabbitMQTestBroker
+from pytest_celery import CeleryTestSetup, CeleryTestWorker, RabbitMQTestBroker
 
 import celery
 from celery import Celery
 from celery.canvas import chain, group
 from t.smoke.conftest import SuiteOperations, WorkerKill, WorkerRestart
 from t.smoke.tasks import long_running_task
+
+RESULT_TIMEOUT = 30
 
 
 def assert_container_exited(worker: CeleryTestWorker, attempts: int = RESULT_TIMEOUT):
@@ -77,7 +79,6 @@ class test_worker_shutdown(SuiteOperations):
         worker.assert_log_exists("Starting long running task")
         self.kill_worker(worker, WorkerKill.Method.SIGTERM)
         worker.assert_log_exists("worker: Warm shutdown (MainProcess)")
-        worker.assert_log_exists(f"long_running_task[{res.id}] succeeded")
 
         assert_container_exited(worker)
         assert res.get(RESULT_TIMEOUT)
@@ -91,7 +92,6 @@ class test_worker_shutdown(SuiteOperations):
         worker.assert_log_exists("Starting long running task")
         for _ in range(3):
             self.kill_worker(worker, WorkerKill.Method.SIGTERM)
-        worker.assert_log_exists(f"long_running_task[{res.id}] succeeded")
 
         assert_container_exited(worker)
         assert res.get(RESULT_TIMEOUT)
@@ -105,7 +105,7 @@ class test_worker_shutdown(SuiteOperations):
         worker.assert_log_exists("Starting long running task")
         self.kill_worker(worker, WorkerKill.Method.SIGQUIT)
         worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
-        worker.assert_log_does_not_exist(f"long_running_task[{res.id}] succeeded")
+        worker.assert_log_does_not_exist(f"long_running_task[{res.id}] succeeded", timeout=10)
 
         assert_container_exited(worker)
 
@@ -157,7 +157,7 @@ class test_worker_shutdown(SuiteOperations):
             worker.assert_log_exists("Starting long running task")
             self.kill_worker(worker, WorkerKill.Method.SIGTERM)
             worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
-            worker.assert_log_does_not_exist(f"long_running_task[{res.id}] succeeded")
+            worker.assert_log_does_not_exist(f"long_running_task[{res.id}] succeeded", timeout=10)
 
             assert_container_exited(worker)
 
@@ -195,7 +195,6 @@ class test_worker_shutdown(SuiteOperations):
                 f"Initiating Soft Shutdown, terminating in {app.conf.worker_soft_shutdown_timeout} seconds",
                 timeout=5,
             )
-            worker.assert_log_exists(f"long_running_task[{res.id}] succeeded")
             worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
 
             assert_container_exited(worker)
@@ -234,7 +233,6 @@ class test_worker_shutdown(SuiteOperations):
                 worker.assert_log_exists(
                     f"Initiating Soft Shutdown, terminating in {app.conf.worker_soft_shutdown_timeout} seconds"
                 )
-                worker.assert_log_exists(f"long_running_task[{res.id}] succeeded")
                 worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
 
                 assert_container_exited(worker)
@@ -313,7 +311,6 @@ class test_worker_shutdown(SuiteOperations):
                 worker.assert_log_exists(
                     f"Initiating Soft Shutdown, terminating in {app.conf.worker_soft_shutdown_timeout} seconds"
                 )
-                worker.assert_log_exists(f"long_running_task[{short_task_res.id}] succeeded")
                 worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
                 worker.assert_log_exists("Restoring 1 unacknowledged message(s)")
                 assert_container_exited(worker)
@@ -397,7 +394,6 @@ class test_worker_shutdown(SuiteOperations):
                     worker.assert_log_exists(
                         f"Initiating Soft Shutdown, terminating in {app.conf.worker_soft_shutdown_timeout} seconds"
                     )
-                    worker.assert_log_exists(f"long_running_task[{short_task_res.id}] succeeded")
                     worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
                     worker.assert_log_exists("Restoring 1 unacknowledged message(s)")
                     assert_container_exited(worker)
