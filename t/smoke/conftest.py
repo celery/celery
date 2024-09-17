@@ -2,7 +2,7 @@ import os
 
 import pytest
 from pytest_celery import (LOCALSTACK_CREDS, REDIS_CONTAINER_TIMEOUT, REDIS_ENV, REDIS_IMAGE, REDIS_PORTS,
-                           RedisContainer)
+                           CeleryTestSetup, RedisContainer)
 from pytest_docker_tools import container, fetch, fxtr
 
 from celery import Celery
@@ -13,6 +13,21 @@ from t.smoke.workers.alt import *  # noqa
 from t.smoke.workers.dev import *  # noqa
 from t.smoke.workers.latest import *  # noqa
 from t.smoke.workers.other import *  # noqa
+
+
+class SmokeTestSetup(CeleryTestSetup):
+    def ready(self, *args, **kwargs) -> bool:
+        # Force false, false, true
+        return super().ready(
+            ping=False,
+            control=False,
+            docker=True,
+        )
+
+
+@pytest.fixture
+def celery_setup_cls() -> type[CeleryTestSetup]:  # type: ignore
+    return SmokeTestSetup
 
 
 class SuiteOperations(
