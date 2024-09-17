@@ -74,10 +74,10 @@ class test_worker_shutdown(SuiteOperations):
         sig = long_running_task.si(5, verbose=True).set(queue=queue)
         res = sig.delay()
 
-        worker.wait_for_log("Starting long running task")
+        worker.assert_log_exists("Starting long running task")
         self.kill_worker(worker, WorkerKill.Method.SIGTERM)
-        worker.wait_for_log("worker: Warm shutdown (MainProcess)")
-        worker.wait_for_log(f"long_running_task[{res.id}] succeeded")
+        worker.assert_log_exists("worker: Warm shutdown (MainProcess)")
+        worker.assert_log_exists(f"long_running_task[{res.id}] succeeded")
 
         assert_container_exited(worker)
         assert res.get(RESULT_TIMEOUT)
@@ -88,10 +88,10 @@ class test_worker_shutdown(SuiteOperations):
         sig = long_running_task.si(5, verbose=True).set(queue=queue)
         res = sig.delay()
 
-        worker.wait_for_log("Starting long running task")
+        worker.assert_log_exists("Starting long running task")
         for _ in range(3):
             self.kill_worker(worker, WorkerKill.Method.SIGTERM)
-        worker.wait_for_log(f"long_running_task[{res.id}] succeeded")
+        worker.assert_log_exists(f"long_running_task[{res.id}] succeeded")
 
         assert_container_exited(worker)
         assert res.get(RESULT_TIMEOUT)
@@ -102,9 +102,9 @@ class test_worker_shutdown(SuiteOperations):
         sig = long_running_task.si(5, verbose=True).set(queue=queue)
         res = sig.delay()
 
-        worker.wait_for_log("Starting long running task")
+        worker.assert_log_exists("Starting long running task")
         self.kill_worker(worker, WorkerKill.Method.SIGQUIT)
-        worker.wait_for_log("worker: Cold shutdown (MainProcess)")
+        worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
         worker.assert_log_does_not_exist(f"long_running_task[{res.id}] succeeded")
 
         assert_container_exited(worker)
@@ -118,13 +118,13 @@ class test_worker_shutdown(SuiteOperations):
         sig = long_running_task.si(420, verbose=True).set(queue=queue)
         sig.delay()
 
-        worker.wait_for_log("Starting long running task")
+        worker.assert_log_exists("Starting long running task")
         self.kill_worker(worker, WorkerKill.Method.SIGTERM)
         self.kill_worker(worker, WorkerKill.Method.SIGQUIT)
         self.kill_worker(worker, WorkerKill.Method.SIGQUIT)
 
-        worker.wait_for_log("worker: Warm shutdown (MainProcess)")
-        worker.wait_for_log("worker: Cold shutdown (MainProcess)")
+        worker.assert_log_exists("worker: Warm shutdown (MainProcess)")
+        worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
 
         assert_container_exited(worker)
 
@@ -134,11 +134,11 @@ class test_worker_shutdown(SuiteOperations):
         sig = long_running_task.si(420, verbose=True).set(queue=queue)
         sig.delay()
 
-        worker.wait_for_log("Starting long running task")
+        worker.assert_log_exists("Starting long running task")
         self.kill_worker(worker, WorkerKill.Method.SIGQUIT)
         self.kill_worker(worker, WorkerKill.Method.SIGQUIT)
 
-        worker.wait_for_log("worker: Cold shutdown (MainProcess)")
+        worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
 
         assert_container_exited(worker)
 
@@ -154,9 +154,9 @@ class test_worker_shutdown(SuiteOperations):
             sig = long_running_task.si(5, verbose=True).set(queue=queue)
             res = sig.delay()
 
-            worker.wait_for_log("Starting long running task")
+            worker.assert_log_exists("Starting long running task")
             self.kill_worker(worker, WorkerKill.Method.SIGTERM)
-            worker.wait_for_log("worker: Cold shutdown (MainProcess)")
+            worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
             worker.assert_log_does_not_exist(f"long_running_task[{res.id}] succeeded")
 
             assert_container_exited(worker)
@@ -167,11 +167,11 @@ class test_worker_shutdown(SuiteOperations):
             sig = long_running_task.si(420, verbose=True).set(queue=queue)
             sig.delay()
 
-            worker.wait_for_log("Starting long running task")
+            worker.assert_log_exists("Starting long running task")
             self.kill_worker(worker, WorkerKill.Method.SIGTERM)
             self.kill_worker(worker, WorkerKill.Method.SIGTERM)
 
-            worker.wait_for_log("worker: Cold shutdown (MainProcess)")
+            worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
 
             assert_container_exited(worker)
 
@@ -189,14 +189,14 @@ class test_worker_shutdown(SuiteOperations):
             sig = long_running_task.si(5, verbose=True).set(queue=queue)
             res = sig.delay()
 
-            worker.wait_for_log("Starting long running task")
+            worker.assert_log_exists("Starting long running task")
             self.kill_worker(worker, WorkerKill.Method.SIGQUIT)
-            worker.wait_for_log(
+            worker.assert_log_exists(
                 f"Initiating Soft Shutdown, terminating in {app.conf.worker_soft_shutdown_timeout} seconds",
                 timeout=5,
             )
-            worker.wait_for_log(f"long_running_task[{res.id}] succeeded")
-            worker.wait_for_log("worker: Cold shutdown (MainProcess)")
+            worker.assert_log_exists(f"long_running_task[{res.id}] succeeded")
+            worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
 
             assert_container_exited(worker)
             assert res.get(RESULT_TIMEOUT)
@@ -207,11 +207,11 @@ class test_worker_shutdown(SuiteOperations):
             sig = long_running_task.si(420, verbose=True).set(queue=queue)
             sig.delay()
 
-            worker.wait_for_log("Starting long running task")
+            worker.assert_log_exists("Starting long running task")
             self.kill_worker(worker, WorkerKill.Method.SIGQUIT)
             self.kill_worker(worker, WorkerKill.Method.SIGQUIT)
-            worker.wait_for_log("Waiting gracefully for cold shutdown to complete...")
-            worker.wait_for_log("worker: Cold shutdown (MainProcess)")
+            worker.assert_log_exists("Waiting gracefully for cold shutdown to complete...")
+            worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
             self.kill_worker(worker, WorkerKill.Method.SIGQUIT)
 
             assert_container_exited(worker)
@@ -229,13 +229,13 @@ class test_worker_shutdown(SuiteOperations):
                 sig = long_running_task.si(5, verbose=True).set(queue=queue)
                 res = sig.delay()
 
-                worker.wait_for_log("Starting long running task")
+                worker.assert_log_exists("Starting long running task")
                 self.kill_worker(worker, WorkerKill.Method.SIGTERM)
-                worker.wait_for_log(
+                worker.assert_log_exists(
                     f"Initiating Soft Shutdown, terminating in {app.conf.worker_soft_shutdown_timeout} seconds"
                 )
-                worker.wait_for_log(f"long_running_task[{res.id}] succeeded")
-                worker.wait_for_log("worker: Cold shutdown (MainProcess)")
+                worker.assert_log_exists(f"long_running_task[{res.id}] succeeded")
+                worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
 
                 assert_container_exited(worker)
                 assert res.get(RESULT_TIMEOUT)
@@ -246,11 +246,11 @@ class test_worker_shutdown(SuiteOperations):
                 sig = long_running_task.si(420, verbose=True).set(queue=queue)
                 sig.delay()
 
-                worker.wait_for_log("Starting long running task")
+                worker.assert_log_exists("Starting long running task")
                 self.kill_worker(worker, WorkerKill.Method.SIGTERM)
                 self.kill_worker(worker, WorkerKill.Method.SIGTERM)
-                worker.wait_for_log("Waiting gracefully for cold shutdown to complete...")
-                worker.wait_for_log("worker: Cold shutdown (MainProcess)", timeout=5)
+                worker.assert_log_exists("Waiting gracefully for cold shutdown to complete...")
+                worker.assert_log_exists("worker: Cold shutdown (MainProcess)", timeout=5)
                 self.kill_worker(worker, WorkerKill.Method.SIGTERM)
 
                 assert_container_exited(worker)
@@ -282,13 +282,13 @@ class test_worker_shutdown(SuiteOperations):
                 sig = long_running_task.si(15, verbose=True).set(queue=queue)
                 res = sig.delay()
 
-                worker.wait_for_log("Starting long running task")
+                worker.assert_log_exists("Starting long running task")
                 self.kill_worker(worker, WorkerKill.Method.SIGQUIT)
-                worker.wait_for_log(
+                worker.assert_log_exists(
                     f"Initiating Soft Shutdown, terminating in {app.conf.worker_soft_shutdown_timeout} seconds"
                 )
-                worker.wait_for_log("worker: Cold shutdown (MainProcess)")
-                worker.wait_for_log("Restoring 1 unacknowledged message(s)")
+                worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
+                worker.assert_log_exists("Restoring 1 unacknowledged message(s)")
                 assert_container_exited(worker)
                 worker.restart()
                 assert res.get(RESULT_TIMEOUT)
@@ -307,15 +307,15 @@ class test_worker_shutdown(SuiteOperations):
                 sig = group(short_task, long_task)
                 sig.delay()
 
-                worker.wait_for_log(f"long_running_task[{short_task_res.id}] received")
-                worker.wait_for_log(f"long_running_task[{long_task_res.id}] received")
+                worker.assert_log_exists(f"long_running_task[{short_task_res.id}] received")
+                worker.assert_log_exists(f"long_running_task[{long_task_res.id}] received")
                 self.kill_worker(worker, WorkerKill.Method.SIGQUIT)
-                worker.wait_for_log(
+                worker.assert_log_exists(
                     f"Initiating Soft Shutdown, terminating in {app.conf.worker_soft_shutdown_timeout} seconds"
                 )
-                worker.wait_for_log(f"long_running_task[{short_task_res.id}] succeeded")
-                worker.wait_for_log("worker: Cold shutdown (MainProcess)")
-                worker.wait_for_log("Restoring 1 unacknowledged message(s)")
+                worker.assert_log_exists(f"long_running_task[{short_task_res.id}] succeeded")
+                worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
+                worker.assert_log_exists("Restoring 1 unacknowledged message(s)")
                 assert_container_exited(worker)
                 assert short_task_res.get(RESULT_TIMEOUT)
 
@@ -333,14 +333,14 @@ class test_worker_shutdown(SuiteOperations):
                 sig = group(short_task, long_task)
                 res = sig.delay()
 
-                worker.wait_for_log(f"long_running_task[{short_task_res.id}] received")
-                worker.wait_for_log(f"long_running_task[{long_task_res.id}] received")
+                worker.assert_log_exists(f"long_running_task[{short_task_res.id}] received")
+                worker.assert_log_exists(f"long_running_task[{long_task_res.id}] received")
                 self.kill_worker(worker, WorkerKill.Method.SIGQUIT)
-                worker.wait_for_log(
+                worker.assert_log_exists(
                     f"Initiating Soft Shutdown, terminating in {app.conf.worker_soft_shutdown_timeout} seconds"
                 )
-                worker.wait_for_log("worker: Cold shutdown (MainProcess)")
-                worker.wait_for_log("Restoring 2 unacknowledged message(s)")
+                worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
+                worker.assert_log_exists("Restoring 2 unacknowledged message(s)")
                 assert_container_exited(worker)
                 worker.restart()
                 assert res.get(RESULT_TIMEOUT) == [True, True]
@@ -363,13 +363,13 @@ class test_worker_shutdown(SuiteOperations):
                     sig = long_running_task.si(15, verbose=True).set(queue=queue)
                     res = sig.delay()
 
-                    worker.wait_for_log("Starting long running task")
+                    worker.assert_log_exists("Starting long running task")
                     self.kill_worker(worker, WorkerKill.Method.SIGTERM)
-                    worker.wait_for_log(
+                    worker.assert_log_exists(
                         f"Initiating Soft Shutdown, terminating in {app.conf.worker_soft_shutdown_timeout} seconds"
                     )
-                    worker.wait_for_log("worker: Cold shutdown (MainProcess)")
-                    worker.wait_for_log("Restoring 1 unacknowledged message(s)")
+                    worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
+                    worker.assert_log_exists("Restoring 1 unacknowledged message(s)")
                     assert_container_exited(worker)
                     worker.restart()
                     assert res.get(RESULT_TIMEOUT)
@@ -391,15 +391,15 @@ class test_worker_shutdown(SuiteOperations):
                     sig = group(short_task, long_task)
                     sig.delay()
 
-                    worker.wait_for_log(f"long_running_task[{short_task_res.id}] received")
-                    worker.wait_for_log(f"long_running_task[{long_task_res.id}] received")
+                    worker.assert_log_exists(f"long_running_task[{short_task_res.id}] received")
+                    worker.assert_log_exists(f"long_running_task[{long_task_res.id}] received")
                     self.kill_worker(worker, WorkerKill.Method.SIGTERM)
-                    worker.wait_for_log(
+                    worker.assert_log_exists(
                         f"Initiating Soft Shutdown, terminating in {app.conf.worker_soft_shutdown_timeout} seconds"
                     )
-                    worker.wait_for_log(f"long_running_task[{short_task_res.id}] succeeded")
-                    worker.wait_for_log("worker: Cold shutdown (MainProcess)")
-                    worker.wait_for_log("Restoring 1 unacknowledged message(s)")
+                    worker.assert_log_exists(f"long_running_task[{short_task_res.id}] succeeded")
+                    worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
+                    worker.assert_log_exists("Restoring 1 unacknowledged message(s)")
                     assert_container_exited(worker)
                     assert short_task_res.get(RESULT_TIMEOUT)
 
@@ -415,10 +415,10 @@ class test_worker_shutdown(SuiteOperations):
                     worker = celery_setup.worker
 
                     self.kill_worker(worker, WorkerKill.Method.SIGQUIT)
-                    worker.wait_for_log(
+                    worker.assert_log_exists(
                         f"Initiating Soft Shutdown, terminating in {app.conf.worker_soft_shutdown_timeout} seconds",
                     )
-                    worker.wait_for_log("worker: Cold shutdown (MainProcess)")
+                    worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
 
                     assert_container_exited(worker)
 
@@ -432,13 +432,13 @@ class test_worker_shutdown(SuiteOperations):
                     sig = long_running_task.si(5, verbose=True).set(queue=queue)
                     res = sig.apply_async(countdown=app.conf.worker_soft_shutdown_timeout + 5)
 
-                    worker.wait_for_log(f"long_running_task[{res.id}] received")
+                    worker.assert_log_exists(f"long_running_task[{res.id}] received")
                     self.kill_worker(worker, WorkerKill.Method.SIGQUIT)
-                    worker.wait_for_log(
+                    worker.assert_log_exists(
                         f"Initiating Soft Shutdown, terminating in {app.conf.worker_soft_shutdown_timeout} seconds"
                     )
-                    worker.wait_for_log("worker: Cold shutdown (MainProcess)")
-                    worker.wait_for_log("Restoring 1 unacknowledged message(s)")
+                    worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
+                    worker.assert_log_exists("Restoring 1 unacknowledged message(s)")
                     assert_container_exited(worker)
                     worker.restart()
                     assert res.get(RESULT_TIMEOUT)
