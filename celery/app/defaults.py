@@ -249,6 +249,7 @@ NAMESPACES = Namespace(
         ),
         table_schemas=Option(type='dict'),
         table_names=Option(type='dict', old={'celery_result_db_tablenames'}),
+        create_tables_at_setup=Option(True, type='bool'),
     ),
     task=Namespace(
         __old__=OLD_NS,
