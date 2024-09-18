@@ -501,6 +501,7 @@ class Celery:
                 if shared:
                     def cons(app):
                         return app._task_from_fun(fun, **opts)
+
                     cons.__name__ = fun.__name__
                     connect_on_app_finalize(cons)
                 if not lazy or self.finalized:
@@ -836,10 +837,12 @@ class Celery:
                     options['routing_key'] = routing_key
                     options['exchange'] = exchange
         elif is_native_delayed_delivery and options['queue'].exchange.type == 'direct':
-            logger.warn("Direct exchanges are not supported with native delayed delivery.\n"
-                        f"{options['queue'].exchange.name} is a direct exchange but should be a topic exchange or "
-                        f"a fanout exchange in order for native delayed delivery to work properly.\n"
-                        f"If quorum queues are used, this task may block the worker process until the ETA arrives.")
+            logger.warning(
+                'Direct exchanges are not supported with native delayed delivery.\n'
+                f'{options["queue"].exchange.name} is a direct exchange but should be a topic exchange or '
+                'a fanout exchange in order for native delayed delivery to work properly.\n'
+                'If quorum queues are used, this task may block the worker process until the ETA arrives.'
+            )
 
         if expires is not None:
             if isinstance(expires, datetime):
@@ -1001,6 +1004,7 @@ class Celery:
                 'broker_connection_timeout', connect_timeout
             ),
         )
+
     broker_connection = connection
 
     def _acquire_connection(self, pool=True):
@@ -1020,6 +1024,7 @@ class Celery:
                 will be acquired from the connection pool.
         """
         return FallbackContext(connection, self._acquire_connection, pool=pool)
+
     default_connection = connection_or_acquire  # XXX compat
 
     def producer_or_acquire(self, producer=None):
@@ -1035,6 +1040,7 @@ class Celery:
         return FallbackContext(
             producer, self.producer_pool.acquire, block=True,
         )
+
     default_producer = producer_or_acquire  # XXX compat
 
     def prepare_config(self, c):
