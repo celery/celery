@@ -17,10 +17,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
     CELERY_DELAYED_DELIVERY_EXCHANGE = "celery_delayed_delivery"
 
     def include_if(self, c):
-        return c.app.conf.broker_native_delayed_delivery and (
-            c.app.conf.broker_url.startswith('amqp://')
-            or c.app.conf.broker_url.startswith('py-amqp://')
-        )
+        return c.app.conf.broker_native_delayed_delivery and c.connection.transport.driver_type == 'amqp'
 
     def level_name(self, level: int) -> str:
         return f"celery_delayed_{level}"
