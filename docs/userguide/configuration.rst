@@ -992,11 +992,17 @@ strings (this is the part of the URI that comes after the ``db+`` prefix).
 ``database_create_tables_at_setup``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Default: False by default.
+.. versionadded:: 5.5.0
+
+Default: True by default.
 
 - If `True`, Celery will create the tables in the database during setup.
 - If `False`, Celery will create the tables lazily, i.e. wait for the first task
   to be executed before creating the tables.
+
+.. note::
+    Before celery 5.5, the tables were created lazily i.e. it was equivalent to
+    `database_create_tables_at_setup` set to False.
 
 .. setting:: database_engine_options
 

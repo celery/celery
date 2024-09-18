@@ -1,7 +1,6 @@
 """SQLAlchemy result store backend."""
 import logging
 from contextlib import contextmanager
-from warnings import warn
 
 from vine.utils import wraps
 
@@ -101,15 +100,7 @@ class DatabaseBackend(BaseBackend):
 
         self.session_manager = SessionManager()
 
-        create_tables_at_setup = conf.get("database_create_tables_at_setup", None)
-        if create_tables_at_setup is None:
-            create_tables_at_setup = False
-            warn(
-                "configuration option `database_create_tables_at_setup` is not "
-                "set, defaulting to False. Default value will change to True in "
-                "celery 6.0 or later",
-            )
-
+        create_tables_at_setup = conf.database_create_tables_at_setup
         if create_tables_at_setup is True:
             self._create_tables()
 
