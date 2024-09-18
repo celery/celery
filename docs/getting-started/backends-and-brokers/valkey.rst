@@ -55,7 +55,7 @@ It is also easy to connect directly to a list of Valkey Sentinel:
 
 .. code-block:: python
 
-    app.conf.broker_url = 'sentinel://localhost:26379;sentinel://localhost:26380;sentinel://localhost:26381'
+    app.conf.broker_url = 'valkeysentinel://localhost:26379;sentinel://localhost:26380;sentinel://localhost:26381'
     app.conf.broker_transport_options = { 'master_name': "cluster1" }
 
 Additional options can be passed to the Sentinel client using ``sentinel_kwargs``:
