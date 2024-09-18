@@ -196,6 +196,21 @@ NAMESPACES = Namespace(
         retry_on_timeout=Option(False, type='bool'),
         socket_keepalive=Option(False, type='bool'),
     ),
+    valkey=Namespace(
+        __old__=old_ns('celery_valkey'),
+
+        backend_use_ssl=Option(type='dict'),
+        db=Option(type='int'),
+        host=Option(type='string'),
+        max_connections=Option(type='int'),
+        username=Option(type='string'),
+        password=Option(type='string'),
+        port=Option(type='int'),
+        socket_timeout=Option(120.0, type='float'),
+        socket_connect_timeout=Option(None, type='float'),
+        retry_on_timeout=Option(False, type='bool'),
+        socket_keepalive=Option(False, type='bool'),
+    ),
     result=Namespace(
         __old__=old_ns('celery_result'),
 
