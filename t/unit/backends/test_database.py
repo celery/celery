@@ -82,7 +82,8 @@ class test_DatabaseBackend:
             'task': 'foo',
             'group': 'bar',
         }
-        # disable table creation because databases foo and bar do not exist
+        # disable table creation because schema foo and bar do not exist
+        # and aren't created if they don't exist.
         self.app.conf.database_create_tables_at_setup = False
         tb = DatabaseBackend(self.uri, app=self.app)
         assert tb.task_cls.__table__.schema == 'foo'
