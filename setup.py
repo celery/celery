@@ -40,6 +40,7 @@ EXTENSIONS = {
     'sqlalchemy',
     'sqs',
     'tblib',
+    'valkey',
     'yaml',
     'zookeeper',
     'zstd'

@@ -1,0 +1,2 @@
+valkey>=6.0.0
+libvalkey>=4.0.0
