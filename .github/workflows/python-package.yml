@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', 'pypy-3.10']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', 'pypy-3.10']
         os: ["blacksmith-4vcpu-ubuntu-2204", "windows-latest"]
         exclude:
             - python-version: '3.9'
@@ -43,6 +43,8 @@ jobs:
             - python-version: '3.10'
               os: "windows-latest"
             - python-version: '3.11'
+              os: "windows-latest"
+            - python-version: '3.13'
               os: "windows-latest"
 
     steps:
@@ -55,6 +57,7 @@ jobs:
       uses: useblacksmith/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
+        allow-prereleases: true
         cache: 'pip'
         cache-dependency-path: '**/setup.py'
 
@@ -84,7 +87,7 @@ jobs:
       strategy:
           fail-fast: false
           matrix:
-              python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+              python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
               toxenv: ['redis', 'rabbitmq', 'rabbitmq_redis']
 
       services:
@@ -113,6 +116,7 @@ jobs:
               uses: useblacksmith/setup-python@v6
               with:
                   python-version: ${{ matrix.python-version }}
+                  allow-prereleases: true
                   cache: 'pip'
                   cache-dependency-path: '**/setup.py'
           -   name: Install tox
@@ -132,7 +136,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.8', '3.12']
+        python-version: ['3.8', '3.12', '3.13']
         test-case: [
           'failover',
           'quorum_queues',
@@ -163,6 +167,7 @@ jobs:
         uses: useblacksmith/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
+          allow-prereleases: true
           cache: 'pip'
           cache-dependency-path: '**/setup.py'
 
