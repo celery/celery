@@ -88,7 +88,7 @@ jobs:
           fail-fast: false
           matrix:
               python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
-              toxenv: ['redis', 'rabbitmq', 'rabbitmq_redis']
+              toxenv: ['redis', 'rabbitmq', 'rabbitmq_redis', 'rabbitmq_valkey']
 
       services:
           redis:
@@ -105,6 +105,13 @@ jobs:
               env:
                   RABBITMQ_DEFAULT_USER: guest
                   RABBITMQ_DEFAULT_PASS: guest
+          valkey:
+            image: valkey/valkey
+            ports:
+              - 6379:6379
+            env:
+              VALKEY_HOST: localhost
+              VALKEY_PORT: 6379
 
       steps:
           -   name: Install apt packages
