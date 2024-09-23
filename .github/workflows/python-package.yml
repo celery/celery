@@ -108,7 +108,7 @@ jobs:
           valkey:
             image: valkey/valkey
             ports:
-              - 6379:6379
+              - 6380:6379
             env:
               VALKEY_HOST: localhost
               VALKEY_PORT: 6379
