@@ -1,4 +1,5 @@
 import errno
+import logging
 import socket
 from collections import deque
 from unittest.mock import MagicMock, Mock, call, patch
@@ -640,6 +641,22 @@ class test_Tasks:
         tasks = Tasks(c)
         with pytest.warns(CeleryWarning, match=ETA_TASKS_NO_GLOBAL_QOS_WARNING % "celery"):
             tasks.qos_global(c)
+
+    def test_log_when_qos_is_false(self, caplog):
+        c = self.c
+        c.connection.transport.driver_type = 'amqp'
+        c.app.conf.broker_native_delayed_delivery = True
+        c.app.amqp.queues = {"celery": Mock(queue_arguments={"x-queue-type": "quorum"})}
+        tasks = Tasks(c)
+
+        with caplog.at_level(logging.INFO):
+            tasks.start(c)
+
+        assert len(caplog.records) == 1
+
+        record = caplog.records[0]
+        assert record.levelname == "INFO"
+        assert record.msg == "Global QoS is disabled. Prefetch count in now static."
 
 
 class test_Agent:
