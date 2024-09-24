@@ -80,6 +80,7 @@ have been moved into a new  ``task_`` prefix.
 ``BROKER_HEARTBEAT``                       :setting:`broker_heartbeat`
 ``BROKER_LOGIN_METHOD``                    :setting:`broker_login_method`
 ``BROKER_NATIVE_DELAYED_DELIVERY``         :setting:`broker_native_delayed_delivery`
+``BROKER_NATIVE_DELAYED_DELIVERY_QUEUE_TYPE`` :setting:`broker_native_delayed_delivery_queue_type`
 ``BROKER_POOL_LIMIT``                      :setting:`broker_pool_limit`
 ``BROKER_USE_SSL``                         :setting:`broker_use_ssl`
 ``CELERY_CACHE_BACKEND``                   :setting:`cache_backend`
@@ -3018,6 +3019,22 @@ Default: Disabled.
 When enabled, tasks with ETAs and Countdowns will use the native delayed delivery mechanism for RabbitMQ.
 
 See :ref:`using-quorum-queues` for details regarding native delayed delivery.
+
+.. setting:: broker_native_delayed_delivery_queue_type
+
+``broker_native_delayed_delivery_queue_type``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.5
+
+:transports supported: ``pyamqp``
+
+Default: ``"classic"``.
+
+This setting is used to allow changing the default queue type for the
+:setting:`broker_native_delayed_delivery` queues. The other viable option is ``"quorum"`` which
+is only supported by RabbitMQ and sets the queue type to ``quorum`` using the ``x-queue-type``
+queue argument.
 
 .. setting:: broker_transport_options
 
