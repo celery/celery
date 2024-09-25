@@ -42,6 +42,8 @@ class Tasks(bootsteps.StartStopStep):
         c.update_strategies()
 
         qos_global = self.qos_global(c)
+        if qos_global is False:
+            logger.info("Global QoS is disabled. Prefetch count in now static.")
 
         # set initial prefetch count
         c.connection.default_channel.basic_qos(
@@ -107,7 +109,7 @@ class Tasks(bootsteps.StartStopStep):
             tuple[bool, str]: A tuple containing a boolean indicating if any of the queues are quorum queues
             and the name of the first quorum queue found or an empty string if no quorum queues were found.
         """
-        is_rabbitmq_broker = c.app.conf.broker_url.startswith(("amqp", "pyamqp"))
+        is_rabbitmq_broker = c.connection.transport.driver_type == 'amqp'
 
         if is_rabbitmq_broker:
             queues = c.app.amqp.queues

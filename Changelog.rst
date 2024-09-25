@@ -8,6 +8,124 @@ This document contains change notes for bugfix & new features
 in the main branch & 5.5.x series, please see :ref:`whatsnew-5.5` for
 an overview of what's new in Celery 5.5.
 
+.. _version-5.5.0b3:
+
+5.5.0b3
+=======
+
+:release-date: 2024-09-08
+:release-by: Tomer Nosrati
+
+Celery v5.5.0 Beta 3 is now available for testing.
+Please help us test this version and report any issues.
+
+Key Highlights
+~~~~~~~~~~~~~~
+
+Soft Shutdown
+-------------
+
+The soft shutdown is a new mechanism in Celery that sits between the warm shutdown and the cold shutdown.
+It sets a time limited "warm shutdown" period, during which the worker will continue to process tasks that are already running.
+After the soft shutdown ends, the worker will initiate a graceful cold shutdown, stopping all tasks and exiting.
+
+The soft shutdown is disabled by default, and can be enabled by setting the new configuration option :setting:`worker_soft_shutdown_timeout`.
+If a worker is not running any task when the soft shutdown initiates, it will skip the warm shutdown period and proceed directly to the cold shutdown
+unless the new configuration option :setting:`worker_enable_soft_shutdown_on_idle` is set to True. This is useful for workers
+that are idle, waiting on ETA tasks to be executed that still want to enable the soft shutdown anyways.
+
+The soft shutdown can replace the cold shutdown when using a broker with a visibility timeout mechanism, like :ref:`Redis <broker-redis>`
+or :ref:`SQS <broker-sqs>`, to enable a more graceful cold shutdown procedure, allowing the worker enough time to re-queue tasks that were not
+completed (e.g., ``Restoring 1 unacknowledged message(s)``) by resetting the visibility timeout of the unacknowledged messages just before
+the worker exits completely.
+
+After upgrading to this version, please share your feedback on the new Soft Shutdown mechanism.
+
+Relevant Issues:
+`#9213 <https://github.com/celery/celery/pull/9213>`_,
+`#9231 <https://github.com/celery/celery/pull/9231>`_,
+`#9238 <https://github.com/celery/celery/pull/9238>`_
+
+- New :ref:`documentation <worker-stopping>` for each shutdown type.
+- New :setting:`worker_soft_shutdown_timeout` configuration option.
+- New :setting:`worker_enable_soft_shutdown_on_idle` configuration option.
+
+REMAP_SIGTERM
+-------------
+
+The ``REMAP_SIGTERM`` "hidden feature" has been tested, :ref:`documented <worker-REMAP_SIGTERM>` and is now officially supported.
+This feature allows users to remap the SIGTERM signal to SIGQUIT, to initiate a soft or a cold shutdown using :sig:`TERM`
+instead of :sig:`QUIT`.
+
+Previous Pre-release Highlights
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Pydantic Support
+----------------
+
+This release introduces support for Pydantic models in Celery tasks.
+For more info, see the new pydantic example and PR `#9023 <https://github.com/celery/celery/pull/9023>`_ by @mathiasertl.
+
+After upgrading to this version, please share your feedback on the new Pydantic support.
+
+Redis Broker Stability Improvements
+-----------------------------------
+The root cause of the Redis broker instability issue has been `identified and resolved <https://github.com/celery/kombu/pull/2007>`_
+in the v5.4.0 release of Kombu, which should resolve the disconnections bug and offer additional improvements.
+
+After upgrading to this version, please share your feedback on the Redis broker stability.
+
+Relevant Issues:
+`#7276 <https://github.com/celery/celery/discussions/7276>`_,
+`#8091 <https://github.com/celery/celery/discussions/8091>`_,
+`#8030 <https://github.com/celery/celery/discussions/8030>`_,
+`#8384 <https://github.com/celery/celery/discussions/8384>`_
+
+Quorum Queues Initial Support
+-----------------------------
+This release introduces the initial support for Quorum Queues with Celery. 
+
+See new configuration options for more details:
+
+- :setting:`task_default_queue_type`
+- :setting:`worker_detect_quorum_queues`
+
+After upgrading to this version, please share your feedback on the Quorum Queues support.
+
+Relevant Issues:
+`#6067 <https://github.com/celery/celery/discussions/6067>`_,
+`#9121 <https://github.com/celery/celery/discussions/9121>`_
+
+What's Changed
+~~~~~~~~~~~~~~
+
+- Added SQS (localstack) broker to canvas smoke tests (#9179)
+- Pin elastic-transport to <= latest version 8.15.0 (#9182)
+- Update elasticsearch requirement from <=8.14.0 to <=8.15.0 (#9186)
+- Improve formatting (#9188)
+- Add basic helm chart for celery (#9181)
+- Update kafka.rst (#9194)
+- Update pytest-order to 1.3.0 (#9198)
+- Update mypy to 1.11.2 (#9206)
+- All added to routes (#9204)
+- Fix typos discovered by codespell (#9212)
+- Use tzdata extras with zoneinfo backports (#8286)
+- Use `docker compose` in Contributing's doc build section (#9219)
+- Failing test for issue #9119 (#9215)
+- Fix date_done timezone issue (#8385)
+- CI Fixes to smoke tests (#9223)
+- Fix: passes current request context when pushing to request_stack (#9208)
+- Fix broken link in the Using RabbitMQ docs page (#9226)
+- Added Soft Shutdown Mechanism (#9213)
+- Added worker_enable_soft_shutdown_on_idle (#9231)
+- Bump cryptography from 43.0.0 to 43.0.1 (#9233)
+- Added docs regarding the relevancy of soft shutdown and ETA tasks (#9238)
+- Show broker_connection_retry_on_startup warning only if it evaluates as False (#9227)
+- Fixed docker-docs CI failure (#9240)
+- Added docker cleanup auto-fixture to improve smoke tests stability (#9243)
+- print is not thread-safe, so should not be used in signal handler (#9222)
+- Prepare for (pre) release: v5.5.0b3 (#9244)
+
 .. _version-5.5.0b2:
 
 5.5.0b2

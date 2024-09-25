@@ -33,8 +33,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', 'pypy-3.10']
-        os: ["ubuntu-latest", "windows-latest"]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', 'pypy-3.10']
+        os: ["blacksmith-4vcpu-ubuntu-2204", "windows-latest"]
         exclude:
             - python-version: '3.9'
               os: "windows-latest"
@@ -44,17 +44,20 @@ jobs:
               os: "windows-latest"
             - python-version: '3.11'
               os: "windows-latest"
+            - python-version: '3.13'
+              os: "windows-latest"
 
     steps:
     - name: Install apt packages
-      if: startsWith(matrix.os, 'ubuntu-')
+      if: startsWith(matrix.os, 'blacksmith-4vcpu-ubuntu')
       run: |
         sudo apt-get update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: useblacksmith/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
+        allow-prereleases: true
         cache: 'pip'
         cache-dependency-path: '**/setup.py'
 
@@ -80,11 +83,11 @@ jobs:
       if: needs.Unit.result == 'success'
       timeout-minutes: 240
 
-      runs-on: ubuntu-latest
+      runs-on: blacksmith-4vcpu-ubuntu-2204
       strategy:
           fail-fast: false
           matrix:
-              python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+              python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
               toxenv: ['redis', 'rabbitmq', 'rabbitmq_redis']
 
       services:
@@ -110,9 +113,10 @@ jobs:
 
           -   uses: actions/checkout@v4
           -   name: Set up Python ${{ matrix.python-version }}
-              uses: actions/setup-python@v5
+              uses: useblacksmith/setup-python@v6
               with:
                   python-version: ${{ matrix.python-version }}
+                  allow-prereleases: true
                   cache: 'pip'
                   cache-dependency-path: '**/setup.py'
           -   name: Install tox
@@ -124,373 +128,53 @@ jobs:
               run: >
                   tox --verbose --verbose -e
                   "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -vv
-
-  Smoke-failover:
+  Smoke:
     needs:
-    - Integration
-    if: needs.Integration.result == 'success'
-    runs-on: ubuntu-latest
+    - Unit
+    if: needs.Unit.result == 'success'
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     strategy:
-        fail-fast: false
-        matrix:
-            python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+      fail-fast: false
+      matrix:
+        python-version: ['3.8', '3.12', '3.13']
+        test-case: [
+          'failover',
+          'quorum_queues',
+          'stamping',
+          'test_canvas.py',
+          'test_consumer.py',
+          'test_control.py',
+          'test_signals.py',
+          'test_tasks.py',
+          'test_thread_safe.py',
+          'test_worker.py'
+        ]
 
     steps:
-        -   name: Fetch Docker Images
-            run: |
-              docker pull redis:latest
-              docker pull rabbitmq:latest
+      - name: Fetch Docker Images
+        run: |
+          docker pull redis:latest
+          docker pull rabbitmq:latest
 
-        -   name: Install apt packages
-            run: |
-                sudo apt update
+      - name: Install apt packages
+        run: |
+          sudo apt update
+          sudo apt-get install -y procps  # Install procps to enable sysctl
+          sudo sysctl -w vm.overcommit_memory=1
 
-        -   uses: actions/checkout@v4
-        -   name: Set up Python ${{ matrix.python-version }}
-            uses: actions/setup-python@v5
-            with:
-                python-version: ${{ matrix.python-version }}
-                cache: 'pip'
-                cache-dependency-path: '**/setup.py'
-        -   name: Install tox
-            run: python -m pip install --upgrade pip tox tox-gh-actions
-        -   name: >
-                Run tox for
-                "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 20
-            run: >
-                tox --verbose --verbose -e
-                "${{ matrix.python-version }}-smoke" -- -n auto -k failover
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: useblacksmith/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          allow-prereleases: true
+          cache: 'pip'
+          cache-dependency-path: '**/setup.py'
 
-  Smoke-quorum_queues:
-    needs:
-    - Integration
-    if: needs.Integration.result == 'success'
-    runs-on: ubuntu-latest
-    strategy:
-        fail-fast: false
-        matrix:
-            python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+      - name: Install tox
+        run: python -m pip install --upgrade pip tox tox-gh-actions
 
-    steps:
-        -   name: Fetch Docker Images
-            run: |
-              docker pull redis:latest
-              docker pull rabbitmq:latest
-
-        -   name: Install apt packages
-            run: |
-                sudo apt update
-
-        -   uses: actions/checkout@v4
-        -   name: Set up Python ${{ matrix.python-version }}
-            uses: actions/setup-python@v5
-            with:
-                python-version: ${{ matrix.python-version }}
-                cache: 'pip'
-                cache-dependency-path: '**/setup.py'
-        -   name: Install tox
-            run: python -m pip install --upgrade pip tox tox-gh-actions
-        -   name: >
-                Run tox for
-                "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 20
-            run: >
-                tox --verbose --verbose -e
-                "${{ matrix.python-version }}-smoke" -- -n auto -k quorum_queues
-
-  Smoke-stamping:
-    needs:
-    - Integration
-    if: needs.Integration.result == 'success'
-    runs-on: ubuntu-latest
-    strategy:
-        fail-fast: false
-        matrix:
-            python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
-
-    steps:
-        -   name: Fetch Docker Images
-            run: |
-              docker pull redis:latest
-              docker pull rabbitmq:latest
-
-        -   name: Install apt packages
-            run: |
-                sudo apt update
-
-        -   uses: actions/checkout@v4
-        -   name: Set up Python ${{ matrix.python-version }}
-            uses: actions/setup-python@v5
-            with:
-                python-version: ${{ matrix.python-version }}
-                cache: 'pip'
-                cache-dependency-path: '**/setup.py'
-        -   name: Install tox
-            run: python -m pip install --upgrade pip tox tox-gh-actions
-        -   name: >
-                Run tox for
-                "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 20
-            run: >
-                tox --verbose --verbose -e
-                "${{ matrix.python-version }}-smoke" -- -n auto -k stamping
-
-  Smoke-canvas:
-    needs:
-    - Smoke-stamping
-    if: needs.Smoke-stamping.result == 'success'
-    runs-on: ubuntu-latest
-    strategy:
-        fail-fast: false
-        matrix:
-            python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
-
-    steps:
-        -   name: Fetch Docker Images
-            run: |
-              docker pull redis:latest
-              docker pull rabbitmq:latest
-
-        -   name: Install apt packages
-            run: |
-                sudo apt update
-
-        -   uses: actions/checkout@v4
-        -   name: Set up Python ${{ matrix.python-version }}
-            uses: actions/setup-python@v5
-            with:
-                python-version: ${{ matrix.python-version }}
-                cache: 'pip'
-                cache-dependency-path: '**/setup.py'
-        -   name: Install tox
-            run: python -m pip install --upgrade pip tox tox-gh-actions
-        -   name: >
-                Run tox for
-                "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 20
-            run: >
-                tox --verbose --verbose -e
-                "${{ matrix.python-version }}-smoke" -- -n auto -k test_canvas.py
-
-  Smoke-consumer:
-    needs:
-    - Smoke-stamping
-    if: needs.Smoke-stamping.result == 'success'
-    runs-on: ubuntu-latest
-    strategy:
-        fail-fast: false
-        matrix:
-            python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
-
-    steps:
-        -   name: Fetch Docker Images
-            run: |
-              docker pull redis:latest
-              docker pull rabbitmq:latest
-
-        -   name: Install apt packages
-            run: |
-                sudo apt update
-
-        -   uses: actions/checkout@v4
-        -   name: Set up Python ${{ matrix.python-version }}
-            uses: actions/setup-python@v5
-            with:
-                python-version: ${{ matrix.python-version }}
-                cache: 'pip'
-                cache-dependency-path: '**/setup.py'
-        -   name: Install tox
-            run: python -m pip install --upgrade pip tox tox-gh-actions
-        -   name: >
-                Run tox for
-                "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 20
-            run: >
-                tox --verbose --verbose -e
-                "${{ matrix.python-version }}-smoke" -- -n auto -k test_consumer.py
-
-  Smoke-control:
-    needs:
-    - Smoke-stamping
-    if: needs.Smoke-stamping.result == 'success'
-    runs-on: ubuntu-latest
-    strategy:
-        fail-fast: false
-        matrix:
-            python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
-
-    steps:
-        -   name: Fetch Docker Images
-            run: |
-              docker pull redis:latest
-              docker pull rabbitmq:latest
-
-        -   name: Install apt packages
-            run: |
-                sudo apt update
-
-        -   uses: actions/checkout@v4
-        -   name: Set up Python ${{ matrix.python-version }}
-            uses: actions/setup-python@v5
-            with:
-                python-version: ${{ matrix.python-version }}
-                cache: 'pip'
-                cache-dependency-path: '**/setup.py'
-        -   name: Install tox
-            run: python -m pip install --upgrade pip tox tox-gh-actions
-        -   name: >
-                Run tox for
-                "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 20
-            run: >
-                tox --verbose --verbose -e
-                "${{ matrix.python-version }}-smoke" -- -n auto -k test_control.py
-
-  Smoke-signals:
-    needs:
-    - Smoke-stamping
-    if: needs.Smoke-stamping.result == 'success'
-    runs-on: ubuntu-latest
-    strategy:
-        fail-fast: false
-        matrix:
-            python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
-
-    steps:
-        -   name: Fetch Docker Images
-            run: |
-              docker pull redis:latest
-              docker pull rabbitmq:latest
-
-        -   name: Install apt packages
-            run: |
-                sudo apt update
-
-        -   uses: actions/checkout@v4
-        -   name: Set up Python ${{ matrix.python-version }}
-            uses: actions/setup-python@v5
-            with:
-                python-version: ${{ matrix.python-version }}
-                cache: 'pip'
-                cache-dependency-path: '**/setup.py'
-        -   name: Install tox
-            run: python -m pip install --upgrade pip tox tox-gh-actions
-        -   name: >
-                Run tox for
-                "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 20
-            run: >
-                tox --verbose --verbose -e
-                "${{ matrix.python-version }}-smoke" -- -n auto -k test_signals.py
-
-  Smoke-tasks:
-    needs:
-    - Smoke-control
-    if: needs.Smoke-control.result == 'success'
-    runs-on: ubuntu-latest
-    strategy:
-        fail-fast: false
-        matrix:
-            python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
-
-    steps:
-        -   name: Fetch Docker Images
-            run: |
-              docker pull redis:latest
-              docker pull rabbitmq:latest
-
-        -   name: Install apt packages
-            run: |
-                sudo apt update
-
-        -   uses: actions/checkout@v4
-        -   name: Set up Python ${{ matrix.python-version }}
-            uses: actions/setup-python@v5
-            with:
-                python-version: ${{ matrix.python-version }}
-                cache: 'pip'
-                cache-dependency-path: '**/setup.py'
-        -   name: Install tox
-            run: python -m pip install --upgrade pip tox tox-gh-actions
-        -   name: >
-                Run tox for
-                "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 20
-            run: >
-                tox --verbose --verbose -e
-                "${{ matrix.python-version }}-smoke" -- -n auto -k test_tasks.py
-
-  Smoke-thread_safe:
-    needs:
-    - Smoke-control
-    if: needs.Smoke-control.result == 'success'
-    runs-on: ubuntu-latest
-    strategy:
-        fail-fast: false
-        matrix:
-            python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
-
-    steps:
-        -   name: Fetch Docker Images
-            run: |
-              docker pull redis:latest
-              docker pull rabbitmq:latest
-
-        -   name: Install apt packages
-            run: |
-                sudo apt update
-
-        -   uses: actions/checkout@v4
-        -   name: Set up Python ${{ matrix.python-version }}
-            uses: actions/setup-python@v5
-            with:
-                python-version: ${{ matrix.python-version }}
-                cache: 'pip'
-                cache-dependency-path: '**/setup.py'
-        -   name: Install tox
-            run: python -m pip install --upgrade pip tox tox-gh-actions
-        -   name: >
-                Run tox for
-                "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 20
-            run: >
-                tox --verbose --verbose -e
-                "${{ matrix.python-version }}-smoke" -- -n auto -k test_thread_safe.py
-
-  Smoke-worker:
-    needs:
-    - Smoke-control
-    if: needs.Smoke-control.result == 'success'
-    runs-on: ubuntu-latest
-    strategy:
-        fail-fast: false
-        matrix:
-            python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
-
-    steps:
-        -   name: Fetch Docker Images
-            run: |
-              docker pull redis:latest
-              docker pull rabbitmq:latest
-
-        -   name: Install apt packages
-            run: |
-                sudo apt update
-
-        -   uses: actions/checkout@v4
-        -   name: Set up Python ${{ matrix.python-version }}
-            uses: actions/setup-python@v5
-            with:
-                python-version: ${{ matrix.python-version }}
-                cache: 'pip'
-                cache-dependency-path: '**/setup.py'
-        -   name: Install tox
-            run: python -m pip install --upgrade pip tox tox-gh-actions
-        -   name: >
-                Run tox for
-                "${{ matrix.python-version }}-smoke"
-            timeout-minutes: 20
-            run: >
-                tox --verbose --verbose -e
-                "${{ matrix.python-version }}-smoke" -- -n auto -k test_worker.py
+      - name: Run tox for "${{ matrix.python-version }}-smoke-${{ matrix.test-case }}"
+        timeout-minutes: 60
+        run: |
+          tox --verbose --verbose -e "${{ matrix.python-version }}-smoke" -- -n auto -k ${{ matrix.test-case }}

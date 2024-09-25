@@ -1,4 +1,5 @@
 import errno
+import logging
 import socket
 from collections import deque
 from unittest.mock import MagicMock, Mock, call, patch
@@ -442,6 +443,32 @@ class test_Consumer(ConsumerTestCase):
         with pytest.deprecated_call(match=CANCEL_TASKS_BY_DEFAULT):
             c.on_connection_error_after_connected(Mock())
 
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_cancel_all_unacked_requests(self):
+        c = self.get_consumer()
+
+        mock_request_acks_late_not_acknowledged = Mock(id='1')
+        mock_request_acks_late_not_acknowledged.task.acks_late = True
+        mock_request_acks_late_not_acknowledged.acknowledged = False
+        mock_request_acks_late_acknowledged = Mock(id='2')
+        mock_request_acks_late_acknowledged.task.acks_late = True
+        mock_request_acks_late_acknowledged.acknowledged = True
+        mock_request_acks_early = Mock(id='3')
+        mock_request_acks_early.task.acks_late = False
+        mock_request_acks_early.acknowledged = False
+
+        active_requests.add(mock_request_acks_late_not_acknowledged)
+        active_requests.add(mock_request_acks_late_acknowledged)
+        active_requests.add(mock_request_acks_early)
+
+        c.cancel_all_unacked_requests()
+
+        mock_request_acks_late_not_acknowledged.cancel.assert_called_once_with(c.pool)
+        mock_request_acks_late_acknowledged.cancel.assert_not_called()
+        mock_request_acks_early.cancel.assert_not_called()
+
+        active_requests.clear()
+
     @pytest.mark.parametrize("broker_connection_retry", [True, False])
     @pytest.mark.parametrize("broker_connection_retry_on_startup", [None, False])
     @pytest.mark.parametrize("first_connection_attempt", [True, False])
@@ -452,12 +479,12 @@ class test_Consumer(ConsumerTestCase):
         c.app.conf.broker_connection_retry_on_startup = broker_connection_retry_on_startup
         c.app.conf.broker_connection_retry = broker_connection_retry
 
-        if broker_connection_retry_on_startup is None:
-            with subtests.test("Deprecation warning when startup is None"):
-                with pytest.deprecated_call():
-                    c.ensure_connected(Mock())
-
         if broker_connection_retry is False:
+            if broker_connection_retry_on_startup is None:
+                with subtests.test("Deprecation warning when startup is None"):
+                    with pytest.deprecated_call():
+                        c.ensure_connected(Mock())
+
             with subtests.test("Does not retry when connect throws an error and retry is set to false"):
                 conn = Mock()
                 conn.connect.side_effect = ConnectionError()
@@ -564,6 +591,7 @@ class test_Tasks:
 
     def test_detect_quorum_queues_positive(self):
         c = self.c
+        self.c.connection.transport.driver_type = 'amqp'
         c.app.amqp.queues = {"celery": Mock(queue_arguments={"x-queue-type": "quorum"})}
         tasks = Tasks(c)
         result, name = tasks.detect_quorum_queues(c)
@@ -572,6 +600,7 @@ class test_Tasks:
 
     def test_detect_quorum_queues_negative(self):
         c = self.c
+        self.c.connection.transport.driver_type = 'amqp'
         c.app.amqp.queues = {"celery": Mock(queue_arguments=None)}
         tasks = Tasks(c)
         result, name = tasks.detect_quorum_queues(c)
@@ -580,7 +609,7 @@ class test_Tasks:
 
     def test_detect_quorum_queues_not_rabbitmq(self):
         c = self.c
-        c.app.conf.broker_url = "redis://"
+        self.c.connection.transport.driver_type = 'redis'
         tasks = Tasks(c)
         result, name = tasks.detect_quorum_queues(c)
         assert not result
@@ -600,16 +629,34 @@ class test_Tasks:
 
     def test_qos_global_worker_detect_quorum_queues_true_with_quorum_queues(self):
         c = self.c
+        self.c.connection.transport.driver_type = 'amqp'
         c.app.amqp.queues = {"celery": Mock(queue_arguments={"x-queue-type": "quorum"})}
         tasks = Tasks(c)
         assert tasks.qos_global(c) is False
 
     def test_qos_global_eta_warning(self):
         c = self.c
+        self.c.connection.transport.driver_type = 'amqp'
         c.app.amqp.queues = {"celery": Mock(queue_arguments={"x-queue-type": "quorum"})}
         tasks = Tasks(c)
         with pytest.warns(CeleryWarning, match=ETA_TASKS_NO_GLOBAL_QOS_WARNING % "celery"):
             tasks.qos_global(c)
+
+    def test_log_when_qos_is_false(self, caplog):
+        c = self.c
+        c.connection.transport.driver_type = 'amqp'
+        c.app.conf.broker_native_delayed_delivery = True
+        c.app.amqp.queues = {"celery": Mock(queue_arguments={"x-queue-type": "quorum"})}
+        tasks = Tasks(c)
+
+        with caplog.at_level(logging.INFO):
+            tasks.start(c)
+
+        assert len(caplog.records) == 1
+
+        record = caplog.records[0]
+        assert record.levelname == "INFO"
+        assert record.msg == "Global QoS is disabled. Prefetch count in now static."
 
 
 class test_Agent:

@@ -544,8 +544,8 @@ class Task:
             TypeError: If not enough arguments are passed, or too many
                 arguments are passed.  Note that signature checks may
                 be disabled by specifying ``@task(typing=False)``.
-            ValueError: If soft_time_limit and time_limit are set,
-                and soft_time_limit is less than time_limit
+            ValueError: If soft_time_limit and time_limit both are set
+                but soft_time_limit is greater than time_limit
             kombu.exceptions.OperationalError: If a connection to the
                transport cannot be made, or if the connection is lost.
 
@@ -554,7 +554,7 @@ class Task:
             :meth:`kombu.Producer.publish`.
         """
         if self.soft_time_limit and self.time_limit and self.soft_time_limit > self.time_limit:
-            raise ValueError('soft_time_limit must be greater than or equal to time_limit')
+            raise ValueError('soft_time_limit must be less than or equal to time_limit')
 
         if self.typing:
             try:

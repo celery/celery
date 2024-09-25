@@ -2,7 +2,7 @@
 
 |build-status| |coverage| |license| |wheel| |semgrep| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 5.5.0b2 (immunity)
+:Version: 5.5.0b3 (immunity)
 :Web: https://docs.celeryq.dev/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -60,7 +60,7 @@ What do I need?
 
 Celery version 5.5.x runs on:
 
-- Python (3.8, 3.9, 3.10, 3.11, 3.12)
+- Python (3.8, 3.9, 3.10, 3.11, 3.12, 3.13)
 - PyPy3.9+ (v7.3.12+)
 
 

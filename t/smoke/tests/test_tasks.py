@@ -26,7 +26,8 @@ class test_task_termination(SuiteOperations):
             (TaskTermination.Method.SIGKILL, WorkerLostError),
             (TaskTermination.Method.SYSTEM_EXIT, WorkerLostError),
             (TaskTermination.Method.DELAY_TIMEOUT, TimeLimitExceeded),
-            (TaskTermination.Method.EXHAUST_MEMORY, WorkerLostError),
+            # Exhausting the memory messes up the CI environment
+            # (TaskTermination.Method.EXHAUST_MEMORY, WorkerLostError),
         ],
     )
     def test_child_process_respawn(
@@ -86,11 +87,12 @@ class test_task_termination(SuiteOperations):
                 "Hard time limit (2s) exceeded for t.smoke.tasks.self_termination_delay_timeout",
                 "TimeLimitExceeded(2,)",
             ),
-            (
-                TaskTermination.Method.EXHAUST_MEMORY,
-                "Worker exited prematurely: signal 9 (SIGKILL)",
-                None,
-            ),
+            # Exhausting the memory messes up the CI environment
+            # (
+            #     TaskTermination.Method.EXHAUST_MEMORY,
+            #     "Worker exited prematurely: signal 9 (SIGKILL)",
+            #     None,
+            # ),
         ],
     )
     def test_terminated_task_logs_correct_error(
@@ -140,5 +142,5 @@ class test_time_limit:
 
     def test_soft_time_limit_must_exceed_time_limit(self, celery_setup: CeleryTestSetup):
         sig = soft_time_limit_must_exceed_time_limit.s()
-        with pytest.raises(ValueError, match="soft_time_limit must be greater than or equal to time_limit"):
+        with pytest.raises(ValueError, match="soft_time_limit must be less than or equal to time_limit"):
             sig.apply_async(queue=celery_setup.worker.worker_queue)

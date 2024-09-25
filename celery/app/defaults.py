@@ -249,6 +249,7 @@ NAMESPACES = Namespace(
         ),
         table_schemas=Option(type='dict'),
         table_names=Option(type='dict', old={'celery_result_db_tablenames'}),
+        create_tables_at_setup=Option(True, type='bool'),
     ),
     task=Namespace(
         __old__=OLD_NS,
@@ -309,6 +310,8 @@ NAMESPACES = Namespace(
         cancel_long_running_tasks_on_connection_loss=Option(
             False, type='bool'
         ),
+        soft_shutdown_timeout=Option(0.0, type='float'),
+        enable_soft_shutdown_on_idle=Option(False, type='bool'),
         concurrency=Option(None, type='int'),
         consumer=Option('celery.worker.consumer:Consumer', type='string'),
         direct=Option(False, type='bool', old={'celery_worker_direct'}),

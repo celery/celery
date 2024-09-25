@@ -777,7 +777,7 @@ def create_request_cls(base, task, pool, hostname, eventer,
                 if isinstance(exc, (SystemExit, KeyboardInterrupt)):
                     raise exc
                 return self.on_failure(retval, return_ok=True)
-            task_ready(self)
+            task_ready(self, successful=True)
 
             if acks_late:
                 self.acknowledge()
