@@ -9,10 +9,12 @@ import uuid
 from copy import deepcopy
 from datetime import datetime, timedelta
 from datetime import timezone as datetime_timezone
+from logging import LogRecord
 from pickle import dumps, loads
-from unittest.mock import DEFAULT, Mock, patch
+from unittest.mock import ANY, DEFAULT, MagicMock, Mock, patch
 
 import pytest
+from kombu import Exchange, Queue
 from pydantic import BaseModel, ValidationInfo, model_validator
 from vine import promise
 
@@ -1307,6 +1309,190 @@ class test_App:
                 expires='2023-03-16T17:21:20.663973')
         except TypeError as e:
             pytest.fail(f'raise unexcepted error {e}')
+
+    def test_native_delayed_delivery_countdown(self):
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {
+            'queue': Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        }
+        self.app.conf.broker_url = 'amqp://'
+        self.app.conf.broker_native_delayed_delivery = True
+
+        self.app.send_task('foo', (1, 2), countdown=30)
+
+        exchange = Exchange(
+            'celery_delayed_27',
+            type='topic',
+        )
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            exchange=exchange,
+            routing_key='0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.1.1.1.0.testcelery'
+        )
+
+    def test_native_delayed_delivery_eta_datetime(self):
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {
+            'queue': Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        }
+        self.app.conf.broker_url = 'amqp://'
+        self.app.conf.broker_native_delayed_delivery = True
+        self.app.now = Mock(return_value=datetime(2024, 8, 24, tzinfo=datetime_timezone.utc))
+
+        self.app.send_task('foo', (1, 2), eta=datetime(2024, 8, 25))
+
+        exchange = Exchange(
+            'celery_delayed_27',
+            type='topic',
+        )
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            exchange=exchange,
+            routing_key='0.0.0.0.0.0.0.0.0.0.0.1.0.1.0.1.0.0.0.1.1.0.0.0.0.0.0.0.testcelery'
+        )
+
+    def test_native_delayed_delivery_eta_str(self):
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {
+            'queue': Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        }
+        self.app.conf.broker_url = 'amqp://'
+        self.app.conf.broker_native_delayed_delivery = True
+        self.app.now = Mock(return_value=datetime(2024, 8, 24, tzinfo=datetime_timezone.utc))
+
+        self.app.send_task('foo', (1, 2), eta=datetime(2024, 8, 25).isoformat())
+
+        exchange = Exchange(
+            'celery_delayed_27',
+            type='topic',
+        )
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            exchange=exchange,
+            routing_key='0.0.0.0.0.0.0.0.0.0.0.1.0.1.0.1.0.0.0.1.1.0.0.0.0.0.0.0.testcelery',
+        )
+
+    def test_native_delayed_delivery_no_eta_or_countdown(self):
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {'queue': Queue('testcelery', routing_key='testcelery')}
+        self.app.conf.broker_url = 'amqp://'
+        self.app.conf.broker_native_delayed_delivery = True
+
+        self.app.send_task('foo', (1, 2), countdown=-10)
+
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            queue=Queue(
+                'testcelery',
+                routing_key='testcelery'
+            )
+        )
+
+    def test_native_delayed_delivery_countdown_in_the_past(self):
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {
+            'queue': Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        }
+        self.app.conf.broker_url = 'amqp://'
+        self.app.conf.broker_native_delayed_delivery = True
+
+        self.app.send_task('foo', (1, 2))
+
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            queue=Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        )
+
+    def test_native_delayed_delivery_eta_in_the_past(self):
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {
+            'queue': Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        }
+        self.app.conf.broker_url = 'amqp://'
+        self.app.conf.broker_native_delayed_delivery = True
+        self.app.now = Mock(return_value=datetime(2024, 8, 24, tzinfo=datetime_timezone.utc))
+
+        self.app.send_task('foo', (1, 2), eta=datetime(2024, 8, 23).isoformat())
+
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            queue=Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        )
+
+    def test_native_delayed_delivery_direct_exchange(self, caplog):
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {
+            'queue': Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='direct')
+            )
+        }
+        self.app.conf.broker_url = 'amqp://'
+        self.app.conf.broker_native_delayed_delivery = True
+
+        self.app.send_task('foo', (1, 2), countdown=10)
+
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            queue=Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='direct')
+            )
+        )
+
+        assert len(caplog.records) == 1
+        record: LogRecord = caplog.records[0]
+        assert record.levelname == "WARNING"
+        assert record.message == (
+            "Direct exchanges are not supported with native delayed delivery.\n"
+            "testcelery is a direct exchange but should be a topic exchange or "
+            "a fanout exchange in order for native delayed delivery to work properly.\n"
+            "If quorum queues are used, this task may block the worker process until the ETA arrives."
+        )
 
 
 class test_defaults:
