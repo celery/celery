@@ -20,7 +20,7 @@ repos:
     rev: v2.3.0
     hooks:
       - id: codespell # See pyproject.toml for args
-        args: [--toml, pyproject.toml]
+        args: [--toml, pyproject.toml, --write-changes]
         additional_dependencies:
           - tomli
 
