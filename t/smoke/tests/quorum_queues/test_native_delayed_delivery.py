@@ -110,7 +110,7 @@ class test_broker_configuration_classic:
                 assert queue_arguments["x-dead-letter-exchange"] == f"celery_delayed_{queue_level - 1}"
 
             assert queue_arguments["x-message-ttl"] == pow(2, queue_level) * 1000
-            assert queue_arguments["x-queue-type"] == 'quorum'
+            assert queue_arguments["x-queue-type"] == 'classic'
 
     def test_native_delayed_delivery_exchange_configuration(self, celery_setup: CeleryTestSetup):
         broker: RabbitMQManagementBroker = celery_setup.broker
