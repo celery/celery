@@ -36,15 +36,19 @@ class DelayedDelivery(bootsteps.StartStopStep):
             delayed_exchange: Exchange = Exchange(current_level, type="topic").bind(channel)
             delayed_exchange.declare()
 
+            queue_arguments = {
+                "x-queue-type": c.app.conf.broker_native_delayed_delivery_queue_type,
+                "x-overflow": "reject-publish",
+                "x-message-ttl": pow(2, level) * 1000,
+                "x-dead-letter-exchange": next_level if level > 0 else self.CELERY_DELAYED_DELIVERY_EXCHANGE,
+            }
+
+            if c.app.conf.broker_native_delayed_delivery_queue_type == 'quorum':
+                queue_arguments["x-dead-letter-strategy"] = "at-least-once"
+
             delayed_queue: Queue = Queue(
                 current_level,
-                queue_arguments={
-                    "x-queue-type": c.app.conf.broker_native_delayed_delivery_queue_type,
-                    "x-dead-letter-strategy": "at-least-once",
-                    "x-overflow": "reject-publish",
-                    "x-message-ttl": pow(2, level) * 1000,
-                    "x-dead-letter-exchange": next_level if level > 0 else self.CELERY_DELAYED_DELIVERY_EXCHANGE,
-                }
+                queue_arguments=queue_arguments
             ).bind(channel)
             delayed_queue.declare()
             delayed_queue.bind_to(current_level, routing_key)
