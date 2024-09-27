@@ -32,11 +32,16 @@ def get_optional_arg(annotation: typing.Any) -> typing.Any:
     return None
 
 
-def annotation_issubclass(annotation: typing.Any, cls: type) -> bool:
-    """Test if a given annotation is of the given subclass."""
+def annotation_is_class(annotation: typing.Any) -> bool:
+    """Test if a given annotation is a class that can be used in isinstance()/issubclass()."""
     # isclass() returns True for generic type hints (e.g. `list[str]`) until Python 3.10.
     # NOTE: The guard for Python 3.9 is because types.GenericAlias is only added in Python 3.9. This is not a problem
     #       as the syntax is added in the same version in the first place.
     if (3, 9) <= sys.version_info < (3, 11) and isinstance(annotation, types.GenericAlias):
         return False
-    return isclass(annotation) and issubclass(annotation, cls)
+    return isclass(annotation)
+
+
+def annotation_issubclass(annotation: typing.Any, cls: type) -> bool:
+    """Test if a given annotation is of the given subclass."""
+    return annotation_is_class(annotation) and issubclass(annotation, cls)

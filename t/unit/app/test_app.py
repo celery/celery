@@ -552,6 +552,7 @@ class test_App:
             assert foo(None) == 2
             check.assert_called_with(None, kwarg=True)
 
+    @pytest.mark.skipif(sys.version_info < (3, 9), reason="Notation is only supported in Python 3.9 or newer.")
     def test_task_with_pydantic_with_dict_args(self):
         """Test pydantic task receiving and returning a generic dict argument."""
         with self.Celery() as app:
@@ -565,6 +566,7 @@ class test_App:
             assert foo({'a': 'b'}, kwarg={'c': 'd'}) == {'x': 'y'}
             check.assert_called_once_with({'a': 'b'}, kwarg={'c': 'd'})
 
+    @pytest.mark.skipif(sys.version_info < (3, 9), reason="Notation is only supported in Python 3.9 or newer.")
     def test_task_with_pydantic_with_list_args(self):
         """Test pydantic task receiving and returning a generic dict argument."""
         with self.Celery() as app:
@@ -639,6 +641,23 @@ class test_App:
 
             assert foo({'arg_value': 1}, kwarg={'kwarg_value': 2}) == {'ret_value': 1}
             check.assert_called_with(ArgModel(arg_value=1), kwarg=KwargModel(kwarg_value=2))
+
+    @pytest.mark.skipif(sys.version_info < (3, 9), reason="Notation is only supported in Python 3.9 or newer.")
+    def test_task_with_pydantic_with_generic_return_value(self):
+        """Test pydantic task receiving and returning an optional argument."""
+        class ReturnModel(BaseModel):
+            ret_value: int
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo() -> dict[str, str]:
+                check()
+                return ReturnModel(ret_value=1)  # type: ignore  # whole point here is that this doesn't match
+
+            assert foo() == ReturnModel(ret_value=1)
+            check.assert_called_once_with()
 
     def test_task_with_pydantic_with_task_name_in_context(self):
         """Test that the task name is passed to as additional context."""
