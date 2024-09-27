@@ -549,8 +549,8 @@ class test_App:
             assert foo(0) == 1
             check.assert_called_once_with(0, kwarg=True)
 
-            assert foo() == 2
-            check.assert_called_once_with(None, kwarg=True)
+            assert foo(None) == 2
+            check.assert_called_with(None, kwarg=True)
 
     def test_task_with_pydantic_with_dict_args(self):
         """Test pydantic task receiving and returning a generic dict argument."""
@@ -638,7 +638,7 @@ class test_App:
             check.assert_called_once_with(None, kwarg=None)
 
             assert foo({'arg_value': 1}, kwarg={'kwarg_value': 2}) == {'ret_value': 1}
-            check.assert_called_once_with(ArgModel(arg_vlaue=1), kwarg=KwargModel(kwarg_value=2))
+            check.assert_called_with(ArgModel(arg_value=1), kwarg=KwargModel(kwarg_value=2))
 
     def test_task_with_pydantic_with_task_name_in_context(self):
         """Test that the task name is passed to as additional context."""
