@@ -129,7 +129,7 @@ def pydantic_wrapper(
         bound_args = task_signature.bind(*task_args, **task_kwargs)
         for arg_name, arg_value in bound_args.arguments.items():
             arg_annotation = task_signature.parameters[arg_name].annotation
-            if issubclass(arg_annotation, BaseModel):
+            if isinstance(arg_annotation, type) and issubclass(arg_annotation, BaseModel):
                 bound_args.arguments[arg_name] = arg_annotation.model_validate(
                     arg_value,
                     strict=strict,
