@@ -12,11 +12,11 @@ from celery.utils.annotations import annotation_issubclass, get_optional_arg, is
     'value,expected',
     ((3, False), ('x', False), (int, False), (type(None), True)),
 )
-def test_is_none_type(value: typing.Any, expected: bool):
+def test_is_none_type(value: typing.Any, expected: bool) -> None:
     assert is_none_type(value) is expected
 
 
-def test_is_none_type_with_optional_annotations():
+def test_is_none_type_with_optional_annotations() -> None:
     annotation = typing.Optional[int]
     int_type, none_type = typing.get_args(annotation)
     assert int_type == int  # just to make sure that order is correct
@@ -32,7 +32,7 @@ def test_get_optional_arg() -> None:
         optional3: typing.Union[None, int],
         not_optional1: typing.Union[str, int],
         not_optional2: typing.Union[str, int, bool],
-    ):
+    ) -> None:
         pass
 
     parameters = inspect.signature(func).parameters
@@ -47,7 +47,7 @@ def test_get_optional_arg() -> None:
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason="Notation is only supported in Python 3.10 or newer.")
 def test_get_optional_arg_with_pipe_notation() -> None:
-    def func(optional: int | None, optional2: None | int):
+    def func(optional: int | None, optional2: None | int) -> None:
         pass
 
     parameters = inspect.signature(func).parameters
@@ -60,10 +60,10 @@ def test_annotation_issubclass() -> None:
     def func(
         int_arg: int,
         base_model: BaseModel,
-        list_arg: list,
-        dict_arg: dict,
-        list_typing_arg: typing.List,
-        dict_typing_arg: typing.Dict,
+        list_arg: list,  # type: ignore[type-arg]  # what we test
+        dict_arg: dict,  # type: ignore[type-arg]  # what we test
+        list_typing_arg: typing.List,  # type: ignore[type-arg]  # what we test
+        dict_typing_arg: typing.Dict,  # type: ignore[type-arg]  # what we test
         list_typing_generic_arg: typing.List[str],
         dict_typing_generic_arg: typing.Dict[str, str],
     ) -> None:
