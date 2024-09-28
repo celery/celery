@@ -25,10 +25,12 @@ def get_optional_arg(annotation: typing.Any) -> typing.Any:
         return None
 
     has_none_arg = any(is_none_type(arg) for arg in union_args)
-    other_arg = next(arg for arg in union_args if not is_none_type(arg))
+    # There will always be at least one type arg, as we have already established that this is a Union with exactly
+    # two members, and both cannot be None (`Union[None, None]` does not work).
+    type_arg = next(arg for arg in union_args if not is_none_type(arg))  # pragma: no branch
 
     if has_none_arg:
-        return other_arg
+        return type_arg
     return None
 
 
