@@ -37,6 +37,7 @@ from celery.utils.log import get_logger
 from celery.utils.objects import FallbackContext, mro_lookup
 from celery.utils.time import maybe_make_aware, timezone, to_utc
 
+from ..utils.annotations import annotation_is_class, annotation_issubclass, get_optional_arg
 # Load all builtin tasks
 from . import backends, builtins  # noqa
 from .annotations import prepare as prepare_annotations
@@ -129,7 +130,12 @@ def pydantic_wrapper(
         bound_args = task_signature.bind(*task_args, **task_kwargs)
         for arg_name, arg_value in bound_args.arguments.items():
             arg_annotation = task_signature.parameters[arg_name].annotation
-            if issubclass(arg_annotation, BaseModel):
+
+            optional_arg = get_optional_arg(arg_annotation)
+            if optional_arg is not None and arg_value is not None:
+                arg_annotation = optional_arg
+
+            if annotation_issubclass(arg_annotation, BaseModel):
                 bound_args.arguments[arg_name] = arg_annotation.model_validate(
                     arg_value,
                     strict=strict,
@@ -141,9 +147,15 @@ def pydantic_wrapper(
 
         # Dump Pydantic model if the returned value is an instance of pydantic.BaseModel *and* its
         # class matches the typehint
+        return_annotation = task_signature.return_annotation
+        optional_return_annotation = get_optional_arg(return_annotation)
+        if optional_return_annotation is not None:
+            return_annotation = optional_return_annotation
+
         if (
-            isinstance(returned_value, BaseModel)
-            and isinstance(returned_value, task_signature.return_annotation)
+            annotation_is_class(return_annotation)
+            and isinstance(returned_value, BaseModel)
+            and isinstance(returned_value, return_annotation)
         ):
             return returned_value.model_dump(**dump_kwargs)
 

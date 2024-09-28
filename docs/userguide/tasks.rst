@@ -803,7 +803,14 @@ Argument validation with Pydantic
 .. versionadded:: 5.5.0
 
 You can use Pydantic_ to validate and convert arguments as well as serializing
-results based on typehints by passing ``pydantic=True``. For example:
+results based on typehints by passing ``pydantic=True``.
+
+.. NOTE::
+
+   Argument validation only covers arguments/return values on the task side. You still have
+   serialize arguments yourself when invoking a task with ``delay()`` or ``apply_async()``.
+
+For example:
 
 .. code-block:: python
 
@@ -831,6 +838,55 @@ the returned model "dumped" (serialized using ``BaseModel.model_dump()``):
    >>> result = x.delay({'value': 1})
    >>> result.get(timeout=1)
    {'value': 'example: 1'}
+
+Union types, arguments to generics
+----------------------------------
+
+Union types (e.g. ``Union[SomeModel, OtherModel]``) or arguments to generics (e.g.
+``list[SomeModel]``) are **not** supported.
+
+In case you want to support a list or similar types, it is recommended to use
+``pydantic.RootModel``.
+
+
+Optional parameters/return values
+---------------------------------
+
+Optional parameters or return values are also handled properly. For example, given this task:
+
+.. code-block:: python
+
+    from typing import Optional
+
+    # models are the same as above
+
+    @app.task(pydantic=True)
+    def x(arg: Optional[ArgModel] = None) -> Optional[ReturnModel]:
+        if arg is None:
+            return None
+        return ReturnModel(value=f"example: {arg.value}")
+
+You'll get the following behavior:
+
+.. code-block:: python
+
+    >>> result = x.delay()
+   >>> result.get(timeout=1) is None
+   True
+   >>> result = x.delay({'value': 1})
+   >>> result.get(timeout=1)
+   {'value': 'example: 1'}
+
+Return value handling
+---------------------
+
+Return values will only be serialized if the returned model matches the annotation. If you pass a
+model instance of a different type, it will *not* be serialized. ``mypy`` should already catch such
+errors and you should fix your typehints then.
+
+
+Pydantic parameters
+-------------------
 
 There are a few more options influencing Pydantic behavior:
 

@@ -10,6 +10,7 @@ from copy import deepcopy
 from datetime import datetime, timedelta
 from datetime import timezone as datetime_timezone
 from pickle import dumps, loads
+from typing import Optional
 from unittest.mock import DEFAULT, Mock, patch
 
 import pytest
@@ -533,6 +534,52 @@ class test_App:
             assert foo(0) == 1
             check.assert_called_once_with(0, kwarg=True)
 
+    def test_task_with_pydantic_with_optional_args(self):
+        """Test pydantic task receiving and returning an optional argument."""
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo(arg: Optional[int], kwarg: Optional[bool] = True) -> Optional[int]:
+                check(arg, kwarg=kwarg)
+                if isinstance(arg, int):
+                    return 1
+                return 2
+
+            assert foo(0) == 1
+            check.assert_called_once_with(0, kwarg=True)
+
+            assert foo(None) == 2
+            check.assert_called_with(None, kwarg=True)
+
+    @pytest.mark.skipif(sys.version_info < (3, 9), reason="Notation is only supported in Python 3.9 or newer.")
+    def test_task_with_pydantic_with_dict_args(self):
+        """Test pydantic task receiving and returning a generic dict argument."""
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo(arg: dict[str, str], kwarg: dict[str, str]) -> dict[str, str]:
+                check(arg, kwarg=kwarg)
+                return {'x': 'y'}
+
+            assert foo({'a': 'b'}, kwarg={'c': 'd'}) == {'x': 'y'}
+            check.assert_called_once_with({'a': 'b'}, kwarg={'c': 'd'})
+
+    @pytest.mark.skipif(sys.version_info < (3, 9), reason="Notation is only supported in Python 3.9 or newer.")
+    def test_task_with_pydantic_with_list_args(self):
+        """Test pydantic task receiving and returning a generic dict argument."""
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo(arg: list[str], kwarg: list[str] = True) -> list[str]:
+                check(arg, kwarg=kwarg)
+                return ['x']
+
+            assert foo(['a'], kwarg=['b']) == ['x']
+            check.assert_called_once_with(['a'], kwarg=['b'])
+
     def test_task_with_pydantic_with_pydantic_arg_and_default_kwarg(self):
         """Test a pydantic task with pydantic arg/kwarg and return value."""
 
@@ -567,6 +614,50 @@ class test_App:
             # Explicitly pass all arguments as kwarg
             assert foo(arg={'arg_value': 5}, kwarg={'kwarg_value': 6}) == {'ret_value': 2}
             check.assert_called_once_with(ArgModel(arg_value=5), kwarg=KwargModel(kwarg_value=6))
+
+    def test_task_with_pydantic_with_optional_pydantic_args(self):
+        """Test pydantic task receiving and returning an optional argument."""
+        class ArgModel(BaseModel):
+            arg_value: int
+
+        class KwargModel(BaseModel):
+            kwarg_value: int
+
+        class ReturnModel(BaseModel):
+            ret_value: int
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo(arg: Optional[ArgModel], kwarg: Optional[KwargModel] = None) -> Optional[ReturnModel]:
+                check(arg, kwarg=kwarg)
+                if isinstance(arg, ArgModel):
+                    return ReturnModel(ret_value=1)
+                return None
+
+            assert foo(None) is None
+            check.assert_called_once_with(None, kwarg=None)
+
+            assert foo({'arg_value': 1}, kwarg={'kwarg_value': 2}) == {'ret_value': 1}
+            check.assert_called_with(ArgModel(arg_value=1), kwarg=KwargModel(kwarg_value=2))
+
+    @pytest.mark.skipif(sys.version_info < (3, 9), reason="Notation is only supported in Python 3.9 or newer.")
+    def test_task_with_pydantic_with_generic_return_value(self):
+        """Test pydantic task receiving and returning an optional argument."""
+        class ReturnModel(BaseModel):
+            ret_value: int
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo() -> dict[str, str]:
+                check()
+                return ReturnModel(ret_value=1)  # type: ignore  # whole point here is that this doesn't match
+
+            assert foo() == ReturnModel(ret_value=1)
+            check.assert_called_once_with()
 
     def test_task_with_pydantic_with_task_name_in_context(self):
         """Test that the task name is passed to as additional context."""
