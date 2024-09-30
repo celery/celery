@@ -499,7 +499,7 @@ link to your website. [`Become a sponsor`_]
 .. |oc-sponsor-1| image:: https://opencollective.com/celery/sponsor/0/avatar.svg
     :target: https://opencollective.com/celery/sponsor/0/website
 
-.. |oc-sponsor-2| image:: ./docs/images/blacksmith-logo-padded.svg
+.. |oc-sponsor-2| image:: ./docs/images/blacksmith-logo-white-on-black.svg
     :target: https://www.blacksmith.sh/
     :alt: Blacksmith.sh
     :width: 240
