@@ -494,7 +494,7 @@ link to your website. [`Become a sponsor`_]
 
 .. _`Become a sponsor`: https://opencollective.com/celery#sponsor
 
-|oc-sponsor-1| |oc-sponsor-2|
+|oc-sponsor-1| |oc-sponsor-2| |oc-sponsor-3|
 
 .. |oc-sponsor-1| image:: https://opencollective.com/celery/sponsor/0/avatar.svg
     :target: https://opencollective.com/celery/sponsor/0/website
