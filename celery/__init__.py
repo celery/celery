@@ -17,7 +17,7 @@ from . import local
 
 SERIES = 'immunity'
 
-__version__ = '5.5.0b3'
+__version__ = '5.5.0b4'
 __author__ = 'Ask Solem'
 __contact__ = 'auvipy@gmail.com'
 __homepage__ = 'https://docs.celeryq.dev/'
