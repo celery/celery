@@ -8,6 +8,149 @@ This document contains change notes for bugfix & new features
 in the main branch & 5.5.x series, please see :ref:`whatsnew-5.5` for
 an overview of what's new in Celery 5.5.
 
+.. _version-5.5.0b4:
+
+5.5.0b4
+=======
+
+:release-date: 2024-09-30
+:release-by: Tomer Nosrati
+
+Celery v5.5.0 Beta 4 is now available for testing.
+Please help us test this version and report any issues.
+
+Key Highlights
+~~~~~~~~~~~~~~
+
+Python 3.13 Initial Support
+---------------------------
+
+This release introduces the initial support for Python 3.13 with Celery.
+
+After upgrading to this version, please share your feedback on the Python 3.13 support.
+
+Previous Pre-release Highlights
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Soft Shutdown
+-------------
+
+The soft shutdown is a new mechanism in Celery that sits between the warm shutdown and the cold shutdown.
+It sets a time limited "warm shutdown" period, during which the worker will continue to process tasks that are already running.
+After the soft shutdown ends, the worker will initiate a graceful cold shutdown, stopping all tasks and exiting.
+
+The soft shutdown is disabled by default, and can be enabled by setting the new configuration option :setting:`worker_soft_shutdown_timeout`.
+If a worker is not running any task when the soft shutdown initiates, it will skip the warm shutdown period and proceed directly to the cold shutdown
+unless the new configuration option :setting:`worker_enable_soft_shutdown_on_idle` is set to True. This is useful for workers
+that are idle, waiting on ETA tasks to be executed that still want to enable the soft shutdown anyways.
+
+The soft shutdown can replace the cold shutdown when using a broker with a visibility timeout mechanism, like :ref:`Redis <broker-redis>`
+or :ref:`SQS <broker-sqs>`, to enable a more graceful cold shutdown procedure, allowing the worker enough time to re-queue tasks that were not
+completed (e.g., ``Restoring 1 unacknowledged message(s)``) by resetting the visibility timeout of the unacknowledged messages just before
+the worker exits completely.
+
+After upgrading to this version, please share your feedback on the new Soft Shutdown mechanism.
+
+Relevant Issues:
+`#9213 <https://github.com/celery/celery/pull/9213>`_,
+`#9231 <https://github.com/celery/celery/pull/9231>`_,
+`#9238 <https://github.com/celery/celery/pull/9238>`_
+
+- New :ref:`documentation <worker-stopping>` for each shutdown type.
+- New :setting:`worker_soft_shutdown_timeout` configuration option.
+- New :setting:`worker_enable_soft_shutdown_on_idle` configuration option.
+
+REMAP_SIGTERM
+-------------
+
+The ``REMAP_SIGTERM`` "hidden feature" has been tested, :ref:`documented <worker-REMAP_SIGTERM>` and is now officially supported.
+This feature allows users to remap the SIGTERM signal to SIGQUIT, to initiate a soft or a cold shutdown using :sig:`TERM`
+instead of :sig:`QUIT`.
+
+Pydantic Support
+----------------
+
+This release introduces support for Pydantic models in Celery tasks.
+For more info, see the new pydantic example and PR `#9023 <https://github.com/celery/celery/pull/9023>`_ by @mathiasertl.
+
+After upgrading to this version, please share your feedback on the new Pydantic support.
+
+Redis Broker Stability Improvements
+-----------------------------------
+The root cause of the Redis broker instability issue has been `identified and resolved <https://github.com/celery/kombu/pull/2007>`_
+in the v5.4.0 release of Kombu, which should resolve the disconnections bug and offer additional improvements.
+
+After upgrading to this version, please share your feedback on the Redis broker stability.
+
+Relevant Issues:
+`#7276 <https://github.com/celery/celery/discussions/7276>`_,
+`#8091 <https://github.com/celery/celery/discussions/8091>`_,
+`#8030 <https://github.com/celery/celery/discussions/8030>`_,
+`#8384 <https://github.com/celery/celery/discussions/8384>`_
+
+Quorum Queues Initial Support
+-----------------------------
+This release introduces the initial support for Quorum Queues with Celery. 
+
+See new configuration options for more details:
+
+- :setting:`task_default_queue_type`
+- :setting:`worker_detect_quorum_queues`
+
+After upgrading to this version, please share your feedback on the Quorum Queues support.
+
+Relevant Issues:
+`#6067 <https://github.com/celery/celery/discussions/6067>`_,
+`#9121 <https://github.com/celery/celery/discussions/9121>`_
+
+What's Changed
+~~~~~~~~~~~~~~
+
+- Correct the error description in exception message when validate soft_time_limit (#9246)
+- Update msgpack to 1.1.0 (#9249)
+- chore(utils/time.py): rename `_is_ambigious` -> `_is_ambiguous` (#9248)
+- Reduced Smoke Tests to min/max supported python (3.8/3.12) (#9252)
+- Update pytest to 8.3.3 (#9253)
+- Update elasticsearch requirement from <=8.15.0 to <=8.15.1 (#9255)
+- Update mongodb without deprecated `[srv]` extra requirement (#9258)
+- blacksmith.sh: Migrate workflows to Blacksmith (#9261)
+- Fixes #9119: inject dispatch_uid for retry-wrapped receivers (#9247)
+- Run all smoke tests CI jobs together (#9263)
+- Improve documentation on visibility timeout (#9264)
+- Bump pytest-celery to 1.1.2 (#9267)
+- Added missing "app.conf.visibility_timeout" in smoke tests (#9266)
+- Improved stability with t/smoke/tests/test_consumer.py (#9268)
+- Improved Redis container stability in the smoke tests (#9271)
+- Disabled EXHAUST_MEMORY tests in Smoke-tasks (#9272)
+- Marked xfail for test_reducing_prefetch_count with Redis - flaky test (#9273)
+- Fixed pypy unit tests random failures in the CI (#9275)
+- Fixed more pypy unit tests random failures in the CI (#9278)
+- Fix Redis container from aborting randomly (#9276)
+- Run Integration & Smoke CI tests together after unit tests pass (#9280)
+- Added "loglevel verbose" to Redis containers in smoke tests (#9282)
+- Fixed Redis error in the smoke tests: "Possible SECURITY ATTACK detected" (#9284)
+- Refactored the smoke tests github workflow (#9285)
+- Increased --reruns 3->4 in smoke tests (#9286)
+- Improve stability of smoke tests (CI and Local) (#9287)
+- Fixed Smoke tests CI "test-case" labels (specific instead of general) (#9288)
+- Use assert_log_exists instead of wait_for_log in worker smoke tests (#9290)
+- Optimized t/smoke/tests/test_worker.py (#9291)
+- Enable smoke tests dockers check before each test starts (#9292)
+- Relaxed smoke tests flaky tests mechanism (#9293)
+- Updated quorum queue detection to handle multiple broker instances (#9294)
+- Non-lazy table creation for database backend (#9228)
+- Pin pymongo to latest version 4.9 (#9297)
+- Bump pymongo from 4.9 to 4.9.1 (#9298)
+- Bump Kombu to v5.4.2 (#9304)
+- Use rabbitmq:3 in stamping smoke tests (#9307)
+- Bump pytest-celery to 1.1.3 (#9308)
+- Added Python 3.13 Support (#9309)
+- Add log when global qos is disabled (#9296)
+- Added official release docs (whatsnew) for v5.5 (#9312)
+- Enable Codespell autofix (#9313)
+- Pydantic typehints: Fix optional, allow generics (#9319)
+- Prepare for (pre) release: v5.5.0b4 (#9322)
+
 .. _version-5.5.0b3:
 
 5.5.0b3
