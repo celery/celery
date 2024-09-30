@@ -499,10 +499,10 @@ link to your website. [`Become a sponsor`_]
 .. |oc-sponsor-1| image:: https://opencollective.com/celery/sponsor/0/avatar.svg
     :target: https://opencollective.com/celery/sponsor/0/website
 
-.. |oc-sponsor-2| image:: https://docs.celeryq.dev/en/latest/_images/blacksmith.png
+.. |oc-sponsor-2| image:: https://cdn.prod.website-files.com/666867b039e0f3d7fb777efa/666c7b31dc41f7f25b721378_blacksmith-logo.svg
     :target: https://www.blacksmith.sh/
     :alt: Blacksmith.sh
-    :width: 200
+    :width: 240
     :height: 57
 
 .. |oc-sponsor-3| image:: https://upstash.com/logo/upstash-dark-bg.svg
