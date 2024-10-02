@@ -2043,8 +2043,8 @@ There's a race condition if the task starts executing
 before the transaction has been committed; The database object doesn't exist
 yet!
 
-The solution is to use the ``on_commit`` callback to launch your Celery task
-once all transactions have been committed successfully.
+The solution is to use
+:meth:`~celery.contrib.django.task.DjangoTask.delay_on_commit` instead:
 
 .. code-block:: python
 
@@ -2054,7 +2054,31 @@ once all transactions have been committed successfully.
     @transaction.atomic
     def create_article(request):
         article = Article.objects.create()
-        transaction.on_commit(lambda: expand_abbreviations.delay(article.pk))
+        expand_abbreviations.delay_on_commit(article.pk)
+        return HttpResponseRedirect('/articles/')
+
+This method was added in Celery 5.4. It's a shortcut that uses Django's
+``on_commit`` callback to launch your Celery task once all transactions
+have been committed successfully.
+
+With Celery <5.4
+~~~~~~~~~~~~~~~~
+
+If you're using an older version of Celery, you can replicate this behaviour
+using the Django callback directly as follows:
+
+.. code-block:: python
+
+    import functools
+    from django.db import transaction
+    from django.http import HttpResponseRedirect
+
+    @transaction.atomic
+    def create_article(request):
+        article = Article.objects.create()
+        transaction.on_commit(
+            functools.partial(expand_abbreviations.delay, article.pk)
+        )
         return HttpResponseRedirect('/articles/')
 
 .. note::
