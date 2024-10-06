@@ -10,7 +10,7 @@ moto>=4.1.11,<5.1.0
 # typing extensions
 mypy==1.11.2; platform_python_implementation=="CPython"
 pre-commit>=3.5.0,<3.8.0; python_version < '3.9'
-pre-commit>=3.8.0; python_version >= '3.9'
+pre-commit>=4.0.0; python_version >= '3.9'
 -r extras/yaml.txt
 -r extras/msgpack.txt
 -r extras/mongodb.txt
