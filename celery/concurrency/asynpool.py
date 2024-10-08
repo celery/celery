@@ -416,7 +416,7 @@ class AsynPool(_pool.Pool):
 
     def __init__(self, processes=None, synack=False,
                  sched_strategy=None, proc_alive_timeout=None,
-                 *args, **kwargs):
+                 proc_use_process_group=None, *args, **kwargs):
         self.sched_strategy = SCHED_STRATEGIES.get(sched_strategy,
                                                    sched_strategy)
         processes = self.cpu_count() if processes is None else processes
@@ -440,6 +440,10 @@ class AsynPool(_pool.Pool):
         self._proc_alive_timeout = (
             PROC_ALIVE_TIMEOUT if proc_alive_timeout is None
             else proc_alive_timeout
+        )
+        self._proc_use_process_group = (
+            proc_use_process_group if proc_use_process_group is not None
+            else False
         )
         self._waiting_to_start = set()
 
@@ -610,7 +614,7 @@ class AsynPool(_pool.Pool):
         process_flush_queues = self.process_flush_queues
         waiting_to_start = self._waiting_to_start
 
-        def verify_process_alive(proc):
+        def verify_process_alive(proc, kill_pg):
             proc = proc()  # is a weakref
             if (proc is not None and proc._is_alive() and
                     proc in waiting_to_start):
@@ -618,7 +622,10 @@ class AsynPool(_pool.Pool):
                 assert fileno_to_outq[proc.outqR_fd] is proc
                 assert proc.outqR_fd in hub.readers
                 error('Timed out waiting for UP message from %r', proc)
-                os.kill(proc.pid, 9)
+                if kill_pg:
+                    os.killpg(os.getpgid(proc.pid), 9)
+                else:
+                    os.kill(proc.pid, 9)
 
         def on_process_up(proc):
             """Called when a process has started."""
@@ -645,7 +652,10 @@ class AsynPool(_pool.Pool):
 
             waiting_to_start.add(proc)
             hub.call_later(
-                self._proc_alive_timeout, verify_process_alive, ref(proc),
+                self._proc_alive_timeout,
+                verify_process_alive,
+                ref(proc),
+                self._proc_use_process_group,
             )
 
         self.on_process_up = on_process_up
