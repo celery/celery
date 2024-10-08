@@ -118,6 +118,9 @@ Transports and Backends
 :``celery[gcs]``:
     for using the Google Cloud Storage as a result backend (*experimental*).
 
+:``celery[valkey]``:
+    for using Valkey as a message transport or as a result backend.
+
 
 
 .. _celery-installing-from-source:
