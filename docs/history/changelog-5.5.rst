@@ -8,6 +8,118 @@ This document contains change notes for bugfix & new features
 in the main branch & 5.5.x series, please see :ref:`whatsnew-5.5` for
 an overview of what's new in Celery 5.5.
 
+.. _version-5.5.0rc1:
+
+5.5.0rc1
+========
+
+:release-date: 2024-10-08
+:release-by: Tomer Nosrati
+
+Celery v5.5.0 Release Candidate 1 is now available for testing.
+Please help us test this version and report any issues.
+
+Key Highlights
+~~~~~~~~~~~~~~
+
+See :ref:`whatsnew-5.5` or read main highlights below.
+
+Python 3.13 Initial Support
+---------------------------
+
+This release introduces the initial support for Python 3.13 with Celery.
+
+After upgrading to this version, please share your feedback on the Python 3.13 support.
+
+Soft Shutdown
+-------------
+
+The soft shutdown is a new mechanism in Celery that sits between the warm shutdown and the cold shutdown.
+It sets a time limited "warm shutdown" period, during which the worker will continue to process tasks that are already running.
+After the soft shutdown ends, the worker will initiate a graceful cold shutdown, stopping all tasks and exiting.
+
+The soft shutdown is disabled by default, and can be enabled by setting the new configuration option :setting:`worker_soft_shutdown_timeout`.
+If a worker is not running any task when the soft shutdown initiates, it will skip the warm shutdown period and proceed directly to the cold shutdown
+unless the new configuration option :setting:`worker_enable_soft_shutdown_on_idle` is set to True. This is useful for workers
+that are idle, waiting on ETA tasks to be executed that still want to enable the soft shutdown anyways.
+
+The soft shutdown can replace the cold shutdown when using a broker with a visibility timeout mechanism, like :ref:`Redis <broker-redis>`
+or :ref:`SQS <broker-sqs>`, to enable a more graceful cold shutdown procedure, allowing the worker enough time to re-queue tasks that were not
+completed (e.g., ``Restoring 1 unacknowledged message(s)``) by resetting the visibility timeout of the unacknowledged messages just before
+the worker exits completely.
+
+After upgrading to this version, please share your feedback on the new Soft Shutdown mechanism.
+
+Relevant Issues:
+`#9213 <https://github.com/celery/celery/pull/9213>`_,
+`#9231 <https://github.com/celery/celery/pull/9231>`_,
+`#9238 <https://github.com/celery/celery/pull/9238>`_
+
+- New :ref:`documentation <worker-stopping>` for each shutdown type.
+- New :setting:`worker_soft_shutdown_timeout` configuration option.
+- New :setting:`worker_enable_soft_shutdown_on_idle` configuration option.
+
+REMAP_SIGTERM
+-------------
+
+The ``REMAP_SIGTERM`` "hidden feature" has been tested, :ref:`documented <worker-REMAP_SIGTERM>` and is now officially supported.
+This feature allows users to remap the SIGTERM signal to SIGQUIT, to initiate a soft or a cold shutdown using :sig:`TERM`
+instead of :sig:`QUIT`.
+
+Pydantic Support
+----------------
+
+This release introduces support for Pydantic models in Celery tasks.
+For more info, see the new pydantic example and PR `#9023 <https://github.com/celery/celery/pull/9023>`_ by @mathiasertl.
+
+After upgrading to this version, please share your feedback on the new Pydantic support.
+
+Redis Broker Stability Improvements
+-----------------------------------
+The root cause of the Redis broker instability issue has been `identified and resolved <https://github.com/celery/kombu/pull/2007>`_
+in the v5.4.0 release of Kombu, which should resolve the disconnections bug and offer additional improvements.
+
+After upgrading to this version, please share your feedback on the Redis broker stability.
+
+Relevant Issues:
+`#7276 <https://github.com/celery/celery/discussions/7276>`_,
+`#8091 <https://github.com/celery/celery/discussions/8091>`_,
+`#8030 <https://github.com/celery/celery/discussions/8030>`_,
+`#8384 <https://github.com/celery/celery/discussions/8384>`_
+
+Quorum Queues Initial Support
+-----------------------------
+This release introduces the initial support for Quorum Queues with Celery. 
+
+See new configuration options for more details:
+
+- :setting:`task_default_queue_type`
+- :setting:`worker_detect_quorum_queues`
+
+After upgrading to this version, please share your feedback on the Quorum Queues support.
+
+Relevant Issues:
+`#6067 <https://github.com/celery/celery/discussions/6067>`_,
+`#9121 <https://github.com/celery/celery/discussions/9121>`_
+
+What's Changed
+~~~~~~~~~~~~~~
+
+- Added Blacksmith.sh to the Sponsors section in the README (#9323)
+- Revert "Added Blacksmith.sh to the Sponsors section in the README" (#9324)
+- Added Blacksmith.sh to the Sponsors section in the README (#9325)
+- Added missing " |oc-sponsor-3|” in README (#9326)
+- Use Blacksmith SVG logo (#9327)
+- Updated Blacksmith SVG logo (#9328)
+- Revert "Updated Blacksmith SVG logo" (#9329)
+- Update pymongo to 4.10.0 (#9330)
+- Update pymongo to 4.10.1 (#9332)
+- Update user guide to recommend delay_on_commit (#9333)
+- Pin pre-commit to latest version 4.0.0 (Python 3.9+) (#9334)
+- Update ephem to 4.1.6 (#9336)
+- Updated Blacksmith SVG logo (#9337)
+- Prepare for (pre) release: v5.5.0rc1 (#9341)
+
 .. _version-5.5.0b4:
 
 5.5.0b4
