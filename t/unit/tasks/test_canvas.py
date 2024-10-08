@@ -1549,6 +1549,23 @@ class test_chord(CanvasCase):
         x.freeze()
         x.tasks = [self.add.s(2, 2)]
         x.freeze()
+        
+    def test_apply_async_task_in_chained_chords(self):
+        x = chain(
+            chord([self.add.si(1, 2)], body=self.mul.s(4), app=self.app),
+            chord([self.add.si(3, 4)], body=self.mul.s(4), app=self.app)
+        )
+        x.apply_async()
+
+    def test_apply_async_task_in_nested_chords(self):
+        x = chord(
+            [
+                chord([self.add.si(5, 6)], body=self.mul.s(4), app=self.app),
+            ],
+            body=self.mul.s(4),
+            app=self.app
+        )
+        x.apply_async()
 
     def test_chain_always_eager(self):
         self.app.conf.task_always_eager = True
