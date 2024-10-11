@@ -9,7 +9,8 @@ on:
           - '**.toml'
           - '/docker/**'
           - '.github/workflows/docker.yml'
-          - 'Dockerfile'
+          - 'docker/Dockerfile'
+          - 't/smoke/workers/docker/**'
     push:
       branches: [ 'main']
       paths:
@@ -18,6 +19,8 @@ on:
           - '**.toml'
           - '/docker/**'
           - '.github/workflows/docker.yml'
+          - 'docker/Dockerfile'
+          - 't/smoke/workers/docker/**'
     workflow_dispatch:
 
 
