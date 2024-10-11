@@ -1,4 +1,4 @@
-FROM python:3.11-bookworm
+FROM python:3.13-bookworm
 
 # Create a user to run the worker
 RUN adduser --disabled-password --gecos "" test_user
