@@ -42,7 +42,7 @@ Options
 Resource expiry
 ---------------
 
-The default settins are built to be as simple cost effective and intutive as possible and to "just work".
+The default settings are built to be as simple cost effective and intuitive as possible and to "just work".
 The pubsub messages and subscriptions are set to expire after 24 hours, and can be set
 by configuring the :setting:`expiration_seconds` setting::
 
@@ -134,9 +134,9 @@ Caveats
   The reason is that the Pub/Sub API does not provide a way to get the
   exact number of messages in a subscription.
 
-- Orphan (no subscriptions) Pub/Sub topics arent being auto removed!!
+- Orphan (no subscriptions) Pub/Sub topics aren't being auto removed!!
   Since GCP introduces a hard limit of 10k topics per project,
   it is recommended to remove orphan topics manually in a periodic manner.
 
-- Max message size is limited to 10MB, as a workaroud you can use GCS Backend to
+- Max message size is limited to 10MB, as a workaround you can use GCS Backend to
   store the message in GCS and pass the GCS URL to the task.
