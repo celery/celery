@@ -91,9 +91,6 @@ class Tasks(bootsteps.StartStopStep):
         if c.app.conf.worker_detect_quorum_queues:
             using_quorum_queues, qname = self.detect_quorum_queues(c)
 
-            if c.app.conf.broker_native_delayed_delivery is True:
-                using_quorum_queues = True
-
             if using_quorum_queues:
                 qos_global = False
                 logger.info("Global QoS is disabled. Prefetch count in now static.")
