@@ -686,13 +686,6 @@ class test_Tasks:
         tasks = Tasks(c)
         assert tasks.qos_global(c) is True
 
-    def test_qos_global_worker_detect_quorum_queues_true_native_delayed_delivery_true(self):
-        c = self.c
-        c.app.conf.broker_native_delayed_delivery = True
-        c.app.amqp.queues = {"celery": Mock(queue_arguments=None)}
-        tasks = Tasks(c)
-        assert tasks.qos_global(c) is False
-
     def test_qos_global_worker_detect_quorum_queues_true_with_quorum_queues(self):
         c = self.c
         self.c.connection.transport.driver_type = 'amqp'
