@@ -11,6 +11,7 @@ logger = get_logger(__name__)
 
 
 class DelayedDelivery(bootsteps.StartStopStep):
+    """This bootstep declares native delayed delivery queues and exchanges and binds all queues to them"""
     requires = (Tasks,)
 
     def include_if(self, c):
