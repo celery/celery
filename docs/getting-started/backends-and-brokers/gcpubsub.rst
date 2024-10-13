@@ -4,6 +4,8 @@
  Using Google Pub/Sub
 =====================
 
+.. versionadded:: 5.5
+
 .. _broker-gcpubsub-installation:
 
 Installation
