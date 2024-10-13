@@ -17,6 +17,7 @@ from dateutil.parser import isoparse
 from kombu import Exchange, pools
 from kombu.clocks import LamportClock
 from kombu.common import oid_from
+from kombu.transport.native_delayed_delivery import calculate_routing_key
 from kombu.utils.compat import register_after_fork
 from kombu.utils.objects import cached_property
 from kombu.utils.uuid import uuid
@@ -840,7 +841,7 @@ class Celery:
 
             if countdown:
                 if countdown > 0:
-                    routing_key = '.'.join(list(f'{int(countdown):028b}')) + f'.{options["queue"].routing_key}'
+                    routing_key = calculate_routing_key(int(countdown), options["queue"].routing_key)
                     exchange = Exchange(
                         'celery_delayed_27',
                         type='topic',
