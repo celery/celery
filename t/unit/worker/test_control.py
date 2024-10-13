@@ -22,6 +22,8 @@ from celery.worker.state import REVOKE_EXPIRES, revoked, revoked_stamps
 
 hostname = socket.gethostname()
 
+IS_PYPY = hasattr(sys, 'pypy_version_info')
+
 
 class WorkController:
     autoscaler = None
@@ -721,6 +723,7 @@ class test_ControlPanel:
         consumer.controller.consumer = None
         panel.handle('pool_restart', {'reloader': _reload})
 
+    @pytest.mark.skipif(IS_PYPY, reason="Patch for sys.modules doesn't work on PyPy correctly")
     @patch('celery.worker.worker.logger.debug')
     def test_pool_restart_import_modules(self, _debug):
         consumer = Consumer(self.app)
