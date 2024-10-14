@@ -21,6 +21,7 @@ Broker Instructions
     redis
     sqs
     kafka
+    valkey
 
 .. _broker-overview:
 
@@ -104,3 +105,11 @@ SQLAlchemy is a backend.
 It allows Celery to interface with MySQL, PostgreSQL, SQlite, and more. It is an ORM, and is the way Celery can use a SQL DB as a result backend.
 
 :ref:`See documentation for details <conf-database-result-backend>`
+
+Valkey
+------
+
+Valkey is a free licenced fork of Redis, with a similar API that almost works the same.
+it does everything redis does
+
+:red:`See documentation for details <broker-valkey>`
