@@ -19,13 +19,15 @@ class DelayedDelivery(bootsteps.StartStopStep):
                 and c.connection_for_write().transport.driver_type == 'amqp')
 
     def start(self, c: Consumer):
-        connection = c.connection_for_write()
         app: Celery = c.app
 
-        declare_native_delayed_delivery_exchanges_and_queues(
-            connection,
-            app.conf.broker_native_delayed_delivery_queue_type
-        )
+        for broker_url in app.conf.broker_url.split(';'):
+            connection = c.connection_for_write(url=broker_url)
 
-        for queue in app.amqp.queues.values():
-            bind_queue_to_native_delayed_delivery_exchange(connection, queue)
+            declare_native_delayed_delivery_exchanges_and_queues(
+                connection,
+                app.conf.broker_native_delayed_delivery_queue_type
+            )
+
+            for queue in app.amqp.queues.values():
+                bind_queue_to_native_delayed_delivery_exchange(connection, queue)
