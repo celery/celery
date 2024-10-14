@@ -5,12 +5,17 @@ from unittest.mock import MagicMock, Mock, call, patch
 import pytest
 from google.cloud.exceptions import NotFound
 
-from celery.backends.gcs import GCSBackend
+# Workaround until python-firestore is fixed
+is_py313 = sys.version_info >= (3, 13)
+if not is_py313:
+    from celery.backends.gcs import GCSBackend
+else:
+    GCSBackend = None
 from celery.exceptions import ImproperlyConfigured
 
 
 @pytest.mark.skipif(
-    sys.version_info >= (3, 13),
+    is_py313,
     reason="https://github.com/googleapis/python-firestore/issues/973",
 )
 class test_GCSBackend:
