@@ -1,3 +1,4 @@
+import sys
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, Mock, call, patch
 
@@ -8,6 +9,10 @@ from celery.backends.gcs import GCSBackend
 from celery.exceptions import ImproperlyConfigured
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 13),
+    reason="https://github.com/googleapis/python-firestore/issues/973",
+)
 class test_GCSBackend:
     def setup_method(self):
         self.app.conf.gcs_bucket = 'bucket'
