@@ -26,6 +26,17 @@ Available as part of the Tidelift Subscription.
 
 The maintainers of ``celery`` and thousands of other packages are working with Tidelift to deliver commercial support and maintenance for the open source dependencies you use to build your applications. Save time, reduce risk, and improve code health, while paying the maintainers of the exact dependencies you use. `Learn more. <https://tidelift.com/subscription/pkg/pypi-celery?utm_source=pypi-celery&utm_medium=referral&utm_campaign=enterprise&utm_term=repo>`_
 
+
+Sponsor
+=======
+
+`Dragonfly <https://www.dragonflydb.io/>`_ is a drop-in Redis replacement that cuts costs and boosts performance. Designed to fully utilize the power of modern cloud hardware and deliver on the data demands of modern applications, Dragonfly frees developers from the limits of traditional in-memory data stores.
+
+.. image:: https://github.com/celery/celery/raw/main/docs/images/dragonfly.png
+   :alt: Dragonfly logo
+
+
+
 What's a Task Queue?
 ====================
 
