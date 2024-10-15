@@ -68,6 +68,7 @@ class test_DelayedDelivery:
     def test_start_native_delayed_delivery_direct_exchange(self, caplog):
         consumer_mock = Mock()
         consumer_mock.app.conf.broker_native_delayed_delivery_queue_type = 'classic'
+        consumer_mock.app.conf.broker_url = 'amqp://'
         consumer_mock.app.amqp.queues = {
             'celery': Queue('celery', exchange=Exchange('celery', type='direct'))
         }
@@ -89,6 +90,7 @@ class test_DelayedDelivery:
     def test_start_native_delayed_delivery_topic_exchange(self, caplog):
         consumer_mock = Mock()
         consumer_mock.app.conf.broker_native_delayed_delivery_queue_type = 'classic'
+        consumer_mock.app.conf.broker_url = 'amqp://'
         consumer_mock.app.amqp.queues = {
             'celery': Queue('celery', exchange=Exchange('celery', type='topic'))
         }
@@ -102,6 +104,7 @@ class test_DelayedDelivery:
     def test_start_native_delayed_delivery_fanout_exchange(self, caplog):
         consumer_mock = Mock()
         consumer_mock.app.conf.broker_native_delayed_delivery_queue_type = 'classic'
+        consumer_mock.app.conf.broker_url = 'amqp://'
         consumer_mock.app.amqp.queues = {
             'celery': Queue('celery', exchange=Exchange('celery', type='fanout'))
         }
