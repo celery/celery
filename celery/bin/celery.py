@@ -48,34 +48,6 @@ Unable to load celery application.
 {0}""")
 
 
-class App(ParamType):
-    """Application option."""
-
-    name = "application"
-
-    def convert(self, value, param, ctx):
-        try:
-            return find_app(value)
-        except ModuleNotFoundError as e:
-            if e.name != value:
-                exc = traceback.format_exc()
-                self.fail(
-                    UNABLE_TO_LOAD_APP_ERROR_OCCURRED.format(value, exc)
-                )
-            self.fail(UNABLE_TO_LOAD_APP_MODULE_NOT_FOUND.format(e.name))
-        except AttributeError as e:
-            attribute_name = e.args[0].capitalize()
-            self.fail(UNABLE_TO_LOAD_APP_APP_MISSING.format(attribute_name))
-        except Exception:
-            exc = traceback.format_exc()
-            self.fail(
-                UNABLE_TO_LOAD_APP_ERROR_OCCURRED.format(value, exc)
-            )
-
-
-APP = App()
-
-
 if sys.version_info >= (3, 10):
     _PLUGINS = entry_points(group='celery.commands')
 else:
@@ -91,7 +63,6 @@ else:
               '--app',
               envvar='APP',
               cls=CeleryOption,
-              type=APP,
               help_group="Global Options")
 @click.option('-b',
               '--broker',
@@ -160,7 +131,26 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir,
         os.environ['CELERY_CONFIG_MODULE'] = config
     if skip_checks:
         os.environ['CELERY_SKIP_CHECKS'] = 'true'
-    ctx.obj = CLIContext(app=app, no_color=no_color, workdir=workdir,
+
+    try:
+        app_object = find_app(app)
+    except ModuleNotFoundError as e:
+        if e.name != app:
+            exc = traceback.format_exc()
+            ctx.fail(
+                UNABLE_TO_LOAD_APP_ERROR_OCCURRED.format(app, exc)
+            )
+        ctx.fail(UNABLE_TO_LOAD_APP_MODULE_NOT_FOUND.format(e.name))
+    except AttributeError as e:
+        attribute_name = e.args[0].capitalize()
+        ctx.fail(UNABLE_TO_LOAD_APP_APP_MISSING.format(attribute_name))
+    except Exception:
+        exc = traceback.format_exc()
+        ctx.fail(
+            UNABLE_TO_LOAD_APP_ERROR_OCCURRED.format(app, exc)
+        )
+
+    ctx.obj = CLIContext(app=app_object, no_color=no_color, workdir=workdir,
                          quiet=quiet)
 
     # User options
