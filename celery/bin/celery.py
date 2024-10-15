@@ -11,7 +11,6 @@ except ImportError:
 
 import click
 import click.exceptions
-from click.types import ParamType
 from click_didyoumean import DYMGroup
 from click_plugins import with_plugins
 
