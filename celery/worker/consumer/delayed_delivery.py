@@ -22,12 +22,16 @@ class DelayedDelivery(bootsteps.StartStopStep):
         app: Celery = c.app
 
         for broker_url in app.conf.broker_url.split(';'):
-            connection = c.connection_for_write(url=broker_url)
+            try:
+                # We use connection for write directly to avoid using ensure_connection()
+                connection = c.app.connection_for_write(url=broker_url)
+                declare_native_delayed_delivery_exchanges_and_queues(
+                    connection,
+                    app.conf.broker_native_delayed_delivery_queue_type
+                )
 
-            declare_native_delayed_delivery_exchanges_and_queues(
-                connection,
-                app.conf.broker_native_delayed_delivery_queue_type
-            )
-
-            for queue in app.amqp.queues.values():
-                bind_queue_to_native_delayed_delivery_exchange(connection, queue)
+                for queue in app.amqp.queues.values():
+                    bind_queue_to_native_delayed_delivery_exchange(connection, queue)
+            except ConnectionRefusedError:
+                # We may receive this error if a fail-over occurs
+                continue
