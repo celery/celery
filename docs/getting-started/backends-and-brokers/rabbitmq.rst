@@ -178,6 +178,8 @@ When the server is running, you can continue reading `Setting up RabbitMQ`_.
 Using Quorum Queues
 ===================
 
+.. versionadded:: 5.5
+
 .. warning::
 
     Quorum Queues require disabling global QoS which means some features won't work as expected.
