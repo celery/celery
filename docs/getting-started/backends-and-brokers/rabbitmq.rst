@@ -199,6 +199,8 @@ If you'd like to change the type of the default queue, set the :setting:`task_de
 Celery automatically detects if quorum queues are used using the :setting:`worker_detect_quorum_queues` setting.
 We recommend to keep the default behavior turned on.
 
+To migrate from classic mirrored queues to quorum queues, please refer to RabbitMQ's `documentation <https://www.rabbitmq.com/blog/2023/03/02/quorum-queues-migration>`_ on the subject.
+
 .. _`Quorum Queues`: https://www.rabbitmq.com/docs/quorum-queues
 
 .. _limitations:
