@@ -1432,7 +1432,7 @@ class test_App:
                 exchange=Exchange('testcelery', type='topic')
             )
         }
-        self.app.conf.broker_url = 'amqp://'
+        self.app.producer_pool.connections.connection = 'amqp'
         self.app.conf.broker_native_delayed_delivery = True
 
         self.app.send_task('foo', (1, 2), countdown=30)
@@ -1458,7 +1458,7 @@ class test_App:
                 exchange=Exchange('testcelery', type='topic')
             )
         }
-        self.app.conf.broker_url = 'amqp://'
+        self.app.producer_pool.connections.connection = 'amqp'
         self.app.conf.broker_native_delayed_delivery = True
         self.app.now = Mock(return_value=datetime(2024, 8, 24, tzinfo=datetime_timezone.utc))
 
@@ -1485,7 +1485,7 @@ class test_App:
                 exchange=Exchange('testcelery', type='topic')
             )
         }
-        self.app.conf.broker_url = 'amqp://'
+        self.app.producer_pool.connections.connection = 'amqp'
         self.app.conf.broker_native_delayed_delivery = True
         self.app.now = Mock(return_value=datetime(2024, 8, 24, tzinfo=datetime_timezone.utc))
 
@@ -1506,7 +1506,7 @@ class test_App:
     def test_native_delayed_delivery_no_eta_or_countdown(self):
         self.app.amqp = MagicMock(name='amqp')
         self.app.amqp.router.route.return_value = {'queue': Queue('testcelery', routing_key='testcelery')}
-        self.app.conf.broker_url = 'amqp://'
+        self.app.producer_pool.connections.connection = 'amqp'
         self.app.conf.broker_native_delayed_delivery = True
 
         self.app.send_task('foo', (1, 2), countdown=-10)
@@ -1530,7 +1530,7 @@ class test_App:
                 exchange=Exchange('testcelery', type='topic')
             )
         }
-        self.app.conf.broker_url = 'amqp://'
+        self.app.producer_pool.connections.connection = 'amqp'
         self.app.conf.broker_native_delayed_delivery = True
 
         self.app.send_task('foo', (1, 2))
@@ -1555,7 +1555,7 @@ class test_App:
                 exchange=Exchange('testcelery', type='topic')
             )
         }
-        self.app.conf.broker_url = 'amqp://'
+        self.app.producer_pool.connections.connection = 'amqp'
         self.app.conf.broker_native_delayed_delivery = True
         self.app.now = Mock(return_value=datetime(2024, 8, 24, tzinfo=datetime_timezone.utc))
 
@@ -1581,7 +1581,7 @@ class test_App:
                 exchange=Exchange('testcelery', type='direct')
             )
         }
-        self.app.conf.broker_url = 'amqp://'
+        self.app.producer_pool.connections.connection = 'amqp'
         self.app.conf.broker_native_delayed_delivery = True
 
         self.app.send_task('foo', (1, 2), countdown=10)
