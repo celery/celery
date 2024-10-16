@@ -832,7 +832,7 @@ class Celery:
             options, route_name or name, args, kwargs, task_type)
 
         is_native_delayed_delivery = conf.broker_native_delayed_delivery and (
-            conf.broker_url.startswith('amqp://') or conf.broker_url.startswith('py-amqp://'))
+            self.producer_pool.connections.connection == 'amqp')
         if is_native_delayed_delivery and options['queue'].exchange.type != 'direct':
             if eta:
                 if isinstance(eta, str):
