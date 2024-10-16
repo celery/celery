@@ -10,7 +10,7 @@ import threading
 from itertools import count
 from threading import TIMEOUT_MAX as THREAD_TIMEOUT_MAX
 from time import sleep
-from typing import Callable, Optional, Any, Iterator, Tuple
+from typing import Any, Callable, Iterator, Optional, Tuple
 
 from kombu.asynchronous.timer import Entry
 from kombu.asynchronous.timer import Timer as Schedule
