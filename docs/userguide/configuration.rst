@@ -1829,7 +1829,7 @@ GCS backend settings
 
 .. note::
 
-    This gcs backend driver requires :pypi:`google-cloud-storage`.
+    This gcs backend driver requires :pypi:`google-cloud-storage` and :pypi:`google-cloud-firestore`.
 
     To install, use :command:`gcs`:
 
@@ -1843,6 +1843,7 @@ GCS backend settings
 GCS could be configured via the URL provided in :setting:`result_backend`, for example::
 
     result_backend = 'gs://mybucket/some-prefix?gcs_project=myproject&ttl=600'
+    result_backend = 'gs://mybucket/some-prefix?gcs_project=myproject?firestore_project=myproject2&ttl=600'
 
 This backend requires the following configuration directives to be set:
 
@@ -1901,6 +1902,17 @@ Threadpool size for GCS operations. Same value defines the connection pool size.
 Allows to control the number of concurrent operations. For example::
 
     gcs_threadpool_maxsize = 20
+
+``firestore_project``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: gcs_project.
+
+The Firestore project for Chord reference counting. Allows native chord ref counts.
+If not specified defaults to :setting:`gcs_project`.
+For example::
+
+    firestore_project = 'test-project2'
 
 Example configuration
 ~~~~~~~~~~~~~~~~~~~~~
