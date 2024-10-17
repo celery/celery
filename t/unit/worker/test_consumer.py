@@ -696,6 +696,7 @@ class test_Tasks:
     def test_qos_global_eta_warning(self):
         c = self.c
         self.c.connection.transport.driver_type = 'amqp'
+        c.app.conf.broker_native_delayed_delivery = False
         c.app.amqp.queues = {"celery": Mock(queue_arguments={"x-queue-type": "quorum"})}
         tasks = Tasks(c)
         with pytest.warns(CeleryWarning, match=ETA_TASKS_NO_GLOBAL_QOS_WARNING % "celery"):
