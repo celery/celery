@@ -137,6 +137,8 @@ after_setup_task_logger = Signal(
 # - Beat
 beat_init = Signal(name='beat_init')
 beat_embedded_init = Signal(name='beat_embedded_init')
+beat_shutting_down = Signal(name='beat_shutting_down')
+beat_shutdown = Signal(name='beat_shutdown')
 
 # - Eventlet
 eventlet_pool_started = Signal(name='eventlet_pool_started')
