@@ -47,6 +47,7 @@ class test_Consumer(ConsumerTestCase):
         @self.app.task(shared=False)
         def add(x, y):
             return x + y
+
         self.add = add
 
     def test_repr(self):
@@ -147,6 +148,7 @@ class test_Consumer(ConsumerTestCase):
 
             def __exit__(self, *args):
                 pass
+
         c.qos._mutex = MutexMock()
 
         assert c._restore_prefetch_count_after_connection_restart(None) is None
@@ -266,6 +268,7 @@ class test_Consumer(ConsumerTestCase):
         def se(*args, **kwargs):
             c.blueprint.state = CLOSE
             raise RestartFreqExceeded()
+
         c._restart_state.step.side_effect = se
         c.blueprint.start.side_effect = socket.error()
 
@@ -313,6 +316,7 @@ class test_Consumer(ConsumerTestCase):
     def _closer(self, c):
         def se(*args, **kwargs):
             c.blueprint.state = CLOSE
+
         return se
 
     @pytest.mark.parametrize("broker_connection_retry", [True, False])
@@ -529,6 +533,61 @@ class test_Consumer_WorkerShutdown(ConsumerTestCase):
             )
             expected_connection_retry_type = f"app.conf.{conn_type_name}=False"
             assert expected_connection_retry_type in record.msg
+
+
+class test_Consumer_PerformPendingOperations(ConsumerTestCase):
+
+    def test_perform_pending_operations_all_success(self):
+        """
+        Test that all pending operations are processed successfully when `once=False`.
+        """
+        c = self.get_consumer(no_hub=True)
+
+        # Create mock operations
+        mock_operation_1 = Mock()
+        mock_operation_2 = Mock()
+
+        # Add mock operations to _pending_operations
+        c._pending_operations = [mock_operation_1, mock_operation_2]
+
+        # Call perform_pending_operations
+        c.perform_pending_operations()
+
+        # Assert that all operations were called
+        mock_operation_1.assert_called_once()
+        mock_operation_2.assert_called_once()
+
+        # Ensure all pending operations are cleared
+        assert len(c._pending_operations) == 0
+
+    def test_perform_pending_operations_with_exception(self):
+        """
+        Test that pending operations are processed even if one raises an exception, and
+        the exception is logged when `once=False`.
+        """
+        c = self.get_consumer(no_hub=True)
+
+        # Mock operations: one failing, one successful
+        mock_operation_fail = Mock(side_effect=Exception("Test Exception"))
+        mock_operation_success = Mock()
+
+        # Add operations to _pending_operations
+        c._pending_operations = [mock_operation_fail, mock_operation_success]
+
+        # Patch logger to avoid logging during the test
+        with patch('celery.worker.consumer.consumer.logger.exception') as mock_logger:
+            # Call perform_pending_operations
+            c.perform_pending_operations()
+
+            # Assert that both operations were attempted
+            mock_operation_fail.assert_called_once()
+            mock_operation_success.assert_called_once()
+
+            # Ensure the exception was logged
+            mock_logger.assert_called_once()
+
+            # Ensure all pending operations are cleared
+            assert len(c._pending_operations) == 0
 
 
 class test_Heart:

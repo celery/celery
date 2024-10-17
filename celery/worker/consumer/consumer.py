@@ -412,6 +412,7 @@ class Consumer:
         )
 
     def shutdown(self):
+        self.perform_pending_operations()
         self.blueprint.shutdown(self)
 
     def stop(self):

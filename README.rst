@@ -171,7 +171,7 @@ It supports...
 
     - **Message Transports**
 
-        - RabbitMQ_, Redis_, Amazon SQS
+        - RabbitMQ_, Redis_, Amazon SQS, Google Pub/Sub
 
     - **Concurrency**
 
@@ -183,6 +183,7 @@ It supports...
         - memcached
         - SQLAlchemy, Django ORM
         - Apache Cassandra, IronCache, Elasticsearch
+        - Google Cloud Storage
 
     - **Serialization**
 
@@ -371,6 +372,10 @@ Transports and Backends
 
     You should probably not use this in your requirements, it's here
     for informational purposes only.
+
+:``celery[gcpubsub]``:
+    for using Google Pub/Sub as a message transport.
+
 
 
 .. _celery-installing-from-source:

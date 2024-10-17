@@ -118,6 +118,9 @@ Transports and Backends
 :``celery[gcs]``:
     for using the Google Cloud Storage as a result backend (*experimental*).
 
+:``celery[gcpubsub]``:
+    for using the Google Cloud Pub/Sub as a message transport (*experimental*)..
+
 
 
 .. _celery-installing-from-source:
