@@ -1,12 +1,13 @@
 """Fixtures and testing utilities for :pypi:`pytest <pytest>`."""
 import os
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Mapping, Sequence, Union  # noqa
+from typing import TYPE_CHECKING, Any, Mapping, Sequence, Union
 
 import pytest
 
 if TYPE_CHECKING:
     from _pytest.config import Config
+
     from celery import Celery
 
     from ..worker import WorkController
