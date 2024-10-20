@@ -173,6 +173,7 @@ class CeleryCommand(click.Command):
 
 class DaemonOption(CeleryOption):
     """Common daemonization option"""
+
     def __init__(self, *args, **kwargs):
         super().__init__(args,
                          help_group=kwargs.pop("help_group", "Daemonization Options"),

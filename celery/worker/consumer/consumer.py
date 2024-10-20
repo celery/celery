@@ -169,6 +169,7 @@ class Consumer:
             'celery.worker.consumer.heart:Heart',
             'celery.worker.consumer.control:Control',
             'celery.worker.consumer.tasks:Tasks',
+            'celery.worker.consumer.delayed_delivery:DelayedDelivery',
             'celery.worker.consumer.consumer:Evloop',
             'celery.worker.consumer.agent:Agent',
         ]
@@ -477,9 +478,9 @@ class Consumer:
         return self.ensure_connected(
             self.app.connection_for_read(heartbeat=heartbeat))
 
-    def connection_for_write(self, heartbeat=None):
+    def connection_for_write(self, url=None, heartbeat=None):
         return self.ensure_connected(
-            self.app.connection_for_write(heartbeat=heartbeat))
+            self.app.connection_for_write(url=url, heartbeat=heartbeat))
 
     def ensure_connected(self, conn):
         # Callback called for each retry while the connection
