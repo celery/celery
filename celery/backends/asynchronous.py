@@ -3,10 +3,8 @@ import socket
 import threading
 import time
 from collections import deque
-from collections.abc import Callable
 from queue import Empty
 from time import sleep
-from typing import Optional
 from weakref import WeakKeyDictionary
 
 from kombu.utils.compat import detect_environment
@@ -70,8 +68,8 @@ class Drainer:
 
 
 class greenletDrainer(Drainer):
-    spawn: Callable[[Callable[[], None]], object]
-    _exc: Optional[Exception] = None
+    spawn = None
+    _exc = None
     _g = None
     _drain_complete_event = None    # event, sended (and recreated) after every drain_events iteration
 
