@@ -3,8 +3,10 @@ import socket
 import threading
 import time
 from collections import deque
+from collections.abc import Callable
 from queue import Empty
 from time import sleep
+from typing import Optional
 from weakref import WeakKeyDictionary
 
 from kombu.utils.compat import detect_environment
@@ -12,6 +14,10 @@ from kombu.utils.compat import detect_environment
 from celery import states
 from celery.exceptions import TimeoutError
 from celery.utils.threads import THREAD_TIMEOUT_MAX
+
+E_CELERY_RESTART_REQUIRED = """
+Celery must be restarted due to an error encountered while draining events.
+"""
 
 __all__ = (
     'AsyncBackendMixin', 'BaseResultConsumer', 'Drainer',
@@ -64,7 +70,8 @@ class Drainer:
 
 
 class greenletDrainer(Drainer):
-    spawn = None
+    spawn: Callable[[Callable[[], None]], object]
+    _exc: Optional[Exception] = None
     _g = None
     _drain_complete_event = None    # event, sended (and recreated) after every drain_events iteration
 
@@ -78,6 +85,7 @@ class greenletDrainer(Drainer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._mutex = threading.Lock()
         self._started = threading.Event()
         self._stopped = threading.Event()
         self._shutdown = threading.Event()
@@ -85,16 +93,29 @@ class greenletDrainer(Drainer):
 
     def run(self):
         self._started.set()
-        while not self._stopped.is_set():
-            try:
-                self.result_consumer.drain_events(timeout=1)
-                self._send_drain_complete_event()
-                self._create_drain_complete_event()
-            except socket.timeout:
-                pass
-        self._shutdown.set()
+
+        try:
+            while not self._stopped.is_set():
+                try:
+                    self.result_consumer.drain_events(timeout=1)
+                    self._send_drain_complete_event()
+                    self._create_drain_complete_event()
+                except socket.timeout:
+                    pass
+        except Exception as e:
+            with self._mutex:
+                self._exc = e
+        finally:
+            self._shutdown.set()
 
     def start(self):
+        if self._shutdown.is_set():
+            with self._mutex:
+                if self._exc is not None:
+                    raise self._exc
+                else:
+                    raise Exception(E_CELERY_RESTART_REQUIRED)
+
         if not self._started.is_set():
             self._g = self.spawn(self.run)
             self._started.wait()
@@ -108,6 +129,10 @@ class greenletDrainer(Drainer):
         self.start()
         if not p.ready:
             self._drain_complete_event.wait(timeout=timeout)
+
+            with self._mutex:
+                if self._exc is not None:
+                    raise self._exc
 
 
 @register_drainer('eventlet')
