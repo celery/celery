@@ -8,7 +8,7 @@ from unittest.mock import Mock, patch
 import pytest
 from vine import promise
 
-from celery.backends.asynchronous import BaseResultConsumer
+from celery.backends.asynchronous import E_CELERY_RESTART_REQUIRED, BaseResultConsumer
 from celery.backends.base import Backend
 from celery.utils import cached_property
 
@@ -142,11 +142,52 @@ class DrainerTests:
         assert on_interval.call_count < 20, 'Should have limited number of calls to on_interval'
 
 
+class GreenletDrainerTests(DrainerTests):
+    def test_drain_with_run_greenlet_error_raises(self):
+        with patch.object(self.drainer.result_consumer, 'drain_events', side_effect=Exception("Test Exception")):
+            greenlet = self.schedule_thread(self.drainer.run)
+
+            with pytest.raises(Exception, match="Test Exception"):
+                p = promise()
+
+                for _ in self.drainer.drain_events_until(p, interval=self.interval):
+                    pass
+
+            self.teardown_thread(greenlet)
+
+    def test_start_raises_if_previous_error_in_run(self):
+        with patch.object(self.drainer.result_consumer, 'drain_events', side_effect=Exception("Test Exception")):
+            thread = self.schedule_thread(self.drainer.run)
+
+            with pytest.raises(Exception, match="Test Exception"):
+                self.drainer.start()
+
+            self.teardown_thread(thread)
+
+    def test_start_raises_if_drainer_already_stopped(self):
+        with patch.object(self.drainer.result_consumer, 'drain_events') as mock_drain_events:
+            mock_drain_events.side_effect = lambda **_kwargs: self.sleep(0)
+            thread = self.schedule_thread(self.drainer.run)
+            self.drainer.stop()
+
+            with pytest.raises(Exception, match=E_CELERY_RESTART_REQUIRED):
+                self.drainer.start()
+
+            self.teardown_thread(thread)
+
+        # # ideally we would call `drainer.stop`, but when waiting for the shutdown signal,
+        # # it does not yield back to the spawned greenlet's event loop for some reason
+        # self.drainer._shutdown.set()
+
+        # with pytest.raises(Exception, match=E_CELERY_RESTART_REQUIRED):
+        #     self.drainer.start()
+
+
 @pytest.mark.skipif(
     sys.platform == "win32",
     reason="hangs forever intermittently on windows"
 )
-class test_EventletDrainer(DrainerTests):
+class test_EventletDrainer(GreenletDrainerTests):
     @pytest.fixture(autouse=True)
     def setup_drainer(self):
         self.drainer = self.get_drainer('eventlet')
@@ -173,22 +214,6 @@ class test_EventletDrainer(DrainerTests):
     def teardown_thread(self, thread):
         thread.wait()
 
-    def test_drain_with_greenlet_error_raises(self):
-        exc_msg = "Test Exception"
-
-        # `drain_events` is called within `run`, which gets called within the greenlet
-        with patch.object(self.drainer.result_consumer, 'drain_events', side_effect=Exception(exc_msg)):
-            greenthread = self.schedule_thread(self.drainer.run)
-
-            # verify that the greenlet error is raised during event draining
-            with pytest.raises(Exception, match=exc_msg):
-                p = promise()
-
-                for _ in self.drainer.drain_events_until(p, interval=self.interval):
-                    pass
-
-            self.teardown_thread(greenthread)
-
 
 class test_Drainer(DrainerTests):
     @pytest.fixture(autouse=True)
@@ -212,7 +237,7 @@ class test_Drainer(DrainerTests):
         thread.join()
 
 
-class test_GeventDrainer(DrainerTests):
+class test_GeventDrainer(GreenletDrainerTests):
     @pytest.fixture(autouse=True)
     def setup_drainer(self):
         self.drainer = self.get_drainer('gevent')
@@ -239,19 +264,3 @@ class test_GeventDrainer(DrainerTests):
     def teardown_thread(self, thread):
         import gevent
         gevent.wait([thread])
-
-    def test_drain_with_greenlet_error_raises(self):
-        exc_msg = "Test Exception"
-
-        # `drain_events` is called within `run`, which gets called within the greenlet
-        with patch.object(self.drainer.result_consumer, 'drain_events', side_effect=Exception(exc_msg)):
-            greenlet = self.schedule_thread(self.drainer.run)
-
-            # verify that the greenlet error is raised during event draining
-            with pytest.raises(Exception, match=exc_msg):
-                p = promise()
-
-                for _ in self.drainer.drain_events_until(p, interval=self.interval):
-                    pass
-
-            self.teardown_thread(greenlet)
