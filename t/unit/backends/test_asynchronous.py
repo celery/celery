@@ -173,6 +173,22 @@ class test_EventletDrainer(DrainerTests):
     def teardown_thread(self, thread):
         thread.wait()
 
+    def test_drain_with_greenlet_error_raises(self):
+        exc_msg = "Test Exception"
+
+        # `drain_events` is called within `run`, which gets called within the greenlet
+        with patch.object(self.drainer.result_consumer, 'drain_events', side_effect=Exception(exc_msg)):
+            greenthread = self.schedule_thread(self.drainer.run)
+
+            # verify that the greenlet error is raised during event draining
+            with pytest.raises(Exception, match=exc_msg):
+                p = promise()
+
+                for _ in self.drainer.drain_events_until(p, interval=self.interval):
+                    pass
+
+            self.teardown_thread(greenthread)
+
 
 class test_Drainer(DrainerTests):
     @pytest.fixture(autouse=True)
@@ -223,3 +239,19 @@ class test_GeventDrainer(DrainerTests):
     def teardown_thread(self, thread):
         import gevent
         gevent.wait([thread])
+
+    def test_drain_with_greenlet_error_raises(self):
+        exc_msg = "Test Exception"
+
+        # `drain_events` is called within `run`, which gets called within the greenlet
+        with patch.object(self.drainer.result_consumer, 'drain_events', side_effect=Exception(exc_msg)):
+            greenlet = self.schedule_thread(self.drainer.run)
+
+            # verify that the greenlet error is raised during event draining
+            with pytest.raises(Exception, match=exc_msg):
+                p = promise()
+
+                for _ in self.drainer.drain_events_until(p, interval=self.interval):
+                    pass
+
+            self.teardown_thread(greenlet)
