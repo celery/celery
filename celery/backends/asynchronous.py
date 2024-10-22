@@ -14,13 +14,29 @@ from celery.exceptions import TimeoutError
 from celery.utils.threads import THREAD_TIMEOUT_MAX
 
 E_CELERY_RESTART_REQUIRED = """
-Celery must be restarted due to an error encountered while draining events.
+Celery must be restarted because a shutdown signal was detected.
 """
 
 __all__ = (
     'AsyncBackendMixin', 'BaseResultConsumer', 'Drainer',
     'register_drainer',
 )
+
+
+class EventletAdaptedEvent():
+    def __init__(self):
+        import eventlet
+        self.evt = eventlet.Event()
+
+    def is_set(self):
+        return self.evt.ready()
+
+    def set(self):
+        return self.evt.send()
+
+    def wait(self, timeout=None):
+        return self.evt.wait(timeout)
+
 
 drainers = {}
 
@@ -66,6 +82,9 @@ class Drainer:
     def wait_for(self, p, wait, timeout=None):
         wait(timeout=timeout)
 
+    def _event(self):
+        return threading.Event()
+
 
 class greenletDrainer(Drainer):
     spawn = None
@@ -73,21 +92,17 @@ class greenletDrainer(Drainer):
     _g = None
     _drain_complete_event = None    # event, sended (and recreated) after every drain_events iteration
 
-    def _create_drain_complete_event(self):
-        """create new self._drain_complete_event object"""
-        pass
-
     def _send_drain_complete_event(self):
-        """raise self._drain_complete_event for wakeup .wait_for"""
-        pass
+        self._drain_complete_event.set()
+        self._drain_complete_event = self._event()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._mutex = threading.Lock()
-        self._started = threading.Event()
-        self._stopped = threading.Event()
-        self._shutdown = threading.Event()
-        self._create_drain_complete_event()
+
+        self._started = self._event()
+        self._stopped = self._event()
+        self._shutdown = self._event()
+        self._drain_complete_event = self._event()
 
     def run(self):
         self._started.set()
@@ -97,22 +112,19 @@ class greenletDrainer(Drainer):
                 try:
                     self.result_consumer.drain_events(timeout=1)
                     self._send_drain_complete_event()
-                    self._create_drain_complete_event()
                 except socket.timeout:
                     pass
         except Exception as e:
-            with self._mutex:
-                self._exc = e
+            self._exc = e
         finally:
             self._shutdown.set()
 
     def start(self):
         if self._shutdown.is_set():
-            with self._mutex:
-                if self._exc is not None:
-                    raise self._exc
-                else:
-                    raise Exception(E_CELERY_RESTART_REQUIRED)
+            if self._exc is not None:
+                raise self._exc
+            else:
+                raise Exception(E_CELERY_RESTART_REQUIRED)
 
         if not self._started.is_set():
             self._g = self.spawn(self.run)
@@ -128,9 +140,8 @@ class greenletDrainer(Drainer):
         if not p.ready:
             self._drain_complete_event.wait(timeout=timeout)
 
-            with self._mutex:
-                if self._exc is not None:
-                    raise self._exc
+            if self._exc is not None:
+                raise self._exc
 
 
 @register_drainer('eventlet')
@@ -142,12 +153,8 @@ class eventletDrainer(greenletDrainer):
         sleep(0)
         return g
 
-    def _create_drain_complete_event(self):
-        from eventlet.event import Event
-        self._drain_complete_event = Event()
-
-    def _send_drain_complete_event(self):
-        self._drain_complete_event.send()
+    def _event(self):
+        return EventletAdaptedEvent()
 
 
 @register_drainer('gevent')
@@ -159,13 +166,9 @@ class geventDrainer(greenletDrainer):
         gevent.sleep(0)
         return g
 
-    def _create_drain_complete_event(self):
+    def _event(self):
         from gevent.event import Event
-        self._drain_complete_event = Event()
-
-    def _send_drain_complete_event(self):
-        self._drain_complete_event.set()
-        self._create_drain_complete_event()
+        return Event()
 
 
 class AsyncBackendMixin:
