@@ -24,6 +24,11 @@ __all__ = (
 
 
 class EventletAdaptedEvent():
+    """
+    An adapted eventlet event, designed to match the API of `threading.Event` and
+    `gevent.event.Event`.
+    """
+
     def __init__(self):
         import eventlet
         self.evt = eventlet.Event()

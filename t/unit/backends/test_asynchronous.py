@@ -175,13 +175,6 @@ class GreenletDrainerTests(DrainerTests):
 
             self.teardown_thread(thread)
 
-        # # ideally we would call `drainer.stop`, but when waiting for the shutdown signal,
-        # # it does not yield back to the spawned greenlet's event loop for some reason
-        # self.drainer._shutdown.set()
-
-        # with pytest.raises(Exception, match=E_CELERY_RESTART_REQUIRED):
-        #     self.drainer.start()
-
 
 @pytest.mark.skipif(
     sys.platform == "win32",
