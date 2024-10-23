@@ -467,7 +467,8 @@ class AMQP:
                               retry=None, retry_policy=None,
                               serializer=None, delivery_mode=None,
                               compression=None, declare=None,
-                              headers=None, exchange_type=None, **kwargs):
+                              headers=None, exchange_type=None,
+                              timeout=None, confirm_timeout=None, **kwargs):
             retry = default_retry if retry is None else retry
             headers2, properties, body, sent_event = message
             if headers:
@@ -528,6 +529,7 @@ class AMQP:
                 retry=retry, retry_policy=_rp,
                 delivery_mode=delivery_mode, declare=declare,
                 headers=headers2,
+                timeout=timeout, confirm_timeout=confirm_timeout,
                 **properties
             )
             if after_receivers:
