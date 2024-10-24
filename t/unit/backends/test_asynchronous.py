@@ -216,7 +216,7 @@ class test_EventletDrainer(GreenletDrainerTests):
             # eventlet's API acts like a join() rather
             # than wait, and throws if the greenlet threw
             thread.wait()
-        except:
+        except Exception:
             pass
 
 
