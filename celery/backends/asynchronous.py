@@ -121,7 +121,9 @@ class greenletDrainer(Drainer):
                     pass
         except Exception as e:
             self._exc = e
+            raise
         finally:
+            self._send_drain_complete_event()
             self._shutdown.set()
 
     def start(self):
@@ -137,7 +139,6 @@ class greenletDrainer(Drainer):
 
     def stop(self):
         self._stopped.set()
-        self._send_drain_complete_event()
         self._shutdown.wait(THREAD_TIMEOUT_MAX)
 
     def wait_for(self, p, wait, timeout=None):

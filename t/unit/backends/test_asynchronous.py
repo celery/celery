@@ -143,9 +143,9 @@ class DrainerTests:
 
 
 class GreenletDrainerTests(DrainerTests):
-    def test_drain_with_run_greenlet_error_raises(self):
+    def test_drain_raises_when_greenlet_already_exited(self):
         with patch.object(self.drainer.result_consumer, 'drain_events', side_effect=Exception("Test Exception")):
-            greenlet = self.schedule_thread(self.drainer.run)
+            self.schedule_thread(self.drainer.run)
 
             with pytest.raises(Exception, match="Test Exception"):
                 p = promise()
@@ -153,27 +153,29 @@ class GreenletDrainerTests(DrainerTests):
                 for _ in self.drainer.drain_events_until(p, interval=self.interval):
                     pass
 
-            self.teardown_thread(greenlet)
+    def test_drain_raises_while_waiting_on_exiting_greenlet(self):
+        with patch.object(self.drainer.result_consumer, 'drain_events', side_effect=Exception("Test Exception")):
+            with pytest.raises(Exception, match="Test Exception"):
+                p = promise()
+
+                for _ in self.drainer.drain_events_until(p, interval=self.interval):
+                    pass
 
     def test_start_raises_if_previous_error_in_run(self):
         with patch.object(self.drainer.result_consumer, 'drain_events', side_effect=Exception("Test Exception")):
-            thread = self.schedule_thread(self.drainer.run)
+            self.schedule_thread(self.drainer.run)
 
             with pytest.raises(Exception, match="Test Exception"):
                 self.drainer.start()
 
-            self.teardown_thread(thread)
-
     def test_start_raises_if_drainer_already_stopped(self):
         with patch.object(self.drainer.result_consumer, 'drain_events') as mock_drain_events:
             mock_drain_events.side_effect = lambda **_kwargs: self.sleep(0)
-            thread = self.schedule_thread(self.drainer.run)
+            self.schedule_thread(self.drainer.run)
             self.drainer.stop()
 
             with pytest.raises(Exception, match=E_CELERY_RESTART_REQUIRED):
                 self.drainer.start()
-
-            self.teardown_thread(thread)
 
 
 @pytest.mark.skipif(
