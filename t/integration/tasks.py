@@ -344,6 +344,7 @@ class ExpectedException(Exception):
 
 class UnpickleableException(Exception):
     """Exception that doesn't survive a pickling roundtrip (dump + load)."""
+
     def __init__(self, foo, bar=None):
         if bar is None:
             # We define bar with a default value in the signature so that

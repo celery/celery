@@ -504,7 +504,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
             "ExpressionAttributeValues": {
                 ":num": {"N": "1"},
             },
-            "ReturnValues" : "UPDATED_NEW",
+            "ReturnValues": "UPDATED_NEW",
         }
 
     def _item_to_dict(self, raw_response):
