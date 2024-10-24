@@ -145,13 +145,15 @@ class DrainerTests:
 class GreenletDrainerTests(DrainerTests):
     def test_drain_raises_when_greenlet_already_exited(self):
         with patch.object(self.drainer.result_consumer, 'drain_events', side_effect=Exception("Test Exception")):
-            self.schedule_thread(self.drainer.run)
+            thread = self.schedule_thread(self.drainer.run)
 
             with pytest.raises(Exception, match="Test Exception"):
                 p = promise()
 
                 for _ in self.drainer.drain_events_until(p, interval=self.interval):
                     pass
+
+            self.teardown_thread(thread)
 
     def test_drain_raises_while_waiting_on_exiting_greenlet(self):
         with patch.object(self.drainer.result_consumer, 'drain_events', side_effect=Exception("Test Exception")):
@@ -163,19 +165,22 @@ class GreenletDrainerTests(DrainerTests):
 
     def test_start_raises_if_previous_error_in_run(self):
         with patch.object(self.drainer.result_consumer, 'drain_events', side_effect=Exception("Test Exception")):
-            self.schedule_thread(self.drainer.run)
+            thread = self.schedule_thread(self.drainer.run)
 
             with pytest.raises(Exception, match="Test Exception"):
                 self.drainer.start()
 
+            self.teardown_thread(thread)
+
     def test_start_raises_if_drainer_already_stopped(self):
-        with patch.object(self.drainer.result_consumer, 'drain_events') as mock_drain_events:
-            mock_drain_events.side_effect = lambda **_kwargs: self.sleep(0)
-            self.schedule_thread(self.drainer.run)
+        with patch.object(self.drainer.result_consumer, 'drain_events', side_effect=lambda **_: self.sleep(0)):
+            thread = self.schedule_thread(self.drainer.run)
             self.drainer.stop()
 
             with pytest.raises(Exception, match=E_CELERY_RESTART_REQUIRED):
                 self.drainer.start()
+
+            self.teardown_thread(thread)
 
 
 @pytest.mark.skipif(
@@ -207,7 +212,9 @@ class test_EventletDrainer(GreenletDrainerTests):
         return g
 
     def teardown_thread(self, thread):
-        thread.wait()
+        import eventlet
+        while not thread.dead:
+            eventlet.sleep(0)
 
 
 class test_Drainer(DrainerTests):
