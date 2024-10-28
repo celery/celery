@@ -325,6 +325,22 @@ class test_AMQP(test_AMQP_Base):
         )
         assert prod.publish.call_args[1]['delivery_mode'] == 33
 
+    def test_send_task_message__with_timeout(self):
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event,
+            timeout=1,
+        )
+        assert prod.publish.call_args[1]['timeout'] == 1
+
+    def test_send_task_message__with_confirm_timeout(self):
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event,
+            confirm_timeout=1,
+        )
+        assert prod.publish.call_args[1]['confirm_timeout'] == 1
+
     def test_send_task_message__with_receivers(self):
         mocked_receiver = ((Mock(), Mock()), Mock())
         with patch('celery.signals.task_sent.receivers', [mocked_receiver]):
