@@ -708,13 +708,13 @@ class test_Tasks:
         c.app.amqp.queues = {"celery": Mock(queue_arguments={"x-queue-type": "quorum"})}
         tasks = Tasks(c)
 
-        with caplog.at_level(logging.INFO):
+        with caplog.at_level(logging.DEBUG):
             tasks.start(c)
 
         assert len(caplog.records) == 1
 
         record = caplog.records[0]
-        assert record.levelname == "INFO"
+        assert record.levelname == "DEBUG"
         assert record.msg == "Global QoS is disabled. Prefetch count in now static."
 
 

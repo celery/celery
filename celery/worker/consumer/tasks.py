@@ -43,7 +43,7 @@ class Tasks(bootsteps.StartStopStep):
 
         qos_global = self.qos_global(c)
         if qos_global is False:
-            logger.info("Global QoS is disabled. Prefetch count in now static.")
+            logger.debug("Global QoS is disabled. Prefetch count in now static.")
 
         # set initial prefetch count
         c.connection.default_channel.basic_qos(
