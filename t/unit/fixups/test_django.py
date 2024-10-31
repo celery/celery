@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -183,7 +183,7 @@ class test_DjangoWorkerFixup(FixupCase):
             with patch('celery.fixups.django._maybe_close_fd') as mcf:
                 _all = f._db.connections.all = Mock()
                 conns = _all.return_value = [
-                    Mock(), Mock(),
+                    Mock(), MagicMock(),
                 ]
                 conns[0].connection = None
                 with patch.object(f, 'close_cache'):
