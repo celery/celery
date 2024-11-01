@@ -893,7 +893,7 @@ There are a few more options influencing Pydantic behavior:
 .. attribute:: Task.pydantic_strict
 
    By default, `strict mode <https://docs.pydantic.dev/dev/concepts/strict_mode/>`_
-   is enabled. You can pass ``False`` to disable strict model validation.
+   is disabled. You can pass ``True`` to enable strict model validation.
 
 .. attribute:: Task.pydantic_context
 

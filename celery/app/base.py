@@ -548,7 +548,7 @@ class Celery:
         base=None,
         bind=False,
         pydantic: bool = False,
-        pydantic_strict: bool = True,
+        pydantic_strict: bool = False,
         pydantic_context: typing.Optional[typing.Dict[str, typing.Any]] = None,
         pydantic_dump_kwargs: typing.Optional[typing.Dict[str, typing.Any]] = None,
         **options,
