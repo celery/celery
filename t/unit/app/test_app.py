@@ -615,6 +615,28 @@ class test_App:
             assert foo(arg={'arg_value': 5}, kwarg={'kwarg_value': 6}) == {'ret_value': 2}
             check.assert_called_once_with(ArgModel(arg_value=5), kwarg=KwargModel(kwarg_value=6))
 
+    def test_task_with_pydantic_with_non_strict_validation(self):
+        """Test a pydantic task with where Pydantic has to apply non-strict validation."""
+
+        class Model(BaseModel):
+            value: timedelta
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo(arg: Model) -> Model:
+                check(arg)
+                return Model(value=timedelta(days=arg.value.days * 2))
+
+            assert foo({'value': timedelta(days=1)}) == {'value': 'P2D'}
+            check.assert_called_once_with(Model(value=timedelta(days=1)))
+            check.reset_mock()
+
+            # Pass a serialized value to the task
+            assert foo({'value': 'P3D'}) == {'value': 'P6D'}
+            check.assert_called_once_with(Model(value=timedelta(days=3)))
+
     def test_task_with_pydantic_with_optional_pydantic_args(self):
         """Test pydantic task receiving and returning an optional argument."""
         class ArgModel(BaseModel):
