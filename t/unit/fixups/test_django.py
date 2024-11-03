@@ -156,6 +156,10 @@ class test_DjangoFixup(FixupCase):
                 assert f._worker_fixup is DWF.return_value
 
 
+class InterfaceError(Exception):
+    pass
+
+
 class test_DjangoWorkerFixup(FixupCase):
     Fixup = DjangoWorkerFixup
 
@@ -180,7 +184,7 @@ class test_DjangoWorkerFixup(FixupCase):
 
     def test_on_worker_process_init(self, patching):
         with self.fixup_context(self.app) as (f, _, _):
-            with patch('celery.fixups.django._maybe_close_fd') as mcf:
+            with patch('celery.fixups.django._maybe_close_fd', side_effect=InterfaceError) as mcf:
                 _all = f._db.connections.all = Mock()
                 conns = _all.return_value = [
                     Mock(), MagicMock(),
@@ -188,6 +192,7 @@ class test_DjangoWorkerFixup(FixupCase):
                 conns[0].connection = None
                 with patch.object(f, 'close_cache'):
                     with patch.object(f, '_close_database'):
+                        f.interface_errors = (InterfaceError, )
                         f.on_worker_process_init()
                         mcf.assert_called_with(conns[1].connection)
                         f.close_cache.assert_called_with()
