@@ -42,8 +42,6 @@ class Tasks(bootsteps.StartStopStep):
         c.update_strategies()
 
         qos_global = self.qos_global(c)
-        if qos_global is False:
-            logger.info("Global QoS is disabled. Prefetch count in now static.")
 
         # set initial prefetch count
         c.connection.default_channel.basic_qos(
@@ -95,6 +93,7 @@ class Tasks(bootsteps.StartStopStep):
             using_quorum_queues, qname = self.detect_quorum_queues(c)
             if using_quorum_queues:
                 qos_global = False
+                logger.info("Global QoS is disabled. Prefetch count in now static.")
                 # The ETA tasks mechanism requires additional work for Celery to fully support
                 # quorum queues. Warn the user that ETA tasks may not function as expected until
                 # this is done so we can at least support quorum queues partially for now.
