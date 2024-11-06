@@ -3029,11 +3029,11 @@ See :ref:`using-quorum-queues` for details regarding native delayed delivery.
 
 :transports supported: ``pyamqp``
 
-Default: ``"classic"``.
+Default: ``"quorum"``.
 
 This setting is used to allow changing the default queue type for the
-:setting:`broker_native_delayed_delivery` queues. The other viable option is ``"quorum"`` which
-is only supported by RabbitMQ and sets the queue type to ``quorum`` using the ``x-queue-type``
+:setting:`broker_native_delayed_delivery` queues. The other viable option is ``"classic"`` which
+is only supported by RabbitMQ and sets the queue type to ``classic`` using the ``x-queue-type``
 queue argument.
 
 .. setting:: broker_transport_options
