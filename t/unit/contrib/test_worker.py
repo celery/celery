@@ -4,7 +4,7 @@ import pytest
 # to install the celery.ping task that the test lib uses
 import celery.contrib.testing.tasks  # noqa
 from celery import Celery
-from celery.contrib.testing.worker import start_worker, TestWorkController
+from celery.contrib.testing.worker import TestWorkController, start_worker
 
 
 class test_worker:
