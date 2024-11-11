@@ -10,14 +10,15 @@ from billiard.exceptions import RestartFreqExceeded
 
 from celery import bootsteps
 from celery.contrib.testing.mocks import ContextMock
-from celery.exceptions import CeleryWarning, WorkerShutdown, WorkerTerminate
+from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.utils.collections import LimitedSet
+from celery.utils.quorum_queues import detect_quorum_queues
 from celery.worker.consumer.agent import Agent
 from celery.worker.consumer.consumer import CANCEL_TASKS_BY_DEFAULT, CLOSE, TERMINATE, Consumer
 from celery.worker.consumer.gossip import Gossip
 from celery.worker.consumer.heart import Heart
 from celery.worker.consumer.mingle import Mingle
-from celery.worker.consumer.tasks import ETA_TASKS_NO_GLOBAL_QOS_WARNING, Tasks
+from celery.worker.consumer.tasks import Tasks
 from celery.worker.state import active_requests
 
 
@@ -652,8 +653,7 @@ class test_Tasks:
         c = self.c
         self.c.connection.transport.driver_type = 'amqp'
         c.app.amqp.queues = {"celery": Mock(queue_arguments={"x-queue-type": "quorum"})}
-        tasks = Tasks(c)
-        result, name = tasks.detect_quorum_queues(c)
+        result, name = detect_quorum_queues(c.app, c.connection.transport.driver_type)
         assert result
         assert name == "celery"
 
@@ -661,16 +661,14 @@ class test_Tasks:
         c = self.c
         self.c.connection.transport.driver_type = 'amqp'
         c.app.amqp.queues = {"celery": Mock(queue_arguments=None)}
-        tasks = Tasks(c)
-        result, name = tasks.detect_quorum_queues(c)
+        result, name = detect_quorum_queues(c.app, c.connection.transport.driver_type)
         assert not result
         assert name == ""
 
     def test_detect_quorum_queues_not_rabbitmq(self):
         c = self.c
         self.c.connection.transport.driver_type = 'redis'
-        tasks = Tasks(c)
-        result, name = tasks.detect_quorum_queues(c)
+        result, name = detect_quorum_queues(c.app, c.connection.transport.driver_type)
         assert not result
         assert name == ""
 
@@ -692,15 +690,6 @@ class test_Tasks:
         c.app.amqp.queues = {"celery": Mock(queue_arguments={"x-queue-type": "quorum"})}
         tasks = Tasks(c)
         assert tasks.qos_global(c) is False
-
-    def test_qos_global_eta_warning(self):
-        c = self.c
-        self.c.connection.transport.driver_type = 'amqp'
-        c.app.conf.broker_native_delayed_delivery = False
-        c.app.amqp.queues = {"celery": Mock(queue_arguments={"x-queue-type": "quorum"})}
-        tasks = Tasks(c)
-        with pytest.warns(CeleryWarning, match=ETA_TASKS_NO_GLOBAL_QOS_WARNING % "celery"):
-            tasks.qos_global(c)
 
     def test_log_when_qos_is_false(self, caplog):
         c = self.c

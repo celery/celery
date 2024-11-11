@@ -1272,7 +1272,8 @@ class test_App:
     def test_bugreport(self):
         assert self.app.bugreport()
 
-    def test_send_task__connection_provided(self):
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task__connection_provided(self, detect_quorum_queues):
         connection = Mock(name='connection')
         router = Mock(name='router')
         router.route.return_value = {}
@@ -1423,7 +1424,8 @@ class test_App:
         except TypeError as e:
             pytest.fail(f'raise unexcepted error {e}')
 
-    def test_native_delayed_delivery_countdown(self):
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery_countdown(self, detect_quorum_queues):
         self.app.amqp = MagicMock(name='amqp')
         self.app.amqp.router.route.return_value = {
             'queue': Queue(
@@ -1432,8 +1434,6 @@ class test_App:
                 exchange=Exchange('testcelery', type='topic')
             )
         }
-        self.app.producer_pool.connections.connection = 'amqp'
-        self.app.conf.broker_native_delayed_delivery = True
 
         self.app.send_task('foo', (1, 2), countdown=30)
 
@@ -1449,7 +1449,8 @@ class test_App:
             routing_key='0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.1.1.1.0.testcelery'
         )
 
-    def test_native_delayed_delivery_eta_datetime(self):
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery_eta_datetime(self, detect_quorum_queues):
         self.app.amqp = MagicMock(name='amqp')
         self.app.amqp.router.route.return_value = {
             'queue': Queue(
@@ -1458,8 +1459,6 @@ class test_App:
                 exchange=Exchange('testcelery', type='topic')
             )
         }
-        self.app.producer_pool.connections.connection = 'amqp'
-        self.app.conf.broker_native_delayed_delivery = True
         self.app.now = Mock(return_value=datetime(2024, 8, 24, tzinfo=datetime_timezone.utc))
 
         self.app.send_task('foo', (1, 2), eta=datetime(2024, 8, 25))
@@ -1476,7 +1475,8 @@ class test_App:
             routing_key='0.0.0.0.0.0.0.0.0.0.0.1.0.1.0.1.0.0.0.1.1.0.0.0.0.0.0.0.testcelery'
         )
 
-    def test_native_delayed_delivery_eta_str(self):
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery_eta_str(self, detect_quorum_queues):
         self.app.amqp = MagicMock(name='amqp')
         self.app.amqp.router.route.return_value = {
             'queue': Queue(
@@ -1485,8 +1485,6 @@ class test_App:
                 exchange=Exchange('testcelery', type='topic')
             )
         }
-        self.app.producer_pool.connections.connection = 'amqp'
-        self.app.conf.broker_native_delayed_delivery = True
         self.app.now = Mock(return_value=datetime(2024, 8, 24, tzinfo=datetime_timezone.utc))
 
         self.app.send_task('foo', (1, 2), eta=datetime(2024, 8, 25).isoformat())
@@ -1503,11 +1501,10 @@ class test_App:
             routing_key='0.0.0.0.0.0.0.0.0.0.0.1.0.1.0.1.0.0.0.1.1.0.0.0.0.0.0.0.testcelery',
         )
 
-    def test_native_delayed_delivery_no_eta_or_countdown(self):
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery_no_eta_or_countdown(self, detect_quorum_queues):
         self.app.amqp = MagicMock(name='amqp')
         self.app.amqp.router.route.return_value = {'queue': Queue('testcelery', routing_key='testcelery')}
-        self.app.producer_pool.connections.connection = 'amqp'
-        self.app.conf.broker_native_delayed_delivery = True
 
         self.app.send_task('foo', (1, 2), countdown=-10)
 
@@ -1521,7 +1518,8 @@ class test_App:
             )
         )
 
-    def test_native_delayed_delivery_countdown_in_the_past(self):
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery_countdown_in_the_past(self, detect_quorum_queues):
         self.app.amqp = MagicMock(name='amqp')
         self.app.amqp.router.route.return_value = {
             'queue': Queue(
@@ -1530,8 +1528,6 @@ class test_App:
                 exchange=Exchange('testcelery', type='topic')
             )
         }
-        self.app.producer_pool.connections.connection = 'amqp'
-        self.app.conf.broker_native_delayed_delivery = True
 
         self.app.send_task('foo', (1, 2))
 
@@ -1546,7 +1542,8 @@ class test_App:
             )
         )
 
-    def test_native_delayed_delivery_eta_in_the_past(self):
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery_eta_in_the_past(self, detect_quorum_queues):
         self.app.amqp = MagicMock(name='amqp')
         self.app.amqp.router.route.return_value = {
             'queue': Queue(
@@ -1555,8 +1552,6 @@ class test_App:
                 exchange=Exchange('testcelery', type='topic')
             )
         }
-        self.app.producer_pool.connections.connection = 'amqp'
-        self.app.conf.broker_native_delayed_delivery = True
         self.app.now = Mock(return_value=datetime(2024, 8, 24, tzinfo=datetime_timezone.utc))
 
         self.app.send_task('foo', (1, 2), eta=datetime(2024, 8, 23).isoformat())
@@ -1572,7 +1567,8 @@ class test_App:
             )
         )
 
-    def test_native_delayed_delivery_direct_exchange(self, caplog):
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery_direct_exchange(self, detect_quorum_queues, caplog):
         self.app.amqp = MagicMock(name='amqp')
         self.app.amqp.router.route.return_value = {
             'queue': Queue(
@@ -1581,8 +1577,6 @@ class test_App:
                 exchange=Exchange('testcelery', type='direct')
             )
         }
-        self.app.producer_pool.connections.connection = 'amqp'
-        self.app.conf.broker_native_delayed_delivery = True
 
         self.app.send_task('foo', (1, 2), countdown=10)
 

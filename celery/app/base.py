@@ -39,6 +39,7 @@ from celery.utils.objects import FallbackContext, mro_lookup
 from celery.utils.time import maybe_make_aware, timezone, to_utc
 
 from ..utils.annotations import annotation_is_class, annotation_issubclass, get_optional_arg
+from ..utils.quorum_queues import detect_quorum_queues
 # Load all builtin tasks
 from . import backends, builtins  # noqa
 from .annotations import prepare as prepare_annotations
@@ -831,8 +832,8 @@ class Celery:
         options = router.route(
             options, route_name or name, args, kwargs, task_type)
 
-        is_native_delayed_delivery = conf.broker_native_delayed_delivery and (
-            self.producer_pool.connections.connection == 'amqp')
+        is_native_delayed_delivery = detect_quorum_queues(self,
+                                                          self.producer_pool.connections.connection.transport_cls)[0]
         if is_native_delayed_delivery and options['queue'].exchange.type != 'direct':
             if eta:
                 if isinstance(eta, str):

@@ -3,6 +3,7 @@ from kombu.transport.native_delayed_delivery import (bind_queue_to_native_delaye
 
 from celery import Celery, bootsteps
 from celery.utils.log import get_logger
+from celery.utils.quorum_queues import detect_quorum_queues
 from celery.worker.consumer import Consumer, Tasks
 
 __all__ = ('DelayedDelivery',)
@@ -15,8 +16,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
     requires = (Tasks,)
 
     def include_if(self, c):
-        return (c.app.conf.broker_native_delayed_delivery
-                and c.connection_for_write().transport.driver_type == 'amqp')
+        return detect_quorum_queues(c.app, c.app.connection_for_write().transport.driver_type)[0]
 
     def start(self, c: Consumer):
         app: Celery = c.app

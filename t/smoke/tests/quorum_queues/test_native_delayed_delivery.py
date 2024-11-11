@@ -18,7 +18,6 @@ class test_broker_configuration_quorum:
         app = default_worker_app
         app.conf.broker_transport_options = {"confirm_publish": True}
         app.conf.task_default_queue_type = "quorum"
-        app.conf.broker_native_delayed_delivery = True
         app.conf.broker_native_delayed_delivery_queue_type = 'quorum'
         app.conf.task_default_exchange_type = 'topic'
         app.conf.task_default_routing_key = 'celery'
@@ -77,7 +76,6 @@ class test_broker_configuration_classic:
         app = default_worker_app
         app.conf.broker_transport_options = {"confirm_publish": True}
         app.conf.task_default_queue_type = "quorum"
-        app.conf.broker_native_delayed_delivery = True
         app.conf.broker_native_delayed_delivery_queue_type = 'classic'
         app.conf.task_default_exchange_type = 'topic'
         app.conf.task_default_routing_key = 'celery'
@@ -134,7 +132,6 @@ class test_native_delayed_delivery:
         app = default_worker_app
         app.conf.broker_transport_options = {"confirm_publish": True}
         app.conf.task_default_queue_type = "quorum"
-        app.conf.broker_native_delayed_delivery = True
         app.conf.task_default_exchange_type = 'topic'
         app.conf.task_default_routing_key = 'celery'
 

@@ -6,10 +6,12 @@ from kombu.common import QoS, ignore_errors
 
 from celery import bootsteps
 from celery.utils.log import get_logger
+from celery.utils.quorum_queues import detect_quorum_queues
 
 from .mingle import Mingle
 
 __all__ = ('Tasks',)
+
 
 logger = get_logger(__name__)
 debug = logger.debug
@@ -77,28 +79,10 @@ class Tasks(bootsteps.StartStopStep):
         qos_global = not c.connection.qos_semantics_matches_spec
 
         if c.app.conf.worker_detect_quorum_queues:
-            using_quorum_queues, qname = self.detect_quorum_queues(c)
+            using_quorum_queues, qname = detect_quorum_queues(c.app, c.connection.transport.driver_type)
 
             if using_quorum_queues:
                 qos_global = False
                 logger.info("Global QoS is disabled. Prefetch count in now static.")
 
         return qos_global
-
-    def detect_quorum_queues(self, c) -> tuple[bool, str]:
-        """Detect if any of the queues are quorum queues.
-
-        Returns:
-            tuple[bool, str]: A tuple containing a boolean indicating if any of the queues are quorum queues
-            and the name of the first quorum queue found or an empty string if no quorum queues were found.
-        """
-        is_rabbitmq_broker = c.connection.transport.driver_type == 'amqp'
-
-        if is_rabbitmq_broker:
-            queues = c.app.amqp.queues
-            for qname in queues:
-                qarguments = queues[qname].queue_arguments or {}
-                if qarguments.get("x-queue-type") == "quorum":
-                    return True, qname
-
-        return False, ""
