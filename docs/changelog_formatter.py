@@ -2,9 +2,10 @@
 
 import re
 import sys
+
 import click
 import pyperclip
-from colorama import init, Fore
+from colorama import Fore, init
 
 # Initialize colorama for color support in terminal
 init(autoreset=True)
@@ -15,7 +16,7 @@ PATTERN = re.compile(r"^\*\s*(.*?)\s+by\s+@[\w-]+\s+in\s+https://github\.com/[\w
 
 def read_changes_file(filename):
     try:
-        with open(filename, "r") as f:
+        with open(filename) as f:
             return f.readlines()
     except FileNotFoundError:
         print(f"Error: {filename} file not found.")
