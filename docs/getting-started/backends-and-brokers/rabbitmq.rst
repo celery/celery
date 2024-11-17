@@ -220,7 +220,8 @@ when Quorum Queues are detected.
 In addition, :ref:`ETA/Countdown <calling-eta>` will block the worker when received until the ETA arrives since
 we can no longer increase the prefetch count and fetch another task from the queue.
 
-In order to properly schedule ETA/Countdown tasks you need to enable :ref:`Native Delayed Delivery <native-delayed-delivery>`.
+In order to properly schedule ETA/Countdown tasks we automatically detect if quorum queues are used
+and in case they are, Celery automatically enables :ref:`Native Delayed Delivery <native-delayed-delivery>`.
 
 .. _native-delayed-delivery:
 
@@ -234,4 +235,4 @@ The design is borrowed from NServiceBus. If you are interested in the implementa
 
 .. _documentation: https://docs.particular.net/transports/rabbitmq/delayed-delivery
 
-To enable Native Delayed Delivery set the :setting:`broker_native_delayed_delivery` setting to ``True``.
+Native Delayed Delivery is automatically enabled when quorum queues are detected.
