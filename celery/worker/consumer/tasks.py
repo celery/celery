@@ -2,30 +2,19 @@
 
 from __future__ import annotations
 
-import warnings
-
 from kombu.common import QoS, ignore_errors
 
 from celery import bootsteps
-from celery.exceptions import CeleryWarning
 from celery.utils.log import get_logger
+from celery.utils.quorum_queues import detect_quorum_queues
 
 from .mingle import Mingle
 
 __all__ = ('Tasks',)
 
+
 logger = get_logger(__name__)
 debug = logger.debug
-
-
-ETA_TASKS_NO_GLOBAL_QOS_WARNING = """
-Detected quorum queue "%r", disabling global QoS.
-With global QoS disabled, ETA tasks may not function as expected. Instead of adjusting
-the prefetch count dynamically, ETA tasks will occupy the prefetch buffer, potentially
-blocking other tasks from being consumed. To mitigate this, either set a high prefetch
-count or avoid using quorum queues until the ETA mechanism is updated to support a
-disabled global QoS, which is required for quorum queues.
-"""
 
 
 class Tasks(bootsteps.StartStopStep):
@@ -90,31 +79,10 @@ class Tasks(bootsteps.StartStopStep):
         qos_global = not c.connection.qos_semantics_matches_spec
 
         if c.app.conf.worker_detect_quorum_queues:
-            using_quorum_queues, qname = self.detect_quorum_queues(c)
+            using_quorum_queues, qname = detect_quorum_queues(c.app, c.connection.transport.driver_type)
+
             if using_quorum_queues:
                 qos_global = False
                 logger.info("Global QoS is disabled. Prefetch count in now static.")
-                # The ETA tasks mechanism requires additional work for Celery to fully support
-                # quorum queues. Warn the user that ETA tasks may not function as expected until
-                # this is done so we can at least support quorum queues partially for now.
-                warnings.warn(ETA_TASKS_NO_GLOBAL_QOS_WARNING % (qname,), CeleryWarning)
 
         return qos_global
-
-    def detect_quorum_queues(self, c) -> tuple[bool, str]:
-        """Detect if any of the queues are quorum queues.
-
-        Returns:
-            tuple[bool, str]: A tuple containing a boolean indicating if any of the queues are quorum queues
-            and the name of the first quorum queue found or an empty string if no quorum queues were found.
-        """
-        is_rabbitmq_broker = c.connection.transport.driver_type == 'amqp'
-
-        if is_rabbitmq_broker:
-            queues = c.app.amqp.queues
-            for qname in queues:
-                qarguments = queues[qname].queue_arguments or {}
-                if qarguments.get("x-queue-type") == "quorum":
-                    return True, qname
-
-        return False, ""

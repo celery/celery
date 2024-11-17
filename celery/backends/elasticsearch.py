@@ -97,7 +97,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
             # N/A: Low level exception (i.e. socket exception)
             if exc.status_code in {401, 409, 500, 502, 504, 'N/A'}:
                 return True
-        if isinstance(exc , elasticsearch.exceptions.TransportError):
+        if isinstance(exc, elasticsearch.exceptions.TransportError):
             return True
         return False
 
