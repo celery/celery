@@ -168,7 +168,7 @@ Minimum Dependencies
 Kombu
 ~~~~~
 
-Starting from Celery v5.5, the minimum required version is Kombu 5.4.
+Starting from Celery v5.5, the minimum required version is Kombu 5.5.
 
 Redis
 ~~~~~
