@@ -155,7 +155,7 @@ def _start_worker_thread(app: Celery,
     worker = WorkController(
         app=app,
         concurrency=concurrency,
-        hostname=anon_nodename(),
+        hostname=kwargs.pop("hostname", anon_nodename()),
         pool=pool,
         loglevel=loglevel,
         logfile=logfile,

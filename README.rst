@@ -2,7 +2,7 @@
 
 |build-status| |coverage| |license| |wheel| |semgrep| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 5.5.0rc1 (immunity)
+:Version: 5.5.0rc2 (immunity)
 :Web: https://docs.celeryq.dev/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -33,9 +33,9 @@ Sponsor
 `Dragonfly <https://www.dragonflydb.io/>`_ is a drop-in Redis replacement that cuts costs and boosts performance. Designed to fully utilize the power of modern cloud hardware and deliver on the data demands of modern applications, Dragonfly frees developers from the limits of traditional in-memory data stores.
 
 
-.. image:: https://github.com/celery/celery/raw/main/docs/images/dragonfly.png
+.. image:: https://github.com/celery/celery/raw/main/docs/images/dragonfly.svg
    :alt: Dragonfly logo
-   :width: 150px 
+   :width: 150px
 
 
 
