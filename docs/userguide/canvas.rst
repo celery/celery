@@ -817,6 +817,48 @@ It supports the following operations:
     Gather the results of all subtasks
     and return them in the same order as they were called (as a list).
 
+.. _group-unrolling:
+
+Group Unrolling
+~~~~~~~~~~~~~~~
+
+A group with a single signature will be unrolled to a single signature when chained.
+This means that the following group may pass either a list of results or a single result to the chain
+depending on the number of items in the group.
+
+.. code-block:: pycon
+
+    >>> from celery import chain, group
+    >>> from tasks import add
+    >>> chain(add.s(2, 2), group(add.s(1)), add.s(1))
+    add(2, 2) | add(1) | add(1)
+    >>> chain(add.s(2, 2), group(add.s(1), add.s(2)), add.s(1))
+    add(2, 2) | %add((add(1), add(2)), 1)
+
+This means that you should be careful and make sure the ``add`` task can accept either a list or a single item as input
+if you plan to use it as part of a larger canvas.
+
+.. warning::
+
+    In Celery 4.x the following group below would not unroll into a chain due to a bug but instead the canvas would be
+    upgraded into a chord.
+
+    .. code-block:: pycon
+
+        >>> from celery import chain, group
+        >>> from tasks import add
+        >>> chain(group(add.s(1, 1)), add.s(2))
+        %add([add(1, 1)], 2)
+
+    In Celery 5.x this bug was fixed and the group is correctly unrolled into a single signature.
+
+    .. code-block:: pycon
+
+        >>> from celery import chain, group
+        >>> from tasks import add
+        >>> chain(group(add.s(1, 1)), add.s(2))
+        add(1, 1) | add(2)
+
 .. _canvas-chord:
 
 Chords
