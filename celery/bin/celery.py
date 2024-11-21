@@ -64,8 +64,8 @@ else:
               cls=CeleryOption,
               # May take either: a str when invoked from command line (Click),
               # or a Celery object when invoked from inside Celery; hence the
-              # UNPROCESSED type, to prevent Click from converting the Celery
-              # object into its str representation.
+              # need to prevent Click from "processing" the Celery object and
+              # converting it into its str representation.
               type=click.UNPROCESSED,
               help_group="Global Options")
 @click.option('-b',
