@@ -73,15 +73,23 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
         the container is created if it doesn't yet exist.
 
         """
-        # Leveraging the work that Kombu already did for us
-        credential_, url = AzureStorageQueuesTransport.parse_uri(
-            self._connection_string
-        )
-        client = BlobServiceClient(
-            account_url=url,
-            credential=credential_,
-            read_timeout=self._read_timeout,
-        )
+        if "DefaultAzureCredential" in self._connection_string or "ManagedIdentityCredential" in self._connection_string:
+            # Leveraging the work that Kombu already did for us
+            credential_, url = AzureStorageQueuesTransport.parse_uri(
+                self._connection_string
+            )
+            client = BlobServiceClient(
+                account_url=url,
+                credential=credential_,
+                connection_timeout=self._connection_timeout,
+                read_timeout=self._read_timeout,
+            )
+        else:
+            client = BlobServiceClient.from_connection_string(
+                self._connection_string,
+                connection_timeout=self._connection_timeout,
+                read_timeout=self._read_timeout,
+            )
 
         try:
             client.create_container(name=self._container_name)
