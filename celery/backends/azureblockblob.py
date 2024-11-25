@@ -73,7 +73,10 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
         the container is created if it doesn't yet exist.
 
         """
-        if "DefaultAzureCredential" in self._connection_string or "ManagedIdentityCredential" in self._connection_string:
+        if (
+            "DefaultAzureCredential" in self._connection_string or
+            "ManagedIdentityCredential" in self._connection_string
+        ):
             # Leveraging the work that Kombu already did for us
             credential_, url = AzureStorageQueuesTransport.parse_uri(
                 self._connection_string

@@ -60,16 +60,17 @@ class test_AzureBlockBlobBackend:
         # ...but only once per backend instance
         assert backend._blob_service_client is not None
         assert mock_blob_service_client_instance.create_container.call_count == 1
-        
+
     @patch(MODULE_TO_MOCK + ".AzureStorageQueuesTransport")
     @patch(MODULE_TO_MOCK + ".BlobServiceClient")
     def test_create_client__default_azure_credentials(self, mock_blob_service_client, mock_kombu_transport):
         credential_mock = Mock()
         mock_blob_service_client.return_value = Mock()
         mock_kombu_transport.parse_uri.return_value = (credential_mock, "dummy_account_url")
-        backend = AzureBlockBlobBackend(app=self.app, url="azureblockblob://DefaultAzureCredential@dummy_account_url")
+        url = "azureblockblob://DefaultAzureCredential@dummy_account_url"
+        backend = AzureBlockBlobBackend(app=self.app, url=url)
         assert backend._blob_service_client is not None
-        mock_kombu_transport.parse_uri.assert_called_once_with("DefaultAzureCredential@dummy_account_url")
+        mock_kombu_transport.parse_uri.assert_called_once_with(url)
         mock_blob_service_client.assert_called_once_with(
             account_url="dummy_account_url",
             credential=credential_mock,
@@ -83,9 +84,10 @@ class test_AzureBlockBlobBackend:
         credential_mock = Mock()
         mock_blob_service_client.return_value = Mock()
         mock_kombu_transport.parse_uri.return_value = (credential_mock, "dummy_account_url")
-        backend = AzureBlockBlobBackend(app=self.app, url="azureblockblob://ManagedIdentityCredential@dummy_account_url")
+        url = "azureblockblob://ManagedIdentityCredential@dummy_account_url"
+        backend = AzureBlockBlobBackend(app=self.app, url=url)
         assert backend._blob_service_client is not None
-        mock_kombu_transport.parse_uri.assert_called_once_with("ManagedIdentityCredential@dummy_account_url")
+        mock_kombu_transport.parse_uri.assert_called_once_with(url)
         mock_blob_service_client.assert_called_once_with(
             account_url="dummy_account_url",
             credential=credential_mock,
