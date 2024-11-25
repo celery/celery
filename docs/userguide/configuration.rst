@@ -1670,7 +1670,7 @@ Default: None.
 
 The s3 access key id. For example::
 
-    s3_access_key_id = 'acces_key_id'
+    s3_access_key_id = 'access_key_id'
 
 .. setting:: s3_secret_access_key
 
@@ -1681,7 +1681,7 @@ Default: None.
 
 The s3 secret access key. For example::
 
-    s3_secret_access_key = 'acces_secret_access_key'
+    s3_secret_access_key = 'access_secret_access_key'
 
 .. setting:: s3_bucket
 
