@@ -70,7 +70,7 @@ class test_AzureBlockBlobBackend:
         url = "azureblockblob://DefaultAzureCredential@dummy_account_url"
         backend = AzureBlockBlobBackend(app=self.app, url=url)
         assert backend._blob_service_client is not None
-        mock_kombu_transport.parse_uri.assert_called_once_with(url)
+        mock_kombu_transport.parse_uri.assert_called_once_with(url.replace("azureblockblob://", ""))
         mock_blob_service_client.assert_called_once_with(
             account_url="dummy_account_url",
             credential=credential_mock,
@@ -87,7 +87,7 @@ class test_AzureBlockBlobBackend:
         url = "azureblockblob://ManagedIdentityCredential@dummy_account_url"
         backend = AzureBlockBlobBackend(app=self.app, url=url)
         assert backend._blob_service_client is not None
-        mock_kombu_transport.parse_uri.assert_called_once_with(url)
+        mock_kombu_transport.parse_uri.assert_called_once_with(url.replace("azureblockblob://", ""))
         mock_blob_service_client.assert_called_once_with(
             account_url="dummy_account_url",
             credential=credential_mock,
