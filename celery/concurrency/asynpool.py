@@ -103,26 +103,35 @@ def _get_job_writer(job):
         return writer()  # is a weakref
 
 
+def _ensure_integral_fd(fd):
+    return fd if isinstance(fd, Integral) else fd.fileno()
+
+
 if hasattr(select, 'poll'):
     def _select_imp(readers=None, writers=None, err=None, timeout=0,
                     poll=select.poll, POLLIN=select.POLLIN,
                     POLLOUT=select.POLLOUT, POLLERR=select.POLLERR):
         poller = poll()
         register = poller.register
+        fd_to_mask = {}
 
         if readers:
-            [register(fd, POLLIN) for fd in readers]
+            for fd in map(_ensure_integral_fd, writers):
+                fd_to_mask[fd] = fd_to_mask.get(fd, 0) | POLLIN
         if writers:
-            [register(fd, POLLOUT) for fd in writers]
+            for fd in map(_ensure_integral_fd, writers):
+                fd_to_mask[fd] = fd_to_mask.get(fd, 0) | POLLOUT
         if err:
-            [register(fd, POLLERR) for fd in err]
+            for fd in map(_ensure_integral_fd, err):
+                fd_to_mask[fd] = fd_to_mask.get(fd, 0) | POLLERR
+
+        for fd, event_mask in fd_to_mask.items():
+            register(fd, event_mask)
 
         R, W = set(), set()
         timeout = 0 if timeout and timeout < 0 else round(timeout * 1e3)
         events = poller.poll(timeout)
         for fd, event in events:
-            if not isinstance(fd, Integral):
-                fd = fd.fileno()
             if event & POLLIN:
                 R.add(fd)
             if event & POLLOUT:

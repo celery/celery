@@ -1,6 +1,7 @@
 import errno
 import os
 import socket
+import tempfile
 from itertools import cycle
 from unittest.mock import Mock, patch
 
@@ -292,6 +293,11 @@ class test_AsynPool:
             poll.side_effect.errno = 34134
             with pytest.raises(socket.error):
                 asynpool._select({3}, poll=poll)
+
+    def test_select_unpatched(self):
+        with tempfile.TemporaryFile('w') as f:
+            _, writeable, _ = asynpool._select(writers={f, }, err={f, })
+            assert f.fileno() in writeable
 
     def test_promise(self):
         fun = Mock()
