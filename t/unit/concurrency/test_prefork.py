@@ -299,6 +299,10 @@ class test_AsynPool:
             _, writeable, _ = asynpool._select(writers={f, }, err={f, })
             assert f.fileno() in writeable
 
+        with tempfile.TemporaryFile('r') as f:
+            readable, _, _ = asynpool._select(readers={f, }, err={f, })
+            assert f.fileno() in readable
+
     def test_promise(self):
         fun = Mock()
         x = asynpool.promise(fun, (1,), {'foo': 1})
