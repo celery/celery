@@ -116,7 +116,7 @@ if hasattr(select, 'poll'):
         fd_to_mask = {}
 
         if readers:
-            for fd in map(_ensure_integral_fd, writers):
+            for fd in map(_ensure_integral_fd, readers):
                 fd_to_mask[fd] = fd_to_mask.get(fd, 0) | POLLIN
         if writers:
             for fd in map(_ensure_integral_fd, writers):
