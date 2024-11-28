@@ -71,11 +71,11 @@ RUN pyenv install 3.11
 RUN pyenv install 3.10
 RUN pyenv install 3.9
 RUN pyenv install 3.8
-
+RUN pyenv install pypy3.10
 
 
 # Set global Python versions
-RUN pyenv global 3.12 3.11 3.10 3.9 3.8
+RUN pyenv global 3.12 3.11 3.10 3.9 3.8 pypy3.10
 
 # Install celery
 WORKDIR $HOME
@@ -84,14 +84,15 @@ COPY --chown=1000:1000 docker/entrypoint /entrypoint
 RUN chmod gu+x /entrypoint
 
 # Define the local pyenvs
-RUN pyenv local 3.13 3.12 3.11 3.10 3.9 3.8
+RUN pyenv local 3.13 3.12 3.11 3.10 3.9 3.8 pypy3.10
 
 RUN pyenv exec python3.13 -m pip install --upgrade pip setuptools wheel && \
     pyenv exec python3.12 -m pip install --upgrade pip setuptools wheel && \
     pyenv exec python3.11 -m pip install --upgrade pip setuptools wheel && \
     pyenv exec python3.10 -m pip install --upgrade pip setuptools wheel && \
     pyenv exec python3.9 -m pip install --upgrade pip setuptools wheel && \
-    pyenv exec python3.8 -m pip install --upgrade pip setuptools wheel
+    pyenv exec python3.8 -m pip install --upgrade pip setuptools wheel && \
+    pyenv exec pypy3.10 -m pip install --upgrade pip setuptools wheel
 
 COPY --chown=1000:1000 . $HOME/celery
 
@@ -100,7 +101,8 @@ RUN pyenv exec python3.13 -m pip install -e $HOME/celery && \
     pyenv exec python3.11 -m pip install -e $HOME/celery && \
     pyenv exec python3.10 -m pip install -e $HOME/celery && \
     pyenv exec python3.9 -m pip install -e $HOME/celery && \
-    pyenv exec python3.8 -m pip install -e $HOME/celery
+    pyenv exec python3.8 -m pip install -e $HOME/celery && \
+    pyenv exec pypy3.10 -m pip install -e $HOME/celery
 
 # Setup one celery environment for basic development use
 RUN pyenv exec python3.13 -m pip install -r requirements/default.txt \
@@ -149,6 +151,15 @@ RUN pyenv exec python3.13 -m pip install -r requirements/default.txt \
   -r requirements/test-pypy3.txt \
   -r requirements/test.txt && \
   pyenv exec python3.8 -m pip install -r requirements/default.txt \
+  -r requirements/dev.txt \
+  -r requirements/docs.txt \
+  -r requirements/pkgutils.txt \
+  -r requirements/test-ci-base.txt \
+  -r requirements/test-ci-default.txt \
+  -r requirements/test-integration.txt \
+  -r requirements/test-pypy3.txt \
+  -r requirements/test.txt && \
+  pyenv exec pypy3.10 -m pip install -r requirements/default.txt \
   -r requirements/dev.txt \
   -r requirements/docs.txt \
   -r requirements/pkgutils.txt \
