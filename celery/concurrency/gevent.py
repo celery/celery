@@ -167,4 +167,5 @@ class TaskPool(base.BasePool):
 
 
 def _terminate(self, signal):
-    self.kill()
+    # Done in `TaskPool.terminate_job`
+    pass
