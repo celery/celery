@@ -1165,7 +1165,7 @@ class test_tasks(TasksCase):
             self.mytask.replace(sig1)
 
     def test_replace_callback(self):
-        c = group([self.mytask.s()], app=self.app)
+        c = group([self.mytask.s(), self.mytask.s()], app=self.app)
         c.freeze = Mock(name='freeze')
         c.delay = Mock(name='delay')
         self.mytask.request.id = 'id'
