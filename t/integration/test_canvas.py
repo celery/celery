@@ -1694,18 +1694,18 @@ class test_chord:
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
 
-        c = group([add_to_all_to_chord.s([1, 2, 3], 4)]) | identity.s()
+        c = group([identity.si(1), add_to_all_to_chord.s([1, 2, 3], 4)]) | identity.s()
         res = c()
-        assert sorted(res.get()) == [0, 5, 6, 7]
+        assert sorted(res.get()) == [0, 1, 5, 6, 7]
 
     @flaky
     def test_add_chord_to_chord(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
 
-        c = group([add_chord_to_chord.s([1, 2, 3], 4)]) | identity.s()
+        c = group([identity.si(1), add_chord_to_chord.s([1, 2, 3], 4)]) | identity.s()
         res = c()
-        assert sorted(res.get()) == [0, 5 + 6 + 7]
+        assert sorted(res.get()) == [0, 1, 5 + 6 + 7]
 
     @flaky
     def test_eager_chord_inside_task(self, manager):
