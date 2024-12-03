@@ -8,6 +8,144 @@ This document contains change notes for bugfix & new features
 in the main branch & 5.5.x series, please see :ref:`whatsnew-5.5` for
 an overview of what's new in Celery 5.5.
 
+.. _version-5.5.0rc3:
+
+5.5.0rc3
+========
+
+:release-date: 2024-12-03
+:release-by: Tomer Nosrati
+
+Celery v5.5.0 Release Candidate 3 is now available for testing.
+Please help us test this version and report any issues.
+
+Key Highlights
+~~~~~~~~~~~~~~
+
+See :ref:`whatsnew-5.5` or read the main highlights below.
+
+Using Kombu 5.5.0rc2
+--------------------
+
+The minimum required Kombu version has been bumped to 5.5.0.
+Kombu is current at 5.5.0rc2.
+
+Complete Quorum Queues Support
+------------------------------
+
+A completely new ETA mechanism was developed to allow full support with RabbitMQ Quorum Queues.
+
+After upgrading to this version, please share your feedback on the quorum queues support.
+
+Relevant Issues:
+`#9207 <https://github.com/celery/celery/discussions/9207>`_,
+`#6067 <https://github.com/celery/celery/discussions/6067>`_
+
+- New :ref:`documentation <using-quorum-queues>`.
+- New :setting:`broker_native_delayed_delivery_queue_type` configuration option.
+
+New support for Google Pub/Sub transport
+----------------------------------------
+
+After upgrading to this version, please share your feedback on the Google Pub/Sub transport support.
+
+Relevant Issues:
+`#9351 <https://github.com/celery/celery/pull/9351>`_
+
+Python 3.13 Improved Support
+----------------------------
+
+Additional dependencies have been migrated successfully to Python 3.13, including Kombu and py-amqp.
+
+Soft Shutdown
+-------------
+
+The soft shutdown is a new mechanism in Celery that sits between the warm shutdown and the cold shutdown.
+It sets a time limited "warm shutdown" period, during which the worker will continue to process tasks that are already running.
+After the soft shutdown ends, the worker will initiate a graceful cold shutdown, stopping all tasks and exiting.
+
+The soft shutdown is disabled by default, and can be enabled by setting the new configuration option :setting:`worker_soft_shutdown_timeout`.
+If a worker is not running any task when the soft shutdown initiates, it will skip the warm shutdown period and proceed directly to the cold shutdown
+unless the new configuration option :setting:`worker_enable_soft_shutdown_on_idle` is set to True. This is useful for workers
+that are idle, waiting on ETA tasks to be executed that still want to enable the soft shutdown anyways.
+
+The soft shutdown can replace the cold shutdown when using a broker with a visibility timeout mechanism, like :ref:`Redis <broker-redis>`
+or :ref:`SQS <broker-sqs>`, to enable a more graceful cold shutdown procedure, allowing the worker enough time to re-queue tasks that were not
+completed (e.g., ``Restoring 1 unacknowledged message(s)``) by resetting the visibility timeout of the unacknowledged messages just before
+the worker exits completely.
+
+After upgrading to this version, please share your feedback on the new Soft Shutdown mechanism.
+
+Relevant Issues:
+`#9213 <https://github.com/celery/celery/pull/9213>`_,
+`#9231 <https://github.com/celery/celery/pull/9231>`_,
+`#9238 <https://github.com/celery/celery/pull/9238>`_
+
+- New :ref:`documentation <worker-stopping>` for each shutdown type.
+- New :setting:`worker_soft_shutdown_timeout` configuration option.
+- New :setting:`worker_enable_soft_shutdown_on_idle` configuration option.
+
+REMAP_SIGTERM
+-------------
+
+The ``REMAP_SIGTERM`` "hidden feature" has been tested, :ref:`documented <worker-REMAP_SIGTERM>` and is now officially supported.
+This feature allows users to remap the SIGTERM signal to SIGQUIT, to initiate a soft or a cold shutdown using :sig:`TERM`
+instead of :sig:`QUIT`.
+
+Pydantic Support
+----------------
+
+This release introduces support for Pydantic models in Celery tasks.
+For more info, see the new pydantic example and PR `#9023 <https://github.com/celery/celery/pull/9023>`_ by @mathiasertl.
+
+After upgrading to this version, please share your feedback on the new Pydantic support.
+
+Redis Broker Stability Improvements
+-----------------------------------
+The root cause of the Redis broker instability issue has been `identified and resolved <https://github.com/celery/kombu/pull/2007>`_
+in the v5.4.0 release of Kombu, which should resolve the disconnections bug and offer additional improvements.
+
+After upgrading to this version, please share your feedback on the Redis broker stability.
+
+Relevant Issues:
+`#7276 <https://github.com/celery/celery/discussions/7276>`_,
+`#8091 <https://github.com/celery/celery/discussions/8091>`_,
+`#8030 <https://github.com/celery/celery/discussions/8030>`_,
+`#8384 <https://github.com/celery/celery/discussions/8384>`_
+
+Quorum Queues Initial Support
+-----------------------------
+This release introduces the initial support for Quorum Queues with Celery. 
+
+See new configuration options for more details:
+
+- :setting:`task_default_queue_type`
+- :setting:`worker_detect_quorum_queues`
+
+After upgrading to this version, please share your feedback on the Quorum Queues support.
+
+Relevant Issues:
+`#6067 <https://github.com/celery/celery/discussions/6067>`_,
+`#9121 <https://github.com/celery/celery/discussions/9121>`_
+
+What's Changed
+~~~~~~~~~~~~~~
+
+- Document usage of broker_native_delayed_delivery_queue_type (#9419)
+- Adjust section in what's new document regarding quorum queues support (#9420)
+- Update pytest-rerunfailures to 15.0 (#9422)
+- Document group unrolling (#9421)
+- fix small typo acces -> access (#9434)
+- Update cryptography to 44.0.0 (#9437)
+- Added pypy to Dockerfile (#9438)
+- Skipped flaky tests on pypy (all pass after ~10 reruns) (#9439)
+- Allowing managed credentials for azureblockblob (#9430)
+- Allow passing Celery objects to the Click entry point (#9426)
+- support Request termination for gevent (#9440)
+- Prevent event_mask from being overwritten. (#9432)
+- Update pytest to 8.3.4 (#9444)
+- Prepare for (pre) release: v5.5.0rc3 (#9450)
+
 .. _version-5.5.0rc2:
 
 5.5.0rc2
