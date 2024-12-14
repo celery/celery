@@ -62,6 +62,11 @@ else:
               '--app',
               envvar='APP',
               cls=CeleryOption,
+              # May take either: a str when invoked from command line (Click),
+              # or a Celery object when invoked from inside Celery; hence the
+              # need to prevent Click from "processing" the Celery object and
+              # converting it into its str representation.
+              type=click.UNPROCESSED,
               help_group="Global Options")
 @click.option('-b',
               '--broker',
@@ -131,25 +136,26 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir,
     if skip_checks:
         os.environ['CELERY_SKIP_CHECKS'] = 'true'
 
-    try:
-        app_object = find_app(app)
-    except ModuleNotFoundError as e:
-        if e.name != app:
+    if isinstance(app, str):
+        try:
+            app = find_app(app)
+        except ModuleNotFoundError as e:
+            if e.name != app:
+                exc = traceback.format_exc()
+                ctx.fail(
+                    UNABLE_TO_LOAD_APP_ERROR_OCCURRED.format(app, exc)
+                )
+            ctx.fail(UNABLE_TO_LOAD_APP_MODULE_NOT_FOUND.format(e.name))
+        except AttributeError as e:
+            attribute_name = e.args[0].capitalize()
+            ctx.fail(UNABLE_TO_LOAD_APP_APP_MISSING.format(attribute_name))
+        except Exception:
             exc = traceback.format_exc()
             ctx.fail(
                 UNABLE_TO_LOAD_APP_ERROR_OCCURRED.format(app, exc)
             )
-        ctx.fail(UNABLE_TO_LOAD_APP_MODULE_NOT_FOUND.format(e.name))
-    except AttributeError as e:
-        attribute_name = e.args[0].capitalize()
-        ctx.fail(UNABLE_TO_LOAD_APP_APP_MISSING.format(attribute_name))
-    except Exception:
-        exc = traceback.format_exc()
-        ctx.fail(
-            UNABLE_TO_LOAD_APP_ERROR_OCCURRED.format(app, exc)
-        )
 
-    ctx.obj = CLIContext(app=app_object, no_color=no_color, workdir=workdir,
+    ctx.obj = CLIContext(app=app, no_color=no_color, workdir=workdir,
                          quiet=quiet)
 
     # User options

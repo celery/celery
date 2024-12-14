@@ -285,11 +285,13 @@ Quorum Queues Initial Support
 -----------------------------
 
 This release introduces the initial support for Quorum Queues with Celery.
+See the documentation for :ref:`using-quorum-queues` for more details.
 
-See new configuration options for more details:
+In addition, you can read about the new configuration options relevant for this feature:
 
 - :setting:`task_default_queue_type`
 - :setting:`worker_detect_quorum_queues`
+- :setting:`broker_native_delayed_delivery_queue_type`
 
 REMAP_SIGTERM
 -------------

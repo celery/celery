@@ -1,6 +1,7 @@
 import errno
 import os
 import socket
+import tempfile
 from itertools import cycle
 from unittest.mock import Mock, patch
 
@@ -293,6 +294,15 @@ class test_AsynPool:
             with pytest.raises(socket.error):
                 asynpool._select({3}, poll=poll)
 
+    def test_select_unpatched(self):
+        with tempfile.TemporaryFile('w') as f:
+            _, writeable, _ = asynpool._select(writers={f, }, err={f, })
+            assert f.fileno() in writeable
+
+        with tempfile.TemporaryFile('r') as f:
+            readable, _, _ = asynpool._select(readers={f, }, err={f, })
+            assert f.fileno() in readable
+
     def test_promise(self):
         fun = Mock()
         x = asynpool.promise(fun, (1,), {'foo': 1})
@@ -368,6 +378,7 @@ class test_AsynPool:
         hub.close = Mock(name='hub.close()')
         return hub
 
+    @t.skip.if_pypy
     def test_schedule_writes_hub_remove_writer_ready_fd_not_in_all_inqueues(self):
         pool = asynpool.AsynPool(threads=False)
         hub = self._get_hub()
@@ -386,6 +397,7 @@ class test_AsynPool:
         assert 6 in hub.readers
         assert 6 not in hub.writers
 
+    @t.skip.if_pypy
     def test_schedule_writes_hub_remove_writers_from_active_writers_when_get_index_error(self):
         pool = asynpool.AsynPool(threads=False)
         hub = self._get_hub()
@@ -420,6 +432,7 @@ class test_AsynPool:
 
         assert 6 in hub.writers
 
+    @t.skip.if_pypy
     def test_schedule_writes_hub_remove_fd_only_from_writers_when_write_job_is_done(self):
         pool = asynpool.AsynPool(threads=False)
         hub = self._get_hub()
@@ -450,6 +463,7 @@ class test_AsynPool:
         assert 2 not in hub.writers
         assert 2 in hub.readers
 
+    @t.skip.if_pypy
     def test_register_with_event_loop__no_on_tick_dupes(self):
         """Ensure AsynPool's register_with_event_loop only registers
         on_poll_start in the event loop the first time it's called. This
@@ -461,6 +475,7 @@ class test_AsynPool:
         pool.register_with_event_loop(hub)
         hub.on_tick.add.assert_called_once()
 
+    @t.skip.if_pypy
     @patch('billiard.pool.Pool._create_worker_process')
     def test_before_create_process_signal(self, create_process):
         from celery import signals

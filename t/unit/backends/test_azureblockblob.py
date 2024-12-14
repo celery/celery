@@ -61,6 +61,40 @@ class test_AzureBlockBlobBackend:
         assert backend._blob_service_client is not None
         assert mock_blob_service_client_instance.create_container.call_count == 1
 
+    @patch(MODULE_TO_MOCK + ".AzureStorageQueuesTransport")
+    @patch(MODULE_TO_MOCK + ".BlobServiceClient")
+    def test_create_client__default_azure_credentials(self, mock_blob_service_client, mock_kombu_transport):
+        credential_mock = Mock()
+        mock_blob_service_client.return_value = Mock()
+        mock_kombu_transport.parse_uri.return_value = (credential_mock, "dummy_account_url")
+        url = "azureblockblob://DefaultAzureCredential@dummy_account_url"
+        backend = AzureBlockBlobBackend(app=self.app, url=url)
+        assert backend._blob_service_client is not None
+        mock_kombu_transport.parse_uri.assert_called_once_with(url.replace("azureblockblob://", ""))
+        mock_blob_service_client.assert_called_once_with(
+            account_url="dummy_account_url",
+            credential=credential_mock,
+            connection_timeout=backend._connection_timeout,
+            read_timeout=backend._read_timeout,
+        )
+
+    @patch(MODULE_TO_MOCK + ".AzureStorageQueuesTransport")
+    @patch(MODULE_TO_MOCK + ".BlobServiceClient")
+    def test_create_client__managed_identity_azure_credentials(self, mock_blob_service_client, mock_kombu_transport):
+        credential_mock = Mock()
+        mock_blob_service_client.return_value = Mock()
+        mock_kombu_transport.parse_uri.return_value = (credential_mock, "dummy_account_url")
+        url = "azureblockblob://ManagedIdentityCredential@dummy_account_url"
+        backend = AzureBlockBlobBackend(app=self.app, url=url)
+        assert backend._blob_service_client is not None
+        mock_kombu_transport.parse_uri.assert_called_once_with(url.replace("azureblockblob://", ""))
+        mock_blob_service_client.assert_called_once_with(
+            account_url="dummy_account_url",
+            credential=credential_mock,
+            connection_timeout=backend._connection_timeout,
+            read_timeout=backend._read_timeout,
+        )
+
     @patch(MODULE_TO_MOCK + ".BlobServiceClient")
     def test_configure_client(self, mock_blob_service_factory):
 

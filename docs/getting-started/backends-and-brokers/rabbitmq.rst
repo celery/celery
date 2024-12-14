@@ -236,3 +236,7 @@ The design is borrowed from NServiceBus. If you are interested in the implementa
 .. _documentation: https://docs.particular.net/transports/rabbitmq/delayed-delivery
 
 Native Delayed Delivery is automatically enabled when quorum queues are detected.
+
+By default the Native Delayed Delivery queues are quorum queues.
+If you'd like to change them to classic queues you can set the :setting:`broker_native_delayed_delivery_queue_type`
+to classic.
