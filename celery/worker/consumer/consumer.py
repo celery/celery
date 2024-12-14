@@ -734,10 +734,21 @@ class Consumer:
         )
 
     def cancel_all_unacked_requests(self):
-        """Cancel all unacked requests with late acknowledgement enabled."""
+        """Cancel all active requests that either do not require late acknowledgments or,
+        if they do, have not been acknowledged yet.
+        """
 
         def should_cancel(request):
-            return request.task.acks_late and not request.acknowledged
+            if not request.task.acks_late:
+                # Task does not require late acknowledgment, cancel it.
+                return True
+
+            if not request.acknowledged:
+                # Task is late acknowledged, but it has not been acknowledged yet, cancel it.
+                return True
+
+            # Task is late acknowledged, but it has already been acknowledged.
+            return False  # Do not cancel and allow it to gracefully finish as it has already been acknowledged.
 
         requests_to_cancel = tuple(filter(should_cancel, active_requests))
 

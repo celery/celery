@@ -460,7 +460,6 @@ class test_Consumer(ConsumerTestCase):
         mock_request_acks_late_acknowledged.acknowledged = True
         mock_request_acks_early = Mock(id='3')
         mock_request_acks_early.task.acks_late = False
-        mock_request_acks_early.acknowledged = False
 
         active_requests.add(mock_request_acks_late_not_acknowledged)
         active_requests.add(mock_request_acks_late_acknowledged)
@@ -470,7 +469,7 @@ class test_Consumer(ConsumerTestCase):
 
         mock_request_acks_late_not_acknowledged.cancel.assert_called_once_with(c.pool)
         mock_request_acks_late_acknowledged.cancel.assert_not_called()
-        mock_request_acks_early.cancel.assert_not_called()
+        mock_request_acks_early.cancel.assert_called_once_with(c.pool)
 
         active_requests.clear()
 
