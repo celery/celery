@@ -564,7 +564,7 @@ class test_chain(CanvasCase):
         assert isinstance(new_chain.tasks[0].body, _chain)
 
     def test_chain_of_chord_upgrade_on_chaining(self):
-        c = chord([signature('header')], group(signature('body')))
+        c = chord([signature('header')], group(signature('body'), signature('body2')))
         c = chain(c)
         t = signature('t')
         new_chain = c | t  # t should be chained with the body of c[0] and create a new chord
@@ -1251,6 +1251,19 @@ class test_group(CanvasCase):
             assert isinstance(result, AsyncResult)
             assert group_id is not None
 
+    def test_group_unroll(self, subtests):
+        @self.app.task
+        def test_task(a, b):
+            return
+
+        with subtests.test("single item"):
+            c = group(test_task.s(1, 2)) | test_task.s(1)
+            assert str(c) == "t.unit.tasks.test_canvas.test_task(1, 2) | test_task(1)"
+
+        with subtests.test("regen"):
+            c = group(test_task.s(1, 2) for _ in range(1)) | test_task.s(1)
+            assert str(c) == "t.unit.tasks.test_canvas.test_task(1, 2) | test_task(1)"
+
 
 class test_chord(CanvasCase):
     def test__get_app_does_not_exhaust_generator(self):
@@ -1769,11 +1782,19 @@ class test_chord(CanvasCase):
 
     def test_chord_upgrade_on_chaining(self):
         """ Test that chaining a chord with a group body upgrades to a new chord """
-        c = chord([signature('header')], group(signature('body')))
+        c = chord([signature('header')], group(signature('body'), signature('body2')))
         t = signature('t')
         stil_chord = c | t  # t should be chained with the body of c and create a new chord
         assert isinstance(stil_chord, chord)
         assert isinstance(stil_chord.body, chord)
+
+    def test_no_chord_upgrade_on_chaining_with_group_of_a_single_item(self):
+        """ Test that chaining a chord with a group body upgrades to a new chord """
+        c = chord([signature('header')], group(signature('body')))
+        t = signature('t')
+        stil_chord = c | t  # t should be chained with the body of c and create a new chord
+        assert isinstance(stil_chord, chord)
+        assert isinstance(stil_chord.body, _chain)
 
     @pytest.mark.parametrize('header', [
         [signature('s1'), signature('s2')],
