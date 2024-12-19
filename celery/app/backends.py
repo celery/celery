@@ -35,6 +35,9 @@ BACKEND_ALIASES = {
     'arangodb': 'celery.backends.arangodb:ArangoDbBackend',
     's3': 'celery.backends.s3:S3Backend',
     'gs': 'celery.backends.gcs:GCSBackend',
+    'valkey': 'celery.backends.valkey:ValkeyBackend',
+    'valkeys': 'celery.backends.valkey:ValkeyBackend',
+    'valkeysentinel': 'celery.backends.valkey:SentinelBackend',
 }
 
 
