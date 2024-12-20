@@ -647,7 +647,7 @@ class SentinelBackend(RedisBackend):
 
         hosts = connparams.pop("hosts")
         min_other_sentinels = self._transport_options.get("min_other_sentinels", 0)
-        sentinel_kwargs = self._transport_options.get("sentinel_kwargs", {})
+        sentinel_kwargs = self._transport_options.get("sentinel_kwargs", None)
 
         sentinel_instance = self.sentinel.Sentinel(
             [(cp['host'], cp['port']) for cp in hosts],
