@@ -267,4 +267,11 @@ class test_CassandraBackend:
             'cql_version': '3.2.1',
             'protocol_version': 3
         }
-        mod.CassandraBackend(app=self.app)
+        x = mod.CassandraBackend(app=self.app)
+        # Default port is 9042
+        assert x.port == 9042
+
+        # Valid options with port specified
+        self.app.conf.cassandra_port = 1234
+        x = mod.CassandraBackend(app=self.app)
+        assert x.port == 1234
