@@ -267,6 +267,7 @@ class test_CassandraBackend:
             'cql_version': '3.2.1',
             'protocol_version': 3
         }
+        self.app.conf.cassandra_port = None
         x = mod.CassandraBackend(app=self.app)
         # Default port is 9042
         assert x.port == 9042
