@@ -96,7 +96,7 @@ class CassandraBackend(BaseBackend):
         self.servers = servers or conf.get('cassandra_servers', None)
         self.bundle_path = bundle_path or conf.get(
             'cassandra_secure_bundle_path', None)
-        self.port = port or conf.get('cassandra_port', 9042)
+        self.port = port or conf.get('cassandra_port', None) or 9042
         self.keyspace = keyspace or conf.get('cassandra_keyspace', None)
         self.table = table or conf.get('cassandra_table', None)
         self.cassandra_options = conf.get('cassandra_options', {})
