@@ -42,7 +42,7 @@ __all__ = (
     'DaemonContext', 'detached', 'parse_uid', 'parse_gid', 'setgroups',
     'initgroups', 'setgid', 'setuid', 'maybe_drop_privileges', 'signals',
     'signal_name', 'set_process_title', 'set_mp_process_title',
-    'get_errno_name', 'ignore_errno', 'fd_by_path',
+    'get_errno_name', 'ignore_errno', 'fd_by_path', 'isatty',
 )
 
 # exitcodes
@@ -94,6 +94,12 @@ SIGNAMES = {
 }
 SIGMAP = {getattr(_signal, name): name for name in SIGNAMES}
 
+def isatty(fh):
+    """Return true if the process has a controlling terminal."""
+    try:
+        return fh.isatty()
+    except AttributeError:
+        pass
 
 def pyimplementation():
     """Return string identifying the current Python implementation."""
