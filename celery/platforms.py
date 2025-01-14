@@ -94,12 +94,14 @@ SIGNAMES = {
 }
 SIGMAP = {getattr(_signal, name): name for name in SIGNAMES}
 
+
 def isatty(fh):
     """Return true if the process has a controlling terminal."""
     try:
         return fh.isatty()
     except AttributeError:
         pass
+
 
 def pyimplementation():
     """Return string identifying the current Python implementation."""
