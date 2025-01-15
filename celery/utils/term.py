@@ -167,7 +167,11 @@ class colored:
 
 
 def supports_images() -> bool:
-    return isatty(sys.stdin) and ITERM_PROFILE is not None
+    
+    try:
+        return sys.stdin.isatty() and ITERM_PROFILE
+    except AttributeError:
+        pass
 
 
 def _read_as_base64(path: str) -> str:
