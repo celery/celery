@@ -7,6 +7,8 @@ import platform
 import sys
 from functools import reduce
 
+from celery.platforms import isatty
+
 __all__ = ('colored',)
 
 from typing import Any
@@ -165,7 +167,11 @@ class colored:
 
 
 def supports_images() -> bool:
-    return sys.stdin.isatty() and ITERM_PROFILE is not None
+    
+    try:
+        return sys.stdin.isatty() and ITERM_PROFILE
+    except AttributeError:
+        pass
 
 
 def _read_as_base64(path: str) -> str:
