@@ -31,7 +31,7 @@ class Gossip(bootsteps.ConsumerStep):
     _cons_stamp_fields = itemgetter(
         'id', 'clock', 'hostname', 'pid', 'topic', 'action', 'cver',
     )
-    compatible_transports = {'amqp', 'redis'}
+    compatible_transports = {'amqp', 'redis', 'django'}
 
     def __init__(self, c, without_gossip=False,
                  interval=5.0, heartbeat_interval=2.0, **kwargs):
