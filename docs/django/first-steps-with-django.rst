@@ -133,6 +133,24 @@ Finally, the ``debug_task`` example is a task that dumps
 its own request information. This is using the new ``bind=True`` task option
 introduced in Celery 3.1 to easily refer to the current task instance.
 
+Using Django as the broker
+--------------------------
+
+Add ``kombu.transport.django`` to ``INSTALLED_APPS`` in your
+Django project's :file:`settings.py`::
+
+        INSTALLED_APPS = (
+            ...,
+            'kombu.transport.django',
+        )
+
+Then, assuming you are using Django's :file:`settings.py` to also configure
+Celery, add the following setting:
+
+.. code-block:: python
+
+    CELERY_BROKER_URL = 'django:///'
+
 Using the ``@shared_task`` decorator
 ------------------------------------
 
