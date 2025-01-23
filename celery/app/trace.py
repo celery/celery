@@ -528,7 +528,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         if task_on_success:
                             task_on_success(retval, uuid, args, kwargs)
                         if success_receivers:
-                            send_success(sender=task, result=retval)
+                            send_success(sender=task, result=retval, runtime=T)
                         if _does_info:
                             info(LOG_SUCCESS, {
                                 'id': uuid,
