@@ -16,7 +16,6 @@ if TYPE_CHECKING:
     from types import ModuleType
     from typing import Protocol
 
-    from django.db.backends.base.base import BaseDatabaseWrapper
     from django.db.utils import ConnectionHandler
 
     from celery.app.base import Celery
@@ -165,16 +164,15 @@ class DjangoWorkerFixup:
         # network IO that close() might cause.
         for c in self._db.connections.all():
             if c and c.connection:
-                self._maybe_close_db_fd(c)
+                self._maybe_close_db_fd(c.connection)
 
         # use the _ version to avoid DB_REUSE preventing the conn.close() call
         self._close_database(force=True)
         self.close_cache()
 
-    def _maybe_close_db_fd(self, c: "BaseDatabaseWrapper") -> None:
+    def _maybe_close_db_fd(self, fd: IO) -> None:
         try:
-            with c.wrap_database_errors:
-                _maybe_close_fd(c.connection)
+            _maybe_close_fd(fd)
         except self.interface_errors:
             pass
 
