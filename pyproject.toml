@@ -1,0 +1,55 @@
+[tool.pytest.ini_options]
+addopts = "--strict-markers"
+testpaths = "t/unit/"
+python_classes = "test_*"
+xfail_strict=true
+markers = ["sleepdeprived_patched_module", "masked_modules", "patched_environ", "patched_module", "flaky", "timeout"]
+
+[tool.mypy]
+warn_unused_configs = true
+strict = false
+follow_imports = "skip"
+show_error_codes = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+files = [
+    "celery/__main__.py",
+    "celery/states.py",
+    "celery/signals.py",
+    "celery/fixups",
+    "celery/concurrency/thread.py",
+    "celery/security/certificate.py",
+    "celery/utils/text.py",
+    "celery/schedules.py",
+    "celery/apps/beat.py",
+]
+
+[tool.codespell]
+ignore-words-list = "assertin"
+skip = "./.*,docs/AUTHORS.txt,docs/history/*,docs/spelling_wordlist.txt,Changelog.rst,CONTRIBUTORS.txt,*.key"
+
+[tool.coverage.run]
+branch = true
+cover_pylib = false
+include = ["*celery/*"]
+omit = ["celery.tests.*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "except ImportError:"
+]
+omit = [
+    "*/python?.?/*",
+    "*/site-packages/*",
+    "*/pypy/*",
+    "*/celery/bin/graph.py",
+    "*celery/bin/logtool.py",
+    "*celery/task/base.py",
+    "*celery/contrib/sphinx.py",
+    "*celery/concurrency/asynpool.py",
+    "*celery/utils/debug.py",
+    "*celery/contrib/testing/*",
+    "*celery/contrib/pytest.py"
+]

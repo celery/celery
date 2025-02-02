@@ -1,18 +1,15 @@
-# -*- coding: utf-8 -*-
 """Task Routing.
 
 Contains utilities for working with task routers, (:setting:`task_routes`).
 """
-from __future__ import absolute_import, unicode_literals
-
+import fnmatch
 import re
-import string
-from collections import Mapping, OrderedDict
+from collections import OrderedDict
+from collections.abc import Mapping
 
 from kombu import Queue
 
 from celery.exceptions import QueueNotFound
-from celery.five import items, string_t
 from celery.utils.collections import lpmerge
 from celery.utils.functional import maybe_evaluate, mlazy
 from celery.utils.imports import symbol_by_name
@@ -23,26 +20,21 @@ except AttributeError:  # pragma: no cover
     # for support Python 3.7
     Pattern = re.Pattern
 
-__all__ = ('MapRoute', 'Router', 'prepare')
+__all__ = ('MapRoute', 'Router', 'expand_router_string', 'prepare')
 
 
-def glob_to_re(glob, quote=string.punctuation.replace('*', '')):
-    glob = ''.join('\\' + c if c in quote else c for c in glob)
-    return glob.replace('*', '.+?')
-
-
-class MapRoute(object):
+class MapRoute:
     """Creates a router out of a :class:`dict`."""
 
     def __init__(self, map):
-        map = items(map) if isinstance(map, Mapping) else map
+        map = map.items() if isinstance(map, Mapping) else map
         self.map = {}
         self.patterns = OrderedDict()
         for k, v in map:
             if isinstance(k, Pattern):
                 self.patterns[k] = v
             elif '*' in k:
-                self.patterns[re.compile(glob_to_re(k))] = v
+                self.patterns[re.compile(fnmatch.translate(k))] = v
             else:
                 self.map[k] = v
 
@@ -53,7 +45,7 @@ class MapRoute(object):
             pass
         except ValueError:
             return {'queue': self.map[name]}
-        for regex, route in items(self.patterns):
+        for regex, route in self.patterns.items():
             if regex.match(name):
                 try:
                     return dict(route)
@@ -61,7 +53,7 @@ class MapRoute(object):
                     return {'queue': route}
 
 
-class Router(object):
+class Router:
     """Route tasks based on the :setting:`task_routes` setting."""
 
     def __init__(self, routes=None, queues=None,
@@ -71,7 +63,8 @@ class Router(object):
         self.routes = [] if routes is None else routes
         self.create_missing = create_missing
 
-    def route(self, options, name, args=(), kwargs={}, task_type=None):
+    def route(self, options, name, args=(), kwargs=None, task_type=None):
+        kwargs = {} if not kwargs else kwargs
         options = self.expand_destination(options)  # expands 'queue'
         if self.routes:
             route = self.lookup_route(name, args, kwargs, options, task_type)
@@ -79,12 +72,12 @@ class Router(object):
                 return lpmerge(self.expand_destination(route), options)
         if 'queue' not in options:
             options = lpmerge(self.expand_destination(
-                              self.app.conf.task_default_queue), options)
+                self.app.conf.task_default_queue), options)
         return options
 
     def expand_destination(self, route):
         # Route can be a queue name: convenient for direct exchanges.
-        if isinstance(route, string_t):
+        if isinstance(route, str):
             queue, route = route, {}
         else:
             # can use defaults from configured queue, but override specific
@@ -99,7 +92,7 @@ class Router(object):
                     route['queue'] = self.queues[queue]
                 except KeyError:
                     raise QueueNotFound(
-                        'Queue {0!r} missing from task_queues'.format(queue))
+                        f'Queue {queue!r} missing from task_queues')
         return route
 
     def lookup_route(self, name,
@@ -128,10 +121,11 @@ def expand_router_string(router):
 
 def prepare(routes):
     """Expand the :setting:`task_routes` setting."""
+
     def expand_route(route):
         if isinstance(route, (Mapping, list, tuple)):
             return MapRoute(route)
-        if isinstance(route, string_t):
+        if isinstance(route, str):
             return mlazy(expand_router_string, route)
         return route
 

@@ -1,7 +1,6 @@
-from __future__ import absolute_import, unicode_literals
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, patch
 
 from celery import bootsteps
 
@@ -57,7 +56,7 @@ class test_Step:
     class Def(bootsteps.StartStopStep):
         name = 'test_Step.Def'
 
-    def setup(self):
+    def setup_method(self):
         self.steps = []
 
     def test_blueprint_name(self, bp='test_blueprint_name'):
@@ -69,7 +68,7 @@ class test_Step:
 
         class Y(bootsteps.Step):
             name = '%s.Y' % bp
-        assert Y.name == '{0}.Y'.format(bp)
+        assert Y.name == f'{bp}.Y'
 
     def test_init(self):
         assert self.Def(self)
@@ -163,7 +162,7 @@ class test_StartStopStep:
     class Def(bootsteps.StartStopStep):
         name = 'test_StartStopStep.Def'
 
-    def setup(self):
+    def setup_method(self):
         self.steps = []
 
     def test_start__stop(self):

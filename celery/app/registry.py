@@ -1,13 +1,10 @@
-# -*- coding: utf-8 -*-
 """Registry of available tasks."""
-from __future__ import absolute_import, unicode_literals
-
 import inspect
 from importlib import import_module
 
 from celery._state import get_current_app
+from celery.app.autoretry import add_autoretry_behaviour
 from celery.exceptions import InvalidTaskError, NotRegistered
-from celery.five import items
 
 __all__ = ('TaskRegistry',)
 
@@ -28,16 +25,18 @@ class TaskRegistry(dict):
         """
         if task.name is None:
             raise InvalidTaskError(
-                'Task class {0!r} must specify .name attribute'.format(
+                'Task class {!r} must specify .name attribute'.format(
                     type(task).__name__))
-        self[task.name] = inspect.isclass(task) and task() or task
+        task = inspect.isclass(task) and task() or task
+        add_autoretry_behaviour(task)
+        self[task.name] = task
 
     def unregister(self, name):
         """Unregister task by name.
 
         Arguments:
             name (str): name of the task to unregister, or a
-                :class:`celery.task.base.Task` with a valid `name` attribute.
+                :class:`celery.app.task.Task` with a valid `name` attribute.
 
         Raises:
             celery.exceptions.NotRegistered: if the task is not registered.
@@ -55,7 +54,7 @@ class TaskRegistry(dict):
         return self.filter_types('periodic')
 
     def filter_types(self, type):
-        return {name: task for name, task in items(self)
+        return {name: task for name, task in self.items()
                 if getattr(task, 'type', 'regular') == type}
 
 

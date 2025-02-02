@@ -1,21 +1,25 @@
 -r test-ci-base.txt
-#: Disabled for Cryptography crashing on 2.7 after interpreter shutdown.
-#-r extras/auth.txt
--r extras/riak.txt
+-r extras/auth.txt
 -r extras/solar.txt
 -r extras/mongodb.txt
 -r extras/yaml.txt
 -r extras/tblib.txt
--r extras/sqs.txt
 -r extras/slmq.txt
 -r extras/msgpack.txt
 -r extras/memcache.txt
 -r extras/eventlet.txt
 -r extras/gevent.txt
+-r extras/thread.txt
 -r extras/elasticsearch.txt
 -r extras/couchdb.txt
--r extras/couchbase.txt
+# -r extras/couchbase.txt
+-r extras/arangodb.txt
 -r extras/consul.txt
+-r extras/cosmosdbsql.txt
 -r extras/cassandra.txt
--r extras/dynamodb.txt
 -r extras/azureblockblob.txt
+git+https://github.com/celery/kombu.git
+
+# SQS dependencies other than boto
+pycurl>=7.43.0.5,<7.45.4; sys_platform != 'win32' and platform_python_implementation=="CPython" and python_version < "3.9"
+pycurl>=7.45.4; sys_platform != 'win32' and platform_python_implementation=="CPython" and python_version >= "3.9"

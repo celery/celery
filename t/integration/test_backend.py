@@ -1,14 +1,17 @@
-from __future__ import absolute_import, unicode_literals
-
 import os
 
-from case import skip
+import pytest
 
+from celery import states
 from celery.backends.azureblockblob import AzureBlockBlobBackend
 
+pytest.importorskip('azure')
 
-@skip.unless_module("azure")
-@skip.unless_environ("AZUREBLOCKBLOB_URL")
+
+@pytest.mark.skipif(
+    not os.environ.get('AZUREBLOCKBLOB_URL'),
+    reason='Environment variable AZUREBLOCKBLOB_URL required'
+)
 class test_AzureBlockBlobBackend:
     def test_crud(self, manager):
         backend = AzureBlockBlobBackend(
@@ -19,7 +22,7 @@ class test_AzureBlockBlobBackend:
                       for i in range(5)}
 
         for key, value in key_values.items():
-            backend.set(key, value)
+            backend._set_with_state(key, value, states.SUCCESS)
 
         actual_values = backend.mget(key_values.keys())
         expected_values = list(key_values.values())

@@ -1,6 +1,4 @@
 """Worker Pidbox (remote control)."""
-from __future__ import absolute_import, unicode_literals
-
 import socket
 import threading
 
@@ -19,7 +17,7 @@ logger = get_logger(__name__)
 debug, error, info = logger.debug, logger.error, logger.info
 
 
-class Pidbox(object):
+class Pidbox:
     """Worker mailbox."""
 
     consumer = None

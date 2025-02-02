@@ -1,11 +1,9 @@
-from __future__ import absolute_import, unicode_literals
-
 import sys
+from importlib.util import find_spec
+from unittest.mock import Mock
 
 import pytest
-from case import Mock, skip
 
-from celery.five import PY3, long_t, python_2_unicode_compatible, string
 from celery.local import PromiseProxy, Proxy, maybe_evaluate, try_import
 
 
@@ -58,7 +56,7 @@ class test_Proxy:
 
     def test_bool(self):
 
-        class X(object):
+        class X:
 
             def __bool__(self):
                 return False
@@ -69,35 +67,16 @@ class test_Proxy:
 
     def test_slots(self):
 
-        class X(object):
+        class X:
             __slots__ = ()
 
         x = Proxy(X)
         with pytest.raises(AttributeError):
             x.__dict__
 
-    @skip.if_python3()
-    def test_unicode(self):
-
-        @python_2_unicode_compatible
-        class X(object):
-
-            def __unicode__(self):
-                return 'UNICODE'
-            __str__ = __unicode__
-
-            def __repr__(self):
-                return 'REPR'
-
-        x = Proxy(lambda: X())
-        assert string(x) == 'UNICODE'
-        del(X.__unicode__)
-        del(X.__str__)
-        assert string(x) == 'REPR'
-
     def test_dir(self):
 
-        class X(object):
+        class X:
 
             def __dir__(self):
                 return ['a', 'b', 'c']
@@ -105,7 +84,7 @@ class test_Proxy:
         x = Proxy(lambda: X())
         assert dir(x) == ['a', 'b', 'c']
 
-        class Y(object):
+        class Y:
 
             def __dir__(self):
                 raise RuntimeError()
@@ -114,7 +93,7 @@ class test_Proxy:
 
     def test_getsetdel_attr(self):
 
-        class X(object):
+        class X:
             a = 1
             b = 2
             c = 3
@@ -133,7 +112,7 @@ class test_Proxy:
         setattr(x, 'a', 10)
         assert x.a == 10
 
-        del(x.a)
+        del (x.a)
         assert x.a == 1
 
     def test_dictproxy(self):
@@ -143,7 +122,7 @@ class test_Proxy:
         assert x['foo'] == 42
         assert len(x) == 1
         assert 'foo' in x
-        del(x['foo'])
+        del (x['foo'])
         with pytest.raises(KeyError):
             x['foo']
         assert iter(x)
@@ -155,7 +134,7 @@ class test_Proxy:
         x.extend([2, 3, 4])
         assert x[0] == 1
         assert x[:-1] == [1, 2, 3]
-        del(x[-1])
+        del (x[-1])
         assert x[:-1] == [1, 2]
         x[0] = 10
         assert x[0] == 10
@@ -163,14 +142,12 @@ class test_Proxy:
         assert len(x) == 3
         assert iter(x)
         x[0:2] = [1, 2]
-        del(x[0:2])
+        del (x[0:2])
         assert str(x)
-        if sys.version_info[0] < 3:
-            assert x.__cmp__(object()) == -1
 
     def test_complex_cast(self):
 
-        class O(object):
+        class O:
 
             def __complex__(self):
                 return complex(10.333)
@@ -180,7 +157,7 @@ class test_Proxy:
 
     def test_index(self):
 
-        class O(object):
+        class O:
 
             def __index__(self):
                 return 1
@@ -190,7 +167,7 @@ class test_Proxy:
 
     def test_coerce(self):
 
-        class O(object):
+        class O:
 
             def __coerce__(self, other):
                 return self, other
@@ -264,14 +241,12 @@ class test_Proxy:
         x = Proxy(lambda: 10)
         assert type(x.__float__()) == float
         assert type(x.__int__()) == int
-        if not PY3:
-            assert type(x.__long__()) == long_t
         assert hex(x)
         assert oct(x)
 
     def test_hash(self):
 
-        class X(object):
+        class X:
 
             def __hash__(self):
                 return 1234
@@ -280,7 +255,7 @@ class test_Proxy:
 
     def test_call(self):
 
-        class X(object):
+        class X:
 
             def __call__(self):
                 return 1234
@@ -289,7 +264,7 @@ class test_Proxy:
 
     def test_context(self):
 
-        class X(object):
+        class X:
             entered = exited = False
 
             def __enter__(self):
@@ -308,7 +283,7 @@ class test_Proxy:
 
     def test_reduce(self):
 
-        class X(object):
+        class X:
 
             def __reduce__(self):
                 return 123
@@ -321,7 +296,7 @@ class test_PromiseProxy:
 
     def test_only_evaluated_once(self):
 
-        class X(object):
+        class X:
             attr = 123
             evals = 0
 
@@ -366,3 +341,15 @@ class test_PromiseProxy:
 
         assert maybe_evaluate(30) == 30
         assert x.__evaluated__()
+
+
+class test_celery_import:
+    def test_import_celery(self, monkeypatch):
+        monkeypatch.delitem(sys.modules, "celery", raising=False)
+        spec = find_spec("celery")
+        assert spec
+
+        import celery
+
+        assert celery.__spec__ == spec
+        assert find_spec("celery") == spec

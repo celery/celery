@@ -50,7 +50,7 @@ schedule manually.
 
 .. admonition:: Django Users
 
-    Celery recommends and is compatible with the new ``USE_TZ`` setting introduced
+    Celery recommends and is compatible with the ``USE_TZ`` setting introduced
     in Django 1.4.
 
     For Django users the time zone specified in the ``TIME_ZONE`` setting
@@ -90,9 +90,14 @@ beat schedule list.
     app = Celery()
 
     @app.on_after_configure.connect
-    def setup_periodic_tasks(sender, **kwargs):
+    def setup_periodic_tasks(sender: Celery, **kwargs):
         # Calls test('hello') every 10 seconds.
         sender.add_periodic_task(10.0, test.s('hello'), name='add every 10')
+
+        # Calls test('hello') every 30 seconds.
+        # It uses the same signature of previous task, an explicit name is
+        # defined to avoid this task replacing the previous one defined.
+        sender.add_periodic_task(30.0, test.s('hello'), name='add every 30')
 
         # Calls test('world') every 30 seconds
         sender.add_periodic_task(30.0, test.s('world'), expires=10)
@@ -107,9 +112,19 @@ beat schedule list.
     def test(arg):
         print(arg)
 
+    @app.task
+    def add(x, y):
+        z = x + y
+        print(z)
+
+
 
 Setting these up from within the :data:`~@on_after_configure` handler means
-that we'll not evaluate the app at module level when using ``test.s()``.
+that we'll not evaluate the app at module level when using ``test.s()``. Note that
+:data:`~@on_after_configure` is sent after the app is set up, so tasks outside the
+module where the app is declared (e.g. in a `tasks.py` file located by
+:meth:`celery.Celery.autodiscover_tasks`) must use a later signal, such as
+:data:`~@on_after_finalize`.
 
 The :meth:`~@add_periodic_task` function will add the entry to the
 :setting:`beat_schedule` setting behind the scenes, and the same setting
@@ -160,6 +175,10 @@ Available Fields
 
     The name of the task to execute.
 
+    Task names are described in the :ref:`task-names` section of the User Guide.
+    Note that this is not the import path of the task, even though the default
+    naming pattern is built like it is.
+
 * `schedule`
 
     The frequency of execution.
@@ -182,7 +201,7 @@ Available Fields
     Execution options (:class:`dict`).
 
     This can be any argument supported by
-    :meth:`~celery.task.base.Task.apply_async` --
+    :meth:`~celery.app.task.Task.apply_async` --
     `exchange`, `routing_key`, `expires`, and so on.
 
 * `relative`
@@ -459,8 +478,8 @@ To install and use this extension:
 
     .. code-block:: console
 
-        $ celery -A proj beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+        $ celery -A proj beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
 
-   Note:  You may also add this as an settings option directly.
+   Note:  You may also add this as the :setting:`beat_scheduler` setting directly.
 
 #. Visit the Django-Admin interface to set up some periodic tasks.

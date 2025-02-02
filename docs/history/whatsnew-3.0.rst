@@ -524,7 +524,7 @@ stable and is now documented as part of the official API.
     .. code-block:: pycon
 
         >>> celery.control.pool_grow(2, destination=['w1.example.com'])
-        >>> celery.contorl.pool_shrink(2, destination=['w1.example.com'])
+        >>> celery.control.pool_shrink(2, destination=['w1.example.com'])
 
     or using the :program:`celery control` command:
 

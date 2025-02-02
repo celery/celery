@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Remote Debugger.
 
 Introduction
@@ -29,7 +28,7 @@ Environment Variables
 ``CELERY_RDB_HOST``
 -------------------
 
-    Hostname to bind to.  Default is '127.0.01' (only accessable from
+    Hostname to bind to.  Default is '127.0.0.1' (only accessible from
     localhost).
 
 .. envvar:: CELERY_RDB_PORT
@@ -41,8 +40,6 @@ Environment Variables
     The debugger will try to find an available port starting from the
     base port.  The selected port will be logged by the worker.
 """
-from __future__ import absolute_import, print_function, unicode_literals
-
 import errno
 import os
 import socket
@@ -50,8 +47,6 @@ import sys
 from pdb import Pdb
 
 from billiard.process import current_process
-
-from celery.five import range
 
 __all__ = (
     'CELERY_RDB_HOST', 'CELERY_RDB_PORT', 'DEFAULT_PORT',
@@ -105,7 +100,7 @@ class Rdb(Pdb):
         )
         self._sock.setblocking(1)
         self._sock.listen(1)
-        self.ident = '{0}:{1}'.format(self.me, this_port)
+        self.ident = f'{self.me}:{this_port}'
         self.host = host
         self.port = this_port
         self.say(BANNER.format(self=self))
@@ -115,8 +110,8 @@ class Rdb(Pdb):
         self.remote_addr = ':'.join(str(v) for v in address)
         self.say(SESSION_STARTED.format(self=self))
         self._handle = sys.stdin = sys.stdout = self._client.makefile('rw')
-        Pdb.__init__(self, completekey='tab',
-                     stdin=self._handle, stdout=self._handle)
+        super().__init__(completekey='tab',
+                         stdin=self._handle, stdout=self._handle)
 
     def get_avail_port(self, host, port, search_limit=100, skew=+0):
         try:
@@ -131,14 +126,13 @@ class Rdb(Pdb):
             this_port = port + skew + i
             try:
                 _sock.bind((host, this_port))
-            except socket.error as exc:
+            except OSError as exc:
                 if exc.errno in [errno.EADDRINUSE, errno.EINVAL]:
                     continue
                 raise
             else:
                 return _sock, this_port
-        else:
-            raise Exception(NO_AVAILABLE_PORT.format(self=self))
+        raise Exception(NO_AVAILABLE_PORT.format(self=self))
 
     def say(self, m):
         print(m, file=self.out)

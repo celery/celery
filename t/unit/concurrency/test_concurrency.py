@@ -1,11 +1,12 @@
-from __future__ import absolute_import, unicode_literals
-
+import importlib
 import os
+import sys
 from itertools import count
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, patch
 
+from celery import concurrency
 from celery.concurrency.base import BasePool, apply_target
 from celery.exceptions import WorkerShutdown, WorkerTerminate
 
@@ -108,6 +109,7 @@ class test_BasePool:
 
     def test_interface_info(self):
         assert BasePool(10).info == {
+            'implementation': 'celery.concurrency.base:BasePool',
             'max-concurrency': 10,
         }
 
@@ -154,3 +156,33 @@ class test_BasePool:
 
     def test_interface_no_close(self):
         assert BasePool(10).on_close() is None
+
+
+class test_get_available_pool_names:
+
+    def test_no_concurrent_futures__returns_no_threads_pool_name(self):
+        expected_pool_names = (
+            'prefork',
+            'eventlet',
+            'gevent',
+            'solo',
+            'processes',
+            'custom',
+        )
+        with patch.dict(sys.modules, {'concurrent.futures': None}):
+            importlib.reload(concurrency)
+            assert concurrency.get_available_pool_names() == expected_pool_names
+
+    def test_concurrent_futures__returns_threads_pool_name(self):
+        expected_pool_names = (
+            'prefork',
+            'eventlet',
+            'gevent',
+            'solo',
+            'processes',
+            'threads',
+            'custom',
+        )
+        with patch.dict(sys.modules, {'concurrent.futures': Mock()}):
+            importlib.reload(concurrency)
+            assert concurrency.get_available_pool_names() == expected_pool_names

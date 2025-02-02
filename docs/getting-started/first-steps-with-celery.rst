@@ -14,7 +14,7 @@ tools and support you need to run such a system in production.
 
 In this tutorial you'll learn the absolute basics of using Celery.
 
-Learn about;
+Learn about:
 
 - Choosing and installing a message transport (broker).
 - Installing Celery and creating your first task.
@@ -65,7 +65,7 @@ Or, if you want to run it on Docker execute this:
 
 .. code-block:: console
 
-    $ docker run -d -p 5462:5462 rabbitmq
+    $ docker run -d -p 5672:5672 rabbitmq
 
 When the command completes, the broker will already be running in the background,
 ready to move messages for you: ``Starting rabbitmq-server: SUCCESS``.
@@ -106,7 +106,7 @@ Installing Celery
 =================
 
 Celery is on the Python Package Index (PyPI), so it can be installed
-with standard Python tools like ``pip`` or ``easy_install``:
+with standard Python tools like ``pip``:
 
 .. code-block:: console
 
@@ -141,7 +141,7 @@ This is only needed so that names can be automatically generated when the tasks 
 defined in the `__main__` module.
 
 The second argument is the broker keyword argument, specifying the URL of the
-message broker you want to use. Here using RabbitMQ (also the default option).
+message broker you want to use. Here we are using RabbitMQ (also the default option).
 
 See :ref:`celerytut-broker` above for more choices --
 for RabbitMQ you can use ``amqp://localhost``, or for Redis you can
@@ -159,7 +159,7 @@ argument:
 
 .. code-block:: console
 
-    $ celery -A tasks worker --loglevel=info
+    $ celery -A tasks worker --loglevel=INFO
 
 .. note::
 
@@ -181,7 +181,7 @@ There are also several other commands available, and help is also available:
 
 .. code-block:: console
 
-    $ celery help
+    $ celery --help
 
 .. _`supervisord`: http://supervisord.org
 
@@ -218,7 +218,7 @@ Keeping Results
 If you want to keep track of the tasks' states, Celery needs to store or send
 the states somewhere. There are several
 built-in result backends to choose from: `SQLAlchemy`_/`Django`_ ORM,
-`Memcached`_, `Redis`_, :ref:`RPC <conf-rpc-result-backend>` (`RabbitMQ`_/AMQP),
+`MongoDB`_, `Memcached`_, `Redis`_, :ref:`RPC <conf-rpc-result-backend>` (`RabbitMQ`_/AMQP),
 and -- or you can define your own.
 
 .. _`Memcached`: http://memcached.org
@@ -229,7 +229,8 @@ and -- or you can define your own.
 For this example we use the `rpc` result backend, that sends states
 back as transient messages. The backend is specified via the ``backend`` argument to
 :class:`@Celery`, (or via the :setting:`result_backend` setting if
-you choose to use a configuration module):
+you choose to use a configuration module). So, you can modify this line in the `tasks.py`
+file to enable the `rpc://` backend:
 
 .. code-block:: python
 
@@ -244,12 +245,13 @@ the message broker (a popular combination):
 
 To read more about result backends please see :ref:`task-result-backends`.
 
-Now with the result backend configured, let's call the task again.
-This time you'll hold on to the :class:`~@AsyncResult` instance returned
-when you call a task:
+Now with the result backend configured, close the current python session and import the
+``tasks`` module again to put the changes into effect. This time you'll hold on to the
+:class:`~@AsyncResult` instance returned when you call a task:
 
 .. code-block:: pycon
 
+    >>> from tasks import add    # close and reopen to get updated 'app'
     >>> result = add.delay(4, 4)
 
 The :meth:`~@AsyncResult.ready` method returns whether the task
@@ -286,9 +288,9 @@ original traceback:
 
 .. warning::
 
-    Backends use resources to store and transmit results. To ensure 
-    that resources are released, you must eventually call 
-    :meth:`~@AsyncResult.get` or :meth:`~@AsyncResult.forget` on 
+    Backends use resources to store and transmit results. To ensure
+    that resources are released, you must eventually call
+    :meth:`~@AsyncResult.get` or :meth:`~@AsyncResult.forget` on
     EVERY :class:`~@AsyncResult` instance returned after calling
     a task.
 

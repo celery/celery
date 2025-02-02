@@ -1,29 +1,31 @@
-from __future__ import absolute_import, unicode_literals
-
 import socket
 import sys
+import time
 from collections import defaultdict
 from datetime import datetime, timedelta
+from queue import Queue as FastQueue
+from unittest.mock import Mock, call, patch
 
 import pytest
-from case import Mock, call, patch
 from kombu import pidbox
 from kombu.utils.uuid import uuid
 
-from celery.five import Queue as FastQueue
 from celery.utils.collections import AttributeDict
+from celery.utils.functional import maybe_list
 from celery.utils.timer2 import Timer
-from celery.worker import WorkController as _WC  # noqa
+from celery.worker import WorkController as _WC
 from celery.worker import consumer, control
 from celery.worker import state as worker_state
 from celery.worker.pidbox import Pidbox, gPidbox
 from celery.worker.request import Request
-from celery.worker.state import revoked
+from celery.worker.state import REVOKE_EXPIRES, revoked, revoked_stamps
 
 hostname = socket.gethostname()
 
+IS_PYPY = hasattr(sys, 'pypy_version_info')
 
-class WorkController(object):
+
+class WorkController:
     autoscaler = None
 
     def stats(self):
@@ -117,7 +119,7 @@ class test_Pidbox_green:
 
 class test_ControlPanel:
 
-    def setup(self):
+    def setup_method(self):
         self.panel = self.create_panel(consumer=Consumer(self.app))
 
         @self.app.task(name='c.unittest.mytask', rate_limit=200, shared=False)
@@ -193,6 +195,22 @@ class test_ControlPanel:
             assert x['clock'] == 315  # incremented
         finally:
             worker_state.revoked.discard('revoked1')
+
+    def test_hello_does_not_send_expired_revoked_items(self):
+        consumer = Consumer(self.app)
+        panel = self.create_panel(consumer=consumer)
+        panel.state.app.clock.value = 313
+        panel.state.hostname = 'elaine@vandelay.com'
+        # Add an expired revoked item to the revoked set.
+        worker_state.revoked.add(
+            'expired_in_past',
+            now=time.monotonic() - REVOKE_EXPIRES - 1
+        )
+        x = panel.handle('hello', {
+            'from_node': 'george@vandelay.com',
+            'revoked': {'1234', '4567', '891'}
+        })
+        assert 'expired_in_past' not in x['revoked']
 
     def test_conf(self):
         consumer = Consumer(self.app)
@@ -300,9 +318,23 @@ class test_ControlPanel:
         finally:
             worker_state.active_requests.discard(r)
 
+    def test_active_safe(self):
+        kwargsrepr = '<anything>'
+        r = Request(
+            self.TaskMessage(self.mytask.name, id='do re mi',
+                             kwargsrepr=kwargsrepr),
+            app=self.app,
+        )
+        worker_state.active_requests.add(r)
+        try:
+            active_resp = self.panel.handle('dump_active', {'safe': True})
+            assert active_resp[0]['kwargs'] == kwargsrepr
+        finally:
+            worker_state.active_requests.discard(r)
+
     def test_pool_grow(self):
 
-        class MockPool(object):
+        class MockPool:
 
             def __init__(self, size=1):
                 self.size = size
@@ -334,15 +366,14 @@ class test_ControlPanel:
 
         panel.state.consumer = Mock()
         panel.state.consumer.controller = Mock()
-        sc = panel.state.consumer.controller.autoscaler = Mock()
-        panel.handle('pool_grow')
-        sc.force_scale_up.assert_called()
-        panel.handle('pool_shrink')
-        sc.force_scale_down.assert_called()
+        r = panel.handle('pool_grow')
+        assert 'error' in r
+        r = panel.handle('pool_shrink')
+        assert 'error' in r
 
     def test_add__cancel_consumer(self):
 
-        class MockConsumer(object):
+        class MockConsumer:
             queues = []
             canceled = []
             consuming = False
@@ -420,7 +451,7 @@ class test_ControlPanel:
 
     def test_rate_limit(self):
 
-        class xConsumer(object):
+        class xConsumer:
             reset = False
 
             def reset_rate_limits(self):
@@ -516,6 +547,104 @@ class test_ControlPanel:
         finally:
             worker_state.task_ready(request)
 
+    @pytest.mark.parametrize(
+        "terminate", [True, False],
+    )
+    def test_revoke_by_stamped_headers_terminate(self, terminate):
+        request = Mock()
+        request.id = uuid()
+        request.options = stamped_header = {'stamp': 'foo'}
+        request.options['stamped_headers'] = ['stamp']
+        state = self.create_state()
+        state.consumer = Mock()
+        worker_state.task_reserved(request)
+        try:
+            worker_state.revoked_stamps.clear()
+            assert stamped_header.keys() != revoked_stamps.keys()
+            control.revoke_by_stamped_headers(state, stamped_header, terminate=terminate)
+            assert stamped_header.keys() == revoked_stamps.keys()
+            for key in stamped_header.keys():
+                assert maybe_list(stamped_header[key]) == revoked_stamps[key]
+        finally:
+            worker_state.task_ready(request)
+
+    @pytest.mark.parametrize(
+        "header_to_revoke",
+        [
+            {'header_A': 'value_1'},
+            {'header_B': ['value_2', 'value_3']},
+            {'header_C': ('value_2', 'value_3')},
+            {'header_D': {'value_2', 'value_3'}},
+            {'header_E': [1, '2', 3.0]},
+        ],
+    )
+    def test_revoke_by_stamped_headers(self, header_to_revoke):
+        ids = []
+
+        # Create at least more than one request with the same stamped header
+        for _ in range(2):
+            headers = {
+                "id": uuid(),
+                "task": self.mytask.name,
+                "stamped_headers": header_to_revoke.keys(),
+                "stamps": header_to_revoke,
+            }
+            ids.append(headers["id"])
+            message = self.TaskMessage(
+                self.mytask.name,
+                "do re mi",
+            )
+            message.headers.update(headers)
+            request = Request(
+                message,
+                app=self.app,
+            )
+
+            # Add the request to the active_requests so the request is found
+            # when the revoke_by_stamped_headers is called
+            worker_state.active_requests.add(request)
+            worker_state.task_reserved(request)
+
+        state = self.create_state()
+        state.consumer = Mock()
+        # Revoke by header
+        revoked_stamps.clear()
+        r = control.revoke_by_stamped_headers(state, header_to_revoke, terminate=True)
+        # Check all of the requests were revoked by a single header
+        for header, stamp in header_to_revoke.items():
+            assert header in r['ok']
+            for s in maybe_list(stamp):
+                assert str(s) in r['ok']
+        assert header_to_revoke.keys() == revoked_stamps.keys()
+        for key in header_to_revoke.keys():
+            assert list(maybe_list(header_to_revoke[key])) == revoked_stamps[key]
+        revoked_stamps.clear()
+
+    def test_revoke_return_value_terminate_true(self):
+        header_to_revoke = {'foo': 'bar'}
+        headers = {
+            "id": uuid(),
+            "task": self.mytask.name,
+            "stamped_headers": header_to_revoke.keys(),
+            "stamps": header_to_revoke,
+        }
+        message = self.TaskMessage(
+            self.mytask.name,
+            "do re mi",
+        )
+        message.headers.update(headers)
+        request = Request(
+            message,
+            app=self.app,
+        )
+        worker_state.active_requests.add(request)
+        worker_state.task_reserved(request)
+        state = self.create_state()
+        state.consumer = Mock()
+        r_headers = control.revoke_by_stamped_headers(state, header_to_revoke, terminate=True)
+        # revoke & revoke_by_stamped_headers are not aligned anymore in their return values
+        assert "{'foo': {'bar'}}" in r_headers["ok"]
+
     def test_autoscale(self):
         self.panel.state.consumer = Mock()
         self.panel.state.consumer.controller = Mock()
@@ -594,6 +723,7 @@ class test_ControlPanel:
         consumer.controller.consumer = None
         panel.handle('pool_restart', {'reloader': _reload})
 
+    @pytest.mark.skipif(IS_PYPY, reason="Patch for sys.modules doesn't work on PyPy correctly")
     @patch('celery.worker.worker.logger.debug')
     def test_pool_restart_import_modules(self, _debug):
         consumer = Consumer(self.app)

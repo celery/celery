@@ -4,6 +4,10 @@
  Change history
 ================
 
+This document contains change notes for bugfix releases in
+the 4.1.x series, please see :ref:`whatsnew-4.2` for
+an overview of what's new in Celery 4.2.
+
 .. _version-4.1.1:
 
 4.1.1

@@ -1,28 +1,33 @@
 """Useful mocks for unit testing."""
-from __future__ import absolute_import, unicode_literals
-
 import numbers
 from datetime import datetime, timedelta
+from typing import Any, Mapping, Sequence  # noqa
+from unittest.mock import Mock
 
-try:
-    from case import Mock
-except ImportError:
-    try:
-        from unittest.mock import Mock
-    except ImportError:
-        from mock import Mock
+from celery import Celery  # noqa
+from celery.canvas import Signature  # noqa
 
 
-def TaskMessage(name, id=None, args=(), kwargs={}, callbacks=None,
-                errbacks=None, chain=None, shadow=None, utc=None, **options):
-    # type: (str, str, Sequence, Mapping, Sequence[Signature],
-    #        Sequence[Signature], Sequence[Signature],
-    #        str, bool, **Any) -> Any
+def TaskMessage(
+    name,  # type: str
+    id=None,  # type: str
+    args=(),  # type: Sequence
+    kwargs=None,  # type: Mapping
+    callbacks=None,  # type: Sequence[Signature]
+    errbacks=None,  # type: Sequence[Signature]
+    chain=None,  # type: Sequence[Signature]
+    shadow=None,  # type: str
+    utc=None,  # type: bool
+    **options  # type: Any
+):
+    # type: (...) -> Any
     """Create task message in protocol 2 format."""
-    from celery import uuid
+    kwargs = {} if not kwargs else kwargs
     from kombu.serialization import dumps
+
+    from celery import uuid
     id = id or uuid()
-    message = Mock(name='TaskMessage-{0}'.format(id))
+    message = Mock(name=f'TaskMessage-{id}')
     message.headers = {
         'id': id,
         'task': name,
@@ -37,15 +42,24 @@ def TaskMessage(name, id=None, args=(), kwargs={}, callbacks=None,
     return message
 
 
-def TaskMessage1(name, id=None, args=(), kwargs={}, callbacks=None,
-                 errbacks=None, chain=None, **options):
-    # type: (str, str, Sequence, Mapping, Sequence[Signature],
-    #        Sequence[Signature], Sequence[Signature]) -> Any
+def TaskMessage1(
+    name,  # type: str
+    id=None,  # type: str
+    args=(),  # type: Sequence
+    kwargs=None,  # type: Mapping
+    callbacks=None,  # type: Sequence[Signature]
+    errbacks=None,  # type: Sequence[Signature]
+    chain=None,  # type: Sequence[Signature]
+    **options  # type: Any
+):
+    # type: (...) -> Any
     """Create task message in protocol 1 format."""
-    from celery import uuid
+    kwargs = {} if not kwargs else kwargs
     from kombu.serialization import dumps
+
+    from celery import uuid
     id = id or uuid()
-    message = Mock(name='TaskMessage-{0}'.format(id))
+    message = Mock(name=f'TaskMessage-{id}')
     message.headers = {}
     message.payload = {
         'task': name,
@@ -95,3 +109,29 @@ def task_message_from_sig(app, sig, utc=True, TaskMessage=TaskMessage):
         utc=utc,
         **sig.options
     )
+
+
+class _ContextMock(Mock):
+    """Dummy class implementing __enter__ and __exit__.
+
+    The :keyword:`with` statement requires these to be implemented
+    in the class, not just the instance.
+    """
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        pass
+
+
+def ContextMock(*args, **kwargs):
+    """Mock that mocks :keyword:`with` statement contexts."""
+    obj = _ContextMock(*args, **kwargs)
+    obj.attach_mock(_ContextMock(), '__enter__')
+    obj.attach_mock(_ContextMock(), '__exit__')
+    obj.__enter__.return_value = obj
+    # if __exit__ return a value the exception is ignored,
+    # so it must return None here.
+    obj.__exit__.return_value = None
+    return obj

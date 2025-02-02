@@ -1,16 +1,12 @@
-# -*- coding: utf-8 -*-
 """Custom maps, sets, sequences, and other data structures."""
-from __future__ import absolute_import, unicode_literals
-
-import sys
-from collections import Callable, Mapping, MutableMapping, MutableSet
+import time
 from collections import OrderedDict as _OrderedDict
-from collections import Sequence, deque
+from collections import deque
+from collections.abc import Callable, Mapping, MutableMapping, MutableSet, Sequence
 from heapq import heapify, heappop, heappush
 from itertools import chain, count
-
-from celery.five import (PY3, Empty, items, keys, monotonic,
-                         python_2_unicode_compatible, values)
+from queue import Empty
+from typing import Any, Dict, Iterable, List  # noqa
 
 from .functional import first, uniq
 from .text import match_case
@@ -24,9 +20,9 @@ except ImportError:
 try:
     from django.utils.functional import LazyObject, LazySettings
 except ImportError:
-    class LazyObject(object):  # noqa
+    class LazyObject:
         pass
-    LazySettings = LazyObject  # noqa
+    LazySettings = LazyObject
 
 __all__ = (
     'AttributeDictMixin', 'AttributeDict', 'BufferMap', 'ChainMap',
@@ -55,29 +51,18 @@ def lpmerge(L, R):
     Keeps values from `L`, if the value in `R` is :const:`None`.
     """
     setitem = L.__setitem__
-    [setitem(k, v) for k, v in items(R) if v is not None]
+    [setitem(k, v) for k, v in R.items() if v is not None]
     return L
 
 
 class OrderedDict(_OrderedDict):
     """Dict where insertion order matters."""
 
-    if PY3:  # pragma: no cover
-        def _LRUkey(self):
-            # type: () -> Any
-            # return value of od.keys does not support __next__,
-            # but this version will also not create a copy of the list.
-            return next(iter(keys(self)))
-    else:
-        if _dict_is_ordered:  # pragma: no cover
-            def _LRUkey(self):
-                # type: () -> Any
-                # iterkeys is iterable.
-                return next(self.iterkeys())
-        else:
-            def _LRUkey(self):
-                # type: () -> Any
-                return self._OrderedDict__root[1][2]
+    def _LRUkey(self):
+        # type: () -> Any
+        # return value of od.keys does not support __next__,
+        # but this version will also not create a copy of the list.
+        return next(iter(self.keys()))
 
     if not hasattr(_OrderedDict, 'move_to_end'):
         if _dict_is_ordered:  # pragma: no cover
@@ -113,7 +98,7 @@ class OrderedDict(_OrderedDict):
                     root[1] = first_node[0] = link
 
 
-class AttributeDictMixin(object):
+class AttributeDictMixin:
     """Mixin for Mapping interface that adds attribute access.
 
     I.e., `d.key -> d[key]`).
@@ -126,11 +111,9 @@ class AttributeDictMixin(object):
             return self[k]
         except KeyError:
             raise AttributeError(
-                '{0!r} object has no attribute {1!r}'.format(
-                    type(self).__name__, k))
+                f'{type(self).__name__!r} object has no attribute {k!r}')
 
-    def __setattr__(self, key, value):
-        # type: (str, Any) -> None
+    def __setattr__(self, key: str, value) -> None:
         """`d[key] = value -> d.key = value`."""
         self[key] = value
 
@@ -139,7 +122,7 @@ class AttributeDict(dict, AttributeDictMixin):
     """Dict subclass with attribute access."""
 
 
-class DictAttribute(object):
+class DictAttribute:
     """Dict interface to attributes.
 
     `obj[k] -> obj.k`
@@ -208,26 +191,12 @@ class DictAttribute(object):
             yield getattr(self.obj, key)
     itervalues = _iterate_values
 
-    if sys.version_info[0] == 3:  # pragma: no cover
-        items = _iterate_items
-        keys = _iterate_keys
-        values = _iterate_values
-    else:
-
-        def keys(self):
-            # type: () -> List[Any]
-            return list(self)
-
-        def items(self):
-            # type: () -> List[Tuple[Any, Any]]
-            return list(self._iterate_items())
-
-        def values(self):
-            # type: () -> List[Any]
-            return list(self._iterate_values())
+    items = _iterate_items
+    keys = _iterate_keys
+    values = _iterate_values
 
 
-MutableMapping.register(DictAttribute)  # noqa: E305
+MutableMapping.register(DictAttribute)
 
 
 class ChainMap(MutableMapping):
@@ -237,6 +206,7 @@ class ChainMap(MutableMapping):
     changes = None
     defaults = None
     maps = None
+    _observers = ()
 
     def __init__(self, *maps, **kwargs):
         # type: (*Mapping, **Any) -> None
@@ -246,6 +216,7 @@ class ChainMap(MutableMapping):
             maps=maps,
             changes=maps[0],
             defaults=maps[1:],
+            _observers=[],
         )
 
     def add_defaults(self, d):
@@ -260,7 +231,7 @@ class ChainMap(MutableMapping):
             return self.maps[0].pop(key, *default)
         except KeyError:
             raise KeyError(
-                'Key not found in the first mapping: {!r}'.format(key))
+                f'Key not found in the first mapping: {key!r}')
 
     def __missing__(self, key):
         # type: (Any) -> Any
@@ -289,7 +260,7 @@ class ChainMap(MutableMapping):
         try:
             del self.changes[self._key(key)]
         except KeyError:
-            raise KeyError('Key not found in first mapping: {0!r}'.format(key))
+            raise KeyError(f'Key not found in first mapping: {key!r}')
 
     def clear(self):
         # type: () -> None
@@ -327,7 +298,10 @@ class ChainMap(MutableMapping):
 
     def update(self, *args, **kwargs):
         # type: (*Any, **Any) -> Any
-        return self.changes.update(*args, **kwargs)
+        result = self.changes.update(*args, **kwargs)
+        for callback in self._observers:
+            callback(*args, **kwargs)
+        return result
 
     def __repr__(self):
         # type: () -> str
@@ -351,7 +325,7 @@ class ChainMap(MutableMapping):
         # changes take precedence.
         # pylint: disable=bad-reversed-sequence
         #   Someone should teach pylint about properties.
-        return chain(*[op(d) for d in reversed(self.maps)])
+        return chain(*(op(d) for d in reversed(self.maps)))
 
     def _iterate_keys(self):
         # type: () -> Iterable
@@ -368,26 +342,14 @@ class ChainMap(MutableMapping):
         return (self[key] for key in self)
     itervalues = _iterate_values
 
-    if sys.version_info[0] == 3:  # pragma: no cover
-        keys = _iterate_keys
-        items = _iterate_items
-        values = _iterate_values
+    def bind_to(self, callback):
+        self._observers.append(callback)
 
-    else:  # noqa
-        def keys(self):
-            # type: () -> List[Any]
-            return list(self._iterate_keys())
-
-        def items(self):
-            # type: () -> List[Tuple[Any, Any]]
-            return list(self._iterate_items())
-
-        def values(self):
-            # type: () -> List[Any]
-            return list(self._iterate_values())
+    keys = _iterate_keys
+    items = _iterate_items
+    values = _iterate_values
 
 
-@python_2_unicode_compatible
 class ConfigurationView(ChainMap, AttributeDictMixin):
     """A view over an applications configuration dictionaries.
 
@@ -405,7 +367,7 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
     def __init__(self, changes, defaults=None, keys=None, prefix=None):
         # type: (Mapping, Mapping, List[str], str) -> None
         defaults = [] if defaults is None else defaults
-        super(ConfigurationView, self).__init__(changes, *defaults)
+        super().__init__(changes, *defaults)
         self.__dict__.update(
             prefix=prefix.rstrip('_') + '_' if prefix else prefix,
             _keys=keys,
@@ -422,7 +384,7 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
     def __getitem__(self, key):
         # type: (str) -> Any
         keys = self._to_keys(key)
-        getitem = super(ConfigurationView, self).__getitem__
+        getitem = super().__getitem__
         for k in keys + (
                 tuple(f(key) for f in self._keys) if self._keys else ()):
             try:
@@ -476,8 +438,7 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
         )
 
 
-@python_2_unicode_compatible
-class LimitedSet(object):
+class LimitedSet:
     """Kind-of Set (or priority queue) with limitations.
 
     Good for when you need to test for membership (`a in set`),
@@ -524,7 +485,7 @@ class LimitedSet(object):
         False
         >>> len(s)  # maxlen is reached
         50000
-        >>> s.purge(now=monotonic() + 7200)  # clock + 2 hours
+        >>> s.purge(now=time.monotonic() + 7200)  # clock + 2 hours
         >>> len(s)  # now only minlen items are cached
         4000
         >>>> 57000 in s  # even this item is gone now
@@ -554,7 +515,7 @@ class LimitedSet(object):
     def _refresh_heap(self):
         # type: () -> None
         """Time consuming recreating of heap.  Don't run this too often."""
-        self._heap[:] = [entry for entry in values(self._data)]
+        self._heap[:] = [entry for entry in self._data.values()]
         heapify(self._heap)
 
     def _maybe_refresh_heap(self):
@@ -571,7 +532,7 @@ class LimitedSet(object):
     def add(self, item, now=None):
         # type: (Any, float) -> None
         """Add a new item, or reset the expiry time of an existing item."""
-        now = now or monotonic()
+        now = now or time.monotonic()
         if item in self._data:
             self.discard(item)
         entry = (now, item)
@@ -591,15 +552,14 @@ class LimitedSet(object):
             self.purge()
         elif isinstance(other, dict):
             # revokes are sent as a dict
-            for key, inserted in items(other):
+            for key, inserted in other.items():
                 if isinstance(inserted, (tuple, list)):
                     # in case someone uses ._data directly for sending update
                     inserted = inserted[0]
                 if not isinstance(inserted, float):
                     raise ValueError(
                         'Expecting float timestamp, got type '
-                        '{0!r} with value: {1}'.format(
-                            type(inserted), inserted))
+                        f'{type(inserted)!r} with value: {inserted}')
                 self.add(key, inserted)
         else:
             # XXX AVOID THIS, it could keep old data if more parties
@@ -622,7 +582,7 @@ class LimitedSet(object):
             now (float): Time of purging -- by default right now.
                 This can be useful for unit testing.
         """
-        now = now or monotonic()
+        now = now or time.monotonic()
         now = now() if isinstance(now, Callable) else now
         if self.maxlen:
             while len(self._data) > self.maxlen:
@@ -635,8 +595,7 @@ class LimitedSet(object):
                     break  # oldest item hasn't expired yet
                 self.pop()
 
-    def pop(self, default=None):
-        # type: (Any) -> Any
+    def pop(self, default: Any = None) -> Any:
         """Remove and return the oldest item, or :const:`None` when empty."""
         while self._heap:
             _, item = heappop(self._heap)
@@ -662,15 +621,11 @@ class LimitedSet(object):
             >>> r == s
             True
         """
-        return {key: inserted for inserted, key in values(self._data)}
+        return {key: inserted for inserted, key in self._data.values()}
 
     def __eq__(self, other):
         # type: (Any) -> bool
         return self._data == other._data
-
-    def __ne__(self, other):
-        # type: (Any) -> bool
-        return not self.__eq__(other)
 
     def __repr__(self):
         # type: () -> str
@@ -680,7 +635,7 @@ class LimitedSet(object):
 
     def __iter__(self):
         # type: () -> Iterable
-        return (i for _, i in sorted(values(self._data)))
+        return (i for _, i in sorted(self._data.values()))
 
     def __len__(self):
         # type: () -> int
@@ -707,28 +662,25 @@ class LimitedSet(object):
         return len(self._heap) * 100 / max(len(self._data), 1) - 100
 
 
-MutableSet.register(LimitedSet)  # noqa: E305
+MutableSet.register(LimitedSet)
 
 
-class Evictable(object):
+class Evictable:
     """Mixin for classes supporting the ``evict`` method."""
 
     Empty = Empty
 
-    def evict(self):
-        # type: () -> None
+    def evict(self) -> None:
         """Force evict until maxsize is enforced."""
         self._evict(range=count)
 
-    def _evict(self, limit=100, range=range):
-        # type: (int) -> None
+    def _evict(self, limit: int = 100, range=range) -> None:
         try:
             [self._evict1() for _ in range(limit)]
         except IndexError:
             pass
 
-    def _evict1(self):
-        # type: () -> None
+    def _evict1(self) -> None:
         if self._evictcount <= self.maxsize:
             raise IndexError()
         try:
@@ -737,7 +689,6 @@ class Evictable(object):
             raise IndexError()
 
 
-@python_2_unicode_compatible
 class Messagebuffer(Evictable):
     """A buffer of pending messages."""
 
@@ -777,9 +728,7 @@ class Messagebuffer(Evictable):
 
     def __repr__(self):
         # type: () -> str
-        return '<{0}: {1}/{2}>'.format(
-            type(self).__name__, len(self), self.maxsize,
-        )
+        return f'<{type(self).__name__}: {len(self)}/{self.maxsize}>'
 
     def __iter__(self):
         # type: () -> Iterable
@@ -793,8 +742,7 @@ class Messagebuffer(Evictable):
         # type: () -> int
         return self._len()
 
-    def __contains__(self, item):
-        # type: () -> bool
+    def __contains__(self, item) -> bool:
         return item in self.data
 
     def __reversed__(self):
@@ -811,10 +759,9 @@ class Messagebuffer(Evictable):
         return len(self)
 
 
-Sequence.register(Messagebuffer)  # noqa: E305
+Sequence.register(Messagebuffer)
 
 
-@python_2_unicode_compatible
 class BufferMap(OrderedDict, Evictable):
     """Map of buffers."""
 
@@ -827,12 +774,12 @@ class BufferMap(OrderedDict, Evictable):
 
     def __init__(self, maxsize, iterable=None, bufmaxsize=1000):
         # type: (int, Iterable, int) -> None
-        super(BufferMap, self).__init__()
+        super().__init__()
         self.maxsize = maxsize
         self.bufmaxsize = 1000
         if iterable:
             self.update(iterable)
-        self.total = sum(len(buf) for buf in items(self))
+        self.total = sum(len(buf) for buf in self.items())
 
     def put(self, key, item):
         # type: (Any, Any) -> None
@@ -908,9 +855,7 @@ class BufferMap(OrderedDict, Evictable):
 
     def __repr__(self):
         # type: () -> str
-        return '<{0}: {1}/{2}>'.format(
-            type(self).__name__, self.total, self.maxsize,
-        )
+        return f'<{type(self).__name__}: {self.total}/{self.maxsize}>'
 
     @property
     def _evictcount(self):

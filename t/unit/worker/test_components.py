@@ -1,13 +1,13 @@
-from __future__ import absolute_import, unicode_literals
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, patch, skip
 
+import t.skip
 from celery.exceptions import ImproperlyConfigured
 from celery.worker.components import Beat, Hub, Pool, Timer
 
 # some of these are tested in test_worker, so I've only written tests
-# here to complete coverage.  Should move everyting to this module at some
+# here to complete coverage.  Should move everything to this module at some
 # point [-ask]
 
 
@@ -22,7 +22,7 @@ class test_Timer:
 
 class test_Hub:
 
-    def setup(self):
+    def setup_method(self):
         self.w = Mock(name='w')
         self.hub = Hub(self.w)
         self.w.hub = Mock(name='w.hub')
@@ -61,7 +61,7 @@ class test_Pool:
         comp.close(w)
         comp.terminate(w)
 
-    @skip.if_win32()
+    @t.skip.if_win32
     def test_create_when_eventloop(self):
         w = Mock()
         w.use_eventloop = w.pool_putlocks = w.pool_cls.uses_semaphore = True

@@ -81,7 +81,8 @@ with :meth:`@worker_main`:
     def add(x, y): return x + y
 
     if __name__ == '__main__':
-        app.worker_main()
+        args = ['worker', '--loglevel=INFO']
+        app.worker_main(argv=args)
 
 When this module is executed the tasks will be named starting with "``__main__``",
 but when the module is imported by another process, say to call a task,
@@ -257,7 +258,7 @@ You can then specify the configuration module to use via the environment:
 
 .. code-block:: console
 
-    $ CELERY_CONFIG_MODULE="celeryconfig.prod" celery worker -l info
+    $ CELERY_CONFIG_MODULE="celeryconfig.prod" celery worker -l INFO
 
 .. _app-censored-config:
 
@@ -360,28 +361,21 @@ Finalizing the object will:
 .. topic:: The "default app"
 
     Celery didn't always have applications, it used to be that
-    there was only a module-based API, and for backwards compatibility
-    the old API is still there until the release of Celery 5.0.
+    there was only a module-based API. A compatibility API was
+    available at the old location until the release of Celery 5.0,
+    but has been removed.
 
     Celery always creates a special app - the "default app",
     and this is used if no custom application has been instantiated.
 
-    The :mod:`celery.task` module is there to accommodate the old API,
-    and shouldn't be used if you use a custom app. You should
-    always use the methods on the app instance, not the module based API.
-
-    For example, the old Task base class enables many compatibility
-    features where some may be incompatible with newer features, such
-    as task methods:
+    The :mod:`celery.task` module is no longer available. Use the
+    methods on the app instance, not the module based API:
 
     .. code-block:: python
 
         from celery.task import Task   # << OLD Task base class.
 
         from celery import Task        # << NEW base class.
-
-    The new base class is recommended even if you use the old
-    module-based API.
 
 
 Breaking the chain
@@ -400,7 +394,7 @@ The following example is considered bad practice:
 
     from celery import current_app
 
-    class Scheduler(object):
+    class Scheduler:
 
         def run(self):
             app = current_app
@@ -409,7 +403,7 @@ Instead it should take the ``app`` as an argument:
 
 .. code-block:: python
 
-    class Scheduler(object):
+    class Scheduler:
 
         def __init__(self, app):
             self.app = app
@@ -421,7 +415,7 @@ so that everything also works in the module-based compatibility API
 
     from celery.app import app_or_default
 
-    class Scheduler(object):
+    class Scheduler:
         def __init__(self, app=None):
             self.app = app_or_default(app)
 
@@ -431,12 +425,12 @@ chain breaks:
 
 .. code-block:: console
 
-    $ CELERY_TRACE_APP=1 celery worker -l info
+    $ CELERY_TRACE_APP=1 celery worker -l INFO
 
 
 .. topic:: Evolving the API
 
-    Celery has changed a lot in the 7 years since it was initially
+    Celery has changed a lot from 2009 since it was initially
     created.
 
     For example, in the beginning it was possible to use any callable as
@@ -456,7 +450,7 @@ chain breaks:
 
     .. code-block:: python
 
-        from celery.task import Task
+        from celery import Task
         from celery.registry import tasks
 
         class Hello(Task):
@@ -475,16 +469,16 @@ chain breaks:
 
     .. code-block:: python
 
-        from celery.task import task
+        from celery import app
 
-        @task(queue='hipri')
+        @app.task(queue='hipri')
         def hello(to):
             return 'hello {0}'.format(to)
 
 Abstract Tasks
 ==============
 
-All tasks created using the :meth:`~@task` decorator
+All tasks created using the :meth:`@task` decorator
 will inherit from the application's base :attr:`~@Task` class.
 
 You can specify a different base class using the ``base`` argument:
@@ -506,14 +500,18 @@ class: :class:`celery.Task`.
 
         def __call__(self, *args, **kwargs):
             print('TASK STARTING: {0.name}[{0.request.id}]'.format(self))
-            return super(DebugTask, self).__call__(*args, **kwargs)
+            return self.run(*args, **kwargs)
 
 
 .. tip::
 
-    If you override the tasks ``__call__`` method, then it's very important
-    that you also call super so that the base call method can set up the
-    default request used when a task is called directly.
+    If you override the task's ``__call__`` method, then it's very important
+    that you also call ``self.run`` to execute the body of the task.  Do not
+    call ``super().__call__``.  The ``__call__`` method of the neutral base
+    class :class:`celery.Task` is only present for reference.  For optimization,
+    this has been unrolled into ``celery.app.trace.build_tracer.trace_task``
+    which calls ``run`` directly on the custom task class if no ``__call__``
+    method is defined.
 
 The neutral base class is special because it's not bound to any specific app
 yet. Once a task is bound to an app it'll read configuration to set default

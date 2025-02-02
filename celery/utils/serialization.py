@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Utilities for safely pickling exceptions."""
-from __future__ import absolute_import, unicode_literals
-
 import datetime
 import numbers
 import sys
@@ -11,19 +8,12 @@ from functools import partial
 from inspect import getmro
 from itertools import takewhile
 
-from kombu.utils.encoding import bytes_to_str, str_to_bytes
-
-from celery.five import (bytes_if_py2, items, python_2_unicode_compatible,
-                         reraise, string_t)
-
-from .encoding import safe_repr
+from kombu.utils.encoding import bytes_to_str, safe_repr, str_to_bytes
 
 try:
     import cPickle as pickle
 except ImportError:
-    import pickle  # noqa
-
-PY33 = sys.version_info >= (3, 3)
+    import pickle
 
 __all__ = (
     'UnpickleableExceptionWrapper', 'subclass_exception',
@@ -33,15 +23,16 @@ __all__ = (
 )
 
 #: List of base classes we probably don't want to reduce to.
-try:
-    unwanted_base_classes = (StandardError, Exception, BaseException, object)
-except NameError:  # pragma: no cover
-    unwanted_base_classes = (Exception, BaseException, object)  # py3k
+unwanted_base_classes = (Exception, BaseException, object)
+
+STRTOBOOL_DEFAULT_TABLE = {'false': False, 'no': False, '0': False,
+                           'true': True, 'yes': True, '1': True,
+                           'on': True, 'off': False}
 
 
-def subclass_exception(name, parent, module):  # noqa
+def subclass_exception(name, parent, module):
     """Create new exception class."""
-    return type(bytes_if_py2(name), (parent,), {'__module__': module})
+    return type(name, (parent,), {'__module__': module})
 
 
 def find_pickleable_exception(exc, loads=pickle.loads,
@@ -106,7 +97,6 @@ def ensure_serializable(items, encoder):
     return tuple(safe_exc_args)
 
 
-@python_2_unicode_compatible
 class UnpickleableExceptionWrapper(Exception):
     """Wraps unpickleable exceptions.
 
@@ -138,12 +128,15 @@ class UnpickleableExceptionWrapper(Exception):
     exc_args = None
 
     def __init__(self, exc_module, exc_cls_name, exc_args, text=None):
-        safe_exc_args = ensure_serializable(exc_args, pickle.dumps)
+        safe_exc_args = ensure_serializable(
+            exc_args, lambda v: pickle.loads(pickle.dumps(v))
+        )
         self.exc_module = exc_module
         self.exc_cls_name = exc_cls_name
         self.exc_args = safe_exc_args
         self.text = text
-        Exception.__init__(self, exc_module, exc_cls_name, safe_exc_args, text)
+        super().__init__(exc_module, exc_cls_name, safe_exc_args,
+                         text)
 
     def restore(self):
         return create_exception_cls(self.exc_cls_name,
@@ -154,10 +147,15 @@ class UnpickleableExceptionWrapper(Exception):
 
     @classmethod
     def from_exception(cls, exc):
-        return cls(exc.__class__.__module__,
-                   exc.__class__.__name__,
-                   getattr(exc, 'args', []),
-                   safe_repr(exc))
+        res = cls(
+            exc.__class__.__module__,
+            exc.__class__.__name__,
+            getattr(exc, 'args', []),
+            safe_repr(exc)
+        )
+        if hasattr(exc, "__traceback__"):
+            res = res.with_traceback(exc.__traceback__)
+        return res
 
 
 def get_pickleable_exception(exc):
@@ -199,18 +197,18 @@ def b64decode(s):
     return base64decode(str_to_bytes(s))
 
 
-def strtobool(term, table={'false': False, 'no': False, '0': False,
-                           'true': True, 'yes': True, '1': True,
-                           'on': True, 'off': False}):
+def strtobool(term, table=None):
     """Convert common terms for true/false to bool.
 
     Examples (true/false/yes/no/on/off/1/0).
     """
-    if isinstance(term, string_t):
+    if table is None:
+        table = STRTOBOOL_DEFAULT_TABLE
+    if isinstance(term, str):
         try:
             return table[term.lower()]
         except KeyError:
-            raise TypeError('Cannot coerce {0!r} to type bool'.format(term))
+            raise TypeError(f'Cannot coerce {term!r} to type bool')
     return term
 
 
@@ -233,7 +231,7 @@ def _datetime_to_json(dt):
 
 
 def jsonify(obj,
-            builtin_types=(numbers.Real, string_t), key=None,
+            builtin_types=(numbers.Real, str), key=None,
             keyfilter=None,
             unknown_type_filter=None):
     """Transform object making it suitable for json serialization."""
@@ -251,7 +249,7 @@ def jsonify(obj,
         return [_jsonify(v) for v in obj]
     elif isinstance(obj, dict):
         return {
-            k: _jsonify(v, key=k) for k, v in items(obj)
+            k: _jsonify(v, key=k) for k, v in obj.items()
             if (keyfilter(k) if keyfilter else 1)
         }
     elif isinstance(obj, (datetime.date, datetime.time)):
@@ -261,32 +259,15 @@ def jsonify(obj,
     else:
         if unknown_type_filter is None:
             raise ValueError(
-                'Unsupported type: {0!r} {1!r} (parent: {2})'.format(
-                    type(obj), obj, key))
+                f'Unsupported type: {type(obj)!r} {obj!r} (parent: {key})'
+            )
         return unknown_type_filter(obj)
 
 
-# Since PyPy 3 targets Python 3.2, 'raise exc from None' will
-# raise a TypeError so we need to look for Python 3.3 or newer
-if PY33:  # pragma: no cover
-    from vine.five import exec_
-    _raise_with_context = None  # for flake8
-    exec_("""def _raise_with_context(exc, ctx): raise exc from ctx""")
-
-    def raise_with_context(exc):
-        exc_info = sys.exc_info()
-        if not exc_info:
-            raise exc
-        elif exc_info[1] is exc:
-            raise
-        _raise_with_context(exc, exc_info[1])
-else:
-    def raise_with_context(exc):
-        exc_info = sys.exc_info()
-        if not exc_info:
-            raise exc
-        if exc_info[1] is exc:
-            raise
-        elif exc_info[2]:
-            reraise(type(exc), exc, exc_info[2])
+def raise_with_context(exc):
+    exc_info = sys.exc_info()
+    if not exc_info:
         raise exc
+    elif exc_info[1] is exc:
+        raise
+    raise exc from exc_info[1]

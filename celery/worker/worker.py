@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """WorkController can be used to instantiate in-process workers.
 
 The command-line interface for the worker is in :mod:`celery.bin.worker`,
@@ -12,10 +11,11 @@ global side-effects (i.e., except for the global state stored in
 The worker consists of several components, all managed by bootsteps
 (mod:`celery.bootsteps`).
 """
-from __future__ import absolute_import, unicode_literals
 
 import os
 import sys
+from datetime import datetime, timezone
+from time import sleep
 
 from billiard import cpu_count
 from kombu.utils.compat import detect_environment
@@ -24,9 +24,7 @@ from celery import bootsteps
 from celery import concurrency as _concurrency
 from celery import signals
 from celery.bootsteps import RUN, TERMINATE
-from celery.exceptions import (ImproperlyConfigured, TaskRevokedError,
-                               WorkerTerminate)
-from celery.five import python_2_unicode_compatible, values
+from celery.exceptions import ImproperlyConfigured, TaskRevokedError, WorkerTerminate
 from celery.platforms import EX_FAILURE, create_pidlock
 from celery.utils.imports import reload_from_cwd
 from celery.utils.log import mlevel
@@ -39,8 +37,8 @@ from . import state
 
 try:
     import resource
-except ImportError:  # pragma: no cover
-    resource = None  # noqa
+except ImportError:
+    resource = None
 
 
 __all__ = ('WorkController',)
@@ -62,8 +60,7 @@ defined in the `task_queues` setting.
 """
 
 
-@python_2_unicode_compatible
-class WorkController(object):
+class WorkController:
     """Unmanaged worker instance."""
 
     app = None
@@ -93,6 +90,7 @@ class WorkController(object):
     def __init__(self, app=None, hostname=None, **kwargs):
         self.app = app or self.app
         self.hostname = default_nodename(hostname)
+        self.startup_time = datetime.now(timezone.utc)
         self.app.loader.init_worker()
         self.on_before_init(**kwargs)
         self.setup_defaults(**kwargs)
@@ -191,7 +189,7 @@ class WorkController(object):
             [self.app.loader.import_task_module(m) for m in includes]
         self.include = includes
         task_modules = {task.__class__.__module__
-                        for task in values(self.app.tasks)}
+                        for task in self.app.tasks.values()}
         self.app.conf.include = tuple(set(prev) | task_modules)
 
     def prepare_args(self, **kwargs):
@@ -244,7 +242,7 @@ class WorkController(object):
                 not self.app.IS_WINDOWS)
 
     def stop(self, in_sighandler=False, exitcode=None):
-        """Graceful shutdown of the worker server."""
+        """Graceful shutdown of the worker server (Warm shutdown)."""
         if exitcode is not None:
             self.exitcode = exitcode
         if self.blueprint.state == RUN:
@@ -254,7 +252,7 @@ class WorkController(object):
         self._send_worker_shutdown()
 
     def terminate(self, in_sighandler=False):
-        """Not so graceful shutdown of the worker server."""
+        """Not so graceful shutdown of the worker server (Cold shutdown)."""
         if self.blueprint.state != TERMINATE:
             self.signal_consumer_close()
             if not in_sighandler or self.pool.signal_safe:
@@ -296,9 +294,11 @@ class WorkController(object):
             return reload_from_cwd(sys.modules[module], reloader)
 
     def info(self):
+        uptime = datetime.now(timezone.utc) - self.startup_time
         return {'total': self.state.total_count,
                 'pid': os.getpid(),
-                'clock': str(self.app.clock)}
+                'clock': str(self.app.clock),
+                'uptime': round(uptime.total_seconds())}
 
     def rusage(self):
         if resource is None:
@@ -408,3 +408,28 @@ class WorkController(object):
             'worker_disable_rate_limits', disable_rate_limits,
         )
         self.worker_lost_wait = either('worker_lost_wait', worker_lost_wait)
+
+    def wait_for_soft_shutdown(self):
+        """Wait :setting:`worker_soft_shutdown_timeout` if soft shutdown is enabled.
+
+        To enable soft shutdown, set the :setting:`worker_soft_shutdown_timeout` in the
+        configuration. Soft shutdown can be used to allow the worker to finish processing
+        few more tasks before initiating a cold shutdown. This mechanism allows the worker
+        to finish short tasks that are already in progress and requeue long-running tasks
+        to be picked up by another worker.
+
+        .. warning::
+            If there are no tasks in the worker, the worker will not wait for the
+            soft shutdown timeout even if it is set as it makes no sense to wait for
+            the timeout when there are no tasks to process.
+        """
+        app = self.app
+        requests = tuple(state.active_requests)
+
+        if app.conf.worker_enable_soft_shutdown_on_idle:
+            requests = True
+
+        if app.conf.worker_soft_shutdown_timeout > 0 and requests:
+            log = f"Initiating Soft Shutdown, terminating in {app.conf.worker_soft_shutdown_timeout} seconds"
+            logger.warning(log)
+            sleep(app.conf.worker_soft_shutdown_timeout)

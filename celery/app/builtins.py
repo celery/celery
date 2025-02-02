@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-
 """Built-in Tasks.
 
 The built-in tasks are always available in all app instances.
 """
-from __future__ import absolute_import, unicode_literals
-
 from celery._state import connect_on_app_finalize
 from celery.utils.log import get_logger
 
@@ -48,7 +45,7 @@ def add_unlock_chord_task(app):
     from celery.result import allow_join_result, result_from_tuple
 
     @app.task(name='celery.chord_unlock', max_retries=None, shared=False,
-              default_retry_delay=1, ignore_result=True, lazy=False, bind=True)
+              default_retry_delay=app.conf.result_chord_retry_interval, ignore_result=True, lazy=False, bind=True)
     def unlock_chord(self, group_id, callback, interval=None,
                      max_retries=None, result=None,
                      Result=app.AsyncResult, GroupResult=app.GroupResult,
@@ -78,11 +75,14 @@ def add_unlock_chord_task(app):
         callback = maybe_signature(callback, app=app)
         try:
             with allow_join_result():
-                ret = j(timeout=3.0, propagate=True)
+                ret = j(
+                    timeout=app.conf.result_chord_join_timeout,
+                    propagate=True,
+                )
         except Exception as exc:  # pylint: disable=broad-except
             try:
                 culprit = next(deps._failed_join_report())
-                reason = 'Dependency {0.id} raised {1!r}'.format(culprit, exc)
+                reason = f'Dependency {culprit.id} raised {exc!r}'
             except StopIteration:
                 reason = repr(exc)
             logger.exception('Chord %r raised: %r', group_id, exc)
@@ -94,7 +94,7 @@ def add_unlock_chord_task(app):
                 logger.exception('Chord %r raised: %r', group_id, exc)
                 app.backend.chord_error_from_stack(
                     callback,
-                    exc=ChordError('Callback error: {0!r}'.format(exc)),
+                    exc=ChordError(f'Callback error: {exc!r}'),
                 )
     return unlock_chord
 
@@ -166,7 +166,8 @@ def add_chain_task(app):
 @connect_on_app_finalize
 def add_chord_task(app):
     """No longer used, but here for backwards compatibility."""
-    from celery import group, chord as _chord
+    from celery import chord as _chord
+    from celery import group
     from celery.canvas import maybe_signature
 
     @app.task(name='celery.chord', bind=True, ignore_result=False,

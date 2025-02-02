@@ -1,6 +1,4 @@
 """Worker <-> Worker communication Bootstep."""
-from __future__ import absolute_import, unicode_literals
-
 from collections import defaultdict
 from functools import partial
 from heapq import heappush
@@ -8,9 +6,9 @@ from operator import itemgetter
 
 from kombu import Consumer
 from kombu.asynchronous.semaphore import DummyLock
+from kombu.exceptions import ContentDisallowed, DecodeError
 
 from celery import bootsteps
-from celery.five import values
 from celery.utils.log import get_logger
 from celery.utils.objects import Bunch
 
@@ -74,7 +72,7 @@ class Gossip(bootsteps.ConsumerStep):
             'task': self.call_task
         }
 
-        super(Gossip, self).__init__(c, **kwargs)
+        super().__init__(c, **kwargs)
 
     def compatible_transport(self, app):
         with app.connection_for_read() as conn:
@@ -101,12 +99,12 @@ class Gossip(bootsteps.ConsumerStep):
             return logger.exception('election request missing field %s', exc)
         heappush(
             self.consensus_requests[id_],
-            (clock, '%s.%s' % (hostname, pid), topic, action),
+            (clock, f'{hostname}.{pid}', topic, action),
         )
         self.dispatcher.send('worker-elect-ack', id=id_)
 
     def start(self, c):
-        super(Gossip, self).start(c)
+        super().start(c)
         self.dispatcher = c.event_dispatcher
 
     def on_elect_ack(self, event):
@@ -163,7 +161,7 @@ class Gossip(bootsteps.ConsumerStep):
     def periodic(self):
         workers = self.state.workers
         dirty = set()
-        for worker in values(workers):
+        for worker in workers.values():
             if not worker.alive:
                 dirty.add(worker)
                 self.on_node_lost(worker)
@@ -178,6 +176,7 @@ class Gossip(bootsteps.ConsumerStep):
             channel,
             queues=[ev.queue],
             on_message=partial(self.on_message, ev.event_from_message),
+            accept=ev.accept,
             no_ack=True
         )]
 
@@ -198,7 +197,10 @@ class Gossip(bootsteps.ConsumerStep):
         hostname = (message.headers.get('hostname') or
                     message.payload['hostname'])
         if hostname != self.hostname:
-            _, event = prepare(message.payload)
-            self.update_state(event)
+            try:
+                _, event = prepare(message.payload)
+                self.update_state(event)
+            except (DecodeError, ContentDisallowed, TypeError) as exc:
+                logger.error(exc)
         else:
             self.clock.forward()

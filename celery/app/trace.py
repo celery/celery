@@ -1,18 +1,16 @@
-# -*- coding: utf-8 -*-
 """Trace task execution.
 
 This module defines how the task execution is traced:
 errors are recorded, handlers are applied and so on.
 """
-from __future__ import absolute_import, unicode_literals
-
 import logging
 import os
 import sys
+import time
 from collections import namedtuple
 from warnings import warn
 
-from billiard.einfo import ExceptionInfo
+from billiard.einfo import ExceptionInfo, ExceptionWithTraceback
 from kombu.exceptions import EncodeError
 from kombu.serialization import loads as loads_message
 from kombu.serialization import prepare_accept_content
@@ -22,15 +20,13 @@ from celery import current_app, group, signals, states
 from celery._state import _task_stack
 from celery.app.task import Context
 from celery.app.task import Task as BaseTask
-from celery.exceptions import Ignore, InvalidTaskError, Reject, Retry
-from celery.five import monotonic, text_t
+from celery.exceptions import BackendGetMetaError, Ignore, InvalidTaskError, Reject, Retry
+from celery.result import AsyncResult
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.objects import mro_lookup
 from celery.utils.saferepr import saferepr
-from celery.utils.serialization import (get_pickleable_etype,
-                                        get_pickleable_exception,
-                                        get_pickled_exception)
+from celery.utils.serialization import get_pickleable_etype, get_pickleable_exception, get_pickled_exception
 
 # ## ---
 # This is the heart of the worker, the inner loop so to speak.
@@ -49,7 +45,14 @@ __all__ = (
     'setup_worker_optimizations', 'reset_worker_optimizations',
 )
 
+from celery.worker.state import successful_requests
+
 logger = get_logger(__name__)
+
+#: Format string used to log task receipt.
+LOG_RECEIVED = """\
+Task %(name)s[%(id)s] received\
+"""
 
 #: Format string used to log task success.
 LOG_SUCCESS = """\
@@ -82,7 +85,8 @@ Task %(name)s[%(id)s] retry: %(exc)s\
 """
 
 log_policy_t = namedtuple(
-    'log_policy_t', ('format', 'description', 'severity', 'traceback', 'mail'),
+    'log_policy_t',
+    ('format', 'description', 'severity', 'traceback', 'mail'),
 )
 
 log_policy_reject = log_policy_t(LOG_REJECTED, 'rejected', logging.WARN, 1, 1)
@@ -150,7 +154,7 @@ def get_task_name(request, default):
     return getattr(request, 'shadow', None) or default
 
 
-class TraceInfo(object):
+class TraceInfo:
     """Information about task execution."""
 
     __slots__ = ('state', 'retval')
@@ -161,9 +165,13 @@ class TraceInfo(object):
 
     def handle_error_state(self, task, req,
                            eager=False, call_errbacks=True):
-        store_errors = not eager
         if task.ignore_result:
             store_errors = task.store_errors_even_if_ignored
+        elif eager and task.store_eager_result:
+            store_errors = True
+        else:
+            store_errors = not eager
+
         return {
             RETRY: self.handle_retry,
             FAILURE: self.handle_failure,
@@ -195,7 +203,7 @@ class TraceInfo(object):
             info(LOG_RETRY, {
                 'id': req.id,
                 'name': get_task_name(req, task.name),
-                'exc': text_t(reason),
+                'exc': str(reason),
             })
             return einfo
         finally:
@@ -203,39 +211,44 @@ class TraceInfo(object):
 
     def handle_failure(self, task, req, store_errors=True, call_errbacks=True):
         """Handle exception."""
-        _, _, tb = sys.exc_info()
-        try:
-            exc = self.retval
-            # make sure we only send pickleable exceptions back to parent.
-            einfo = ExceptionInfo()
-            einfo.exception = get_pickleable_exception(einfo.exception)
-            einfo.type = get_pickleable_etype(einfo.type)
+        orig_exc = self.retval
 
-            task.backend.mark_as_failure(
-                req.id, exc, einfo.traceback,
-                request=req, store_result=store_errors,
-                call_errbacks=call_errbacks,
-            )
+        exc = get_pickleable_exception(orig_exc)
+        if exc.__traceback__ is None:
+            # `get_pickleable_exception` may have created a new exception without
+            # a traceback.
+            _, _, exc.__traceback__ = sys.exc_info()
 
-            task.on_failure(exc, req.id, req.args, req.kwargs, einfo)
-            signals.task_failure.send(sender=task, task_id=req.id,
-                                      exception=exc, args=req.args,
-                                      kwargs=req.kwargs,
-                                      traceback=tb,
-                                      einfo=einfo)
-            self._log_error(task, req, einfo)
-            return einfo
-        finally:
-            del tb
+        exc_type = get_pickleable_etype(type(orig_exc))
+
+        # make sure we only send pickleable exceptions back to parent.
+        einfo = ExceptionInfo(exc_info=(exc_type, exc, exc.__traceback__))
+
+        task.backend.mark_as_failure(
+            req.id, exc, einfo.traceback,
+            request=req, store_result=store_errors,
+            call_errbacks=call_errbacks,
+        )
+
+        task.on_failure(exc, req.id, req.args, req.kwargs, einfo)
+        signals.task_failure.send(sender=task, task_id=req.id,
+                                  exception=exc, args=req.args,
+                                  kwargs=req.kwargs,
+                                  traceback=exc.__traceback__,
+                                  einfo=einfo)
+        self._log_error(task, req, einfo)
+        return einfo
 
     def _log_error(self, task, req, einfo):
         eobj = einfo.exception = get_pickled_exception(einfo.exception)
+        if isinstance(eobj, ExceptionWithTraceback):
+            eobj = einfo.exception = eobj.exc
         exception, traceback, exc_info, sargs, skwargs = (
             safe_repr(eobj),
             safe_str(einfo.traceback),
             einfo.exc_info,
-            safe_repr(req.args),
-            safe_repr(req.kwargs),
+            req.get('argsrepr') or safe_repr(req.args),
+            req.get('kwargsrepr') or safe_repr(req.kwargs),
         )
         policy = get_log_policy(task, einfo, eobj)
 
@@ -256,9 +269,31 @@ class TraceInfo(object):
                    extra={'data': context})
 
 
+def traceback_clear(exc=None):
+    # Cleared Tb, but einfo still has a reference to Traceback.
+    # exc cleans up the Traceback at the last moment that can be revealed.
+    tb = None
+    if exc is not None:
+        if hasattr(exc, '__traceback__'):
+            tb = exc.__traceback__
+        else:
+            _, _, tb = sys.exc_info()
+    else:
+        _, _, tb = sys.exc_info()
+
+    while tb is not None:
+        try:
+            tb.tb_frame.clear()
+            tb.tb_frame.f_locals
+        except RuntimeError:
+            # Ignore the exception raised if the frame is still executing.
+            pass
+        tb = tb.tb_next
+
+
 def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                  Info=TraceInfo, eager=False, propagate=False, app=None,
-                 monotonic=monotonic, trace_ok_t=trace_ok_t,
+                 monotonic=time.monotonic, trace_ok_t=trace_ok_t,
                  IGNORE_STATES=IGNORE_STATES):
     """Return a function that traces task execution.
 
@@ -283,7 +318,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         :keyword request: Request dict.
 
     """
-    # noqa: C901
+
     # pylint: disable=too-many-statements
 
     # If the task doesn't define a custom __call__ method
@@ -292,26 +327,35 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     fun = task if task_has_custom(task, '__call__') else task.run
 
     loader = loader or app.loader
-    backend = task.backend
     ignore_result = task.ignore_result
     track_started = task.track_started
     track_started = not eager and (task.track_started and not ignore_result)
-    publish_result = not eager and not ignore_result
+
+    # #6476
+    if eager and not ignore_result and task.store_eager_result:
+        publish_result = True
+    else:
+        publish_result = not eager and not ignore_result
+
+    deduplicate_successful_tasks = ((app.conf.task_acks_late or task.acks_late)
+                                    and app.conf.worker_deduplicate_successful_tasks
+                                    and app.backend.persistent)
+
     hostname = hostname or gethostname()
+    inherit_parent_priority = app.conf.task_inherit_parent_priority
 
     loader_task_init = loader.on_task_init
     loader_cleanup = loader.on_process_cleanup
 
+    task_before_start = None
     task_on_success = None
     task_after_return = None
+    if task_has_custom(task, 'before_start'):
+        task_before_start = task.before_start
     if task_has_custom(task, 'on_success'):
         task_on_success = task.on_success
     if task_has_custom(task, 'after_return'):
         task_after_return = task.after_return
-
-    store_result = backend.store_result
-    mark_as_done = backend.mark_as_done
-    backend_cleanup = backend.process_cleanup
 
     pid = os.getpid()
 
@@ -330,7 +374,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     from celery import canvas
     signature = canvas.maybe_signature  # maybe_ does not clone if already
 
-    def on_error(request, exc, uuid, state=FAILURE, call_errbacks=True):
+    def on_error(request, exc, state=FAILURE, call_errbacks=True):
         if propagate:
             raise
         I = Info(state, exc)
@@ -360,10 +404,34 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
             except AttributeError:
                 raise InvalidTaskError(
                     'Task keyword arguments is not a mapping')
-            push_task(task)
+
             task_request = Context(request or {}, args=args,
                                    called_directly=False, kwargs=kwargs)
+
+            redelivered = (task_request.delivery_info
+                           and task_request.delivery_info.get('redelivered', False))
+            if deduplicate_successful_tasks and redelivered:
+                if task_request.id in successful_requests:
+                    return trace_ok_t(R, I, T, Rstr)
+                r = AsyncResult(task_request.id, app=app)
+
+                try:
+                    state = r.state
+                except BackendGetMetaError:
+                    pass
+                else:
+                    if state == SUCCESS:
+                        info(LOG_IGNORED, {
+                            'id': task_request.id,
+                            'name': get_task_name(task_request, name),
+                            'description': 'Task already completed successfully.'
+                        })
+                        return trace_ok_t(R, I, T, Rstr)
+
+            push_task(task)
             root_id = task_request.root_id or uuid
+            task_priority = task_request.delivery_info.get('priority') if \
+                inherit_parent_priority else None
             push_request(task_request)
             try:
                 # -*- PRE -*-
@@ -372,28 +440,35 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                 args=args, kwargs=kwargs)
                 loader_task_init(uuid, task)
                 if track_started:
-                    store_result(
+                    task.backend.store_result(
                         uuid, {'pid': pid, 'hostname': hostname}, STARTED,
                         request=task_request,
                     )
 
                 # -*- TRACE -*-
                 try:
+                    if task_before_start:
+                        task_before_start(uuid, args, kwargs)
+
                     R = retval = fun(*args, **kwargs)
                     state = SUCCESS
                 except Reject as exc:
                     I, R = Info(REJECTED, exc), ExceptionInfo(internal=True)
                     state, retval = I.state, I.retval
                     I.handle_reject(task, task_request)
+                    traceback_clear(exc)
                 except Ignore as exc:
                     I, R = Info(IGNORED, exc), ExceptionInfo(internal=True)
                     state, retval = I.state, I.retval
                     I.handle_ignore(task, task_request)
+                    traceback_clear(exc)
                 except Retry as exc:
                     I, R, state, retval = on_error(
-                        task_request, exc, uuid, RETRY, call_errbacks=False)
+                        task_request, exc, RETRY, call_errbacks=False)
+                    traceback_clear(exc)
                 except Exception as exc:
-                    I, R, state, retval = on_error(task_request, exc, uuid)
+                    I, R, state, retval = on_error(task_request, exc)
+                    traceback_clear(exc)
                 except BaseException:
                     raise
                 else:
@@ -419,15 +494,18 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                     group_.apply_async(
                                         (retval,),
                                         parent_id=uuid, root_id=root_id,
+                                        priority=task_priority
                                     )
                                 if sigs:
                                     group(sigs, app=app).apply_async(
                                         (retval,),
                                         parent_id=uuid, root_id=root_id,
+                                        priority=task_priority
                                     )
                             else:
                                 signature(callbacks[0], app=app).apply_async(
                                     (retval,), parent_id=uuid, root_id=root_id,
+                                    priority=task_priority
                                 )
 
                         # execute first task in chain
@@ -437,12 +515,13 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             _chsig.apply_async(
                                 (retval,), chain=chain,
                                 parent_id=uuid, root_id=root_id,
+                                priority=task_priority
                             )
-                        mark_as_done(
+                        task.backend.mark_as_done(
                             uuid, retval, task_request, publish_result,
                         )
                     except EncodeError as exc:
-                        I, R, state, retval = on_error(task_request, exc, uuid)
+                        I, R, state, retval = on_error(task_request, exc)
                     else:
                         Rstr = saferepr(R, resultrepr_maxsize)
                         T = monotonic() - time_start
@@ -456,6 +535,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                 'name': get_task_name(task_request, name),
                                 'return_value': Rstr,
                                 'runtime': T,
+                                'args': task_request.get('argsrepr') or safe_repr(args),
+                                'kwargs': task_request.get('kwargsrepr') or safe_repr(kwargs),
                             })
 
                 # -* POST *-
@@ -475,7 +556,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     pop_request()
                     if not eager:
                         try:
-                            backend_cleanup()
+                            task.backend.process_cleanup()
                             loader_cleanup()
                         except (KeyboardInterrupt, SystemExit, MemoryError):
                             raise
@@ -485,29 +566,53 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         except MemoryError:
             raise
         except Exception as exc:
+            _signal_internal_error(task, uuid, args, kwargs, request, exc)
             if eager:
                 raise
             R = report_internal_error(task, exc)
             if task_request is not None:
-                I, _, _, _ = on_error(task_request, exc, uuid)
+                I, _, _, _ = on_error(task_request, exc)
         return trace_ok_t(R, I, T, Rstr)
 
     return trace_task
 
 
-def trace_task(task, uuid, args, kwargs, request={}, **opts):
+def trace_task(task, uuid, args, kwargs, request=None, **opts):
     """Trace task execution."""
+    request = {} if not request else request
     try:
         if task.__trace__ is None:
             task.__trace__ = build_tracer(task.name, task, **opts)
         return task.__trace__(uuid, args, kwargs, request)
     except Exception as exc:
-        return trace_ok_t(report_internal_error(task, exc), None, 0.0, None)
+        _signal_internal_error(task, uuid, args, kwargs, request, exc)
+        return trace_ok_t(report_internal_error(task, exc), TraceInfo(FAILURE, exc), 0.0, None)
 
 
-def _trace_task_ret(name, uuid, request, body, content_type,
-                    content_encoding, loads=loads_message, app=None,
-                    **extra_request):
+def _signal_internal_error(task, uuid, args, kwargs, request, exc):
+    """Send a special `internal_error` signal to the app for outside body errors."""
+    try:
+        _, _, tb = sys.exc_info()
+        einfo = ExceptionInfo()
+        einfo.exception = get_pickleable_exception(einfo.exception)
+        einfo.type = get_pickleable_etype(einfo.type)
+        signals.task_internal_error.send(
+            sender=task,
+            task_id=uuid,
+            args=args,
+            kwargs=kwargs,
+            request=request,
+            exception=exc,
+            traceback=tb,
+            einfo=einfo,
+        )
+    finally:
+        del tb
+
+
+def trace_task_ret(name, uuid, request, body, content_type,
+                   content_encoding, loads=loads_message, app=None,
+                   **extra_request):
     app = app or current_app._get_current_object()
     embed = None
     if content_type:
@@ -527,12 +632,10 @@ def _trace_task_ret(name, uuid, request, body, content_type,
     return (1, R, T) if I else (0, Rstr, T)
 
 
-trace_task_ret = _trace_task_ret  # noqa: E305
-
-
-def _fast_trace_task(task, uuid, request, body, content_type,
-                     content_encoding, loads=loads_message, _loc=_localized,
-                     hostname=None, **_):
+def fast_trace_task(task, uuid, request, body, content_type,
+                    content_encoding, loads=loads_message, _loc=None,
+                    hostname=None, **_):
+    _loc = _localized if not _loc else _loc
     embed = None
     tasks, accept, hostname = _loc
     if content_type:
@@ -557,7 +660,7 @@ def report_internal_error(task, exc):
         _value = task.backend.prepare_exception(exc, 'pickle')
         exc_info = ExceptionInfo((_type, _value, _tb), internal=True)
         warn(RuntimeWarning(
-            'Exception raised outside body: {0!r}:\n{1}'.format(
+            'Exception raised outside body: {!r}:\n{}'.format(
                 exc, exc_info.traceback)))
         return exc_info
     finally:
@@ -566,8 +669,6 @@ def report_internal_error(task, exc):
 
 def setup_worker_optimizations(app, hostname=None):
     """Setup worker related optimizations."""
-    global trace_task_ret
-
     hostname = hostname or gethostname()
 
     # make sure custom Task.__call__ methods that calls super
@@ -593,16 +694,11 @@ def setup_worker_optimizations(app, hostname=None):
         hostname,
     ]
 
-    trace_task_ret = _fast_trace_task
-    from celery.worker import request as request_module
-    request_module.trace_task_ret = _fast_trace_task
-    request_module.__optimize__()
+    app.use_fast_trace_task = True
 
 
-def reset_worker_optimizations():
+def reset_worker_optimizations(app=current_app):
     """Reset previously configured optimizations."""
-    global trace_task_ret
-    trace_task_ret = _trace_task_ret
     try:
         delattr(BaseTask, '_stackprotected')
     except AttributeError:
@@ -611,8 +707,7 @@ def reset_worker_optimizations():
         BaseTask.__call__ = _patched.pop('BaseTask.__call__')
     except KeyError:
         pass
-    from celery.worker import request as request_module
-    request_module.trace_task_ret = _trace_task_ret
+    app.use_fast_trace_task = False
 
 
 def _install_stack_protection():

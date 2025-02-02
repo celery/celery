@@ -1,18 +1,16 @@
 """Async I/O backend support utilities."""
-from __future__ import absolute_import, unicode_literals
-
 import socket
 import threading
+import time
 from collections import deque
+from queue import Empty
 from time import sleep
 from weakref import WeakKeyDictionary
 
 from kombu.utils.compat import detect_environment
-from kombu.utils.objects import cached_property
 
 from celery import states
 from celery.exceptions import TimeoutError
-from celery.five import Empty, monotonic
 from celery.utils.threads import THREAD_TIMEOUT_MAX
 
 __all__ = (
@@ -32,7 +30,7 @@ def register_drainer(name):
 
 
 @register_drainer('default')
-class Drainer(object):
+class Drainer:
     """Result draining service."""
 
     def __init__(self, result_consumer):
@@ -44,16 +42,16 @@ class Drainer(object):
     def stop(self):
         pass
 
-    def drain_events_until(self, p, timeout=None, on_interval=None, wait=None):
+    def drain_events_until(self, p, timeout=None, interval=1, on_interval=None, wait=None):
         wait = wait or self.result_consumer.drain_events
-        time_start = monotonic()
+        time_start = time.monotonic()
 
         while 1:
             # Total time spent may exceed a single call to wait()
-            if timeout and monotonic() - time_start >= timeout:
+            if timeout and time.monotonic() - time_start >= timeout:
                 raise socket.timeout()
             try:
-                yield self.wait_for(p, wait, timeout=1)
+                yield self.wait_for(p, wait, timeout=interval)
             except socket.timeout:
                 pass
             if on_interval:
@@ -68,18 +66,30 @@ class Drainer(object):
 class greenletDrainer(Drainer):
     spawn = None
     _g = None
+    _drain_complete_event = None    # event, sended (and recreated) after every drain_events iteration
+
+    def _create_drain_complete_event(self):
+        """create new self._drain_complete_event object"""
+        pass
+
+    def _send_drain_complete_event(self):
+        """raise self._drain_complete_event for wakeup .wait_for"""
+        pass
 
     def __init__(self, *args, **kwargs):
-        super(greenletDrainer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._started = threading.Event()
         self._stopped = threading.Event()
         self._shutdown = threading.Event()
+        self._create_drain_complete_event()
 
     def run(self):
         self._started.set()
         while not self._stopped.is_set():
             try:
                 self.result_consumer.drain_events(timeout=1)
+                self._send_drain_complete_event()
+                self._create_drain_complete_event()
             except socket.timeout:
                 pass
         self._shutdown.set()
@@ -91,33 +101,51 @@ class greenletDrainer(Drainer):
 
     def stop(self):
         self._stopped.set()
+        self._send_drain_complete_event()
         self._shutdown.wait(THREAD_TIMEOUT_MAX)
 
     def wait_for(self, p, wait, timeout=None):
         self.start()
         if not p.ready:
-            sleep(0)
+            self._drain_complete_event.wait(timeout=timeout)
 
 
 @register_drainer('eventlet')
 class eventletDrainer(greenletDrainer):
 
-    @cached_property
-    def spawn(self):
-        from eventlet import spawn
-        return spawn
+    def spawn(self, func):
+        from eventlet import sleep, spawn
+        g = spawn(func)
+        sleep(0)
+        return g
+
+    def _create_drain_complete_event(self):
+        from eventlet.event import Event
+        self._drain_complete_event = Event()
+
+    def _send_drain_complete_event(self):
+        self._drain_complete_event.send()
 
 
 @register_drainer('gevent')
 class geventDrainer(greenletDrainer):
 
-    @cached_property
-    def spawn(self):
-        from gevent import spawn
-        return spawn
+    def spawn(self, func):
+        import gevent
+        g = gevent.spawn(func)
+        gevent.sleep(0)
+        return g
+
+    def _create_drain_complete_event(self):
+        from gevent.event import Event
+        self._drain_complete_event = Event()
+
+    def _send_drain_complete_event(self):
+        self._drain_complete_event.set()
+        self._create_drain_complete_event()
 
 
-class AsyncBackendMixin(object):
+class AsyncBackendMixin:
     """Mixin for backends that enables the async API."""
 
     def _collect_into(self, result, bucket):
@@ -134,7 +162,9 @@ class AsyncBackendMixin(object):
         # into these buckets.
         bucket = deque()
         for node in results:
-            if node._cache:
+            if not hasattr(node, '_cache'):
+                bucket.append(node)
+            elif node._cache:
                 bucket.append(node)
             else:
                 self._collect_into(node, bucket)
@@ -142,7 +172,10 @@ class AsyncBackendMixin(object):
         for _ in self._wait_for_pending(result, no_ack=no_ack, **kwargs):
             while bucket:
                 node = bucket.popleft()
-                yield node.id, node._cache
+                if not hasattr(node, '_cache'):
+                    yield node.id, node.children
+                else:
+                    yield node.id, node._cache
         while bucket:
             node = bucket.popleft()
             yield node.id, node._cache
@@ -195,6 +228,7 @@ class AsyncBackendMixin(object):
         return self.result_consumer._wait_for_pending(
             result, timeout=timeout,
             on_interval=on_interval, on_message=on_message,
+            **kwargs
         )
 
     @property
@@ -202,7 +236,7 @@ class AsyncBackendMixin(object):
         return True
 
 
-class BaseResultConsumer(object):
+class BaseResultConsumer:
     """Manager responsible for consuming result messages."""
 
     def __init__(self, backend, app, accept,

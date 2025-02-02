@@ -58,7 +58,6 @@ Contents
     tutorials/index
     faq
     changelog
-    whatsnew-4.2
     reference/index
     internals/index
     history/index

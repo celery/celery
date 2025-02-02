@@ -1,29 +1,31 @@
-# -*- coding: utf-8 -*-
 """Secure serializer."""
-from __future__ import absolute_import, unicode_literals
-
 from kombu.serialization import dumps, loads, registry
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, str_to_bytes
 
-from celery.five import bytes_if_py2
+from celery.app.defaults import DEFAULT_SECURITY_DIGEST
 from celery.utils.serialization import b64decode, b64encode
 
 from .certificate import Certificate, FSCertStore
 from .key import PrivateKey
-from .utils import reraise_errors
+from .utils import get_digest_algorithm, reraise_errors
 
 __all__ = ('SecureSerializer', 'register_auth')
 
+# Note: we guarantee that this value won't appear in the serialized data,
+# so we can use it as a separator.
+# If you change this value, make sure it's not present in the serialized data.
+DEFAULT_SEPARATOR = str_to_bytes("\x00\x01")
 
-class SecureSerializer(object):
+
+class SecureSerializer:
     """Signed serializer."""
 
     def __init__(self, key=None, cert=None, cert_store=None,
-                 digest='sha1', serializer='json'):
+                 digest=DEFAULT_SECURITY_DIGEST, serializer='json'):
         self._key = key
         self._cert = cert
         self._cert_store = cert_store
-        self._digest = bytes_if_py2(digest)
+        self._digest = get_digest_algorithm(digest)
         self._serializer = serializer
 
     def serialize(self, data):
@@ -32,7 +34,8 @@ class SecureSerializer(object):
         assert self._cert is not None
         with reraise_errors('Unable to serialize: {0!r}', (Exception,)):
             content_type, content_encoding, body = dumps(
-                bytes_to_str(data), serializer=self._serializer)
+                data, serializer=self._serializer)
+
             # What we sign is the serialized body, not the body itself.
             # this way the receiver doesn't have to decode the contents
             # to verify the signature (and thus avoiding potential flaws
@@ -51,48 +54,37 @@ class SecureSerializer(object):
                                        payload['signer'],
                                        payload['body'])
             self._cert_store[signer].verify(body, signature, self._digest)
-        return loads(bytes_to_str(body), payload['content_type'],
+        return loads(body, payload['content_type'],
                      payload['content_encoding'], force=True)
 
     def _pack(self, body, content_type, content_encoding, signer, signature,
-              sep=str_to_bytes('\x00\x01')):
+              sep=DEFAULT_SEPARATOR):
         fields = sep.join(
-            ensure_bytes(s) for s in [signer, signature, content_type,
-                                      content_encoding, body]
+            ensure_bytes(s) for s in [b64encode(signer), b64encode(signature),
+                                      content_type, content_encoding, body]
         )
         return b64encode(fields)
 
-    def _unpack(self, payload, sep=str_to_bytes('\x00\x01')):
+    def _unpack(self, payload, sep=DEFAULT_SEPARATOR):
         raw_payload = b64decode(ensure_bytes(payload))
-        first_sep = raw_payload.find(sep)
-
-        signer = raw_payload[:first_sep]
-        signer_cert = self._cert_store[signer]
-
-        sig_len = signer_cert._cert.get_pubkey().bits() >> 3
-        signature = raw_payload[
-            first_sep + len(sep):first_sep + len(sep) + sig_len
-        ]
-        end_of_sig = first_sep + len(sep) + sig_len + len(sep)
-
-        v = raw_payload[end_of_sig:].split(sep)
-
+        v = raw_payload.split(sep, maxsplit=4)
         return {
-            'signer': signer,
-            'signature': signature,
-            'content_type': bytes_to_str(v[0]),
-            'content_encoding': bytes_to_str(v[1]),
-            'body': bytes_to_str(v[2]),
+            'signer': b64decode(v[0]),
+            'signature': b64decode(v[1]),
+            'content_type': bytes_to_str(v[2]),
+            'content_encoding': bytes_to_str(v[3]),
+            'body': v[4],
         }
 
 
-def register_auth(key=None, cert=None, store=None, digest='sha1',
+def register_auth(key=None, key_password=None, cert=None, store=None,
+                  digest=DEFAULT_SECURITY_DIGEST,
                   serializer='json'):
     """Register security serializer."""
-    s = SecureSerializer(key and PrivateKey(key),
+    s = SecureSerializer(key and PrivateKey(key, password=key_password),
                          cert and Certificate(cert),
                          store and FSCertStore(store),
-                         digest=digest, serializer=serializer)
+                         digest, serializer=serializer)
     registry.register('auth', s.serialize, s.deserialize,
                       content_type='application/data',
                       content_encoding='utf-8')

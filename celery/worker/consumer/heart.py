@@ -1,6 +1,4 @@
 """Worker Event Heartbeat Bootstep."""
-from __future__ import absolute_import, unicode_literals
-
 from celery import bootsteps
 from celery.worker import heartbeat
 
@@ -25,7 +23,7 @@ class Heart(bootsteps.StartStopStep):
         self.enabled = not without_heartbeat
         self.heartbeat_interval = heartbeat_interval
         c.heart = None
-        super(Heart, self).__init__(c, **kwargs)
+        super().__init__(c, **kwargs)
 
     def start(self, c):
         c.heart = heartbeat.Heart(

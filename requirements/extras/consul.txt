@@ -1,1 +1,1 @@
-python-consul
+python-consul2==0.1.5

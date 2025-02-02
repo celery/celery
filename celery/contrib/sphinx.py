@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Sphinx documentation plugin used to document tasks.
 
 Introduction
@@ -6,6 +5,8 @@ Introduction
 
 Usage
 -----
+
+The Celery extension for Sphinx requires Sphinx 2.0 or later.
 
 Add the extension to your :file:`docs/conf.py` configuration module:
 
@@ -29,18 +30,13 @@ syntax.
 
 Use ``.. autotask::`` to alternatively manually document a task.
 """
-from __future__ import absolute_import, unicode_literals
+from inspect import signature
 
-from sphinx.domains.python import PyModulelevel
+from docutils import nodes
+from sphinx.domains.python import PyFunction
 from sphinx.ext.autodoc import FunctionDocumenter
 
 from celery.app.task import BaseTask
-from celery.local import PromiseProxy
-
-try:  # pragma: no cover
-    from inspect import formatargspec, getfullargspec
-except ImportError:  # Py2
-    from inspect import formatargspec, getargspec as getfullargspec  # noqa
 
 
 class TaskDocumenter(FunctionDocumenter):
@@ -56,12 +52,10 @@ class TaskDocumenter(FunctionDocumenter):
     def format_args(self):
         wrapped = getattr(self.object, '__wrapped__', None)
         if wrapped is not None:
-            argspec = getfullargspec(wrapped)
-            if argspec[0] and argspec[0][0] in ('cls', 'self'):
-                del argspec[0][0]
-            fmt = formatargspec(*argspec)
-            fmt = fmt.replace('\\', '\\\\')
-            return fmt
+            sig = signature(wrapped)
+            if "self" in sig.parameters or "cls" in sig.parameters:
+                sig = sig.replace(parameters=list(sig.parameters.values())[1:])
+            return str(sig)
         return ''
 
     def document_members(self, all_members=False):
@@ -72,19 +66,17 @@ class TaskDocumenter(FunctionDocumenter):
         # given by *self.modname*. But since functions decorated with the @task
         # decorator are instances living in the celery.local, we have to check
         # the wrapped function instead.
-        modname = self.get_attr(self.object, '__module__', None)
-        if modname and modname == 'celery.local':
-            wrapped = getattr(self.object, '__wrapped__', None)
-            if wrapped and getattr(wrapped, '__module__') == self.modname:
-                return True
-        return super(TaskDocumenter, self).check_module()
+        wrapped = getattr(self.object, '__wrapped__', None)
+        if wrapped and getattr(wrapped, '__module__') == self.modname:
+            return True
+        return super().check_module()
 
 
-class TaskDirective(PyModulelevel):
+class TaskDirective(PyFunction):
     """Sphinx task directive."""
 
     def get_signature_prefix(self, sig):
-        return self.env.config.celery_task_prefix
+        return [nodes.Text(self.env.config.celery_task_prefix)]
 
 
 def autodoc_skip_member_handler(app, what, name, obj, skip, options):
@@ -95,7 +87,7 @@ def autodoc_skip_member_handler(app, what, name, obj, skip, options):
     # suppress repetition of class documentation in an instance of the
     # class. This overrides that behavior.
     if isinstance(obj, BaseTask) and getattr(obj, '__wrapped__'):
-        if skip and isinstance(obj, PromiseProxy):
+        if skip:
             return False
     return None
 

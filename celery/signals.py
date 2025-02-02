@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Celery Signals.
 
 This module defines the signals (Observer pattern) sent by
@@ -11,20 +10,21 @@ functions are called whenever a signal is called.
 
     :ref:`signals` for more information.
 """
-from __future__ import absolute_import, unicode_literals
 
 from .utils.dispatch import Signal
 
 __all__ = (
-    'before_task_publish', 'after_task_publish',
+    'before_task_publish', 'after_task_publish', 'task_internal_error',
     'task_prerun', 'task_postrun', 'task_success',
+    'task_received', 'task_rejected', 'task_unknown',
     'task_retry', 'task_failure', 'task_revoked', 'celeryd_init',
-    'celeryd_after_setup', 'worker_init', 'worker_process_init',
-    'worker_ready', 'worker_shutdown', 'worker_shutting_down',
-    'setup_logging', 'after_setup_logger', 'after_setup_task_logger',
-    'beat_init', 'beat_embedded_init', 'heartbeat_sent',
-    'eventlet_pool_started', 'eventlet_pool_preshutdown',
-    'eventlet_pool_postshutdown', 'eventlet_pool_apply',
+    'celeryd_after_setup', 'worker_init', 'worker_before_create_process',
+    'worker_process_init', 'worker_process_shutdown', 'worker_ready',
+    'worker_shutdown', 'worker_shutting_down', 'setup_logging',
+    'after_setup_logger', 'after_setup_task_logger', 'beat_init',
+    'beat_embedded_init', 'heartbeat_sent', 'eventlet_pool_started',
+    'eventlet_pool_preshutdown', 'eventlet_pool_postshutdown',
+    'eventlet_pool_apply',
 )
 
 # - Task
@@ -38,6 +38,10 @@ before_task_publish = Signal(
 after_task_publish = Signal(
     name='after_task_publish',
     providing_args={'body', 'exchange', 'routing_key'},
+)
+task_received = Signal(
+    name='task_received',
+    providing_args={'request'}
 )
 task_prerun = Signal(
     name='task_prerun',
@@ -61,6 +65,12 @@ task_failure = Signal(
         'task_id', 'exception', 'args', 'kwargs', 'traceback', 'einfo',
     },
 )
+task_internal_error = Signal(
+    name='task_internal_error',
+    providing_args={
+        'task_id', 'args', 'kwargs', 'request', 'exception', 'traceback', 'einfo'
+    }
+)
 task_revoked = Signal(
     name='task_revoked',
     providing_args={
@@ -83,7 +93,7 @@ task_sent = Signal(
     },
 )
 
-# - Prorgam: `celery worker`
+# - Program: `celery worker`
 celeryd_init = Signal(
     name='celeryd_init',
     providing_args={'instance', 'conf', 'options'},
@@ -96,6 +106,7 @@ celeryd_after_setup = Signal(
 # - Worker
 import_modules = Signal(name='import_modules')
 worker_init = Signal(name='worker_init')
+worker_before_create_process = Signal(name="worker_before_create_process")
 worker_process_init = Signal(name='worker_process_init')
 worker_process_shutdown = Signal(name='worker_process_shutdown')
 worker_ready = Signal(name='worker_ready')

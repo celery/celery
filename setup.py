@@ -1,102 +1,49 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 import codecs
 import os
 import re
-import sys
+
 import setuptools
-import setuptools.command.test
-try:
-    from platform import python_implementation as _pyimp
-except (AttributeError, ImportError):
-    def _pyimp():
-        return 'Python (unknown)'
 
 NAME = 'celery'
-
-# -*- Python Versions -*-
-
-E_UNSUPPORTED_PYTHON = """
-----------------------------------------
- Celery 4.0 requires %s %s or later
-----------------------------------------
-
-- For CPython 2.6, PyPy 1.x, Jython 2.6, CPython 3.2->3.3; use Celery 3.1:
-
-    $ pip install 'celery<4'
-
-- For CPython 2.5, Jython 2.5; use Celery 3.0:
-
-    $ pip install 'celery<3.1'
-
-- For CPython 2.4; use Celery 2.2:
-
-    $ pip install 'celery<2.3'
-"""
-
-PYIMP = _pyimp()
-PY26_OR_LESS = sys.version_info < (2, 7)
-PY3 = sys.version_info[0] == 3
-PY33_OR_LESS = PY3 and sys.version_info < (3, 4)
-PYPY_VERSION = getattr(sys, 'pypy_version_info', None)
-PYPY = PYPY_VERSION is not None
-PYPY24_ATLEAST = PYPY_VERSION and PYPY_VERSION >= (2, 4)
-
-if PY26_OR_LESS:
-    raise Exception(E_UNSUPPORTED_PYTHON % (PYIMP, '2.7'))
-elif PY33_OR_LESS and not PYPY24_ATLEAST:
-    raise Exception(E_UNSUPPORTED_PYTHON % (PYIMP, '3.4'))
 
 # -*- Extras -*-
 
 EXTENSIONS = {
+    'arangodb',
     'auth',
+    'azureblockblob',
+    'brotli',
     'cassandra',
-    'django',
-    'elasticsearch',
-    'memcache',
-    'pymemcache',
+    'consul',
+    'cosmosdbsql',
     'couchbase',
+    'couchdb',
+    'django',
+    'dynamodb',
+    'elasticsearch',
     'eventlet',
     'gevent',
+    'gcs',
+    'librabbitmq',
+    'memcache',
+    'mongodb',
     'msgpack',
-    'yaml',
+    'pymemcache',
+    'pydantic',
+    'pyro',
+    'pytest',
     'redis',
-    'sqs',
-    'couchdb',
-    'riak',
-    'zookeeper',
+    's3',
+    'slmq',
     'solar',
     'sqlalchemy',
-    'azureblockblob',
-    'librabbitmq',
-    'pyro',
-    'slmq',
+    'sqs',
     'tblib',
-    'consul',
-    'dynamodb',
-    'mongodb',
+    'yaml',
+    'zookeeper',
+    'zstd'
 }
-
-# -*- Classifiers -*-
-
-classes = """
-    Development Status :: 5 - Production/Stable
-    License :: OSI Approved :: BSD License
-    Topic :: System :: Distributed Computing
-    Topic :: Software Development :: Object Brokering
-    Programming Language :: Python
-    Programming Language :: Python :: 2
-    Programming Language :: Python :: 2.7
-    Programming Language :: Python :: 3
-    Programming Language :: Python :: 3.4
-    Programming Language :: Python :: 3.5
-    Programming Language :: Python :: 3.6
-    Programming Language :: Python :: 3.7
-    Programming Language :: Python :: Implementation :: CPython
-    Programming Language :: Python :: Implementation :: PyPy
-    Operating System :: OS Independent
-"""
 
 # -*- Distribution Meta -*-
 
@@ -178,26 +125,13 @@ def extras_require():
 
 # -*- Long Description -*-
 
+
 def long_description():
     try:
         return codecs.open('README.rst', 'r', 'utf-8').read()
-    except IOError:
+    except OSError:
         return 'Long description error: Missing README.rst file'
 
-# -*- Command: setup.py test -*-
-
-class pytest(setuptools.command.test.test):
-    user_options = [('pytest-args=', 'a', 'Arguments to pass to py.test')]
-
-    def initialize_options(self):
-        setuptools.command.test.test.initialize_options(self)
-        self.pytest_args = []
-
-    def run_tests(self):
-        import pytest as _pytest
-        sys.exit(_pytest.main(self.pytest_args))
-
-# -*- %%% -*-
 
 meta = parse_dist_meta()
 setuptools.setup(
@@ -210,22 +144,41 @@ setuptools.setup(
     author=meta['author'],
     author_email=meta['contact'],
     url=meta['homepage'],
-    license='BSD',
+    license='BSD-3-Clause',
     platforms=['any'],
     install_requires=install_requires(),
-    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
+    python_requires=">=3.8",
     tests_require=reqs('test.txt'),
     extras_require=extras_require(),
-    classifiers=[s.strip() for s in classes.split('\n') if s],
-    cmdclass={'test': pytest},
     include_package_data=True,
-    zip_safe=False,
     entry_points={
         'console_scripts': [
             'celery = celery.__main__:main',
-        ],
-        'pytest11': [
-            'celery = celery.contrib.pytest',
-        ],
+        ]
     },
+    project_urls={
+        "Documentation": "https://docs.celeryq.dev/en/stable/",
+        "Changelog": "https://docs.celeryq.dev/en/stable/changelog.html",
+        "Code": "https://github.com/celery/celery",
+        "Tracker": "https://github.com/celery/celery/issues",
+        "Funding": "https://opencollective.com/celery"
+    },
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "License :: OSI Approved :: BSD License",
+        "Topic :: System :: Distributed Computing",
+        "Topic :: Software Development :: Object Brokering",
+        "Framework :: Celery",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3 :: Only",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: Implementation :: CPython",
+        "Programming Language :: Python :: Implementation :: PyPy",
+        "Operating System :: OS Independent"
+    ]
 )

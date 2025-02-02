@@ -1,17 +1,15 @@
-# -*- coding: utf-8 -*-
 """Base Execution Pool."""
-from __future__ import absolute_import, unicode_literals
-
 import logging
 import os
 import sys
+import time
+from typing import Any, Dict
 
 from billiard.einfo import ExceptionInfo
 from billiard.exceptions import WorkerLostError
 from kombu.utils.encoding import safe_repr
 
-from celery.exceptions import WorkerShutdown, WorkerTerminate
-from celery.five import monotonic, reraise
+from celery.exceptions import WorkerShutdown, WorkerTerminate, reraise
 from celery.utils import timer2
 from celery.utils.log import get_logger
 from celery.utils.text import truncate
@@ -21,10 +19,11 @@ __all__ = ('BasePool', 'apply_target')
 logger = get_logger('celery.pool')
 
 
-def apply_target(target, args=(), kwargs={}, callback=None,
+def apply_target(target, args=(), kwargs=None, callback=None,
                  accept_callback=None, pid=None, getpid=os.getpid,
-                 propagate=(), monotonic=monotonic, **_):
+                 propagate=(), monotonic=time.monotonic, **_):
     """Apply function within pool context."""
+    kwargs = {} if not kwargs else kwargs
     if accept_callback:
         accept_callback(pid or getpid(), monotonic())
     try:
@@ -45,7 +44,7 @@ def apply_target(target, args=(), kwargs={}, callback=None,
         callback(ret)
 
 
-class BasePool(object):
+class BasePool:
     """Task pool."""
 
     RUN = 0x1
@@ -112,11 +111,11 @@ class BasePool(object):
 
     def terminate_job(self, pid, signal=None):
         raise NotImplementedError(
-            '{0} does not implement kill_job'.format(type(self)))
+            f'{type(self)} does not implement kill_job')
 
     def restart(self):
         raise NotImplementedError(
-            '{0} does not implement restart'.format(type(self)))
+            f'{type(self)} does not implement restart')
 
     def stop(self):
         self.on_stop()
@@ -138,12 +137,14 @@ class BasePool(object):
     def on_close(self):
         pass
 
-    def apply_async(self, target, args=[], kwargs={}, **options):
+    def apply_async(self, target, args=None, kwargs=None, **options):
         """Equivalent of the :func:`apply` built-in function.
 
         Callbacks should optimally return as soon as possible since
         otherwise the thread which handles the result will get blocked.
         """
+        kwargs = {} if not kwargs else kwargs
+        args = [] if not args else args
         if self._does_debug:
             logger.debug('TaskPool: Apply %s (args:%s kwargs:%s)',
                          target, truncate(safe_repr(args), 1024),
@@ -154,8 +155,15 @@ class BasePool(object):
                              callbacks_propagate=self.callbacks_propagate,
                              **options)
 
-    def _get_info(self):
+    def _get_info(self) -> Dict[str, Any]:
+        """
+        Return configuration and statistics information. Subclasses should
+        augment the data as required.
+
+        :return: The returned value must be JSON-friendly.
+        """
         return {
+            'implementation': self.__class__.__module__ + ':' + self.__class__.__name__,
             'max-concurrency': self.limit,
         }
 

@@ -1,8 +1,7 @@
-from __future__ import absolute_import, unicode_literals
+import django
 
 # Django settings for celery_http_gateway project.
 
-import django
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -76,11 +75,11 @@ TEMPLATE_LOADERS = (
     'django.template.loaders.app_directories.load_template_source',
 )
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-)
+]
 
 ROOT_URLCONF = 'celery_http_gateway.urls'
 

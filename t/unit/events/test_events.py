@@ -1,15 +1,13 @@
-from __future__ import absolute_import, unicode_literals
-
 import socket
+from unittest.mock import Mock, call
 
 import pytest
-from case import Mock, call
 
 from celery.events import Event
 from celery.events.receiver import CLIENT_CLOCK_SKEW
 
 
-class MockProducer(object):
+class MockProducer:
 
     raise_on_publish = False
 
@@ -228,6 +226,15 @@ class test_EventReceiver:
     def test_event_queue_prefix__argument(self):
         r = self.app.events.Receiver(Mock(), queue_prefix='fooq')
         assert r.queue.name.startswith('fooq.')
+
+    def test_event_exchange__default(self):
+        r = self.app.events.Receiver(Mock())
+        assert r.exchange.name == 'celeryev'
+
+    def test_event_exchange__setting(self):
+        self.app.conf.event_exchange = 'exchange_ev'
+        r = self.app.events.Receiver(Mock())
+        assert r.exchange.name == 'exchange_ev'
 
     def test_catch_all_event(self):
         message = {'type': 'world-war'}
