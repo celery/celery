@@ -1,5 +1,6 @@
 """Gevent execution pool."""
 import functools
+import types
 from time import monotonic
 
 from kombu.asynchronous import timer as _timer
@@ -121,6 +122,7 @@ class TaskPool(base.BasePool):
                                    target, args, kwargs, callback, accept_callback,
                                    self.getpid, timeout=timeout, timeout_callback=timeout_callback)
         self._add_to_pool_map(id(greenlet), greenlet)
+        greenlet.terminate = types.MethodType(_terminate, greenlet)
         return greenlet
 
     def grow(self, n=1):
@@ -162,3 +164,8 @@ class TaskPool(base.BasePool):
     @staticmethod
     def _cleanup_after_job_finish(greenlet, pool_map, pid):
         del pool_map[pid]
+
+
+def _terminate(self, signal):
+    # Done in `TaskPool.terminate_job`
+    pass
