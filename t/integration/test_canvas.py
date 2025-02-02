@@ -312,6 +312,11 @@ class test_chain:
 
     @flaky
     def test_replace_with_chain_that_contains_a_group(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
         s = replace_with_chain_which_contains_a_group.s()
 
         result = s.delay()
