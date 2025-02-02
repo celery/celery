@@ -1583,10 +1583,6 @@ class group(Signature):
 
     def __or__(self, other):
         # group() | task -> chord
-        # If the group is unrolled, return a chain instead
-        g = maybe_unroll_group(self)
-        if not isinstance(g, group):
-            return g | other
         return chord(self, body=other, app=self._app)
 
     def skew(self, start=1.0, stop=None, step=1.0):
