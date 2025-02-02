@@ -1,0 +1,18 @@
+collective: celery
+tiers:
+    - tiers: '*'
+      labels: ['Backer ❤️']
+      message: 'Hey <author>. Thank you for supporting the project!:heart:'
+    - tiers: ['Basic Sponsor', 'Sponsor', 'Silver Sponsor', 'Gold Sponsor']
+      labels: ['Sponsor ❤️']
+      message: |
+        Thank you for sponsoring the project!:heart::heart::heart:
+        Resolving this issue is one of our top priorities.
+        One of @celery/core-developers will triage it shortly.
+invitation: |
+  Hey <author> :wave:,
+  Thank you for opening an issue. We will get back to you as soon as we can.
+  Also, check out our [Open Collective](<link>) and consider backing us - every little helps!
+
+  We also offer priority support for our sponsors.
+  If you require immediate assistance please consider sponsoring us.

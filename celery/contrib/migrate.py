@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Message migration tools (Broker <-> Broker)."""
-from __future__ import absolute_import, print_function, unicode_literals
-
 import socket
 from functools import partial
 from itertools import cycle, islice
@@ -11,7 +8,6 @@ from kombu.common import maybe_declare
 from kombu.utils.encoding import ensure_bytes
 
 from celery.app import app_or_default
-from celery.five import python_2_unicode_compatible, string, string_t
 from celery.utils.nodenames import worker_direct
 from celery.utils.text import str_to_list
 
@@ -32,8 +28,7 @@ class StopFiltering(Exception):
     """Semi-predicate used to signal filter stop."""
 
 
-@python_2_unicode_compatible
-class State(object):
+class State:
     """Migration progress state."""
 
     count = 0
@@ -44,20 +39,20 @@ class State(object):
     def strtotal(self):
         if not self.total_apx:
             return '?'
-        return string(self.total_apx)
+        return str(self.total_apx)
 
     def __repr__(self):
         if self.filtered:
-            return '^{0.filtered}'.format(self)
-        return '{0.count}/{0.strtotal}'.format(self)
+            return f'^{self.filtered}'
+        return f'{self.count}/{self.strtotal}'
 
 
 def republish(producer, message, exchange=None, routing_key=None,
-              remove_props=['application_headers',
-                            'content_type',
-                            'content_encoding',
-                            'headers']):
+              remove_props=None):
     """Republish message."""
+    if not remove_props:
+        remove_props = ['application_headers', 'content_type',
+                        'content_encoding', 'headers']
     body = ensure_bytes(message.body)  # use raw message body.
     info, headers, props = (message.delivery_info,
                             message.headers, message.properties)
@@ -68,13 +63,18 @@ def republish(producer, message, exchange=None, routing_key=None,
     # when the message is recompressed.
     compression = headers.pop('compression', None)
 
+    expiration = props.pop('expiration', None)
+    # ensure expiration is a float
+    expiration = float(expiration) if expiration is not None else None
+
     for key in remove_props:
         props.pop(key, None)
 
     producer.publish(ensure_bytes(body), exchange=exchange,
                      routing_key=routing_key, compression=compression,
                      headers=headers, content_type=ctype,
-                     content_encoding=enc, **props)
+                     content_encoding=enc, expiration=expiration,
+                     **props)
 
 
 def migrate_task(producer, body_, message, queues=None):
@@ -119,7 +119,7 @@ def migrate_tasks(source, dest, migrate=migrate_task, app=None,
 
 
 def _maybe_queue(app, q):
-    if isinstance(q, string_t):
+    if isinstance(q, str):
         return app.amqp.queues[q]
     return q
 
@@ -173,7 +173,7 @@ def move(predicate, connection=None, exchange=None, routing_key=None,
     .. code-block:: python
 
         def transform(value):
-            if isinstance(value, string_t):
+            if isinstance(value, str):
                 return Queue(value, Exchange(value), value)
             return value
 
@@ -182,7 +182,7 @@ def move(predicate, connection=None, exchange=None, routing_key=None,
     Note:
         The predicate may also return a tuple of ``(exchange, routing_key)``
         to specify the destination to where the task should be moved,
-        or a :class:`~kombu.entitiy.Queue` instance.
+        or a :class:`~kombu.entity.Queue` instance.
         Any other true value means that the task will be moved to the
         default exchange/routing_key.
     """
@@ -234,7 +234,7 @@ def task_id_in(ids, body, message):
 
 
 def prepare_queues(queues):
-    if isinstance(queues, string_t):
+    if isinstance(queues, str):
         queues = queues.split(',')
     if isinstance(queues, list):
         queues = dict(tuple(islice(cycle(q.split(':')), None, 2))
@@ -244,7 +244,7 @@ def prepare_queues(queues):
     return queues
 
 
-class Filterer(object):
+class Filterer:
 
     def __init__(self, app, conn, filter,
                  limit=None, timeout=1.0,
@@ -361,6 +361,8 @@ def move_task_by_id(task_id, dest, **kwargs):
     Arguments:
         task_id (str): Id of task to find and move.
         dest: (str, kombu.Queue): Destination queue.
+        transform (Callable): Optional function to transform the return
+            value (destination) of the filter function.
         **kwargs (Any): Also supports the same keyword
             arguments as :func:`move`.
     """
@@ -380,7 +382,7 @@ def move_by_idmap(map, **kwargs):
         ...   queues=['hipri'])
     """
     def task_id_in_map(body, message):
-        return map.get(body['id'])
+        return map.get(message.properties['correlation_id'])
 
     # adding the limit means that we don't have to consume any more
     # when we've found everything.

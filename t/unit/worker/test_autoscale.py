@@ -1,11 +1,10 @@
-from __future__ import absolute_import, unicode_literals
-
 import sys
+from time import monotonic
+from unittest.mock import Mock, patch
 
-from case import Mock, mock, patch
+import pytest
 
 from celery.concurrency.base import BasePool
-from celery.five import monotonic
 from celery.utils.objects import Bunch
 from celery.worker import autoscale, state
 
@@ -16,7 +15,7 @@ class MockPool(BasePool):
     shrink_raises_ValueError = False
 
     def __init__(self, *args, **kwargs):
-        super(MockPool, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._pool = Bunch(_processes=self.limit)
 
     def grow(self, n=1):
@@ -74,7 +73,7 @@ class test_WorkerComponent:
 
 class test_Autoscaler:
 
-    def setup(self):
+    def setup_method(self):
         self.pool = MockPool(3)
 
     def test_stop(self):
@@ -91,33 +90,33 @@ class test_Autoscaler:
 
         worker = Mock(name='worker')
         x = Scaler(self.pool, 10, 3, worker=worker)
-        x._is_stopped.set()
-        x.stop()
+        # Don't allow thread joining or event waiting to block the test
+        with patch("threading.Thread.join"), patch("threading.Event.wait"):
+            x.stop()
         assert x.joined
         x.joined = False
         x.alive = False
-        x.stop()
+        with patch("threading.Thread.join"), patch("threading.Event.wait"):
+            x.stop()
         assert not x.joined
 
-    @mock.sleepdeprived(module=autoscale)
-    def test_body(self):
+    @pytest.mark.sleepdeprived_patched_module(autoscale)
+    def test_body(self, sleepdeprived):
         worker = Mock(name='worker')
         x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
         x.body()
         assert x.pool.num_processes == 3
-        _keep = [Mock(name='req{0}'.format(i)) for i in range(20)]
+        _keep = [Mock(name=f'req{i}') for i in range(20)]
         [state.task_reserved(m) for m in _keep]
         x.body()
         x.body()
         assert x.pool.num_processes == 10
-        worker.consumer._update_prefetch_count.assert_called()
         state.reserved_requests.clear()
         x.body()
         assert x.pool.num_processes == 10
         x._last_scale_up = monotonic() - 10000
         x.body()
         assert x.pool.num_processes == 3
-        worker.consumer._update_prefetch_count.assert_called()
 
     def test_run(self):
 
@@ -126,13 +125,13 @@ class test_Autoscaler:
 
             def body(self):
                 self.scale_called = True
-                self._is_shutdown.set()
+                getattr(self, "_bgThread__is_shutdown").set()
 
         worker = Mock(name='worker')
         x = Scaler(self.pool, 10, 3, worker=worker)
         x.run()
-        assert x._is_shutdown.isSet()
-        assert x._is_stopped.isSet()
+        assert getattr(x, "_bgThread__is_shutdown").is_set()
+        assert getattr(x, "_bgThread__is_stopped").is_set()
         assert x.scale_called
 
     def test_shrink_raises_exception(self):
@@ -152,28 +151,42 @@ class test_Autoscaler:
         x.scale_down(1)
         assert debug.call_count
 
-    def test_update_and_force(self):
+    def test_update(self):
         worker = Mock(name='worker')
         x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
+        x.worker.consumer.prefetch_multiplier = 1
+        x.keepalive = -1
         assert x.processes == 3
-        x.force_scale_up(5)
-        assert x.processes == 8
-        x.update(5, None)
-        assert x.processes == 5
-        x.force_scale_down(3)
-        assert x.processes == 2
-        x.update(None, 3)
-        assert x.processes == 3
-        x.force_scale_down(1000)
-        assert x.min_concurrency == 0
-        assert x.processes == 0
-        x.force_scale_up(1000)
-        x.min_concurrency = 1
-        x.force_scale_down(1)
+        x.scale_up(5)
+        x.update(7, None)
+        assert x.processes == 7
+        assert x.max_concurrency == 7
+        x.scale_down(4)
+        x.update(None, 6)
+        assert x.processes == 6
+        assert x.min_concurrency == 6
 
         x.update(max=300, min=10)
         x.update(max=300, min=2)
         x.update(max=None, min=None)
+
+    def test_prefetch_count_on_updates(self):
+        worker = Mock(name='worker')
+        x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
+        x.worker.consumer.prefetch_multiplier = 1
+        x.update(5, None)
+        worker.consumer._update_prefetch_count.assert_called_with(-5)
+        x.update(15, 7)
+        worker.consumer._update_prefetch_count.assert_called_with(10)
+
+    def test_prefetch_count_on_updates_prefetch_multiplier_gt_one(self):
+        worker = Mock(name='worker')
+        x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
+        x.worker.consumer.prefetch_multiplier = 4
+        x.update(5, None)
+        worker.consumer._update_prefetch_count.assert_called_with(-5)
+        x.update(15, 7)
+        worker.consumer._update_prefetch_count.assert_called_with(10)
 
     def test_info(self):
         worker = Mock(name='worker')
@@ -189,7 +202,7 @@ class test_Autoscaler:
         class _Autoscaler(autoscale.Autoscaler):
 
             def body(self):
-                self._is_shutdown.set()
+                getattr(self, "_bgThread__is_shutdown").set()
                 raise OSError('foo')
         worker = Mock(name='worker')
         x = _Autoscaler(self.pool, 10, 3, worker=worker)
@@ -203,14 +216,14 @@ class test_Autoscaler:
         _exit.assert_called_with(1)
         stderr.write.assert_called()
 
-    @mock.sleepdeprived(module=autoscale)
-    def test_no_negative_scale(self):
+    @pytest.mark.sleepdeprived_patched_module(autoscale)
+    def test_no_negative_scale(self, sleepdeprived):
         total_num_processes = []
         worker = Mock(name='worker')
         x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
         x.body()  # the body func scales up or down
 
-        _keep = [Mock(name='req{0}'.format(i)) for i in range(35)]
+        _keep = [Mock(name=f'req{i}') for i in range(35)]
         for req in _keep:
             state.task_reserved(req)
             x.body()

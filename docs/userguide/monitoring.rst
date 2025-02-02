@@ -12,7 +12,7 @@ Introduction
 
 There are several tools available to monitor and inspect Celery clusters.
 
-This document describes some of these, as as well as
+This document describes some of these, as well as
 features related to monitoring, like events and broadcast commands.
 
 .. _monitoring-workers:
@@ -33,7 +33,7 @@ To list all the commands available do:
 
 .. code-block:: console
 
-    $ celery help
+    $ celery --help
 
 or to get help for a specific command do:
 
@@ -266,9 +266,6 @@ Features
 .. figure:: ../images/dashboard.png
    :width: 700px
 
-.. figure:: ../images/monitor.png
-   :width: 700px
-
 More screenshots_:
 
 .. _screenshots: https://github.com/mher/flower/tree/master/docs/screenshots
@@ -302,9 +299,9 @@ Broker URL can also be passed through the
 
 .. code-block:: console
 
-    $ celery flower --broker=amqp://guest:guest@localhost:5672//
+    $ celery --broker=amqp://guest:guest@localhost:5672// flower
     or
-    $ celery flower --broker=redis://guest:guest@localhost:6379/0
+    $ celery --broker=redis://guest:guest@localhost:6379/0 flower
 
 Then, you can visit flower in your web browser :
 
@@ -356,7 +353,7 @@ and it includes a tool to dump events to :file:`stdout`:
 
     $ celery -A proj events --dump
 
-For a complete list of options use :option:`--help <celery --help>`:
+For a complete list of options use :option:`!--help`:
 
 .. code-block:: console
 
@@ -739,7 +736,7 @@ Sent if the execution of the task failed.
 task-rejected
 ~~~~~~~~~~~~~
 
-:signature: ``task-rejected(uuid, requeued)``
+:signature: ``task-rejected(uuid, requeue)``
 
 The task was rejected by the worker, possibly to be re-queued or moved to a
 dead letter queue.

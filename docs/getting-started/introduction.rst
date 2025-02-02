@@ -25,7 +25,7 @@ A Celery system can consist of multiple workers and brokers, giving way
 to high availability and horizontal scaling.
 
 Celery is written in Python, but the protocol can be implemented in any
-language. In addition to Python there's node-celery_ for Node.js,
+language. In addition to Python there's node-celery_ and node-celery-ts_ for Node.js,
 and a `PHP client`_.
 
 Language interoperability can also be achieved
@@ -33,22 +33,27 @@ exposing an HTTP endpoint and having a task that requests it (webhooks).
 
 .. _`PHP client`: https://github.com/gjedeer/celery-php
 .. _node-celery: https://github.com/mher/node-celery
+.. _node-celery-ts: https://github.com/IBM/node-celery-ts
 
 What do I need?
 ===============
 
 .. sidebar:: Version Requirements
-    :subtitle: Celery version 4.0 runs on
+    :subtitle: Celery version 5.3 runs on
 
-    - Python ❨2.7, 3.4, 3.5❩
-    - PyPy ❨5.4, 5.5❩
+    - Python ❨3.8, 3.9, 3.10, 3.11❩
+    - PyPy3.8+ ❨v7.3.11+❩
 
-    This is the last version to support Python 2.7,
-    and from the next version (Celery 5.x) Python 3.5 or newer is required.
+    Celery 4.x was the last version to support Python 2.7,
+    Celery 5.x requires Python 3.6 or newer.
+    Celery 5.1.x also requires Python 3.6 or newer.
+    Celery 5.2.x requires Python 3.7 or newer.
+
 
     If you're running an older version of Python, you need to be running
     an older version of Celery:
 
+    - Python 2.7 or Python 3.5: Celery series 4.4 or earlier.
     - Python 2.6: Celery series 3.1 or earlier.
     - Python 2.5: Celery series 3.0 or earlier.
     - Python 2.4 was Celery series 2.2 or earlier.
@@ -134,6 +139,7 @@ Celery is…
 
             - prefork (multiprocessing),
             - Eventlet_, gevent_
+            - thread (multithreaded)
             - `solo` (single threaded)
 
         - **Result Stores**
@@ -141,7 +147,12 @@ Celery is…
             - AMQP, Redis
             - Memcached,
             - SQLAlchemy, Django ORM
-            - Apache Cassandra, Elasticsearch
+            - Apache Cassandra, Elasticsearch, Riak
+            - MongoDB, CouchDB, Couchbase, ArangoDB
+            - Amazon DynamoDB, Amazon S3
+            - Microsoft Azure Block Blob, Microsoft Azure Cosmos DB
+            - Google Cloud Storage
+            - File system
 
         - **Serialization**
 

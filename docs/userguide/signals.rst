@@ -289,6 +289,66 @@ Provides arguments:
 
     The :class:`billiard.einfo.ExceptionInfo` instance.
 
+``task_internal_error``
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Dispatched when an internal Celery error occurs while executing the task.
+
+Sender is the task object executed.
+
+.. signal:: task_internal_error
+
+Provides arguments:
+
+* ``task_id``
+
+    Id of the task.
+
+* ``args``
+
+    Positional arguments the task was called with.
+
+* ``kwargs``
+
+    Keyword arguments the task was called with.
+
+* ``request``
+
+    The original request dictionary.
+    This is provided as the ``task.request`` may not be ready by the time
+    the exception is raised.
+
+* ``exception``
+
+    Exception instance raised.
+
+* ``traceback``
+
+    Stack trace object.
+
+* ``einfo``
+
+    The :class:`billiard.einfo.ExceptionInfo` instance.
+
+``task_received``
+~~~~~~~~~~~~~~~~~
+
+Dispatched when a task is received from the broker and is ready for execution.
+
+Sender is the consumer object.
+
+.. signal:: task_received
+
+Provides arguments:
+
+* ``request``
+
+    This is a :class:`~celery.worker.request.Request` instance, and not
+    ``task.request``. When using the prefork pool this signal
+    is dispatched in the parent process, so ``task.request`` isn't available
+    and shouldn't be used. Use this object instead, as they share many
+    of the same fields.
+
 .. signal:: task_revoked
 
 ``task_revoked``
@@ -302,7 +362,7 @@ Provides arguments:
 
 * ``request``
 
-    This is a :class:`~celery.worker.request.Request` instance, and not
+    This is a :class:`~celery.app.task.Context` instance, and not
     ``task.request``. When using the prefork pool this signal
     is dispatched in the parent process, so ``task.request`` isn't available
     and shouldn't be used. Use this object instead, as they share many
@@ -482,6 +542,20 @@ Provides arguments:
 ~~~~~~~~~~~~~~~
 
 Dispatched before the worker is started.
+
+.. signal:: worker_before_create_process
+
+``worker_before_create_process``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Dispatched in the parent process, just before new child process is created in the prefork pool.
+It can be used to clean up instances that don't behave well when forking.
+
+.. code-block:: python
+
+    @signals.worker_before_create_process.connect
+    def clean_channels(**kwargs):
+        grpc_singleton.clean_channel()
 
 .. signal:: worker_ready
 

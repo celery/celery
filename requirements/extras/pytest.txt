@@ -1,0 +1,1 @@
+pytest-celery[all]>=1.1.3

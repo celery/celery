@@ -1,11 +1,21 @@
-from __future__ import absolute_import, unicode_literals
-
-from celery import Celery
 from xyzzy import plugh  # noqa
+
+from celery import Celery, shared_task
 
 app = Celery()
 
 
 @app.task
 def bar():
-    """This task has a docstring!"""
+    """Task.
+
+    This is a sample Task.
+    """
+
+
+@shared_task
+def baz():
+    """Shared Task.
+
+    This is a sample Shared Task.
+    """

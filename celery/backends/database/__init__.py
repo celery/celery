@@ -1,9 +1,5 @@
-# -*- coding: utf-8 -*-
 """SQLAlchemy result store backend."""
-from __future__ import absolute_import, unicode_literals
-
 import logging
-
 from contextlib import contextmanager
 
 from vine.utils import wraps
@@ -11,17 +7,15 @@ from vine.utils import wraps
 from celery import states
 from celery.backends.base import BaseBackend
 from celery.exceptions import ImproperlyConfigured
-from celery.five import range
 from celery.utils.time import maybe_timedelta
 
-from .models import Task
-from .models import TaskSet
+from .models import Task, TaskExtended, TaskSet
 from .session import SessionManager
 
 try:
     from sqlalchemy.exc import DatabaseError, InvalidRequestError
     from sqlalchemy.orm.exc import StaleDataError
-except ImportError:  # pragma: no cover
+except ImportError:
     raise ImproperlyConfigured(
         'The database result backend requires SQLAlchemy to be installed.'
         'See https://pypi.org/project/SQLAlchemy/')
@@ -69,12 +63,19 @@ class DatabaseBackend(BaseBackend):
     # to not bombard the database with queries.
     subpolling_interval = 0.5
 
+    task_cls = Task
+    taskset_cls = TaskSet
+
     def __init__(self, dburi=None, engine_options=None, url=None, **kwargs):
         # The `url` argument was added later and is used by
         # the app to set backend by url (celery.app.backends.by_url)
-        super(DatabaseBackend, self).__init__(
-            expires_type=maybe_timedelta, url=url, **kwargs)
+        super().__init__(expires_type=maybe_timedelta,
+                         url=url, **kwargs)
         conf = self.app.conf
+
+        if self.extended_result:
+            self.task_cls = TaskExtended
+
         self.url = url or dburi or conf.database_url
         self.engine_options = dict(
             engine_options or {},
@@ -83,58 +84,102 @@ class DatabaseBackend(BaseBackend):
             'short_lived_sessions',
             conf.database_short_lived_sessions)
 
+        schemas = conf.database_table_schemas or {}
         tablenames = conf.database_table_names or {}
-        Task.__table__.name = tablenames.get('task', 'celery_taskmeta')
-        TaskSet.__table__.name = tablenames.get('group', 'celery_tasksetmeta')
+        self.task_cls.configure(
+            schema=schemas.get('task'),
+            name=tablenames.get('task'))
+        self.taskset_cls.configure(
+            schema=schemas.get('group'),
+            name=tablenames.get('group'))
 
         if not self.url:
             raise ImproperlyConfigured(
                 'Missing connection string! Do you have the'
                 ' database_url setting set to a real value?')
 
-    def ResultSession(self, session_manager=SessionManager()):
+        self.session_manager = SessionManager()
+
+        create_tables_at_setup = conf.database_create_tables_at_setup
+        if create_tables_at_setup is True:
+            self._create_tables()
+
+    @property
+    def extended_result(self):
+        return self.app.conf.find_value_for_key('extended', 'result')
+
+    def _create_tables(self):
+        """Create the task and taskset tables."""
+        self.ResultSession()
+
+    def ResultSession(self, session_manager=None):
+        if session_manager is None:
+            session_manager = self.session_manager
         return session_manager.session_factory(
             dburi=self.url,
             short_lived_sessions=self.short_lived_sessions,
             **self.engine_options)
 
     @retry
-    def _store_result(self, task_id, result, state,
-                      traceback=None, max_retries=3, **kwargs):
+    def _store_result(self, task_id, result, state, traceback=None,
+                      request=None, **kwargs):
         """Store return value and state of an executed task."""
         session = self.ResultSession()
         with session_cleanup(session):
-            task = list(session.query(Task).filter(Task.task_id == task_id))
+            task = list(session.query(self.task_cls).filter(self.task_cls.task_id == task_id))
             task = task and task[0]
             if not task:
-                task = Task(task_id)
+                task = self.task_cls(task_id)
+                task.task_id = task_id
                 session.add(task)
                 session.flush()
-            task.result = result
-            task.status = state
-            task.traceback = traceback
+
+            self._update_result(task, result, state, traceback=traceback, request=request)
             session.commit()
-            return result
+
+    def _update_result(self, task, result, state, traceback=None,
+                       request=None):
+
+        meta = self._get_result_meta(result=result, state=state,
+                                     traceback=traceback, request=request,
+                                     format_date=False, encode=True)
+
+        # Exclude the primary key id and task_id columns
+        # as we should not set it None
+        columns = [column.name for column in self.task_cls.__table__.columns
+                   if column.name not in {'id', 'task_id'}]
+
+        # Iterate through the columns name of the table
+        # to set the value from meta.
+        # If the value is not present in meta, set None
+        for column in columns:
+            value = meta.get(column)
+            setattr(task, column, value)
 
     @retry
     def _get_task_meta_for(self, task_id):
         """Get task meta-data for a task by id."""
         session = self.ResultSession()
         with session_cleanup(session):
-            task = list(session.query(Task).filter(Task.task_id == task_id))
+            task = list(session.query(self.task_cls).filter(self.task_cls.task_id == task_id))
             task = task and task[0]
             if not task:
-                task = Task(task_id)
+                task = self.task_cls(task_id)
                 task.status = states.PENDING
                 task.result = None
-            return self.meta_from_decoded(task.to_dict())
+            data = task.to_dict()
+            if data.get('args', None) is not None:
+                data['args'] = self.decode(data['args'])
+            if data.get('kwargs', None) is not None:
+                data['kwargs'] = self.decode(data['kwargs'])
+            return self.meta_from_decoded(data)
 
     @retry
     def _save_group(self, group_id, result):
         """Store the result of an executed group."""
         session = self.ResultSession()
         with session_cleanup(session):
-            group = TaskSet(group_id, result)
+            group = self.taskset_cls(group_id, result)
             session.add(group)
             session.flush()
             session.commit()
@@ -145,8 +190,8 @@ class DatabaseBackend(BaseBackend):
         """Get meta-data for group by id."""
         session = self.ResultSession()
         with session_cleanup(session):
-            group = session.query(TaskSet).filter(
-                TaskSet.taskset_id == group_id).first()
+            group = session.query(self.taskset_cls).filter(
+                self.taskset_cls.taskset_id == group_id).first()
             if group:
                 return group.to_dict()
 
@@ -155,8 +200,8 @@ class DatabaseBackend(BaseBackend):
         """Delete meta-data for group by id."""
         session = self.ResultSession()
         with session_cleanup(session):
-            session.query(TaskSet).filter(
-                TaskSet.taskset_id == group_id).delete()
+            session.query(self.taskset_cls).filter(
+                self.taskset_cls.taskset_id == group_id).delete()
             session.flush()
             session.commit()
 
@@ -165,7 +210,7 @@ class DatabaseBackend(BaseBackend):
         """Forget about result."""
         session = self.ResultSession()
         with session_cleanup(session):
-            session.query(Task).filter(Task.task_id == task_id).delete()
+            session.query(self.task_cls).filter(self.task_cls.task_id == task_id).delete()
             session.commit()
 
     def cleanup(self):
@@ -174,15 +219,16 @@ class DatabaseBackend(BaseBackend):
         expires = self.expires
         now = self.app.now()
         with session_cleanup(session):
-            session.query(Task).filter(
-                Task.date_done < (now - expires)).delete()
-            session.query(TaskSet).filter(
-                TaskSet.date_done < (now - expires)).delete()
+            session.query(self.task_cls).filter(
+                self.task_cls.date_done < (now - expires)).delete()
+            session.query(self.taskset_cls).filter(
+                self.taskset_cls.date_done < (now - expires)).delete()
             session.commit()
 
-    def __reduce__(self, args=(), kwargs={}):
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
         kwargs.update(
             {'dburi': self.url,
              'expires': self.expires,
              'engine_options': self.engine_options})
-        return super(DatabaseBackend, self).__reduce__(args, kwargs)
+        return super().__reduce__(args, kwargs)

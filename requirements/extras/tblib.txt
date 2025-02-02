@@ -1,1 +1,2 @@
-tblib>=1.3.0
+tblib>=1.5.0;python_version>='3.8.0'
+tblib>=1.3.0;python_version<'3.8.0'

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Abortable Tasks.
 
 Abortable tasks overview
@@ -28,8 +27,6 @@ In the consumer:
 
 .. code-block:: python
 
-    from __future__ import absolute_import
-
     from celery.contrib.abortable import AbortableTask
     from celery.utils.log import get_task_logger
 
@@ -57,8 +54,6 @@ In the producer:
 
 .. code-block:: python
 
-    from __future__ import absolute_import
-
     import time
 
     from proj.tasks import MyLongRunningTask
@@ -83,8 +78,6 @@ have it block until the task is finished.
    database backend.  Therefore, this class will only work with the
    database backends.
 """
-from __future__ import absolute_import, unicode_literals
-
 from celery import Task
 from celery.result import AsyncResult
 

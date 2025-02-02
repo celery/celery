@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-'
-from __future__ import absolute_import, unicode_literals
-
 from celery.app.task import Context
 
 
-# Retreive the values of all context attributes as a
+# Retrieve the values of all context attributes as a
 # dictionary in an implementation-agnostic manner.
 def get_context_as_dict(ctx, getter=getattr):
     defaults = {}
@@ -66,3 +63,24 @@ class test_Context:
         ctx_dict = get_context_as_dict(ctx, getter=Context.get)
         assert ctx_dict == expected
         assert get_context_as_dict(Context()) == default_context
+
+    def test_extract_headers(self):
+        # Should extract custom headers from the request dict
+        request = {
+            'task': 'test.test_task',
+            'id': 'e16eeaee-1172-49bb-9098-5437a509ffd9',
+            'custom-header': 'custom-value',
+        }
+        ctx = Context(request)
+        assert ctx.headers == {'custom-header': 'custom-value'}
+
+    def test_dont_override_headers(self):
+        # Should not override headers if defined in the request
+        request = {
+            'task': 'test.test_task',
+            'id': 'e16eeaee-1172-49bb-9098-5437a509ffd9',
+            'headers': {'custom-header': 'custom-value'},
+            'custom-header-2': 'custom-value-2',
+        }
+        ctx = Context(request)
+        assert ctx.headers == {'custom-header': 'custom-value'}

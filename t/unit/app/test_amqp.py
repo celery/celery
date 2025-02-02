@@ -1,14 +1,11 @@
-from __future__ import absolute_import, unicode_literals
-
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock
 from kombu import Exchange, Queue
 
 from celery import uuid
 from celery.app.amqp import Queues, utf8dict
-from celery.five import keys
 from celery.utils.time import to_utc
 
 
@@ -92,39 +89,17 @@ class test_Queues:
         q['foo'] = queue
         assert q['foo'].exchange == q.default_exchange
 
-    @pytest.mark.parametrize('ha_policy,qname,q,qargs,expected', [
-        (None, 'xyz', 'xyz', None, None),
-        (None, 'xyz', 'xyz', {'x-foo': 'bar'}, {'x-foo': 'bar'}),
-        ('all', 'foo', Queue('foo'), None, {'ha-mode': 'all'}),
-        ('all', 'xyx2',
-         Queue('xyx2', queue_arguments={'x-foo': 'bar'}),
-         None,
-         {'ha-mode': 'all', 'x-foo': 'bar'}),
-        (['A', 'B', 'C'], 'foo', Queue('foo'), None, {
-            'ha-mode': 'nodes',
-            'ha-params': ['A', 'B', 'C']}),
-    ])
-    def test_with_ha_policy(self, ha_policy, qname, q, qargs, expected):
-        queues = Queues(ha_policy=ha_policy, create_missing=False)
-        queues.add(q, queue_arguments=qargs)
-        assert queues[qname].queue_arguments == expected
-
     def test_select_add(self):
         q = Queues()
         q.select(['foo', 'bar'])
         q.select_add('baz')
-        assert sorted(keys(q._consume_from)) == ['bar', 'baz', 'foo']
+        assert sorted(q._consume_from.keys()) == ['bar', 'baz', 'foo']
 
     def test_deselect(self):
         q = Queues()
         q.select(['foo', 'bar'])
         q.deselect('bar')
-        assert sorted(keys(q._consume_from)) == ['foo']
-
-    def test_with_ha_policy_compat(self):
-        q = Queues(ha_policy='all')
-        q.add('bar')
-        assert q['bar'].queue_arguments == {'ha-mode': 'all'}
+        assert sorted(q._consume_from.keys()) == ['foo']
 
     def test_add_default_exchange(self):
         ex = Exchange('fff', 'fanout')
@@ -146,12 +121,6 @@ class test_Queues:
         ({'max_priority': 10},
          'moo', Queue('moo', queue_arguments=None),
          {'x-max-priority': 10}),
-        ({'ha_policy': 'all', 'max_priority': 5},
-         'bar', 'bar',
-         {'ha-mode': 'all', 'x-max-priority': 5}),
-        ({'ha_policy': 'all', 'max_priority': 5},
-         'xyx2', Queue('xyx2', queue_arguments={'x-max-priority': 2}),
-         {'ha-mode': 'all', 'x-max-priority': 2}),
         ({'max_priority': None},
          'foo2', 'foo2',
          None),
@@ -168,17 +137,19 @@ class test_Queues:
 
 class test_default_queues:
 
+    @pytest.mark.parametrize('default_queue_type', ['classic', 'quorum'])
     @pytest.mark.parametrize('name,exchange,rkey', [
         ('default', None, None),
         ('default', 'exchange', None),
         ('default', 'exchange', 'routing_key'),
         ('default', None, 'routing_key'),
     ])
-    def test_setting_default_queue(self, name, exchange, rkey):
+    def test_setting_default_queue(self, name, exchange, rkey, default_queue_type):
         self.app.conf.task_queues = {}
         self.app.conf.task_default_exchange = exchange
         self.app.conf.task_default_routing_key = rkey
         self.app.conf.task_default_queue = name
+        self.app.conf.task_default_queue_type = default_queue_type
         assert self.app.amqp.queues.default_exchange.name == exchange or name
         queues = dict(self.app.amqp.queues)
         assert len(queues) == 1
@@ -186,6 +157,40 @@ class test_default_queues:
         assert queue.exchange.name == exchange or name
         assert queue.exchange.type == 'direct'
         assert queue.routing_key == rkey or name
+
+        if default_queue_type == 'quorum':
+            assert queue.queue_arguments == {'x-queue-type': 'quorum'}
+        else:
+            assert queue.queue_arguments is None
+
+
+class test_default_exchange:
+
+    @pytest.mark.parametrize('name,exchange,rkey', [
+        ('default', 'foo', None),
+        ('default', 'foo', 'routing_key'),
+    ])
+    def test_setting_default_exchange(self, name, exchange, rkey):
+        q = Queue(name, routing_key=rkey)
+        self.app.conf.task_queues = {q}
+        self.app.conf.task_default_exchange = exchange
+        queues = dict(self.app.amqp.queues)
+        queue = queues[name]
+        assert queue.exchange.name == exchange
+
+    @pytest.mark.parametrize('name,extype,rkey', [
+        ('default', 'direct', None),
+        ('default', 'direct', 'routing_key'),
+        ('default', 'topic', None),
+        ('default', 'topic', 'routing_key'),
+    ])
+    def test_setting_default_exchange_type(self, name, extype, rkey):
+        q = Queue(name, routing_key=rkey)
+        self.app.conf.task_queues = {q}
+        self.app.conf.task_default_exchange_type = extype
+        queues = dict(self.app.amqp.queues)
+        queue = queues[name]
+        assert queue.exchange.type == extype
 
 
 class test_AMQP_proto1:
@@ -207,15 +212,17 @@ class test_AMQP_proto1:
         self.app.amqp.as_task_v1(uuid(), 'foo', countdown=30, expires=40)
 
 
-class test_AMQP:
-
-    def setup(self):
+class test_AMQP_Base:
+    def setup_method(self):
         self.simple_message = self.app.amqp.as_task_v2(
             uuid(), 'foo', create_sent_event=True,
         )
         self.simple_message_no_sent_event = self.app.amqp.as_task_v2(
             uuid(), 'foo', create_sent_event=False,
         )
+
+
+class test_AMQP(test_AMQP_Base):
 
     def test_kwargs_must_be_mapping(self):
         with pytest.raises(TypeError):
@@ -228,10 +235,6 @@ class test_AMQP:
     def test_countdown_negative(self):
         with pytest.raises(ValueError):
             self.app.amqp.as_task_v2(uuid(), 'foo', countdown=-1232132323123)
-
-    def test_Queues__with_ha_policy(self):
-        x = self.app.amqp.Queues({}, ha_policy='all')
-        assert x.ha_policy == 'all'
 
     def test_Queues__with_max_priority(self):
         x = self.app.amqp.Queues({}, max_priority=23)
@@ -322,8 +325,23 @@ class test_AMQP:
         )
         assert prod.publish.call_args[1]['delivery_mode'] == 33
 
+    def test_send_task_message__with_timeout(self):
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event,
+            timeout=1,
+        )
+        assert prod.publish.call_args[1]['timeout'] == 1
+
+    def test_send_task_message__with_confirm_timeout(self):
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event,
+            confirm_timeout=1,
+        )
+        assert prod.publish.call_args[1]['confirm_timeout'] == 1
+
     def test_send_task_message__with_receivers(self):
-        from case import patch
         mocked_receiver = ((Mock(), Mock()), Mock())
         with patch('celery.signals.task_sent.receivers', [mocked_receiver]):
             self.app.amqp.send_task_message(Mock(), 'foo', self.simple_message)
@@ -333,8 +351,17 @@ class test_AMQP:
         r2 = self.app.amqp.routes
         assert r1 is r2
 
+    def update_conf_runtime_for_tasks_queues(self):
+        self.app.conf.update(task_routes={'task.create_pr': 'queue.qwerty'})
+        self.app.send_task('task.create_pr')
+        router_was = self.app.amqp.router
+        self.app.conf.update(task_routes={'task.create_pr': 'queue.asdfgh'})
+        self.app.send_task('task.create_pr')
+        router = self.app.amqp.router
+        assert router != router_was
 
-class test_as_task_v2:
+
+class test_as_task_v2(test_AMQP_Base):
 
     def test_raises_if_args_is_not_tuple(self):
         with pytest.raises(TypeError):
@@ -345,14 +372,14 @@ class test_as_task_v2:
             self.app.amqp.as_task_v2(uuid(), 'foo', kwargs=(1, 2, 3))
 
     def test_countdown_to_eta(self):
-        now = to_utc(datetime.utcnow()).astimezone(self.app.timezone)
+        now = to_utc(datetime.now(timezone.utc)).astimezone(self.app.timezone)
         m = self.app.amqp.as_task_v2(
             uuid(), 'foo', countdown=10, now=now,
         )
         assert m.headers['eta'] == (now + timedelta(seconds=10)).isoformat()
 
     def test_expires_to_datetime(self):
-        now = to_utc(datetime.utcnow()).astimezone(self.app.timezone)
+        now = to_utc(datetime.now(timezone.utc)).astimezone(self.app.timezone)
         m = self.app.amqp.as_task_v2(
             uuid(), 'foo', expires=30, now=now,
         )
@@ -360,14 +387,33 @@ class test_as_task_v2:
             now + timedelta(seconds=30)).isoformat()
 
     def test_eta_to_datetime(self):
-        eta = datetime.utcnow()
+        eta = datetime.now(timezone.utc)
         m = self.app.amqp.as_task_v2(
             uuid(), 'foo', eta=eta,
         )
         assert m.headers['eta'] == eta.isoformat()
 
-    def test_callbacks_errbacks_chord(self):
+    def test_compression(self):
+        self.app.conf.task_compression = 'gzip'
 
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event,
+            compression=None
+        )
+        assert prod.publish.call_args[1]['compression'] == 'gzip'
+
+    def test_compression_override(self):
+        self.app.conf.task_compression = 'gzip'
+
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event,
+            compression='bz2'
+        )
+        assert prod.publish.call_args[1]['compression'] == 'bz2'
+
+    def test_callbacks_errbacks_chord(self):
         @self.app.task
         def t(i):
             pass

@@ -1,21 +1,23 @@
-# -* coding: utf-8 -*-
 """Elasticsearch result store backend."""
-from __future__ import absolute_import, unicode_literals
-
-from datetime import datetime
+from datetime import datetime, timezone
 
 from kombu.utils.encoding import bytes_to_str
 from kombu.utils.url import _parse_url
 
+from celery import states
 from celery.exceptions import ImproperlyConfigured
-from celery.five import items
 
 from .base import KeyValueStoreBackend
 
 try:
     import elasticsearch
 except ImportError:
-    elasticsearch = None  # noqa
+    elasticsearch = None
+
+try:
+    import elastic_transport
+except ImportError:
+    elastic_transport = None
 
 __all__ = ('ElasticsearchBackend',)
 
@@ -34,26 +36,30 @@ class ElasticsearchBackend(KeyValueStoreBackend):
     """
 
     index = 'celery'
-    doc_type = 'backend'
+    doc_type = None
     scheme = 'http'
     host = 'localhost'
     port = 9200
+    username = None
+    password = None
     es_retry_on_timeout = False
     es_timeout = 10
     es_max_retries = 3
 
     def __init__(self, url=None, *args, **kwargs):
-        super(ElasticsearchBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.url = url
         _get = self.app.conf.get
 
         if elasticsearch is None:
             raise ImproperlyConfigured(E_LIB_MISSING)
 
-        index = doc_type = scheme = host = port = None
+        index = doc_type = scheme = host = port = username = password = None
 
         if url:
-            scheme, host, port, _, _, path, _ = _parse_url(url)  # noqa
+            scheme, host, port, username, password, path, _ = _parse_url(url)
+            if scheme == 'elasticsearch':
+                scheme = None
             if path:
                 path = path.strip('/')
                 index, _, doc_type = path.partition('/')
@@ -63,6 +69,8 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         self.scheme = scheme or self.scheme
         self.host = host or self.host
         self.port = port or self.port
+        self.username = username or self.username
+        self.password = password or self.password
 
         self.es_retry_on_timeout = (
             _get('elasticsearch_retry_on_timeout') or self.es_retry_on_timeout
@@ -76,15 +84,26 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         if es_max_retries is not None:
             self.es_max_retries = es_max_retries
 
+        self.es_save_meta_as_text = _get('elasticsearch_save_meta_as_text', True)
         self._server = None
+
+    def exception_safe_to_retry(self, exc):
+        if isinstance(exc, elasticsearch.exceptions.ApiError):
+            # 401: Unauthorized
+            # 409: Conflict
+            # 500: Internal Server Error
+            # 502: Bad Gateway
+            # 504: Gateway Timeout
+            # N/A: Low level exception (i.e. socket exception)
+            if exc.status_code in {401, 409, 500, 502, 504, 'N/A'}:
+                return True
+        if isinstance(exc, elasticsearch.exceptions.TransportError):
+            return True
+        return False
 
     def get(self, key):
         try:
-            res = self.server.get(
-                index=self.index,
-                doc_type=self.doc_type,
-                id=key,
-            )
+            res = self._get(key)
             try:
                 if res['found']:
                     return res['_source']['result']
@@ -93,46 +112,168 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         except elasticsearch.exceptions.NotFoundError:
             pass
 
-    def set(self, key, value):
+    def _get(self, key):
+        if self.doc_type:
+            return self.server.get(
+                index=self.index,
+                id=key,
+                doc_type=self.doc_type,
+            )
+        else:
+            return self.server.get(
+                index=self.index,
+                id=key,
+            )
+
+    def _set_with_state(self, key, value, state):
+        body = {
+            'result': value,
+            '@timestamp': '{}Z'.format(
+                datetime.now(timezone.utc).isoformat()[:-9]
+            ),
+        }
         try:
             self._index(
                 id=key,
-                body={
-                    'result': value,
-                    '@timestamp': '{0}Z'.format(
-                        datetime.utcnow().isoformat()[:-3]
-                    ),
-                },
+                body=body,
             )
         except elasticsearch.exceptions.ConflictError:
             # document already exists, update it
-            data = self.get(key)
-            data[key] = value
-            self._index(key, data, refresh=True)
+            self._update(key, body, state)
+
+    def set(self, key, value):
+        return self._set_with_state(key, value, None)
 
     def _index(self, id, body, **kwargs):
-        body = {bytes_to_str(k): v for k, v in items(body)}
-        return self.server.index(
-            id=bytes_to_str(id),
-            index=self.index,
-            doc_type=self.doc_type,
-            body=body,
-            **kwargs
-        )
+        body = {bytes_to_str(k): v for k, v in body.items()}
+        if self.doc_type:
+            return self.server.index(
+                id=bytes_to_str(id),
+                index=self.index,
+                doc_type=self.doc_type,
+                body=body,
+                params={'op_type': 'create'},
+                **kwargs
+            )
+        else:
+            return self.server.index(
+                id=bytes_to_str(id),
+                index=self.index,
+                body=body,
+                params={'op_type': 'create'},
+                **kwargs
+            )
+
+    def _update(self, id, body, state, **kwargs):
+        """Update state in a conflict free manner.
+
+        If state is defined (not None), this will not update ES server if either:
+        * existing state is success
+        * existing state is a ready state and current state in not a ready state
+
+        This way, a Retry state cannot override a Success or Failure, and chord_unlock
+        will not retry indefinitely.
+        """
+        body = {bytes_to_str(k): v for k, v in body.items()}
+
+        try:
+            res_get = self._get(key=id)
+            if not res_get.get('found'):
+                return self._index(id, body, **kwargs)
+            # document disappeared between index and get calls.
+        except elasticsearch.exceptions.NotFoundError:
+            return self._index(id, body, **kwargs)
+
+        try:
+            meta_present_on_backend = self.decode_result(res_get['_source']['result'])
+        except (TypeError, KeyError):
+            pass
+        else:
+            if meta_present_on_backend['status'] == states.SUCCESS:
+                # if stored state is already in success, do nothing
+                return {'result': 'noop'}
+            elif meta_present_on_backend['status'] in states.READY_STATES and state in states.UNREADY_STATES:
+                # if stored state is in ready state and current not, do nothing
+                return {'result': 'noop'}
+
+        # get current sequence number and primary term
+        # https://www.elastic.co/guide/en/elasticsearch/reference/current/optimistic-concurrency-control.html
+        seq_no = res_get.get('_seq_no', 1)
+        prim_term = res_get.get('_primary_term', 1)
+
+        # try to update document with current seq_no and primary_term
+        if self.doc_type:
+            res = self.server.update(
+                id=bytes_to_str(id),
+                index=self.index,
+                doc_type=self.doc_type,
+                body={'doc': body},
+                params={'if_primary_term': prim_term, 'if_seq_no': seq_no},
+                **kwargs
+            )
+        else:
+            res = self.server.update(
+                id=bytes_to_str(id),
+                index=self.index,
+                body={'doc': body},
+                params={'if_primary_term': prim_term, 'if_seq_no': seq_no},
+                **kwargs
+            )
+        # result is elastic search update query result
+        # noop = query did not update any document
+        # updated = at least one document got updated
+        if res['result'] == 'noop':
+            raise elasticsearch.exceptions.ConflictError(
+                "conflicting update occurred concurrently",
+                elastic_transport.ApiResponseMeta(409, "HTTP/1.1",
+                                                  elastic_transport.HttpHeaders(), 0, elastic_transport.NodeConfig(
+                                                      self.scheme, self.host, self.port)), None)
+        return res
+
+    def encode(self, data):
+        if self.es_save_meta_as_text:
+            return super().encode(data)
+        else:
+            if not isinstance(data, dict):
+                return super().encode(data)
+            if data.get("result"):
+                data["result"] = self._encode(data["result"])[2]
+            if data.get("traceback"):
+                data["traceback"] = self._encode(data["traceback"])[2]
+            return data
+
+    def decode(self, payload):
+        if self.es_save_meta_as_text:
+            return super().decode(payload)
+        else:
+            if not isinstance(payload, dict):
+                return super().decode(payload)
+            if payload.get("result"):
+                payload["result"] = super().decode(payload["result"])
+            if payload.get("traceback"):
+                payload["traceback"] = super().decode(payload["traceback"])
+            return payload
 
     def mget(self, keys):
         return [self.get(key) for key in keys]
 
     def delete(self, key):
-        self.server.delete(index=self.index, doc_type=self.doc_type, id=key)
+        if self.doc_type:
+            self.server.delete(index=self.index, id=key, doc_type=self.doc_type)
+        else:
+            self.server.delete(index=self.index, id=key)
 
     def _get_server(self):
         """Connect to the Elasticsearch server."""
+        http_auth = None
+        if self.username and self.password:
+            http_auth = (self.username, self.password)
         return elasticsearch.Elasticsearch(
-            '%s:%s' % (self.host, self.port),
+            f'{self.scheme}://{self.host}:{self.port}',
             retry_on_timeout=self.es_retry_on_timeout,
             max_retries=self.es_max_retries,
-            timeout=self.es_timeout
+            timeout=self.es_timeout,
+            http_auth=http_auth,
         )
 
     @property

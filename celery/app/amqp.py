@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
 """Sending/Receiving Messages (Kombu integration)."""
-from __future__ import absolute_import, unicode_literals
-
 import numbers
-from collections import Mapping, namedtuple
+from collections import namedtuple
+from collections.abc import Mapping
 from datetime import timedelta
 from weakref import WeakValueDictionary
 
@@ -13,8 +11,6 @@ from kombu.utils.functional import maybe_list
 from kombu.utils.objects import cached_property
 
 from celery import signals
-from celery.five import PY3, items, string_t
-from celery.local import try_import
 from celery.utils.nodenames import anon_nodename
 from celery.utils.saferepr import saferepr
 from celery.utils.text import indent as textindent
@@ -26,9 +22,6 @@ __all__ = ('AMQP', 'Queues', 'task_message')
 
 #: earliest date supported by time.mktime.
 INT_MIN = -2147483648
-
-# json in Python 2.7 borks if dict contains byte keys.
-JSON_NEEDS_UNICODE_KEYS = not PY3 and not try_import('simplejson')
 
 #: Human readable queue declaration.
 QUEUE_FORMAT = """
@@ -42,7 +35,7 @@ task_message = namedtuple('task_message',
 
 def utf8dict(d, encoding='utf-8'):
     return {k.decode(encoding) if isinstance(k, bytes) else k: v
-            for k, v in items(d)}
+            for k, v in d.items()}
 
 
 class Queues(dict):
@@ -53,7 +46,6 @@ class Queues(dict):
         create_missing (bool): By default any unknown queues will be
             added automatically, but if this flag is disabled the occurrence
             of unknown queues in `wanted` will raise :exc:`KeyError`.
-        ha_policy (Sequence, str): Default HA policy for queues with none set.
         max_priority (int): Default x-max-priority for queues with none set.
     """
 
@@ -62,31 +54,31 @@ class Queues(dict):
     _consume_from = None
 
     def __init__(self, queues=None, default_exchange=None,
-                 create_missing=True, ha_policy=None, autoexchange=None,
+                 create_missing=True, autoexchange=None,
                  max_priority=None, default_routing_key=None):
-        dict.__init__(self)
+        super().__init__()
         self.aliases = WeakValueDictionary()
         self.default_exchange = default_exchange
         self.default_routing_key = default_routing_key
         self.create_missing = create_missing
-        self.ha_policy = ha_policy
         self.autoexchange = Exchange if autoexchange is None else autoexchange
         self.max_priority = max_priority
         if queues is not None and not isinstance(queues, Mapping):
             queues = {q.name: q for q in queues}
-        for name, q in items(queues or {}):
+        queues = queues or {}
+        for name, q in queues.items():
             self.add(q) if isinstance(q, Queue) else self.add_compat(name, **q)
 
     def __getitem__(self, name):
         try:
             return self.aliases[name]
         except KeyError:
-            return dict.__getitem__(self, name)
+            return super().__getitem__(name)
 
     def __setitem__(self, name, queue):
         if self.default_exchange and not queue.exchange:
             queue.exchange = self.default_exchange
-        dict.__setitem__(self, name, queue)
+        super().__setitem__(name, queue)
         if queue.alias:
             self.aliases[queue.alias] = queue
 
@@ -124,27 +116,16 @@ class Queues(dict):
         return self._add(Queue.from_dict(name, **options))
 
     def _add(self, queue):
+        if queue.exchange is None or queue.exchange.name == '':
+            queue.exchange = self.default_exchange
         if not queue.routing_key:
-            if queue.exchange is None or queue.exchange.name == '':
-                queue.exchange = self.default_exchange
             queue.routing_key = self.default_routing_key
-        if self.ha_policy:
-            if queue.queue_arguments is None:
-                queue.queue_arguments = {}
-            self._set_ha_policy(queue.queue_arguments)
         if self.max_priority is not None:
             if queue.queue_arguments is None:
                 queue.queue_arguments = {}
             self._set_max_priority(queue.queue_arguments)
         self[queue.name] = queue
         return queue
-
-    def _set_ha_policy(self, args):
-        policy = self.ha_policy
-        if isinstance(policy, (list, tuple)):
-            return args.update({'ha-mode': 'nodes',
-                                'ha-params': list(policy)})
-        args['ha-mode'] = policy
 
     def _set_max_priority(self, args):
         if 'x-max-priority' not in args and self.max_priority is not None:
@@ -156,7 +137,7 @@ class Queues(dict):
         if not active:
             return ''
         info = [QUEUE_FORMAT.strip().format(q)
-                for _, q in sorted(items(active))]
+                for _, q in sorted(active.items())]
         if indent_first:
             return textindent('\n'.join(info), indent)
         return info[0] + '\n' + textindent('\n'.join(info[1:]), indent)
@@ -209,7 +190,7 @@ class Queues(dict):
         return self
 
 
-class AMQP(object):
+class AMQP:
     """App AMQP API: app.amqp."""
 
     Connection = Connection
@@ -247,6 +228,7 @@ class AMQP(object):
             1: self.as_task_v1,
             2: self.as_task_v2,
         }
+        self.app._conf.bind_to(self._handle_conf_update)
 
     @cached_property
     def create_task_message(self):
@@ -256,7 +238,7 @@ class AMQP(object):
     def send_task_message(self):
         return self._create_task_sender()
 
-    def Queues(self, queues, create_missing=None, ha_policy=None,
+    def Queues(self, queues, create_missing=None,
                autoexchange=None, max_priority=None):
         # Create new :class:`Queues` instance, using queue defaults
         # from the current configuration.
@@ -264,19 +246,21 @@ class AMQP(object):
         default_routing_key = conf.task_default_routing_key
         if create_missing is None:
             create_missing = conf.task_create_missing_queues
-        if ha_policy is None:
-            ha_policy = conf.task_queue_ha_policy
         if max_priority is None:
             max_priority = conf.task_queue_max_priority
         if not queues and conf.task_default_queue:
+            queue_arguments = None
+            if conf.task_default_queue_type == 'quorum':
+                queue_arguments = {'x-queue-type': 'quorum'}
             queues = (Queue(conf.task_default_queue,
                             exchange=self.default_exchange,
-                            routing_key=default_routing_key),)
+                            routing_key=default_routing_key,
+                            queue_arguments=queue_arguments),)
         autoexchange = (self.autoexchange if autoexchange is None
                         else autoexchange)
         return self.queues_cls(
             queues, self.default_exchange, create_missing,
-            ha_policy, autoexchange, max_priority, default_routing_key,
+            autoexchange, max_priority, default_routing_key,
         )
 
     def Router(self, queues=None, create_missing=None):
@@ -298,13 +282,15 @@ class AMQP(object):
         )
 
     def as_task_v2(self, task_id, name, args=None, kwargs=None,
-                   countdown=None, eta=None, group_id=None,
+                   countdown=None, eta=None, group_id=None, group_index=None,
                    expires=None, retries=0, chord=None,
                    callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
                    create_sent_event=False, root_id=None, parent_id=None,
                    shadow=None, chain=None, now=None, timezone=None,
-                   origin=None, argsrepr=None, kwargsrepr=None):
+                   origin=None, ignore_result=False, argsrepr=None, kwargsrepr=None, stamped_headers=None,
+                   replaced_task_nesting=0, **options):
+
         args = args or ()
         kwargs = kwargs or {}
         if not isinstance(args, (list, tuple)):
@@ -325,10 +311,10 @@ class AMQP(object):
             expires = maybe_make_aware(
                 now + timedelta(seconds=expires), tz=timezone,
             )
-        if not isinstance(eta, string_t):
+        if not isinstance(eta, str):
             eta = eta and eta.isoformat()
         # If we retry a task `expires` will already be ISO8601-formatted.
-        if not isinstance(expires, string_t):
+        if not isinstance(expires, str):
             expires = expires and expires.isoformat()
 
         if argsrepr is None:
@@ -336,34 +322,34 @@ class AMQP(object):
         if kwargsrepr is None:
             kwargsrepr = saferepr(kwargs, self.kwargsrepr_maxsize)
 
-        if JSON_NEEDS_UNICODE_KEYS:  # pragma: no cover
-            if callbacks:
-                callbacks = [utf8dict(callback) for callback in callbacks]
-            if errbacks:
-                errbacks = [utf8dict(errback) for errback in errbacks]
-            if chord:
-                chord = utf8dict(chord)
-
         if not root_id:  # empty root_id defaults to task_id
             root_id = task_id
 
+        stamps = {header: options[header] for header in stamped_headers or []}
+        headers = {
+            'lang': 'py',
+            'task': name,
+            'id': task_id,
+            'shadow': shadow,
+            'eta': eta,
+            'expires': expires,
+            'group': group_id,
+            'group_index': group_index,
+            'retries': retries,
+            'timelimit': [time_limit, soft_time_limit],
+            'root_id': root_id,
+            'parent_id': parent_id,
+            'argsrepr': argsrepr,
+            'kwargsrepr': kwargsrepr,
+            'origin': origin or anon_nodename(),
+            'ignore_result': ignore_result,
+            'replaced_task_nesting': replaced_task_nesting,
+            'stamped_headers': stamped_headers,
+            'stamps': stamps,
+        }
+
         return task_message(
-            headers={
-                'lang': 'py',
-                'task': name,
-                'id': task_id,
-                'shadow': shadow,
-                'eta': eta,
-                'expires': expires,
-                'group': group_id,
-                'retries': retries,
-                'timelimit': [time_limit, soft_time_limit],
-                'root_id': root_id,
-                'parent_id': parent_id,
-                'argsrepr': argsrepr,
-                'kwargsrepr': kwargsrepr,
-                'origin': origin or anon_nodename()
-            },
+            headers=headers,
             properties={
                 'correlation_id': task_id,
                 'reply_to': reply_to or '',
@@ -390,7 +376,7 @@ class AMQP(object):
         )
 
     def as_task_v1(self, task_id, name, args=None, kwargs=None,
-                   countdown=None, eta=None, group_id=None,
+                   countdown=None, eta=None, group_id=None, group_index=None,
                    expires=None, retries=0,
                    chord=None, callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
@@ -415,14 +401,6 @@ class AMQP(object):
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
 
-        if JSON_NEEDS_UNICODE_KEYS:  # pragma: no cover
-            if callbacks:
-                callbacks = [utf8dict(callback) for callback in callbacks]
-            if errbacks:
-                errbacks = [utf8dict(errback) for errback in errbacks]
-            if chord:
-                chord = utf8dict(chord)
-
         return task_message(
             headers={},
             properties={
@@ -435,6 +413,7 @@ class AMQP(object):
                 'args': args,
                 'kwargs': kwargs,
                 'group': group_id,
+                'group_index': group_index,
                 'retries': retries,
                 'eta': eta,
                 'expires': expires,
@@ -458,7 +437,7 @@ class AMQP(object):
 
     def _verify_seconds(self, s, what):
         if s < INT_MIN:
-            raise ValueError('%s is out of range: %r' % (what, s))
+            raise ValueError(f'{what} is out of range: {s!r}')
         return s
 
     def _create_task_sender(self):
@@ -480,7 +459,7 @@ class AMQP(object):
 
         default_rkey = self.app.conf.task_default_routing_key
         default_serializer = self.app.conf.task_serializer
-        default_compressor = self.app.conf.result_compression
+        default_compressor = self.app.conf.task_compression
 
         def send_task_message(producer, name, message,
                               exchange=None, routing_key=None, queue=None,
@@ -488,7 +467,8 @@ class AMQP(object):
                               retry=None, retry_policy=None,
                               serializer=None, delivery_mode=None,
                               compression=None, declare=None,
-                              headers=None, exchange_type=None, **kwargs):
+                              headers=None, exchange_type=None,
+                              timeout=None, confirm_timeout=None, **kwargs):
             retry = default_retry if retry is None else retry
             headers2, properties, body, sent_event = message
             if headers:
@@ -500,7 +480,7 @@ class AMQP(object):
             if queue is None and exchange is None:
                 queue = default_queue
             if queue is not None:
-                if isinstance(queue, string_t):
+                if isinstance(queue, str):
                     qname, queue = queue, queues[queue]
                 else:
                     qname = queue.name
@@ -549,6 +529,7 @@ class AMQP(object):
                 retry=retry, retry_policy=_rp,
                 delivery_mode=delivery_mode, declare=declare,
                 headers=headers2,
+                timeout=timeout, confirm_timeout=confirm_timeout,
                 **properties
             )
             if after_receivers:
@@ -591,7 +572,7 @@ class AMQP(object):
         """Queue name⇒ declaration mapping."""
         return self.Queues(self.app.conf.task_queues)
 
-    @queues.setter  # noqa
+    @queues.setter
     def queues(self, queues):
         return self.Queues(queues)
 
@@ -604,6 +585,10 @@ class AMQP(object):
     @cached_property
     def router(self):
         return self.Router()
+
+    @router.setter
+    def router(self, value):
+        return value
 
     @property
     def producer_pool(self):
@@ -626,5 +611,11 @@ class AMQP(object):
     @cached_property
     def _event_dispatcher(self):
         # We call Dispatcher.publish with a custom producer
-        # so don't need the diuspatcher to be enabled.
+        # so don't need the dispatcher to be enabled.
         return self.app.events.Dispatcher(enabled=False)
+
+    def _handle_conf_update(self, *args, **kwargs):
+        if ('task_routes' in kwargs or 'task_routes' in args):
+            self.flush_routes()
+            self.router = self.Router()
+        return

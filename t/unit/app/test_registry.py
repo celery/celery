@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import pytest
 
 from celery.app.registry import _unpickle_task, _unpickle_task_v2
@@ -25,7 +23,7 @@ class test_unpickle_task:
 
 class test_TaskRegistry:
 
-    def setup(self):
+    def setup_method(self):
         self.mytask = self.app.task(name='A', shared=False)(returns)
         self.missing_name_task = self.app.task(
             name=None, shared=False)(returns)

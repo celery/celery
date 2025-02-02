@@ -1,25 +1,21 @@
-# -*- coding: utf-8 -*-
 """App utilities: Compat settings, bug-report tool, pickling apps."""
-from __future__ import absolute_import, unicode_literals
-
 import os
 import platform as _platform
 import re
-from collections import Mapping, namedtuple
+from collections import namedtuple
+from collections.abc import Mapping
 from copy import deepcopy
 from types import ModuleType
 
 from kombu.utils.url import maybe_sanitize_url
 
 from celery.exceptions import ImproperlyConfigured
-from celery.five import items, keys, string_t, values
 from celery.platforms import pyimplementation
 from celery.utils.collections import ConfigurationView
 from celery.utils.imports import import_from_cwd, qualname, symbol_by_name
 from celery.utils.text import pretty
 
-from .defaults import (_OLD_DEFAULTS, _OLD_SETTING_KEYS, _TO_NEW_KEY,
-                       _TO_OLD_KEY, DEFAULTS, SETTING_KEYS, find)
+from .defaults import _OLD_DEFAULTS, _OLD_SETTING_KEYS, _TO_NEW_KEY, _TO_OLD_KEY, DEFAULTS, SETTING_KEYS, find
 
 __all__ = (
     'Settings', 'appstr', 'bugreport',
@@ -30,7 +26,8 @@ __all__ = (
 BUGREPORT_INFO = """
 software -> celery:{celery_v} kombu:{kombu_v} py:{py_v}
             billiard:{billiard_v} {driver_v}
-platform -> system:{system} arch:{arch} imp:{py_i}
+platform -> system:{system} arch:{arch}
+            kernel version:{kernel_version} imp:{py_i}
 loader   -> {loader}
 settings -> transport:{transport} results:{results}
 
@@ -67,7 +64,7 @@ FMT_REPLACE_SETTING = '{replace:<36} -> {with_}'
 
 def appstr(app):
     """String used in __repr__ etc, to id app instances."""
-    return '{0} at {1:#x}'.format(app.main or '__main__', id(app))
+    return f'{app.main or "__main__"} at {id(app):#x}'
 
 
 class Settings(ConfigurationView):
@@ -78,6 +75,11 @@ class Settings(ConfigurationView):
         :ref:`configuration` for a full list of configuration keys.
 
     """
+
+    def __init__(self, *args, deprecated_settings=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.deprecated_settings = deprecated_settings
 
     @property
     def broker_read_url(self):
@@ -106,7 +108,7 @@ class Settings(ConfigurationView):
     def result_backend(self):
         return (
             os.environ.get('CELERY_RESULT_BACKEND') or
-            self.get('CELERY_RESULT_BACKEND')
+            self.first('result_backend', 'CELERY_RESULT_BACKEND')
         )
 
     @property
@@ -126,7 +128,7 @@ class Settings(ConfigurationView):
     @property
     def timezone(self):
         # this way we also support django's time zone.
-        return self.first('timezone', 'time_zone')
+        return self.first('timezone', 'TIME_ZONE')
 
     def without_defaults(self):
         """Return the current configuration, but without defaults."""
@@ -180,17 +182,31 @@ class Settings(ConfigurationView):
         filt = filter_hidden_settings if censored else lambda v: v
         dict_members = dir(dict)
         self.finalize()
+        settings = self if with_defaults else self.without_defaults()
         return filt({
-            k: v for k, v in items(
-                self if with_defaults else self.without_defaults())
+            k: v for k, v in settings.items()
             if not k.startswith('_') and k not in dict_members
         })
 
     def humanize(self, with_defaults=False, censored=True):
         """Return a human readable text showing configuration changes."""
         return '\n'.join(
-            '{0}: {1}'.format(key, pretty(value, width=50))
-            for key, value in items(self.table(with_defaults, censored)))
+            f'{key}: {pretty(value, width=50)}'
+            for key, value in self.table(with_defaults, censored).items())
+
+    def maybe_warn_deprecated_settings(self):
+        # TODO: Remove this method in Celery 6.0
+        if self.deprecated_settings:
+            from celery.app.defaults import _TO_NEW_KEY
+            from celery.utils import deprecated
+            for setting in self.deprecated_settings:
+                deprecated.warn(description=f'The {setting!r} setting',
+                                removal='6.0.0',
+                                alternative=f'Use the {_TO_NEW_KEY[setting]} instead')
+
+            return True
+
+        return False
 
 
 def _new_key_to_old(key, convert=_TO_OLD_KEY.get):
@@ -213,12 +229,17 @@ _old_settings_info = _settings_info_t(
 )
 
 
-def detect_settings(conf, preconf={}, ignore_keys=set(), prefix=None,
-                    all_keys=SETTING_KEYS, old_keys=_OLD_SETTING_KEYS):
+def detect_settings(conf, preconf=None, ignore_keys=None, prefix=None,
+                    all_keys=None, old_keys=None):
+    preconf = {} if not preconf else preconf
+    ignore_keys = set() if not ignore_keys else ignore_keys
+    all_keys = SETTING_KEYS if not all_keys else all_keys
+    old_keys = _OLD_SETTING_KEYS if not old_keys else old_keys
+
     source = conf
     if conf is None:
         source, conf = preconf, {}
-    have = set(keys(source)) - ignore_keys
+    have = set(source.keys()) - ignore_keys
     is_in_new = have.intersection(all_keys)
     is_in_old = have.intersection(old_keys)
 
@@ -255,16 +276,17 @@ def detect_settings(conf, preconf={}, ignore_keys=set(), prefix=None,
             for key in sorted(really_left)
         )))
 
-    preconf = {info.convert.get(k, k): v for k, v in items(preconf)}
+    preconf = {info.convert.get(k, k): v for k, v in preconf.items()}
     defaults = dict(deepcopy(info.defaults), **preconf)
     return Settings(
         preconf, [conf, defaults],
         (_old_key_to_new, _new_key_to_old),
+        deprecated_settings=is_in_old,
         prefix=prefix,
     )
 
 
-class AppPickler(object):
+class AppPickler:
     """Old application pickler/unpickler (< 3.1)."""
 
     def __call__(self, cls, *args):
@@ -307,7 +329,7 @@ def filter_hidden_settings(conf):
     def maybe_censor(key, value, mask='*' * 8):
         if isinstance(value, Mapping):
             return filter_hidden_settings(value)
-        if isinstance(key, string_t):
+        if isinstance(key, str):
             if HIDDEN_SETTINGS.search(key):
                 return mask
             elif 'broker_url' in key.lower():
@@ -318,19 +340,20 @@ def filter_hidden_settings(conf):
 
         return value
 
-    return {k: maybe_censor(k, v) for k, v in items(conf)}
+    return {k: maybe_censor(k, v) for k, v in conf.items()}
 
 
 def bugreport(app):
     """Return a string containing information useful in bug-reports."""
     import billiard
-    import celery
     import kombu
+
+    import celery
 
     try:
         conn = app.connection()
-        driver_v = '{0}:{1}'.format(conn.transport.driver_name,
-                                    conn.transport.driver_version())
+        driver_v = '{}:{}'.format(conn.transport.driver_name,
+                                  conn.transport.driver_version())
         transport = conn.transport_cls
     except Exception:  # pylint: disable=broad-except
         transport = driver_v = ''
@@ -338,6 +361,7 @@ def bugreport(app):
     return BUGREPORT_INFO.format(
         system=_platform.system(),
         arch=', '.join(x for x in _platform.architecture() if x),
+        kernel_version=_platform.release(),
         py_i=pyimplementation(),
         celery_v=celery.VERSION_BANNER,
         kombu_v=kombu.__version__,
@@ -369,17 +393,18 @@ def find_app(app, symbol_by_name=symbol_by_name, imp=import_from_cwd):
             try:
                 found = sym.celery
                 if isinstance(found, ModuleType):
-                    raise AttributeError()
+                    raise AttributeError(
+                        "attribute 'celery' is the celery module not the instance of celery")
             except AttributeError:
                 if getattr(sym, '__path__', None):
                     try:
                         return find_app(
-                            '{0}.celery'.format(app),
+                            f'{app}.celery',
                             symbol_by_name=symbol_by_name, imp=imp,
                         )
                     except ImportError:
                         pass
-                for suspect in values(vars(sym)):
+                for suspect in vars(sym).values():
                     if isinstance(suspect, Celery):
                         return suspect
                 raise

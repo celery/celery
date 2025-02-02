@@ -1,6 +1,4 @@
 """Event receiver implementation."""
-from __future__ import absolute_import, unicode_literals
-
 import time
 from operator import itemgetter
 
@@ -44,7 +42,8 @@ class EventReceiver(ConsumerMixin):
         self.node_id = node_id or uuid()
         self.queue_prefix = queue_prefix or self.app.conf.event_queue_prefix
         self.exchange = get_exchange(
-            self.connection or self.app.connection_for_write())
+            self.connection or self.app.connection_for_write(),
+            name=self.app.conf.event_exchange)
         if queue_ttl is None:
             queue_ttl = self.app.conf.event_queue_ttl
         if queue_expires is None:
@@ -89,7 +88,8 @@ class EventReceiver(ConsumerMixin):
         unless :attr:`EventDispatcher.should_stop` is set to True, or
         forced via :exc:`KeyboardInterrupt` or :exc:`SystemExit`.
         """
-        return list(self.consume(limit=limit, timeout=timeout, wakeup=wakeup))
+        for _ in self.consume(limit=limit, timeout=timeout, wakeup=wakeup):
+            pass
 
     def wakeup_workers(self, channel=None):
         self.app.control.broadcast('heartbeat',
@@ -124,7 +124,7 @@ class EventReceiver(ConsumerMixin):
         return type, body
 
     def _receive(self, body, message, list=list, isinstance=isinstance):
-        if isinstance(body, list):  # celery 4.0: List of events
+        if isinstance(body, list):  # celery 4.0+: List of events
             process, from_message = self.process, self.event_from_message
             [process(*from_message(event)) for event in body]
         else:

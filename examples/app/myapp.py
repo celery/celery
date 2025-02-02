@@ -2,7 +2,7 @@
 
 Usage::
 
-   (window1)$ python myapp.py worker -l info
+   (window1)$ python myapp.py worker -l INFO
 
    (window2)$ python
    >>> from myapp import add
@@ -13,16 +13,17 @@ Usage::
 You can also specify the app to use with the `celery` command,
 using the `-A` / `--app` option::
 
-    $ celery -A myapp worker -l info
+    $ celery -A myapp worker -l INFO
 
 With the `-A myproj` argument the program will search for an app
 instance in the module ``myproj``.  You can also specify an explicit
 name using the fully qualified form::
 
-    $ celery -A myapp:app worker -l info
+    $ celery -A myapp:app worker -l INFO
 
 """
-from __future__ import absolute_import, unicode_literals
+from time import sleep
+
 from celery import Celery
 
 app = Celery(
@@ -30,11 +31,13 @@ app = Celery(
     broker='amqp://guest@localhost//',
     # ## add result backend here if needed.
     # backend='rpc'
+    task_acks_late=True
 )
 
 
 @app.task
 def add(x, y):
+    sleep(10)
     return x + y
 
 

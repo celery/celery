@@ -1,8 +1,5 @@
-# -* coding: utf-8 -*-
 """Apache Cassandra result store backend using the DataStax driver."""
-from __future__ import absolute_import, unicode_literals
-
-import sys
+import threading
 
 from celery import states
 from celery.exceptions import ImproperlyConfigured
@@ -14,8 +11,9 @@ try:  # pragma: no cover
     import cassandra
     import cassandra.auth
     import cassandra.cluster
-except ImportError:  # pragma: no cover
-    cassandra = None   # noqa
+    import cassandra.query
+except ImportError:
+    cassandra = None
 
 
 __all__ = ('CassandraBackend',)
@@ -31,6 +29,10 @@ E_NO_SUCH_CASSANDRA_AUTH_PROVIDER = """
 CASSANDRA_AUTH_PROVIDER you provided is not a valid auth_provider class.
 See https://datastax.github.io/python-driver/api/cassandra/auth.html.
 """
+
+E_CASSANDRA_MISCONFIGURED = 'Cassandra backend improperly configured.'
+
+E_CASSANDRA_NOT_CONFIGURED = 'Cassandra backend not configured.'
 
 Q_INSERT_RESULT = """
 INSERT INTO {table} (
@@ -61,43 +63,51 @@ Q_EXPIRES = """
     USING TTL {0}
 """
 
-if sys.version_info[0] == 3:
-    def buf_t(x):
-        return bytes(x, 'utf8')
-else:
-    buf_t = buffer  # noqa
+
+def buf_t(x):
+    return bytes(x, 'utf8')
 
 
 class CassandraBackend(BaseBackend):
-    """Cassandra backend utilizing DataStax driver.
+    """Cassandra/AstraDB backend utilizing DataStax driver.
 
     Raises:
         celery.exceptions.ImproperlyConfigured:
             if module :pypi:`cassandra-driver` is not available,
-            or if the :setting:`cassandra_servers` setting is not set.
+            or not-exactly-one of the :setting:`cassandra_servers` and
+            the :setting:`cassandra_secure_bundle_path` settings is set.
     """
 
     #: List of Cassandra servers with format: ``hostname``.
     servers = None
+    #: Location of the secure connect bundle zipfile (absolute path).
+    bundle_path = None
 
     supports_autoexpire = True      # autoexpire supported via entry_ttl
 
     def __init__(self, servers=None, keyspace=None, table=None, entry_ttl=None,
-                 port=9042, **kwargs):
-        super(CassandraBackend, self).__init__(**kwargs)
+                 port=None, bundle_path=None, **kwargs):
+        super().__init__(**kwargs)
 
         if not cassandra:
             raise ImproperlyConfigured(E_NO_CASSANDRA)
 
         conf = self.app.conf
         self.servers = servers or conf.get('cassandra_servers', None)
-        self.port = port or conf.get('cassandra_port', None)
+        self.bundle_path = bundle_path or conf.get(
+            'cassandra_secure_bundle_path', None)
+        self.port = port or conf.get('cassandra_port', None) or 9042
         self.keyspace = keyspace or conf.get('cassandra_keyspace', None)
         self.table = table or conf.get('cassandra_table', None)
         self.cassandra_options = conf.get('cassandra_options', {})
 
-        if not self.servers or not self.keyspace or not self.table:
-            raise ImproperlyConfigured('Cassandra backend not configured.')
+        # either servers or bundle path must be provided...
+        db_directions = self.servers or self.bundle_path
+        if not db_directions or not self.keyspace or not self.table:
+            raise ImproperlyConfigured(E_CASSANDRA_NOT_CONFIGURED)
+        # ...but not both:
+        if self.servers and self.bundle_path:
+            raise ImproperlyConfigured(E_CASSANDRA_MISCONFIGURED)
 
         expires = entry_ttl or conf.get('cassandra_entry_ttl', None)
 
@@ -123,17 +133,11 @@ class CassandraBackend(BaseBackend):
                 raise ImproperlyConfigured(E_NO_SUCH_CASSANDRA_AUTH_PROVIDER)
             self.auth_provider = auth_provider_class(**auth_kwargs)
 
-        self._connection = None
+        self._cluster = None
         self._session = None
         self._write_stmt = None
         self._read_stmt = None
-        self._make_stmt = None
-
-    def process_cleanup(self):
-        if self._connection is not None:
-            self._connection.shutdown()  # also shuts down _session
-        self._connection = None
-        self._session = None
+        self._lock = threading.RLock()
 
     def _get_connection(self, write=False):
         """Prepare the connection for action.
@@ -141,14 +145,27 @@ class CassandraBackend(BaseBackend):
         Arguments:
             write (bool): are we a writer?
         """
-        if self._connection is not None:
+        if self._session is not None:
             return
+        self._lock.acquire()
         try:
-            self._connection = cassandra.cluster.Cluster(
-                self.servers, port=self.port,
-                auth_provider=self.auth_provider,
-                **self.cassandra_options)
-            self._session = self._connection.connect(self.keyspace)
+            if self._session is not None:
+                return
+            # using either 'servers' or 'bundle_path' here:
+            if self.servers:
+                self._cluster = cassandra.cluster.Cluster(
+                    self.servers, port=self.port,
+                    auth_provider=self.auth_provider,
+                    **self.cassandra_options)
+            else:
+                # 'bundle_path' is guaranteed to be set
+                self._cluster = cassandra.cluster.Cluster(
+                    cloud={
+                        'secure_connect_bundle': self.bundle_path,
+                    },
+                    auth_provider=self.auth_provider,
+                    **self.cassandra_options)
+            self._session = self._cluster.connect(self.keyspace)
 
             # We're forced to do concatenation below, as formatting would
             # blow up on superficial %s that'll be processed by Cassandra
@@ -172,25 +189,27 @@ class CassandraBackend(BaseBackend):
                 # Anyway; if you're doing anything critical, you should
                 # have created this table in advance, in which case
                 # this query will be a no-op (AlreadyExists)
-                self._make_stmt = cassandra.query.SimpleStatement(
+                make_stmt = cassandra.query.SimpleStatement(
                     Q_CREATE_RESULT_TABLE.format(table=self.table),
                 )
-                self._make_stmt.consistency_level = self.write_consistency
+                make_stmt.consistency_level = self.write_consistency
 
                 try:
-                    self._session.execute(self._make_stmt)
+                    self._session.execute(make_stmt)
                 except cassandra.AlreadyExists:
                     pass
 
         except cassandra.OperationTimedOut:
             # a heavily loaded or gone Cassandra cluster failed to respond.
             # leave this class in a consistent state
-            if self._connection is not None:
-                self._connection.shutdown()     # also shuts down _session
+            if self._cluster is not None:
+                self._cluster.shutdown()     # also shuts down _session
 
-            self._connection = None
+            self._cluster = None
             self._session = None
             raise   # we did fail after all - reraise
+        finally:
+            self._lock.release()
 
     def _store_result(self, task_id, result, state,
                       traceback=None, request=None, **kwargs):
@@ -213,24 +232,25 @@ class CassandraBackend(BaseBackend):
         """Get task meta-data for a task by id."""
         self._get_connection()
 
-        res = self._session.execute(self._read_stmt, (task_id, ))
+        res = self._session.execute(self._read_stmt, (task_id, )).one()
         if not res:
             return {'status': states.PENDING, 'result': None}
 
-        status, result, date_done, traceback, children = res[0]
+        status, result, date_done, traceback, children = res
 
         return self.meta_from_decoded({
             'task_id': task_id,
             'status': status,
             'result': self.decode(result),
-            'date_done': date_done.strftime('%Y-%m-%dT%H:%M:%SZ'),
+            'date_done': date_done,
             'traceback': self.decode(traceback),
             'children': self.decode(children),
         })
 
-    def __reduce__(self, args=(), kwargs={}):
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
         kwargs.update(
             {'servers': self.servers,
              'keyspace': self.keyspace,
              'table': self.table})
-        return super(CassandraBackend, self).__reduce__(args, kwargs)
+        return super().__reduce__(args, kwargs)

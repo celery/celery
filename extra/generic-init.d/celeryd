@@ -6,7 +6,7 @@
 # :Usage: /etc/init.d/celeryd {start|stop|force-reload|restart|try-restart|status}
 # :Configuration file: /etc/default/celeryd (or /usr/local/etc/celeryd on BSD)
 #
-# See http://docs.celeryproject.org/en/latest/userguide/daemonizing.html#generic-init-scripts
+# See https://docs.celeryq.dev/en/latest/userguide/daemonizing.html#generic-init-scripts
 
 
 ### BEGIN INIT INFO
@@ -77,7 +77,7 @@ _config_sanity() {
         echo
         echo "Resolution:"
         echo "Review the file carefully, and make sure it hasn't been "
-        echo "modified with mailicious intent.  When sure the "
+        echo "modified with malicious intent.  When sure the "
         echo "script is safe to execute with superuser privileges "
         echo "you can change ownership of the script:"
         echo "    $ sudo chown root '$path'"
@@ -269,7 +269,7 @@ dryrun () {
 
 
 stop_workers () {
-    _chuid stopwait $CELERYD_NODES --pidfile="$CELERYD_PID_FILE"
+    _chuid stopwait $CELERYD_NODES $DAEMON_OPTS --pidfile="$CELERYD_PID_FILE"
 }
 
 

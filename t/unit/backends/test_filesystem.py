@@ -1,21 +1,23 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals
-
 import os
+import pickle
+import sys
 import tempfile
+import time
+from unittest.mock import patch
 
 import pytest
-from case import skip
 
+import t.skip
 from celery import states, uuid
+from celery.backends import filesystem
 from celery.backends.filesystem import FilesystemBackend
 from celery.exceptions import ImproperlyConfigured
 
 
-@skip.if_win32()
+@t.skip.if_win32
 class test_FilesystemBackend:
 
-    def setup(self):
+    def setup_method(self):
         self.directory = tempfile.mkdtemp()
         self.url = 'file://' + self.directory
         self.path = self.directory.encode('ascii')
@@ -28,9 +30,26 @@ class test_FilesystemBackend:
         tb = FilesystemBackend(app=self.app, url=self.url)
         assert tb.path == self.path
 
-    def test_path_is_incorrect(self):
-        with pytest.raises(ImproperlyConfigured):
-            FilesystemBackend(app=self.app, url=self.url + '-incorrect')
+    @pytest.mark.parametrize("url,expected_error_message", [
+        ('file:///non-existing', filesystem.E_PATH_INVALID),
+        ('url://non-conforming', filesystem.E_PATH_NON_CONFORMING_SCHEME),
+        (None, filesystem.E_NO_PATH_SET)
+    ])
+    def test_raises_meaningful_errors_for_invalid_urls(
+        self,
+        url,
+        expected_error_message
+    ):
+        with pytest.raises(
+            ImproperlyConfigured,
+            match=expected_error_message
+        ):
+            FilesystemBackend(app=self.app, url=url)
+
+    def test_localhost_is_removed_from_url(self):
+        url = 'file://localhost' + self.directory
+        tb = FilesystemBackend(app=self.app, url=url)
+        assert tb.path == self.path
 
     def test_missing_task_is_PENDING(self):
         tb = FilesystemBackend(app=self.app, url=self.url)
@@ -71,3 +90,41 @@ class test_FilesystemBackend:
         tb.mark_as_done(tid, 42)
         tb.forget(tid)
         assert len(os.listdir(self.directory)) == 0
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_pickleable(self):
+        tb = FilesystemBackend(app=self.app, url=self.url, serializer='pickle')
+        assert pickle.loads(pickle.dumps(tb))
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason='Test can fail on '
+                        'Windows/FAT due to low granularity of st_mtime')
+    def test_cleanup(self):
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        yesterday_task_ids = [uuid() for i in range(10)]
+        today_task_ids = [uuid() for i in range(10)]
+        for tid in yesterday_task_ids:
+            tb.mark_as_done(tid, 42)
+        day_length = 0.2
+        time.sleep(day_length)  # let FS mark some difference in mtimes
+        for tid in today_task_ids:
+            tb.mark_as_done(tid, 42)
+        with patch.object(tb, 'expires', 0):
+            tb.cleanup()
+        # test that zero expiration time prevents any cleanup
+        filenames = set(os.listdir(tb.path))
+        assert all(
+            tb.get_key_for_task(tid) in filenames
+            for tid in yesterday_task_ids + today_task_ids
+        )
+        # test that non-zero expiration time enables cleanup by file mtime
+        with patch.object(tb, 'expires', day_length):
+            tb.cleanup()
+        filenames = set(os.listdir(tb.path))
+        assert not any(
+            tb.get_key_for_task(tid) in filenames
+            for tid in yesterday_task_ids
+        )
+        assert all(
+            tb.get_key_for_task(tid) in filenames
+            for tid in today_task_ids
+        )

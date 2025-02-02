@@ -1,12 +1,14 @@
-from __future__ import absolute_import, unicode_literals
+import datetime
+import os
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, mock, patch, skip
 
 from celery.exceptions import SecurityError
 from celery.security.certificate import Certificate, CertStore, FSCertStore
+from t.unit import conftest
 
-from . import CERT1, CERT2, KEY1
+from . import CERT1, CERT2, CERT_ECDSA, KEY1
 from .case import SecurityCase
 
 
@@ -27,15 +29,30 @@ class test_Certificate(SecurityCase):
             Certificate(CERT1[:20] + CERT1[21:])
         with pytest.raises(SecurityError):
             Certificate(KEY1)
+        with pytest.raises(SecurityError):
+            Certificate(CERT_ECDSA)
 
-    @skip.todo(reason='cert expired')
+    @pytest.mark.skip('TODO: cert expired')
     def test_has_expired(self):
         assert not Certificate(CERT1).has_expired()
 
     def test_has_expired_mock(self):
         x = Certificate(CERT1)
+
         x._cert = Mock(name='cert')
-        assert x.has_expired() is x._cert.has_expired()
+        time_after = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=-1)
+        x._cert.not_valid_after_utc = time_after
+
+        assert x.has_expired() is True
+
+    def test_has_not_expired_mock(self):
+        x = Certificate(CERT1)
+
+        x._cert = Mock(name='cert')
+        time_after = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)
+        x._cert.not_valid_after_utc = time_after
+
+        assert x.has_expired() is False
 
 
 class test_CertStore(SecurityCase):
@@ -69,22 +86,24 @@ class test_FSCertStore(SecurityCase):
         cert.has_expired.return_value = False
         isdir.return_value = True
         glob.return_value = ['foo.cert']
-        with mock.open():
+        with conftest.open():
             cert.get_id.return_value = 1
-            x = FSCertStore('/var/certs')
+
+            path = os.path.join('var', 'certs')
+            x = FSCertStore(path)
             assert 1 in x._certs
-            glob.assert_called_with('/var/certs/*')
+            glob.assert_called_with(os.path.join(path, '*'))
 
             # they both end up with the same id
             glob.return_value = ['foo.cert', 'bar.cert']
             with pytest.raises(SecurityError):
-                x = FSCertStore('/var/certs')
+                x = FSCertStore(path)
             glob.return_value = ['foo.cert']
 
             cert.has_expired.return_value = True
             with pytest.raises(SecurityError):
-                x = FSCertStore('/var/certs')
+                x = FSCertStore(path)
 
             isdir.return_value = False
             with pytest.raises(SecurityError):
-                x = FSCertStore('/var/certs')
+                x = FSCertStore(path)

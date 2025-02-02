@@ -1,35 +1,33 @@
-from __future__ import absolute_import, unicode_literals
-
+import os
 from datetime import datetime
 from pickle import dumps, loads
+from unittest.mock import Mock, patch
 
 import pytest
-from case import Mock, patch, skip
 
 from celery import states, uuid
+from celery.app.task import Context
 from celery.exceptions import ImproperlyConfigured
 
-try:
-    import sqlalchemy  # noqa
-except ImportError:
-    DatabaseBackend = Task = TaskSet = retry = None  # noqa
-    SessionManager = session_cleanup = None  # noqa
-else:
-    from celery.backends.database import (
-        DatabaseBackend, retry, session_cleanup,
-    )
-    from celery.backends.database import session
-    from celery.backends.database.session import SessionManager
-    from celery.backends.database.models import Task, TaskSet
+pytest.importorskip('sqlalchemy')
+
+from celery.backends.database import DatabaseBackend, retry, session, session_cleanup  # noqa
+from celery.backends.database.models import Task, TaskSet  # noqa
+from celery.backends.database.session import PREPARE_MODELS_MAX_RETRIES, ResultModelBase, SessionManager  # noqa
+from t import skip  # noqa
+
+DB_PATH = "test.db"
 
 
-class SomeClass(object):
+class SomeClass:
 
     def __init__(self, data):
         self.data = data
 
+    def __eq__(self, cmp):
+        return self.data == cmp.data
 
-@skip.unless_module('sqlalchemy')
+
 class test_session_cleanup:
 
     def test_context(self):
@@ -47,13 +45,17 @@ class test_session_cleanup:
         session.close.assert_called_with()
 
 
-@skip.unless_module('sqlalchemy')
-@skip.if_pypy()
-@skip.if_jython()
+@skip.if_pypy
 class test_DatabaseBackend:
 
-    def setup(self):
-        self.uri = 'sqlite:///test.db'
+    @pytest.fixture(autouse=True)
+    def remmove_db(self):
+        yield
+        if os.path.exists(DB_PATH):
+            os.remove(DB_PATH)
+
+    def setup_method(self):
+        self.uri = 'sqlite:///' + DB_PATH
         self.app.conf.result_serializer = 'pickle'
 
     def test_retry_helper(self):
@@ -74,6 +76,37 @@ class test_DatabaseBackend:
         self.app.conf.database_url = None
         with pytest.raises(ImproperlyConfigured):
             DatabaseBackend(app=self.app)
+
+    def test_table_schema_config(self):
+        self.app.conf.database_table_schemas = {
+            'task': 'foo',
+            'group': 'bar',
+        }
+        # disable table creation because schema foo and bar do not exist
+        # and aren't created if they don't exist.
+        self.app.conf.database_create_tables_at_setup = False
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.task_cls.__table__.schema == 'foo'
+        assert tb.task_cls.__table__.c.id.default.schema == 'foo'
+        assert tb.taskset_cls.__table__.schema == 'bar'
+        assert tb.taskset_cls.__table__.c.id.default.schema == 'bar'
+
+    def test_table_name_config(self):
+        self.app.conf.database_table_names = {
+            'task': 'foo',
+            'group': 'bar',
+        }
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.task_cls.__table__.name == 'foo'
+        assert tb.taskset_cls.__table__.name == 'bar'
+
+    def test_table_creation_at_setup_config(self):
+        from sqlalchemy import inspect
+        self.app.conf.database_create_tables_at_setup = True
+        tb = DatabaseBackend(self.uri, app=self.app)
+        engine = tb.session_manager.get_engine(tb.url)
+        inspect(engine).has_table("celery_taskmeta")
+        inspect(engine).has_table("celery_tasksetmeta")
 
     def test_missing_task_id_is_PENDING(self):
         tb = DatabaseBackend(self.uri, app=self.app)
@@ -204,7 +237,134 @@ class test_DatabaseBackend:
         assert 'foo', repr(TaskSet('foo' in None))
 
 
-@skip.unless_module('sqlalchemy')
+@skip.if_pypy
+class test_DatabaseBackend_result_extended():
+    def setup_method(self):
+        self.uri = 'sqlite:///' + DB_PATH
+        self.app.conf.result_serializer = 'pickle'
+        self.app.conf.result_extended = True
+
+    @pytest.mark.parametrize(
+        'result_serializer, args, kwargs',
+        [
+            ('pickle', (SomeClass(1), SomeClass(2)), {'foo': SomeClass(123)}),
+            ('json', ['a', 'b'], {'foo': 'bar'}),
+        ],
+        ids=['using pickle', 'using json']
+    )
+    def test_store_result(self, result_serializer, args, kwargs):
+        self.app.conf.result_serializer = result_serializer
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+
+        request = Context(args=args, kwargs=kwargs,
+                          task='mytask', retries=2,
+                          hostname='celery@worker_1',
+                          delivery_info={'routing_key': 'celery'})
+
+        tb.store_result(tid, {'fizz': 'buzz'}, states.SUCCESS, request=request)
+        meta = tb.get_task_meta(tid)
+
+        assert meta['result'] == {'fizz': 'buzz'}
+        assert meta['args'] == args
+        assert meta['kwargs'] == kwargs
+        assert meta['queue'] == 'celery'
+        assert meta['name'] == 'mytask'
+        assert meta['retries'] == 2
+        assert meta['worker'] == "celery@worker_1"
+
+    @pytest.mark.parametrize(
+        'result_serializer, args, kwargs',
+        [
+            ('pickle', (SomeClass(1), SomeClass(2)), {'foo': SomeClass(123)}),
+            ('json', ['a', 'b'], {'foo': 'bar'}),
+        ],
+        ids=['using pickle', 'using json']
+    )
+    def test_store_none_result(self, result_serializer, args, kwargs):
+        self.app.conf.result_serializer = result_serializer
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+
+        request = Context(args=args, kwargs=kwargs,
+                          task='mytask', retries=2,
+                          hostname='celery@worker_1',
+                          delivery_info={'routing_key': 'celery'})
+
+        tb.store_result(tid, None, states.SUCCESS, request=request)
+        meta = tb.get_task_meta(tid)
+
+        assert meta['result'] is None
+        assert meta['args'] == args
+        assert meta['kwargs'] == kwargs
+        assert meta['queue'] == 'celery'
+        assert meta['name'] == 'mytask'
+        assert meta['retries'] == 2
+        assert meta['worker'] == "celery@worker_1"
+
+    @pytest.mark.parametrize(
+        'result_serializer, args, kwargs',
+        [
+            ('pickle', (SomeClass(1), SomeClass(2)),
+             {'foo': SomeClass(123)}),
+            ('json', ['a', 'b'], {'foo': 'bar'}),
+        ],
+        ids=['using pickle', 'using json']
+    )
+    def test_get_result_meta(self, result_serializer, args, kwargs):
+        self.app.conf.result_serializer = result_serializer
+        tb = DatabaseBackend(self.uri, app=self.app)
+
+        request = Context(args=args, kwargs=kwargs,
+                          task='mytask', retries=2,
+                          hostname='celery@worker_1',
+                          delivery_info={'routing_key': 'celery'})
+
+        meta = tb._get_result_meta(result={'fizz': 'buzz'},
+                                   state=states.SUCCESS, traceback=None,
+                                   request=request, format_date=False,
+                                   encode=True)
+
+        assert meta['result'] == {'fizz': 'buzz'}
+        assert tb.decode(meta['args']) == args
+        assert tb.decode(meta['kwargs']) == kwargs
+        assert meta['queue'] == 'celery'
+        assert meta['name'] == 'mytask'
+        assert meta['retries'] == 2
+        assert meta['worker'] == "celery@worker_1"
+
+    @pytest.mark.parametrize(
+        'result_serializer, args, kwargs',
+        [
+            ('pickle', (SomeClass(1), SomeClass(2)),
+             {'foo': SomeClass(123)}),
+            ('json', ['a', 'b'], {'foo': 'bar'}),
+        ],
+        ids=['using pickle', 'using json']
+    )
+    def test_get_result_meta_with_none(self, result_serializer, args, kwargs):
+        self.app.conf.result_serializer = result_serializer
+        tb = DatabaseBackend(self.uri, app=self.app)
+
+        request = Context(args=args, kwargs=kwargs,
+                          task='mytask', retries=2,
+                          hostname='celery@worker_1',
+                          delivery_info={'routing_key': 'celery'})
+
+        meta = tb._get_result_meta(result=None,
+                                   state=states.SUCCESS, traceback=None,
+                                   request=request, format_date=False,
+                                   encode=True)
+
+        assert meta['result'] is None
+        assert tb.decode(meta['args']) == args
+        assert tb.decode(meta['kwargs']) == kwargs
+        assert meta['queue'] == 'celery'
+        assert meta['name'] == 'mytask'
+        assert meta['retries'] == 2
+        assert meta['worker'] == "celery@worker_1"
+
+
 class test_SessionManager:
 
     def test_after_fork(self):
@@ -219,6 +379,14 @@ class test_SessionManager:
         s._after_fork()
         engine = s.get_engine('dburi', foo=1)
         create_engine.assert_called_with('dburi', foo=1)
+        assert engine is create_engine()
+        engine2 = s.get_engine('dburi', foo=1)
+        assert engine2 is engine
+
+    @patch('celery.backends.database.session.create_engine')
+    def test_get_engine_kwargs(self, create_engine):
+        s = SessionManager()
+        engine = s.get_engine('dbur', foo=1, pool_size=5)
         assert engine is create_engine()
         engine2 = s.get_engine('dburi', foo=1)
         assert engine2 is engine
@@ -249,3 +417,33 @@ class test_SessionManager:
             SessionManager()
         finally:
             session.register_after_fork = prev
+
+    @patch('celery.backends.database.session.create_engine')
+    def test_prepare_models_terminates(self, create_engine):
+        """SessionManager.prepare_models has retry logic because the creation
+        of database tables by multiple workers is racy. This test patches
+        the used method to always raise, so we can verify that it does
+        eventually terminate.
+        """
+        from sqlalchemy.dialects.sqlite import dialect
+        from sqlalchemy.exc import DatabaseError
+
+        if hasattr(dialect, 'dbapi'):
+            # Method name in SQLAlchemy < 2.0
+            sqlite = dialect.dbapi()
+        else:
+            # Newer method name in SQLAlchemy 2.0
+            sqlite = dialect.import_dbapi()
+        manager = SessionManager()
+        engine = manager.get_engine('dburi')
+
+        def raise_err(bind):
+            raise DatabaseError("", "", [], sqlite.DatabaseError)
+
+        patch_create_all = patch.object(
+            ResultModelBase.metadata, 'create_all', side_effect=raise_err)
+
+        with pytest.raises(DatabaseError), patch_create_all as mock_create_all:
+            manager.prepare_models(engine)
+
+        assert mock_create_all.call_count == PREPARE_MODELS_MAX_RETRIES + 1

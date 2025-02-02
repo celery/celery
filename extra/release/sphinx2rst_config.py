@@ -1,6 +1,4 @@
-from __future__ import absolute_import, unicode_literals
-
-REFBASE = 'http://docs.celeryproject.org/en/latest'
+REFBASE = 'https://docs.celeryq.dev/en/latest'
 REFS = {
     'mailing-list':
         'https://groups.google.com/group/celery-users',

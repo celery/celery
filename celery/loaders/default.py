@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """The default loader used when no custom app has been initialized."""
-from __future__ import absolute_import, unicode_literals
-
 import os
 import warnings
 

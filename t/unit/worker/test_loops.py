@@ -1,25 +1,21 @@
-from __future__ import absolute_import, unicode_literals
-
 import errno
 import socket
+from queue import Empty
+from unittest.mock import Mock
 
 import pytest
-from case import Mock
 from kombu.asynchronous import ERR, READ, WRITE, Hub
 from kombu.exceptions import DecodeError
 
 from celery.bootsteps import CLOSE, RUN
-from celery.exceptions import (InvalidTaskError, WorkerLostError,
-                               WorkerShutdown, WorkerTerminate)
-from celery.five import Empty, python_2_unicode_compatible
-from celery.platforms import EX_FAILURE
+from celery.exceptions import InvalidTaskError, WorkerLostError, WorkerShutdown, WorkerTerminate
+from celery.platforms import EX_FAILURE, EX_OK
 from celery.worker import state
 from celery.worker.consumer import Consumer
 from celery.worker.loops import _quick_drain, asynloop, synloop
 
 
-@python_2_unicode_compatible
-class PromiseEqual(object):
+class PromiseEqual:
 
     def __init__(self, fun, *args, **kwargs):
         self.fun = fun
@@ -35,7 +31,7 @@ class PromiseEqual(object):
         return '<promise: {0.fun!r} {0.args!r} {0.kwargs!r}>'.format(self)
 
 
-class X(object):
+class X:
 
     def __init__(self, app, heartbeat=None, on_task_message=None,
                  transport_driver_type=None):
@@ -137,7 +133,7 @@ def get_task_callback(*args, **kwargs):
 
 class test_asynloop:
 
-    def setup(self):
+    def setup_method(self):
         @self.app.task(shared=False)
         def add(x, y):
             return x + y
@@ -161,9 +157,10 @@ class test_asynloop:
         asynloop(*x.args)
         x.consumer.consume.assert_called_with()
         x.obj.on_ready.assert_called_with()
-        x.hub.timer.call_repeatedly.assert_called_with(
-            10 / 2.0, x.connection.heartbeat_check, (2.0,),
-        )
+        last_call_args, _ = x.hub.timer.call_repeatedly.call_args
+
+        assert last_call_args[0] == 10 / 2.0
+        assert last_call_args[2] == (2.0,)
 
     def task_context(self, sig, **kwargs):
         x, on_task = get_task_callback(self.app, **kwargs)
@@ -217,14 +214,16 @@ class test_asynloop:
         on_task(msg)
         x.on_decode_error.assert_called_with(msg, exc)
 
-    def test_should_terminate(self):
+    @pytest.mark.parametrize('should_stop', (None, False, True, EX_OK))
+    def test_should_terminate(self, should_stop):
         x = X(self.app)
-        # XXX why aren't the errors propagated?!?
+        state.should_stop = should_stop
         state.should_terminate = True
         try:
             with pytest.raises(WorkerTerminate):
                 asynloop(*x.args)
         finally:
+            state.should_stop = None
             state.should_terminate = None
 
     def test_should_terminate_hub_close_raises(self):
@@ -364,7 +363,7 @@ class test_asynloop:
 
     def test_poll_write_generator(self):
         x = X(self.app)
-        x.hub.remove = Mock(name='hub.remove()')
+        x.hub.remove_writer = Mock(name='hub.remove_writer()')
 
         def Gen():
             yield 1
@@ -377,19 +376,19 @@ class test_asynloop:
         with pytest.raises(socket.error):
             asynloop(*x.args)
         assert gen.gi_frame.f_lasti != -1
-        x.hub.remove.assert_not_called()
+        x.hub.remove_writer.assert_not_called()
 
     def test_poll_write_generator_stopped(self):
         x = X(self.app)
 
         def Gen():
-            raise StopIteration()
-            yield
+            if 0:
+                yield
         gen = Gen()
         x.hub.add_writer(6, gen)
         x.hub.on_tick.add(x.close_then_error(Mock(name='tick'), 2))
         x.hub.poller.poll.return_value = [(6, WRITE)]
-        x.hub.remove = Mock(name='hub.remove()')
+        x.hub.remove_writer = Mock(name='hub.remove_writer()')
         with pytest.raises(socket.error):
             asynloop(*x.args)
         assert gen.gi_frame is None
@@ -430,6 +429,30 @@ class test_asynloop:
         asynloop(*x.args)
         poller.poll.assert_called()
 
+    def test_heartbeat_error(self):
+        x = X(self.app, heartbeat=10)
+        x.connection.heartbeat_check = Mock(
+            side_effect=RuntimeError("Heartbeat error")
+        )
+
+        def call_repeatedly(rate, fn, args):
+            fn(*args)
+
+        x.hub.timer.call_repeatedly = call_repeatedly
+        with pytest.raises(RuntimeError):
+            asynloop(*x.args)
+
+    def test_no_heartbeat_support(self):
+        x = X(self.app)
+        x.connection.supports_heartbeats = False
+        x.hub.timer.call_repeatedly = Mock(
+            name='x.hub.timer.call_repeatedly()'
+        )
+        x.hub.on_tick.add(x.closer(mod=2))
+        asynloop(*x.args)
+
+        x.hub.timer.call_repeatedly.assert_not_called()
+
 
 class test_synloop:
 
@@ -460,10 +483,53 @@ class test_synloop:
         x.close_then_error(x.connection.drain_events)
         assert synloop(*x.args) is None
 
+    def test_no_connection(self):
+        x = X(self.app)
+        x.connection = None
+        x.hub.timer.call_repeatedly = Mock(
+            name='x.hub.timer.call_repeatedly()'
+        )
+        x.blueprint.state = CLOSE
+        synloop(*x.args)
+
+        x.hub.timer.call_repeatedly.assert_not_called()
+
+    def test_heartbeat_error(self):
+        x = X(self.app, heartbeat=10)
+        x.obj.pool.is_green = True
+
+        def heartbeat_check(rate):
+            raise RuntimeError('Heartbeat error')
+
+        def call_repeatedly(rate, fn, args):
+            fn(*args)
+
+        x.connection.heartbeat_check = Mock(
+            name='heartbeat_check', side_effect=heartbeat_check
+        )
+        x.obj.timer.call_repeatedly = call_repeatedly
+        with pytest.raises(RuntimeError):
+            synloop(*x.args)
+
+    def test_no_heartbeat_support(self):
+        x = X(self.app)
+        x.connection.supports_heartbeats = False
+        x.obj.pool.is_green = True
+        x.obj.timer.call_repeatedly = Mock(
+            name='x.obj.timer.call_repeatedly()'
+        )
+
+        def drain_events(timeout):
+            x.blueprint.state = CLOSE
+        x.connection.drain_events.side_effect = drain_events
+        synloop(*x.args)
+
+        x.obj.timer.call_repeatedly.assert_not_called()
+
 
 class test_quick_drain:
 
-    def setup(self):
+    def setup_method(self):
         self.connection = Mock(name='connection')
 
     def test_drain(self):

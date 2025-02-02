@@ -2,8 +2,6 @@
 
 ``Events`` -> :class:`celery.events.EventDispatcher`.
 """
-from __future__ import absolute_import, unicode_literals
-
 from kombu.common import ignore_errors
 
 from celery import bootsteps
@@ -29,8 +27,9 @@ class Events(bootsteps.StartStopStep):
             not without_gossip or
             not without_heartbeat
         )
+        self.enabled = self.send_events
         c.event_dispatcher = None
-        super(Events, self).__init__(c, **kwargs)
+        super().__init__(c, **kwargs)
 
     def start(self, c):
         # flush events sent while connection was down.

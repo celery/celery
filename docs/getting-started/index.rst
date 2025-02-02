@@ -9,7 +9,7 @@
     :maxdepth: 2
 
     introduction
-    brokers/index
+    backends-and-brokers/index
     first-steps-with-celery
     next-steps
     resources

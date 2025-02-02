@@ -135,23 +135,18 @@ task that adds 16 to the previous result, forming the expression
 
 
 You can also cause a callback to be applied if task raises an exception
-(*errback*), but this behaves differently from a regular callback
-in that it will be passed the id of the parent task, not the result.
-This is because it may not always be possible to serialize
-the exception raised, and so this way the error callback requires
-a result backend to be enabled, and the task must retrieve the result
-of the task instead.
+(*errback*). The worker won't actually call the errback as a task, but will
+instead call the errback function directly so that the raw request, exception
+and traceback objects can be passed to it.
 
 This is an example error callback:
 
 .. code-block:: python
 
     @app.task
-    def error_handler(uuid):
-        result = AsyncResult(uuid)
-        exc = result.get(propagate=False)
+    def error_handler(request, exc, traceback):
         print('Task {0} raised exception: {1!r}\n{2!r}'.format(
-              uuid, exc, result.traceback))
+              request.id, exc, traceback))
 
 it can be added to the task using the ``link_error`` execution
 option:
@@ -171,6 +166,9 @@ as a list:
 The callbacks/errbacks will then be called in order, and all
 callbacks will be called with the return value of the parent task
 as a partial argument.
+
+In the case of a chord, we can handle errors using multiple handling strategies.
+See :ref:`chord error handling <chord-errors>` for more information.
 
 .. _calling-on-message:
 
@@ -197,7 +195,8 @@ For example for long-running tasks to send task progress you can do something li
     def on_raw_message(body):
         print(body)
 
-    r = hello.apply_async()
+    a, b = 1, 1
+    r = hello.apply_async(args=(a, b))
     print(r.get(on_message=on_raw_message, propagate=False))
 
 Will generate output like this:
@@ -235,7 +234,7 @@ a shortcut to set ETA by seconds into the future.
 
     >>> result = add.apply_async((2, 2), countdown=3)
     >>> result.get()    # this takes at least 3 seconds to return
-    20
+    4
 
 The task is guaranteed to be executed at some time *after* the
 specified date and time, but not necessarily at that exact time.
@@ -251,10 +250,53 @@ and timezone information):
 
 .. code-block:: pycon
 
-    >>> from datetime import datetime, timedelta
+    >>> from datetime import datetime, timedelta, timezone
 
-    >>> tomorrow = datetime.utcnow() + timedelta(days=1)
+    >>> tomorrow = datetime.now(timezone.utc) + timedelta(days=1)
     >>> add.apply_async((2, 2), eta=tomorrow)
+
+.. warning::
+
+    Tasks with `eta` or `countdown` are immediately fetched by the worker
+    and until the scheduled time passes, they reside in the worker's memory.
+    When using those options to schedule lots of tasks for a distant future,
+    those tasks may accumulate in the worker and make a significant impact on
+    the RAM usage.
+
+    Moreover, tasks are not acknowledged until the worker starts executing
+    them. If using Redis as a broker, task will get redelivered when `countdown`
+    exceeds `visibility_timeout` (see :ref:`redis-caveats`).
+
+    Therefore, using `eta` and `countdown` **is not recommended** for
+    scheduling tasks for a distant future. Ideally, use values no longer
+    than several minutes. For longer durations, consider using
+    database-backed periodic tasks, e.g. with :pypi:`django-celery-beat` if
+    using Django (see :ref:`beat-custom-schedulers`).
+
+.. warning::
+
+    When using RabbitMQ as a message broker when specifying a ``countdown``
+    over 15 minutes, you may encounter the problem that the worker terminates
+    with an :exc:`~amqp.exceptions.PreconditionFailed` error will be raised:
+
+    .. code-block:: pycon
+
+        amqp.exceptions.PreconditionFailed: (0, 0): (406) PRECONDITION_FAILED - consumer ack timed out on channel
+
+    In RabbitMQ since version 3.8.15 the default value for
+    ``consumer_timeout`` is 15 minutes.
+    Since version 3.8.17 it was increased to 30 minutes. If a consumer does
+    not ack its delivery for more than the timeout value, its channel will be
+    closed with a ``PRECONDITION_FAILED`` channel exception.
+    See `Delivery Acknowledgement Timeout`_ for more information.
+
+    To solve the problem, in RabbitMQ configuration file ``rabbitmq.conf`` you
+    should specify the ``consumer_timeout`` parameter greater than or equal to
+    your countdown value. For example, you can specify a very large value
+    of ``consumer_timeout = 31622400000``, which is equal to 1 year
+    in milliseconds, to avoid problems in the future.
+
+.. _`Delivery Acknowledgement Timeout`: https://www.rabbitmq.com/consumers.html#acknowledgement-timeout
 
 .. _calling-expiration:
 
@@ -271,9 +313,9 @@ either as seconds after task publish, or a specific date and time using
     >>> add.apply_async((10, 10), expires=60)
 
     >>> # Also supports datetime
-    >>> from datetime import datetime, timedelta
+    >>> from datetime import datetime, timedelta, timezone
     >>> add.apply_async((10, 10), kwargs,
-    ...                 expires=datetime.now() + timedelta(days=1)
+    ...                 expires=datetime.now(timezone.utc) + timedelta(days=1))
 
 
 When a worker receives an expired task it will mark
@@ -332,6 +374,25 @@ and can contain the following keys:
     Maximum number of seconds (float or integer) to wait between
     retries. Default is 0.2.
 
+- `retry_errors`
+
+    `retry_errors` is a tuple of exception classes that should be retried.
+    It will be ignored if not specified. Default is None (ignored).
+
+    For example, if you want to retry only tasks that were timed out, you can use
+    :exc:`~kombu.exceptions.TimeoutError`:
+
+    .. code-block:: python
+
+        from kombu.exceptions import TimeoutError
+
+        add.apply_async((2, 2), retry=True, retry_policy={
+            'max_retries': 3,
+            'retry_errors': (TimeoutError, ),
+        })
+
+    .. versionadded:: 5.3
+
 For example, the default policy correlates to:
 
 .. code-block:: python
@@ -341,6 +402,7 @@ For example, the default policy correlates to:
         'interval_start': 0,
         'interval_step': 0.2,
         'interval_max': 0.2,
+        'retry_errors': None,
     })
 
 the maximum time spent retrying will be 0.4 seconds. It's set relatively
@@ -429,8 +491,7 @@ them into the Kombu serializer registry
 Each option has its advantages and disadvantages.
 
 json -- JSON is supported in many programming languages, is now
-    a standard part of Python (since 2.6), and is fairly fast to decode
-    using the modern Python libraries, such as :pypi:`simplejson`.
+    a standard part of Python (since 2.6), and is fairly fast to decode.
 
     The primary disadvantage to JSON is that it limits you to the following
     data types: strings, Unicode, floats, Boolean, dictionaries, and lists.
@@ -445,6 +506,16 @@ json -- JSON is supported in many programming languages, is now
     best choice.
 
     See http://json.org for more information.
+
+    .. note::
+
+        (From Python official docs https://docs.python.org/3.6/library/json.html)
+        Keys in key/value pairs of JSON are always of the type :class:`str`. When
+        a dictionary is converted into JSON, all the keys of the dictionary are
+        coerced to strings. As a result of this, if a dictionary is converted
+        into JSON and then back into a dictionary, the dictionary may not equal
+        the original one. That is, ``loads(dumps(x)) != x`` if x has non-string
+        keys.
 
 pickle -- If you have no desire to support any language other than
     Python, then using the pickle encoding will gain you the support of
@@ -464,17 +535,29 @@ yaml -- YAML has many of the same characteristics as json,
     If you need a more expressive set of data types and need to maintain
     cross-language compatibility, then YAML may be a better fit than the above.
 
+    To use it, install Celery with:
+
+    .. code-block:: console
+
+      $ pip install celery[yaml]
+
     See http://yaml.org/ for more information.
 
 msgpack -- msgpack is a binary serialization format that's closer to JSON
-    in features. It's very young however, and support should be considered
-    experimental at this point.
+    in features. The format compresses better, so is a faster to parse and
+    encode compared to JSON.
+
+    To use it, install Celery with:
+
+    .. code-block:: console
+
+      $ pip install celery[msgpack]
 
     See http://msgpack.org/ for more information.
 
-The encoding used is available as a message header, so the worker knows how to
-deserialize any task. If you use a custom serializer, this serializer must
-be available for the worker.
+To use a custom serializer you need to add the content type to
+:setting:`accept_content`. By default, only JSON is accepted,
+and tasks containing other content headers are rejected.
 
 The following order is used to decide the serializer
 used when sending a task:
@@ -495,7 +578,119 @@ Example setting a custom serializer for a single task invocation:
 Compression
 ===========
 
-Celery can compress the messages using either *gzip*, or *bzip2*.
+Celery can compress messages using the following builtin schemes:
+
+- `brotli`
+
+    brotli is optimized for the web, in particular small text
+    documents. It is most effective for serving static content
+    such as fonts and html pages.
+
+    To use it, install Celery with:
+
+    .. code-block:: console
+
+      $ pip install celery[brotli]
+
+- `bzip2`
+
+    bzip2 creates smaller files than gzip, but compression and
+    decompression speeds are noticeably slower than those of gzip.
+
+    To use it, please ensure your Python executable was compiled
+    with bzip2 support.
+
+    If you get the following :class:`ImportError`:
+
+    .. code-block:: pycon
+
+      >>> import bz2
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      ImportError: No module named 'bz2'
+
+    it means that you should recompile your Python version with bzip2 support.
+
+- `gzip`
+
+    gzip is suitable for systems that require a small memory footprint,
+    making it ideal for systems with limited memory. It is often
+    used to generate files with the ".tar.gz" extension.
+
+    To use it, please ensure your Python executable was compiled
+    with gzip support.
+
+    If you get the following :class:`ImportError`:
+
+    .. code-block:: pycon
+
+      >>> import gzip
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      ImportError: No module named 'gzip'
+
+    it means that you should recompile your Python version with gzip support.
+
+- `lzma`
+
+    lzma provides a good compression ratio and executes with
+    fast compression and decompression speeds at the expense
+    of higher memory usage.
+
+    To use it, please ensure your Python executable was compiled
+    with lzma support and that your Python version is 3.3 and above.
+
+    If you get the following :class:`ImportError`:
+
+    .. code-block:: pycon
+
+      >>> import lzma
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      ImportError: No module named 'lzma'
+
+    it means that you should recompile your Python version with lzma support.
+
+    Alternatively, you can also install a backport using:
+
+    .. code-block:: console
+
+      $ pip install celery[lzma]
+
+- `zlib`
+
+    zlib is an abstraction of the Deflate algorithm in library
+    form which includes support both for the gzip file format
+    and a lightweight stream format in its API. It is a crucial
+    component of many software systems - Linux kernel and Git VCS just
+    to name a few.
+
+    To use it, please ensure your Python executable was compiled
+    with zlib support.
+
+    If you get the following :class:`ImportError`:
+
+    .. code-block:: pycon
+
+      >>> import zlib
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      ImportError: No module named 'zlib'
+
+    it means that you should recompile your Python version with zlib support.
+
+- `zstd`
+
+    zstd targets real-time compression scenarios at zlib-level
+    and better compression ratios. It's backed by a very fast entropy
+    stage, provided by Huff0 and FSE library.
+
+    To use it, install Celery with:
+
+    .. code-block:: console
+
+      $ pip install celery[zstd]
+
 You can also create your own compression schemes and register
 them in the :func:`kombu compression registry <kombu.compression.register>`.
 
@@ -530,13 +725,13 @@ publisher:
 
 .. code-block:: python
 
-
+    numbers = [(2, 2), (4, 4), (8, 8), (16, 16)]
     results = []
     with add.app.pool.acquire(block=True) as connection:
         with add.get_publisher(connection) as publisher:
             try:
-                for args in numbers:
-                    res = add.apply_async((2, 2), publisher=publisher)
+                for i, j in numbers:
+                    res = add.apply_async((i, j), publisher=publisher)
                     results.append(res)
     print([res.get() for res in results])
 
@@ -569,7 +764,7 @@ the workers :option:`-Q <celery worker -Q>` argument:
 
 .. code-block:: console
 
-    $ celery -A proj worker -l info -Q celery,priority.high
+    $ celery -A proj worker -l INFO -Q celery,priority.high
 
 .. seealso::
 
@@ -583,15 +778,23 @@ the workers :option:`-Q <celery worker -Q>` argument:
 Results options
 ===============
 
-You can enable or disable result storage using the ``ignore_result`` option::
+You can enable or disable result storage using the :setting:`task_ignore_result`
+setting or by using the ``ignore_result`` option:
 
-    result = add.apply_async(1, 2, ignore_result=True)
-    result.get() # -> None
+.. code-block:: pycon
 
-    # Do not ignore result (default)
-    result = add.apply_async(1, 2, ignore_result=False)
-    result.get() # -> 3
+  >>> result = add.apply_async((1, 2), ignore_result=True)
+  >>> result.get()
+  None
 
+  >>> # Do not ignore result (default)
+  ...
+  >>> result = add.apply_async((1, 2), ignore_result=False)
+  >>> result.get()
+  3
+
+If you'd like to store additional metadata about the task in the result backend
+set the :setting:`result_extended` setting to ``True``.
 
 .. seealso::
 

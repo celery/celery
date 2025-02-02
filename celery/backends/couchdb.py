@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """CouchDB result store backend."""
-from __future__ import absolute_import, unicode_literals
-
 from kombu.utils.encoding import bytes_to_str
 from kombu.utils.url import _parse_url
 
@@ -12,7 +9,7 @@ from .base import KeyValueStoreBackend
 try:
     import pycouchdb
 except ImportError:
-    pycouchdb = None  # noqa
+    pycouchdb = None
 
 __all__ = ('CouchBackend',)
 
@@ -37,7 +34,7 @@ class CouchBackend(KeyValueStoreBackend):
     password = None
 
     def __init__(self, url=None, *args, **kwargs):
-        super(CouchBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.url = url
 
         if pycouchdb is None:
@@ -45,7 +42,7 @@ class CouchBackend(KeyValueStoreBackend):
 
         uscheme = uhost = uport = uname = upass = ucontainer = None
         if url:
-            _, uhost, uport, uname, upass, ucontainer, _ = _parse_url(url)  # noqa
+            _, uhost, uport, uname, upass, ucontainer, _ = _parse_url(url)
             ucontainer = ucontainer.strip('/') if ucontainer else None
 
         self.scheme = uscheme or self.scheme
@@ -60,13 +57,10 @@ class CouchBackend(KeyValueStoreBackend):
     def _get_connection(self):
         """Connect to the CouchDB server."""
         if self.username and self.password:
-            conn_string = '%s://%s:%s@%s:%s' % (
-                self.scheme, self.username, self.password,
-                self.host, str(self.port))
+            conn_string = f'{self.scheme}://{self.username}:{self.password}@{self.host}:{self.port}'
             server = pycouchdb.Server(conn_string, authmethod='basic')
         else:
-            conn_string = '%s://%s:%s' % (
-                self.scheme, self.host, str(self.port))
+            conn_string = f'{self.scheme}://{self.host}:{self.port}'
             server = pycouchdb.Server(conn_string)
 
         try:
@@ -81,6 +75,7 @@ class CouchBackend(KeyValueStoreBackend):
         return self._connection
 
     def get(self, key):
+        key = bytes_to_str(key)
         try:
             return self.connection.get(key)['value']
         except pycouchdb.exceptions.NotFound:

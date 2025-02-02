@@ -1,5 +1,5 @@
-:Version: 4.2.0 (latentcall)
-:Web: http://celeryproject.org/
+:Version: 5.5.0rc4 (immunity)
+:Web: https://docs.celeryq.dev/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
 :Keywords: task, queue, job, async, rabbitmq, amqp, redis,
@@ -24,7 +24,7 @@ A Celery system can consist of multiple workers and brokers, giving way
 to high availability and horizontal scaling.
 
 Celery is written in Python, but the protocol can be implemented in any
-language. In addition to Python there's node-celery_ for Node.js,
+language. In addition to Python there's node-celery_ and node-celery-ts_ for Node.js,
 and a `PHP client`_.
 
 Language interoperability can also be achieved by using webhooks
@@ -32,18 +32,18 @@ in such a way that the client enqueues an URL to be requested by a worker.
 
 .. _node-celery: https://github.com/mher/node-celery
 .. _`PHP client`: https://github.com/gjedeer/celery-php
+.. _node-celery-ts: https://github.com/IBM/node-celery-ts
 
 What do I need?
 ===============
 
-Celery version 4.0 runs on,
+Celery version 5.1.x runs on,
 
-- Python (2.7, 3.4, 3.5)
-- PyPy (5.4, 5.5)
+- Python 3.6 or newer versions
+- PyPy3.6 (7.3) or newer
 
 
-This is the last version to support Python 2.7,
-and from the next version (Celery 5.x) Python 3.5 or newer is required.
+From the next major version (Celery 6.x) Python 3.7 or newer is required.
 
 If you're running an older version of Python, you need to be running
 an older version of Celery:
@@ -68,7 +68,7 @@ Get Started
 ===========
 
 If this is the first time you're trying to use Celery, or you're
-new to Celery 4.0 coming from previous versions then you should read our
+new to Celery 5.0.x or 5.1.x coming from previous versions then you should read our
 getting started tutorials:
 
 - `First steps with Celery`_
@@ -80,10 +80,10 @@ getting started tutorials:
     A more complete overview, showing more features.
 
 .. _`First steps with Celery`:
-    http://docs.celeryproject.org/en/latest/getting-started/first-steps-with-celery.html
+    https://docs.celeryq.dev/en/latest/getting-started/first-steps-with-celery.html
 
 .. _`Next steps`:
-    http://docs.celeryproject.org/en/latest/getting-started/next-steps.html
+    https://docs.celeryq.dev/en/latest/getting-started/next-steps.html
 
 Celery is…
 =============
@@ -132,7 +132,7 @@ It supports…
 
     - **Concurrency**
 
-        - Prefork, Eventlet_, gevent_, single threaded (``solo``)
+        - Prefork, Eventlet_, gevent_, single threaded (``solo``), thread
 
     - **Result Stores**
 
@@ -198,4 +198,4 @@ Documentation
 The `latest documentation`_ is hosted at Read The Docs, containing user guides,
 tutorials, and an API reference.
 
-.. _`latest documentation`: http://docs.celeryproject.org/en/latest/
+.. _`latest documentation`: https://docs.celeryq.dev/en/latest/

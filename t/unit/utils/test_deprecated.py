@@ -1,7 +1,6 @@
-from __future__ import absolute_import, unicode_literals
+from unittest.mock import patch
 
 import pytest
-from case import patch
 
 from celery.utils import deprecated
 
@@ -11,7 +10,7 @@ class test_deprecated_property:
     @patch('celery.utils.deprecated.warn')
     def test_deprecated(self, warn):
 
-        class X(object):
+        class X:
             _foo = None
 
             @deprecated.Property(deprecation='1.2')
@@ -41,7 +40,7 @@ class test_deprecated_property:
             description='foo', removal=None,
         )
         warn.reset_mock()
-        del(x.foo)
+        del (x.foo)
         warn.assert_called_with(
             stacklevel=3, deprecation='1.2', alternative=None,
             description='foo', removal=None,
@@ -49,7 +48,7 @@ class test_deprecated_property:
         assert x._foo is None
 
     def test_deprecated_no_setter_or_deleter(self):
-        class X(object):
+        class X:
             @deprecated.Property(deprecation='1.2')
             def foo(self):
                 pass
@@ -58,7 +57,7 @@ class test_deprecated_property:
         with pytest.raises(AttributeError):
             x.foo = 10
         with pytest.raises(AttributeError):
-            del(x.foo)
+            del (x.foo)
 
 
 class test_warn:

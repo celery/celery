@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """Deprecation utilities."""
-from __future__ import absolute_import, print_function, unicode_literals
-
 import warnings
 
 from vine.utils import wraps
@@ -54,7 +51,7 @@ def Callable(deprecation=None, removal=None,
 
         @wraps(fun)
         def __inner(*args, **kwargs):
-            from . imports import qualname
+            from .imports import qualname
             warn(description=description or qualname(fun),
                  deprecation=deprecation,
                  removal=removal,
@@ -75,7 +72,7 @@ def Property(deprecation=None, removal=None,
     return _inner
 
 
-class _deprecated_property(object):
+class _deprecated_property:
 
     def __init__(self, fget=None, fset=None, fdel=None, doc=None, **depreinfo):
         self.__get = fget

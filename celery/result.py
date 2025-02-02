@@ -1,12 +1,12 @@
-# -*- coding: utf-8 -*-
 """Task results/state and results for groups of tasks."""
-from __future__ import absolute_import, unicode_literals
 
+import datetime
 import time
-from collections import OrderedDict, deque
+from collections import deque
 from contextlib import contextmanager
-from copy import copy
+from weakref import proxy
 
+from dateutil.parser import isoparse
 from kombu.utils.objects import cached_property
 from vine import Thenable, barrier, promise
 
@@ -14,9 +14,6 @@ from . import current_app, states
 from ._state import _set_task_join_will_block, task_join_will_block
 from .app import app_or_default
 from .exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
-from .five import (items, monotonic, python_2_unicode_compatible, range,
-                   string_t)
-from .utils import deprecated
 from .utils.graph import DependencyGraph, GraphFormatter
 
 try:
@@ -31,8 +28,8 @@ __all__ = (
 
 E_WOULDBLOCK = """\
 Never call result.get() within a task!
-See http://docs.celeryq.org/en/latest/userguide/tasks.html\
-#task-synchronous-subtasks
+See https://docs.celeryq.dev/en/latest/userguide/tasks.html\
+#avoid-launching-synchronous-subtasks
 """
 
 
@@ -61,7 +58,7 @@ def denied_join_result():
         _set_task_join_will_block(reset_value)
 
 
-class ResultBase(object):
+class ResultBase:
     """Base class for results."""
 
     #: Parent result (if part of a chain)
@@ -69,7 +66,6 @@ class ResultBase(object):
 
 
 @Thenable.register
-@python_2_unicode_compatible
 class AsyncResult(ResultBase):
     """Query task state.
 
@@ -94,18 +90,18 @@ class AsyncResult(ResultBase):
                  app=None, parent=None):
         if id is None:
             raise ValueError(
-                'AsyncResult requires valid id, not {0}'.format(type(id)))
+                f'AsyncResult requires valid id, not {type(id)}')
         self.app = app_or_default(app or self.app)
         self.id = id
         self.backend = backend or self.app.backend
         self.parent = parent
-        self.on_ready = promise(self._on_fulfilled)
+        self.on_ready = promise(self._on_fulfilled, weak=True)
         self._cache = None
         self._ignored = False
 
     @property
     def ignored(self):
-        """"If True, task result retrieval is disabled."""
+        """If True, task result retrieval is disabled."""
         if hasattr(self, '_ignored'):
             return self._ignored
         return False
@@ -127,9 +123,20 @@ class AsyncResult(ResultBase):
         parent = self.parent
         return (self.id, parent and parent.as_tuple()), None
 
+    def as_list(self):
+        """Return as a list of task IDs."""
+        results = []
+        parent = self.parent
+        results.append(self.id)
+        if parent is not None:
+            results.extend(parent.as_list())
+        return results
+
     def forget(self):
-        """Forget about (and possibly remove the result of) this task."""
+        """Forget the result of this task and its parents."""
         self._cache = None
+        if self.parent:
+            self.parent.forget()
         self.backend.forget(self.id)
 
     def revoke(self, connection=None, terminate=False, signal=None,
@@ -154,6 +161,30 @@ class AsyncResult(ResultBase):
                                 terminate=terminate, signal=signal,
                                 reply=wait, timeout=timeout)
 
+    def revoke_by_stamped_headers(self, headers, connection=None, terminate=False, signal=None,
+                                  wait=False, timeout=None):
+        """Send revoke signal to all workers only for tasks with matching headers values.
+
+        Any worker receiving the task, or having reserved the
+        task, *must* ignore it.
+        All header fields *must* match.
+
+        Arguments:
+            headers (dict[str, Union(str, list)]): Headers to match when revoking tasks.
+            terminate (bool): Also terminate the process currently working
+                on the task (if any).
+            signal (str): Name of signal to send to process if terminate.
+                Default is TERM.
+            wait (bool): Wait for replies from workers.
+                The ``timeout`` argument specifies the seconds to wait.
+                Disabled by default.
+            timeout (float): Time in seconds to wait for replies when
+                ``wait`` is enabled.
+        """
+        self.app.control.revoke_by_stamped_headers(headers, connection=connection,
+                                                   terminate=terminate, signal=signal,
+                                                   reply=wait, timeout=timeout)
+
     def get(self, timeout=None, propagate=True, interval=0.5,
             no_ack=True, follow_parents=True, callback=None, on_message=None,
             on_interval=None, disable_sync_subtasks=True,
@@ -174,7 +205,10 @@ class AsyncResult(ResultBase):
 
         Arguments:
             timeout (float): How long to wait, in seconds, before the
-                operation times out.
+                operation times out. This is the setting for the publisher
+                (celery client) and is different from `timeout` parameter of
+                `@app.task`, which is the setting for the worker. The task
+                isn't terminated even if timeout occurs.
             propagate (bool): Re-raise exception if the task failed.
             interval (float): Time to wait (in seconds) before retrying to
                 retrieve the result.  Note that this does not have any effect
@@ -203,7 +237,7 @@ class AsyncResult(ResultBase):
             assert_will_not_block()
         _on_interval = promise()
         if follow_parents and propagate and self.parent:
-            on_interval = promise(self._maybe_reraise_parent_error)
+            _on_interval = promise(self._maybe_reraise_parent_error, weak=True)
             self._maybe_reraise_parent_error()
         if on_interval:
             _on_interval.then(on_interval)
@@ -293,13 +327,15 @@ class AsyncResult(ResultBase):
     def iterdeps(self, intermediate=False):
         stack = deque([(None, self)])
 
+        is_incomplete_stream = not intermediate
+
         while stack:
             parent, node = stack.popleft()
             yield parent, node
             if node.ready():
                 stack.extend((node, child) for child in node.children or [])
             else:
-                if not intermediate:
+                if is_incomplete_stream:
                     raise IncompleteStream()
 
     def ready(self):
@@ -355,18 +391,14 @@ class AsyncResult(ResultBase):
         return hash(self.id)
 
     def __repr__(self):
-        return '<{0}: {1}>'.format(type(self).__name__, self.id)
+        return f'<{type(self).__name__}: {self.id}>'
 
     def __eq__(self, other):
         if isinstance(other, AsyncResult):
             return other.id == self.id
-        elif isinstance(other, string_t):
+        elif isinstance(other, str):
             return other == self.id
         return NotImplemented
-
-    def __ne__(self, other):
-        res = self.__eq__(other)
-        return True if res is NotImplemented else not res
 
     def __copy__(self):
         return self.__class__(
@@ -410,7 +442,7 @@ class AsyncResult(ResultBase):
             return self._maybe_set_cache(self.backend.get_task_meta(self.id))
         return self._cache
 
-    def _iter_meta(self):
+    def _iter_meta(self, **kwargs):
         return iter([self._get_task_meta()])
 
     def _set_cache(self, d):
@@ -476,7 +508,7 @@ class AsyncResult(ResultBase):
         """Compat. alias to :attr:`id`."""
         return self.id
 
-    @task_id.setter  # noqa
+    @task_id.setter
     def task_id(self, id):
         self.id = id
 
@@ -498,7 +530,11 @@ class AsyncResult(ResultBase):
 
     @property
     def date_done(self):
-        return self._get_task_meta().get('date_done')
+        """UTC date and time."""
+        date_done = self._get_task_meta().get('date_done')
+        if date_done and not isinstance(date_done, datetime.datetime):
+            return isoparse(date_done)
+        return date_done
 
     @property
     def retries(self):
@@ -510,7 +546,6 @@ class AsyncResult(ResultBase):
 
 
 @Thenable.register
-@python_2_unicode_compatible
 class ResultSet(ResultBase):
     """A collection of results.
 
@@ -526,10 +561,10 @@ class ResultSet(ResultBase):
     def __init__(self, results, app=None, ready_barrier=None, **kwargs):
         self._app = app
         self.results = results
-        self.on_ready = promise(args=(self,))
+        self.on_ready = promise(args=(proxy(self),))
         self._on_full = ready_barrier or barrier(results)
         if self._on_full:
-            self._on_full.then(promise(self._on_ready))
+            self._on_full.then(promise(self._on_ready, weak=True))
 
     def add(self, result):
         """Add :class:`AsyncResult` as a new member of the set.
@@ -551,7 +586,7 @@ class ResultSet(ResultBase):
         Raises:
             KeyError: if the result isn't a member.
         """
-        if isinstance(result, string_t):
+        if isinstance(result, str):
             result = self.app.AsyncResult(result)
         try:
             self.results.remove(result)
@@ -619,8 +654,11 @@ class ResultSet(ResultBase):
     def completed_count(self):
         """Task completion count.
 
+        Note that `complete` means `successful` in this context. In other words, the
+        return value of this method is the number of ``successful`` tasks.
+
         Returns:
-            int: the number of tasks completed.
+            int: the number of complete (i.e. successful) tasks.
         """
         return sum(int(result.successful()) for result in self.results)
 
@@ -654,30 +692,6 @@ class ResultSet(ResultBase):
     def __getitem__(self, index):
         """`res[i] -> res.results[i]`."""
         return self.results[index]
-
-    @deprecated.Callable('4.0', '5.0')
-    def iterate(self, timeout=None, propagate=True, interval=0.5):
-        """Deprecated method, use :meth:`get` with a callback argument."""
-        elapsed = 0.0
-        results = OrderedDict((result.id, copy(result))
-                              for result in self.results)
-
-        while results:
-            removed = set()
-            for task_id, result in items(results):
-                if result.ready():
-                    yield result.get(timeout=timeout and timeout - elapsed,
-                                     propagate=propagate)
-                    removed.add(task_id)
-                else:
-                    if result.backend.subpolling_interval:
-                        time.sleep(result.backend.subpolling_interval)
-            for task_id in removed:
-                results.pop(task_id, None)
-            time.sleep(interval)
-            elapsed += interval
-            if timeout and elapsed >= timeout:
-                raise TimeoutError('The operation timed out')
 
     def get(self, timeout=None, propagate=True, interval=0.5,
             callback=None, no_ack=True, on_message=None,
@@ -744,7 +758,7 @@ class ResultSet(ResultBase):
         """
         if disable_sync_subtasks:
             assert_will_not_block()
-        time_start = monotonic()
+        time_start = time.monotonic()
         remaining = None
 
         if on_message is not None:
@@ -755,12 +769,13 @@ class ResultSet(ResultBase):
         for result in self.results:
             remaining = None
             if timeout:
-                remaining = timeout - (monotonic() - time_start)
+                remaining = timeout - (time.monotonic() - time_start)
                 if remaining <= 0.0:
                     raise TimeoutError('join operation timed out')
             value = result.get(
                 timeout=remaining, propagate=propagate,
                 interval=interval, no_ack=no_ack, on_interval=on_interval,
+                disable_sync_subtasks=disable_sync_subtasks,
             )
             if callback:
                 callback(result.id, value)
@@ -811,18 +826,23 @@ class ResultSet(ResultBase):
         acc = None if callback else [None for _ in range(len(self))]
         for task_id, meta in self.iter_native(timeout, interval, no_ack,
                                               on_message, on_interval):
-            value = meta['result']
-            if propagate and meta['status'] in states.PROPAGATE_STATES:
-                raise value
+            if isinstance(meta, list):
+                value = []
+                for children_result in meta:
+                    value.append(children_result.get())
+            else:
+                value = meta['result']
+                if propagate and meta['status'] in states.PROPAGATE_STATES:
+                    raise value
             if callback:
                 callback(task_id, value)
             else:
                 acc[order_index[task_id]] = value
         return acc
 
-    def _iter_meta(self):
+    def _iter_meta(self, **kwargs):
         return (meta for _, meta in self.backend.get_many(
-            {r.id for r in self.results}, max_iterations=1,
+            {r.id for r in self.results}, max_iterations=1, **kwargs
         ))
 
     def _failed_join_report(self):
@@ -838,13 +858,8 @@ class ResultSet(ResultBase):
             return other.results == self.results
         return NotImplemented
 
-    def __ne__(self, other):
-        res = self.__eq__(other)
-        return True if res is NotImplemented else not res
-
     def __repr__(self):
-        return '<{0}: [{1}]>'.format(type(self).__name__,
-                                     ', '.join(r.id for r in self.results))
+        return f'<{type(self).__name__}: [{", ".join(r.id for r in self.results)}]>'
 
     @property
     def supports_native_join(self):
@@ -861,7 +876,7 @@ class ResultSet(ResultBase):
         return self._app
 
     @app.setter
-    def app(self, app):  # noqa
+    def app(self, app):
         self._app = app
 
     @property
@@ -870,7 +885,6 @@ class ResultSet(ResultBase):
 
 
 @Thenable.register
-@python_2_unicode_compatible
 class GroupResult(ResultSet):
     """Like :class:`ResultSet`, but with an associated id.
 
@@ -894,11 +908,11 @@ class GroupResult(ResultSet):
     def __init__(self, id=None, results=None, parent=None, **kwargs):
         self.id = id
         self.parent = parent
-        ResultSet.__init__(self, results, **kwargs)
+        super().__init__(results, **kwargs)
 
     def _on_ready(self):
         self.backend.remove_pending_result(self)
-        ResultSet._on_ready(self)
+        super()._on_ready()
 
     def save(self, backend=None):
         """Save group-result for later retrieval using :meth:`restore`.
@@ -931,19 +945,12 @@ class GroupResult(ResultSet):
                 other.results == self.results and
                 other.parent == self.parent
             )
-        elif isinstance(other, string_t):
+        elif isinstance(other, str):
             return other == self.id
         return NotImplemented
 
-    def __ne__(self, other):
-        res = self.__eq__(other)
-        return True if res is NotImplemented else not res
-
     def __repr__(self):
-        return '<{0}: {1} [{2}]>'.format(
-            type(self).__name__, self.id,
-            ', '.join(r.id for r in self.results)
-        )
+        return f'<{type(self).__name__}: {self.id} [{", ".join(r.id for r in self.results)}]>'
 
     def __str__(self):
         """`str(self) -> self.id`."""
@@ -974,17 +981,17 @@ class GroupResult(ResultSet):
 
 
 @Thenable.register
-@python_2_unicode_compatible
 class EagerResult(AsyncResult):
     """Result that we know has already been executed."""
 
-    def __init__(self, id, ret_value, state, traceback=None):
+    def __init__(self, id, ret_value, state, traceback=None, name=None):
         # pylint: disable=super-init-not-called
         # XXX should really not be inheriting from AsyncResult
         self.id = id
         self._result = ret_value
         self._state = state
         self._traceback = traceback
+        self._name = name
         self.on_ready = promise()
         self.on_ready(self)
 
@@ -1016,7 +1023,8 @@ class EagerResult(AsyncResult):
             return self.result
         elif self.state in states.PROPAGATE_STATES:
             if propagate:
-                raise self.result
+                raise self.result if isinstance(
+                    self.result, Exception) else Exception(self.result)
             return self.result
     wait = get  # XXX Compat (remove 5.0)
 
@@ -1027,7 +1035,7 @@ class EagerResult(AsyncResult):
         self._state = states.REVOKED
 
     def __repr__(self):
-        return '<EagerResult: {0.id}>'.format(self)
+        return f'<EagerResult: {self.id}>'
 
     @property
     def _cache(self):
@@ -1036,6 +1044,7 @@ class EagerResult(AsyncResult):
             'result': self._result,
             'status': self._state,
             'traceback': self._traceback,
+            'name': self._name,
         }
 
     @property

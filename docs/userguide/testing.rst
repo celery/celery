@@ -4,6 +4,23 @@
  Testing with Celery
 ================================================================
 
+Testing with Celery is divided into two parts:
+
+    * Unit & Integration: Using ``celery.contrib.pytest``.
+    * Smoke / Production: Using :pypi:`pytest-celery <pytest-celery>` >= 1.0.0
+
+Installing the pytest-celery plugin will install the ``celery.contrib.pytest`` infrastructure as well,
+alongside the pytest plugin infrastructure. The difference is how you use it.
+
+.. warning::
+
+     Both APIs are NOT compatible with each other. The pytest-celery plugin is Docker based
+     and the ``celery.contrib.pytest`` is mock based.
+
+To use the ``celery.contrib.pytest`` infrastructure, follow the instructions below.
+
+The pytest-celery plugin has its `own documentation <https://pytest-celery.readthedocs.io/>`_.
+
 Tasks and unit tests
 ====================
 
@@ -17,6 +34,9 @@ To test task behavior in unit tests the preferred method is mocking.
     When testing with eager mode you are only testing an emulation
     of what happens in a worker, and there are many discrepancies
     between the emulation and what happens in reality.
+
+    Note that eagerly executed tasks don't write results to backend by default.
+    If you want to enable this functionality, have a look at :setting:`task_store_eager_result`.
 
 A Celery task is much like a web view, in that it should only
 define how to perform the action in the context of being called as a task.
@@ -43,6 +63,10 @@ Say we had a task like this:
         except OperationalError as exc:
             raise self.retry(exc=exc)
 
+
+``Note``: A task being `bound <https://docs.celeryq.dev/en/latest/userguide/tasks.html#bound-tasks>`_ means the first
+argument to the task will always be the task instance (self). which means you do get a self argument as the
+first argument and can use the Task class methods and attributes.
 
 You could write unit tests for this task, using mocking like
 in this example:
@@ -84,13 +108,25 @@ in this example:
             with raises(Retry):
                 send_order(product.pk, 3, Decimal(30.6))
 
-Py.test
-=======
+.. _pytest_plugin:
+
+pytest
+======
 
 .. versionadded:: 4.0
 
-Celery is also a :pypi:`pytest` plugin that adds fixtures that you can
+Celery also makes a :pypi:`pytest` plugin available that adds fixtures that you can
 use in your integration (or unit) test suites.
+
+Enabling
+--------
+
+Celery initially ships the plugin in a disabled state, to enable it you can either:
+
+    * ``pip install celery[pytest]``
+    * ``pip install pytest-celery``
+    * or add an environment variable ``PYTEST_PLUGINS=celery.contrib.pytest``
+    * or add ``pytest_plugins = ("celery.contrib.pytest", )`` to your root conftest.py
 
 
 Marks
@@ -141,7 +177,8 @@ Example:
         @celery_app.task
         def mul(x, y):
             return x * y
-
+        
+        celery_worker.reload()
         assert mul.delay(4, 4).get(timeout=10) == 16
 
 ``celery_worker`` - Embed live worker.
@@ -150,6 +187,11 @@ Example:
 This fixture starts a Celery worker instance that you can use
 for integration tests.  The worker will be started in a *separate thread*
 and will be shutdown as soon as the test returns.
+
+By default the fixture will wait up to 10 seconds for the worker to complete
+outstanding tasks and will raise an exception if the time limit is exceeded.
+The timeout can be customized by setting the ``shutdown_timeout`` key in the
+dictionary returned by the :func:`celery_worker_parameters` fixture.
 
 Example:
 
@@ -172,6 +214,20 @@ Example:
     @pytest.mark.celery(result_backend='rpc')
     def test_other(celery_worker):
         ...
+
+Heartbeats are disabled by default which means that the test worker doesn't
+send events for ``worker-online``, ``worker-offline`` and ``worker-heartbeat``.
+To enable heartbeats modify the :func:`celery_worker_parameters` fixture:
+
+.. code-block:: python
+
+    # Put this in your conftest.py
+    @pytest.fixture(scope="session")
+    def celery_worker_parameters():
+        return {"without_heartbeat": False}
+        ...
+
+
 
 Session scope
 ^^^^^^^^^^^^^
@@ -308,7 +364,7 @@ Example:
 
     # Do this in your tests.
     def test_add_task(celery_session_worker):
-        assert add.delay(2, 2) == 4
+        assert add.delay(2, 2).get() == 4
 
 .. warning::
 

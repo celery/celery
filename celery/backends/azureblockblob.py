@@ -1,6 +1,5 @@
 """The Azure Storage Block Blob backend for Celery."""
-from __future__ import absolute_import, unicode_literals
-
+from kombu.transport.azurestoragequeues import Transport as AzureStorageQueuesTransport
 from kombu.utils import cached_property
 from kombu.utils.encoding import bytes_to_str
 
@@ -10,17 +9,16 @@ from celery.utils.log import get_logger
 from .base import KeyValueStoreBackend
 
 try:
-    import azure.storage as azurestorage
-    from azure.common import AzureMissingResourceHttpError
-    from azure.storage.blob import BlockBlobService
-    from azure.storage.common.retry import ExponentialRetry
-except ImportError:  # pragma: no cover
-    azurestorage = BlockBlobService = ExponentialRetry = \
-        AzureMissingResourceHttpError = None  # noqa
+    import azure.storage.blob as azurestorage
+    from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
+    from azure.storage.blob import BlobServiceClient
+except ImportError:
+    azurestorage = None
 
 __all__ = ("AzureBlockBlobBackend",)
 
 LOGGER = get_logger(__name__)
+AZURE_BLOCK_BLOB_CONNECTION_PREFIX = 'azureblockblob://'
 
 
 class AzureBlockBlobBackend(KeyValueStoreBackend):
@@ -29,17 +27,21 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
     def __init__(self,
                  url=None,
                  container_name=None,
-                 retry_initial_backoff_sec=None,
-                 retry_increment_base=None,
-                 retry_max_attempts=None,
                  *args,
                  **kwargs):
-        super(AzureBlockBlobBackend, self).__init__(*args, **kwargs)
+        """
+        Supported URL formats:
 
-        if azurestorage is None:
+        azureblockblob://CONNECTION_STRING
+        azureblockblob://DefaultAzureCredential@STORAGE_ACCOUNT_URL
+        azureblockblob://ManagedIdentityCredential@STORAGE_ACCOUNT_URL
+        """
+        super().__init__(*args, **kwargs)
+
+        if azurestorage is None or azurestorage.__version__ < '12':
             raise ImproperlyConfigured(
-                "You need to install the azure-storage library to use the "
-                "AzureBlockBlob backend")
+                "You need to install the azure-storage-blob v12 library to"
+                "use the AzureBlockBlob backend")
 
         conf = self.app.conf
 
@@ -49,20 +51,14 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
             container_name or
             conf["azureblockblob_container_name"])
 
-        self._retry_initial_backoff_sec = (
-            retry_initial_backoff_sec or
-            conf["azureblockblob_retry_initial_backoff_sec"])
-
-        self._retry_increment_base = (
-            retry_increment_base or
-            conf["azureblockblob_retry_increment_base"])
-
-        self._retry_max_attempts = (
-            retry_max_attempts or
-            conf["azureblockblob_retry_max_attempts"])
+        self.base_path = conf.get('azureblockblob_base_path', '')
+        self._connection_timeout = conf.get(
+            'azureblockblob_connection_timeout', 20
+        )
+        self._read_timeout = conf.get('azureblockblob_read_timeout', 120)
 
     @classmethod
-    def _parse_url(cls, url, prefix="azureblockblob://"):
+    def _parse_url(cls, url, prefix=AZURE_BLOCK_BLOB_CONNECTION_PREFIX):
         connection_string = url[len(prefix):]
         if not connection_string:
             raise ImproperlyConfigured("Invalid URL")
@@ -70,26 +66,41 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
         return connection_string
 
     @cached_property
-    def _client(self):
-        """Return the Azure Storage Block Blob service.
+    def _blob_service_client(self):
+        """Return the Azure Storage Blob service client.
 
         If this is the first call to the property, the client is created and
         the container is created if it doesn't yet exist.
 
         """
-        client = BlockBlobService(connection_string=self._connection_string)
+        if (
+            "DefaultAzureCredential" in self._connection_string or
+            "ManagedIdentityCredential" in self._connection_string
+        ):
+            # Leveraging the work that Kombu already did for us
+            credential_, url = AzureStorageQueuesTransport.parse_uri(
+                self._connection_string
+            )
+            client = BlobServiceClient(
+                account_url=url,
+                credential=credential_,
+                connection_timeout=self._connection_timeout,
+                read_timeout=self._read_timeout,
+            )
+        else:
+            client = BlobServiceClient.from_connection_string(
+                self._connection_string,
+                connection_timeout=self._connection_timeout,
+                read_timeout=self._read_timeout,
+            )
 
-        created = client.create_container(
-            container_name=self._container_name, fail_on_exist=False)
-
-        if created:
-            LOGGER.info("Created Azure Blob Storage container %s",
-                        self._container_name)
-
-        client.retry = ExponentialRetry(
-            initial_backoff=self._retry_initial_backoff_sec,
-            increment_base=self._retry_increment_base,
-            max_attempts=self._retry_max_attempts).retry
+        try:
+            client.create_container(name=self._container_name)
+            msg = f"Container created with name {self._container_name}."
+        except ResourceExistsError:
+            msg = f"Container with name {self._container_name} already." \
+                "exists. This will not be created."
+        LOGGER.info(msg)
 
         return client
 
@@ -98,16 +109,18 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
 
         Args:
               key: The key for which to read the value.
-
         """
         key = bytes_to_str(key)
-        LOGGER.debug("Getting Azure Block Blob %s/%s",
-                     self._container_name, key)
+        LOGGER.debug("Getting Azure Block Blob %s/%s", self._container_name, key)
+
+        blob_client = self._blob_service_client.get_blob_client(
+            container=self._container_name,
+            blob=f'{self.base_path}{key}',
+        )
 
         try:
-            return self._client.get_blob_to_text(
-                self._container_name, key).content
-        except AzureMissingResourceHttpError:
+            return blob_client.download_blob().readall().decode()
+        except ResourceNotFoundError:
             return None
 
     def set(self, key, value):
@@ -119,11 +132,14 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
 
         """
         key = bytes_to_str(key)
-        LOGGER.debug("Creating Azure Block Blob at %s/%s",
-                     self._container_name, key)
+        LOGGER.debug(f"Creating azure blob at {self._container_name}/{key}")
 
-        return self._client.create_blob_from_text(
-            self._container_name, key, value)
+        blob_client = self._blob_service_client.get_blob_client(
+            container=self._container_name,
+            blob=f'{self.base_path}{key}',
+        )
+
+        blob_client.upload_blob(value, overwrite=True)
 
     def mget(self, keys):
         """Read all the values for the provided keys.
@@ -142,7 +158,31 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
 
         """
         key = bytes_to_str(key)
-        LOGGER.debug("Deleting Azure Block Blob at %s/%s",
-                     self._container_name, key)
+        LOGGER.debug(f"Deleting azure blob at {self._container_name}/{key}")
 
-        self._client.delete_blob(self._container_name, key)
+        blob_client = self._blob_service_client.get_blob_client(
+            container=self._container_name,
+            blob=f'{self.base_path}{key}',
+        )
+
+        blob_client.delete_blob()
+
+    def as_uri(self, include_password=False):
+        if include_password:
+            return (
+                f'{AZURE_BLOCK_BLOB_CONNECTION_PREFIX}'
+                f'{self._connection_string}'
+            )
+
+        connection_string_parts = self._connection_string.split(';')
+        account_key_prefix = 'AccountKey='
+        redacted_connection_string_parts = [
+            f'{account_key_prefix}**' if part.startswith(account_key_prefix)
+            else part
+            for part in connection_string_parts
+        ]
+
+        return (
+            f'{AZURE_BLOCK_BLOB_CONNECTION_PREFIX}'
+            f'{";".join(redacted_connection_string_parts)}'
+        )
