@@ -7,7 +7,7 @@ from urllib.parse import unquote
 
 from kombu.utils.functional import retry_over_time
 from kombu.utils.objects import cached_property
-from kombu.utils.url import _parse_url, maybe_sanitize_url, as_url
+from kombu.utils.url import _parse_url, as_url, maybe_sanitize_url
 
 from celery import states
 from celery._state import task_join_will_block
