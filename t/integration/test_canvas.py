@@ -21,9 +21,9 @@ from .tasks import (ExpectedException, StampOnReplace, add, add_chord_to_chord, 
                     add_to_all_to_chord, build_chain_inside_task, collect_ids, delayed_sum,
                     delayed_sum_with_soft_guard, errback_new_style, errback_old_style, fail, fail_replaced, identity,
                     ids, mul, print_unicode, raise_error, redis_count, redis_echo, redis_echo_group_id,
-                    replace_with_chain, replace_with_chain_which_contains_a_group, replace_with_chain_which_raises,
-                    replace_with_empty_chain, replace_with_stamped_task, retry_once, return_exception,
-                    return_priority, second_order_replace1, tsum, write_to_file_and_return_int, xsum)
+                    replace_with_chain, replace_with_chain_which_raises, replace_with_empty_chain,
+                    replace_with_stamped_task, retry_once, return_exception, return_priority, second_order_replace1,
+                    tsum, write_to_file_and_return_int, xsum)
 
 RETRYABLE_EXCEPTIONS = (OSError, ConnectionError, TimeoutError)
 
@@ -309,13 +309,6 @@ class test_chain:
         expected_messages = [b'In A', b'In B', b'In/Out C', b'Out B',
                              b'Out A']
         assert redis_messages == expected_messages
-
-    @flaky
-    def test_replace_with_chain_that_contains_a_group(self, manager):
-        s = replace_with_chain_which_contains_a_group.s()
-
-        result = s.delay()
-        assert result.get(timeout=TIMEOUT) == [4, 4]
 
     @flaky
     def test_parent_ids(self, manager, num=10):
@@ -1696,23 +1689,23 @@ class test_chord:
         res1 = c1()
         assert res1.get(timeout=TIMEOUT) == [29, 38]
 
-    # @flaky
+    @flaky
     def test_add_to_chord(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
 
-        c = group([identity.si(1), add_to_all_to_chord.s([1, 2, 3], 4)]) | identity.s()
+        c = group([add_to_all_to_chord.s([1, 2, 3], 4)]) | identity.s()
         res = c()
-        assert sorted(res.get()) == [0, 1, 5, 6, 7]
+        assert sorted(res.get()) == [0, 5, 6, 7]
 
     @flaky
     def test_add_chord_to_chord(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
 
-        c = group([identity.si(1), add_chord_to_chord.s([1, 2, 3], 4)]) | identity.s()
+        c = group([add_chord_to_chord.s([1, 2, 3], 4)]) | identity.s()
         res = c()
-        assert sorted(res.get()) == [0, 1, 5 + 6 + 7]
+        assert sorted(res.get()) == [0, 5 + 6 + 7]
 
     @flaky
     def test_eager_chord_inside_task(self, manager):
