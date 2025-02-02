@@ -849,28 +849,6 @@ if you plan to use it as part of a larger canvas.
         >>> chain(group(add.s(1, 1)), add.s(2))
         add(1, 1) | add(2)
 
-.. warning::
-
-    .. versionadded:: 5.5
-
-    Before Celery 5.5 the following group would be upgraded to a chord instead of being unrolled:
-
-    .. code-block:: pycon
-
-        >>> from celery import chain, group
-        >>> from tasks import add
-        >>> group(add.s(1, 1)) | add.s(2)
-        %add([add(1, 1)], 2)
-
-    This was fixed in Celery 5.5 and now the group is correctly unrolled into a single signature.
-
-    .. code-block:: pycon
-
-        >>> from celery import chain, group
-        >>> from tasks import add
-        >>> group(add.s(1, 1)) | add.s(2)
-        add(1, 1) | add(2)
-
 .. _canvas-chord:
 
 Chords
