@@ -17,7 +17,7 @@ Features include:
 
 * Fast event loop based on `libev`_ or `libuv`_.
 * Lightweight execution units based on greenlets.
-* API that re-uses concepts from the Python standard library (for
+* API that reuses concepts from the Python standard library (for
   examples there are `events`_ and
   `queues`_).
 * `Cooperative sockets with SSL support <http://www.gevent.org/api/index.html#networking>`_
