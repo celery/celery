@@ -19,6 +19,7 @@ from kombu.transport.memory import Transport
 from kombu.utils.uuid import uuid
 
 import t.skip
+from celery.apps.worker import safe_say
 from celery.bootsteps import CLOSE, RUN, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
 from celery.exceptions import (ImproperlyConfigured, InvalidTaskError, TaskRevokedError, WorkerShutdown,
@@ -220,8 +221,8 @@ class test_Consumer(ConsumerCase):
             Mock(), self.foo_task.name,
             args=(1, 2), kwargs='foobarbaz', id=1)
         c.update_strategies()
-        strat = c.strategies[self.foo_task.name] = Mock(name='strategy')
-        strat.side_effect = InvalidTaskError()
+        strategy = c.strategies[self.foo_task.name] = Mock(name='strategy')
+        strategy.side_effect = InvalidTaskError()
 
         callback = self._get_on_message(c)
         callback(m)
@@ -1193,3 +1194,51 @@ class test_WorkController(ConsumerCase):
             assert isinstance(w.semaphore, LaxBoundedSemaphore)
             P = w.pool
             P.start()
+
+    def test_wait_for_soft_shutdown(self):
+        worker = self.worker
+        worker.app.conf.worker_soft_shutdown_timeout = 10
+        request = Mock(name='task', id='1234213')
+        state.task_accepted(request)
+        with patch("celery.worker.worker.sleep") as sleep:
+            worker.wait_for_soft_shutdown()
+            sleep.assert_called_with(worker.app.conf.worker_soft_shutdown_timeout)
+
+    def test_wait_for_soft_shutdown_no_tasks(self):
+        worker = self.worker
+        worker.app.conf.worker_soft_shutdown_timeout = 10
+        worker.app.conf.worker_enable_soft_shutdown_on_idle = True
+        state.active_requests.clear()
+        with patch("celery.worker.worker.sleep") as sleep:
+            worker.wait_for_soft_shutdown()
+            sleep.assert_called_with(worker.app.conf.worker_soft_shutdown_timeout)
+
+    def test_wait_for_soft_shutdown_no_wait(self):
+        worker = self.worker
+        request = Mock(name='task', id='1234213')
+        state.task_accepted(request)
+        with patch("celery.worker.worker.sleep") as sleep:
+            worker.wait_for_soft_shutdown()
+            sleep.assert_not_called()
+
+    def test_wait_for_soft_shutdown_no_wait_no_tasks(self):
+        worker = self.worker
+        worker.app.conf.worker_enable_soft_shutdown_on_idle = True
+        with patch("celery.worker.worker.sleep") as sleep:
+            worker.wait_for_soft_shutdown()
+            sleep.assert_not_called()
+
+
+class test_WorkerApp:
+
+    def test_safe_say_defaults_to_stderr(self, capfd):
+        safe_say("hello")
+        captured = capfd.readouterr()
+        assert "\nhello\n" == captured.err
+        assert "" == captured.out
+
+    def test_safe_say_writes_to_std_out(self, capfd):
+        safe_say("out", sys.stdout)
+        captured = capfd.readouterr()
+        assert "\nout\n" == captured.out
+        assert "" == captured.err

@@ -12,7 +12,7 @@
 -r extras/thread.txt
 -r extras/elasticsearch.txt
 -r extras/couchdb.txt
--r extras/couchbase.txt
+# -r extras/couchbase.txt
 -r extras/arangodb.txt
 -r extras/consul.txt
 -r extras/cosmosdbsql.txt
@@ -21,4 +21,5 @@
 git+https://github.com/celery/kombu.git
 
 # SQS dependencies other than boto
-pycurl==7.43.0.5
+pycurl>=7.43.0.5,<7.45.4; sys_platform != 'win32' and platform_python_implementation=="CPython" and python_version < "3.9"
+pycurl>=7.45.4; sys_platform != 'win32' and platform_python_implementation=="CPython" and python_version >= "3.9"

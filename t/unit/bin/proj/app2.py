@@ -1,1 +1,1 @@
-import celery
+import celery  # noqa

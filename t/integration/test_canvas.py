@@ -2,11 +2,11 @@ import collections
 import re
 import tempfile
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from time import monotonic, sleep
 
 import pytest
-import pytest_subtests
+import pytest_subtests  # noqa
 
 from celery import chain, chord, group, signature
 from celery.backends.base import BaseKeyValueStoreBackend
@@ -153,8 +153,8 @@ class test_link_error:
         )
         assert result.get(timeout=TIMEOUT, propagate=False) == exception
 
-    @pytest.mark.xfail(raises=TimeoutError, reason="Task is timeout instead of returning exception")
-    def test_link_error_callback_retries(self):
+    @flaky
+    def test_link_error_callback_retries(self, manager):
         exception = ExpectedException("Task expected to fail", "test")
         result = fail.apply_async(
             args=("test",),
@@ -165,20 +165,19 @@ class test_link_error:
     @flaky
     def test_link_error_using_signature_eager(self):
         fail = signature('t.integration.tasks.fail', args=("test",))
-        retrun_exception = signature('t.integration.tasks.return_exception')
+        return_exception = signature('t.integration.tasks.return_exception')
 
-        fail.link_error(retrun_exception)
+        fail.link_error(return_exception)
 
         exception = ExpectedException("Task expected to fail", "test")
         assert (fail.apply().get(timeout=TIMEOUT, propagate=False), True) == (
             exception, True)
 
-    @pytest.mark.xfail(raises=TimeoutError, reason="Task is timeout instead of returning exception")
-    def test_link_error_using_signature(self):
+    def test_link_error_using_signature(self, manager):
         fail = signature('t.integration.tasks.fail', args=("test",))
-        retrun_exception = signature('t.integration.tasks.return_exception')
+        return_exception = signature('t.integration.tasks.return_exception')
 
-        fail.link_error(retrun_exception)
+        fail.link_error(return_exception)
 
         exception = ExpectedException("Task expected to fail", "test")
         assert (fail.delay().get(timeout=TIMEOUT / 10, propagate=False), True) == (
@@ -367,7 +366,7 @@ class test_chain:
         except NotImplementedError as e:
             raise pytest.skip(e.args[0])
 
-        eta = datetime.utcnow() + timedelta(seconds=10)
+        eta = datetime.now(timezone.utc) + timedelta(seconds=10)
         c = chain(
             group(
                 add.s(1, 2),
@@ -506,23 +505,8 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [8, 8]
 
-    def test_stamping_example_canvas(self, manager):
-        """Test the stamping example canvas from the examples directory"""
-        try:
-            manager.app.backend.ensure_chords_allowed()
-        except NotImplementedError as e:
-            raise pytest.skip(e.args[0])
-
-        c = chain(
-            group(identity.s(i) for i in range(1, 4)) | xsum.s(),
-            chord(group(mul.s(10) for _ in range(1, 4)), xsum.s()),
-        )
-
-        res = c()
-        assert res.get(timeout=TIMEOUT) == 180
-
     @pytest.mark.xfail(raises=TimeoutError, reason="Task is timeout")
-    def test_nested_chain_group_lone(self, manager):
+    def test_nested_chain_group_lone(self, manager):  # Fails with Redis 5.x
         """
         Test that a lone group in a chain completes.
         """
@@ -1046,6 +1030,103 @@ class test_chain:
         # Cleanup
         redis_connection.delete(redis_key, 'Done')
 
+    def test_freezing_chain_sets_id_of_last_task(self, manager):
+        last_task = add.s(2).set(task_id='42')
+        c = add.s(4) | last_task
+        assert c.id is None
+        c.freeze(last_task.id)
+        assert c.id == last_task.id
+
+    @pytest.mark.parametrize(
+        "group_last_task",
+        [False, True],
+    )
+    def test_chaining_upgraded_chords_mixed_canvas_protocol_2(
+            self, manager, subtests, group_last_task):
+        """ This test is built to reproduce the github issue https://github.com/celery/celery/issues/8662
+
+        The issue describes a canvas where a chain of groups are executed multiple times instead of once.
+        This test is built to reproduce the issue and to verify that the issue is fixed.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_connection = get_redis_connection()
+        redis_key = 'echo_chamber'
+
+        c = chain(
+            group([
+                redis_echo.si('1', redis_key=redis_key),
+                redis_echo.si('2', redis_key=redis_key)
+            ]),
+            group([
+                redis_echo.si('3', redis_key=redis_key),
+                redis_echo.si('4', redis_key=redis_key),
+                redis_echo.si('5', redis_key=redis_key)
+            ]),
+            group([
+                redis_echo.si('6', redis_key=redis_key),
+                redis_echo.si('7', redis_key=redis_key),
+                redis_echo.si('8', redis_key=redis_key),
+                redis_echo.si('9', redis_key=redis_key)
+            ]),
+            redis_echo.si('Done', redis_key='Done') if not group_last_task else
+            group(redis_echo.si('Done', redis_key='Done')),
+        )
+
+        with subtests.test(msg='Run the chain and wait for completion'):
+            redis_connection.delete(redis_key, 'Done')
+            c.delay().get(timeout=TIMEOUT)
+            await_redis_list_message_length(1, redis_key='Done', timeout=10)
+
+        with subtests.test(msg='All tasks are executed once'):
+            actual = [
+                sig.decode('utf-8')
+                for sig in redis_connection.lrange(redis_key, 0, -1)
+            ]
+            expected = [str(i) for i in range(1, 10)]
+            with subtests.test(msg='All tasks are executed once'):
+                assert sorted(actual) == sorted(expected)
+
+        # Cleanup
+        redis_connection.delete(redis_key, 'Done')
+
+    def test_group_in_center_of_chain(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        t1 = chain(tsum.s(), group(add.s(8), add.s(16)), tsum.s() | add.s(32))
+        t2 = chord([tsum, tsum], t1)
+        t3 = chord([add.s(0, 1)], t2)
+        res = t3.apply_async()  # should not raise
+        assert res.get(timeout=TIMEOUT) == 60
+
+    def test_upgrade_to_chord_inside_chains(self, manager):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        redis_key = str(uuid.uuid4())
+        group1 = group(redis_echo.si('a', redis_key), redis_echo.si('a', redis_key))
+        group2 = group(redis_echo.si('a', redis_key), redis_echo.si('a', redis_key))
+        chord1 = group1 | group2
+        chain1 = chain(chord1, (redis_echo.si('a', redis_key) | redis_echo.si('b', redis_key)))
+        chain1.apply_async().get(timeout=TIMEOUT)
+        redis_connection = get_redis_connection()
+        actual = redis_connection.lrange(redis_key, 0, -1)
+        assert actual.count(b'b') == 1
+        redis_connection.delete(redis_key)
+
 
 class test_result_set:
 
@@ -1068,46 +1149,6 @@ class test_result_set:
 
 
 class test_group:
-    def test_group_stamping(self, manager, subtests):
-        if not manager.app.conf.result_backend.startswith('redis'):
-            raise pytest.skip('Requires redis result backend.')
-
-        sig1 = add.s(1, 1000)
-        sig1_res = sig1.freeze()
-        g1 = group(sig1, add.s(1, 2000))
-        g1_res = g1.freeze()
-        res = g1.apply_async()
-        res.get(timeout=TIMEOUT)
-
-        with subtests.test("sig_1 is stamped", groups=[g1_res.id]):
-            assert sig1_res._get_task_meta()["groups"] == [g1_res.id]
-
-    def test_nested_group_stamping(self, manager, subtests):
-        if not manager.app.conf.result_backend.startswith('redis'):
-            raise pytest.skip('Requires redis result backend.')
-
-        sig1 = add.s(2, 2)
-        sig2 = add.s(2)
-
-        sig1_res = sig1.freeze()
-        sig2_res = sig2.freeze()
-
-        g2 = group(sig2, chain(add.s(4), add.s(2)))
-
-        g2_res = g2.freeze()
-
-        g1 = group(sig1, chain(add.s(1, 1), g2))
-
-        g1_res = g1.freeze()
-        res = g1.apply_async()
-        res.get(timeout=TIMEOUT)
-
-        with subtests.test("sig1 is stamped", groups=[g1_res.id]):
-            assert sig1_res._get_task_meta()['groups'] == [g1_res.id]
-        with subtests.test("sig2 is stamped", groups=[g1_res.id, g2_res.id]):
-            assert sig2_res._get_task_meta()['groups'] == \
-                [g1_res.id, g2_res.id]
-
     @flaky
     def test_ready_with_exception(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
@@ -1550,43 +1591,6 @@ def assert_ping(manager):
 
 
 class test_chord:
-    def test_chord_stamping_two_levels(self, manager, subtests):
-        """
-        For a group within a chord, test that group stamps are stored in
-        the correct order.
-        """
-        try:
-            manager.app.backend.ensure_chords_allowed()
-        except NotImplementedError as e:
-            raise pytest.skip(e.args[0])
-
-        sig_1 = add.s(2, 2)
-        sig_2 = add.s(2)
-
-        sig_1_res = sig_1.freeze()
-        sig_2_res = sig_2.freeze()
-
-        g2 = group(
-            sig_2,
-            add.s(4),
-        )
-
-        g2_res = g2.freeze()
-
-        sig_sum = xsum.s()
-        sig_sum.freeze()
-
-        g1 = chord([sig_1, chain(add.s(4, 4), g2)], sig_sum)
-        g1.freeze()
-
-        res = g1.apply_async()
-        res.get(timeout=TIMEOUT)
-
-        with subtests.test("sig_1_res is stamped", groups=[g1.tasks.id]):
-            assert sig_1_res._get_task_meta()['groups'] == [g1.tasks.id]
-        with subtests.test("sig_2_res is stamped", groups=[g1.id]):
-            assert sig_2_res._get_task_meta()['groups'] == [g1.tasks.id, g2_res.id]
-
     @flaky
     def test_simple_chord_with_a_delay_in_group_save(self, manager, monkeypatch):
         try:
@@ -1611,6 +1615,18 @@ class test_chord:
 
         result = c()
         assert result.get(timeout=TIMEOUT) == 4
+
+    def test_chord_order(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        inputs = [i for i in range(10)]
+
+        c = chord((identity.si(i) for i in inputs), identity.s())
+        result = c()
+        assert result.get() == inputs
 
     @pytest.mark.xfail(reason="async_results aren't performed in async way")
     def test_redis_subscribed_channels_leak(self, manager):
@@ -1958,7 +1974,7 @@ class test_chord:
         backend = fail.app.backend
         j_key = backend.get_key_for_group(original_group_id, '.j')
         redis_connection = get_redis_connection()
-        # The redis key is either a list or zset depending on configuration
+        # The redis key is either a list or a zset (a redis sorted set) depending on configuration
         if manager.app.conf.result_backend_transport_options.get(
             'result_chord_ordered', True
         ):
@@ -2580,6 +2596,7 @@ class test_chord:
             await_redis_echo({errback_msg, }, redis_key=redis_key)
         redis_connection.delete(redis_key)
 
+    @flaky
     @pytest.mark.parametrize(
         "errback_task", [errback_old_style, errback_new_style, ],
     )
@@ -3043,6 +3060,43 @@ class test_chord:
             # Cleanup
             redis_connection.delete(errback_key)
 
+    def test_upgraded_chord_link_error_with_header_errback_enabled(self, manager, subtests):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+        redis_connection = get_redis_connection()
+
+        manager.app.conf.task_allow_error_cb_on_chord_header = True
+
+        body_msg = 'chord body called'
+        body_key = 'echo_body'
+        body_sig = redis_echo.si(body_msg, redis_key=body_key)
+
+        errback_msg = 'errback called'
+        errback_key = 'echo_errback'
+        errback_sig = redis_echo.si(errback_msg, redis_key=errback_key)
+
+        redis_connection.delete(errback_key, body_key)
+
+        sig = chain(
+            identity.si(42),
+            group(
+                fail.si(),
+                fail.si(),
+            ),
+            body_sig,
+        ).on_error(errback_sig)
+
+        with subtests.test(msg='Error propagates from failure in header'):
+            with pytest.raises(ExpectedException):
+                sig.apply_async().get(timeout=TIMEOUT)
+
+        redis_connection.delete(errback_key, body_key)
+
 
 class test_signature_serialization:
     """
@@ -3143,20 +3197,116 @@ class test_signature_serialization:
         sig.delay().get(timeout=TIMEOUT)
 
 
-class test_stamping_visitor:
-    def test_stamp_value_type_defined_by_visitor(self, manager, subtests):
-        """ Test that the visitor can define the type of the stamped value """
+class test_stamping_mechanism:
+    def test_stamping_workflow(self, manager, subtests):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        workflow = group(
+            add.s(1, 2) | add.s(3),
+            add.s(4, 5) | add.s(6),
+            identity.si(21),
+        ) | group(
+            xsum.s(),
+            xsum.s(),
+        )
+
+        @task_received.connect
+        def task_received_handler(request=None, **kwargs):
+            nonlocal assertion_result
+            link = None
+            if request._Request__payload[2]["callbacks"]:
+                link = signature(request._Request__payload[2]["callbacks"][0])
+            link_error = None
+            if request._Request__payload[2]["errbacks"]:
+                link_error = signature(request._Request__payload[2]["errbacks"][0])
+
+            assertion_result = all(
+                [
+                    assertion_result,
+                    [stamped_header in request.stamps for stamped_header in request.stamped_headers],
+                    [
+                        stamped_header in link.options
+                        for stamped_header in link.options["stamped_headers"]
+                        if link  # the link itself doesn't have a link
+                    ],
+                    [
+                        stamped_header in link_error.options
+                        for stamped_header in link_error.options["stamped_headers"]
+                        if link_error  # the link_error itself doesn't have a link_error
+                    ],
+                ]
+            )
 
         @before_task_publish.connect
-        def before_task_publish_handler(sender=None, body=None, exchange=None, routing_key=None, headers=None,
-                                        properties=None, declare=None, retry_policy=None, **kwargs):
+        def before_task_publish_handler(
+            body=None,
+            headers=None,
+            **kwargs,
+        ):
+            nonlocal assertion_result
+
+            assertion_result = all(
+                [stamped_header in headers["stamps"] for stamped_header in headers["stamped_headers"]]
+            )
+
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {"on_signature": 42}
+
+        with subtests.test("Prepare canvas workflow and stamp it"):
+            link_sig = identity.si("link")
+            link_error_sig = identity.si("link_error")
+            canvas_workflow = workflow
+            canvas_workflow.link(link_sig)
+            canvas_workflow.link_error(link_error_sig)
+            canvas_workflow.stamp(visitor=CustomStampingVisitor())
+
+        with subtests.test("Check canvas was executed successfully"):
+            assertion_result = False
+            assert canvas_workflow.apply_async().get() == [42] * 2
+            assert assertion_result
+
+    def test_stamping_example_canvas(self, manager):
+        """Test the stamping example canvas from the examples directory"""
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = chain(
+            group(identity.s(i) for i in range(1, 4)) | xsum.s(),
+            chord(group(mul.s(10) for _ in range(1, 4)), xsum.s()),
+        )
+
+        res = c()
+        assert res.get(timeout=TIMEOUT) == 180
+
+    def test_stamp_value_type_defined_by_visitor(self, manager, subtests):
+        """Test that the visitor can define the type of the stamped value"""
+
+        @before_task_publish.connect
+        def before_task_publish_handler(
+            sender=None,
+            body=None,
+            exchange=None,
+            routing_key=None,
+            headers=None,
+            properties=None,
+            declare=None,
+            retry_policy=None,
+            **kwargs,
+        ):
             nonlocal task_headers
             task_headers = headers.copy()
 
-        with subtests.test(msg='Test stamping a single value'):
+        with subtests.test(msg="Test stamping a single value"):
+
             class CustomStampingVisitor(StampingVisitor):
                 def on_signature(self, sig, **headers) -> dict:
-                    return {'stamp': 42}
+                    return {"stamp": 42}
 
             stamped_task = add.si(1, 1)
             stamped_task.stamp(visitor=CustomStampingVisitor())
@@ -3165,14 +3315,15 @@ class test_stamping_visitor:
             stamped_task.apply_async()
             assert task_headers is not None
             assert result.get() == 2
-            assert 'stamps' in task_headers
-            assert 'stamp' in task_headers['stamps']
-            assert not isinstance(task_headers['stamps']['stamp'], list)
+            assert "stamps" in task_headers
+            assert "stamp" in task_headers["stamps"]
+            assert not isinstance(task_headers["stamps"]["stamp"], list)
 
-        with subtests.test(msg='Test stamping a list of values'):
+        with subtests.test(msg="Test stamping a list of values"):
+
             class CustomStampingVisitor(StampingVisitor):
                 def on_signature(self, sig, **headers) -> dict:
-                    return {'stamp': [4, 2]}
+                    return {"stamp": [4, 2]}
 
             stamped_task = add.si(1, 1)
             stamped_task.stamp(visitor=CustomStampingVisitor())
@@ -3181,16 +3332,25 @@ class test_stamping_visitor:
             stamped_task.apply_async()
             assert task_headers is not None
             assert result.get() == 2
-            assert 'stamps' in task_headers
-            assert 'stamp' in task_headers['stamps']
-            assert isinstance(task_headers['stamps']['stamp'], list)
+            assert "stamps" in task_headers
+            assert "stamp" in task_headers["stamps"]
+            assert isinstance(task_headers["stamps"]["stamp"], list)
 
     def test_properties_not_affected_from_stamping(self, manager, subtests):
-        """ Test that the task properties are not dirty with stamping visitor entries """
+        """Test that the task properties are not dirty with stamping visitor entries"""
 
         @before_task_publish.connect
-        def before_task_publish_handler(sender=None, body=None, exchange=None, routing_key=None, headers=None,
-                                        properties=None, declare=None, retry_policy=None, **kwargs):
+        def before_task_publish_handler(
+            sender=None,
+            body=None,
+            exchange=None,
+            routing_key=None,
+            headers=None,
+            properties=None,
+            declare=None,
+            retry_policy=None,
+            **kwargs,
+        ):
             nonlocal task_headers
             nonlocal task_properties
             task_headers = headers.copy()
@@ -3198,7 +3358,7 @@ class test_stamping_visitor:
 
         class CustomStampingVisitor(StampingVisitor):
             def on_signature(self, sig, **headers) -> dict:
-                return {'stamp': 42}
+                return {"stamp": 42}
 
         stamped_task = add.si(1, 1)
         stamped_task.stamp(visitor=CustomStampingVisitor())
@@ -3208,35 +3368,27 @@ class test_stamping_visitor:
         stamped_task.apply_async()
         assert task_properties is not None
         assert result.get() == 2
-        assert 'stamped_headers' in task_headers
-        stamped_headers = task_headers['stamped_headers']
+        assert "stamped_headers" in task_headers
+        stamped_headers = task_headers["stamped_headers"]
 
-        with subtests.test(msg='Test that the task properties are not dirty with stamping visitor entries'):
-            assert 'stamped_headers' not in task_properties, 'stamped_headers key should not be in task properties'
+        with subtests.test(msg="Test that the task properties are not dirty with stamping visitor entries"):
+            assert "stamped_headers" not in task_properties, "stamped_headers key should not be in task properties"
             for stamp in stamped_headers:
                 assert stamp not in task_properties, f'The stamp "{stamp}" should not be in the task properties'
 
     def test_task_received_has_access_to_stamps(self, manager):
-        """ Make sure that the request has the stamps using the task_received signal """
+        """Make sure that the request has the stamps using the task_received signal"""
 
         assertion_result = False
 
         @task_received.connect
-        def task_received_handler(
-            sender=None,
-            request=None,
-            signal=None,
-            **kwargs
-        ):
+        def task_received_handler(sender=None, request=None, signal=None, **kwargs):
             nonlocal assertion_result
-            assertion_result = all([
-                stamped_header in request.stamps
-                for stamped_header in request.stamped_headers
-            ])
+            assertion_result = all([stamped_header in request.stamps for stamped_header in request.stamped_headers])
 
         class CustomStampingVisitor(StampingVisitor):
             def on_signature(self, sig, **headers) -> dict:
-                return {'stamp': 42}
+                return {"stamp": 42}
 
         stamped_task = add.si(1, 1)
         stamped_task.stamp(visitor=CustomStampingVisitor())
@@ -3244,7 +3396,7 @@ class test_stamping_visitor:
         assert assertion_result
 
     def test_all_tasks_of_canvas_are_stamped(self, manager, subtests):
-        """ Test that complex canvas are stamped correctly """
+        """Test that complex canvas are stamped correctly"""
         try:
             manager.app.backend.ensure_chords_allowed()
         except NotImplementedError as e:
@@ -3252,14 +3404,16 @@ class test_stamping_visitor:
 
         @task_received.connect
         def task_received_handler(**kwargs):
-            request = kwargs['request']
+            request = kwargs["request"]
             nonlocal assertion_result
 
-            assertion_result = all([
-                assertion_result,
-                all([stamped_header in request.stamps for stamped_header in request.stamped_headers]),
-                request.stamps['stamp'] == 42
-            ])
+            assertion_result = all(
+                [
+                    assertion_result,
+                    all([stamped_header in request.stamps for stamped_header in request.stamped_headers]),
+                    request.stamps["stamp"] == 42,
+                ]
+            )
 
         # Using a list because pytest.mark.parametrize does not play well
         canvas = [
@@ -3272,15 +3426,25 @@ class test_stamping_visitor:
             group(add.s(1, 1) | add.s(10), add.s(2, 2) | add.s(20)),
             chain(add.s(1, 1) | add.s(10), add.s(2) | add.s(20)),
             chord([add.s(1, 1) | add.s(10), add.s(2, 2) | add.s(20)], xsum.s()),
-            chain(chain(add.s(1, 1) | add.s(10), add.s(2) | add.s(20)), add.s(3) | add.s(30)),
-            chord(group(chain(add.s(1, 1), add.s(2)), chord([add.s(3, 3), add.s(4, 4)], xsum.s())), xsum.s()),
+            chain(
+                chain(add.s(1, 1) | add.s(10), add.s(2) | add.s(20)),
+                add.s(3) | add.s(30),
+            ),
+            chord(
+                group(
+                    chain(add.s(1, 1), add.s(2)),
+                    chord([add.s(3, 3), add.s(4, 4)], xsum.s()),
+                ),
+                xsum.s(),
+            ),
         ]
 
         for sig in canvas:
-            with subtests.test(msg='Assert all tasks are stamped'):
+            with subtests.test(msg="Assert all tasks are stamped"):
+
                 class CustomStampingVisitor(StampingVisitor):
                     def on_signature(self, sig, **headers) -> dict:
-                        return {'stamp': 42}
+                        return {"stamp": 42}
 
                 stamped_task = sig
                 stamped_task.stamp(visitor=CustomStampingVisitor())
@@ -3289,26 +3453,29 @@ class test_stamping_visitor:
                 assert assertion_result
 
     def test_replace_merge_stamps(self, manager):
-        """ Test that replacing a task keeps the previous and new stamps """
+        """Test that replacing a task keeps the previous and new stamps"""
 
         @task_received.connect
         def task_received_handler(**kwargs):
-            request = kwargs['request']
+            request = kwargs["request"]
             nonlocal assertion_result
             expected_stamp_key = list(StampOnReplace.stamp.keys())[0]
             expected_stamp_value = list(StampOnReplace.stamp.values())[0]
 
-            assertion_result = all([
-                assertion_result,
-                all([stamped_header in request.stamps for stamped_header in request.stamped_headers]),
-                request.stamps['stamp'] == 42,
-                request.stamps[expected_stamp_key] == expected_stamp_value
-                if 'replaced_with_me' in request.task_name else True
-            ])
+            assertion_result = all(
+                [
+                    assertion_result,
+                    all([stamped_header in request.stamps for stamped_header in request.stamped_headers]),
+                    request.stamps["stamp"] == 42,
+                    request.stamps[expected_stamp_key] == expected_stamp_value
+                    if "replaced_with_me" in request.task_name
+                    else True,
+                ]
+            )
 
         class CustomStampingVisitor(StampingVisitor):
             def on_signature(self, sig, **headers) -> dict:
-                return {'stamp': 42}
+                return {"stamp": 42}
 
         stamped_task = replace_with_stamped_task.s()
         stamped_task.stamp(visitor=CustomStampingVisitor())
@@ -3318,57 +3485,22 @@ class test_stamping_visitor:
         sleep(1)
         # stamped_task needs to be stamped with CustomStampingVisitor
         # and the replaced task with both CustomStampingVisitor and StampOnReplace
-        assert assertion_result, 'All of the tasks should have been stamped'
-
-    def test_replace_group_merge_stamps(self, manager):
-        """ Test that replacing a group signature keeps the previous and new group stamps """
-
-        x = 5
-        y = 6
-
-        @task_received.connect
-        def task_received_handler(**kwargs):
-            request = kwargs['request']
-            nonlocal assertion_result
-            nonlocal gid1
-
-            assertion_result = all([
-                assertion_result,
-                request.stamps['groups'][0] == gid1,
-                len(request.stamps['groups']) == 2
-                if any([request.args == [10, x], request.args == [10, y]]) else True
-            ])
-
-        sig = add.s(3, 3) | add.s(4) | group(add.s(x), add.s(y))
-        sig = group(add.s(1, 1), add.s(2, 2), replace_with_stamped_task.s(replace_with=sig))
-        assertion_result = False
-        sig.delay()
-        assertion_result = True
-        gid1 = sig.options['task_id']
-        sleep(1)
-        assert assertion_result, 'Group stamping is corrupted'
+        assert assertion_result, "All of the tasks should have been stamped"
 
     def test_linking_stamped_sig(self, manager):
-        """ Test that linking a callback after stamping will stamp the callback correctly"""
+        """Test that linking a callback after stamping will stamp the callback correctly"""
 
         assertion_result = False
 
         @task_received.connect
-        def task_received_handler(
-            sender=None,
-            request=None,
-            signal=None,
-            **kwargs
-        ):
+        def task_received_handler(sender=None, request=None, signal=None, **kwargs):
             nonlocal assertion_result
-            link = request._Request__payload[2]['callbacks'][0]
-            assertion_result = all([
-                stamped_header in link['options']
-                for stamped_header in link['options']['stamped_headers']
-            ])
+            link = request._Request__payload[2]["callbacks"][0]
+            assertion_result = all(
+                [stamped_header in link["options"] for stamped_header in link["options"]["stamped_headers"]]
+            )
 
         class FixedMonitoringIdStampingVisitor(StampingVisitor):
-
             def __init__(self, msg_id):
                 self.msg_id = msg_id
 
@@ -3376,36 +3508,31 @@ class test_stamping_visitor:
                 mtask_id = self.msg_id
                 return {"mtask_id": mtask_id}
 
-        link_sig = identity.si('link_sig')
-        stamped_pass_sig = identity.si('passing sig')
+        link_sig = identity.si("link_sig")
+        stamped_pass_sig = identity.si("passing sig")
         stamped_pass_sig.stamp(visitor=FixedMonitoringIdStampingVisitor(str(uuid.uuid4())))
         stamped_pass_sig.link(link_sig)
-        # This causes the relevant stamping for this test case
-        # as it will stamp the link via the group stamping internally
+        stamped_pass_sig.stamp(visitor=FixedMonitoringIdStampingVisitor("1234"))
         stamped_pass_sig.apply_async().get(timeout=2)
         assert assertion_result
 
     def test_err_linking_stamped_sig(self, manager):
-        """ Test that linking an error after stamping will stamp the errlink correctly"""
+        """Test that linking an error after stamping will stamp the errlink correctly"""
 
         assertion_result = False
 
         @task_received.connect
-        def task_received_handler(
-            sender=None,
-            request=None,
-            signal=None,
-            **kwargs
-        ):
+        def task_received_handler(sender=None, request=None, signal=None, **kwargs):
             nonlocal assertion_result
             link_error = request.errbacks[0]
-            assertion_result = all([
-                stamped_header in link_error['options']
-                for stamped_header in link_error['options']['stamped_headers']
-            ])
+            assertion_result = all(
+                [
+                    stamped_header in link_error["options"]
+                    for stamped_header in link_error["options"]["stamped_headers"]
+                ]
+            )
 
         class FixedMonitoringIdStampingVisitor(StampingVisitor):
-
             def __init__(self, msg_id):
                 self.msg_id = msg_id
 
@@ -3413,12 +3540,63 @@ class test_stamping_visitor:
                 mtask_id = self.msg_id
                 return {"mtask_id": mtask_id}
 
-        link_error_sig = identity.si('link_error')
+        link_error_sig = identity.si("link_error")
         stamped_fail_sig = fail.si()
         stamped_fail_sig.stamp(visitor=FixedMonitoringIdStampingVisitor(str(uuid.uuid4())))
         stamped_fail_sig.link_error(link_error_sig)
         with pytest.raises(ExpectedException):
-            # This causes the relevant stamping for this test case
-            # as it will stamp the link via the group stamping internally
+            stamped_fail_sig.stamp(visitor=FixedMonitoringIdStampingVisitor("1234"))
             stamped_fail_sig.apply_async().get()
         assert assertion_result
+
+    @flaky
+    def test_stamps_remain_on_task_retry(self, manager):
+        @task_received.connect
+        def task_received_handler(request, **kwargs):
+            nonlocal assertion_result
+
+            try:
+                assertion_result = all(
+                    [
+                        assertion_result,
+                        all([stamped_header in request.stamps for stamped_header in request.stamped_headers]),
+                        request.stamps["stamp"] == 42,
+                    ]
+                )
+            except Exception:
+                assertion_result = False
+
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {"stamp": 42}
+
+        stamped_task = retry_once.si()
+        stamped_task.stamp(visitor=CustomStampingVisitor())
+        assertion_result = True
+        res = stamped_task.delay()
+        res.get(timeout=TIMEOUT)
+        assert assertion_result
+
+    def test_stamp_canvas_with_dictionary_link(self, manager, subtests):
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {"on_signature": 42}
+
+        with subtests.test("Stamp canvas with dictionary link"):
+            canvas = identity.si(42)
+            canvas.options["link"] = dict(identity.si(42))
+            canvas.stamp(visitor=CustomStampingVisitor())
+
+    def test_stamp_canvas_with_dictionary_link_error(self, manager, subtests):
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {"on_signature": 42}
+
+        with subtests.test("Stamp canvas with dictionary link error"):
+            canvas = fail.si()
+            canvas.options["link_error"] = dict(fail.si())
+            canvas.stamp(visitor=CustomStampingVisitor())
+
+        with subtests.test(msg="Expect canvas to fail"):
+            with pytest.raises(ExpectedException):
+                canvas.apply_async().get(timeout=TIMEOUT)

@@ -1,15 +1,19 @@
 import json
 import pickle
 import sys
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 from unittest.mock import Mock
 
 import pytest
-import pytz
 from kombu import Queue
 
 from celery.utils.serialization import (STRTOBOOL_DEFAULT_TABLE, UnpickleableExceptionWrapper, ensure_serializable,
                                         get_pickleable_etype, jsonify, strtobool)
+
+if sys.version_info >= (3, 9):
+    from zoneinfo import ZoneInfo
+else:
+    from backports.zoneinfo import ZoneInfo
 
 
 class test_AAPickle:
@@ -63,9 +67,9 @@ class test_jsonify:
         Queue('foo'),
         ['foo', 'bar', 'baz'],
         {'foo': 'bar'},
-        datetime.utcnow(),
-        datetime.utcnow().replace(tzinfo=pytz.utc),
-        datetime.utcnow().replace(microsecond=0),
+        datetime.now(timezone.utc),
+        datetime.now(timezone.utc).replace(tzinfo=ZoneInfo("UTC")),
+        datetime.now(timezone.utc).replace(microsecond=0),
         date(2012, 1, 1),
         time(hour=1, minute=30),
         time(hour=1, minute=30, microsecond=3),

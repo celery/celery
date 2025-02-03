@@ -11,13 +11,17 @@ on:
         - '**.txt'
         - '.github/workflows/python-package.yml'
         - '**.toml'
+        - "tox.ini"
   pull_request:
-    branches: [ 'main']
+    branches: [ 'main' ]
     paths:
         - '**.py'
         - '**.txt'
         - '**.toml'
         - '.github/workflows/python-package.yml'
+        - "tox.ini"
+  workflow_dispatch:
+
 
 permissions:
   contents: read # to fetch code (actions/checkout)
@@ -29,39 +33,36 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', 'pypy-3.9', 'pypy-3.8']
-        os: ["ubuntu-latest", "windows-latest"]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', 'pypy-3.10']
+        os: ["blacksmith-4vcpu-ubuntu-2204", "windows-latest"]
         exclude:
-            - python-version: 'pypy-3.9'
+            - python-version: '3.9'
               os: "windows-latest"
-            - python-version: 'pypy-3.8'
+            - python-version: 'pypy-3.10'
               os: "windows-latest"
+            - python-version: '3.10'
+              os: "windows-latest"
+            - python-version: '3.11'
+              os: "windows-latest"
+            - python-version: '3.13'
+              os: "windows-latest"
+
     steps:
     - name: Install apt packages
-      if: startsWith(matrix.os, 'ubuntu-')
+      if: startsWith(matrix.os, 'blacksmith-4vcpu-ubuntu')
       run: |
-        sudo apt update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
-    - uses: actions/checkout@v3
+        sudo apt-get update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: useblacksmith/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
-
-    - name: Get pip cache dir
-      id: pip-cache
-      run: |
-        echo "::set-output name=dir::$(pip cache dir)"
-    - name: Cache
-      uses: actions/cache@v3.0.2
-      with:
-        path: ${{ steps.pip-cache.outputs.dir }}
-        key:
-          ${{ matrix.python-version }}-${{matrix.os}}-${{ hashFiles('**/setup.py') }}
-        restore-keys: |
-          ${{ matrix.python-version }}-${{matrix.os}}
+        allow-prereleases: true
+        cache: 'pip'
+        cache-dependency-path: '**/setup.py'
 
     - name: Install tox
-      run: python -m pip install --upgrade pip tox tox-gh-actions
+      run: python -m pip install --upgrade pip 'tox' tox-gh-actions
     - name: >
         Run tox for
         "${{ matrix.python-version }}-unit"
@@ -69,10 +70,11 @@ jobs:
       run: |
         tox --verbose --verbose
 
-    - uses: codecov/codecov-action@v3.1.0
+    - uses: codecov/codecov-action@v5
       with:
         flags: unittests # optional
         fail_ci_if_error: true # optional (default = false)
+        token: ${{ secrets.CODECOV_TOKEN }}
         verbose: true # optional (default = false)
 
   Integration:
@@ -81,11 +83,11 @@ jobs:
       if: needs.Unit.result == 'success'
       timeout-minutes: 240
 
-      runs-on: ubuntu-latest
+      runs-on: blacksmith-4vcpu-ubuntu-2204
       strategy:
           fail-fast: false
           matrix:
-              python-version: ['3.7', '3.8', '3.9', '3.10']
+              python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
               toxenv: ['redis', 'rabbitmq', 'rabbitmq_redis']
 
       services:
@@ -107,20 +109,18 @@ jobs:
       steps:
           -   name: Install apt packages
               run: |
-                  sudo apt update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
+                  sudo apt-get update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
 
-          -   uses: actions/checkout@v3
+          -   uses: actions/checkout@v4
           -   name: Set up Python ${{ matrix.python-version }}
-              uses: actions/setup-python@v4
+              uses: useblacksmith/setup-python@v6
               with:
                   python-version: ${{ matrix.python-version }}
-
-          -   name: Get pip cache dir
-              id: pip-cache
-              run: |
-                  echo "::set-output name=dir::$(pip cache dir)"
+                  allow-prereleases: true
+                  cache: 'pip'
+                  cache-dependency-path: '**/setup.py'
           -   name: Install tox
-              run: python -m pip install --upgrade pip tox tox-gh-actions
+              run: python -m pip install --upgrade pip 'tox' tox-gh-actions
           -   name: >
                   Run tox for
                   "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}"
@@ -128,3 +128,53 @@ jobs:
               run: >
                   tox --verbose --verbose -e
                   "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -vv
+  Smoke:
+    needs:
+    - Unit
+    if: needs.Unit.result == 'success'
+    runs-on: blacksmith-4vcpu-ubuntu-2204
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.8', '3.12', '3.13']
+        test-case: [
+          'failover',
+          'quorum_queues',
+          'stamping',
+          'test_canvas.py',
+          'test_consumer.py',
+          'test_control.py',
+          'test_signals.py',
+          'test_tasks.py',
+          'test_thread_safe.py',
+          'test_worker.py'
+        ]
+
+    steps:
+      - name: Fetch Docker Images
+        run: |
+          docker pull redis:latest
+          docker pull rabbitmq:latest
+
+      - name: Install apt packages
+        run: |
+          sudo apt update
+          sudo apt-get install -y procps  # Install procps to enable sysctl
+          sudo sysctl -w vm.overcommit_memory=1
+
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: useblacksmith/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          allow-prereleases: true
+          cache: 'pip'
+          cache-dependency-path: '**/setup.py'
+
+      - name: Install tox
+        run: python -m pip install --upgrade pip tox tox-gh-actions
+
+      - name: Run tox for "${{ matrix.python-version }}-smoke-${{ matrix.test-case }}"
+        timeout-minutes: 60
+        run: |
+          tox --verbose --verbose -e "${{ matrix.python-version }}-smoke" -- -n auto -k ${{ matrix.test-case }}

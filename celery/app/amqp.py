@@ -249,9 +249,13 @@ class AMQP:
         if max_priority is None:
             max_priority = conf.task_queue_max_priority
         if not queues and conf.task_default_queue:
+            queue_arguments = None
+            if conf.task_default_queue_type == 'quorum':
+                queue_arguments = {'x-queue-type': 'quorum'}
             queues = (Queue(conf.task_default_queue,
                             exchange=self.default_exchange,
-                            routing_key=default_routing_key),)
+                            routing_key=default_routing_key,
+                            queue_arguments=queue_arguments),)
         autoexchange = (self.autoexchange if autoexchange is None
                         else autoexchange)
         return self.queues_cls(
@@ -285,7 +289,7 @@ class AMQP:
                    create_sent_event=False, root_id=None, parent_id=None,
                    shadow=None, chain=None, now=None, timezone=None,
                    origin=None, ignore_result=False, argsrepr=None, kwargsrepr=None, stamped_headers=None,
-                   **options):
+                   replaced_task_nesting=0, **options):
 
         args = args or ()
         kwargs = kwargs or {}
@@ -339,6 +343,7 @@ class AMQP:
             'kwargsrepr': kwargsrepr,
             'origin': origin or anon_nodename(),
             'ignore_result': ignore_result,
+            'replaced_task_nesting': replaced_task_nesting,
             'stamped_headers': stamped_headers,
             'stamps': stamps,
         }
@@ -462,7 +467,8 @@ class AMQP:
                               retry=None, retry_policy=None,
                               serializer=None, delivery_mode=None,
                               compression=None, declare=None,
-                              headers=None, exchange_type=None, **kwargs):
+                              headers=None, exchange_type=None,
+                              timeout=None, confirm_timeout=None, **kwargs):
             retry = default_retry if retry is None else retry
             headers2, properties, body, sent_event = message
             if headers:
@@ -523,6 +529,7 @@ class AMQP:
                 retry=retry, retry_policy=_rp,
                 delivery_mode=delivery_mode, declare=declare,
                 headers=headers2,
+                timeout=timeout, confirm_timeout=confirm_timeout,
                 **properties
             )
             if after_receivers:

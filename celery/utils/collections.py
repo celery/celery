@@ -6,7 +6,7 @@ from collections.abc import Callable, Mapping, MutableMapping, MutableSet, Seque
 from heapq import heapify, heappop, heappush
 from itertools import chain, count
 from queue import Empty
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, Iterable, List  # noqa
 
 from .functional import first, uniq
 from .text import match_case
@@ -206,7 +206,7 @@ class ChainMap(MutableMapping):
     changes = None
     defaults = None
     maps = None
-    _observers = []
+    _observers = ()
 
     def __init__(self, *maps, **kwargs):
         # type: (*Mapping, **Any) -> None
@@ -216,6 +216,7 @@ class ChainMap(MutableMapping):
             maps=maps,
             changes=maps[0],
             defaults=maps[1:],
+            _observers=[],
         )
 
     def add_defaults(self, d):
@@ -594,8 +595,7 @@ class LimitedSet:
                     break  # oldest item hasn't expired yet
                 self.pop()
 
-    def pop(self, default=None) -> Any:
-        # type: (Any) -> Any
+    def pop(self, default: Any = None) -> Any:
         """Remove and return the oldest item, or :const:`None` when empty."""
         while self._heap:
             _, item = heappop(self._heap)

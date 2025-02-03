@@ -1,5 +1,5 @@
 """Elasticsearch result store backend."""
-from datetime import datetime
+from datetime import datetime, timezone
 
 from kombu.utils.encoding import bytes_to_str
 from kombu.utils.url import _parse_url
@@ -13,6 +13,11 @@ try:
     import elasticsearch
 except ImportError:
     elasticsearch = None
+
+try:
+    import elastic_transport
+except ImportError:
+    elastic_transport = None
 
 __all__ = ('ElasticsearchBackend',)
 
@@ -31,7 +36,7 @@ class ElasticsearchBackend(KeyValueStoreBackend):
     """
 
     index = 'celery'
-    doc_type = 'backend'
+    doc_type = None
     scheme = 'http'
     host = 'localhost'
     port = 9200
@@ -83,17 +88,17 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         self._server = None
 
     def exception_safe_to_retry(self, exc):
-        if isinstance(exc, (elasticsearch.exceptions.TransportError)):
+        if isinstance(exc, elasticsearch.exceptions.ApiError):
             # 401: Unauthorized
             # 409: Conflict
-            # 429: Too Many Requests
             # 500: Internal Server Error
             # 502: Bad Gateway
-            # 503: Service Unavailable
             # 504: Gateway Timeout
             # N/A: Low level exception (i.e. socket exception)
-            if exc.status_code in {401, 409, 429, 500, 502, 503, 504, 'N/A'}:
+            if exc.status_code in {401, 409, 500, 502, 504, 'N/A'}:
                 return True
+        if isinstance(exc, elasticsearch.exceptions.TransportError):
+            return True
         return False
 
     def get(self, key):
@@ -108,17 +113,23 @@ class ElasticsearchBackend(KeyValueStoreBackend):
             pass
 
     def _get(self, key):
-        return self.server.get(
-            index=self.index,
-            doc_type=self.doc_type,
-            id=key,
-        )
+        if self.doc_type:
+            return self.server.get(
+                index=self.index,
+                id=key,
+                doc_type=self.doc_type,
+            )
+        else:
+            return self.server.get(
+                index=self.index,
+                id=key,
+            )
 
     def _set_with_state(self, key, value, state):
         body = {
             'result': value,
             '@timestamp': '{}Z'.format(
-                datetime.utcnow().isoformat()[:-3]
+                datetime.now(timezone.utc).isoformat()[:-9]
             ),
         }
         try:
@@ -135,14 +146,23 @@ class ElasticsearchBackend(KeyValueStoreBackend):
 
     def _index(self, id, body, **kwargs):
         body = {bytes_to_str(k): v for k, v in body.items()}
-        return self.server.index(
-            id=bytes_to_str(id),
-            index=self.index,
-            doc_type=self.doc_type,
-            body=body,
-            params={'op_type': 'create'},
-            **kwargs
-        )
+        if self.doc_type:
+            return self.server.index(
+                id=bytes_to_str(id),
+                index=self.index,
+                doc_type=self.doc_type,
+                body=body,
+                params={'op_type': 'create'},
+                **kwargs
+            )
+        else:
+            return self.server.index(
+                id=bytes_to_str(id),
+                index=self.index,
+                body=body,
+                params={'op_type': 'create'},
+                **kwargs
+            )
 
     def _update(self, id, body, state, **kwargs):
         """Update state in a conflict free manner.
@@ -182,19 +202,32 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         prim_term = res_get.get('_primary_term', 1)
 
         # try to update document with current seq_no and primary_term
-        res = self.server.update(
-            id=bytes_to_str(id),
-            index=self.index,
-            doc_type=self.doc_type,
-            body={'doc': body},
-            params={'if_primary_term': prim_term, 'if_seq_no': seq_no},
-            **kwargs
-        )
+        if self.doc_type:
+            res = self.server.update(
+                id=bytes_to_str(id),
+                index=self.index,
+                doc_type=self.doc_type,
+                body={'doc': body},
+                params={'if_primary_term': prim_term, 'if_seq_no': seq_no},
+                **kwargs
+            )
+        else:
+            res = self.server.update(
+                id=bytes_to_str(id),
+                index=self.index,
+                body={'doc': body},
+                params={'if_primary_term': prim_term, 'if_seq_no': seq_no},
+                **kwargs
+            )
         # result is elastic search update query result
         # noop = query did not update any document
         # updated = at least one document got updated
         if res['result'] == 'noop':
-            raise elasticsearch.exceptions.ConflictError(409, 'conflicting update occurred concurrently', {})
+            raise elasticsearch.exceptions.ConflictError(
+                "conflicting update occurred concurrently",
+                elastic_transport.ApiResponseMeta(409, "HTTP/1.1",
+                                                  elastic_transport.HttpHeaders(), 0, elastic_transport.NodeConfig(
+                                                      self.scheme, self.host, self.port)), None)
         return res
 
     def encode(self, data):
@@ -225,7 +258,10 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         return [self.get(key) for key in keys]
 
     def delete(self, key):
-        self.server.delete(index=self.index, doc_type=self.doc_type, id=key)
+        if self.doc_type:
+            self.server.delete(index=self.index, id=key, doc_type=self.doc_type)
+        else:
+            self.server.delete(index=self.index, id=key)
 
     def _get_server(self):
         """Connect to the Elasticsearch server."""
@@ -233,11 +269,10 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         if self.username and self.password:
             http_auth = (self.username, self.password)
         return elasticsearch.Elasticsearch(
-            f'{self.host}:{self.port}',
+            f'{self.scheme}://{self.host}:{self.port}',
             retry_on_timeout=self.es_retry_on_timeout,
             max_retries=self.es_max_retries,
             timeout=self.es_timeout,
-            scheme=self.scheme,
             http_auth=http_auth,
         )
 

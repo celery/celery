@@ -1,5 +1,5 @@
 """Distributed Task Queue."""
-# :copyright: (c) 2016-2026 Asif Saif Uddin, celery core and individual
+# :copyright: (c) 2017-2026 Asif Saif Uddin, celery core and individual
 #                 contributors, All rights reserved.
 # :copyright: (c) 2015-2016 Ask Solem.  All rights reserved.
 # :copyright: (c) 2012-2014 GoPivotal, Inc., All rights reserved.
@@ -15,9 +15,9 @@ from collections import namedtuple
 # Lazy loading
 from . import local
 
-SERIES = 'dawn-chorus'
+SERIES = 'immunity'
 
-__version__ = '5.3.0b1'
+__version__ = '5.5.0rc4'
 __author__ = 'Ask Solem'
 __contact__ = 'auvipy@gmail.com'
 __homepage__ = 'https://docs.celeryq.dev/'
@@ -70,7 +70,8 @@ if STATICA_HACK:  # pragma: no cover
     from celery.app.base import Celery
     from celery.app.task import Task
     from celery.app.utils import bugreport
-    from celery.canvas import chain, chord, chunks, group, maybe_signature, signature, subtask, xmap, xstarmap
+    from celery.canvas import (chain, chord, chunks, group, maybe_signature, signature, subtask, xmap,  # noqa
+                               xstarmap)
     from celery.utils import uuid
 
 # Eventlet/gevent patching must happen before importing

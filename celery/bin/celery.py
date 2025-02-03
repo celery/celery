@@ -11,7 +11,6 @@ except ImportError:
 
 import click
 import click.exceptions
-from click.types import ParamType
 from click_didyoumean import DYMGroup
 from click_plugins import with_plugins
 
@@ -48,34 +47,6 @@ Unable to load celery application.
 {0}""")
 
 
-class App(ParamType):
-    """Application option."""
-
-    name = "application"
-
-    def convert(self, value, param, ctx):
-        try:
-            return find_app(value)
-        except ModuleNotFoundError as e:
-            if e.name != value:
-                exc = traceback.format_exc()
-                self.fail(
-                    UNABLE_TO_LOAD_APP_ERROR_OCCURRED.format(value, exc)
-                )
-            self.fail(UNABLE_TO_LOAD_APP_MODULE_NOT_FOUND.format(e.name))
-        except AttributeError as e:
-            attribute_name = e.args[0].capitalize()
-            self.fail(UNABLE_TO_LOAD_APP_APP_MISSING.format(attribute_name))
-        except Exception:
-            exc = traceback.format_exc()
-            self.fail(
-                UNABLE_TO_LOAD_APP_ERROR_OCCURRED.format(value, exc)
-            )
-
-
-APP = App()
-
-
 if sys.version_info >= (3, 10):
     _PLUGINS = entry_points(group='celery.commands')
 else:
@@ -91,7 +62,11 @@ else:
               '--app',
               envvar='APP',
               cls=CeleryOption,
-              type=APP,
+              # May take either: a str when invoked from command line (Click),
+              # or a Celery object when invoked from inside Celery; hence the
+              # need to prevent Click from "processing" the Celery object and
+              # converting it into its str representation.
+              type=click.UNPROCESSED,
               help_group="Global Options")
 @click.option('-b',
               '--broker',
@@ -136,7 +111,8 @@ else:
               cls=CeleryOption,
               is_flag=True,
               help_group="Global Options",
-              help="Skip Django core checks on startup.")
+              help="Skip Django core checks on startup. Setting the SKIP_CHECKS environment "
+                   "variable to any non-empty string will have the same effect.")
 @click.pass_context
 def celery(ctx, app, broker, result_backend, loader, config, workdir,
            no_color, quiet, version, skip_checks):
@@ -158,7 +134,27 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir,
     if config:
         os.environ['CELERY_CONFIG_MODULE'] = config
     if skip_checks:
-        os.environ['CELERY_SKIP_CHECKS'] = skip_checks
+        os.environ['CELERY_SKIP_CHECKS'] = 'true'
+
+    if isinstance(app, str):
+        try:
+            app = find_app(app)
+        except ModuleNotFoundError as e:
+            if e.name != app:
+                exc = traceback.format_exc()
+                ctx.fail(
+                    UNABLE_TO_LOAD_APP_ERROR_OCCURRED.format(app, exc)
+                )
+            ctx.fail(UNABLE_TO_LOAD_APP_MODULE_NOT_FOUND.format(e.name))
+        except AttributeError as e:
+            attribute_name = e.args[0].capitalize()
+            ctx.fail(UNABLE_TO_LOAD_APP_APP_MISSING.format(attribute_name))
+        except Exception:
+            exc = traceback.format_exc()
+            ctx.fail(
+                UNABLE_TO_LOAD_APP_ERROR_OCCURRED.format(app, exc)
+            )
+
     ctx.obj = CLIContext(app=app, no_color=no_color, workdir=workdir,
                          quiet=quiet)
 
@@ -173,7 +169,7 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir,
 
 @celery.command(cls=CeleryCommand)
 @click.pass_context
-def report(ctx):
+def report(ctx, **kwargs):
     """Shows information useful to include in bug-reports."""
     app = ctx.obj.app
     app.loader.import_default_modules()

@@ -308,7 +308,7 @@ The Primitives
 The primitives are also signature objects themselves, so that they can be combined
 in any number of ways to compose complex work-flows.
 
-Here's some examples:
+Here're some examples:
 
 - Simple chain
 
@@ -389,7 +389,7 @@ Here's some examples:
         >>> res.get()
         90
 
-    The above example creates 10 task that all start in parallel,
+    The above example creates 10 tasks that all start in parallel,
     and when all of them are complete the return values are combined
     into a list and sent to the ``tsum`` task.
 
@@ -461,17 +461,7 @@ Here's some examples:
 
         >>> res = (add.s(4, 4) | group(add.si(i, i) for i in range(10)))()
         >>> res.get()
-        <GroupResult: de44df8c-821d-4c84-9a6a-44769c738f98 [
-            bc01831b-9486-4e51-b046-480d7c9b78de,
-            2650a1b8-32bf-4771-a645-b0a35dcc791b,
-            dcbee2a5-e92d-4b03-b6eb-7aec60fd30cf,
-            59f92e0a-23ea-41ce-9fad-8645a0e7759c,
-            26e1e707-eccf-4bf4-bbd8-1e1729c3cce3,
-            2d10a5f4-37f0-41b2-96ac-a973b1df024d,
-            e13d3bdb-7ae3-4101-81a4-6f17ee21df2d,
-            104b2be0-7b75-44eb-ac8e-f9220bdfa140,
-            c5c551a5-0386-4973-aa37-b65cbeb2624b,
-            83f72d71-4b71-428e-b604-6f16599a9f37]>
+        [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
 
         >>> res.parent.get()
         8
@@ -614,6 +604,13 @@ Chains can also be made using the ``|`` (pipe) operator:
 
     >>> (add.s(2, 2) | mul.s(8) | mul.s(10)).apply_async()
 
+Task ID
+~~~~~~~
+
+.. versionadded:: 5.4
+
+A chain will inherit the task id of the last task in the chain.
+
 Graphs
 ~~~~~~
 
@@ -706,7 +703,7 @@ a linked callback signature.
 Additionally, linking the task will *not* guarantee that it will activate only
 when all group tasks have finished.
 As an example, the following snippet using a simple `add(a, b)` task is faulty
-since the linked `add.s()` signature will not received the finalised group
+since the linked `add.s()` signature will not receive the finalised group
 result as one might expect.
 
 .. code-block:: pycon
@@ -809,6 +806,48 @@ It supports the following operations:
 
     Gather the results of all subtasks
     and return them in the same order as they were called (as a list).
+
+.. _group-unrolling:
+
+Group Unrolling
+~~~~~~~~~~~~~~~
+
+A group with a single signature will be unrolled to a single signature when chained.
+This means that the following group may pass either a list of results or a single result to the chain
+depending on the number of items in the group.
+
+.. code-block:: pycon
+
+    >>> from celery import chain, group
+    >>> from tasks import add
+    >>> chain(add.s(2, 2), group(add.s(1)), add.s(1))
+    add(2, 2) | add(1) | add(1)
+    >>> chain(add.s(2, 2), group(add.s(1), add.s(2)), add.s(1))
+    add(2, 2) | %add((add(1), add(2)), 1)
+
+This means that you should be careful and make sure the ``add`` task can accept either a list or a single item as input
+if you plan to use it as part of a larger canvas.
+
+.. warning::
+
+    In Celery 4.x the following group below would not unroll into a chain due to a bug but instead the canvas would be
+    upgraded into a chord.
+
+    .. code-block:: pycon
+
+        >>> from celery import chain, group
+        >>> from tasks import add
+        >>> chain(group(add.s(1, 1)), add.s(2))
+        %add([add(1, 1)], 2)
+
+    In Celery 5.x this bug was fixed and the group is correctly unrolled into a single signature.
+
+    .. code-block:: pycon
+
+        >>> from celery import chain, group
+        >>> from tasks import add
+        >>> chain(group(add.s(1, 1)), add.s(2))
+        add(1, 1) | add(2)
 
 .. _canvas-chord:
 
@@ -993,11 +1032,11 @@ Example implementation:
         raise self.retry(countdown=interval, max_retries=max_retries)
 
 
-This is used by all result backends except Redis and Memcached: they
+This is used by all result backends except Redis, Memcached and DynamoDB: they
 increment a counter after each task in the header, then applies the callback
 when the counter exceeds the number of tasks in the set.
 
-The Redis and Memcached approach is a much better solution, but not easily
+The Redis, Memcached and DynamoDB approach is a much better solution, but not easily
 implemented in other backends (suggestions welcome!).
 
 .. note::
@@ -1037,7 +1076,7 @@ For example using ``map``:
 
     >>> from proj.tasks import add
 
-    >>> ~tsum.map([range(10), range(100)])
+    >>> ~tsum.map([list(range(10)), list(range(100))])
     [45, 4950]
 
 is the same as having a task doing:
@@ -1085,7 +1124,7 @@ of parallelism, but this is rarely true for a busy cluster
 and in practice since you're avoiding the overhead  of messaging
 it may considerably increase performance.
 
-To create a chunks signature you can use :meth:`@Task.chunks`:
+To create a chunks' signature you can use :meth:`@Task.chunks`:
 
 .. code-block:: pycon
 
@@ -1170,29 +1209,11 @@ will initialize a group ``g`` and mark its components with stamp ``your_custom_s
 For this feature to be useful, you need to set the :setting:`result_extended`
 configuration option to ``True`` or directive ``result_extended = True``.
 
-
-Group stamping
---------------
-
-When the ``apply`` and ``apply_async`` methods are called,
-there is an automatic stamping signature with group id.
-Stamps are stored in group header.
-For example, after
-
-.. code-block:: pycon
-
-    >>> g.apply_async()
-
-the header of task sig1 will store the stamp groups with g.id.
-In the case of nested groups, the order of the stamps corresponds
-to the nesting level. The group stamping is idempotent;
-the task cannot be stamped twice with the same group id.
-
 Canvas stamping
 ----------------
 
-In addition to the default group stamping, we can also stamp
-canvas with custom stamps, as shown in the example.
+We can also stamp the canvas with custom stamping logic, using the visitor class ``StampingVisitor``
+as the base class for the custom stamping visitor.
 
 Custom stamping
 ----------------
@@ -1200,7 +1221,7 @@ Custom stamping
 If more complex stamping logic is required, it is possible
 to implement custom stamping behavior based on the Visitor
 pattern. The class that implements this custom logic must
-inherit ``VisitorStamping`` and implement appropriate methods.
+inherit ``StampingVisitor`` and implement appropriate methods.
 
 For example, the following example ``InGroupVisitor`` will label
 tasks that are in side of some group by label ``in_group``.
@@ -1238,9 +1259,10 @@ the external monitoring system, etc.
 
 .. note::
 
-    The ``stamped_headers`` key returned in ``on_signature`` is used to specify the headers that will be
-    stamped on the task. If this key is not specified, the stamping visitor will assume all keys in the
-    returned dictionary are the stamped headers from the visitor.
+    The ``stamped_headers`` key returned in ``on_signature`` (or any other visitor method) is used to
+    specify the headers that will be stamped on the task. If this key is not specified, the stamping
+    visitor will assume all keys in the returned dictionary are the stamped headers from the visitor.
+
     This means the following code block will result in the same behavior as the previous example.
 
 .. code-block:: python
@@ -1249,7 +1271,7 @@ the external monitoring system, etc.
         def on_signature(self, sig, **headers) -> dict:
             return {'monitoring_id': uuid4().hex, 'stamped_headers': ['monitoring_id']}
 
-Next, lets see how to use the ``MonitoringIdStampingVisitor`` example stamping visitor.
+Next, let's see how to use the ``MonitoringIdStampingVisitor`` example stamping visitor.
 
 .. code-block:: python
 
@@ -1278,7 +1300,7 @@ visitor will be applied to the callback as well.
 
     The callback must be linked to the signature before stamping.
 
-For example, lets examine the following custome stamping visitor.
+For example, let's examine the following custom stamping visitor.
 
 .. code-block:: python
 
@@ -1320,21 +1342,3 @@ This example will result in the following stamps:
     {'header': 'value', 'on_callback': True, 'stamped_headers': ['header', 'on_callback']}
     >>> c.body.options['link_error'][0].options
     {'header': 'value', 'on_errback': True, 'stamped_headers': ['header', 'on_errback']}
-
-When calling ``apply_async()`` on ``c``, the group stamping will be applied on top of the above stamps.
-This will result in the following stamps:
-
-.. code-block:: python
-
-    >>> c.options
-    {'header': 'value', 'groups': ['1234'], 'stamped_headers': ['header', 'groups']}
-    >>> c.tasks.tasks[0].options
-    {'header': 'value', 'groups': ['1234'], 'stamped_headers': ['header', 'groups']}
-    >>> c.tasks.tasks[1].options
-    {'header': 'value', 'groups': ['1234'], 'stamped_headers': ['header', 'groups']}
-    >>> c.body.options
-    {'header': 'value', 'groups': [], 'stamped_headers': ['header', 'groups']}
-    >>> c.body.options['link'][0].options
-    {'header': 'value', 'on_callback': True, 'groups': [], 'stamped_headers': ['header', 'on_callback', 'groups']}
-    >>> c.body.options['link_error'][0].options
-    {'header': 'value', 'on_errback': True, 'groups': [], 'stamped_headers': ['header', 'on_errback', 'groups']}
