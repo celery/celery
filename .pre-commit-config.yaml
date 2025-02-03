@@ -1,12 +1,12 @@
 repos:
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.15.0
+    rev: v3.19.1
     hooks:
       - id: pyupgrade
         args: ["--py38-plus"]
 
   - repo: https://github.com/PyCQA/flake8
-    rev: 6.1.0
+    rev: 7.1.1
     hooks:
       - id: flake8
 
@@ -16,12 +16,21 @@ repos:
       - id: yesqa
         exclude: ^celery/app/task\.py$|^celery/backends/cache\.py$
 
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.0
+    hooks:
+      - id: codespell # See pyproject.toml for args
+        args: [--toml, pyproject.toml, --write-changes]
+        additional_dependencies:
+          - tomli
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v5.0.0
     hooks:
       - id: check-merge-conflict
       - id: check-toml
       - id: check-yaml
+        exclude: helm-chart/templates/
       - id: mixed-line-ending
 
   - repo: https://github.com/pycqa/isort
@@ -30,7 +39,7 @@ repos:
       - id: isort
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.7.1
+    rev: v1.14.0
     hooks:
     -   id: mypy
         pass_filenames: false

@@ -186,6 +186,10 @@ class Pidfile:
         if not pid:
             self.remove()
             return True
+        if pid == os.getpid():
+            # this can be common in k8s pod with PID of 1 - don't kill
+            self.remove()
+            return True
 
         try:
             os.kill(pid, 0)

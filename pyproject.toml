@@ -24,6 +24,10 @@ files = [
     "celery/apps/beat.py",
 ]
 
+[tool.codespell]
+ignore-words-list = "assertin"
+skip = "./.*,docs/AUTHORS.txt,docs/history/*,docs/spelling_wordlist.txt,Changelog.rst,CONTRIBUTORS.txt,*.key"
+
 [tool.coverage.run]
 branch = true
 cover_pylib = false

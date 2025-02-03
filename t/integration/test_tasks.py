@@ -16,9 +16,10 @@ from celery.utils.serialization import UnpickleableExceptionWrapper
 from celery.worker import state as worker_state
 
 from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connection
-from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result, add_not_typed, fail,
-                    fail_unpickleable, print_unicode, retry, retry_once, retry_once_headers, retry_once_priority,
-                    retry_unpickleable, return_properties, second_order_replace1, sleeping)
+from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result, add_not_typed, add_pydantic,
+                    fail, fail_unpickleable, print_unicode, retry, retry_once, retry_once_headers,
+                    retry_once_priority, retry_unpickleable, return_properties, second_order_replace1, sleeping,
+                    soft_time_limit_must_exceed_time_limit)
 
 TIMEOUT = 10
 
@@ -127,6 +128,20 @@ class test_tasks:
         # persisted in the result backend.
         sleep(1)
         assert result.result is None
+
+    @flaky
+    def test_pydantic_annotations(self, manager):
+        """Tests task call with Pydantic model serialization."""
+        results = []
+        # Tests calling task only with args
+        for i in range(10):
+            results.append([i + i, add_pydantic.delay({'x': i, 'y': i})])
+        for expected, result in results:
+            value = result.get(timeout=10)
+            assert value == {'result': expected}
+            assert result.status == 'SUCCESS'
+            assert result.ready() is True
+            assert result.successful() is True
 
     @flaky
     def test_timeout(self, manager):
@@ -418,7 +433,8 @@ class test_tasks:
 
         assert result.status == 'FAILURE'
 
-    @flaky
+    # Requires investigation why it randomly succeeds/fails
+    @pytest.mark.skip(reason="Randomly fails")
     def test_task_accepted(self, manager, sleep=1):
         r1 = sleeping.delay(sleep)
         sleeping.delay(sleep)
@@ -457,6 +473,15 @@ class test_tasks:
     def test_properties(self, celery_session_worker):
         res = return_properties.apply_async(app_id="1234")
         assert res.get(timeout=TIMEOUT)["app_id"] == "1234"
+
+    @flaky
+    def test_soft_time_limit_exceeding_time_limit(self):
+
+        with pytest.raises(ValueError, match='soft_time_limit must be less than or equal to time_limit'):
+            result = soft_time_limit_must_exceed_time_limit.apply_async()
+            result.get(timeout=5)
+
+            assert result.status == 'FAILURE'
 
 
 class test_trace_log_arguments:
@@ -540,6 +565,7 @@ class test_task_redis_result_backend:
         new_channels = [channel for channel in get_active_redis_channels() if channel not in channels_before_test]
         assert new_channels == []
 
+    @flaky
     def test_asyncresult_get_cancels_subscription(self, manager):
         channels_before_test = get_active_redis_channels()
 

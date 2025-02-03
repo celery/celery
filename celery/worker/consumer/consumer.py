@@ -169,6 +169,7 @@ class Consumer:
             'celery.worker.consumer.heart:Heart',
             'celery.worker.consumer.control:Control',
             'celery.worker.consumer.tasks:Tasks',
+            'celery.worker.consumer.delayed_delivery:DelayedDelivery',
             'celery.worker.consumer.consumer:Evloop',
             'celery.worker.consumer.agent:Agent',
         ]
@@ -412,6 +413,7 @@ class Consumer:
         )
 
     def shutdown(self):
+        self.perform_pending_operations()
         self.blueprint.shutdown(self)
 
     def stop(self):
@@ -476,9 +478,9 @@ class Consumer:
         return self.ensure_connected(
             self.app.connection_for_read(heartbeat=heartbeat))
 
-    def connection_for_write(self, heartbeat=None):
+    def connection_for_write(self, url=None, heartbeat=None):
         return self.ensure_connected(
-            self.app.connection_for_write(heartbeat=heartbeat))
+            self.app.connection_for_write(url=url, heartbeat=heartbeat))
 
     def ensure_connected(self, conn):
         # Callback called for each retry while the connection
@@ -505,13 +507,14 @@ class Consumer:
             # to determine whether connection retries are disabled.
             retry_disabled = not self.app.conf.broker_connection_retry
 
-            warnings.warn(
-                CPendingDeprecationWarning(
-                    f"The broker_connection_retry configuration setting will no longer determine\n"
-                    f"whether broker connection retries are made during startup in Celery 6.0 and above.\n"
-                    f"If you wish to retain the existing behavior for retrying connections on startup,\n"
-                    f"you should set broker_connection_retry_on_startup to {self.app.conf.broker_connection_retry}.")
-            )
+            if retry_disabled:
+                warnings.warn(
+                    CPendingDeprecationWarning(
+                        "The broker_connection_retry configuration setting will no longer determine\n"
+                        "whether broker connection retries are made during startup in Celery 6.0 and above.\n"
+                        "If you wish to refrain from retrying connections on startup,\n"
+                        "you should set broker_connection_retry_on_startup to False instead.")
+                )
         else:
             if self.first_connection_attempt:
                 retry_disabled = not self.app.conf.broker_connection_retry_on_startup
@@ -729,6 +732,29 @@ class Consumer:
         return '<Consumer: {self.hostname} ({state})>'.format(
             self=self, state=self.blueprint.human_state(),
         )
+
+    def cancel_all_unacked_requests(self):
+        """Cancel all active requests that either do not require late acknowledgments or,
+        if they do, have not been acknowledged yet.
+        """
+
+        def should_cancel(request):
+            if not request.task.acks_late:
+                # Task does not require late acknowledgment, cancel it.
+                return True
+
+            if not request.acknowledged:
+                # Task is late acknowledged, but it has not been acknowledged yet, cancel it.
+                return True
+
+            # Task is late acknowledged, but it has already been acknowledged.
+            return False  # Do not cancel and allow it to gracefully finish as it has already been acknowledged.
+
+        requests_to_cancel = tuple(filter(should_cancel, active_requests))
+
+        if requests_to_cancel:
+            for request in requests_to_cancel:
+                request.cancel(self.pool)
 
 
 class Evloop(bootsteps.StartStopStep):

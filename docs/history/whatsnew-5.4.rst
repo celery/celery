@@ -1,9 +1,9 @@
-.. _whatsnew-5.3:
+.. _whatsnew-5.4:
 
 =========================================
- What's new in Celery 5.3 (Emerald Rush)
+ What's new in Celery 5.4 (Opalescent)
 =========================================
-:Author: Asif Saif Uddin (``auvipy at gmail.com``).
+:Author: Tomer Nosrati (``tomer.nosrati at gmail.com``).
 
 .. sidebar:: Change history
 
@@ -58,16 +58,16 @@ Preface
     **This release contains fixes for many long standing bugs & stability issues.
     We encourage our users to upgrade to this release as soon as possible.**
 
-The 5.3.0 release is a new feature release for Celery.
+The 5.4.0 release is a new feature release for Celery.
 
 Releases in the 5.x series are codenamed after songs of `Jon Hopkins <https://en.wikipedia.org/wiki/Jon_Hopkins>`_.
-This release has been codenamed `Emerald Rush <https://www.youtube.com/watch?v=4sk0uDbM5lc>`_.
+This release has been codenamed `Opalescent <https://www.youtube.com/watch?v=9ByfK25WsMM>`_.
 
 From now on we only support Python 3.8 and above.
 We will maintain compatibility with Python 3.8 until it's
 EOL in 2024.
 
-*— Asif Saif Uddin*
+*— Tomer Nosrati*
 
 Long Term Support Policy
 ------------------------
@@ -141,12 +141,12 @@ this effort.
 After the migration is done, run your test suite with Celery 4 to ensure
 nothing has been broken.
 
-Step 5: Upgrade to Celery 5.3
+Step 5: Upgrade to Celery 5.4
 -----------------------------
 
 At this point you can upgrade your workers and clients with the new version.
 
-.. _v530-important:
+.. _v540-important:
 
 Important Notes
 ===============
@@ -172,17 +172,16 @@ ready yet:
 Quality Improvements and Stability Enhancements
 -----------------------------------------------
 
-Celery 5.3 focuses on elevating the overall quality and stability of the project. 
+Celery 5.4 focuses on elevating the overall quality and stability of the project. 
 We have dedicated significant efforts to address various bugs, enhance performance,
 and make improvements based on valuable user feedback.
 
 Better Compatibility and Upgrade Confidence
 -------------------------------------------
 
-Our goal with Celery 5.3 is to instill confidence in users who are currently 
+Our goal with Celery 5.4 is to instill confidence in users who are currently 
 using Celery 4 or older versions. We want to assure you that upgrading to 
-Celery 5.3 will provide a more robust and reliable experience.
-
+Celery 5.4 will provide a more robust and reliable experience.
 
 Dropped support for Python 3.7
 ------------------------------
@@ -199,28 +198,10 @@ However we encourage you to upgrade to a supported Python version since
 no further security patches will be applied for Python 3.7 after
 the 23th of June, 2023.
 
-
-Automatic re-connection on connection loss to broker
-----------------------------------------------------
-
-Unless :setting:`broker_connection_retry_on_startup` is set to False,
-Celery will automatically retry reconnecting to the broker after 
-the first connection loss. :setting:`broker_connection_retry` controls 
-whether to automatically retry reconnecting to the broker for subsequent
-reconnects.
-
-Since the message broker does not track how many tasks were already fetched 
-before the connection was lost, Celery will reduce the prefetch count by 
-the number of tasks that are currently running multiplied by 
-:setting:`worker_prefetch_multiplier`.
-The prefetch count will be gradually restored to the maximum allowed after
-each time a task that was running before the connection was lost is complete
-
-
 Kombu
 -----
 
-Starting from v5.3.0, the minimum required version is Kombu 5.3.0.
+Starting from v5.4.0, the minimum required version is Kombu 5.3.
 
 Redis
 -----
@@ -231,7 +212,7 @@ redis-py 4.5.x is the new minimum required version.
 SQLAlchemy
 ---------------------
 
-SQLAlchemy 1.4.x & 2.0.x is now supported in celery v5.3
+SQLAlchemy 1.4.x & 2.0.x is now supported in celery v5.4
 
 
 Billiard
@@ -245,105 +226,8 @@ Deprecate pytz and use zoneinfo
 
 A switch have been made to zoneinfo for handling timezone data instead of pytz.
 
-
-Support for out-of-tree worker pool implementations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Prior to version 5.3, Celery had a fixed notion of the worker pool types it supports.
-Celery v5.3.0 introduces the the possibility of an out-of-tree worker pool implementation.
-This feature ensure that the current worker pool implementations consistently call into
-BasePool._get_info(), and enhance it to report the work pool class in use via the 
-"celery inspect stats" command. For example:
-
-$ celery -A ... inspect stats
-->  celery@freenas: OK
-    {
-        ...
-        "pool": {
-           ...
-            "implementation": "celery_aio_pool.pool:AsyncIOPool",
-
-It can be used as follows:
-
-    Set the environment variable CELERY_CUSTOM_WORKER_POOL to the name of
-    an implementation of :class:celery.concurrency.base.BasePool in the
-    standard Celery format of "package:class".
-
-    Select this pool using '--pool custom'.
-
-
-Signal::``worker_before_create_process``
-----------------------------------------
-
-Dispatched in the parent process, just before new child process is created in the prefork pool.
-It can be used to clean up instances that don't behave well when forking.
-
-.. code-block:: python
-    @signals.worker_before_create_process.connect
-    def clean_channels(**kwargs):
-        grpc_singleton.clean_channel()
-
-
-Setting::``beat_cron_starting_deadline``
-----------------------------------------
-
-When using cron, the number of seconds :mod:`~celery.bin.beat` can look back
-when deciding whether a cron schedule is due. When set to `None`, cronjobs that
-are past due will always run immediately.
-
-
-Redis result backend Global keyprefix
--------------------------------------
-
-The global key prefix will be prepended to all keys used for the result backend,
-which can be useful when a redis database is shared by different users.
-By default, no prefix is prepended.
-
-To configure the global keyprefix for the Redis result backend, use the 
-``global_keyprefix`` key under :setting:`result_backend_transport_options`:
-
-
-.. code-block:: python
-    app.conf.result_backend_transport_options = {
-        'global_keyprefix': 'my_prefix_'
-    }
-
-
 Django
 ------
 
 Minimum django version is bumped to v2.2.28.
 Also added --skip-checks flag to bypass django core checks.
-
-
-Make default worker state limits configurable
----------------------------------------------
-
-Previously, `REVOKES_MAX`, `REVOKE_EXPIRES`, `SUCCESSFUL_MAX` and
-`SUCCESSFUL_EXPIRES` were hardcoded in `celery.worker.state`. This 
-version introduces `CELERY_WORKER_` prefixed environment variables 
-with the same names that allow you to customize these values should
-you need to.
-
-
-Canvas stamping
----------------
-
-The goal of the Stamping API is to give an ability to label the signature 
-and its components for debugging information purposes. For example, when 
-the canvas is a complex structure, it may be necessary to label some or 
-all elements of the formed structure. The complexity increases even more 
-when nested groups are rolled-out or chain elements are replaced. In such 
-cases, it may be necessary to understand which group an element is a part 
-of or on what nested level it is. This requires a mechanism that traverses 
-the canvas elements and marks them with specific metadata. The stamping API 
-allows doing that based on the Visitor pattern.
-
-
-Known Issues
-------------
-Canvas header stamping has issues in a hybrid Celery 4.x. & Celery 5.3.x 
-environment and is not safe for production use at the moment.
-
-
-
-

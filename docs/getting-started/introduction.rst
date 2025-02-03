@@ -151,6 +151,7 @@ Celery is…
             - MongoDB, CouchDB, Couchbase, ArangoDB
             - Amazon DynamoDB, Amazon S3
             - Microsoft Azure Block Blob, Microsoft Azure Cosmos DB
+            - Google Cloud Storage
             - File system
 
         - **Serialization**
