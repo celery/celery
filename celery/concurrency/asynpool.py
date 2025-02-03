@@ -103,26 +103,35 @@ def _get_job_writer(job):
         return writer()  # is a weakref
 
 
+def _ensure_integral_fd(fd):
+    return fd if isinstance(fd, Integral) else fd.fileno()
+
+
 if hasattr(select, 'poll'):
     def _select_imp(readers=None, writers=None, err=None, timeout=0,
                     poll=select.poll, POLLIN=select.POLLIN,
                     POLLOUT=select.POLLOUT, POLLERR=select.POLLERR):
         poller = poll()
         register = poller.register
+        fd_to_mask = {}
 
         if readers:
-            [register(fd, POLLIN) for fd in readers]
+            for fd in map(_ensure_integral_fd, readers):
+                fd_to_mask[fd] = fd_to_mask.get(fd, 0) | POLLIN
         if writers:
-            [register(fd, POLLOUT) for fd in writers]
+            for fd in map(_ensure_integral_fd, writers):
+                fd_to_mask[fd] = fd_to_mask.get(fd, 0) | POLLOUT
         if err:
-            [register(fd, POLLERR) for fd in err]
+            for fd in map(_ensure_integral_fd, err):
+                fd_to_mask[fd] = fd_to_mask.get(fd, 0) | POLLERR
+
+        for fd, event_mask in fd_to_mask.items():
+            register(fd, event_mask)
 
         R, W = set(), set()
         timeout = 0 if timeout and timeout < 0 else round(timeout * 1e3)
         events = poller.poll(timeout)
         for fd, event in events:
-            if not isinstance(fd, Integral):
-                fd = fd.fileno()
             if event & POLLIN:
                 R.add(fd)
             if event & POLLOUT:
@@ -194,7 +203,7 @@ def iterate_file_descriptors_safely(fds_iter, source_data,
     or possibly other reasons, so safely manage our lists of FDs.
     :param fds_iter: the file descriptors to iterate and apply hub_method
     :param source_data: data source to remove FD if it renders OSError
-    :param hub_method: the method to call with with each fd and kwargs
+    :param hub_method: the method to call with each fd and kwargs
     :*args to pass through to the hub_method;
     with a special syntax string '*fd*' represents a substitution
     for the current fd object in the iteration (for some callers).
@@ -772,7 +781,7 @@ class AsynPool(_pool.Pool):
                     None, WRITE | ERR, consolidate=True)
             else:
                 iterate_file_descriptors_safely(
-                    inactive, all_inqueues, hub_remove)
+                    inactive, all_inqueues, hub.remove_writer)
         self.on_poll_start = on_poll_start
 
         def on_inqueue_close(fd, proc):
@@ -818,7 +827,7 @@ class AsynPool(_pool.Pool):
                     # worker is already busy with another task
                     continue
                 if ready_fd not in all_inqueues:
-                    hub_remove(ready_fd)
+                    hub.remove_writer(ready_fd)
                     continue
                 try:
                     job = pop_message()
@@ -829,7 +838,7 @@ class AsynPool(_pool.Pool):
                     # this may create a spinloop where the event loop
                     # always wakes up.
                     for inqfd in diff(active_writes):
-                        hub_remove(inqfd)
+                        hub.remove_writer(inqfd)
                     break
 
                 else:
@@ -927,7 +936,7 @@ class AsynPool(_pool.Pool):
                     else:
                         errors = 0
             finally:
-                hub_remove(fd)
+                hub.remove_writer(fd)
                 write_stats[proc.index] += 1
                 # message written, so this fd is now available
                 active_writes.discard(fd)

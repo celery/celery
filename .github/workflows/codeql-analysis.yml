@@ -17,12 +17,14 @@ on:
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ main ]
- 
+  workflow_dispatch:
+
+
 
 jobs:
   analyze:
     name: Analyze
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     permissions:
       actions: read
       contents: read

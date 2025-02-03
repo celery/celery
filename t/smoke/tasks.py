@@ -1,3 +1,5 @@
+"""Smoke tests tasks."""
+
 from __future__ import annotations
 
 import os
@@ -34,6 +36,16 @@ def long_running_task(seconds: float = 1, verbose: bool = False) -> bool:
     logger.info("Finished long running task")
 
     return True
+
+
+@shared_task(soft_time_limit=3, time_limit=5)
+def soft_time_limit_lower_than_time_limit():
+    sleep(4)
+
+
+@shared_task(soft_time_limit=5, time_limit=3)
+def soft_time_limit_must_exceed_time_limit():
+    pass
 
 
 @shared_task(bind=True)

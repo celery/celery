@@ -377,6 +377,7 @@ class MyCustomException(Exception):
 
 class UnpickleableException(Exception):
     """Exception that doesn't survive a pickling roundtrip (dump + load)."""
+
     def __init__(self, foo, bar):
         super().__init__(foo)
         self.bar = bar
@@ -1409,6 +1410,19 @@ class test_tasks(TasksCase):
                                                    ignore_result=False)
 
         self.app.send_task = old_send_task
+
+    def test_soft_time_limit_failure(self):
+        @self.app.task(soft_time_limit=5, time_limit=3)
+        def yyy():
+            pass
+
+        try:
+            yyy_result = yyy.apply_async()
+            yyy_result.get(timeout=5)
+
+            assert yyy_result.state == 'FAILURE'
+        except ValueError as e:
+            assert str(e) == 'soft_time_limit must be less than or equal to time_limit'
 
 
 class test_apply_task(TasksCase):

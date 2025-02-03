@@ -41,6 +41,9 @@ C_REMDEBUG = os.environ.get('C_REMDEBUG', False)
 DAYNAMES = 'sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'
 WEEKDAYS = dict(zip(DAYNAMES, range(7)))
 
+MONTHNAMES = 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'
+YEARMONTHS = dict(zip(MONTHNAMES, range(1, 13)))
+
 RATE_MODIFIER_MAP = {
     's': lambda n: n,
     'm': lambda n: n / 60.0,
@@ -258,6 +261,21 @@ def weekday(name: str) -> int:
         raise KeyError(name)
 
 
+def yearmonth(name: str) -> int:
+    """Return the position of a month: 1 - 12, where 1 is January.
+
+    Example:
+        >>> yearmonth('january'), yearmonth('jan'), yearmonth('may')
+        (1, 1, 5)
+    """
+    abbreviation = name[0:3].lower()
+    try:
+        return YEARMONTHS[abbreviation]
+    except KeyError:
+        # Show original day name in exception, instead of abbr.
+        raise KeyError(name)
+
+
 def humanize_seconds(
         secs: int, prefix: str = '', sep: str = '', now: str = 'now',
         microseconds: bool = False) -> str:
@@ -303,7 +321,7 @@ def _can_detect_ambiguous(tz: tzinfo) -> bool:
     return isinstance(tz, ZoneInfo) or hasattr(tz, "is_ambiguous")
 
 
-def _is_ambigious(dt: datetime, tz: tzinfo) -> bool:
+def _is_ambiguous(dt: datetime, tz: tzinfo) -> bool:
     """Helper function to determine if a timezone is ambiguous using python's dateutil module.
 
     Returns False if the timezone cannot detect ambiguity, or if there is no ambiguity, otherwise True.
@@ -320,7 +338,7 @@ def make_aware(dt: datetime, tz: tzinfo) -> datetime:
     """Set timezone for a :class:`~datetime.datetime` object."""
 
     dt = dt.replace(tzinfo=tz)
-    if _is_ambigious(dt, tz):
+    if _is_ambiguous(dt, tz):
         dt = min(dt.replace(fold=0), dt.replace(fold=1))
     return dt
 

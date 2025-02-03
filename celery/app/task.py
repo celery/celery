@@ -466,7 +466,7 @@ class Task:
             shadow (str): Override task name used in logs/monitoring.
                 Default is retrieved from :meth:`shadow_name`.
 
-            connection (kombu.Connection): Re-use existing broker connection
+            connection (kombu.Connection): Reuse existing broker connection
                 instead of acquiring one from the connection pool.
 
             retry (bool): If enabled sending of the task message will be
@@ -543,6 +543,8 @@ class Task:
             TypeError: If not enough arguments are passed, or too many
                 arguments are passed.  Note that signature checks may
                 be disabled by specifying ``@task(typing=False)``.
+            ValueError: If soft_time_limit and time_limit both are set
+                but soft_time_limit is greater than time_limit
             kombu.exceptions.OperationalError: If a connection to the
                transport cannot be made, or if the connection is lost.
 
@@ -550,6 +552,9 @@ class Task:
             Also supports all keyword arguments supported by
             :meth:`kombu.Producer.publish`.
         """
+        if self.soft_time_limit and self.time_limit and self.soft_time_limit > self.time_limit:
+            raise ValueError('soft_time_limit must be less than or equal to time_limit')
+
         if self.typing:
             try:
                 check_arguments = self.__header__
@@ -1109,7 +1114,7 @@ class Task:
         return result
 
     def push_request(self, *args, **kwargs):
-        self.request_stack.push(Context(*args, **kwargs))
+        self.request_stack.push(Context(*args, **{**self.request.__dict__, **kwargs}))
 
     def pop_request(self):
         self.request_stack.pop()

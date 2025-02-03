@@ -79,6 +79,7 @@ have been moved into a new  ``task_`` prefix.
 ``BROKER_FAILOVER_STRATEGY``               :setting:`broker_failover_strategy`
 ``BROKER_HEARTBEAT``                       :setting:`broker_heartbeat`
 ``BROKER_LOGIN_METHOD``                    :setting:`broker_login_method`
+``BROKER_NATIVE_DELAYED_DELIVERY_QUEUE_TYPE`` :setting:`broker_native_delayed_delivery_queue_type`
 ``BROKER_POOL_LIMIT``                      :setting:`broker_pool_limit`
 ``BROKER_USE_SSL``                         :setting:`broker_use_ssl`
 ``CELERY_CACHE_BACKEND``                   :setting:`cache_backend`
@@ -137,6 +138,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_DEFAULT_EXCHANGE``                :setting:`task_default_exchange`
 ``CELERY_DEFAULT_EXCHANGE_TYPE``           :setting:`task_default_exchange_type`
 ``CELERY_DEFAULT_QUEUE``                   :setting:`task_default_queue`
+``CELERY_DEFAULT_QUEUE_TYPE``              :setting:`task_default_queue_type`
 ``CELERY_DEFAULT_RATE_LIMIT``              :setting:`task_default_rate_limit`
 ``CELERY_DEFAULT_ROUTING_KEY``             :setting:`task_default_routing_key`
 ``CELERY_EAGER_PROPAGATES``                :setting:`task_eager_propagates`
@@ -176,6 +178,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_WORKER_TASK_LOG_FORMAT``          :setting:`worker_task_log_format`
 ``CELERYD_TIMER``                          :setting:`worker_timer`
 ``CELERYD_TIMER_PRECISION``                :setting:`worker_timer_precision`
+``CELERYD_DETECT_QUORUM_QUEUES``           :setting:`worker_detect_quorum_queues`
 ========================================== ==============================================
 
 Configuration Directives
@@ -683,7 +686,7 @@ Can be one of the following:
     Use `Memcached`_ to store the results.
     See :ref:`conf-cache-result-backend`.
 
-* mongodb
+*``mongodb``
     Use `MongoDB`_ to store the results.
     See :ref:`conf-mongodb-result-backend`.
 
@@ -731,6 +734,10 @@ Can be one of the following:
     Use the `S3`_ to store the results
     See :ref:`conf-s3-result-backend`.
 
+* ``gcs``
+    Use the `GCS`_ to store the results
+    See :ref:`conf-gcs-result-backend`.
+
 .. warning:
 
     While the AMQP result backend is very efficient, you must make sure
@@ -750,6 +757,7 @@ Can be one of the following:
 .. _`Consul`: https://consul.io/
 .. _`AzureBlockBlob`: https://azure.microsoft.com/en-us/services/storage/blobs/
 .. _`S3`: https://aws.amazon.com/s3/
+.. _`GCS`: https://cloud.google.com/storage/
 
 
 .. setting:: result_backend_always_retry
@@ -979,6 +987,23 @@ strings (this is the part of the URI that comes after the ``db+`` prefix).
 
 .. _`Connection String`:
     http://www.sqlalchemy.org/docs/core/engines.html#database-urls
+
+.. setting:: database_create_tables_at_setup
+
+``database_create_tables_at_setup``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.5.0
+
+Default: True by default.
+
+- If `True`, Celery will create the tables in the database during setup.
+- If `False`, Celery will create the tables lazily, i.e. wait for the first task
+  to be executed before creating the tables.
+
+.. note::
+    Before celery 5.5, the tables were created lazily i.e. it was equivalent to
+    `database_create_tables_at_setup` set to False.
 
 .. setting:: database_engine_options
 
@@ -1571,7 +1596,7 @@ Example configuration (Astra DB)
 Additional configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Cassandra driver, when estabilishing the connection, undergoes a stage
+The Cassandra driver, when establishing the connection, undergoes a stage
 of negotiating the protocol version with the server(s). Similarly,
 a load-balancing policy is automatically supplied (by default
 ``DCAwareRoundRobinPolicy``, which in turn has a ``local_dc`` setting, also
@@ -1645,7 +1670,7 @@ Default: None.
 
 The s3 access key id. For example::
 
-    s3_access_key_id = 'acces_key_id'
+    s3_access_key_id = 'access_key_id'
 
 .. setting:: s3_secret_access_key
 
@@ -1656,7 +1681,7 @@ Default: None.
 
 The s3 secret access key. For example::
 
-    s3_secret_access_key = 'acces_secret_access_key'
+    s3_secret_access_key = 'access_secret_access_key'
 
 .. setting:: s3_bucket
 
@@ -1797,6 +1822,108 @@ Timeout in seconds for establishing the azure block blob connection.
 Default: 120.
 
 Timeout in seconds for reading of an azure block blob.
+
+.. _conf-gcs-result-backend:
+
+GCS backend settings
+--------------------
+
+.. note::
+
+    This gcs backend driver requires :pypi:`google-cloud-storage` and :pypi:`google-cloud-firestore`.
+
+    To install, use :command:`gcs`:
+
+    .. code-block:: console
+
+        $ pip install celery[gcs]
+
+    See :ref:`bundles` for information on combining multiple extension
+    requirements.
+
+GCS could be configured via the URL provided in :setting:`result_backend`, for example::
+
+    result_backend = 'gs://mybucket/some-prefix?gcs_project=myproject&ttl=600'
+    result_backend = 'gs://mybucket/some-prefix?gcs_project=myproject?firestore_project=myproject2&ttl=600'
+
+This backend requires the following configuration directives to be set:
+
+.. setting:: gcs_bucket
+
+``gcs_bucket``
+~~~~~~~~~~~~~~
+
+Default: None.
+
+The gcs bucket name. For example::
+
+    gcs_bucket = 'bucket_name'
+
+.. setting:: gcs_project
+
+``gcs_project``
+~~~~~~~~~~~~~~~
+
+Default: None.
+
+The gcs project name. For example::
+
+    gcs_project = 'test-project'
+
+.. setting:: gcs_base_path
+
+``gcs_base_path``
+~~~~~~~~~~~~~~~~~
+
+Default: None.
+
+A base path in the gcs bucket to use to store all result keys. For example::
+
+    gcs_base_path = '/prefix'
+
+``gcs_ttl``
+~~~~~~~~~~~
+
+Default: 0.
+
+The time to live in seconds for the results blobs.
+Requires a GCS bucket with "Delete" Object Lifecycle Management action enabled.
+Use it to automatically delete results from Cloud Storage Buckets.
+
+For example to auto remove results after 24 hours::
+
+    gcs_ttl = 86400
+
+``gcs_threadpool_maxsize``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 10.
+
+Threadpool size for GCS operations. Same value defines the connection pool size.
+Allows to control the number of concurrent operations. For example::
+
+    gcs_threadpool_maxsize = 20
+
+``firestore_project``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: gcs_project.
+
+The Firestore project for Chord reference counting. Allows native chord ref counts.
+If not specified defaults to :setting:`gcs_project`.
+For example::
+
+    firestore_project = 'test-project2'
+
+Example configuration
+~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    gcs_bucket = 'mybucket'
+    gcs_project = 'myproject'
+    gcs_base_path = '/celery_result_backend'
+    gcs_ttl = 86400
 
 .. _conf-elasticsearch-result-backend:
 
@@ -2511,6 +2638,34 @@ that queue.
 
     :ref:`routing-changing-default-queue`
 
+.. setting:: task_default_queue_type
+
+``task_default_queue_type``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.5
+
+Default: ``"classic"``.
+
+This setting is used to allow changing the default queue type for the
+:setting:`task_default_queue` queue. The other viable option is ``"quorum"`` which
+is only supported by RabbitMQ and sets the queue type to ``quorum`` using the ``x-queue-type``
+queue argument.
+
+If the :setting:`worker_detect_quorum_queues` setting is enabled, the worker will
+automatically detect the queue type and disable the global QoS accordingly.
+
+.. warning::
+
+    Quorum queues require confirm publish to be enabled.
+    Use :setting:`broker_transport_options` to enable confirm publish by setting:
+
+    .. code-block:: python
+
+        broker_transport_options = {"confirm_publish": True}
+
+    For more information, see `RabbitMQ documentation <https://www.rabbitmq.com/docs/quorum-queues#use-cases>`_.
+
 .. setting:: task_default_exchange
 
 ``task_default_exchange``
@@ -2821,7 +2976,7 @@ to the AMQP broker.
 If this is set to :const:`None`, we'll retry forever.
 
 ``broker_channel_error_retry``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 5.3
 
@@ -2841,6 +2996,22 @@ Also, this option doesn't work when `broker_connection_retry` is `False`.
 Default: ``"AMQPLAIN"``.
 
 Set custom amqp login method.
+
+.. setting:: broker_native_delayed_delivery_queue_type
+
+``broker_native_delayed_delivery_queue_type``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.5
+
+:transports supported: ``pyamqp``
+
+Default: ``"quorum"``.
+
+This setting is used to allow changing the default queue type for the
+native delayed delivery queues. The other viable option is ``"classic"`` which
+is only supported by RabbitMQ and sets the queue type to ``classic`` using the ``x-queue-type``
+queue argument.
 
 .. setting:: broker_transport_options
 
@@ -2984,7 +3155,7 @@ prefetch count to its maximum allowable value following a connection loss to the
 broker. By default, this setting is enabled.
 
 Upon a connection loss, Celery will attempt to reconnect to the broker automatically,
-provided the :setting:`broker_connection_retry_on_startup` or :setting:`broker_connection_retry` 
+provided the :setting:`broker_connection_retry_on_startup` or :setting:`broker_connection_retry`
 is not set to False. During the period of lost connection, the message broker does not keep track
 of the number of tasks already fetched. Therefore, to manage the task load effectively and prevent
 overloading, Celery reduces the prefetch count based on the number of tasks that are
@@ -3129,6 +3300,62 @@ are recorded as such in the result backend as long as :setting:`task_ignore_resu
     In Celery 6.0, the :setting:`worker_cancel_long_running_tasks_on_connection_loss`
     will be set to ``True`` by default as the current behavior leads to more
     problems than it solves.
+
+.. setting:: worker_detect_quorum_queues
+
+``worker_detect_quorum_queues``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.5
+
+Default: Enabled.
+
+Automatically detect if any of the queues in :setting:`task_queues` are quorum queues
+(including the :setting:`task_default_queue`) and disable the global QoS if any quorum queue is detected.
+
+.. setting:: worker_soft_shutdown_timeout
+
+``worker_soft_shutdown_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.5
+
+Default: 0.0.
+
+The standard :ref:`warm shutdown <worker-warm-shutdown>` will wait for all tasks to finish before shutting down
+unless the cold shutdown is triggered. The :ref:`soft shutdown <worker-soft-shutdown>` will add a waiting time
+before the cold shutdown is initiated. This setting specifies how long the worker will wait before the cold shutdown
+is initiated and the worker is terminated.
+
+This will apply also when the worker initiate :ref:`cold shutdown <worker-cold-shutdown>` without doing a warm shutdown first.
+
+If the value is set to 0.0, the soft shutdown will be practically disabled. Regardless of the value, the soft shutdown
+will be disabled if there are no tasks running (unless :setting:`worker_enable_soft_shutdown_on_idle` is enabled).
+
+Experiment with this value to find the optimal time for your tasks to finish gracefully before the worker is terminated.
+Recommended values can be 10, 30, 60 seconds. Too high value can lead to a long waiting time before the worker is terminated
+and trigger a :sig:`KILL` signal to forcefully terminate the worker by the host system.
+
+.. setting:: worker_enable_soft_shutdown_on_idle
+
+``worker_enable_soft_shutdown_on_idle``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.5
+
+Default: False.
+
+If the :setting:`worker_soft_shutdown_timeout` is set to a value greater than 0.0, the worker will skip
+the :ref:`soft shutdown <worker-soft-shutdown>` anyways if there are no tasks running. This setting will
+enable the soft shutdown even if there are no tasks running.
+
+.. tip::
+
+    When the worker received ETA tasks, but the ETA has not been reached yet, and a shutdown is initiated,
+    the worker will **skip** the soft shutdown and initiate the cold shutdown immediately if there are no
+    tasks running. This may lead to failure in re-queueing the ETA tasks during worker teardown. To mitigate
+    this, enable this configuration to ensure the worker waits regadless, which gives enough time for a
+    graceful shutdown and successful re-queueing of the ETA tasks.
 
 .. _conf-events:
 

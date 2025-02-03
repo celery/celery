@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -103,7 +103,7 @@ class test_DjangoFixup(FixupCase):
             self.sigs.worker_init.connect.assert_called_with(f.on_worker_init)
             assert self.app.loader.now == f.now
 
-            # Specialized Task class is used
+            # Specialized DjangoTask class is used
             assert self.app.task_cls == 'celery.contrib.django.task:DjangoTask'
             from celery.contrib.django.task import DjangoTask
             assert issubclass(f.app.Task, DjangoTask)
@@ -120,8 +120,25 @@ class test_DjangoFixup(FixupCase):
 
         with self.fixup_context(self.app) as (f, _, _):
             f.install()
-            # Specialized Task class is NOT used
+            # Specialized DjangoTask class is NOT used,
+            # The one from the user's class is
             assert self.app.task_cls == 'myapp.celery.tasks:Task'
+
+    def test_install_custom_user_task_as_class_attribute(self, patching):
+        patching('celery.fixups.django.signals')
+
+        from celery.app import Celery
+
+        class MyCeleryApp(Celery):
+            task_cls = 'myapp.celery.tasks:Task'
+
+        app = MyCeleryApp('mytestapp')
+
+        with self.fixup_context(app) as (f, _, _):
+            f.install()
+            # Specialized DjangoTask class is NOT used,
+            # The one from the user's class is
+            assert app.task_cls == 'myapp.celery.tasks:Task'
 
     def test_now(self):
         with self.fixup_context(self.app) as (f, _, _):
@@ -137,6 +154,10 @@ class test_DjangoFixup(FixupCase):
                 DWF.assert_called_with(f.app)
                 DWF.return_value.install.assert_called_with()
                 assert f._worker_fixup is DWF.return_value
+
+
+class InterfaceError(Exception):
+    pass
 
 
 class test_DjangoWorkerFixup(FixupCase):
@@ -163,14 +184,15 @@ class test_DjangoWorkerFixup(FixupCase):
 
     def test_on_worker_process_init(self, patching):
         with self.fixup_context(self.app) as (f, _, _):
-            with patch('celery.fixups.django._maybe_close_fd') as mcf:
+            with patch('celery.fixups.django._maybe_close_fd', side_effect=InterfaceError) as mcf:
                 _all = f._db.connections.all = Mock()
                 conns = _all.return_value = [
-                    Mock(), Mock(),
+                    Mock(), MagicMock(),
                 ]
                 conns[0].connection = None
                 with patch.object(f, 'close_cache'):
                     with patch.object(f, '_close_database'):
+                        f.interface_errors = (InterfaceError, )
                         f.on_worker_process_init()
                         mcf.assert_called_with(conns[1].connection)
                         f.close_cache.assert_called_with()

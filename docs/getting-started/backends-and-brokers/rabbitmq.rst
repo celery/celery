@@ -28,7 +28,7 @@ username, password and vhost.
 Installing the RabbitMQ Server
 ==============================
 
-See `Installing RabbitMQ`_ over at RabbitMQ's website. For macOS
+See `Downloading and Installing RabbitMQ`_ over at RabbitMQ's website. For macOS
 see `Installing RabbitMQ on macOS`_.
 
 .. _`Downloading and Installing RabbitMQ`: https://www.rabbitmq.com/download.html
@@ -172,3 +172,71 @@ but rather use the :command:`rabbitmqctl` command:
     $ sudo rabbitmqctl stop
 
 When the server is running, you can continue reading `Setting up RabbitMQ`_.
+
+.. _using-quorum-queues:
+
+Using Quorum Queues
+===================
+
+.. versionadded:: 5.5
+
+.. warning::
+
+    Quorum Queues require disabling global QoS which means some features won't work as expected.
+    See `limitations`_ for details.
+
+Celery supports `Quorum Queues`_ by setting the ``x-queue-type`` header to ``quorum` like so:
+
+.. code-block:: python
+
+    from kombu import Queue
+
+    task_queues = [Queue('my-queue', queue_arguments={'x-queue-type': 'quorum'})]
+    broker_transport_options = {"confirm_publish": True}
+
+If you'd like to change the type of the default queue, set the :setting:`task_default_queue_type` setting to ``quorum``.
+
+Celery automatically detects if quorum queues are used using the :setting:`worker_detect_quorum_queues` setting.
+We recommend to keep the default behavior turned on.
+
+To migrate from classic mirrored queues to quorum queues, please refer to RabbitMQ's `documentation <https://www.rabbitmq.com/blog/2023/03/02/quorum-queues-migration>`_ on the subject.
+
+.. _`Quorum Queues`: https://www.rabbitmq.com/docs/quorum-queues
+
+.. _limitations:
+
+Limitations
+-----------
+
+Disabling global QoS means that the the per-channel QoS is now static.
+This means that some Celery features won't work when using Quorum Queues.
+
+Autoscaling relies on increasing and decreasing the prefetch count whenever a new process is instantiated
+or terminated so it won't work when Quorum Queues are detected.
+
+Similarly, the :setting:`worker_enable_prefetch_count_reduction` setting will be a no-op even when set to ``True``
+when Quorum Queues are detected.
+
+In addition, :ref:`ETA/Countdown <calling-eta>` will block the worker when received until the ETA arrives since
+we can no longer increase the prefetch count and fetch another task from the queue.
+
+In order to properly schedule ETA/Countdown tasks we automatically detect if quorum queues are used
+and in case they are, Celery automatically enables :ref:`Native Delayed Delivery <native-delayed-delivery>`.
+
+.. _native-delayed-delivery:
+
+Native Delayed Delivery
+-----------------------
+
+Since tasks with ETA/Countdown will block the worker until they are scheduled for execution,
+we need to use RabbitMQ's native capabilities to schedule the execution of tasks.
+
+The design is borrowed from NServiceBus. If you are interested in the implementation details, refer to their `documentation`_.
+
+.. _documentation: https://docs.particular.net/transports/rabbitmq/delayed-delivery
+
+Native Delayed Delivery is automatically enabled when quorum queues are detected.
+
+By default the Native Delayed Delivery queues are quorum queues.
+If you'd like to change them to classic queues you can set the :setting:`broker_native_delayed_delivery_queue_type`
+to classic.

@@ -297,3 +297,9 @@ Austin Snoeyink 2022/12/06
 Jeremy Z. Othieno 2023/07/27
 Tomer Nosrati, 2022/17/07
 Andy Zickler, 2024/01/18
+Johannes Faigle, 2024/06/18
+Giovanni Giampauli, 2024/06/26
+Shamil Abdulaev, 2024/08/05
+Nikos Atlas, 2024/08/26
+Marc Bresson, 2024/09/02
+Narasux, 2024/09/09

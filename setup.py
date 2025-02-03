@@ -4,7 +4,6 @@ import os
 import re
 
 import setuptools
-import setuptools.command.test
 
 NAME = 'celery'
 
@@ -25,11 +24,13 @@ EXTENSIONS = {
     'elasticsearch',
     'eventlet',
     'gevent',
+    'gcs',
     'librabbitmq',
     'memcache',
     'mongodb',
     'msgpack',
     'pymemcache',
+    'pydantic',
     'pyro',
     'pytest',
     'redis',
@@ -175,6 +176,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
         "Operating System :: OS Independent"

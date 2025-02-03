@@ -9,7 +9,7 @@ import pytest
 
 from celery import states, uuid
 from celery.app.task import Context
-from celery.backends.base import SyncBackendMixin
+from celery.backends.base import Backend, SyncBackendMixin
 from celery.exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
 from celery.result import AsyncResult, EagerResult, GroupResult, ResultSet, assert_will_not_block, result_from_tuple
 from celery.utils.serialization import pickle
@@ -435,17 +435,20 @@ class test_AsyncResult:
         result = self.app.AsyncResult(self.task4['id'])
         assert result.date_done is None
 
-    @pytest.mark.parametrize('result_dict, date', [
-        ({'date_done': None}, None),
-        ({'date_done': '1991-10-05T05:41:06'},
-         datetime.datetime(1991, 10, 5, 5, 41, 6)),
-        ({'date_done': datetime.datetime(1991, 10, 5, 5, 41, 6)},
-         datetime.datetime(1991, 10, 5, 5, 41, 6))
+    @patch('celery.app.base.to_utc')
+    @pytest.mark.parametrize('timezone, date', [
+        ("UTC", "2024-08-24T00:00:00+00:00"),
+        ("America/Los_Angeles", "2024-08-23T17:00:00-07:00"),
+        ("Pacific/Kwajalein", "2024-08-24T12:00:00+12:00"),
+        ("Europe/Berlin", "2024-08-24T02:00:00+02:00"),
     ])
-    def test_date_done(self, result_dict, date):
-        result = self.app.AsyncResult(uuid())
-        result._cache = result_dict
-        assert result.date_done == date
+    def test_date_done(self, utc_datetime_mock, timezone, date):
+        utc_datetime_mock.return_value = datetime.datetime(2024, 8, 24, 0, 0, 0, 0, datetime.timezone.utc)
+        self.app.conf.timezone = timezone
+        del self.app.timezone  # reset cached timezone
+
+        result = Backend(app=self.app)._get_result_meta(None, states.SUCCESS, None, None)
+        assert result.get('date_done') == date
 
 
 class test_ResultSet:

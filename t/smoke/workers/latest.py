@@ -8,6 +8,11 @@ from celery import Celery
 
 
 class CeleryLatestWorkerContainer(CeleryWorkerContainer):
+    """Defines the configurations for a Celery worker container.
+
+    This worker will install the latest version of Celery from PyPI.
+    """
+
     @property
     def client(self) -> Any:
         return self
@@ -25,6 +30,7 @@ class CeleryLatestWorkerContainer(CeleryWorkerContainer):
         return "celery_latest_tests_queue"
 
 
+# Build the image from the PyPI Dockerfile
 celery_latest_worker_image = build(
     path=".",
     dockerfile="t/smoke/workers/docker/pypi",
@@ -33,6 +39,7 @@ celery_latest_worker_image = build(
 )
 
 
+# Define container settings
 celery_latest_worker_container = container(
     image="{celery_latest_worker_image.id}",
     environment=fxtr("default_worker_env"),
@@ -40,6 +47,7 @@ celery_latest_worker_container = container(
     volumes={"{default_worker_volume.name}": defaults.DEFAULT_WORKER_VOLUME},
     wrapper_class=CeleryLatestWorkerContainer,
     timeout=defaults.DEFAULT_WORKER_CONTAINER_TIMEOUT,
+    command=CeleryLatestWorkerContainer.command(),
 )
 
 
@@ -48,6 +56,7 @@ def celery_latest_worker(
     celery_latest_worker_container: CeleryLatestWorkerContainer,
     celery_setup_app: Celery,
 ) -> CeleryTestWorker:
+    """Creates a pytest-celery worker node from the worker container."""
     worker = CeleryTestWorker(celery_latest_worker_container, app=celery_setup_app)
     yield worker
     worker.teardown()

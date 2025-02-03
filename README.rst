@@ -2,7 +2,7 @@
 
 |build-status| |coverage| |license| |wheel| |semgrep| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 5.4.0rc1 (opalescent)
+:Version: 5.5.0rc4 (immunity)
 :Web: https://docs.celeryq.dev/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -25,6 +25,21 @@ For enterprise
 Available as part of the Tidelift Subscription.
 
 The maintainers of ``celery`` and thousands of other packages are working with Tidelift to deliver commercial support and maintenance for the open source dependencies you use to build your applications. Save time, reduce risk, and improve code health, while paying the maintainers of the exact dependencies you use. `Learn more. <https://tidelift.com/subscription/pkg/pypi-celery?utm_source=pypi-celery&utm_medium=referral&utm_campaign=enterprise&utm_term=repo>`_
+
+
+Sponsor
+=======
+
+`Dragonfly <https://www.dragonflydb.io/>`_ is a drop-in Redis replacement that cuts costs and boosts performance. Designed to fully utilize the power of modern cloud hardware and deliver on the data demands of modern applications, Dragonfly frees developers from the limits of traditional in-memory data stores.
+
+
+.. image:: https://github.com/celery/celery/raw/main/docs/images/dragonfly.svg
+   :alt: Dragonfly logo
+   :width: 150px
+
+
+
+
 
 What's a Task Queue?
 ====================
@@ -58,9 +73,9 @@ in such a way that the client enqueues an URL to be requested by a worker.
 What do I need?
 ===============
 
-Celery version 5.3.5 runs on:
+Celery version 5.5.x runs on:
 
-- Python (3.8, 3.9, 3.10, 3.11, 3.12)
+- Python (3.8, 3.9, 3.10, 3.11, 3.12, 3.13)
 - PyPy3.9+ (v7.3.12+)
 
 
@@ -92,7 +107,7 @@ Get Started
 ===========
 
 If this is the first time you're trying to use Celery, or you're
-new to Celery v5.3.5 coming from previous versions then you should read our
+new to Celery v5.5.x coming from previous versions then you should read our
 getting started tutorials:
 
 - `First steps with Celery`_
@@ -156,7 +171,7 @@ It supports...
 
     - **Message Transports**
 
-        - RabbitMQ_, Redis_, Amazon SQS
+        - RabbitMQ_, Redis_, Amazon SQS, Google Pub/Sub
 
     - **Concurrency**
 
@@ -168,6 +183,7 @@ It supports...
         - memcached
         - SQLAlchemy, Django ORM
         - Apache Cassandra, IronCache, Elasticsearch
+        - Google Cloud Storage
 
     - **Serialization**
 
@@ -201,6 +217,8 @@ integration packages:
     +--------------------+------------------------+
     | `Tornado`_         | `tornado-celery`_      |
     +--------------------+------------------------+
+    | `FastAPI`_         | not needed             |
+    +--------------------+------------------------+
 
 The integration packages aren't strictly necessary, but they can make
 development easier, and sometimes they add important hooks like closing
@@ -217,6 +235,7 @@ database connections at ``fork``.
 .. _`web2py-celery`: https://code.google.com/p/web2py-celery/
 .. _`Tornado`: https://www.tornadoweb.org/
 .. _`tornado-celery`: https://github.com/mher/tornado-celery/
+.. _`FastAPI`: https://fastapi.tiangolo.com/
 
 .. _celery-documentation:
 
@@ -225,8 +244,6 @@ Documentation
 
 The `latest documentation`_ is hosted at Read The Docs, containing user guides,
 tutorials, and an API reference.
-
-最新的中文文档托管在 https://www.celerycn.io/ 中，包含用户指南、教程、API接口等。
 
 .. _`latest documentation`: https://docs.celeryq.dev/en/latest/
 
@@ -317,6 +334,9 @@ Transports and Backends
 :``celery[s3]``:
     for using S3 Storage as a result backend.
 
+:``celery[gcs]``:
+    for using Google Cloud Storage as a result backend.
+
 :``celery[couchbase]``:
     for using Couchbase as a result backend.
 
@@ -352,6 +372,10 @@ Transports and Backends
 
     You should probably not use this in your requirements, it's here
     for informational purposes only.
+
+:``celery[gcpubsub]``:
+    for using Google Pub/Sub as a message transport.
+
 
 
 .. _celery-installing-from-source:
@@ -490,12 +514,18 @@ link to your website. [`Become a sponsor`_]
 
 .. _`Become a sponsor`: https://opencollective.com/celery#sponsor
 
-|oc-sponsor-1| |oc-sponsor-2|
+|oc-sponsor-1| |oc-sponsor-2| |oc-sponsor-3|
 
 .. |oc-sponsor-1| image:: https://opencollective.com/celery/sponsor/0/avatar.svg
     :target: https://opencollective.com/celery/sponsor/0/website
 
-.. |oc-sponsor-2| image:: https://upstash.com/logo/upstash-dark-bg.svg
+.. |oc-sponsor-2| image:: ./docs/images/blacksmith-logo-white-on-black.svg
+    :target: https://www.blacksmith.sh/
+    :alt: Blacksmith.sh
+    :width: 240
+    :height: 57
+
+.. |oc-sponsor-3| image:: https://upstash.com/logo/upstash-dark-bg.svg
     :target: http://upstash.com/?code=celery
     :alt: Upstash
     :width: 200

@@ -1203,7 +1203,7 @@ class test_RedisBackend_chords_complex(basetest_RedisBackend):
         self.b.client.lrange.assert_not_called()
         # Confirm that the `GroupResult.restore` mock was called
         complex_header_result.assert_called_once_with(request.group)
-        # Confirm the the callback was called with the `join()`ed group result
+        # Confirm that the callback was called with the `join()`ed group result
         if supports_native_join:
             expected_join = mock_result_obj.join_native
         else:
