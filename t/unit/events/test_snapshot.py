@@ -1,7 +1,6 @@
 from unittest.mock import Mock, patch
 
 import pytest
-from case import mock
 
 from celery.app.events import Events
 from celery.events.snapshot import Polaroid, evcam
@@ -20,7 +19,7 @@ timer = MockTimer()
 
 class test_Polaroid:
 
-    def setup(self):
+    def setup_method(self):
         self.state = self.app.events.State()
 
     def test_constructor(self):
@@ -102,12 +101,11 @@ class test_evcam:
         def Receiver(self, *args, **kwargs):
             return test_evcam.MockReceiver()
 
-    def setup(self):
+    def setup_method(self):
         self.app.events = self.MockEvents()
         self.app.events.app = self.app
 
-    @mock.restore_logging()
-    def test_evcam(self):
+    def test_evcam(self, restore_logging):
         evcam(Polaroid, timer=timer, app=self.app)
         evcam(Polaroid, timer=timer, loglevel='CRITICAL', app=self.app)
         self.MockReceiver.raise_keyboard_interrupt = True

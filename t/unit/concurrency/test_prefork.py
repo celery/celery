@@ -1,11 +1,13 @@
 import errno
 import os
 import socket
+import tempfile
 from itertools import cycle
 from unittest.mock import Mock, patch
 
 import pytest
-from case import mock
+from billiard.pool import ApplyResult
+from kombu.asynchronous import Hub
 
 import t.skip
 from celery.app.defaults import DEFAULTS
@@ -64,55 +66,51 @@ class test_process_initializer:
         return loader
 
     @patch('celery.platforms.signals')
-    def test_process_initializer(self, _signals, set_mp_process_title):
-        with mock.restore_logging():
-            from celery import signals
-            from celery._state import _tls
-            from celery.concurrency.prefork import (WORKER_SIGIGNORE,
-                                                    WORKER_SIGRESET,
-                                                    process_initializer)
-            on_worker_process_init = Mock()
-            signals.worker_process_init.connect(on_worker_process_init)
+    def test_process_initializer(self, _signals, set_mp_process_title, restore_logging):
+        from celery import signals
+        from celery._state import _tls
+        from celery.concurrency.prefork import WORKER_SIGIGNORE, WORKER_SIGRESET, process_initializer
+        on_worker_process_init = Mock()
+        signals.worker_process_init.connect(on_worker_process_init)
 
-            with self.Celery(loader=self.Loader) as app:
-                app.conf = AttributeDict(DEFAULTS)
-                process_initializer(app, 'awesome.worker.com')
-                _signals.ignore.assert_any_call(*WORKER_SIGIGNORE)
-                _signals.reset.assert_any_call(*WORKER_SIGRESET)
-                assert app.loader.init_worker.call_count
-                on_worker_process_init.assert_called()
-                assert _tls.current_app is app
-                set_mp_process_title.assert_called_with(
-                    'celeryd', hostname='awesome.worker.com',
-                )
+        with self.Celery(loader=self.Loader) as app:
+            app.conf = AttributeDict(DEFAULTS)
+            process_initializer(app, 'awesome.worker.com')
+            _signals.ignore.assert_any_call(*WORKER_SIGIGNORE)
+            _signals.reset.assert_any_call(*WORKER_SIGRESET)
+            assert app.loader.init_worker.call_count
+            on_worker_process_init.assert_called()
+            assert _tls.current_app is app
+            set_mp_process_title.assert_called_with(
+                'celeryd', hostname='awesome.worker.com',
+            )
 
-                with patch('celery.app.trace.setup_worker_optimizations') as S:
-                    os.environ['FORKED_BY_MULTIPROCESSING'] = '1'
-                    try:
-                        process_initializer(app, 'luke.worker.com')
-                        S.assert_called_with(app, 'luke.worker.com')
-                    finally:
-                        os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
-
-                os.environ['CELERY_LOG_FILE'] = 'worker%I.log'
-                app.log.setup = Mock(name='log_setup')
+            with patch('celery.app.trace.setup_worker_optimizations') as S:
+                os.environ['FORKED_BY_MULTIPROCESSING'] = '1'
                 try:
                     process_initializer(app, 'luke.worker.com')
+                    S.assert_called_with(app, 'luke.worker.com')
                 finally:
-                    os.environ.pop('CELERY_LOG_FILE', None)
+                    os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+
+            os.environ['CELERY_LOG_FILE'] = 'worker%I.log'
+            app.log.setup = Mock(name='log_setup')
+            try:
+                process_initializer(app, 'luke.worker.com')
+            finally:
+                os.environ.pop('CELERY_LOG_FILE', None)
 
     @patch('celery.platforms.set_pdeathsig')
-    def test_pdeath_sig(self, _set_pdeathsig, set_mp_process_title):
-        with mock.restore_logging():
-            from celery import signals
-            on_worker_process_init = Mock()
-            signals.worker_process_init.connect(on_worker_process_init)
-            from celery.concurrency.prefork import process_initializer
+    def test_pdeath_sig(self, _set_pdeathsig, set_mp_process_title, restore_logging):
+        from celery import signals
+        on_worker_process_init = Mock()
+        signals.worker_process_init.connect(on_worker_process_init)
+        from celery.concurrency.prefork import process_initializer
 
-            with self.Celery(loader=self.Loader) as app:
-                app.conf = AttributeDict(DEFAULTS)
-                process_initializer(app, 'awesome.worker.com')
-            _set_pdeathsig.assert_called_once_with('SIGKILL')
+        with self.Celery(loader=self.Loader) as app:
+            app.conf = AttributeDict(DEFAULTS)
+            process_initializer(app, 'awesome.worker.com')
+        _set_pdeathsig.assert_called_once_with('SIGKILL')
 
 
 class test_process_destructor:
@@ -199,19 +197,31 @@ class ExeMockTaskPool(mp.TaskPool):
 @t.skip.if_win32
 class test_AsynPool:
 
-    def setup(self):
+    def setup_method(self):
         pytest.importorskip('multiprocessing')
 
     def test_gen_not_started(self):
 
         def gen():
             yield 1
+            assert not asynpool.gen_not_started(g)
             yield 2
         g = gen()
         assert asynpool.gen_not_started(g)
         next(g)
         assert not asynpool.gen_not_started(g)
         list(g)
+        assert not asynpool.gen_not_started(g)
+
+        def gen2():
+            yield 1
+            raise RuntimeError('generator error')
+        g = gen2()
+        assert asynpool.gen_not_started(g)
+        next(g)
+        assert not asynpool.gen_not_started(g)
+        with pytest.raises(RuntimeError):
+            next(g)
         assert not asynpool.gen_not_started(g)
 
     @patch('select.select', create=True)
@@ -284,6 +294,15 @@ class test_AsynPool:
             with pytest.raises(socket.error):
                 asynpool._select({3}, poll=poll)
 
+    def test_select_unpatched(self):
+        with tempfile.TemporaryFile('w') as f:
+            _, writeable, _ = asynpool._select(writers={f, }, err={f, })
+            assert f.fileno() in writeable
+
+        with tempfile.TemporaryFile('r') as f:
+            readable, _, _ = asynpool._select(readers={f, }, err={f, })
+            assert f.fileno() in readable
+
     def test_promise(self):
         fun = Mock()
         x = asynpool.promise(fun, (1,), {'foo': 1})
@@ -347,11 +366,133 @@ class test_AsynPool:
         # Then: all items were removed from the managed data source
         assert fd_iter == {}, "Expected all items removed from managed dict"
 
+    def _get_hub(self):
+        hub = Hub()
+        hub.readers = {}
+        hub.writers = {}
+        hub.timer = Mock(name='hub.timer')
+        hub.timer._queue = [Mock()]
+        hub.fire_timers = Mock(name='hub.fire_timers')
+        hub.fire_timers.return_value = 1.7
+        hub.poller = Mock(name='hub.poller')
+        hub.close = Mock(name='hub.close()')
+        return hub
+
+    @t.skip.if_pypy
+    def test_schedule_writes_hub_remove_writer_ready_fd_not_in_all_inqueues(self):
+        pool = asynpool.AsynPool(threads=False)
+        hub = self._get_hub()
+
+        writer = Mock(name='writer')
+        reader = Mock(name='reader')
+
+        # add 2 fake fds with the same id
+        hub.add_reader(6, reader, 6)
+        hub.add_writer(6, writer, 6)
+        pool._all_inqueues.clear()
+        pool._create_write_handlers(hub)
+
+        # check schedule_writes write fds remove not remove the reader one from the hub.
+        hub.consolidate_callback(ready_fds=[6])
+        assert 6 in hub.readers
+        assert 6 not in hub.writers
+
+    @t.skip.if_pypy
+    def test_schedule_writes_hub_remove_writers_from_active_writers_when_get_index_error(self):
+        pool = asynpool.AsynPool(threads=False)
+        hub = self._get_hub()
+
+        writer = Mock(name='writer')
+        reader = Mock(name='reader')
+
+        # add 3 fake fds with the same id to reader and writer
+        hub.add_reader(6, reader, 6)
+        hub.add_reader(8, reader, 8)
+        hub.add_reader(9, reader, 9)
+        hub.add_writer(6, writer, 6)
+        hub.add_writer(8, writer, 8)
+        hub.add_writer(9, writer, 9)
+
+        # add fake fd to pool _all_inqueues to make sure we try to read from outbound_buffer
+        # set active_writes to 6 to make sure we remove all write fds except 6
+        pool._active_writes = {6}
+        pool._all_inqueues = {2, 6, 8, 9}
+
+        pool._create_write_handlers(hub)
+
+        # clear outbound_buffer to get IndexError when trying to pop any message
+        # in this case all active_writers fds will be removed from the hub
+        pool.outbound_buffer.clear()
+
+        hub.consolidate_callback(ready_fds=[2])
+        if {6, 8, 9} <= hub.readers.keys() and not {8, 9} <= hub.writers.keys():
+            assert True
+        else:
+            assert False
+
+        assert 6 in hub.writers
+
+    @t.skip.if_pypy
+    def test_schedule_writes_hub_remove_fd_only_from_writers_when_write_job_is_done(self):
+        pool = asynpool.AsynPool(threads=False)
+        hub = self._get_hub()
+
+        writer = Mock(name='writer')
+        reader = Mock(name='reader')
+
+        # add one writer and one reader with the same fd
+        hub.add_writer(2, writer, 2)
+        hub.add_reader(2, reader, 2)
+        assert 2 in hub.writers
+
+        # For test purposes to reach _write_job in schedule writes
+        pool._all_inqueues = {2}
+        worker = Mock("worker")
+        # this lambda need to return a number higher than 4
+        # to pass the while loop in _write_job function and to reach the hub.remove_writer
+        worker.send_job_offset = lambda header, HW: 5
+
+        pool._fileno_to_inq[2] = worker
+        pool._create_write_handlers(hub)
+
+        result = ApplyResult({}, lambda x: True)
+        result._payload = [None, None, -1]
+        pool.outbound_buffer.appendleft(result)
+
+        hub.consolidate_callback(ready_fds=[2])
+        assert 2 not in hub.writers
+        assert 2 in hub.readers
+
+    @t.skip.if_pypy
+    def test_register_with_event_loop__no_on_tick_dupes(self):
+        """Ensure AsynPool's register_with_event_loop only registers
+        on_poll_start in the event loop the first time it's called. This
+        prevents a leak when the Consumer is restarted.
+        """
+        pool = asynpool.AsynPool(threads=False)
+        hub = Mock(name='hub')
+        pool.register_with_event_loop(hub)
+        pool.register_with_event_loop(hub)
+        hub.on_tick.add.assert_called_once()
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_before_create_process_signal(self, create_process):
+        from celery import signals
+        on_worker_before_create_process = Mock()
+        signals.worker_before_create_process.connect(on_worker_before_create_process)
+        pool = asynpool.AsynPool(processes=1, threads=False)
+        create_process.assert_called_once_with(0)
+        on_worker_before_create_process.assert_any_call(
+            signal=signals.worker_before_create_process,
+            sender=pool,
+        )
+
 
 @t.skip.if_win32
 class test_ResultHandler:
 
-    def setup(self):
+    def setup_method(self):
         pytest.importorskip('multiprocessing')
 
     def test_process_result(self):

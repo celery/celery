@@ -1,5 +1,5 @@
 """MongoDB result store backend."""
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from kombu.exceptions import EncodeError
 from kombu.utils.objects import cached_property
@@ -12,13 +12,13 @@ from .base import BaseBackend
 
 try:
     import pymongo
-except ImportError:  # pragma: no cover
+except ImportError:
     pymongo = None
 
 if pymongo:
     try:
         from bson.binary import Binary
-    except ImportError:                     # pragma: no cover
+    except ImportError:
         from pymongo.binary import Binary
     from pymongo.errors import InvalidDocument
 else:                                       # pragma: no cover
@@ -182,7 +182,8 @@ class MongoBackend(BaseBackend):
                       traceback=None, request=None, **kwargs):
         """Store return value and state of an executed task."""
         meta = self._get_result_meta(result=self.encode(result), state=state,
-                                     traceback=traceback, request=request)
+                                     traceback=traceback, request=request,
+                                     format_date=False)
         # Add the _id for mongodb
         meta['_id'] = task_id
 
@@ -197,6 +198,21 @@ class MongoBackend(BaseBackend):
         """Get task meta-data for a task by id."""
         obj = self.collection.find_one({'_id': task_id})
         if obj:
+            if self.app.conf.find_value_for_key('extended', 'result'):
+                return self.meta_from_decoded({
+                    'name': obj['name'],
+                    'args': obj['args'],
+                    'task_id': obj['_id'],
+                    'queue': obj['queue'],
+                    'kwargs': obj['kwargs'],
+                    'status': obj['status'],
+                    'worker': obj['worker'],
+                    'retries': obj['retries'],
+                    'children': obj['children'],
+                    'date_done': obj['date_done'],
+                    'traceback': obj['traceback'],
+                    'result': self.decode(obj['result']),
+                })
             return self.meta_from_decoded({
                 'task_id': obj['_id'],
                 'status': obj['status'],
@@ -212,7 +228,7 @@ class MongoBackend(BaseBackend):
         meta = {
             '_id': group_id,
             'result': self.encode([i.id for i in result]),
-            'date_done': datetime.utcnow(),
+            'date_done': datetime.now(timezone.utc),
         }
         self.group_collection.replace_one({'_id': group_id}, meta, upsert=True)
         return result
@@ -265,16 +281,7 @@ class MongoBackend(BaseBackend):
 
     def _get_database(self):
         conn = self._get_connection()
-        db = conn[self.database_name]
-        if self.user and self.password:
-            source = self.options.get(
-                'authsource',
-                self.database_name or 'admin'
-            )
-            if not db.authenticate(self.user, self.password, source=source):
-                raise ImproperlyConfigured(
-                    'Invalid MongoDB username or password.')
-        return db
+        return conn[self.database_name]
 
     @cached_property
     def database(self):

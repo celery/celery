@@ -3,7 +3,6 @@ from pickle import dumps, loads
 from unittest.mock import Mock
 
 import pytest
-from case import mock
 
 from celery import states
 from celery.exceptions import ImproperlyConfigured
@@ -17,17 +16,17 @@ CASSANDRA_MODULES = [
 ]
 
 
-@mock.module(*CASSANDRA_MODULES)
 class test_CassandraBackend:
 
-    def setup(self):
+    def setup_method(self):
         self.app.conf.update(
             cassandra_servers=['example.com'],
             cassandra_keyspace='celery',
             cassandra_table='task_results',
         )
 
-    def test_init_no_cassandra(self, *modules):
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    def test_init_no_cassandra(self, module):
         # should raise ImproperlyConfigured when no python-driver
         # installed.
         from celery.backends import cassandra as mod
@@ -38,7 +37,8 @@ class test_CassandraBackend:
         finally:
             mod.cassandra = prev
 
-    def test_init_with_and_without_LOCAL_QUROM(self, *modules):
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    def test_init_with_and_without_LOCAL_QUROM(self, module):
         from celery.backends import cassandra as mod
         mod.cassandra = Mock()
 
@@ -53,19 +53,58 @@ class test_CassandraBackend:
         cons.LOCAL_FOO = 'bar'
         mod.CassandraBackend(app=self.app)
 
-        # no servers raises ImproperlyConfigured
+        # no servers and no bundle_path raises ImproperlyConfigured
         with pytest.raises(ImproperlyConfigured):
             self.app.conf.cassandra_servers = None
+            self.app.conf.cassandra_secure_bundle_path = None
             mod.CassandraBackend(
                 app=self.app, keyspace='b', column_family='c',
             )
 
+        # both servers no bundle_path raises ImproperlyConfigured
+        with pytest.raises(ImproperlyConfigured):
+            self.app.conf.cassandra_servers = ['localhost']
+            self.app.conf.cassandra_secure_bundle_path = (
+                '/home/user/secure-connect-bundle.zip')
+            mod.CassandraBackend(
+                app=self.app, keyspace='b', column_family='c',
+            )
+
+    def test_init_with_cloud(self):
+        # Tests behavior when Cluster.connect works properly
+        # and cluster is created with 'cloud' param instead of 'contact_points'
+        from celery.backends import cassandra as mod
+
+        class DummyClusterWithBundle:
+
+            def __init__(self, *args, **kwargs):
+                if args != ():
+                    # this cluster is supposed to be created with 'cloud=...'
+                    raise ValueError('I should be created with kwargs only')
+                pass
+
+            def connect(self, *args, **kwargs):
+                return Mock()
+
+        mod.cassandra = Mock()
+        mod.cassandra.cluster = Mock()
+        mod.cassandra.cluster.Cluster = DummyClusterWithBundle
+
+        self.app.conf.cassandra_secure_bundle_path = '/path/to/bundle.zip'
+        self.app.conf.cassandra_servers = None
+
+        x = mod.CassandraBackend(app=self.app)
+        x._get_connection()
+        assert isinstance(x._cluster, DummyClusterWithBundle)
+
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
     @pytest.mark.usefixtures('depends_on_current_app')
-    def test_reduce(self, *modules):
+    def test_reduce(self, module):
         from celery.backends.cassandra import CassandraBackend
         assert loads(dumps(CassandraBackend(app=self.app)))
 
-    def test_get_task_meta_for(self, *modules):
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    def test_get_task_meta_for(self, module):
         from celery.backends import cassandra as mod
         mod.cassandra = Mock()
 
@@ -95,7 +134,8 @@ class test_CassandraBackend:
         x.as_uri()
         x.as_uri(include_password=False)
 
-    def test_store_result(self, *modules):
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    def test_store_result(self, module):
         from celery.backends import cassandra as mod
         mod.cassandra = Mock()
 
@@ -227,4 +267,12 @@ class test_CassandraBackend:
             'cql_version': '3.2.1',
             'protocol_version': 3
         }
-        mod.CassandraBackend(app=self.app)
+        self.app.conf.cassandra_port = None
+        x = mod.CassandraBackend(app=self.app)
+        # Default port is 9042
+        assert x.port == 9042
+
+        # Valid options with port specified
+        self.app.conf.cassandra_port = 1234
+        x = mod.CassandraBackend(app=self.app)
+        assert x.port == 1234

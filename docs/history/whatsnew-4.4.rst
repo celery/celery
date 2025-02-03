@@ -51,7 +51,7 @@ This release has been codenamed `Cliffs <https://www.youtube.com/watch?v=i524g6J
 which is one of my favorite tracks.
 
 This release focuses on mostly bug fixes and usability improvement for developers.
-Many long standing bugs, usability issues, documentation issues & minor ehancement
+Many long standing bugs, usability issues, documentation issues & minor enhancement
 issues were squashed which improve the overall developers experience.
 
 Celery 4.4 is the first release to support Python 3.8 & pypy36-7.2.

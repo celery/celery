@@ -6,7 +6,7 @@ import sys
 import threading
 import traceback
 from contextlib import contextmanager
-from typing import AnyStr, Sequence
+from typing import AnyStr, Sequence  # noqa
 
 from kombu.log import LOG_LEVELS
 from kombu.log import get_logger as _get_logger
@@ -37,7 +37,7 @@ base_logger = logger = _get_logger('celery')
 
 
 def set_in_sighandler(value):
-    """Set flag signifiying that we're inside a signal handler."""
+    """Set flag signifying that we're inside a signal handler."""
     global _in_sighandler
     _in_sighandler = value
 
@@ -224,13 +224,13 @@ class LoggingProxy:
         if getattr(self._thread, 'recurse_protection', False):
             # Logger is logging back to this file, so stop recursing.
             return 0
-        data = data.rstrip('\n')
         if data and not self.closed:
             self._thread.recurse_protection = True
             try:
-                safe_data = safe_str(data)
-                self.logger.log(self.loglevel, safe_data)
-                return len(safe_data)
+                safe_data = safe_str(data).rstrip('\n')
+                if safe_data:
+                    self.logger.log(self.loglevel, safe_data)
+                    return len(safe_data)
             finally:
                 self._thread.recurse_protection = False
         return 0
@@ -264,7 +264,7 @@ def get_multiprocessing_logger():
     """Return the multiprocessing logger."""
     try:
         from billiard import util
-    except ImportError:  # pragma: no cover
+    except ImportError:
         pass
     else:
         return util.get_logger()
@@ -274,7 +274,7 @@ def reset_multiprocessing_logger():
     """Reset multiprocessing logging setup."""
     try:
         from billiard import util
-    except ImportError:  # pragma: no cover
+    except ImportError:
         pass
     else:
         if hasattr(util, '_logger'):  # pragma: no cover
@@ -284,7 +284,7 @@ def reset_multiprocessing_logger():
 def current_process():
     try:
         from billiard import process
-    except ImportError:  # pragma: no cover
+    except ImportError:
         pass
     else:
         return process.current_process()

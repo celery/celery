@@ -11,7 +11,6 @@ from unittest.mock import Mock, patch
 
 import pytest
 from amqp import ChannelError
-from case import mock
 from kombu import Connection
 from kombu.asynchronous import get_event_loop
 from kombu.common import QoS, ignore_errors
@@ -20,10 +19,10 @@ from kombu.transport.memory import Transport
 from kombu.utils.uuid import uuid
 
 import t.skip
+from celery.apps.worker import safe_say
 from celery.bootsteps import CLOSE, RUN, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
-from celery.exceptions import (ImproperlyConfigured, InvalidTaskError,
-                               TaskRevokedError, WorkerShutdown,
+from celery.exceptions import (ImproperlyConfigured, InvalidTaskError, TaskRevokedError, WorkerShutdown,
                                WorkerTerminate)
 from celery.platforms import EX_FAILURE
 from celery.utils.nodenames import worker_direct
@@ -79,7 +78,7 @@ class ConsumerCase:
 
 class test_Consumer(ConsumerCase):
 
-    def setup(self):
+    def setup_method(self):
         self.buffer = FastQueue()
         self.timer = Timer()
 
@@ -88,7 +87,7 @@ class test_Consumer(ConsumerCase):
             return x * y * z
         self.foo_task = foo_task
 
-    def teardown(self):
+    def teardown_method(self):
         self.timer.stop()
 
     def LoopConsumer(self, buffer=None, controller=None, timer=None, app=None,
@@ -222,8 +221,8 @@ class test_Consumer(ConsumerCase):
             Mock(), self.foo_task.name,
             args=(1, 2), kwargs='foobarbaz', id=1)
         c.update_strategies()
-        strat = c.strategies[self.foo_task.name] = Mock(name='strategy')
-        strat.side_effect = InvalidTaskError()
+        strategy = c.strategies[self.foo_task.name] = Mock(name='strategy')
+        strategy.side_effect = InvalidTaskError()
 
         callback = self._get_on_message(c)
         callback(m)
@@ -295,6 +294,7 @@ class test_Consumer(ConsumerCase):
             yield SyntaxError('bar')
         c = self.NoopConsumer(task_events=False, pool=BasePool())
         c.loop.side_effect = loop_side_effect()
+        c.pool.num_processes = 2
         c.connection_errors = (KeyError,)
         try:
             with pytest.raises(SyntaxError):
@@ -698,7 +698,7 @@ class test_Consumer(ConsumerCase):
 
 class test_WorkController(ConsumerCase):
 
-    def setup(self):
+    def setup_method(self):
         self.worker = self.create_worker()
         self._logger = worker_module.logger
         self._comp_logger = components.logger
@@ -710,7 +710,7 @@ class test_WorkController(ConsumerCase):
             return x * y * z
         self.foo_task = foo_task
 
-    def teardown(self):
+    def teardown_method(self):
         worker_module.logger = self._logger
         components.logger = self._comp_logger
 
@@ -804,8 +804,8 @@ class test_WorkController(ConsumerCase):
         assert worker.autoscaler
 
     @t.skip.if_win32
-    @mock.sleepdeprived(module=autoscale)
-    def test_with_autoscaler_file_descriptor_safety(self):
+    @pytest.mark.sleepdeprived_patched_module(autoscale)
+    def test_with_autoscaler_file_descriptor_safety(self, sleepdeprived):
         # Given: a test celery worker instance with auto scaling
         worker = self.create_worker(
             autoscale=[10, 5], use_eventloop=True,
@@ -853,8 +853,8 @@ class test_WorkController(ConsumerCase):
         worker.pool.terminate()
 
     @t.skip.if_win32
-    @mock.sleepdeprived(module=autoscale)
-    def test_with_file_descriptor_safety(self):
+    @pytest.mark.sleepdeprived_patched_module(autoscale)
+    def test_with_file_descriptor_safety(self, sleepdeprived):
         # Given: a test celery worker instance
         worker = self.create_worker(
             autoscale=[10, 5], use_eventloop=True,
@@ -893,7 +893,7 @@ class test_WorkController(ConsumerCase):
         worker.pool._pool.on_poll_start()
         # Then: test did not raise OSError
 
-        # Given: a mock object that fakes whats required to do whats next
+        # Given: a mock object that fakes what's required to do what's next
         proc = Mock(_sentinel_poll=42)
 
         # When: Calling again to register with event loop ...
@@ -1194,3 +1194,51 @@ class test_WorkController(ConsumerCase):
             assert isinstance(w.semaphore, LaxBoundedSemaphore)
             P = w.pool
             P.start()
+
+    def test_wait_for_soft_shutdown(self):
+        worker = self.worker
+        worker.app.conf.worker_soft_shutdown_timeout = 10
+        request = Mock(name='task', id='1234213')
+        state.task_accepted(request)
+        with patch("celery.worker.worker.sleep") as sleep:
+            worker.wait_for_soft_shutdown()
+            sleep.assert_called_with(worker.app.conf.worker_soft_shutdown_timeout)
+
+    def test_wait_for_soft_shutdown_no_tasks(self):
+        worker = self.worker
+        worker.app.conf.worker_soft_shutdown_timeout = 10
+        worker.app.conf.worker_enable_soft_shutdown_on_idle = True
+        state.active_requests.clear()
+        with patch("celery.worker.worker.sleep") as sleep:
+            worker.wait_for_soft_shutdown()
+            sleep.assert_called_with(worker.app.conf.worker_soft_shutdown_timeout)
+
+    def test_wait_for_soft_shutdown_no_wait(self):
+        worker = self.worker
+        request = Mock(name='task', id='1234213')
+        state.task_accepted(request)
+        with patch("celery.worker.worker.sleep") as sleep:
+            worker.wait_for_soft_shutdown()
+            sleep.assert_not_called()
+
+    def test_wait_for_soft_shutdown_no_wait_no_tasks(self):
+        worker = self.worker
+        worker.app.conf.worker_enable_soft_shutdown_on_idle = True
+        with patch("celery.worker.worker.sleep") as sleep:
+            worker.wait_for_soft_shutdown()
+            sleep.assert_not_called()
+
+
+class test_WorkerApp:
+
+    def test_safe_say_defaults_to_stderr(self, capfd):
+        safe_say("hello")
+        captured = capfd.readouterr()
+        assert "\nhello\n" == captured.err
+        assert "" == captured.out
+
+    def test_safe_say_writes_to_std_out(self, capfd):
+        safe_say("out", sys.stdout)
+        captured = capfd.readouterr()
+        assert "\nout\n" == captured.out
+        assert "" == captured.err

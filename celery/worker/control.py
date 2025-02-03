@@ -1,7 +1,7 @@
 """Worker remote control command implementations."""
 import io
 import tempfile
-from collections import UserDict, namedtuple
+from collections import UserDict, defaultdict, namedtuple
 
 from billiard.common import TERM_SIGNAME
 from kombu.utils.encoding import safe_repr
@@ -146,6 +146,71 @@ def revoke(state, task_id, terminate=False, signal=None, **kwargs):
     #     Outside of this scope that is a function.
     # supports list argument since 3.1
     task_ids, task_id = set(maybe_list(task_id) or []), None
+    task_ids = _revoke(state, task_ids, terminate, signal, **kwargs)
+    if isinstance(task_ids, dict) and 'ok' in task_ids:
+        return task_ids
+    return ok(f'tasks {task_ids} flagged as revoked')
+
+
+@control_command(
+    variadic='headers',
+    signature='[key1=value1 [key2=value2 [... [keyN=valueN]]]]',
+)
+def revoke_by_stamped_headers(state, headers, terminate=False, signal=None, **kwargs):
+    """Revoke task by header (or list of headers).
+
+    Keyword Arguments:
+        headers(dictionary): Dictionary that contains stamping scheme name as keys and stamps as values.
+                             If headers is a list, it will be converted to a dictionary.
+        terminate (bool): Also terminate the process if the task is active.
+        signal (str): Name of signal to use for terminate (e.g., ``KILL``).
+    Sample headers input:
+        {'mtask_id': [id1, id2, id3]}
+    """
+    # pylint: disable=redefined-outer-name
+    # XXX Note that this redefines `terminate`:
+    #     Outside of this scope that is a function.
+    # supports list argument since 3.1
+    signum = _signals.signum(signal or TERM_SIGNAME)
+
+    if isinstance(headers, list):
+        headers = {h.split('=')[0]: h.split('=')[1] for h in headers}
+
+    for header, stamps in headers.items():
+        updated_stamps = maybe_list(worker_state.revoked_stamps.get(header) or []) + list(maybe_list(stamps))
+        worker_state.revoked_stamps[header] = updated_stamps
+
+    if not terminate:
+        return ok(f'headers {headers} flagged as revoked, but not terminated')
+
+    active_requests = list(worker_state.active_requests)
+
+    terminated_scheme_to_stamps_mapping = defaultdict(set)
+
+    # Terminate all running tasks of matching headers
+    # Go through all active requests, and check if one of the
+    # requests has a stamped header that matches the given headers to revoke
+
+    for req in active_requests:
+        # Check stamps exist
+        if hasattr(req, "stamps") and req.stamps:
+            # if so, check if any stamps match a revoked stamp
+            for expected_header_key, expected_header_value in headers.items():
+                if expected_header_key in req.stamps:
+                    expected_header_value = maybe_list(expected_header_value)
+                    actual_header = maybe_list(req.stamps[expected_header_key])
+                    matching_stamps_for_request = set(actual_header) & set(expected_header_value)
+                    # Check any possible match regardless if the stamps are a sequence or not
+                    if matching_stamps_for_request:
+                        terminated_scheme_to_stamps_mapping[expected_header_key].update(matching_stamps_for_request)
+                        req.terminate(state.consumer.pool, signal=signum)
+
+    if not terminated_scheme_to_stamps_mapping:
+        return ok(f'headers {headers} were not terminated')
+    return ok(f'headers {terminated_scheme_to_stamps_mapping} revoked')
+
+
+def _revoke(state, task_ids, terminate=False, signal=None, **kwargs):
     size = len(task_ids)
     terminated = set()
 
@@ -166,7 +231,7 @@ def revoke(state, task_id, terminate=False, signal=None, **kwargs):
 
     idstr = ', '.join(task_ids)
     logger.info('Tasks flagged as revoked: %s', idstr)
-    return ok(f'tasks {idstr} flagged as revoked')
+    return task_ids
 
 
 @control_command(
@@ -515,7 +580,7 @@ def autoscale(state, max=None, min=None):
 def shutdown(state, msg='Got shutdown from remote', **kwargs):
     """Shutdown worker(s)."""
     logger.warning(msg)
-    raise WorkerShutdown(msg)
+    raise WorkerShutdown(0)
 
 
 # -- Queues

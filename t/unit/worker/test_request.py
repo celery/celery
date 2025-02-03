@@ -2,7 +2,7 @@ import numbers
 import os
 import signal
 import socket
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from time import monotonic, time
 from unittest.mock import Mock, patch
 
@@ -12,24 +12,21 @@ from kombu.utils.encoding import from_utf8, safe_repr, safe_str
 from kombu.utils.uuid import uuid
 
 from celery import states
-from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task,
-                              mro_lookup, reset_worker_optimizations,
-                              setup_worker_optimizations, trace_task,
-                              trace_task_ret)
+from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task, mro_lookup, reset_worker_optimizations,
+                              setup_worker_optimizations, trace_task, trace_task_ret)
 from celery.backends.base import BaseDictBackend
-from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
-                               TaskRevokedError, Terminated, WorkerLostError)
-from celery.signals import task_retry, task_revoked
+from celery.exceptions import Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError, Terminated, WorkerLostError
+from celery.signals import task_failure, task_retry, task_revoked
 from celery.worker import request as module
 from celery.worker import strategy
 from celery.worker.request import Request, create_request_cls
 from celery.worker.request import logger as req_logger
-from celery.worker.state import revoked
+from celery.worker.state import revoked, revoked_stamps
 
 
 class RequestCase:
 
-    def setup(self):
+    def setup_method(self):
         self.app.conf.result_serializer = 'pickle'
 
         @self.app.task(shared=False)
@@ -171,7 +168,6 @@ class test_trace_task(RequestCase):
         assert not self.app.AsyncResult(task_id).ready()
 
     def test_execute_request_ignore_result(self):
-
         @self.app.task(shared=False)
         def ignores_result(i):
             return i ** i
@@ -232,7 +228,8 @@ class test_Request(RequestCase):
             kwargs[str(i)] = ''.join(
                 random.choice(string.ascii_lowercase) for i in range(1000))
         assert self.get_request(
-            self.add.s(**kwargs)).info(safe=True).get('kwargs') == ''  # mock message doesn't populate kwargsrepr
+            self.add.s(**kwargs)).info(safe=True).get(
+            'kwargs') == ''  # mock message doesn't populate kwargsrepr
         assert self.get_request(
             self.add.s(**kwargs)).info(safe=False).get('kwargs') == kwargs
         args = []
@@ -240,7 +237,8 @@ class test_Request(RequestCase):
             args.append(''.join(
                 random.choice(string.ascii_lowercase) for i in range(1000)))
         assert list(self.get_request(
-            self.add.s(*args)).info(safe=True).get('args')) == []  # mock message doesn't populate argsrepr
+            self.add.s(*args)).info(safe=True).get(
+            'args')) == []  # mock message doesn't populate argsrepr
         assert list(self.get_request(
             self.add.s(*args)).info(safe=False).get('args')) == args
 
@@ -336,32 +334,69 @@ class test_Request(RequestCase):
         )
 
     def test_on_failure_WorkerLostError_rejects_with_requeue(self):
-        einfo = None
         try:
             raise WorkerLostError()
         except WorkerLostError:
             einfo = ExceptionInfo(internal=True)
+
         req = self.get_request(self.add.s(2, 2))
         req.task.acks_late = True
         req.task.reject_on_worker_lost = True
         req.delivery_info['redelivered'] = False
+        req.task.backend = Mock()
+
         req.on_failure(einfo)
+
         req.on_reject.assert_called_with(
             req_logger, req.connection_errors, True)
+        req.task.backend.mark_as_failure.assert_not_called()
 
     def test_on_failure_WorkerLostError_redelivered_None(self):
-        einfo = None
         try:
             raise WorkerLostError()
         except WorkerLostError:
             einfo = ExceptionInfo(internal=True)
+
         req = self.get_request(self.add.s(2, 2))
         req.task.acks_late = True
         req.task.reject_on_worker_lost = True
         req.delivery_info['redelivered'] = None
+        req.task.backend = Mock()
+
         req.on_failure(einfo)
+
         req.on_reject.assert_called_with(
             req_logger, req.connection_errors, True)
+        req.task.backend.mark_as_failure.assert_not_called()
+
+    def test_on_failure_WorkerLostError_redelivered_True(self):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.acks_late = False
+        req.task.reject_on_worker_lost = True
+        req.delivery_info['redelivered'] = True
+        req.task.backend = Mock()
+
+        with self.assert_signal_called(
+            task_failure,
+            sender=req.task,
+            task_id=req.id,
+            exception=einfo.exception.exc,
+            args=req.args,
+            kwargs=req.kwargs,
+            traceback=einfo.traceback,
+            einfo=einfo
+        ):
+            req.on_failure(einfo)
+
+        req.task.backend.mark_as_failure.assert_called_once_with(req.id,
+                                                                 einfo.exception.exc,
+                                                                 request=req._context,
+                                                                 store_result=True)
 
     def test_tzlocal_is_cached(self):
         req = self.get_request(self.add.s(2, 2))
@@ -502,7 +537,7 @@ class test_Request(RequestCase):
 
     def test_revoked_expires_expired(self):
         job = self.get_request(self.mytask.s(1, f='x').set(
-            expires=datetime.utcnow() - timedelta(days=1)
+            expires=datetime.now(timezone.utc) - timedelta(days=1)
         ))
         with self.assert_signal_called(
                 task_revoked, sender=job.task, request=job._context,
@@ -514,7 +549,7 @@ class test_Request(RequestCase):
 
     def test_revoked_expires_not_expired(self):
         job = self.xRequest(
-            expires=datetime.utcnow() + timedelta(days=1),
+            expires=datetime.now(timezone.utc) + timedelta(days=1),
         )
         job.revoked()
         assert job.id not in revoked
@@ -523,7 +558,7 @@ class test_Request(RequestCase):
     def test_revoked_expires_ignore_result(self):
         self.mytask.ignore_result = True
         job = self.xRequest(
-            expires=datetime.utcnow() - timedelta(days=1),
+            expires=datetime.now(timezone.utc) - timedelta(days=1),
         )
         job.revoked()
         assert job.id in revoked
@@ -540,6 +575,33 @@ class test_Request(RequestCase):
                 task_revoked, sender=job.task, request=job._context,
                 terminated=False, expired=False, signum=None):
             revoked.add(job.id)
+            assert job.revoked()
+            assert job._already_revoked
+            assert job.acknowledged
+
+    @pytest.mark.parametrize(
+        "header_to_revoke",
+        [
+            {'header_A': 'value_1'},
+            {'header_B': ['value_2', 'value_3']},
+            {'header_C': ('value_2', 'value_3')},
+            {'header_D': {'value_2', 'value_3'}},
+            {'header_E': [1, '2', 3.0]},
+        ],
+    )
+    def test_revoked_by_stamped_headers(self, header_to_revoke):
+        revoked_stamps.clear()
+        job = self.xRequest()
+        stamps = header_to_revoke
+        stamped_headers = list(header_to_revoke.keys())
+        job._message.headers['stamps'] = stamps
+        job._message.headers['stamped_headers'] = stamped_headers
+        job._request_dict['stamps'] = stamps
+        job._request_dict['stamped_headers'] = stamped_headers
+        with self.assert_signal_called(
+                task_revoked, sender=job.task, request=job._context,
+                terminated=False, expired=False, signum=None):
+            revoked_stamps.update(stamps)
             assert job.revoked()
             assert job._already_revoked
             assert job.acknowledged
@@ -772,7 +834,7 @@ class test_Request(RequestCase):
         m = self.TaskMessage(self.mytask.name, args=(), kwargs='foo')
         req = Request(m, app=self.app)
         with pytest.raises(InvalidTaskError):
-            raise req.execute().exception
+            raise req.execute().exception.exc
 
     def test_on_hard_timeout_acks_late(self, patching):
         error = patching('celery.worker.request.error')
@@ -1138,11 +1200,11 @@ class test_Request(RequestCase):
 
 class test_create_request_class(RequestCase):
 
-    def setup(self):
+    def setup_method(self):
         self.task = Mock(name='task')
         self.pool = Mock(name='pool')
         self.eventer = Mock(name='eventer')
-        super().setup()
+        super().setup_method()
 
     def create_request_cls(self, **kwargs):
         return create_request_cls(
@@ -1292,7 +1354,8 @@ class test_create_request_class(RequestCase):
     def test_execute_using_pool__defaults_of_hybrid_to_proto2(self):
         weakref_ref = Mock(name='weakref.ref')
         headers = strategy.hybrid_to_proto2(Mock(headers=None), {'id': uuid(),
-                                                                 'task': self.mytask.name})[1]
+                                                                 'task': self.mytask.name})[
+            1]
         job = self.zRequest(revoked_tasks=set(), ref=weakref_ref, **headers)
         job.execute_using_pool(self.pool)
         assert job._apply_result

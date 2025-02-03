@@ -18,7 +18,7 @@ responsiveness at times of high load.
 Ensuring Operations
 ===================
 
-In the book `Programming Pearls`_, Jon Bentley presents the concept of
+In the book Programming Pearls, Jon Bentley presents the concept of
 back-of-the-envelope calculations by asking the question;
 
     ❝ How much water flows out of the Mississippi River in a day? ❞
@@ -37,8 +37,6 @@ A way to do this is by :ref:`using Munin <monitoring-munin>`.
 You should set up alerts, that'll notify you as soon as any queue has
 reached an unacceptable size. This way you can take appropriate action
 like adding new worker nodes, or revoking unnecessary tasks.
-
-.. _`Programming Pearls`: http://www.cs.bell-labs.com/cm/cs/pearls/
 
 .. _`The back of the envelope`:
     http://books.google.com/books?id=kse_7qbWbjsC&pg=PA67
@@ -150,6 +148,15 @@ The task message is only deleted from the queue after the task is
 :term:`acknowledged`, so if the worker crashes before acknowledging the task,
 it can be redelivered to another worker (or the same after recovery).
 
+Note that an exception is considered normal operation in Celery and it will be acknowledged.
+Acknowledgments are really used to safeguard against failures that can not be normally
+handled by the Python exception system (i.e. power failure, memory corruption, hardware failure, fatal signal, etc.).
+For normal exceptions you should use task.retry() to retry the task.
+
+.. seealso::
+
+    Notes at :ref:`faq-acks_late-vs-retry`.
+
 When using the default of early acknowledgment, having a prefetch multiplier setting
 of *one*, means the worker will reserve at most one extra task for every
 worker process: or in other words, if the worker is started with
@@ -157,20 +164,15 @@ worker process: or in other words, if the worker is started with
 tasks (10 acknowledged tasks executing, and 10 unacknowledged reserved
 tasks) at any time.
 
-Often users ask if disabling "prefetching of tasks" is possible, but what
-they really mean by that, is to have a worker only reserve as many tasks as
-there are worker processes (10 unacknowledged tasks for
-:option:`-c 10 <celery worker -c>`)
+Often users ask if disabling "prefetching of tasks" is possible, and it is
+possible with a catch. You can have a worker only reserve as many tasks as
+there are worker processes, with the condition that they are acknowledged
+late (10 unacknowledged tasks executing for :option:`-c 10 <celery worker -c>`)
 
-That's possible, but not without also enabling
-:term:`late acknowledgment`. Using this option over the
+For that, you need to enable  :term:`late acknowledgment`. Using this option over the
 default behavior means a task that's already started executing will be
 retried in the event of a power failure or the worker instance being killed
 abruptly, so this also means the task must be :term:`idempotent`
-
-.. seealso::
-
-    Notes at :ref:`faq-acks_late-vs-retry`.
 
 You can enable this behavior by using the following configuration options:
 
@@ -178,6 +180,42 @@ You can enable this behavior by using the following configuration options:
 
     task_acks_late = True
     worker_prefetch_multiplier = 1
+
+If you want to disable "prefetching of tasks" without using ack_late (because
+your tasks are not idempotent) that's impossible right now and you can join the
+discussion here https://github.com/celery/celery/discussions/7106
+
+Memory Usage
+------------
+
+If you are experiencing high memory usage on a prefork worker, first you need
+to determine whether the issue is also happening on the Celery master
+process. The Celery master process's memory usage should not continue to
+increase drastically after start-up. If you see this happening, it may indicate
+a memory leak bug which should be reported to the Celery issue tracker.
+
+If only your child processes have high memory usage, this indicates an issue
+with your task.
+
+Keep in mind, Python process memory usage has a "high watermark" and will not
+return memory to the operating system until the child process has stopped. This
+means a single high memory usage task could permanently increase the memory
+usage of a child process until it's restarted. Fixing this may require adding
+chunking logic to your task to reduce peak memory usage.
+
+Celery workers have two main ways to help reduce memory usage due to the "high
+watermark" and/or memory leaks in child processes: the
+:setting:`worker_max_tasks_per_child` and :setting:`worker_max_memory_per_child`
+settings.
+
+You must be careful not to set these settings too low, or else your workers
+will spend most of their time restarting child processes instead of processing
+tasks. For example, if you use a :setting:`worker_max_tasks_per_child` of 1
+and your child process takes 1 second to start, then that child process would
+only be able to process a maximum of 60 tasks per minute (assuming the task ran
+instantly). A similar issue can occur when your tasks always exceed
+:setting:`worker_max_memory_per_child`.
+
 
 .. rubric:: Footnotes
 

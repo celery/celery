@@ -8,14 +8,14 @@ from pickle import dumps, loads
 from unittest.mock import ANY, Mock, call, patch
 
 import pytest
-from case import ContextMock, mock
 
 from celery import signature, states, uuid
 from celery.canvas import Signature
-from celery.exceptions import (BackendStoreError, ChordError,
-                               ImproperlyConfigured)
+from celery.contrib.testing.mocks import ContextMock
+from celery.exceptions import BackendStoreError, ChordError, ImproperlyConfigured
 from celery.result import AsyncResult, GroupResult
 from celery.utils.collections import AttributeDict
+from t.unit import conftest
 
 
 def raise_on_second_call(mock, exc, *retval):
@@ -61,7 +61,7 @@ class Pipeline:
         return [step(*a, **kw) for step, a, kw in self.steps]
 
 
-class PubSub(mock.MockCallbacks):
+class PubSub(conftest.MockCallbacks):
     def __init__(self, ignore_subscribe_messages=False):
         self._subscribed_to = set()
 
@@ -78,7 +78,7 @@ class PubSub(mock.MockCallbacks):
         pass
 
 
-class Redis(mock.MockCallbacks):
+class Redis(conftest.MockCallbacks):
     Connection = Connection
     Pipeline = Pipeline
     pubsub = PubSub
@@ -143,7 +143,7 @@ class Redis(mock.MockCallbacks):
 
     def zrange(self, key, start, stop):
         # `stop` is inclusive in Redis so we use `stop + 1` unless that would
-        # cause us to move from negative (right-most) indicies to positive
+        # cause us to move from negative (right-most) indices to positive
         stop = stop + 1 if stop != -1 else None
         return [e[1] for e in self._get_sorted_set(key)[start:stop]]
 
@@ -158,7 +158,7 @@ class Redis(mock.MockCallbacks):
         return len(self.zrangebyscore(key, min_, max_))
 
 
-class Sentinel(mock.MockCallbacks):
+class Sentinel(conftest.MockCallbacks):
     def __init__(self, sentinels, min_other_sentinels=0, sentinel_kwargs=None,
                  **connection_kwargs):
         self.sentinel_kwargs = sentinel_kwargs
@@ -276,6 +276,44 @@ class test_RedisResultConsumer:
         parent_on_state_change.assert_called_with(meta, None)
         assert consumer._pubsub._subscribed_to == {b'celery-task-meta-initial'}
 
+    def test_drain_events_connection_error_no_patch(self):
+        meta = {'task_id': 'initial', 'status': states.SUCCESS}
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.backend._set_with_state(b'celery-task-meta-initial', json.dumps(meta), states.SUCCESS)
+        consumer._pubsub.get_message.side_effect = ConnectionError()
+        consumer.drain_events()
+        consumer._pubsub.subscribe.assert_not_called()
+
+    def test__reconnect_pubsub_no_subscribed(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.subscribed_to = set()
+        consumer._reconnect_pubsub()
+        consumer.backend.client.mget.assert_not_called()
+        consumer._pubsub.subscribe.assert_not_called()
+        consumer._pubsub.connection.register_connect_callback.assert_called_once()
+
+    def test__reconnect_pubsub_with_state_change(self):
+        meta = {'task_id': 'initial', 'status': states.SUCCESS}
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.backend._set_with_state(b'celery-task-meta-initial', json.dumps(meta), states.SUCCESS)
+        consumer._reconnect_pubsub()
+        consumer.backend.client.mget.assert_called_once()
+        consumer._pubsub.subscribe.assert_not_called()
+        consumer._pubsub.connection.register_connect_callback.assert_called_once()
+
+    def test__reconnect_pubsub_without_state_change(self):
+        meta = {'task_id': 'initial', 'status': states.STARTED}
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.backend._set_with_state(b'celery-task-meta-initial', json.dumps(meta), states.SUCCESS)
+        consumer._reconnect_pubsub()
+        consumer.backend.client.mget.assert_called_once()
+        consumer._pubsub.subscribe.assert_called_once()
+        consumer._pubsub.connection.register_connect_callback.assert_not_called()
+
 
 class basetest_RedisBackend:
     def get_backend(self):
@@ -320,7 +358,7 @@ class basetest_RedisBackend:
             callback.delay = Mock(name='callback.delay')
             yield tasks, request, callback
 
-    def setup(self):
+    def setup_method(self):
         self.Backend = self.get_backend()
         self.E_LOST = self.get_E_LOST()
         self.b = self.Backend(app=self.app)
@@ -1133,7 +1171,7 @@ class test_RedisBackend_chords_complex(basetest_RedisBackend):
         self.b.client.lrange.assert_not_called()
         # Confirm that the `GroupResult.restore` mock was called
         complex_header_result.assert_called_once_with(request.group)
-        # Confirm the the callback was called with the `join()`ed group result
+        # Confirm that the callback was called with the `join()`ed group result
         if supports_native_join:
             expected_join = mock_result_obj.join_native
         else:
@@ -1155,7 +1193,7 @@ class test_SentinelBackend:
         from celery.backends.redis import E_LOST
         return E_LOST
 
-    def setup(self):
+    def setup_method(self):
         self.Backend = self.get_backend()
         self.E_LOST = self.get_E_LOST()
         self.b = self.Backend(app=self.app)

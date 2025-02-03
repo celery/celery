@@ -249,9 +249,13 @@ class AMQP:
         if max_priority is None:
             max_priority = conf.task_queue_max_priority
         if not queues and conf.task_default_queue:
+            queue_arguments = None
+            if conf.task_default_queue_type == 'quorum':
+                queue_arguments = {'x-queue-type': 'quorum'}
             queues = (Queue(conf.task_default_queue,
                             exchange=self.default_exchange,
-                            routing_key=default_routing_key),)
+                            routing_key=default_routing_key,
+                            queue_arguments=queue_arguments),)
         autoexchange = (self.autoexchange if autoexchange is None
                         else autoexchange)
         return self.queues_cls(
@@ -284,7 +288,9 @@ class AMQP:
                    time_limit=None, soft_time_limit=None,
                    create_sent_event=False, root_id=None, parent_id=None,
                    shadow=None, chain=None, now=None, timezone=None,
-                   origin=None, ignore_result=False, argsrepr=None, kwargsrepr=None):
+                   origin=None, ignore_result=False, argsrepr=None, kwargsrepr=None, stamped_headers=None,
+                   replaced_task_nesting=0, **options):
+
         args = args or ()
         kwargs = kwargs or {}
         if not isinstance(args, (list, tuple)):
@@ -319,25 +325,31 @@ class AMQP:
         if not root_id:  # empty root_id defaults to task_id
             root_id = task_id
 
+        stamps = {header: options[header] for header in stamped_headers or []}
+        headers = {
+            'lang': 'py',
+            'task': name,
+            'id': task_id,
+            'shadow': shadow,
+            'eta': eta,
+            'expires': expires,
+            'group': group_id,
+            'group_index': group_index,
+            'retries': retries,
+            'timelimit': [time_limit, soft_time_limit],
+            'root_id': root_id,
+            'parent_id': parent_id,
+            'argsrepr': argsrepr,
+            'kwargsrepr': kwargsrepr,
+            'origin': origin or anon_nodename(),
+            'ignore_result': ignore_result,
+            'replaced_task_nesting': replaced_task_nesting,
+            'stamped_headers': stamped_headers,
+            'stamps': stamps,
+        }
+
         return task_message(
-            headers={
-                'lang': 'py',
-                'task': name,
-                'id': task_id,
-                'shadow': shadow,
-                'eta': eta,
-                'expires': expires,
-                'group': group_id,
-                'group_index': group_index,
-                'retries': retries,
-                'timelimit': [time_limit, soft_time_limit],
-                'root_id': root_id,
-                'parent_id': parent_id,
-                'argsrepr': argsrepr,
-                'kwargsrepr': kwargsrepr,
-                'origin': origin or anon_nodename(),
-                'ignore_result': ignore_result,
-            },
+            headers=headers,
             properties={
                 'correlation_id': task_id,
                 'reply_to': reply_to or '',
@@ -447,7 +459,7 @@ class AMQP:
 
         default_rkey = self.app.conf.task_default_routing_key
         default_serializer = self.app.conf.task_serializer
-        default_compressor = self.app.conf.result_compression
+        default_compressor = self.app.conf.task_compression
 
         def send_task_message(producer, name, message,
                               exchange=None, routing_key=None, queue=None,
@@ -455,7 +467,8 @@ class AMQP:
                               retry=None, retry_policy=None,
                               serializer=None, delivery_mode=None,
                               compression=None, declare=None,
-                              headers=None, exchange_type=None, **kwargs):
+                              headers=None, exchange_type=None,
+                              timeout=None, confirm_timeout=None, **kwargs):
             retry = default_retry if retry is None else retry
             headers2, properties, body, sent_event = message
             if headers:
@@ -516,6 +529,7 @@ class AMQP:
                 retry=retry, retry_policy=_rp,
                 delivery_mode=delivery_mode, declare=declare,
                 headers=headers2,
+                timeout=timeout, confirm_timeout=confirm_timeout,
                 **properties
             )
             if after_receivers:
@@ -597,7 +611,7 @@ class AMQP:
     @cached_property
     def _event_dispatcher(self):
         # We call Dispatcher.publish with a custom producer
-        # so don't need the diuspatcher to be enabled.
+        # so don't need the dispatcher to be enabled.
         return self.app.events.Dispatcher(enabled=False)
 
     def _handle_conf_update(self, *args, **kwargs):

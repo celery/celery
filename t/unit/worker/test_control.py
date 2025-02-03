@@ -11,15 +11,18 @@ from kombu import pidbox
 from kombu.utils.uuid import uuid
 
 from celery.utils.collections import AttributeDict
+from celery.utils.functional import maybe_list
 from celery.utils.timer2 import Timer
 from celery.worker import WorkController as _WC
 from celery.worker import consumer, control
 from celery.worker import state as worker_state
 from celery.worker.pidbox import Pidbox, gPidbox
 from celery.worker.request import Request
-from celery.worker.state import REVOKE_EXPIRES, revoked
+from celery.worker.state import REVOKE_EXPIRES, revoked, revoked_stamps
 
 hostname = socket.gethostname()
+
+IS_PYPY = hasattr(sys, 'pypy_version_info')
 
 
 class WorkController:
@@ -116,7 +119,7 @@ class test_Pidbox_green:
 
 class test_ControlPanel:
 
-    def setup(self):
+    def setup_method(self):
         self.panel = self.create_panel(consumer=Consumer(self.app))
 
         @self.app.task(name='c.unittest.mytask', rate_limit=200, shared=False)
@@ -544,6 +547,104 @@ class test_ControlPanel:
         finally:
             worker_state.task_ready(request)
 
+    @pytest.mark.parametrize(
+        "terminate", [True, False],
+    )
+    def test_revoke_by_stamped_headers_terminate(self, terminate):
+        request = Mock()
+        request.id = uuid()
+        request.options = stamped_header = {'stamp': 'foo'}
+        request.options['stamped_headers'] = ['stamp']
+        state = self.create_state()
+        state.consumer = Mock()
+        worker_state.task_reserved(request)
+        try:
+            worker_state.revoked_stamps.clear()
+            assert stamped_header.keys() != revoked_stamps.keys()
+            control.revoke_by_stamped_headers(state, stamped_header, terminate=terminate)
+            assert stamped_header.keys() == revoked_stamps.keys()
+            for key in stamped_header.keys():
+                assert maybe_list(stamped_header[key]) == revoked_stamps[key]
+        finally:
+            worker_state.task_ready(request)
+
+    @pytest.mark.parametrize(
+        "header_to_revoke",
+        [
+            {'header_A': 'value_1'},
+            {'header_B': ['value_2', 'value_3']},
+            {'header_C': ('value_2', 'value_3')},
+            {'header_D': {'value_2', 'value_3'}},
+            {'header_E': [1, '2', 3.0]},
+        ],
+    )
+    def test_revoke_by_stamped_headers(self, header_to_revoke):
+        ids = []
+
+        # Create at least more than one request with the same stamped header
+        for _ in range(2):
+            headers = {
+                "id": uuid(),
+                "task": self.mytask.name,
+                "stamped_headers": header_to_revoke.keys(),
+                "stamps": header_to_revoke,
+            }
+            ids.append(headers["id"])
+            message = self.TaskMessage(
+                self.mytask.name,
+                "do re mi",
+            )
+            message.headers.update(headers)
+            request = Request(
+                message,
+                app=self.app,
+            )
+
+            # Add the request to the active_requests so the request is found
+            # when the revoke_by_stamped_headers is called
+            worker_state.active_requests.add(request)
+            worker_state.task_reserved(request)
+
+        state = self.create_state()
+        state.consumer = Mock()
+        # Revoke by header
+        revoked_stamps.clear()
+        r = control.revoke_by_stamped_headers(state, header_to_revoke, terminate=True)
+        # Check all of the requests were revoked by a single header
+        for header, stamp in header_to_revoke.items():
+            assert header in r['ok']
+            for s in maybe_list(stamp):
+                assert str(s) in r['ok']
+        assert header_to_revoke.keys() == revoked_stamps.keys()
+        for key in header_to_revoke.keys():
+            assert list(maybe_list(header_to_revoke[key])) == revoked_stamps[key]
+        revoked_stamps.clear()
+
+    def test_revoke_return_value_terminate_true(self):
+        header_to_revoke = {'foo': 'bar'}
+        headers = {
+            "id": uuid(),
+            "task": self.mytask.name,
+            "stamped_headers": header_to_revoke.keys(),
+            "stamps": header_to_revoke,
+        }
+        message = self.TaskMessage(
+            self.mytask.name,
+            "do re mi",
+        )
+        message.headers.update(headers)
+        request = Request(
+            message,
+            app=self.app,
+        )
+        worker_state.active_requests.add(request)
+        worker_state.task_reserved(request)
+        state = self.create_state()
+        state.consumer = Mock()
+        r_headers = control.revoke_by_stamped_headers(state, header_to_revoke, terminate=True)
+        # revoke & revoke_by_stamped_headers are not aligned anymore in their return values
+        assert "{'foo': {'bar'}}" in r_headers["ok"]
+
     def test_autoscale(self):
         self.panel.state.consumer = Mock()
         self.panel.state.consumer.controller = Mock()
@@ -622,6 +723,7 @@ class test_ControlPanel:
         consumer.controller.consumer = None
         panel.handle('pool_restart', {'reloader': _reload})
 
+    @pytest.mark.skipif(IS_PYPY, reason="Patch for sys.modules doesn't work on PyPy correctly")
     @patch('celery.worker.worker.logger.debug')
     def test_pool_restart_import_modules(self, _debug):
         consumer = Consumer(self.app)

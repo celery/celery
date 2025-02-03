@@ -22,7 +22,7 @@ class test_Timer:
 
 class test_Hub:
 
-    def setup(self):
+    def setup_method(self):
         self.w = Mock(name='w')
         self.hub = Hub(self.w)
         self.w.hub = Mock(name='w.hub')

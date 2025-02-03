@@ -101,6 +101,148 @@ longer version:
     On Linux systems, Celery now supports sending :sig:`KILL` signal to all child processes
     after worker termination. This is done via `PR_SET_PDEATHSIG` option of ``prctl(2)``.
 
+.. _worker_shutdown:
+
+Worker Shutdown
+---------------
+
+We will use the terms *Warm, Soft, Cold, Hard* to describe the different stages of worker shutdown.
+The worker will initiate the shutdown process when it receives the :sig:`TERM` or :sig:`QUIT` signal.
+The :sig:`INT` (Ctrl-C) signal is also handled during the shutdown process and always triggers the 
+next stage of the shutdown process.
+
+.. _worker-warm-shutdown:
+
+Warm Shutdown
+~~~~~~~~~~~~~
+
+When the worker receives the :sig:`TERM` signal, it will initiate a warm shutdown. The worker will
+finish all currently executing tasks before it actually terminates. The first time the worker receives
+the :sig:`INT` (Ctrl-C) signal, it will initiate a warm shutdown as well.
+
+The warm shutdown will stop the call to :func:`WorkController.start() <celery.worker.worker.WorkController.start>`
+and will call :func:`WorkController.stop() <celery.worker.worker.WorkController.stop>`.
+
+- Additional :sig:`TERM` signals will be ignored during the warm shutdown process.
+- The next :sig:`INT` signal will trigger the next stage of the shutdown process.
+
+.. _worker-cold-shutdown:
+
+Cold Shutdown
+~~~~~~~~~~~~~
+
+Cold shutdown is initiated when the worker receives the :sig:`QUIT` signal. The worker will stop
+all currently executing tasks and terminate immediately.
+
+.. _worker-REMAP_SIGTERM:
+
+.. note::
+
+    If the environment variable ``REMAP_SIGTERM`` is set to ``SIGQUIT``, the worker will also initiate
+    a cold shutdown when it receives the :sig:`TERM` signal instead of a warm shutdown.
+
+The cold shutdown will stop the call to :func:`WorkController.start() <celery.worker.worker.WorkController.start>`
+and will call :func:`WorkController.terminate() <celery.worker.worker.WorkController.terminate>`.
+
+If the warm shutdown already started, the transition to cold shutdown will run a signal handler ``on_cold_shutdown``
+to cancel all currently executing tasks from the MainProcess and potentially trigger the :ref:`worker-soft-shutdown`.
+
+.. _worker-soft-shutdown:
+
+Soft Shutdown
+~~~~~~~~~~~~~
+
+.. versionadded:: 5.5
+
+Soft shutdown is a time limited warm shutdown, initiated just before the cold shutdown. The worker will
+allow :setting:`worker_soft_shutdown_timeout` seconds for all currently executing tasks to finish before
+it terminates. If the time limit is reached, the worker will initiate a cold shutdown and cancel all currently
+executing tasks. If the :sig:`QUIT` signal is received during the soft shutdown, the worker will cancel all
+currently executing tasks but still wait for the time limit to finish before terminating, giving a chance for
+the worker to perform the cold shutdown a little more gracefully.
+
+The soft shutdown is disabled by default to maintain backward compatibility with the :ref:`worker-cold-shutdown`
+behavior. To enable the soft shutdown, set :setting:`worker_soft_shutdown_timeout` to a positive float value.
+The soft shutdown will be skipped if there are no tasks running. To force the soft shutdown, *also* enable the
+:setting:`worker_enable_soft_shutdown_on_idle` setting.
+
+.. warning::
+
+    If the worker is not running any task but has ETA tasks reserved, the soft shutdown will not be initiated
+    unless the :setting:`worker_enable_soft_shutdown_on_idle` setting is enabled, which may lead to task loss
+    during the cold shutdown. When using ETA tasks, it is recommended to enable the soft shutdown on idle.
+    Experiment which :setting:`worker_soft_shutdown_timeout` value works best for your setup to reduce the risk
+    of task loss to a minimum.
+
+For example, when setting ``worker_soft_shutdown_timeout=3``, the worker will allow 3 seconds for all currently
+executing tasks to finish before it terminates. If the time limit is reached, the worker will initiate a cold shutdown
+and cancel all currently executing tasks.
+
+.. code-block:: console
+
+    [INFO/MainProcess] Task myapp.long_running_task[6f748357-b2c7-456a-95de-f05c00504042] received
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 1/2000s
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 2/2000s
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 3/2000s
+    ^C
+    worker: Hitting Ctrl+C again will initiate cold shutdown, terminating all running tasks!
+
+    worker: Warm shutdown (MainProcess)
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 4/2000s
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 5/2000s
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 6/2000s
+    ^C
+    worker: Hitting Ctrl+C again will terminate all running tasks!
+    [WARNING/MainProcess] Initiating Soft Shutdown, terminating in 3 seconds
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 7/2000s
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 8/2000s
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 9/2000s
+    [WARNING/MainProcess] Restoring 1 unacknowledged message(s)
+
+- The next :sig:`QUIT` signal will cancel the tasks that are still running in the soft shutdown, but the worker
+  will still wait for the time limit to finish before terminating.
+- The next (2nd) :sig:`QUIT` or :sig:`INT` signal will trigger the next stage of the shutdown process.
+
+.. _worker-hard-shutdown:
+
+Hard Shutdown
+~~~~~~~~~~~~~
+
+.. versionadded:: 5.5
+
+Hard shutdown is mostly for local or debug purposes, allowing to spam the :sig:`INT` (Ctrl-C) signal
+to force the worker to terminate immediately. The worker will stop all currently executing tasks and
+terminate immediately by raising a :exc:`@WorkerTerminate` exception in the MainProcess.
+
+For example, notice the ``^C`` in the logs below (using the :sig:`INT` signal to move from stage to stage):
+
+.. code-block:: console
+
+    [INFO/MainProcess] Task myapp.long_running_task[7235ac16-543d-4fd5-a9e1-2d2bb8ab630a] received
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 1/2000s
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 2/2000s
+    ^C
+    worker: Hitting Ctrl+C again will initiate cold shutdown, terminating all running tasks!
+
+    worker: Warm shutdown (MainProcess)
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 3/2000s
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 4/2000s
+    ^C
+    worker: Hitting Ctrl+C again will terminate all running tasks!
+    [WARNING/MainProcess] Initiating Soft Shutdown, terminating in 10 seconds
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 5/2000s
+    [WARNING/ForkPoolWorker-8] long_running_task is running, sleeping 6/2000s
+    ^C
+    Waiting gracefully for cold shutdown to complete...
+
+    worker: Cold shutdown (MainProcess)
+    ^C[WARNING/MainProcess] Restoring 1 unacknowledged message(s)
+
+.. warning::
+
+    The log ``Restoring 1 unacknowledged message(s)`` is misleading as it is not guaranteed that the message
+    will be restored after a hard shutdown. The :ref:`worker-soft-shutdown` allows adding a time window just between
+    the warm and the cold shutdown that improves the gracefulness of the shutdown process.
 
 .. _worker-restarting:
 
@@ -137,6 +279,31 @@ isn't recommended in production:
     :sig:`HUP` is disabled on macOS because of a limitation on
     that platform.
 
+Automatic re-connection on connection loss to broker
+====================================================
+
+.. versionadded:: 5.3
+
+Unless :setting:`broker_connection_retry_on_startup` is set to False,
+Celery will automatically retry reconnecting to the broker after the first
+connection loss. :setting:`broker_connection_retry` controls whether to automatically
+retry reconnecting to the broker for subsequent reconnects.
+
+.. versionadded:: 5.1
+
+If :setting:`worker_cancel_long_running_tasks_on_connection_loss` is set to True,
+Celery will also cancel any long running task that is currently running.
+
+.. versionadded:: 5.3
+
+Since the message broker does not track how many tasks were already fetched before
+the connection was lost, Celery will reduce the prefetch count by the number of
+tasks that are currently running multiplied by :setting:`worker_prefetch_multiplier`.
+The prefetch count will be gradually restored to the maximum allowed after
+each time a task that was running before the connection was lost is complete.
+
+This feature is enabled by default, but can be disabled by setting False
+to :setting:`worker_enable_prefetch_count_reduction`.
 
 .. _worker-process-signals:
 
@@ -329,12 +496,26 @@ Commands
 
 ``revoke``: Revoking tasks
 --------------------------
-:pool support: all, terminate only supported by prefork and eventlet
+:pool support: all, terminate only supported by prefork, eventlet and gevent
 :broker support: *amqp, redis*
 :command: :program:`celery -A proj control revoke <task_id>`
 
 All worker nodes keeps a memory of revoked task ids, either in-memory or
 persistent on disk (see :ref:`worker-persistent-revokes`).
+
+.. note::
+
+    The maximum number of revoked tasks to keep in memory can be
+    specified using the ``CELERY_WORKER_REVOKES_MAX`` environment
+    variable, which defaults to 50000. When the limit has been exceeded,
+    the revokes will be active for 10800 seconds (3 hours) before being
+    expired. This value can be changed using the
+    ``CELERY_WORKER_REVOKE_EXPIRES`` environment variable.
+
+    Memory limits can also be set for successful tasks through the
+    ``CELERY_WORKER_SUCCESSFUL_MAX`` and
+    ``CELERY_WORKER_SUCCESSFUL_EXPIRES`` environment variables, and
+    default to 1000 and 10800 respectively.
 
 When a worker receives a revoke request it will skip executing
 the task, but it won't terminate an already executing task unless
@@ -432,6 +613,71 @@ Note that remote control commands must be working for revokes to work.
 Remote control commands are only supported by the RabbitMQ (amqp) and Redis
 at this point.
 
+.. control:: revoke_by_stamped_header
+
+``revoke_by_stamped_header``: Revoking tasks by their stamped headers
+---------------------------------------------------------------------
+:pool support: all, terminate only supported by prefork and eventlet
+:broker support: *amqp, redis*
+:command: :program:`celery -A proj control revoke_by_stamped_header <header=value>`
+
+This command is similar to :meth:`~@control.revoke`, but instead of
+specifying the task id(s), you specify the stamped header(s) as key-value pair(s),
+and each task that has a stamped header matching the key-value pair(s) will be revoked.
+
+.. warning::
+
+    The revoked headers mapping is not persistent across restarts, so if you
+    restart the workers, the revoked headers will be lost and need to be
+    mapped again.
+
+.. warning::
+
+    This command may perform poorly if your worker pool concurrency is high
+    and terminate is enabled, since it will have to iterate over all the running
+    tasks to find the ones with the specified stamped header.
+
+**Example**
+
+.. code-block:: pycon
+
+    >>> app.control.revoke_by_stamped_header({'header': 'value'})
+
+    >>> app.control.revoke_by_stamped_header({'header': 'value'}, terminate=True)
+
+    >>> app.control.revoke_by_stamped_header({'header': 'value'}, terminate=True, signal='SIGKILL')
+
+
+Revoking multiple tasks by stamped headers
+------------------------------------------
+
+.. versionadded:: 5.3
+
+The ``revoke_by_stamped_header`` method also accepts a list argument, where it will revoke
+by several headers or several values.
+
+**Example**
+
+.. code-block:: pycon
+
+    >> app.control.revoke_by_stamped_header({
+    ...    'header_A': 'value_1',
+    ...    'header_B': ['value_2', 'value_3'],
+    })
+
+This will revoke all of the tasks that have a stamped header ``header_A`` with value ``value_1``,
+and all of the tasks that have a stamped header ``header_B`` with values ``value_2`` or ``value_3``.
+
+**CLI Example**
+
+.. code-block:: console
+
+    $ celery -A proj control revoke_by_stamped_header stamped_header_key_A=stamped_header_value_1 stamped_header_key_B=stamped_header_value_2
+
+    $ celery -A proj control revoke_by_stamped_header stamped_header_key_A=stamped_header_value_1 stamped_header_key_B=stamped_header_value_2 --terminate
+
+    $ celery -A proj control revoke_by_stamped_header stamped_header_key_A=stamped_header_value_1 stamped_header_key_B=stamped_header_value_2 --terminate --signal=SIGKILL
+
 .. _worker-time-limits:
 
 Time Limits
@@ -472,7 +718,9 @@ time limit kills it:
             clean_up_in_a_hurry()
 
 Time limits can also be set using the :setting:`task_time_limit` /
-:setting:`task_soft_time_limit` settings.
+:setting:`task_soft_time_limit` settings. You can also specify time
+limits for client side operation using ``timeout`` argument of
+``AsyncResult.get()`` function.
 
 .. note::
 
@@ -602,7 +850,7 @@ which needs two numbers: the maximum and minimum number of pool processes:
               10 if necessary).
 
 You can also define your own rules for the autoscaler by subclassing
-:class:`~celery.worker.autoscaler.Autoscaler`.
+:class:`~celery.worker.autoscale.Autoscaler`.
 Some ideas for metrics include load average or the amount of memory available.
 You can specify a custom autoscaler with the :setting:`worker_autoscaler` setting.
 
@@ -948,7 +1196,7 @@ There are two types of remote control commands:
 
 Remote control commands are registered in the control panel and
 they take a single argument: the current
-:class:`~celery.worker.control.ControlDispatch` instance.
+:class:`!celery.worker.control.ControlDispatch` instance.
 From there you have access to the active
 :class:`~celery.worker.consumer.Consumer` if needed.
 

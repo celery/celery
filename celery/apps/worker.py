@@ -19,9 +19,8 @@ from kombu.utils.encoding import safe_str
 
 from celery import VERSION_BANNER, platforms, signals
 from celery.app import trace
-from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.loaders.app import AppLoader
-from celery.platforms import EX_FAILURE, EX_OK, check_privileges, isatty
+from celery.platforms import EX_FAILURE, EX_OK, check_privileges
 from celery.utils import static, term
 from celery.utils.debug import cry
 from celery.utils.imports import qualname
@@ -78,8 +77,9 @@ def active_thread_count():
                if not t.name.startswith('Dummy-'))
 
 
-def safe_say(msg):
-    print(f'\n{msg}', file=sys.__stderr__, flush=True)
+def safe_say(msg, f=sys.__stderr__):
+    if hasattr(f, 'fileno') and f.fileno() is not None:
+        os.write(f.fileno(), f'\n{msg}\n'.encode())
 
 
 class Worker(WorkController):
@@ -107,7 +107,7 @@ class Worker(WorkController):
         super().setup_defaults(**kwargs)
         self.purge = purge
         self.no_color = no_color
-        self._isatty = isatty(sys.stdout)
+        self._isatty = sys.stdout.isatty()
         self.colored = self.app.log.colored(
             self.logfile,
             enabled=not no_color if no_color is not None else no_color
@@ -279,41 +279,157 @@ class Worker(WorkController):
         )
 
 
-def _shutdown_handler(worker, sig='TERM', how='Warm',
-                      exc=WorkerShutdown, callback=None, exitcode=EX_OK):
+def _shutdown_handler(worker: Worker, sig='TERM', how='Warm', callback=None, exitcode=EX_OK, verbose=True):
+    """Install signal handler for warm/cold shutdown.
+
+    The handler will run from the MainProcess.
+
+    Args:
+        worker (Worker): The worker that received the signal.
+        sig (str, optional): The signal that was received. Defaults to 'TERM'.
+        how (str, optional): The type of shutdown to perform. Defaults to 'Warm'.
+        callback (Callable, optional): Signal handler. Defaults to None.
+        exitcode (int, optional): The exit code to use. Defaults to EX_OK.
+        verbose (bool, optional): Whether to print the type of shutdown. Defaults to True.
+    """
     def _handle_request(*args):
         with in_sighandler():
             from celery.worker import state
             if current_process()._name == 'MainProcess':
                 if callback:
                     callback(worker)
-                safe_say(f'worker: {how} shutdown (MainProcess)')
+                if verbose:
+                    safe_say(f'worker: {how} shutdown (MainProcess)', sys.__stdout__)
                 signals.worker_shutting_down.send(
                     sender=worker.hostname, sig=sig, how=how,
                     exitcode=exitcode,
                 )
-            if active_thread_count() > 1:
-                setattr(state, {'Warm': 'should_stop',
-                                'Cold': 'should_terminate'}[how], exitcode)
-            else:
-                raise exc(exitcode)
+            setattr(state, {'Warm': 'should_stop',
+                            'Cold': 'should_terminate'}[how], exitcode)
     _handle_request.__name__ = str(f'worker_{how}')
     platforms.signals[sig] = _handle_request
 
 
+def on_hard_shutdown(worker: Worker):
+    """Signal handler for hard shutdown.
+
+    The handler will terminate the worker immediately by force using the exit code ``EX_FAILURE``.
+
+    In practice, you should never get here, as the standard shutdown process should be enough.
+    This handler is only for the worst-case scenario, where the worker is stuck and cannot be
+    terminated gracefully (e.g., spamming the Ctrl+C in the terminal to force the worker to terminate).
+
+    Args:
+        worker (Worker): The worker that received the signal.
+
+    Raises:
+        WorkerTerminate: This exception will be raised in the MainProcess to terminate the worker immediately.
+    """
+    from celery.exceptions import WorkerTerminate
+    raise WorkerTerminate(EX_FAILURE)
+
+
+def during_soft_shutdown(worker: Worker):
+    """This signal handler is called when the worker is in the middle of the soft shutdown process.
+
+    When the worker is in the soft shutdown process, it is waiting for tasks to finish. If the worker
+    receives a SIGINT (Ctrl+C) or SIGQUIT signal (or possibly SIGTERM if REMAP_SIGTERM is set to "SIGQUIT"),
+    the handler will cancels all unacked requests to allow the worker to terminate gracefully and replace the
+    signal handler for SIGINT and SIGQUIT with the hard shutdown handler ``on_hard_shutdown`` to terminate
+    the worker immediately by force next time the signal is received.
+
+    It will give the worker once last chance to gracefully terminate (the cold shutdown), after canceling all
+    unacked requests, before using the hard shutdown handler to terminate the worker forcefully.
+
+    Args:
+        worker (Worker): The worker that received the signal.
+    """
+    # Replace the signal handler for SIGINT (Ctrl+C) and SIGQUIT (and possibly SIGTERM)
+    # with the hard shutdown handler to terminate the worker immediately by force
+    install_worker_term_hard_handler(worker, sig='SIGINT', callback=on_hard_shutdown, verbose=False)
+    install_worker_term_hard_handler(worker, sig='SIGQUIT', callback=on_hard_shutdown)
+
+    # Cancel all unacked requests and allow the worker to terminate naturally
+    worker.consumer.cancel_all_unacked_requests()
+
+    # We get here if the worker was in the middle of the soft (cold) shutdown process,
+    # and the matching signal was received. This can typically happen when the worker is
+    # waiting for tasks to finish, and the user decides to still cancel the running tasks.
+    # We give the worker the last chance to gracefully terminate by letting the soft shutdown
+    # waiting time to finish, which is running in the MainProcess from the previous signal handler call.
+    safe_say('Waiting gracefully for cold shutdown to complete...', sys.__stdout__)
+
+
+def on_cold_shutdown(worker: Worker):
+    """Signal handler for cold shutdown.
+
+    Registered for SIGQUIT and SIGINT (Ctrl+C) signals. If REMAP_SIGTERM is set to "SIGQUIT", this handler will also
+    be registered for SIGTERM.
+
+    This handler will initiate the cold (and soft if enabled) shutdown procesdure for the worker.
+
+    Worker running with N tasks:
+        - SIGTERM:
+            -The worker will initiate the warm shutdown process until all tasks are finished. Additional.
+            SIGTERM signals will be ignored. SIGQUIT will transition to the cold shutdown process described below.
+        - SIGQUIT:
+            - The worker will initiate the cold shutdown process.
+            - If the soft shutdown is enabled, the worker will wait for the tasks to finish up to the soft
+            shutdown timeout (practically having a limited warm shutdown just before the cold shutdown).
+            - Cancel all tasks (from the MainProcess) and allow the worker to complete the cold shutdown
+            process gracefully.
+
+    Caveats:
+        - SIGINT (Ctrl+C) signal is defined to replace itself with the cold shutdown (SIGQUIT) after first use,
+        and to emit a message to the user to hit Ctrl+C again to initiate the cold shutdown process. But, most
+        important, it will also be caught in WorkController.start() to initiate the warm shutdown process.
+        - SIGTERM will also be handled in WorkController.start() to initiate the warm shutdown process (the same).
+        - If REMAP_SIGTERM is set to "SIGQUIT", the SIGTERM signal will be remapped to SIGQUIT, and the cold
+        shutdown process will be initiated instead of the warm shutdown process using SIGTERM.
+        - If SIGQUIT is received (also via SIGINT) during the cold/soft shutdown process, the handler will cancel all
+        unacked requests but still wait for the soft shutdown process to finish before terminating the worker
+        gracefully. The next time the signal is received though, the worker will terminate immediately by force.
+
+    So, the purpose of this handler is to allow waiting for the soft shutdown timeout, then cancel all tasks from
+    the MainProcess and let the WorkController.terminate() to terminate the worker naturally. If the soft shutdown
+    is disabled, it will immediately cancel all tasks let the cold shutdown finish normally.
+
+    Args:
+        worker (Worker): The worker that received the signal.
+    """
+    safe_say('worker: Hitting Ctrl+C again will terminate all running tasks!', sys.__stdout__)
+
+    # Replace the signal handler for SIGINT (Ctrl+C) and SIGQUIT (and possibly SIGTERM)
+    install_worker_term_hard_handler(worker, sig='SIGINT', callback=during_soft_shutdown)
+    install_worker_term_hard_handler(worker, sig='SIGQUIT', callback=during_soft_shutdown)
+    if REMAP_SIGTERM == "SIGQUIT":
+        install_worker_term_hard_handler(worker, sig='SIGTERM', callback=during_soft_shutdown)
+    # else, SIGTERM will print the _shutdown_handler's message and do nothing, every time it is received..
+
+    # Initiate soft shutdown process (if enabled and tasks are running)
+    worker.wait_for_soft_shutdown()
+
+    # Cancel all unacked requests and allow the worker to terminate naturally
+    worker.consumer.cancel_all_unacked_requests()
+
+    # Stop the pool to allow successful tasks call on_success()
+    worker.consumer.pool.stop()
+
+
+# Allow SIGTERM to be remapped to SIGQUIT to initiate cold shutdown instead of warm shutdown using SIGTERM
 if REMAP_SIGTERM == "SIGQUIT":
     install_worker_term_handler = partial(
-        _shutdown_handler, sig='SIGTERM', how='Cold', exc=WorkerTerminate, exitcode=EX_FAILURE,
+        _shutdown_handler, sig='SIGTERM', how='Cold', callback=on_cold_shutdown, exitcode=EX_FAILURE,
     )
 else:
     install_worker_term_handler = partial(
-        _shutdown_handler, sig='SIGTERM', how='Warm', exc=WorkerShutdown,
+        _shutdown_handler, sig='SIGTERM', how='Warm',
     )
+
 
 if not is_jython:  # pragma: no cover
     install_worker_term_hard_handler = partial(
-        _shutdown_handler, sig='SIGQUIT', how='Cold', exc=WorkerTerminate,
-        exitcode=EX_FAILURE,
+        _shutdown_handler, sig='SIGQUIT', how='Cold', callback=on_cold_shutdown, exitcode=EX_FAILURE,
     )
 else:  # pragma: no cover
     install_worker_term_handler = \
@@ -321,8 +437,9 @@ else:  # pragma: no cover
 
 
 def on_SIGINT(worker):
-    safe_say('worker: Hitting Ctrl+C again will terminate all running tasks!')
-    install_worker_term_hard_handler(worker, sig='SIGINT')
+    safe_say('worker: Hitting Ctrl+C again will initiate cold shutdown, terminating all running tasks!',
+             sys.__stdout__)
+    install_worker_term_hard_handler(worker, sig='SIGINT', verbose=False)
 
 
 if not is_jython:  # pragma: no cover
@@ -347,7 +464,8 @@ def install_worker_restart_handler(worker, sig='SIGHUP'):
     def restart_worker_sig_handler(*args):
         """Signal handler restarting the current python program."""
         set_in_sighandler(True)
-        safe_say(f"Restarting celery worker ({' '.join(sys.argv)})")
+        safe_say(f"Restarting celery worker ({' '.join(sys.argv)})",
+                 sys.__stdout__)
         import atexit
         atexit.register(_reload_current_worker)
         from celery.worker import state

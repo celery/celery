@@ -1,7 +1,7 @@
 """Fixtures and testing utilities for :pypi:`pytest <pytest>`."""
 import os
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Mapping, Sequence, Union
+from typing import TYPE_CHECKING, Any, Mapping, Sequence, Union  # noqa
 
 import pytest
 
@@ -22,7 +22,7 @@ NO_WORKER = os.environ.get('NO_WORKER')
 def pytest_configure(config):
     """Register additional pytest configuration."""
     # add the pytest.mark.celery() marker registration to the pytest.ini [markers] section
-    # this prevents pytest 4.5 and newer from issueing a warning about an unknown marker
+    # this prevents pytest 4.5 and newer from issuing a warning about an unknown marker
     # and shows helpful marker documentation when running pytest --markers.
     config.addinivalue_line(
         "markers", "celery(**overrides): override celery configuration for a test case"
@@ -98,7 +98,7 @@ def celery_session_worker(
         for module in celery_includes:
             celery_session_app.loader.import_task_module(module)
         for class_task in celery_class_tasks:
-            celery_session_app.tasks.register(class_task)
+            celery_session_app.register_task(class_task)
         with worker.start_worker(celery_session_app,
                                  pool=celery_worker_pool,
                                  **celery_worker_parameters) as w:

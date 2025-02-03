@@ -2,9 +2,9 @@ import datetime
 from pickle import dumps, loads
 from unittest.mock import ANY, MagicMock, Mock, patch, sentinel
 
+import dns.version
+import pymongo
 import pytest
-import pytz
-from case import mock
 from kombu.exceptions import EncodeError
 
 try:
@@ -12,9 +12,18 @@ try:
 except ImportError:
     ConfigurationError = None
 
+
+import sys
+
+if sys.version_info >= (3, 9):
+    from zoneinfo import ZoneInfo
+else:
+    from backports.zoneinfo import ZoneInfo
+
 from celery import states, uuid
 from celery.backends.mongodb import Binary, InvalidDocument, MongoBackend
 from celery.exceptions import ImproperlyConfigured
+from t.unit import conftest
 
 COLLECTION = 'taskmeta_celery'
 TASK_ID = uuid()
@@ -25,8 +34,42 @@ MONGODB_PASSWORD = '1234'
 MONGODB_DATABASE = 'testing'
 MONGODB_COLLECTION = 'collection1'
 MONGODB_GROUP_COLLECTION = 'group_collection1'
+# uri with user, password, database name, replica set, DNS seedlist format
+MONGODB_SEEDLIST_URI = ('srv://'
+                        'celeryuser:celerypassword@'
+                        'dns-seedlist-host.example.com/'
+                        'celerydatabase')
+MONGODB_BACKEND_HOST = [
+    'mongo1.example.com:27017',
+    'mongo2.example.com:27017',
+    'mongo3.example.com:27017',
+]
+CELERY_USER = 'celeryuser'
+CELERY_PASSWORD = 'celerypassword'
+CELERY_DATABASE = 'celerydatabase'
 
 pytest.importorskip('pymongo')
+
+
+def fake_resolver_dnspython():
+    TXT = pytest.importorskip('dns.rdtypes.ANY.TXT').TXT
+    SRV = pytest.importorskip('dns.rdtypes.IN.SRV').SRV
+
+    def mock_resolver(_, rdtype, rdclass=None, lifetime=None, **kwargs):
+
+        if rdtype == 'SRV':
+            return [
+                SRV(0, 0, 0, 0, 27017, hostname)
+                for hostname in [
+                    'mongo1.example.com',
+                    'mongo2.example.com',
+                    'mongo3.example.com'
+                ]
+            ]
+        elif rdtype == 'TXT':
+            return [TXT(0, 0, [b'replicaSet=rs0'])]
+
+    return mock_resolver
 
 
 class test_MongoBackend:
@@ -41,7 +84,7 @@ class test_MongoBackend:
         'hostname.dom/database?replicaSet=rs'
     )
 
-    def setup(self):
+    def setup_method(self):
         self.patching('celery.backends.mongodb.MongoBackend.encode')
         self.patching('celery.backends.mongodb.MongoBackend.decode')
         self.patching('celery.backends.mongodb.Binary')
@@ -86,18 +129,14 @@ class test_MongoBackend:
                'mongo3.example.com:27017/'
                'celerydatabase?replicaSet=rs0')
         mb = MongoBackend(app=self.app, url=uri)
-        assert mb.mongo_host == [
-            'mongo1.example.com:27017',
-            'mongo2.example.com:27017',
-            'mongo3.example.com:27017',
-        ]
+        assert mb.mongo_host == MONGODB_BACKEND_HOST
         assert mb.options == dict(
             mb._prepare_client_options(),
             replicaset='rs0',
         )
-        assert mb.user == 'celeryuser'
-        assert mb.password == 'celerypassword'
-        assert mb.database_name == 'celerydatabase'
+        assert mb.user == CELERY_USER
+        assert mb.password == CELERY_PASSWORD
+        assert mb.database_name == CELERY_DATABASE
 
         # same uri, change some parameters in backend settings
         self.app.conf.mongodb_backend_settings = {
@@ -109,65 +148,93 @@ class test_MongoBackend:
             },
         }
         mb = MongoBackend(app=self.app, url=uri)
-        assert mb.mongo_host == [
-            'mongo1.example.com:27017',
-            'mongo2.example.com:27017',
-            'mongo3.example.com:27017',
-        ]
+        assert mb.mongo_host == MONGODB_BACKEND_HOST
         assert mb.options == dict(
             mb._prepare_client_options(),
             replicaset='rs1',
             socketKeepAlive=True,
         )
         assert mb.user == 'backenduser'
-        assert mb.password == 'celerypassword'
+        assert mb.password == CELERY_PASSWORD
         assert mb.database_name == 'another_db'
 
         mb = MongoBackend(app=self.app, url='mongodb://')
 
-    def test_init_mongodb_dns_seedlist(self):
-        Name = pytest.importorskip('dns.name').Name
-        TXT = pytest.importorskip('dns.rdtypes.ANY.TXT').TXT
-        SRV = pytest.importorskip('dns.rdtypes.IN.SRV').SRV
-
+    @pytest.mark.skipif(dns.version.MAJOR > 1,
+                        reason="For dnspython version > 1, pymongo's"
+                               "srv_resolver calls resolver.resolve")
+    @pytest.mark.skipif(pymongo.version_tuple[0] > 3,
+                        reason="For pymongo version > 3, options returns ssl")
+    def test_init_mongodb_dnspython1_pymongo3_seedlist(self):
+        resolver = fake_resolver_dnspython()
         self.app.conf.mongodb_backend_settings = None
 
-        def mock_resolver(_, rdtype, rdclass=None, lifetime=None, **kwargs):
-
-            if rdtype == 'SRV':
-                return [
-                    SRV(0, 0, 0, 0, 27017, Name(labels=hostname))
-                    for hostname in [
-                        b'mongo1.example.com'.split(b'.'),
-                        b'mongo2.example.com'.split(b'.'),
-                        b'mongo3.example.com'.split(b'.')
-                    ]
-                ]
-            elif rdtype == 'TXT':
-                return [TXT(0, 0, [b'replicaSet=rs0'])]
-
-        # uri with user, password, database name, replica set,
-        # DNS seedlist format
-        uri = ('srv://'
-               'celeryuser:celerypassword@'
-               'dns-seedlist-host.example.com/'
-               'celerydatabase')
-
-        with patch('dns.resolver.query', side_effect=mock_resolver):
-            mb = MongoBackend(app=self.app, url=uri)
-            assert mb.mongo_host == [
-                'mongo1.example.com:27017',
-                'mongo2.example.com:27017',
-                'mongo3.example.com:27017',
-            ]
+        with patch('dns.resolver.query', side_effect=resolver):
+            mb = self.perform_seedlist_assertions()
             assert mb.options == dict(
                 mb._prepare_client_options(),
                 replicaset='rs0',
                 ssl=True
             )
-            assert mb.user == 'celeryuser'
-            assert mb.password == 'celerypassword'
-            assert mb.database_name == 'celerydatabase'
+
+    @pytest.mark.skipif(dns.version.MAJOR <= 1,
+                        reason="For dnspython versions 1.X, pymongo's"
+                               "srv_resolver calls resolver.query")
+    @pytest.mark.skipif(pymongo.version_tuple[0] > 3,
+                        reason="For pymongo version > 3, options returns ssl")
+    def test_init_mongodb_dnspython2_pymongo3_seedlist(self):
+        resolver = fake_resolver_dnspython()
+        self.app.conf.mongodb_backend_settings = None
+
+        with patch('dns.resolver.resolve', side_effect=resolver):
+            mb = self.perform_seedlist_assertions()
+            assert mb.options == dict(
+                mb._prepare_client_options(),
+                replicaset='rs0',
+                ssl=True
+            )
+
+    @pytest.mark.skipif(dns.version.MAJOR > 1,
+                        reason="For dnspython version >= 2, pymongo's"
+                               "srv_resolver calls resolver.resolve")
+    @pytest.mark.skipif(pymongo.version_tuple[0] <= 3,
+                        reason="For pymongo version > 3, options returns tls")
+    def test_init_mongodb_dnspython1_pymongo4_seedlist(self):
+        resolver = fake_resolver_dnspython()
+        self.app.conf.mongodb_backend_settings = None
+
+        with patch('dns.resolver.query', side_effect=resolver):
+            mb = self.perform_seedlist_assertions()
+            assert mb.options == dict(
+                mb._prepare_client_options(),
+                replicaset='rs0',
+                tls=True
+            )
+
+    @pytest.mark.skipif(dns.version.MAJOR <= 1,
+                        reason="For dnspython versions 1.X, pymongo's"
+                               "srv_resolver calls resolver.query")
+    @pytest.mark.skipif(pymongo.version_tuple[0] <= 3,
+                        reason="For pymongo version > 3, options returns tls")
+    def test_init_mongodb_dnspython2_pymongo4_seedlist(self):
+        resolver = fake_resolver_dnspython()
+        self.app.conf.mongodb_backend_settings = None
+
+        with patch('dns.resolver.resolve', side_effect=resolver):
+            mb = self.perform_seedlist_assertions()
+            assert mb.options == dict(
+                mb._prepare_client_options(),
+                replicaset='rs0',
+                tls=True
+            )
+
+    def perform_seedlist_assertions(self):
+        mb = MongoBackend(app=self.app, url=MONGODB_SEEDLIST_URI)
+        assert mb.mongo_host == MONGODB_BACKEND_HOST
+        assert mb.user == CELERY_USER
+        assert mb.password == CELERY_PASSWORD
+        assert mb.database_name == CELERY_DATABASE
+        return mb
 
     def test_ensure_mongodb_uri_compliance(self):
         mb = MongoBackend(app=self.app, url=None)
@@ -234,8 +301,8 @@ class test_MongoBackend:
             connection = mb._get_connection()
             mock_Connection.assert_called_once_with(
                 host=['localhost:27017'],
-                username='celeryuser',
-                password='celerypassword',
+                username=CELERY_USER,
+                password=CELERY_PASSWORD,
                 authmechanism='SCRAM-SHA-256',
                 **mb._prepare_client_options()
             )
@@ -273,8 +340,6 @@ class test_MongoBackend:
 
         assert database is mock_database
         assert self.backend.__dict__['database'] is mock_database
-        mock_database.authenticate.assert_called_once_with(
-            MONGODB_USER, MONGODB_PASSWORD, source=self.backend.database_name)
 
     @patch('celery.backends.mongodb.MongoBackend._get_connection')
     def test_get_database_no_existing_no_auth(self, mock_get_connection):
@@ -290,7 +355,6 @@ class test_MongoBackend:
         database = self.backend.database
 
         assert database is mock_database
-        mock_database.authenticate.assert_not_called()
         assert self.backend.__dict__['database'] is mock_database
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
@@ -362,6 +426,28 @@ class test_MongoBackend:
         assert list(sorted([
             'status', 'task_id', 'date_done',
             'traceback', 'result', 'children',
+        ])) == list(sorted(ret_val.keys()))
+
+    @patch('celery.backends.mongodb.MongoBackend._get_database')
+    def test_get_task_meta_for_result_extended(self, mock_get_database):
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
+
+        mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
+        mock_collection = Mock()
+        mock_collection.find_one.return_value = MagicMock()
+
+        mock_get_database.return_value = mock_database
+        mock_database.__getitem__.return_value = mock_collection
+
+        self.app.conf.result_extended = True
+        ret_val = self.backend._get_task_meta_for(sentinel.task_id)
+
+        mock_get_database.assert_called_once_with()
+        mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
+        assert list(sorted([
+            'status', 'task_id', 'date_done',
+            'traceback', 'result', 'children',
+            'name', 'args', 'queue', 'kwargs', 'worker', 'retries',
         ])) == list(sorted(ret_val.keys()))
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
@@ -477,7 +563,10 @@ class test_MongoBackend:
         mock_database.__getitem__ = Mock(name='MD.__getitem__')
         mock_database.__getitem__.return_value = mock_collection
 
-        self.backend.app.now = datetime.datetime.utcnow
+        def now_func():
+            return datetime.datetime.now(datetime.timezone.utc)
+
+        self.backend.app.now = now_func
         self.backend.cleanup()
 
         mock_get_database.assert_called_once_with()
@@ -488,19 +577,6 @@ class test_MongoBackend:
 
         self.backend.cleanup()
         mock_collection.delete_many.assert_not_called()
-
-    def test_get_database_authfailure(self):
-        x = MongoBackend(app=self.app)
-        x._get_connection = Mock()
-        conn = x._get_connection.return_value = {}
-        db = conn[x.database_name] = Mock()
-        db.authenticate.return_value = False
-        x.user = 'jerry'
-        x.password = 'cere4l'
-        with pytest.raises(ImproperlyConfigured):
-            x._get_database()
-        db.authenticate.assert_called_with('jerry', 'cere4l',
-                                           source=x.database_name)
 
     def test_prepare_client_options(self):
         with patch('pymongo.version_tuple', new=(3, 0, 3)):
@@ -529,7 +605,7 @@ class test_MongoBackend:
             '/work4us?replicaSet=rs&ssl=true'
         )
         worker = self.app.Worker()
-        with mock.stdouts():
+        with conftest.stdouts():
             worker.on_start()
             assert worker.startup_info()
 
@@ -618,7 +694,7 @@ SUCCESS_RESULT_TEST_DATA = [
         "serializers": ["bson", "pickle", "yaml"],
     },
     {
-        "result": datetime.datetime(2000, 1, 1, 0, 0, 0, 0, tzinfo=pytz.utc),
+        "result": datetime.datetime(2000, 1, 1, 0, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
         "serializers": ["pickle", "yaml"],
     },
     # custom types
@@ -657,7 +733,7 @@ class test_MongoBackend_store_get_result:
         backend = mongo_backend_factory(serializer=serializer)
         backend.store_result(TASK_ID, result, 'SUCCESS')
         recovered = backend.get_result(TASK_ID)
-        assert type(recovered) == result_type
+        assert isinstance(recovered, result_type)
         assert recovered == result
 
     @pytest.mark.parametrize("serializer",
@@ -681,5 +757,5 @@ class test_MongoBackend_store_get_result:
         traceback = 'Traceback:\n  Exception: Basic Exception\n'
         backend.store_result(TASK_ID, exception, 'FAILURE', traceback)
         recovered = backend.get_result(TASK_ID)
-        assert type(recovered) == type(exception)
+        assert isinstance(recovered, type(exception))
         assert recovered.args == exception.args

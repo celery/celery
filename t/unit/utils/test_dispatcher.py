@@ -182,3 +182,16 @@ class test_Signal:
         del a, result, expected
         garbage_collect()
         self._testIsClean(a_signal)
+
+    def test_disconnect_retryable_decorator(self):
+        # Regression test for https://github.com/celery/celery/issues/9119
+
+        @a_signal.connect(sender=self, retry=True)
+        def succeeds_eventually(val, **kwargs):
+            return val
+
+        try:
+            a_signal.send(sender=self, val='test')
+        finally:
+            a_signal.disconnect(succeeds_eventually, sender=self)
+        self._testIsClean(a_signal)

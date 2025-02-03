@@ -1,17 +1,17 @@
+import copy
+import re
 from contextlib import contextmanager
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
 from kombu.serialization import prepare_accept_content
-from kombu.utils.encoding import ensure_bytes
+from kombu.utils.encoding import bytes_to_str, ensure_bytes
 
 import celery
 from celery import chord, group, signature, states, uuid
 from celery.app.task import Context, Task
-from celery.backends.base import (BaseBackend, DisabledBackend,
-                                  KeyValueStoreBackend, _nulldict)
-from celery.exceptions import (BackendGetMetaError, BackendStoreError,
-                               ChordError, TimeoutError)
+from celery.backends.base import BaseBackend, DisabledBackend, KeyValueStoreBackend, _nulldict
+from celery.exceptions import BackendGetMetaError, BackendStoreError, ChordError, SecurityError, TimeoutError
 from celery.result import result_from_tuple
 from celery.utils import serialization
 from celery.utils.functional import pass1
@@ -69,7 +69,7 @@ class test_serialization:
 
 class test_Backend_interface:
 
-    def setup(self):
+    def setup_method(self):
         self.app.conf.accept_content = ['json']
 
     def test_accept_precedence(self):
@@ -125,6 +125,18 @@ class test_Backend_interface:
         assert meta['kwargs'] == kwargs
         assert meta['queue'] == 'celery'
 
+    def test_get_result_meta_stamps_attribute_error(self):
+        class Request:
+            pass
+        self.app.conf.result_extended = True
+        b1 = BaseBackend(self.app)
+        meta = b1._get_result_meta(result={'fizz': 'buzz'},
+                                   state=states.SUCCESS, traceback=None,
+                                   request=Request())
+        assert meta['status'] == states.SUCCESS
+        assert meta['result'] == {'fizz': 'buzz'}
+        assert meta['traceback'] is None
+
     def test_get_result_meta_encoded(self):
         self.app.conf.result_extended = True
         b1 = BaseBackend(self.app)
@@ -164,10 +176,34 @@ class test_Backend_interface:
         assert meta['kwargs'] == kwargs
         assert meta['queue'] == 'celery'
 
+    def test_get_result_meta_format_date(self):
+        import datetime
+        self.app.conf.result_extended = True
+        b1 = BaseBackend(self.app)
+        args = ['a', 'b']
+        kwargs = {'foo': 'bar'}
+
+        request = Context(args=args, kwargs=kwargs)
+        meta = b1._get_result_meta(result={'fizz': 'buzz'},
+                                   state=states.SUCCESS, traceback=None,
+                                   request=request, format_date=True)
+        assert isinstance(meta['date_done'], str)
+
+        self.app.conf.result_extended = True
+        b2 = BaseBackend(self.app)
+        args = ['a', 'b']
+        kwargs = {'foo': 'bar'}
+
+        request = Context(args=args, kwargs=kwargs)
+        meta = b2._get_result_meta(result={'fizz': 'buzz'},
+                                   state=states.SUCCESS, traceback=None,
+                                   request=request, format_date=False)
+        assert isinstance(meta['date_done'], datetime.datetime)
+
 
 class test_BaseBackend_interface:
 
-    def setup(self):
+    def setup_method(self):
         self.b = BaseBackend(self.app)
 
         @self.app.task(shared=False)
@@ -261,7 +297,7 @@ class test_exception_pickle:
 
 class test_prepare_exception:
 
-    def setup(self):
+    def setup_method(self):
         self.b = BaseBackend(self.app)
 
     def test_unpickleable(self):
@@ -359,7 +395,7 @@ class DictBackend(BaseBackend):
 
 class test_BaseBackend_dict:
 
-    def setup(self):
+    def setup_method(self):
         self.b = DictBackend(app=self.app)
 
         @self.app.task(shared=False, bind=True)
@@ -581,6 +617,31 @@ class test_BaseBackend_dict:
         b = BaseBackend(app=self.app)
         assert b.exception_to_python(None) is None
 
+    def test_not_an_actual_exc_info(self):
+        pass
+
+    def test_not_an_exception_but_a_callable(self):
+        x = {
+            'exc_message': ('echo 1',),
+            'exc_type': 'system',
+            'exc_module': 'os'
+        }
+
+        with pytest.raises(SecurityError,
+                           match=re.escape(r"Expected an exception class, got os.system with payload ('echo 1',)")):
+            self.b.exception_to_python(x)
+
+    def test_not_an_exception_but_another_object(self):
+        x = {
+            'exc_message': (),
+            'exc_type': 'object',
+            'exc_module': 'builtins'
+        }
+
+        with pytest.raises(SecurityError,
+                           match=re.escape(r"Expected an exception class, got builtins.object with payload ()")):
+            self.b.exception_to_python(x)
+
     def test_exception_to_python_when_attribute_exception(self):
         b = BaseBackend(app=self.app)
         test_exception = {'exc_type': 'AttributeDoesNotExist',
@@ -625,7 +686,7 @@ class test_BaseBackend_dict:
 
 class test_KeyValueStoreBackend:
 
-    def setup(self):
+    def setup_method(self):
         self.b = KVBackend(app=self.app)
 
     def test_on_chord_part_return(self):
@@ -681,10 +742,56 @@ class test_KeyValueStoreBackend:
         stored_meta = self.b.decode(self.b.get(self.b.get_key_for_task(tid)))
         assert stored_meta['status'] == states.SUCCESS
 
+    def test_get_key_for_task_none_task_id(self):
+        with pytest.raises(ValueError):
+            self.b.get_key_for_task(None)
+
+    def test_get_key_for_group_none_group_id(self):
+        with pytest.raises(ValueError):
+            self.b.get_key_for_task(None)
+
+    def test_get_key_for_chord_none_group_id(self):
+        with pytest.raises(ValueError):
+            self.b.get_key_for_group(None)
+
     def test_strip_prefix(self):
         x = self.b.get_key_for_task('x1b34')
         assert self.b._strip_prefix(x) == 'x1b34'
         assert self.b._strip_prefix('x1b34') == 'x1b34'
+
+    def test_global_keyprefix(self):
+        global_keyprefix = "test_global_keyprefix"
+        app = copy.deepcopy(self.app)
+        app.conf.get('result_backend_transport_options', {}).update({"global_keyprefix": global_keyprefix})
+        b = KVBackend(app=app)
+        tid = uuid()
+        assert bytes_to_str(b.get_key_for_task(tid)) == f"{global_keyprefix}_celery-task-meta-{tid}"
+        assert bytes_to_str(b.get_key_for_group(tid)) == f"{global_keyprefix}_celery-taskset-meta-{tid}"
+        assert bytes_to_str(b.get_key_for_chord(tid)) == f"{global_keyprefix}_chord-unlock-{tid}"
+
+        global_keyprefix = "test_global_keyprefix_"
+        app = copy.deepcopy(self.app)
+        app.conf.get('result_backend_transport_options', {}).update({"global_keyprefix": global_keyprefix})
+        b = KVBackend(app=app)
+        tid = uuid()
+        assert bytes_to_str(b.get_key_for_task(tid)) == f"{global_keyprefix}celery-task-meta-{tid}"
+        assert bytes_to_str(b.get_key_for_group(tid)) == f"{global_keyprefix}celery-taskset-meta-{tid}"
+        assert bytes_to_str(b.get_key_for_chord(tid)) == f"{global_keyprefix}chord-unlock-{tid}"
+
+        global_keyprefix = "test_global_keyprefix:"
+        app = copy.deepcopy(self.app)
+        app.conf.get('result_backend_transport_options', {}).update({"global_keyprefix": global_keyprefix})
+        b = KVBackend(app=app)
+        tid = uuid()
+        assert bytes_to_str(b.get_key_for_task(tid)) == f"{global_keyprefix}celery-task-meta-{tid}"
+        assert bytes_to_str(b.get_key_for_group(tid)) == f"{global_keyprefix}celery-taskset-meta-{tid}"
+        assert bytes_to_str(b.get_key_for_chord(tid)) == f"{global_keyprefix}chord-unlock-{tid}"
+
+    def test_global_keyprefix_missing(self):
+        tid = uuid()
+        assert bytes_to_str(self.b.get_key_for_task(tid)) == f"celery-task-meta-{tid}"
+        assert bytes_to_str(self.b.get_key_for_group(tid)) == f"celery-taskset-meta-{tid}"
+        assert bytes_to_str(self.b.get_key_for_chord(tid)) == f"chord-unlock-{tid}"
 
     def test_get_many(self):
         for is_dict in True, False:
@@ -978,7 +1085,7 @@ class test_DisabledBackend:
 
 class test_as_uri:
 
-    def setup(self):
+    def setup_method(self):
         self.b = BaseBackend(
             app=self.app,
             url='sch://uuuu:pwpw@hostname.dom'
@@ -1166,3 +1273,15 @@ class test_backend_retries:
         finally:
             self.app.conf.result_backend_always_retry = prev
             self.app.conf.result_backend_max_retries = prev_max_retries
+
+    def test_result_backend_thread_safe(self):
+        # Should identify the backend as thread safe
+        self.app.conf.result_backend_thread_safe = True
+        b = BaseBackend(app=self.app)
+        assert b.thread_safe is True
+
+    def test_result_backend_not_thread_safe(self):
+        # Should identify the backend as not being thread safe
+        self.app.conf.result_backend_thread_safe = False
+        b = BaseBackend(app=self.app)
+        assert b.thread_safe is False

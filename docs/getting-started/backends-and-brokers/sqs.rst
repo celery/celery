@@ -15,7 +15,7 @@ the ``celery[sqs]`` :ref:`bundle <bundles>`:
 
 .. code-block:: console
 
-    $ pip install celery[sqs]
+    $ pip install "celery[sqs]"
 
 .. _broker-sqs-configuration:
 
@@ -38,13 +38,24 @@ encode the password so it can always be parsed correctly. For example:
 .. code-block:: python
 
     from kombu.utils.url import safequote
-    
+
     aws_access_key = safequote("ABCDEFGHIJKLMNOPQRST")
     aws_secret_key = safequote("ZYXK7NiynG/TogH8Nj+P9nlE73sq3")
-    
+
     broker_url = "sqs://{aws_access_key}:{aws_secret_key}@".format(
         aws_access_key=aws_access_key, aws_secret_key=aws_secret_key,
     )
+
+.. warning::
+
+    Don't use this setup option with django's ``debug=True``.
+    It may lead to security issues within deployed django apps.
+
+    In debug mode django shows environment variables and the SQS URL
+    may be exposed to the internet including your AWS access and secret keys.
+    Please turn off debug mode on your deployed django application or
+    consider a setup option described below.
+
 
 The login credentials can also be set using the environment variables
 :envvar:`AWS_ACCESS_KEY_ID` and :envvar:`AWS_SECRET_ACCESS_KEY`,
@@ -71,6 +82,8 @@ by configuring the :setting:`broker_transport_options` setting::
 
         http://aws.amazon.com/about-aws/globalinfrastructure/
 
+.. _sqs-visibility-timeout:
+
 Visibility Timeout
 ------------------
 
@@ -83,6 +96,9 @@ This option is set via the :setting:`broker_transport_options` setting::
     broker_transport_options = {'visibility_timeout': 3600}  # 1 hour.
 
 The default visibility timeout is 30 minutes.
+
+This option is used when creating the SQS queue and has no effect if
+using :ref:`predefined queues <predefined-queues>`.
 
 Polling Interval
 ----------------
@@ -132,6 +148,8 @@ using the :setting:`broker_transport_options` setting::
 
     broker_transport_options = {'queue_name_prefix': 'celery-'}
 
+.. _predefined-queues:
+
 Predefined Queues
 -----------------
 
@@ -149,6 +167,10 @@ setting::
             }
         }
     }
+
+When using this option, the visibility timeout should be set in the SQS queue
+(in AWS) rather than via the :ref:`visibility timeout <sqs-visibility-timeout>`
+option.
 
 Back-off policy
 ------------------------
@@ -198,7 +220,7 @@ STS token authentication
 https://docs.aws.amazon.com/cli/latest/reference/sts/assume-role.html
 
 AWS STS authentication is supported by using the ``sts_role_arn`` and ``sts_token_timeout`` broker transport options. ``sts_role_arn`` is the assumed IAM role ARN we use to authorize our access to SQS.
-``sts_token_timeout`` is the token timeout, defaults (and minimum) to 900 seconds. After the mentioned period, a new token will be created.
+``sts_token_timeout`` is the token timeout, defaults (and minimum) to 900 seconds. After the mentioned period, a new token will be created::
 
     broker_transport_options = {
         'predefined_queues': {
@@ -223,31 +245,65 @@ Caveats
 - If a task isn't acknowledged within the ``visibility_timeout``,
   the task will be redelivered to another worker and executed.
 
-    This causes problems with ETA/countdown/retry tasks where the
-    time to execute exceeds the visibility timeout; in fact if that
-    happens it will be executed again, and again in a loop.
+  This causes problems with ETA/countdown/retry tasks where the
+  time to execute exceeds the visibility timeout; in fact if that
+  happens it will be executed again, and again in a loop.
 
-    So you have to increase the visibility timeout to match
-    the time of the longest ETA you're planning to use.
+  So you have to increase the visibility timeout to match
+  the time of the longest ETA you're planning to use.
 
-    Note that Celery will redeliver messages at worker shutdown,
-    so having a long visibility timeout will only delay the redelivery
-    of 'lost' tasks in the event of a power failure or forcefully terminated
-    workers.
+  Note that Celery will redeliver messages at worker shutdown,
+  so having a long visibility timeout will only delay the redelivery
+  of 'lost' tasks in the event of a power failure or forcefully terminated
+  workers.
 
-    Periodic tasks won't be affected by the visibility timeout,
-    as it is a concept separate from ETA/countdown.
+  Periodic tasks won't be affected by the visibility timeout,
+  as it is a concept separate from ETA/countdown.
 
-    The maximum visibility timeout supported by AWS as of this writing
-    is 12 hours (43200 seconds)::
+  The maximum visibility timeout supported by AWS as of this writing
+  is 12 hours (43200 seconds)::
 
-        broker_transport_options = {'visibility_timeout': 43200}
+      broker_transport_options = {'visibility_timeout': 43200}
 
 - SQS doesn't yet support worker remote control commands.
 
 - SQS doesn't yet support events, and so cannot be used with
   :program:`celery events`, :program:`celerymon`, or the Django Admin
   monitor.
+
+- With FIFO queues it might be necessary to set additional message properties such as ``MessageGroupId`` and ``MessageDeduplicationId`` when publishing a message.
+
+  Message properties can be passed as keyword arguments to :meth:`~celery.app.task.Task.apply_async`:
+
+  .. code-block:: python
+
+    message_properties = {
+        'MessageGroupId': '<YourMessageGroupId>',
+        'MessageDeduplicationId': '<YourMessageDeduplicationId>'
+    }
+    task.apply_async(**message_properties)
+
+- During :ref:`shutdown <worker-stopping>`, the worker will attempt to re-queue any unacknowledged messages
+  with :setting:`task_acks_late` enabled. However, if the worker is terminated forcefully
+  (:ref:`cold shutdown <worker-cold-shutdown>`), the worker might not be able to re-queue the tasks on time,
+  and they will not be consumed again until the :ref:`sqs-visibility-timeout` has passed. This creates a
+  problem when the :ref:`sqs-visibility-timeout` is very high and a worker needs to shut down just after it has
+  received a task. If the task is not re-queued in such case, it will need to wait for the long visibility timeout
+  to pass before it can be consumed again, leading to potentially very long delays in tasks execution.
+
+  The :ref:`soft shutdown <worker-soft-shutdown>` introduces a time-limited warm shutdown phase just before
+  the :ref:`cold shutdown <worker-cold-shutdown>`. This time window significantly increases the chances of
+  re-queuing the tasks during shutdown which mitigates the problem of long visibility timeouts.
+
+  To enable the :ref:`soft shutdown <worker-soft-shutdown>`, set the :setting:`worker_soft_shutdown_timeout` to a value
+  greater than 0. The value must be an float describing the number of seconds. During this time, the worker will
+  continue to process the running tasks until the timeout expires, after which the :ref:`cold shutdown <worker-cold-shutdown>`
+  will be initiated automatically to terminate the worker gracefully.
+
+  If the :ref:`REMAP_SIGTERM <worker-REMAP_SIGTERM>` is configured to SIGQUIT in the environment variables, and
+  the :setting:`worker_soft_shutdown_timeout` is set, the worker will initiate the :ref:`soft shutdown <worker-soft-shutdown>`
+  when it receives the :sig:`TERM` signal (*and* the :sig:`QUIT` signal).
+
 
 .. _sqs-results-configuration:
 

@@ -6,6 +6,7 @@ from collections import deque
 from contextlib import contextmanager
 from weakref import proxy
 
+from dateutil.parser import isoparse
 from kombu.utils.objects import cached_property
 from vine import Thenable, barrier, promise
 
@@ -14,7 +15,6 @@ from ._state import _set_task_join_will_block, task_join_will_block
 from .app import app_or_default
 from .exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
 from .utils.graph import DependencyGraph, GraphFormatter
-from .utils.iso8601 import parse_iso8601
 
 try:
     import tblib
@@ -28,8 +28,8 @@ __all__ = (
 
 E_WOULDBLOCK = """\
 Never call result.get() within a task!
-See http://docs.celeryq.org/en/latest/userguide/tasks.html\
-#task-synchronous-subtasks
+See https://docs.celeryq.dev/en/latest/userguide/tasks.html\
+#avoid-launching-synchronous-subtasks
 """
 
 
@@ -161,6 +161,30 @@ class AsyncResult(ResultBase):
                                 terminate=terminate, signal=signal,
                                 reply=wait, timeout=timeout)
 
+    def revoke_by_stamped_headers(self, headers, connection=None, terminate=False, signal=None,
+                                  wait=False, timeout=None):
+        """Send revoke signal to all workers only for tasks with matching headers values.
+
+        Any worker receiving the task, or having reserved the
+        task, *must* ignore it.
+        All header fields *must* match.
+
+        Arguments:
+            headers (dict[str, Union(str, list)]): Headers to match when revoking tasks.
+            terminate (bool): Also terminate the process currently working
+                on the task (if any).
+            signal (str): Name of signal to send to process if terminate.
+                Default is TERM.
+            wait (bool): Wait for replies from workers.
+                The ``timeout`` argument specifies the seconds to wait.
+                Disabled by default.
+            timeout (float): Time in seconds to wait for replies when
+                ``wait`` is enabled.
+        """
+        self.app.control.revoke_by_stamped_headers(headers, connection=connection,
+                                                   terminate=terminate, signal=signal,
+                                                   reply=wait, timeout=timeout)
+
     def get(self, timeout=None, propagate=True, interval=0.5,
             no_ack=True, follow_parents=True, callback=None, on_message=None,
             on_interval=None, disable_sync_subtasks=True,
@@ -181,7 +205,10 @@ class AsyncResult(ResultBase):
 
         Arguments:
             timeout (float): How long to wait, in seconds, before the
-                operation times out.
+                operation times out. This is the setting for the publisher
+                (celery client) and is different from `timeout` parameter of
+                `@app.task`, which is the setting for the worker. The task
+                isn't terminated even if timeout occurs.
             propagate (bool): Re-raise exception if the task failed.
             interval (float): Time to wait (in seconds) before retrying to
                 retrieve the result.  Note that this does not have any effect
@@ -300,13 +327,15 @@ class AsyncResult(ResultBase):
     def iterdeps(self, intermediate=False):
         stack = deque([(None, self)])
 
+        is_incomplete_stream = not intermediate
+
         while stack:
             parent, node = stack.popleft()
             yield parent, node
             if node.ready():
                 stack.extend((node, child) for child in node.children or [])
             else:
-                if not intermediate:
+                if is_incomplete_stream:
                     raise IncompleteStream()
 
     def ready(self):
@@ -370,10 +399,6 @@ class AsyncResult(ResultBase):
         elif isinstance(other, str):
             return other == self.id
         return NotImplemented
-
-    def __ne__(self, other):
-        res = self.__eq__(other)
-        return True if res is NotImplemented else not res
 
     def __copy__(self):
         return self.__class__(
@@ -508,7 +533,7 @@ class AsyncResult(ResultBase):
         """UTC date and time."""
         date_done = self._get_task_meta().get('date_done')
         if date_done and not isinstance(date_done, datetime.datetime):
-            return parse_iso8601(date_done)
+            return isoparse(date_done)
         return date_done
 
     @property
@@ -629,8 +654,11 @@ class ResultSet(ResultBase):
     def completed_count(self):
         """Task completion count.
 
+        Note that `complete` means `successful` in this context. In other words, the
+        return value of this method is the number of ``successful`` tasks.
+
         Returns:
-            int: the number of tasks completed.
+            int: the number of complete (i.e. successful) tasks.
         """
         return sum(int(result.successful()) for result in self.results)
 
@@ -830,10 +858,6 @@ class ResultSet(ResultBase):
             return other.results == self.results
         return NotImplemented
 
-    def __ne__(self, other):
-        res = self.__eq__(other)
-        return True if res is NotImplemented else not res
-
     def __repr__(self):
         return f'<{type(self).__name__}: [{", ".join(r.id for r in self.results)}]>'
 
@@ -925,10 +949,6 @@ class GroupResult(ResultSet):
             return other == self.id
         return NotImplemented
 
-    def __ne__(self, other):
-        res = self.__eq__(other)
-        return True if res is NotImplemented else not res
-
     def __repr__(self):
         return f'<{type(self).__name__}: {self.id} [{", ".join(r.id for r in self.results)}]>'
 
@@ -964,13 +984,14 @@ class GroupResult(ResultSet):
 class EagerResult(AsyncResult):
     """Result that we know has already been executed."""
 
-    def __init__(self, id, ret_value, state, traceback=None):
+    def __init__(self, id, ret_value, state, traceback=None, name=None):
         # pylint: disable=super-init-not-called
         # XXX should really not be inheriting from AsyncResult
         self.id = id
         self._result = ret_value
         self._state = state
         self._traceback = traceback
+        self._name = name
         self.on_ready = promise()
         self.on_ready(self)
 
@@ -1023,6 +1044,7 @@ class EagerResult(AsyncResult):
             'result': self._result,
             'status': self._state,
             'traceback': self._traceback,
+            'name': self._name,
         }
 
     @property

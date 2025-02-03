@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from pickle import dumps, loads
 from unittest.mock import Mock, patch
@@ -10,12 +11,12 @@ from celery.exceptions import ImproperlyConfigured
 
 pytest.importorskip('sqlalchemy')
 
-from celery.backends.database import (DatabaseBackend, retry, session,  # noqa
-                                      session_cleanup)
+from celery.backends.database import DatabaseBackend, retry, session, session_cleanup  # noqa
 from celery.backends.database.models import Task, TaskSet  # noqa
-from celery.backends.database.session import (  # noqa
-    PREPARE_MODELS_MAX_RETRIES, ResultModelBase, SessionManager)
+from celery.backends.database.session import PREPARE_MODELS_MAX_RETRIES, ResultModelBase, SessionManager  # noqa
 from t import skip  # noqa
+
+DB_PATH = "test.db"
 
 
 class SomeClass:
@@ -47,8 +48,14 @@ class test_session_cleanup:
 @skip.if_pypy
 class test_DatabaseBackend:
 
-    def setup(self):
-        self.uri = 'sqlite:///test.db'
+    @pytest.fixture(autouse=True)
+    def remmove_db(self):
+        yield
+        if os.path.exists(DB_PATH):
+            os.remove(DB_PATH)
+
+    def setup_method(self):
+        self.uri = 'sqlite:///' + DB_PATH
         self.app.conf.result_serializer = 'pickle'
 
     def test_retry_helper(self):
@@ -75,6 +82,9 @@ class test_DatabaseBackend:
             'task': 'foo',
             'group': 'bar',
         }
+        # disable table creation because schema foo and bar do not exist
+        # and aren't created if they don't exist.
+        self.app.conf.database_create_tables_at_setup = False
         tb = DatabaseBackend(self.uri, app=self.app)
         assert tb.task_cls.__table__.schema == 'foo'
         assert tb.task_cls.__table__.c.id.default.schema == 'foo'
@@ -89,6 +99,14 @@ class test_DatabaseBackend:
         tb = DatabaseBackend(self.uri, app=self.app)
         assert tb.task_cls.__table__.name == 'foo'
         assert tb.taskset_cls.__table__.name == 'bar'
+
+    def test_table_creation_at_setup_config(self):
+        from sqlalchemy import inspect
+        self.app.conf.database_create_tables_at_setup = True
+        tb = DatabaseBackend(self.uri, app=self.app)
+        engine = tb.session_manager.get_engine(tb.url)
+        inspect(engine).has_table("celery_taskmeta")
+        inspect(engine).has_table("celery_tasksetmeta")
 
     def test_missing_task_id_is_PENDING(self):
         tb = DatabaseBackend(self.uri, app=self.app)
@@ -221,8 +239,8 @@ class test_DatabaseBackend:
 
 @skip.if_pypy
 class test_DatabaseBackend_result_extended():
-    def setup(self):
-        self.uri = 'sqlite:///test.db'
+    def setup_method(self):
+        self.uri = 'sqlite:///' + DB_PATH
         self.app.conf.result_serializer = 'pickle'
         self.app.conf.result_extended = True
 
@@ -410,7 +428,12 @@ class test_SessionManager:
         from sqlalchemy.dialects.sqlite import dialect
         from sqlalchemy.exc import DatabaseError
 
-        sqlite = dialect.dbapi()
+        if hasattr(dialect, 'dbapi'):
+            # Method name in SQLAlchemy < 2.0
+            sqlite = dialect.dbapi()
+        else:
+            # Newer method name in SQLAlchemy 2.0
+            sqlite = dialect.import_dbapi()
         manager = SessionManager()
         engine = manager.get_engine('dburi')
 

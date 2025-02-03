@@ -2,29 +2,28 @@ import collections
 import re
 import tempfile
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from time import monotonic, sleep
 
 import pytest
-import pytest_subtests  # noqa: F401
+import pytest_subtests  # noqa
 
 from celery import chain, chord, group, signature
 from celery.backends.base import BaseKeyValueStoreBackend
+from celery.canvas import StampingVisitor
 from celery.exceptions import ImproperlyConfigured, TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet
+from celery.signals import before_task_publish, task_received
 
 from . import tasks
-from .conftest import (TEST_BACKEND, get_active_redis_channels,
-                       get_redis_connection)
-from .tasks import (ExpectedException, add, add_chord_to_chord, add_replaced,
-                    add_to_all, add_to_all_to_chord, build_chain_inside_task,
-                    collect_ids, delayed_sum, delayed_sum_with_soft_guard,
-                    errback_new_style, errback_old_style, fail, fail_replaced,
-                    identity, ids, print_unicode, raise_error, redis_count,
-                    redis_echo, replace_with_chain,
-                    replace_with_chain_which_raises, replace_with_empty_chain,
-                    retry_once, return_exception, return_priority,
-                    second_order_replace1, tsum, write_to_file_and_return_int)
+from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connection
+from .tasks import (ExpectedException, StampOnReplace, add, add_chord_to_chord, add_replaced, add_to_all,
+                    add_to_all_to_chord, build_chain_inside_task, collect_ids, delayed_sum,
+                    delayed_sum_with_soft_guard, errback_new_style, errback_old_style, fail, fail_replaced, identity,
+                    ids, mul, print_unicode, raise_error, redis_count, redis_echo, redis_echo_group_id,
+                    replace_with_chain, replace_with_chain_which_raises, replace_with_empty_chain,
+                    replace_with_stamped_task, retry_once, return_exception, return_priority, second_order_replace1,
+                    tsum, write_to_file_and_return_int, xsum)
 
 RETRYABLE_EXCEPTIONS = (OSError, ConnectionError, TimeoutError)
 
@@ -34,7 +33,6 @@ def is_retryable_exception(exc):
 
 
 TIMEOUT = 60
-
 
 _flaky = pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
 _timeout = pytest.mark.timeout(timeout=300)
@@ -51,7 +49,7 @@ def await_redis_echo(expected_msgs, redis_key="redis-echo", timeout=TIMEOUT):
     redis_connection = get_redis_connection()
 
     if isinstance(expected_msgs, (str, bytes, bytearray)):
-        expected_msgs = (expected_msgs, )
+        expected_msgs = (expected_msgs,)
     expected_msgs = collections.Counter(
         e if not isinstance(e, str) else e.encode("utf-8")
         for e in expected_msgs
@@ -67,10 +65,34 @@ def await_redis_echo(expected_msgs, redis_key="redis-echo", timeout=TIMEOUT):
             )
         retrieved_key, msg = maybe_key_msg
         assert retrieved_key.decode("utf-8") == redis_key
-        expected_msgs[msg] -= 1     # silently accepts unexpected messages
+        expected_msgs[msg] -= 1  # silently accepts unexpected messages
 
     # There should be no more elements - block momentarily
     assert redis_connection.blpop(redis_key, min(1, timeout)) is None
+
+
+def await_redis_list_message_length(expected_length, redis_key="redis-group-ids", timeout=TIMEOUT):
+    """
+    Helper to wait for a specified or well-known redis key to contain a string.
+    """
+    sleep(1)
+    redis_connection = get_redis_connection()
+
+    check_interval = 0.1
+    check_max = int(timeout / check_interval)
+
+    for i in range(check_max + 1):
+        length = redis_connection.llen(redis_key)
+
+        if length == expected_length:
+            break
+
+        sleep(check_interval)
+    else:
+        raise TimeoutError(f'{redis_key!r} has length of {length}, but expected to be of length {expected_length}')
+
+    sleep(min(1, timeout))
+    assert redis_connection.llen(redis_key) == expected_length
 
 
 def await_redis_count(expected_count, redis_key="redis-count", timeout=TIMEOUT):
@@ -100,6 +122,13 @@ def await_redis_count(expected_count, redis_key="redis-count", timeout=TIMEOUT):
     assert int(redis_connection.get(redis_key)) == expected_count
 
 
+def compare_group_ids_in_redis(redis_key='redis-group-ids'):
+    redis_connection = get_redis_connection()
+    actual = redis_connection.lrange(redis_key, 0, -1)
+    assert len(actual) >= 2, 'Expected at least 2 group ids in redis'
+    assert actual[0] == actual[1], 'Expected group ids to be equal'
+
+
 class test_link_error:
     @flaky
     def test_link_error_eager(self):
@@ -125,34 +154,33 @@ class test_link_error:
         assert result.get(timeout=TIMEOUT, propagate=False) == exception
 
     @flaky
-    def test_link_error_callback_retries(self):
+    def test_link_error_callback_retries(self, manager):
         exception = ExpectedException("Task expected to fail", "test")
         result = fail.apply_async(
             args=("test",),
             link_error=retry_once.s(countdown=None)
         )
-        assert result.get(timeout=TIMEOUT, propagate=False) == exception
+        assert result.get(timeout=TIMEOUT / 10, propagate=False) == exception
 
     @flaky
     def test_link_error_using_signature_eager(self):
         fail = signature('t.integration.tasks.fail', args=("test",))
-        retrun_exception = signature('t.integration.tasks.return_exception')
+        return_exception = signature('t.integration.tasks.return_exception')
 
-        fail.link_error(retrun_exception)
+        fail.link_error(return_exception)
 
         exception = ExpectedException("Task expected to fail", "test")
         assert (fail.apply().get(timeout=TIMEOUT, propagate=False), True) == (
             exception, True)
 
-    @flaky
-    def test_link_error_using_signature(self):
+    def test_link_error_using_signature(self, manager):
         fail = signature('t.integration.tasks.fail', args=("test",))
-        retrun_exception = signature('t.integration.tasks.return_exception')
+        return_exception = signature('t.integration.tasks.return_exception')
 
-        fail.link_error(retrun_exception)
+        fail.link_error(return_exception)
 
         exception = ExpectedException("Task expected to fail", "test")
-        assert (fail.delay().get(timeout=TIMEOUT, propagate=False), True) == (
+        assert (fail.delay().get(timeout=TIMEOUT / 10, propagate=False), True) == (
             exception, True)
 
 
@@ -170,16 +198,16 @@ class test_chain:
 
     @flaky
     def test_complex_chain(self, manager):
+        g = group(add.s(i) for i in range(4))
         c = (
             add.s(2, 2) | (
                 add.s(4) | add_replaced.s(8) | add.s(16) | add.s(32)
-            ) |
-            group(add.s(i) for i in range(4))
+            ) | g
         )
         res = c()
         assert res.get(timeout=TIMEOUT) == [64, 65, 66, 67]
 
-    @flaky
+    @pytest.mark.xfail(raises=TimeoutError, reason="Task is timeout")
     def test_group_results_in_chain(self, manager):
         # This adds in an explicit test for the special case added in commit
         # 1e3fcaa969de6ad32b52a3ed8e74281e5e5360e6
@@ -191,7 +219,7 @@ class test_chain:
             )
         )
         res = c()
-        assert res.get(timeout=TIMEOUT) == [4, 5]
+        assert res.get(timeout=TIMEOUT / 10) == [4, 5]
 
     def test_chain_of_chain_with_a_single_task(self, manager):
         sig = signature('any_taskname', queue='any_q')
@@ -338,7 +366,7 @@ class test_chain:
         except NotImplementedError as e:
             raise pytest.skip(e.args[0])
 
-        eta = datetime.utcnow() + timedelta(seconds=10)
+        eta = datetime.now(timezone.utc) + timedelta(seconds=10)
         c = chain(
             group(
                 add.s(1, 2),
@@ -477,8 +505,8 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [8, 8]
 
-    @flaky
-    def test_nested_chain_group_lone(self, manager):
+    @pytest.mark.xfail(raises=TimeoutError, reason="Task is timeout")
+    def test_nested_chain_group_lone(self, manager):  # Fails with Redis 5.x
         """
         Test that a lone group in a chain completes.
         """
@@ -486,7 +514,7 @@ class test_chain:
             group(identity.s(42), identity.s(42)),  # [42, 42]
         )
         res = sig.delay()
-        assert res.get(timeout=TIMEOUT) == [42, 42]
+        assert res.get(timeout=TIMEOUT / 10) == [42, 42]
 
     def test_nested_chain_group_mid(self, manager):
         """
@@ -498,9 +526,9 @@ class test_chain:
             raise pytest.skip(e.args[0])
 
         sig = chain(
-            identity.s(42),                         # 42
-            group(identity.s(), identity.s()),      # [42, 42]
-            identity.s(),                           # [42, 42]
+            identity.s(42),  # 42
+            group(identity.s(), identity.s()),  # [42, 42]
+            identity.s(),  # [42, 42]
         )
         res = sig.delay()
         assert res.get(timeout=TIMEOUT) == [42, 42]
@@ -510,8 +538,8 @@ class test_chain:
         Test that a final group in a chain with preceding tasks completes.
         """
         sig = chain(
-            identity.s(42),                         # 42
-            group(identity.s(), identity.s()),      # [42, 42]
+            identity.s(42),  # 42
+            group(identity.s(), identity.s()),  # [42, 42]
         )
         res = sig.delay()
         assert res.get(timeout=TIMEOUT) == [42, 42]
@@ -573,6 +601,29 @@ class test_chain:
 
         assert res.get(timeout=TIMEOUT) == 'Hello world'
         await_redis_echo({link_msg, 'Hello world'})
+
+    def test_chain_flattening_keep_links_of_inner_chain(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_connection = get_redis_connection()
+
+        link_b_msg = 'link_b called'
+        link_b_key = 'echo_link_b'
+        link_b_sig = redis_echo.si(link_b_msg, redis_key=link_b_key)
+
+        def link_chain(sig):
+            sig.link(link_b_sig)
+            sig.link_error(identity.s('link_ab'))
+            return sig
+
+        inner_chain = link_chain(chain(identity.s('a'), add.s('b')))
+        flat_chain = chain(inner_chain, add.s('c'))
+        redis_connection.delete(link_b_key)
+        res = flat_chain.delay()
+
+        assert res.get(timeout=TIMEOUT) == 'abc'
+        await_redis_echo((link_b_msg,), redis_key=link_b_key)
 
     def test_chain_with_eb_replaced_with_chain_with_eb(
         self, manager, subtests
@@ -731,27 +782,350 @@ class test_chain:
             await_redis_count(1, redis_key=redis_key)
         redis_connection.delete(redis_key)
 
-    def test_task_replaced_with_chain(self):
+    @pytest.mark.xfail(raises=TimeoutError,
+                       reason="Task is timeout instead of returning exception on rpc backend",
+                       strict=False)
+    def test_task_replaced_with_chain(self, manager):
         orig_sig = replace_with_chain.si(42)
         res_obj = orig_sig.delay()
         assert res_obj.get(timeout=TIMEOUT) == 42
 
-    def test_chain_child_replaced_with_chain_first(self):
+    def test_chain_child_replaced_with_chain_first(self, manager):
         orig_sig = chain(replace_with_chain.si(42), identity.s())
         res_obj = orig_sig.delay()
         assert res_obj.get(timeout=TIMEOUT) == 42
 
-    def test_chain_child_replaced_with_chain_middle(self):
+    def test_chain_child_replaced_with_chain_middle(self, manager):
         orig_sig = chain(
             identity.s(42), replace_with_chain.s(), identity.s()
         )
         res_obj = orig_sig.delay()
         assert res_obj.get(timeout=TIMEOUT) == 42
 
-    def test_chain_child_replaced_with_chain_last(self):
+    @pytest.mark.xfail(raises=TimeoutError,
+                       reason="Task is timeout instead of returning exception on rpc backend",
+                       strict=False)
+    def test_chain_child_replaced_with_chain_last(self, manager):
         orig_sig = chain(identity.s(42), replace_with_chain.s())
         res_obj = orig_sig.delay()
         assert res_obj.get(timeout=TIMEOUT) == 42
+
+    @pytest.mark.parametrize('redis_key', ['redis-group-ids'])
+    def test_chord_header_id_duplicated_on_rabbitmq_msg_duplication(self, manager, subtests, celery_session_app,
+                                                                    redis_key):
+        """
+        When a task that predates a chord in a chain was duplicated by Rabbitmq (for whatever reason),
+        the chord header id was not duplicated. This caused the chord header to have a different id.
+        This test ensures that the chord header's id preserves itself in face of such an edge case.
+        To validate the correct behavior is implemented, we collect the original and duplicated chord header ids
+        in redis, to ensure that they are the same.
+        """
+
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        if manager.app.conf.broker_url.startswith('redis'):
+            raise pytest.xfail('Redis broker does not duplicate the task (t1)')
+
+        # Republish t1 to cause the chain to be executed twice
+        @before_task_publish.connect
+        def before_task_publish_handler(sender=None, body=None, exchange=None, routing_key=None, headers=None,
+                                        properties=None,
+                                        declare=None, retry_policy=None, **kwargs):
+            """ We want to republish t1 to ensure that the chain is executed twice """
+
+            metadata = {
+                'body': body,
+                'exchange': exchange,
+                'routing_key': routing_key,
+                'properties': properties,
+                'headers': headers,
+            }
+
+            with celery_session_app.producer_pool.acquire(block=True) as producer:
+                # Publish t1 to the message broker, just before it's going to be published which causes duplication
+                return producer.publish(
+                    metadata['body'],
+                    exchange=metadata['exchange'],
+                    routing_key=metadata['routing_key'],
+                    retry=None,
+                    retry_policy=retry_policy,
+                    serializer='json',
+                    delivery_mode=None,
+                    headers=headers,
+                    **kwargs
+                )
+
+        # Clean redis key
+        redis_connection = get_redis_connection()
+        if redis_connection.exists(redis_key):
+            redis_connection.delete(redis_key)
+
+        # Prepare tasks
+        t1, t2, t3, t4 = identity.s(42), redis_echo_group_id.s(), identity.s(), identity.s()
+        c = chain(t1, chord([t2, t3], t4))
+
+        # Delay chain
+        r1 = c.delay()
+        r1.get(timeout=TIMEOUT)
+
+        # Cleanup
+        before_task_publish.disconnect(before_task_publish_handler)
+
+        with subtests.test(msg='Compare group ids via redis list'):
+            await_redis_list_message_length(2, redis_key=redis_key, timeout=15)
+            compare_group_ids_in_redis(redis_key=redis_key)
+
+        # Cleanup
+        redis_connection = get_redis_connection()
+        redis_connection.delete(redis_key)
+
+    def test_chaining_upgraded_chords_pure_groups(self, manager, subtests):
+        """ This test is built to reproduce the github issue https://github.com/celery/celery/issues/5958
+
+        The issue describes a canvas where a chain of groups are executed multiple times instead of once.
+        This test is built to reproduce the issue and to verify that the issue is fixed.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_connection = get_redis_connection()
+        redis_key = 'echo_chamber'
+
+        c = chain(
+            # letting the chain upgrade the chord, reproduces the issue in _chord.__or__
+            group(
+                redis_echo.si('1', redis_key=redis_key),
+                redis_echo.si('2', redis_key=redis_key),
+                redis_echo.si('3', redis_key=redis_key),
+            ),
+            group(
+                redis_echo.si('4', redis_key=redis_key),
+                redis_echo.si('5', redis_key=redis_key),
+                redis_echo.si('6', redis_key=redis_key),
+            ),
+            group(
+                redis_echo.si('7', redis_key=redis_key),
+            ),
+            group(
+                redis_echo.si('8', redis_key=redis_key),
+            ),
+            redis_echo.si('9', redis_key=redis_key),
+            redis_echo.si('Done', redis_key='Done'),
+        )
+
+        with subtests.test(msg='Run the chain and wait for completion'):
+            redis_connection.delete(redis_key, 'Done')
+            c.delay().get(timeout=TIMEOUT)
+            await_redis_list_message_length(1, redis_key='Done', timeout=10)
+
+        with subtests.test(msg='All tasks are executed once'):
+            actual = [sig.decode('utf-8') for sig in redis_connection.lrange(redis_key, 0, -1)]
+            expected = [str(i) for i in range(1, 10)]
+            with subtests.test(msg='All tasks are executed once'):
+                assert sorted(actual) == sorted(expected)
+
+        # Cleanup
+        redis_connection.delete(redis_key, 'Done')
+
+    def test_chaining_upgraded_chords_starting_with_chord(self, manager, subtests):
+        """ This test is built to reproduce the github issue https://github.com/celery/celery/issues/5958
+
+        The issue describes a canvas where a chain of groups are executed multiple times instead of once.
+        This test is built to reproduce the issue and to verify that the issue is fixed.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_connection = get_redis_connection()
+        redis_key = 'echo_chamber'
+
+        c = chain(
+            # by manually upgrading the chord to a group, we can reproduce the issue in _chain.__or__
+            chord(group([redis_echo.si('1', redis_key=redis_key),
+                         redis_echo.si('2', redis_key=redis_key),
+                         redis_echo.si('3', redis_key=redis_key)]),
+                  group([redis_echo.si('4', redis_key=redis_key),
+                         redis_echo.si('5', redis_key=redis_key),
+                         redis_echo.si('6', redis_key=redis_key)])),
+            group(
+                redis_echo.si('7', redis_key=redis_key),
+            ),
+            group(
+                redis_echo.si('8', redis_key=redis_key),
+            ),
+            redis_echo.si('9', redis_key=redis_key),
+            redis_echo.si('Done', redis_key='Done'),
+        )
+
+        with subtests.test(msg='Run the chain and wait for completion'):
+            redis_connection.delete(redis_key, 'Done')
+            c.delay().get(timeout=TIMEOUT)
+            await_redis_list_message_length(1, redis_key='Done', timeout=10)
+
+        with subtests.test(msg='All tasks are executed once'):
+            actual = [sig.decode('utf-8') for sig in redis_connection.lrange(redis_key, 0, -1)]
+            expected = [str(i) for i in range(1, 10)]
+            with subtests.test(msg='All tasks are executed once'):
+                assert sorted(actual) == sorted(expected)
+
+        # Cleanup
+        redis_connection.delete(redis_key, 'Done')
+
+    def test_chaining_upgraded_chords_mixed_canvas(self, manager, subtests):
+        """ This test is built to reproduce the github issue https://github.com/celery/celery/issues/5958
+
+        The issue describes a canvas where a chain of groups are executed multiple times instead of once.
+        This test is built to reproduce the issue and to verify that the issue is fixed.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_connection = get_redis_connection()
+        redis_key = 'echo_chamber'
+
+        c = chain(
+            chord(group([redis_echo.si('1', redis_key=redis_key),
+                         redis_echo.si('2', redis_key=redis_key),
+                         redis_echo.si('3', redis_key=redis_key)]),
+                  group([redis_echo.si('4', redis_key=redis_key),
+                         redis_echo.si('5', redis_key=redis_key),
+                         redis_echo.si('6', redis_key=redis_key)])),
+            redis_echo.si('7', redis_key=redis_key),
+            group(
+                redis_echo.si('8', redis_key=redis_key),
+            ),
+            redis_echo.si('9', redis_key=redis_key),
+            redis_echo.si('Done', redis_key='Done'),
+        )
+
+        with subtests.test(msg='Run the chain and wait for completion'):
+            redis_connection.delete(redis_key, 'Done')
+            c.delay().get(timeout=TIMEOUT)
+            await_redis_list_message_length(1, redis_key='Done', timeout=10)
+
+        with subtests.test(msg='All tasks are executed once'):
+            actual = [sig.decode('utf-8') for sig in redis_connection.lrange(redis_key, 0, -1)]
+            expected = [str(i) for i in range(1, 10)]
+            with subtests.test(msg='All tasks are executed once'):
+                assert sorted(actual) == sorted(expected)
+
+        # Cleanup
+        redis_connection.delete(redis_key, 'Done')
+
+    def test_freezing_chain_sets_id_of_last_task(self, manager):
+        last_task = add.s(2).set(task_id='42')
+        c = add.s(4) | last_task
+        assert c.id is None
+        c.freeze(last_task.id)
+        assert c.id == last_task.id
+
+    @pytest.mark.parametrize(
+        "group_last_task",
+        [False, True],
+    )
+    def test_chaining_upgraded_chords_mixed_canvas_protocol_2(
+            self, manager, subtests, group_last_task):
+        """ This test is built to reproduce the github issue https://github.com/celery/celery/issues/8662
+
+        The issue describes a canvas where a chain of groups are executed multiple times instead of once.
+        This test is built to reproduce the issue and to verify that the issue is fixed.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_connection = get_redis_connection()
+        redis_key = 'echo_chamber'
+
+        c = chain(
+            group([
+                redis_echo.si('1', redis_key=redis_key),
+                redis_echo.si('2', redis_key=redis_key)
+            ]),
+            group([
+                redis_echo.si('3', redis_key=redis_key),
+                redis_echo.si('4', redis_key=redis_key),
+                redis_echo.si('5', redis_key=redis_key)
+            ]),
+            group([
+                redis_echo.si('6', redis_key=redis_key),
+                redis_echo.si('7', redis_key=redis_key),
+                redis_echo.si('8', redis_key=redis_key),
+                redis_echo.si('9', redis_key=redis_key)
+            ]),
+            redis_echo.si('Done', redis_key='Done') if not group_last_task else
+            group(redis_echo.si('Done', redis_key='Done')),
+        )
+
+        with subtests.test(msg='Run the chain and wait for completion'):
+            redis_connection.delete(redis_key, 'Done')
+            c.delay().get(timeout=TIMEOUT)
+            await_redis_list_message_length(1, redis_key='Done', timeout=10)
+
+        with subtests.test(msg='All tasks are executed once'):
+            actual = [
+                sig.decode('utf-8')
+                for sig in redis_connection.lrange(redis_key, 0, -1)
+            ]
+            expected = [str(i) for i in range(1, 10)]
+            with subtests.test(msg='All tasks are executed once'):
+                assert sorted(actual) == sorted(expected)
+
+        # Cleanup
+        redis_connection.delete(redis_key, 'Done')
+
+    def test_group_in_center_of_chain(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        t1 = chain(tsum.s(), group(add.s(8), add.s(16)), tsum.s() | add.s(32))
+        t2 = chord([tsum, tsum], t1)
+        t3 = chord([add.s(0, 1)], t2)
+        res = t3.apply_async()  # should not raise
+        assert res.get(timeout=TIMEOUT) == 60
+
+    def test_upgrade_to_chord_inside_chains(self, manager):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        redis_key = str(uuid.uuid4())
+        group1 = group(redis_echo.si('a', redis_key), redis_echo.si('a', redis_key))
+        group2 = group(redis_echo.si('a', redis_key), redis_echo.si('a', redis_key))
+        chord1 = group1 | group2
+        chain1 = chain(chord1, (redis_echo.si('a', redis_key) | redis_echo.si('b', redis_key)))
+        chain1.apply_async().get(timeout=TIMEOUT)
+        redis_connection = get_redis_connection()
+        actual = redis_connection.lrange(redis_key, 0, -1)
+        assert actual.count(b'b') == 1
+        redis_connection.delete(redis_key)
 
 
 class test_result_set:
@@ -848,7 +1222,7 @@ class test_group:
         """
         Test that a simple group completes.
         """
-        sig = group(identity.s(42), identity.s(42))     # [42, 42]
+        sig = group(identity.s(42), identity.s(42))  # [42, 42]
         res = sig.delay()
         assert res.get(timeout=TIMEOUT) == [42, 42]
 
@@ -858,7 +1232,7 @@ class test_group:
         """
         sig = group(
             group(identity.s(42), identity.s(42)),  # [42, 42]
-        )                                       # [42, 42] due to unrolling
+        )  # [42, 42] due to unrolling
         res = sig.delay()
         assert res.get(timeout=TIMEOUT) == [42, 42]
 
@@ -869,8 +1243,8 @@ class test_group:
             raise pytest.skip(e.args[0])
 
         gchild_sig = identity.si(42)
-        child_chord = chord((gchild_sig, ), identity.s())
-        group_sig = group((child_chord, ))
+        child_chord = chord((gchild_sig,), identity.s())
+        group_sig = group((child_chord,))
         res = group_sig.delay()
         # Wait for the result to land and confirm its value is as expected
         assert res.get(timeout=TIMEOUT) == [[42]]
@@ -882,9 +1256,9 @@ class test_group:
             raise pytest.skip(e.args[0])
 
         gchild_count = 42
-        gchild_sig = chain((identity.si(1337), ) * gchild_count)
-        child_chord = chord((gchild_sig, ), identity.s())
-        group_sig = group((child_chord, ))
+        gchild_sig = chain((identity.si(1337),) * gchild_count)
+        child_chord = chord((gchild_sig,), identity.s())
+        group_sig = group((child_chord,))
         res = group_sig.delay()
         # Wait for the result to land and confirm its value is as expected
         assert res.get(timeout=TIMEOUT) == [[1337]]
@@ -896,9 +1270,9 @@ class test_group:
             raise pytest.skip(e.args[0])
 
         gchild_count = 42
-        gchild_sig = group((identity.si(1337), ) * gchild_count)
-        child_chord = chord((gchild_sig, ), identity.s())
-        group_sig = group((child_chord, ))
+        gchild_sig = group((identity.si(1337),) * gchild_count)
+        child_chord = chord((gchild_sig,), identity.s())
+        group_sig = group((child_chord,))
         res = group_sig.delay()
         # Wait for the result to land and confirm its value is as expected
         assert res.get(timeout=TIMEOUT) == [[1337] * gchild_count]
@@ -911,10 +1285,10 @@ class test_group:
 
         gchild_count = 42
         gchild_sig = chord(
-            (identity.si(1337), ) * gchild_count, identity.si(31337),
+            (identity.si(1337),) * gchild_count, identity.si(31337),
         )
-        child_chord = chord((gchild_sig, ), identity.s())
-        group_sig = group((child_chord, ))
+        child_chord = chord((gchild_sig,), identity.s())
+        group_sig = group((child_chord,))
         res = group_sig.delay()
         # Wait for the result to land and confirm its value is as expected
         assert res.get(timeout=TIMEOUT) == [[31337]]
@@ -929,19 +1303,19 @@ class test_group:
         child_chord = chord(
             (
                 identity.si(42),
-                chain((identity.si(42), ) * gchild_count),
-                group((identity.si(42), ) * gchild_count),
-                chord((identity.si(42), ) * gchild_count, identity.si(1337)),
+                chain((identity.si(42),) * gchild_count),
+                group((identity.si(42),) * gchild_count),
+                chord((identity.si(42),) * gchild_count, identity.si(1337)),
             ),
             identity.s(),
         )
-        group_sig = group((child_chord, ))
+        group_sig = group((child_chord,))
         res = group_sig.delay()
         # Wait for the result to land and confirm its value is as expected. The
         # group result gets unrolled into the encapsulating chord, hence the
         # weird unpacking below
         assert res.get(timeout=TIMEOUT) == [
-            [42, 42, *((42, ) * gchild_count), 1337]
+            [42, 42, *((42,) * gchild_count), 1337]
         ]
 
     @pytest.mark.xfail(raises=TimeoutError, reason="#6734")
@@ -951,8 +1325,8 @@ class test_group:
         except NotImplementedError as e:
             raise pytest.skip(e.args[0])
 
-        child_chord = chord(identity.si(42), chain((identity.s(), )))
-        group_sig = group((child_chord, ))
+        child_chord = chord(identity.si(42), chain((identity.s(),)))
+        group_sig = group((child_chord,))
         res = group_sig.delay()
         # The result can be expected to timeout since it seems like its
         # underlying promise might not be getting fulfilled (ref #6734). Pick a
@@ -1175,19 +1549,28 @@ class test_group:
             await_redis_count(1, redis_key=redis_key)
         redis_connection.delete(redis_key)
 
-    def test_group_child_replaced_with_chain_first(self):
+    @pytest.mark.xfail(raises=TimeoutError,
+                       reason="Task is timeout instead of returning exception on rpc backend",
+                       strict=False)
+    def test_group_child_replaced_with_chain_first(self, manager):
         orig_sig = group(replace_with_chain.si(42), identity.s(1337))
         res_obj = orig_sig.delay()
         assert res_obj.get(timeout=TIMEOUT) == [42, 1337]
 
-    def test_group_child_replaced_with_chain_middle(self):
+    @pytest.mark.xfail(raises=TimeoutError,
+                       reason="Task is timeout instead of returning exception on rpc backend",
+                       strict=False)
+    def test_group_child_replaced_with_chain_middle(self, manager):
         orig_sig = group(
             identity.s(42), replace_with_chain.s(1337), identity.s(31337)
         )
         res_obj = orig_sig.delay()
         assert res_obj.get(timeout=TIMEOUT) == [42, 1337, 31337]
 
-    def test_group_child_replaced_with_chain_last(self):
+    @pytest.mark.xfail(raises=TimeoutError,
+                       reason="Task is timeout instead of returning exception on rpc backend",
+                       strict=False)
+    def test_group_child_replaced_with_chain_last(self, manager):
         orig_sig = group(identity.s(42), replace_with_chain.s(1337))
         res_obj = orig_sig.delay()
         assert res_obj.get(timeout=TIMEOUT) == [42, 1337]
@@ -1233,7 +1616,19 @@ class test_chord:
         result = c()
         assert result.get(timeout=TIMEOUT) == 4
 
-    @flaky
+    def test_chord_order(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        inputs = [i for i in range(10)]
+
+        c = chord((identity.si(i) for i in inputs), identity.s())
+        result = c()
+        assert result.get() == inputs
+
+    @pytest.mark.xfail(reason="async_results aren't performed in async way")
     def test_redis_subscribed_channels_leak(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
@@ -1336,6 +1731,36 @@ class test_chord:
         )
         res = c()
         assert res.get(timeout=TIMEOUT) == [12, 13, 14, 15]
+
+    def test_group_kwargs(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+        c = (
+            add.s(2, 2) |
+            group(add.s(i) for i in range(4)) |
+            add_to_all.s(8)
+        )
+        res = c.apply_async(kwargs={"z": 1})
+        assert res.get(timeout=TIMEOUT) == [13, 14, 15, 16]
+
+    def test_group_args_and_kwargs(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+        c = (
+            group(add.s(i) for i in range(4)) |
+            add_to_all.s(8)
+        )
+        res = c.apply_async(args=(4,), kwargs={"z": 1})
+        if manager.app.conf.result_backend.startswith('redis'):
+            # for a simple chord like the one above, redis does not guarantee
+            # the ordering of the results as a performance trade off.
+            assert set(res.get(timeout=TIMEOUT)) == {13, 14, 15, 16}
+        else:
+            assert res.get(timeout=TIMEOUT) == [13, 14, 15, 16]
 
     def test_nested_group_chain(self, manager):
         try:
@@ -1549,7 +1974,7 @@ class test_chord:
         backend = fail.app.backend
         j_key = backend.get_key_for_group(original_group_id, '.j')
         redis_connection = get_redis_connection()
-        # The redis key is either a list or zset depending on configuration
+        # The redis key is either a list or a zset (a redis sorted set) depending on configuration
         if manager.app.conf.result_backend_transport_options.get(
             'result_chord_ordered', True
         ):
@@ -1566,20 +1991,25 @@ class test_chord:
                    ) == 1
 
     @flaky
-    def test_generator(self, manager):
+    @pytest.mark.parametrize('size', [3, 4, 5, 6, 7, 8, 9])
+    def test_generator(self, manager, size):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
         def assert_generator(file_name):
-            for i in range(3):
+            for i in range(size):
                 sleep(1)
-                if i == 2:
+                if i == size - 1:
                     with open(file_name) as file_handle:
                         # ensures chord header generators tasks are processed incrementally #3021
                         assert file_handle.readline() == '0\n', "Chord header was unrolled too early"
+
                 yield write_to_file_and_return_int.s(file_name, i)
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp_file:
             file_name = tmp_file.name
             c = chord(assert_generator(file_name), tsum.s())
-            assert c().get(timeout=TIMEOUT) == 3
+            assert c().get(timeout=TIMEOUT) == size * (size - 1) // 2
 
     @flaky
     def test_parallel_chords(self, manager):
@@ -1737,7 +2167,7 @@ class test_chord:
             (
                 group(identity.s(42), identity.s(42)),  # [42, 42]
             ),
-            identity.s()                            # [42, 42]
+            identity.s()  # [42, 42]
         )
         res = sig.delay()
         assert res.get(timeout=TIMEOUT) == [42, 42]
@@ -1757,14 +2187,14 @@ class test_chord:
         sig = chord(
             group(
                 chain(
-                    identity.s(42),     # 42
+                    identity.s(42),  # 42
                     group(
-                        identity.s(),       # 42
-                        identity.s(),       # 42
-                    ),                  # [42, 42]
-                ),                  # [42, 42]
-            ),                  # [[42, 42]] since the chain prevents unrolling
-            identity.s(),       # [[42, 42]]
+                        identity.s(),  # 42
+                        identity.s(),  # 42
+                    ),  # [42, 42]
+                ),  # [42, 42]
+            ),  # [[42, 42]] since the chain prevents unrolling
+            identity.s(),  # [[42, 42]]
         )
         res = sig.delay()
         assert res.get(timeout=TIMEOUT) == [[42, 42]]
@@ -1802,13 +2232,13 @@ class test_chord:
 
         child_sig = fail.s()
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         with subtests.test(msg="Error propagates from simple header task"):
             res = chord_sig.delay()
             with pytest.raises(ExpectedException):
                 res.get(timeout=TIMEOUT)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         with subtests.test(msg="Error propagates from simple body task"):
             res = chord_sig.delay()
             with pytest.raises(ExpectedException):
@@ -1826,7 +2256,7 @@ class test_chord:
         errback = redis_echo.si(errback_msg, redis_key=redis_key)
         child_sig = fail.s()
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         chord_sig.link_error(errback)
         redis_connection.delete(redis_key)
         with subtests.test(msg="Error propagates from simple header task"):
@@ -1838,7 +2268,7 @@ class test_chord:
         ):
             await_redis_echo({errback_msg, }, redis_key=redis_key)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         chord_sig.link_error(errback)
         redis_connection.delete(redis_key)
         with subtests.test(msg="Error propagates from simple body task"):
@@ -1864,7 +2294,7 @@ class test_chord:
         errback = errback_task.s()
         child_sig = fail.s()
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         chord_sig.link_error(errback)
         expected_redis_key = chord_sig.body.freeze().id
         redis_connection.delete(expected_redis_key)
@@ -1877,7 +2307,7 @@ class test_chord:
         ):
             await_redis_count(1, redis_key=expected_redis_key)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         chord_sig.link_error(errback)
         expected_redis_key = chord_sig.body.freeze().id
         redis_connection.delete(expected_redis_key)
@@ -1899,7 +2329,7 @@ class test_chord:
 
         child_sig = chain(identity.si(42), fail.s(), identity.si(42))
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         with subtests.test(
             msg="Error propagates from header chain which fails before the end"
         ):
@@ -1907,7 +2337,7 @@ class test_chord:
             with pytest.raises(ExpectedException):
                 res.get(timeout=TIMEOUT)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         with subtests.test(
             msg="Error propagates from body chain which fails before the end"
         ):
@@ -1927,7 +2357,7 @@ class test_chord:
         errback = redis_echo.si(errback_msg, redis_key=redis_key)
         child_sig = chain(identity.si(42), fail.s(), identity.si(42))
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         chord_sig.link_error(errback)
         redis_connection.delete(redis_key)
         with subtests.test(
@@ -1941,7 +2371,7 @@ class test_chord:
         ):
             await_redis_echo({errback_msg, }, redis_key=redis_key)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         chord_sig.link_error(errback)
         redis_connection.delete(redis_key)
         with subtests.test(
@@ -1971,7 +2401,7 @@ class test_chord:
         fail_sig_id = fail_sig.freeze().id
         child_sig = chain(identity.si(42), fail_sig, identity.si(42))
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         chord_sig.link_error(errback)
         expected_redis_key = chord_sig.body.freeze().id
         redis_connection.delete(expected_redis_key)
@@ -1986,7 +2416,7 @@ class test_chord:
         ):
             await_redis_count(1, redis_key=expected_redis_key)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         chord_sig.link_error(errback)
         expected_redis_key = fail_sig_id
         redis_connection.delete(expected_redis_key)
@@ -2010,7 +2440,7 @@ class test_chord:
 
         child_sig = chain(identity.si(42), fail.s())
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         with subtests.test(
             msg="Error propagates from header chain which fails at the end"
         ):
@@ -2018,7 +2448,7 @@ class test_chord:
             with pytest.raises(ExpectedException):
                 res.get(timeout=TIMEOUT)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         with subtests.test(
             msg="Error propagates from body chain which fails at the end"
         ):
@@ -2038,7 +2468,7 @@ class test_chord:
         errback = redis_echo.si(errback_msg, redis_key=redis_key)
         child_sig = chain(identity.si(42), fail.s())
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         chord_sig.link_error(errback)
         redis_connection.delete(redis_key)
         with subtests.test(
@@ -2052,7 +2482,7 @@ class test_chord:
         ):
             await_redis_echo({errback_msg, }, redis_key=redis_key)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         chord_sig.link_error(errback)
         redis_connection.delete(redis_key)
         with subtests.test(
@@ -2082,7 +2512,7 @@ class test_chord:
         fail_sig_id = fail_sig.freeze().id
         child_sig = chain(identity.si(42), fail_sig)
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         chord_sig.link_error(errback)
         expected_redis_key = chord_sig.body.freeze().id
         redis_connection.delete(expected_redis_key)
@@ -2097,7 +2527,7 @@ class test_chord:
         ):
             await_redis_count(1, redis_key=expected_redis_key)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         chord_sig.link_error(errback)
         expected_redis_key = fail_sig_id
         redis_connection.delete(expected_redis_key)
@@ -2121,13 +2551,13 @@ class test_chord:
 
         child_sig = group(identity.si(42), fail.s())
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         with subtests.test(msg="Error propagates from header group"):
             res = chord_sig.delay()
             with pytest.raises(ExpectedException):
                 res.get(timeout=TIMEOUT)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         with subtests.test(msg="Error propagates from body group"):
             res = chord_sig.delay()
             with pytest.raises(ExpectedException):
@@ -2145,7 +2575,7 @@ class test_chord:
         errback = redis_echo.si(errback_msg, redis_key=redis_key)
         child_sig = group(identity.si(42), fail.s())
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         chord_sig.link_error(errback)
         redis_connection.delete(redis_key)
         with subtests.test(msg="Error propagates from header group"):
@@ -2155,7 +2585,7 @@ class test_chord:
         with subtests.test(msg="Errback is called after header group fails"):
             await_redis_echo({errback_msg, }, redis_key=redis_key)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         chord_sig.link_error(errback)
         redis_connection.delete(redis_key)
         with subtests.test(msg="Error propagates from body group"):
@@ -2166,6 +2596,7 @@ class test_chord:
             await_redis_echo({errback_msg, }, redis_key=redis_key)
         redis_connection.delete(redis_key)
 
+    @flaky
     @pytest.mark.parametrize(
         "errback_task", [errback_old_style, errback_new_style, ],
     )
@@ -2181,7 +2612,7 @@ class test_chord:
         fail_sig_id = fail_sig.freeze().id
         child_sig = group(identity.si(42), fail_sig)
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         chord_sig.link_error(errback)
         expected_redis_key = chord_sig.body.freeze().id
         redis_connection.delete(expected_redis_key)
@@ -2192,7 +2623,7 @@ class test_chord:
         with subtests.test(msg="Errback is called after header group fails"):
             await_redis_count(1, redis_key=expected_redis_key)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         chord_sig.link_error(errback)
         expected_redis_key = fail_sig_id
         redis_connection.delete(expected_redis_key)
@@ -2220,7 +2651,7 @@ class test_chord:
             *(fail.s() for _ in range(fail_task_count)),
         )
 
-        chord_sig = chord((child_sig, ), identity.s())
+        chord_sig = chord((child_sig,), identity.s())
         chord_sig.link_error(errback)
         redis_connection.delete(redis_key)
         with subtests.test(msg="Error propagates from header group"):
@@ -2233,7 +2664,7 @@ class test_chord:
             # is attached to the chord body which is a single task!
             await_redis_count(1, redis_key=redis_key)
 
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         chord_sig.link_error(errback)
         redis_connection.delete(redis_key)
         with subtests.test(msg="Error propagates from body group"):
@@ -2246,10 +2677,43 @@ class test_chord:
             await_redis_count(fail_task_count, redis_key=redis_key)
         redis_connection.delete(redis_key)
 
-    @pytest.mark.parametrize(
-        "errback_task", [errback_old_style, errback_new_style, ],
-    )
-    def test_mutable_errback_called_by_chord_from_group_fail_multiple(
+    @pytest.mark.parametrize("errback_task", [errback_old_style, errback_new_style])
+    def test_mutable_errback_called_by_chord_from_group_fail_multiple_on_header_failure(
+        self, errback_task, manager, subtests
+    ):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        fail_task_count = 42
+        # We have to use failing task signatures with unique task IDs to ensure
+        # the chord can complete when they are used as part of its header!
+        fail_sigs = tuple(
+            fail.s() for _ in range(fail_task_count)
+        )
+        errback = errback_task.s()
+        # Include a mix of passing and failing tasks
+        child_sig = group(
+            *(identity.si(42) for _ in range(8)),  # arbitrary task count
+            *fail_sigs,
+        )
+
+        chord_sig = chord((child_sig,), identity.s())
+        chord_sig.link_error(errback)
+        expected_redis_key = chord_sig.body.freeze().id
+        redis_connection.delete(expected_redis_key)
+        with subtests.test(msg="Error propagates from header group"):
+            res = chord_sig.delay()
+            sleep(1)
+            with pytest.raises(ExpectedException):
+                res.get(timeout=TIMEOUT)
+        with subtests.test(msg="Errback is called after header group fails"):
+            # NOTE: Here we only expect the errback to be called once since it
+            # is attached to the chord body which is a single task!
+            await_redis_count(1, redis_key=expected_redis_key)
+
+    @pytest.mark.parametrize("errback_task", [errback_old_style, errback_new_style])
+    def test_mutable_errback_called_by_chord_from_group_fail_multiple_on_body_failure(
         self, errback_task, manager, subtests
     ):
         if not manager.app.conf.result_backend.startswith("redis"):
@@ -2266,29 +2730,17 @@ class test_chord:
         errback = errback_task.s()
         # Include a mix of passing and failing tasks
         child_sig = group(
-            *(identity.si(42) for _ in range(24)),  # arbitrary task count
+            *(identity.si(42) for _ in range(8)),  # arbitrary task count
             *fail_sigs,
         )
 
-        chord_sig = chord((child_sig, ), identity.s())
-        chord_sig.link_error(errback)
-        expected_redis_key = chord_sig.body.freeze().id
-        redis_connection.delete(expected_redis_key)
-        with subtests.test(msg="Error propagates from header group"):
-            res = chord_sig.delay()
-            with pytest.raises(ExpectedException):
-                res.get(timeout=TIMEOUT)
-        with subtests.test(msg="Errback is called after header group fails"):
-            # NOTE: Here we only expect the errback to be called once since it
-            # is attached to the chord body which is a single task!
-            await_redis_count(1, redis_key=expected_redis_key)
-
-        chord_sig = chord((identity.si(42), ), child_sig)
+        chord_sig = chord((identity.si(42),), child_sig)
         chord_sig.link_error(errback)
         for fail_sig_id in fail_sig_ids:
             redis_connection.delete(fail_sig_id)
         with subtests.test(msg="Error propagates from body group"):
             res = chord_sig.delay()
+            sleep(1)
             with pytest.raises(ExpectedException):
                 res.get(timeout=TIMEOUT)
         with subtests.test(msg="Errback is called after body group fails"):
@@ -2326,7 +2778,7 @@ class test_chord:
             raise pytest.skip(e.args[0])
 
         orig_sig = chord(
-            (replace_with_chain.si(42), identity.s(1337), ),
+            (replace_with_chain.si(42), identity.s(1337),),
             identity.s(),
         )
         res_obj = orig_sig.delay()
@@ -2339,7 +2791,7 @@ class test_chord:
             raise pytest.skip(e.args[0])
 
         orig_sig = chord(
-            (identity.s(42), replace_with_chain.s(1337), identity.s(31337), ),
+            (identity.s(42), replace_with_chain.s(1337), identity.s(31337),),
             identity.s(),
         )
         res_obj = orig_sig.delay()
@@ -2352,7 +2804,7 @@ class test_chord:
             raise pytest.skip(e.args[0])
 
         orig_sig = chord(
-            (identity.s(42), replace_with_chain.s(1337), ),
+            (identity.s(42), replace_with_chain.s(1337),),
             identity.s(),
         )
         res_obj = orig_sig.delay()
@@ -2409,6 +2861,241 @@ class test_chord:
         )
         res_obj = orig_sig.delay()
         assert res_obj.get(timeout=TIMEOUT) == [42]
+
+    def test_enabling_flag_allow_error_cb_on_chord_header(self, manager, subtests):
+        """
+        Test that the flag allow_error_callback_on_chord_header works as
+        expected. To confirm this, we create a chord with a failing header
+        task, and check that the body does not execute when the header task fails.
+        This allows preventing the body from executing when the chord header fails
+        when the flag is turned on. In addition, we make sure the body error callback
+        is also executed when the header fails and the flag is turned on.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+        redis_connection = get_redis_connection()
+
+        manager.app.conf.task_allow_error_cb_on_chord_header = True
+
+        header_errback_msg = 'header errback called'
+        header_errback_key = 'echo_header_errback'
+        header_errback_sig = redis_echo.si(header_errback_msg, redis_key=header_errback_key)
+
+        body_errback_msg = 'body errback called'
+        body_errback_key = 'echo_body_errback'
+        body_errback_sig = redis_echo.si(body_errback_msg, redis_key=body_errback_key)
+
+        body_msg = 'chord body called'
+        body_key = 'echo_body'
+        body_sig = redis_echo.si(body_msg, redis_key=body_key)
+
+        headers = (
+            (fail.si(),),
+            (fail.si(), fail.si(), fail.si()),
+            (fail.si(), identity.si(42)),
+            (fail.si(), identity.si(42), identity.si(42)),
+            (fail.si(), identity.si(42), fail.si()),
+            (fail.si(), identity.si(42), fail.si(), identity.si(42)),
+            (fail.si(), identity.si(42), fail.si(), identity.si(42), fail.si()),
+        )
+
+        # for some reason using parametrize breaks the test so we do it manually unfortunately
+        for header in headers:
+            chord_sig = chord(header, body_sig)
+            # link error to chord header ONLY
+            [header_task.link_error(header_errback_sig) for header_task in chord_sig.tasks]
+            # link error to chord body ONLY
+            chord_sig.body.link_error(body_errback_sig)
+            redis_connection.delete(header_errback_key, body_errback_key, body_key)
+
+            with subtests.test(msg='Error propagates from failure in header'):
+                res = chord_sig.delay()
+                with pytest.raises(ExpectedException):
+                    res.get(timeout=TIMEOUT)
+
+            with subtests.test(msg='Confirm the body was not executed'):
+                with pytest.raises(TimeoutError):
+                    # confirm the chord body was not called
+                    await_redis_echo((body_msg,), redis_key=body_key, timeout=10)
+                # Double check
+                assert not redis_connection.exists(body_key), 'Chord body was called when it should have not'
+
+            with subtests.test(msg='Confirm the errback was called for each failed header task + body'):
+                # confirm the errback was called for each task in the chord header
+                failed_header_tasks_count = len(list(filter(lambda f_sig: f_sig == fail.si(), header)))
+                expected_header_errbacks = tuple(header_errback_msg for _ in range(failed_header_tasks_count))
+                await_redis_echo(expected_header_errbacks, redis_key=header_errback_key)
+
+                # confirm the errback was called for the chord body
+                await_redis_echo((body_errback_msg,), redis_key=body_errback_key)
+
+            redis_connection.delete(header_errback_key, body_errback_key)
+
+    def test_disabling_flag_allow_error_cb_on_chord_header(self, manager, subtests):
+        """
+        Confirm that when allow_error_callback_on_chord_header is disabled, the default
+        behavior is kept.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+        redis_connection = get_redis_connection()
+
+        manager.app.conf.task_allow_error_cb_on_chord_header = False
+
+        errback_msg = 'errback called'
+        errback_key = 'echo_errback'
+        errback_sig = redis_echo.si(errback_msg, redis_key=errback_key)
+
+        body_msg = 'chord body called'
+        body_key = 'echo_body'
+        body_sig = redis_echo.si(body_msg, redis_key=body_key)
+
+        headers = (
+            (fail.si(),),
+            (fail.si(), fail.si(), fail.si()),
+            (fail.si(), identity.si(42)),
+            (fail.si(), identity.si(42), identity.si(42)),
+            (fail.si(), identity.si(42), fail.si()),
+            (fail.si(), identity.si(42), fail.si(), identity.si(42)),
+            (fail.si(), identity.si(42), fail.si(), identity.si(42), fail.si()),
+        )
+
+        # for some reason using parametrize breaks the test so we do it manually unfortunately
+        for header in headers:
+            chord_sig = chord(header, body_sig)
+            chord_sig.link_error(errback_sig)
+            redis_connection.delete(errback_key, body_key)
+
+            with subtests.test(msg='Error propagates from failure in header'):
+                res = chord_sig.delay()
+                with pytest.raises(ExpectedException):
+                    res.get(timeout=TIMEOUT)
+
+            with subtests.test(msg='Confirm the body was not executed'):
+                with pytest.raises(TimeoutError):
+                    # confirm the chord body was not called
+                    await_redis_echo((body_msg,), redis_key=body_key, timeout=10)
+                # Double check
+                assert not redis_connection.exists(body_key), 'Chord body was called when it should have not'
+
+            with subtests.test(msg='Confirm only one errback was called'):
+                await_redis_echo((errback_msg,), redis_key=errback_key, timeout=10)
+                with pytest.raises(TimeoutError):
+                    await_redis_echo((errback_msg,), redis_key=errback_key, timeout=10)
+
+            # Cleanup
+            redis_connection.delete(errback_key)
+
+    def test_flag_allow_error_cb_on_chord_header_on_upgraded_chord(self, manager, subtests):
+        """
+        Confirm that allow_error_callback_on_chord_header flag supports upgraded chords
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+        redis_connection = get_redis_connection()
+
+        manager.app.conf.task_allow_error_cb_on_chord_header = True
+
+        errback_msg = 'errback called'
+        errback_key = 'echo_errback'
+        errback_sig = redis_echo.si(errback_msg, redis_key=errback_key)
+
+        body_msg = 'chord body called'
+        body_key = 'echo_body'
+        body_sig = redis_echo.si(body_msg, redis_key=body_key)
+
+        headers = (
+            # (fail.si(),),  <-- this is not supported because it's not a valid chord header (only one task)
+            (fail.si(), fail.si(), fail.si()),
+            (fail.si(), identity.si(42)),
+            (fail.si(), identity.si(42), identity.si(42)),
+            (fail.si(), identity.si(42), fail.si()),
+            (fail.si(), identity.si(42), fail.si(), identity.si(42)),
+            (fail.si(), identity.si(42), fail.si(), identity.si(42), fail.si()),
+        )
+
+        # for some reason using parametrize breaks the test so we do it manually unfortunately
+        for header in headers:
+            implicit_chord_sig = chain(group(list(header)), body_sig)
+            implicit_chord_sig.link_error(errback_sig)
+            redis_connection.delete(errback_key, body_key)
+
+            with subtests.test(msg='Error propagates from failure in header'):
+                res = implicit_chord_sig.delay()
+                with pytest.raises(ExpectedException):
+                    res.get(timeout=TIMEOUT)
+
+            with subtests.test(msg='Confirm the body was not executed'):
+                with pytest.raises(TimeoutError):
+                    # confirm the chord body was not called
+                    await_redis_echo((body_msg,), redis_key=body_key, timeout=10)
+                # Double check
+                assert not redis_connection.exists(body_key), 'Chord body was called when it should have not'
+
+            with subtests.test(msg='Confirm the errback was called for each failed header task + body'):
+                # confirm the errback was called for each task in the chord header
+                failed_header_tasks_count = len(list(filter(lambda f_sig: f_sig.name == fail.si().name, header)))
+                expected_errbacks_count = failed_header_tasks_count + 1  # +1 for the body
+                expected_errbacks = tuple(errback_msg for _ in range(expected_errbacks_count))
+                await_redis_echo(expected_errbacks, redis_key=errback_key)
+
+                # confirm there are not leftovers
+                assert not redis_connection.exists(errback_key)
+
+            # Cleanup
+            redis_connection.delete(errback_key)
+
+    def test_upgraded_chord_link_error_with_header_errback_enabled(self, manager, subtests):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+        redis_connection = get_redis_connection()
+
+        manager.app.conf.task_allow_error_cb_on_chord_header = True
+
+        body_msg = 'chord body called'
+        body_key = 'echo_body'
+        body_sig = redis_echo.si(body_msg, redis_key=body_key)
+
+        errback_msg = 'errback called'
+        errback_key = 'echo_errback'
+        errback_sig = redis_echo.si(errback_msg, redis_key=errback_key)
+
+        redis_connection.delete(errback_key, body_key)
+
+        sig = chain(
+            identity.si(42),
+            group(
+                fail.si(),
+                fail.si(),
+            ),
+            body_sig,
+        ).on_error(errback_sig)
+
+        with subtests.test(msg='Error propagates from failure in header'):
+            with pytest.raises(ExpectedException):
+                sig.apply_async().get(timeout=TIMEOUT)
+
+        redis_connection.delete(errback_key, body_key)
 
 
 class test_signature_serialization:
@@ -2508,3 +3195,408 @@ class test_signature_serialization:
             tasks.rebuild_signature.s()
         )
         sig.delay().get(timeout=TIMEOUT)
+
+
+class test_stamping_mechanism:
+    def test_stamping_workflow(self, manager, subtests):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        workflow = group(
+            add.s(1, 2) | add.s(3),
+            add.s(4, 5) | add.s(6),
+            identity.si(21),
+        ) | group(
+            xsum.s(),
+            xsum.s(),
+        )
+
+        @task_received.connect
+        def task_received_handler(request=None, **kwargs):
+            nonlocal assertion_result
+            link = None
+            if request._Request__payload[2]["callbacks"]:
+                link = signature(request._Request__payload[2]["callbacks"][0])
+            link_error = None
+            if request._Request__payload[2]["errbacks"]:
+                link_error = signature(request._Request__payload[2]["errbacks"][0])
+
+            assertion_result = all(
+                [
+                    assertion_result,
+                    [stamped_header in request.stamps for stamped_header in request.stamped_headers],
+                    [
+                        stamped_header in link.options
+                        for stamped_header in link.options["stamped_headers"]
+                        if link  # the link itself doesn't have a link
+                    ],
+                    [
+                        stamped_header in link_error.options
+                        for stamped_header in link_error.options["stamped_headers"]
+                        if link_error  # the link_error itself doesn't have a link_error
+                    ],
+                ]
+            )
+
+        @before_task_publish.connect
+        def before_task_publish_handler(
+            body=None,
+            headers=None,
+            **kwargs,
+        ):
+            nonlocal assertion_result
+
+            assertion_result = all(
+                [stamped_header in headers["stamps"] for stamped_header in headers["stamped_headers"]]
+            )
+
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {"on_signature": 42}
+
+        with subtests.test("Prepare canvas workflow and stamp it"):
+            link_sig = identity.si("link")
+            link_error_sig = identity.si("link_error")
+            canvas_workflow = workflow
+            canvas_workflow.link(link_sig)
+            canvas_workflow.link_error(link_error_sig)
+            canvas_workflow.stamp(visitor=CustomStampingVisitor())
+
+        with subtests.test("Check canvas was executed successfully"):
+            assertion_result = False
+            assert canvas_workflow.apply_async().get() == [42] * 2
+            assert assertion_result
+
+    def test_stamping_example_canvas(self, manager):
+        """Test the stamping example canvas from the examples directory"""
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = chain(
+            group(identity.s(i) for i in range(1, 4)) | xsum.s(),
+            chord(group(mul.s(10) for _ in range(1, 4)), xsum.s()),
+        )
+
+        res = c()
+        assert res.get(timeout=TIMEOUT) == 180
+
+    def test_stamp_value_type_defined_by_visitor(self, manager, subtests):
+        """Test that the visitor can define the type of the stamped value"""
+
+        @before_task_publish.connect
+        def before_task_publish_handler(
+            sender=None,
+            body=None,
+            exchange=None,
+            routing_key=None,
+            headers=None,
+            properties=None,
+            declare=None,
+            retry_policy=None,
+            **kwargs,
+        ):
+            nonlocal task_headers
+            task_headers = headers.copy()
+
+        with subtests.test(msg="Test stamping a single value"):
+
+            class CustomStampingVisitor(StampingVisitor):
+                def on_signature(self, sig, **headers) -> dict:
+                    return {"stamp": 42}
+
+            stamped_task = add.si(1, 1)
+            stamped_task.stamp(visitor=CustomStampingVisitor())
+            result = stamped_task.freeze()
+            task_headers = None
+            stamped_task.apply_async()
+            assert task_headers is not None
+            assert result.get() == 2
+            assert "stamps" in task_headers
+            assert "stamp" in task_headers["stamps"]
+            assert not isinstance(task_headers["stamps"]["stamp"], list)
+
+        with subtests.test(msg="Test stamping a list of values"):
+
+            class CustomStampingVisitor(StampingVisitor):
+                def on_signature(self, sig, **headers) -> dict:
+                    return {"stamp": [4, 2]}
+
+            stamped_task = add.si(1, 1)
+            stamped_task.stamp(visitor=CustomStampingVisitor())
+            result = stamped_task.freeze()
+            task_headers = None
+            stamped_task.apply_async()
+            assert task_headers is not None
+            assert result.get() == 2
+            assert "stamps" in task_headers
+            assert "stamp" in task_headers["stamps"]
+            assert isinstance(task_headers["stamps"]["stamp"], list)
+
+    def test_properties_not_affected_from_stamping(self, manager, subtests):
+        """Test that the task properties are not dirty with stamping visitor entries"""
+
+        @before_task_publish.connect
+        def before_task_publish_handler(
+            sender=None,
+            body=None,
+            exchange=None,
+            routing_key=None,
+            headers=None,
+            properties=None,
+            declare=None,
+            retry_policy=None,
+            **kwargs,
+        ):
+            nonlocal task_headers
+            nonlocal task_properties
+            task_headers = headers.copy()
+            task_properties = properties.copy()
+
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {"stamp": 42}
+
+        stamped_task = add.si(1, 1)
+        stamped_task.stamp(visitor=CustomStampingVisitor())
+        result = stamped_task.freeze()
+        task_headers = None
+        task_properties = None
+        stamped_task.apply_async()
+        assert task_properties is not None
+        assert result.get() == 2
+        assert "stamped_headers" in task_headers
+        stamped_headers = task_headers["stamped_headers"]
+
+        with subtests.test(msg="Test that the task properties are not dirty with stamping visitor entries"):
+            assert "stamped_headers" not in task_properties, "stamped_headers key should not be in task properties"
+            for stamp in stamped_headers:
+                assert stamp not in task_properties, f'The stamp "{stamp}" should not be in the task properties'
+
+    def test_task_received_has_access_to_stamps(self, manager):
+        """Make sure that the request has the stamps using the task_received signal"""
+
+        assertion_result = False
+
+        @task_received.connect
+        def task_received_handler(sender=None, request=None, signal=None, **kwargs):
+            nonlocal assertion_result
+            assertion_result = all([stamped_header in request.stamps for stamped_header in request.stamped_headers])
+
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {"stamp": 42}
+
+        stamped_task = add.si(1, 1)
+        stamped_task.stamp(visitor=CustomStampingVisitor())
+        stamped_task.apply_async().get()
+        assert assertion_result
+
+    def test_all_tasks_of_canvas_are_stamped(self, manager, subtests):
+        """Test that complex canvas are stamped correctly"""
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        @task_received.connect
+        def task_received_handler(**kwargs):
+            request = kwargs["request"]
+            nonlocal assertion_result
+
+            assertion_result = all(
+                [
+                    assertion_result,
+                    all([stamped_header in request.stamps for stamped_header in request.stamped_headers]),
+                    request.stamps["stamp"] == 42,
+                ]
+            )
+
+        # Using a list because pytest.mark.parametrize does not play well
+        canvas = [
+            add.s(1, 1),
+            group(add.s(1, 1), add.s(2, 2)),
+            chain(add.s(1, 1), add.s(2, 2)),
+            chord([add.s(1, 1), add.s(2, 2)], xsum.s()),
+            chain(group(add.s(0, 0)), add.s(-1)),
+            add.s(1, 1) | add.s(10),
+            group(add.s(1, 1) | add.s(10), add.s(2, 2) | add.s(20)),
+            chain(add.s(1, 1) | add.s(10), add.s(2) | add.s(20)),
+            chord([add.s(1, 1) | add.s(10), add.s(2, 2) | add.s(20)], xsum.s()),
+            chain(
+                chain(add.s(1, 1) | add.s(10), add.s(2) | add.s(20)),
+                add.s(3) | add.s(30),
+            ),
+            chord(
+                group(
+                    chain(add.s(1, 1), add.s(2)),
+                    chord([add.s(3, 3), add.s(4, 4)], xsum.s()),
+                ),
+                xsum.s(),
+            ),
+        ]
+
+        for sig in canvas:
+            with subtests.test(msg="Assert all tasks are stamped"):
+
+                class CustomStampingVisitor(StampingVisitor):
+                    def on_signature(self, sig, **headers) -> dict:
+                        return {"stamp": 42}
+
+                stamped_task = sig
+                stamped_task.stamp(visitor=CustomStampingVisitor())
+                assertion_result = True
+                stamped_task.apply_async().get()
+                assert assertion_result
+
+    def test_replace_merge_stamps(self, manager):
+        """Test that replacing a task keeps the previous and new stamps"""
+
+        @task_received.connect
+        def task_received_handler(**kwargs):
+            request = kwargs["request"]
+            nonlocal assertion_result
+            expected_stamp_key = list(StampOnReplace.stamp.keys())[0]
+            expected_stamp_value = list(StampOnReplace.stamp.values())[0]
+
+            assertion_result = all(
+                [
+                    assertion_result,
+                    all([stamped_header in request.stamps for stamped_header in request.stamped_headers]),
+                    request.stamps["stamp"] == 42,
+                    request.stamps[expected_stamp_key] == expected_stamp_value
+                    if "replaced_with_me" in request.task_name
+                    else True,
+                ]
+            )
+
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {"stamp": 42}
+
+        stamped_task = replace_with_stamped_task.s()
+        stamped_task.stamp(visitor=CustomStampingVisitor())
+        assertion_result = False
+        stamped_task.delay()
+        assertion_result = True
+        sleep(1)
+        # stamped_task needs to be stamped with CustomStampingVisitor
+        # and the replaced task with both CustomStampingVisitor and StampOnReplace
+        assert assertion_result, "All of the tasks should have been stamped"
+
+    def test_linking_stamped_sig(self, manager):
+        """Test that linking a callback after stamping will stamp the callback correctly"""
+
+        assertion_result = False
+
+        @task_received.connect
+        def task_received_handler(sender=None, request=None, signal=None, **kwargs):
+            nonlocal assertion_result
+            link = request._Request__payload[2]["callbacks"][0]
+            assertion_result = all(
+                [stamped_header in link["options"] for stamped_header in link["options"]["stamped_headers"]]
+            )
+
+        class FixedMonitoringIdStampingVisitor(StampingVisitor):
+            def __init__(self, msg_id):
+                self.msg_id = msg_id
+
+            def on_signature(self, sig, **headers):
+                mtask_id = self.msg_id
+                return {"mtask_id": mtask_id}
+
+        link_sig = identity.si("link_sig")
+        stamped_pass_sig = identity.si("passing sig")
+        stamped_pass_sig.stamp(visitor=FixedMonitoringIdStampingVisitor(str(uuid.uuid4())))
+        stamped_pass_sig.link(link_sig)
+        stamped_pass_sig.stamp(visitor=FixedMonitoringIdStampingVisitor("1234"))
+        stamped_pass_sig.apply_async().get(timeout=2)
+        assert assertion_result
+
+    def test_err_linking_stamped_sig(self, manager):
+        """Test that linking an error after stamping will stamp the errlink correctly"""
+
+        assertion_result = False
+
+        @task_received.connect
+        def task_received_handler(sender=None, request=None, signal=None, **kwargs):
+            nonlocal assertion_result
+            link_error = request.errbacks[0]
+            assertion_result = all(
+                [
+                    stamped_header in link_error["options"]
+                    for stamped_header in link_error["options"]["stamped_headers"]
+                ]
+            )
+
+        class FixedMonitoringIdStampingVisitor(StampingVisitor):
+            def __init__(self, msg_id):
+                self.msg_id = msg_id
+
+            def on_signature(self, sig, **headers):
+                mtask_id = self.msg_id
+                return {"mtask_id": mtask_id}
+
+        link_error_sig = identity.si("link_error")
+        stamped_fail_sig = fail.si()
+        stamped_fail_sig.stamp(visitor=FixedMonitoringIdStampingVisitor(str(uuid.uuid4())))
+        stamped_fail_sig.link_error(link_error_sig)
+        with pytest.raises(ExpectedException):
+            stamped_fail_sig.stamp(visitor=FixedMonitoringIdStampingVisitor("1234"))
+            stamped_fail_sig.apply_async().get()
+        assert assertion_result
+
+    @flaky
+    def test_stamps_remain_on_task_retry(self, manager):
+        @task_received.connect
+        def task_received_handler(request, **kwargs):
+            nonlocal assertion_result
+
+            try:
+                assertion_result = all(
+                    [
+                        assertion_result,
+                        all([stamped_header in request.stamps for stamped_header in request.stamped_headers]),
+                        request.stamps["stamp"] == 42,
+                    ]
+                )
+            except Exception:
+                assertion_result = False
+
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {"stamp": 42}
+
+        stamped_task = retry_once.si()
+        stamped_task.stamp(visitor=CustomStampingVisitor())
+        assertion_result = True
+        res = stamped_task.delay()
+        res.get(timeout=TIMEOUT)
+        assert assertion_result
+
+    def test_stamp_canvas_with_dictionary_link(self, manager, subtests):
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {"on_signature": 42}
+
+        with subtests.test("Stamp canvas with dictionary link"):
+            canvas = identity.si(42)
+            canvas.options["link"] = dict(identity.si(42))
+            canvas.stamp(visitor=CustomStampingVisitor())
+
+    def test_stamp_canvas_with_dictionary_link_error(self, manager, subtests):
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {"on_signature": 42}
+
+        with subtests.test("Stamp canvas with dictionary link error"):
+            canvas = fail.si()
+            canvas.options["link_error"] = dict(fail.si())
+            canvas.stamp(visitor=CustomStampingVisitor())
+
+        with subtests.test(msg="Expect canvas to fail"):
+            with pytest.raises(ExpectedException):
+                canvas.apply_async().get(timeout=TIMEOUT)

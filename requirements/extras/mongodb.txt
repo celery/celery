@@ -1,1 +1,1 @@
-pymongo[srv]>=3.3.0
+pymongo==4.10.1

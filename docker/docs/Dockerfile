@@ -1,4 +1,4 @@
-FROM python:3.9-slim-buster
+FROM python:3.12-slim-bookworm
 
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -21,6 +21,10 @@ COPY /requirements /requirements
 
 # All imports needed for autodoc.
 RUN pip install -r /requirements/docs.txt -r /requirements/default.txt
+
+COPY . /celery
+
+RUN pip install /celery
 
 COPY docker/docs/start /start-docs
 RUN sed -i 's/\r$//g' /start-docs

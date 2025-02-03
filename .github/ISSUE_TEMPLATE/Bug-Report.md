@@ -1,8 +1,12 @@
 ---
 name: Bug Report
 about: Is something wrong with Celery?
-labels: "Issue Type: Bug Report"
+title: ''
+labels: 'Issue Type: Bug Report'
+assignees: ''
+
 ---
+
 <!--
 Please fill this template entirely and do not erase parts of it.
 We reserve the right to close without a response
@@ -12,26 +16,27 @@ bug reports which are incomplete.
 <!--
 To check an item on the list replace [ ] with [x].
 -->
-- [ ] I have verified that the issue exists against the `master` branch of Celery.
-- [ ] This has already been asked to the [discussion group](https://groups.google.com/forum/#!forum/celery-users) first.
+- [ ] I have verified that the issue exists against the `main` branch of Celery.
+- [ ] This has already been asked to the [discussions forum](https://github.com/celery/celery/discussions) first.
 - [ ] I have read the relevant section in the
-  [contribution guide](http://docs.celeryproject.org/en/latest/contributing.html#other-bugs)
+  [contribution guide](https://docs.celeryq.dev/en/main/contributing.html#other-bugs)
   on reporting bugs.
 - [ ] I have checked the [issues list](https://github.com/celery/celery/issues?q=is%3Aissue+label%3A%22Issue+Type%3A+Bug+Report%22+-label%3A%22Category%3A+Documentation%22)
   for similar or identical bug reports.
 - [ ] I have checked the [pull requests list](https://github.com/celery/celery/pulls?q=is%3Apr+label%3A%22PR+Type%3A+Bugfix%22+-label%3A%22Category%3A+Documentation%22)
   for existing proposed fixes.
-- [ ] I have checked the [commit log](https://github.com/celery/celery/commits/master)
-  to find out if the bug was already fixed in the master branch.
+- [ ] I have checked the [commit log](https://github.com/celery/celery/commits/main)
+  to find out if the bug was already fixed in the main branch.
 - [ ] I have included all related issues and possible duplicate issues
   in this issue (If there are none, check this box anyway).
+- [ ] I have tried to reproduce the issue with [pytest-celery](https://docs.celeryq.dev/projects/pytest-celery/en/latest/userguide/celery-bug-report.html) and added the reproduction script below.
 
 ## Mandatory Debugging Information
 
 - [ ] I have included the output of ``celery -A proj report`` in the issue.
     (if you are not able to do this, then at least specify the Celery
      version affected).
-- [ ] I have verified that the issue exists against the `master` branch of Celery.
+- [ ] I have verified that the issue exists against the `main` branch of Celery.
 - [ ] I have included the contents of ``pip freeze`` in the issue.
 - [ ] I have included all the versions of all the external dependencies required
   to reproduce this bug.
@@ -92,14 +97,14 @@ on the subject: https://help.github.com/en/articles/autolinked-references-and-ur
 
 ## Required Dependencies
 <!-- Please fill the required dependencies to reproduce this issue -->
-* **Minimal Python Version**: N/A or Unknown
-* **Minimal Celery Version**: N/A or Unknown
-* **Minimal Kombu Version**: N/A or Unknown
-* **Minimal Broker Version**: N/A or Unknown
-* **Minimal Result Backend Version**: N/A or Unknown
-* **Minimal OS and/or Kernel Version**: N/A or Unknown
-* **Minimal Broker Client Version**: N/A or Unknown
-* **Minimal Result Backend Client Version**: N/A or Unknown
+- **Minimal Python Version**: N/A or Unknown
+- **Minimal Celery Version**: N/A or Unknown
+- **Minimal Kombu Version**: N/A or Unknown
+- **Minimal Broker Version**: N/A or Unknown
+- **Minimal Result Backend Version**: N/A or Unknown
+- **Minimal OS and/or Kernel Version**: N/A or Unknown
+- **Minimal Broker Client Version**: N/A or Unknown
+- **Minimal Result Backend Client Version**: N/A or Unknown
 
 ### Python Packages
 <!-- Please fill the contents of pip freeze below -->
@@ -133,6 +138,10 @@ We prefer submitting test cases in the form of a PR to our integration test suit
 If you can provide one, please mention the PR number below.
 If not, please attach the most minimal code example required to reproduce the issue below.
 If the test case is too large, please include a link to a gist or a repository below.
+
+Alternatively, the pytest-celery plugin can be used to create standalone reproduction scripts
+that can be added to this report. See the pytest-celery documentation for more information at
+pytest-celery.readthedocs.io
 -->
 
 <details>

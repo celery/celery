@@ -9,7 +9,6 @@ sys.path.insert(0, os.getcwd())
 
 broker_url = 'amqp://guest:guest@localhost:5672//'
 worker_disable_rate_limits = True
-result_backend = 'amqp'
 result_expires = 30 * 60
 
 imports = ('tasks', 'webcrawler')
