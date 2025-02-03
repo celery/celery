@@ -1,15 +1,21 @@
+import dbm
 import errno
-from datetime import datetime, timedelta
+import sys
+from datetime import datetime, timedelta, timezone
 from pickle import dumps, loads
-from unittest.mock import Mock, call, patch
+from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
-import pytz
 
 from celery import __version__, beat, uuid
 from celery.beat import BeatLazyFunc, event_t
 from celery.schedules import crontab, schedule
 from celery.utils.objects import Bunch
+
+if sys.version_info >= (3, 9):
+    from zoneinfo import ZoneInfo
+else:
+    from backports.zoneinfo import ZoneInfo
 
 
 class MockShelve(dict):
@@ -151,7 +157,10 @@ class mSchedulerRuntimeError(mScheduler):
 
 class mocked_schedule(schedule):
 
-    def __init__(self, is_due, next_run_at, nowfun=datetime.utcnow):
+    def now_func():
+        return datetime.now(timezone.utc)
+
+    def __init__(self, is_due, next_run_at, nowfun=now_func):
         self._is_due = is_due
         self._next_run_at = next_run_at
         self.run_every = timedelta(seconds=1)
@@ -194,7 +203,9 @@ class test_Scheduler:
         foo.apply_async = Mock(name='foo.apply_async')
 
         scheduler = mScheduler(app=self.app)
-        scheduler.apply_async(scheduler.Entry(task=foo.name, app=self.app, args=None, kwargs=None))
+        scheduler.apply_async(
+            scheduler.Entry(
+                task=foo.name, app=self.app, args=None, kwargs=None))
         foo.apply_async.assert_called()
 
     def test_apply_async_with_null_args_set_to_none(self):
@@ -293,6 +304,29 @@ class test_Scheduler:
     def test_info(self):
         scheduler = mScheduler(app=self.app)
         assert isinstance(scheduler.info, str)
+
+    def test_apply_entry_handles_empty_result(self):
+        s = mScheduler(app=self.app)
+        entry = s.Entry(name='a name', task='foo', app=self.app)
+
+        with patch.object(s, 'apply_async') as mock_apply_async:
+            with patch("celery.beat.debug") as mock_debug:
+                mock_apply_async.return_value = None
+                s.apply_entry(entry)
+        mock_debug.assert_called_once_with('%s sent.', entry.task)
+
+        with patch.object(s, 'apply_async') as mock_apply_async:
+            with patch("celery.beat.debug") as mock_debug:
+                mock_apply_async.return_value = object()
+                s.apply_entry(entry)
+        mock_debug.assert_called_once_with('%s sent.', entry.task)
+
+        task_id = 'taskId123456'
+        with patch.object(s, 'apply_async') as mock_apply_async:
+            with patch("celery.beat.debug") as mock_debug:
+                mock_apply_async.return_value = self.app.AsyncResult(task_id)
+                s.apply_entry(entry)
+        mock_debug.assert_called_once_with('%s sent. id->%s', entry.task, task_id)
 
     def test_maybe_entry(self):
         s = mScheduler(app=self.app)
@@ -432,9 +466,10 @@ class test_Scheduler:
         assert a.schedule['bar'].schedule._next_run_at == 40
 
     def test_when(self):
-        now_time_utc = datetime(2000, 10, 10, 10, 10, 10, 10, tzinfo=pytz.utc)
+        now_time_utc = datetime(2000, 10, 10, 10, 10,
+                                10, 10, tzinfo=ZoneInfo("UTC"))
         now_time_casey = now_time_utc.astimezone(
-            pytz.timezone('Antarctica/Casey')
+            ZoneInfo('Antarctica/Casey')
         )
         scheduler = mScheduler(app=self.app)
         result_utc = scheduler._when(
@@ -635,6 +670,57 @@ class test_PersistentScheduler:
         with pytest.raises(OSError):
             s._remove_db()
 
+    def test_create_schedule_corrupted(self):
+        """
+        Test that any decoding errors that might happen when opening beat-schedule.db are caught
+        """
+        s = create_persistent_scheduler()[0](app=self.app,
+                                             schedule_filename='schedule')
+        s._store = MagicMock()
+        s._destroy_open_corrupted_schedule = Mock()
+        s._destroy_open_corrupted_schedule.return_value = MagicMock()
+
+        # self._store['entries'] will throw a KeyError
+        s._store.__getitem__.side_effect = KeyError()
+        # then, when _create_schedule tries to reset _store['entries'], throw another error
+        expected_error = UnicodeDecodeError("ascii", b"ordinal not in range(128)", 0, 0, "")
+        s._store.__setitem__.side_effect = expected_error
+
+        s._create_schedule()
+        s._destroy_open_corrupted_schedule.assert_called_with(expected_error)
+
+    def test_create_schedule_corrupted_dbm_error(self):
+        """
+        Test that any dbm.error that might happen when opening beat-schedule.db are caught
+        """
+        s = create_persistent_scheduler()[0](app=self.app,
+                                             schedule_filename='schedule')
+        s._store = MagicMock()
+        s._destroy_open_corrupted_schedule = Mock()
+        s._destroy_open_corrupted_schedule.return_value = MagicMock()
+
+        # self._store['entries'] = {} will throw a KeyError
+        s._store.__getitem__.side_effect = KeyError()
+        # then, when _create_schedule tries to reset _store['entries'], throw another error, specifically dbm.error
+        expected_error = dbm.error[0]()
+        s._store.__setitem__.side_effect = expected_error
+
+        s._create_schedule()
+        s._destroy_open_corrupted_schedule.assert_called_with(expected_error)
+
+    def test_create_schedule_missing_entries(self):
+        """
+        Test that if _create_schedule can't find the key "entries" in _store it will recreate it
+        """
+        s = create_persistent_scheduler()[0](app=self.app, schedule_filename="schedule")
+        s._store = MagicMock()
+
+        # self._store['entries'] will throw a KeyError
+        s._store.__getitem__.side_effect = TypeError()
+
+        s._create_schedule()
+        s._store.__setitem__.assert_called_with("entries", {})
+
     def test_setup_schedule(self):
         s = create_persistent_scheduler()[0](app=self.app,
                                              schedule_filename='schedule')
@@ -731,7 +817,8 @@ class test_Service:
 
     def get_service(self):
         Scheduler, mock_shelve = create_persistent_scheduler()
-        return beat.Service(app=self.app, scheduler_cls=Scheduler), mock_shelve
+        return beat.Service(
+            app=self.app, scheduler_cls=Scheduler), mock_shelve
 
     def test_pickleable(self):
         s = beat.Service(app=self.app, scheduler_cls=Mock)
@@ -831,17 +918,17 @@ class test_schedule:
     def test_maybe_make_aware(self):
         x = schedule(10, app=self.app)
         x.utc_enabled = True
-        d = x.maybe_make_aware(datetime.utcnow())
+        d = x.maybe_make_aware(datetime.now(timezone.utc))
         assert d.tzinfo
         x.utc_enabled = False
-        d2 = x.maybe_make_aware(datetime.utcnow())
+        d2 = x.maybe_make_aware(datetime.now(timezone.utc))
         assert d2.tzinfo
 
     def test_to_local(self):
         x = schedule(10, app=self.app)
         x.utc_enabled = True
-        d = x.to_local(datetime.utcnow())
+        d = x.to_local(datetime.now())
         assert d.tzinfo is None
         x.utc_enabled = False
-        d = x.to_local(datetime.utcnow())
+        d = x.to_local(datetime.now(timezone.utc))
         assert d.tzinfo

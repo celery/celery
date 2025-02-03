@@ -104,7 +104,7 @@ class Context:
     def _get_custom_headers(self, *args, **kwargs):
         headers = {}
         headers.update(*args, **kwargs)
-        celery_keys = {*Context.__dict__.keys(), 'lang', 'task', 'argsrepr', 'kwargsrepr'}
+        celery_keys = {*Context.__dict__.keys(), 'lang', 'task', 'argsrepr', 'kwargsrepr', 'compression'}
         for key in celery_keys:
             headers.pop(key, None)
         if not headers:
@@ -125,7 +125,7 @@ class Context:
 
     def as_execution_options(self):
         limit_hard, limit_soft = self.timelimit or (None, None)
-        return {
+        execution_options = {
             'task_id': self.id,
             'root_id': self.root_id,
             'parent_id': self.parent_id,
@@ -145,6 +145,12 @@ class Context:
             'replaced_task_nesting': self.replaced_task_nesting,
             'origin': self.origin,
         }
+        if hasattr(self, 'stamps') and hasattr(self, 'stamped_headers'):
+            if self.stamps is not None and self.stamped_headers is not None:
+                execution_options['stamped_headers'] = self.stamped_headers
+                for k, v in self.stamps.items():
+                    execution_options[k] = v
+        return execution_options
 
     @property
     def children(self):
@@ -460,7 +466,7 @@ class Task:
             shadow (str): Override task name used in logs/monitoring.
                 Default is retrieved from :meth:`shadow_name`.
 
-            connection (kombu.Connection): Re-use existing broker connection
+            connection (kombu.Connection): Reuse existing broker connection
                 instead of acquiring one from the connection pool.
 
             retry (bool): If enabled sending of the task message will be
@@ -537,6 +543,8 @@ class Task:
             TypeError: If not enough arguments are passed, or too many
                 arguments are passed.  Note that signature checks may
                 be disabled by specifying ``@task(typing=False)``.
+            ValueError: If soft_time_limit and time_limit both are set
+                but soft_time_limit is greater than time_limit
             kombu.exceptions.OperationalError: If a connection to the
                transport cannot be made, or if the connection is lost.
 
@@ -544,6 +552,9 @@ class Task:
             Also supports all keyword arguments supported by
             :meth:`kombu.Producer.publish`.
         """
+        if self.soft_time_limit and self.time_limit and self.soft_time_limit > self.time_limit:
+            raise ValueError('soft_time_limit must be less than or equal to time_limit')
+
         if self.typing:
             try:
                 check_arguments = self.__header__
@@ -782,6 +793,7 @@ class Task:
 
         request = {
             'id': task_id,
+            'task': self.name,
             'retries': retries,
             'is_eager': True,
             'logfile': logfile,
@@ -818,7 +830,7 @@ class Task:
         if isinstance(retval, Retry) and retval.sig is not None:
             return retval.sig.apply(retries=retries + 1)
         state = states.SUCCESS if ret.info is None else ret.info.state
-        return EagerResult(task_id, retval, state, traceback=tb)
+        return EagerResult(task_id, retval, state, traceback=tb, name=self.name)
 
     def AsyncResult(self, task_id, **kwargs):
         """Get AsyncResult instance for the specified task.
@@ -948,11 +960,20 @@ class Task:
             root_id=self.request.root_id,
             replaced_task_nesting=replaced_task_nesting
         )
+
+        # If the replaced task is a chain, we want to set all of the chain tasks
+        # with the same replaced_task_nesting value to mark their replacement nesting level
+        if isinstance(sig, _chain):
+            for chain_task in maybe_list(sig.tasks) or []:
+                chain_task.set(replaced_task_nesting=replaced_task_nesting)
+
         # If the task being replaced is part of a chain, we need to re-create
         # it with the replacement signature - these subsequent tasks will
         # retain their original task IDs as well
         for t in reversed(self.request.chain or []):
-            sig |= signature(t, app=self.app)
+            chain_task = signature(t, app=self.app)
+            chain_task.set(replaced_task_nesting=replaced_task_nesting)
+            sig |= chain_task
         return self.on_replace(sig)
 
     def add_to_chord(self, sig, lazy=False):
@@ -1093,7 +1114,7 @@ class Task:
         return result
 
     def push_request(self, *args, **kwargs):
-        self.request_stack.push(Context(*args, **kwargs))
+        self.request_stack.push(Context(*args, **{**self.request.__dict__, **kwargs}))
 
     def pop_request(self):
         self.request_stack.pop()
@@ -1120,7 +1141,7 @@ class Task:
         return self._exec_options
 
     @property
-    def backend(self):
+    def backend(self):  # noqa: F811
         backend = self._backend
         if backend is None:
             return self.app.backend

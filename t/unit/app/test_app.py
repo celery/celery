@@ -1,14 +1,22 @@
 import gc
+import importlib
 import itertools
 import os
 import ssl
+import sys
+import typing
 import uuid
 from copy import deepcopy
 from datetime import datetime, timedelta
+from datetime import timezone as datetime_timezone
+from logging import LogRecord
 from pickle import dumps, loads
-from unittest.mock import Mock, patch
+from typing import Optional
+from unittest.mock import ANY, DEFAULT, MagicMock, Mock, patch
 
 import pytest
+from kombu import Exchange, Queue
+from pydantic import BaseModel, ValidationInfo, model_validator
 from vine import promise
 
 from celery import Celery, _state
@@ -26,6 +34,11 @@ from celery.utils.objects import Bunch
 from celery.utils.serialization import pickle
 from celery.utils.time import localize, timezone, to_utc
 from t.unit import conftest
+
+if sys.version_info >= (3, 9):
+    from zoneinfo import ZoneInfo
+else:
+    from backports.zoneinfo import ZoneInfo  # noqa
 
 THIS_IS_A_KEY = 'this is a value'
 
@@ -79,7 +92,7 @@ class test_App:
         tz_utc = timezone.get_timezone('UTC')
         tz_us_eastern = timezone.get_timezone(timezone_setting_value)
 
-        now = to_utc(datetime.utcnow())
+        now = to_utc(datetime.now(datetime_timezone.utc))
         app_now = self.app.now()
 
         assert app_now.tzinfo is tz_utc
@@ -93,9 +106,9 @@ class test_App:
 
         app_now = self.app.now()
 
-        assert app_now.tzinfo.zone == tz_us_eastern.zone
+        assert app_now.tzinfo == tz_us_eastern
 
-        diff = to_utc(datetime.utcnow()) - localize(app_now, tz_utc)
+        diff = to_utc(datetime.now(datetime_timezone.utc)) - localize(app_now, tz_utc)
         assert diff <= timedelta(seconds=1)
 
         # Verify that timezone setting overrides enable_utc=on setting
@@ -103,7 +116,7 @@ class test_App:
         del self.app.timezone
         app_now = self.app.now()
         assert self.app.timezone == tz_us_eastern
-        assert app_now.tzinfo.zone == tz_us_eastern.zone
+        assert app_now.tzinfo == tz_us_eastern
 
     @patch('celery.app.base.set_default_app')
     def test_set_default(self, set_default_app):
@@ -498,6 +511,301 @@ class test_App:
                 pass
             check.assert_called_with(foo)
 
+    def test_task_with_pydantic_with_no_args(self):
+        """Test a pydantic task with no arguments or return value."""
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo():
+                check()
+
+            assert foo() is None
+            check.assert_called_once()
+
+    def test_task_with_pydantic_with_arg_and_kwarg(self):
+        """Test a pydantic task with simple (non-pydantic) arg/kwarg and return value."""
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo(arg: int, kwarg: bool = True) -> int:
+                check(arg, kwarg=kwarg)
+                return 1
+
+            assert foo(0) == 1
+            check.assert_called_once_with(0, kwarg=True)
+
+    def test_task_with_pydantic_with_optional_args(self):
+        """Test pydantic task receiving and returning an optional argument."""
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo(arg: Optional[int], kwarg: Optional[bool] = True) -> Optional[int]:
+                check(arg, kwarg=kwarg)
+                if isinstance(arg, int):
+                    return 1
+                return 2
+
+            assert foo(0) == 1
+            check.assert_called_once_with(0, kwarg=True)
+
+            assert foo(None) == 2
+            check.assert_called_with(None, kwarg=True)
+
+    @pytest.mark.skipif(sys.version_info < (3, 9), reason="Notation is only supported in Python 3.9 or newer.")
+    def test_task_with_pydantic_with_dict_args(self):
+        """Test pydantic task receiving and returning a generic dict argument."""
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo(arg: dict[str, str], kwarg: dict[str, str]) -> dict[str, str]:
+                check(arg, kwarg=kwarg)
+                return {'x': 'y'}
+
+            assert foo({'a': 'b'}, kwarg={'c': 'd'}) == {'x': 'y'}
+            check.assert_called_once_with({'a': 'b'}, kwarg={'c': 'd'})
+
+    @pytest.mark.skipif(sys.version_info < (3, 9), reason="Notation is only supported in Python 3.9 or newer.")
+    def test_task_with_pydantic_with_list_args(self):
+        """Test pydantic task receiving and returning a generic dict argument."""
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo(arg: list[str], kwarg: list[str] = True) -> list[str]:
+                check(arg, kwarg=kwarg)
+                return ['x']
+
+            assert foo(['a'], kwarg=['b']) == ['x']
+            check.assert_called_once_with(['a'], kwarg=['b'])
+
+    def test_task_with_pydantic_with_pydantic_arg_and_default_kwarg(self):
+        """Test a pydantic task with pydantic arg/kwarg and return value."""
+
+        class ArgModel(BaseModel):
+            arg_value: int
+
+        class KwargModel(BaseModel):
+            kwarg_value: int
+
+        kwarg_default = KwargModel(kwarg_value=1)
+
+        class ReturnModel(BaseModel):
+            ret_value: int
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo(arg: ArgModel, kwarg: KwargModel = kwarg_default) -> ReturnModel:
+                check(arg, kwarg=kwarg)
+                return ReturnModel(ret_value=2)
+
+            assert foo({'arg_value': 0}) == {'ret_value': 2}
+            check.assert_called_once_with(ArgModel(arg_value=0), kwarg=kwarg_default)
+            check.reset_mock()
+
+            # Explicitly pass kwarg (but as argument)
+            assert foo({'arg_value': 3}, {'kwarg_value': 4}) == {'ret_value': 2}
+            check.assert_called_once_with(ArgModel(arg_value=3), kwarg=KwargModel(kwarg_value=4))
+            check.reset_mock()
+
+            # Explicitly pass all arguments as kwarg
+            assert foo(arg={'arg_value': 5}, kwarg={'kwarg_value': 6}) == {'ret_value': 2}
+            check.assert_called_once_with(ArgModel(arg_value=5), kwarg=KwargModel(kwarg_value=6))
+
+    def test_task_with_pydantic_with_non_strict_validation(self):
+        """Test a pydantic task with where Pydantic has to apply non-strict validation."""
+
+        class Model(BaseModel):
+            value: timedelta
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo(arg: Model) -> Model:
+                check(arg)
+                return Model(value=timedelta(days=arg.value.days * 2))
+
+            assert foo({'value': timedelta(days=1)}) == {'value': 'P2D'}
+            check.assert_called_once_with(Model(value=timedelta(days=1)))
+            check.reset_mock()
+
+            # Pass a serialized value to the task
+            assert foo({'value': 'P3D'}) == {'value': 'P6D'}
+            check.assert_called_once_with(Model(value=timedelta(days=3)))
+
+    def test_task_with_pydantic_with_optional_pydantic_args(self):
+        """Test pydantic task receiving and returning an optional argument."""
+        class ArgModel(BaseModel):
+            arg_value: int
+
+        class KwargModel(BaseModel):
+            kwarg_value: int
+
+        class ReturnModel(BaseModel):
+            ret_value: int
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo(arg: Optional[ArgModel], kwarg: Optional[KwargModel] = None) -> Optional[ReturnModel]:
+                check(arg, kwarg=kwarg)
+                if isinstance(arg, ArgModel):
+                    return ReturnModel(ret_value=1)
+                return None
+
+            assert foo(None) is None
+            check.assert_called_once_with(None, kwarg=None)
+
+            assert foo({'arg_value': 1}, kwarg={'kwarg_value': 2}) == {'ret_value': 1}
+            check.assert_called_with(ArgModel(arg_value=1), kwarg=KwargModel(kwarg_value=2))
+
+    @pytest.mark.skipif(sys.version_info < (3, 9), reason="Notation is only supported in Python 3.9 or newer.")
+    def test_task_with_pydantic_with_generic_return_value(self):
+        """Test pydantic task receiving and returning an optional argument."""
+        class ReturnModel(BaseModel):
+            ret_value: int
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo() -> dict[str, str]:
+                check()
+                return ReturnModel(ret_value=1)  # type: ignore  # whole point here is that this doesn't match
+
+            assert foo() == ReturnModel(ret_value=1)
+            check.assert_called_once_with()
+
+    def test_task_with_pydantic_with_task_name_in_context(self):
+        """Test that the task name is passed to as additional context."""
+
+        class ArgModel(BaseModel):
+            value: int
+
+            @model_validator(mode='after')
+            def validate_context(self, info: ValidationInfo):
+                context = info.context
+                assert context
+                assert context.get('celery_task_name') == 't.unit.app.test_app.task'
+                return self
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def task(arg: ArgModel):
+                check(arg)
+                return 1
+
+            assert task({'value': 1}) == 1
+
+    def test_task_with_pydantic_with_strict_validation(self):
+        """Test a pydantic task with/without strict model validation."""
+
+        class ArgModel(BaseModel):
+            value: int
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True, pydantic_strict=True)
+            def strict(arg: ArgModel):
+                check(arg)
+
+            @app.task(pydantic=True, pydantic_strict=False)
+            def loose(arg: ArgModel):
+                check(arg)
+
+            # In Pydantic, passing an "exact int" as float works without strict validation
+            assert loose({'value': 1.0}) is None
+            check.assert_called_once_with(ArgModel(value=1))
+            check.reset_mock()
+
+            # ... but a non-strict value will raise an exception
+            with pytest.raises(ValueError):
+                loose({'value': 1.1})
+            check.assert_not_called()
+
+            # ... with strict validation, even an "exact int" will not work:
+            with pytest.raises(ValueError):
+                strict({'value': 1.0})
+            check.assert_not_called()
+
+    def test_task_with_pydantic_with_extra_context(self):
+        """Test passing additional validation context to the model."""
+
+        class ArgModel(BaseModel):
+            value: int
+
+            @model_validator(mode='after')
+            def validate_context(self, info: ValidationInfo):
+                context = info.context
+                assert context, context
+                assert context.get('foo') == 'bar'
+                return self
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True, pydantic_context={'foo': 'bar'})
+            def task(arg: ArgModel):
+                check(arg.value)
+                return 1
+
+            assert task({'value': 1}) == 1
+            check.assert_called_once_with(1)
+
+    def test_task_with_pydantic_with_dump_kwargs(self):
+        """Test passing keyword arguments to model_dump()."""
+
+        class ArgModel(BaseModel):
+            value: int
+
+        class RetModel(BaseModel):
+            value: datetime
+            unset_value: typing.Optional[int] = 99  # this would be in the output, if exclude_unset weren't True
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True, pydantic_dump_kwargs={'mode': 'python', 'exclude_unset': True})
+            def task(arg: ArgModel) -> RetModel:
+                check(arg)
+                return RetModel(value=datetime(2024, 5, 14, tzinfo=timezone.utc))
+
+            assert task({'value': 1}) == {'value': datetime(2024, 5, 14, tzinfo=timezone.utc)}
+            check.assert_called_once_with(ArgModel(value=1))
+
+    def test_task_with_pydantic_with_pydantic_not_installed(self):
+        """Test configuring a task with Pydantic when pydantic is not installed."""
+
+        with self.Celery() as app:
+            @app.task(pydantic=True)
+            def task():
+                return
+
+            # mock function will raise ModuleNotFoundError only if pydantic is imported
+            def import_module(name, *args, **kwargs):
+                if name == 'pydantic':
+                    raise ModuleNotFoundError('Module not found.')
+                return DEFAULT
+
+            msg = r'^You need to install pydantic to use pydantic model serialization\.$'
+            with patch(
+                'celery.app.base.importlib.import_module',
+                side_effect=import_module,
+                wraps=importlib.import_module
+            ):
+                with pytest.raises(ImproperlyConfigured, match=msg):
+                    task()
+
     def test_task_sets_main_name_MP_MAIN_FILE(self):
         from celery.utils import imports as _imports
         _imports.MP_MAIN_FILE = __file__
@@ -520,7 +828,8 @@ class test_App:
             def foo(parameter: int) -> None:
                 pass
 
-            assert typing.get_type_hints(foo) == {'parameter': int, 'return': type(None)}
+            assert typing.get_type_hints(foo) == {
+                'parameter': int, 'return': type(None)}
 
     def test_annotate_decorator(self):
         from celery.app.task import Task
@@ -688,6 +997,18 @@ class test_App:
             self.app.config_from_object(Config(), force=True)
             assert exc.args[0].startswith('task_default_delivery_mode')
             assert 'CELERY_DEFAULT_DELIVERY_MODE' in exc.args[0]
+
+    def test_config_form_object__module_attr_does_not_exist(self):
+        module_name = __name__
+        attr_name = 'bar'
+        # the module must exist, but it should not have the config attr
+        self.app.config_from_object(f'{module_name}.{attr_name}')
+
+        with pytest.raises(ModuleNotFoundError) as exc:
+            assert self.app.conf.broker_url is None
+
+        assert module_name in exc.value.args[0]
+        assert attr_name in exc.value.args[0]
 
     def test_config_from_cmdline(self):
         cmdline = ['task_always_eager=no',
@@ -916,6 +1237,33 @@ class test_App:
         assert 'add1' in self.app.conf.beat_schedule
         assert 'add2' in self.app.conf.beat_schedule
 
+    def test_add_periodic_task_expected_override(self):
+
+        @self.app.task
+        def add(x, y):
+            pass
+        sig = add.s(2, 2)
+        self.app.add_periodic_task(10, sig, name='add1', expires=3)
+        self.app.add_periodic_task(20, sig, name='add1', expires=3)
+        assert 'add1' in self.app.conf.beat_schedule
+        assert len(self.app.conf.beat_schedule) == 1
+
+    def test_add_periodic_task_unexpected_override(self, caplog):
+
+        @self.app.task
+        def add(x, y):
+            pass
+        sig = add.s(2, 2)
+        self.app.add_periodic_task(10, sig, expires=3)
+        self.app.add_periodic_task(20, sig, expires=3)
+
+        assert len(self.app.conf.beat_schedule) == 1
+        assert caplog.records[0].message == (
+            "Periodic task key='t.unit.app.test_app.add(2, 2)' shadowed a"
+            " previous unnamed periodic task. Pass a name kwarg to"
+            " add_periodic_task to silence this warning."
+        )
+
     @pytest.mark.masked_modules('multiprocessing.util')
     def test_pool_no_multiprocessing(self, mask_modules):
         pool = self.app.pool
@@ -924,7 +1272,8 @@ class test_App:
     def test_bugreport(self):
         assert self.app.bugreport()
 
-    def test_send_task__connection_provided(self):
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task__connection_provided(self, detect_quorum_queues):
         connection = Mock(name='connection')
         router = Mock(name='router')
         router.route.return_value = {}
@@ -1066,6 +1415,191 @@ class test_App:
             assert isinstance(main_backend, Backend)
             assert isinstance(thread_backend, Backend)
             assert main_backend is thread_backend
+
+    def test_send_task_expire_as_string(self):
+        try:
+            self.app.send_task(
+                'foo', (1, 2),
+                expires='2023-03-16T17:21:20.663973')
+        except TypeError as e:
+            pytest.fail(f'raise unexcepted error {e}')
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery_countdown(self, detect_quorum_queues):
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {
+            'queue': Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        }
+
+        self.app.send_task('foo', (1, 2), countdown=30)
+
+        exchange = Exchange(
+            'celery_delayed_27',
+            type='topic',
+        )
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            exchange=exchange,
+            routing_key='0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.1.1.1.0.testcelery'
+        )
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery_eta_datetime(self, detect_quorum_queues):
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {
+            'queue': Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        }
+        self.app.now = Mock(return_value=datetime(2024, 8, 24, tzinfo=datetime_timezone.utc))
+
+        self.app.send_task('foo', (1, 2), eta=datetime(2024, 8, 25))
+
+        exchange = Exchange(
+            'celery_delayed_27',
+            type='topic',
+        )
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            exchange=exchange,
+            routing_key='0.0.0.0.0.0.0.0.0.0.0.1.0.1.0.1.0.0.0.1.1.0.0.0.0.0.0.0.testcelery'
+        )
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery_eta_str(self, detect_quorum_queues):
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {
+            'queue': Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        }
+        self.app.now = Mock(return_value=datetime(2024, 8, 24, tzinfo=datetime_timezone.utc))
+
+        self.app.send_task('foo', (1, 2), eta=datetime(2024, 8, 25).isoformat())
+
+        exchange = Exchange(
+            'celery_delayed_27',
+            type='topic',
+        )
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            exchange=exchange,
+            routing_key='0.0.0.0.0.0.0.0.0.0.0.1.0.1.0.1.0.0.0.1.1.0.0.0.0.0.0.0.testcelery',
+        )
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery_no_eta_or_countdown(self, detect_quorum_queues):
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {'queue': Queue('testcelery', routing_key='testcelery')}
+
+        self.app.send_task('foo', (1, 2), countdown=-10)
+
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            queue=Queue(
+                'testcelery',
+                routing_key='testcelery'
+            )
+        )
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery_countdown_in_the_past(self, detect_quorum_queues):
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {
+            'queue': Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        }
+
+        self.app.send_task('foo', (1, 2))
+
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            queue=Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        )
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery_eta_in_the_past(self, detect_quorum_queues):
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {
+            'queue': Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        }
+        self.app.now = Mock(return_value=datetime(2024, 8, 24, tzinfo=datetime_timezone.utc))
+
+        self.app.send_task('foo', (1, 2), eta=datetime(2024, 8, 23).isoformat())
+
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            queue=Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        )
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery_direct_exchange(self, detect_quorum_queues, caplog):
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {
+            'queue': Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='direct')
+            )
+        }
+
+        self.app.send_task('foo', (1, 2), countdown=10)
+
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            queue=Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='direct')
+            )
+        )
+
+        assert len(caplog.records) == 1
+        record: LogRecord = caplog.records[0]
+        assert record.levelname == "WARNING"
+        assert record.message == (
+            "Direct exchanges are not supported with native delayed delivery.\n"
+            "testcelery is a direct exchange but should be a topic exchange or "
+            "a fanout exchange in order for native delayed delivery to work properly.\n"
+            "If quorum queues are used, this task may block the worker process until the ETA arrives."
+        )
 
 
 class test_defaults:

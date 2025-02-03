@@ -166,8 +166,8 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               type=LOG_LEVEL,
               help_group="Worker Options",
               help="Logging level.")
-@click.option('optimization',
-              '-O',
+@click.option('-O',
+              '--optimization',
               default='default',
               cls=CeleryOption,
               type=click.Choice(('default', 'fair')),
@@ -300,8 +300,11 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
            **kwargs):
     """Start worker instance.
 
+    \b
     Examples
     --------
+
+    \b
     $ celery --app=proj worker -l INFO
     $ celery -A proj worker -l INFO -Q hipri,lopri
     $ celery -A proj worker --concurrency=4

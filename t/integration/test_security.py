@@ -74,7 +74,7 @@ class test_security:
     def gen_certificate(self, key, common_name, issuer=None, sign_key=None):
         """generate a certificate with cryptography"""
 
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(datetime.timezone.utc)
 
         certificate = x509.CertificateBuilder().subject_name(
             x509.Name([

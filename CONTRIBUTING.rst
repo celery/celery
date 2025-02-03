@@ -256,6 +256,7 @@ issue tracker.
 * :pypi:`kombu`: https://github.com/celery/kombu/issues
 * :pypi:`amqp`: https://github.com/celery/py-amqp/issues
 * :pypi:`vine`: https://github.com/celery/vine/issues
+* :pypi:`pytest-celery`: https://github.com/celery/pytest-celery/issues
 * :pypi:`librabbitmq`: https://github.com/celery/librabbitmq/issues
 * :pypi:`django-celery-beat`: https://github.com/celery/django-celery-beat/issues
 * :pypi:`django-celery-results`: https://github.com/celery/django-celery-results/issues
@@ -422,7 +423,7 @@ to upstream changes:
 .. code-block:: console
 
     $ cd celery
-    $ git remote add upstream git://github.com/celery/celery.git
+    $ git remote add upstream git@github.com:celery/celery.git
     $ git fetch upstream
 
 If you need to pull in new changes from upstream you should
@@ -464,13 +465,13 @@ Docker image can be built via:
 
 .. code-block:: console
 
-    $ docker-compose build celery
+    $ docker compose build celery
 
 and run via:
 
 .. code-block:: console
 
-    $ docker-compose run --rm celery <command>
+    $ docker compose run --rm celery <command>
 
 where <command> is a command to execute in a Docker container. The `--rm` flag
 indicates that the container should be removed after it is exited and is useful
@@ -485,7 +486,7 @@ Some useful commands to run:
 * ``make test``
 
     To run the test suite.
-    **Note:** This will run tests using python 3.8 by default.
+    **Note:** This will run tests using python 3.12 by default.
 
 * ``tox``
 
@@ -493,30 +494,30 @@ Some useful commands to run:
     **Note:** This command will run tests for every environment defined in :file:`tox.ini`.
     It takes a while.
 
-* ``pyenv exec python{3.6,3.7,3.8,3.9} -m pytest t/unit``
+* ``pyenv exec python{3.8,3.9,3.10,3.11,3.12} -m pytest t/unit``
 
     To run unit tests using pytest.
 
-    **Note:** ``{3.6,3.7,3.8,3.9}`` means you can use any of those options.
-    e.g. ``pyenv exec python3.7 -m pytest t/unit``
+    **Note:** ``{3.8,3.9,3.10,3.11,3.12}`` means you can use any of those options.
+    e.g. ``pyenv exec python3.12 -m pytest t/unit``
 
-* ``pyenv exec python{3.6,3.7,3.8,3.9} -m pytest t/integration``
+* ``pyenv exec python{3.8,3.9,3.10,3.11,3.12} -m pytest t/integration``
 
     To run integration tests using pytest
 
-    **Note:** ``{3.6,3.7,3.8,3.9}`` means you can use any of those options.
-    e.g. ``pyenv exec python3.7 -m pytest t/unit``
+    **Note:** ``{3.8,3.9,3.10,3.11,3.12}`` means you can use any of those options.
+    e.g. ``pyenv exec python3.12 -m pytest t/unit``
 
 By default, docker-compose will mount the Celery and test folders in the Docker
 container, allowing code changes and testing to be immediately visible inside
 the Docker container. Environment variables, such as the broker and backend to
 use are also defined in the :file:`docker/docker-compose.yml` file.
 
-By running ``docker-compose build celery`` an image will be created with the
+By running ``docker compose build celery`` an image will be created with the
 name ``celery/celery:dev``. This docker image has every dependency needed
 for development installed. ``pyenv`` is used to install multiple python
-versions, the docker image offers python 3.6, 3.7, 3.8 and 3.9.
-The default python version is set to 3.8.
+versions, the docker image offers python 3.8, 3.9, 3.10, 3.11 and 3.12.
+The default python version is set to 3.12.
 
 The :file:`docker-compose.yml` file defines the necessary environment variables
 to run integration tests. The ``celery`` service also mounts the codebase
@@ -526,7 +527,7 @@ as global module for development. If you prefer, you can also run
 ``python -m pip install -e .`` to install the codebase in development mode.
 
 If you would like to run a Django or stand alone project to manually test or
-debug a feature, you can use the image built by `docker-compose` and mount
+debug a feature, you can use the image built by `docker compose` and mount
 your custom code. Here's an example:
 
 Assuming a folder structure such as:
@@ -717,7 +718,7 @@ Build the documentation by running:
 
 .. code-block:: console
 
-    $ docker-compose -f docker/docker-compose.yml up --build docs
+    $ docker compose -f docker/docker-compose.yml up --build docs
 
 The service will start a local docs server at ``:7000``. The server is using
 ``sphinx-autobuild`` with the ``--watch`` option enabled, so you can live
@@ -825,7 +826,7 @@ had to be modified.
 
 .. _`Isort`: https://isort.readthedocs.io/en/latest/
 
-.. _contributing-pull-requets:
+.. _contributing-pull-requests:
 
 Creating pull requests
 ----------------------
@@ -1245,6 +1246,11 @@ Josue Balandrano Coronel
 :github: https://github.com/xirdneh
 :twitter: https://twitter.com/eusoj_xirdneh
 
+Tomer Nosrati
+~~~~~~~~~~~~~
+:github: https://github.com/Nusnus
+:twitter: https://x.com/tomer_nosrati
+
 Website
 -------
 
@@ -1311,6 +1317,15 @@ Promise/deferred implementation.
 :Windows-CI: https://ci.appveyor.com/project/ask/vine
 :PyPI: :pypi:`vine`
 :docs: https://vine.readthedocs.io
+
+``pytest-celery``
+-----------------
+
+Pytest plugin for Celery.
+
+:git: https://github.com/celery/pytest-celery
+:PyPI: :pypi:`pytest-celery`
+:docs: https://pytest-celery.readthedocs.io
 
 ``billiard``
 ------------

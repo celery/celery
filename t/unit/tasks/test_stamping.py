@@ -366,6 +366,19 @@ def return_True(*args, **kwargs):
 class CanvasCase:
     def setup_method(self):
         @self.app.task(shared=False)
+        def identity(x):
+            return x
+
+        self.identity = identity
+
+        @self.app.task(shared=False)
+        def fail(*args):
+            args = ("Task expected to fail",) + args
+            raise Exception(*args)
+
+        self.fail = fail
+
+        @self.app.task(shared=False)
         def add(x, y):
             return x + y
 
@@ -426,6 +439,20 @@ class CanvasCase:
                 return reduce(operator.mul, numbers)
 
         self.xprod = xprod
+
+        @self.app.task(bind=True, max_retries=3, iterations=0, shared=False)
+        def retry_task(self, arg1, arg2, kwarg=1, max_retries=None, care=True):
+            self.iterations += 1
+            rmax = self.max_retries if max_retries is None else max_retries
+
+            assert repr(self.request)
+            retries = self.request.retries
+            if care and retries >= rmax:
+                return arg1
+            else:
+                raise self.retry(countdown=0, max_retries=rmax)
+
+        self.retry_task = retry_task
 
 
 @pytest.mark.parametrize(
@@ -1221,3 +1248,69 @@ class test_stamping_mechanism(CanvasCase):
 
         with subtests.test("sig_2_res has stamped_headers", stamped_headers=["stamp"]):
             assert sorted(sig_2_res._get_task_meta()["stamped_headers"]) == sorted(["stamp"])
+
+    def test_retry_stamping(self):
+        self.retry_task.push_request()
+        self.retry_task.request.stamped_headers = ['stamp']
+        self.retry_task.request.stamps = {'stamp': 'value'}
+        sig = self.retry_task.signature_from_request()
+        assert sig.options['stamped_headers'] == ['stamp']
+        assert sig.options['stamp'] == 'value'
+
+    def test_link_error_does_not_duplicate_stamps(self, subtests):
+        class CustomStampingVisitor(StampingVisitor):
+            def on_group_start(self, group, **headers):
+                return {}
+
+            def on_chain_start(self, chain, **headers):
+                return {}
+
+            def on_signature(self, sig, **headers):
+                existing_headers = sig.options.get("headers") or {}
+                existing_stamps = existing_headers.get("stamps") or {}
+                existing_stamp = existing_stamps.get("stamp")
+                existing_stamp = existing_stamp or sig.options.get("stamp")
+                if existing_stamp is None:
+                    stamp = str(uuid.uuid4())
+                    return {"stamp": stamp}
+                else:
+                    assert False, "stamp already exists"
+
+        def s(n, fail_flag=False):
+            if not fail_flag:
+                return self.identity.si(str(n))
+            return self.fail.si(str(n))
+
+        def tasks():
+            tasks = []
+            for i in range(0, 4):
+                fail_flag = False
+                if i:
+                    fail_flag = True
+                sig = s(i, fail_flag)
+                sig.link(s(f"link{str(i)}"))
+                sig.link_error(s(f"link_error{str(i)}"))
+                tasks.append(sig)
+            return tasks
+
+        with subtests.test("group"):
+            canvas = group(tasks())
+            canvas.link_error(s("group_link_error"))
+            canvas.stamp(CustomStampingVisitor())
+
+        with subtests.test("chord header"):
+            self.app.conf.task_allow_error_cb_on_chord_header = True
+            canvas = chord(tasks(), self.identity.si("body"))
+            canvas.link_error(s("group_link_error"))
+            canvas.stamp(CustomStampingVisitor())
+
+        with subtests.test("chord body"):
+            self.app.conf.task_allow_error_cb_on_chord_header = False
+            canvas = chord(tasks(), self.identity.si("body"))
+            canvas.link_error(s("group_link_error"))
+            canvas.stamp(CustomStampingVisitor())
+
+        with subtests.test("chain"):
+            canvas = chain(tasks())
+            canvas.link_error(s("chain_link_error"))
+            canvas.stamp(CustomStampingVisitor())

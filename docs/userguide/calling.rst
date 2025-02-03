@@ -234,7 +234,7 @@ a shortcut to set ETA by seconds into the future.
 
     >>> result = add.apply_async((2, 2), countdown=3)
     >>> result.get()    # this takes at least 3 seconds to return
-    20
+    4
 
 The task is guaranteed to be executed at some time *after* the
 specified date and time, but not necessarily at that exact time.
@@ -250,10 +250,28 @@ and timezone information):
 
 .. code-block:: pycon
 
-    >>> from datetime import datetime, timedelta
+    >>> from datetime import datetime, timedelta, timezone
 
-    >>> tomorrow = datetime.utcnow() + timedelta(days=1)
+    >>> tomorrow = datetime.now(timezone.utc) + timedelta(days=1)
     >>> add.apply_async((2, 2), eta=tomorrow)
+
+.. warning::
+
+    Tasks with `eta` or `countdown` are immediately fetched by the worker
+    and until the scheduled time passes, they reside in the worker's memory.
+    When using those options to schedule lots of tasks for a distant future,
+    those tasks may accumulate in the worker and make a significant impact on
+    the RAM usage.
+
+    Moreover, tasks are not acknowledged until the worker starts executing
+    them. If using Redis as a broker, task will get redelivered when `countdown`
+    exceeds `visibility_timeout` (see :ref:`redis-caveats`).
+
+    Therefore, using `eta` and `countdown` **is not recommended** for
+    scheduling tasks for a distant future. Ideally, use values no longer
+    than several minutes. For longer durations, consider using
+    database-backed periodic tasks, e.g. with :pypi:`django-celery-beat` if
+    using Django (see :ref:`beat-custom-schedulers`).
 
 .. warning::
 
@@ -295,9 +313,9 @@ either as seconds after task publish, or a specific date and time using
     >>> add.apply_async((10, 10), expires=60)
 
     >>> # Also supports datetime
-    >>> from datetime import datetime, timedelta
+    >>> from datetime import datetime, timedelta, timezone
     >>> add.apply_async((10, 10), kwargs,
-    ...                 expires=datetime.now() + timedelta(days=1)
+    ...                 expires=datetime.now(timezone.utc) + timedelta(days=1))
 
 
 When a worker receives an expired task it will mark
@@ -360,12 +378,6 @@ and can contain the following keys:
 
     `retry_errors` is a tuple of exception classes that should be retried.
     It will be ignored if not specified. Default is None (ignored).
-
-    .. warning::
-
-        If you specify a tuple of exception classes, you must make sure
-        that you also specify the ``max_retries`` option, otherwise
-        you will get an error.
 
     For example, if you want to retry only tasks that were timed out, you can use
     :exc:`~kombu.exceptions.TimeoutError`:
@@ -543,7 +555,7 @@ msgpack -- msgpack is a binary serialization format that's closer to JSON
 
     See http://msgpack.org/ for more information.
 
-To use a custom serializer you need add the content type to
+To use a custom serializer you need to add the content type to
 :setting:`accept_content`. By default, only JSON is accepted,
 and tasks containing other content headers are rejected.
 

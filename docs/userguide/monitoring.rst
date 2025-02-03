@@ -299,9 +299,9 @@ Broker URL can also be passed through the
 
 .. code-block:: console
 
-    $ celery flower --broker=amqp://guest:guest@localhost:5672//
+    $ celery --broker=amqp://guest:guest@localhost:5672// flower
     or
-    $ celery flower --broker=redis://guest:guest@localhost:6379/0
+    $ celery --broker=redis://guest:guest@localhost:6379/0 flower
 
 Then, you can visit flower in your web browser :
 

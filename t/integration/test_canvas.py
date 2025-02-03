@@ -2,7 +2,7 @@ import collections
 import re
 import tempfile
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from time import monotonic, sleep
 
 import pytest
@@ -153,8 +153,8 @@ class test_link_error:
         )
         assert result.get(timeout=TIMEOUT, propagate=False) == exception
 
-    @pytest.mark.xfail(raises=TimeoutError, reason="Task is timeout instead of returning exception")
-    def test_link_error_callback_retries(self):
+    @flaky
+    def test_link_error_callback_retries(self, manager):
         exception = ExpectedException("Task expected to fail", "test")
         result = fail.apply_async(
             args=("test",),
@@ -165,20 +165,19 @@ class test_link_error:
     @flaky
     def test_link_error_using_signature_eager(self):
         fail = signature('t.integration.tasks.fail', args=("test",))
-        retrun_exception = signature('t.integration.tasks.return_exception')
+        return_exception = signature('t.integration.tasks.return_exception')
 
-        fail.link_error(retrun_exception)
+        fail.link_error(return_exception)
 
         exception = ExpectedException("Task expected to fail", "test")
         assert (fail.apply().get(timeout=TIMEOUT, propagate=False), True) == (
             exception, True)
 
-    @pytest.mark.xfail(raises=TimeoutError, reason="Task is timeout instead of returning exception")
-    def test_link_error_using_signature(self):
+    def test_link_error_using_signature(self, manager):
         fail = signature('t.integration.tasks.fail', args=("test",))
-        retrun_exception = signature('t.integration.tasks.return_exception')
+        return_exception = signature('t.integration.tasks.return_exception')
 
-        fail.link_error(retrun_exception)
+        fail.link_error(return_exception)
 
         exception = ExpectedException("Task expected to fail", "test")
         assert (fail.delay().get(timeout=TIMEOUT / 10, propagate=False), True) == (
@@ -367,7 +366,7 @@ class test_chain:
         except NotImplementedError as e:
             raise pytest.skip(e.args[0])
 
-        eta = datetime.utcnow() + timedelta(seconds=10)
+        eta = datetime.now(timezone.utc) + timedelta(seconds=10)
         c = chain(
             group(
                 add.s(1, 2),
@@ -507,7 +506,7 @@ class test_chain:
         assert res.get(timeout=TIMEOUT) == [8, 8]
 
     @pytest.mark.xfail(raises=TimeoutError, reason="Task is timeout")
-    def test_nested_chain_group_lone(self, manager):
+    def test_nested_chain_group_lone(self, manager):  # Fails with Redis 5.x
         """
         Test that a lone group in a chain completes.
         """
@@ -1031,6 +1030,103 @@ class test_chain:
         # Cleanup
         redis_connection.delete(redis_key, 'Done')
 
+    def test_freezing_chain_sets_id_of_last_task(self, manager):
+        last_task = add.s(2).set(task_id='42')
+        c = add.s(4) | last_task
+        assert c.id is None
+        c.freeze(last_task.id)
+        assert c.id == last_task.id
+
+    @pytest.mark.parametrize(
+        "group_last_task",
+        [False, True],
+    )
+    def test_chaining_upgraded_chords_mixed_canvas_protocol_2(
+            self, manager, subtests, group_last_task):
+        """ This test is built to reproduce the github issue https://github.com/celery/celery/issues/8662
+
+        The issue describes a canvas where a chain of groups are executed multiple times instead of once.
+        This test is built to reproduce the issue and to verify that the issue is fixed.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_connection = get_redis_connection()
+        redis_key = 'echo_chamber'
+
+        c = chain(
+            group([
+                redis_echo.si('1', redis_key=redis_key),
+                redis_echo.si('2', redis_key=redis_key)
+            ]),
+            group([
+                redis_echo.si('3', redis_key=redis_key),
+                redis_echo.si('4', redis_key=redis_key),
+                redis_echo.si('5', redis_key=redis_key)
+            ]),
+            group([
+                redis_echo.si('6', redis_key=redis_key),
+                redis_echo.si('7', redis_key=redis_key),
+                redis_echo.si('8', redis_key=redis_key),
+                redis_echo.si('9', redis_key=redis_key)
+            ]),
+            redis_echo.si('Done', redis_key='Done') if not group_last_task else
+            group(redis_echo.si('Done', redis_key='Done')),
+        )
+
+        with subtests.test(msg='Run the chain and wait for completion'):
+            redis_connection.delete(redis_key, 'Done')
+            c.delay().get(timeout=TIMEOUT)
+            await_redis_list_message_length(1, redis_key='Done', timeout=10)
+
+        with subtests.test(msg='All tasks are executed once'):
+            actual = [
+                sig.decode('utf-8')
+                for sig in redis_connection.lrange(redis_key, 0, -1)
+            ]
+            expected = [str(i) for i in range(1, 10)]
+            with subtests.test(msg='All tasks are executed once'):
+                assert sorted(actual) == sorted(expected)
+
+        # Cleanup
+        redis_connection.delete(redis_key, 'Done')
+
+    def test_group_in_center_of_chain(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        t1 = chain(tsum.s(), group(add.s(8), add.s(16)), tsum.s() | add.s(32))
+        t2 = chord([tsum, tsum], t1)
+        t3 = chord([add.s(0, 1)], t2)
+        res = t3.apply_async()  # should not raise
+        assert res.get(timeout=TIMEOUT) == 60
+
+    def test_upgrade_to_chord_inside_chains(self, manager):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        redis_key = str(uuid.uuid4())
+        group1 = group(redis_echo.si('a', redis_key), redis_echo.si('a', redis_key))
+        group2 = group(redis_echo.si('a', redis_key), redis_echo.si('a', redis_key))
+        chord1 = group1 | group2
+        chain1 = chain(chord1, (redis_echo.si('a', redis_key) | redis_echo.si('b', redis_key)))
+        chain1.apply_async().get(timeout=TIMEOUT)
+        redis_connection = get_redis_connection()
+        actual = redis_connection.lrange(redis_key, 0, -1)
+        assert actual.count(b'b') == 1
+        redis_connection.delete(redis_key)
+
 
 class test_result_set:
 
@@ -1520,6 +1616,18 @@ class test_chord:
         result = c()
         assert result.get(timeout=TIMEOUT) == 4
 
+    def test_chord_order(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        inputs = [i for i in range(10)]
+
+        c = chord((identity.si(i) for i in inputs), identity.s())
+        result = c()
+        assert result.get() == inputs
+
     @pytest.mark.xfail(reason="async_results aren't performed in async way")
     def test_redis_subscribed_channels_leak(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
@@ -1866,7 +1974,7 @@ class test_chord:
         backend = fail.app.backend
         j_key = backend.get_key_for_group(original_group_id, '.j')
         redis_connection = get_redis_connection()
-        # The redis key is either a list or zset depending on configuration
+        # The redis key is either a list or a zset (a redis sorted set) depending on configuration
         if manager.app.conf.result_backend_transport_options.get(
             'result_chord_ordered', True
         ):
@@ -2488,6 +2596,7 @@ class test_chord:
             await_redis_echo({errback_msg, }, redis_key=redis_key)
         redis_connection.delete(redis_key)
 
+    @flaky
     @pytest.mark.parametrize(
         "errback_task", [errback_old_style, errback_new_style, ],
     )
@@ -2951,6 +3060,43 @@ class test_chord:
             # Cleanup
             redis_connection.delete(errback_key)
 
+    def test_upgraded_chord_link_error_with_header_errback_enabled(self, manager, subtests):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+        redis_connection = get_redis_connection()
+
+        manager.app.conf.task_allow_error_cb_on_chord_header = True
+
+        body_msg = 'chord body called'
+        body_key = 'echo_body'
+        body_sig = redis_echo.si(body_msg, redis_key=body_key)
+
+        errback_msg = 'errback called'
+        errback_key = 'echo_errback'
+        errback_sig = redis_echo.si(errback_msg, redis_key=errback_key)
+
+        redis_connection.delete(errback_key, body_key)
+
+        sig = chain(
+            identity.si(42),
+            group(
+                fail.si(),
+                fail.si(),
+            ),
+            body_sig,
+        ).on_error(errback_sig)
+
+        with subtests.test(msg='Error propagates from failure in header'):
+            with pytest.raises(ExpectedException):
+                sig.apply_async().get(timeout=TIMEOUT)
+
+        redis_connection.delete(errback_key, body_key)
+
 
 class test_signature_serialization:
     """
@@ -3084,12 +3230,12 @@ class test_stamping_mechanism:
                     [
                         stamped_header in link.options
                         for stamped_header in link.options["stamped_headers"]
-                        if link  # the link itself doensn't have a link
+                        if link  # the link itself doesn't have a link
                     ],
                     [
                         stamped_header in link_error.options
                         for stamped_header in link_error.options["stamped_headers"]
-                        if link_error  # the link_error itself doensn't have a link
+                        if link_error  # the link_error itself doesn't have a link_error
                     ],
                 ]
             )
@@ -3402,3 +3548,55 @@ class test_stamping_mechanism:
             stamped_fail_sig.stamp(visitor=FixedMonitoringIdStampingVisitor("1234"))
             stamped_fail_sig.apply_async().get()
         assert assertion_result
+
+    @flaky
+    def test_stamps_remain_on_task_retry(self, manager):
+        @task_received.connect
+        def task_received_handler(request, **kwargs):
+            nonlocal assertion_result
+
+            try:
+                assertion_result = all(
+                    [
+                        assertion_result,
+                        all([stamped_header in request.stamps for stamped_header in request.stamped_headers]),
+                        request.stamps["stamp"] == 42,
+                    ]
+                )
+            except Exception:
+                assertion_result = False
+
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {"stamp": 42}
+
+        stamped_task = retry_once.si()
+        stamped_task.stamp(visitor=CustomStampingVisitor())
+        assertion_result = True
+        res = stamped_task.delay()
+        res.get(timeout=TIMEOUT)
+        assert assertion_result
+
+    def test_stamp_canvas_with_dictionary_link(self, manager, subtests):
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {"on_signature": 42}
+
+        with subtests.test("Stamp canvas with dictionary link"):
+            canvas = identity.si(42)
+            canvas.options["link"] = dict(identity.si(42))
+            canvas.stamp(visitor=CustomStampingVisitor())
+
+    def test_stamp_canvas_with_dictionary_link_error(self, manager, subtests):
+        class CustomStampingVisitor(StampingVisitor):
+            def on_signature(self, sig, **headers) -> dict:
+                return {"on_signature": 42}
+
+        with subtests.test("Stamp canvas with dictionary link error"):
+            canvas = fail.si()
+            canvas.options["link_error"] = dict(fail.si())
+            canvas.stamp(visitor=CustomStampingVisitor())
+
+        with subtests.test(msg="Expect canvas to fail"):
+            with pytest.raises(ExpectedException):
+                canvas.apply_async().get(timeout=TIMEOUT)
