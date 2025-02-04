@@ -17,7 +17,7 @@ repos:
         exclude: ^celery/app/task\.py$|^celery/backends/cache\.py$
 
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.1
+    rev: v2.4.0
     hooks:
       - id: codespell # See pyproject.toml for args
         args: [--toml, pyproject.toml, --write-changes]
@@ -34,12 +34,12 @@ repos:
       - id: mixed-line-ending
 
   - repo: https://github.com/pycqa/isort
-    rev: 6.0.0
+    rev: 5.13.2
     hooks:
       - id: isort
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.14.1
+    rev: v1.14.0
     hooks:
     -   id: mypy
         pass_filenames: false
