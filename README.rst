@@ -75,7 +75,7 @@ What do I need?
 
 Celery version 5.5.x runs on:
 
-- Python (3.8, 3.9, 3.10, 3.11, 3.12, 3.13)
+- Python (3.9, 3.10, 3.11, 3.12, 3.13)
 - PyPy3.9+ (v7.3.12+)
 
 
@@ -84,6 +84,7 @@ This is the version of celery which will support Python 3.8 or newer.
 If you're running an older version of Python, you need to be running
 an older version of Celery:
 
+- Python 3.8: Celery 5.5 or earlier.
 - Python 3.7: Celery 5.2 or earlier.
 - Python 3.6: Celery 5.1 or earlier.
 - Python 2.7: Celery 4.x series.
