@@ -558,7 +558,7 @@ class crontab(BaseSchedule):
     def __repr__(self) -> str:
         return CRON_REPR.format(self)
 
-    def __reduce__(self) -> tuple[type, tuple[str, str, str, str, str], Any]:
+    def __reduce__(self) -> tuple[type, tuple[Cronspec, Cronspec, Cronspec, Cronspec, Cronspec], Any]:
         return (self.__class__, (self._orig_minute,
                                  self._orig_hour,
                                  self._orig_day_of_week,
