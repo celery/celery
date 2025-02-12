@@ -279,7 +279,7 @@ class Worker(WorkController):
         )
 
 
-def _shutdown_handler(worker: Worker, sig='TERM', how='Warm', callback=None, exitcode=EX_OK, verbose=True):
+def _shutdown_handler(worker: Worker, sig='SIGTERM', how='Warm', callback=None, exitcode=EX_OK, verbose=True):
     """Install signal handler for warm/cold shutdown.
 
     The handler will run from the MainProcess.
