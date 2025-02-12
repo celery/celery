@@ -6,7 +6,6 @@ import os
 import platform
 import sys
 from functools import reduce
-
 from celery.platforms import isatty
 
 __all__ = ('colored',)
@@ -167,7 +166,7 @@ class colored:
 
 
 def supports_images() -> bool:
-    
+
     try:
         return sys.stdin.isatty() and ITERM_PROFILE
     except AttributeError:
