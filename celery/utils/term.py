@@ -6,6 +6,7 @@ import os
 import platform
 import sys
 from functools import reduce
+
 from celery.platforms import isatty
 
 __all__ = ('colored',)
