@@ -1448,6 +1448,8 @@ class test_App:
             exchange=exchange,
             routing_key='0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.1.1.1.0.testcelery'
         )
+        driver_type_stub = self.app.amqp.producer_pool.connections.connection.transport.driver_type
+        detect_quorum_queues.assert_called_once_with(self.app, driver_type_stub)
 
     @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
     def test_native_delayed_delivery_eta_datetime(self, detect_quorum_queues):

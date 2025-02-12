@@ -832,8 +832,8 @@ class Celery:
         options = router.route(
             options, route_name or name, args, kwargs, task_type)
 
-        is_native_delayed_delivery = detect_quorum_queues(self,
-                                                          self.producer_pool.connections.connection.transport_cls)[0]
+        driver_type = self.producer_pool.connections.connection.transport.driver_type
+        is_native_delayed_delivery = detect_quorum_queues(self, driver_type)[0]
         if is_native_delayed_delivery and options['queue'].exchange.type != 'direct':
             if eta:
                 if isinstance(eta, str):

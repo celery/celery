@@ -185,7 +185,7 @@ Using Quorum Queues
     Quorum Queues require disabling global QoS which means some features won't work as expected.
     See `limitations`_ for details.
 
-Celery supports `Quorum Queues`_ by setting the ``x-queue-type`` header to ``quorum` like so:
+Celery supports `Quorum Queues`_ by setting the ``x-queue-type`` header to ``quorum`` like so:
 
 .. code-block:: python
 
