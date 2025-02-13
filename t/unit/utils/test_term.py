@@ -1,8 +1,9 @@
+import os
 from base64 import b64encode
 from tempfile import NamedTemporaryFile
-import os
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 import t.skip
 from celery.utils import term
