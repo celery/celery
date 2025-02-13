@@ -71,16 +71,16 @@ class test_colored:
             expected_result = b64encode(test_data).decode('ascii')
 
             assert result == expected_result
+
     @pytest.mark.parametrize('is_tty, iterm_profile, expected', [
-        (True, 'test_profile', True),   # Test case where both conditions are met
-        (False, 'test_profile', False),  # Test case where is_tty is False
-        (True, None, False),             # Test case where iterm_profile is not set
+        (True, 'test_profile', True),
+        (False, 'test_profile', False),
+        (True, None, False),
     ])
     @patch('sys.stdin.isatty')
     @patch.dict(os.environ, {'ITERM_PROFILE': 'test_profile'}, clear=True)
     def test_supports_images(self, mock_isatty, is_tty, iterm_profile, expected):
         mock_isatty.return_value = is_tty
         if iterm_profile is None:
-            del os.environ['ITERM_PROFILE']  # Ensure it's not set
+            del os.environ['ITERM_PROFILE']
         assert supports_images() == expected
-

@@ -169,7 +169,7 @@ def supports_images() -> bool:
     try:
         return sys.stdin.isatty() and bool(os.environ.get('ITERM_PROFILE'))
     except AttributeError:
-        return False 
+        return False
 
 
 def _read_as_base64(path: str) -> str:
