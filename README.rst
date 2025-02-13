@@ -171,7 +171,7 @@ It supports...
 
     - **Message Transports**
 
-        - RabbitMQ_, Redis_, Amazon SQS, Google Pub/Sub
+        - RabbitMQ_, Redis_, Amazon SQS, Google Pub/Sub, Valkey_
 
     - **Concurrency**
 
@@ -179,7 +179,7 @@ It supports...
 
     - **Result Stores**
 
-        - AMQP, Redis
+        - AMQP, Redis, Valkey
         - memcached
         - SQLAlchemy, Django ORM
         - Apache Cassandra, IronCache, Elasticsearch
@@ -196,6 +196,7 @@ It supports...
 
 .. _RabbitMQ: https://rabbitmq.com
 .. _Redis: https://redis.io
+.. _Valkey: https://valkey.io
 .. _SQLAlchemy: http://sqlalchemy.org
 
 Framework Integration
@@ -367,6 +368,9 @@ Transports and Backends
 :``celery[consul]``:
     for using the Consul.io Key/Value store as a message transport or result backend (*experimental*).
 
+:``celery[valkey]``:
+    for using Valkey as a message transport or as a result backend.
+
 :``celery[django]``:
     specifies the lowest version possible for Django support.
 
@@ -514,18 +518,12 @@ link to your website. [`Become a sponsor`_]
 
 .. _`Become a sponsor`: https://opencollective.com/celery#sponsor
 
-|oc-sponsor-1| |oc-sponsor-2| |oc-sponsor-3|
+|oc-sponsor-1| |oc-sponsor-2|
 
 .. |oc-sponsor-1| image:: https://opencollective.com/celery/sponsor/0/avatar.svg
     :target: https://opencollective.com/celery/sponsor/0/website
 
-.. |oc-sponsor-2| image:: ./docs/images/blacksmith-logo-white-on-black.svg
-    :target: https://www.blacksmith.sh/
-    :alt: Blacksmith.sh
-    :width: 240
-    :height: 57
-
-.. |oc-sponsor-3| image:: https://upstash.com/logo/upstash-dark-bg.svg
+.. |oc-sponsor-2| image:: https://upstash.com/logo/upstash-dark-bg.svg
     :target: http://upstash.com/?code=celery
     :alt: Upstash
     :width: 200
