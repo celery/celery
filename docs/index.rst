@@ -15,15 +15,14 @@ or :ref:`our mailing-list <mailing-list>`.
 
 Celery is Open Source and licensed under the `BSD License`_.
 
-Donations
-=========
+.. image:: https://opencollective.com/static/images/opencollectivelogo-footer-n.svg
+   :target: https://opencollective.com/celery
+   :alt: Open Collective logo
+   :width: 240px
 
-This project relies on your generous donations.
-
-If you are using Celery to create a commercial product, please consider becoming our `backer`_ or our `sponsor`_ to ensure Celery's future.
-
-.. _`backer`: https://opencollective.com/celery#backer
-.. _`sponsor`: https://opencollective.com/celery#sponsor
+`Open Collective <https://opencollective.com/celery>`_ is our community-powered funding platform that fuels Celery's
+ongoing development. Your sponsorship directly supports improvements, maintenance, and innovative features that keep
+Celery robust and reliable.
 
 Getting Started
 ===============
