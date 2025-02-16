@@ -5,6 +5,7 @@ from datetime import tzinfo
 from unittest.mock import Mock, patch
 
 import pytest
+import pytz
 
 if sys.version_info >= (3, 9):
     from zoneinfo import ZoneInfo
@@ -131,6 +132,8 @@ def test_remaining():
     """
     eastern_tz = ZoneInfo("US/Eastern")
     tokyo_tz = ZoneInfo("Asia/Tokyo")
+    eastern_tz_pytz = pytz.timezone("US/Eastern")
+    tokyo_tz_pytz = pytz.timezone("Asia/Tokyo")
 
     # Case 1: `start` in UTC and `now` in other timezone
     start = datetime.now(ZoneInfo("UTC"))
@@ -158,21 +161,88 @@ def test_remaining():
     start (i.e. there is not an hour diff due to DST).
     In 2019, DST starts on March 10
     """
-    start = datetime(
-        month=3, day=9, year=2019, hour=10,
-        minute=0, tzinfo=eastern_tz)  # EST
-
-    now = datetime(
-        day=11, month=3, year=2019, hour=1,
-        minute=0, tzinfo=eastern_tz)  # EDT
-    delta = ffwd(hour=10, year=2019, microsecond=0, minute=0,
-                 second=0, day=11, weeks=0, month=3)
+    start = datetime(day=9, month=3, year=2019, hour=10, minute=0, tzinfo=eastern_tz)         # EST
+    now = datetime(day=11, month=3, year=2019, hour=1, minute=0, tzinfo=eastern_tz)           # EDT
+    delta = ffwd(hour=10, year=2019, microsecond=0, minute=0, second=0, day=11, weeks=0, month=3)
     # `next_actual_time` is the next time to run (derived from delta)
     next_actual_time = datetime(
         day=11, month=3, year=2019, hour=10, minute=0, tzinfo=eastern_tz)  # EDT
     assert start.tzname() == "EST"
     assert now.tzname() == "EDT"
     assert next_actual_time.tzname() == "EDT"
+    rem_time = remaining(start, delta, now)
+    next_run = now + rem_time
+    assert next_run == next_actual_time
+
+    """
+    Case 4: DST check (ZoneInfo, timedelta)
+    Suppose start (which is last_run_time) is in PDT while next_run is in PST,
+    Check whether there is an hour added to the time between now and the `next_run`
+    In 2022, DST ends on Nov 6
+    """
+    start = datetime(day=6, month=11, year=2022, hour=1, minute=15, tzinfo=eastern_tz, fold=0)
+    now = datetime(day=6, month=11, year=2022, hour=1, minute=34, tzinfo=eastern_tz, fold=1)
+    ends_in = timedelta(minutes=80)
+    next_actual_time = datetime(day=6, month=11, year=2022, hour=1, minute=35, tzinfo=eastern_tz, fold=1)
+    assert start.tzname() == "EDT"
+    assert now.tzname() == "EST"
+    assert next_actual_time.tzname() == "EST"
+    rem_time = remaining(start, ends_in, now)
+    next_run = now + rem_time
+    assert next_run == next_actual_time
+    
+    """
+    Case 5: DST check (ZoneInfo, ffwd)
+    Suppose start (which is last_run_time) is in EST while next_run is in EDT,
+    then check whether the `next_run` is actually the time specified in the
+    start (i.e. there is not an hour diff due to DST).
+    In 2019, DST starts on March 10
+    """
+    start = datetime(day=6, month=11, year=2022, hour=1, minute=15, tzinfo=eastern_tz, fold=0)         # EST
+    now = datetime(day=6, month=11, year=2022, hour=5, minute=0, tzinfo=eastern_tz, fold=1)           # EDT
+    delta = ffwd(hour=7, microsecond=0, minute=0, second=0, weekday=6)
+    # `next_actual_time` is the next time to run (derived from delta)
+    next_actual_time = datetime(
+        day=6, month=11, year=2022, hour=7, minute=0, tzinfo=eastern_tz, fold=1)  # EDT
+    assert start.tzname() == "EDT"
+    assert now.tzname() == "EST"
+    assert next_actual_time.tzname() == "EST"
+    rem_time = remaining(start, delta, now)
+    next_run = now + rem_time
+    assert next_run == next_actual_time
+
+    """
+    Case 6: DST check (pytz, timedelta)
+    Suppose start (which is last_run_time) is in PDT while next_run is in PST,
+    Check whether there is an hour added to the time between now and the `next_run`
+    In 2022, DST ends on Nov 6
+    """
+    start = eastern_tz_pytz.localize(datetime(day=6, month=11, year=2022, hour=1, minute=15), is_dst=True)
+    now = eastern_tz_pytz.localize(datetime(day=6, month=11, year=2022, hour=1, minute=34), is_dst=False)
+    ends_in = timedelta(minutes=80)
+    next_actual_time = eastern_tz_pytz.localize(datetime(day=6, month=11, year=2022, hour=1, minute=35), is_dst=False)
+    assert start.tzname() == "EDT"
+    assert now.tzname() == "EST"
+    assert next_actual_time.tzname() == "EST"
+    rem_time = remaining(start, ends_in, now)
+    next_run = now + rem_time
+    assert next_run == next_actual_time
+    
+    """
+    Case 5: DST check (pytz, ffwd)
+    Suppose start (which is last_run_time) is in EST while next_run is in EDT,
+    then check whether the `next_run` is actually the time specified in the
+    start (i.e. there is not an hour diff due to DST).
+    In 2019, DST starts on March 10
+    """
+    start = eastern_tz_pytz.localize(datetime(day=6, month=11, year=2022, hour=1, minute=15), is_dst=True)
+    now = eastern_tz_pytz.localize(datetime(day=6, month=11, year=2022, hour=5, minute=0), is_dst=False)
+    delta = ffwd(hour=7, microsecond=0, minute=0, second=0, weekday=6)
+    # `next_actual_time` is the next time to run (derived from delta)
+    next_actual_time = eastern_tz_pytz.localize(datetime(day=6, month=11, year=2022, hour=7, minute=0), is_dst=False)
+    assert start.tzname() == "EDT"
+    assert now.tzname() == "EST"
+    assert next_actual_time.tzname() == "EST"
     rem_time = remaining(start, delta, now)
     next_run = now + rem_time
     assert next_run == next_actual_time
