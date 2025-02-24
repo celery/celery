@@ -14,9 +14,10 @@ from operator import attrgetter
 
 from click.exceptions import Exit
 from dateutil.parser import isoparse
-from kombu import pools
+from kombu import Exchange, pools
 from kombu.clocks import LamportClock
 from kombu.common import oid_from
+from kombu.transport.native_delayed_delivery import calculate_routing_key
 from kombu.utils.compat import register_after_fork
 from kombu.utils.objects import cached_property
 from kombu.utils.uuid import uuid
@@ -37,6 +38,8 @@ from celery.utils.log import get_logger
 from celery.utils.objects import FallbackContext, mro_lookup
 from celery.utils.time import maybe_make_aware, timezone, to_utc
 
+from ..utils.annotations import annotation_is_class, annotation_issubclass, get_optional_arg
+from ..utils.quorum_queues import detect_quorum_queues
 # Load all builtin tasks
 from . import backends, builtins  # noqa
 from .annotations import prepare as prepare_annotations
@@ -129,7 +132,12 @@ def pydantic_wrapper(
         bound_args = task_signature.bind(*task_args, **task_kwargs)
         for arg_name, arg_value in bound_args.arguments.items():
             arg_annotation = task_signature.parameters[arg_name].annotation
-            if issubclass(arg_annotation, BaseModel):
+
+            optional_arg = get_optional_arg(arg_annotation)
+            if optional_arg is not None and arg_value is not None:
+                arg_annotation = optional_arg
+
+            if annotation_issubclass(arg_annotation, BaseModel):
                 bound_args.arguments[arg_name] = arg_annotation.model_validate(
                     arg_value,
                     strict=strict,
@@ -141,9 +149,15 @@ def pydantic_wrapper(
 
         # Dump Pydantic model if the returned value is an instance of pydantic.BaseModel *and* its
         # class matches the typehint
+        return_annotation = task_signature.return_annotation
+        optional_return_annotation = get_optional_arg(return_annotation)
+        if optional_return_annotation is not None:
+            return_annotation = optional_return_annotation
+
         if (
-            isinstance(returned_value, BaseModel)
-            and isinstance(returned_value, task_signature.return_annotation)
+            annotation_is_class(return_annotation)
+            and isinstance(returned_value, BaseModel)
+            and isinstance(returned_value, return_annotation)
         ):
             return returned_value.model_dump(**dump_kwargs)
 
@@ -501,6 +515,7 @@ class Celery:
                 if shared:
                     def cons(app):
                         return app._task_from_fun(fun, **opts)
+
                     cons.__name__ = fun.__name__
                     connect_on_app_finalize(cons)
                 if not lazy or self.finalized:
@@ -536,7 +551,7 @@ class Celery:
         base=None,
         bind=False,
         pydantic: bool = False,
-        pydantic_strict: bool = True,
+        pydantic_strict: bool = False,
         pydantic_context: typing.Optional[typing.Dict[str, typing.Any]] = None,
         pydantic_dump_kwargs: typing.Optional[typing.Dict[str, typing.Any]] = None,
         **options,
@@ -816,6 +831,33 @@ class Celery:
         ignore_result = options.pop('ignore_result', False)
         options = router.route(
             options, route_name or name, args, kwargs, task_type)
+
+        driver_type = self.producer_pool.connections.connection.transport.driver_type
+        is_native_delayed_delivery = detect_quorum_queues(self, driver_type)[0]
+        if is_native_delayed_delivery and options['queue'].exchange.type != 'direct':
+            if eta:
+                if isinstance(eta, str):
+                    eta = isoparse(eta)
+                countdown = (maybe_make_aware(eta) - self.now()).total_seconds()
+
+            if countdown:
+                if countdown > 0:
+                    routing_key = calculate_routing_key(int(countdown), options["queue"].routing_key)
+                    exchange = Exchange(
+                        'celery_delayed_27',
+                        type='topic',
+                    )
+                    del options['queue']
+                    options['routing_key'] = routing_key
+                    options['exchange'] = exchange
+        elif is_native_delayed_delivery and options['queue'].exchange.type == 'direct':
+            logger.warning(
+                'Direct exchanges are not supported with native delayed delivery.\n'
+                f'{options["queue"].exchange.name} is a direct exchange but should be a topic exchange or '
+                'a fanout exchange in order for native delayed delivery to work properly.\n'
+                'If quorum queues are used, this task may block the worker process until the ETA arrives.'
+            )
+
         if expires is not None:
             if isinstance(expires, datetime):
                 expires_s = (maybe_make_aware(
@@ -976,6 +1018,7 @@ class Celery:
                 'broker_connection_timeout', connect_timeout
             ),
         )
+
     broker_connection = connection
 
     def _acquire_connection(self, pool=True):
@@ -995,6 +1038,7 @@ class Celery:
                 will be acquired from the connection pool.
         """
         return FallbackContext(connection, self._acquire_connection, pool=pool)
+
     default_connection = connection_or_acquire  # XXX compat
 
     def producer_or_acquire(self, producer=None):
@@ -1010,6 +1054,7 @@ class Celery:
         return FallbackContext(
             producer, self.producer_pool.acquire, block=True,
         )
+
     default_producer = producer_or_acquire  # XXX compat
 
     def prepare_config(self, c):

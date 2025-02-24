@@ -10,14 +10,15 @@ from billiard.exceptions import RestartFreqExceeded
 
 from celery import bootsteps
 from celery.contrib.testing.mocks import ContextMock
-from celery.exceptions import CeleryWarning, WorkerShutdown, WorkerTerminate
+from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.utils.collections import LimitedSet
+from celery.utils.quorum_queues import detect_quorum_queues
 from celery.worker.consumer.agent import Agent
 from celery.worker.consumer.consumer import CANCEL_TASKS_BY_DEFAULT, CLOSE, TERMINATE, Consumer
 from celery.worker.consumer.gossip import Gossip
 from celery.worker.consumer.heart import Heart
 from celery.worker.consumer.mingle import Mingle
-from celery.worker.consumer.tasks import ETA_TASKS_NO_GLOBAL_QOS_WARNING, Tasks
+from celery.worker.consumer.tasks import Tasks
 from celery.worker.state import active_requests
 
 
@@ -47,6 +48,7 @@ class test_Consumer(ConsumerTestCase):
         @self.app.task(shared=False)
         def add(x, y):
             return x + y
+
         self.add = add
 
     def test_repr(self):
@@ -147,6 +149,7 @@ class test_Consumer(ConsumerTestCase):
 
             def __exit__(self, *args):
                 pass
+
         c.qos._mutex = MutexMock()
 
         assert c._restore_prefetch_count_after_connection_restart(None) is None
@@ -266,6 +269,7 @@ class test_Consumer(ConsumerTestCase):
         def se(*args, **kwargs):
             c.blueprint.state = CLOSE
             raise RestartFreqExceeded()
+
         c._restart_state.step.side_effect = se
         c.blueprint.start.side_effect = socket.error()
 
@@ -313,6 +317,7 @@ class test_Consumer(ConsumerTestCase):
     def _closer(self, c):
         def se(*args, **kwargs):
             c.blueprint.state = CLOSE
+
         return se
 
     @pytest.mark.parametrize("broker_connection_retry", [True, False])
@@ -455,7 +460,6 @@ class test_Consumer(ConsumerTestCase):
         mock_request_acks_late_acknowledged.acknowledged = True
         mock_request_acks_early = Mock(id='3')
         mock_request_acks_early.task.acks_late = False
-        mock_request_acks_early.acknowledged = False
 
         active_requests.add(mock_request_acks_late_not_acknowledged)
         active_requests.add(mock_request_acks_late_acknowledged)
@@ -465,7 +469,7 @@ class test_Consumer(ConsumerTestCase):
 
         mock_request_acks_late_not_acknowledged.cancel.assert_called_once_with(c.pool)
         mock_request_acks_late_acknowledged.cancel.assert_not_called()
-        mock_request_acks_early.cancel.assert_not_called()
+        mock_request_acks_early.cancel.assert_called_once_with(c.pool)
 
         active_requests.clear()
 
@@ -531,6 +535,61 @@ class test_Consumer_WorkerShutdown(ConsumerTestCase):
             assert expected_connection_retry_type in record.msg
 
 
+class test_Consumer_PerformPendingOperations(ConsumerTestCase):
+
+    def test_perform_pending_operations_all_success(self):
+        """
+        Test that all pending operations are processed successfully when `once=False`.
+        """
+        c = self.get_consumer(no_hub=True)
+
+        # Create mock operations
+        mock_operation_1 = Mock()
+        mock_operation_2 = Mock()
+
+        # Add mock operations to _pending_operations
+        c._pending_operations = [mock_operation_1, mock_operation_2]
+
+        # Call perform_pending_operations
+        c.perform_pending_operations()
+
+        # Assert that all operations were called
+        mock_operation_1.assert_called_once()
+        mock_operation_2.assert_called_once()
+
+        # Ensure all pending operations are cleared
+        assert len(c._pending_operations) == 0
+
+    def test_perform_pending_operations_with_exception(self):
+        """
+        Test that pending operations are processed even if one raises an exception, and
+        the exception is logged when `once=False`.
+        """
+        c = self.get_consumer(no_hub=True)
+
+        # Mock operations: one failing, one successful
+        mock_operation_fail = Mock(side_effect=Exception("Test Exception"))
+        mock_operation_success = Mock()
+
+        # Add operations to _pending_operations
+        c._pending_operations = [mock_operation_fail, mock_operation_success]
+
+        # Patch logger to avoid logging during the test
+        with patch('celery.worker.consumer.consumer.logger.exception') as mock_logger:
+            # Call perform_pending_operations
+            c.perform_pending_operations()
+
+            # Assert that both operations were attempted
+            mock_operation_fail.assert_called_once()
+            mock_operation_success.assert_called_once()
+
+            # Ensure the exception was logged
+            mock_logger.assert_called_once()
+
+            # Ensure all pending operations are cleared
+            assert len(c._pending_operations) == 0
+
+
 class test_Heart:
 
     def test_start(self):
@@ -593,8 +652,7 @@ class test_Tasks:
         c = self.c
         self.c.connection.transport.driver_type = 'amqp'
         c.app.amqp.queues = {"celery": Mock(queue_arguments={"x-queue-type": "quorum"})}
-        tasks = Tasks(c)
-        result, name = tasks.detect_quorum_queues(c)
+        result, name = detect_quorum_queues(c.app, c.connection.transport.driver_type)
         assert result
         assert name == "celery"
 
@@ -602,16 +660,14 @@ class test_Tasks:
         c = self.c
         self.c.connection.transport.driver_type = 'amqp'
         c.app.amqp.queues = {"celery": Mock(queue_arguments=None)}
-        tasks = Tasks(c)
-        result, name = tasks.detect_quorum_queues(c)
+        result, name = detect_quorum_queues(c.app, c.connection.transport.driver_type)
         assert not result
         assert name == ""
 
     def test_detect_quorum_queues_not_rabbitmq(self):
         c = self.c
         self.c.connection.transport.driver_type = 'redis'
-        tasks = Tasks(c)
-        result, name = tasks.detect_quorum_queues(c)
+        result, name = detect_quorum_queues(c.app, c.connection.transport.driver_type)
         assert not result
         assert name == ""
 
@@ -633,14 +689,6 @@ class test_Tasks:
         c.app.amqp.queues = {"celery": Mock(queue_arguments={"x-queue-type": "quorum"})}
         tasks = Tasks(c)
         assert tasks.qos_global(c) is False
-
-    def test_qos_global_eta_warning(self):
-        c = self.c
-        self.c.connection.transport.driver_type = 'amqp'
-        c.app.amqp.queues = {"celery": Mock(queue_arguments={"x-queue-type": "quorum"})}
-        tasks = Tasks(c)
-        with pytest.warns(CeleryWarning, match=ETA_TASKS_NO_GLOBAL_QOS_WARNING % "celery"):
-            tasks.qos_global(c)
 
     def test_log_when_qos_is_false(self, caplog):
         c = self.c

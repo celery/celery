@@ -377,6 +377,7 @@ class MyCustomException(Exception):
 
 class UnpickleableException(Exception):
     """Exception that doesn't survive a pickling roundtrip (dump + load)."""
+
     def __init__(self, foo, bar):
         super().__init__(foo)
         self.bar = bar

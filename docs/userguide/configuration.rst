@@ -79,6 +79,7 @@ have been moved into a new  ``task_`` prefix.
 ``BROKER_FAILOVER_STRATEGY``               :setting:`broker_failover_strategy`
 ``BROKER_HEARTBEAT``                       :setting:`broker_heartbeat`
 ``BROKER_LOGIN_METHOD``                    :setting:`broker_login_method`
+``BROKER_NATIVE_DELAYED_DELIVERY_QUEUE_TYPE`` :setting:`broker_native_delayed_delivery_queue_type`
 ``BROKER_POOL_LIMIT``                      :setting:`broker_pool_limit`
 ``BROKER_USE_SSL``                         :setting:`broker_use_ssl`
 ``CELERY_CACHE_BACKEND``                   :setting:`cache_backend`
@@ -1669,7 +1670,7 @@ Default: None.
 
 The s3 access key id. For example::
 
-    s3_access_key_id = 'acces_key_id'
+    s3_access_key_id = 'access_key_id'
 
 .. setting:: s3_secret_access_key
 
@@ -1680,7 +1681,7 @@ Default: None.
 
 The s3 secret access key. For example::
 
-    s3_secret_access_key = 'acces_secret_access_key'
+    s3_secret_access_key = 'access_secret_access_key'
 
 .. setting:: s3_bucket
 
@@ -1829,7 +1830,7 @@ GCS backend settings
 
 .. note::
 
-    This gcs backend driver requires :pypi:`google-cloud-storage`.
+    This gcs backend driver requires :pypi:`google-cloud-storage` and :pypi:`google-cloud-firestore`.
 
     To install, use :command:`gcs`:
 
@@ -1843,6 +1844,7 @@ GCS backend settings
 GCS could be configured via the URL provided in :setting:`result_backend`, for example::
 
     result_backend = 'gs://mybucket/some-prefix?gcs_project=myproject&ttl=600'
+    result_backend = 'gs://mybucket/some-prefix?gcs_project=myproject?firestore_project=myproject2&ttl=600'
 
 This backend requires the following configuration directives to be set:
 
@@ -1901,6 +1903,17 @@ Threadpool size for GCS operations. Same value defines the connection pool size.
 Allows to control the number of concurrent operations. For example::
 
     gcs_threadpool_maxsize = 20
+
+``firestore_project``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: gcs_project.
+
+The Firestore project for Chord reference counting. Allows native chord ref counts.
+If not specified defaults to :setting:`gcs_project`.
+For example::
+
+    firestore_project = 'test-project2'
 
 Example configuration
 ~~~~~~~~~~~~~~~~~~~~~
@@ -2644,14 +2657,6 @@ automatically detect the queue type and disable the global QoS accordingly.
 
 .. warning::
 
-    When using quorum queues, ETA tasks may not function as expected. Instead of adjusting
-    the prefetch count dynamically, ETA tasks will occupy the prefetch buffer, potentially
-    blocking other tasks from being consumed. To mitigate this, either set a high prefetch
-    count or avoid using quorum queues until the ETA mechanism is updated to support a
-    disabled global QoS, which is required for quorum queues.
-
-.. warning::
-
     Quorum queues require confirm publish to be enabled.
     Use :setting:`broker_transport_options` to enable confirm publish by setting:
 
@@ -2992,6 +2997,22 @@ Default: ``"AMQPLAIN"``.
 
 Set custom amqp login method.
 
+.. setting:: broker_native_delayed_delivery_queue_type
+
+``broker_native_delayed_delivery_queue_type``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.5
+
+:transports supported: ``pyamqp``
+
+Default: ``"quorum"``.
+
+This setting is used to allow changing the default queue type for the
+native delayed delivery queues. The other viable option is ``"classic"`` which
+is only supported by RabbitMQ and sets the queue type to ``classic`` using the ``x-queue-type``
+queue argument.
+
 .. setting:: broker_transport_options
 
 ``broker_transport_options``
@@ -3186,16 +3207,16 @@ it's replaced with a new one. Default is no limit.
 Default: No limit.
 Type: int (kilobytes)
 
-Maximum amount of resident memory, in kilobytes, that may be consumed by a
-worker before it will be replaced by a new worker. If a single
-task causes a worker to exceed this limit, the task will be
-completed, and the worker will be replaced afterwards.
+Maximum amount of resident memory, in kilobytes (1024 bytes), that may be
+consumed by a worker before it will be replaced by a new worker. If a single
+task causes a worker to exceed this limit, the task will be completed, and the
+worker will be replaced afterwards.
 
 Example:
 
 .. code-block:: python
 
-    worker_max_memory_per_child = 12000  # 12MB
+    worker_max_memory_per_child = 12288  # 12 * 1024 = 12 MB
 
 .. setting:: worker_disable_rate_limits
 

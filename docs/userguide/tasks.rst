@@ -803,7 +803,14 @@ Argument validation with Pydantic
 .. versionadded:: 5.5.0
 
 You can use Pydantic_ to validate and convert arguments as well as serializing
-results based on typehints by passing ``pydantic=True``. For example:
+results based on typehints by passing ``pydantic=True``.
+
+.. NOTE::
+
+   Argument validation only covers arguments/return values on the task side. You still have
+   serialize arguments yourself when invoking a task with ``delay()`` or ``apply_async()``.
+
+For example:
 
 .. code-block:: python
 
@@ -832,12 +839,61 @@ the returned model "dumped" (serialized using ``BaseModel.model_dump()``):
    >>> result.get(timeout=1)
    {'value': 'example: 1'}
 
+Union types, arguments to generics
+----------------------------------
+
+Union types (e.g. ``Union[SomeModel, OtherModel]``) or arguments to generics (e.g.
+``list[SomeModel]``) are **not** supported.
+
+In case you want to support a list or similar types, it is recommended to use
+``pydantic.RootModel``.
+
+
+Optional parameters/return values
+---------------------------------
+
+Optional parameters or return values are also handled properly. For example, given this task:
+
+.. code-block:: python
+
+    from typing import Optional
+
+    # models are the same as above
+
+    @app.task(pydantic=True)
+    def x(arg: Optional[ArgModel] = None) -> Optional[ReturnModel]:
+        if arg is None:
+            return None
+        return ReturnModel(value=f"example: {arg.value}")
+
+You'll get the following behavior:
+
+.. code-block:: python
+
+    >>> result = x.delay()
+   >>> result.get(timeout=1) is None
+   True
+   >>> result = x.delay({'value': 1})
+   >>> result.get(timeout=1)
+   {'value': 'example: 1'}
+
+Return value handling
+---------------------
+
+Return values will only be serialized if the returned model matches the annotation. If you pass a
+model instance of a different type, it will *not* be serialized. ``mypy`` should already catch such
+errors and you should fix your typehints then.
+
+
+Pydantic parameters
+-------------------
+
 There are a few more options influencing Pydantic behavior:
 
 .. attribute:: Task.pydantic_strict
 
    By default, `strict mode <https://docs.pydantic.dev/dev/concepts/strict_mode/>`_
-   is enabled. You can pass ``False`` to disable strict model validation.
+   is disabled. You can pass ``True`` to enable strict model validation.
 
 .. attribute:: Task.pydantic_context
 
@@ -1987,8 +2043,8 @@ There's a race condition if the task starts executing
 before the transaction has been committed; The database object doesn't exist
 yet!
 
-The solution is to use the ``on_commit`` callback to launch your Celery task
-once all transactions have been committed successfully.
+The solution is to use
+:meth:`~celery.contrib.django.task.DjangoTask.delay_on_commit` instead:
 
 .. code-block:: python
 
@@ -1998,7 +2054,31 @@ once all transactions have been committed successfully.
     @transaction.atomic
     def create_article(request):
         article = Article.objects.create()
-        transaction.on_commit(lambda: expand_abbreviations.delay(article.pk))
+        expand_abbreviations.delay_on_commit(article.pk)
+        return HttpResponseRedirect('/articles/')
+
+This method was added in Celery 5.4. It's a shortcut that uses Django's
+``on_commit`` callback to launch your Celery task once all transactions
+have been committed successfully.
+
+With Celery <5.4
+~~~~~~~~~~~~~~~~
+
+If you're using an older version of Celery, you can replicate this behaviour
+using the Django callback directly as follows:
+
+.. code-block:: python
+
+    import functools
+    from django.db import transaction
+    from django.http import HttpResponseRedirect
+
+    @transaction.atomic
+    def create_article(request):
+        article = Article.objects.create()
+        transaction.on_commit(
+            functools.partial(expand_abbreviations.delay, article.pk)
+        )
         return HttpResponseRedirect('/articles/')
 
 .. note::

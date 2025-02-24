@@ -9,7 +9,8 @@ on:
           - '**.toml'
           - '/docker/**'
           - '.github/workflows/docker.yml'
-          - 'Dockerfile'
+          - 'docker/Dockerfile'
+          - 't/smoke/workers/docker/**'
     push:
       branches: [ 'main']
       paths:
@@ -18,6 +19,8 @@ on:
           - '**.toml'
           - '/docker/**'
           - '.github/workflows/docker.yml'
+          - 'docker/Dockerfile'
+          - 't/smoke/workers/docker/**'
     workflow_dispatch:
 
 
@@ -29,14 +32,6 @@ jobs:
     - uses: actions/checkout@v4
     - name: Build Docker container
       run: make docker-build
-
-  docker-docs:
-    runs-on: blacksmith-4vcpu-ubuntu-2204
-    timeout-minutes: 5
-    steps:
-    - uses: actions/checkout@v4
-    - name: Build Documentation
-      run: make docker-docs
 
   smoke-tests_dev:
     runs-on: blacksmith-4vcpu-ubuntu-2204
