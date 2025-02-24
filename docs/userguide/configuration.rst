@@ -610,12 +610,12 @@ has been executed, not *right before* (the default behavior).
 ``task_acks_on_failure_or_timeout``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Default: Enabled
+Default: Disabled
 
 When enabled messages for all tasks will be acknowledged even if they
 fail or time out.
 
-Configuring this setting only applies to tasks that are
+This setting only applies to tasks that are
 acknowledged **after** they have been executed and only if
 :setting:`task_acks_late` is enabled.
 
