@@ -1,6 +1,5 @@
 """Code related to handling annotations."""
 
-import sys
 import types
 import typing
 from inspect import isclass
@@ -8,27 +7,20 @@ from inspect import isclass
 
 def is_none_type(value: typing.Any) -> bool:
     """Check if the given value is a NoneType."""
-    if sys.version_info < (3, 10):
-        # raise Exception('below 3.10', value, type(None))
-        return value is type(None)
-    return value == types.NoneType  # type: ignore[no-any-return]
+    return value == types.NoneType
 
 
 def get_optional_arg(annotation: typing.Any) -> typing.Any:
     """Get the argument from a type | None annotation, or None if it is not such an annotation.
-    
-    This function handles both the | operator syntax (Python 3.10+) and typing.Union syntax.
     
     Examples:
         - int | None -> int
         - str | None -> str
         - str | int -> None (not an Optional type)
         - None | None -> None (invalid)
-        - typing.Union[int, None] -> int (legacy syntax)
-        - typing.Union[str, None] -> str (legacy syntax)
     """
     origin = typing.get_origin(annotation)
-    if origin != typing.Union and (sys.version_info >= (3, 10) and origin != types.UnionType):
+    if origin != types.UnionType:
         return None
 
     union_args = typing.get_args(annotation)
@@ -47,10 +39,8 @@ def get_optional_arg(annotation: typing.Any) -> typing.Any:
 
 def annotation_is_class(annotation: typing.Any) -> bool:
     """Test if a given annotation is a class that can be used in isinstance()/issubclass()."""
-    # isclass() returns True for generic type hints (e.g. `list[str]`) until Python 3.10.
-    # NOTE: The guard for Python 3.9 is because types.GenericAlias is only added in Python 3.9. This is not a problem
-    #       as the syntax is added in the same version in the first place.
-    if (3, 9) <= sys.version_info < (3, 11) and isinstance(annotation, types.GenericAlias):
+    # Generic type hints (e.g. `list[str]`) are not classes in Python 3.10+
+    if isinstance(annotation, types.GenericAlias):
         return False
     return isclass(annotation)
 
