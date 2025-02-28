@@ -206,7 +206,7 @@ class Inspect:
         * ``pool`` - Pool-specific section.
             * ``max-concurrency`` - Max number of processes/threads/green threads.
             * ``max-tasks-per-child`` - Max number of tasks a thread may execute before being recycled.
-            * ``processes`` - List of PIDs (or thread-id’s).
+            * ``processes`` - List of PIDs (or thread-id's).
             * ``put-guarded-by-semaphore`` - Internal
             * ``timeouts`` - Default values for time limits.
             * ``writes`` - Specific to the prefork pool, this shows the distribution
@@ -483,7 +483,7 @@ class Control:
         not execute it after all.
 
         Arguments:
-            task_id (Union(str, list)): Id of the task to revoke
+            task_id (str | list): Id of the task to revoke
                 (or list of ids).
             terminate (bool): Also terminate the process currently working
                 on the task (if any).
@@ -508,7 +508,7 @@ class Control:
         not execute it after all.
 
         Arguments:
-            headers (dict[str, Union(str, list)]): Headers to match when revoking tasks.
+            headers (dict[str, str | list]): Headers to match when revoking tasks.
             terminate (bool): Also terminate the process currently working
                 on the task (if any).
             signal (str): Name of signal to send to process if terminate.

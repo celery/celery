@@ -75,7 +75,7 @@ class Blueprint:
     """Blueprint containing bootsteps that can be applied to objects.
 
     Arguments:
-        steps Sequence[Union[str, Step]]: List of steps.
+        steps Sequence[str | Step]: List of steps.
         name (str): Set explicit name for this blueprint.
         on_start (Callable): Optional callback applied after blueprint start.
         on_close (Callable): Optional callback applied before blueprint close.

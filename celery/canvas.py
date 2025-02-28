@@ -270,7 +270,7 @@ class Signature(dict):
         :ref:`guide-canvas` for the complete guide.
 
     Arguments:
-        task (Union[Type[celery.app.task.Task], str]): Either a task
+        task (str | Type[celery.app.task.Task]): Either a task
             class/instance, or the name of a task.
         args (Tuple): Positional arguments to apply.
         kwargs (Dict): Keyword arguments to apply.
@@ -1024,7 +1024,7 @@ class _chain(Signature):
         # to each task and adding the chain's links to the last task.
         tasks = [t.clone() for t in self.tasks]
         for sig in maybe_list(self.options.get('link')) or []:
-            tasks[-1].link(sig)
+            tasks[-1].extend_list_option('link', sig)
         for sig in maybe_list(self.options.get('link_error')) or []:
             for task in tasks:
                 task.link_error(sig)
@@ -1138,7 +1138,7 @@ class _chain(Signature):
             tasks (List[Signature]): The tasks of the chain.
             root_id (str): The id of the root task.
             parent_id (str): The id of the parent task.
-            link_error (Union[List[Signature], Signature]): The error callback.
+            link_error (list[Signature] | Signature): The error callback.
                 will be set for all tasks in the chain.
             app (Celery): The Celery app instance.
             last_task_id (str): The id of the last task in the chain.
@@ -2393,7 +2393,7 @@ def maybe_signature(d, app=None, clone=False):
     """Ensure obj is a signature, or None.
 
     Arguments:
-        d (Optional[Union[abstract.CallableSignature, Mapping]]):
+        d (Optional[abstract.CallableSignature | Mapping]):
             Signature or dict-serialized signature.
         app (celery.Celery):
             App to bind signature to.

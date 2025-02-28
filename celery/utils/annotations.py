@@ -15,18 +15,25 @@ def is_none_type(value: typing.Any) -> bool:
 
 
 def get_optional_arg(annotation: typing.Any) -> typing.Any:
-    """Get the argument from an Optional[...] annotation, or None if it is no such annotation."""
+    """Get the argument from an Optional[...] annotation, or None if it is no such annotation.
+    
+    For example:
+        - int | None -> int
+        - str | None -> str
+        - str | int -> None (not an Optional)
+        - None | None -> None (invalid)
+    """
     origin = typing.get_origin(annotation)
     if origin != typing.Union and (sys.version_info >= (3, 10) and origin != types.UnionType):
         return None
 
     union_args = typing.get_args(annotation)
-    if len(union_args) != 2:  # Union does _not_ have two members, so it's not an Optional
+    if len(union_args) != 2:  # type1 | type2 does not have two members, so it's not an Optional
         return None
 
     has_none_arg = any(is_none_type(arg) for arg in union_args)
-    # There will always be at least one type arg, as we have already established that this is a Union with exactly
-    # two members, and both cannot be None (`Union[None, None]` does not work).
+    # There will always be at least one type arg, as we have already established that this is a type1 | type2 with exactly
+    # two members, and both cannot be None (`None | None` does not work).
     type_arg = next(arg for arg in union_args if not is_none_type(arg))  # pragma: no branch
 
     if has_none_arg:

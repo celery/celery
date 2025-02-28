@@ -1,7 +1,7 @@
 """Fixtures and testing utilities for :pypi:`pytest <pytest>`."""
 import os
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Mapping, Sequence, Union  # noqa
+from typing import TYPE_CHECKING, Any, Mapping, Sequence  # noqa
 
 import pytest
 
@@ -125,7 +125,7 @@ def celery_includes():
 
 @pytest.fixture(scope='session')
 def celery_worker_pool():
-    # type: () -> Union[str, Any]
+    # type: () -> str | Any
     """You can override this fixture to set the worker pool.
 
     The "solo" pool is used by default, but you can set this to

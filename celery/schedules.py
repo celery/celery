@@ -5,7 +5,7 @@ import re
 from bisect import bisect, bisect_left
 from collections import namedtuple
 from datetime import datetime, timedelta, tzinfo
-from typing import Any, Callable, Iterable, Mapping, Sequence, Union
+from typing import Any, Callable, Iterable, Mapping, Sequence
 
 from kombu.utils.objects import cached_property
 
@@ -51,7 +51,7 @@ Argument event "{event}" is invalid, must be one of {all_events}.\
 """
 
 
-Cronspec = Union[int, str, Iterable[int]]
+Cronspec = int | str | Iterable[int]
 
 
 def cronfield(s: Cronspec | None) -> Cronspec:

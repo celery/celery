@@ -170,7 +170,7 @@ class AsyncResult(ResultBase):
         All header fields *must* match.
 
         Arguments:
-            headers (dict[str, Union(str, list)]): Headers to match when revoking tasks.
+            headers (dict[str, str | list]): Headers to match when revoking tasks.
             terminate (bool): Also terminate the process currently working
                 on the task (if any).
             signal (str): Name of signal to send to process if terminate.

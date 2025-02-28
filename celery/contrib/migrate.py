@@ -142,7 +142,7 @@ def move(predicate, connection=None, exchange=None, routing_key=None,
                 3) any other true value means the specified
                     ``exchange`` and ``routing_key`` arguments will be used.
         connection (kombu.Connection): Custom connection to use.
-        source: List[Union[str, kombu.Queue]]: Optional list of source
+        source: List[str | kombu.Queue]: Optional list of source
             queues to use instead of the default (queues
             in :setting:`task_queues`).  This list can also contain
             :class:`~kombu.entity.Queue` instances.

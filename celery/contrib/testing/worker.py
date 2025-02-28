@@ -3,7 +3,7 @@ import logging
 import os
 import threading
 from contextlib import contextmanager
-from typing import Any, Iterable, Optional, Union
+from typing import Any, Iterable, Optional
 
 import celery.worker.consumer  # noqa
 from celery import Celery, worker
@@ -99,7 +99,7 @@ def start_worker(
     app,  # type: Celery
     concurrency=1,  # type: int
     pool='solo',  # type: str
-    loglevel=WORKER_LOGLEVEL,  # type: Union[str, int]
+    loglevel=WORKER_LOGLEVEL,  # type: str | int
     logfile=None,  # type: str
     perform_ping_check=True,  # type: bool
     ping_task_timeout=10.0,  # type: float
@@ -138,7 +138,7 @@ def start_worker(
 def _start_worker_thread(app: Celery,
                          concurrency: int = 1,
                          pool: str = 'solo',
-                         loglevel: Union[str, int] = WORKER_LOGLEVEL,
+                         loglevel: str | int = WORKER_LOGLEVEL,
                          logfile: Optional[str] = None,
                          WorkController: Any = TestWorkController,
                          perform_ping_check: bool = True,
@@ -197,7 +197,7 @@ def _start_worker_process(app,
                           loglevel=WORKER_LOGLEVEL,
                           logfile=None,
                           **kwargs):
-    # type (Celery, int, str, Union[int, str], str, **Any) -> Iterable
+    # type (Celery, int, str, str | int, str, **Any) -> Iterable
     """Start worker in separate process.
 
     Yields:
@@ -214,7 +214,7 @@ def _start_worker_process(app,
         cluster.stopwait()
 
 
-def setup_app_for_worker(app: Celery, loglevel: Union[str, int], logfile: str) -> None:
+def setup_app_for_worker(app: Celery, loglevel: str | int, logfile: str) -> None:
     """Setup the app to be used for starting an embedded worker."""
     app.finalize()
     app.set_current()

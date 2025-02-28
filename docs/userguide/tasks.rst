@@ -842,7 +842,7 @@ the returned model "dumped" (serialized using ``BaseModel.model_dump()``):
 Union types, arguments to generics
 ----------------------------------
 
-Union types (e.g. ``Union[SomeModel, OtherModel]``) or arguments to generics (e.g.
+Union types (e.g. ``SomeModel | OtherModel``) or arguments to generics (e.g.
 ``list[SomeModel]``) are **not** supported.
 
 In case you want to support a list or similar types, it is recommended to use
@@ -1958,8 +1958,8 @@ Since Celery is a distributed system, you can't know which process, or
 on what machine the task will be executed. You can't even know if the task will
 run in a timely manner.
 
-The ancient async sayings tells us that “asserting the world is the
-responsibility of the task”. What this means is that the world view may
+The ancient async sayings tells us that "asserting the world is the
+responsibility of the task". What this means is that the world view may
 have changed since the task was requested, so the task is responsible for
 making sure the world is how it should be;  If you have a task
 that re-indexes a search engine, and the search engine should only be
