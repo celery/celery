@@ -22,8 +22,6 @@ These tests ensure that:
 """
 
 import gc
-import weakref
-from time import sleep
 
 import pytest
 
