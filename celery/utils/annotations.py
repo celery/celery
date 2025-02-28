@@ -5,9 +5,16 @@ import typing
 from inspect import isclass
 
 
-def is_none_type(value: typing.Any) -> bool:
-    """Check if the given value is a NoneType."""
-    return value == types.NoneType
+def is_none_type(value: type | None) -> bool:
+    """Check if the given value is NoneType.
+    
+    Args:
+        value: A type to check.
+    
+    Returns:
+        bool: True if the value is NoneType, False otherwise.
+    """
+    return value is types.NoneType
 
 
 def get_optional_arg(annotation: typing.Any) -> typing.Any:
