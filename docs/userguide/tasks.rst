@@ -856,12 +856,12 @@ Optional parameters or return values are also handled properly. For example, giv
 
 .. code-block:: python
 
-    from typing import Optional
+    from celery import Celery
 
     # models are the same as above
 
     @app.task(pydantic=True)
-    def x(arg: Optional[ArgModel] = None) -> Optional[ReturnModel]:
+    def x(arg: ArgModel | None = None) -> ReturnModel | None:
         if arg is None:
             return None
         return ReturnModel(value=f"example: {arg.value}")
@@ -871,11 +871,11 @@ You'll get the following behavior:
 .. code-block:: python
 
     >>> result = x.delay()
-   >>> result.get(timeout=1) is None
-   True
-   >>> result = x.delay({'value': 1})
-   >>> result.get(timeout=1)
-   {'value': 'example: 1'}
+    >>> result.get(timeout=1) is None
+    True
+    >>> result = x.delay({'value': 1})
+    >>> result.get(timeout=1)
+    {'value': 'example: 1'}
 
 Return value handling
 ---------------------

@@ -4,7 +4,7 @@ import sys
 import warnings
 from datetime import datetime, timezone
 from importlib import import_module
-from typing import IO, TYPE_CHECKING, Any, List, Optional, cast
+from typing import IO, TYPE_CHECKING, Any, List, cast
 
 from kombu.utils.imports import symbol_by_name
 from kombu.utils.objects import cached_property
@@ -47,7 +47,7 @@ def _verify_django_version(django: "ModuleType") -> None:
         raise ImproperlyConfigured('Celery 5.x requires Django 1.11 or later.')
 
 
-def fixup(app: "Celery", env: str = 'DJANGO_SETTINGS_MODULE') -> Optional["DjangoFixup"]:
+def fixup(app: "Celery", env: str = 'DJANGO_SETTINGS_MODULE') -> "DjangoFixup" | None:
     """Install Django fixup if settings module environment is set."""
     SETTINGS_MODULE = os.environ.get(env)
     if SETTINGS_MODULE and 'django' not in app.loader_cls.lower():
@@ -68,7 +68,7 @@ class DjangoFixup:
         self.app = app
         if _state.default_app is None:
             self.app.set_default()
-        self._worker_fixup: Optional["DjangoWorkerFixup"] = None
+        self._worker_fixup: "DjangoWorkerFixup" | None = None
 
     def install(self) -> "DjangoFixup":
         # Need to add project directory to path.

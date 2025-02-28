@@ -139,7 +139,7 @@ def _start_worker_thread(app: Celery,
                          concurrency: int = 1,
                          pool: str = 'solo',
                          loglevel: str | int = WORKER_LOGLEVEL,
-                         logfile: Optional[str] = None,
+                         logfile: str | None = None,
                          WorkController: Any = TestWorkController,
                          perform_ping_check: bool = True,
                          shutdown_timeout: float = 10.0,
@@ -191,13 +191,12 @@ def _start_worker_thread(app: Celery,
 
 
 @contextmanager
-def _start_worker_process(app,
-                          concurrency=1,
-                          pool='solo',
-                          loglevel=WORKER_LOGLEVEL,
-                          logfile=None,
-                          **kwargs):
-    # type (Celery, int, str, str | int, str, **Any) -> Iterable
+def _start_worker_process(app: Celery,
+                          concurrency: int = 1,
+                          pool: str = 'solo',
+                          loglevel: str | int = WORKER_LOGLEVEL,
+                          logfile: str | None = None,
+                          **kwargs) -> Iterable:
     """Start worker in separate process.
 
     Yields:

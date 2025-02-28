@@ -2389,11 +2389,11 @@ def signature(varies, *args, **kwargs):
 subtask = signature  # XXX compat
 
 
-def maybe_signature(d, app=None, clone=False):
+def maybe_signature(d: abstract.CallableSignature | Mapping | None, app=None, clone=False):
     """Ensure obj is a signature, or None.
 
     Arguments:
-        d (Optional[abstract.CallableSignature | Mapping]):
+        d (abstract.CallableSignature | Mapping | None):
             Signature or dict-serialized signature.
         app (celery.Celery):
             App to bind signature to.
@@ -2402,7 +2402,7 @@ def maybe_signature(d, app=None, clone=False):
            will be cloned when this flag is enabled.
 
     Returns:
-        Optional[abstract.CallableSignature]
+        abstract.CallableSignature | None
     """
     if d is not None:
         if isinstance(d, abstract.CallableSignature):

@@ -10,7 +10,7 @@ import threading
 from itertools import count
 from threading import TIMEOUT_MAX as THREAD_TIMEOUT_MAX
 from time import sleep
-from typing import Any, Callable, Iterator, Optional, Tuple
+from typing import Any, Callable, Iterator, Tuple
 
 from kombu.asynchronous.timer import Entry
 from kombu.asynchronous.timer import Timer as Schedule
@@ -32,7 +32,7 @@ class Timer(threading.Thread):
     Schedule = Schedule
 
     running: bool = False
-    on_tick: Optional[Callable[[float], None]] = None
+    on_tick: Callable[[float], None] | None = None
 
     _timer_count: count = count(1)
 
@@ -43,11 +43,11 @@ class Timer(threading.Thread):
             traceback.print_stack()
             super().start(*args, **kwargs)
 
-    def __init__(self, schedule: Optional[Schedule] = None,
-                 on_error: Optional[Callable[[Exception], None]] = None,
-                 on_tick: Optional[Callable[[float], None]] = None,
-                 on_start: Optional[Callable[['Timer'], None]] = None,
-                 max_interval: Optional[float] = None, **kwargs: Any) -> None:
+    def __init__(self, schedule: Schedule | None = None,
+                 on_error: Callable[[Exception], None] | None = None,
+                 on_tick: Callable[[float], None] | None = None,
+                 on_start: Callable[['Timer'], None] | None = None,
+                 max_interval: float | None = None, **kwargs: Any) -> None:
         self.schedule = schedule or self.Schedule(on_error=on_error,
                                                   max_interval=max_interval)
         self.on_start = on_start
@@ -64,10 +64,10 @@ class Timer(threading.Thread):
         self.daemon = True
         self.name = f'Timer-{next(self._timer_count)}'
 
-    def _next_entry(self) -> Optional[float]:
+    def _next_entry(self) -> float | None:
         with self.not_empty:
-            delay: Optional[float]
-            entry: Optional[Entry]
+            delay: float | None
+            entry: Entry | None
             delay, entry = next(self.scheduler)
             if entry is None:
                 if delay is None:
@@ -79,7 +79,7 @@ class Timer(threading.Thread):
     def run(self) -> None:
         try:
             self.running = True
-            self.scheduler: Iterator[Tuple[Optional[float], Optional[Entry]]] = iter(self.schedule)
+            self.scheduler: Iterator[Tuple[float | None, Entry | None]] = iter(self.schedule)
 
             while not self.__is_shutdown.is_set():
                 delay = self._next_entry()
@@ -120,7 +120,7 @@ class Timer(threading.Thread):
             self.not_empty.notify()
             return entry
 
-    def enter(self, entry: Entry, eta: float, priority: Optional[int] = None) -> Entry:
+    def enter(self, entry: Entry, eta: float, priority: int | None = None) -> Entry:
         return self._do_enter('enter_at', entry, eta, priority=priority)
 
     def call_at(self, *args: Any, **kwargs: Any) -> Entry:

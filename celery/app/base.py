@@ -107,8 +107,8 @@ def pydantic_wrapper(
     task_fun: typing.Callable[..., typing.Any],
     task_name: str,
     strict: bool = True,
-    context: typing.Optional[typing.Dict[str, typing.Any]] = None,
-    dump_kwargs: typing.Optional[typing.Dict[str, typing.Any]] = None
+    context: typing.Dict[str, typing.Any] | None = None,
+    dump_kwargs: typing.Dict[str, typing.Any] | None = None
 ):
     """Wrapper to validate arguments and serialize return values using Pydantic."""
     try:
@@ -552,8 +552,8 @@ class Celery:
         bind=False,
         pydantic: bool = False,
         pydantic_strict: bool = False,
-        pydantic_context: typing.Optional[typing.Dict[str, typing.Any]] = None,
-        pydantic_dump_kwargs: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        pydantic_context: typing.Dict[str, typing.Any] | None = None,
+        pydantic_dump_kwargs: typing.Dict[str, typing.Any] | None = None,
         **options,
     ):
         if not self.finalized and not self.autofinalize:
@@ -767,7 +767,7 @@ class Celery:
             packages (List[str]): List of packages to search.
                 This argument may also be a callable, in which case the
                 value returned is used (for lazy evaluation).
-            related_name (Optional[str]): The name of the module to find.  Defaults
+            related_name (str | None): The name of the module to find.  Defaults
                 to "tasks": meaning "look for 'module.tasks' for every
                 module in ``packages``.".  If ``None`` will only try to import
                 the package, i.e. "look for 'module'".

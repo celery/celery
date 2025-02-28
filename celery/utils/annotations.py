@@ -15,13 +15,17 @@ def is_none_type(value: typing.Any) -> bool:
 
 
 def get_optional_arg(annotation: typing.Any) -> typing.Any:
-    """Get the argument from an Optional[...] annotation, or None if it is no such annotation.
+    """Get the argument from a type | None annotation, or None if it is not such an annotation.
     
-    For example:
+    This function handles both the | operator syntax (Python 3.10+) and typing.Union syntax.
+    
+    Examples:
         - int | None -> int
         - str | None -> str
-        - str | int -> None (not an Optional)
+        - str | int -> None (not an Optional type)
         - None | None -> None (invalid)
+        - typing.Union[int, None] -> int (legacy syntax)
+        - typing.Union[str, None] -> str (legacy syntax)
     """
     origin = typing.get_origin(annotation)
     if origin != typing.Union and (sys.version_info >= (3, 10) and origin != types.UnionType):

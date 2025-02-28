@@ -4,14 +4,8 @@ import itertools
 import os
 import ssl
 import sys
-import typing
-import uuid
-from copy import deepcopy
 from datetime import datetime, timedelta
-from datetime import timezone as datetime_timezone
-from logging import LogRecord
-from pickle import dumps, loads
-from typing import Optional
+from typing import Dict, List
 from unittest.mock import ANY, DEFAULT, MagicMock, Mock, patch
 
 import pytest
@@ -542,7 +536,7 @@ class test_App:
             check = Mock()
 
             @app.task(pydantic=True)
-            def foo(arg: Optional[int], kwarg: Optional[bool] = True) -> Optional[int]:
+            def foo(arg: int | None, kwarg: bool | None = True) -> int | None:
                 check(arg, kwarg=kwarg)
                 if isinstance(arg, int):
                     return 1
@@ -640,7 +634,7 @@ class test_App:
             check.assert_called_once_with(Model(value=timedelta(days=3)))
 
     def test_task_with_pydantic_with_optional_pydantic_args(self):
-        """Test pydantic task receiving and returning an optional argument."""
+        """Test pydantic task receiving and returning an optional pydantic model."""
         class ArgModel(BaseModel):
             arg_value: int
 
@@ -654,10 +648,10 @@ class test_App:
             check = Mock()
 
             @app.task(pydantic=True)
-            def foo(arg: Optional[ArgModel], kwarg: Optional[KwargModel] = None) -> Optional[ReturnModel]:
+            def foo(arg: ArgModel | None, kwarg: KwargModel | None = None) -> ReturnModel | None:
                 check(arg, kwarg=kwarg)
-                if isinstance(arg, ArgModel):
-                    return ReturnModel(ret_value=1)
+                if arg is not None:
+                    return ReturnModel(ret_value=arg.arg_value)
                 return None
 
             assert foo(None) is None
@@ -763,14 +757,13 @@ class test_App:
             check.assert_called_once_with(1)
 
     def test_task_with_pydantic_with_dump_kwargs(self):
-        """Test passing keyword arguments to model_dump()."""
-
+        """Test pydantic task with dump_kwargs."""
         class ArgModel(BaseModel):
             value: int
 
         class RetModel(BaseModel):
             value: datetime
-            unset_value: typing.Optional[int] = 99  # this would be in the output, if exclude_unset weren't True
+            unset_value: int | None = 99  # this would be in the output, if exclude_unset weren't True
 
         with self.Celery() as app:
             check = Mock()
@@ -1272,7 +1265,7 @@ class test_App:
     def test_bugreport(self):
         assert self.app.bugreport()
 
-    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
     def test_send_task__connection_provided(self, detect_quorum_queues):
         connection = Mock(name='connection')
         router = Mock(name='router')

@@ -15,7 +15,7 @@ from decimal import Decimal
 from itertools import chain
 from numbers import Number
 from pprint import _recursion
-from typing import Any, AnyStr, Callable, Dict, Iterator, List, Optional, Sequence, Set, Tuple  # noqa
+from typing import Any, AnyStr, Callable, Dict, Iterator, List, Sequence, Set, Tuple  # noqa
 
 from .text import truncate
 
@@ -195,7 +195,7 @@ def _reprseq(val, lit_start, lit_end, builtin_type, chainer):
 
 
 def reprstream(stack: deque,
-               seen: Optional[Set] = None,
+               seen: Set | None = None,
                maxlevels: int = 3,
                level: int = 0,
                isinstance: Callable = isinstance) -> Iterator[Any]:
