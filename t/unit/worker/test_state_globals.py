@@ -27,7 +27,6 @@ import pytest
 
 from celery.utils.collections import LimitedSet
 from celery.worker import state
-from celery.worker.request import Request
 
 
 class MockRequest:
