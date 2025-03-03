@@ -22,6 +22,7 @@ Broker Instructions
     sqs
     kafka
     gcpubsub
+    django
 
 .. _broker-overview:
 
@@ -46,6 +47,8 @@ individual transport (see :ref:`broker_toc`).
 | *Kafka*       | Experimental | No             | No                 |
 +---------------+--------------+----------------+--------------------+
 | *GC PubSub*   | Experimental | Yes            | Yes                |
++---------------+--------------+----------------+--------------------+
+| *Django*      | Experimental | Yes            | Yes                |
 +---------------+--------------+----------------+--------------------+
 
 Experimental brokers may be functional but they don't have
