@@ -3,7 +3,7 @@ import inspect
 from collections import UserList
 from functools import partial
 from itertools import islice, tee, zip_longest
-from typing import Any, Callable
+from typing import Any, Callable, TypeVar
 
 from kombu.utils.functional import LRUCache, dictfilter, is_list, lazy, maybe_evaluate, maybe_list, memoize
 from vine import promise
@@ -23,6 +23,9 @@ FUNHEAD_TEMPLATE = """
 def {fun_name}({fun_args}):
     return {fun_value}
 """
+
+T = TypeVar('T')
+U = TypeVar('U')
 
 
 class DummyContext:
@@ -71,7 +74,7 @@ def evaluate_promises(it):
         yield value
 
 
-def first(predicate, it):
+def first(predicate: Callable[[T], bool] | None, it):
     """Return the first element in ``it`` that ``predicate`` accepts.
 
     If ``predicate`` is None it will return the first item that's not
@@ -365,7 +368,7 @@ def fun_accepts_kwargs(fun):
     )
 
 
-def maybe(typ, val):
+def maybe(typ, val: T | None) -> U | None:
     """Call typ on value if val is defined."""
     return typ(val) if val is not None else val
 
