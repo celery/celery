@@ -90,10 +90,9 @@ class DelayedDelivery(bootsteps.StartStopStep):
                     max_retries=MAX_RETRIES,
                 )
             except Exception as e:
-                logger.error(
-                    "Failed to setup delayed delivery for %r after %d retries: %s",
-                    broker_url, MAX_RETRIES, str(e),
-                    exc_info=True
+                logger.warning(
+                    "Failed to setup delayed delivery for %r: %s",
+                    broker_url, str(e)
                 )
                 setup_errors.append((broker_url, e))
 
@@ -128,7 +127,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
                 queue_type
             )
         except Exception as e:
-            logger.error(
+            logger.warning(
                 "Failed to declare exchanges and queues for %r: %s",
                 broker_url, str(e)
             )
@@ -137,7 +136,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
         try:
             self._bind_queues(c.app, connection)
         except Exception as e:
-            logger.error(
+            logger.warning(
                 "Failed to bind queues for %r: %s",
                 broker_url, str(e)
             )
@@ -176,7 +175,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
             exc: The exception that triggered the retry
             intervals_count: Number of retry attempts so far
         """
-        logger.debug(
+        logger.warning(
             "Retrying delayed delivery setup (attempt %d/%d) after error: %s",
             intervals_count + 1, MAX_RETRIES, str(exc)
         )
@@ -230,6 +229,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
             raise ValueError("broker_native_delayed_delivery_queue_type is not configured")
 
         if queue_type not in VALID_QUEUE_TYPES:
+            sorted_types = sorted(VALID_QUEUE_TYPES)
             raise ValueError(
-                f"Invalid queue type {queue_type!r}. Must be one of: {', '.join(VALID_QUEUE_TYPES)}"
+                f"Invalid queue type {queue_type!r}. Must be one of: {', '.join(sorted_types)}"
             )
