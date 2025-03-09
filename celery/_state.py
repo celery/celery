@@ -10,9 +10,17 @@ import os
 import sys
 import threading
 import weakref
+from typing import TYPE_CHECKING, Optional, Union, Set, Callable
 
 from celery.local import Proxy
 from celery.utils.threads import LocalStack
+
+
+if TYPE_CHECKING:
+    from celery.app.base import Celery
+    from celery.app.task import Task
+    from celery.utils.threads import _FastLocalStack, _LocalStack
+
 
 __all__ = (
     'set_default_app', 'get_current_app', 'get_current_task',
@@ -21,43 +29,43 @@ __all__ = (
 )
 
 #: Global default app used when no current app.
-default_app = None
+default_app: Optional["Celery"] = None
 
 #: Function returning the app provided or the default app if none.
 #:
 #: The environment variable :envvar:`CELERY_TRACE_APP` is used to
 #: trace app leaks.  When enabled an exception is raised if there
 #: is no active app.
-app_or_default = None
+app_or_default: Callable[[Optional["Celery"]], "Celery"]
 
 #: List of all app instances (weakrefs), mustn't be used directly.
-_apps = weakref.WeakSet()
+_apps: "weakref.WeakSet[Celery]" = weakref.WeakSet()
 
 #: Global set of functions to call whenever a new app is finalized.
 #: Shared tasks, and built-in tasks are created by adding callbacks here.
-_on_app_finalizers = set()
+_on_app_finalizers: Set[Callable[["Celery"], None]] = set()
 
 _task_join_will_block = False
 
 
-def connect_on_app_finalize(callback):
+def connect_on_app_finalize(callback: Callable[["Celery"], None]) -> Callable[["Celery"], None]:
     """Connect callback to be called when any app is finalized."""
     _on_app_finalizers.add(callback)
     return callback
 
 
-def _announce_app_finalized(app):
+def _announce_app_finalized(app: "Celery") -> None:
     callbacks = set(_on_app_finalizers)
     for callback in callbacks:
         callback(app)
 
 
-def _set_task_join_will_block(blocks):
+def _set_task_join_will_block(blocks: bool) -> None:
     global _task_join_will_block
     _task_join_will_block = blocks
 
 
-def task_join_will_block():
+def task_join_will_block() -> bool:
     return _task_join_will_block
 
 
@@ -65,12 +73,12 @@ class _TLS(threading.local):
     #: Apps with the :attr:`~celery.app.base.BaseApp.set_as_current` attribute
     #: sets this, so it will always contain the last instantiated app,
     #: and is the default app returned by :func:`app_or_default`.
-    current_app = None
+    current_app: Optional["Celery"] = None
 
 
 _tls = _TLS()
 
-_task_stack = LocalStack()
+_task_stack: Union["_FastLocalStack[Task]", "_LocalStack[Task]"] = LocalStack()
 
 
 #: Function used to push a task to the thread local stack
@@ -83,13 +91,13 @@ push_current_task = _task_stack.push
 pop_current_task = _task_stack.pop
 
 
-def set_default_app(app):
+def set_default_app(app: "Celery") -> None:
     """Set default app."""
     global default_app
     default_app = app
 
 
-def _get_current_app():
+def _get_current_app() -> "Celery":
     if default_app is None:
         #: creates the global fallback app instance.
         from celery.app.base import Celery
@@ -100,16 +108,16 @@ def _get_current_app():
     return _tls.current_app or default_app
 
 
-def _set_current_app(app):
+def _set_current_app(app: "Celery") -> None:
     _tls.current_app = app
 
 
 if os.environ.get('C_STRICT_APP'):  # pragma: no cover
-    def get_current_app():
+    def get_current_app() -> "Celery":
         """Return the current app."""
         raise RuntimeError('USES CURRENT APP')
 elif os.environ.get('C_WARN_APP'):  # pragma: no cover
-    def get_current_app():
+    def get_current_app() -> "Celery":
         import traceback
         print('-- USES CURRENT_APP', file=sys.stderr)  # +
         traceback.print_stack(file=sys.stderr)
@@ -118,12 +126,12 @@ else:
     get_current_app = _get_current_app
 
 
-def get_current_task():
+def get_current_task() -> Optional["Task"]:
     """Currently executing task."""
     return _task_stack.top
 
 
-def get_current_worker_task():
+def get_current_worker_task() -> Optional["Task"]:
     """Currently executing task, that was applied by the worker.
 
     This is used to differentiate between the actual task
@@ -133,6 +141,7 @@ def get_current_worker_task():
     for task in reversed(_task_stack.stack):
         if not task.request.called_directly:
             return task
+    return None
 
 
 #: Proxy to current app.
@@ -142,25 +151,25 @@ current_app = Proxy(get_current_app)
 current_task = Proxy(get_current_task)
 
 
-def _register_app(app):
+def _register_app(app: "Celery") -> None:
     _apps.add(app)
 
 
-def _deregister_app(app):
+def _deregister_app(app: "Celery") -> None:
     _apps.discard(app)
 
 
-def _get_active_apps():
+def _get_active_apps() -> "weakref.WeakSet[Celery]":
     return _apps
 
 
-def _app_or_default(app=None):
+def _app_or_default(app: Optional["Celery"] = None) -> "Celery":
     if app is None:
         return get_current_app()
     return app
 
 
-def _app_or_default_trace(app=None):  # pragma: no cover
+def _app_or_default_trace(app: Optional["Celery"] = None) -> "Celery":  # pragma: no cover
     from traceback import print_stack
     try:
         from billiard.process import current_process
@@ -179,13 +188,13 @@ def _app_or_default_trace(app=None):  # pragma: no cover
     return app
 
 
-def enable_trace():
+def enable_trace() -> None:
     """Enable tracing of app instances."""
     global app_or_default
     app_or_default = _app_or_default_trace
 
 
-def disable_trace():
+def disable_trace() -> None:
     """Disable tracing of app instances."""
     global app_or_default
     app_or_default = _app_or_default

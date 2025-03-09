@@ -6,6 +6,7 @@ import threading
 import traceback
 from contextlib import contextmanager
 from threading import TIMEOUT_MAX as THREAD_TIMEOUT_MAX
+from typing import Generic, TypeVar, Optional, List
 
 from celery.local import Proxy
 
@@ -22,6 +23,9 @@ except ImportError:
                 from _dummy_thread import get_ident
             except ImportError:
                 from dummy_thread import get_ident
+
+
+T = TypeVar("T")
 
 
 __all__ = (
@@ -152,7 +156,7 @@ class Local:
             raise AttributeError(name)
 
 
-class _LocalStack:
+class _LocalStack(Generic[T]):
     """Local stack.
 
     This class works similar to a :class:`Local` but keeps a stack
@@ -201,7 +205,7 @@ class _LocalStack:
             return rv
         return Proxy(_lookup)
 
-    def push(self, obj):
+    def push(self, obj: T) -> List[T]:
         """Push a new item to the stack."""
         rv = getattr(self._local, 'stack', None)
         if rv is None:
@@ -211,7 +215,7 @@ class _LocalStack:
         rv.append(obj)
         return rv
 
-    def pop(self):
+    def pop(self) -> Optional[T]:
         """Remove the topmost item from the stack.
 
         Note:
@@ -231,7 +235,7 @@ class _LocalStack:
         return len(stack) if stack else 0
 
     @property
-    def stack(self):
+    def stack(self) -> List[T]:
         # get_current_worker_task uses this to find
         # the original task that was executed by the worker.
         stack = getattr(self._local, 'stack', None)
@@ -240,7 +244,7 @@ class _LocalStack:
         return []
 
     @property
-    def top(self):
+    def top(self) -> Optional[T]:
         """The topmost item on the stack.
 
         Note:
@@ -302,16 +306,16 @@ class LocalManager:
             self.__class__.__name__, len(self.locals))
 
 
-class _FastLocalStack(threading.local):
+class _FastLocalStack(threading.local, Generic[T]):
 
     def __init__(self):
-        self.stack = []
+        self.stack: List[T] = []
         self.push = self.stack.append
         self.pop = self.stack.pop
         super().__init__()
 
     @property
-    def top(self):
+    def top(self) -> Optional[T]:
         try:
             return self.stack[-1]
         except (AttributeError, IndexError):
