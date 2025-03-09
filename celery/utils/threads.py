@@ -6,7 +6,7 @@ import threading
 import traceback
 from contextlib import contextmanager
 from threading import TIMEOUT_MAX as THREAD_TIMEOUT_MAX
-from typing import Generic, TypeVar, Optional, List
+from typing import Generic, List, Optional, TypeVar
 
 from celery.local import Proxy
 

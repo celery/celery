@@ -10,11 +10,10 @@ import os
 import sys
 import threading
 import weakref
-from typing import TYPE_CHECKING, Optional, Union, Set, Callable
+from typing import TYPE_CHECKING, Callable, Optional, Set, Union
 
 from celery.local import Proxy
 from celery.utils.threads import LocalStack
-
 
 if TYPE_CHECKING:
     from celery.app.base import Celery
