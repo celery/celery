@@ -2307,6 +2307,13 @@ class _chord(Signature):
                 CPendingDeprecationWarning
             )
 
+        # Edge case for nested chords in the header
+        for task in maybe_list(self.tasks) or []:
+            if isinstance(task, chord):
+                # Let the nested chord do the error linking itself on its
+                # header and body where needed, based on the current configuration
+                task.link_error(errback)
+
         self.body.link_error(errback)
         return errback
 

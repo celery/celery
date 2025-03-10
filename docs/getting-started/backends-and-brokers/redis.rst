@@ -160,6 +160,12 @@ through a multi-tier storage architecture.
 Integration with Celery is straightforward as demonstrated
 in an `example provided by Upstash <https://github.com/upstash/examples/tree/main/examples/using-celery>`_.
 
+Dragonfly
+---------
+`Dragonfly <https://www.dragonflydb.io/>`_ is a drop-in Redis replacement that cuts costs and boosts performance.
+Designed to fully utilize the power of modern cloud hardware and deliver on the data demands of modern applications,
+Dragonfly frees developers from the limits of traditional in-memory data stores.
+
 .. _redis-caveats:
 
 Caveats
