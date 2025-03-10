@@ -16,7 +16,10 @@ class DelayedDelivery(bootsteps.StartStopStep):
     requires = (Tasks,)
 
     def include_if(self, c):
-        return detect_quorum_queues(c.app, c.app.connection_for_write().transport.driver_type)[0]
+        try:
+            return detect_quorum_queues(c.app, c.app.connection_for_write().transport.driver_type)[0]
+        except (ConnectionRefusedError, ValueError):
+            return False
 
     def start(self, c: Consumer):
         app: Celery = c.app
@@ -32,6 +35,9 @@ class DelayedDelivery(bootsteps.StartStopStep):
 
                 for queue in app.amqp.queues.values():
                     bind_queue_to_native_delayed_delivery_exchange(connection, queue)
-            except ConnectionRefusedError:
-                # We may receive this error if a fail-over occurs
-                continue
+            except (ConnectionRefusedError, ValueError) as exc:
+                # Log error and continue to support failover
+                logger.warning(
+                    "Failed to set up delayed delivery for broker: %s. Error: %r",
+                    broker_url, exc
+                )
