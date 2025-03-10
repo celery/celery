@@ -30,6 +30,10 @@ test_worker_stopped = Signal(
 class TestWorkController(worker.WorkController):
     """Worker that can synchronize on being fully started."""
 
+    # When this class is imported in pytest files, prevent pytest from thinking
+    # this is a test class
+    __test__ = False
+
     logger_queue = None
 
     def __init__(self, *args, **kwargs):
