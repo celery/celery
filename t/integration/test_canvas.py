@@ -311,6 +311,18 @@ class test_chain:
         assert redis_messages == expected_messages
 
     @flaky
+    def test_replace_with_chain_that_contains_a_group(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        s = replace_with_chain_which_contains_a_group.s()
+
+        result = s.delay()
+        assert result.get(timeout=TIMEOUT) == [4, 4]
+
+    @flaky
     def test_parent_ids(self, manager, num=10):
         assert_ping(manager)
 
