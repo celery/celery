@@ -734,6 +734,17 @@ avoid having all the tasks run at the same moment. It will also cap the
 maximum backoff delay to 10 minutes. All these settings can be customized
 via options documented below.
 
+Retry forever
+------------------------------------
+
+If you want to retry task forever, you should set `max_retries` attribute of the task to ``None``:
+
+.. code-block:: python
+
+    @app.task(max_retries=None)
+    def x():
+        ...
+
 .. versionadded:: 4.4
 
 You can also set `autoretry_for`, `max_retries`, `retry_backoff`, `retry_backoff_max` and `retry_jitter` options in class-based tasks:
