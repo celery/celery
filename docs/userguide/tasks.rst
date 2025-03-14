@@ -2050,9 +2050,7 @@ then passing the primary key to a task. It uses the `transaction.atomic`
 decorator, that will commit the transaction when the view returns, or
 roll back if the view raises an exception.
 
-There's a race condition if the task starts executing
-before the transaction has been committed; The database object doesn't exist
-yet!
+There is a race condition - Since transactions are atomic, the article object will not be persisted to the database before the view function returns a response. If the task starts executing before the transaction has been committed, it will query for the article object, which does not yet exist. We need to ensure that the transaction is committed before running the asynchronous task.
 
 The solution is to use
 :meth:`~celery.contrib.django.task.DjangoTask.delay_on_commit` instead:
