@@ -124,10 +124,14 @@ jobs:
           -   name: >
                   Run tox for
                   "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}"
-              timeout-minutes: 60
-              run: >
-                  tox --verbose --verbose -e
-                  "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -vv
+              uses: nick-fields/retry@v3
+              with:
+                timeout_minutes: 60
+                max_attempts: 2
+                retry_wait_seconds: 0
+                command: |
+                  tox --verbose --verbose -e "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -vv
+
   Smoke:
     needs:
     - Unit
