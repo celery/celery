@@ -138,9 +138,13 @@ jobs:
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
         test-case: [
-          'failover',
-          'quorum_queues',
-          'stamping',
+          'test_broker_failover.py',
+          'test_worker_failover.py',
+          'test_native_delayed_delivery.py',
+          'test_quorum_queues.py',
+          'test_hybrid_cluster.py',
+          'test_revoke.py',
+          'test_visitor.py',
           'test_canvas.py',
           'test_consumer.py',
           'test_control.py',
