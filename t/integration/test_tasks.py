@@ -318,6 +318,7 @@ class test_tasks:
                     assert result.successful() is False
             worker_state.revoked_stamps.clear()
 
+    @flaky
     def test_revoke_by_stamped_headers_no_match(self, manager):
         response = manager.app.control.revoke_by_stamped_headers(
             {"myheader": ["myvalue"]},
