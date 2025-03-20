@@ -8,6 +8,169 @@ This document contains change notes for bugfix & new features
 in the main branch & 5.5.x series, please see :ref:`whatsnew-5.5` for
 an overview of what's new in Celery 5.5.
 
+.. _version-5.5.0rc5:
+
+5.5.0rc5
+========
+
+:release-date: 2025-02-25
+:release-by: Tomer Nosrati
+
+Celery v5.5.0 Release Candidate 5 is now available for testing.
+Please help us test this version and report any issues.
+
+Key Highlights
+~~~~~~~~~~~~~~
+
+See :ref:`whatsnew-5.5` or read the main highlights below.
+
+Using Kombu 5.5.0rc3
+--------------------
+
+The minimum required Kombu version has been bumped to 5.5.0.
+Kombu is currently at 5.5.0rc3.
+
+Complete Quorum Queues Support
+------------------------------
+
+A completely new ETA mechanism was developed to allow full support with RabbitMQ Quorum Queues.
+
+After upgrading to this version, please share your feedback on the quorum queues support.
+
+Relevant Issues:
+`#9207 <https://github.com/celery/celery/discussions/9207>`_,
+`#6067 <https://github.com/celery/celery/discussions/6067>`_
+
+- New :ref:`documentation <using-quorum-queues>`.
+- New :setting:`broker_native_delayed_delivery_queue_type` configuration option.
+
+New support for Google Pub/Sub transport
+----------------------------------------
+
+After upgrading to this version, please share your feedback on the Google Pub/Sub transport support.
+
+Relevant Issues:
+`#9351 <https://github.com/celery/celery/pull/9351>`_
+
+Python 3.13 Improved Support
+----------------------------
+
+Additional dependencies have been migrated successfully to Python 3.13, including Kombu and py-amqp.
+
+Soft Shutdown
+-------------
+
+The soft shutdown is a new mechanism in Celery that sits between the warm shutdown and the cold shutdown.
+It sets a time limited "warm shutdown" period, during which the worker will continue to process tasks that are already running.
+After the soft shutdown ends, the worker will initiate a graceful cold shutdown, stopping all tasks and exiting.
+
+The soft shutdown is disabled by default, and can be enabled by setting the new configuration option :setting:`worker_soft_shutdown_timeout`.
+If a worker is not running any task when the soft shutdown initiates, it will skip the warm shutdown period and proceed directly to the cold shutdown
+unless the new configuration option :setting:`worker_enable_soft_shutdown_on_idle` is set to True. This is useful for workers
+that are idle, waiting on ETA tasks to be executed that still want to enable the soft shutdown anyways.
+
+The soft shutdown can replace the cold shutdown when using a broker with a visibility timeout mechanism, like :ref:`Redis <broker-redis>`
+or :ref:`SQS <broker-sqs>`, to enable a more graceful cold shutdown procedure, allowing the worker enough time to re-queue tasks that were not
+completed (e.g., ``Restoring 1 unacknowledged message(s)``) by resetting the visibility timeout of the unacknowledged messages just before
+the worker exits completely.
+
+After upgrading to this version, please share your feedback on the new Soft Shutdown mechanism.
+
+Relevant Issues:
+`#9213 <https://github.com/celery/celery/pull/9213>`_,
+`#9231 <https://github.com/celery/celery/pull/9231>`_,
+`#9238 <https://github.com/celery/celery/pull/9238>`_
+
+- New :ref:`documentation <worker-stopping>` for each shutdown type.
+- New :setting:`worker_soft_shutdown_timeout` configuration option.
+- New :setting:`worker_enable_soft_shutdown_on_idle` configuration option.
+
+REMAP_SIGTERM
+-------------
+
+The ``REMAP_SIGTERM`` "hidden feature" has been tested, :ref:`documented <worker-REMAP_SIGTERM>` and is now officially supported.
+This feature allows users to remap the SIGTERM signal to SIGQUIT, to initiate a soft or a cold shutdown using :sig:`TERM`
+instead of :sig:`QUIT`.
+
+Pydantic Support
+----------------
+
+This release introduces support for Pydantic models in Celery tasks.
+For more info, see the new pydantic example and PR `#9023 <https://github.com/celery/celery/pull/9023>`_ by @mathiasertl.
+
+After upgrading to this version, please share your feedback on the new Pydantic support.
+
+Redis Broker Stability Improvements
+-----------------------------------
+The root cause of the Redis broker instability issue has been `identified and resolved <https://github.com/celery/kombu/pull/2007>`_
+in the v5.4.0 release of Kombu, which should resolve the disconnections bug and offer additional improvements.
+
+After upgrading to this version, please share your feedback on the Redis broker stability.
+
+Relevant Issues:
+`#7276 <https://github.com/celery/celery/discussions/7276>`_,
+`#8091 <https://github.com/celery/celery/discussions/8091>`_,
+`#8030 <https://github.com/celery/celery/discussions/8030>`_,
+`#8384 <https://github.com/celery/celery/discussions/8384>`_
+
+Quorum Queues Initial Support
+-----------------------------
+This release introduces the initial support for Quorum Queues with Celery. 
+
+See new configuration options for more details:
+
+- :setting:`task_default_queue_type`
+- :setting:`worker_detect_quorum_queues`
+
+After upgrading to this version, please share your feedback on the Quorum Queues support.
+
+Relevant Issues:
+`#6067 <https://github.com/celery/celery/discussions/6067>`_,
+`#9121 <https://github.com/celery/celery/discussions/9121>`_
+
+What's Changed
+~~~~~~~~~~~~~~
+
+- Bump mypy from 1.13.0 to 1.14.0 (#9476)
+- Fix cassandra backend port settings not working (#9465)
+- Unroll group when a group with a single item is chained using the | operator (#9456)
+- fix(django): catch the right error when trying to close db connection (#9392)
+- Replacing a task with a chain which contains a group now returns a result instead of hanging (#9484)
+- Avoid using a group of one as it is now unrolled into a chain (#9510)
+- Link to the correct IRC network (#9509)
+- Bump pytest-github-actions-annotate-failures from 0.2.0 to 0.3.0 (#9504)
+- Update canvas.rst to fix output result from chain object (#9502)
+- Unauthorized Changes Cleanup (#9528)
+- [RE-APPROVED] fix(django): catch the right error when trying to close db connection (#9529)
+- [RE-APPROVED] Link to the correct IRC network (#9531)
+- [RE-APPROVED] Update canvas.rst to fix output result from chain object (#9532)
+- Update test-ci-base.txt (#9539)
+- Update install-pyenv.sh (#9540)
+- Update elasticsearch requirement from <=8.17.0 to <=8.17.1 (#9518)
+- Bump google-cloud-firestore from 2.19.0 to 2.20.0 (#9493)
+- Bump mypy from 1.14.0 to 1.14.1 (#9483)
+- Update elastic-transport requirement from <=8.15.1 to <=8.17.0 (#9490)
+- Update Dockerfile by adding missing Python version 3.13 (#9549)
+- Fix typo for default of sig (#9495)
+- fix(crontab): resolve constructor type conflicts (#9551)
+- worker_max_memory_per_child: kilobyte is 1024 bytes (#9553)
+- Fix formatting in quorum queue docs (#9555)
+- Bump cryptography from 44.0.0 to 44.0.1 (#9556)
+- Fix the send_task method when detecting if the native delayed delivery approach is available (#9552)
+- Reverted PR #7814 & minor code improvement (#9494)
+- Improved donation and sponsorship visibility (#9558)
+- Updated the Getting Help section, replacing deprecated with new resources (#9559)
+- Fixed django example (#9562)
+- Bump Kombu to v5.5.0rc3 (#9564)
+- Bump ephem from 4.1.6 to 4.2 (#9565)
+- Bump pytest-celery to v1.2.0 (#9568)
+- Remove dependency on `pycurl` (#9526)
+- Set TestWorkController.__test__ (#9574)
+- Fixed bug when revoking by stamped headers a stamp that does not exist (#9575)
+- Canvas Stamping Doc Fixes (#9578)
+- Bugfix: Chord with a chord in header doesn't invoke error callback on inner chord header failure (default config) (#9580)
+- Prepare for (pre) release: v5.5.0rc5 (#9582)
+
 .. _version-5.5.0rc4:
 
 5.5.0rc4
