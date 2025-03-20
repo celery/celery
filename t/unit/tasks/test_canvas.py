@@ -90,15 +90,7 @@ class CanvasCase:
 
         @self.app.task(shared=False)
         def xprod(numbers):
-            try:
-                return math.prod(numbers)
-            except AttributeError:
-                #  TODO: Drop this backport once
-                #        we drop support for Python 3.7
-                import operator
-                from functools import reduce
-
-                return reduce(operator.mul, numbers)
+            return math.prod(numbers)
 
         self.xprod = xprod
 

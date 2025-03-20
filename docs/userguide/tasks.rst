@@ -734,17 +734,6 @@ avoid having all the tasks run at the same moment. It will also cap the
 maximum backoff delay to 10 minutes. All these settings can be customized
 via options documented below.
 
-Retry forever
-------------------------------------
-
-If you want to retry task forever, you should set `max_retries` attribute of the task to ``None``:
-
-.. code-block:: python
-
-    @app.task(max_retries=None)
-    def x():
-        ...
-
 .. versionadded:: 4.4
 
 You can also set `autoretry_for`, `max_retries`, `retry_backoff`, `retry_backoff_max` and `retry_jitter` options in class-based tasks:
@@ -2050,9 +2039,7 @@ then passing the primary key to a task. It uses the `transaction.atomic`
 decorator, that will commit the transaction when the view returns, or
 roll back if the view raises an exception.
 
-There's a race condition if the task starts executing
-before the transaction has been committed; The database object doesn't exist
-yet!
+There is a race condition because transactions are atomic. This means the article object is not persisted to the database until after the view function returns a response. If the asynchronous task starts executing before the transaction is committed, it may attempt to query the article object before it exists. To prevent this, we need to ensure that the transaction is committed before triggering the task.
 
 The solution is to use
 :meth:`~celery.contrib.django.task.DjangoTask.delay_on_commit` instead:
