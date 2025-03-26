@@ -35,6 +35,11 @@ from celery.platforms import detached, maybe_drop_privileges
               type=int,
               help_group="Beat Options",
               help="Max seconds to sleep between schedule iterations.")
+@click.option('--sync-every',
+              cls=CeleryOption,
+              type=int,
+              help_group="Beat Options",
+              help="Time to wait, in seconds, between each schedule synchronization.")
 @click.option('-l',
               '--loglevel',
               default='WARNING',
