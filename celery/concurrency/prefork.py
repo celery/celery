@@ -52,6 +52,8 @@ def process_initializer(app, hostname):
     # run once per process.
     app.loader.init_worker()
     app.loader.init_worker_process()
+    if app.conf.worker_proc_use_process_group:
+        os.setpgrp()
     logfile = os.environ.get('CELERY_LOG_FILE') or None
     if logfile and '%i' in logfile.lower():
         # logfile path will differ so need to set up logging again.
@@ -106,12 +108,17 @@ class TaskPool(BasePool):
             self.app.conf.worker_proc_alive_timeout if self.app
             else None
         )
+        proc_use_process_group = (
+            self.app.conf.worker_proc_use_process_group if self.app
+            else None
+        )
         P = self._pool = Pool(processes=self.limit,
                               initializer=process_initializer,
                               on_process_exit=process_destructor,
                               enable_timeouts=True,
                               synack=False,
                               proc_alive_timeout=proc_alive_timeout,
+                              proc_use_process_group=proc_use_process_group,
                               **self.options)
 
         # Create proxy methods
