@@ -128,9 +128,9 @@ class ResultConsumer(BaseResultConsumer):
         except self._connection_errors:
             try:
                 self._ensure(self._reconnect_pubsub, ())
-            except self._connection_errors:
+            except self._connection_errors as e:
                 logger.critical(E_RETRY_LIMIT_EXCEEDED)
-                raise
+                raise RuntimeError(E_RETRY_LIMIT_EXCEEDED) from e
 
     def _maybe_cancel_ready_task(self, meta):
         if meta['status'] in states.READY_STATES:
