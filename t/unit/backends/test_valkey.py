@@ -192,7 +192,7 @@ class test_ValkeyResultConsumer:
         from celery.backends.valkey import ValkeyBackend
 
         class _ValkeyBackend(ValkeyBackend):
-            valkey = valkey
+            backend = valkey
 
         return _ValkeyBackend(app=self.app)
 
@@ -226,7 +226,7 @@ class test_ValkeyResultConsumer:
         consumer.on_after_fork()
         parent_method.assert_called_once()
 
-    @patch('celery.backends.valkey.ResultConsumer.cancel_for')
+    @patch('celery.backends.base_keyval.ResultConsumer.cancel_for')
     @patch('celery.backends.asynchronous.BaseResultConsumer.on_state_change')
     def test_on_state_change(self, parent_method, cancel_for):
         consumer = self.get_consumer()
@@ -264,7 +264,7 @@ class test_ValkeyResultConsumer:
         consumer.cancel_for('some-task')
         assert consumer._pubsub._subscribed_to == {b'celery-task-meta-initial'}
 
-    @patch('celery.backends.valkey.ResultConsumer.cancel_for')
+    @patch('celery.backends.base_keyval.ResultConsumer.cancel_for')
     @patch('celery.backends.asynchronous.BaseResultConsumer.on_state_change')
     def test_drain_events_connection_error(self, parent_on_state_change, cancel_for):
         meta = {'task_id': 'initial', 'status': states.SUCCESS}
@@ -320,13 +320,13 @@ class basetest_ValkeyBackend:
         from celery.backends.valkey import ValkeyBackend
 
         class _ValkeyBackend(ValkeyBackend):
-            valkey = valkey
+            backend = valkey
 
         return _ValkeyBackend
 
     def get_E_LOST(self):
-        from celery.backends.valkey import E_LOST
-        return E_LOST
+        from celery.backends.base_keyval import E_LOST
+        return E_LOST.format("Valkey")
 
     def create_task(self, i, group_id="group_id"):
         tid = uuid()
@@ -342,7 +342,7 @@ class basetest_ValkeyBackend:
 
     @contextmanager
     def chord_context(self, size=1):
-        with patch('celery.backends.valkey.maybe_signature') as ms:
+        with patch('celery.backends.base_keyval.maybe_signature') as ms:
             request = Mock(name='request')
             request.id = 'id1'
             group_id = 'gid1'
@@ -374,7 +374,7 @@ class test_ValkeyBackend(basetest_ValkeyBackend):
         assert loads(dumps(x))
 
     def test_no_valkey(self):
-        self.Backend.valkey = None
+        self.Backend.backend = None
         with pytest.raises(ImproperlyConfigured):
             self.Backend(app=self.app)
 
@@ -659,7 +659,7 @@ class test_ValkeyBackend(basetest_ValkeyBackend):
         })
         self.Backend(app=self.app)
 
-    @patch('celery.backends.valkey.logger')
+    @patch('celery.backends.base_keyval.logger')
     def test_on_connection_error(self, logger):
         intervals = iter([10, 20, 30])
         exc = KeyError()
@@ -671,7 +671,7 @@ class test_ValkeyBackend(basetest_ValkeyBackend):
         assert self.b.on_connection_error(10, exc, intervals, 3) == 30
         logger.error.assert_called_with(self.E_LOST, 3, 10, 'in 30.00 seconds')
 
-    @patch('celery.backends.valkey.retry_over_time')
+    @patch('celery.backends.base_keyval.retry_over_time')
     def test_retry_policy_conf(self, retry_over_time):
         self.app.conf.result_backend_transport_options = dict(
             retry_policy=dict(
@@ -735,10 +735,9 @@ class test_ValkeyBackend(basetest_ValkeyBackend):
         assert self.b.on_chord_part_return(request, 'SUCCESS', 10) is None
 
     def test_ConnectionPool(self):
-        self.b.valkey = Mock(name='valkey')
+        self.b.backend = Mock(name='valkey')
         assert self.b._ConnectionPool is None
-        assert self.b.ConnectionPool is self.b.valkey.ConnectionPool
-        assert self.b.ConnectionPool is self.b.valkey.ConnectionPool
+        assert self.b.ConnectionPool is self.b.backend.ConnectionPool
 
     def test_expires_defaults_to_config(self):
         self.app.conf.result_expires = 10
@@ -1190,8 +1189,8 @@ class test_SentinelBackend:
         return _SentinelBackend
 
     def get_E_LOST(self):
-        from celery.backends.valkey import E_LOST
-        return E_LOST
+        from celery.backends.base_keyval import E_LOST
+        return E_LOST.format("Valkey")
 
     def setup_method(self):
         self.Backend = self.get_backend()
@@ -1207,7 +1206,7 @@ class test_SentinelBackend:
         assert loads(dumps(x))
 
     def test_no_valkey(self):
-        self.Backend.valkey = None
+        self.Backend.backend = None
         with pytest.raises(ImproperlyConfigured):
             self.Backend(app=self.app)
 

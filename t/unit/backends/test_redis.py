@@ -197,7 +197,7 @@ class test_RedisResultConsumer:
         from celery.backends.redis import RedisBackend
 
         class _RedisBackend(RedisBackend):
-            redis = redis
+            backend = redis
 
         return _RedisBackend(app=self.app)
 
@@ -231,7 +231,7 @@ class test_RedisResultConsumer:
         consumer.on_after_fork()
         parent_method.assert_called_once()
 
-    @patch('celery.backends.redis.ResultConsumer.cancel_for')
+    @patch('celery.backends.base_keyval.ResultConsumer.cancel_for')
     @patch('celery.backends.asynchronous.BaseResultConsumer.on_state_change')
     def test_on_state_change(self, parent_method, cancel_for):
         consumer = self.get_consumer()
@@ -269,7 +269,7 @@ class test_RedisResultConsumer:
         consumer.cancel_for('some-task')
         assert consumer._pubsub._subscribed_to == {b'celery-task-meta-initial'}
 
-    @patch('celery.backends.redis.ResultConsumer.cancel_for')
+    @patch('celery.backends.base_keyval.ResultConsumer.cancel_for')
     @patch('celery.backends.asynchronous.BaseResultConsumer.on_state_change')
     def test_drain_events_connection_error(self, parent_on_state_change, cancel_for):
         meta = {'task_id': 'initial', 'status': states.SUCCESS}
@@ -325,13 +325,13 @@ class basetest_RedisBackend:
         from celery.backends.redis import RedisBackend
 
         class _RedisBackend(RedisBackend):
-            redis = redis
+            backend = redis
 
         return _RedisBackend
 
     def get_E_LOST(self):
-        from celery.backends.redis import E_LOST
-        return E_LOST
+        from celery.backends.base_keyval import E_LOST
+        return E_LOST.format("Redis")
 
     def create_task(self, i, group_id="group_id"):
         tid = uuid()
@@ -347,7 +347,7 @@ class basetest_RedisBackend:
 
     @contextmanager
     def chord_context(self, size=1):
-        with patch('celery.backends.redis.maybe_signature') as ms:
+        with patch('celery.backends.base_keyval.maybe_signature') as ms:
             request = Mock(name='request')
             request.id = 'id1'
             group_id = 'gid1'
@@ -379,7 +379,7 @@ class test_RedisBackend(basetest_RedisBackend):
         assert loads(dumps(x))
 
     def test_no_redis(self):
-        self.Backend.redis = None
+        self.Backend.backend = None
         with pytest.raises(ImproperlyConfigured):
             self.Backend(app=self.app)
 
@@ -664,7 +664,7 @@ class test_RedisBackend(basetest_RedisBackend):
         })
         self.Backend(app=self.app)
 
-    @patch('celery.backends.redis.logger')
+    @patch('celery.backends.base_keyval.logger')
     def test_on_connection_error(self, logger):
         intervals = iter([10, 20, 30])
         exc = KeyError()
@@ -676,7 +676,7 @@ class test_RedisBackend(basetest_RedisBackend):
         assert self.b.on_connection_error(10, exc, intervals, 3) == 30
         logger.error.assert_called_with(self.E_LOST, 3, 10, 'in 30.00 seconds')
 
-    @patch('celery.backends.redis.retry_over_time')
+    @patch('celery.backends.base_keyval.retry_over_time')
     def test_retry_policy_conf(self, retry_over_time):
         self.app.conf.result_backend_transport_options = dict(
             retry_policy=dict(
@@ -748,10 +748,9 @@ class test_RedisBackend(basetest_RedisBackend):
         assert self.b.on_chord_part_return(request, 'SUCCESS', 10) is None
 
     def test_ConnectionPool(self):
-        self.b.redis = Mock(name='redis')
+        self.b.backend = Mock(name='redis')
         assert self.b._ConnectionPool is None
-        assert self.b.ConnectionPool is self.b.redis.ConnectionPool
-        assert self.b.ConnectionPool is self.b.redis.ConnectionPool
+        assert self.b.ConnectionPool is self.b.backend.ConnectionPool
 
     def test_expires_defaults_to_config(self):
         self.app.conf.result_expires = 10
@@ -1203,8 +1202,8 @@ class test_SentinelBackend:
         return _SentinelBackend
 
     def get_E_LOST(self):
-        from celery.backends.redis import E_LOST
-        return E_LOST
+        from celery.backends.base_keyval import E_LOST
+        return E_LOST.format("Redis")
 
     def setup_method(self):
         self.Backend = self.get_backend()
@@ -1220,7 +1219,7 @@ class test_SentinelBackend:
         assert loads(dumps(x))
 
     def test_no_redis(self):
-        self.Backend.redis = None
+        self.Backend.backend = None
         with pytest.raises(ImproperlyConfigured):
             self.Backend(app=self.app)
 
