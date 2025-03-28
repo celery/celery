@@ -18,8 +18,8 @@ from celery import current_app, signals
 from celery.app.task import Context
 from celery.app.trace import fast_trace_task, trace_task, trace_task_ret
 from celery.concurrency.base import BasePool
-from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError, Terminated,
-                               TimeLimitExceeded, WorkerLostError, MaxRetriesExceededError)
+from celery.exceptions import (Ignore, InvalidTaskError, MaxRetriesExceededError, Reject, Retry, TaskRevokedError,
+                               Terminated, TimeLimitExceeded, WorkerLostError)
 from celery.platforms import signals as _signals
 from celery.utils.functional import maybe, maybe_list, noop
 from celery.utils.log import get_logger
