@@ -663,7 +663,7 @@ class Request:
                 
                 if max_retries is not None:
                     self._rejection_count += 1
-                    if self._rejection_count > max_retries:
+                    if self._rejection_count >= max_retries:
                         warn('Max retries (%d) exceeded for task %s[%s], rejecting without requeue',
                              max_retries, self.name, self.id)
                         requeue = False
