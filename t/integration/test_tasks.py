@@ -319,6 +319,17 @@ class test_tasks:
             worker_state.revoked_stamps.clear()
 
     @flaky
+    def test_revoke_by_stamped_headers_no_match(self, manager):
+        response = manager.app.control.revoke_by_stamped_headers(
+            {"myheader": ["myvalue"]},
+            terminate=False,
+            reply=True,
+        )
+
+        expected_response = "headers {'myheader': ['myvalue']} flagged as revoked, but not terminated"
+        assert response[0][list(response[0].keys())[0]]["ok"] == expected_response
+
+    @flaky
     def test_wrong_arguments(self, manager):
         """Tests that proper exceptions are raised when task is called with wrong arguments."""
         with pytest.raises(TypeError):
