@@ -400,7 +400,8 @@ class test_AsyncResult:
             result_clone = copy.copy(result)
             # del result do not exactly call __del__ method. The gc does.
             # https://docs.python.org/3/reference/datamodel.html#object.__del__
-            result.__del__()
+            del result
+            gc.collect()
             backend.remove_pending_result.assert_called_once_with(
                 result_clone
             )
