@@ -1130,7 +1130,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
         assert x.connparams['socket_keepalive'] is True
         assert x.connparams['socket_keepalive_options'] == {4: 300, 6: 9, 5: 45}
 
-    def test_setup_proper_max_conenction_value_depends_on_passed_value(self):
+    def test_setup_proper_max_connection_value_depends_on_passed_value(self):
         x = self.Backend('redis://:bosco@vandelay.com:123//1', app=self.app)
         assert x.connparams['max_connections'] is None
 
