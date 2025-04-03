@@ -9,7 +9,7 @@ from celery.worker.consumer.delayed_delivery import DelayedDelivery
 
 class test_DelayedDelivery:
     @patch('celery.worker.consumer.delayed_delivery.detect_quorum_queues', return_value=[False, ""])
-    def test_include_if_no_quorum_queues_detected(self, detect_quorum_queues):
+    def test_include_if_no_quorum_queues_detected(self, _):
         consumer_mock = Mock()
 
         delayed_delivery = DelayedDelivery(consumer_mock)
@@ -17,7 +17,7 @@ class test_DelayedDelivery:
         assert delayed_delivery.include_if(consumer_mock) is False
 
     @patch('celery.worker.consumer.delayed_delivery.detect_quorum_queues', return_value=[True, ""])
-    def test_include_if_quorum_queues_detected(self, detect_quorum_queues):
+    def test_include_if_quorum_queues_detected(self, _):
         consumer_mock = Mock()
 
         delayed_delivery = DelayedDelivery(consumer_mock)
@@ -74,26 +74,36 @@ class test_DelayedDelivery:
 
         assert len(caplog.records) == 0
 
-    def test_validate_broker_urls_empty(self):
+    @pytest.mark.parametrize(
+        "broker_urls, expected_result",
+        [
+            ("amqp://", {"amqp://"}),
+            ("amqp://;redis://", {"amqp://", "redis://"}),
+            (
+                ["amqp://", "redis://", "sqs://"],
+                {"amqp://", "redis://", "sqs://"},
+            ),
+        ],
+    )
+    def test_validate_broker_urls_valid(self, broker_urls, expected_result):
         delayed_delivery = DelayedDelivery(Mock())
+        urls = delayed_delivery._validate_broker_urls(broker_urls)
+        assert urls == expected_result
 
-        with pytest.raises(ValueError, match="broker_url configuration is empty"):
-            delayed_delivery._validate_broker_urls("")
-
-        with pytest.raises(ValueError, match="broker_url configuration is empty"):
-            delayed_delivery._validate_broker_urls(None)
-
-    def test_validate_broker_urls_invalid(self):
+    @pytest.mark.parametrize(
+        "broker_urls, exception_type, exception_match",
+        [
+            ("", ValueError, "broker_url configuration is empty"),
+            (None, ValueError, "broker_url configuration is empty"),
+            ([], ValueError, "broker_url configuration is empty"),
+            (123, ValueError, "broker_url must be a string or list"),
+            (["amqp://", 123, None, "amqp://"], ValueError, "All broker URLs must be strings"),
+        ],
+    )
+    def test_validate_broker_urls_invalid(self, broker_urls, exception_type, exception_match):
         delayed_delivery = DelayedDelivery(Mock())
-
-        with pytest.raises(ValueError, match="No valid broker URLs found in configuration"):
-            delayed_delivery._validate_broker_urls("  ;  ;  ")
-
-    def test_validate_broker_urls_valid(self):
-        delayed_delivery = DelayedDelivery(Mock())
-
-        urls = delayed_delivery._validate_broker_urls("amqp://localhost;amqp://remote")
-        assert urls == {"amqp://localhost", "amqp://remote"}
+        with pytest.raises(exception_type, match=exception_match):
+            delayed_delivery._validate_broker_urls(broker_urls)
 
     def test_validate_queue_type_empty(self):
         delayed_delivery = DelayedDelivery(Mock())
