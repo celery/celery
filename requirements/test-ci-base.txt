@@ -6,3 +6,4 @@ pytest-github-actions-annotate-failures==0.3.0
 -r extras/pymemcache.txt
 -r extras/thread.txt
 -r extras/auth.txt
+-r extras/valkey.txt
