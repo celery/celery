@@ -8,6 +8,20 @@ This document contains change notes for bugfix & new features
 in the main branch & 5.5.x series, please see :ref:`whatsnew-5.5` for
 an overview of what's new in Celery 5.5.
 
+.. _version-5.5.1:
+
+5.5.1
+=====
+
+:release-date: 2025-04-08
+:release-by: Tomer Nosrati
+
+What's Changed
+~~~~~~~~~~~~~~
+
+- Fixed "AttributeError: list object has no attribute strip" with quorum queues and failover brokers (#9657)
+- Prepare for release: v5.5.1 (#9660)
+
 .. _version-5.5.0:
 
 5.5.0
