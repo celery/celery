@@ -121,6 +121,9 @@ Transports and Backends
 :``celery[gcpubsub]``:
     for using the Google Cloud Pub/Sub as a message transport (*experimental*)..
 
+:``celery[valkey]``:
+    for using Valkey as a message transport or as a result backend.
+
 
 
 .. _celery-installing-from-source:
