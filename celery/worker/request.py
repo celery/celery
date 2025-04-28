@@ -602,8 +602,8 @@ class Request:
         is_worker_lost = isinstance(exc, WorkerLostError)
         if self.task.acks_late:
             reject = (
-                self.task.reject_on_worker_lost and
-                is_worker_lost
+                (self.task.reject_on_worker_lost and is_worker_lost)
+                or (isinstance(exc, TimeLimitExceeded) and not self.task.acks_on_failure_or_timeout)
             )
             ack = self.task.acks_on_failure_or_timeout
             if reject:

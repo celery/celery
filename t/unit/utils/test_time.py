@@ -177,6 +177,41 @@ def test_remaining():
     next_run = now + rem_time
     assert next_run == next_actual_time
 
+    """
+    Case 4: DST check between now and next_run
+    Suppose start (which is last_run_time) and now are in EST while next_run
+    is in EDT, then check that the remaining time returned is the exact real
+    time difference (not wall time).
+    For example, between
+    2019-03-10 01:30:00-05:00 and
+    2019-03-10 03:30:00-04:00
+    There is only 1 hour difference in real time, but 2 on wall time.
+    Python by default uses wall time in arithmetic between datetimes with
+    equal non-UTC timezones.
+    In 2019, DST starts on March 10
+    """
+    start = datetime(
+        day=10, month=3, year=2019, hour=1,
+        minute=30, tzinfo=eastern_tz)  # EST
+
+    now = datetime(
+        day=10, month=3, year=2019, hour=1,
+        minute=30, tzinfo=eastern_tz)  # EST
+    delta = ffwd(hour=3, year=2019, microsecond=0, minute=30,
+                 second=0, day=10, weeks=0, month=3)
+    # `next_actual_time` is the next time to run (derived from delta)
+    next_actual_time = datetime(
+        day=10, month=3, year=2019, hour=3, minute=30, tzinfo=eastern_tz)  # EDT
+    assert start.tzname() == "EST"
+    assert now.tzname() == "EST"
+    assert next_actual_time.tzname() == "EDT"
+    rem_time = remaining(start, delta, now)
+    assert rem_time.total_seconds() == 3600
+    next_run_utc = now.astimezone(ZoneInfo("UTC")) + rem_time
+    next_run_edt = next_run_utc.astimezone(eastern_tz)
+    assert next_run_utc == next_actual_time
+    assert next_run_edt == next_actual_time
+
 
 class test_timezone:
 
