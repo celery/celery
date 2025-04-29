@@ -878,15 +878,16 @@ class test_Request(RequestCase):
         job.task.backend = Mock(name='backend')
 
         try:
-            raise KeyError('foo')
-        except KeyError:
-            exc_info = ExceptionInfo()
-            job.on_failure(exc_info)
+            try:
+                raise KeyError('foo')
+            except KeyError:
+                exc_info = ExceptionInfo()
+                job.on_failure(exc_info)
 
-        job.send_event.assert_not_called()
-        job.task.backend.mark_as_failure.assert_not_called()
-        state.should_terminate = None
-
+            job.send_event.assert_not_called()
+            job.task.backend.mark_as_failure.assert_not_called()
+        finally:
+            state.should_terminate = None
     def test_from_message_invalid_kwargs(self):
         m = self.TaskMessage(self.mytask.name, args=(), kwargs='foo')
         req = Request(m, app=self.app)
