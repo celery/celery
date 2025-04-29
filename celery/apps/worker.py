@@ -412,6 +412,9 @@ def on_cold_shutdown(worker: Worker):
     # Cancel all unacked requests and allow the worker to terminate naturally
     worker.consumer.cancel_all_unacked_requests()
 
+    from celery.worker import state
+    state.should_terminate = True
+
     # Stop the pool to allow successful tasks call on_success()
     worker.consumer.pool.stop()
 

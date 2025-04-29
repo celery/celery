@@ -870,6 +870,23 @@ class test_Request(RequestCase):
         job.on_failure(exc_info)
         assert not job.eventer.send.called
 
+    def test_on_failure_should_terminate(self):
+        from celery.worker import state
+        state.should_terminate = True
+        job = self.xRequest()
+        job.send_event = Mock(name='send_event')
+        job.task.backend = Mock(name='backend')
+
+        try:
+            raise KeyError('foo')
+        except KeyError:
+            exc_info = ExceptionInfo()
+            job.on_failure(exc_info)
+
+        job.send_event.assert_not_called()
+        job.task.backend.mark_as_failure.assert_not_called()
+        state.should_terminate = None
+
     def test_from_message_invalid_kwargs(self):
         m = self.TaskMessage(self.mytask.name, args=(), kwargs='foo')
         req = Request(m, app=self.app)
@@ -936,6 +953,18 @@ class test_Request(RequestCase):
         job = self.xRequest()
         job.on_timeout(soft=True, timeout=1336)
         assert self.mytask.backend.get_status(job.id) == states.PENDING
+
+    def test_on_timeout_should_terminate(self, patching):
+        from celery.worker import state
+        warn = patching('celery.worker.request.warn')
+        error = patching('celery.worker.request.error')
+
+        state.should_terminate = True
+        job = self.xRequest()
+        job.on_timeout(None, None)
+        warn.assert_not_called()
+        error.assert_not_called()
+        state.should_terminate = None
 
     def test_fast_trace_task(self):
         assert self.app.use_fast_trace_task is False
