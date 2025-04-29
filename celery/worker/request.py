@@ -619,7 +619,7 @@ class Request:
                 # need to be removed from prefetched local queue
                 self.reject(requeue=False)
 
-        # This is a special case where the task failure handing is done during
+        # This is a special case where the task failure handling is done during
         # the cold shutdown process.
         if state.should_terminate:
             return_ok = True
