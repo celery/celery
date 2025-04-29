@@ -525,7 +525,7 @@ class Request:
                  timeout, self.name, self.id)
         else:
             task_ready(self)
-            # This is a special case where the task timeout handing is done during
+            # This is a special case where the task timeout handling is done during
             # the cold shutdown process.
             if not state.should_terminate:
                 error('Hard time limit (%ss) exceeded for %s[%s]', timeout, self.name, self.id)
