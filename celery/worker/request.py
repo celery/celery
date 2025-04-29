@@ -525,14 +525,16 @@ class Request:
                  timeout, self.name, self.id)
         else:
             task_ready(self)
-            error('Hard time limit (%ss) exceeded for %s[%s]',
-                  timeout, self.name, self.id)
-            exc = TimeLimitExceeded(timeout)
+            # This is a special case where the task timeout handing is done during
+            # the cold shutdown process.
+            if not state.should_terminate:
+                error('Hard time limit (%ss) exceeded for %s[%s]', timeout, self.name, self.id)
+                exc = TimeLimitExceeded(timeout)
 
-            self.task.backend.mark_as_failure(
-                self.id, exc, request=self._context,
-                store_result=self.store_errors,
-            )
+                self.task.backend.mark_as_failure(
+                    self.id, exc, request=self._context,
+                    store_result=self.store_errors,
+                )
 
             if self.task.acks_late and self.task.acks_on_failure_or_timeout:
                 self.acknowledge()
@@ -616,6 +618,12 @@ class Request:
                 # supporting the behaviour where a task failed and
                 # need to be removed from prefetched local queue
                 self.reject(requeue=False)
+
+        # This is a special case where the task failure handing is done during
+        # the cold shutdown process.
+        if state.should_terminate:
+            return_ok = True
+            send_failed_event = False
 
         # This is a special case where the process would not have had time
         # to write the result.
