@@ -23,7 +23,7 @@ __all__ = (
 )
 
 
-class EventletAdaptedEvent():
+class EventletAdaptedEvent:
     """
     An adapted eventlet event, designed to match the API of `threading.Event` and
     `gevent.event.Event`.
