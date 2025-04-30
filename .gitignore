@@ -39,3 +39,4 @@ integration-tests-config.json
 statefilename.*
 dump.rdb
 .env
+junit.xml

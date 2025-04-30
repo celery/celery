@@ -535,6 +535,8 @@ class Task:
             publisher (kombu.Producer): Deprecated alias to ``producer``.
 
             headers (Dict): Message headers to be included in the message.
+                The headers can be used as an overlay for custom labeling
+                using the :ref:`canvas-stamping` feature.
 
         Returns:
             celery.result.AsyncResult: Promise of future evaluation.

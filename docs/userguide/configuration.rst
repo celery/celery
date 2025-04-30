@@ -686,7 +686,7 @@ Can be one of the following:
     Use `Memcached`_ to store the results.
     See :ref:`conf-cache-result-backend`.
 
-*``mongodb``
+* ``mongodb``
     Use `MongoDB`_ to store the results.
     See :ref:`conf-mongodb-result-backend`.
 

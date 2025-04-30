@@ -90,15 +90,7 @@ class CanvasCase:
 
         @self.app.task(shared=False)
         def xprod(numbers):
-            try:
-                return math.prod(numbers)
-            except AttributeError:
-                #  TODO: Drop this backport once
-                #        we drop support for Python 3.7
-                import operator
-                from functools import reduce
-
-                return reduce(operator.mul, numbers)
+            return math.prod(numbers)
 
         self.xprod = xprod
 
@@ -1746,7 +1738,7 @@ class test_chord(CanvasCase):
             group(signature('t'), signature('t'))
         ]
         for chord_header in headers:
-            c = chord(chord_header, signature('t'))
+            c = chord(chord_header, signature('t'), app=self.app)
             sig = signature('t')
             errback = c.link_error(sig)
             assert errback == sig
@@ -1754,7 +1746,7 @@ class test_chord(CanvasCase):
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_flag_allow_error_cb_on_chord_header_with_dict_callback(self):
         self.app.conf.task_allow_error_cb_on_chord_header = True
-        c = chord(group(signature('th1'), signature('th2')), signature('tbody'))
+        c = chord(group(signature('th1'), signature('th2')), signature('tbody'), app=self.app)
         errback_dict = dict(signature('tcb'))
         errback = c.link_error(errback_dict)
         assert errback == errback_dict
@@ -1783,7 +1775,7 @@ class test_chord(CanvasCase):
     def test_link_error_on_chord_header(self, header):
         """ Test that link_error on a chord also links the header """
         self.app.conf.task_allow_error_cb_on_chord_header = True
-        c = chord(header, signature('body'))
+        c = chord(header, signature('body'), app=self.app)
         err = signature('err')
         errback = c.link_error(err)
         assert errback == err
