@@ -833,8 +833,9 @@ class Celery:
             options, route_name or name, args, kwargs, task_type)
 
         driver_type = self.producer_pool.connections.connection.transport.driver_type
+        quorum_queues_detected = detect_quorum_queues(self, driver_type)
 
-        if (eta or countdown) and detect_quorum_queues(self, driver_type)[0]:
+        if (eta or countdown) and quorum_queues_detected[0]:
 
             queue = options.get("queue")
             exchange_type = queue.exchange.type if queue else options["exchange_type"]
