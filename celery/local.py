@@ -397,7 +397,6 @@ COMPAT_MODULES = {
         },
         'log': {
             'get_default_logger': 'log.get_default_logger',
-            'setup_logger': 'log.setup_logger',
             'setup_logging_subsystem': 'log.setup_logging_subsystem',
             'redirect_stdouts_to_logger': 'log.redirect_stdouts_to_logger',
         },
@@ -517,6 +516,7 @@ def recreate_module(name, compat_modules=None, by_module=None, direct=None,
     new_module.__dict__.update({
         mod: get_compat_module(new_module, mod) for mod in compat_modules
     })
+    new_module.__spec__ = old_module.__spec__
     return old_module, new_module
 
 

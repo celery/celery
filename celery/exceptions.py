@@ -96,6 +96,8 @@ __all__ = (
     'CeleryCommandException',
 )
 
+from celery.utils.serialization import get_pickleable_exception
+
 UNREGISTERED_FMT = """\
 Task of kind {0} never registered, please make sure it's imported.\
 """
@@ -160,7 +162,7 @@ class Retry(TaskPredicate):
         if isinstance(exc, str):
             self.exc, self.excs = None, exc
         else:
-            self.exc, self.excs = exc, safe_repr(exc) if exc else None
+            self.exc, self.excs = get_pickleable_exception(exc), safe_repr(exc) if exc else None
         self.when = when
         self.is_eager = is_eager
         self.sig = sig

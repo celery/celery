@@ -41,7 +41,7 @@ This directory contains generic bash init-scripts for the
 these should run on Linux, FreeBSD, OpenBSD, and other Unix-like platforms.
 
 .. _`extra/generic-init.d/`:
-    https://github.com/celery/celery/tree/master/extra/generic-init.d/
+    https://github.com/celery/celery/tree/main/extra/generic-init.d/
 
 .. _generic-initd-celeryd:
 
@@ -373,7 +373,7 @@ Usage ``systemd``
 * `extra/systemd/`_
 
 .. _`extra/systemd/`:
-    https://github.com/celery/celery/tree/master/extra/systemd/
+    https://github.com/celery/celery/tree/main/extra/systemd/
 
 .. _generic-systemd-celery:
 
@@ -541,7 +541,7 @@ or production environment (inadvertently) as root.
 * `extra/supervisord/`_
 
 .. _`extra/supervisord/`:
-    https://github.com/celery/celery/tree/master/extra/supervisord/
+    https://github.com/celery/celery/tree/main/extra/supervisord/
 
 .. _daemon-launchd:
 
@@ -551,4 +551,4 @@ or production environment (inadvertently) as root.
 * `extra/macOS`_
 
 .. _`extra/macOS`:
-    https://github.com/celery/celery/tree/master/extra/macOS/
+    https://github.com/celery/celery/tree/main/extra/macOS/

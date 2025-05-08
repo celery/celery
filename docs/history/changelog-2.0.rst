@@ -332,7 +332,7 @@ Documentation
 
 * New homepage design by Jan Henrik Helmers: http://celeryproject.org
 
-* New Sphinx theme by Armin Ronacher: http://docs.celeryproject.org/
+* New Sphinx theme by Armin Ronacher: https://docs.celeryq.dev/
 
 * Fixed "pending_xref" errors shown in the HTML rendering of the
   documentation. Apparently this was caused by new changes in Sphinx 1.0b2.

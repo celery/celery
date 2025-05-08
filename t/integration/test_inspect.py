@@ -1,6 +1,6 @@
 import os
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from time import sleep
 from unittest.mock import ANY
 
@@ -26,7 +26,7 @@ def inspect(manager):
 
 
 class test_Inspect:
-    """Integration tests fo app.control.inspect() API"""
+    """Integration tests to app.control.inspect() API"""
 
     @flaky
     def test_ping(self, inspect):
@@ -126,7 +126,7 @@ class test_Inspect:
     @flaky
     def test_scheduled(self, inspect):
         """Tests listing scheduled tasks"""
-        exec_time = datetime.utcnow() + timedelta(seconds=5)
+        exec_time = datetime.now(timezone.utc) + timedelta(seconds=5)
         res = add.apply_async([1, 2], {'z': 3}, eta=exec_time)
         ret = inspect.scheduled()
         assert len(ret) == 1

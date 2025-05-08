@@ -27,7 +27,7 @@ def set_queues(app, **queues):
 
 class RouteCase:
 
-    def setup(self):
+    def setup_method(self):
         self.a_queue = {
             'exchange': 'fooexchange',
             'exchange_type': 'fanout',

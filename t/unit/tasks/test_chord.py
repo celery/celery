@@ -20,7 +20,7 @@ class AnySignatureWithTask(Signature):
 
 class ChordCase:
 
-    def setup(self):
+    def setup_method(self):
 
         @self.app.task(shared=False)
         def add(x, y):
@@ -77,7 +77,7 @@ class test_unlock_chord_task(ChordCase):
 
         with self._chord_context(AlwaysReady) as (cb, retry, _):
             cb.type.apply_async.assert_called_with(
-                ([2, 4, 8, 6],), {}, task_id=cb.id, stamped_headers=['groups'], groups=[]
+                ([2, 4, 8, 6],), {}, task_id=cb.id,
             )
             # didn't retry
             assert not retry.call_count
@@ -234,8 +234,6 @@ class test_unlock_chord_task(ChordCase):
                 task_id=None,
                 kwargs={},
                 interval=10,
-                groups=[ch.tasks.id],
-                stamped_headers=['groups']
             )
 
     def test_unlock_with_chord_params_and_task_id(self):
@@ -258,8 +256,6 @@ class test_unlock_chord_task(ChordCase):
                 task_id=sentinel.task_id,
                 kwargs={},
                 interval=10,
-                groups=[ch.tasks.id],
-                stamped_headers=['groups']
             )
 
 
@@ -323,7 +319,7 @@ class test_chord(ChordCase):
 
 class test_add_to_chord:
 
-    def setup(self):
+    def setup_method(self):
 
         @self.app.task(shared=False)
         def add(x, y):

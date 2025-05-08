@@ -28,7 +28,7 @@ def trace(
 
 
 class TraceCase:
-    def setup(self):
+    def setup_method(self):
         @self.app.task(shared=False)
         def add(x, y):
             return x + y
@@ -362,10 +362,10 @@ class test_trace(TraceCase):
         sig3.apply_async = Mock(name='gapply')
         request = {'callbacks': [sig1, sig3, sig2], 'root_id': 'root'}
 
-        def passt(s, *args, **kwargs):
+        def pass_value(s, *args, **kwargs):
             return s
 
-        maybe_signature.side_effect = passt
+        maybe_signature.side_effect = pass_value
         retval, _ = self.trace(self.add, (2, 2), {}, request=request)
         group_.assert_called_with((4,), parent_id='id-1', root_id='root', priority=None)
         sig3.apply_async.assert_called_with(
@@ -381,10 +381,10 @@ class test_trace(TraceCase):
         sig2.apply_async = Mock(name='gapply')
         request = {'callbacks': [sig1, sig2], 'root_id': 'root'}
 
-        def passt(s, *args, **kwargs):
+        def pass_value(s, *args, **kwargs):
             return s
 
-        maybe_signature.side_effect = passt
+        maybe_signature.side_effect = pass_value
         retval, _ = self.trace(self.add, (2, 2), {}, request=request)
         sig1.apply_async.assert_called_with(
             (4,), parent_id='id-1', root_id='root', priority=None
@@ -627,5 +627,39 @@ class test_stackprotection:
                 return self.request
 
             assert foo(1).called_directly
+        finally:
+            reset_worker_optimizations(self.app)
+
+    def test_stackprotection_headers_passed_on_new_request_stack(self):
+        setup_worker_optimizations(self.app)
+        try:
+
+            @self.app.task(shared=False, bind=True)
+            def foo(self, i):
+                if i:
+                    return foo.apply(args=(i-1,), headers=456)
+                return self.request
+
+            task = foo.apply(args=(2,), headers=123, loglevel=5)
+            assert task.result.result.result.args == (0,)
+            assert task.result.result.result.headers == 456
+            assert task.result.result.result.loglevel == 0
+        finally:
+            reset_worker_optimizations(self.app)
+
+    def test_stackprotection_headers_persisted_calling_task_directly(self):
+        setup_worker_optimizations(self.app)
+        try:
+
+            @self.app.task(shared=False, bind=True)
+            def foo(self, i):
+                if i:
+                    return foo(i-1)
+                return self.request
+
+            task = foo.apply(args=(2,), headers=123, loglevel=5)
+            assert task.result.args == (0,)
+            assert task.result.headers == 123
+            assert task.result.loglevel == 5
         finally:
             reset_worker_optimizations(self.app)

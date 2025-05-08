@@ -51,8 +51,13 @@ def instantiate(name, *args, **kwargs):
 @contextmanager
 def cwd_in_path():
     """Context adding the current working directory to sys.path."""
-    cwd = os.getcwd()
-    if cwd in sys.path:
+    try:
+        cwd = os.getcwd()
+    except FileNotFoundError:
+        cwd = None
+    if not cwd:
+        yield
+    elif cwd in sys.path:
         yield
     else:
         sys.path.insert(0, cwd)
@@ -141,7 +146,14 @@ def gen_task_name(app, name, module_name):
 
 
 def load_extension_class_names(namespace):
-    for ep in entry_points().get(namespace, []):
+    if sys.version_info >= (3, 10):
+        _entry_points = entry_points(group=namespace)
+    else:
+        try:
+            _entry_points = entry_points().get(namespace, [])
+        except AttributeError:
+            _entry_points = entry_points().select(group=namespace)
+    for ep in _entry_points:
         yield ep.name, ep.value
 
 

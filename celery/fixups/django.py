@@ -2,7 +2,7 @@
 import os
 import sys
 import warnings
-from datetime import datetime
+from datetime import datetime, timezone
 from importlib import import_module
 from typing import IO, TYPE_CHECKING, Any, List, Optional, cast
 
@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from types import ModuleType
     from typing import Protocol
 
+    from django.db.backends.base.base import BaseDatabaseWrapper
     from django.db.utils import ConnectionHandler
 
     from celery.app.base import Celery
@@ -78,6 +79,9 @@ class DjangoFixup:
         self._settings = symbol_by_name('django.conf:settings')
         self.app.loader.now = self.now
 
+        if not self.app._custom_task_cls_used:
+            self.app.task_cls = 'celery.contrib.django.task:DjangoTask'
+
         signals.import_modules.connect(self.on_import_modules)
         signals.worker_init.connect(self.on_worker_init)
         return self
@@ -100,7 +104,7 @@ class DjangoFixup:
         self.worker_fixup.install()
 
     def now(self, utc: bool = False) -> datetime:
-        return datetime.utcnow() if utc else self._now()
+        return datetime.now(timezone.utc) if utc else self._now()
 
     def autodiscover_tasks(self) -> List[str]:
         from django.apps import apps
@@ -133,11 +137,11 @@ class DjangoWorkerFixup:
     def validate_models(self) -> None:
         from django.core.checks import run_checks
         self.django_setup()
-        run_checks()
+        if not os.environ.get('CELERY_SKIP_CHECKS'):
+            run_checks()
 
     def install(self) -> "DjangoWorkerFixup":
         signals.beat_embedded_init.connect(self.close_database)
-        signals.worker_ready.connect(self.on_worker_ready)
         signals.task_prerun.connect(self.on_task_prerun)
         signals.task_postrun.connect(self.on_task_postrun)
         signals.worker_process_init.connect(self.on_worker_process_init)
@@ -161,15 +165,16 @@ class DjangoWorkerFixup:
         # network IO that close() might cause.
         for c in self._db.connections.all():
             if c and c.connection:
-                self._maybe_close_db_fd(c.connection)
+                self._maybe_close_db_fd(c)
 
         # use the _ version to avoid DB_REUSE preventing the conn.close() call
         self._close_database(force=True)
         self.close_cache()
 
-    def _maybe_close_db_fd(self, fd: IO) -> None:
+    def _maybe_close_db_fd(self, c: "BaseDatabaseWrapper") -> None:
         try:
-            _maybe_close_fd(fd)
+            with c.wrap_database_errors:
+                _maybe_close_fd(c.connection)
         except self.interface_errors:
             pass
 
@@ -211,8 +216,3 @@ class DjangoWorkerFixup:
             self._cache.close_caches()
         except (TypeError, AttributeError):
             pass
-
-    def on_worker_ready(self, **kwargs: Any) -> None:
-        if self._settings.DEBUG:
-            warnings.warn('''Using settings.DEBUG leads to a memory
-            leak, never use this setting in production environments!''')

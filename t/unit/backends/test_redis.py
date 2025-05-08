@@ -9,6 +9,11 @@ from unittest.mock import ANY, Mock, call, patch
 
 import pytest
 
+try:
+    from redis import exceptions
+except ImportError:
+    exceptions = None
+
 from celery import signature, states, uuid
 from celery.canvas import Signature
 from celery.contrib.testing.mocks import ContextMock
@@ -358,7 +363,7 @@ class basetest_RedisBackend:
             callback.delay = Mock(name='callback.delay')
             yield tasks, request, callback
 
-    def setup(self):
+    def setup_method(self):
         self.Backend = self.get_backend()
         self.E_LOST = self.get_E_LOST()
         self.b = self.Backend(app=self.app)
@@ -693,6 +698,14 @@ class test_RedisBackend(basetest_RedisBackend):
             fn, b.connection_errors, (), {}, ANY,
             max_retries=2, interval_start=0, interval_step=0.01, interval_max=1
         )
+
+    def test_exception_safe_to_retry(self):
+        b = self.Backend(app=self.app)
+        assert not b.exception_safe_to_retry(Exception("failed"))
+        assert not b.exception_safe_to_retry(BaseException("failed"))
+        assert not b.exception_safe_to_retry(exceptions.RedisError("redis error"))
+        assert b.exception_safe_to_retry(exceptions.ConnectionError("service unavailable"))
+        assert b.exception_safe_to_retry(exceptions.TimeoutError("timeout"))
 
     def test_incr(self):
         self.b.client = Mock(name='client')
@@ -1171,7 +1184,7 @@ class test_RedisBackend_chords_complex(basetest_RedisBackend):
         self.b.client.lrange.assert_not_called()
         # Confirm that the `GroupResult.restore` mock was called
         complex_header_result.assert_called_once_with(request.group)
-        # Confirm the the callback was called with the `join()`ed group result
+        # Confirm that the callback was called with the `join()`ed group result
         if supports_native_join:
             expected_join = mock_result_obj.join_native
         else:
@@ -1193,7 +1206,7 @@ class test_SentinelBackend:
         from celery.backends.redis import E_LOST
         return E_LOST
 
-    def setup(self):
+    def setup_method(self):
         self.Backend = self.get_backend()
         self.E_LOST = self.get_E_LOST()
         self.b = self.Backend(app=self.app)

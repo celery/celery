@@ -106,7 +106,7 @@ def reset_cache_backend_state(celery_app):
 
 @contextmanager
 def assert_signal_called(signal, **expected):
-    """Context that verifes signal is called before exiting."""
+    """Context that verifies signal is called before exiting."""
     handler = Mock()
 
     def on_call(**kwargs):
@@ -547,7 +547,7 @@ def _module(*names):
                 sys.modules[name] = prev[name]
             except KeyError:
                 try:
-                    del(sys.modules[name])
+                    del (sys.modules[name])
                 except KeyError:
                     pass
 

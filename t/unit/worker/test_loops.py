@@ -133,7 +133,7 @@ def get_task_callback(*args, **kwargs):
 
 class test_asynloop:
 
-    def setup(self):
+    def setup_method(self):
         @self.app.task(shared=False)
         def add(x, y):
             return x + y
@@ -363,7 +363,7 @@ class test_asynloop:
 
     def test_poll_write_generator(self):
         x = X(self.app)
-        x.hub.remove = Mock(name='hub.remove()')
+        x.hub.remove_writer = Mock(name='hub.remove_writer()')
 
         def Gen():
             yield 1
@@ -376,7 +376,7 @@ class test_asynloop:
         with pytest.raises(socket.error):
             asynloop(*x.args)
         assert gen.gi_frame.f_lasti != -1
-        x.hub.remove.assert_not_called()
+        x.hub.remove_writer.assert_not_called()
 
     def test_poll_write_generator_stopped(self):
         x = X(self.app)
@@ -388,7 +388,7 @@ class test_asynloop:
         x.hub.add_writer(6, gen)
         x.hub.on_tick.add(x.close_then_error(Mock(name='tick'), 2))
         x.hub.poller.poll.return_value = [(6, WRITE)]
-        x.hub.remove = Mock(name='hub.remove()')
+        x.hub.remove_writer = Mock(name='hub.remove_writer()')
         with pytest.raises(socket.error):
             asynloop(*x.args)
         assert gen.gi_frame is None
@@ -529,7 +529,7 @@ class test_synloop:
 
 class test_quick_drain:
 
-    def setup(self):
+    def setup_method(self):
         self.connection = Mock(name='connection')
 
     def test_drain(self):
