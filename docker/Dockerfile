@@ -42,9 +42,6 @@ RUN sh create-linux-user.sh
 # Swap to the celery user so packages and celery are not installed as root.
 USER $CELERY_USER
 
-#COPY docker/scripts/install-pyenv.sh .
-#RUN sh install-pyenv.sh
-
 # Install celery
 WORKDIR $HOME
 COPY --chown=1000:1000 requirements $HOME/requirements
