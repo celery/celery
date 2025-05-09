@@ -202,7 +202,7 @@ It supports...
 
     - **Message Transports**
 
-        - RabbitMQ_, Redis_, Amazon SQS, Google Pub/Sub
+        - RabbitMQ_, Redis_, Amazon SQS, Google Pub/Sub, Valkey_
 
     - **Concurrency**
 
@@ -210,7 +210,7 @@ It supports...
 
     - **Result Stores**
 
-        - AMQP, Redis
+        - AMQP, Redis, Valkey
         - memcached
         - SQLAlchemy, Django ORM
         - Apache Cassandra, IronCache, Elasticsearch
@@ -227,6 +227,7 @@ It supports...
 
 .. _RabbitMQ: https://rabbitmq.com
 .. _Redis: https://redis.io
+.. _Valkey: https://valkey.io
 .. _SQLAlchemy: http://sqlalchemy.org
 
 Framework Integration
@@ -397,6 +398,9 @@ Transports and Backends
 
 :``celery[consul]``:
     for using the Consul.io Key/Value store as a message transport or result backend (*experimental*).
+
+:``celery[valkey]``:
+    for using Valkey as a message transport or as a result backend.
 
 :``celery[django]``:
     specifies the lowest version possible for Django support.
