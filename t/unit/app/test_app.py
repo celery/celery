@@ -1452,6 +1452,58 @@ class test_App:
         detect_quorum_queues.assert_called_once_with(self.app, driver_type_stub)
 
     @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery__no_queue_arg__no_eta(self, detect_quorum_queues):
+        self.app.amqp = MagicMock(name='amqp')
+        options = {
+            'routing_key': 'testcelery',
+            'exchange': 'testcelery',
+            'exchange_type': 'topic',
+        }
+        self.app.amqp.router.route.return_value = options
+
+        self.app.send_task(
+            name='foo',
+            args=(1, 2),
+        )
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            **options,
+        )
+        assert not detect_quorum_queues.called
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery__no_queue_arg__with_countdown(self, detect_quorum_queues):
+        self.app.amqp = MagicMock(name='amqp')
+        options = {
+            'routing_key': 'testcelery',
+            'exchange': 'testcelery',
+            'exchange_type': 'topic',
+        }
+        self.app.amqp.router.route.return_value = options
+
+        self.app.send_task(
+            name='foo',
+            args=(1, 2),
+            countdown=30,
+        )
+        exchange = Exchange(
+            'celery_delayed_27',
+            type='topic',
+        )
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            exchange=exchange,
+            routing_key='0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.1.1.1.0.testcelery',
+            exchange_type="topic",
+        )
+        driver_type_stub = self.app.amqp.producer_pool.connections.connection.transport.driver_type
+        detect_quorum_queues.assert_called_once_with(self.app, driver_type_stub)
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
     def test_native_delayed_delivery_eta_datetime(self, detect_quorum_queues):
         self.app.amqp = MagicMock(name='amqp')
         self.app.amqp.router.route.return_value = {
