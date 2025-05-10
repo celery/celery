@@ -833,30 +833,38 @@ class Celery:
             options, route_name or name, args, kwargs, task_type)
 
         driver_type = self.producer_pool.connections.connection.transport.driver_type
-        is_native_delayed_delivery = detect_quorum_queues(self, driver_type)[0]
-        if is_native_delayed_delivery and options['queue'].exchange.type != 'direct':
-            if eta:
-                if isinstance(eta, str):
-                    eta = isoparse(eta)
-                countdown = (maybe_make_aware(eta) - self.now()).total_seconds()
 
-            if countdown:
-                if countdown > 0:
-                    routing_key = calculate_routing_key(int(countdown), options["queue"].routing_key)
-                    exchange = Exchange(
-                        'celery_delayed_27',
-                        type='topic',
-                    )
-                    del options['queue']
-                    options['routing_key'] = routing_key
-                    options['exchange'] = exchange
-        elif is_native_delayed_delivery and options['queue'].exchange.type == 'direct':
-            logger.warning(
-                'Direct exchanges are not supported with native delayed delivery.\n'
-                f'{options["queue"].exchange.name} is a direct exchange but should be a topic exchange or '
-                'a fanout exchange in order for native delayed delivery to work properly.\n'
-                'If quorum queues are used, this task may block the worker process until the ETA arrives.'
-            )
+        if (eta or countdown) and detect_quorum_queues(self, driver_type)[0]:
+
+            queue = options.get("queue")
+            exchange_type = queue.exchange.type if queue else options["exchange_type"]
+            routing_key = queue.routing_key if queue else options["routing_key"]
+            exchange_name = queue.exchange.name if queue else options["exchange"]
+
+            if exchange_type != 'direct':
+                if eta:
+                    if isinstance(eta, str):
+                        eta = isoparse(eta)
+                    countdown = (maybe_make_aware(eta) - self.now()).total_seconds()
+
+                if countdown:
+                    if countdown > 0:
+                        routing_key = calculate_routing_key(int(countdown), routing_key)
+                        exchange = Exchange(
+                            'celery_delayed_27',
+                            type='topic',
+                        )
+                        options.pop("queue", None)
+                        options['routing_key'] = routing_key
+                        options['exchange'] = exchange
+
+            else:
+                logger.warning(
+                    'Direct exchanges are not supported with native delayed delivery.\n'
+                    f'{exchange_name} is a direct exchange but should be a topic exchange or '
+                    'a fanout exchange in order for native delayed delivery to work properly.\n'
+                    'If quorum queues are used, this task may block the worker process until the ETA arrives.'
+                )
 
         if expires is not None:
             if isinstance(expires, datetime):
