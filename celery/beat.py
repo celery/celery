@@ -399,11 +399,11 @@ class Scheduler:
         try:
             entry_args = _evaluate_entry_args(entry.args)
             entry_kwargs = _evaluate_entry_kwargs(entry.kwargs)
-            
+
             # Add custom header to identify tasks from Celery Beat
             options = entry.options.copy()
             options.setdefault('headers', {})['celery_beat_task'] = True
-            
+
             if task:
                 return task.apply_async(entry_args, entry_kwargs,
                                         producer=producer,
