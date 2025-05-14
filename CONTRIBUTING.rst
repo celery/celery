@@ -445,10 +445,10 @@ fetch and checkout a remote branch like this::
 
 **Note:** Any feature or fix branch should be created from ``upstream/main``.
 
-.. _`Fork a Repo`: https://help.github.com/fork-a-repo/
+.. _`Fork a Repo`: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo
 .. _`Rebasing merge commits in git`:
     https://web.archive.org/web/20150627054345/http://marketblog.envato.com/general/rebasing-merge-commits-in-git/
-.. _`Rebase`: https://help.github.com/rebase/
+.. _`Rebase`: https://docs.github.com/en/get-started/using-git/about-git-rebase
 
 .. _contributing-docker-development:
 

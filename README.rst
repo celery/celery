@@ -2,10 +2,11 @@
 
 |build-status| |coverage| |license| |wheel| |semgrep| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 5.5.0 (immunity)
+:Version: 5.5.2 (immunity)
 :Web: https://docs.celeryq.dev/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
+:DeepWiki: |deepwiki|
 :Keywords: task, queue, job, async, rabbitmq, amqp, redis,
   python, distributed, actors
 
@@ -584,3 +585,8 @@ file in the top distribution directory for the full license text.
 .. |downloads| image:: https://pepy.tech/badge/celery
     :alt: Downloads
     :target: https://pepy.tech/project/celery
+
+.. |deepwiki| image:: https://devin.ai/assets/deepwiki-badge.png
+    :alt: Ask http://DeepWiki.com
+    :target: https://deepwiki.com/celery/celery
+    :width: 125px
