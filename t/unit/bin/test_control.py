@@ -23,8 +23,8 @@ def test_custom_remote_command(celery_cmd, custom_cmd, isolated_cli_runner: CliR
         [*_GLOBAL_OPTIONS, celery_cmd, *_INSPECT_OPTIONS, *custom_cmd],
         catch_exceptions=False,
     )
-    assert res.exit_code == EX_UNAVAILABLE, (res, res.stdout)
-    assert res.stdout.strip() == 'Error: No nodes replied within time constraint'
+    assert res.exit_code == EX_UNAVAILABLE, (res, res.output)
+    assert res.output.strip() == 'Error: No nodes replied within time constraint'
 
 
 @pytest.mark.parametrize(
@@ -44,8 +44,8 @@ def test_unrecognized_remote_command(celery_cmd, remote_cmd, isolated_cli_runner
         [*_GLOBAL_OPTIONS, celery_cmd, *_INSPECT_OPTIONS, remote_cmd],
         catch_exceptions=False,
     )
-    assert res.exit_code == 2, (res, res.stdout)
-    assert f'Error: Command {remote_cmd} not recognized. Available {celery_cmd} commands: ' in res.stdout
+    assert res.exit_code == 2, (res, res.output)
+    assert f'Error: Command {remote_cmd} not recognized. Available {celery_cmd} commands: ' in res.output
 
 
 _expected_inspect_regex = (
