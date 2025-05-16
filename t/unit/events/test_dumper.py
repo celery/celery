@@ -1,7 +1,9 @@
 import io
 import sys
 from datetime import datetime
+
 import pytest
+
 from celery.events import dumper
 
 
