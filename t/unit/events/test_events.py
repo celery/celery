@@ -337,3 +337,11 @@ def test_default_dispatcher(app):
     with app.events.default_dispatcher() as d:
         assert d
         assert d.connection
+
+
+def test_group_from():
+    from celery.events import event
+    print("event.py loaded from:", event.__file__)
+    assert event.group_from('task-sent') == 'task'
+    assert event.group_from('custom-my-event') == 'custom'
+    assert event.group_from('foo') == 'foo'
