@@ -370,3 +370,11 @@ def test_get_exchange_custom_name():
     conn = DummyConn()
     ex = event.get_exchange(conn, name='custom')
     assert ex.name == 'custom'
+
+def test_group_from():
+    from celery.events import event
+    print("event.py loaded from:", event.__file__)
+    assert event.group_from('task-sent') == 'task'
+    assert event.group_from('custom-my-event') == 'custom'
+    assert event.group_from('foo') == 'foo'
+
