@@ -196,6 +196,21 @@ Celery supports `Quorum Queues`_ by setting the ``x-queue-type`` header to ``quo
 
 If you'd like to change the type of the default queue, set the :setting:`task_default_queue_type` setting to ``quorum``.
 
+Another way to configure `Quorum Queues`_ is by relying on default settings and using ``task_routes``:
+
+.. code-block:: python
+
+    task_default_queue_type = "quorum"
+    task_default_exchange_type = "topic"
+    task_default_queue = "my-queue"
+    broker_transport_options = {"confirm_publish": True}
+
+    task_routes = {
+        "*": {
+            "routing_key": "my-queue",
+        },
+    }
+
 Celery automatically detects if quorum queues are used using the :setting:`worker_detect_quorum_queues` setting.
 We recommend to keep the default behavior turned on.
 
