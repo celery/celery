@@ -371,6 +371,7 @@ def test_get_exchange_custom_name():
     ex = event.get_exchange(conn, name='custom')
     assert ex.name == 'custom'
 
+
 def test_group_from():
     from celery.events import event
     print("event.py loaded from:", event.__file__)
