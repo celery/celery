@@ -839,7 +839,7 @@ class Celery:
         # task_id = task_id or uuid()
         if task_id is None:
             task_id_generator = self.conf.get("task_id_generator")
-            if  task_id_generator is not None:
+            if task_id_generator is not None:
                 try:
                     task_id = str(task_id_generator())
                 except Exception as exc:

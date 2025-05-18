@@ -22,9 +22,14 @@ name using the fully qualified form::
     $ celery -A myapp:app worker -l INFO
 
 """
-from time import sleep
+from time import sleep, time
 
 from celery import Celery
+
+
+def my_custom_id_generator():
+    return f"task-{int(time())}-{id(time)}"
+
 
 app = Celery(
     'myapp',
@@ -33,6 +38,7 @@ app = Celery(
     # backend='rpc'
     task_acks_late=True
 )
+app.conf.task_id_generator = my_custom_id_generator
 
 
 @app.task
