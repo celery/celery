@@ -3934,6 +3934,10 @@ When using cron, the number of seconds :mod:`~celery.bin.beat` can look back
 when deciding whether a cron schedule is due. When set to `None`, cronjobs that
 are past due will always run immediately.
 
+.. warning::
+
+    Setting this higher than 3600 (1 hour) is highly discouraged.
+
 .. setting:: beat_logfile
 
 ``beat_logfile``
