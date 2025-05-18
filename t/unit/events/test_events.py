@@ -378,4 +378,3 @@ def test_group_from():
     assert event.group_from('task-sent') == 'task'
     assert event.group_from('custom-my-event') == 'custom'
     assert event.group_from('foo') == 'foo'
-
