@@ -77,6 +77,12 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         verbose: true # optional (default = false)
 
+    - name: Upload test results to Codecov
+      if: ${{ !cancelled() }}
+      uses: codecov/test-results-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+
   Integration:
       needs:
       - Unit
@@ -124,10 +130,14 @@ jobs:
           -   name: >
                   Run tox for
                   "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}"
-              timeout-minutes: 60
-              run: >
-                  tox --verbose --verbose -e
-                  "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -vv
+              uses: nick-fields/retry@v3
+              with:
+                timeout_minutes: 60
+                max_attempts: 2
+                retry_wait_seconds: 0
+                command: |
+                  tox --verbose --verbose -e "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -vv
+
   Smoke:
     needs:
     - Unit
@@ -136,11 +146,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.8', '3.12', '3.13']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
         test-case: [
-          'failover',
-          'quorum_queues',
-          'stamping',
+          'test_broker_failover.py',
+          'test_worker_failover.py',
+          'test_native_delayed_delivery.py',
+          'test_quorum_queues.py',
+          'test_hybrid_cluster.py',
+          'test_revoke.py',
+          'test_visitor.py',
           'test_canvas.py',
           'test_consumer.py',
           'test_control.py',
@@ -175,6 +189,10 @@ jobs:
         run: python -m pip install --upgrade pip tox tox-gh-actions
 
       - name: Run tox for "${{ matrix.python-version }}-smoke-${{ matrix.test-case }}"
-        timeout-minutes: 60
-        run: |
-          tox --verbose --verbose -e "${{ matrix.python-version }}-smoke" -- -n auto -k ${{ matrix.test-case }}
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 20
+          max_attempts: 2
+          retry_wait_seconds: 0
+          command: |
+            tox --verbose --verbose -e "${{ matrix.python-version }}-smoke" -- -n auto -k ${{ matrix.test-case }}

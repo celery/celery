@@ -4,9 +4,8 @@ from __future__ import annotations
 import re
 from bisect import bisect, bisect_left
 from collections import namedtuple
-from collections.abc import Iterable
 from datetime import datetime, timedelta, tzinfo
-from typing import Any, Callable, Mapping, Sequence
+from typing import Any, Callable, Iterable, Mapping, Sequence, Union
 
 from kombu.utils.objects import cached_property
 
@@ -52,7 +51,10 @@ Argument event "{event}" is invalid, must be one of {all_events}.\
 """
 
 
-def cronfield(s: str) -> str:
+Cronspec = Union[int, str, Iterable[int]]
+
+
+def cronfield(s: Cronspec | None) -> Cronspec:
     return '*' if s is None else s
 
 
@@ -396,8 +398,8 @@ class crontab(BaseSchedule):
     present in ``month_of_year``.
     """
 
-    def __init__(self, minute: str = '*', hour: str = '*', day_of_week: str = '*',
-                 day_of_month: str = '*', month_of_year: str = '*', **kwargs: Any) -> None:
+    def __init__(self, minute: Cronspec = '*', hour: Cronspec = '*', day_of_week: Cronspec = '*',
+                 day_of_month: Cronspec = '*', month_of_year: Cronspec = '*', **kwargs: Any) -> None:
         self._orig_minute = cronfield(minute)
         self._orig_hour = cronfield(hour)
         self._orig_day_of_week = cronfield(day_of_week)
@@ -430,7 +432,7 @@ class crontab(BaseSchedule):
 
     @staticmethod
     def _expand_cronspec(
-            cronspec: int | str | Iterable,
+            cronspec: Cronspec,
             max_: int, min_: int = 0) -> set[Any]:
         """Expand cron specification.
 
@@ -555,7 +557,7 @@ class crontab(BaseSchedule):
     def __repr__(self) -> str:
         return CRON_REPR.format(self)
 
-    def __reduce__(self) -> tuple[type, tuple[str, str, str, str, str], Any]:
+    def __reduce__(self) -> tuple[type, tuple[Cronspec, Cronspec, Cronspec, Cronspec, Cronspec], Any]:
         return (self.__class__, (self._orig_minute,
                                  self._orig_hour,
                                  self._orig_day_of_week,

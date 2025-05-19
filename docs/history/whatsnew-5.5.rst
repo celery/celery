@@ -160,8 +160,6 @@ Python 3.8 Support
 
 Python 3.8 will reach EOL in October, 2024.
 
-Celery v5.5 will be the last version to support Python 3.8.
-
 Minimum Dependencies
 --------------------
 
@@ -200,44 +198,81 @@ News
 Redis Broker Stability Improvements
 -----------------------------------
 
-The root cause of the Redis broker instability issue has been `identified and resolved <https://github.com/celery/kombu/pull/2007>`_
-in the v5.4.0 release of Kombu, which should resolve the disconnections bug and offer
-additional improvements.
+Long-standing disconnection issues with the Redis broker have been identified and
+resolved in Kombu 5.5.0. These improvements significantly enhance stability when
+using Redis as a broker, particularly in high-throughput environments.
 
-Soft Shutdown
--------------
+Additionally, the Redis backend now has better exception handling with the new
+``exception_safe_to_retry`` feature, which improves resilience during temporary
+Redis connection issues. See :ref:`conf-redis-result-backend` for complete
+documentation.
 
-The soft shutdown is a new mechanism in Celery that sits between the warm shutdown and the cold shutdown.
-It sets a time limited "warm shutdown" period, during which the worker will continue to process tasks that
-are already running. After the soft shutdown ends, the worker will initiate a graceful cold shutdown,
-stopping all tasks and exiting.
+``pycurl`` replaced with ``urllib3``
+------------------------------------
 
-The soft shutdown is disabled by default, and can be enabled by setting the new configuration option
-:setting:`worker_soft_shutdown_timeout`. If a worker is not running any task when the soft shutdown initiates,
-it will skip the warm shutdown period and proceed directly to the cold shutdown unless the new configuration option
-:setting:`worker_enable_soft_shutdown_on_idle` is set to ``True``. This is useful for workers that are idle,
-waiting on ETA tasks to be executed that still want to enable the soft shutdown anyways.
+Replaced the :pypi:`pycurl` dependency with :pypi:`urllib3`.
 
-The soft shutdown can replace the cold shutdown when using a broker with a visibility timeout mechanism,
-like :ref:`Redis <broker-redis>` or :ref:`SQS <broker-sqs>`, to enable a more graceful cold shutdown procedure,
-allowing the worker enough time to re-queue tasks that were not completed (e.g., ``Restoring 1 unacknowledged message(s)``)
-by resetting the visibility timeout of the unacknowledged messages just before the worker exits completely.
+We're monitoring the performance impact of this change and welcome feedback from users
+who notice any significant differences in their environments.
+
+RabbitMQ Quorum Queues Support
+------------------------------
+
+Added support for RabbitMQ's new `Quorum Queues <https://www.rabbitmq.com/docs/quorum-queues>`_
+feature, including compatibility with ETA tasks. This implementation has some limitations compared
+to classic queues, so please refer to the documentation for details.
+
+`Native Delayed Delivery <https://docs.particular.net/transports/rabbitmq/delayed-delivery>`_
+is automatically enabled when quorum queues are detected to implement the ETA mechanism.
+
+See :ref:`using-quorum-queues` for complete documentation.
+
+Configuration options:
+
+- :setting:`broker_native_delayed_delivery_queue_type`: Specifies the queue type for
+  delayed delivery (default: ``quorum``)
+- :setting:`task_default_queue_type`: Sets the default queue type for tasks
+  (default: ``classic``)
+- :setting:`worker_detect_quorum_queues`: Controls automatic detection of quorum
+  queues (default: ``True``)
+
+Soft Shutdown Mechanism
+-----------------------
+
+Soft shutdown is a time limited warm shutdown, initiated just before the cold shutdown.
+The worker will allow :setting:`worker_soft_shutdown_timeout` seconds for all currently
+executing tasks to finish before it terminates. If the time limit is reached, the worker
+will initiate a cold shutdown and cancel all currently executing tasks.
+
+This feature is particularly valuable when using brokers with visibility timeout
+mechanisms, such as Redis or SQS. It allows the worker enough time to re-queue
+tasks that were not completed before exiting, preventing task loss during worker
+shutdown.
+
+See :ref:`worker-stopping` for complete documentation on worker shutdown types.
+
+Configuration options:
+
+- :setting:`worker_soft_shutdown_timeout`: Sets the duration in seconds for the soft
+  shutdown period (default: ``0.0``, disabled)
+- :setting:`worker_enable_soft_shutdown_on_idle`: Controls whether soft shutdown
+  should be enabled even when the worker is idle (default: ``False``)
 
 Pydantic Support
 ----------------
 
-This release introduces support for Pydantic models in Celery tasks by @mathiasertl:
+New native support for Pydantic models in tasks. This integration allows you to
+leverage Pydantic's powerful data validation and serialization capabilities directly
+in your Celery tasks.
 
-.. code-block:: bash
-
-    pip install "celery[pydantic]"
-
-You can use `Pydantic <https://docs.pydantic.dev/>`_ to validate and convert arguments as well as serializing
-results based on typehints by passing ``pydantic=True``. For example:
+Example usage:
 
 .. code-block:: python
 
     from pydantic import BaseModel
+    from celery import Celery
+
+    app = Celery('tasks')
 
     class ArgModel(BaseModel):
         value: int
@@ -253,49 +288,73 @@ results based on typehints by passing ``pydantic=True``. For example:
         # The returned model will be converted to a dict automatically
         return ReturnModel(value=f"example: {arg.value}")
 
-The task can then be called using a dict matching the model, and you'll receive
-the returned model "dumped" (serialized using ``BaseModel.model_dump()``):
+See :ref:`task-pydantic` for complete documentation.
+
+Configuration options:
+
+- ``pydantic=True``: Enables Pydantic integration for the task
+- ``pydantic_strict=True/False``: Controls whether strict validation is enabled
+  (default: ``False``)
+- ``pydantic_context={...}``: Provides additional context for validation
+- ``pydantic_dump_kwargs={...}``: Customizes serialization behavior
+
+Google Pub/Sub Transport
+------------------------
+
+New support for Google Cloud Pub/Sub as a message transport, expanding Celery's
+cloud integration options.
+
+See :ref:`broker-gcpubsub` for complete documentation.
+
+For the Google Pub/Sub support you have to install additional dependencies:
+
+.. code-block:: console
+
+    $ pip install "celery[gcpubsub]"
+
+Then configure your Celery application to use the Google Pub/Sub transport:
 
 .. code-block:: python
 
-   >>> result = x.delay({'value': 1})
-   >>> result.get(timeout=1)
-   {'value': 'example: 1'}
+    broker_url = 'gcpubsub://projects/project-id'
 
-There are a few more options influencing Pydantic behavior:
+Python 3.13 Support
+-------------------
 
-.. attribute:: Task.pydantic_strict
+Official support for Python 3.13. All core dependencies have been updated to
+ensure compatibility, including Kombu and py-amqp.
 
-   By default, `strict mode <https://docs.pydantic.dev/dev/concepts/strict_mode/>`_
-   is enabled. You can pass ``False`` to disable strict model validation.
+This release maintains compatibility with Python 3.8 through 3.13, as well as
+PyPy 3.10+.
 
-.. attribute:: Task.pydantic_context
+REMAP_SIGTERM Support
+---------------------
 
-   Pass `additional validation context
-   <https://docs.pydantic.dev/dev/concepts/validators/#validation-context>`_ during
-   Pydantic model validation. The context already includes the application object as
-   ``celery_app`` and the task name as ``celery_task_name`` by default.
-
-.. attribute:: Task.pydantic_dump_kwargs
-
-   When serializing a result, pass these additional arguments to ``dump_kwargs()``.
-   By default, only ``mode='json'`` is passed.
-
-Quorum Queues Initial Support
------------------------------
-
-This release introduces the initial support for Quorum Queues with Celery.
-See the documentation for :ref:`using-quorum-queues` for more details.
-
-In addition, you can read about the new configuration options relevant for this feature:
-
-- :setting:`task_default_queue_type`
-- :setting:`worker_detect_quorum_queues`
-- :setting:`broker_native_delayed_delivery_queue_type`
-
-REMAP_SIGTERM
--------------
-
-The REMAP_SIGTERM "hidden feature" has been tested, :ref:`documented <worker-REMAP_SIGTERM>` and is now officially supported.
-This feature allows users to remap the SIGTERM signal to SIGQUIT, to initiate a soft or a cold shutdown using TERM
+The "REMAP_SIGTERM" feature, previously undocumented, has been tested, documented,
+and is now officially supported. This feature allows you to remap the SIGTERM
+signal to SIGQUIT, enabling you to initiate a soft or cold shutdown using TERM
 instead of QUIT.
+
+This is particularly useful in containerized environments where SIGTERM is the
+standard signal for graceful termination.
+
+See :ref:`Cold Shutdown documentation <worker-REMAP_SIGTERM>` for more info.
+
+To enable this feature, set the environment variable:
+
+.. code-block:: bash
+
+    export REMAP_SIGTERM="SIGQUIT"
+
+Database Backend Improvements
+----------------------------
+
+New ``create_tables_at_setup`` option for the database backend. This option
+controls when database tables are created, allowing for non-lazy table creation.
+
+By default (``create_tables_at_setup=True``), tables are created during backend
+initialization. Setting this to ``False`` defers table creation until they are
+actually needed, which can be useful in certain deployment scenarios where you want
+more control over database schema management.
+
+See :ref:`conf-database-result-backend` for complete documentation.
