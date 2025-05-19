@@ -75,7 +75,7 @@ RUN pyenv install pypy3.10
 
 
 # Set global Python versions
-RUN pyenv global 3.12 3.11 3.10 3.9 3.8 pypy3.10
+RUN pyenv global 3.13 3.12 3.11 3.10 3.9 3.8 pypy3.10
 
 # Install celery
 WORKDIR $HOME

@@ -527,7 +527,8 @@ class Control:
         if result:
             for host in result:
                 for response in host.values():
-                    task_ids.update(response['ok'])
+                    if isinstance(response['ok'], set):
+                        task_ids.update(response['ok'])
 
         if task_ids:
             return self.revoke(list(task_ids), destination=destination, terminate=terminate, signal=signal, **kwargs)
