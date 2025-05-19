@@ -13,7 +13,6 @@ Unknown result backend: {0!r}.  Did you spell that correctly? ({1!r})
 """
 
 BACKEND_ALIASES = {
-    'amqp': 'celery.backends.amqp:AMQPBackend',
     'rpc': 'celery.backends.rpc.RPCBackend',
     'cache': 'celery.backends.cache:CacheBackend',
     'redis': 'celery.backends.redis:RedisBackend',
@@ -35,6 +34,7 @@ BACKEND_ALIASES = {
     'azureblockblob': 'celery.backends.azureblockblob:AzureBlockBlobBackend',
     'arangodb': 'celery.backends.arangodb:ArangoDbBackend',
     's3': 'celery.backends.s3:S3Backend',
+    'gs': 'celery.backends.gcs:GCSBackend',
 }
 
 

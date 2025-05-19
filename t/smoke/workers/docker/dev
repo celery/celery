@@ -1,0 +1,51 @@
+FROM python:3.13-bookworm
+
+# Create a user to run the worker
+RUN adduser --disabled-password --gecos "" test_user
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y build-essential \
+    git \
+    wget \
+    make \
+    curl \
+    apt-utils \
+    debconf \
+    lsb-release \
+    libmemcached-dev \
+    libffi-dev \
+    ca-certificates \
+    pypy3 \
+    pypy3-lib \
+    sudo
+
+# Set arguments
+ARG CELERY_LOG_LEVEL=INFO
+ARG CELERY_WORKER_NAME=celery_dev_worker
+ARG CELERY_WORKER_QUEUE=celery
+ENV LOG_LEVEL=$CELERY_LOG_LEVEL
+ENV WORKER_NAME=$CELERY_WORKER_NAME
+ENV WORKER_QUEUE=$CELERY_WORKER_QUEUE
+
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+EXPOSE 5678
+
+# Install celery from source
+WORKDIR /celery
+
+COPY --chown=test_user:test_user . /celery
+RUN pip install --no-cache-dir --upgrade \
+    pip \
+    -e /celery[redis,pymemcache,pydantic,sqs] \
+    pytest-celery>=1.1.3
+
+# The workdir must be /app
+WORKDIR /app
+
+# Switch to the test_user
+USER test_user
+
+# Start the celery worker
+CMD celery -A app worker --loglevel=$LOG_LEVEL -n $WORKER_NAME@%h -Q $WORKER_QUEUE

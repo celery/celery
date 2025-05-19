@@ -9,7 +9,7 @@ import sys
 import time
 import warnings
 from collections import namedtuple
-from datetime import datetime, timedelta
+from datetime import timedelta
 from functools import partial
 from weakref import WeakValueDictionary
 
@@ -131,6 +131,7 @@ class Backend:
         self.max_sleep_between_retries_ms = conf.get('result_backend_max_sleep_between_retries_ms', 10000)
         self.base_sleep_between_retries_ms = conf.get('result_backend_base_sleep_between_retries_ms', 10)
         self.max_retries = conf.get('result_backend_max_retries', float("inf"))
+        self.thread_safe = conf.get('result_backend_thread_safe', False)
 
         self._pending_results = pending_results_t({}, WeakValueDictionary())
         self._pending_messages = BufferMap(MESSAGE_BUFFER_MAX)
@@ -230,7 +231,7 @@ class Backend:
                         hasattr(errback.type, '__header__') and
 
                         # workaround to support tasks with bind=True executed as
-                        # link errors. Otherwise retries can't be used
+                        # link errors. Otherwise, retries can't be used
                         not isinstance(errback.type.__header__, partial) and
                         arity_greater(errback.type.__header__, 1)
                 ):
@@ -459,7 +460,7 @@ class Backend:
                          state, traceback, request, format_date=True,
                          encode=False):
         if state in self.READY_STATES:
-            date_done = datetime.utcnow()
+            date_done = self.app.now()
             if format_date:
                 date_done = date_done.isoformat()
         else:
@@ -488,8 +489,11 @@ class Backend:
                     'retries': getattr(request, 'retries', None),
                     'queue': request.delivery_info.get('routing_key')
                     if hasattr(request, 'delivery_info') and
-                    request.delivery_info else None
+                    request.delivery_info else None,
                 }
+                if getattr(request, 'stamps', None):
+                    request_meta['stamped_headers'] = request.stamped_headers
+                    request_meta.update(request.stamps)
 
                 if encode:
                     # args and kwargs need to be encoded properly before saving
@@ -569,9 +573,10 @@ class Backend:
             pass
 
     def _ensure_not_eager(self):
-        if self.app.conf.task_always_eager:
+        if self.app.conf.task_always_eager and not self.app.conf.task_store_eager_result:
             warnings.warn(
-                "Shouldn't retrieve result with task_always_eager enabled.",
+                "Results are not stored in backend and should not be retrieved when "
+                "task_always_eager is enabled, unless task_store_eager_result is enabled.",
                 RuntimeWarning
             )
 
@@ -813,10 +818,26 @@ class BaseKeyValueStoreBackend(Backend):
     def __init__(self, *args, **kwargs):
         if hasattr(self.key_t, '__func__'):  # pragma: no cover
             self.key_t = self.key_t.__func__  # remove binding
-        self._encode_prefixes()
         super().__init__(*args, **kwargs)
+        self._add_global_keyprefix()
+        self._encode_prefixes()
         if self.implements_incr:
             self.apply_chord = self._apply_chord_incr
+
+    def _add_global_keyprefix(self):
+        """
+        This method prepends the global keyprefix to the existing keyprefixes.
+
+        This method checks if a global keyprefix is configured in `result_backend_transport_options` using the
+        `global_keyprefix` key. If so, then it is prepended to the task, group and chord key prefixes.
+        """
+        global_keyprefix = self.app.conf.get('result_backend_transport_options', {}).get("global_keyprefix", None)
+        if global_keyprefix:
+            if global_keyprefix[-1] not in ':_-.':
+                global_keyprefix += '_'
+            self.task_keyprefix = f"{global_keyprefix}{self.task_keyprefix}"
+            self.group_keyprefix = f"{global_keyprefix}{self.group_keyprefix}"
+            self.chord_keyprefix = f"{global_keyprefix}{self.chord_keyprefix}"
 
     def _encode_prefixes(self):
         self.task_keyprefix = self.key_t(self.task_keyprefix)
@@ -846,23 +867,27 @@ class BaseKeyValueStoreBackend(Backend):
 
     def get_key_for_task(self, task_id, key=''):
         """Get the cache key for a task by id."""
-        key_t = self.key_t
-        return key_t('').join([
-            self.task_keyprefix, key_t(task_id), key_t(key),
-        ])
+        if not task_id:
+            raise ValueError(f'task_id must not be empty. Got {task_id} instead.')
+        return self._get_key_for(self.task_keyprefix, task_id, key)
 
     def get_key_for_group(self, group_id, key=''):
         """Get the cache key for a group by id."""
-        key_t = self.key_t
-        return key_t('').join([
-            self.group_keyprefix, key_t(group_id), key_t(key),
-        ])
+        if not group_id:
+            raise ValueError(f'group_id must not be empty. Got {group_id} instead.')
+        return self._get_key_for(self.group_keyprefix, group_id, key)
 
     def get_key_for_chord(self, group_id, key=''):
         """Get the cache key for the chord waiting on group with given id."""
+        if not group_id:
+            raise ValueError(f'group_id must not be empty. Got {group_id} instead.')
+        return self._get_key_for(self.chord_keyprefix, group_id, key)
+
+    def _get_key_for(self, prefix, id, key=''):
         key_t = self.key_t
+
         return key_t('').join([
-            self.chord_keyprefix, key_t(group_id), key_t(key),
+            prefix, key_t(id), key_t(key),
         ])
 
     def _strip_prefix(self, key):
@@ -1057,7 +1082,7 @@ class BaseKeyValueStoreBackend(Backend):
                     )
             finally:
                 deps.delete()
-                self.client.delete(key)
+                self.delete(key)
         else:
             self.expire(key, self.expires)
 

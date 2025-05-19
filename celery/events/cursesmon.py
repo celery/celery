@@ -273,8 +273,6 @@ class CursesMonitor:  # pragma: no cover
                         nexty = next(y)
                         if nexty >= my - 1:
                             subline = ' ' * 4 + '[...]'
-                        elif nexty >= my:
-                            break
                         self.win.addstr(
                             nexty, 3,
                             abbr(' ' * 4 + subline, self.screen_width - 4),

@@ -13,7 +13,7 @@ pytest.importorskip('pydocumentdb')
 
 
 class test_DocumentDBBackend:
-    def setup(self):
+    def setup_method(self):
         self.url = "cosmosdbsql://:key@endpoint"
         self.backend = CosmosDBSQLBackend(app=self.app, url=self.url)
 

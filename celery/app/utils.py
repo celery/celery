@@ -35,7 +35,7 @@ settings -> transport:{transport} results:{results}
 """
 
 HIDDEN_SETTINGS = re.compile(
-    'API|TOKEN|KEY|SECRET|PASS|PROFANITIES_LIST|SIGNATURE|DATABASE',
+    'API|TOKEN|KEY|SECRET|PASS|PROFANITIES_LIST|SIGNATURE|DATABASE|BEAT_DBURI',
     re.IGNORECASE,
 )
 
@@ -128,7 +128,7 @@ class Settings(ConfigurationView):
     @property
     def timezone(self):
         # this way we also support django's time zone.
-        return self.first('timezone', 'time_zone')
+        return self.first('timezone', 'TIME_ZONE')
 
     def without_defaults(self):
         """Return the current configuration, but without defaults."""

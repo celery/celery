@@ -1,7 +1,7 @@
 import collections
 
 import pytest
-import pytest_subtests  # noqa: F401
+import pytest_subtests  # noqa
 from kombu.utils.functional import lazy
 
 from celery.utils.functional import (DummyContext, first, firstmethod, fun_accepts_kwargs, fun_takes_argument,
@@ -195,7 +195,7 @@ class test_regen:
         # The following checks are for the known "misbehaviour"
         assert getattr(g, "_regen__done") is False
         # If the `regen()` instance doesn't think it's done then it'll dupe the
-        # elements from the underlying iterator if it can be re-used
+        # elements from the underlying iterator if it can be reused
         iter_g = iter(g)
         for e in original_list * 2:
             assert next(iter_g) == e

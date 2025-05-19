@@ -62,7 +62,8 @@ def beat(ctx, detach=False, logfile=None, pidfile=None, uid=None,
         maybe_drop_privileges(uid=uid, gid=gid)
 
     beat = partial(app.Beat,
-                   logfile=logfile, pidfile=pidfile, **kwargs)
+                   logfile=logfile, pidfile=pidfile,
+                   quiet=ctx.obj.quiet, **kwargs)
 
     if detach:
         with detached(logfile, pidfile, uid, gid, umask, workdir):

@@ -280,7 +280,7 @@ Features removed for simplicity
     This was an experimental feature, so not covered by our deprecation
     timeline guarantee.
 
-    You can copy and pase the existing batches code for use within your projects:
+    You can copy and pass the existing batches code for use within your projects:
     https://github.com/celery/celery/blob/3.1/celery/contrib/batches.py
 
 Features removed for lack of funding
@@ -1395,7 +1395,7 @@ New Elasticsearch result backend introduced
 
 See :ref:`conf-elasticsearch-result-backend` for more information.
 
-To depend on Celery with Elasticsearch as the result bakend use:
+To depend on Celery with Elasticsearch as the result backend use:
 
 .. code-block:: console
 

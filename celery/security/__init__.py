@@ -41,7 +41,7 @@ except ImportError:
     raise ImproperlyConfigured(CRYPTOGRAPHY_NOT_INSTALLED)
 
 
-def setup_security(allowed_serializers=None, key=None, cert=None, store=None,
+def setup_security(allowed_serializers=None, key=None, key_password=None, cert=None, store=None,
                    digest=None, serializer='json', app=None):
     """See :meth:`@Celery.setup_security`."""
     if app is None:
@@ -56,6 +56,7 @@ def setup_security(allowed_serializers=None, key=None, cert=None, store=None,
         raise ImproperlyConfigured(SETTING_MISSING)
 
     key = key or conf.security_key
+    key_password = key_password or conf.security_key_password
     cert = cert or conf.security_certificate
     store = store or conf.security_cert_store
     digest = digest or conf.security_digest
@@ -65,7 +66,7 @@ def setup_security(allowed_serializers=None, key=None, cert=None, store=None,
 
     with open(key) as kf:
         with open(cert) as cf:
-            register_auth(kf.read(), cf.read(), store, digest, serializer)
+            register_auth(kf.read(), key_password, cf.read(), store, digest, serializer)
     registry._set_default_serializer('auth')
 
 

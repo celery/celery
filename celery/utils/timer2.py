@@ -10,6 +10,7 @@ import threading
 from itertools import count
 from threading import TIMEOUT_MAX as THREAD_TIMEOUT_MAX
 from time import sleep
+from typing import Any, Callable, Iterator, Optional, Tuple
 
 from kombu.asynchronous.timer import Entry
 from kombu.asynchronous.timer import Timer as Schedule
@@ -30,20 +31,23 @@ class Timer(threading.Thread):
     Entry = Entry
     Schedule = Schedule
 
-    running = False
-    on_tick = None
+    running: bool = False
+    on_tick: Optional[Callable[[float], None]] = None
 
-    _timer_count = count(1)
+    _timer_count: count = count(1)
 
     if TIMER_DEBUG:  # pragma: no cover
-        def start(self, *args, **kwargs):
+        def start(self, *args: Any, **kwargs: Any) -> None:
             import traceback
             print('- Timer starting')
             traceback.print_stack()
             super().start(*args, **kwargs)
 
-    def __init__(self, schedule=None, on_error=None, on_tick=None,
-                 on_start=None, max_interval=None, **kwargs):
+    def __init__(self, schedule: Optional[Schedule] = None,
+                 on_error: Optional[Callable[[Exception], None]] = None,
+                 on_tick: Optional[Callable[[float], None]] = None,
+                 on_start: Optional[Callable[['Timer'], None]] = None,
+                 max_interval: Optional[float] = None, **kwargs: Any) -> None:
         self.schedule = schedule or self.Schedule(on_error=on_error,
                                                   max_interval=max_interval)
         self.on_start = on_start
@@ -60,8 +64,10 @@ class Timer(threading.Thread):
         self.daemon = True
         self.name = f'Timer-{next(self._timer_count)}'
 
-    def _next_entry(self):
+    def _next_entry(self) -> Optional[float]:
         with self.not_empty:
+            delay: Optional[float]
+            entry: Optional[Entry]
             delay, entry = next(self.scheduler)
             if entry is None:
                 if delay is None:
@@ -70,10 +76,10 @@ class Timer(threading.Thread):
         return self.schedule.apply_entry(entry)
     __next__ = next = _next_entry  # for 2to3
 
-    def run(self):
+    def run(self) -> None:
         try:
             self.running = True
-            self.scheduler = iter(self.schedule)
+            self.scheduler: Iterator[Tuple[Optional[float], Optional[Entry]]] = iter(self.schedule)
 
             while not self.__is_shutdown.is_set():
                 delay = self._next_entry()
@@ -94,61 +100,61 @@ class Timer(threading.Thread):
             sys.stderr.flush()
             os._exit(1)
 
-    def stop(self):
+    def stop(self) -> None:
         self.__is_shutdown.set()
         if self.running:
             self.__is_stopped.wait()
             self.join(THREAD_TIMEOUT_MAX)
             self.running = False
 
-    def ensure_started(self):
+    def ensure_started(self) -> None:
         if not self.running and not self.is_alive():
             if self.on_start:
                 self.on_start(self)
             self.start()
 
-    def _do_enter(self, meth, *args, **kwargs):
+    def _do_enter(self, meth: str, *args: Any, **kwargs: Any) -> Entry:
         self.ensure_started()
         with self.mutex:
             entry = getattr(self.schedule, meth)(*args, **kwargs)
             self.not_empty.notify()
             return entry
 
-    def enter(self, entry, eta, priority=None):
+    def enter(self, entry: Entry, eta: float, priority: Optional[int] = None) -> Entry:
         return self._do_enter('enter_at', entry, eta, priority=priority)
 
-    def call_at(self, *args, **kwargs):
+    def call_at(self, *args: Any, **kwargs: Any) -> Entry:
         return self._do_enter('call_at', *args, **kwargs)
 
-    def enter_after(self, *args, **kwargs):
+    def enter_after(self, *args: Any, **kwargs: Any) -> Entry:
         return self._do_enter('enter_after', *args, **kwargs)
 
-    def call_after(self, *args, **kwargs):
+    def call_after(self, *args: Any, **kwargs: Any) -> Entry:
         return self._do_enter('call_after', *args, **kwargs)
 
-    def call_repeatedly(self, *args, **kwargs):
+    def call_repeatedly(self, *args: Any, **kwargs: Any) -> Entry:
         return self._do_enter('call_repeatedly', *args, **kwargs)
 
-    def exit_after(self, secs, priority=10):
+    def exit_after(self, secs: float, priority: int = 10) -> None:
         self.call_after(secs, sys.exit, priority)
 
-    def cancel(self, tref):
+    def cancel(self, tref: Entry) -> None:
         tref.cancel()
 
-    def clear(self):
+    def clear(self) -> None:
         self.schedule.clear()
 
-    def empty(self):
+    def empty(self) -> bool:
         return not len(self)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.schedule)
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         """``bool(timer)``."""
         return True
     __nonzero__ = __bool__
 
     @property
-    def queue(self):
+    def queue(self) -> list:
         return self.schedule.queue

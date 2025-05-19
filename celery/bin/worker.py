@@ -166,8 +166,8 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               type=LOG_LEVEL,
               help_group="Worker Options",
               help="Logging level.")
-@click.option('optimization',
-              '-O',
+@click.option('-O',
+              '--optimization',
               default='default',
               cls=CeleryOption,
               type=click.Choice(('default', 'fair')),
@@ -300,8 +300,11 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
            **kwargs):
     """Start worker instance.
 
+    \b
     Examples
     --------
+
+    \b
     $ celery --app=proj worker -l INFO
     $ celery -A proj worker -l INFO -Q hipri,lopri
     $ celery -A proj worker --concurrency=4
@@ -325,6 +328,10 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
                 argv.remove('--detach')
             if '-D' in argv:
                 argv.remove('-D')
+            if "--uid" in argv:
+                argv.remove('--uid')
+            if "--gid" in argv:
+                argv.remove('--gid')
 
             return detach(sys.executable,
                           argv,
@@ -347,7 +354,7 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
             quiet=ctx.obj.quiet,
             **kwargs)
         worker.start()
-        return worker.exitcode
+        ctx.exit(worker.exitcode)
     except SecurityError as e:
         ctx.obj.error(e.args[0])
         ctx.exit(1)
