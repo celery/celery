@@ -339,6 +339,39 @@ def test_default_dispatcher(app):
         assert d.connection
 
 
+class DummyConn:
+    class transport:
+        driver_type = 'amqp'
+
+
+def test_get_exchange_default_type():
+    from celery.events import event
+    conn = DummyConn()
+    ex = event.get_exchange(conn)
+    assert ex.type == 'topic'
+    assert ex.name == event.EVENT_EXCHANGE_NAME
+
+
+def test_get_exchange_redis_type():
+    from celery.events import event
+
+    class RedisConn:
+        class transport:
+            driver_type = 'redis'
+
+    conn = RedisConn()
+    ex = event.get_exchange(conn)
+    assert ex.type == 'fanout'
+    assert ex.name == event.EVENT_EXCHANGE_NAME
+
+
+def test_get_exchange_custom_name():
+    from celery.events import event
+    conn = DummyConn()
+    ex = event.get_exchange(conn, name='custom')
+    assert ex.name == 'custom'
+
+
 def test_group_from():
     from celery.events import event
     print("event.py loaded from:", event.__file__)
