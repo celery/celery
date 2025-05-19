@@ -57,9 +57,9 @@ the PYTHONPATH.
                   tasks_with_future_eta
 
   tasks_with_future_eta     = tasks with ETA in the future         (not ready to run)
-  tasks_waiting             = tasks with ETA in the past or no ETA (ready, wating for a worker)
+  tasks_waiting             = tasks with ETA in the past or no ETA (ready, waiting for a worker)
   tasks_running             = tasks running, acked before start    (ready, running and acknowledged)
-  tasks_running_w_acks_late = tasks running, acked before finished (ready, running and unacknowleged)
+  tasks_running_w_acks_late = tasks running, acked before finished (ready, running and unacknowledged)
 """
 import time
 

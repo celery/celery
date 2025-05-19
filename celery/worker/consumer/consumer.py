@@ -578,8 +578,8 @@ class Consumer:
         #
         # Force the QoS decrement by calling `update` so RabbitMQ won't
         # push the same task just before we reject it.
-        # The QoS is increased everytime a future-ETA task is received and
-        # decreased here everytime the future-ETA is reached.
+        # The QoS is increased every time a future-ETA task is received and
+        # decreased here every time the future-ETA is reached.
         #
         # See: celery.worker.strategy.default
         #
