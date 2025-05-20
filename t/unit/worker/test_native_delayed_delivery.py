@@ -1,15 +1,18 @@
+import itertools
 from logging import LogRecord
+from typing import Iterator
 from unittest.mock import Mock, patch
 
 import pytest
 from kombu import Exchange, Queue
+from kombu.utils.functional import retry_over_time
 
-from celery.worker.consumer.delayed_delivery import DelayedDelivery
+from celery.worker.consumer.delayed_delivery import MAX_RETRIES, RETRY_INTERVAL, DelayedDelivery
 
 
 class test_DelayedDelivery:
     @patch('celery.worker.consumer.delayed_delivery.detect_quorum_queues', return_value=[False, ""])
-    def test_include_if_no_quorum_queues_detected(self, detect_quorum_queues):
+    def test_include_if_no_quorum_queues_detected(self, _):
         consumer_mock = Mock()
 
         delayed_delivery = DelayedDelivery(consumer_mock)
@@ -17,7 +20,7 @@ class test_DelayedDelivery:
         assert delayed_delivery.include_if(consumer_mock) is False
 
     @patch('celery.worker.consumer.delayed_delivery.detect_quorum_queues', return_value=[True, ""])
-    def test_include_if_quorum_queues_detected(self, detect_quorum_queues):
+    def test_include_if_quorum_queues_detected(self, _):
         consumer_mock = Mock()
 
         delayed_delivery = DelayedDelivery(consumer_mock)
@@ -74,26 +77,36 @@ class test_DelayedDelivery:
 
         assert len(caplog.records) == 0
 
-    def test_validate_broker_urls_empty(self):
+    @pytest.mark.parametrize(
+        "broker_urls, expected_result",
+        [
+            ("amqp://", {"amqp://"}),
+            ("amqp://;redis://", {"amqp://", "redis://"}),
+            (
+                ["amqp://", "redis://", "sqs://"],
+                {"amqp://", "redis://", "sqs://"},
+            ),
+        ],
+    )
+    def test_validate_broker_urls_valid(self, broker_urls, expected_result):
         delayed_delivery = DelayedDelivery(Mock())
+        urls = delayed_delivery._validate_broker_urls(broker_urls)
+        assert urls == expected_result
 
-        with pytest.raises(ValueError, match="broker_url configuration is empty"):
-            delayed_delivery._validate_broker_urls("")
-
-        with pytest.raises(ValueError, match="broker_url configuration is empty"):
-            delayed_delivery._validate_broker_urls(None)
-
-    def test_validate_broker_urls_invalid(self):
+    @pytest.mark.parametrize(
+        "broker_urls, exception_type, exception_match",
+        [
+            ("", ValueError, "broker_url configuration is empty"),
+            (None, ValueError, "broker_url configuration is empty"),
+            ([], ValueError, "broker_url configuration is empty"),
+            (123, ValueError, "broker_url must be a string or list"),
+            (["amqp://", 123, None, "amqp://"], ValueError, "All broker URLs must be strings"),
+        ],
+    )
+    def test_validate_broker_urls_invalid(self, broker_urls, exception_type, exception_match):
         delayed_delivery = DelayedDelivery(Mock())
-
-        with pytest.raises(ValueError, match="No valid broker URLs found in configuration"):
-            delayed_delivery._validate_broker_urls("  ;  ;  ")
-
-    def test_validate_broker_urls_valid(self):
-        delayed_delivery = DelayedDelivery(Mock())
-
-        urls = delayed_delivery._validate_broker_urls("amqp://localhost;amqp://remote")
-        assert urls == {"amqp://localhost", "amqp://remote"}
+        with pytest.raises(exception_type, match=exception_match):
+            delayed_delivery._validate_broker_urls(broker_urls)
 
     def test_validate_queue_type_empty(self):
         delayed_delivery = DelayedDelivery(Mock())
@@ -141,13 +154,57 @@ class test_DelayedDelivery:
         delayed_delivery = DelayedDelivery(Mock())
         exc = ConnectionRefusedError("Connection refused")
 
-        delayed_delivery._on_retry(exc, 1)
+        # Create a dummy float iterator
+        interval_range = iter([1.0, 2.0, 3.0])
+        intervals_count = 1
+
+        delayed_delivery._on_retry(exc, interval_range, intervals_count)
 
         assert len(caplog.records) == 1
         record = caplog.records[0]
         assert record.levelname == "WARNING"
         assert "attempt 2/3" in record.message
         assert "Connection refused" in record.message
+
+    def test_on_retry_argument_types(self):
+        delayed_delivery_instance = DelayedDelivery(parent=Mock())
+        fake_exception = ConnectionRefusedError("Simulated failure")
+
+        # Define a custom errback to check types
+        def type_checking_errback(self, exc, interval_range, intervals_count):
+            assert isinstance(exc, Exception), f"Expected Exception, got {type(exc)}"
+            assert isinstance(interval_range, Iterator), f"Expected Iterator, got {type(interval_range)}"
+            assert isinstance(intervals_count, int), f"Expected int, got {type(intervals_count)}"
+
+            peek_iter, interval_range = itertools.tee(interval_range)
+            try:
+                first = next(peek_iter)
+                assert isinstance(first, float)
+            except StopIteration:
+                pass
+
+            return 0.1
+
+        # Patch _setup_delayed_delivery to raise the exception immediately
+        with patch.object(delayed_delivery_instance, '_setup_delayed_delivery', side_effect=fake_exception):
+            # Patch _on_retry properly as a bound method to avoid 'missing self'
+            with patch.object(
+                delayed_delivery_instance,
+                '_on_retry',
+                new=type_checking_errback.__get__(delayed_delivery_instance)
+            ):
+                try:
+                    with pytest.raises(ConnectionRefusedError):
+                        retry_over_time(
+                            delayed_delivery_instance._setup_delayed_delivery,
+                            args=(Mock(), "amqp://localhost"),
+                            catch=(ConnectionRefusedError,),
+                            errback=delayed_delivery_instance._on_retry,
+                            interval_start=RETRY_INTERVAL,
+                            max_retries=MAX_RETRIES,
+                        )
+                except ConnectionRefusedError:
+                    pass  # expected
 
     def test_start_with_no_queues(self, caplog):
         consumer_mock = Mock()

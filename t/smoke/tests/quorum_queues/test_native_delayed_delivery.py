@@ -127,6 +127,32 @@ class test_native_delayed_delivery:
 
         result.get(timeout=10)
 
+    def test_countdown__no_queue_arg(self, celery_setup: CeleryTestSetup):
+        task_route_function = lambda *args, **kwargs: {  # noqa: E731
+            "routing_key": "celery",
+            "exchange": "celery",
+            "exchange_type": "topic",
+        }
+        celery_setup.app.conf.task_routes = (task_route_function,)
+        s = noop.s().set()
+
+        result = s.apply_async()
+
+        result.get(timeout=3)
+
+    def test_countdown__no_queue_arg__countdown(self, celery_setup: CeleryTestSetup):
+        task_route_function = lambda *args, **kwargs: {  # noqa: E731
+            "routing_key": "celery",
+            "exchange": "celery",
+            "exchange_type": "topic",
+        }
+        celery_setup.app.conf.task_routes = (task_route_function,)
+        s = noop.s().set()
+
+        result = s.apply_async(countdown=5)
+
+        result.get(timeout=10)
+
     def test_eta(self, celery_setup: CeleryTestSetup):
         s = noop.s().set(queue=celery_setup.worker.worker_queue)
 
