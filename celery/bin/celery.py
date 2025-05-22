@@ -192,7 +192,8 @@ def status(ctx, **kwargs):
         ):
             ctx.obj.error(
                 "Could not connect to the message broker. "
-                "Please make sure your broker (e.g., RabbitMQ or Redis) is running and the connection settings are correct.\n"
+                "Please make sure your broker (e.g., RabbitMQ or Redis) is running and the connection "
+                "settings are correct.\n"
                 f"Reason: {exc}",
                 fg='red'
             )
