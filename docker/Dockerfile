@@ -1,4 +1,5 @@
-FROM debian:bookworm-slim
+ARG PYTHON_VERSION
+FROM python:${PYTHON_VERSION}-slim
 
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONIOENCODING UTF-8
@@ -6,6 +7,7 @@ ENV PYTHONIOENCODING UTF-8
 ARG DEBIAN_FRONTEND=noninteractive
 
 # Pypy3 is installed from a package manager because it takes so long to build.
+
 RUN apt-get update && apt-get install -y build-essential \
     libcurl4-openssl-dev \
     apt-utils \
@@ -48,7 +50,7 @@ ARG CELERY_USER=developer
 RUN : "${CELERY_USER:?CELERY_USER build argument needs to be set and non-empty.}"
 
 ENV HOME /home/$CELERY_USER
-ENV PATH="$HOME/.pyenv/bin:$PATH"
+# ENV PATH="$HOME/.pyenv/bin:$PATH"
 
 # Copy and run setup scripts
 WORKDIR $PROVISIONING
@@ -61,113 +63,26 @@ RUN useradd -m -s /bin/bash $CELERY_USER
 # Swap to the celery user so packages and celery are not installed as root.
 USER $CELERY_USER
 
-# Install pyenv
-RUN curl https://pyenv.run | bash
-
-# Install required Python versions
-RUN pyenv install 3.13
-RUN pyenv install 3.12
-RUN pyenv install 3.11
-RUN pyenv install 3.10
-RUN pyenv install 3.9
-RUN pyenv install 3.8
-RUN pyenv install pypy3.10
-
-
-# Set global Python versions
-RUN pyenv global 3.13 3.12 3.11 3.10 3.9 3.8 pypy3.10
 
 # Install celery
 WORKDIR $HOME
 COPY --chown=1000:1000 requirements $HOME/requirements
-COPY --chown=1000:1000 docker/entrypoint /entrypoint
-RUN chmod gu+x /entrypoint
+#COPY --chown=1000:1000 docker/entrypoint /entrypoint
+#RUN chmod gu+x /entrypoint
 
-# Define the local pyenvs
-RUN pyenv local 3.13 3.12 3.11 3.10 3.9 3.8 pypy3.10
 
-RUN pyenv exec python3.13 -m pip install --upgrade pip setuptools wheel && \
-    pyenv exec python3.12 -m pip install --upgrade pip setuptools wheel && \
-    pyenv exec python3.11 -m pip install --upgrade pip setuptools wheel && \
-    pyenv exec python3.10 -m pip install --upgrade pip setuptools wheel && \
-    pyenv exec python3.9 -m pip install --upgrade pip setuptools wheel && \
-    pyenv exec python3.8 -m pip install --upgrade pip setuptools wheel && \
-    pyenv exec pypy3.10 -m pip install --upgrade pip setuptools wheel
+RUN pip install --upgrade pip setuptools wheel
+
+# Setup one celery environment for basic development use
+RUN pip install -r requirements/dev.txt \
+  -r requirements/test.txt \
+  
 
 COPY --chown=1000:1000 . $HOME/celery
 
-RUN pyenv exec python3.13 -m pip install -e $HOME/celery && \
-    pyenv exec python3.12 -m pip install -e $HOME/celery && \
-    pyenv exec python3.11 -m pip install -e $HOME/celery && \
-    pyenv exec python3.10 -m pip install -e $HOME/celery && \
-    pyenv exec python3.9 -m pip install -e $HOME/celery && \
-    pyenv exec python3.8 -m pip install -e $HOME/celery && \
-    pyenv exec pypy3.10 -m pip install -e $HOME/celery
 
-# Setup one celery environment for basic development use
-RUN pyenv exec python3.13 -m pip install -r requirements/default.txt \
-    -r requirements/dev.txt \
-    -r requirements/docs.txt \
-    -r requirements/pkgutils.txt \
-    -r requirements/test-ci-base.txt \
-    -r requirements/test-ci-default.txt \
-    -r requirements/test-integration.txt \
-    -r requirements/test-pypy3.txt \
-    -r requirements/test.txt && \
-  pyenv exec python3.12 -m pip install -r requirements/default.txt \
-  -r requirements/dev.txt \
-  -r requirements/docs.txt \
-  -r requirements/pkgutils.txt \
-  -r requirements/test-ci-base.txt \
-  -r requirements/test-ci-default.txt \
-  -r requirements/test-integration.txt \
-  -r requirements/test-pypy3.txt \
-  -r requirements/test.txt && \
-  pyenv exec python3.11 -m pip install -r requirements/default.txt \
-  -r requirements/dev.txt \
-  -r requirements/docs.txt \
-  -r requirements/pkgutils.txt \
-  -r requirements/test-ci-base.txt \
-  -r requirements/test-ci-default.txt \
-  -r requirements/test-integration.txt \
-  -r requirements/test-pypy3.txt \
-  -r requirements/test.txt && \
-  pyenv exec python3.10 -m pip install -r requirements/default.txt \
-  -r requirements/dev.txt \
-  -r requirements/docs.txt \
-  -r requirements/pkgutils.txt \
-  -r requirements/test-ci-base.txt \
-  -r requirements/test-ci-default.txt \
-  -r requirements/test-integration.txt \
-  -r requirements/test-pypy3.txt \
-  -r requirements/test.txt && \
-  pyenv exec python3.9 -m pip install -r requirements/default.txt \
-  -r requirements/dev.txt \
-  -r requirements/docs.txt \
-  -r requirements/pkgutils.txt \
-  -r requirements/test-ci-base.txt \
-  -r requirements/test-ci-default.txt \
-  -r requirements/test-integration.txt \
-  -r requirements/test-pypy3.txt \
-  -r requirements/test.txt && \
-  pyenv exec python3.8 -m pip install -r requirements/default.txt \
-  -r requirements/dev.txt \
-  -r requirements/docs.txt \
-  -r requirements/pkgutils.txt \
-  -r requirements/test-ci-base.txt \
-  -r requirements/test-ci-default.txt \
-  -r requirements/test-integration.txt \
-  -r requirements/test-pypy3.txt \
-  -r requirements/test.txt && \
-  pyenv exec pypy3.10 -m pip install -r requirements/default.txt \
-  -r requirements/dev.txt \
-  -r requirements/docs.txt \
-  -r requirements/pkgutils.txt \
-  -r requirements/test-ci-base.txt \
-  -r requirements/test-ci-default.txt \
-  -r requirements/test-integration.txt \
-  -r requirements/test-pypy3.txt \
-  -r requirements/test.txt
+ 
+
 
 WORKDIR $HOME/celery
 
@@ -177,3 +92,8 @@ RUN git config --global --add safe.directory /home/developer/celery
 # and that any compiled files from earlier steps or from mounts are removed to avoid
 # pytest failing with an ImportMismatchError
 ENTRYPOINT ["/entrypoint"]
+
+ENV PYTHONPATH "${PYTHONPATH}:/t/
+
+# Command to run tests
+CMD ["pytest", "t/integration"]
