@@ -1,4 +1,5 @@
 import json
+
 from click.testing import CliRunner
 
 from celery import Celery
