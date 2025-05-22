@@ -384,10 +384,10 @@ class test_Request(RequestCase):
 
         def assert_sender_has_request(sender, **kwargs):
             assert sender.request == req._context
-        
+
         on_call = Mock(side_effect=assert_sender_has_request)
         task_failure.connect(on_call)
-        
+
         try:
             req.on_failure(einfo)
         finally:
