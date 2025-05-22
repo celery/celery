@@ -20,7 +20,7 @@ from celery.bin.amqp import amqp
 from celery.bin.base import CeleryCommand, CeleryOption, CLIContext
 from celery.bin.beat import beat
 from celery.bin.call import call
-from celery.bin.control import control, inspect, status
+from celery.bin.control import control, inspect
 from celery.bin.events import events
 from celery.bin.graph import graph
 from celery.bin.list import list_
@@ -186,7 +186,10 @@ def status(ctx, **kwargs):
         ctx.obj.echo(app.control.inspect().stats())
     except Exception as exc:
         import kombu
-        if isinstance(exc, getattr(kombu.exceptions, 'OperationalError', Exception)):
+        if isinstance(
+            exc,
+            getattr(kombu.exceptions, 'OperationalError', Exception)
+        ):
             ctx.obj.error(
                 "Could not connect to the message broker. "
                 "Please make sure your broker (e.g., RabbitMQ or Redis) is running and the connection settings are correct.\n"
@@ -200,6 +203,7 @@ def status(ctx, **kwargs):
                 fg='red'
             )
         ctx.exit(1)
+
 
 celery.add_command(purge)
 celery.add_command(call)
