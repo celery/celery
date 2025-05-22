@@ -4,12 +4,13 @@ import pytest
 from click.testing import CliRunner
 
 from celery.bin.celery import celery
+from celery import Celery
+from celery._state import set_default_app
 
 
-@pytest.mark.skip(
-    reason="This test requires a Celery app context. It may fail in environments where current_app is not set."
-)
 def test_report_json_output():
+    app = Celery('test')
+    set_default_app(app)
     runner = CliRunner()
     result = runner.invoke(celery, ['report', '--json'])
     assert result.exit_code == 0
