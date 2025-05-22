@@ -3,9 +3,9 @@ import json
 import pytest
 from click.testing import CliRunner
 
-from celery.bin.celery import celery
 from celery import Celery
 from celery._state import set_default_app
+from celery.bin.celery import celery
 
 
 def test_report_json_output():
