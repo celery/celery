@@ -176,6 +176,31 @@ def report(ctx, **kwargs):
     ctx.obj.echo(app.bugreport())
 
 
+@celery.command(cls=CeleryCommand)
+@click.pass_context
+def status(ctx, **kwargs):
+    """Show worker status."""
+    try:
+        app = ctx.obj.app
+        app.loader.import_default_modules()
+        ctx.obj.echo(app.control.inspect().stats())
+    except Exception as exc:
+        import kombu
+        if isinstance(exc, getattr(kombu.exceptions, 'OperationalError', Exception)):
+            ctx.obj.error(
+                "Could not connect to the message broker. "
+                "Please make sure your broker (e.g., RabbitMQ or Redis) is running and the connection settings are correct.\n"
+                f"Reason: {exc}",
+                fg='red'
+            )
+        else:
+            ctx.obj.error(
+                "An unexpected error occurred while trying to get worker status.\n"
+                f"Reason: {exc}",
+                fg='red'
+            )
+        ctx.exit(1)
+
 celery.add_command(purge)
 celery.add_command(call)
 celery.add_command(beat)
