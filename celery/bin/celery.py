@@ -241,7 +241,8 @@ def _show(self, file=None):
         self.ctx.obj.error(
             WRONG_APP_OPTION_USAGE_MESSAGE.format(
                 option_name=self.option_name,
-                info_name=self.ctx.info_name),
+                info_name=self.ctx.info_name
+            ),
             fg='red'
         )
     previous_show_implementation(self, file=file)
