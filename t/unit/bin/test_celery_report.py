@@ -1,7 +1,10 @@
 import json
+
 import pytest
 from click.testing import CliRunner
+
 from celery.bin.celery import celery
+
 
 @pytest.mark.skip(reason="This test requires a Celery app context. It may fail in environments where current_app is not set.")
 def test_report_json_output():
