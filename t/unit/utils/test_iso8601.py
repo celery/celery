@@ -1,7 +1,10 @@
-import pytest
 from datetime import datetime, timedelta, timezone
-from celery.utils.iso8601 import parse_iso8601
+
+import pytest
+
 from celery.exceptions import CPendingDeprecationWarning
+from celery.utils.iso8601 import parse_iso8601
+
 
 def test_parse_iso8601_utc():
     dt = parse_iso8601("2023-10-26T10:30:00Z")
