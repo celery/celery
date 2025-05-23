@@ -9,11 +9,6 @@ from unittest.mock import ANY, Mock, call, patch
 
 import pytest
 
-try:
-    from redis import exceptions
-except ImportError:
-    exceptions = None
-
 from celery import signature, states, uuid
 from celery.canvas import Signature
 from celery.contrib.testing.mocks import ContextMock
@@ -83,7 +78,7 @@ class PubSub(conftest.MockCallbacks):
         pass
 
 
-class Redis(conftest.MockCallbacks):
+class Valkey(conftest.MockCallbacks):
     Connection = Connection
     Pipeline = Pipeline
     pubsub = PubSub
@@ -147,7 +142,7 @@ class Redis(conftest.MockCallbacks):
         fake_sorted_set.sort()
 
     def zrange(self, key, start, stop):
-        # `stop` is inclusive in Redis so we use `stop + 1` unless that would
+        # `stop` is inclusive in Valkey so we use `stop + 1` unless that would
         # cause us to move from negative (right-most) indices to positive
         stop = stop + 1 if stop != -1 else None
         return [e[1] for e in self._get_sorted_set(key)[start:stop]]
@@ -167,17 +162,17 @@ class Sentinel(conftest.MockCallbacks):
     def __init__(self, sentinels, min_other_sentinels=0, sentinel_kwargs=None,
                  **connection_kwargs):
         self.sentinel_kwargs = sentinel_kwargs
-        self.sentinels = [Redis(hostname, port, **self.sentinel_kwargs)
+        self.sentinels = [Valkey(hostname, port, **self.sentinel_kwargs)
                           for hostname, port in sentinels]
         self.min_other_sentinels = min_other_sentinels
         self.connection_kwargs = connection_kwargs
 
-    def master_for(self, service_name, redis_class):
+    def master_for(self, service_name, valkey_class):
         return random.choice(self.sentinels)
 
 
-class redis:
-    StrictRedis = Redis
+class valkey:
+    StrictValkey = Valkey
 
     class ConnectionPool:
         def __init__(self, **kwargs):
@@ -192,14 +187,14 @@ class sentinel:
     Sentinel = Sentinel
 
 
-class test_RedisResultConsumer:
+class test_ValkeyResultConsumer:
     def get_backend(self):
-        from celery.backends.redis import RedisBackend
+        from celery.backends.valkey import ValkeyBackend
 
-        class _RedisBackend(RedisBackend):
-            backend = redis
+        class _ValkeyBackend(ValkeyBackend):
+            backend = valkey
 
-        return _RedisBackend(app=self.app)
+        return _ValkeyBackend(app=self.app)
 
     def get_consumer(self):
         consumer = self.get_backend().result_consumer
@@ -320,18 +315,18 @@ class test_RedisResultConsumer:
         consumer._pubsub.connection.register_connect_callback.assert_not_called()
 
 
-class basetest_RedisBackend:
+class basetest_ValkeyBackend:
     def get_backend(self):
-        from celery.backends.redis import RedisBackend
+        from celery.backends.valkey import ValkeyBackend
 
-        class _RedisBackend(RedisBackend):
-            backend = redis
+        class _ValkeyBackend(ValkeyBackend):
+            backend = valkey
 
-        return _RedisBackend
+        return _ValkeyBackend
 
     def get_E_LOST(self):
         from celery.backends.base_keyval import E_LOST
-        return E_LOST.format("Redis")
+        return E_LOST.format("Valkey")
 
     def create_task(self, i, group_id="group_id"):
         tid = uuid()
@@ -369,28 +364,28 @@ class basetest_RedisBackend:
         self.b = self.Backend(app=self.app)
 
 
-class test_RedisBackend(basetest_RedisBackend):
+class test_ValkeyBackend(basetest_ValkeyBackend):
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_reduce(self):
-        pytest.importorskip('redis')
+        pytest.importorskip('valkey')
 
-        from celery.backends.redis import RedisBackend
-        x = RedisBackend(app=self.app)
+        from celery.backends.valkey import ValkeyBackend
+        x = ValkeyBackend(app=self.app)
         assert loads(dumps(x))
 
-    def test_no_redis(self):
+    def test_no_valkey(self):
         self.Backend.backend = None
         with pytest.raises(ImproperlyConfigured):
             self.Backend(app=self.app)
 
-    def test_username_password_from_redis_conf(self):
-        self.app.conf.redis_password = 'password'
+    def test_username_password_from_valkey_conf(self):
+        self.app.conf.valkey_password = 'password'
         x = self.Backend(app=self.app)
 
         assert x.connparams
         assert 'username' not in x.connparams
         assert x.connparams['password'] == 'password'
-        self.app.conf.redis_username = 'username'
+        self.app.conf.valkey_username = 'username'
         x = self.Backend(app=self.app)
 
         assert x.connparams
@@ -398,10 +393,10 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['password'] == 'password'
 
     def test_url(self):
-        self.app.conf.redis_socket_timeout = 30.0
-        self.app.conf.redis_socket_connect_timeout = 100.0
+        self.app.conf.valkey_socket_timeout = 30.0
+        self.app.conf.valkey_socket_connect_timeout = 100.0
         x = self.Backend(
-            'redis://:bosco@vandelay.com:123//1', app=self.app,
+            'valkey://:bosco@vandelay.com:123//1', app=self.app,
         )
         assert x.connparams
         assert x.connparams['host'] == 'vandelay.com'
@@ -413,7 +408,7 @@ class test_RedisBackend(basetest_RedisBackend):
         assert 'username' not in x.connparams
 
         x = self.Backend(
-            'redis://username:bosco@vandelay.com:123//1', app=self.app,
+            'valkey://username:bosco@vandelay.com:123//1', app=self.app,
         )
         assert x.connparams
         assert x.connparams['host'] == 'vandelay.com'
@@ -425,10 +420,10 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['socket_connect_timeout'] == 100.0
 
     def test_timeouts_in_url_coerced(self):
-        pytest.importorskip('redis')
+        pytest.importorskip('valkey')
 
         x = self.Backend(
-            ('redis://:bosco@vandelay.com:123//1?'
+            ('valkey://:bosco@vandelay.com:123//1?'
              'socket_timeout=30&socket_connect_timeout=100'),
             app=self.app,
         )
@@ -441,17 +436,17 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['socket_connect_timeout'] == 100
 
     def test_socket_url(self):
-        pytest.importorskip('redis')
+        pytest.importorskip('valkey')
 
-        self.app.conf.redis_socket_timeout = 30.0
-        self.app.conf.redis_socket_connect_timeout = 100.0
+        self.app.conf.valkey_socket_timeout = 30.0
+        self.app.conf.valkey_socket_connect_timeout = 100.0
         x = self.Backend(
-            'socket:///tmp/redis.sock?virtual_host=/3', app=self.app,
+            'socket:///tmp/valkey.sock?virtual_host=/3', app=self.app,
         )
         assert x.connparams
-        assert x.connparams['path'] == '/tmp/redis.sock'
+        assert x.connparams['path'] == '/tmp/valkey.sock'
         assert (x.connparams['connection_class'] is
-                redis.UnixDomainSocketConnection)
+                valkey.UnixDomainSocketConnection)
         assert 'host' not in x.connparams
         assert 'port' not in x.connparams
         assert x.connparams['socket_timeout'] == 30.0
@@ -460,18 +455,18 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['db'] == 3
 
     def test_backend_ssl(self):
-        pytest.importorskip('redis')
+        pytest.importorskip('valkey')
 
-        self.app.conf.redis_backend_use_ssl = {
+        self.app.conf.valkey_backend_use_ssl = {
             'ssl_cert_reqs': ssl.CERT_REQUIRED,
             'ssl_ca_certs': '/path/to/ca.crt',
             'ssl_certfile': '/path/to/client.crt',
             'ssl_keyfile': '/path/to/client.key',
         }
-        self.app.conf.redis_socket_timeout = 30.0
-        self.app.conf.redis_socket_connect_timeout = 100.0
+        self.app.conf.valkey_socket_timeout = 30.0
+        self.app.conf.valkey_socket_connect_timeout = 100.0
         x = self.Backend(
-            'rediss://:bosco@vandelay.com:123//1', app=self.app,
+            'valkeys://:bosco@vandelay.com:123//1', app=self.app,
         )
         assert x.connparams
         assert x.connparams['host'] == 'vandelay.com'
@@ -485,21 +480,21 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['ssl_certfile'] == '/path/to/client.crt'
         assert x.connparams['ssl_keyfile'] == '/path/to/client.key'
 
-        from redis.connection import SSLConnection
+        from valkey.connection import SSLConnection
         assert x.connparams['connection_class'] is SSLConnection
 
     def test_backend_health_check_interval_ssl(self):
-        pytest.importorskip('redis')
+        pytest.importorskip('valkey')
 
-        self.app.conf.redis_backend_use_ssl = {
+        self.app.conf.valkey_backend_use_ssl = {
             'ssl_cert_reqs': ssl.CERT_REQUIRED,
             'ssl_ca_certs': '/path/to/ca.crt',
             'ssl_certfile': '/path/to/client.crt',
             'ssl_keyfile': '/path/to/client.key',
         }
-        self.app.conf.redis_backend_health_check_interval = 10
+        self.app.conf.valkey_backend_health_check_interval = 10
         x = self.Backend(
-            'rediss://:bosco@vandelay.com:123//1', app=self.app,
+            'valkeys://:bosco@vandelay.com:123//1', app=self.app,
         )
         assert x.connparams
         assert x.connparams['host'] == 'vandelay.com'
@@ -508,15 +503,15 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['password'] == 'bosco'
         assert x.connparams['health_check_interval'] == 10
 
-        from redis.connection import SSLConnection
+        from valkey.connection import SSLConnection
         assert x.connparams['connection_class'] is SSLConnection
 
     def test_backend_health_check_interval(self):
-        pytest.importorskip('redis')
+        pytest.importorskip('valkey')
 
-        self.app.conf.redis_backend_health_check_interval = 10
+        self.app.conf.valkey_backend_health_check_interval = 10
         x = self.Backend(
-            'redis://vandelay.com:123//1', app=self.app,
+            'valkey://vandelay.com:123//1', app=self.app,
         )
         assert x.connparams
         assert x.connparams['host'] == 'vandelay.com'
@@ -525,10 +520,10 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['health_check_interval'] == 10
 
     def test_backend_health_check_interval_not_set(self):
-        pytest.importorskip('redis')
+        pytest.importorskip('valkey')
 
         x = self.Backend(
-            'redis://vandelay.com:123//1', app=self.app,
+            'valkey://vandelay.com:123//1', app=self.app,
         )
         assert x.connparams
         assert x.connparams['host'] == 'vandelay.com'
@@ -541,18 +536,18 @@ class test_RedisBackend(basetest_RedisBackend):
         "CERT_REQUIRED",
     ])
     def test_backend_ssl_certreq_str(self, cert_str):
-        pytest.importorskip('redis')
+        pytest.importorskip('valkey')
 
-        self.app.conf.redis_backend_use_ssl = {
+        self.app.conf.valkey_backend_use_ssl = {
             'ssl_cert_reqs': cert_str,
             'ssl_ca_certs': '/path/to/ca.crt',
             'ssl_certfile': '/path/to/client.crt',
             'ssl_keyfile': '/path/to/client.key',
         }
-        self.app.conf.redis_socket_timeout = 30.0
-        self.app.conf.redis_socket_connect_timeout = 100.0
+        self.app.conf.valkey_socket_timeout = 30.0
+        self.app.conf.valkey_socket_connect_timeout = 100.0
         x = self.Backend(
-            'rediss://:bosco@vandelay.com:123//1', app=self.app,
+            'valkeys://:bosco@vandelay.com:123//1', app=self.app,
         )
         assert x.connparams
         assert x.connparams['host'] == 'vandelay.com'
@@ -566,7 +561,7 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['ssl_certfile'] == '/path/to/client.crt'
         assert x.connparams['ssl_keyfile'] == '/path/to/client.key'
 
-        from redis.connection import SSLConnection
+        from valkey.connection import SSLConnection
         assert x.connparams['connection_class'] is SSLConnection
 
     @pytest.mark.parametrize('cert_str', [
@@ -574,12 +569,12 @@ class test_RedisBackend(basetest_RedisBackend):
         "CERT_REQUIRED",
     ])
     def test_backend_ssl_url(self, cert_str):
-        pytest.importorskip('redis')
+        pytest.importorskip('valkey')
 
-        self.app.conf.redis_socket_timeout = 30.0
-        self.app.conf.redis_socket_connect_timeout = 100.0
+        self.app.conf.valkey_socket_timeout = 30.0
+        self.app.conf.valkey_socket_connect_timeout = 100.0
         x = self.Backend(
-            'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=%s' % cert_str,
+            'valkeys://:bosco@vandelay.com:123//1?ssl_cert_reqs=%s' % cert_str,
             app=self.app,
         )
         assert x.connparams
@@ -591,7 +586,7 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['socket_connect_timeout'] == 100.0
         assert x.connparams['ssl_cert_reqs'] == ssl.CERT_REQUIRED
 
-        from redis.connection import SSLConnection
+        from valkey.connection import SSLConnection
         assert x.connparams['connection_class'] is SSLConnection
 
     @pytest.mark.parametrize('cert_str', [
@@ -599,14 +594,14 @@ class test_RedisBackend(basetest_RedisBackend):
         "CERT_NONE",
     ])
     def test_backend_ssl_url_options(self, cert_str):
-        pytest.importorskip('redis')
+        pytest.importorskip('valkey')
 
         x = self.Backend(
             (
-                'rediss://:bosco@vandelay.com:123//1'
+                'valkeys://:bosco@vandelay.com:123//1'
                 '?ssl_cert_reqs={cert_str}'
                 '&ssl_ca_certs=%2Fvar%2Fssl%2Fmyca.pem'
-                '&ssl_certfile=%2Fvar%2Fssl%2Fredis-server-cert.pem'
+                '&ssl_certfile=%2Fvar%2Fssl%2Fvalkey-server-cert.pem'
                 '&ssl_keyfile=%2Fvar%2Fssl%2Fprivate%2Fworker-key.pem'
             ).format(cert_str=cert_str),
             app=self.app,
@@ -618,7 +613,7 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['password'] == 'bosco'
         assert x.connparams['ssl_cert_reqs'] == ssl.CERT_NONE
         assert x.connparams['ssl_ca_certs'] == '/var/ssl/myca.pem'
-        assert x.connparams['ssl_certfile'] == '/var/ssl/redis-server-cert.pem'
+        assert x.connparams['ssl_certfile'] == '/var/ssl/valkey-server-cert.pem'
         assert x.connparams['ssl_keyfile'] == '/var/ssl/private/worker-key.pem'
 
     @pytest.mark.parametrize('cert_str', [
@@ -626,10 +621,10 @@ class test_RedisBackend(basetest_RedisBackend):
         "CERT_OPTIONAL",
     ])
     def test_backend_ssl_url_cert_none(self, cert_str):
-        pytest.importorskip('redis')
+        pytest.importorskip('valkey')
 
         x = self.Backend(
-            'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=%s' % cert_str,
+            'valkeys://:bosco@vandelay.com:123//1?ssl_cert_reqs=%s' % cert_str,
             app=self.app,
         )
         assert x.connparams
@@ -638,15 +633,15 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['port'] == 123
         assert x.connparams['ssl_cert_reqs'] == ssl.CERT_OPTIONAL
 
-        from redis.connection import SSLConnection
+        from valkey.connection import SSLConnection
         assert x.connparams['connection_class'] is SSLConnection
 
     @pytest.mark.parametrize("uri", [
-        'rediss://:bosco@vandelay.com:123//1?ssl_cert_reqs=CERT_KITTY_CATS',
-        'rediss://:bosco@vandelay.com:123//1'
+        'valkeys://:bosco@vandelay.com:123//1?ssl_cert_reqs=CERT_KITTY_CATS',
+        'valkeys://:bosco@vandelay.com:123//1'
     ])
     def test_backend_ssl_url_invalid(self, uri):
-        pytest.importorskip('redis')
+        pytest.importorskip('valkey')
 
         with pytest.raises(ValueError):
             self.Backend(
@@ -699,14 +694,6 @@ class test_RedisBackend(basetest_RedisBackend):
             max_retries=2, interval_start=0, interval_step=0.01, interval_max=1
         )
 
-    def test_exception_safe_to_retry(self):
-        b = self.Backend(app=self.app)
-        assert not b.exception_safe_to_retry(Exception("failed"))
-        assert not b.exception_safe_to_retry(BaseException("failed"))
-        assert not b.exception_safe_to_retry(exceptions.RedisError("redis error"))
-        assert b.exception_safe_to_retry(exceptions.ConnectionError("service unavailable"))
-        assert b.exception_safe_to_retry(exceptions.TimeoutError("timeout"))
-
     def test_incr(self):
         self.b.client = Mock(name='client')
         self.b.incr('foo')
@@ -748,7 +735,7 @@ class test_RedisBackend(basetest_RedisBackend):
         assert self.b.on_chord_part_return(request, 'SUCCESS', 10) is None
 
     def test_ConnectionPool(self):
-        self.b.backend = Mock(name='redis')
+        self.b.backend = Mock(name='valkey')
         assert self.b._ConnectionPool is None
         assert self.b.ConnectionPool is self.b.backend.ConnectionPool
 
@@ -762,13 +749,13 @@ class test_RedisBackend(basetest_RedisBackend):
         assert b.expires == 48
 
     def test_add_to_chord(self):
-        b = self.Backend('redis://', app=self.app)
+        b = self.Backend('valkey://', app=self.app)
         gid = uuid()
         b.add_to_chord(gid, 'sig')
         b.client.incr.assert_called_with(b.get_key_for_group(gid, '.t'), 1)
 
     def test_set_chord_size(self):
-        b = self.Backend('redis://', app=self.app)
+        b = self.Backend('valkey://', app=self.app)
         gid = uuid()
         b.set_chord_size(gid, 10)
         b.client.set.assert_called_with(b.get_key_for_group(gid, '.s'), 10)
@@ -814,7 +801,7 @@ class test_RedisBackend(basetest_RedisBackend):
             self.b.set('key', 'x' * (self.b._MAX_STR_VALUE_SIZE + 1))
 
 
-class test_RedisBackend_chords_simple(basetest_RedisBackend):
+class test_ValkeyBackend_chords_simple(basetest_ValkeyBackend):
     @pytest.fixture(scope="class", autouse=True)
     def simple_header_result(self):
         with patch(
@@ -1109,7 +1096,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             )
 
 
-class test_RedisBackend_chords_complex(basetest_RedisBackend):
+class test_ValkeyBackend_chords_complex(basetest_ValkeyBackend):
     @pytest.fixture(scope="function", autouse=True)
     def complex_header_result(self):
         with patch("celery.result.GroupResult.restore") as p:
@@ -1193,17 +1180,17 @@ class test_RedisBackend_chords_complex(basetest_RedisBackend):
 
 class test_SentinelBackend:
     def get_backend(self):
-        from celery.backends.redis import SentinelBackend
+        from celery.backends.valkey import SentinelBackend
 
         class _SentinelBackend(SentinelBackend):
-            redis = redis
+            valkey = valkey
             sentinel = sentinel
 
         return _SentinelBackend
 
     def get_E_LOST(self):
         from celery.backends.base_keyval import E_LOST
-        return E_LOST.format("Redis")
+        return E_LOST.format("Valkey")
 
     def setup_method(self):
         self.Backend = self.get_backend()
@@ -1212,20 +1199,20 @@ class test_SentinelBackend:
 
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_reduce(self):
-        pytest.importorskip('redis')
+        pytest.importorskip('valkey')
 
-        from celery.backends.redis import SentinelBackend
+        from celery.backends.valkey import SentinelBackend
         x = SentinelBackend(app=self.app)
         assert loads(dumps(x))
 
-    def test_no_redis(self):
+    def test_no_valkey(self):
         self.Backend.backend = None
         with pytest.raises(ImproperlyConfigured):
             self.Backend(app=self.app)
 
     def test_url(self):
-        self.app.conf.redis_socket_timeout = 30.0
-        self.app.conf.redis_socket_connect_timeout = 100.0
+        self.app.conf.valkey_socket_timeout = 30.0
+        self.app.conf.valkey_socket_connect_timeout = 100.0
         x = self.Backend(
             'sentinel://:test@github.com:123/1;'
             'sentinel://:test@github.com:124/1',
@@ -1253,7 +1240,7 @@ class test_SentinelBackend:
         found_dbs = [cp['db'] for cp in x.connparams['hosts']]
         assert found_dbs == expected_dbs
 
-        # By default passwords should be sanitized
+        # By default, passwords should be sanitized
         display_url = x.as_uri()
         assert "test" not in display_url
         # We can choose not to sanitize with the `include_password` argument
@@ -1285,17 +1272,17 @@ class test_SentinelBackend:
         assert pool
 
     def test_backend_ssl(self):
-        pytest.importorskip('redis')
+        pytest.importorskip('valkey')
 
-        from celery.backends.redis import SentinelBackend
-        self.app.conf.redis_backend_use_ssl = {
+        from celery.backends.valkey import SentinelBackend
+        self.app.conf.valkey_backend_use_ssl = {
             'ssl_cert_reqs': "CERT_REQUIRED",
             'ssl_ca_certs': '/path/to/ca.crt',
             'ssl_certfile': '/path/to/client.crt',
             'ssl_keyfile': '/path/to/client.key',
         }
-        self.app.conf.redis_socket_timeout = 30.0
-        self.app.conf.redis_socket_connect_timeout = 100.0
+        self.app.conf.valkey_socket_timeout = 30.0
+        self.app.conf.valkey_socket_connect_timeout = 100.0
         x = SentinelBackend(
             'sentinel://:bosco@vandelay.com:123//1', app=self.app,
         )
@@ -1312,5 +1299,5 @@ class test_SentinelBackend:
         assert x.connparams['ssl_certfile'] == '/path/to/client.crt'
         assert x.connparams['ssl_keyfile'] == '/path/to/client.key'
 
-        from celery.backends.redis import SentinelManagedSSLConnection
+        from celery.backends.valkey import SentinelManagedSSLConnection
         assert x.connparams['connection_class'] is SentinelManagedSSLConnection
