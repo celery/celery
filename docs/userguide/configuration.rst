@@ -885,9 +885,9 @@ on backend specifications).
 .. note::
 
     For the moment this only works with the AMQP, database, cache, Couchbase,
-    and Redis backends.
+    filesystem and Redis backends.
 
-    When using the database backend, ``celery beat`` must be
+    When using the database or filesystem backend, ``celery beat`` must be
     running for the results to be expired.
 
 .. setting:: result_cache_max
