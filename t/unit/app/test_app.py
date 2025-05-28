@@ -1323,14 +1323,13 @@ class test_App:
             exchange='bar_exchange', routing_key='bar_exchange',
         )
 
-    @patch('celery.app.base.uuid')
-    def test_send_task_custom_task_id_generator(self, mock_uuid):
+    def test_send_task_custom_task_id_generator(self):
         # Default UUID should be used when no custom generator is provided
-        task_id = None
-        self.app.conf.task_id_generator = None
-        self.app.send_task('foo', task_id=task_id)
-        mock_uuid.assert_called_once()
-        mock_uuid.reset_mock()
+        with patch('celery.app.base.uuid', return_value="default-uuid-123") as mock_uuid:
+            self.app.conf.task_id_generator = None
+            result = self.app.send_task('foo')
+            assert result.id == "default-uuid-123"
+            mock_uuid.assert_called_once()
 
         # Custom generator should be used when provided
         mock_generator = Mock(return_value="custom-id-123")
@@ -1338,14 +1337,14 @@ class test_App:
         result = self.app.send_task('foo')
         assert result.id == "custom-id-123"
         mock_generator.assert_called_once()
-        mock_uuid.assert_not_called()
 
         # Should fall back to UUID when custom generator raises exception
-        mock_generator = Mock(side_effect=ValueError("Generator error"))
-        self.app.conf.task_id_generator = mock_generator
-        self.app.send_task('foo')
-        mock_generator.assert_called_once()
-        mock_uuid.assert_called_once()
+        with patch("celery.app.base.uuid", return_value="fallback-uuid-123") as mock_uuid:
+            mock_generator = Mock(side_effect=ValueError("Generator error"))
+            self.app.conf.task_id_generator = mock_generator
+            result = self.app.send_task('foo')
+            assert result.id == "fallback-uuid-123"
+            mock_uuid.assert_called_once()
 
         # Should convert non-string return values to strings
         mock_generator = Mock(return_value=42)
@@ -1353,6 +1352,8 @@ class test_App:
         result = self.app.send_task('foo')
         assert result.id == "42"
         mock_generator.assert_called_once()
+
+        self.app.conf.task_id_generator = None
 
     def test_select_queues(self):
         self.app.amqp = Mock(name='amqp')
