@@ -8,6 +8,7 @@ pytest-order==1.5.0
 freezegun==1.5.5
 boto3>=1.43.113
 moto==5.2.3
+python-ulid>=3.0.0,<4.0.0
 # type checking
 mypy==2.4.1; platform_python_implementation=="CPython"
 pre-commit>=4.6.2
