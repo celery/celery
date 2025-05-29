@@ -39,7 +39,7 @@ What do I need?
 ===============
 
 .. sidebar:: Version Requirements
-    :Celery version 5.5.x runs on:
+    :subtitle: Celery version 5.5.x runs on:
 
     - Python ❨3.8, 3.9, 3.10, 3.11, 3.12, 3.13❩
     - PyPy3.9+ ❨v7.3.12+❩
