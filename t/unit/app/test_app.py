@@ -1324,6 +1324,17 @@ class test_App:
         )
 
     def test_send_task_custom_task_id_generator(self):
+        # test property
+        assert self.app.conf.task_id_generator is None
+
+        def test_property_generator():
+            return "property-test-123"
+
+        self.app.conf.task_id_generator = test_property_generator
+        assert self.app.conf.task_id_generator == test_property_generator
+
+        self.app.conf.task_id_generator = None      # reset
+
         # Default UUID should be used when no custom generator is provided
         with patch('celery.app.base.uuid', return_value="default-uuid-123") as mock_uuid:
             self.app.conf.task_id_generator = None
@@ -1354,6 +1365,32 @@ class test_App:
         mock_generator.assert_called_once()
 
         self.app.conf.task_id_generator = None
+
+    def test_send_task_custom_task_id_generator_with_ulid_generator(self):
+        try:
+            import ulid
+        except ImportError:
+            pytest.skip("ulid not installed")
+
+        try:
+            def ulid_generator():
+                return str(ulid.ULID())
+
+            self.app.conf.task_id_generator = ulid_generator
+
+            results = []     # testing multiple task creations
+            for i in range(3):
+                result = self.app.send_task('foo')
+                results.append(result)
+
+                assert len(result.id) == 26     # ulid format validation
+                assert all(c in '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ' for c in result.id.upper())
+
+            unique_ids = {r.id for r in results}
+            assert len(unique_ids) == 3, "ULIDs should be unique"
+
+        finally:
+            self.app.conf.task_id_generator = None
 
     def test_select_queues(self):
         self.app.amqp = Mock(name='amqp')
