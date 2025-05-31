@@ -1,1 +1,1 @@
-PyYAML>=3.10
+kombu[yaml]

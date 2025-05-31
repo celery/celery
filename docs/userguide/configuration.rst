@@ -885,9 +885,9 @@ on backend specifications).
 .. note::
 
     For the moment this only works with the AMQP, database, cache, Couchbase,
-    and Redis backends.
+    filesystem and Redis backends.
 
-    When using the database backend, ``celery beat`` must be
+    When using the database or filesystem backend, ``celery beat`` must be
     running for the results to be expired.
 
 .. setting:: result_cache_max
@@ -3933,6 +3933,10 @@ Default: None.
 When using cron, the number of seconds :mod:`~celery.bin.beat` can look back
 when deciding whether a cron schedule is due. When set to `None`, cronjobs that
 are past due will always run immediately.
+
+.. warning::
+
+    Setting this higher than 3600 (1 hour) is highly discouraged.
 
 .. setting:: beat_logfile
 

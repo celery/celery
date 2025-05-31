@@ -1,3 +1,3 @@
 boto3>=1.26.143
 urllib3>=1.26.16
-kombu[sqs]>=5.3.4
+kombu[sqs]>=5.5.0

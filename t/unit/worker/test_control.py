@@ -669,8 +669,9 @@ class test_ControlPanel:
     def test_shutdown(self):
         m = {'method': 'shutdown',
              'destination': hostname}
-        with pytest.raises(SystemExit):
+        with pytest.raises(SystemExit) as excinfo:
             self.panel.handle_message(m, None)
+        assert excinfo.value.code == 0
 
     def test_panel_reply(self):
 

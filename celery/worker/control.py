@@ -7,6 +7,7 @@ from billiard.common import TERM_SIGNAME
 from kombu.utils.encoding import safe_repr
 
 from celery.exceptions import WorkerShutdown
+from celery.platforms import EX_OK
 from celery.platforms import signals as _signals
 from celery.utils.functional import maybe_list
 from celery.utils.log import get_logger
@@ -580,7 +581,7 @@ def autoscale(state, max=None, min=None):
 def shutdown(state, msg='Got shutdown from remote', **kwargs):
     """Shutdown worker(s)."""
     logger.warning(msg)
-    raise WorkerShutdown(0)
+    raise WorkerShutdown(EX_OK)
 
 
 # -- Queues
