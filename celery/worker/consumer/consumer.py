@@ -31,7 +31,8 @@ from celery.utils.objects import Bunch
 from celery.utils.text import truncate
 from celery.utils.time import humanize_seconds, rate
 from celery.worker import loops
-from celery.worker.state import active_requests, maybe_shutdown, requests, reserved_requests, task_reserved
+from celery.worker.state import (active_requests, maybe_shutdown, requests, reserved_requests, successful_requests,
+                                 task_reserved)
 
 __all__ = ('Consumer', 'Evloop', 'dump_body')
 
@@ -743,6 +744,8 @@ class Consumer:
     def cancel_all_unacked_requests(self):
         """Cancel all active requests that either do not require late acknowledgments or,
         if they do, have not been acknowledged yet.
+
+        Does not cancel successful tasks, even if they have not been acknowledged yet.
         """
 
         def should_cancel(request):
@@ -752,6 +755,9 @@ class Consumer:
 
             if not request.acknowledged:
                 # Task is late acknowledged, but it has not been acknowledged yet, cancel it.
+                if request.id in successful_requests:
+                    # Unless it was successful, in which case we don't want to cancel it.
+                    return False
                 return True
 
             # Task is late acknowledged, but it has already been acknowledged.

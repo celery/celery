@@ -19,7 +19,7 @@ from celery.worker.consumer.gossip import Gossip
 from celery.worker.consumer.heart import Heart
 from celery.worker.consumer.mingle import Mingle
 from celery.worker.consumer.tasks import Tasks
-from celery.worker.state import active_requests
+from celery.worker.state import active_requests, successful_requests
 
 
 class ConsumerTestCase:
@@ -476,6 +476,25 @@ class test_Consumer(ConsumerTestCase):
         mock_request_acks_early.cancel.assert_called_once_with(c.pool)
 
         active_requests.clear()
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_cancel_all_unacked_requests_preserves_successful_tasks(self):
+        c = self.get_consumer()
+
+        mock_successful_request = Mock(id='successful-task')
+        mock_successful_request.task.acks_late = True
+        mock_successful_request.acknowledged = False
+
+        active_requests.add(mock_successful_request)
+
+        successful_requests.add('successful-task')
+
+        try:
+            c.cancel_all_unacked_requests()
+            mock_successful_request.cancel.assert_not_called()
+        finally:
+            active_requests.clear()
+            successful_requests.clear()
 
     @pytest.mark.parametrize("broker_connection_retry", [True, False])
     @pytest.mark.parametrize("broker_connection_retry_on_startup", [None, False])
