@@ -2,6 +2,8 @@ import os
 from collections.abc import Iterable
 from time import sleep
 
+from pydantic import BaseModel
+
 from celery import Signature, Task, chain, chord, group, shared_task
 from celery.canvas import signature
 from celery.exceptions import SoftTimeLimitExceeded
@@ -342,6 +344,7 @@ class ExpectedException(Exception):
 
 class UnpickleableException(Exception):
     """Exception that doesn't survive a pickling roundtrip (dump + load)."""
+
     def __init__(self, foo, bar=None):
         if bar is None:
             # We define bar with a default value in the signature so that
@@ -475,6 +478,22 @@ def replaced_with_me():
     return True
 
 
+class AddParameterModel(BaseModel):
+    x: int
+    y: int
+
+
+class AddResultModel(BaseModel):
+    result: int
+
+
+@shared_task(pydantic=True)
+def add_pydantic(data: AddParameterModel) -> AddResultModel:
+    """Add two numbers, but with parameters and results using Pydantic model serialization."""
+    value = data.x + data.y
+    return AddResultModel(result=value)
+
+
 if LEGACY_TASKS_DISABLED:
     class StampOnReplace(StampingVisitor):
         stamp = {"StampOnReplace": "This is the replaced task"}
@@ -494,3 +513,8 @@ if LEGACY_TASKS_DISABLED:
         if replace_with is None:
             replace_with = replaced_with_me.s()
         self.replace(signature(replace_with))
+
+
+@shared_task(soft_time_limit=2, time_limit=1)
+def soft_time_limit_must_exceed_time_limit():
+    pass

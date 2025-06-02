@@ -602,8 +602,8 @@ class Request:
         is_worker_lost = isinstance(exc, WorkerLostError)
         if self.task.acks_late:
             reject = (
-                self.task.reject_on_worker_lost and
-                is_worker_lost
+                (self.task.reject_on_worker_lost and is_worker_lost)
+                or (isinstance(exc, TimeLimitExceeded) and not self.task.acks_on_failure_or_timeout)
             )
             ack = self.task.acks_on_failure_or_timeout
             if reject:
@@ -777,7 +777,7 @@ def create_request_cls(base, task, pool, hostname, eventer,
                 if isinstance(exc, (SystemExit, KeyboardInterrupt)):
                     raise exc
                 return self.on_failure(retval, return_ok=True)
-            task_ready(self)
+            task_ready(self, successful=True)
 
             if acks_late:
                 self.acknowledge()

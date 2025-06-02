@@ -79,6 +79,7 @@ have been moved into a new  ``task_`` prefix.
 ``BROKER_FAILOVER_STRATEGY``               :setting:`broker_failover_strategy`
 ``BROKER_HEARTBEAT``                       :setting:`broker_heartbeat`
 ``BROKER_LOGIN_METHOD``                    :setting:`broker_login_method`
+``BROKER_NATIVE_DELAYED_DELIVERY_QUEUE_TYPE`` :setting:`broker_native_delayed_delivery_queue_type`
 ``BROKER_POOL_LIMIT``                      :setting:`broker_pool_limit`
 ``BROKER_USE_SSL``                         :setting:`broker_use_ssl`
 ``CELERY_CACHE_BACKEND``                   :setting:`cache_backend`
@@ -137,6 +138,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_DEFAULT_EXCHANGE``                :setting:`task_default_exchange`
 ``CELERY_DEFAULT_EXCHANGE_TYPE``           :setting:`task_default_exchange_type`
 ``CELERY_DEFAULT_QUEUE``                   :setting:`task_default_queue`
+``CELERY_DEFAULT_QUEUE_TYPE``              :setting:`task_default_queue_type`
 ``CELERY_DEFAULT_RATE_LIMIT``              :setting:`task_default_rate_limit`
 ``CELERY_DEFAULT_ROUTING_KEY``             :setting:`task_default_routing_key`
 ``CELERY_EAGER_PROPAGATES``                :setting:`task_eager_propagates`
@@ -176,6 +178,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_WORKER_TASK_LOG_FORMAT``          :setting:`worker_task_log_format`
 ``CELERYD_TIMER``                          :setting:`worker_timer`
 ``CELERYD_TIMER_PRECISION``                :setting:`worker_timer_precision`
+``CELERYD_DETECT_QUORUM_QUEUES``           :setting:`worker_detect_quorum_queues`
 ========================================== ==============================================
 
 Configuration Directives
@@ -683,7 +686,7 @@ Can be one of the following:
     Use `Memcached`_ to store the results.
     See :ref:`conf-cache-result-backend`.
 
-* mongodb
+* ``mongodb``
     Use `MongoDB`_ to store the results.
     See :ref:`conf-mongodb-result-backend`.
 
@@ -882,9 +885,9 @@ on backend specifications).
 .. note::
 
     For the moment this only works with the AMQP, database, cache, Couchbase,
-    and Redis backends.
+    filesystem and Redis backends.
 
-    When using the database backend, ``celery beat`` must be
+    When using the database or filesystem backend, ``celery beat`` must be
     running for the results to be expired.
 
 .. setting:: result_cache_max
@@ -984,6 +987,23 @@ strings (this is the part of the URI that comes after the ``db+`` prefix).
 
 .. _`Connection String`:
     http://www.sqlalchemy.org/docs/core/engines.html#database-urls
+
+.. setting:: database_create_tables_at_setup
+
+``database_create_tables_at_setup``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.5.0
+
+Default: True by default.
+
+- If `True`, Celery will create the tables in the database during setup.
+- If `False`, Celery will create the tables lazily, i.e. wait for the first task
+  to be executed before creating the tables.
+
+.. note::
+    Before celery 5.5, the tables were created lazily i.e. it was equivalent to
+    `database_create_tables_at_setup` set to False.
 
 .. setting:: database_engine_options
 
@@ -1576,7 +1596,7 @@ Example configuration (Astra DB)
 Additional configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Cassandra driver, when estabilishing the connection, undergoes a stage
+The Cassandra driver, when establishing the connection, undergoes a stage
 of negotiating the protocol version with the server(s). Similarly,
 a load-balancing policy is automatically supplied (by default
 ``DCAwareRoundRobinPolicy``, which in turn has a ``local_dc`` setting, also
@@ -1650,7 +1670,7 @@ Default: None.
 
 The s3 access key id. For example::
 
-    s3_access_key_id = 'acces_key_id'
+    s3_access_key_id = 'access_key_id'
 
 .. setting:: s3_secret_access_key
 
@@ -1661,7 +1681,7 @@ Default: None.
 
 The s3 secret access key. For example::
 
-    s3_secret_access_key = 'acces_secret_access_key'
+    s3_secret_access_key = 'access_secret_access_key'
 
 .. setting:: s3_bucket
 
@@ -1810,7 +1830,7 @@ GCS backend settings
 
 .. note::
 
-    This gcs backend driver requires :pypi:`google-cloud-storage`.
+    This gcs backend driver requires :pypi:`google-cloud-storage` and :pypi:`google-cloud-firestore`.
 
     To install, use :command:`gcs`:
 
@@ -1824,6 +1844,7 @@ GCS backend settings
 GCS could be configured via the URL provided in :setting:`result_backend`, for example::
 
     result_backend = 'gs://mybucket/some-prefix?gcs_project=myproject&ttl=600'
+    result_backend = 'gs://mybucket/some-prefix?gcs_project=myproject?firestore_project=myproject2&ttl=600'
 
 This backend requires the following configuration directives to be set:
 
@@ -1882,6 +1903,17 @@ Threadpool size for GCS operations. Same value defines the connection pool size.
 Allows to control the number of concurrent operations. For example::
 
     gcs_threadpool_maxsize = 20
+
+``firestore_project``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: gcs_project.
+
+The Firestore project for Chord reference counting. Allows native chord ref counts.
+If not specified defaults to :setting:`gcs_project`.
+For example::
+
+    firestore_project = 'test-project2'
 
 Example configuration
 ~~~~~~~~~~~~~~~~~~~~~
@@ -2606,6 +2638,34 @@ that queue.
 
     :ref:`routing-changing-default-queue`
 
+.. setting:: task_default_queue_type
+
+``task_default_queue_type``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.5
+
+Default: ``"classic"``.
+
+This setting is used to allow changing the default queue type for the
+:setting:`task_default_queue` queue. The other viable option is ``"quorum"`` which
+is only supported by RabbitMQ and sets the queue type to ``quorum`` using the ``x-queue-type``
+queue argument.
+
+If the :setting:`worker_detect_quorum_queues` setting is enabled, the worker will
+automatically detect the queue type and disable the global QoS accordingly.
+
+.. warning::
+
+    Quorum queues require confirm publish to be enabled.
+    Use :setting:`broker_transport_options` to enable confirm publish by setting:
+
+    .. code-block:: python
+
+        broker_transport_options = {"confirm_publish": True}
+
+    For more information, see `RabbitMQ documentation <https://www.rabbitmq.com/docs/quorum-queues#use-cases>`_.
+
 .. setting:: task_default_exchange
 
 ``task_default_exchange``
@@ -2937,6 +2997,22 @@ Default: ``"AMQPLAIN"``.
 
 Set custom amqp login method.
 
+.. setting:: broker_native_delayed_delivery_queue_type
+
+``broker_native_delayed_delivery_queue_type``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.5
+
+:transports supported: ``pyamqp``
+
+Default: ``"quorum"``.
+
+This setting is used to allow changing the default queue type for the
+native delayed delivery queues. The other viable option is ``"classic"`` which
+is only supported by RabbitMQ and sets the queue type to ``classic`` using the ``x-queue-type``
+queue argument.
+
 .. setting:: broker_transport_options
 
 ``broker_transport_options``
@@ -3131,16 +3207,16 @@ it's replaced with a new one. Default is no limit.
 Default: No limit.
 Type: int (kilobytes)
 
-Maximum amount of resident memory, in kilobytes, that may be consumed by a
-worker before it will be replaced by a new worker. If a single
-task causes a worker to exceed this limit, the task will be
-completed, and the worker will be replaced afterwards.
+Maximum amount of resident memory, in kilobytes (1024 bytes), that may be
+consumed by a worker before it will be replaced by a new worker. If a single
+task causes a worker to exceed this limit, the task will be completed, and the
+worker will be replaced afterwards.
 
 Example:
 
 .. code-block:: python
 
-    worker_max_memory_per_child = 12000  # 12MB
+    worker_max_memory_per_child = 12288  # 12 * 1024 = 12 MB
 
 .. setting:: worker_disable_rate_limits
 
@@ -3224,6 +3300,62 @@ are recorded as such in the result backend as long as :setting:`task_ignore_resu
     In Celery 6.0, the :setting:`worker_cancel_long_running_tasks_on_connection_loss`
     will be set to ``True`` by default as the current behavior leads to more
     problems than it solves.
+
+.. setting:: worker_detect_quorum_queues
+
+``worker_detect_quorum_queues``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.5
+
+Default: Enabled.
+
+Automatically detect if any of the queues in :setting:`task_queues` are quorum queues
+(including the :setting:`task_default_queue`) and disable the global QoS if any quorum queue is detected.
+
+.. setting:: worker_soft_shutdown_timeout
+
+``worker_soft_shutdown_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.5
+
+Default: 0.0.
+
+The standard :ref:`warm shutdown <worker-warm-shutdown>` will wait for all tasks to finish before shutting down
+unless the cold shutdown is triggered. The :ref:`soft shutdown <worker-soft-shutdown>` will add a waiting time
+before the cold shutdown is initiated. This setting specifies how long the worker will wait before the cold shutdown
+is initiated and the worker is terminated.
+
+This will apply also when the worker initiate :ref:`cold shutdown <worker-cold-shutdown>` without doing a warm shutdown first.
+
+If the value is set to 0.0, the soft shutdown will be practically disabled. Regardless of the value, the soft shutdown
+will be disabled if there are no tasks running (unless :setting:`worker_enable_soft_shutdown_on_idle` is enabled).
+
+Experiment with this value to find the optimal time for your tasks to finish gracefully before the worker is terminated.
+Recommended values can be 10, 30, 60 seconds. Too high value can lead to a long waiting time before the worker is terminated
+and trigger a :sig:`KILL` signal to forcefully terminate the worker by the host system.
+
+.. setting:: worker_enable_soft_shutdown_on_idle
+
+``worker_enable_soft_shutdown_on_idle``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.5
+
+Default: False.
+
+If the :setting:`worker_soft_shutdown_timeout` is set to a value greater than 0.0, the worker will skip
+the :ref:`soft shutdown <worker-soft-shutdown>` anyways if there are no tasks running. This setting will
+enable the soft shutdown even if there are no tasks running.
+
+.. tip::
+
+    When the worker received ETA tasks, but the ETA has not been reached yet, and a shutdown is initiated,
+    the worker will **skip** the soft shutdown and initiate the cold shutdown immediately if there are no
+    tasks running. This may lead to failure in re-queueing the ETA tasks during worker teardown. To mitigate
+    this, enable this configuration to ensure the worker waits regadless, which gives enough time for a
+    graceful shutdown and successful re-queueing of the ETA tasks.
 
 .. _conf-events:
 
@@ -3801,6 +3933,10 @@ Default: None.
 When using cron, the number of seconds :mod:`~celery.bin.beat` can look back
 when deciding whether a cron schedule is due. When set to `None`, cronjobs that
 are past due will always run immediately.
+
+.. warning::
+
+    Setting this higher than 3600 (1 hour) is highly discouraged.
 
 .. setting:: beat_logfile
 

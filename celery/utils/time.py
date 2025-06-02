@@ -204,7 +204,7 @@ def delta_resolution(dt: datetime, delta: timedelta) -> datetime:
 def remaining(
         start: datetime, ends_in: timedelta, now: Callable | None = None,
         relative: bool = False) -> timedelta:
-    """Calculate the remaining time for a start date and a timedelta.
+    """Calculate the real remaining time for a start date and a timedelta.
 
     For example, "how many seconds left for 30 seconds after start?"
 
@@ -221,18 +221,22 @@ def remaining(
         ~datetime.timedelta: Remaining time.
     """
     now = now or datetime.now(datetime_timezone.utc)
-    if str(
-            start.tzinfo) == str(
-            now.tzinfo) and now.utcoffset() != start.utcoffset():
-        # DST started/ended
-        start = start.replace(tzinfo=now.tzinfo)
     end_date = start + ends_in
     if relative:
         end_date = delta_resolution(end_date, ends_in).replace(microsecond=0)
-    ret = end_date - now
+
+    # Using UTC to calculate real time difference.
+    # Python by default uses wall time in arithmetic between datetimes with
+    # equal non-UTC timezones.
+    now_utc = now.astimezone(timezone.utc)
+    end_date_utc = end_date.astimezone(timezone.utc)
+    ret = end_date_utc - now_utc
     if C_REMDEBUG:  # pragma: no cover
-        print('rem: NOW:{!r} START:{!r} ENDS_IN:{!r} END_DATE:{} REM:{}'.format(
-            now, start, ends_in, end_date, ret))
+        print(
+            'rem: NOW:{!r} NOW_UTC:{!r} START:{!r} ENDS_IN:{!r} '
+            'END_DATE:{} END_DATE_UTC:{!r} REM:{}'.format(
+                now, now_utc, start, ends_in, end_date, end_date_utc, ret)
+        )
     return ret
 
 
@@ -321,7 +325,7 @@ def _can_detect_ambiguous(tz: tzinfo) -> bool:
     return isinstance(tz, ZoneInfo) or hasattr(tz, "is_ambiguous")
 
 
-def _is_ambigious(dt: datetime, tz: tzinfo) -> bool:
+def _is_ambiguous(dt: datetime, tz: tzinfo) -> bool:
     """Helper function to determine if a timezone is ambiguous using python's dateutil module.
 
     Returns False if the timezone cannot detect ambiguity, or if there is no ambiguity, otherwise True.
@@ -338,7 +342,7 @@ def make_aware(dt: datetime, tz: tzinfo) -> datetime:
     """Set timezone for a :class:`~datetime.datetime` object."""
 
     dt = dt.replace(tzinfo=tz)
-    if _is_ambigious(dt, tz):
+    if _is_ambiguous(dt, tz):
         dt = min(dt.replace(fold=0), dt.replace(fold=1))
     return dt
 

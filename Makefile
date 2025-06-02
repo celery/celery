@@ -7,7 +7,6 @@ TOX=tox
 ICONV=iconv
 FLAKE8=flake8
 PYROMA=pyroma
-FLAKEPLUS=flakeplus
 SPHINX2RST=sphinx2rst
 RST2HTML=rst2html.py
 DEVNULL=/dev/null
@@ -22,7 +21,6 @@ CONTRIBUTING=CONTRIBUTING.rst
 CONTRIBUTING_SRC="docs/contributing.rst"
 SPHINX_HTMLDIR="${SPHINX_BUILDDIR}/html"
 DOCUMENTATION=Documentation
-FLAKEPLUSTARGET=2.7
 
 WORKER_GRAPH="docs/images/worker_graph_full.png"
 
@@ -40,7 +38,6 @@ help:
 	@echo "    contribcheck     - Check CONTRIBUTING.rst encoding"
 	@echo "    flakes --------  - Check code for syntax and style errors."
 	@echo "      flakecheck     - Run flake8 on the source code."
-	@echo "      flakepluscheck - Run flakeplus on the source code."
 	@echo "readme               - Regenerate README.rst file."
 	@echo "contrib              - Regenerate CONTRIBUTING.rst file"
 	@echo "clean-dist --------- - Clean all distribution build artifacts."
@@ -100,13 +97,7 @@ flakecheck:
 flakediag:
 	-$(MAKE) flakecheck
 
-flakepluscheck:
-	$(FLAKEPLUS) --$(FLAKEPLUSTARGET) "$(PROJ)" "$(TESTDIR)"
-
-flakeplusdiag:
-	-$(MAKE) flakepluscheck
-
-flakes: flakediag flakeplusdiag
+flakes: flakediag
 
 clean-readme:
 	-rm -f $(README)
@@ -177,36 +168,36 @@ authorcheck:
 
 .PHONY: docker-build
 docker-build:
-	@docker-compose -f docker/docker-compose.yml build
+	@docker compose -f docker/docker-compose.yml build
 
 .PHONY: docker-lint
 docker-lint:
-	@docker-compose -f docker/docker-compose.yml run --rm -w /home/developer/celery celery tox -e lint
+	@docker compose -f docker/docker-compose.yml run --rm -w /home/developer/celery celery tox -e lint
 
 .PHONY: docker-unit-tests
 docker-unit-tests:
-	@docker-compose -f docker/docker-compose.yml run --rm -w /home/developer/celery celery tox -e 3.12-unit -- $(filter-out $@,$(MAKECMDGOALS))
+	@docker compose -f docker/docker-compose.yml run --rm -w /home/developer/celery celery tox -e 3.12-unit -- $(filter-out $@,$(MAKECMDGOALS))
 
 # Integration tests are not fully supported when running in a docker container yet so we allow them to
 # gracefully fail until fully supported.
 # TODO: Add documentation (in help command) when fully supported.
 .PHONY: docker-integration-tests
 docker-integration-tests:
-	@docker-compose -f docker/docker-compose.yml run --rm -w /home/developer/celery celery tox -e 3.12-integration-docker -- --maxfail=1000
+	@docker compose -f docker/docker-compose.yml run --rm -w /home/developer/celery celery tox -e 3.12-integration-docker -- --maxfail=1000
 
 .PHONY: docker-bash
 docker-bash:
-	@docker-compose -f docker/docker-compose.yml run --rm -w /home/developer/celery celery bash
+	@docker compose -f docker/docker-compose.yml run --rm -w /home/developer/celery celery bash
 
 .PHONY: docker-docs
 docker-docs:
-	@docker-compose -f docker/docker-compose.yml up --build -d docs
+	@docker compose -f docker/docker-compose.yml up --build -d docs
 	@echo "Waiting 60 seconds for docs service to build the documentation inside the container..."
-	@timeout 60 sh -c 'until docker logs $$(docker-compose -f docker/docker-compose.yml ps -q docs) 2>&1 | \
+	@timeout 60 sh -c 'until docker logs $$(docker compose -f docker/docker-compose.yml ps -q docs) 2>&1 | \
 		grep "build succeeded"; do sleep 1; done' || \
 		(echo "Error! - run manually: docker compose -f ./docker/docker-compose.yml up --build docs"; \
-	docker-compose -f docker/docker-compose.yml logs --tail=50 docs; false)
-	@docker-compose -f docker/docker-compose.yml down
+	docker compose -f docker/docker-compose.yml logs --tail=50 docs; false)
+	@docker compose -f docker/docker-compose.yml down
 
 .PHONY: catch-all
 %: catch-all

@@ -48,9 +48,7 @@ class test_chain:
             identity.si("end").set(queue=queue),
         )
         res = sig.apply_async()
-        celery_setup.worker.assert_log_does_not_exist(
-            "ValueError: task_id must not be empty. Got None instead."
-        )
+        celery_setup.worker.assert_log_does_not_exist("ValueError: task_id must not be empty. Got None instead.")
 
         with pytest.raises(ExpectedException):
             res.get(timeout=RESULT_TIMEOUT)
@@ -61,9 +59,7 @@ class test_chain:
         group1 = group(redis_echo.si("a", redis_key), redis_echo.si("a", redis_key))
         group2 = group(redis_echo.si("a", redis_key), redis_echo.si("a", redis_key))
         chord1 = group1 | group2
-        chain1 = chain(
-            chord1, (redis_echo.si("a", redis_key) | redis_echo.si("b", redis_key).set(queue=queue))
-        )
+        chain1 = chain(chord1, (redis_echo.si("a", redis_key) | redis_echo.si("b", redis_key).set(queue=queue)))
         chain1.apply_async(queue=queue).get(timeout=RESULT_TIMEOUT)
         redis_connection = get_redis_connection()
         actual = redis_connection.lrange(redis_key, 0, -1)

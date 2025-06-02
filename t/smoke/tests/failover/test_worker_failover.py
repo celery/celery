@@ -7,8 +7,6 @@ from celery import Celery
 from t.smoke.conftest import SuiteOperations, WorkerKill
 from t.smoke.tasks import long_running_task
 
-MB = 1024 * 1024
-
 
 @pytest.fixture
 def celery_worker_cluster(
@@ -26,8 +24,6 @@ class test_worker_failover(SuiteOperations):
     def default_worker_app(self, default_worker_app: Celery) -> Celery:
         app = default_worker_app
         app.conf.task_acks_late = True
-        if app.conf.broker_url.startswith("redis"):
-            app.conf.broker_transport_options = {"visibility_timeout": 1}
         return app
 
     def test_killing_first_worker(
