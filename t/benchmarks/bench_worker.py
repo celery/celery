@@ -28,8 +28,8 @@ app.conf.update(
             'exchange': 'bench.worker',
             'routing_key': 'bench.worker',
             'no_ack': True,
-            'exchange_durable': False,
-            'queue_durable': False,
+            'exchange_durable': True,
+            'queue_durable': True,
             'auto_delete': True,
         }
     },
