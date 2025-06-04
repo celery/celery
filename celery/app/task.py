@@ -792,10 +792,10 @@ class Task:
 
         parent_task = _task_stack.top
         if parent_task:
-            parent_id = parent_task.request.id
-            root_id = parent_task.request.root_id
+            parent_id = parent_task.request.id or ""
+            root_id = parent_task.request.root_id or task_id
         else:
-            parent_id  = None
+            parent_id = None
             root_id = task_id
 
         # Make sure we get the task instance, not class.
