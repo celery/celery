@@ -790,12 +790,22 @@ class Task:
         if throw is None:
             throw = app.conf.task_eager_propagates
 
+        parent_task = _task_stack.top
+        if parent_task:
+            parent_id = parent_task.request.id
+            root_id = parent_task.request.root_id
+        else:
+            parent_id  = None
+            root_id = task_id
+
         # Make sure we get the task instance, not class.
         task = app._tasks[self.name]
 
         request = {
             'id': task_id,
             'task': self.name,
+            'parent_id': parent_id,
+            'root_id': root_id,
             'retries': retries,
             'is_eager': True,
             'logfile': logfile,
