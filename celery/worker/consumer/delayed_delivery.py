@@ -3,7 +3,6 @@
 This module provides the DelayedDelivery bootstep which handles setup and configuration
 of native delayed delivery functionality when using quorum queues.
 """
-import os
 from typing import Iterator, List, Optional, Set, Union, ValuesView
 
 from kombu import Connection, Queue
@@ -178,8 +177,6 @@ class DelayedDelivery(bootsteps.StartStopStep):
             intervals_count: Number of retry attempts so far
         """
         interval = next(interval_range)
-        if os.getenv("CELERY_TEST_MODE", 0) == "1":
-            interval = min(interval, 0.1)
         logger.warning(
             "Retrying delayed delivery setup (attempt %d/%d) after error: %s. Sleeping %.2f seconds.",
             intervals_count + 1, MAX_RETRIES, str(exc), interval
