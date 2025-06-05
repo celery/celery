@@ -205,7 +205,7 @@ class test_DelayedDelivery:
                         )
                 except ConnectionRefusedError:
                     pass  # expected
-    
+
     def test_retry_over_time_with_float_return(self):
         delayed_delivery = DelayedDelivery(parent=Mock())
         return_values = []
