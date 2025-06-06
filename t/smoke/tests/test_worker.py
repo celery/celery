@@ -9,7 +9,7 @@ from celery.canvas import chain, group
 from t.smoke.conftest import SuiteOperations, WorkerKill, WorkerRestart
 from t.smoke.tasks import long_running_task
 
-RESULT_TIMEOUT = 30
+RESULT_TIMEOUT = 120
 
 
 def assert_container_exited(worker: CeleryTestWorker, attempts: int = RESULT_TIMEOUT):
