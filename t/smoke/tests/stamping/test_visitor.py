@@ -2,12 +2,10 @@ from __future__ import annotations
 
 import json
 
-from pytest_celery import CeleryTestWorker
+from pytest_celery import RESULT_TIMEOUT, CeleryTestWorker
 
 from celery.canvas import StampingVisitor
 from t.integration.tasks import add, identity
-
-CUSTOM_TIMEOUT = 120
 
 
 class test_stamping_visitor:
@@ -35,7 +33,7 @@ class test_stamping_visitor:
             .set(queue=dev_worker.worker_queue)
         )
         stamped_task.stamp(visitor=CustomStampingVisitor())
-        stamped_task.delay().get(timeout=CUSTOM_TIMEOUT)
+        stamped_task.delay().get(timeout=RESULT_TIMEOUT)
         assert dev_worker.logs().count(
             json.dumps(on_signature_stamp, indent=4, sort_keys=True)
         )
