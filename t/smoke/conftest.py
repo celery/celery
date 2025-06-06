@@ -119,6 +119,12 @@ def default_worker_app(default_worker_app: Celery) -> Celery:
     return app
 
 
+@pytest.fixture(autouse=True)
+def patch_celery_on_retry():
+    with patch("celery.worker.consumer.delayed_delivery.DelayedDelivery._on_retry") as mock_retry:
+        mock_retry.side_effect = lambda exc, interval_range, intervals_count: 0.01
+        yield
+
 # Override the default redis broker container from pytest-celery
 default_redis_broker = container(
     image="{default_redis_broker_image}",
