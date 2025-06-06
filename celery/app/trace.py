@@ -327,7 +327,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     fun = task if task_has_custom(task, '__call__') else task.run
 
     loader = loader or app.loader
-    ignore_result = task.ignore_result
+    ignore_result = task.request.ignore_result
     track_started = task.track_started
     track_started = not eager and (task.track_started and not ignore_result)
 
