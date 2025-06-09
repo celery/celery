@@ -469,7 +469,6 @@ Here're some examples:
 
 .. warning::
 
-    :ref:`guide-routing`.
     With more complex workflows, the default JSON serializer has been observed to
     drastically inflate message sizes due to recursive references, leading to
     resource issues. The *pickle* serializer is not vulnerable to this and may
