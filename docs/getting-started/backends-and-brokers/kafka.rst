@@ -31,18 +31,20 @@ For celeryconfig.py:
     sasl_username = os.environ["SASL_USERNAME"]
     sasl_password = os.environ["SASL_PASSWORD"]
     broker_url = f"confluentkafka://{sasl_username}:{sasl_password}@broker:9094"
-    kafka_admin_config = {
-        "sasl.username": sasl_username,
-        "sasl.password": sasl_password,
-    }
-    kafka_common_config = {
-        "sasl.username": sasl_username,
-        "sasl.password": sasl_password,
-        "security.protocol": "SASL_SSL",
-        "sasl.mechanism": "SCRAM-SHA-512",
-        "bootstrap_servers": "broker:9094",
-    }
-
+    broker_transport_options.update({
+        "kafka_admin_config": {
+            "sasl.username": sasl_username,
+            "sasl.password": sasl_password,
+        },
+        "kafka_common_config": {
+            "sasl.username": sasl_username,
+            "sasl.password": sasl_password,
+            "security.protocol": "SASL_SSL",
+            "sasl.mechanism": "SCRAM-SHA-512",
+            "bootstrap_servers": "broker:9094",
+        }
+    })
+    
 Please note that "allow_create_topics" is needed if the topic does not exist
 yet but is not necessary otherwise.
 

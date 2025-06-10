@@ -173,6 +173,7 @@ class CeleryCommand(click.Command):
 
 class DaemonOption(CeleryOption):
     """Common daemonization option"""
+
     def __init__(self, *args, **kwargs):
         super().__init__(args,
                          help_group=kwargs.pop("help_group", "Daemonization Options"),
@@ -181,7 +182,7 @@ class DaemonOption(CeleryOption):
 
     def daemon_setting(self, ctx: Context, opt: CeleryOption, value: Any) -> Any:
         """
-        Try to fetch deamonization option from applications settings.
+        Try to fetch daemonization option from applications settings.
         Use the daemon command name as prefix (eg. `worker` -> `worker_pidfile`)
         """
         return value or getattr(ctx.obj.app.conf, f"{ctx.command.name}_{self.name}", None)

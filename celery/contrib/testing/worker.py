@@ -30,6 +30,10 @@ test_worker_stopped = Signal(
 class TestWorkController(worker.WorkController):
     """Worker that can synchronize on being fully started."""
 
+    # When this class is imported in pytest files, prevent pytest from thinking
+    # this is a test class
+    __test__ = False
+
     logger_queue = None
 
     def __init__(self, *args, **kwargs):
@@ -155,7 +159,7 @@ def _start_worker_thread(app: Celery,
     worker = WorkController(
         app=app,
         concurrency=concurrency,
-        hostname=anon_nodename(),
+        hostname=kwargs.pop("hostname", anon_nodename()),
         pool=pool,
         loglevel=loglevel,
         logfile=logfile,

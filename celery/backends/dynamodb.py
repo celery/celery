@@ -1,5 +1,6 @@
 """AWS DynamoDB result store backend."""
 from collections import namedtuple
+from ipaddress import ip_address
 from time import sleep, time
 from typing import Any, Dict
 
@@ -96,9 +97,9 @@ class DynamoDBBackend(KeyValueStoreBackend):
 
             aws_credentials_given = access_key_given
 
-            if region == 'localhost':
+            if region == 'localhost' or DynamoDBBackend._is_valid_ip(region):
                 # We are using the downloadable, local version of DynamoDB
-                self.endpoint_url = f'http://localhost:{port}'
+                self.endpoint_url = f'http://{region}:{port}'
                 self.aws_region = 'us-east-1'
                 logger.warning(
                     'Using local-only DynamoDB endpoint URL: {}'.format(
@@ -152,6 +153,14 @@ class DynamoDBBackend(KeyValueStoreBackend):
                 access_key_id=aws_access_key_id,
                 secret_access_key=aws_secret_access_key
             )
+
+    @staticmethod
+    def _is_valid_ip(ip):
+        try:
+            ip_address(ip)
+            return True
+        except ValueError:
+            return False
 
     def _get_client(self, access_key_id=None, secret_access_key=None):
         """Get client connection."""
@@ -495,7 +504,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
             "ExpressionAttributeValues": {
                 ":num": {"N": "1"},
             },
-            "ReturnValues" : "UPDATED_NEW",
+            "ReturnValues": "UPDATED_NEW",
         }
 
     def _item_to_dict(self, raw_response):

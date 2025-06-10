@@ -4,13 +4,12 @@ import os
 import re
 
 import setuptools
-import setuptools.command.test
 
 NAME = 'celery'
 
 # -*- Extras -*-
 
-EXTENSIONS = {
+EXTENSIONS = (
     'arangodb',
     'auth',
     'azureblockblob',
@@ -31,6 +30,7 @@ EXTENSIONS = {
     'mongodb',
     'msgpack',
     'pymemcache',
+    'pydantic',
     'pyro',
     'pytest',
     'redis',
@@ -43,7 +43,7 @@ EXTENSIONS = {
     'yaml',
     'zookeeper',
     'zstd'
-}
+)
 
 # -*- Distribution Meta -*-
 
@@ -176,6 +176,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
         "Operating System :: OS Independent"

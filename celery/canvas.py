@@ -974,9 +974,7 @@ class _chain(Signature):
                 tasks, other), app=self._app)
         elif isinstance(other, _chain):
             # chain | chain -> chain
-            # use type(self) for _chain subclasses
-            return type(self)(seq_concat_seq(
-                self.unchain_tasks(), other.unchain_tasks()), app=self._app)
+            return reduce(operator.or_, other.unchain_tasks(), self)
         elif isinstance(other, Signature):
             if self.tasks and isinstance(self.tasks[-1], group):
                 # CHAIN [last item is group] | TASK -> chord
@@ -2308,6 +2306,13 @@ class _chord(Signature):
                 "regarding how errbacks should behave when used with chords.",
                 CPendingDeprecationWarning
             )
+
+        # Edge case for nested chords in the header
+        for task in maybe_list(self.tasks) or []:
+            if isinstance(task, chord):
+                # Let the nested chord do the error linking itself on its
+                # header and body where needed, based on the current configuration
+                task.link_error(errback)
 
         self.body.link_error(errback)
         return errback

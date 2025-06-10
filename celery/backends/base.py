@@ -9,7 +9,7 @@ import sys
 import time
 import warnings
 from collections import namedtuple
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from functools import partial
 from weakref import WeakValueDictionary
 
@@ -460,7 +460,7 @@ class Backend:
                          state, traceback, request, format_date=True,
                          encode=False):
         if state in self.READY_STATES:
-            date_done = datetime.now(timezone.utc)
+            date_done = self.app.now()
             if format_date:
                 date_done = date_done.isoformat()
         else:
@@ -833,9 +833,11 @@ class BaseKeyValueStoreBackend(Backend):
         """
         global_keyprefix = self.app.conf.get('result_backend_transport_options', {}).get("global_keyprefix", None)
         if global_keyprefix:
-            self.task_keyprefix = f"{global_keyprefix}_{self.task_keyprefix}"
-            self.group_keyprefix = f"{global_keyprefix}_{self.group_keyprefix}"
-            self.chord_keyprefix = f"{global_keyprefix}_{self.chord_keyprefix}"
+            if global_keyprefix[-1] not in ':_-.':
+                global_keyprefix += '_'
+            self.task_keyprefix = f"{global_keyprefix}{self.task_keyprefix}"
+            self.group_keyprefix = f"{global_keyprefix}{self.group_keyprefix}"
+            self.chord_keyprefix = f"{global_keyprefix}{self.chord_keyprefix}"
 
     def _encode_prefixes(self):
         self.task_keyprefix = self.key_t(self.task_keyprefix)

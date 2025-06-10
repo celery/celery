@@ -1108,6 +1108,25 @@ class test_chain:
         res = t3.apply_async()  # should not raise
         assert res.get(timeout=TIMEOUT) == 60
 
+    def test_upgrade_to_chord_inside_chains(self, manager):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        redis_key = str(uuid.uuid4())
+        group1 = group(redis_echo.si('a', redis_key), redis_echo.si('a', redis_key))
+        group2 = group(redis_echo.si('a', redis_key), redis_echo.si('a', redis_key))
+        chord1 = group1 | group2
+        chain1 = chain(chord1, (redis_echo.si('a', redis_key) | redis_echo.si('b', redis_key)))
+        chain1.apply_async().get(timeout=TIMEOUT)
+        redis_connection = get_redis_connection()
+        actual = redis_connection.lrange(redis_key, 0, -1)
+        assert actual.count(b'b') == 1
+        redis_connection.delete(redis_key)
+
 
 class test_result_set:
 
@@ -2842,6 +2861,60 @@ class test_chord:
         )
         res_obj = orig_sig.delay()
         assert res_obj.get(timeout=TIMEOUT) == [42]
+
+    def test_nested_chord_header_link_error(self, manager, subtests):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        errback_msg = "errback called"
+        errback_key = "echo_errback"
+        errback_sig = redis_echo.si(errback_msg, redis_key=errback_key)
+
+        body_msg = "chord body called"
+        body_key = "echo_body"
+        body_sig = redis_echo.si(body_msg, redis_key=body_key)
+
+        redis_connection.delete(errback_key, body_key)
+
+        manager.app.conf.task_allow_error_cb_on_chord_header = False
+
+        chord_inner = chord(
+            [identity.si("t1"), fail.si()],
+            identity.si("t2 (body)"),
+        )
+        chord_outer = chord(
+            group(
+                [
+                    identity.si("t3"),
+                    chord_inner,
+                ],
+            ),
+            body_sig,
+        )
+        chord_outer.link_error(errback_sig)
+        chord_outer.delay()
+
+        with subtests.test(msg="Confirm the body was not executed"):
+            with pytest.raises(TimeoutError):
+                # confirm the chord body was not called
+                await_redis_echo((body_msg,), redis_key=body_key, timeout=10)
+            # Double check
+            assert not redis_connection.exists(body_key), "Chord body was called when it should have not"
+
+        with subtests.test(msg="Confirm only one errback was called"):
+            await_redis_echo((errback_msg,), redis_key=errback_key, timeout=10)
+            with pytest.raises(TimeoutError):
+                # Double check
+                await_redis_echo((errback_msg,), redis_key=errback_key, timeout=10)
+
+        # Cleanup
+        redis_connection.delete(errback_key)
 
     def test_enabling_flag_allow_error_cb_on_chord_header(self, manager, subtests):
         """

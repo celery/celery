@@ -37,7 +37,7 @@ base_logger = logger = _get_logger('celery')
 
 
 def set_in_sighandler(value):
-    """Set flag signifiying that we're inside a signal handler."""
+    """Set flag signifying that we're inside a signal handler."""
     global _in_sighandler
     _in_sighandler = value
 

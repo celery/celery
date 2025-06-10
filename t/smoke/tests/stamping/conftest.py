@@ -7,6 +7,13 @@ from t.smoke.workers.dev import SmokeWorkerContainer
 
 
 @pytest.fixture
+def default_rabbitmq_broker_image() -> str:
+    # Celery 4 doesn't support RabbitMQ 4 due to:
+    # https://github.com/celery/kombu/pull/2098
+    return "rabbitmq:3"
+
+
+@pytest.fixture
 def default_worker_tasks(default_worker_tasks: set) -> set:
     from t.smoke.tests.stamping import tasks as stamping_tasks
 

@@ -15,7 +15,8 @@ from celery import states
 from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task, mro_lookup, reset_worker_optimizations,
                               setup_worker_optimizations, trace_task, trace_task_ret)
 from celery.backends.base import BaseDictBackend
-from celery.exceptions import Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError, Terminated, WorkerLostError
+from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError, Terminated,
+                               TimeLimitExceeded, WorkerLostError)
 from celery.signals import task_failure, task_retry, task_revoked
 from celery.worker import request as module
 from celery.worker import strategy
@@ -397,6 +398,45 @@ class test_Request(RequestCase):
                                                                  einfo.exception.exc,
                                                                  request=req._context,
                                                                  store_result=True)
+
+    def test_on_failure_TimeLimitExceeded_acks(self):
+        try:
+            raise TimeLimitExceeded()
+        except TimeLimitExceeded:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.acks_late = True
+        req.task.acks_on_failure_or_timeout = True
+        req.delivery_info['redelivered'] = False
+        req.task.backend = Mock()
+
+        req.on_failure(einfo)
+
+        req.on_ack.assert_called_with(
+            req_logger, req.connection_errors)
+        req.task.backend.mark_as_failure.assert_called_once_with(req.id,
+                                                                 einfo.exception.exc,
+                                                                 request=req._context,
+                                                                 store_result=True)
+
+    def test_on_failure_TimeLimitExceeded_rejects_with_requeue(self):
+        try:
+            raise TimeLimitExceeded()
+        except TimeLimitExceeded:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.acks_late = True
+        req.task.acks_on_failure_or_timeout = False
+        req.delivery_info['redelivered'] = False
+        req.task.backend = Mock()
+
+        req.on_failure(einfo)
+
+        req.on_reject.assert_called_with(
+            req_logger, req.connection_errors, True)
+        req.task.backend.mark_as_failure.assert_not_called()
 
     def test_tzlocal_is_cached(self):
         req = self.get_request(self.add.s(2, 2))

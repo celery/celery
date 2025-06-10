@@ -4,12 +4,12 @@ import pytest
 # to install the celery.ping task that the test lib uses
 import celery.contrib.testing.tasks  # noqa
 from celery import Celery
-from celery.contrib.testing.worker import start_worker
+from celery.contrib.testing.worker import TestWorkController, start_worker
 
 
 class test_worker:
     def setup_method(self):
-        self.app = Celery('celerytest', backend='cache+memory://', broker='memory://',)
+        self.app = Celery('celerytest', backend='cache+memory://', broker='memory://', )
 
         @self.app.task
         def add(x, y):
@@ -45,3 +45,15 @@ class test_worker:
             with start_worker(app=self.app, loglevel=0):
                 result = self.error_task.apply_async()
                 result.get(timeout=5)
+
+    def test_start_worker_with_hostname_config(self):
+        """Make sure a custom hostname can be supplied to the TestWorkController"""
+        test_hostname = 'test_name@test_host'
+        with start_worker(app=self.app, loglevel=0, hostname=test_hostname) as w:
+
+            assert isinstance(w, TestWorkController)
+            assert w.hostname == test_hostname
+
+            result = self.add.s(1, 2).apply_async()
+            val = result.get(timeout=5)
+        assert val == 3

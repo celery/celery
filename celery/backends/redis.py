@@ -359,6 +359,11 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         connparams.update(query)
         return connparams
 
+    def exception_safe_to_retry(self, exc):
+        if isinstance(exc, self.connection_errors):
+            return True
+        return False
+
     @cached_property
     def retry_policy(self):
         retry_policy = super().retry_policy

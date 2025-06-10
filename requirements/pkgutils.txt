@@ -1,7 +1,6 @@
 setuptools>=40.8.0
 wheel>=0.33.1
 flake8>=3.8.3
-flakeplus>=1.1
 flake8-docstrings>=1.7.0
 pydocstyle==6.3.0
 tox>=3.8.4
@@ -9,3 +8,4 @@ sphinx2rst>=1.0
 # Disable cyanide until it's fully updated.
 # cyanide>=1.0.1
 bumpversion==0.6.0
+pyperclip==1.9.0

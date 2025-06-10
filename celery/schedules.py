@@ -4,9 +4,8 @@ from __future__ import annotations
 import re
 from bisect import bisect, bisect_left
 from collections import namedtuple
-from collections.abc import Iterable
 from datetime import datetime, timedelta, tzinfo
-from typing import Any, Callable, Mapping, Sequence
+from typing import Any, Callable, Iterable, Mapping, Sequence, Union
 
 from kombu.utils.objects import cached_property
 
@@ -15,7 +14,7 @@ from celery import Celery
 from . import current_app
 from .utils.collections import AttributeDict
 from .utils.time import (ffwd, humanize_seconds, localize, maybe_make_aware, maybe_timedelta, remaining, timezone,
-                         weekday)
+                         weekday, yearmonth)
 
 __all__ = (
     'ParseException', 'schedule', 'crontab', 'crontab_parser',
@@ -52,7 +51,10 @@ Argument event "{event}" is invalid, must be one of {all_events}.\
 """
 
 
-def cronfield(s: str) -> str:
+Cronspec = Union[int, str, Iterable[int]]
+
+
+def cronfield(s: Cronspec | None) -> Cronspec:
     return '*' if s is None else s
 
 
@@ -300,9 +302,12 @@ class crontab_parser:
             i = int(s)
         except ValueError:
             try:
-                i = weekday(s)
+                i = yearmonth(s)
             except KeyError:
-                raise ValueError(f'Invalid weekday literal {s!r}.')
+                try:
+                    i = weekday(s)
+                except KeyError:
+                    raise ValueError(f'Invalid weekday literal {s!r}.')
 
         max_val = self.min_ + self.max_ - 1
         if i > max_val:
@@ -393,8 +398,8 @@ class crontab(BaseSchedule):
     present in ``month_of_year``.
     """
 
-    def __init__(self, minute: str = '*', hour: str = '*', day_of_week: str = '*',
-                 day_of_month: str = '*', month_of_year: str = '*', **kwargs: Any) -> None:
+    def __init__(self, minute: Cronspec = '*', hour: Cronspec = '*', day_of_week: Cronspec = '*',
+                 day_of_month: Cronspec = '*', month_of_year: Cronspec = '*', **kwargs: Any) -> None:
         self._orig_minute = cronfield(minute)
         self._orig_hour = cronfield(hour)
         self._orig_day_of_week = cronfield(day_of_week)
@@ -408,9 +413,26 @@ class crontab(BaseSchedule):
         self.month_of_year = self._expand_cronspec(month_of_year, 12, 1)
         super().__init__(**kwargs)
 
+    @classmethod
+    def from_string(cls, crontab: str) -> crontab:
+        """
+        Create a Crontab from a cron expression string. For example ``crontab.from_string('* * * * *')``.
+
+        .. code-block:: text
+
+            ┌───────────── minute (0–59)
+            │ ┌───────────── hour (0–23)
+            │ │ ┌───────────── day of the month (1–31)
+            │ │ │ ┌───────────── month (1–12)
+            │ │ │ │ ┌───────────── day of the week (0–6) (Sunday to Saturday)
+            * * * * *
+        """
+        minute, hour, day_of_month, month_of_year, day_of_week = crontab.split(" ")
+        return cls(minute, hour, day_of_week, day_of_month, month_of_year)
+
     @staticmethod
     def _expand_cronspec(
-            cronspec: int | str | Iterable,
+            cronspec: Cronspec,
             max_: int, min_: int = 0) -> set[Any]:
         """Expand cron specification.
 
@@ -535,7 +557,7 @@ class crontab(BaseSchedule):
     def __repr__(self) -> str:
         return CRON_REPR.format(self)
 
-    def __reduce__(self) -> tuple[type, tuple[str, str, str, str, str], Any]:
+    def __reduce__(self) -> tuple[type, tuple[Cronspec, Cronspec, Cronspec, Cronspec, Cronspec], Any]:
         return (self.__class__, (self._orig_minute,
                                  self._orig_hour,
                                  self._orig_day_of_week,

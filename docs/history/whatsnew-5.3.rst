@@ -278,6 +278,7 @@ Dispatched in the parent process, just before new child process is created in th
 It can be used to clean up instances that don't behave well when forking.
 
 .. code-block:: python
+
     @signals.worker_before_create_process.connect
     def clean_channels(**kwargs):
         grpc_singleton.clean_channel()
@@ -303,6 +304,7 @@ To configure the global keyprefix for the Redis result backend, use the
 
 
 .. code-block:: python
+
     app.conf.result_backend_transport_options = {
         'global_keyprefix': 'my_prefix_'
     }

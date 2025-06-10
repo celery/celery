@@ -21,5 +21,4 @@
 git+https://github.com/celery/kombu.git
 
 # SQS dependencies other than boto
-pycurl>=7.43.0.5; sys_platform != 'win32' and platform_python_implementation=="CPython"
-
+urllib3>=1.26.16

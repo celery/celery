@@ -38,6 +38,16 @@ def long_running_task(seconds: float = 1, verbose: bool = False) -> bool:
     return True
 
 
+@shared_task(soft_time_limit=3, time_limit=5)
+def soft_time_limit_lower_than_time_limit():
+    sleep(4)
+
+
+@shared_task(soft_time_limit=5, time_limit=3)
+def soft_time_limit_must_exceed_time_limit():
+    pass
+
+
 @shared_task(bind=True)
 def replace_with_task(self: Task, replace_with: Signature = None):
     if replace_with is None:
