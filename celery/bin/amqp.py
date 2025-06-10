@@ -81,10 +81,10 @@ def amqp(ctx):
                 default=False)
 @click.argument('durable',
                 type=bool,
-                default=False)
+                default=True)
 @click.argument('auto_delete',
                 type=bool,
-                default=False)
+                default=True)
 @click.pass_obj
 def exchange_declare(amqp_context, exchange, type, passive, durable,
                      auto_delete):
@@ -158,7 +158,7 @@ def queue_bind(amqp_context, queue, exchange, routing_key):
                 default=False)
 @click.argument('durable',
                 type=bool,
-                default=False)
+                default=True)
 @click.argument('auto_delete',
                 type=bool,
                 default=False)
