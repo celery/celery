@@ -517,6 +517,13 @@ json -- JSON is supported in many programming languages, is now
         the original one. That is, ``loads(dumps(x)) != x`` if x has non-string
         keys.
 
+    .. warning::
+
+        With more complex workflows created using :ref:`guide-canvas`, the JSON
+        serializer has been observed to drastically inflate message sizes due to
+        recursive references, leading to resource issues. The *pickle* serializer
+        is not vulnerable to this and may therefore be preferable in such cases.
+
 pickle -- If you have no desire to support any language other than
     Python, then using the pickle encoding will gain you the support of
     all built-in Python data types (except class instances), smaller
