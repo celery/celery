@@ -168,7 +168,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
                 )
                 raise
 
-    def _on_retry(self, exc: Exception, interval_range: Iterator[float], intervals_count: int) -> None:
+    def _on_retry(self, exc: Exception, interval_range: Iterator[float], intervals_count: int) -> float:
         """Callback for retry attempts.
 
         Args:
@@ -176,10 +176,12 @@ class DelayedDelivery(bootsteps.StartStopStep):
             interval_range: An iterator which returns the time in seconds to sleep next
             intervals_count: Number of retry attempts so far
         """
+        interval = next(interval_range)
         logger.warning(
-            "Retrying delayed delivery setup (attempt %d/%d) after error: %s",
-            intervals_count + 1, MAX_RETRIES, str(exc)
+            "Retrying delayed delivery setup (attempt %d/%d) after error: %s. Sleeping %.2f seconds.",
+            intervals_count + 1, MAX_RETRIES, str(exc), interval
         )
+        return interval
 
     def _validate_configuration(self, app: Celery) -> None:
         """Validate all required configuration settings.
