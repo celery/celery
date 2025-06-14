@@ -40,8 +40,11 @@ class TaskPool(BasePool):
         )
         self._initialized_event = threading.Event()
 
-    def on_apply(self, *args, **kwargs):
-        self._tasks_queue.sync_q.put(test)
+    def on_apply(self, func, args=(), kwargs=None, **options):
+        if not callable(func):
+            raise ValueError("The 'func' argument must be callable.")
+        job = AsyncJob(func=func, args=args, kwargs=kwargs)
+        self._tasks_queue.sync_q.put(job)
 
     def on_start(self):
         self._guest_event_loop_thread.start()
