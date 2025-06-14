@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 
 import pytest
@@ -137,17 +137,19 @@ class test_Queues:
 
 class test_default_queues:
 
+    @pytest.mark.parametrize('default_queue_type', ['classic', 'quorum'])
     @pytest.mark.parametrize('name,exchange,rkey', [
         ('default', None, None),
         ('default', 'exchange', None),
         ('default', 'exchange', 'routing_key'),
         ('default', None, 'routing_key'),
     ])
-    def test_setting_default_queue(self, name, exchange, rkey):
+    def test_setting_default_queue(self, name, exchange, rkey, default_queue_type):
         self.app.conf.task_queues = {}
         self.app.conf.task_default_exchange = exchange
         self.app.conf.task_default_routing_key = rkey
         self.app.conf.task_default_queue = name
+        self.app.conf.task_default_queue_type = default_queue_type
         assert self.app.amqp.queues.default_exchange.name == exchange or name
         queues = dict(self.app.amqp.queues)
         assert len(queues) == 1
@@ -155,6 +157,11 @@ class test_default_queues:
         assert queue.exchange.name == exchange or name
         assert queue.exchange.type == 'direct'
         assert queue.routing_key == rkey or name
+
+        if default_queue_type == 'quorum':
+            assert queue.queue_arguments == {'x-queue-type': 'quorum'}
+        else:
+            assert queue.queue_arguments is None
 
 
 class test_default_exchange:
@@ -205,15 +212,17 @@ class test_AMQP_proto1:
         self.app.amqp.as_task_v1(uuid(), 'foo', countdown=30, expires=40)
 
 
-class test_AMQP:
-
-    def setup(self):
+class test_AMQP_Base:
+    def setup_method(self):
         self.simple_message = self.app.amqp.as_task_v2(
             uuid(), 'foo', create_sent_event=True,
         )
         self.simple_message_no_sent_event = self.app.amqp.as_task_v2(
             uuid(), 'foo', create_sent_event=False,
         )
+
+
+class test_AMQP(test_AMQP_Base):
 
     def test_kwargs_must_be_mapping(self):
         with pytest.raises(TypeError):
@@ -316,6 +325,22 @@ class test_AMQP:
         )
         assert prod.publish.call_args[1]['delivery_mode'] == 33
 
+    def test_send_task_message__with_timeout(self):
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event,
+            timeout=1,
+        )
+        assert prod.publish.call_args[1]['timeout'] == 1
+
+    def test_send_task_message__with_confirm_timeout(self):
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event,
+            confirm_timeout=1,
+        )
+        assert prod.publish.call_args[1]['confirm_timeout'] == 1
+
     def test_send_task_message__with_receivers(self):
         mocked_receiver = ((Mock(), Mock()), Mock())
         with patch('celery.signals.task_sent.receivers', [mocked_receiver]):
@@ -336,7 +361,7 @@ class test_AMQP:
         assert router != router_was
 
 
-class test_as_task_v2:
+class test_as_task_v2(test_AMQP_Base):
 
     def test_raises_if_args_is_not_tuple(self):
         with pytest.raises(TypeError):
@@ -347,14 +372,14 @@ class test_as_task_v2:
             self.app.amqp.as_task_v2(uuid(), 'foo', kwargs=(1, 2, 3))
 
     def test_countdown_to_eta(self):
-        now = to_utc(datetime.utcnow()).astimezone(self.app.timezone)
+        now = to_utc(datetime.now(timezone.utc)).astimezone(self.app.timezone)
         m = self.app.amqp.as_task_v2(
             uuid(), 'foo', countdown=10, now=now,
         )
         assert m.headers['eta'] == (now + timedelta(seconds=10)).isoformat()
 
     def test_expires_to_datetime(self):
-        now = to_utc(datetime.utcnow()).astimezone(self.app.timezone)
+        now = to_utc(datetime.now(timezone.utc)).astimezone(self.app.timezone)
         m = self.app.amqp.as_task_v2(
             uuid(), 'foo', expires=30, now=now,
         )
@@ -362,14 +387,33 @@ class test_as_task_v2:
             now + timedelta(seconds=30)).isoformat()
 
     def test_eta_to_datetime(self):
-        eta = datetime.utcnow()
+        eta = datetime.now(timezone.utc)
         m = self.app.amqp.as_task_v2(
             uuid(), 'foo', eta=eta,
         )
         assert m.headers['eta'] == eta.isoformat()
 
-    def test_callbacks_errbacks_chord(self):
+    def test_compression(self):
+        self.app.conf.task_compression = 'gzip'
 
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event,
+            compression=None
+        )
+        assert prod.publish.call_args[1]['compression'] == 'gzip'
+
+    def test_compression_override(self):
+        self.app.conf.task_compression = 'gzip'
+
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event,
+            compression='bz2'
+        )
+        assert prod.publish.call_args[1]['compression'] == 'bz2'
+
+    def test_callbacks_errbacks_chord(self):
         @self.app.task
         def t(i):
             pass

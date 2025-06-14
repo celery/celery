@@ -109,6 +109,7 @@ class test_BasePool:
 
     def test_interface_info(self):
         assert BasePool(10).info == {
+            'implementation': 'celery.concurrency.base:BasePool',
             'max-concurrency': 10,
         }
 
@@ -166,6 +167,7 @@ class test_get_available_pool_names:
             'gevent',
             'solo',
             'processes',
+            'custom',
         )
         with patch.dict(sys.modules, {'concurrent.futures': None}):
             importlib.reload(concurrency)
@@ -179,6 +181,7 @@ class test_get_available_pool_names:
             'solo',
             'processes',
             'threads',
+            'custom',
         )
         with patch.dict(sys.modules, {'concurrent.futures': Mock()}):
             importlib.reload(concurrency)

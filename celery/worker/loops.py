@@ -119,8 +119,10 @@ def synloop(obj, connection, consumer, blueprint, hub, qos,
 
     obj.on_ready()
 
-    while blueprint.state == RUN and obj.connection:
-        state.maybe_shutdown()
+    def _loop_cycle():
+        """
+        Perform one iteration of the blocking event loop.
+        """
         if heartbeat_error[0] is not None:
             raise heartbeat_error[0]
         if qos.prev != qos.value:
@@ -133,3 +135,9 @@ def synloop(obj, connection, consumer, blueprint, hub, qos,
         except OSError:
             if blueprint.state == RUN:
                 raise
+
+    while blueprint.state == RUN and obj.connection:
+        try:
+            state.maybe_shutdown()
+        finally:
+            _loop_cycle()

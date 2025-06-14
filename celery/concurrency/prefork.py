@@ -155,7 +155,8 @@ class TaskPool(BasePool):
 
     def _get_info(self):
         write_stats = getattr(self._pool, 'human_write_stats', None)
-        return {
+        info = super()._get_info()
+        info.update({
             'max-concurrency': self.limit,
             'processes': [p.pid for p in self._pool._pool],
             'max-tasks-per-child': self._pool._maxtasksperchild or 'N/A',
@@ -163,7 +164,8 @@ class TaskPool(BasePool):
             'timeouts': (self._pool.soft_timeout or 0,
                          self._pool.timeout or 0),
             'writes': write_stats() if write_stats is not None else 'N/A',
-        }
+        })
+        return info
 
     @property
     def num_processes(self):

@@ -11,13 +11,13 @@ from celery.local import Proxy
 
 try:
     from greenlet import getcurrent as get_ident
-except ImportError:  # pragma: no cover
+except ImportError:
     try:
         from _thread import get_ident
     except ImportError:
         try:
             from thread import get_ident
-        except ImportError:  # pragma: no cover
+        except ImportError:
             try:
                 from _dummy_thread import get_ident
             except ImportError:

@@ -222,7 +222,7 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
 
     def on_out_of_band_result(self, task_id, message):
         # Callback called when a reply for a task is received,
-        # but we have no idea what do do with it.
+        # but we have no idea what to do with it.
         # Since the result is not pending, we put it in a separate
         # buffer: probably it will become pending later.
         if self.result_consumer:

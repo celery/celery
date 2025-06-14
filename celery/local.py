@@ -148,12 +148,6 @@ class Proxy:
     def __delitem__(self, key):
         del self._get_current_object()[key]
 
-    def __setslice__(self, i, j, seq):
-        self._get_current_object()[i:j] = seq
-
-    def __delslice__(self, i, j):
-        del self._get_current_object()[i:j]
-
     def __setattr__(self, name, value):
         setattr(self._get_current_object(), name, value)
 
@@ -198,9 +192,6 @@ class Proxy:
 
     def __contains__(self, i):
         return i in self._get_current_object()
-
-    def __getslice__(self, i, j):
-        return self._get_current_object()[i:j]
 
     def __add__(self, other):
         return self._get_current_object() + other
@@ -406,7 +397,6 @@ COMPAT_MODULES = {
         },
         'log': {
             'get_default_logger': 'log.get_default_logger',
-            'setup_logger': 'log.setup_logger',
             'setup_logging_subsystem': 'log.setup_logging_subsystem',
             'redirect_stdouts_to_logger': 'log.redirect_stdouts_to_logger',
         },
@@ -506,12 +496,11 @@ def create_module(name, attrs, cls_attrs=None, pkg=None,
 
 def recreate_module(name, compat_modules=None, by_module=None, direct=None,
                     base=LazyModule, **attrs):
-    compat_modules = compat_modules or ()
+    compat_modules = compat_modules or COMPAT_MODULES.get(name, ())
     by_module = by_module or {}
     direct = direct or {}
     old_module = sys.modules[name]
     origins = get_origins(by_module)
-    compat_modules = COMPAT_MODULES.get(name, ())
 
     _all = tuple(set(reduce(
         operator.add,
@@ -527,6 +516,7 @@ def recreate_module(name, compat_modules=None, by_module=None, direct=None,
     new_module.__dict__.update({
         mod: get_compat_module(new_module, mod) for mod in compat_modules
     })
+    new_module.__spec__ = old_module.__spec__
     return old_module, new_module
 
 

@@ -15,8 +15,7 @@ from decimal import Decimal
 from itertools import chain
 from numbers import Number
 from pprint import _recursion
-from typing import (Any, AnyStr, Callable, Dict, Iterator, List, Sequence,
-                    Set, Tuple)
+from typing import Any, AnyStr, Callable, Dict, Iterator, List, Optional, Sequence, Set, Tuple  # noqa
 
 from .text import truncate
 
@@ -42,7 +41,7 @@ _quoted = namedtuple('_quoted', ('value',))
 #: Recursion protection.
 _dirty = namedtuple('_dirty', ('objid',))
 
-#: Types that are repsented as chars.
+#: Types that are represented as chars.
 chars_t = (bytes, str)
 
 #: Types that are regarded as safe to call repr on.
@@ -136,14 +135,7 @@ def _repr_binary_bytes(val):
         return val.decode('utf-8')
     except UnicodeDecodeError:
         # possibly not unicode, but binary data so format as hex.
-        try:
-            ashex = val.hex
-        except AttributeError:  # pragma: no cover
-            # Python 3.4
-            return val.decode('utf-8', errors='replace')
-        else:
-            # Python 3.5+
-            return ashex()
+        return val.hex()
 
 
 def _format_chars(val, maxlen):
@@ -202,9 +194,12 @@ def _reprseq(val, lit_start, lit_end, builtin_type, chainer):
     )
 
 
-def reprstream(stack, seen=None, maxlevels=3, level=0, isinstance=isinstance):
+def reprstream(stack: deque,
+               seen: Optional[Set] = None,
+               maxlevels: int = 3,
+               level: int = 0,
+               isinstance: Callable = isinstance) -> Iterator[Any]:
     """Streaming repr, yielding tokens."""
-    # type: (deque, Set, int, int, Callable) -> Iterator[Any]
     seen = seen or set()
     append = stack.append
     popleft = stack.popleft

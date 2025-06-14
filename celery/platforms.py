@@ -13,7 +13,6 @@ import platform as _platform
 import signal as _signal
 import sys
 import warnings
-from collections import namedtuple
 from contextlib import contextmanager
 
 from billiard.compat import close_open_fds, get_fdmax
@@ -27,7 +26,7 @@ from .local import try_import
 
 try:
     from billiard.process import current_process
-except ImportError:  # pragma: no cover
+except ImportError:
     current_process = None
 
 _setproctitle = try_import('setproctitle')
@@ -64,8 +63,6 @@ PIDFILE_MODE = ((os.R_OK | os.W_OK) << 6) | ((os.R_OK) << 3) | (os.R_OK)
 
 PIDLOCKED = """ERROR: Pidfile ({0}) already exists.
 Seems we're already running? (pid: {1})"""
-
-_range = namedtuple('_range', ('start', 'stop'))
 
 ROOT_DISALLOWED = """\
 Running a worker with superuser privileges when the
@@ -186,7 +183,7 @@ class Pidfile:
     def remove_if_stale(self):
         """Remove the lock if the process isn't running.
 
-        I.e. process does not respons to signal.
+        I.e. process does not respond to signal.
         """
         try:
             pid = self.read_pid()
@@ -197,10 +194,14 @@ class Pidfile:
         if not pid:
             self.remove()
             return True
+        if pid == os.getpid():
+            # this can be common in k8s pod with PID of 1 - don't kill
+            self.remove()
+            return True
 
         try:
             os.kill(pid, 0)
-        except os.error as exc:
+        except OSError as exc:
             if exc.errno == errno.ESRCH or exc.errno == errno.EPERM:
                 print('Stale pidfile exists - Removing it.', file=sys.stderr)
                 self.remove()

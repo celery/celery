@@ -13,8 +13,7 @@ from kombu.utils.encoding import from_utf8
 from kombu.utils.objects import cached_property
 
 from celery.platforms import IS_WINDOWS, Pidfile, signal_name
-from celery.utils.nodenames import (gethostname, host_format, node_format,
-                                    nodesplit)
+from celery.utils.nodenames import gethostname, host_format, node_format, nodesplit
 from celery.utils.saferepr import saferepr
 
 __all__ = ('Cluster', 'Node')

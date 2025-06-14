@@ -2,8 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from celery.utils.threads import (Local, LocalManager, _FastLocalStack,
-                                  _LocalStack, bgThread)
+from celery.utils.threads import Local, LocalManager, _FastLocalStack, _LocalStack, bgThread
 from t.unit import conftest
 
 
