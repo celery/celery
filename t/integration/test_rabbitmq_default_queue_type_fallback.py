@@ -1,8 +1,10 @@
 # t/integration/test_rabbitmq_default_queue_type_fallback.py
 
-import pytest
 import time
+
+import pytest
 from kombu import Connection
+
 from celery import Celery
 
 
