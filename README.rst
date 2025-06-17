@@ -40,6 +40,7 @@ Blacksmith
 .. image:: ./docs/images/blacksmith-logo-white-on-black.svg
    :alt: Blacksmith logo
    :width: 240px
+   :target: https://blacksmith.sh/
 
 `Official Announcement <https://www.linkedin.com/pulse/celery-now-powered-blacksmith-tomer-nosrati-ew68e/?trackingId=DWHH49WqS2iOW8Jf5N1kEg%3D%3D>`_
 
@@ -49,6 +50,7 @@ Upstash
 .. image:: https://upstash.com/logo/upstash-dark-bg.svg
    :alt: Upstash logo
    :width: 200px
+   :target: https://upstash.com/?code=celery
 
 `Upstash <http://upstash.com/?code=celery>`_ offers a serverless Redis database service,
 providing a seamless solution for Celery users looking to leverage
@@ -62,6 +64,7 @@ Dragonfly
 .. image:: https://github.com/celery/celery/raw/main/docs/images/dragonfly.svg
    :alt: Dragonfly logo
    :width: 150px
+   :target: https://www.dragonflydb.io/
 
 `Dragonfly <https://www.dragonflydb.io/>`_ is a drop-in Redis replacement that cuts costs and boosts performance.
 Designed to fully utilize the power of modern cloud hardware and deliver on the data demands of modern applications,
