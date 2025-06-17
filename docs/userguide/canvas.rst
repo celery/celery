@@ -467,6 +467,13 @@ Here're some examples:
         8
 
 
+.. warning::
+
+    With more complex workflows, the default JSON serializer has been observed to
+    drastically inflate message sizes due to recursive references, leading to
+    resource issues. The *pickle* serializer is not vulnerable to this and may
+    therefore be preferable in such cases.
+
 .. _canvas-chain:
 
 Chains
@@ -1259,19 +1266,25 @@ the external monitoring system, etc.
         def on_signature(self, sig, **headers) -> dict:
             return {'monitoring_id': uuid4().hex}
 
-.. note::
+.. important::
 
-    The ``stamped_headers`` key returned in ``on_signature`` (or any other visitor method) is used to
-    specify the headers that will be stamped on the task. If this key is not specified, the stamping
-    visitor will assume all keys in the returned dictionary are the stamped headers from the visitor.
+    The ``stamped_headers`` key in the dictionary returned by ``on_signature()`` (or any other visitor method) is **optional**:
 
-    This means the following code block will result in the same behavior as the previous example.
+    .. code-block:: python
 
-.. code-block:: python
-
-    class MonitoringIdStampingVisitor(StampingVisitor):
+        # Approach 1: Without stamped_headers - ALL keys are treated as stamps
         def on_signature(self, sig, **headers) -> dict:
-            return {'monitoring_id': uuid4().hex, 'stamped_headers': ['monitoring_id']}
+            return {'monitoring_id': uuid4().hex}  # monitoring_id becomes a stamp
+
+        # Approach 2: With stamped_headers - ONLY listed keys are stamps
+        def on_signature(self, sig, **headers) -> dict:
+            return {
+                'monitoring_id': uuid4().hex,      # This will be a stamp
+                'other_data': 'value',             # This will NOT be a stamp
+                'stamped_headers': ['monitoring_id']  # Only monitoring_id is stamped
+            }
+
+    If the ``stamped_headers`` key is not specified, the stamping visitor will assume all keys in the returned dictionary are stamped headers.
 
 Next, let's see how to use the ``MonitoringIdStampingVisitor`` example stamping visitor.
 
@@ -1302,18 +1315,24 @@ visitor will be applied to the callback as well.
 
     The callback must be linked to the signature before stamping.
 
-For example, let's examine the following custom stamping visitor.
+For example, let's examine the following custom stamping visitor that uses the
+implicit approach where all returned dictionary keys are automatically treated as
+stamped headers without explicitly specifying `stamped_headers`.
 
 .. code-block:: python
 
     class CustomStampingVisitor(StampingVisitor):
         def on_signature(self, sig, **headers) -> dict:
+            # 'header' will automatically be treated as a stamped header
+            # without needing to specify 'stamped_headers': ['header']
             return {'header': 'value'}
 
         def on_callback(self, callback, **header) -> dict:
+            # 'on_callback' will automatically be treated as a stamped header
             return {'on_callback': True}
 
         def on_errback(self, errback, **header) -> dict:
+            # 'on_errback' will automatically be treated as a stamped header
             return {'on_errback': True}
 
 This custom stamping visitor will stamp the signature, callbacks, and errbacks with ``{'header': 'value'}``

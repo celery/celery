@@ -3,7 +3,7 @@
 This module provides the DelayedDelivery bootstep which handles setup and configuration
 of native delayed delivery functionality when using quorum queues.
 """
-from typing import Optional, Set, ValuesView
+from typing import Iterator, List, Optional, Set, Union, ValuesView
 
 from kombu import Connection, Queue
 from kombu.transport.native_delayed_delivery import (bind_queue_to_native_delayed_delivery_exchange,
@@ -168,17 +168,20 @@ class DelayedDelivery(bootsteps.StartStopStep):
                 )
                 raise
 
-    def _on_retry(self, exc: Exception, intervals_count: int) -> None:
+    def _on_retry(self, exc: Exception, interval_range: Iterator[float], intervals_count: int) -> float:
         """Callback for retry attempts.
 
         Args:
             exc: The exception that triggered the retry
+            interval_range: An iterator which returns the time in seconds to sleep next
             intervals_count: Number of retry attempts so far
         """
+        interval = next(interval_range)
         logger.warning(
-            "Retrying delayed delivery setup (attempt %d/%d) after error: %s",
-            intervals_count + 1, MAX_RETRIES, str(exc)
+            "Retrying delayed delivery setup (attempt %d/%d) after error: %s. Sleeping %.2f seconds.",
+            intervals_count + 1, MAX_RETRIES, str(exc), interval
         )
+        return interval
 
     def _validate_configuration(self, app: Celery) -> None:
         """Validate all required configuration settings.
@@ -195,22 +198,33 @@ class DelayedDelivery(bootsteps.StartStopStep):
         # Validate queue type
         self._validate_queue_type(app.conf.broker_native_delayed_delivery_queue_type)
 
-    def _validate_broker_urls(self, urls: str) -> Set[str]:
+    def _validate_broker_urls(self, broker_urls: Union[str, List[str]]) -> Set[str]:
         """Validate and split broker URLs.
 
         Args:
-            urls: Semicolon-separated broker URLs
+            broker_urls: Broker URLs, either as a semicolon-separated string
+                  or as a list of strings
 
         Returns:
             Set of valid broker URLs
 
         Raises:
-            ValueError: If no valid broker URLs are found
+            ValueError: If no valid broker URLs are found or if invalid URLs are provided
         """
-        if not urls or not urls.strip():
+        if not broker_urls:
             raise ValueError("broker_url configuration is empty")
 
-        valid_urls = {url.strip() for url in urls.split(';') if url.strip()}
+        if isinstance(broker_urls, str):
+            brokers = broker_urls.split(";")
+        elif isinstance(broker_urls, list):
+            if not all(isinstance(url, str) for url in broker_urls):
+                raise ValueError("All broker URLs must be strings")
+            brokers = broker_urls
+        else:
+            raise ValueError(f"broker_url must be a string or list, got {broker_urls!r}")
+
+        valid_urls = {url for url in brokers}
+
         if not valid_urls:
             raise ValueError("No valid broker URLs found in configuration")
 
