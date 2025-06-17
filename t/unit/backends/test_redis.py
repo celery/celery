@@ -9,6 +9,11 @@ from unittest.mock import ANY, Mock, call, patch
 
 import pytest
 
+try:
+    from redis import exceptions
+except ImportError:
+    exceptions = None
+
 from celery import signature, states, uuid
 from celery.canvas import Signature
 from celery.contrib.testing.mocks import ContextMock
@@ -693,6 +698,14 @@ class test_RedisBackend(basetest_RedisBackend):
             fn, b.connection_errors, (), {}, ANY,
             max_retries=2, interval_start=0, interval_step=0.01, interval_max=1
         )
+
+    def test_exception_safe_to_retry(self):
+        b = self.Backend(app=self.app)
+        assert not b.exception_safe_to_retry(Exception("failed"))
+        assert not b.exception_safe_to_retry(BaseException("failed"))
+        assert not b.exception_safe_to_retry(exceptions.RedisError("redis error"))
+        assert b.exception_safe_to_retry(exceptions.ConnectionError("service unavailable"))
+        assert b.exception_safe_to_retry(exceptions.TimeoutError("timeout"))
 
     def test_incr(self):
         self.b.client = Mock(name='client')

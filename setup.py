@@ -9,7 +9,7 @@ NAME = 'celery'
 
 # -*- Extras -*-
 
-EXTENSIONS = {
+EXTENSIONS = (
     'arangodb',
     'auth',
     'azureblockblob',
@@ -43,7 +43,7 @@ EXTENSIONS = {
     'yaml',
     'zookeeper',
     'zstd'
-}
+)
 
 # -*- Distribution Meta -*-
 
