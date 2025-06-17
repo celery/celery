@@ -113,7 +113,9 @@ def test_chord_unlock_stress_routing_to_quorum_queue(app, add, summarize):
         time.sleep(3)  # Give chord_unlock time to be dispatched
 
         # Start worker that consumes both header and callback queues
-        with start_worker(app, queues=["header_queue", "chord_callback_queue"], loglevel="info", perform_ping_check=False):
+        with start_worker(
+            app, queues=["header_queue", "chord_callback_queue"], loglevel="info", perform_ping_check=False
+        ):
             # Poll all chord results
             with ThreadPoolExecutor(max_workers=10) as executor:
                 futures = {
