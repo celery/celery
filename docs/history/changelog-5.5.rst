@@ -8,6 +8,54 @@ This document contains change notes for bugfix & new features
 in the main branch & 5.5.x series, please see :ref:`whatsnew-5.5` for
 an overview of what's new in Celery 5.5.
 
+.. _version-5.5.3:
+
+5.5.3
+=====
+
+:release-date: 2025-06-01
+:release-by: Tomer Nosrati
+
+What's Changed
+~~~~~~~~~~~~~~
+
+- make the tests run on python 3.13 for gcs backend (#9677)
+- Added DeepWiki to README (#9683)
+- Limit redis to <=v5.2.1 to match Kombu (#9693)
+- Use EX_OK instead of literal zero (#9684)
+- Make wheel metadata reproducible (#9687)
+- let celery install from kombu dependencies for better align (#9696)
+- Fix stamping documentation to clarify stamped_headers key is optional in visitor methods (#9697)
+- Support apply_async without queue argument on quorum queues (#9686)
+- Updated rabbitmq doc about using quorum queues with task routes (#9707)
+- Add: Dumper Unit Test (#9711)
+- Add unit test for event.group_from (#9709)
+- refactor: add beat_cron_starting_deadline documentation warning (#9712)
+- fix: resolve issue #9569 by supporting distinct broker transport options for workers (#9695)
+- Fixes issue with retry callback arguments in DelayedDelivery (#9708)
+- get_exchange-unit-test (#9710)
+- ISSUE-9704: Update documentation of result_expires, filesystem backend is supported (#9716)
+- update to blacksmith ubuntu 24.04 (#9717)
+- Added unit tests for celery.utils.iso8601 (#9725)
+- Update introduction.rst docs (#9728)
+- Prepare for release: v5.5.3 (#9732)
+
+.. _version-5.5.2:
+
+5.5.2
+=====
+
+:release-date: 2025-04-25
+:release-by: Tomer Nosrati
+
+What's Changed
+~~~~~~~~~~~~~~
+
+- Fix calculating remaining time across DST changes (#9669)
+- Remove `setup_logger` from COMPAT_MODULES (#9668)
+- Fix mongodb bullet and fix github links in contributions section (#9672)
+- Prepare for release: v5.5.2 (#9675)
+
 .. _version-5.5.1:
 
 5.5.1
@@ -632,7 +680,7 @@ Relevant Issues:
 
 Quorum Queues Initial Support
 -----------------------------
-This release introduces the initial support for Quorum Queues with Celery. 
+This release introduces the initial support for Quorum Queues with Celery.
 
 See new configuration options for more details:
 
@@ -795,7 +843,7 @@ Relevant Issues:
 
 Quorum Queues Initial Support
 -----------------------------
-This release introduces the initial support for Quorum Queues with Celery. 
+This release introduces the initial support for Quorum Queues with Celery.
 
 See new configuration options for more details:
 
@@ -925,7 +973,7 @@ Relevant Issues:
 
 Quorum Queues Initial Support
 -----------------------------
-This release introduces the initial support for Quorum Queues with Celery. 
+This release introduces the initial support for Quorum Queues with Celery.
 
 See new configuration options for more details:
 
@@ -1073,7 +1121,7 @@ Relevant Issues:
 
 Quorum Queues Initial Support
 -----------------------------
-This release introduces the initial support for Quorum Queues with Celery. 
+This release introduces the initial support for Quorum Queues with Celery.
 
 See new configuration options for more details:
 
@@ -1204,7 +1252,7 @@ Relevant Issues:
 
 Quorum Queues Initial Support
 -----------------------------
-This release introduces the initial support for Quorum Queues with Celery. 
+This release introduces the initial support for Quorum Queues with Celery.
 
 See new configuration options for more details:
 
@@ -1317,7 +1365,7 @@ Relevant Issues:
 
 Quorum Queues Initial Support
 -----------------------------
-This release introduces the initial support for Quorum Queues with Celery. 
+This release introduces the initial support for Quorum Queues with Celery.
 
 See new configuration options for more details:
 
@@ -1453,7 +1501,7 @@ Relevant Issues:
 
 Quorum Queues Initial Support
 -----------------------------
-This release introduces the initial support for Quorum Queues with Celery. 
+This release introduces the initial support for Quorum Queues with Celery.
 
 See new configuration options for more details:
 
@@ -1536,7 +1584,7 @@ Relevant Issues:
 
 Quorum Queues Initial Support
 -----------------------------
-This release introduces the initial support for Quorum Queues with Celery. 
+This release introduces the initial support for Quorum Queues with Celery.
 
 See new configuration options for more details:
 
@@ -1595,7 +1643,7 @@ Relevant Issues:
 
 Quorum Queues Initial Support
 -----------------------------
-This release introduces the initial support for Quorum Queues with Celery. 
+This release introduces the initial support for Quorum Queues with Celery.
 
 See new configuration options for more details:
 
