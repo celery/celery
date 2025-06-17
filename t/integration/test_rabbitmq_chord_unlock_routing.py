@@ -1,10 +1,12 @@
-import pytest
 import time
-from celery import Celery, chord
-from kombu import Queue, Exchange
-from celery.result import allow_join_result
-from celery.contrib.testing.worker import start_worker
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
+import pytest
+from kombu import Exchange, Queue
+
+from celery import Celery, chord
+from celery.contrib.testing.worker import start_worker
+from celery.result import allow_join_result
 
 
 @pytest.fixture(scope="function")
