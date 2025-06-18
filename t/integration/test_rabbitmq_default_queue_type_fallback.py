@@ -1,6 +1,5 @@
-# t/integration/test_rabbitmq_default_queue_type_fallback.py
-
 import time
+import socket
 
 import pytest
 from kombu import Connection
@@ -8,12 +7,26 @@ from kombu import Connection
 from celery import Celery
 
 
+def wait_for_port(host, port, timeout=30.0):
+    """Wait for a port to become available."""
+    start = time.time()
+    while time.time() - start < timeout:
+        try:
+            with socket.create_connection((host, port), timeout=2):
+                return
+        except OSError:
+            time.sleep(1)
+    raise TimeoutError(f"Timed out waiting for {host}:{port}")
+
+
 @pytest.fixture()
-def app():
+def app(rabbitmq):
+    wait_for_port(rabbitmq.hostname, rabbitmq.ports[5672])
+
     return Celery(
         "test_app",
-        broker="pyamqp://guest:guest@rabbit:5672//",
-        backend="redis://redis:6379/0",
+        broker=f"pyamqp://guest:guest@{rabbitmq.hostname}:{rabbitmq.ports[5672]}/",
+        backend="redis://redis:6379/0",  # You may also want to make redis dynamic if needed
         include=["t.integration.test_rabbitmq_default_queue_type_fallback"],
     )
 
@@ -54,9 +67,9 @@ def test_fallback_to_classic_queue_and_direct_exchange(app, ping):
                 try:
                     response = channel.exchange_declare("celery", passive=True)
                     exchange_type = response['type']
-                    break  # Exit loop if successful
+                    break
                 except Exception:
-                    time.sleep(0.5)  # Wait briefly before retrying
+                    time.sleep(0.5)
 
         if exchange_type is None:
             exchange_type = "error: Exchange declaration timed out"
