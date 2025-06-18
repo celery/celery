@@ -1,14 +1,15 @@
 import io
+import logging
 import sys
 import threading
 import time
-import logging
 
 import pytest
+from kombu import Exchange, Queue
+from kombu.common import maybe_declare as original_maybe_declare
+
 from celery import Celery
 from celery.contrib.testing.worker import start_worker
-from kombu import Queue, Exchange
-from kombu.common import maybe_declare as original_maybe_declare
 from celery.worker.consumer import tasks as consumer_tasks
 
 
