@@ -43,16 +43,23 @@ def test_fallback_to_classic_queue_and_direct_exchange(app, ping):
     with start_worker(app, queues=["celery"], loglevel="info", perform_ping_check=False):
         result = ping.delay()
         assert result.get(timeout=10) == "pong"
-        time.sleep(2)
 
-        with Connection(app.conf.broker_url) as conn:
-            channel = conn.channel()
-            try:
-                response = channel.exchange_declare("celery", passive=True)
-                exchange_type = response['type']
-            except Exception as exc:
-                exchange_type = f"error: {exc}"
+        exchange_type = None
+        start_time = time.time()
+        timeout = 10  # Maximum wait time in seconds
 
+        while time.time() - start_time < timeout:
+            with Connection(app.conf.broker_url) as conn:
+                channel = conn.channel()
+                try:
+                    response = channel.exchange_declare("celery", passive=True)
+                    exchange_type = response['type']
+                    break  # Exit loop if successful
+                except Exception:
+                    time.sleep(0.5)  # Wait briefly before retrying
+
+        if exchange_type is None:
+            exchange_type = "error: Exchange declaration timed out"
         assert exchange_type != "direct", (
             "Expected Celery to honor task_default_exchange_type, "
             f"but got: {exchange_type}"
