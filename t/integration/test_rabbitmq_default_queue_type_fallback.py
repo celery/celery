@@ -1,5 +1,5 @@
-import time
 import socket
+import time
 
 import pytest
 from kombu import Connection
