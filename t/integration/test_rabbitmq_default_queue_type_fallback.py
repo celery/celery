@@ -12,7 +12,7 @@ from celery import Celery
 def app():
     return Celery(
         "test_app",
-        broker="amqp://guest:guest@rabbit:5672//",
+        broker="pyamqp://guest:guest@rabbit:5672//",
         backend="redis://redis:6379/0",
         include=["t.integration.test_rabbitmq_default_queue_type_fallback"],
     )
