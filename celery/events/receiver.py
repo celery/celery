@@ -52,7 +52,7 @@ class EventReceiver(ConsumerMixin):
             '.'.join([self.queue_prefix, self.node_id]),
             exchange=self.exchange,
             routing_key=self.routing_key,
-            auto_delete=True, durable=False,
+            auto_delete=True, durable=True,
             message_ttl=queue_ttl,
             expires=queue_expires,
         )
