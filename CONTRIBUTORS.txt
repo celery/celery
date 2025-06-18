@@ -304,3 +304,4 @@ Nikos Atlas, 2024/08/26
 Marc Bresson, 2024/09/02
 Narasux, 2024/09/09
 Colin Watson, 2025/03/01
+Lucas Infante, 2025/05/15
