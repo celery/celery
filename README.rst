@@ -44,6 +44,19 @@ Blacksmith
 
 `Official Announcement <https://www.linkedin.com/pulse/celery-now-powered-blacksmith-tomer-nosrati-ew68e/?trackingId=DWHH49WqS2iOW8Jf5N1kEg%3D%3D>`_
 
+CloudAMQP
+---------
+
+.. image:: ./docs/images/cloudamqp-logo-lightbg.svg
+   :alt: CloudAMQP logo
+   :width: 240px
+   :target: https://www.cloudamqp.com/
+
+`CloudAMQP <https://www.cloudamqp.com/>`_ is a industry leading RabbitMQ as a service provider.
+If you need highly available message queues, a perfect choice would be to use CloudAMQP.
+With 24,000+ running instances, CloudAMQP is the leading hosting provider of RabbitMQ,
+with customers all over the world.
+
 Upstash
 -------
 
