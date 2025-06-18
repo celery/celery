@@ -71,6 +71,19 @@ def summarize(app):
     return summarize
 
 
+def wait_for_chord_unlock(chord_result, timeout=10, interval=0.2):
+    """
+    Waits for chord_unlock to be enqueued by polling the `parent` of the chord result.
+    This confirms that the header group finished and the callback is ready to run.
+    """
+    start = time.monotonic()
+    while time.monotonic() - start < timeout:
+        if chord_result.parent and chord_result.parent.ready():
+            return True
+        time.sleep(interval)
+    return False
+
+
 @pytest.mark.amqp
 @pytest.mark.timeout(90)
 @pytest.mark.xfail(reason="chord_unlock routed to quorum/topic queue intermittently fails under load")
@@ -110,7 +123,10 @@ def test_chord_unlock_stress_routing_to_quorum_queue(app, add, summarize):
             result = chord(header)(callback)
             pending_results.append((i, result))
 
-        time.sleep(3)  # Give chord_unlock time to be dispatched
+        # Wait for chord_unlock tasks to be dispatched before starting the worker
+        for i, result in pending_results:
+            if not wait_for_chord_unlock(result):
+                print(f"[!] Chord {i}: unlock was not dispatched within timeout")
 
         # Start worker that consumes both header and callback queues
         with start_worker(
