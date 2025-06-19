@@ -144,9 +144,9 @@ def test_chord_unlock_stress_routing_to_quorum_queue(app, add, summarize):
                     i, result = futures[future]
                     try:
                         res = future.result()
-                        print(f"[✓] Chord {i} completed: {res}")
+                        logging.info(f"[✓] Chord {i} completed: {res}")
                     except Exception as exc:
-                        print(f"[✗] Chord {i} failed or stuck: {exc}")
+                        logging.error(f"[✗] Chord {i} failed or stuck: {exc}")
                         failures.append((i, exc))
 
     # Assertion: all chords should have completed
