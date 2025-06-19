@@ -105,8 +105,11 @@ def test_simulated_rabbitmq_cluster_visibility_race(monkeypatch, caplog):
     errors = []
     worker_count = 3
     stderr_capture = io.StringIO()
-    original_stderr = sys.stderr
-    sys.stderr = stderr_capture  # Capture stderr globally for all threads
+    log_handler = logging.StreamHandler(stderr_capture)
+    log_handler.setLevel(logging.ERROR)
+    test_logger = logging.getLogger("test_logger")
+    test_logger.setLevel(logging.ERROR)
+    test_logger.addHandler(log_handler)
 
     def start_worker_instance(worker_id):
         try:
