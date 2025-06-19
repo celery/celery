@@ -63,13 +63,13 @@ def test_fallback_to_classic_queue_and_direct_exchange(app, ping):
 
         while time.time() - start_time < timeout:
             with Connection(app.conf.broker_url) as conn:
-                channel = conn.channel()
-                try:
-                    response = channel.exchange_declare("celery", passive=True)
-                    exchange_type = response['type']
-                    break
-                except Exception:
-                    time.sleep(0.5)
+                with conn.channel() as channel:
+                    try:
+                        response = channel.exchange_declare("celery", passive=True)
+                        exchange_type = response['type']
+                        break
+                    except Exception:
+                        time.sleep(0.5)
 
         if exchange_type is None:
             exchange_type = "error: Exchange declaration timed out"
