@@ -25,9 +25,9 @@ def delete_queue_amqp(queue_name, broker_url):
             channel = conn.channel()
             queue = Queue(name=queue_name)
             queue(channel).delete(if_unused=False, if_empty=False)
-            print(f"Queue '{queue_name}' deleted.")
+            logging.info(f"Queue '{queue_name}' deleted.")
         except Exception as exc:
-            print(f"Queue deletion failed (may not exist yet): {exc}")
+            logging.error(f"Queue deletion failed (may not exist yet): {exc}")
 
 
 @pytest.mark.amqp
