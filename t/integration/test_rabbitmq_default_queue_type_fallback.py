@@ -20,13 +20,19 @@ def wait_for_port(host, port, timeout=30.0):
 
 
 @pytest.fixture()
-def app(rabbitmq):
+def redis():
+    """Fixture to provide Redis hostname and port."""
+    return {"hostname": "redis", "port": 6379}
+
+@pytest.fixture()
+def app(rabbitmq, redis):
     wait_for_port(rabbitmq.hostname, rabbitmq.ports[5672])
+    wait_for_port(redis["hostname"], redis["port"])
 
     return Celery(
         "test_app",
         broker=f"pyamqp://guest:guest@{rabbitmq.hostname}:{rabbitmq.ports[5672]}/",
-        backend="redis://redis:6379/0",  # You may also want to make redis dynamic if needed
+        backend=f"redis://{redis['hostname']}:{redis['port']}/0",
         include=["t.integration.test_rabbitmq_default_queue_type_fallback"],
     )
 
