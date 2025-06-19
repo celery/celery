@@ -1781,7 +1781,71 @@ class test_chord(CanvasCase):
         assert errback == err
         for header_task in c.tasks:
             assert header_task.options['link_error'] == [err.clone(immutable=True)]
-        assert c.body.options['link_error'] == [err]
+        assert c.body.options["link_error"] == [err]
+
+    def test_chord_run_uses_group_id_for_body_freeze(self):
+        """Test that chord.run() uses group_id instead of task_id for body.freeze().
+
+        This is the unit test for the fix to issue #8578. The chord body should be
+        frozen with the group_id to ensure proper error handling and task identification.
+        """
+        # Create a chord with header group and body chain
+        header = group([self.add.s(1, 1), self.add.s(2, 2)])
+        body = chain(self.add.s(10, 10), self.add.s(20, 20))
+        test_chord = chord(header, body)
+
+        # Set up specific IDs for testing
+        chord_task_id = "test-chord-id"
+        group_task_id = "test-group-id"
+        header.options["task_id"] = group_task_id
+
+        # Use patch to spy on body.freeze method
+        with patch.object(body, "freeze", wraps=body.freeze) as mock_freeze:
+            test_chord.run(header, body, (), task_id=chord_task_id)
+
+            # Assert that body.freeze was called with group_id, not chord task_id
+            mock_freeze.assert_called_once_with(group_task_id, root_id=None)
+
+    def test_chord_run_generates_group_id_when_none_provided(self):
+        """Test that chord.run() generates a group_id when header has no task_id."""
+        # Create a chord with header group and body chain (no task_id set)
+        header = group([self.add.s(1, 1), self.add.s(2, 2)])
+        body = chain(self.add.s(10, 10), self.add.s(20, 20))
+        test_chord = chord(header, body)
+
+        # Use patch to spy on body.freeze method
+        with patch.object(body, "freeze", wraps=body.freeze) as mock_freeze:
+            test_chord.run(header, body, (), task_id=None)
+
+            # Assert that body.freeze was called with a generated UUID (not None)
+            mock_freeze.assert_called_once()
+            args, kwargs = mock_freeze.call_args
+            task_id = args[0] if args else kwargs.get("_id")
+            assert task_id is not None
+
+    def test_chord_run_body_freeze_prevents_task_id_empty_error(self):
+        """Test that proper body.freeze() call prevents 'task_id must not be empty' error.
+
+        This test ensures that when chord body is frozen with group_id, subsequent error
+        handling won't encounter the "task_id must not be empty" error.
+        """
+        # Create chord components
+        header = group([self.add.s(1, 1), self.add.s(2, 2)])
+        body = chain(self.add.s(10, 10), self.add.s(20, 20))
+        test_chord = chord(header, body)
+
+        # Set a group task ID
+        group_id = "test-group-12345"
+        header.options["task_id"] = group_id
+
+        # Run the chord
+        result = test_chord.run(header, body, (), task_id="external-task-id")
+
+        # Verify the body now has a proper ID set (should be the group_id)
+        # This is checked by accessing the body's ID after freezing
+        assert body.id == group_id
+        assert result.id is not None
+        assert result.parent is not None
 
 
 class test_maybe_signature(CanvasCase):

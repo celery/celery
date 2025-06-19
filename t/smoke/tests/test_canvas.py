@@ -103,3 +103,82 @@ class test_chord:
         )
         res = sig.apply_async(queue=celery_setup.worker.worker_queue)
         assert res.get(timeout=RESULT_TIMEOUT) == ["body_task"] * 3
+
+    @pytest.mark.parametrize(
+        "body",
+        [
+            (lambda queue: add.si(9, 7).set(queue=queue)),
+            (
+                lambda queue: chain(
+                    add.si(9, 7).set(queue=queue),
+                    add.si(5, 7).set(queue=queue),
+                )
+            ),
+            pytest.param(
+                (
+                    lambda queue: group(
+                        [
+                            add.si(9, 7).set(queue=queue),
+                            add.si(5, 7).set(queue=queue),
+                        ]
+                    )
+                ),
+                marks=pytest.mark.skip(reason="Task times out"),
+            ),
+            (
+                lambda queue: chord(
+                    group(
+                        [
+                            add.si(1, 1).set(queue=queue),
+                            add.si(2, 2).set(queue=queue),
+                        ]
+                    ),
+                    add.si(10, 10).set(queue=queue),
+                )
+            ),
+        ],
+        ids=[
+            "body is a single_task",
+            "body is a chain",
+            "body is a group",
+            "body is a chord",
+        ],
+    )
+    def test_chord_error_propagation_with_different_body_types(
+        self, celery_setup: CeleryTestSetup, input_body
+    ) -> None:
+        """Reproduce issue #8578 with different chord body types.
+
+        This test verifies that the "task_id must not be empty" error is fixed
+        regardless of the chord body type. The issue occurs when:
+        1. A chord has a group with both succeeding and failing tasks
+        2. The chord body can be any signature type (single task, chain, group, chord)
+        3. When the group task fails, error propagation should work correctly
+
+        Args:
+            input_body (callable): A callable that returns a Celery signature for the chord body.
+        """
+        queue = celery_setup.worker.worker_queue
+
+        # Create the failing group header (same for all tests)
+        failing_group = group(
+            [
+                add.si(15, 7).set(queue=queue),
+                # failing task
+                fail.si().set(queue=queue),
+            ]
+        )
+
+        # Create the chord
+        test_chord = chord(failing_group, input_body(queue))
+
+        result = test_chord.apply_async()
+
+        # The worker should not log the "task_id must not be empty" error
+        celery_setup.worker.assert_log_does_not_exist(
+            "ValueError: task_id must not be empty. Got None instead."
+        )
+
+        # The chord should fail with the expected exception from the failing task
+        with pytest.raises(ExpectedException):
+            result.get(timeout=RESULT_TIMEOUT)

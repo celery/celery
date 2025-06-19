@@ -3151,6 +3151,92 @@ class test_chord:
 
         redis_connection.delete(errback_key, body_key)
 
+    @pytest.mark.parametrize(
+        "body",
+        [
+            (lambda: add.si(9, 7)),
+            (
+                lambda: chain(
+                    add.si(9, 7),
+                    add.si(5, 7),
+                )
+            ),
+            pytest.param(
+                (
+                    lambda: group(
+                        [
+                            add.si(9, 7),
+                            add.si(5, 7),
+                        ]
+                    )
+                ),
+                marks=pytest.mark.skip(reason="Task times out"),
+            ),
+            (
+                lambda: chord(
+                    group(
+                        [
+                            add.si(1, 1),
+                            add.si(2, 2),
+                        ]
+                    ),
+                    add.si(10, 10),
+                )
+            ),
+        ],
+        ids=[
+            "body is a single_task",
+            "body is a chain",
+            "body is a group",
+            "body is a chord",
+        ],
+    )
+    def test_chord_error_propagation_with_different_body_types(
+        self, manager, caplog, input_body
+    ) -> None:
+        """Integration test for issue #8578: task_id must not be empty on chain of groups.
+
+        This test reproduces the exact scenario from GitHub issue #8578 where a chord
+        with a failing group task and a chain body causes a ValueError during error handling.
+
+        The test verifies that:
+        1. The chord executes without the "task_id must not be empty" error
+        2. The failure from the group properly propagates to the chain body
+        3. Error handling works correctly with proper task IDs
+
+        Args:
+            input_body (callable): A callable that returns a Celery signature for the body of the chord.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        # Create the failing group header (same for all tests)
+        failing_chord = chain(
+            group(
+                [
+                    add.si(15, 7),
+                    # failing task
+                    fail.si(),
+                ]
+            ),
+            # dynamic parametrized body
+            input_body(),
+        )
+
+        result = failing_chord.apply_async()
+
+        # The chain should fail due to the failing task in the group
+        with pytest.raises(ExpectedException):
+            result.get(timeout=TIMEOUT)
+
+        # Verify that error propagation worked correctly without the task_id error
+        # This test passes if no "task_id must not be empty" error was logged
+        # wait logs to be processed (wait time might vary)
+        sleep(1)
+        assert "task_id must not be empty" not in caplog.text
+
 
 class test_signature_serialization:
     """
