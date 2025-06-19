@@ -127,7 +127,7 @@ def test_chord_unlock_stress_routing_to_quorum_queue(app, add, summarize):
         # Wait for chord_unlock tasks to be dispatched before starting the worker
         for i, result in pending_results:
             if not wait_for_chord_unlock(result):
-                print(f"[!] Chord {i}: unlock was not dispatched within timeout")
+                logging.warning(f"[!] Chord {i}: unlock was not dispatched within timeout")
 
         # Start worker that consumes both header and callback queues
         with start_worker(
