@@ -24,6 +24,7 @@ def redis():
     """Fixture to provide Redis hostname and port."""
     return {"hostname": "redis", "port": 6379}
 
+
 @pytest.fixture()
 def app(rabbitmq, redis):
     wait_for_port(rabbitmq.hostname, rabbitmq.ports[5672])
