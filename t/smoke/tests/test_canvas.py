@@ -105,7 +105,7 @@ class test_chord:
         assert res.get(timeout=RESULT_TIMEOUT) == ["body_task"] * 3
 
     @pytest.mark.parametrize(
-        "body",
+        "input_body",
         [
             (lambda queue: add.si(9, 7).set(queue=queue)),
             (

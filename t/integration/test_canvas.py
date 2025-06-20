@@ -3152,7 +3152,7 @@ class test_chord:
         redis_connection.delete(errback_key, body_key)
 
     @pytest.mark.parametrize(
-        "body",
+        "input_body",
         [
             (lambda: add.si(9, 7)),
             (
