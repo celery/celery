@@ -1,6 +1,7 @@
 import logging
 import multiprocessing
 import os
+from queue import Empty
 
 import pytest
 from kombu import Exchange, Queue
@@ -49,10 +50,8 @@ def worker_process(worker_id, simulate_fail_flag, result_queue, broker_url, back
     It declares a quorum queue, patches quorum detection to fail once, starts a worker,
     submits a task, and returns the result (or error) through a multiprocessing.Queue.
     """
-    # Setup Celery app in isolated process
     app = Celery(f"worker_{worker_id}", broker=broker_url, backend=backend_url)
 
-    # Define the quorum queue and configure routing
     queue = Queue(
         name=queue_name,
         exchange=Exchange("test_exchange", type="topic"),
@@ -70,7 +69,6 @@ def worker_process(worker_id, simulate_fail_flag, result_queue, broker_url, back
     def dummy_task():
         return f"ok from worker {worker_id}"
 
-    # Patch quorum detection to simulate a visibility race condition on first call
     original_detect = consumer_tasks.detect_quorum_queues
 
     def flaky_detect_quorum_queues(app_arg, driver_type):
@@ -84,6 +82,7 @@ def worker_process(worker_id, simulate_fail_flag, result_queue, broker_url, back
     consumer_tasks.detect_quorum_queues = flaky_detect_quorum_queues
 
     from celery.contrib.testing.worker import start_worker
+
     try:
         with start_worker(
             app,
@@ -94,20 +93,22 @@ def worker_process(worker_id, simulate_fail_flag, result_queue, broker_url, back
             hostname=f"worker_{worker_id}@testhost",
             terminate=True,
         ):
-            # Explicit queue/exchange declaration (safety for race edge cases)
+            logger.info(f"[worker {worker_id}] Worker started")
+
             maybe_declare(queue.exchange, app.pool.acquire(block=True).__enter__())
             maybe_declare(queue, app.pool.acquire(block=True).__enter__())
 
-            # Submit task and wait for result
             result = dummy_task.apply_async(queue=queue_name)
-            result_queue.put(result.get(timeout=30))
+            output = result.get(timeout=30)
+            result_queue.put(output)
     except Exception as exc:
-        result_queue.put(f"Worker {worker_id} failed: {exc}")
+        logger.exception(f"[worker {worker_id}] Exception: {exc}")
+        result_queue.put(f"[worker {worker_id}] failed: {exc}")
 
 
 @pytest.mark.amqp
+@pytest.mark.timeout(180)
 @pytest.mark.xfail(
-    condition=False,
     reason="Expect global QoS errors when quorum queue visibility hasn't propagated.",
     strict=False,
 )
@@ -132,17 +133,12 @@ def test_simulated_rabbitmq_cluster_visibility_race(app_config):
     """
     broker_url, backend_url, queue = app_config
 
-    # Clean state by deleting the queue before the test begins
     delete_queue_amqp(queue.name, broker_url)
 
-    # Shared multiprocessing flag: only one worker simulates quorum detection failure
     simulate_fail_flag = multiprocessing.Value('b', True)
-
-    # Queue to collect results or errors from worker processes
     result_queue = multiprocessing.Queue()
     processes = []
 
-    # Launch 3 isolated workers in parallel to simulate the cluster
     for worker_id in range(3):
         p = multiprocessing.Process(
             target=worker_process,
@@ -151,19 +147,20 @@ def test_simulated_rabbitmq_cluster_visibility_race(app_config):
         processes.append(p)
         p.start()
 
-    # Join all processes with a hard timeout and cleanup if necessary
     for p in processes:
         p.join(timeout=60)
         if p.is_alive():
+            logger.warning(f"Process {p.pid} did not exit in time. Terminating.")
             p.terminate()
             p.join()
 
-    # Collect results from the queue
     results = []
-    while not result_queue.empty():
-        results.append(result_queue.get())
+    while True:
+        try:
+            results.append(result_queue.get_nowait())
+        except Empty:
+            break
 
-    # Debug log for test output review
     logger.info(f"Worker results: {results}")
 
     # Assert: At least one worker should fail (simulated race condition)
