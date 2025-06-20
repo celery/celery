@@ -33,8 +33,13 @@ def app_config():
     Returns broker, backend, and quorum queue definition for test setup.
     Uses environment-provided broker/backend to ensure CI compatibility.
     """
-    broker_url = os.environ["TEST_BROKER"]
-    backend_url = os.environ["TEST_BACKEND"]
+    rabbitmq_user = os.environ.get("RABBITMQ_DEFAULT_USER", "guest")
+    rabbitmq_pass = os.environ.get("RABBITMQ_DEFAULT_PASS", "guest")
+    redis_host = os.environ.get("REDIS_HOST", "localhost")
+    redis_port = os.environ.get("REDIS_PORT", "6379")
+
+    broker_url = os.environ.get("TEST_BROKER", f"pyamqp://{rabbitmq_user}:{rabbitmq_pass}@localhost:5672//")
+    backend_url = os.environ.get("TEST_BACKEND", f"redis://{redis_host}:{redis_port}/0")
     queue = Queue(
         name="race_quorum_queue",
         exchange=Exchange("test_exchange", type="topic"),
