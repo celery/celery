@@ -107,8 +107,9 @@ def worker_process(worker_id, simulate_fail_flag, result_queue, broker_url, back
 
 @pytest.mark.amqp
 @pytest.mark.xfail(
+    condition=False,
     reason="Expect global QoS errors when quorum queue visibility hasn't propagated.",
-    strict=False,  # Use strict=False until failure is deterministic across environments
+    strict=False,
 )
 def test_simulated_rabbitmq_cluster_visibility_race(app_config):
     """
