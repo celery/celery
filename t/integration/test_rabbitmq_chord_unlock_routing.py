@@ -9,6 +9,8 @@ from celery import Celery, chord
 from celery.contrib.testing.worker import start_worker
 from celery.result import allow_join_result
 
+logger = logging.getLogger(__name__)
+
 
 @pytest.fixture(scope="function")
 def app():
@@ -127,7 +129,7 @@ def test_chord_unlock_stress_routing_to_quorum_queue(app, add, summarize):
         # Wait for chord_unlock tasks to be dispatched before starting the worker
         for i, result in pending_results:
             if not wait_for_chord_unlock(result):
-                logging.warning(f"[!] Chord {i}: unlock was not dispatched within timeout")
+                logger.warning(f"[!] Chord {i}: unlock was not dispatched within timeout")
 
         # Start worker that consumes both header and callback queues
         with start_worker(
@@ -144,9 +146,9 @@ def test_chord_unlock_stress_routing_to_quorum_queue(app, add, summarize):
                     i, result = futures[future]
                     try:
                         res = future.result()
-                        logging.info(f"[✓] Chord {i} completed: {res}")
+                        logger.info(f"[✓] Chord {i} completed: {res}")
                     except Exception as exc:
-                        logging.error(f"[✗] Chord {i} failed or stuck: {exc}")
+                        logger.error(f"[✗] Chord {i} failed or stuck: {exc}")
                         failures.append((i, exc))
 
     # Assertion: all chords should have completed
