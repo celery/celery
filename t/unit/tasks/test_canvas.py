@@ -1841,10 +1841,10 @@ class test_chord(CanvasCase):
         # Run the chord
         result = test_chord.run(header, body, (), task_id="external-task-id")
 
-        # Verify the body now has a proper ID set (should be the group_id)
-        # This is checked by accessing the body's ID after freezing
-        assert body.id == group_id
-        assert result.id is not None
+        # Verify the frozen result now has a proper ID set (should be the group_id)
+        # This is checked by accessing the result's ID after freezing
+        assert result.id == group_id
+        assert body.id is not None
         assert result.parent is not None
 
 
