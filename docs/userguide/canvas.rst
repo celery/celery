@@ -244,7 +244,7 @@ arguments:
     >>> add.apply_async((2, 2), link=add.s(8))
 
 As expected this will first launch one task calculating :math:`2 + 2`, then
-another task calculating :math:`8 + 4`.
+another task calculating :math:`4 + 8`.
 
 The Primitives
 ==============
@@ -469,7 +469,6 @@ Here're some examples:
 
 .. warning::
 
-    :ref:`guide-routing`.
     With more complex workflows, the default JSON serializer has been observed to
     drastically inflate message sizes due to recursive references, leading to
     resource issues. The *pickle* serializer is not vulnerable to this and may
