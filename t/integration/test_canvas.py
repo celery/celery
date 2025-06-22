@@ -3194,9 +3194,9 @@ class test_chord:
     def test_chord_error_propagation_with_different_body_types(
         self, manager, caplog, input_body
     ) -> None:
-        """Integration test for issue #8578: task_id must not be empty on chain of groups.
+        """Integration test for issue #9773: task_id must not be empty on chain of groups.
 
-        This test reproduces the exact scenario from GitHub issue #8578 where a chord
+        This test reproduces the exact scenario from GitHub issue #9773 where a chord
         with a failing group task and a chain body causes a ValueError during error handling.
 
         The test verifies that:

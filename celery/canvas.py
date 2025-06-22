@@ -2234,9 +2234,8 @@ class _chord(Signature):
             options.pop('task_id', None)
             body.options.update(options)
 
-        # Use group_id as task_id to ensure the chord body gets the
-        # correct ID for error propagation when group tasks fail
-        bodyres = body.freeze(group_id, root_id=root_id)
+        body_task_id = task_id or uuid()
+        bodyres = body.freeze(body_task_id, group_id=group_id, root_id=root_id)
 
         # Chains should not be passed to the header tasks. See #3771
         options.pop('chain', None)

@@ -147,7 +147,7 @@ class test_chord:
     def test_chord_error_propagation_with_different_body_types(
         self, celery_setup: CeleryTestSetup, input_body
     ) -> None:
-        """Reproduce issue #8578 with different chord body types.
+        """Reproduce issue #9773 with different chord body types.
 
         This test verifies that the "task_id must not be empty" error is fixed
         regardless of the chord body type. The issue occurs when:
