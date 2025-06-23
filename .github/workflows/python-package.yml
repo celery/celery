@@ -128,13 +128,6 @@ jobs:
         - name: Install tox
           run: python -m pip install --upgrade pip 'tox' tox-gh-actions
 
-        - name: Clean pyc/__pycache__ and pytest cache
-          run: |
-            find . -type f -name "*.pyc" -delete
-            find . -type d -name "__pycache__" -exec rm -r {} +
-            python -m pip install pytest
-            python -m pytest --cache-clear || true
-
         - name: Show test_quorum_queue_qos_cluster_simulation.py
           run: |
             echo ">>> test_quorum_queue_qos_cluster_simulation.py:"
