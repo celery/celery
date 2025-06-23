@@ -84,7 +84,7 @@ def run_worker(broker_url, backend_url, queue, simulate_failure, result_queue):
 
 @pytest.mark.amqp
 @pytest.mark.timeout(120)
-# @pytest.mark.xfail(reason="Expect global QoS errors when quorum queue visibility hasn't propagated.", strict=False)
+@pytest.mark.xfail(reason="Expect global QoS errors when quorum queue visibility hasn't propagated.", strict=False)
 def test_simulated_rabbitmq_cluster_visibility_race(app_config):
     broker_url, backend_url, queue = app_config
 
