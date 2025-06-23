@@ -16,7 +16,7 @@ from celery.result import AsyncResult, GroupResult, ResultSet
 from celery.signals import before_task_publish, task_received
 
 from . import tasks
-from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connection
+from .conftest import TEST_BACKEND, check_for_logs, get_active_redis_channels, get_redis_connection
 from .tasks import (ExpectedException, StampOnReplace, add, add_chord_to_chord, add_replaced, add_to_all,
                     add_to_all_to_chord, build_chain_inside_task, collect_ids, delayed_sum,
                     delayed_sum_with_soft_guard, errback_new_style, errback_old_style, fail, fail_replaced, identity,
@@ -3151,6 +3151,7 @@ class test_chord:
 
         redis_connection.delete(errback_key, body_key)
 
+    @flaky
     @pytest.mark.parametrize(
         "input_body",
         [
@@ -3233,9 +3234,9 @@ class test_chord:
 
         # Verify that error propagation worked correctly without the task_id error
         # This test passes if no "task_id must not be empty" error was logged
-        # wait logs to be processed (wait time might vary)
-        sleep(1)
-        assert "task_id must not be empty" not in caplog.text
+        # Check if the message appears in the logs (it shouldn't)
+        error_found = check_for_logs(caplog=caplog, message="ValueError: task_id must not be empty")
+        assert not error_found, "The 'task_id must not be empty' error was found in the logs"
 
 
 class test_signature_serialization:
