@@ -100,8 +100,11 @@ def worker_process(worker_id, simulate_fail_flag, result_queue, broker_url, back
         ):
             logger.info(f"[worker {worker_id}] Worker started")
 
-            maybe_declare(queue.exchange, app.pool.acquire(block=True).__enter__())
-            maybe_declare(queue, app.pool.acquire(block=True).__enter__())
+            with app.broker_connection() as conn:
+                with conn.channel() as channel:
+                    maybe_declare(queue.exchange, channel)
+                    maybe_declare(queue, channel)
+
 
             result = dummy_task.apply_async(queue=queue_name)
             output = result.get(timeout=30)
