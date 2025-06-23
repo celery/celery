@@ -22,7 +22,6 @@ on:
         - "tox.ini"
   workflow_dispatch:
 
-
 permissions:
   contents: read # to fetch code (actions/checkout)
 
@@ -118,6 +117,18 @@ jobs:
                   sudo apt-get update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
 
           -   uses: actions/checkout@v4
+
+          -   name: Clean .pyc files
+              run: |
+                  find . -type f -name "*.pyc" -delete
+                  find . -type d -name "__pycache__" -exec rm -r {} +
+
+          -   name: Clear pytest cache
+              run: pytest --cache-clear || true
+
+          -   name: Print current test file
+              run: cat t/integration/test_quorum_queue_qos_cluster_simulation.py || echo "Test file not found"
+
           -   name: Set up Python ${{ matrix.python-version }}
               uses: useblacksmith/setup-python@v6
               with:
@@ -125,8 +136,10 @@ jobs:
                   allow-prereleases: true
                   cache: 'pip'
                   cache-dependency-path: '**/setup.py'
+
           -   name: Install tox
               run: python -m pip install --upgrade pip 'tox' tox-gh-actions
+
           -   name: >
                   Run tox for
                   "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}"
@@ -136,7 +149,7 @@ jobs:
                 max_attempts: 2
                 retry_wait_seconds: 0
                 command: |
-                  tox --verbose --verbose -e "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -vv
+                  tox -r --verbose --verbose -e "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -vv
 
   Smoke:
     needs:
