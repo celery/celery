@@ -1,7 +1,8 @@
 import logging
 import multiprocessing
 import os
-from queue import Empty
+import time
+from queue import Empty as QueueEmpty
 
 import pytest
 from kombu import Exchange, Queue
@@ -110,7 +111,13 @@ def worker_process(worker_id, simulate_fail_flag, result_queue, broker_url, back
             result_queue.put(output)
     except Exception as exc:
         logger.exception(f"[worker {worker_id}] Exception: {exc}")
-        result_queue.put(f"[worker {worker_id}] failed: {exc}")
+        try:
+            result_queue.put(f"[worker {worker_id}] failed: {exc}")
+        except Exception:
+            pass
+    finally:
+        time.sleep(0.2)
+        result_queue.close()
 
 
 @pytest.mark.amqp
@@ -159,14 +166,16 @@ def test_simulated_rabbitmq_cluster_visibility_race(app_config):
         if p.is_alive():
             logger.warning(f"Process {p.pid} did not exit in time. Terminating.")
             p.terminate()
-            p.join()
+            p.join(timeout=10)
 
     results = []
-    while True:
-        try:
+    try:
+        while True:
             results.append(result_queue.get_nowait())
-        except Empty:
-            break
+    except QueueEmpty:
+        pass
+    finally:
+        result_queue.close()
 
     logger.info(f"Worker results: {results}")
 
