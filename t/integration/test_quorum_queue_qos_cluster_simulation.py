@@ -1,14 +1,14 @@
+import logging
+import multiprocessing
 import os
 import sys
-import logging
+
 import pytest
-import multiprocessing
+from kombu import Connection, Exchange, Queue
+from kombu.common import maybe_declare
 
 from celery import Celery
-from kombu import Queue, Exchange, Connection
-
 from celery.contrib.testing.worker import start_worker
-from kombu.common import maybe_declare
 from celery.worker.consumer import tasks as consumer_tasks
 
 logger = logging.getLogger(__name__)
