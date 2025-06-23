@@ -1,7 +1,10 @@
 import logging
 import multiprocessing
 import os
+<<<<<<< HEAD
 import sys
+=======
+>>>>>>> 35e7531e5 (Fixes linting)
 
 import pytest
 from kombu import Connection, Exchange, Queue
@@ -13,6 +16,7 @@ from celery.worker.consumer import tasks as consumer_tasks
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
+
 
 @pytest.fixture
 def app_config():
@@ -58,7 +62,7 @@ def run_worker(broker_url, backend_url, queue, simulate_failure, result_queue):
 
     @app.task
     def dummy_task():
-        return f"ok from worker"
+        return "ok from worker"
 
     if simulate_failure:
         logger.info(">>> Simulating quorum detection failure <<<")
@@ -69,7 +73,9 @@ def run_worker(broker_url, backend_url, queue, simulate_failure, result_queue):
         consumer_tasks.detect_quorum_queues = fake_detect_quorum_queues
 
     try:
-        with start_worker(app, queues=[queue.name], loglevel="info", perform_ping_check=False, shutdown_timeout=30, terminate=True):
+        with start_worker(
+            app, queues=[queue.name], loglevel="info", perform_ping_check=False, shutdown_timeout=30, terminate=True
+        ):
             with app.broker_connection() as conn:
                 with conn.channel() as channel:
                     maybe_declare(queue.exchange, channel)
@@ -111,5 +117,7 @@ def test_simulated_rabbitmq_cluster_visibility_race(app_config):
             except Exception as e:
                 results.append(f"[worker {i}] no result: {e}")
 
-    expected_error = any("NOT_IMPLEMENTED" in str(r) or "failed" in str(r).lower() or "timeout" in str(r).lower() for r in results)
+    expected_error = any(
+        "NOT_IMPLEMENTED" in str(r) or "failed" in str(r).lower() or "timeout" in str(r).lower() for r in results
+    )
     assert expected_error, f"Expected at least one QoS-related failure. Results:\n{results}"
