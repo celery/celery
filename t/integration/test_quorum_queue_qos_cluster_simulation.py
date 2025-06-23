@@ -105,7 +105,6 @@ def worker_process(worker_id, simulate_fail_flag, result_queue, broker_url, back
                     maybe_declare(queue.exchange, channel)
                     maybe_declare(queue, channel)
 
-
             result = dummy_task.apply_async(queue=queue_name)
             output = result.get(timeout=30)
             result_queue.put(output)
