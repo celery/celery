@@ -133,7 +133,7 @@ jobs:
             find . -type f -name "*.pyc" -delete
             find . -type d -name "__pycache__" -exec rm -r {} +
             python -m pip install pytest
-            pytest --cache-clear || true
+            python -m pytest --cache-clear || true
 
         - name: Show test_quorum_queue_qos_cluster_simulation.py
           run: |

@@ -1,8 +1,10 @@
 import logging
 import multiprocessing
 import os
+import signal
+import sys
 import time
-from queue import Empty as QueueEmpty
+from queue import Empty
 
 import pytest
 from kombu import Exchange, Queue
@@ -15,10 +17,6 @@ logger = logging.getLogger(__name__)
 
 
 def delete_queue_amqp(queue_name, broker_url):
-    """
-    Delete the target queue from RabbitMQ to ensure a clean test run.
-    Ignores errors if the queue does not yet exist.
-    """
     from kombu import Connection
     with Connection(broker_url) as conn:
         try:
@@ -30,10 +28,6 @@ def delete_queue_amqp(queue_name, broker_url):
 
 @pytest.fixture
 def app_config():
-    """
-    Returns broker, backend, and quorum queue definition for test setup.
-    Uses environment-provided broker/backend to ensure CI compatibility.
-    """
     rabbitmq_user = os.environ.get("RABBITMQ_DEFAULT_USER", "guest")
     rabbitmq_pass = os.environ.get("RABBITMQ_DEFAULT_PASS", "guest")
     redis_host = os.environ.get("REDIS_HOST", "localhost")
@@ -41,6 +35,7 @@ def app_config():
 
     broker_url = os.environ.get("TEST_BROKER", f"pyamqp://{rabbitmq_user}:{rabbitmq_pass}@localhost:5672//")
     backend_url = os.environ.get("TEST_BACKEND", f"redis://{redis_host}:{redis_port}/0")
+
     queue = Queue(
         name="race_quorum_queue",
         exchange=Exchange("test_exchange", type="topic"),
@@ -51,11 +46,6 @@ def app_config():
 
 
 def worker_process(worker_id, simulate_fail_flag, result_queue, broker_url, backend_url, queue_name):
-    """
-    Worker process function used in multiprocessing to isolate Celery app context.
-    It declares a quorum queue, patches quorum detection to fail once, starts a worker,
-    submits a task, and returns the result (or error) through a multiprocessing.Queue.
-    """
     app = Celery(f"worker_{worker_id}", broker=broker_url, backend=backend_url)
 
     queue = Queue(
@@ -64,6 +54,7 @@ def worker_process(worker_id, simulate_fail_flag, result_queue, broker_url, back
         routing_key="test.routing.key",
         queue_arguments={"x-queue-type": "quorum"},
     )
+
     app.conf.task_queues = [queue]
     app.conf.worker_detect_quorum_queues = True
     app.conf.task_default_queue = queue_name
@@ -99,8 +90,6 @@ def worker_process(worker_id, simulate_fail_flag, result_queue, broker_url, back
             hostname=f"worker_{worker_id}@testhost",
             terminate=True,
         ):
-            logger.info(f"[worker {worker_id}] Worker started")
-
             with app.broker_connection() as conn:
                 with conn.channel() as channel:
                     maybe_declare(queue.exchange, channel)
@@ -111,12 +100,8 @@ def worker_process(worker_id, simulate_fail_flag, result_queue, broker_url, back
             result_queue.put(output)
     except Exception as exc:
         logger.exception(f"[worker {worker_id}] Exception: {exc}")
-        try:
-            result_queue.put(f"[worker {worker_id}] failed: {exc}")
-        except Exception:
-            pass
+        result_queue.put(f"[worker {worker_id}] failed: {exc}")
     finally:
-        time.sleep(0.2)
         result_queue.close()
 
 
@@ -127,24 +112,6 @@ def worker_process(worker_id, simulate_fail_flag, result_queue, broker_url, back
     strict=False,
 )
 def test_simulated_rabbitmq_cluster_visibility_race(app_config):
-    """
-    Integration test to simulate a RabbitMQ quorum queue visibility race condition
-    across cluster nodes.
-
-    Celery workers use quorum detection logic to avoid premature global QoS setup
-    before queues are fully propagated. This test verifies that such races fail
-    gracefully and are detectable in logs or results.
-
-    Simulates:
-    - Multiple workers racing to attach to a quorum queue
-    - One worker hitting visibility failure due to propagation lag
-    - Captures at least one failure to validate race condition
-
-    Expected:
-    - At least one worker fails to initialize due to global QoS setup on
-      an undeclared quorum queue
-    - Failure is observable via logged error or result payload
-    """
     broker_url, backend_url, queue = app_config
 
     delete_queue_amqp(queue.name, broker_url)
@@ -158,30 +125,26 @@ def test_simulated_rabbitmq_cluster_visibility_race(app_config):
             target=worker_process,
             args=(worker_id, simulate_fail_flag, result_queue, broker_url, backend_url, queue.name),
         )
-        processes.append(p)
         p.start()
+        processes.append(p)
 
+    deadline = time.time() + 70
     for p in processes:
-        p.join(timeout=60)
+        remaining = deadline - time.time()
+        p.join(timeout=remaining)
         if p.is_alive():
-            logger.warning(f"Process {p.pid} did not exit in time. Terminating.")
+            logger.warning(f"[main] Worker {p.pid} hung. Forcing termination.")
             p.terminate()
-            p.join(timeout=10)
+            p.join(timeout=5)
 
     results = []
-    try:
-        while True:
+    while not result_queue.empty():
+        try:
             results.append(result_queue.get_nowait())
-    except QueueEmpty:
-        pass
-    finally:
-        result_queue.close()
+        except Empty:
+            break
 
     logger.info(f"Worker results: {results}")
 
-    # Assert: At least one worker should fail (simulated race condition)
-    expected_error = any(
-        isinstance(r, str) and "failed" in r.lower()
-        for r in results
-    )
-    assert expected_error, f"Expected at least one QoS-related failure. Results: {results}"
+    assert any("failed" in r.lower() for r in results if isinstance(r, str)), \
+        f"Expected at least one QoS-related failure. Results: {results}"
