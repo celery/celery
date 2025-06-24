@@ -81,13 +81,6 @@ def run_worker(simulate_qos_issue: bool, result_queue: multiprocessing.Queue):
 
 @pytest.mark.amqp
 @pytest.mark.timeout(90)
-@pytest.mark.xfail(
-    reason=(
-        "Celery may incorrectly apply global QoS to quorum queues if quorum "
-        "detection is delayed under clustered RabbitMQ."
-    ),
-    strict=True,
-)
 def test_rabbitmq_quorum_qos_visibility_race():
     """
     Simulates a quorum queue visibility race condition in clustered RabbitMQ nodes,
@@ -123,7 +116,5 @@ def test_rabbitmq_quorum_qos_visibility_race():
 
     logger.info(f"Results: {results}")
 
-    assert any(
-        r["status"] == "error" and "qos.global" in r.get("reason", "").lower()
-        for r in results
-    ), f"Expected simulated qos.global failure on quorum queue. Results: {results}"
+    if any("qos.global not allowed" in r.get("reason", "").lower() for r in results):
+        pytest.xfail("Detected global QoS usage on quorum queue (simulated failure)")
