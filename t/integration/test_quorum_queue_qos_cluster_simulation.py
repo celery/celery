@@ -32,7 +32,7 @@ def run_worker(broker_url, backend_url, queue, simulate_failure, result_queue):
     os.environ["TEST_BACKEND"] = backend_url
     os.environ["SIMULATE_FAILURE"] = "1" if simulate_failure else "0"
 
-    # Clean up the queue before binding to it — prevents PreconditionFailed errors on re-declare
+    # Clean up the queue before binding to it — prevents PreconditionFailed errors on redeclare
     try:
         with Connection(broker_url, connect_timeout=5) as conn:
             chan = conn.channel()
