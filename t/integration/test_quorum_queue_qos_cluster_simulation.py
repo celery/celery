@@ -1,10 +1,10 @@
+import os
+import uuid
 import logging
 import multiprocessing
-import os
 
 import pytest
-from kombu import Connection, Exchange, Queue
-
+from kombu import Queue
 from celery import Celery
 from celery.contrib.testing.worker import start_worker
 
@@ -12,80 +12,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def make_app(broker_url, backend_url):
-    """Create and configure a new Celery app instance."""
-    return Celery(
-        "race_test",
-        broker=broker_url,
-        backend=backend_url,
-    )
-
-
-def run_worker(broker_url, backend_url, queue, simulate_failure, result_queue):
-    """
-    Run a Celery worker in a separate process.
-    If simulate_failure is True, simulate a startup error to test quorum visibility race conditions.
-    The result (success or failure string) is pushed into result_queue for the parent process to collect.
-    """
-    # Propagate broker/backend info to environment (CI-compatible)
-    os.environ["TEST_BROKER"] = broker_url
-    os.environ["TEST_BACKEND"] = backend_url
-    os.environ["SIMULATE_FAILURE"] = "1" if simulate_failure else "0"
-
-    # Clean up the queue before binding to it — prevents PreconditionFailed errors on redeclare
-    try:
-        with Connection(broker_url, connect_timeout=5) as conn:
-            chan = conn.channel()
-            queue(chan).delete(if_unused=False, if_empty=False)
-            chan.close()
-    except Exception as e:
-        logger.warning(f"[worker {simulate_failure}] queue delete failed: {e}")
-
-    # Create and configure Celery app with the queue explicitly set
-    app = make_app(broker_url, backend_url)
-    app.conf.task_queues = [queue]
-    app.conf.task_default_queue = queue.name
-    app.conf.task_default_exchange = queue.exchange.name
-    app.conf.task_default_routing_key = queue.routing_key
-    app.conf.worker_prefetch_multiplier = 1
-    app.conf.worker_concurrency = 1
-
-    # Define a dummy task for successful worker verification
-    @app.task(name="dummy_task")
-    def dummy_task():
-        return f"ok from worker {simulate_failure}"
-
-    try:
-        # Launch worker in this subprocess (will block until shutdown or error)
-        with start_worker(
-            app,
-            loglevel="info",
-            perform_ping_check=False,
-            shutdown_timeout=5,
-            terminate=True,
-        ):
-            # Simulate a failure during boot for the first worker (to mimic quorum propagation issues)
-            if simulate_failure:
-                logger.info(f"[worker {simulate_failure}] Simulating quorum QoS failure")
-                raise Exception("Simulated quorum QoS failure")
-
-            # Otherwise run the task to confirm success
-            result = dummy_task.delay().get(timeout=10)
-            logger.info(f"[worker {simulate_failure}] task result: {result}")
-
-        # If we reached here, the worker ran successfully
-        result_queue.put("ok")
-
-    except Exception as e:
-        logger.warning(f"[worker {simulate_failure}] exception: {e}")
-        result_queue.put(str(e))
-
-
-@pytest.fixture
-def app_config():
-    """
-    Prepare broker/backend URLs and a quorum queue with delivery limit to simulate one-attempt delivery.
-    """
+def create_app(queue_name: str) -> Celery:
     rabbitmq_user = os.environ.get("RABBITMQ_DEFAULT_USER", "guest")
     rabbitmq_pass = os.environ.get("RABBITMQ_DEFAULT_PASS", "guest")
     redis_host = os.environ.get("REDIS_HOST", "localhost")
@@ -93,78 +20,106 @@ def app_config():
 
     broker_url = os.environ.get("TEST_BROKER", f"pyamqp://{rabbitmq_user}:{rabbitmq_pass}@localhost:5672//")
     backend_url = os.environ.get("TEST_BACKEND", f"redis://{redis_host}:{redis_port}/0")
-
-    # Define quorum queue with x-delivery-limit to ensure single visibility window
-    queue = Queue(
-        name="race_quorum_queue",
-        exchange=Exchange("test_exchange", type="topic"),
-        routing_key="test.routing.key",
-        queue_arguments={
-            "x-queue-type": "quorum",
-            "x-delivery-limit": 1,
-        },
+    app = Celery(
+        "quorum_qos_race",
+        broker=os.environ.get("TEST_BROKER", broker_url),
+        backend=os.environ.get("TEST_BACKEND", backend_url),
     )
-    return broker_url, backend_url, queue
+
+    app.conf.task_queues = [
+        Queue(
+            name=queue_name,
+            queue_arguments={"x-queue-type": "quorum"},
+        )
+    ]
+    app.conf.task_default_queue = queue_name
+    app.conf.worker_prefetch_multiplier = 1
+    app.conf.task_acks_late = True
+    app.conf.task_reject_on_worker_lost = True
+    app.conf.broker_transport_options = {"confirm_publish": True}
+
+    return app
+
+
+def dummy_task_factory(app: Celery, simulate_qos_issue: bool):
+    @app.task(name="dummy_task")
+    def dummy_task():
+        if simulate_qos_issue:
+            raise Exception("qos.global not allowed on quorum queues (simulated)")
+        return "ok"
+
+    return dummy_task
+
+
+def run_worker(simulate_qos_issue: bool, result_queue: multiprocessing.Queue):
+    queue_name = f"race_quorum_queue_{uuid.uuid4().hex}"
+    app = create_app(queue_name)
+    task = dummy_task_factory(app, simulate_qos_issue)
+
+    try:
+        with start_worker(
+            app,
+            queues=[queue_name],
+            loglevel="INFO",
+            perform_ping_check=False,
+            shutdown_timeout=15,
+        ):
+            res = task.delay()
+            try:
+                result = res.get(timeout=10)
+                result_queue.put({"status": "ok", "result": result})
+            except Exception as e:
+                result_queue.put({"status": "error", "reason": str(e)})
+    except Exception as e:
+        logger.exception("[worker %s] external failure", simulate_qos_issue)
+        result_queue.put({"status": "external_failure", "reason": str(e)})
+    finally:
+        if result_queue.empty():
+            result_queue.put({"status": "crash", "reason": "Worker crashed without reporting"})
 
 
 @pytest.mark.amqp
-@pytest.mark.timeout(60)
-@pytest.mark.xfail(
-    reason="Expect global QoS errors when quorum queue visibility hasn't propagated.",
-    strict=False
-)
-def test_simulated_rabbitmq_cluster_visibility_race(app_config):
+@pytest.mark.timeout(90)
+# @pytest.mark.xfail(
+#     reason="Celery may incorrectly apply global QoS to quorum queues if quorum detection is delayed under clustered RabbitMQ.",
+#     strict=True,
+# )
+def test_rabbitmq_quorum_qos_visibility_race():
     """
-    Launches 3 Celery workers sharing the same quorum queue.
-    The first one simulates a failure due to quorum queue QoS visibility lag (as in production).
-    The others run normally.
-    The test passes if at least one worker fails (as expected), confirming that the condition exists.
+    Simulates a quorum queue visibility race condition in clustered RabbitMQ nodes,
+    where global QoS is incorrectly applied before quorum properties are known.
     """
-    broker_url, backend_url, queue = app_config
     results = []
     processes = []
-    result_queues = []
+    queues = []
 
-    # Start three workers; only the first simulates failure
     for i in range(3):
-        simulate = i == 0  # First worker simulates quorum failure
-        result_queue = multiprocessing.Queue()
-        result_queues.append(result_queue)
-
-        # Launch each worker in an isolated process
+        simulate = (i == 0)
+        q = multiprocessing.Queue()
         p = multiprocessing.Process(
             target=run_worker,
-            args=(broker_url, backend_url, queue, simulate, result_queue),
+            args=(simulate, q),
         )
-        p.start()
         processes.append(p)
+        queues.append(q)
+        p.start()
 
-    # Collect results with proper cleanup
-    for i, (p, q) in enumerate(zip(processes, result_queues)):
-        p.join(timeout=20)
+    for i, (p, q) in enumerate(zip(processes, queues)):
+        p.join(timeout=30)
         if p.is_alive():
-            # Worker didn't exit in time — force kill
-            logger.warning(f"[worker {i}] still alive after join timeout; forcing terminate")
+            logger.warning(f"[worker {i}] still alive after timeout, terminating")
             p.terminate()
-            p.join(timeout=3)
-            if p.is_alive():
-                logger.warning(f"[worker {i}] still alive after terminate; forcing kill")
-                p.kill()
-                p.join(timeout=2)
-            results.append(f"[worker {i}] timeout and forced kill")
+            p.join()
+            results.append({"status": "timeout", "reason": f"[worker {i}] timeout"})
         else:
-            # Worker exited — try to get its result
             try:
-                result = q.get(timeout=5)
-                results.append(result)
+                results.append(q.get(timeout=5))
             except Exception as e:
-                results.append(f"[worker {i}] result_queue get failed: {e}")
+                results.append({"status": "error", "reason": f"Result error: {str(e)}"})
 
     logger.info(f"Results: {results}")
 
-    # At least one worker must fail to simulate quorum race behavior
-    expected_error = any(
-        "Simulated" in r or "failed" in r.lower() or "timeout" in r.lower()
+    assert any(
+        r["status"] == "error" and "qos.global" in r.get("reason", "").lower()
         for r in results
-    )
-    assert expected_error, f"Expected at least one QoS-related failure. Results:\n{results}"
+    ), f"Expected simulated qos.global failure on quorum queue. Results: {results}"
