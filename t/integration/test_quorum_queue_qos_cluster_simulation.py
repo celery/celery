@@ -23,8 +23,8 @@ def create_app(queue_name: str) -> Celery:
     backend_url = os.environ.get("TEST_BACKEND", f"redis://{redis_host}:{redis_port}/0")
     app = Celery(
         "quorum_qos_race",
-        broker=os.environ.get("TEST_BROKER", broker_url),
-        backend=os.environ.get("TEST_BACKEND", backend_url),
+        broker=broker_url,
+        backend=backend_url,
     )
 
     app.conf.task_queues = [
@@ -73,19 +73,21 @@ def run_worker(simulate_qos_issue: bool, result_queue: multiprocessing.Queue):
                 result_queue.put({"status": "error", "reason": str(e)})
     except Exception as e:
         logger.exception("[worker %s] external failure", simulate_qos_issue)
-        result_queue.put({"status": "external_failure", "reason": str(e)})
+        try:
+            result_queue.put({"status": "external_failure", "reason": str(e)})
+        except Exception:
+            pass  # Avoid hang if queue is broken
     finally:
         if result_queue.empty():
-            result_queue.put({"status": "crash", "reason": "Worker crashed without reporting"})
+            try:
+                result_queue.put({"status": "crash", "reason": "Worker crashed without reporting"})
+            except Exception:
+                pass
 
 
 @pytest.mark.amqp
 @pytest.mark.timeout(90)
 def test_rabbitmq_quorum_qos_visibility_race():
-    """
-    Simulates a quorum queue visibility race condition in clustered RabbitMQ nodes,
-    where global QoS is incorrectly applied before quorum properties are known.
-    """
     results = []
     processes = []
     queues = []
@@ -110,11 +112,14 @@ def test_rabbitmq_quorum_qos_visibility_race():
             results.append({"status": "timeout", "reason": f"[worker {i}] timeout"})
         else:
             try:
-                results.append(q.get(timeout=5))
+                if q.empty():
+                    results.append({"status": "crash", "reason": f"[worker {i}] no result in queue"})
+                else:
+                    results.append(q.get(timeout=5))
             except Exception as e:
                 results.append({"status": "error", "reason": f"Result error: {str(e)}"})
 
-    logger.info(f"Results: {results}")
+    logger.warning(f"Final results: {results}")
 
     if any("qos.global not allowed" in r.get("reason", "").lower() for r in results):
         pytest.xfail("Detected global QoS usage on quorum queue (simulated failure)")
