@@ -12,12 +12,18 @@ from celery.contrib.testing.worker import start_worker
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
+# Force safe multiprocessing start method for CI (e.g., GitHub Actions runners)
+try:
+    multiprocessing.set_start_method("spawn", force=True)
+except RuntimeError:
+    # Ignore if already set (e.g., when running multiple tests in same process)
+    pass
+
 
 def create_app(queue_name: str) -> Celery:
     """
     Create and configure a Celery app with a dedicated quorum queue.
     """
-    # Get environment vars or use defaults for local testing
     rabbitmq_user = os.environ.get("RABBITMQ_DEFAULT_USER", "guest")
     rabbitmq_pass = os.environ.get("RABBITMQ_DEFAULT_PASS", "guest")
     redis_host = os.environ.get("REDIS_HOST", "localhost")
@@ -26,10 +32,9 @@ def create_app(queue_name: str) -> Celery:
     broker_url = os.environ.get("TEST_BROKER", f"pyamqp://{rabbitmq_user}:{rabbitmq_pass}@localhost:5672//")
     backend_url = os.environ.get("TEST_BACKEND", f"redis://{redis_host}:{redis_port}/0")
 
-    # Initialize Celery app
     app = Celery("quorum_qos_race", broker=broker_url, backend=backend_url)
 
-    # Define a quorum queue explicitly (simulate real production cluster)
+    # Simulate production-like configuration with quorum and required options
     app.conf.task_queues = [
         Queue(
             name=queue_name,
@@ -113,11 +118,12 @@ def test_rabbitmq_quorum_qos_visibility_race():
         managers.append(manager)
         queues.append(q)
 
-        # Spawn a new process to isolate each worker
+        # Spawn a new daemonized process to isolate each worker
         p = multiprocessing.Process(
             target=run_worker,
             args=(simulate, q),
         )
+        p.daemon = True  # Ensures cleanup even if test exits early
         processes.append(p)
         p.start()
 
