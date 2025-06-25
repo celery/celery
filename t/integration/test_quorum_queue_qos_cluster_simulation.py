@@ -5,20 +5,18 @@ import uuid
 
 import pytest
 from kombu import Queue
-
 from celery import Celery
 from celery.contrib.testing.worker import start_worker
 
-# Configure basic logger
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
 def create_app(queue_name: str) -> Celery:
     """
-    Create a Celery app with a unique quorum queue.
-    Ensures we test behavior under quorum-specific configuration.
+    Create and configure a Celery app with a dedicated quorum queue.
     """
+    # Get environment vars or use defaults for local testing
     rabbitmq_user = os.environ.get("RABBITMQ_DEFAULT_USER", "guest")
     rabbitmq_pass = os.environ.get("RABBITMQ_DEFAULT_PASS", "guest")
     redis_host = os.environ.get("REDIS_HOST", "localhost")
@@ -27,11 +25,15 @@ def create_app(queue_name: str) -> Celery:
     broker_url = os.environ.get("TEST_BROKER", f"pyamqp://{rabbitmq_user}:{rabbitmq_pass}@localhost:5672//")
     backend_url = os.environ.get("TEST_BACKEND", f"redis://{redis_host}:{redis_port}/0")
 
+    # Initialize Celery app
     app = Celery("quorum_qos_race", broker=broker_url, backend=backend_url)
 
-    # Define a quorum queue with the given name
+    # Define a quorum queue explicitly (simulate real production cluster)
     app.conf.task_queues = [
-        Queue(name=queue_name, queue_arguments={"x-queue-type": "quorum"})
+        Queue(
+            name=queue_name,
+            queue_arguments={"x-queue-type": "quorum"},
+        )
     ]
     app.conf.task_default_queue = queue_name
     app.conf.worker_prefetch_multiplier = 1
@@ -44,8 +46,8 @@ def create_app(queue_name: str) -> Celery:
 
 def dummy_task_factory(app: Celery, simulate_qos_issue: bool):
     """
-    Register a dummy task that simulates a failure if instructed.
-    This mimics a global QoS error on quorum queues.
+    Register a dummy task that conditionally raises an exception to simulate
+    a global QoS failure due to premature quorum declaration propagation.
     """
     @app.task(name="dummy_task")
     def dummy_task():
@@ -56,10 +58,10 @@ def dummy_task_factory(app: Celery, simulate_qos_issue: bool):
     return dummy_task
 
 
-def run_worker(simulate_qos_issue: bool, result_queue: multiprocessing.Queue):
+def run_worker(simulate_qos_issue: bool, result_queue):
     """
-    Starts a Celery worker and executes a dummy task.
-    The result is placed into a shared multiprocessing queue.
+    Entry point for subprocess worker. Launches a Celery worker and submits
+    a dummy task. Reports result or failure to a multiprocessing-safe queue.
     """
     queue_name = f"race_quorum_queue_{uuid.uuid4().hex}"
     app = create_app(queue_name)
@@ -84,37 +86,41 @@ def run_worker(simulate_qos_issue: bool, result_queue: multiprocessing.Queue):
         result_queue.put({"status": "external_failure", "reason": str(e)})
     finally:
         if result_queue.empty():
+            # If worker died before putting anything in the result queue
             result_queue.put({"status": "crash", "reason": "Worker crashed without reporting"})
-        result_queue.close()
-        result_queue.join_thread()
 
 
 @pytest.mark.amqp
 @pytest.mark.timeout(90)
 def test_rabbitmq_quorum_qos_visibility_race():
     """
-    Simulates a race condition where global QoS is applied before
-    quorum queue properties propagate in a RabbitMQ cluster.
-
-    This test spawns 3 isolated worker processes:
-    - The first one simulates a global QoS failure.
-    - The others are normal workers to simulate concurrent cluster nodes.
+    This test simulates a race condition in clustered RabbitMQ nodes with quorum queues,
+    where the first worker may attempt global QoS before quorum info is fully propagated.
+    If such an error is detected, the test xfails (known limitation).
     """
     results = []
     processes = []
     queues = []
+    managers = []
 
-    # Start 3 worker processes (1 with simulated failure)
     for i in range(3):
-        simulate = (i == 0)
-        q = multiprocessing.Queue()
-        p = multiprocessing.Process(target=run_worker, args=(simulate, q))
-        processes.append(p)
+        simulate = (i == 0)  # Simulate failure only on the first worker
+
+        # Use multiprocessing.Manager().Queue() to avoid hangs on CI
+        manager = multiprocessing.Manager()
+        q = manager.Queue()
+        managers.append(manager)
         queues.append(q)
+
+        # Spawn a new process to isolate each worker
+        p = multiprocessing.Process(
+            target=run_worker,
+            args=(simulate, q),
+        )
+        processes.append(p)
         p.start()
 
     try:
-        # Collect results and enforce timeouts on each worker
         for i, (p, q) in enumerate(zip(processes, queues)):
             try:
                 p.join(timeout=30)
@@ -128,54 +134,29 @@ def test_rabbitmq_quorum_qos_visibility_race():
                         results.append(q.get(timeout=5))
                     except Exception as e:
                         results.append({"status": "error", "reason": f"Result error: {str(e)}"})
-            except Exception:
+            except Exception as e:
                 logger.exception(f"[worker {i}] crashed during join")
                 try:
                     results.append(q.get(timeout=5))
                 except Exception:
                     results.append({"status": "crash", "reason": f"Worker {i} crashed and gave no result"})
-            finally:
-                # Ensure queue is cleaned up
-                try:
-                    q.close()
-                    q.join_thread()
-                except Exception:
-                    pass
 
         logger.info(f"Results: {results}")
 
-        # If simulated failure is detected, mark test as xfail
+        # If simulated global QoS error is detected, xfail the test
         if any("qos.global not allowed" in r.get("reason", "").lower() for r in results):
-            for i, (p, q) in enumerate(zip(processes, queues)):
-                try:
-                    if not q.empty():
-                        q.get(timeout=2)
-                except Exception:
-                    pass
-                try:
-                    q.close()
-                    q.join_thread()
-                except Exception:
-                    pass
+            for i, p in enumerate(processes):
                 if p.is_alive():
                     logger.warning(f"[worker {i}] still alive before xfail, terminating")
                     p.terminate()
                     p.join(timeout=10)
             pytest.xfail("Detected global QoS usage on quorum queue (simulated failure)")
     finally:
-        # Final safeguard cleanup for any zombie processes or leaked queues
-        for i, (p, q) in enumerate(zip(processes, queues)):
-            try:
-                if not q.empty():
-                    q.get(timeout=2)
-            except Exception:
-                pass
-            try:
-                q.close()
-                q.join_thread()
-            except Exception:
-                pass
+        # Final cleanup to ensure no worker is left hanging
+        for i, p in enumerate(processes):
             if p.is_alive():
                 logger.warning(f"[worker {i}] still alive in final cleanup, terminating")
                 p.terminate()
                 p.join(timeout=10)
+        for m in managers:
+            m.shutdown()  # Shut down manager processes to prevent hanging CI
