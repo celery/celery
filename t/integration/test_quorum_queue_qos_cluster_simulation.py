@@ -135,7 +135,7 @@ def test_rabbitmq_quorum_qos_visibility_race():
                         results.append(q.get(timeout=5))
                     except Exception as e:
                         results.append({"status": "error", "reason": f"Result error: {str(e)}"})
-            except Exception as e:
+            except Exception:
                 logger.exception(f"[worker {i}] crashed during join")
                 try:
                     results.append(q.get(timeout=5))
