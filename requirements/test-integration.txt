@@ -1,4 +1,5 @@
 -r extras/redis.txt
+-r extras/valkey.txt
 -r extras/azureblockblob.txt
 -r extras/auth.txt
 -r extras/memcache.txt
