@@ -5,6 +5,7 @@ import uuid
 
 import pytest
 from kombu import Queue
+
 from celery import Celery
 from celery.contrib.testing.worker import start_worker
 
