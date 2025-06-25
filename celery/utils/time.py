@@ -204,7 +204,7 @@ def delta_resolution(dt: datetime, delta: timedelta) -> datetime:
 def remaining(
         start: datetime, ends_in: timedelta, now: Callable | None = None,
         relative: bool = False) -> timedelta:
-    """Calculate the remaining time for a start date and a timedelta.
+    """Calculate the real remaining time for a start date and a timedelta.
 
     For example, "how many seconds left for 30 seconds after start?"
 
@@ -221,18 +221,22 @@ def remaining(
         ~datetime.timedelta: Remaining time.
     """
     now = now or datetime.now(datetime_timezone.utc)
-    if str(
-            start.tzinfo) == str(
-            now.tzinfo) and now.utcoffset() != start.utcoffset():
-        # DST started/ended
-        start = start.replace(tzinfo=now.tzinfo)
     end_date = start + ends_in
     if relative:
         end_date = delta_resolution(end_date, ends_in).replace(microsecond=0)
-    ret = end_date - now
+
+    # Using UTC to calculate real time difference.
+    # Python by default uses wall time in arithmetic between datetimes with
+    # equal non-UTC timezones.
+    now_utc = now.astimezone(timezone.utc)
+    end_date_utc = end_date.astimezone(timezone.utc)
+    ret = end_date_utc - now_utc
     if C_REMDEBUG:  # pragma: no cover
-        print('rem: NOW:{!r} START:{!r} ENDS_IN:{!r} END_DATE:{} REM:{}'.format(
-            now, start, ends_in, end_date, ret))
+        print(
+            'rem: NOW:{!r} NOW_UTC:{!r} START:{!r} ENDS_IN:{!r} '
+            'END_DATE:{} END_DATE_UTC:{!r} REM:{}'.format(
+                now, now_utc, start, ends_in, end_date, end_date_utc, ret)
+        )
     return ret
 
 

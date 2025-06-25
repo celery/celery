@@ -2,22 +2,27 @@
 
 |build-status| |coverage| |license| |wheel| |semgrep| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 5.5.0rc4 (immunity)
+:Version: 5.5.3 (immunity)
 :Web: https://docs.celeryq.dev/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
+:DeepWiki: |deepwiki|
 :Keywords: task, queue, job, async, rabbitmq, amqp, redis,
   python, distributed, actors
 
 Donations
 =========
 
-This project relies on your generous donations.
+Open Collective
+---------------
 
-If you are using Celery to create a commercial product, please consider becoming our `backer`_ or our `sponsor`_ to ensure Celery's future.
+.. image:: https://opencollective.com/static/images/opencollectivelogo-footer-n.svg
+   :alt: Open Collective logo
+   :width: 200px
 
-.. _`backer`: https://opencollective.com/celery#backer
-.. _`sponsor`: https://opencollective.com/celery#sponsor
+`Open Collective <https://opencollective.com/celery>`_ is our community-powered funding platform that fuels Celery's
+ongoing development. Your sponsorship directly supports improvements, maintenance, and innovative features that keep
+Celery robust and reliable.
 
 For enterprise
 ==============
@@ -26,20 +31,62 @@ Available as part of the Tidelift Subscription.
 
 The maintainers of ``celery`` and thousands of other packages are working with Tidelift to deliver commercial support and maintenance for the open source dependencies you use to build your applications. Save time, reduce risk, and improve code health, while paying the maintainers of the exact dependencies you use. `Learn more. <https://tidelift.com/subscription/pkg/pypi-celery?utm_source=pypi-celery&utm_medium=referral&utm_campaign=enterprise&utm_term=repo>`_
 
+Sponsors
+========
 
-Sponsor
-=======
+Blacksmith
+----------
 
-`Dragonfly <https://www.dragonflydb.io/>`_ is a drop-in Redis replacement that cuts costs and boosts performance. Designed to fully utilize the power of modern cloud hardware and deliver on the data demands of modern applications, Dragonfly frees developers from the limits of traditional in-memory data stores.
+.. image:: ./docs/images/blacksmith-logo-white-on-black.svg
+   :alt: Blacksmith logo
+   :width: 240px
+   :target: https://blacksmith.sh/
 
+`Official Announcement <https://www.linkedin.com/pulse/celery-now-powered-blacksmith-tomer-nosrati-ew68e/?trackingId=DWHH49WqS2iOW8Jf5N1kEg%3D%3D>`_
+
+CloudAMQP
+---------
+
+.. image:: ./docs/images/cloudamqp-logo-lightbg.svg
+   :alt: CloudAMQP logo
+   :width: 240px
+   :target: https://www.cloudamqp.com/
+
+`CloudAMQP <https://www.cloudamqp.com/>`_ is a industry leading RabbitMQ as a service provider.
+If you need highly available message queues, a perfect choice would be to use CloudAMQP.
+With 24,000+ running instances, CloudAMQP is the leading hosting provider of RabbitMQ,
+with customers all over the world.
+
+Upstash
+-------
+
+.. image:: https://upstash.com/logo/upstash-dark-bg.svg
+   :alt: Upstash logo
+   :width: 200px
+   :target: https://upstash.com/?code=celery
+
+`Upstash <http://upstash.com/?code=celery>`_ offers a serverless Redis database service,
+providing a seamless solution for Celery users looking to leverage
+serverless architectures. Upstash's serverless Redis service is designed
+with an eventual consistency model and durable storage, facilitated
+through a multi-tier storage architecture.
+
+Dragonfly
+---------
 
 .. image:: https://github.com/celery/celery/raw/main/docs/images/dragonfly.svg
    :alt: Dragonfly logo
    :width: 150px
+   :target: https://www.dragonflydb.io/
+
+`Dragonfly <https://www.dragonflydb.io/>`_ is a drop-in Redis replacement that cuts costs and boosts performance.
+Designed to fully utilize the power of modern cloud hardware and deliver on the data demands of modern applications,
+Dragonfly frees developers from the limits of traditional in-memory data stores.
 
 
 
-
+.. |oc-sponsor-1| image:: https://opencollective.com/celery/sponsor/0/avatar.svg
+    :target: https://opencollective.com/celery/sponsor/0/website
 
 What's a Task Queue?
 ====================
@@ -506,31 +553,6 @@ Thank you to all our backers! 🙏 [`Become a backer`_]
 .. |oc-backers| image:: https://opencollective.com/celery/backers.svg?width=890
     :target: https://opencollective.com/celery#backers
 
-Sponsors
---------
-
-Support this project by becoming a sponsor. Your logo will show up here with a
-link to your website. [`Become a sponsor`_]
-
-.. _`Become a sponsor`: https://opencollective.com/celery#sponsor
-
-|oc-sponsor-1| |oc-sponsor-2| |oc-sponsor-3|
-
-.. |oc-sponsor-1| image:: https://opencollective.com/celery/sponsor/0/avatar.svg
-    :target: https://opencollective.com/celery/sponsor/0/website
-
-.. |oc-sponsor-2| image:: ./docs/images/blacksmith-logo-white-on-black.svg
-    :target: https://www.blacksmith.sh/
-    :alt: Blacksmith.sh
-    :width: 240
-    :height: 57
-
-.. |oc-sponsor-3| image:: https://upstash.com/logo/upstash-dark-bg.svg
-    :target: http://upstash.com/?code=celery
-    :alt: Upstash
-    :width: 200
-    :height: 57
-
 .. _license:
 
 License
@@ -579,3 +601,8 @@ file in the top distribution directory for the full license text.
 .. |downloads| image:: https://pepy.tech/badge/celery
     :alt: Downloads
     :target: https://pepy.tech/project/celery
+
+.. |deepwiki| image:: https://devin.ai/assets/deepwiki-badge.png
+    :alt: Ask http://DeepWiki.com
+    :target: https://deepwiki.com/celery/celery
+    :width: 125px
