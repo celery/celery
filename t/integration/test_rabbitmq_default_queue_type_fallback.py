@@ -7,7 +7,7 @@ from kombu import Connection
 from celery import Celery
 
 
-def wait_for_port(host, port, timeout=30.0):
+def wait_for_port(host, port, timeout=60.0):
     """Wait for a port to become available."""
     start = time.time()
     while time.time() - start < timeout:
@@ -47,7 +47,7 @@ def ping(app):
 
 
 @pytest.mark.amqp
-@pytest.mark.timeout(30)
+@pytest.mark.timeout(60)
 @pytest.mark.xfail(
     reason=(
         "Celery does not respect task_default_exchange_type/queue_type "
