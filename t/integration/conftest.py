@@ -1,5 +1,7 @@
 import json
 import os
+import re
+import time
 
 import pytest
 
@@ -23,6 +25,32 @@ __all__ = (
 
 def get_active_redis_channels():
     return get_redis_connection().execute_command('PUBSUB CHANNELS')
+
+
+def check_for_logs(
+    caplog,
+    message: str,
+    max_wait: float = 1.0,
+    interval: float = 0.1
+) -> bool:
+    """Check if a specific message exists in the logs.
+
+    Args:
+        caplog: The pytest caplog fixture
+        message: The message to look for, can be a regex pattern
+        max_wait: Maximum time to wait for the log message (in seconds)
+        interval: Time between log checks (in seconds)
+
+    Returns:
+        bool: True if the message was found, False otherwise
+    """
+    start_time = time.monotonic()
+    while time.monotonic() - start_time < max_wait:
+        # Check if the message is in the logs
+        if any(re.search(message, record.message) for record in caplog.records):
+            return True
+        time.sleep(interval)
+    return False
 
 
 @pytest.fixture(scope='session')
