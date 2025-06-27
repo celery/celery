@@ -791,8 +791,8 @@ class Task:
             throw = app.conf.task_eager_propagates
 
         parent_task = _task_stack.top
-        if parent_task:
-            parent_id = parent_task.request.id or None
+        if parent_task and parent_task.request:
+            parent_id = parent_task.request.id
             root_id = parent_task.request.root_id or task_id
         else:
             parent_id = None
