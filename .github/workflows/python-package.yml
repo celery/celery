@@ -128,11 +128,6 @@ jobs:
         - name: Install tox
           run: python -m pip install --upgrade pip 'tox' tox-gh-actions
 
-        - name: Show test_quorum_queue_qos_cluster_simulation.py
-          run: |
-            echo ">>> test_quorum_queue_qos_cluster_simulation.py:"
-            cat t/integration/test_quorum_queue_qos_cluster_simulation.py || echo "File not found"
-
         - name: Run tox for "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}"
           uses: nick-fields/retry@v3
           with:
