@@ -1,29 +1,22 @@
+import gc
 import logging
 import multiprocessing
 import os
+import pprint
 import uuid
 
 import pytest
 from kombu import Queue
+from kombu.pools import connections
 
-from celery import Celery
+from celery import Celery, _state
 from celery.contrib.testing.worker import start_worker
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-# Force safe multiprocessing start method for CI (e.g., GitHub Actions runners)
-try:
-    multiprocessing.set_start_method("spawn", force=True)
-except RuntimeError:
-    # Ignore if already set (e.g., when running multiple tests in same process)
-    pass
-
 
 def create_app(queue_name: str) -> Celery:
-    """
-    Create and configure a Celery app with a dedicated quorum queue.
-    """
     rabbitmq_user = os.environ.get("RABBITMQ_DEFAULT_USER", "guest")
     rabbitmq_pass = os.environ.get("RABBITMQ_DEFAULT_PASS", "guest")
     redis_host = os.environ.get("REDIS_HOST", "localhost")
@@ -34,7 +27,6 @@ def create_app(queue_name: str) -> Celery:
 
     app = Celery("quorum_qos_race", broker=broker_url, backend=backend_url)
 
-    # Simulate production-like configuration with quorum and required options
     app.conf.task_queues = [
         Queue(
             name=queue_name,
@@ -51,26 +43,18 @@ def create_app(queue_name: str) -> Celery:
 
 
 def dummy_task_factory(app: Celery, simulate_qos_issue: bool):
-    """
-    Register a dummy task that conditionally raises an exception to simulate
-    a global QoS failure due to premature quorum declaration propagation.
-    """
     @app.task(name="dummy_task")
     def dummy_task():
         if simulate_qos_issue:
             raise Exception("qos.global not allowed on quorum queues (simulated)")
         return "ok"
-
     return dummy_task
 
 
-def run_worker(simulate_qos_issue: bool, result_queue):
-    """
-    Entry point for subprocess worker. Launches a Celery worker and submits
-    a dummy task. Reports result or failure to a multiprocessing-safe queue.
-    """
+def run_worker(simulate_qos_issue: bool, result_queue: multiprocessing.Queue):
     queue_name = f"race_quorum_queue_{uuid.uuid4().hex}"
     app = create_app(queue_name)
+    logger.info("[Celery config snapshot]:\n%s", pprint.pformat(dict(app.conf)))
     task = dummy_task_factory(app, simulate_qos_issue)
 
     try:
@@ -92,38 +76,33 @@ def run_worker(simulate_qos_issue: bool, result_queue):
         result_queue.put({"status": "external_failure", "reason": str(e)})
     finally:
         if result_queue.empty():
-            # If worker died before putting anything in the result queue
             result_queue.put({"status": "crash", "reason": "Worker crashed without reporting"})
 
 
 @pytest.mark.amqp
 @pytest.mark.timeout(90)
 def test_rabbitmq_quorum_qos_visibility_race():
-    """
-    This test simulates a race condition in clustered RabbitMQ nodes with quorum queues,
-    where the first worker may attempt global QoS before quorum info is fully propagated.
-    If such an error is detected, the test xfails (known limitation).
-    """
+    logger.info("=== DEBUG START: test_rabbitmq_quorum_qos_visibility_race ===")
+    logger.info("[env] TEST_BROKER = %s", os.environ.get("TEST_BROKER"))
+    logger.info("[env] TEST_BACKEND = %s", os.environ.get("TEST_BACKEND"))
+    logger.info("[multiprocessing] start method: %s", multiprocessing.get_start_method())
+
+    try:
+        multiprocessing.set_start_method("spawn", force=True)
+    except RuntimeError:
+        pass
+
     results = []
     processes = []
     queues = []
-    managers = []
 
     for i in range(3):
-        simulate = (i == 0)  # Simulate failure only on the first worker
-
-        # Use multiprocessing.Manager().Queue() to avoid hangs on CI
-        manager = multiprocessing.Manager()
-        q = manager.Queue()
-        managers.append(manager)
+        simulate = (i == 0)
+        q = multiprocessing.Queue()
         queues.append(q)
 
-        # Spawn a new daemonized process to isolate each worker
-        p = multiprocessing.Process(
-            target=run_worker,
-            args=(simulate, q),
-        )
-        p.daemon = True  # Ensures cleanup even if test exits early
+        p = multiprocessing.Process(target=run_worker, args=(simulate, q))
+        p.daemon = True
         processes.append(p)
         p.start()
 
@@ -148,22 +127,34 @@ def test_rabbitmq_quorum_qos_visibility_race():
                 except Exception:
                     results.append({"status": "crash", "reason": f"Worker {i} crashed and gave no result"})
 
-        logger.info(f"Results: {results}")
+        logger.info(f"[test result] Results: {results}")
 
-        # If simulated global QoS error is detected, xfail the test
         if any("qos.global not allowed" in r.get("reason", "").lower() for r in results):
-            for i, p in enumerate(processes):
-                if p.is_alive():
-                    logger.warning(f"[worker {i}] still alive before xfail, terminating")
-                    p.terminate()
-                    p.join(timeout=10)
             pytest.xfail("Detected global QoS usage on quorum queue (simulated failure)")
     finally:
-        # Final cleanup to ensure no worker is left hanging
         for i, p in enumerate(processes):
             if p.is_alive():
                 logger.warning(f"[worker {i}] still alive in final cleanup, terminating")
                 p.terminate()
                 p.join(timeout=10)
-        for m in managers:
-            m.shutdown()  # Shut down manager processes to prevent hanging CI
+
+        # Reset Kombu connection pools (safe public API)
+        try:
+            connections.clear()
+        except Exception:
+            logger.warning("Could not reset kombu connection pools")
+
+        # Reset Celery app/task global state
+        _state._set_current_app(None)
+        _state._task_stack.__init__()  # reinitialize stack to avoid stale state
+
+        # Force garbage collection
+        gc.collect()
+
+        # Reset multiprocessing to default (may help restore test_multiprocess_producer expectations)
+        if multiprocessing.get_start_method(allow_none=True) == "spawn":
+            try:
+                multiprocessing.set_start_method("fork", force=True)
+                logger.info("Multiprocessing start method reset to 'fork'")
+            except RuntimeError:
+                pass

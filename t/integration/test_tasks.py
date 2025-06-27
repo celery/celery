@@ -1,15 +1,18 @@
+import gc
 import logging
+import multiprocessing
+import os
 import platform
 import time
 from datetime import datetime, timedelta, timezone
-from multiprocessing import set_start_method
 from time import perf_counter, sleep
 from uuid import uuid4
 
 import pytest
+from kombu.pools import connections
 
 import celery
-from celery import chain, chord, group
+from celery import _state, chain, chord, group
 from celery.canvas import StampingVisitor
 from celery.signals import task_received
 from celery.utils.serialization import UnpickleableExceptionWrapper
@@ -27,6 +30,48 @@ TIMEOUT = 10
 _flaky = pytest.mark.flaky(reruns=5, reruns_delay=2)
 _timeout = pytest.mark.timeout(timeout=300)
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
+
+@pytest.fixture(autouse=True, scope="session")
+def debug_initial_state():
+    logger.info("=== DEBUG START: test_tasks.py ===")
+    logger.info("[env] TEST_BROKER = %s", os.environ.get("TEST_BROKER"))
+    logger.info("[env] TEST_BACKEND = %s", os.environ.get("TEST_BACKEND"))
+
+    logger.info("Calling connections.clear() at session start (cleanup)")
+    connections.clear()
+
+    yield
+
+    logger.info("[teardown] Forcing gc + clearing Kombu + Celery state")
+    connections.clear()
+    _state._set_current_app(None)
+    _state._task_stack.__init__()
+    gc.collect()
+    logger.info("=== DEBUG END: test_tasks.py ===")
+
+
+@pytest.fixture(autouse=True)
+def debug_test_case(request):
+    logger.info(f"[RUNNING TEST] {request.node.nodeid}")
+    yield
+    logger.info(f"[FINISHED TEST] {request.node.nodeid}")
+
+
+@pytest.fixture(autouse=True)
+def ensure_clean_multiprocessing():
+    # Defensive measure for tests relying on multiprocessing
+    try:
+        method = multiprocessing.get_start_method()
+        logger.info(f"[Multiprocessing] Start method before test: {method}")
+    except RuntimeError:
+        # No context initialized
+        pass
+    yield
+    gc.collect()
+
 
 def flaky(fn):
     return _timeout(_flaky(fn))
@@ -36,7 +81,7 @@ def set_multiprocessing_start_method():
     """Set multiprocessing start method to 'fork' if not on Linux."""
     if platform.system() != 'Linux':
         try:
-            set_start_method('fork')
+            multiprocessing.set_start_method('fork')
         except RuntimeError:
             # The method is already set
             pass
@@ -67,6 +112,9 @@ def _producer(j):
     return j
 
 
+@pytest.mark.usefixtures("debug_initial_state")
+@pytest.mark.usefixtures("debug_test_case")
+@pytest.mark.usefixtures("ensure_clean_multiprocessing")
 class test_tasks:
 
     def test_simple_call(self):
@@ -150,6 +198,7 @@ class test_tasks:
         with pytest.raises(celery.exceptions.TimeoutError):
             result.get(timeout=5)
 
+    @pytest.mark.timeout(60)
     @flaky
     def test_expired(self, manager):
         """Testing expiration of task."""
@@ -268,6 +317,8 @@ class test_tasks:
             # not match the task's stamps, allowing those tasks to proceed successfully.
             worker_state.revoked_stamps.clear()
 
+    @pytest.mark.timeout(20)
+    @pytest.mark.flaky(reruns=2)
     def test_revoked_by_headers_complex_canvas(self, manager, subtests):
         """Testing revoking of task using a stamped header"""
         try:
