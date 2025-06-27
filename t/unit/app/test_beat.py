@@ -606,6 +606,44 @@ class test_Scheduler:
         b = None
         assert scheduler.schedules_equal(a, b)
 
+    def test_apply_async_adds_beat_header(self):
+        scheduler = mScheduler(app=self.app)
+        entry = scheduler.Entry(
+            name='test_task',
+            task='test_task',
+            schedule=schedule(10.0),
+            options={'queue': 'test_queue'},
+            app=self.app
+        )
+
+        result = scheduler.apply_async(entry)
+        assert result.id
+
+        sent_task = scheduler.sent[0]
+        assert 'headers' in sent_task['options']
+        assert sent_task['options']['headers']['celery_beat_task'] is True
+
+    def test_apply_async_preserves_existing_headers(self):
+        scheduler = mScheduler(app=self.app)
+        entry = scheduler.Entry(
+            name='test_task',
+            task='test_task',
+            schedule=schedule(10.0),
+            options={
+                'queue': 'test_queue',
+                'headers': {'existing_header': 'value'}
+            },
+            app=self.app
+        )
+
+        result = scheduler.apply_async(entry)
+        assert result.id
+
+        sent_task = scheduler.sent[0]
+        assert 'headers' in sent_task['options']
+        assert sent_task['options']['headers']['existing_header'] == 'value'
+        assert sent_task['options']['headers']['celery_beat_task'] is True
+
 
 def create_persistent_scheduler(shelv=None):
     if shelv is None:
