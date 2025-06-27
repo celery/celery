@@ -1,10 +1,10 @@
 import gc
 import logging
-import billiard as multiprocessing
 import os
 import pprint
 import uuid
 
+import billiard as multiprocessing
 import pytest
 from kombu import Queue
 from kombu.pools import connections

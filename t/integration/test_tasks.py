@@ -1,10 +1,10 @@
 import logging
-import billiard as multiprocessing
 import platform
 import time
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
+import billiard as multiprocessing
 import pytest
 
 import celery
