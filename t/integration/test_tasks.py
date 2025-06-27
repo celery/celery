@@ -1,18 +1,14 @@
-import gc
 import logging
 import multiprocessing
-import os
 import platform
 import time
 from datetime import datetime, timedelta, timezone
-from time import perf_counter, sleep
 from uuid import uuid4
 
 import pytest
-from kombu.pools import connections
 
 import celery
-from celery import _state, chain, chord, group
+from celery import chain, chord, group
 from celery.canvas import StampingVisitor
 from celery.signals import task_received
 from celery.utils.serialization import UnpickleableExceptionWrapper
@@ -26,51 +22,8 @@ from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_
 
 TIMEOUT = 10
 
-
 _flaky = pytest.mark.flaky(reruns=5, reruns_delay=2)
 _timeout = pytest.mark.timeout(timeout=300)
-
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
-
-
-@pytest.fixture(autouse=True, scope="session")
-def debug_initial_state():
-    logger.info("=== DEBUG START: test_tasks.py ===")
-    logger.info("[env] TEST_BROKER = %s", os.environ.get("TEST_BROKER"))
-    logger.info("[env] TEST_BACKEND = %s", os.environ.get("TEST_BACKEND"))
-
-    logger.info("Calling connections.clear() at session start (cleanup)")
-    connections.clear()
-
-    yield
-
-    logger.info("[teardown] Forcing gc + clearing Kombu + Celery state")
-    connections.clear()
-    _state._set_current_app(None)
-    _state._task_stack.__init__()
-    gc.collect()
-    logger.info("=== DEBUG END: test_tasks.py ===")
-
-
-@pytest.fixture(autouse=True)
-def debug_test_case(request):
-    logger.info(f"[RUNNING TEST] {request.node.nodeid}")
-    yield
-    logger.info(f"[FINISHED TEST] {request.node.nodeid}")
-
-
-@pytest.fixture(autouse=True)
-def ensure_clean_multiprocessing():
-    # Defensive measure for tests relying on multiprocessing
-    try:
-        method = multiprocessing.get_start_method()
-        logger.info(f"[Multiprocessing] Start method before test: {method}")
-    except RuntimeError:
-        # No context initialized
-        pass
-    yield
-    gc.collect()
 
 
 def flaky(fn):
@@ -79,9 +32,9 @@ def flaky(fn):
 
 def set_multiprocessing_start_method():
     """Set multiprocessing start method to 'fork' if not on Linux."""
-    if platform.system() != 'Linux':
+    if platform.system() != "Linux":
         try:
-            multiprocessing.set_start_method('fork')
+            multiprocessing.set_start_method("fork")
         except RuntimeError:
             # The method is already set
             pass
@@ -112,9 +65,6 @@ def _producer(j):
     return j
 
 
-@pytest.mark.usefixtures("debug_initial_state")
-@pytest.mark.usefixtures("debug_test_case")
-@pytest.mark.usefixtures("ensure_clean_multiprocessing")
 class test_tasks:
 
     def test_simple_call(self):
@@ -174,7 +124,7 @@ class test_tasks:
         assert result.get() is None
         # We wait since it takes a bit of time for the result to be
         # persisted in the result backend.
-        sleep(1)
+        time.sleep(1)
         assert result.result is None
 
     @flaky
@@ -229,27 +179,27 @@ class test_tasks:
     @flaky
     def test_eta(self, manager):
         """Tests tasks scheduled at some point in future."""
-        start = perf_counter()
+        start = time.perf_counter()
         # Schedule task to be executed in 3 seconds
         result = add.apply_async((1, 1), countdown=3)
-        sleep(1)
+        time.sleep(1)
         assert result.status == 'PENDING'
         assert result.ready() is False
         assert result.get() == 2
-        end = perf_counter()
+        end = time.perf_counter()
         assert result.status == 'SUCCESS'
         assert result.ready() is True
         # Difference between calling the task and result must be bigger than 3 secs
         assert (end - start) > 3
 
-        start = perf_counter()
+        start = time.perf_counter()
         # Schedule task to be executed at time now + 3 seconds
         result = add.apply_async((2, 2), eta=datetime.now(timezone.utc) + timedelta(seconds=3))
-        sleep(1)
+        time.sleep(1)
         assert result.status == 'PENDING'
         assert result.ready() is False
         assert result.get() == 4
-        end = perf_counter()
+        end = time.perf_counter()
         assert result.status == 'SUCCESS'
         assert result.ready() is True
         # Difference between calling the task and result must be bigger than 3 secs
@@ -421,7 +371,7 @@ class test_tasks:
             status = result.status
             if status != 'PENDING':
                 break
-            sleep(0.1)
+            time.sleep(0.1)
         else:
             raise AssertionError("Timeout while waiting for the task to be retried")
         assert status == 'RETRY'
@@ -437,7 +387,7 @@ class test_tasks:
             status = result.status
             if status != 'PENDING':
                 break
-            sleep(0.1)
+            time.sleep(0.1)
         else:
             raise AssertionError("Timeout while waiting for the task to be retried")
         assert status == 'RETRY'
@@ -462,7 +412,7 @@ class test_tasks:
             status = job.status
             if status != 'PENDING':
                 break
-            sleep(0.1)
+            time.sleep(0.1)
         else:
             raise AssertionError("Timeout while waiting for the task to be retried")
 
@@ -552,7 +502,7 @@ class test_trace_log_arguments:
 
     def assert_trace_log(self, caplog, result, expected):
         # wait for logs from worker
-        sleep(.01)
+        time.sleep(.01)
 
         records = [(r.name, r.levelno, r.msg, r.data["args"], r.data["kwargs"])
                    for r in caplog.records

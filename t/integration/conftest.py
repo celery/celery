@@ -1,13 +1,9 @@
-import atexit
 import json
 import logging
 import os
 import re
-import signal
-import threading
 import time
 
-import psutil
 import pytest
 
 from celery.contrib.pytest import celery_app, celery_session_worker
@@ -24,78 +20,6 @@ __all__ = (
     'celery_session_worker',
     'get_active_redis_channels',
 )
-
-
-def safe_join(thread: threading.Thread, timeout=10):
-    if thread.is_alive():
-        thread.join(timeout)
-        if thread.is_alive():
-            logger.warning("[safe_join] Worker thread did not stop after %ds, forcing shutdown.", timeout)
-
-
-def pytest_sessionstart(session):
-    import celery.contrib.testing.worker as worker_mod
-    orig_start_worker = worker_mod._start_worker_thread
-
-    def patched_start_worker_thread(*args, **kwargs):
-        thread_holder = {}
-
-        class WrappedContext:
-            def __init__(self, orig_context):
-                self._ctx = orig_context
-
-            def __enter__(self):
-                result = self._ctx.__enter__()
-                thread = kwargs.get("thread") or getattr(self._ctx, "thread", None)
-                thread_holder["thread"] = thread
-                return result
-
-            def __exit__(self, exc_type, exc_val, exc_tb):
-                try:
-                    return self._ctx.__exit__(exc_type, exc_val, exc_tb)
-                finally:
-                    thread = thread_holder.get("thread")
-                    if thread:
-                        safe_join(thread, timeout=10)
-
-        ctx = orig_start_worker(*args, **kwargs)
-        return WrappedContext(ctx)
-
-    worker_mod._start_worker_thread = patched_start_worker_thread
-
-
-def _broadcast_shutdown(app):
-    try:
-        logger.info("[sessionfinish] Broadcasting shutdown to all Celery workers")
-        app.control.broadcast("shutdown")
-    except Exception as e:
-        logger.warning("Broadcast shutdown failed: %s", e)
-
-
-def pytest_sessionfinish(session, exitstatus):
-    """Ensure workers are cleanly shut down at the end of the session."""
-    app = getattr(session.config, "celery_app", None)
-    if app is not None:
-        _broadcast_shutdown(app)
-        return
-
-    for item in getattr(session, "items", []) or []:
-        funcargs = getattr(item, "funcargs", None)
-        if funcargs and "manager" in funcargs:
-            _broadcast_shutdown(funcargs["manager"].app)
-            break
-
-
-@atexit.register
-def kill_orphaned_children():
-    current = psutil.Process()
-    children = current.children(recursive=True)
-    for proc in children:
-        try:
-            logger.warning("[atexit] Killing orphaned child: PID %s", proc.pid)
-            proc.send_signal(signal.SIGTERM)
-        except Exception:
-            pass
 
 
 def get_active_redis_channels():
@@ -156,9 +80,7 @@ def manager(app, celery_session_worker):
     manager = Manager(app)
     yield manager
     try:
-        logger.info("Stopping Celery manager")
         manager.wait_until_idle()
-        logger.info("Manager stopped cleanly")
     except Exception as e:
         logger.warning("Failed to stop Celery test manager cleanly: %s", e)
 

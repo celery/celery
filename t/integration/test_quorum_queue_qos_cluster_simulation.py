@@ -82,11 +82,6 @@ def run_worker(simulate_qos_issue: bool, result_queue: multiprocessing.Queue):
 @pytest.mark.amqp
 @pytest.mark.timeout(90)
 def test_rabbitmq_quorum_qos_visibility_race():
-    logger.info("=== DEBUG START: test_rabbitmq_quorum_qos_visibility_race ===")
-    logger.info("[env] TEST_BROKER = %s", os.environ.get("TEST_BROKER"))
-    logger.info("[env] TEST_BACKEND = %s", os.environ.get("TEST_BACKEND"))
-    logger.info("[multiprocessing] start method: %s", multiprocessing.get_start_method())
-
     try:
         multiprocessing.set_start_method("spawn", force=True)
     except RuntimeError:
@@ -111,7 +106,6 @@ def test_rabbitmq_quorum_qos_visibility_race():
             try:
                 p.join(timeout=30)
                 if p.is_alive():
-                    logger.warning(f"[worker {i}] still alive after timeout, terminating")
                     p.terminate()
                     p.join(timeout=10)
                     results.append({"status": "timeout", "reason": f"[worker {i}] timeout"})
@@ -121,20 +115,16 @@ def test_rabbitmq_quorum_qos_visibility_race():
                     except Exception as e:
                         results.append({"status": "error", "reason": f"Result error: {str(e)}"})
             except Exception:
-                logger.exception(f"[worker {i}] crashed during join")
                 try:
                     results.append(q.get(timeout=5))
                 except Exception:
                     results.append({"status": "crash", "reason": f"Worker {i} crashed and gave no result"})
-
-        logger.info(f"[test result] Results: {results}")
 
         if any("qos.global not allowed" in r.get("reason", "").lower() for r in results):
             pytest.xfail("Detected global QoS usage on quorum queue (simulated failure)")
     finally:
         for i, p in enumerate(processes):
             if p.is_alive():
-                logger.warning(f"[worker {i}] still alive in final cleanup, terminating")
                 p.terminate()
                 p.join(timeout=10)
 
@@ -142,7 +132,7 @@ def test_rabbitmq_quorum_qos_visibility_race():
         try:
             connections.clear()
         except Exception:
-            logger.warning("Could not reset kombu connection pools")
+            pass
 
         # Reset Celery app/task global state
         _state._set_current_app(None)
@@ -155,6 +145,5 @@ def test_rabbitmq_quorum_qos_visibility_race():
         if multiprocessing.get_start_method(allow_none=True) == "spawn":
             try:
                 multiprocessing.set_start_method("fork", force=True)
-                logger.info("Multiprocessing start method reset to 'fork'")
             except RuntimeError:
                 pass
