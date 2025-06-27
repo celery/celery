@@ -1,5 +1,5 @@
 import logging
-import multiprocessing
+import billiard as multiprocessing
 import platform
 import time
 from datetime import datetime, timedelta, timezone

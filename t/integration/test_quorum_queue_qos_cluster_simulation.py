@@ -1,6 +1,6 @@
 import gc
 import logging
-import multiprocessing
+import billiard as multiprocessing
 import os
 import pprint
 import uuid
@@ -11,6 +11,8 @@ from kombu.pools import connections
 
 from celery import Celery, _state
 from celery.contrib.testing.worker import start_worker
+
+QOS_GLOBAL_ERROR = "qos.global not allowed"
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -120,7 +122,7 @@ def test_rabbitmq_quorum_qos_visibility_race():
                 except Exception:
                     results.append({"status": "crash", "reason": f"Worker {i} crashed and gave no result"})
 
-        if any("qos.global not allowed" in r.get("reason", "").lower() for r in results):
+        if any(QOS_GLOBAL_ERROR in r.get("reason", "").lower() for r in results):
             pytest.xfail("Detected global QoS usage on quorum queue (simulated failure)")
     finally:
         for i, p in enumerate(processes):
