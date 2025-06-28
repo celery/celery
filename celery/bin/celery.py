@@ -12,7 +12,6 @@ except ImportError:
 import click
 import click.exceptions
 from click_didyoumean import DYMGroup
-from click_plugins import with_plugins
 
 from celery import VERSION_BANNER
 from celery.app.utils import find_app
@@ -32,6 +31,7 @@ from celery.bin.result import result
 from celery.bin.shell import shell
 from celery.bin.upgrade import upgrade
 from celery.bin.worker import worker
+from celery.click_plugins import with_plugins
 
 UNABLE_TO_LOAD_APP_MODULE_NOT_FOUND = click.style("""
 Unable to load celery application.

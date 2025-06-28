@@ -4,6 +4,5 @@ vine>=5.1.0,<6.0
 click>=8.1.2,<9.0
 click-didyoumean>=0.3.0
 click-repl>=0.2.0
-click-plugins>=1.1.1
 backports.zoneinfo[tzdata]>=0.2.1; python_version < '3.9'
 python-dateutil>=2.8.2
