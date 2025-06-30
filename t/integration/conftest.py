@@ -56,7 +56,8 @@ def celery_config(request):
         # To override the default configuration, create the integration-tests-config.json file
         # in Celery's root directory.
         # The file must contain a dictionary of valid configuration name/value pairs.
-        overrides = json.load(open(str(request.config.rootdir / "integration-tests-config.json")))
+        with open(str(request.config.rootdir / "integration-tests-config.json")) as file:
+            overrides = json.load(file)
         config.update(overrides)
     except OSError:
         pass
