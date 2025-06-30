@@ -111,8 +111,8 @@ class test_security:
         try:
             result = t1.get(timeout=10)  # redis backend will timeout
             assert result == 2
-        except (socket.timeout, TimeoutError):
+        except (socket.timeout, TimeoutError) as e:
             pytest.fail(
-                "Timed out waiting for task result. Task was likely dropped by "
-                "worker due to security misconfig."
+                f"Timed out waiting for task result. Task was likely dropped by "
+                f"worker due to security misconfig. Exception details: {e}"
             )
