@@ -6,6 +6,10 @@ import time
 
 import pytest
 
+# we have to import the pytest plugin fixtures here,
+# in case user did not do the `python setup.py develop` yet,
+# that installs the pytest plugin into the setuptools registry.
+
 from celery.contrib.pytest import celery_app, celery_session_worker
 from celery.contrib.testing.manager import Manager
 from t.integration.tasks import get_redis_connection
@@ -48,6 +52,9 @@ def celery_config(request):
         'cassandra_write_consistency': 'ONE',
     }
     try:
+        # To override the default configuration, create the integration-tests-config.json file
+        # in Celery's root directory.
+        # The file must contain a dictionary of valid configuration name/value pairs.
         overrides = json.load(open(str(request.config.rootdir / "integration-tests-config.json")))
         config.update(overrides)
     except OSError:
