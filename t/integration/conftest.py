@@ -6,13 +6,14 @@ import time
 
 import pytest
 
+from celery.contrib.pytest import celery_app, celery_session_worker
+from celery.contrib.testing.manager import Manager
+from t.integration.tasks import get_redis_connection
+
 # we have to import the pytest plugin fixtures here,
 # in case user did not do the `python setup.py develop` yet,
 # that installs the pytest plugin into the setuptools registry.
 
-from celery.contrib.pytest import celery_app, celery_session_worker
-from celery.contrib.testing.manager import Manager
-from t.integration.tasks import get_redis_connection
 
 logger = logging.getLogger(__name__)
 
