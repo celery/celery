@@ -2200,6 +2200,7 @@ class test_chord:
         assert res.get(timeout=TIMEOUT) == [[42, 42]]
 
     @pytest.mark.xfail(TEST_BACKEND.startswith('redis://'), reason="Issue #6437")
+    @pytest.mark.xfail(TEST_BACKEND.startswith('valkey://'), reason="Issue #6437")
     def test_error_propagates_from_chord(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()

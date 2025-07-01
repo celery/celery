@@ -22,6 +22,7 @@ Broker Instructions
     sqs
     kafka
     gcpubsub
+    valkey
 
 .. _broker-overview:
 
@@ -44,8 +45,6 @@ individual transport (see :ref:`broker_toc`).
 | *Zookeeper*   | Experimental | No             | No                 |
 +---------------+--------------+----------------+--------------------+
 | *Kafka*       | Experimental | No             | No                 |
-+---------------+--------------+----------------+--------------------+
-| *GC PubSub*   | Experimental | Yes            | Yes                |
 +---------------+--------------+----------------+--------------------+
 
 Experimental brokers may be functional but they don't have
@@ -116,3 +115,11 @@ Google Cloud Pub/Sub is a broker.
 If you already integrate tightly with Google Cloud, and are familiar with Pub/Sub, it presents a great option as a broker. It is extremely scalable and completely managed, and manages task delegation similarly to RabbitMQ.
 
 :ref:`See documentation for details <broker-gcpubsub>`
+
+Valkey
+------
+
+Valkey is a free licenced fork of Redis, with a similar API that almost works the same.
+it does everything redis does
+
+:red:`See documentation for details <broker-valkey>`
