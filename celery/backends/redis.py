@@ -11,6 +11,7 @@ from kombu.utils.url import _parse_url, maybe_sanitize_url
 
 from celery import states
 from celery._state import task_join_will_block
+from celery.backends.base import _create_chord_error_with_cause
 from celery.canvas import maybe_signature
 from celery.exceptions import BackendStoreError, ChordError, ImproperlyConfigured
 from celery.result import GroupResult, allow_join_result
@@ -436,7 +437,10 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         if state in EXCEPTION_STATES:
             retval = self.exception_to_python(retval)
         if state in PROPAGATE_STATES:
-            raise ChordError(f'Dependency {tid} raised {retval!r}')
+            chord_error = _create_chord_error_with_cause(
+                message=f'Dependency {tid} raised {retval!r}', original_exc=retval
+            )
+            raise chord_error
         return retval
 
     def set_chord_size(self, group_id, chord_size):
