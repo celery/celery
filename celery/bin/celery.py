@@ -168,12 +168,50 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir,
 
 
 @celery.command(cls=CeleryCommand)
+@click.option('-j', '--json', 'as_json', is_flag=True, help='Output as JSON.')
 @click.pass_context
-def report(ctx, **kwargs):
+def report(ctx, as_json, **kwargs):
     """Shows information useful to include in bug-reports."""
     app = ctx.obj.app
     app.loader.import_default_modules()
-    ctx.obj.echo(app.bugreport())
+    report_data = app.bugreport()
+    if as_json:
+        import json
+        lines = report_data.strip().splitlines()
+        result = {}
+        current_key = None
+        current_value = []
+        for line in lines:
+            if '->' in line:
+                # Save previous key-value
+                if current_key is not None:
+                    if len(current_value) == 1:
+                        result[current_key] = current_value[0]
+                    elif len(current_value) > 1:
+                        result[current_key] = current_value
+                # Start new key
+                k, v = line.split('->', 1)
+                current_key = k.strip()
+                v = v.strip()
+                current_value = [v] if v else []
+            elif line.startswith(' ') or line.startswith('\t'):
+                # Indented line, part of previous value
+                if current_key is not None:
+                    current_value.append(line.strip())
+            elif line.strip() == '':
+                continue  # skip blank lines
+            else:
+                # Not a key, not indented, treat as details
+                result.setdefault('details', []).append(line.strip())
+        # Save last key-value
+        if current_key is not None:
+            if len(current_value) == 1:
+                result[current_key] = current_value[0]
+            elif len(current_value) > 1:
+                result[current_key] = current_value
+        ctx.obj.echo(json.dumps(result, ensure_ascii=False, indent=2))
+    else:
+        ctx.obj.echo(report_data)
 
 
 celery.add_command(purge)
