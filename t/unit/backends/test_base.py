@@ -797,10 +797,34 @@ class test_BaseBackend_dict:
 
     def _create_mock_callback(self, task_name="test.task", spec=None, **options):
         """Helper to create mock callbacks with common setup."""
-        callback = Mock(spec=spec)
+        from collections.abc import Mapping
+
+        # Create a mock that properly implements the
+        # mapping protocol for PyPy env compatibility
+        class MockCallback(Mock, Mapping):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self._mapping_data = {}
+
+            def __getitem__(self, key):
+                return self._mapping_data[key]
+
+            def __iter__(self):
+                return iter(self._mapping_data)
+
+            def __len__(self):
+                return len(self._mapping_data)
+
+            def keys(self):
+                return self._mapping_data.keys()
+
+            def items(self):
+                return self._mapping_data.items()
+
+        callback = MockCallback(spec=spec)
         callback.task = task_name
         callback.options = {"link_error": [], **options}
-        callback.keys.return_value = []
+
         return callback
 
     def _setup_task_backend(self, task_name, backend=None):
@@ -1018,6 +1042,7 @@ class test_BaseBackend_dict:
         _ = self.b._handle_group_chord_error(group_callback, backend, ValueError("test error"))
 
         assert "Failed to handle chord error for task" in caplog.text
+
 
 class test_KeyValueStoreBackend:
 
