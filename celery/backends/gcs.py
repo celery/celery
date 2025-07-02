@@ -8,6 +8,7 @@ from kombu.utils.encoding import bytes_to_str
 from kombu.utils.functional import dictfilter
 from kombu.utils.url import url_to_parts
 
+from celery.backends.base import _create_chord_error_with_cause
 from celery.canvas import maybe_signature
 from celery.exceptions import ChordError, ImproperlyConfigured
 from celery.result import GroupResult, allow_join_result
@@ -293,7 +294,8 @@ class GCSBackend(GCSBackendBase):
                     reason = repr(exc)
 
                 logger.exception('Chord %r raised: %r', gid, reason)
-                self.chord_error_from_stack(callback, ChordError(reason))
+                chord_error = _create_chord_error_with_cause(message=reason, original_exc=exc)
+                self.chord_error_from_stack(callback, chord_error)
             else:
                 try:
                     callback.delay(ret)
