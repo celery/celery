@@ -114,16 +114,13 @@ class test_chord:
                     add.si(5, 7).set(queue=queue),
                 )
             ),
-            pytest.param(
-                (
-                    lambda queue: group(
-                        [
-                            add.si(9, 7).set(queue=queue),
-                            add.si(5, 7).set(queue=queue),
-                        ]
-                    )
-                ),
-                marks=pytest.mark.skip(reason="Task times out"),
+            (
+                lambda queue: group(
+                    [
+                        add.si(9, 7).set(queue=queue),
+                        add.si(5, 7).set(queue=queue),
+                    ]
+                )
             ),
             (
                 lambda queue: chord(
