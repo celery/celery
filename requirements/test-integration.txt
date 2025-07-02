@@ -3,4 +3,4 @@
 -r extras/auth.txt
 -r extras/memcache.txt
 pytest-rerunfailures>=11.1.2
-git+https://github.com/celery/kombu.git
+# git+https://github.com/celery/kombu.git
