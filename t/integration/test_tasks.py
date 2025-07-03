@@ -496,6 +496,86 @@ class test_tasks:
             assert result.status == 'FAILURE'
 
 
+class test_apply_tasks:
+    """Tests for tasks called via apply() method."""
+
+    def test_apply_single_task_ids(self, manager):
+        """Test that a single task called via apply() has correct IDs."""
+        @manager.app.task(bind=True)
+        def single_apply_task(self):
+            return {
+                'task_id': self.request.id,
+                'parent_id': self.request.parent_id,
+                'root_id': self.request.root_id,
+            }
+
+        result = single_apply_task.apply()
+        data = result.get()
+
+        # Single task should have no parent and root_id should equal task_id
+        assert data['parent_id'] is None
+        assert data['root_id'] == data['task_id']
+
+    def test_apply_nested_parent_child_relationship(self, manager):
+        """Test parent-child relationship when one task calls another via apply()."""
+
+        @manager.app.task(bind=True)
+        def grandchild_task(task_self):
+            return {
+                'task_id': task_self.request.id,
+                'parent_id': task_self.request.parent_id,
+                'root_id': task_self.request.root_id,
+                'name': 'grandchild_task'
+            }
+
+        @manager.app.task(bind=True)
+        def child_task(task_self):
+
+            # Call grandchild task via apply()
+            grandchild_data = grandchild_task.apply().get()
+            return {
+                'task_id': task_self.request.id,
+                'parent_id': task_self.request.parent_id,
+                'root_id': task_self.request.root_id,
+                'name': 'child_task',
+                'grandchild_data': grandchild_data
+            }
+
+        @manager.app.task(bind=True)
+        def parent_task(task_self):
+            # Call child task via apply()
+            child_data = child_task.apply().get()
+            parent_data = {
+                'task_id': task_self.request.id,
+                'parent_id': task_self.request.parent_id,
+                'root_id': task_self.request.root_id,
+                'name': 'parent_task',
+                'child_data': child_data
+            }
+            return parent_data
+
+        result = parent_task.apply()
+
+        parent_data = result.get()
+        child_data = parent_data['child_data']
+        grandchild_data = child_data['grandchild_data']
+
+        # Verify parent task
+        assert parent_data['name'] == 'parent_task'
+        assert parent_data['parent_id'] is None
+        assert parent_data['root_id'] == parent_data['task_id']
+
+        # Verify child task
+        assert child_data['name'] == 'child_task'
+        assert child_data['parent_id'] == parent_data['task_id']
+        assert child_data['root_id'] == parent_data['task_id']
+
+        # Verify grandchild task
+        assert grandchild_data['name'] == 'grandchild_task'
+        assert grandchild_data['parent_id'] == child_data['task_id']
+        assert grandchild_data['root_id'] == parent_data['task_id']
+
+
 class test_trace_log_arguments:
     args = "CUSTOM ARGS"
     kwargs = "CUSTOM KWARGS"
