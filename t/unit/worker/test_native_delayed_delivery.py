@@ -50,18 +50,23 @@ class test_DelayedDelivery:
         )
 
     def test_start_native_delayed_delivery_topic_exchange(self, caplog):
-        consumer_mock = MagicMock()
+        consumer_mock = Mock()
         consumer_mock.app.conf.broker_native_delayed_delivery_queue_type = 'classic'
         consumer_mock.app.conf.broker_url = 'amqp://'
         consumer_mock.app.amqp.queues = {
             'celery': Queue('celery', exchange=Exchange('celery', type='topic'))
         }
+        connection = MagicMock()
+        consumer_mock.app.connection_for_write.return_value = connection
 
         delayed_delivery = DelayedDelivery(consumer_mock)
 
         delayed_delivery.start(consumer_mock)
 
         assert len(caplog.records) == 0
+        # Verify connection context was called
+        assert connection.__enter__.called
+        assert connection.__exit__.called
 
     def test_start_native_delayed_delivery_fanout_exchange(self, caplog):
         consumer_mock = MagicMock()
