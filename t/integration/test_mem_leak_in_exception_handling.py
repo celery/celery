@@ -163,7 +163,8 @@ def test_mem_leak_unhandled_exceptions():
     threshold_percent = float(os.getenv("MEMORY_LEAK_THRESHOLD_PERCENT", 10))  # Default: 10% increase
     memory_threshold_mb = baseline_memory / 1024 / 1024 * (threshold_percent / 100)
     assert memory_increase_mb < memory_threshold_mb, (
-        f"Memory leak still exists! Expected <{memory_threshold_mb:.2f}MB increase (based on {threshold_percent}% of baseline), "
+        f"Memory leak still exists! Expected <{memory_threshold_mb:.2f}MB increase "
+        f"(based on {threshold_percent}% of baseline), "
         f"but got {memory_increase_mb:.2f}MB. "
         f"This indicates the memory leak fix is not working properly."
     )
