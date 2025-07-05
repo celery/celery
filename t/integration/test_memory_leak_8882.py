@@ -77,14 +77,20 @@ class MemoryLeakUnhandledExceptionsTest:
 
 
 def get_memory_usage():
-    """Get current memory usage in bytes."""
+    """Get current memory usage in bytes.
+
+    Uses psutil to get RSS (Resident Set Size) if available.
+    Falls back to tracemalloc for memory tracking if psutil is unavailable.
+    Note: tracemalloc does not provide RSS but tracks Python memory allocations.
+    """
     try:
         import psutil
         process = psutil.Process(os.getpid())
         return process.memory_info().rss
     except ImportError:
-        # Fallback to tracemalloc if psutil not available
-        current, peak = tracemalloc.get_traced_memory()
+        # Use tracemalloc for memory tracking
+        tracemalloc.clear_traces()  # Clear previous traces to ensure accurate measurement
+        current, _ = tracemalloc.get_traced_memory()
         return current
 
 
