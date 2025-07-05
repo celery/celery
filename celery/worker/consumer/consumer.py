@@ -583,7 +583,7 @@ class Consumer:
         #
         # See: celery.worker.strategy.default
         #
-        logger.warn(f"Task {task.humaninfo()} reached ETA. Decrementing QoS (synchronously)")
+        logger.warning(f"Task {task.humaninfo()} reached ETA. Decrementing QoS (synchronously)")
         self.qos.decrement_eventually()
         self.qos.update()
         #
