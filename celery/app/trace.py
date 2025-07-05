@@ -645,8 +645,8 @@ def _signal_internal_error(task, uuid, args, kwargs, request, exc):
         if tb is not None:
             del tb
         if einfo is not None:
-            # Break potential reference cycles by clearing the einfo object
-            einfo = None
+            # Break potential reference cycles by deleting the einfo object
+            del einfo
 
 
 def trace_task_ret(name, uuid, request, body, content_type,
