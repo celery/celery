@@ -146,7 +146,7 @@ def test_mem_leak_unhandled_exceptions():
     tracemalloc.stop()
 
     # Log memory statistics for debugging
-    logger.debug("")  # New line for better readability
+    logger.debug("--- Memory Statistics ---")  # Separator for better readability
     logger.debug(f"Baseline memory: {baseline_memory / 1024 / 1024:.2f} MB")
     logger.debug(f"After exceptions: {after_exceptions_memory / 1024 / 1024:.2f} MB")
     logger.debug(f"Final memory: {final_memory / 1024 / 1024:.2f} MB")
