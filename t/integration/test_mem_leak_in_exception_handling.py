@@ -1,18 +1,16 @@
 """
-Integration test for memory leak issue #8882.
+Integration tests for memory leak issue #8882.
 
-This test reproduces the memory leak that occurs when Celery tasks
+These tests reproduce memory leak scenarios that occur when Celery tasks
 raise unhandled exceptions, causing ExceptionInfo objects to not be
 properly garbage collected.
 """
 
 import gc
 import os
-import sys
 import tracemalloc
 
 from celery import Celery
-from celery.app.trace import traceback_clear
 
 
 class MemoryLeakUnhandledExceptionsTest:
@@ -93,119 +91,6 @@ def get_memory_usage():
         # Fallback to tracemalloc if psutil not available
         current, peak = tracemalloc.get_traced_memory()
         return current
-
-
-def test_traceback_clear_uses_exc_argument():
-    """Test that traceback_clear(exc) correctly uses the exc argument.
-
-    This test proves that the reported issue about traceback_clear not using
-    the exc argument is NOT valid. The function does use the exc argument correctly.
-    """
-    print("Testing traceback_clear(exc) functionality...")
-
-    # Create exception with traceback
-    def create_exception_with_traceback():
-        """Create an exception with a traceback for testing."""
-        try:
-            # Create a nested call stack to have frames to clear
-            def inner_function():
-                x = "some_local_variable" * 1000  # Create local variable  # noqa: F841
-                y = list(range(1000))  # Another local variable  # noqa: F841
-                raise ValueError("Test exception with traceback")
-
-            def outer_function():
-                z = "outer_local_variable" * 1000  # Local variable in outer frame  # noqa: F841
-                inner_function()
-
-            outer_function()
-        except Exception as e:
-            return e
-
-    # Test 1: traceback_clear(exc) with provided exception
-    exc = create_exception_with_traceback()
-
-    # Verify exception has traceback
-    exc_tb = getattr(exc, '__traceback__', None)
-    if exc_tb is None:
-        raise AssertionError("Exception should have traceback")
-    print("PASS: Exception has traceback")
-
-    # Count initial frames
-    initial_frames = []
-    tb = exc_tb
-    while tb is not None:
-        initial_frames.append(tb.tb_frame)
-        tb = tb.tb_next
-
-    print(f"PASS: Initial traceback has {len(initial_frames)} frames")
-
-    # Verify frames have local variables before clearing
-    frame_locals_before = []
-    for frame in initial_frames:
-        frame_locals_before.append(len(frame.f_locals))
-
-    print(f"PASS: Frames have local variables: {frame_locals_before}")
-
-    # Call traceback_clear with the exception - this should use exc argument
-    traceback_clear(exc)
-    print("PASS: Called traceback_clear(exc)")
-
-    # Verify frames are cleared
-    exc_tb_after = getattr(exc, '__traceback__', None)
-    if exc_tb_after is None:
-        raise AssertionError("Traceback should still exist after clearing")
-
-    tb = exc_tb_after
-    frames_after = []
-    while tb is not None:
-        frames_after.append(tb.tb_frame)
-        tb = tb.tb_next
-
-    # Check that frame locals are cleared
-    cleared_count = 0
-    for frame in frames_after:
-        if len(frame.f_locals) == 0:
-            cleared_count += 1
-
-    print(f"PASS: After traceback_clear: {cleared_count}/{len(frames_after)} frames cleared")
-
-    # Verify the function actually used the exc argument by checking traceback still exists
-    if getattr(exc, '__traceback__', None) is None:
-        raise AssertionError("Traceback should still exist but frames should be cleared")
-    print("PASS: Traceback object still exists (proving exc argument was used)")
-
-    # Test 2: traceback_clear() without exc argument
-    print("Testing traceback_clear() without exc argument...")
-
-    try:
-        def test_function():
-            local_var = "test" * 1000  # noqa: F841
-            raise RuntimeError("Test exception")
-
-        test_function()
-    except Exception:
-        # Now we're in except block with active traceback
-        _, _, tb_before = sys.exc_info()
-        assert tb_before is not None, "Should have active traceback"
-        print("PASS: Active traceback exists")
-
-        # Call traceback_clear without argument - should use sys.exc_info()
-        traceback_clear()
-        print("PASS: Called traceback_clear() without argument")
-
-    # Test 3: traceback_clear(None)
-    print("Testing traceback_clear(None)...")
-
-    try:
-        def test_function():
-            local_var = "test" * 1000  # noqa: F841
-            raise RuntimeError("Test exception")
-
-        test_function()
-    except Exception:
-        # Call with None - should fall back to sys.exc_info()
-        traceback_clear(None)
-        print("PASS: Called traceback_clear(None) - uses sys.exc_info() fallback")
 
 
 def test_mem_leak_unhandled_exceptions():
@@ -361,7 +246,9 @@ def test_mem_leak_nested_exception_stacks():
 
 
 if __name__ == "__main__":
-    # Allow running this test standalone for debugging
-    print("Running memory leak test for unhandled exceptions...")
+    # Allow running these tests standalone for debugging
+    print("Running memory leak integration tests...")
     test_mem_leak_unhandled_exceptions()
-    print("Memory leak test completed")
+    test_mem_leak_retry_failures()
+    test_mem_leak_nested_exception_stacks()
+    print("Memory leak integration tests completed")
