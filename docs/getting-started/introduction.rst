@@ -34,7 +34,7 @@ exposing an HTTP endpoint and having a task that requests it (webhooks).
 .. _node-celery: https://github.com/mher/node-celery
 .. _`PHP client`: https://github.com/gjedeer/celery-php
 .. _`gocelery`: https://github.com/gocelery/gocelery
-.. _gopher-celery: https://github.com/marselester/gopher-celery
+.. _`gopher-celery`: https://github.com/marselester/gopher-celery
 .. _rusty-celery: https://github.com/rusty-celery/rusty-celery
 
 What do I need?
