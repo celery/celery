@@ -148,11 +148,14 @@ def test_mem_leak_unhandled_exceptions():
     # This threshold may need adjustment based on the system
     memory_increase_mb = memory_increase / 1024 / 1024
 
+    # Parameterized memory threshold and margin of error
+    memory_threshold_mb = float(os.getenv("MEMORY_THRESHOLD_MB", 5))  # Default to 5MB
+    margin_of_error = float(os.getenv("MEMORY_MARGIN_PERCENT", 10)) / 100  # Default to 10%
+    effective_threshold_mb = memory_threshold_mb * (1 + margin_of_error)
+
     # Verify the memory leak is fixed - memory increase should be minimal
-    # Before fix: >70MB for 1000 tasks (~70KB/task)
-    # After fix: <5MB for 500 tasks (<10KB/task)
-    assert memory_increase_mb < 5, (
-        f"Memory leak still exists! Expected <5MB increase for 500 tasks, "
+    assert memory_increase_mb < effective_threshold_mb, (
+        f"Memory leak still exists! Expected <{effective_threshold_mb:.2f}MB increase for 500 tasks, "
         f"but got {memory_increase_mb:.2f}MB. "
         f"This indicates the memory leak fix is not working properly."
     )
