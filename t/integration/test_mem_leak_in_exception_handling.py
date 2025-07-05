@@ -144,13 +144,13 @@ def test_mem_leak_unhandled_exceptions():
     # Stop tracing
     tracemalloc.stop()
 
-    # Print memory statistics for debugging
-    print()  # New line for better readability
-    print(f"Baseline memory: {baseline_memory / 1024 / 1024:.2f} MB")
-    print(f"After exceptions: {after_exceptions_memory / 1024 / 1024:.2f} MB")
-    print(f"Final memory: {final_memory / 1024 / 1024:.2f} MB")
-    print(f"Memory increase: {memory_increase / 1024 / 1024:.2f} MB")
-    print(f"Exceptions processed: {exception_count}")
+    # Log memory statistics for debugging
+    logger.debug("")  # New line for better readability
+    logger.debug(f"Baseline memory: {baseline_memory / 1024 / 1024:.2f} MB")
+    logger.debug(f"After exceptions: {after_exceptions_memory / 1024 / 1024:.2f} MB")
+    logger.debug(f"Final memory: {final_memory / 1024 / 1024:.2f} MB")
+    logger.debug(f"Memory increase: {memory_increase / 1024 / 1024:.2f} MB")
+    logger.debug(f"Exceptions processed: {exception_count}")
 
     # The test should demonstrate a significant memory increase
     # This threshold may need adjustment based on the system
