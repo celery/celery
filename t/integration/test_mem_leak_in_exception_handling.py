@@ -79,7 +79,8 @@ class MemoryLeakUnhandledExceptionsTest:
 
 
 def get_memory_usage():
-    """Get current memory usage in bytes.
+    """
+    Get current memory usage in bytes.
 
     Returns RSS (total process memory) if psutil is available,
     otherwise returns Python heap allocations via tracemalloc.
