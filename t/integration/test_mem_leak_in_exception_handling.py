@@ -12,6 +12,7 @@ import os
 import tracemalloc
 
 from celery import Celery
+logger = logging.getLogger(__name__)
 
 
 class MemoryLeakUnhandledExceptionsTest:
