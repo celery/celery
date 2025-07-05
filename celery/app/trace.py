@@ -206,8 +206,8 @@ class TraceInfo:
                 'name': get_task_name(req, task.name),
                 'exc': str(reason),
             })
-            # Note: We return einfo, so we can't clean it up here
-            # The calling function is responsible for cleanup
+            # MEMORY LEAK FIX: Clear traceback frames to prevent memory retention (Issue #8882)
+            traceback_clear(einfo.exception)
             return einfo
         finally:
             # MEMORY LEAK FIX: Clean up direct traceback reference to prevent
