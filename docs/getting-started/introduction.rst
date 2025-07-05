@@ -26,7 +26,7 @@ to high availability and horizontal scaling.
 
 Celery is written in Python, but the protocol can be implemented in any
 language. In addition to Python there's node-celery_ for Node.js,
-a `PHP client`_, `gocelery`_, gopher-celery_ for Go, and rusty-celery_ for Rust.
+a `PHP client`_, `gocelery`_, `gopher-celery`_ for Go, and `rusty-celery`_ for Rust.
 
 Language interoperability can also be achieved
 exposing an HTTP endpoint and having a task that requests it (webhooks).
