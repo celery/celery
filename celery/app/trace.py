@@ -647,6 +647,8 @@ def _signal_internal_error(task, uuid, args, kwargs, request, exc):
         if tb is not None:
             del tb
         if einfo is not None:
+            # Clear traceback frames to ensure consistent cleanup
+            traceback_clear(einfo.exception)
             # Break potential reference cycles by deleting the einfo object
             del einfo
 
