@@ -246,6 +246,8 @@ class TraceInfo:
                                       traceback=exc.__traceback__,
                                       einfo=einfo)
             self._log_error(task, req, einfo)
+            # MEMORY LEAK FIX: Clear traceback frames to prevent memory retention (Issue #8882)
+            traceback_clear(exc)
             # Note: We return einfo, so we can't clean it up here
             # The calling function is responsible for cleanup
             return einfo
