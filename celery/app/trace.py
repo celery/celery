@@ -190,6 +190,7 @@ class TraceInfo:
         # the exception raised is the Retry semi-predicate,
         # and it's exc' attribute is the original exception raised (if any).
         type_, _, tb = sys.exc_info()
+        einfo = None
         try:
             reason = self.retval
             einfo = ExceptionInfo((type_, reason, tb))
@@ -205,39 +206,54 @@ class TraceInfo:
                 'name': get_task_name(req, task.name),
                 'exc': str(reason),
             })
+            # Note: We return einfo, so we can't clean it up here
+            # The calling function is responsible for cleanup
             return einfo
         finally:
-            del tb
+            # MEMORY LEAK FIX: Clean up direct traceback reference to prevent
+            # retention of frame objects and their local variables (Issue #8882)
+            if tb is not None:
+                del tb
 
     def handle_failure(self, task, req, store_errors=True, call_errbacks=True):
         """Handle exception."""
         orig_exc = self.retval
+        tb_ref = None
 
-        exc = get_pickleable_exception(orig_exc)
-        if exc.__traceback__ is None:
-            # `get_pickleable_exception` may have created a new exception without
-            # a traceback.
-            _, _, exc.__traceback__ = sys.exc_info()
+        try:
+            exc = get_pickleable_exception(orig_exc)
+            if exc.__traceback__ is None:
+                # `get_pickleable_exception` may have created a new exception without
+                # a traceback.
+                _, _, tb_ref = sys.exc_info()
+                exc.__traceback__ = tb_ref
 
-        exc_type = get_pickleable_etype(type(orig_exc))
+            exc_type = get_pickleable_etype(type(orig_exc))
 
-        # make sure we only send pickleable exceptions back to parent.
-        einfo = ExceptionInfo(exc_info=(exc_type, exc, exc.__traceback__))
+            # make sure we only send pickleable exceptions back to parent.
+            einfo = ExceptionInfo(exc_info=(exc_type, exc, exc.__traceback__))
 
-        task.backend.mark_as_failure(
-            req.id, exc, einfo.traceback,
-            request=req, store_result=store_errors,
-            call_errbacks=call_errbacks,
-        )
+            task.backend.mark_as_failure(
+                req.id, exc, einfo.traceback,
+                request=req, store_result=store_errors,
+                call_errbacks=call_errbacks,
+            )
 
-        task.on_failure(exc, req.id, req.args, req.kwargs, einfo)
-        signals.task_failure.send(sender=task, task_id=req.id,
-                                  exception=exc, args=req.args,
-                                  kwargs=req.kwargs,
-                                  traceback=exc.__traceback__,
-                                  einfo=einfo)
-        self._log_error(task, req, einfo)
-        return einfo
+            task.on_failure(exc, req.id, req.args, req.kwargs, einfo)
+            signals.task_failure.send(sender=task, task_id=req.id,
+                                      exception=exc, args=req.args,
+                                      kwargs=req.kwargs,
+                                      traceback=exc.__traceback__,
+                                      einfo=einfo)
+            self._log_error(task, req, einfo)
+            # Note: We return einfo, so we can't clean it up here
+            # The calling function is responsible for cleanup
+            return einfo
+        finally:
+            # MEMORY LEAK FIX: Clean up any direct traceback references we may have created
+            # to prevent retention of frame objects and their local variables (Issue #8882)
+            if tb_ref is not None:
+                del tb_ref
 
     def _log_error(self, task, req, einfo):
         eobj = einfo.exception = get_pickled_exception(einfo.exception)
@@ -270,6 +286,12 @@ class TraceInfo:
 
 
 def traceback_clear(exc=None):
+    """Clear traceback frames to prevent memory leaks.
+
+    MEMORY LEAK FIX: This function helps break reference cycles between
+    traceback objects and frame objects that can prevent garbage collection.
+    Clearing frames releases local variables that may be holding large objects.
+    """
     # Cleared Tb, but einfo still has a reference to Traceback.
     # exc cleans up the Traceback at the last moment that can be revealed.
     tb = None
@@ -283,8 +305,10 @@ def traceback_clear(exc=None):
 
     while tb is not None:
         try:
+            # MEMORY LEAK FIX: tb.tb_frame.clear() clears ALL frame data including
+            # local variables, which is more efficient than accessing f_locals separately.
+            # Removed redundant tb.tb_frame.f_locals access that was creating unnecessary references.
             tb.tb_frame.clear()
-            tb.tb_frame.f_locals
         except RuntimeError:
             # Ignore the exception raised if the frame is still executing.
             pass
@@ -456,18 +480,22 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     I, R = Info(REJECTED, exc), ExceptionInfo(internal=True)
                     state, retval = I.state, I.retval
                     I.handle_reject(task, task_request)
+                    # MEMORY LEAK FIX: Clear traceback frames to prevent memory retention (Issue #8882)
                     traceback_clear(exc)
                 except Ignore as exc:
                     I, R = Info(IGNORED, exc), ExceptionInfo(internal=True)
                     state, retval = I.state, I.retval
                     I.handle_ignore(task, task_request)
+                    # MEMORY LEAK FIX: Clear traceback frames to prevent memory retention (Issue #8882)
                     traceback_clear(exc)
                 except Retry as exc:
                     I, R, state, retval = on_error(
                         task_request, exc, RETRY, call_errbacks=False)
+                    # MEMORY LEAK FIX: Clear traceback frames to prevent memory retention (Issue #8882)
                     traceback_clear(exc)
                 except Exception as exc:
                     I, R, state, retval = on_error(task_request, exc)
+                    # MEMORY LEAK FIX: Clear traceback frames to prevent memory retention (Issue #8882)
                     traceback_clear(exc)
                 except BaseException:
                     raise
@@ -522,6 +550,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         )
                     except EncodeError as exc:
                         I, R, state, retval = on_error(task_request, exc)
+                        # MEMORY LEAK FIX: Clear traceback frames to prevent memory retention (Issue #8882)
+                        traceback_clear(exc)
                     else:
                         Rstr = saferepr(R, resultrepr_maxsize)
                         T = monotonic() - time_start
@@ -591,6 +621,8 @@ def trace_task(task, uuid, args, kwargs, request=None, **opts):
 
 def _signal_internal_error(task, uuid, args, kwargs, request, exc):
     """Send a special `internal_error` signal to the app for outside body errors."""
+    tb = None
+    einfo = None
     try:
         _, _, tb = sys.exc_info()
         einfo = ExceptionInfo()
@@ -607,7 +639,14 @@ def _signal_internal_error(task, uuid, args, kwargs, request, exc):
             einfo=einfo,
         )
     finally:
-        del tb
+        # MEMORY LEAK FIX: Clean up local references to prevent memory leaks (Issue #8882)
+        # Both 'tb' and 'einfo' can hold references to frame objects and their local variables.
+        # Explicitly clearing these prevents reference cycles that block garbage collection.
+        if tb is not None:
+            del tb
+        if einfo is not None:
+            # Break potential reference cycles by clearing the einfo object
+            einfo = None
 
 
 def trace_task_ret(name, uuid, request, body, content_type,
