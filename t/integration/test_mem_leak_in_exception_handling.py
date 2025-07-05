@@ -196,10 +196,10 @@ def test_mem_leak_retry_failures():
     memory_increase = after_retries_memory - baseline_memory
     memory_increase_mb = memory_increase / 1024 / 1024
 
-    print()  # New line for better readability
-    print(f"Baseline memory: {baseline_memory / 1024 / 1024:.2f} MB")
-    print(f"After retries: {after_retries_memory / 1024 / 1024:.2f} MB")
-    print(f"Memory increase: {memory_increase_mb:.2f} MB")
+    logger.debug("")  # New line for better readability
+    logger.debug(f"Baseline memory: {baseline_memory / 1024 / 1024:.2f} MB")
+    logger.debug(f"After retries: {after_retries_memory / 1024 / 1024:.2f} MB")
+    logger.debug(f"Memory increase: {memory_increase_mb:.2f} MB")
 
     # Retries should not show significant memory increase if fix is working
     assert memory_increase_mb < 3, (
