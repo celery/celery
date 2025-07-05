@@ -239,10 +239,10 @@ def test_mem_leak_nested_exception_stacks():
     memory_increase = after_complex_memory - baseline_memory
     memory_increase_mb = memory_increase / 1024 / 1024
 
-    print()  # New line for better readability
-    print(f"Baseline memory: {baseline_memory / 1024 / 1024:.2f} MB")
-    print(f"After complex exceptions: {after_complex_memory / 1024 / 1024:.2f} MB")
-    print(f"Memory increase: {memory_increase_mb:.2f} MB")
+    logger.debug("Memory usage results:")
+    logger.debug(f"Baseline memory: {baseline_memory / 1024 / 1024:.2f} MB")
+    logger.debug(f"After complex exceptions: {after_complex_memory / 1024 / 1024:.2f} MB")
+    logger.debug(f"Memory increase: {memory_increase_mb:.2f} MB")
 
     # Complex exceptions should not show significant memory increase if fix is working
     assert memory_increase_mb < 4, (
