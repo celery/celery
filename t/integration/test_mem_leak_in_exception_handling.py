@@ -7,6 +7,7 @@ properly garbage collected.
 """
 
 import gc
+import logging
 import os
 import tracemalloc
 
