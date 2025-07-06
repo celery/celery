@@ -137,6 +137,8 @@ class AsyncResult(ResultBase):
         self._cache = None
         if self.parent:
             self.parent.forget()
+
+        self.backend.remove_pending_result(self)
         self.backend.forget(self.id)
 
     def revoke(self, connection=None, terminate=False, signal=None,
