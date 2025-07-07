@@ -961,12 +961,15 @@ class test_Request(RequestCase):
         warn = patching('celery.worker.request.warn')
         error = patching('celery.worker.request.error')
 
-        state.should_terminate = True
-        job = self.xRequest()
-        job.on_timeout(None, None)
-        warn.assert_not_called()
-        error.assert_not_called()
-        state.should_terminate = None
+        original_should_terminate = state.should_terminate
+        try:
+            state.should_terminate = True
+            job = self.xRequest()
+            job.on_timeout(None, None)
+            warn.assert_not_called()
+            error.assert_not_called()
+        finally:
+            state.should_terminate = original_should_terminate
 
     def test_fast_trace_task(self):
         assert self.app.use_fast_trace_task is False
