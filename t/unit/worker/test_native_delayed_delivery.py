@@ -1,7 +1,7 @@
 import itertools
 from logging import LogRecord
 from typing import Iterator
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from kombu import Exchange, Queue
@@ -28,7 +28,7 @@ class test_DelayedDelivery:
         assert delayed_delivery.include_if(consumer_mock) is True
 
     def test_start_native_delayed_delivery_direct_exchange(self, caplog):
-        consumer_mock = Mock()
+        consumer_mock = MagicMock()
         consumer_mock.app.conf.broker_native_delayed_delivery_queue_type = 'classic'
         consumer_mock.app.conf.broker_url = 'amqp://'
         consumer_mock.app.amqp.queues = {
@@ -56,15 +56,20 @@ class test_DelayedDelivery:
         consumer_mock.app.amqp.queues = {
             'celery': Queue('celery', exchange=Exchange('celery', type='topic'))
         }
+        connection = MagicMock()
+        consumer_mock.app.connection_for_write.return_value = connection
 
         delayed_delivery = DelayedDelivery(consumer_mock)
 
         delayed_delivery.start(consumer_mock)
 
         assert len(caplog.records) == 0
+        # Verify connection context was called
+        assert connection.__enter__.called
+        assert connection.__exit__.called
 
     def test_start_native_delayed_delivery_fanout_exchange(self, caplog):
-        consumer_mock = Mock()
+        consumer_mock = MagicMock()
         consumer_mock.app.conf.broker_native_delayed_delivery_queue_type = 'classic'
         consumer_mock.app.conf.broker_url = 'amqp://'
         consumer_mock.app.amqp.queues = {
@@ -237,7 +242,7 @@ class test_DelayedDelivery:
             assert isinstance(value, float), f"Expected float, got {type(value)}"
 
     def test_start_with_no_queues(self, caplog):
-        consumer_mock = Mock()
+        consumer_mock = MagicMock()
         consumer_mock.app.conf.broker_native_delayed_delivery_queue_type = 'classic'
         consumer_mock.app.conf.broker_url = 'amqp://'
         consumer_mock.app.amqp.queues = {}
@@ -264,7 +269,7 @@ class test_DelayedDelivery:
 
     @patch('celery.worker.consumer.delayed_delivery.declare_native_delayed_delivery_exchanges_and_queues')
     def test_setup_declare_error(self, mock_declare, caplog):
-        consumer_mock = Mock()
+        consumer_mock = MagicMock()
         consumer_mock.app.conf.broker_native_delayed_delivery_queue_type = 'classic'
         consumer_mock.app.conf.broker_url = 'amqp://'
         consumer_mock.app.amqp.queues = {
@@ -284,7 +289,7 @@ class test_DelayedDelivery:
 
     @patch('celery.worker.consumer.delayed_delivery.bind_queue_to_native_delayed_delivery_exchange')
     def test_setup_bind_error(self, mock_bind, caplog):
-        consumer_mock = Mock()
+        consumer_mock = MagicMock()
         consumer_mock.app.conf.broker_native_delayed_delivery_queue_type = 'classic'
         consumer_mock.app.conf.broker_url = 'amqp://'
         consumer_mock.app.amqp.queues = {
