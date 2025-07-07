@@ -124,14 +124,27 @@ def pydantic_wrapper(
         dump_kwargs = {}
     dump_kwargs.setdefault('mode', 'json')
 
+    # If a file uses `from __future__ import annotations`, all annotations will
+    # be strings. `typing.get_type_hints()` can turn these back into real
+    # types, but can also sometimes fail due to circular imports. Try that
+    # first, and fall back to annotations from `inspect.signature()`.
     task_signature = inspect.signature(task_fun)
+
+    try:
+        type_hints = typing.get_type_hints(task_fun)
+    except (NameError, AttributeError, TypeError):
+        # Fall back to raw annotations from inspect if get_type_hints fails
+        type_hints = None
 
     @functools.wraps(task_fun)
     def wrapper(*task_args, **task_kwargs):
         # Validate task parameters if type hinted as BaseModel
         bound_args = task_signature.bind(*task_args, **task_kwargs)
         for arg_name, arg_value in bound_args.arguments.items():
-            arg_annotation = task_signature.parameters[arg_name].annotation
+            if type_hints and arg_name in type_hints:
+                arg_annotation = type_hints[arg_name]
+            else:
+                arg_annotation = task_signature.parameters[arg_name].annotation
 
             optional_arg = get_optional_arg(arg_annotation)
             if optional_arg is not None and arg_value is not None:
@@ -149,7 +162,11 @@ def pydantic_wrapper(
 
         # Dump Pydantic model if the returned value is an instance of pydantic.BaseModel *and* its
         # class matches the typehint
-        return_annotation = task_signature.return_annotation
+        if type_hints and 'return' in type_hints:
+            return_annotation = type_hints['return']
+        else:
+            return_annotation = task_signature.return_annotation
+
         optional_return_annotation = get_optional_arg(return_annotation)
         if optional_return_annotation is not None:
             return_annotation = optional_return_annotation
