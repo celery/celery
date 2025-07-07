@@ -16,9 +16,9 @@ from celery.worker import state as worker_state
 
 from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connection
 from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result, add_not_typed, add_pydantic,
-                    fail, fail_unpickleable, print_unicode, retry, retry_once, retry_once_headers,
-                    retry_once_priority, retry_unpickleable, return_properties, second_order_replace1, sleeping,
-                    soft_time_limit_must_exceed_time_limit)
+                    add_pydantic_string_annotations, fail, fail_unpickleable, print_unicode, retry, retry_once,
+                    retry_once_headers, retry_once_priority, retry_unpickleable, return_properties,
+                    second_order_replace1, sleeping, soft_time_limit_must_exceed_time_limit)
 
 TIMEOUT = 10
 
@@ -134,6 +134,20 @@ class test_tasks:
         # Tests calling task only with args
         for i in range(10):
             results.append([i + i, add_pydantic.delay({'x': i, 'y': i})])
+        for expected, result in results:
+            value = result.get(timeout=10)
+            assert value == {'result': expected}
+            assert result.status == 'SUCCESS'
+            assert result.ready() is True
+            assert result.successful() is True
+
+    @flaky
+    def test_pydantic_string_annotations(self, manager):
+        """Tests task call with string-annotated Pydantic model."""
+        results = []
+        # Tests calling task only with args
+        for i in range(10):
+            results.append([i + i, add_pydantic_string_annotations.delay({'x': i, 'y': i})])
         for expected, result in results:
             value = result.get(timeout=10)
             assert value == {'result': expected}
@@ -494,6 +508,86 @@ class test_tasks:
             result.get(timeout=5)
 
             assert result.status == 'FAILURE'
+
+
+class test_apply_tasks:
+    """Tests for tasks called via apply() method."""
+
+    def test_apply_single_task_ids(self, manager):
+        """Test that a single task called via apply() has correct IDs."""
+        @manager.app.task(bind=True)
+        def single_apply_task(self):
+            return {
+                'task_id': self.request.id,
+                'parent_id': self.request.parent_id,
+                'root_id': self.request.root_id,
+            }
+
+        result = single_apply_task.apply()
+        data = result.get()
+
+        # Single task should have no parent and root_id should equal task_id
+        assert data['parent_id'] is None
+        assert data['root_id'] == data['task_id']
+
+    def test_apply_nested_parent_child_relationship(self, manager):
+        """Test parent-child relationship when one task calls another via apply()."""
+
+        @manager.app.task(bind=True)
+        def grandchild_task(task_self):
+            return {
+                'task_id': task_self.request.id,
+                'parent_id': task_self.request.parent_id,
+                'root_id': task_self.request.root_id,
+                'name': 'grandchild_task'
+            }
+
+        @manager.app.task(bind=True)
+        def child_task(task_self):
+
+            # Call grandchild task via apply()
+            grandchild_data = grandchild_task.apply().get()
+            return {
+                'task_id': task_self.request.id,
+                'parent_id': task_self.request.parent_id,
+                'root_id': task_self.request.root_id,
+                'name': 'child_task',
+                'grandchild_data': grandchild_data
+            }
+
+        @manager.app.task(bind=True)
+        def parent_task(task_self):
+            # Call child task via apply()
+            child_data = child_task.apply().get()
+            parent_data = {
+                'task_id': task_self.request.id,
+                'parent_id': task_self.request.parent_id,
+                'root_id': task_self.request.root_id,
+                'name': 'parent_task',
+                'child_data': child_data
+            }
+            return parent_data
+
+        result = parent_task.apply()
+
+        parent_data = result.get()
+        child_data = parent_data['child_data']
+        grandchild_data = child_data['grandchild_data']
+
+        # Verify parent task
+        assert parent_data['name'] == 'parent_task'
+        assert parent_data['parent_id'] is None
+        assert parent_data['root_id'] == parent_data['task_id']
+
+        # Verify child task
+        assert child_data['name'] == 'child_task'
+        assert child_data['parent_id'] == parent_data['task_id']
+        assert child_data['root_id'] == parent_data['task_id']
+
+        # Verify grandchild task
+        assert grandchild_data['name'] == 'grandchild_task'
+        assert grandchild_data['parent_id'] == child_data['task_id']
+        assert grandchild_data['root_id'] == parent_data['task_id']
 
 
 class test_trace_log_arguments:

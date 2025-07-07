@@ -3162,16 +3162,13 @@ class test_chord:
                     add.si(5, 7),
                 )
             ),
-            pytest.param(
-                (
-                    lambda: group(
-                        [
-                            add.si(9, 7),
-                            add.si(5, 7),
-                        ]
-                    )
-                ),
-                marks=pytest.mark.skip(reason="Task times out"),
+            (
+                lambda: group(
+                    [
+                        add.si(9, 7),
+                        add.si(5, 7),
+                    ]
+                )
             ),
             (
                 lambda: chord(
