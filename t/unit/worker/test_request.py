@@ -887,7 +887,7 @@ class test_Request(RequestCase):
             job.send_event.assert_not_called()
             job.task.backend.mark_as_failure.assert_not_called()
         finally:
-            state.should_terminate = None
+            state.should_terminate = original_should_terminate
 
     def test_from_message_invalid_kwargs(self):
         m = self.TaskMessage(self.mytask.name, args=(), kwargs='foo')
