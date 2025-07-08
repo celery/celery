@@ -65,6 +65,33 @@ def unpickle_backend(cls, args, kwargs):
     return cls(*args, app=current_app._get_current_object(), **kwargs)
 
 
+def _create_chord_error_with_cause(message, original_exc=None) -> ChordError:
+    """Create a ChordError preserving the original exception as __cause__.
+
+    This helper reduces code duplication across the codebase when creating
+    ChordError instances that need to preserve the original exception.
+    """
+    chord_error = ChordError(message)
+    if isinstance(original_exc, Exception):
+        chord_error.__cause__ = original_exc
+    return chord_error
+
+
+def _create_fake_task_request(task_id, errbacks=None, task_name='unknown', **extra) -> Context:
+    """Create a fake task request context for error callbacks.
+
+    This helper reduces code duplication when creating fake request contexts
+    for error callback handling.
+    """
+    return Context({
+        "id": task_id,
+        "errbacks": errbacks or [],
+        "delivery_info": dict(),
+        "task": task_name,
+        **extra
+    })
+
+
 class _nulldict(dict):
     def ignore(self, *a, **kw):
         pass
@@ -281,27 +308,99 @@ class Backend:
 
     def chord_error_from_stack(self, callback, exc=None):
         app = self.app
+
         try:
             backend = app._tasks[callback.task].backend
         except KeyError:
             backend = self
+
+        # Handle group callbacks specially to prevent hanging body tasks
+        if isinstance(callback, group):
+            return self._handle_group_chord_error(group_callback=callback, backend=backend, exc=exc)
         # We have to make a fake request since either the callback failed or
         # we're pretending it did since we don't have information about the
         # chord part(s) which failed. This request is constructed as a best
         # effort for new style errbacks and may be slightly misleading about
         # what really went wrong, but at least we call them!
-        fake_request = Context({
-            "id": callback.options.get("task_id"),
-            "errbacks": callback.options.get("link_error", []),
-            "delivery_info": dict(),
+        fake_request = _create_fake_task_request(
+            task_id=callback.options.get("task_id"),
+            errbacks=callback.options.get("link_error", []),
             **callback
-        })
+        )
         try:
             self._call_task_errbacks(fake_request, exc, None)
         except Exception as eb_exc:  # pylint: disable=broad-except
             return backend.fail_from_current_stack(callback.id, exc=eb_exc)
         else:
             return backend.fail_from_current_stack(callback.id, exc=exc)
+
+    def _handle_group_chord_error(self, group_callback, backend, exc=None):
+        """Handle chord errors when the callback is a group.
+
+        When a chord header fails and the body is a group, we need to:
+        1. Revoke all pending tasks in the group body
+        2. Mark them as failed with the chord error
+        3. Call error callbacks for each task
+
+        This prevents the group body tasks from hanging indefinitely (#8786)
+        """
+
+        # Extract original exception from ChordError if available
+        if isinstance(exc, ChordError) and hasattr(exc, '__cause__') and exc.__cause__:
+            original_exc = exc.__cause__
+        else:
+            original_exc = exc
+
+        try:
+            # Freeze the group to get the actual GroupResult with task IDs
+            frozen_group = group_callback.freeze()
+
+            if isinstance(frozen_group, GroupResult):
+                # revoke all tasks in the group to prevent execution
+                frozen_group.revoke()
+
+                # Handle each task in the group individually
+                for result in frozen_group.results:
+                    try:
+                        # Create fake request for error callbacks
+                        fake_request = _create_fake_task_request(
+                            task_id=result.id,
+                            errbacks=group_callback.options.get("link_error", []),
+                            task_name=getattr(result, 'task', 'unknown')
+                        )
+
+                        # Call error callbacks for this task with original exception
+                        try:
+                            backend._call_task_errbacks(fake_request, original_exc, None)
+                        except Exception:  # pylint: disable=broad-except
+                            # continue on exception to be sure to iter to all the group tasks
+                            pass
+
+                        # Mark the individual task as failed with original exception
+                        backend.fail_from_current_stack(result.id, exc=original_exc)
+
+                    except Exception as task_exc:  # pylint: disable=broad-except
+                        # Log error but continue with other tasks
+                        logger.exception(
+                            'Failed to handle chord error for task %s: %r',
+                            getattr(result, 'id', 'unknown'), task_exc
+                        )
+
+                # Also mark the group itself as failed if it has an ID
+                frozen_group_id = getattr(frozen_group, 'id', None)
+                if frozen_group_id:
+                    backend.mark_as_failure(frozen_group_id, original_exc)
+
+            return None
+
+        except Exception as cleanup_exc:  # pylint: disable=broad-except
+            # Log the error and fall back to single task handling
+            logger.exception(
+                'Failed to handle group chord error, falling back to single task handling: %r',
+                cleanup_exc
+            )
+            # Fallback to original error handling
+            return backend.fail_from_current_stack(group_callback.id, exc=exc)
 
     def fail_from_current_stack(self, task_id, exc=None):
         type_, real_exc, tb = sys.exc_info()
@@ -1068,18 +1167,18 @@ class BaseKeyValueStoreBackend(Backend):
                     )
                 except StopIteration:
                     reason = repr(exc)
-
                 logger.exception('Chord %r raised: %r', gid, reason)
-                self.chord_error_from_stack(callback, ChordError(reason))
+                chord_error = _create_chord_error_with_cause(message=reason, original_exc=exc)
+                self.chord_error_from_stack(callback=callback, exc=chord_error)
             else:
                 try:
                     callback.delay(ret)
                 except Exception as exc:  # pylint: disable=broad-except
                     logger.exception('Chord %r raised: %r', gid, exc)
-                    self.chord_error_from_stack(
-                        callback,
-                        ChordError(f'Callback error: {exc!r}'),
+                    chord_error = _create_chord_error_with_cause(
+                        message=f'Callback error: {exc!r}', original_exc=exc
                     )
+                    self.chord_error_from_stack(callback=callback, exc=chord_error)
             finally:
                 deps.delete()
                 self.delete(key)

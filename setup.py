@@ -165,7 +165,6 @@ setuptools.setup(
     },
     classifiers=[
         "Development Status :: 5 - Production/Stable",
-        "License :: OSI Approved :: BSD License",
         "Topic :: System :: Distributed Computing",
         "Topic :: Software Development :: Object Brokering",
         "Framework :: Celery",

@@ -1,7 +1,7 @@
 import itertools
 from logging import LogRecord
 from typing import Iterator
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from kombu import Exchange, Queue
@@ -28,7 +28,7 @@ class test_DelayedDelivery:
         assert delayed_delivery.include_if(consumer_mock) is True
 
     def test_start_native_delayed_delivery_direct_exchange(self, caplog):
-        consumer_mock = Mock()
+        consumer_mock = MagicMock()
         consumer_mock.app.conf.broker_native_delayed_delivery_queue_type = 'classic'
         consumer_mock.app.conf.broker_url = 'amqp://'
         consumer_mock.app.amqp.queues = {
@@ -56,15 +56,20 @@ class test_DelayedDelivery:
         consumer_mock.app.amqp.queues = {
             'celery': Queue('celery', exchange=Exchange('celery', type='topic'))
         }
+        connection = MagicMock()
+        consumer_mock.app.connection_for_write.return_value = connection
 
         delayed_delivery = DelayedDelivery(consumer_mock)
 
         delayed_delivery.start(consumer_mock)
 
         assert len(caplog.records) == 0
+        # Verify connection context was called
+        assert connection.__enter__.called
+        assert connection.__exit__.called
 
     def test_start_native_delayed_delivery_fanout_exchange(self, caplog):
-        consumer_mock = Mock()
+        consumer_mock = MagicMock()
         consumer_mock.app.conf.broker_native_delayed_delivery_queue_type = 'classic'
         consumer_mock.app.conf.broker_url = 'amqp://'
         consumer_mock.app.amqp.queues = {
@@ -206,8 +211,38 @@ class test_DelayedDelivery:
                 except ConnectionRefusedError:
                     pass  # expected
 
+    def test_retry_over_time_with_float_return(self):
+        delayed_delivery = DelayedDelivery(parent=Mock())
+        return_values = []
+
+        # Wrap the real _on_retry method to capture its return value
+        original_on_retry = delayed_delivery._on_retry
+
+        def wrapped_on_retry(exc, interval_range, intervals_count):
+            result = original_on_retry(exc, interval_range, intervals_count)
+            return_values.append(result)
+            return result
+
+        with patch.object(
+            delayed_delivery, '_setup_delayed_delivery',
+            side_effect=ConnectionRefusedError("Simulated failure")
+        ):
+            with pytest.raises(ConnectionRefusedError):
+                retry_over_time(
+                    fun=delayed_delivery._setup_delayed_delivery,
+                    args=(Mock(), "amqp://localhost"),
+                    catch=(ConnectionRefusedError,),
+                    errback=wrapped_on_retry,
+                    interval_start=RETRY_INTERVAL,
+                    max_retries=MAX_RETRIES
+                )
+
+        assert len(return_values) == MAX_RETRIES
+        for value in return_values:
+            assert isinstance(value, float), f"Expected float, got {type(value)}"
+
     def test_start_with_no_queues(self, caplog):
-        consumer_mock = Mock()
+        consumer_mock = MagicMock()
         consumer_mock.app.conf.broker_native_delayed_delivery_queue_type = 'classic'
         consumer_mock.app.conf.broker_url = 'amqp://'
         consumer_mock.app.amqp.queues = {}
@@ -234,7 +269,7 @@ class test_DelayedDelivery:
 
     @patch('celery.worker.consumer.delayed_delivery.declare_native_delayed_delivery_exchanges_and_queues')
     def test_setup_declare_error(self, mock_declare, caplog):
-        consumer_mock = Mock()
+        consumer_mock = MagicMock()
         consumer_mock.app.conf.broker_native_delayed_delivery_queue_type = 'classic'
         consumer_mock.app.conf.broker_url = 'amqp://'
         consumer_mock.app.amqp.queues = {
@@ -254,7 +289,7 @@ class test_DelayedDelivery:
 
     @patch('celery.worker.consumer.delayed_delivery.bind_queue_to_native_delayed_delivery_exchange')
     def test_setup_bind_error(self, mock_bind, caplog):
-        consumer_mock = Mock()
+        consumer_mock = MagicMock()
         consumer_mock.app.conf.broker_native_delayed_delivery_queue_type = 'classic'
         consumer_mock.app.conf.broker_url = 'amqp://'
         consumer_mock.app.amqp.queues = {
