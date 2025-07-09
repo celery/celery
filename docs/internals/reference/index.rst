@@ -17,6 +17,7 @@
     celery.concurrency
     celery.concurrency.solo
     celery.concurrency.prefork
+    celery.concurrency.spawn
     celery.concurrency.eventlet
     celery.concurrency.gevent
     celery.concurrency.thread
