@@ -66,7 +66,7 @@ class TestTaskPool(spawn.TaskPool):
 class test_spawn_TaskPool:
     @patch('billiard.set_start_method')
     @patch('billiard.forking_enable')
-    def test_on_start_sets_spawn(self, set_method, mock_forking_enable):
+    def test_on_start_sets_spawn(self, mock_forking_enable, set_method):
         pool = TestTaskPool(1)
         with patch.dict(os.environ, {}, clear=True):
             pool.on_start()
