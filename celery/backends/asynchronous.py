@@ -152,7 +152,7 @@ class greenletDrainer(Drainer):
         Raises if the drainer has run to completion (either due to an exception
         or stop() being called).
 
-        Uses _shutdown event as synchronization to ensure _exc is consistently
+        Uses _shutdown event as synchronization to ensure _exc is properly
         set before checking, avoiding the need for locks.
         """
         if self._shutdown.is_set():
