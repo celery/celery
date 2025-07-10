@@ -124,8 +124,9 @@ class greenletDrainer(Drainer):
             self._send_drain_complete_event()
             try:
                 self._shutdown.set()
-            except Exception:
-                pass
+            except RuntimeError as e:
+                import logging
+                logging.error(f"Failed to set shutdown event: {e}")
 
     def start(self):
         if self._shutdown.is_set():
