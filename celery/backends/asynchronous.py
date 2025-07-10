@@ -122,7 +122,10 @@ class greenletDrainer(Drainer):
             raise
         finally:
             self._send_drain_complete_event()
-            self._shutdown.set()
+            try:
+                self._shutdown.set()
+            except Exception:
+                pass
 
     def start(self):
         if self._shutdown.is_set():
