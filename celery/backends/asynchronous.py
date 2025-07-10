@@ -13,9 +13,7 @@ from celery import states
 from celery.exceptions import TimeoutError
 from celery.utils.threads import THREAD_TIMEOUT_MAX
 
-E_CELERY_RESTART_REQUIRED = """
-Celery must be restarted because a shutdown signal was detected.
-"""
+E_CELERY_RESTART_REQUIRED = "Celery must be restarted because a shutdown signal was detected."
 
 __all__ = (
     'AsyncBackendMixin', 'BaseResultConsumer', 'Drainer',
