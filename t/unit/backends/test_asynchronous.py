@@ -213,8 +213,8 @@ class test_EventletDrainer(GreenletDrainerTests):
 
     def teardown_thread(self, thread):
         try:
-            # eventlet's API acts like a join() rather
-            # than wait, and throws if the greenlet threw
+            # eventlet's wait() propagates any errors on the green thread, unlike
+            # similar methods in gevent or python's threading library
             thread.wait()
         except Exception:
             pass
