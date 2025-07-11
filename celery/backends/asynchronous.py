@@ -129,7 +129,7 @@ class greenletDrainer(Drainer):
                 logging.error(f"Failed to set shutdown event: {e}")
 
     def start(self):
-        self._ensure_not_shutdown()
+        self._ensure_not_shut_down()
 
         if not self._started.is_set():
             self._g = self.spawn(self.run)
@@ -144,16 +144,16 @@ class greenletDrainer(Drainer):
         if not p.ready:
             self._drain_complete_event.wait(timeout=timeout)
 
-            self._ensure_not_shutdown()
+            self._ensure_not_shut_down()
 
-    def _ensure_not_shutdown(self):
-        """Ensure the drainer has not run to completion.
+    def _ensure_not_shut_down(self):
+        """Currently used to ensure the drainer has not run to completion.
 
-        Raises if the drainer has run to completion (either due to an exception
+        Raises if the shutdown event has been signaled (either due to an exception
         or stop() being called).
 
-        Uses _shutdown event as synchronization to ensure _exc is properly
-        set before checking, avoiding the need for locks.
+        The _shutdown event acts as synchronization to ensure _exc is properly
+        set before it is read from, avoiding need for locks.
         """
         if self._shutdown.is_set():
             if self._exc is not None:
