@@ -159,7 +159,7 @@ class greenletDrainer(Drainer):
             if self._exc is not None:
                 raise self._exc
             else:
-                raise Exception(E_CELERY_RESTART_REQUIRED)
+                raise CeleryRestartRequired(E_CELERY_RESTART_REQUIRED)
 
 
 @register_drainer('eventlet')
