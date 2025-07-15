@@ -168,7 +168,7 @@ class DjangoWorkerFixup:
                 self._maybe_close_db_fd(c)
 
         # use the _ version to avoid DB_REUSE preventing the conn.close() call
-        self._close_database(force=True)
+        self._close_database()
         self.close_cache()
 
     def _maybe_close_db_fd(self, c: "BaseDatabaseWrapper") -> None:
@@ -197,13 +197,10 @@ class DjangoWorkerFixup:
             self._close_database()
         self._db_recycles += 1
 
-    def _close_database(self, force: bool = False) -> None:
+    def _close_database(self) -> None:
         for conn in self._db.connections.all():
             try:
-                if force:
-                    conn.close()
-                else:
-                    conn.close_if_unusable_or_obsolete()
+                conn.close()
             except self.interface_errors:
                 pass
             except self.DatabaseError as exc:
