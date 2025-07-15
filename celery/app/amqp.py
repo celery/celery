@@ -46,6 +46,13 @@ class Queues(dict):
         create_missing (bool): By default any unknown queues will be
             added automatically, but if this flag is disabled the occurrence
             of unknown queues in `wanted` will raise :exc:`KeyError`.
+        create_missing_queue_type (str): Type of queue to create for missing queues.
+            Must be either 'classic' (default) or 'quorum'. If set to 'quorum',
+            the broker will declare new queues using the quorum type.
+        create_missing_queue_exchange_type (str): Type of exchange to use
+            when creating missing queues. If not set, the default exchange type
+            will be used. If set, the exchange type will be set to this value
+            when creating missing queues.
         max_priority (int): Default x-max-priority for queues with none set.
     """
 
@@ -53,14 +60,19 @@ class Queues(dict):
     #: The rest of the queues are then used for routing only.
     _consume_from = None
 
-    def __init__(self, queues=None, default_exchange=None,
-                 create_missing=True, autoexchange=None,
-                 max_priority=None, default_routing_key=None):
+    def __init__(
+            self, queues=None, default_exchange=None,
+            create_missing=True, create_missing_queue_type=None,
+            create_missing_queue_exchange_type=None, autoexchange=None,
+            max_priority=None, default_routing_key=None,
+    ):
         super().__init__()
         self.aliases = WeakValueDictionary()
         self.default_exchange = default_exchange
         self.default_routing_key = default_routing_key
         self.create_missing = create_missing
+        self.create_missing_queue_type = create_missing_queue_type
+        self.create_missing_queue_exchange_type = create_missing_queue_exchange_type
         self.autoexchange = Exchange if autoexchange is None else autoexchange
         self.max_priority = max_priority
         if queues is not None and not isinstance(queues, Mapping):
@@ -181,7 +193,16 @@ class Queues(dict):
                 self._consume_from.pop(queue, None)
 
     def new_missing(self, name):
-        return Queue(name, self.autoexchange(name), name)
+        queue_arguments = None
+        if self.create_missing_queue_type:
+            queue_arguments = {"x-queue-type": self.create_missing_queue_type}
+
+        if self.create_missing_queue_exchange_type:
+            exchange = Exchange(name, self.create_missing_queue_exchange_type)
+        else:
+            exchange = self.autoexchange(name)
+
+        return Queue(name, exchange, name, queue_arguments=queue_arguments)
 
     @property
     def consume_from(self):
@@ -238,14 +259,18 @@ class AMQP:
     def send_task_message(self):
         return self._create_task_sender()
 
-    def Queues(self, queues, create_missing=None,
-               autoexchange=None, max_priority=None):
+    def Queues(self, queues, create_missing=None, create_missing_queue_type=None,
+               create_missing_queue_exchange_type=None, autoexchange=None, max_priority=None):
         # Create new :class:`Queues` instance, using queue defaults
         # from the current configuration.
         conf = self.app.conf
         default_routing_key = conf.task_default_routing_key
         if create_missing is None:
             create_missing = conf.task_create_missing_queues
+            if create_missing_queue_type is None:
+                create_missing_queue_type = conf.task_create_missing_queue_type
+            if create_missing_queue_exchange_type is None:
+                create_missing_queue_exchange_type = conf.task_create_missing_queue_exchange_type
         if max_priority is None:
             max_priority = conf.task_queue_max_priority
         if not queues and conf.task_default_queue:
@@ -259,8 +284,14 @@ class AMQP:
         autoexchange = (self.autoexchange if autoexchange is None
                         else autoexchange)
         return self.queues_cls(
-            queues, self.default_exchange, create_missing,
-            autoexchange, max_priority, default_routing_key,
+            queues,
+            default_exchange=self.default_exchange,
+            create_missing=create_missing,
+            create_missing_queue_type=create_missing_queue_type,
+            create_missing_queue_exchange_type=create_missing_queue_exchange_type,
+            autoexchange=autoexchange,
+            max_priority=max_priority,
+            default_routing_key=default_routing_key,
         )
 
     def Router(self, queues=None, create_missing=None):

@@ -134,6 +134,8 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_ANNOTATIONS``                     :setting:`task_annotations`
 ``CELERY_COMPRESSION``                     :setting:`task_compression`
 ``CELERY_CREATE_MISSING_QUEUES``           :setting:`task_create_missing_queues`
+``CELERY_CREATE_MISSING_QUEUE_TYPE``       :setting:`task_create_missing_queue_type`
+``CELERY_CREATE_MISSING_QUEUE_EXCHANGE_TYPE`` :setting:`task_create_missing_queue_exchange_type`
 ``CELERY_DEFAULT_DELIVERY_MODE``           :setting:`task_default_delivery_mode`
 ``CELERY_DEFAULT_EXCHANGE``                :setting:`task_default_exchange`
 ``CELERY_DEFAULT_EXCHANGE_TYPE``           :setting:`task_default_exchange_type`
@@ -2618,6 +2620,48 @@ Default: Enabled.
 If enabled (default), any queues specified that aren't defined in
 :setting:`task_queues` will be automatically created. See
 :ref:`routing-automatic`.
+
+.. setting:: task_create_missing_queue_type
+
+``task_create_missing_queue_type``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``"classic"``
+
+When Celery needs to declare a queue that doesn’t exist (i.e., when
+``task_create_missing_queues`` is enabled), this setting defines what type
+of RabbitMQ queue to create.
+
+- ``"classic"`` (default): declares a standard classic queue.
+- ``"quorum"``: declares a RabbitMQ quorum queue (adds ``x-queue-type: quorum``).
+
+.. setting:: task_create_missing_queue_exchange_type
+
+``task_create_missing_queue_exchange_type``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Default: ``None``
+
+If this option is None or the empty string (the default), Celery leaves the
+exchange exactly as returned by your :pyattr:app.amqp.Queues.autoexchange
+hook.
+
+You can set this to a specific exchange type, such as ``"direct"``, ``"topic"``, or
+``"fanout"``, to create the missing queue with that exchange type.
+
+.. tip::
+
+Combine this setting with task_create_missing_queue_type = "quorum"
+to create quorum queues bound to a topic exchange, for example::
+
+    app.conf.task_create_missing_queues=True
+    app.conf.task_create_missing_queue_type="quorum"
+    app.conf.task_create_missing_queue_exchange_type="topic"
+
+.. note::
+
+Like the queue-type setting above, this option does not affect queues
+that you define explicitly in :setting:task_queues; it applies only to
+queues created implicitly at runtime.
 
 .. setting:: task_default_queue
 
