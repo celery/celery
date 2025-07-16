@@ -843,7 +843,7 @@ class Celery:
                 try:
                     task_id = str(task_id_generator())
                 except Exception as exc:
-                    logger.warning(f"Custom task_id_generator failed, falling back to UUID: {exc}")
+                    logger.warning(f"Custom task_id_generator failed, falling back to UUID: {type(exc).__name__}")
                     task_id = uuid()
             else:
                 task_id = uuid()
