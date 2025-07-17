@@ -249,38 +249,38 @@ class test_Autoscaler:
         consumer.pool.num_processes = 10
         consumer.controller = Mock()
         consumer.controller.max_concurrency = 5  # Lower than pool processes
-        
+
         # Mock task consumer setup
         consumer.task_consumer = Mock()
         consumer.task_consumer.channel = Mock()
         consumer.task_consumer.channel.qos = Mock()
         consumer.task_consumer.channel.qos.can_consume = Mock(return_value=True)
-        
+
         # Mock the connection and other required attributes
         consumer.connection = Mock()
         consumer.connection.default_channel = Mock()
         consumer.initial_prefetch_count = 20
         consumer.update_strategies = Mock()
         consumer.on_decode_error = Mock()
-        
+
         # Mock the amqp TaskConsumer
         consumer.app.amqp = Mock()
         consumer.app.amqp.TaskConsumer = Mock(return_value=consumer.task_consumer)
-        
+
         tasks_instance = Tasks(consumer)
-        
+
         # Mock 5 reserved requests (at autoscale limit of 5)
         mock_requests = [Mock() for _ in range(5)]
         with patch('celery.worker.state.reserved_requests', mock_requests):
             tasks_instance.start(consumer)
-            
+
             # Should not be able to consume when at autoscale limit
             assert consumer.task_consumer.channel.qos.can_consume() is False
-            
+
         # Test with 4 reserved requests (under autoscale limit of 5)
         mock_requests = [Mock() for _ in range(4)]
         with patch('celery.worker.state.reserved_requests', mock_requests):
             tasks_instance.start(consumer)
-            
+
             # Should be able to consume when under autoscale limit
             assert consumer.task_consumer.channel.qos.can_consume() is True
