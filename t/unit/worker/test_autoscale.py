@@ -240,7 +240,7 @@ class test_Autoscaler:
     def test_disable_prefetch_respects_max_concurrency(self):
         """Test that disable_prefetch respects autoscale max_concurrency setting"""
         from celery.worker.consumer.tasks import Tasks
-        
+
         # Create a mock consumer with autoscale and disable_prefetch enabled
         consumer = Mock()
         consumer.app = Mock()
