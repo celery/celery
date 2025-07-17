@@ -1,7 +1,7 @@
 """
 Simple test to reproduce JSON serialization memory leak (issue #9475).
 
-In celery repo create this file in 
+In the Celery repository, create this file in the `t/integration` directory.
 
 `t/integration/test_mem_leak_json_serialization.py`
 
