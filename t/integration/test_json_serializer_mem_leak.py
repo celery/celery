@@ -103,43 +103,42 @@ def test_json_serialization_memory_leak():
         job1 = create_job1_task(app)
         # Start memory tracking
         tracemalloc.start()
+        try:
+            # Get baseline memory
+            gc.collect()
+            baseline_memory = get_memory_usage()
 
-        # Get baseline memory
-        gc.collect()
-        baseline_memory = get_memory_usage()
+            # Create the problematic structure from issue #9475
+            per_level_groups = []
+            for idx in range(levels):
+                task_name = f"Node_{idx + 1}"
+                group_tasks = [job1.s(idx).set(task_id=f"{task_name}_node_{jdx + 1}") for jdx in range(nodes_per_level)]
+                per_level_groups.append(group(group_tasks))
 
-        # Create the problematic structure from issue #9475
-        per_level_groups = []
-        for idx in range(levels):
-            task_name = f"Node_{idx + 1}"
-            group_tasks = [job1.s(idx).set(task_id=f"{task_name}_node_{jdx + 1}") for jdx in range(nodes_per_level)]
-            per_level_groups.append(group(group_tasks))
+            # Memory after structure creation
+            structure_memory = get_memory_usage()
 
-        # Memory after structure creation
-        structure_memory = get_memory_usage()
+            # This triggers the memory leak with JSON serialization
+            chain_sig = chain(per_level_groups)
+            chain_sig.apply_async()
 
-        # This triggers the memory leak with JSON serialization
-        chain_sig = chain(per_level_groups)
-        chain_sig.apply_async()
+            # Measure final memory
+            final_memory = get_memory_usage()
 
-        # Measure final memory
-        final_memory = get_memory_usage()
+            # Calculate memory usage
+            structure_increase = (structure_memory - baseline_memory) / 1024 / 1024
+            serialization_increase = (final_memory - structure_memory) / 1024 / 1024
+            total_increase = (final_memory - baseline_memory) / 1024 / 1024
 
-        # Stop tracking
-        tracemalloc.stop()
-
-        # Calculate memory usage
-        structure_increase = (structure_memory - baseline_memory) / 1024 / 1024
-        serialization_increase = (final_memory - structure_memory) / 1024 / 1024
-        total_increase = (final_memory - baseline_memory) / 1024 / 1024
-
-        results[serializer] = {
-            'structure_mb': structure_increase,
-            'serialization_mb': serialization_increase,
-            'total_mb': total_increase,
-            'total_time': time.time() - start,
-        }
-
+            results[serializer] = {
+                'structure_mb': structure_increase,
+                'serialization_mb': serialization_increase,
+                'total_mb': total_increase,
+                'total_time': time.time() - start,
+            }
+        finally:
+            # Stop tracking
+            tracemalloc.stop()
         print(f"  Structure creation: {structure_increase:.2f} MB")
         print(f"  Serialization: {serialization_increase:.2f} MB")
         print(f"  Total increase: {total_increase:.2f} MB")
