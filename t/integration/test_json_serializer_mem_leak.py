@@ -3,7 +3,7 @@ Simple test to reproduce JSON serialization memory leak (issue #9475).
 
 In the Celery repository, create this file in the `t/integration` directory.
 
-`t/integration/test_mem_leak_json_serialization.py`
+`t/integration/test_json_serializer_mem_leak.py`
 
 This test creates nested chain/group structures and measures memory usage
 during JSON serialization vs pickle serialization.
