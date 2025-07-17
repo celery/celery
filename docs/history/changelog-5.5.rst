@@ -30,6 +30,8 @@ What's Changed
 - Updated rabbitmq doc about using quorum queues with task routes (#9707)
 - Add: Dumper Unit Test (#9711)
 - Add unit test for event.group_from (#9709)
+- Allow disabling of broker prefetch with the ``worker_disable_prefetch``
+  configuration option (#XXXX)
 - refactor: add beat_cron_starting_deadline documentation warning (#9712)
 - fix: resolve issue #9569 by supporting distinct broker transport options for workers (#9695)
 - Fixes issue with retry callback arguments in DelayedDelivery (#9708)
