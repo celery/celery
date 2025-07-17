@@ -3131,15 +3131,35 @@ workers, note that the first worker to start will receive four times the
 number of messages initially. Thus the tasks may not be fairly distributed
 to the workers.
 
-To disable prefetching, set :setting:`worker_prefetch_multiplier` to 1.
-Changing that setting to 0 will allow the worker to keep consuming
-as many messages as it wants.
+To limit the broker to only deliver one message per process at a time,
+set :setting:`worker_prefetch_multiplier` to 1. Changing that setting to 0
+will allow the worker to keep consuming as many messages as it wants.
+
+If you need to completely disable broker prefetching while still using
+early acknowledgments, enable :setting:`worker_disable_prefetch`.
+When this option is enabled the worker only fetches a task from the broker
+when one of its processes is available.
+
+You can also enable this via the :option:`--disable-prefetch <celery worker --disable-prefetch>`
+command line flag.
 
 For more on prefetching, read :ref:`optimizing-prefetch-limit`
 
 .. note::
 
     Tasks with ETA/countdown aren't affected by prefetch limits.
+
+.. setting:: worker_disable_prefetch
+
+``worker_disable_prefetch``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``False``.
+
+When enabled, a worker will only consume messages from the broker when it
+has an available process to execute them. This disables prefetching while
+still using early acknowledgments, ensuring that tasks are fairly
+distributed between workers.
 
 .. setting:: worker_enable_prefetch_count_reduction
 
