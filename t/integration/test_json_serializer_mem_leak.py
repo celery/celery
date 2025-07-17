@@ -101,33 +101,7 @@ def test_json_serialization_memory_leak():
             accept_content=[serializer],
         )
 
-        @app.task(bind=True)
-        def job1(self, job_callee, *args, **kwargs):
-            """Task from the original issue #9475."""
-            print("------------------\nI AM: ", self.request.id)
-            job_callee_original = job_callee
-
-            # Count the depth of nested lists
-            depth = 0
-            is_a_list = isinstance(job_callee_original, list)
-            job_callee_original_cp = job_callee_original
-
-            if (
-                is_a_list and
-                len(job_callee_original) > 0 and
-                not isinstance(job_callee_original[0], list)
-            ):
-                print("MOST INNER LIST: ", job_callee_original)
-
-            while is_a_list and len(job_callee_original_cp) > 0:
-                depth += 1
-                job_callee_inner = job_callee_original_cp[0] if is_a_list else job_callee_original_cp
-                is_a_list = isinstance(job_callee_inner, list)
-                job_callee_original_cp = job_callee_inner
-
-            print(f"Nested list depth: {depth}")
-            return job_callee_original
-
+        job1 = create_job1_task(app)
         # Start memory tracking
         tracemalloc.start()
 
