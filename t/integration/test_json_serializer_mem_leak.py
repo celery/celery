@@ -47,14 +47,13 @@ def get_memory_usage():
 
 
 # Test configuration from environment variables
-DEFAULT_TIMEOUT = int(os.getenv('TEST_TIMEOUT_SECONDS', '240'))
 DEFAULT_MEMORY_THRESHOLD = int(os.getenv('TEST_MEMORY_THRESHOLD_MB', '1000'))
 
 
 def get_test_config():
     """Get test configuration from environment variables."""
     return {
-        'timeout_seconds': int(os.getenv('TEST_TIMEOUT_SECONDS', str(DEFAULT_TIMEOUT))),
+        'timeout_seconds': int(os.getenv('TEST_TIMEOUT_SECONDS', '240')),
         'memory_threshold_mb': int(os.getenv('TEST_MEMORY_THRESHOLD_MB', str(DEFAULT_MEMORY_THRESHOLD))),
         'levels': int(os.getenv('LEVELS', '5')),
         'nodes_per_level': int(os.getenv('NODES_PER_LEVEL', '5')),
