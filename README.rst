@@ -2,7 +2,7 @@
 
 |build-status| |coverage| |license| |wheel| |semgrep| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 5.5.2 (immunity)
+:Version: 5.5.3 (immunity)
 :Web: https://docs.celeryq.dev/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -40,8 +40,22 @@ Blacksmith
 .. image:: ./docs/images/blacksmith-logo-white-on-black.svg
    :alt: Blacksmith logo
    :width: 240px
+   :target: https://blacksmith.sh/
 
 `Official Announcement <https://www.linkedin.com/pulse/celery-now-powered-blacksmith-tomer-nosrati-ew68e/?trackingId=DWHH49WqS2iOW8Jf5N1kEg%3D%3D>`_
+
+CloudAMQP
+---------
+
+.. image:: ./docs/images/cloudamqp-logo-lightbg.svg
+   :alt: CloudAMQP logo
+   :width: 240px
+   :target: https://www.cloudamqp.com/
+
+`CloudAMQP <https://www.cloudamqp.com/>`_ is a industry leading RabbitMQ as a service provider.
+If you need highly available message queues, a perfect choice would be to use CloudAMQP.
+With 24,000+ running instances, CloudAMQP is the leading hosting provider of RabbitMQ,
+with customers all over the world.
 
 Upstash
 -------
@@ -49,6 +63,7 @@ Upstash
 .. image:: https://upstash.com/logo/upstash-dark-bg.svg
    :alt: Upstash logo
    :width: 200px
+   :target: https://upstash.com/?code=celery
 
 `Upstash <http://upstash.com/?code=celery>`_ offers a serverless Redis database service,
 providing a seamless solution for Celery users looking to leverage
@@ -62,6 +77,7 @@ Dragonfly
 .. image:: https://github.com/celery/celery/raw/main/docs/images/dragonfly.svg
    :alt: Dragonfly logo
    :width: 150px
+   :target: https://www.dragonflydb.io/
 
 `Dragonfly <https://www.dragonflydb.io/>`_ is a drop-in Redis replacement that cuts costs and boosts performance.
 Designed to fully utilize the power of modern cloud hardware and deliver on the data demands of modern applications,
