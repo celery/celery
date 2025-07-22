@@ -274,6 +274,16 @@ class test_DjangoWorkerFixup(FixupCase):
             with pytest.raises(KeyError):
                 f._close_database()
 
+    def test_close_database_always_closes_connections(self):
+        with self.fixup_context(self.app) as (f, _, _):
+            conn = Mock()
+            f._db.connections.all = Mock(return_value=[conn])
+            f.close_database()
+            conn.close.assert_called_once_with()
+            # close_if_unusable_or_obsolete is not safe to call in all conditions, so avoid using
+            # it to optimize connection handling.
+            conn.close_if_unusable_or_obsolete.assert_not_called()
+
     def test_close_cache(self):
         with self.fixup_context(self.app) as (f, _, _):
             f.close_cache()
