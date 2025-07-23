@@ -1,5 +1,5 @@
 import io
-from datetime import datetime
+from datetime import datetime, timezone
 
 from celery.events import dumper
 
@@ -39,7 +39,7 @@ def test_on_event_task_received():
     buf = io.StringIO()
     d = dumper.Dumper(out=buf)
     event = {
-        'timestamp': datetime(2024, 1, 1, 12, 0, 0).timestamp(),
+        'timestamp': datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc).timestamp(),
         'type': 'task-received',
         'hostname': 'worker1',
         'uuid': 'abc',
@@ -49,7 +49,7 @@ def test_on_event_task_received():
     }
     d.on_event(event.copy())
     output = buf.getvalue()
-    assert 'worker1 [2024-01-01 12:00:00]' in output
+    assert 'worker1 [2024-01-01 12:00:00+00:00]' in output
     assert 'task received' in output
     assert 'mytask(abc) args=(1,) kwargs={}' in output
 
@@ -58,13 +58,13 @@ def test_on_event_non_task():
     buf = io.StringIO()
     d = dumper.Dumper(out=buf)
     event = {
-        'timestamp': datetime(2024, 1, 1, 12, 0, 0).timestamp(),
+        'timestamp': datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc).timestamp(),
         'type': 'worker-online',
         'hostname': 'worker1',
         'foo': 'bar',
     }
     d.on_event(event.copy())
     output = buf.getvalue()
-    assert 'worker1 [2024-01-01 12:00:00]' in output
+    assert 'worker1 [2024-01-01 12:00:00+00:00]' in output
     assert 'started' in output
     assert 'foo=bar' in output
