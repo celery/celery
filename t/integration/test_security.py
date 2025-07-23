@@ -1,6 +1,5 @@
 import datetime
 import os
-import socket
 import tempfile
 
 import pytest
@@ -107,12 +106,5 @@ class test_security:
 
     @pytest.mark.xfail(reason="Issue #5269")
     def test_security_task_done(self):
-        t1 = add.apply_async((1, 1))
-        try:
-            result = t1.get(timeout=10)  # redis backend will timeout
-            assert result == 2
-        except (socket.timeout, TimeoutError) as e:
-            pytest.fail(
-                f"Timed out waiting for task result. Task was likely dropped by "
-                f"worker due to security misconfig. Exception details: {e}"
-            )
+        t1 = add.delay(1, 1)
+        assert t1.get() == 2
