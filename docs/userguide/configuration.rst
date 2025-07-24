@@ -103,6 +103,8 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_MONGODB_BACKEND_SETTINGS``        :setting:`mongodb_backend_settings`
 ``CELERY_EVENT_QUEUE_EXPIRES``             :setting:`event_queue_expires`
 ``CELERY_EVENT_QUEUE_TTL``                 :setting:`event_queue_ttl`
+``CELERY_EVENT_QUEUE_DURABLE``             :setting:`event_queue_durable`
+``CELERY_EVENT_QUEUE_EXCLUSIVE``           :setting:`event_queue_exclusive`
 ``CELERY_EVENT_QUEUE_PREFIX``              :setting:`event_queue_prefix`
 ``CELERY_EVENT_SERIALIZER``                :setting:`event_serializer`
 ``CELERY_REDIS_DB``                        :setting:`redis_db`
@@ -3454,6 +3456,31 @@ Default: 60.0 seconds.
 Expiry time in seconds (int/float) for when after a monitor clients
 event queue will be deleted (``x-expires``).
 
+.. setting:: event_queue_durable
+
+``event_queue_durable``
+~~~~~~~~~~~~~~~~~~~~~~~~
+:transports supported: ``amqp``
+
+Default: ``False``
+
+If enabled, the event receiver's queue will be marked as *durable*, meaning it will survive broker restarts.
+
+.. setting:: event_queue_exclusive
+
+``event_queue_exclusive``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+:transports supported: ``amqp``
+
+Default: ``False``
+
+If enabled, the event queue will be *exclusive* to the current connection and automatically deleted when the connection closes.
+
+.. warning::
+
+   You **cannot** set both ``event_queue_durable`` and ``event_queue_exclusive`` to ``True`` at the same time.
+   Celery will raise an :exc:`ImproperlyConfigured` error if both are set.
+
 .. setting:: event_queue_prefix
 
 ``event_queue_prefix``
@@ -3609,6 +3636,31 @@ Name of the control command exchange.
     This option is in experimental stage, please use it with caution.
 
 .. _conf-logging:
+
+.. setting:: control_queue_durable
+
+``control_queue_durable``
+-------------------------
+
+- **Default:** ``False``
+- **Type:** ``bool``
+
+If set to ``True``, the control exchange and queue will be durable — they will survive broker restarts.
+
+.. setting:: control_queue_exclusive
+
+``control_queue_exclusive``
+---------------------------
+
+- **Default:** ``False``
+- **Type:** ``bool``
+
+If set to ``True``, the control queue will be exclusive to a single connection. This is generally not recommended in distributed environments.
+
+.. warning::
+
+   Setting both ``control_queue_durable`` and ``control_queue_exclusive`` to ``True`` is not supported and will raise an error.
+
 
 Logging
 -------
