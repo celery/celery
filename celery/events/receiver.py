@@ -8,6 +8,7 @@ from kombu.mixins import ConsumerMixin
 
 from celery import uuid
 from celery.app import app_or_default
+from celery.exceptions import ImproperlyConfigured
 from celery.utils.time import adjust_timestamp
 
 from .event import get_exchange
@@ -34,25 +35,39 @@ class EventReceiver(ConsumerMixin):
 
     def __init__(self, channel, handlers=None, routing_key='#',
                  node_id=None, app=None, queue_prefix=None,
-                 accept=None, queue_ttl=None, queue_expires=None):
+                 accept=None, queue_ttl=None, queue_expires=None,
+                 queue_exclusive=None,
+                 queue_durable=None):
         self.app = app_or_default(app or self.app)
         self.channel = maybe_channel(channel)
         self.handlers = {} if handlers is None else handlers
         self.routing_key = routing_key
         self.node_id = node_id or uuid()
-        self.queue_prefix = queue_prefix or self.app.conf.event_queue_prefix
+        cfg = self.app.conf
+        self.queue_prefix = queue_prefix or cfg.event_queue_prefix
         self.exchange = get_exchange(
             self.connection or self.app.connection_for_write(),
-            name=self.app.conf.event_exchange)
+            name=cfg.event_exchange)
         if queue_ttl is None:
-            queue_ttl = self.app.conf.event_queue_ttl
+            queue_ttl = cfg.event_queue_ttl
         if queue_expires is None:
-            queue_expires = self.app.conf.event_queue_expires
+            queue_expires = cfg.event_queue_expires
+        if queue_exclusive is None:
+            queue_exclusive = cfg.event_queue_exclusive
+        if queue_durable is None:
+            queue_durable = cfg.event_queue_durable
+        if queue_exclusive and queue_durable:
+            raise ImproperlyConfigured(
+                'Queue cannot be both exclusive and durable, '
+                'choose one or the other.'
+            )
         self.queue = Queue(
             '.'.join([self.queue_prefix, self.node_id]),
             exchange=self.exchange,
             routing_key=self.routing_key,
-            auto_delete=True, durable=False,
+            auto_delete=True and (not queue_durable),
+            durable=queue_durable,
+            exclusive=queue_exclusive,
             message_ttl=queue_ttl,
             expires=queue_expires,
         )
