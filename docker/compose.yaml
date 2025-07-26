@@ -1,0 +1,24 @@
+version: "3.8"
+
+services:
+  celery310:
+    # Service for Python 3.10
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PYTHON_VERSION: 3.10-slim
+    volumes:
+      - .:/app
+    command: pytest t/integration
+
+  celery311:
+    # Service for Python 3.11
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PYTHON_VERSION: 3.11-slim
+    volumes:
+      - .:/app
+    command: pytest t/integration
