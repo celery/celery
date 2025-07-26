@@ -20,7 +20,7 @@ from kombu.utils.compat import register_after_fork
 from kombu.utils.functional import lazy
 from kombu.utils.objects import cached_property
 
-from celery.exceptions import DuplicateNodenameWarning
+from celery.exceptions import DuplicateNodenameWarning, ImproperlyConfigured
 from celery.utils.log import get_logger
 from celery.utils.text import pluralize
 
@@ -428,6 +428,12 @@ class Control:
 
     def __init__(self, app=None):
         self.app = app
+        if (app.conf.control_queue_durable and
+                app.conf.control_queue_exclusive):
+            raise ImproperlyConfigured(
+                "control_queue_durable and control_queue_exclusive cannot both be True "
+                "(exclusive queues are automatically deleted and cannot be durable).",
+            )
         self.mailbox = self.Mailbox(
             app.conf.control_exchange,
             type='fanout',
