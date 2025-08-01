@@ -38,7 +38,7 @@ RUN apt-get update && apt-get install -y build-essential \
 # Setup variables. Even though changing these may cause unnecessary invalidation of
 # unrelated elements, grouping them together makes the Dockerfile read better.
 ENV PROVISIONING /provisioning
-ENV PIP_NO_CACHE_DIR=false
+ENV PIP_NO_CACHE_DIR=true
 ENV PYTHONDONTWRITEBYTECODE=1
 
 
