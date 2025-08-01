@@ -10,6 +10,7 @@ __all__ = ('get_implementation', 'get_available_pool_names',)
 
 ALIASES = {
     'prefork': 'celery.concurrency.prefork:TaskPool',
+    'spawn': 'celery.concurrency.spawn:TaskPool',
     'eventlet': 'celery.concurrency.eventlet:TaskPool',
     'gevent': 'celery.concurrency.gevent:TaskPool',
     'solo': 'celery.concurrency.solo:TaskPool',
