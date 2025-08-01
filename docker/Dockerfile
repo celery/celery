@@ -106,60 +106,60 @@ RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
     -r requirements/test-integration.txt \
     -r requirements/test-pypy3.txt \
     -r requirements/test.txt && \
-  pyenv exec python3.12 -m pip install -r requirements/default.txt \
-  -r requirements/dev.txt \
-  -r requirements/docs.txt \
-  -r requirements/pkgutils.txt \
-  -r requirements/test-ci-base.txt \
-  -r requirements/test-ci-default.txt \
-  -r requirements/test-integration.txt \
-  -r requirements/test-pypy3.txt \
-  -r requirements/test.txt && \
-  pyenv exec python3.11 -m pip install -r requirements/default.txt \
-  -r requirements/dev.txt \
-  -r requirements/docs.txt \
-  -r requirements/pkgutils.txt \
-  -r requirements/test-ci-base.txt \
-  -r requirements/test-ci-default.txt \
-  -r requirements/test-integration.txt \
-  -r requirements/test-pypy3.txt \
-  -r requirements/test.txt && \
-  pyenv exec python3.10 -m pip install -r requirements/default.txt \
-  -r requirements/dev.txt \
-  -r requirements/docs.txt \
-  -r requirements/pkgutils.txt \
-  -r requirements/test-ci-base.txt \
-  -r requirements/test-ci-default.txt \
-  -r requirements/test-integration.txt \
-  -r requirements/test-pypy3.txt \
-  -r requirements/test.txt && \
-  pyenv exec python3.9 -m pip install -r requirements/default.txt \
-  -r requirements/dev.txt \
-  -r requirements/docs.txt \
-  -r requirements/pkgutils.txt \
-  -r requirements/test-ci-base.txt \
-  -r requirements/test-ci-default.txt \
-  -r requirements/test-integration.txt \
-  -r requirements/test-pypy3.txt \
-  -r requirements/test.txt && \
-  pyenv exec python3.8 -m pip install -r requirements/default.txt \
-  -r requirements/dev.txt \
-  -r requirements/docs.txt \
-  -r requirements/pkgutils.txt \
-  -r requirements/test-ci-base.txt \
-  -r requirements/test-ci-default.txt \
-  -r requirements/test-integration.txt \
-  -r requirements/test-pypy3.txt \
-  -r requirements/test.txt && \
-  pyenv exec pypy3.10 -m pip install -r requirements/default.txt \
-  -r requirements/dev.txt \
-  -r requirements/docs.txt \
-  -r requirements/pkgutils.txt \
-  -r requirements/test-ci-base.txt \
-  -r requirements/test-ci-default.txt \
-  -r requirements/test-integration.txt \
-  -r requirements/test-pypy3.txt \
-  -r requirements/test.txt
+    pyenv exec python3.12 -m pip install -r requirements/default.txt \
+    -r requirements/dev.txt \
+    -r requirements/docs.txt \
+    -r requirements/pkgutils.txt \
+    -r requirements/test-ci-base.txt \
+    -r requirements/test-ci-default.txt \
+    -r requirements/test-integration.txt \
+    -r requirements/test-pypy3.txt \
+    -r requirements/test.txt && \
+    pyenv exec python3.11 -m pip install -r requirements/default.txt \
+    -r requirements/dev.txt \
+    -r requirements/docs.txt \
+    -r requirements/pkgutils.txt \
+    -r requirements/test-ci-base.txt \
+    -r requirements/test-ci-default.txt \
+    -r requirements/test-integration.txt \
+    -r requirements/test-pypy3.txt \
+    -r requirements/test.txt && \
+    pyenv exec python3.10 -m pip install -r requirements/default.txt \
+    -r requirements/dev.txt \
+    -r requirements/docs.txt \
+    -r requirements/pkgutils.txt \
+    -r requirements/test-ci-base.txt \
+    -r requirements/test-ci-default.txt \
+    -r requirements/test-integration.txt \
+    -r requirements/test-pypy3.txt \
+    -r requirements/test.txt && \
+    pyenv exec python3.9 -m pip install -r requirements/default.txt \
+    -r requirements/dev.txt \
+    -r requirements/docs.txt \
+    -r requirements/pkgutils.txt \
+    -r requirements/test-ci-base.txt \
+    -r requirements/test-ci-default.txt \
+    -r requirements/test-integration.txt \
+    -r requirements/test-pypy3.txt \
+    -r requirements/test.txt && \
+    pyenv exec python3.8 -m pip install -r requirements/default.txt \
+    -r requirements/dev.txt \
+    -r requirements/docs.txt \
+    -r requirements/pkgutils.txt \
+    -r requirements/test-ci-base.txt \
+    -r requirements/test-ci-default.txt \
+    -r requirements/test-integration.txt \
+    -r requirements/test-pypy3.txt \
+    -r requirements/test.txt && \
+    pyenv exec pypy3.10 -m pip install -r requirements/default.txt \
+    -r requirements/dev.txt \
+    -r requirements/docs.txt \
+    -r requirements/pkgutils.txt \
+    -r requirements/test-ci-base.txt \
+    -r requirements/test-ci-default.txt \
+    -r requirements/test-integration.txt \
+    -r requirements/test-pypy3.txt \
+    -r requirements/test.txt
 
 COPY --chown=1000:1000 requirements/ $HOME/celery/requirements/
 RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
