@@ -177,6 +177,10 @@ jobs:
           sudo sysctl -w vm.overcommit_memory=1
 
       - uses: actions/checkout@v4
+      - name: Setup Blacksmith Docker caching
+        uses: useblacksmith/build-push-action@v1
+        with:
+          setup-only: true
       - name: Set up Python ${{ matrix.python-version }}
         uses: useblacksmith/setup-python@v6
         with:
