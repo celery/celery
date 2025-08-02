@@ -195,8 +195,8 @@ jobs:
       - name: Run tox for "${{ matrix.python-version }}-smoke-${{ matrix.test-case }}"
         uses: nick-fields/retry@v3
         with:
-          timeout_minutes: 30
-          max_attempts: 2
-          retry_wait_seconds: 0
+          timeout_minutes: 20
+          max_attempts: 5
+          retry_wait_seconds: 60
           command: |
-            tox --verbose --verbose -e "${{ matrix.python-version }}-smoke" -- -n auto -k ${{ matrix.test-case }}
+            tox --verbose --verbose -e "${{ matrix.python-version }}-smoke" -- -k ${{ matrix.test-case }}
