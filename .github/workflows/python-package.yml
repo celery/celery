@@ -197,6 +197,7 @@ jobs:
         with:
           timeout_minutes: 10
           max_attempts: 5
-          retry_wait_seconds: 60
+          retry_wait_seconds: 0
           command: |
-            tox --verbose --verbose -e "${{ matrix.python-version }}-smoke" -- -n auto -k ${{ matrix.test-case }} --reruns-delay 60
+            tox -e clean
+            tox --verbose --verbose -e "${{ matrix.python-version }}-smoke" -- -n auto -k ${{ matrix.test-case }}
