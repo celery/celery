@@ -4,7 +4,7 @@ This is a simple program that dumps events to the console
 as they happen.  Think of it like a `tcpdump` for Celery events.
 """
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 
 from celery.app import app_or_default
 from celery.utils.functional import LRUCache
@@ -48,7 +48,7 @@ class Dumper:
             pass
 
     def on_event(self, ev):
-        timestamp = datetime.utcfromtimestamp(ev.pop('timestamp'))
+        timestamp = datetime.fromtimestamp(ev.pop('timestamp'), timezone.utc)
         type = ev.pop('type').lower()
         hostname = ev.pop('hostname')
         if type.startswith('task-'):
