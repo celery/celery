@@ -31,7 +31,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Setup Blacksmith Docker caching
-      uses: useblacksmith/build-push-action@v1
+      uses: useblacksmith/build-push-action@v2
       with:
         setup-only: true
     - name: Build Docker container
@@ -43,7 +43,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Setup Blacksmith Docker caching
-      uses: useblacksmith/build-push-action@v1
+      uses: useblacksmith/build-push-action@v2
       with:
         setup-only: true
     - name: "Build smoke tests container: dev"
@@ -55,7 +55,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Setup Blacksmith Docker caching
-      uses: useblacksmith/build-push-action@v1
+      uses: useblacksmith/build-push-action@v2
       with:
         setup-only: true
     - name: "Build smoke tests container: latest"
@@ -67,7 +67,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Setup Blacksmith Docker caching
-      uses: useblacksmith/build-push-action@v1
+      uses: useblacksmith/build-push-action@v2
       with:
         setup-only: true
     - name: "Build smoke tests container: pypi"
@@ -79,7 +79,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Setup Blacksmith Docker caching
-      uses: useblacksmith/build-push-action@v1
+      uses: useblacksmith/build-push-action@v2
       with:
         setup-only: true
     - name: "Build smoke tests container: legacy"
