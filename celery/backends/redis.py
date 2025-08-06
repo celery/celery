@@ -7,7 +7,7 @@ from urllib.parse import unquote
 
 from kombu.utils.functional import retry_over_time
 from kombu.utils.objects import cached_property
-from kombu.utils.url import _parse_url, maybe_sanitize_url
+from kombu.utils.url import _parse_url, as_url, maybe_sanitize_url
 
 from celery import states
 from celery._state import task_join_will_block
@@ -675,3 +675,24 @@ class SentinelBackend(RedisBackend):
             service_name=master_name,
             redis_class=self._get_client(),
         ).connection_pool
+
+    def as_uri(self, include_password=False):
+        """Return the backend as an URI.
+
+        Arguments:
+            include_password (bool): Password censored if disabled.
+        """
+        if not self.url:
+            return 'sentinel://'
+        if include_password:
+            return self.url
+
+        urls = []
+        for h in self.connparams.get('hosts', []):
+            urls.append(maybe_sanitize_url(as_url('sentinel',
+                                                  host=h['host'],
+                                                  port=h['port'],
+                                                  password=h['password'])
+                                           )
+                        )
+        return ';'.join(urls)
