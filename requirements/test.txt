@@ -10,7 +10,7 @@ pytest-order==1.3.0
 boto3>=1.26.143
 moto>=4.1.11,<5.1.0
 # typing extensions
-mypy==1.14.1; platform_python_implementation=="CPython"
+mypy==1.16.1; platform_python_implementation=="CPython"
 pre-commit>=3.5.0,<3.8.0; python_version < '3.9'
 pre-commit>=4.0.1; python_version >= '3.9'
 -r extras/yaml.txt
