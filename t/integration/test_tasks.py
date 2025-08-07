@@ -4,7 +4,6 @@ import time
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
-import billiard as multiprocessing
 import pytest
 
 import celery
@@ -28,16 +27,6 @@ _timeout = pytest.mark.timeout(timeout=300)
 
 def flaky(fn):
     return _timeout(_flaky(fn))
-
-
-def set_multiprocessing_start_method():
-    """Set multiprocessing start method to 'fork' if not on Linux."""
-    if platform.system() != "Linux":
-        try:
-            multiprocessing.set_start_method("fork")
-        except RuntimeError:
-            # The method is already set
-            pass
 
 
 class test_class_based_tasks:
@@ -98,10 +87,18 @@ class test_tasks:
             assert result.successful() is True
 
     @flaky
+    @pytest.mark.skipif(
+        platform.system() == "Darwin",
+        reason="Multiprocessing with shared_task doesn't work reliably on macOS due to "
+               "app configuration not being inherited by child processes"
+    )
     def test_multiprocess_producer(self, manager):
-        """Testing multiple processes calling tasks."""
-        set_multiprocessing_start_method()
+        """Testing multiple processes calling tasks.
 
+        Note: This test is skipped on macOS because multiprocessing child processes
+        don't inherit the integration test's Celery app configuration, causing
+        shared_task proxies to use an unconfigured default app without result backend.
+        """
         from multiprocessing import Pool
         pool = Pool(20)
         ret = pool.map(_producer, range(120))
@@ -110,8 +107,6 @@ class test_tasks:
     @flaky
     def test_multithread_producer(self, manager):
         """Testing multiple threads calling tasks."""
-        set_multiprocessing_start_method()
-
         from multiprocessing.pool import ThreadPool
         pool = ThreadPool(20)
         ret = pool.map(_producer, range(120))
