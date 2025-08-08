@@ -3143,6 +3143,8 @@ For more on prefetching, read :ref:`optimizing-prefetch-limit`
 ``worker_eta_task_limit``
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. versionadded:: 5.6
+
 Default: No limit (None).
 
 The maximum number of ETA/countdown tasks that a worker can hold in memory at once.
