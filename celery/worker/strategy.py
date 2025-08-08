@@ -109,6 +109,9 @@ def default(task, app, consumer,
     hostname = consumer.hostname
     connection_errors = consumer.connection_errors
     _does_info = logger.isEnabledFor(logging.INFO)
+    # Track the number of ETA tasks the worker is holding
+    eta_task_count = 0
+    eta_task_limit = app.conf.worker_eta_task_limit
 
     # task event related
     # (optimized to avoid calling request.send_event)
@@ -191,12 +194,49 @@ def default(task, app, consumer,
             bucket = get_bucket(task.name)
 
         if eta and bucket:
+            # Check if we've reached the ETA task limit
+            if eta_task_limit is not None and eta_task_count >= eta_task_limit:
+                info("ETA task limit reached (%s/%s), rejecting task %s",
+                     eta_task_count, eta_task_limit, req.id)
+                req.reject(requeue=True)
+                return
+
+            # Track the ETA task
+            nonlocal eta_task_count
+            eta_task_count += 1
+
             consumer.qos.increment_eventually()
-            return call_at(eta, limit_post_eta, (req, bucket, 1),
+
+            # Define a callback to decrement the counter when the task is executed
+            def eta_callback(*args):
+                nonlocal eta_task_count
+                eta_task_count = max(0, eta_task_count - 1)
+                return limit_post_eta(*args)
+
+            return call_at(eta, eta_callback, (req, bucket, 1),
                            priority=6)
+
         if eta:
+            # Check if we've reached the ETA task limit
+            if eta_task_limit is not None and eta_task_count >= eta_task_limit:
+                info("ETA task limit reached (%s/%s), rejecting task %s",
+                     eta_task_count, eta_task_limit, req.id)
+                req.reject(requeue=True)
+                return
+
+            # Track the ETA task
+            nonlocal eta_task_count
+            eta_task_count += 1
+
             consumer.qos.increment_eventually()
-            call_at(eta, apply_eta_task, (req,), priority=6)
+
+            # Define a callback to decrement the counter when the task is executed
+            def eta_callback(*args):
+                nonlocal eta_task_count
+                eta_task_count = max(0, eta_task_count - 1)
+                return apply_eta_task(*args)
+
+            call_at(eta, eta_callback, (req,), priority=6)
             return task_message_handler
         if bucket:
             return limit_task(req, bucket, 1)
