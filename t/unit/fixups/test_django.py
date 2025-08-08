@@ -284,6 +284,11 @@ class test_DjangoWorkerFixup(FixupCase):
             # it to optimize connection handling.
             conn.close_if_unusable_or_obsolete.assert_not_called()
 
+    def test_close_cache_raises_error(self):
+        with self.fixup_context(self.app) as (f, _, _):
+            f._cache.close_caches.side_effect = AttributeError
+            f.close_cache()
+
     def test_close_cache(self):
         with self.fixup_context(self.app) as (f, _, _):
             f.close_cache()
