@@ -352,3 +352,58 @@ class test_hybrid_to_proto2:
     def test_custom_headers(self):
         _, headers, _, _ = hybrid_to_proto2(self.message, self.body)
         assert headers.get("custom") == "header"
+
+
+class test_eta_task_limit:
+
+    def setup_method(self):
+        self.task = Mock(name='task')
+        self.app = Mock(name='app')
+        self.app.conf.worker_eta_task_limit = 2  # Set limit to 2 for testing
+        self.consumer = Mock(name='consumer')
+        self.consumer.qos = Mock(name='qos')
+        self.consumer.qos.increment_eventually = Mock(name='increment_eventually')
+        self.consumer.timer = Mock(name='timer')
+        self.consumer.timer.call_at = Mock(name='call_at')
+        self.strategy = default_strategy(
+            self.task, self.app, self.consumer,
+            info=Mock(),
+            error=Mock(),
+            task_reserved=Mock(),
+        )
+        self.message = Mock(name='message')
+        self.message.headers = {'id': 'id1'}
+        self.message.payload = {'args': (1,), 'kwargs': {}}
+        self.request = Mock(name='request')
+        self.request.eta = True
+        self.request.id = 'id1'
+        self.request.message = self.message
+        self.request.reject = Mock(name='reject')
+
+        # Mock the Req constructor to return our mock request
+        self.Req = Mock(name='Req')
+        self.Req.return_value = self.request
+
+    @patch('celery.worker.strategy.create_request_cls')
+    def test_eta_task_limit(self, create_request_cls):
+        create_request_cls.return_value = self.Req
+
+        # Process first ETA task - should be accepted
+        self.strategy(self.message, None, Mock(), Mock(), [])
+        self.consumer.qos.increment_eventually.assert_called_once()
+        self.consumer.timer.call_at.assert_called_once()
+        self.request.reject.assert_not_called()
+
+        # Process second ETA task - should be accepted
+        self.request.id = 'id2'
+        self.strategy(self.message, None, Mock(), Mock(), [])
+        assert self.consumer.qos.increment_eventually.call_count == 2
+        assert self.consumer.timer.call_at.call_count == 2
+        self.request.reject.assert_not_called()
+
+        # Process third ETA task - should be rejected because limit is 2
+        self.request.id = 'id3'
+        self.strategy(self.message, None, Mock(), Mock(), [])
+        assert self.consumer.qos.increment_eventually.call_count == 2  # Not incremented
+        assert self.consumer.timer.call_at.call_count == 2  # Not scheduled
+        self.request.reject.assert_called_once_with(requeue=True)
