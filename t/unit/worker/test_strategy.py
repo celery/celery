@@ -407,3 +407,32 @@ class test_eta_task_limit:
         assert self.consumer.qos.increment_eventually.call_count == 2  # Not incremented
         assert self.consumer.timer.call_at.call_count == 2  # Not scheduled
         self.request.reject.assert_called_once_with(requeue=True)
+
+    @patch('celery.worker.strategy.ETATaskTracker')
+    @patch('celery.worker.strategy.create_request_cls')
+    def test_eta_tracker_class(self, create_request_cls, MockETATaskTracker):
+        """Test that the ETATaskTracker class is used correctly."""
+        # Create a mock instance of ETATaskTracker
+        mock_tracker = Mock()
+        MockETATaskTracker.return_value = mock_tracker
+        mock_tracker.check_limit.return_value = False
+        mock_callback = Mock(name='callback')
+        mock_tracker.create_callback.return_value = mock_callback
+
+        create_request_cls.return_value = self.Req
+
+        # Create a new strategy that will use our mock ETATaskTracker
+        strategy = default_strategy(
+            self.task, self.app, self.consumer,
+            info=Mock(),
+            error=Mock(),
+            task_reserved=Mock(),
+        )
+
+        # Process an ETA task
+        strategy(self.message, None, Mock(), Mock(), [])
+
+        # Assert ETATaskTracker methods were called correctly
+        mock_tracker.check_limit.assert_called_once_with(self.request)
+        mock_tracker.create_callback.assert_called_once()
+        self.consumer.timer.call_at.assert_called_once()
