@@ -113,6 +113,30 @@ def default(task, app, consumer,
     eta_task_count = 0
     eta_task_limit = app.conf.worker_eta_task_limit
 
+    def check_eta_task_limit(req):
+        """Check if we've reached the ETA task limit and reject task if needed.
+        
+        Returns True if limit is reached, False otherwise.
+        """
+        nonlocal eta_task_count
+        if eta_task_limit is not None and eta_task_count >= eta_task_limit:
+            info("ETA task limit reached (%s/%s), rejecting task %s",
+                eta_task_count, eta_task_limit, req.id)
+            req.reject(requeue=True)
+            return True
+        
+        # Increment the counter if limit not reached
+        eta_task_count += 1
+        return False
+
+    def create_eta_callback(req, original_callback):
+        """Create a callback that decrements the eta_task_count and calls the original callback."""
+        def eta_callback(*args):
+            nonlocal eta_task_count
+            eta_task_count = max(0, eta_task_count - 1)
+            return original_callback(*args)
+        return eta_callback
+
     # task event related
     # (optimized to avoid calling request.send_event)
     eventer = consumer.event_dispatcher
@@ -195,47 +219,25 @@ def default(task, app, consumer,
 
         if eta and bucket:
             # Check if we've reached the ETA task limit
-            if eta_task_limit is not None and eta_task_count >= eta_task_limit:
-                info("ETA task limit reached (%s/%s), rejecting task %s",
-                     eta_task_count, eta_task_limit, req.id)
-                req.reject(requeue=True)
+            if check_eta_task_limit(req):
                 return
-
-            # Track the ETA task
-            nonlocal eta_task_count
-            eta_task_count += 1
 
             consumer.qos.increment_eventually()
 
-            # Define a callback to decrement the counter when the task is executed
-            def eta_callback(*args):
-                nonlocal eta_task_count
-                eta_task_count = max(0, eta_task_count - 1)
-                return limit_post_eta(*args)
-
+            # Create callback with counter decrement logic
+            eta_callback = create_eta_callback(req, limit_post_eta)
             return call_at(eta, eta_callback, (req, bucket, 1),
                            priority=6)
 
         if eta:
             # Check if we've reached the ETA task limit
-            if eta_task_limit is not None and eta_task_count >= eta_task_limit:
-                info("ETA task limit reached (%s/%s), rejecting task %s",
-                     eta_task_count, eta_task_limit, req.id)
-                req.reject(requeue=True)
+            if check_eta_task_limit(req):
                 return
-
-            # Track the ETA task
-            nonlocal eta_task_count
-            eta_task_count += 1
 
             consumer.qos.increment_eventually()
 
-            # Define a callback to decrement the counter when the task is executed
-            def eta_callback(*args):
-                nonlocal eta_task_count
-                eta_task_count = max(0, eta_task_count - 1)
-                return apply_eta_task(*args)
-
+            # Create callback with counter decrement logic
+            eta_callback = create_eta_callback(req, apply_eta_task)
             call_at(eta, eta_callback, (req,), priority=6)
             return task_message_handler
         if bucket:
