@@ -109,7 +109,6 @@ def default(task, app, consumer,
     hostname = consumer.hostname
     connection_errors = consumer.connection_errors
     _does_info = logger.isEnabledFor(logging.INFO)
-
     # task event related
     # (optimized to avoid calling request.send_event)
     eventer = consumer.event_dispatcher
@@ -125,9 +124,18 @@ def default(task, app, consumer,
     limit_task = consumer._limit_task
     limit_post_eta = consumer._limit_post_eta
     Request = symbol_by_name(task.Request)
-    Req = create_request_cls(Request, task, consumer.pool, hostname, eventer, app=app)
+    Req = create_request_cls(Request, task, consumer.pool, hostname, eventer,
+                             app=app)
 
     revoked_tasks = consumer.controller.state.revoked
+    eta_task_limit = getattr(app.conf, 'worker_eta_task_limit', None)
+
+    # Apply ETA task limit to QoS prefetch count if configured
+    if eta_task_limit is not None:
+        # Set a maximum prefetch count to limit ETA tasks
+        original_prefetch = consumer.qos.value
+        consumer.qos.value = min(original_prefetch, eta_task_limit)
+        consumer.qos.set(consumer.qos.value)
 
     def task_message_handler(message, body, ack, reject, callbacks,
                              to_timestamp=to_timestamp):
@@ -194,6 +202,7 @@ def default(task, app, consumer,
             consumer.qos.increment_eventually()
             return call_at(eta, limit_post_eta, (req, bucket, 1),
                            priority=6)
+
         if eta:
             consumer.qos.increment_eventually()
             call_at(eta, apply_eta_task, (req,), priority=6)
