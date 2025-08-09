@@ -2644,7 +2644,7 @@ of RabbitMQ queue to create.
 Default: ``None``
 
 If this option is None or the empty string (the default), Celery leaves the
-exchange exactly as returned by your :pyattr:app.amqp.Queues.autoexchange
+exchange exactly as returned by your :attr:`app.amqp.Queues.autoexchange`
 hook.
 
 You can set this to a specific exchange type, such as ``"direct"``, ``"topic"``, or
