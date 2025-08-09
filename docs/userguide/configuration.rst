@@ -2662,7 +2662,7 @@ to create quorum queues bound to a topic exchange, for example::
 .. note::
 
 Like the queue-type setting above, this option does not affect queues
-that you define explicitly in :setting:task_queues; it applies only to
+that you define explicitly in :setting:`task_queues`; it applies only to
 queues created implicitly at runtime.
 
 .. setting:: task_default_queue
