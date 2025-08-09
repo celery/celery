@@ -95,6 +95,20 @@ jobs:
           matrix:
               python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
               toxenv: ['redis', 'rabbitmq', 'rabbitmq_redis']
+              test-case: [
+                'test_backend.py',
+                'test_canvas.py',
+                'test_inspect.py',
+                'test_loader.py',
+                'test_mem_leak_in_exception_handling.py',
+                'test_quorum_queue_qos_cluster_simulation.py',
+                'test_rabbitmq_chord_unlock_routing.py',
+                'test_rabbitmq_default_queue_type_fallback.py',
+                'test_security.py',
+                'test_serialization.py',
+                'test_tasks.py',
+                'test_worker.py'
+              ]
 
       services:
           redis:
@@ -129,14 +143,14 @@ jobs:
               run: python -m pip install --upgrade pip 'tox' tox-gh-actions
           -   name: >
                   Run tox for
-                  "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}"
+                  "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}-${{ matrix.test-case }}"
               uses: nick-fields/retry@v3
               with:
-                timeout_minutes: 60
+                timeout_minutes: 30
                 max_attempts: 2
                 retry_wait_seconds: 0
                 command: |
-                  tox --verbose --verbose -e "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -vv
+                  tox --verbose --verbose -e "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -- -k ${{ matrix.test-case }} -vv
 
   Smoke:
     needs:
