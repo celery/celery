@@ -98,17 +98,8 @@ class test_default_strategy_proto2:
             assert not self.was_reserved()
             called = self.consumer.timer.call_at.called
             if called:
-                # The callback might be wrapped by ETATaskTracker, so we need to check
-                # if the original callback is _limit_post_eta or if it's wrapped
                 callback = self.consumer.timer.call_at.call_args[0][1]
-                is_limit_post_eta = (
-                    callback == self.consumer._limit_post_eta or
-                    (hasattr(callback, '__name__') and callback.__name__ == 'eta_callback')
-                )
-                assert is_limit_post_eta, (
-                    f"Expected _limit_post_eta or eta_callback, got {callback} "
-                    f"with name {getattr(callback, '__name__', 'no_name')}"
-                )
+                assert callback == self.consumer._limit_post_eta
             return called
 
         def was_scheduled(self):
@@ -142,7 +133,9 @@ class test_default_strategy_proto2:
         consumer.task_buckets = task_buckets_mock
         if limit:
             bucket = TokenBucket(rate(limit), capacity=1)
-            task_buckets_mock.__getitem__.side_effect = lambda key: bucket if key == sig.task else None
+            task_buckets_mock.__getitem__.side_effect = (
+                lambda key: bucket if key == sig.task else None
+            )
         consumer.controller.state.revoked = set()
         consumer.disable_rate_limits = not rate_limits
         consumer.event_dispatcher.enabled = events
@@ -373,12 +366,15 @@ class test_eta_task_limit:
         self.task.send_events = False
         self.task.Request = Mock(name='Request')
         self.app = Mock(name='app')
-        self.app.conf.worker_eta_task_limit = 2  # Set limit to 2 for testing
+        self.app.conf.worker_eta_task_limit = 3  # Set limit to 3 for testing
         self.app.uses_utc_timezone = Mock(return_value=True)
         self.app.timezone = Mock()
         self.consumer = Mock(name='consumer')
         self.consumer.qos = Mock(name='qos')
-        self.consumer.qos.increment_eventually = Mock(name='increment_eventually')
+        self.consumer.qos.value = 10  # Original prefetch count
+        self.consumer.qos.set = Mock(name='qos_set')
+        self.consumer.qos.increment_eventually = Mock(
+            name='increment_eventually')
         self.consumer.timer = Mock(name='timer')
         self.consumer.timer.call_at = Mock(name='call_at')
         self.consumer.hostname = 'test_hostname'
@@ -399,12 +395,6 @@ class test_eta_task_limit:
         self.consumer.controller.state.revoked = set()
         self.consumer.disable_rate_limits = False
 
-        self.strategy = default_strategy(
-            self.task, self.app, self.consumer,
-            info=Mock(),
-            error=Mock(),
-            task_reserved=Mock(),
-        )
         self.message = Mock(name='message')
         self.message.headers = {'id': 'id1'}
         self.message.payload = {'args': (1,), 'kwargs': {}}
@@ -433,43 +423,52 @@ class test_eta_task_limit:
         self.Req.return_value = self.request
 
     @patch('celery.worker.strategy.create_request_cls')
-    def test_eta_task_limit(self, create_request_cls):
+    def test_qos_limit_applied_when_eta_limit_configured(
+            self, create_request_cls):
+        """Test that QoS prefetch count is limited when
+        worker_eta_task_limit is set."""
         create_request_cls.return_value = self.Req
 
-        # Process first ETA task - should be accepted
-        self.strategy(self.message, None, Mock(), Mock(), [])
-        self.consumer.qos.increment_eventually.assert_called_once()
-        self.consumer.timer.call_at.assert_called_once()
-        self.request.reject.assert_not_called()
+        # Create strategy - this should apply the QoS limit
+        default_strategy(
+            self.task, self.app, self.consumer,
+            info=Mock(),
+            error=Mock(),
+            task_reserved=Mock(),
+        )
 
-        # Process second ETA task - should be accepted
-        self.request.id = 'id2'
-        self.strategy(self.message, None, Mock(), Mock(), [])
-        assert self.consumer.qos.increment_eventually.call_count == 2
-        assert self.consumer.timer.call_at.call_count == 2
-        self.request.reject.assert_not_called()
+        # Verify QoS limit was applied: min(10, 3) = 3
+        assert self.consumer.qos.value == 3
+        self.consumer.qos.set.assert_called_once_with(3)
 
-        # Process third ETA task - should be rejected because limit is 2
-        self.request.id = 'id3'
-        self.strategy(self.message, None, Mock(), Mock(), [])
-        assert self.consumer.qos.increment_eventually.call_count == 2  # Not incremented
-        assert self.consumer.timer.call_at.call_count == 2  # Not scheduled
-        self.request.reject.assert_called_once_with(requeue=True)
-
-    @patch('celery.worker.strategy.ETATaskTracker')
     @patch('celery.worker.strategy.create_request_cls')
-    def test_eta_tracker_class(self, create_request_cls, MockETATaskTracker):
-        """Test that the ETATaskTracker class is used correctly."""
-        # Create a mock instance of ETATaskTracker
-        mock_tracker = Mock()
-        MockETATaskTracker.return_value = mock_tracker
-        mock_tracker.check_limit.return_value = False
-        mock_callback = Mock(name='callback')
-        mock_tracker.create_callback.return_value = mock_callback
-
+    def test_qos_limit_not_applied_when_eta_limit_not_configured(
+            self, create_request_cls):
+        """Test that QoS prefetch count is not modified when
+        worker_eta_task_limit is not set."""
         create_request_cls.return_value = self.Req
 
-        # Create a new strategy that will use our mock ETATaskTracker
+        # Remove the eta limit configuration
+        self.app.conf.worker_eta_task_limit = None
+
+        # Create strategy - this should NOT apply any QoS limit
+        default_strategy(
+            self.task, self.app, self.consumer,
+            info=Mock(),
+            error=Mock(),
+            task_reserved=Mock(),
+        )
+
+        # Verify QoS limit was NOT modified
+        assert self.consumer.qos.value == 10  # Original value unchanged
+        self.consumer.qos.set.assert_not_called()
+
+    @patch('celery.worker.strategy.create_request_cls')
+    def test_eta_task_processing_with_qos_limit(self, create_request_cls):
+        """Test that ETA tasks are processed normally with QoS limiting."""
+        create_request_cls.return_value = self.Req
+
+        # Create strategy with QoS limit applied
         strategy = default_strategy(
             self.task, self.app, self.consumer,
             info=Mock(),
@@ -480,7 +479,34 @@ class test_eta_task_limit:
         # Process an ETA task
         strategy(self.message, None, Mock(), Mock(), [])
 
-        # Assert ETATaskTracker methods were called correctly
-        mock_tracker.check_limit.assert_called_once_with(self.request)
-        mock_tracker.create_callback.assert_called_once()
+        # Verify ETA task processing continues normally
+        self.consumer.qos.increment_eventually.assert_called_once()
         self.consumer.timer.call_at.assert_called_once()
+
+        # Verify the task was scheduled correctly
+        call_args = self.consumer.timer.call_at.call_args
+        # Function to call
+        assert call_args[0][1] == self.consumer.apply_eta_task
+        assert call_args[0][2] == (self.request,)  # Arguments
+        assert call_args[1]['priority'] == 6  # Priority
+
+    @patch('celery.worker.strategy.create_request_cls')
+    def test_qos_respects_lower_original_prefetch(self, create_request_cls):
+        """Test that QoS limit respects when original prefetch is lower than
+        eta_task_limit."""
+        create_request_cls.return_value = self.Req
+
+        # Set original prefetch count lower than eta_task_limit
+        self.consumer.qos.value = 2  # Lower than eta_task_limit (3)
+
+        # Create strategy
+        default_strategy(
+            self.task, self.app, self.consumer,
+            info=Mock(),
+            error=Mock(),
+            task_reserved=Mock(),
+        )
+
+        # Verify QoS keeps the lower original value: min(2, 3) = 2
+        assert self.consumer.qos.value == 2
+        self.consumer.qos.set.assert_called_once_with(2)
