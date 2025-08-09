@@ -146,8 +146,8 @@ jobs:
                   "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}-${{ matrix.test-case }}"
               uses: nick-fields/retry@v3
               with:
-                timeout_minutes: 30
-                max_attempts: 2
+                timeout_minutes: 20
+                max_attempts: 3
                 retry_wait_seconds: 0
                 command: |
                   tox --verbose --verbose -e "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -- -k ${{ matrix.test-case }} -vv
