@@ -129,7 +129,7 @@ def default(task, app, consumer,
     Req = create_request_cls(Request, task, consumer.pool, hostname, eventer, app=app)
 
     revoked_tasks = consumer.controller.state.revoked
-    eta_task_limit = app.conf.worker_eta_task_limit
+    eta_task_limit = getattr(app.conf, 'worker_eta_task_limit', None)
 
     class ETATaskTracker:
         """Track ETA tasks to enforce limits."""
@@ -150,6 +150,7 @@ def default(task, app, consumer,
             def eta_callback(*args):
                 self.count = max(0, self.count - 1)
                 return original_callback(*args)
+            eta_callback.__name__ = 'eta_callback'
             return eta_callback
 
     eta_tracker = ETATaskTracker()

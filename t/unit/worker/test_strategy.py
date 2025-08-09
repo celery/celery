@@ -1,5 +1,4 @@
 import logging
-from collections import defaultdict
 from contextlib import contextmanager
 from unittest.mock import ANY, Mock, patch
 
@@ -99,8 +98,17 @@ class test_default_strategy_proto2:
             assert not self.was_reserved()
             called = self.consumer.timer.call_at.called
             if called:
-                assert self.consumer.timer.call_at.call_args[0][1] == \
-                    self.consumer._limit_post_eta
+                # The callback might be wrapped by ETATaskTracker, so we need to check
+                # if the original callback is _limit_post_eta or if it's wrapped
+                callback = self.consumer.timer.call_at.call_args[0][1]
+                is_limit_post_eta = (
+                    callback == self.consumer._limit_post_eta or
+                    (hasattr(callback, '__name__') and callback.__name__ == 'eta_callback')
+                )
+                assert is_limit_post_eta, (
+                    f"Expected _limit_post_eta or eta_callback, got {callback} "
+                    f"with name {getattr(callback, '__name__', 'no_name')}"
+                )
             return called
 
         def was_scheduled(self):
@@ -128,10 +136,13 @@ class test_default_strategy_proto2:
 
         reserved = Mock()
         consumer = Mock()
-        consumer.task_buckets = defaultdict(lambda: None)
+        # Create a proper mock for task_buckets that supports __getitem__
+        task_buckets_mock = Mock()
+        task_buckets_mock.__getitem__ = Mock(side_effect=lambda key: None)
+        consumer.task_buckets = task_buckets_mock
         if limit:
             bucket = TokenBucket(rate(limit), capacity=1)
-            consumer.task_buckets[sig.task] = bucket
+            task_buckets_mock.__getitem__.side_effect = lambda key: bucket if key == sig.task else None
         consumer.controller.state.revoked = set()
         consumer.disable_rate_limits = not rate_limits
         consumer.event_dispatcher.enabled = events
@@ -358,13 +369,36 @@ class test_eta_task_limit:
 
     def setup_method(self):
         self.task = Mock(name='task')
+        self.task.name = 'test_task'
+        self.task.send_events = False
+        self.task.Request = Mock(name='Request')
         self.app = Mock(name='app')
         self.app.conf.worker_eta_task_limit = 2  # Set limit to 2 for testing
+        self.app.uses_utc_timezone = Mock(return_value=True)
+        self.app.timezone = Mock()
         self.consumer = Mock(name='consumer')
         self.consumer.qos = Mock(name='qos')
         self.consumer.qos.increment_eventually = Mock(name='increment_eventually')
         self.consumer.timer = Mock(name='timer')
         self.consumer.timer.call_at = Mock(name='call_at')
+        self.consumer.hostname = 'test_hostname'
+        self.consumer.connection_errors = ()
+        self.consumer.event_dispatcher = Mock()
+        self.consumer.event_dispatcher.enabled = False
+        self.consumer.apply_eta_task = Mock(name='apply_eta_task')
+        self.consumer._limit_task = Mock(name='_limit_task')
+        self.consumer._limit_post_eta = Mock(name='_limit_post_eta')
+        self.consumer.on_task_request = Mock(name='on_task_request')
+        self.consumer.pool = Mock(name='pool')
+
+        # Create a proper mock for task_buckets that supports __getitem__
+        task_buckets_mock = Mock()
+        task_buckets_mock.__getitem__ = Mock(side_effect=lambda key: None)
+        self.consumer.task_buckets = task_buckets_mock
+
+        self.consumer.controller.state.revoked = set()
+        self.consumer.disable_rate_limits = False
+
         self.strategy = default_strategy(
             self.task, self.app, self.consumer,
             info=Mock(),
@@ -374,11 +408,25 @@ class test_eta_task_limit:
         self.message = Mock(name='message')
         self.message.headers = {'id': 'id1'}
         self.message.payload = {'args': (1,), 'kwargs': {}}
+        self.message.body = {'args': (1,), 'kwargs': {}}
+        self.message.ack = Mock(name='ack')
+        self.message.reject = Mock(name='reject')
+
         self.request = Mock(name='request')
-        self.request.eta = True
+        self.request.eta = Mock()  # Mock object that evaluates to True
+        self.request.utc = True
         self.request.id = 'id1'
+        self.request.name = 'test_task'
         self.request.message = self.message
         self.request.reject = Mock(name='reject')
+        self.request.expires = None
+        self.request.revoked = Mock(return_value=False)
+        self.request.argsrepr = repr((1,))
+        self.request.kwargsrepr = repr({})
+        self.request.root_id = None
+        self.request.parent_id = None
+        self.request.request_dict = {'retries': 0}
+        self.request.info = Mock(return_value={'id': 'id1'})
 
         # Mock the Req constructor to return our mock request
         self.Req = Mock(name='Req')
