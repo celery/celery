@@ -8,7 +8,7 @@ from unittest.mock import Mock, patch
 import pytest
 from vine import promise
 
-from celery.backends.asynchronous import BaseResultConsumer
+from celery.backends.asynchronous import E_CELERY_RESTART_REQUIRED, BaseResultConsumer
 from celery.backends.base import Backend
 from celery.utils import cached_property
 
@@ -142,11 +142,52 @@ class DrainerTests:
         assert on_interval.call_count < 20, 'Should have limited number of calls to on_interval'
 
 
+class GreenletDrainerTests(DrainerTests):
+    def test_drain_raises_when_greenlet_already_exited(self):
+        with patch.object(self.drainer.result_consumer, 'drain_events', side_effect=Exception("Test Exception")):
+            thread = self.schedule_thread(self.drainer.run)
+
+            with pytest.raises(Exception, match="Test Exception"):
+                p = promise()
+
+                for _ in self.drainer.drain_events_until(p, interval=self.interval):
+                    pass
+
+            self.teardown_thread(thread)
+
+    def test_drain_raises_while_waiting_on_exiting_greenlet(self):
+        with patch.object(self.drainer.result_consumer, 'drain_events', side_effect=Exception("Test Exception")):
+            with pytest.raises(Exception, match="Test Exception"):
+                p = promise()
+
+                for _ in self.drainer.drain_events_until(p, interval=self.interval):
+                    pass
+
+    def test_start_raises_if_previous_error_in_run(self):
+        with patch.object(self.drainer.result_consumer, 'drain_events', side_effect=Exception("Test Exception")):
+            thread = self.schedule_thread(self.drainer.run)
+
+            with pytest.raises(Exception, match="Test Exception"):
+                self.drainer.start()
+
+            self.teardown_thread(thread)
+
+    def test_start_raises_if_drainer_already_stopped(self):
+        with patch.object(self.drainer.result_consumer, 'drain_events', side_effect=lambda **_: self.sleep(0)):
+            thread = self.schedule_thread(self.drainer.run)
+            self.drainer.stop()
+
+            with pytest.raises(Exception, match=E_CELERY_RESTART_REQUIRED):
+                self.drainer.start()
+
+            self.teardown_thread(thread)
+
+
 @pytest.mark.skipif(
     sys.platform == "win32",
     reason="hangs forever intermittently on windows"
 )
-class test_EventletDrainer(DrainerTests):
+class test_EventletDrainer(GreenletDrainerTests):
     @pytest.fixture(autouse=True)
     def setup_drainer(self):
         self.drainer = self.get_drainer('eventlet')
@@ -171,7 +212,12 @@ class test_EventletDrainer(DrainerTests):
         return g
 
     def teardown_thread(self, thread):
-        thread.wait()
+        try:
+            # eventlet's wait() propagates any errors on the green thread, unlike
+            # similar methods in gevent or python's threading library
+            thread.wait()
+        except Exception:
+            pass
 
 
 class test_Drainer(DrainerTests):
@@ -196,7 +242,7 @@ class test_Drainer(DrainerTests):
         thread.join()
 
 
-class test_GeventDrainer(DrainerTests):
+class test_GeventDrainer(GreenletDrainerTests):
     @pytest.fixture(autouse=True)
     def setup_drainer(self):
         self.drainer = self.get_drainer('gevent')
