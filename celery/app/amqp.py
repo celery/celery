@@ -195,6 +195,11 @@ class Queues(dict):
     def new_missing(self, name):
         queue_arguments = None
         if self.create_missing_queue_type and self.create_missing_queue_type != "classic":
+            if self.create_missing_queue_type not in ("classic", "quorum"):
+                raise ValueError(
+                    f"Invalid queue type '{self.create_missing_queue_type}'. "
+                    "Valid types are 'classic' and 'quorum'."
+                )
             queue_arguments = {"x-queue-type": self.create_missing_queue_type}
 
         if self.create_missing_queue_exchange_type:
