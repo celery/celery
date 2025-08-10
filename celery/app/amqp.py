@@ -267,10 +267,10 @@ class AMQP:
         default_routing_key = conf.task_default_routing_key
         if create_missing is None:
             create_missing = conf.task_create_missing_queues
-            if create_missing_queue_type is None:
-                create_missing_queue_type = conf.task_create_missing_queue_type
-            if create_missing_queue_exchange_type is None:
-                create_missing_queue_exchange_type = conf.task_create_missing_queue_exchange_type
+        if create_missing_queue_type is None:
+            create_missing_queue_type = conf.task_create_missing_queue_type
+        if create_missing_queue_exchange_type is None:
+            create_missing_queue_exchange_type = conf.task_create_missing_queue_exchange_type
         if max_priority is None:
             max_priority = conf.task_queue_max_priority
         if not queues and conf.task_default_queue:
