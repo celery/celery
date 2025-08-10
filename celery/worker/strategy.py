@@ -128,14 +128,6 @@ def default(task, app, consumer,
                              app=app)
 
     revoked_tasks = consumer.controller.state.revoked
-    eta_task_limit = getattr(app.conf, 'worker_eta_task_limit', None)
-
-    # Apply ETA task limit to QoS prefetch count if configured
-    if eta_task_limit is not None:
-        # Set a maximum prefetch count to limit ETA tasks
-        original_prefetch = consumer.qos.value
-        consumer.qos.value = min(original_prefetch, eta_task_limit)
-        consumer.qos.set(consumer.qos.value)
 
     def task_message_handler(message, body, ack, reject, callbacks,
                              to_timestamp=to_timestamp):
