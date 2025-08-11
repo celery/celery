@@ -46,7 +46,7 @@ class Tasks(bootsteps.StartStopStep):
                 prefetch_count=prefetch_count,
                 apply_global=qos_global,
             )
-        eta_task_limit = c.app.conf.worker_eta_task_limit
+        eta_task_limit = getattr(c.app.conf, 'worker_eta_task_limit', None)
         c.qos = QoS(set_prefetch_count, c.initial_prefetch_count, max_prefetch=eta_task_limit)
 
     def stop(self, c):
