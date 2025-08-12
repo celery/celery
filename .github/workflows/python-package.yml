@@ -84,9 +84,9 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
 
   Integration:
-      needs:
-      - Unit
-      if: needs.Unit.result == 'success'
+    #   needs:
+    #   - Unit
+    #   if: needs.Unit.result == 'success'
       timeout-minutes: 240
 
       runs-on: blacksmith-4vcpu-ubuntu-2404
@@ -153,9 +153,9 @@ jobs:
                   tox --verbose --verbose -e "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -- -k ${{ matrix.test-case }} -vv
 
   Smoke:
-    needs:
-    - Unit
-    if: needs.Unit.result == 'success'
+    # needs:
+    # - Unit
+    # if: needs.Unit.result == 'success'
     runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
       fail-fast: false
