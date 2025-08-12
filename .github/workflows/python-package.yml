@@ -101,7 +101,6 @@ jobs:
                 'test_inspect.py',
                 'test_loader.py',
                 'test_mem_leak_in_exception_handling.py',
-                # 'test_quorum_queue_qos_cluster_simulation.py',
                 'test_rabbitmq_chord_unlock_routing.py',
                 'test_rabbitmq_default_queue_type_fallback.py',
                 'test_security.py',
