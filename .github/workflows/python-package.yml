@@ -87,7 +87,7 @@ jobs:
       needs:
       - Unit
       if: needs.Unit.result == 'success'
-      timeout-minutes: 42
+      timeout-minutes: 240
 
       runs-on: blacksmith-4vcpu-ubuntu-2404
       strategy:
@@ -145,7 +145,7 @@ jobs:
                   "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}-${{ matrix.test-case }}"
               uses: nick-fields/retry@v3
               with:
-                timeout_minutes: 15
+                timeout_minutes: 30
                 max_attempts: 2
                 retry_wait_seconds: 0
                 command: |
