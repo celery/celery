@@ -1016,11 +1016,7 @@ class EagerResult(AsyncResult):
     def ready(self):
         return True
 
-    def get(self, timeout=None, propagate=True,
-            disable_sync_subtasks=True, **kwargs):
-        if disable_sync_subtasks:
-            assert_will_not_block()
-
+    def get(self, timeout=None, propagate=True, **kwargs):
         if self.successful():
             return self.result
         elif self.state in states.PROPAGATE_STATES:
