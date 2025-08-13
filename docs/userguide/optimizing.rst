@@ -181,9 +181,12 @@ You can enable this behavior by using the following configuration options:
     task_acks_late = True
     worker_prefetch_multiplier = 1
 
-If you want to disable "prefetching of tasks" without using ack_late (because
-your tasks are not idempotent) that's impossible right now and you can join the
-discussion here https://github.com/celery/celery/discussions/7106
+If your tasks cannot be acknowledged late you can disable broker
+prefetching by enabling :setting:`worker_disable_prefetch`. With this
+setting the worker fetches a new task only when an execution slot is
+free, preventing tasks from waiting behind long running ones on busy
+workers. This can also be set from the command line using
+:option:`--disable-prefetch <celery worker --disable-prefetch>`.
 
 Memory Usage
 ------------
