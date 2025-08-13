@@ -87,7 +87,7 @@ jobs:
       needs:
       - Unit
       if: needs.Unit.result == 'success'
-      timeout-minutes: 240
+      timeout-minutes: 42
 
       runs-on: blacksmith-4vcpu-ubuntu-2404
       strategy:
@@ -146,15 +146,15 @@ jobs:
               uses: nick-fields/retry@v3
               with:
                 timeout_minutes: 15
-                max_attempts: 10
+                max_attempts: 2
                 retry_wait_seconds: 0
                 command: |
                   tox --verbose --verbose -e "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -- -k ${{ matrix.test-case }} -vv
 
   Smoke:
     needs:
-    - Unit
-    if: needs.Unit.result == 'success'
+    - Integration
+    if: needs.Integration.result == 'success'
     runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
       fail-fast: false
