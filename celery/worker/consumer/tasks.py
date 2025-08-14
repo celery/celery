@@ -56,9 +56,8 @@ class Tasks(bootsteps.StartStopStep):
             original_can_consume = channel_qos.can_consume
 
             def can_consume(self):
-                limit = getattr(c.controller, "max_concurrency", None)
-                if limit is None:
-                    limit = c.pool.num_processes
+                # Prefer autoscaler's max_concurrency if set; otherwise fall back to pool size
+                limit = getattr(c.controller, "max_concurrency", None) or c.pool.num_processes
                 if len(state.reserved_requests) >= limit:
                     return False
                 return original_can_consume()

@@ -33,3 +33,15 @@ def test_cli_skip_checks(isolated_cli_runner: CliRunner):
         )
         assert res.exit_code == 1, (res, res.stdout)
         assert os.environ["CELERY_SKIP_CHECKS"] == "true", "should set CELERY_SKIP_CHECKS"
+
+
+def test_cli_disable_prefetch_flag(isolated_cli_runner: CliRunner):
+    Logging._setup = True
+    # Ensure CLI parses --disable-prefetch and passes it into worker startup
+    res = isolated_cli_runner.invoke(
+        celery,
+        ["-A", "t.unit.bin.proj.app", "worker", "--pool", "solo", "--disable-prefetch"],
+        catch_exceptions=False,
+    )
+    # We only assert parsing works and command initializes; worker exits with 1 in tests
+    assert res.exit_code == 1, res.output
