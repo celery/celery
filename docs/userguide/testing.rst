@@ -121,10 +121,9 @@ use in your integration (or unit) test suites.
 Enabling
 --------
 
-Celery initially ships the plugin in a disabled state, to enable it you can either:
+Celery initially ships the plugin in a disabled state. To enable it, you can either:
 
     * ``pip install celery[pytest]``
-    * ``pip install pytest-celery``
     * or add an environment variable ``PYTEST_PLUGINS=celery.contrib.pytest``
     * or add ``pytest_plugins = ("celery.contrib.pytest", )`` to your root conftest.py
 

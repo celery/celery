@@ -52,7 +52,7 @@ jobs:
       if: startsWith(matrix.os, 'blacksmith-4vcpu-ubuntu')
       run: |
         sudo apt-get update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Set up Python ${{ matrix.python-version }}
       uses: useblacksmith/setup-python@v6
       with:
@@ -117,7 +117,7 @@ jobs:
               run: |
                   sudo apt-get update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
 
-          -   uses: actions/checkout@v4
+          -   uses: actions/checkout@v5
           -   name: Set up Python ${{ matrix.python-version }}
               uses: useblacksmith/setup-python@v6
               with:
@@ -176,7 +176,9 @@ jobs:
           sudo apt-get install -y procps  # Install procps to enable sysctl
           sudo sysctl -w vm.overcommit_memory=1
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+      - name: Setup Docker Builder
+        uses: useblacksmith/setup-docker-builder@v1
       - name: Set up Python ${{ matrix.python-version }}
         uses: useblacksmith/setup-python@v6
         with:
@@ -191,8 +193,8 @@ jobs:
       - name: Run tox for "${{ matrix.python-version }}-smoke-${{ matrix.test-case }}"
         uses: nick-fields/retry@v3
         with:
-          timeout_minutes: 30
-          max_attempts: 2
-          retry_wait_seconds: 0
+          timeout_minutes: 20
+          max_attempts: 5
+          retry_wait_seconds: 60
           command: |
-            tox --verbose --verbose -e "${{ matrix.python-version }}-smoke" -- -n auto -k ${{ matrix.test-case }}
+            tox --verbose --verbose -e "${{ matrix.python-version }}-smoke" -- -k ${{ matrix.test-case }}
