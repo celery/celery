@@ -96,4 +96,5 @@ class CouchBackend(KeyValueStoreBackend):
         return [self.get(key) for key in keys]
 
     def delete(self, key):
+        key = bytes_to_str(key)
         self.connection.delete(key)
