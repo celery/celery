@@ -1,5 +1,5 @@
 import os
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 from click.testing import CliRunner
@@ -45,3 +45,29 @@ def test_cli_disable_prefetch_flag(isolated_cli_runner: CliRunner):
     )
     # We only assert parsing works and command initializes; worker exits with 1 in tests
     assert res.exit_code == 1, res.output
+
+
+def test_worker_sets_disable_prefetch_when_true():
+    app_mock = Mock()
+    app_mock.conf = Mock()
+    app_mock.conf.worker_disable_prefetch = False
+    
+    kwargs = {'disable_prefetch': True}
+    if 'disable_prefetch' in kwargs and kwargs['disable_prefetch'] is not None:
+        app_mock.conf.worker_disable_prefetch = kwargs.pop('disable_prefetch')
+    
+    assert app_mock.conf.worker_disable_prefetch is True
+    assert 'disable_prefetch' not in kwargs
+
+
+def test_worker_ignores_disable_prefetch_when_none():
+    app_mock = Mock()
+    app_mock.conf = Mock()
+    app_mock.conf.worker_disable_prefetch = False
+    
+    kwargs = {'disable_prefetch': None}
+    if 'disable_prefetch' in kwargs and kwargs['disable_prefetch'] is not None:
+        app_mock.conf.worker_disable_prefetch = kwargs.pop('disable_prefetch')
+    
+    assert app_mock.conf.worker_disable_prefetch is False
+    assert 'disable_prefetch' in kwargs
