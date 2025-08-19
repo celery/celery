@@ -1,8 +1,8 @@
 from unittest.mock import MagicMock, Mock, sentinel
+from urllib.parse import urlparse
 
 import pytest
 from kombu.utils.encoding import str_to_bytes
-from urllib.parse import urlparse
 
 from celery import states, uuid
 from celery.app import backends
