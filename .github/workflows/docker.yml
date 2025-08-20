@@ -29,7 +29,7 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2204
     timeout-minutes: 60
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Setup Docker Builder
       uses: useblacksmith/setup-docker-builder@v1
     - name: Build Docker container
@@ -39,7 +39,7 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2204
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Setup Docker Builder
       uses: useblacksmith/setup-docker-builder@v1
     - name: "Build smoke tests container: dev"
@@ -49,7 +49,7 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2204
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Setup Docker Builder
       uses: useblacksmith/setup-docker-builder@v1
     - name: "Build smoke tests container: latest"
@@ -59,7 +59,7 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2204
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Setup Docker Builder
       uses: useblacksmith/setup-docker-builder@v1
     - name: "Build smoke tests container: pypi"
@@ -69,7 +69,7 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2204
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Setup Docker Builder
       uses: useblacksmith/setup-docker-builder@v1
     - name: "Build smoke tests container: legacy"
