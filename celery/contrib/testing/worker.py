@@ -188,6 +188,7 @@ def _start_worker_thread(app: Celery,
                 "to execute."
             )
         state.should_terminate = None
+        state.reset_state()
 
 
 @contextmanager
