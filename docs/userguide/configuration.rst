@@ -3197,7 +3197,7 @@ For more on prefetching, read :ref:`optimizing-prefetch-limit`
 Default: No limit (None).
 
 The maximum number of ETA/countdown tasks that a worker can hold in memory at once.
-When this limit is reached, the worker will reject new ETA tasks (with requeue=True)
+When this limit is reached, the worker will not receive new tasks from the broker
 until some of the existing ETA tasks are executed.
 
 This setting helps prevent memory exhaustion when a queue contains a large number
