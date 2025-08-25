@@ -4,7 +4,7 @@ import time
 from collections import defaultdict
 from datetime import datetime, timedelta
 from queue import Queue as FastQueue
-from unittest.mock import Mock, call, patch
+from unittest.mock import Mock, PropertyMock, call, patch
 
 import pytest
 from kombu import pidbox
@@ -815,3 +815,56 @@ class test_ControlPanel:
             assert ret[req1.id][0] == 'reserved'
         finally:
             worker_state.reserved_requests.clear()
+
+    @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
+    def test_revoke_backend_status_update(self):
+        state = self.create_state()
+        task_ids = ['task-1', 'task-2']
+
+        control._revoke(state, task_ids)
+
+        assert self.app.backend.mark_as_revoked.call_count == 2
+        calls = self.app.backend.mark_as_revoked.call_args_list
+        assert calls[0] == (('task-1',), {'reason': 'revoked', 'store_result': True})
+        assert calls[1] == (('task-2',), {'reason': 'revoked', 'store_result': True})
+
+    @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
+    def test_revoke_backend_failure_defensive(self):
+        self.app.backend.mark_as_revoked.side_effect = Exception("Backend error")
+        state = self.create_state()
+
+        control._revoke(state, ['task-1'])
+
+        assert 'task-1' in revoked
+
+    @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
+    def test_revoke_terminate_backend_update(self):
+        state = self.create_state()
+
+        with patch('celery.worker.control._find_requests_by_id', return_value=[]):
+            control._revoke(state, ['task-1'], terminate=True)
+
+        self.app.backend.mark_as_revoked.assert_called_once_with(
+            'task-1', reason='revoked', store_result=True
+        )
+
+    def test_revoke_by_stamped_headers_backend_update(self):
+        state = self.create_state()
+        state.consumer = Mock()
+
+        request = Mock()
+        request.id = 'task-with-stamp'
+        request.stamps = {'monitoring_id': 'test-123'}
+        request.terminate = Mock()
+
+        worker_state.active_requests.add(request)
+
+        headers = {'monitoring_id': 'test-123'}
+
+        with patch('celery.worker.control._signals.signum', return_value=15):
+            control.revoke_by_stamped_headers(state, headers, terminate=True)
+
+        request.terminate.assert_called_once()
+        assert 'test-123' in worker_state.revoked_stamps.get('monitoring_id', [])
+
+        worker_state.active_requests.clear()
