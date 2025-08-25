@@ -87,7 +87,7 @@ jobs:
     # needs: [Unit]
     # if: needs.Unit.result == 'success'
     strategy:
-      max-parallel: 5
+      max-parallel: 4
       matrix:
         module: [
           'test_backend.py',
@@ -110,7 +110,7 @@ jobs:
     # needs: [Unit]
     # if: needs.Unit.result == 'success'
     strategy:
-      max-parallel: 5
+      max-parallel: 4
       matrix:
         module: [
           'test_broker_failover.py',
