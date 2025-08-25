@@ -91,79 +91,79 @@ jobs:
       module_name: test_backend.py
 
   Integration-test_canvas:
-    needs: [Integration-test_backend]
-    if: needs.Integration-test_backend.result == 'success'
+    # needs: [Unit]
+    # if: needs.Unit.result == 'success'
     uses: ./.github/workflows/integration-test-module.yml
     with:
       module_name: test_canvas.py
 
   Integration-test_inspect:
-    needs: [Integration-test_canvas]
-    if: needs.Integration-test_canvas.result == 'success'
+    # needs: [Unit]
+    # if: needs.Unit.result == 'success'
     uses: ./.github/workflows/integration-test-module.yml
     with:
       module_name: test_inspect.py
 
   Integration-test_loader:
-    needs: [Integration-test_inspect]
-    if: needs.Integration-test_inspect.result == 'success'
+    # needs: [Unit]
+    # if: needs.Unit.result == 'success'
     uses: ./.github/workflows/integration-test-module.yml
     with:
       module_name: test_loader.py
 
   Integration-test_mem_leak_in_exception_handling:
-    needs: [Integration-test_loader]
-    if: needs.Integration-test_loader.result == 'success'
+    # needs: [Unit]
+    # if: needs.Unit.result == 'success'
     uses: ./.github/workflows/integration-test-module.yml
     with:
       module_name: test_mem_leak_in_exception_handling.py
 
   Integration-test_rabbitmq_chord_unlock_routing:
-    needs: [Integration-test_mem_leak_in_exception_handling]
-    if: needs.Integration-test_mem_leak_in_exception_handling.result == 'success'
+    # needs: [Unit]
+    # if: needs.Unit.result == 'success'
     uses: ./.github/workflows/integration-test-module.yml
     with:
       module_name: test_rabbitmq_chord_unlock_routing.py
 
   Integration-test_rabbitmq_default_queue_type_fallback:
-    needs: [Integration-test_rabbitmq_chord_unlock_routing]
-    if: needs.Integration-test_rabbitmq_chord_unlock_routing.result == 'success'
+    # needs: [Unit]
+    # if: needs.Unit.result == 'success'
     uses: ./.github/workflows/integration-test-module.yml
     with:
       module_name: test_rabbitmq_default_queue_type_fallback.py
 
   Integration-test_security:
-    needs: [Integration-test_rabbitmq_default_queue_type_fallback]
-    if: needs.Integration-test_rabbitmq_default_queue_type_fallback.result == 'success'
+    # needs: [Unit]
+    # if: needs.Unit.result == 'success'
     uses: ./.github/workflows/integration-test-module.yml
     with:
       module_name: test_security.py
 
   Integration-test_serialization:
-    needs: [Integration-test_security]
-    if: needs.Integration-test_security.result == 'success'
+    # needs: [Unit]
+    # if: needs.Unit.result == 'success'
     uses: ./.github/workflows/integration-test-module.yml
     with:
       module_name: test_serialization.py
 
   Integration-test_tasks:
-    needs: [Integration-test_serialization]
-    if: needs.Integration-test_serialization.result == 'success'
+    # needs: [Unit]
+    # if: needs.Unit.result == 'success'
     uses: ./.github/workflows/integration-test-module.yml
     with:
       module_name: test_tasks.py
 
   Integration-test_worker:
-    needs: [Integration-test_tasks]
-    if: needs.Integration-test_tasks.result == 'success'
+    # needs: [Unit]
+    # if: needs.Unit.result == 'success'
     uses: ./.github/workflows/integration-test-module.yml
     with:
       module_name: test_worker.py
 
   Smoke:
     needs:
-    - Integration-test_worker
-    if: needs.Integration-test_worker.result == 'success'
+    - Unit
+    if: needs.Unit.result == 'success'
     runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
       fail-fast: false
