@@ -1,4 +1,4 @@
-name: Integration Test Module
+name: Integration Tests
 
 on:
   workflow_call:
@@ -19,7 +19,7 @@ on:
         default: '["redis", "rabbitmq", "rabbitmq_redis"]'
 
 jobs:
-  integration-test:
+  testing-with:
     timeout-minutes: 240
     runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:

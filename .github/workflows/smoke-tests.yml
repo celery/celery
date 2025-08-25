@@ -1,4 +1,4 @@
-name: Smoke Test Module
+name: Smoke Tests
 
 on:
   workflow_call:
@@ -14,7 +14,7 @@ on:
         default: '["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]'
 
 jobs:
-  smoke-test:
+  testing-with:
     runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
       fail-fast: false

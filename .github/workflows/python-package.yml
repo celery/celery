@@ -102,7 +102,7 @@ jobs:
           'test_tasks.py',
           'test_worker.py'
         ]
-    uses: ./.github/workflows/integration-test-module.yml
+    uses: ./.github/workflows/integration-tests.yml
     with:
       module_name: ${{ matrix.module }}
 
@@ -128,6 +128,6 @@ jobs:
           'test_thread_safe.py',
           'test_worker.py'
         ]
-    uses: ./.github/workflows/smoke-test-module.yml
+    uses: ./.github/workflows/smoke-tests.yml
     with:
       module_name: ${{ matrix.module }}
