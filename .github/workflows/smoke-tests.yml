@@ -11,7 +11,7 @@ on:
         description: 'JSON array of Python versions to test'
         required: false
         type: string
-        default: '["3.8", "3.9", "3.13"]'
+        default: '["3.13"]'
 
 jobs:
   testing-with:
