@@ -83,177 +83,51 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
 
-  Integration-test_backend:
+  Integration-tests:
     # needs: [Unit]
     # if: needs.Unit.result == 'success'
+    strategy:
+      max-parallel: 5
+      matrix:
+        module: [
+          'test_backend.py',
+          'test_canvas.py',
+          'test_inspect.py',
+          'test_loader.py',
+          'test_mem_leak_in_exception_handling.py',
+          'test_rabbitmq_chord_unlock_routing.py',
+          'test_rabbitmq_default_queue_type_fallback.py',
+          'test_security.py',
+          'test_serialization.py',
+          'test_tasks.py',
+          'test_worker.py'
+        ]
     uses: ./.github/workflows/integration-test-module.yml
     with:
-      module_name: test_backend.py
+      module_name: ${{ matrix.module }}
 
-  Integration-test_canvas:
+  Smoke-tests:
     # needs: [Unit]
     # if: needs.Unit.result == 'success'
-    uses: ./.github/workflows/integration-test-module.yml
-    with:
-      module_name: test_canvas.py
-
-  Integration-test_inspect:
-    # needs: [Unit]
-    # if: needs.Unit.result == 'success'
-    uses: ./.github/workflows/integration-test-module.yml
-    with:
-      module_name: test_inspect.py
-
-  Integration-test_loader:
-    # needs: [Unit]
-    # if: needs.Unit.result == 'success'
-    uses: ./.github/workflows/integration-test-module.yml
-    with:
-      module_name: test_loader.py
-
-  Integration-test_mem_leak_in_exception_handling:
-    # needs: [Unit]
-    # if: needs.Unit.result == 'success'
-    uses: ./.github/workflows/integration-test-module.yml
-    with:
-      module_name: test_mem_leak_in_exception_handling.py
-
-  Integration-test_rabbitmq_chord_unlock_routing:
-    # needs: [Unit]
-    # if: needs.Unit.result == 'success'
-    uses: ./.github/workflows/integration-test-module.yml
-    with:
-      module_name: test_rabbitmq_chord_unlock_routing.py
-
-  Integration-test_rabbitmq_default_queue_type_fallback:
-    # needs: [Unit]
-    # if: needs.Unit.result == 'success'
-    uses: ./.github/workflows/integration-test-module.yml
-    with:
-      module_name: test_rabbitmq_default_queue_type_fallback.py
-
-  Integration-test_security:
-    # needs: [Unit]
-    # if: needs.Unit.result == 'success'
-    uses: ./.github/workflows/integration-test-module.yml
-    with:
-      module_name: test_security.py
-
-  Integration-test_serialization:
-    # needs: [Unit]
-    # if: needs.Unit.result == 'success'
-    uses: ./.github/workflows/integration-test-module.yml
-    with:
-      module_name: test_serialization.py
-
-  Integration-test_tasks:
-    # needs: [Unit]
-    # if: needs.Unit.result == 'success'
-    uses: ./.github/workflows/integration-test-module.yml
-    with:
-      module_name: test_tasks.py
-
-  Integration-test_worker:
-    # needs: [Unit]
-    # if: needs.Unit.result == 'success'
-    uses: ./.github/workflows/integration-test-module.yml
-    with:
-      module_name: test_worker.py
-
-  Smoke-test_broker_failover:
-    # needs: [Unit]
-    # if: needs.Unit.result == 'success'
+    strategy:
+      max-parallel: 5
+      matrix:
+        module: [
+          'test_broker_failover.py',
+          'test_worker_failover.py',
+          'test_native_delayed_delivery.py',
+          'test_quorum_queues.py',
+          'test_hybrid_cluster.py',
+          'test_revoke.py',
+          'test_visitor.py',
+          'test_canvas.py',
+          'test_consumer.py',
+          'test_control.py',
+          'test_signals.py',
+          'test_tasks.py',
+          'test_thread_safe.py',
+          'test_worker.py'
+        ]
     uses: ./.github/workflows/smoke-test-module.yml
     with:
-      module_name: test_broker_failover.py
-
-  Smoke-test_worker_failover:
-    # needs: [Unit]
-    # if: needs.Unit.result == 'success'
-    uses: ./.github/workflows/smoke-test-module.yml
-    with:
-      module_name: test_worker_failover.py
-
-  Smoke-test_native_delayed_delivery:
-    # needs: [Unit]
-    # if: needs.Unit.result == 'success'
-    uses: ./.github/workflows/smoke-test-module.yml
-    with:
-      module_name: test_native_delayed_delivery.py
-
-  Smoke-test_quorum_queues:
-    # needs: [Unit]
-    # if: needs.Unit.result == 'success'
-    uses: ./.github/workflows/smoke-test-module.yml
-    with:
-      module_name: test_quorum_queues.py
-
-  Smoke-test_hybrid_cluster:
-    # needs: [Unit]
-    # if: needs.Unit.result == 'success'
-    uses: ./.github/workflows/smoke-test-module.yml
-    with:
-      module_name: test_hybrid_cluster.py
-
-  Smoke-test_revoke:
-    # needs: [Unit]
-    # if: needs.Unit.result == 'success'
-    uses: ./.github/workflows/smoke-test-module.yml
-    with:
-      module_name: test_revoke.py
-
-  Smoke-test_visitor:
-    # needs: [Unit]
-    # if: needs.Unit.result == 'success'
-    uses: ./.github/workflows/smoke-test-module.yml
-    with:
-      module_name: test_visitor.py
-
-  Smoke-test_canvas:
-    # needs: [Unit]
-    # if: needs.Unit.result == 'success'
-    uses: ./.github/workflows/smoke-test-module.yml
-    with:
-      module_name: test_canvas.py
-
-  Smoke-test_consumer:
-    # needs: [Unit]
-    # if: needs.Unit.result == 'success'
-    uses: ./.github/workflows/smoke-test-module.yml
-    with:
-      module_name: test_consumer.py
-
-  Smoke-test_control:
-    # needs: [Unit]
-    # if: needs.Unit.result == 'success'
-    uses: ./.github/workflows/smoke-test-module.yml
-    with:
-      module_name: test_control.py
-
-  Smoke-test_signals:
-    # needs: [Unit]
-    # if: needs.Unit.result == 'success'
-    uses: ./.github/workflows/smoke-test-module.yml
-    with:
-      module_name: test_signals.py
-
-  Smoke-test_tasks:
-    # needs: [Unit]
-    # if: needs.Unit.result == 'success'
-    uses: ./.github/workflows/smoke-test-module.yml
-    with:
-      module_name: test_tasks.py
-
-  Smoke-test_thread_safe:
-    # needs: [Unit]
-    # if: needs.Unit.result == 'success'
-    uses: ./.github/workflows/smoke-test-module.yml
-    with:
-      module_name: test_thread_safe.py
-
-  Smoke-test_worker:
-    # needs: [Unit]
-    # if: needs.Unit.result == 'success'
-    uses: ./.github/workflows/smoke-test-module.yml
-    with:
-      module_name: test_worker.py
+      module_name: ${{ matrix.module }}
