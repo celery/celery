@@ -84,8 +84,8 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
 
   Integration-tests:
-    needs: [Unit]
-    if: needs.Unit.result == 'success'
+    # needs: [Unit]
+    # if: needs.Unit.result == 'success'
     strategy:
       max-parallel: 5
       matrix:
@@ -108,8 +108,8 @@ jobs:
       module_name: ${{ matrix.module }}
 
   Smoke-tests:
-    needs: [Unit]
-    if: needs.Unit.result == 'success'
+    # needs: [Unit]
+    # if: needs.Unit.result == 'success'
     strategy:
       max-parallel: 5
       matrix:
