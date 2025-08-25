@@ -39,7 +39,6 @@ class TestWorkController(worker.WorkController):
     def __init__(self, *args, **kwargs):
         # type: (*Any, **Any) -> None
         self._on_started = threading.Event()
-        self._queue_listener_started = False
 
         super().__init__(*args, **kwargs)
 
@@ -57,6 +56,7 @@ class TestWorkController(worker.WorkController):
             # collect logs from forked process.
             # XXX: those logs will appear twice in the live log
             self.queue_listener = logging.handlers.QueueListener(self.logger_queue, logging.getLogger())
+            self.queue_listener.start()
 
     class QueueHandler(logging.handlers.QueueHandler):
         def prepare(self, record):
@@ -76,30 +76,9 @@ class TestWorkController(worker.WorkController):
             logger.addHandler(handler)
         return super().start()
 
-    def stop(self, in_sighandler=False, exitcode=None):
-        if hasattr(self, 'queue_listener') and self._queue_listener_started:
-            try:
-                self.queue_listener.stop()
-                self._queue_listener_started = False
-            except Exception:
-                pass
-        return super().stop(in_sighandler=in_sighandler, exitcode=exitcode)
-
-    def terminate(self, in_sighandler=False):
-        if hasattr(self, 'queue_listener') and self._queue_listener_started:
-            try:
-                self.queue_listener.stop()
-                self._queue_listener_started = False
-            except Exception:
-                pass
-        return super().terminate(in_sighandler=in_sighandler)
-
     def on_consumer_ready(self, consumer):
         # type: (celery.worker.consumer.Consumer) -> None
         """Callback called when the Consumer blueprint is fully started."""
-        if hasattr(self, 'queue_listener') and not self._queue_listener_started:
-            self.queue_listener.start()
-            self._queue_listener_started = True
         self._on_started.set()
         test_worker_started.send(
             sender=self.app, worker=self, consumer=consumer)
@@ -201,25 +180,13 @@ def _start_worker_thread(app: Celery,
     finally:
         from celery.worker import state
         state.should_terminate = 0
-
-        if hasattr(worker, 'queue_listener') and getattr(worker, '_queue_listener_started', False):
-            try:
-                worker.queue_listener.stop()
-                worker._queue_listener_started = False
-            except Exception:
-                pass
-
-        worker.stop()
         t.join(shutdown_timeout)
         if t.is_alive():
-            worker.terminate()
-            t.join(2.0)
-            if t.is_alive():
-                raise RuntimeError(
-                    "Worker thread failed to exit within the allocated timeout. "
-                    "Consider raising `shutdown_timeout` if your tasks take longer "
-                    "to execute."
-                )
+            raise RuntimeError(
+                "Worker thread failed to exit within the allocated timeout. "
+                "Consider raising `shutdown_timeout` if your tasks take longer "
+                "to execute."
+            )
         state.should_terminate = None
 
 
