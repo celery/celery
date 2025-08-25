@@ -83,87 +83,78 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
 
-  Integration-test_backend:
-    needs: [Unit]
-    if: needs.Unit.result == 'success'
-    uses: ./.github/workflows/integration-test-module.yml
-    with:
-      module_name: test_backend.py
+  Integration:
+      needs:
+      - Unit
+      if: needs.Unit.result == 'success'
+      timeout-minutes: 240
 
-  Integration-test_canvas:
-    needs: [Integration-test_backend]
-    if: needs.Integration-test_backend.result == 'success'
-    uses: ./.github/workflows/integration-test-module.yml
-    with:
-      module_name: test_canvas.py
+      runs-on: blacksmith-4vcpu-ubuntu-2404
+      strategy:
+          fail-fast: false
+          matrix:
+              python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+              toxenv: ['redis', 'rabbitmq', 'rabbitmq_redis']
+              test-case: [
+                'test_backend.py',
+                'test_canvas.py',
+                'test_inspect.py',
+                'test_loader.py',
+                'test_mem_leak_in_exception_handling.py',
+                'test_rabbitmq_chord_unlock_routing.py',
+                'test_rabbitmq_default_queue_type_fallback.py',
+                'test_security.py',
+                'test_serialization.py',
+                'test_tasks.py',
+                'test_worker.py'
+              ]
 
-  Integration-test_inspect:
-    needs: [Integration-test_canvas]
-    if: needs.Integration-test_canvas.result == 'success'
-    uses: ./.github/workflows/integration-test-module.yml
-    with:
-      module_name: test_inspect.py
+      services:
+          redis:
+              image: redis
+              ports:
+                  - 6379:6379
+              env:
+                  REDIS_HOST: localhost
+                  REDIS_PORT: 6379
+          rabbitmq:
+              image: rabbitmq
+              ports:
+                  - 5672:5672
+              env:
+                  RABBITMQ_DEFAULT_USER: guest
+                  RABBITMQ_DEFAULT_PASS: guest
 
-  Integration-test_loader:
-    needs: [Integration-test_inspect]
-    if: needs.Integration-test_inspect.result == 'success'
-    uses: ./.github/workflows/integration-test-module.yml
-    with:
-      module_name: test_loader.py
+      steps:
+          -   name: Install apt packages
+              run: |
+                  sudo apt-get update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
 
-  Integration-test_mem_leak_in_exception_handling:
-    needs: [Integration-test_loader]
-    if: needs.Integration-test_loader.result == 'success'
-    uses: ./.github/workflows/integration-test-module.yml
-    with:
-      module_name: test_mem_leak_in_exception_handling.py
-
-  Integration-test_rabbitmq_chord_unlock_routing:
-    needs: [Integration-test_mem_leak_in_exception_handling]
-    if: needs.Integration-test_mem_leak_in_exception_handling.result == 'success'
-    uses: ./.github/workflows/integration-test-module.yml
-    with:
-      module_name: test_rabbitmq_chord_unlock_routing.py
-
-  Integration-test_rabbitmq_default_queue_type_fallback:
-    needs: [Integration-test_rabbitmq_chord_unlock_routing]
-    if: needs.Integration-test_rabbitmq_chord_unlock_routing.result == 'success'
-    uses: ./.github/workflows/integration-test-module.yml
-    with:
-      module_name: test_rabbitmq_default_queue_type_fallback.py
-
-  Integration-test_security:
-    needs: [Integration-test_rabbitmq_default_queue_type_fallback]
-    if: needs.Integration-test_rabbitmq_default_queue_type_fallback.result == 'success'
-    uses: ./.github/workflows/integration-test-module.yml
-    with:
-      module_name: test_security.py
-
-  Integration-test_serialization:
-    needs: [Integration-test_security]
-    if: needs.Integration-test_security.result == 'success'
-    uses: ./.github/workflows/integration-test-module.yml
-    with:
-      module_name: test_serialization.py
-
-  Integration-test_tasks:
-    needs: [Integration-test_serialization]
-    if: needs.Integration-test_serialization.result == 'success'
-    uses: ./.github/workflows/integration-test-module.yml
-    with:
-      module_name: test_tasks.py
-
-  Integration-test_worker:
-    needs: [Integration-test_tasks]
-    if: needs.Integration-test_tasks.result == 'success'
-    uses: ./.github/workflows/integration-test-module.yml
-    with:
-      module_name: test_worker.py
+          -   uses: actions/checkout@v5
+          -   name: Set up Python ${{ matrix.python-version }}
+              uses: useblacksmith/setup-python@v6
+              with:
+                  python-version: ${{ matrix.python-version }}
+                  allow-prereleases: true
+                  cache: 'pip'
+                  cache-dependency-path: '**/setup.py'
+          -   name: Install tox
+              run: python -m pip install --upgrade pip 'tox' tox-gh-actions
+          -   name: >
+                  Run tox for
+                  "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}-${{ matrix.test-case }}"
+              uses: nick-fields/retry@v3
+              with:
+                timeout_minutes: 5
+                max_attempts: 10
+                retry_wait_seconds: 0
+                command: |
+                  tox --verbose --verbose -e "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -- -k ${{ matrix.test-case }} -vv
 
   Smoke:
     needs:
-    - Integration-test_worker
-    if: needs.Integration-test_worker.result == 'success'
+    - Integration
+    if: needs.Integration.result == 'success'
     runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
       fail-fast: false
