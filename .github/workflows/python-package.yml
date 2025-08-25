@@ -210,4 +210,4 @@ jobs:
           max_attempts: 5
           retry_wait_seconds: 60
           command: |
-            tox --verbose --verbose -e "${{ matrix.python-version }}-smoke" -- -k ${{ matrix.test-case }}
+            tox --verbose --verbose -e "${{ matrix.python-version }}-smoke" -- -k ${{ matrix.test-case }} -n auto
