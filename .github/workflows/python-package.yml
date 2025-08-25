@@ -84,8 +84,8 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
 
   Integration-test_backend:
-    needs: [Unit]
-    if: needs.Unit.result == 'success'
+    # needs: [Unit]
+    # if: needs.Unit.result == 'success'
     uses: ./.github/workflows/integration-test-module.yml
     with:
       module_name: test_backend.py
