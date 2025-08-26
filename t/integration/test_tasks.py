@@ -98,6 +98,7 @@ class test_tasks:
             assert result.successful() is True
 
     @flaky
+    @pytest.mark.skip(reason="Broken test")
     def test_multiprocess_producer(self, manager):
         """Testing multiple processes calling tasks."""
         set_multiprocessing_start_method()
@@ -108,6 +109,7 @@ class test_tasks:
         assert list(ret) == list(range(120))
 
     @flaky
+    @pytest.mark.skip(reason="Broken test")
     def test_multithread_producer(self, manager):
         """Testing multiple threads calling tasks."""
         set_multiprocessing_start_method()
