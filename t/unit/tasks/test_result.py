@@ -449,6 +449,20 @@ class test_AsyncResult:
         result = Backend(app=self.app)._get_result_meta(None, states.SUCCESS, None, None)
         assert result.get('date_done') == date
 
+    def test_forget_remove_pending_result(self):
+        with patch('celery.result.AsyncResult.backend') as backend:
+            result = self.app.AsyncResult(self.task1['id'])
+            result.backend = backend
+            result_clone = copy.copy(result)
+            result.forget()
+            backend.remove_pending_result.assert_called_once_with(
+                result_clone
+            )
+
+        result = self.app.AsyncResult(self.task1['id'])
+        result.backend = None
+        del result
+
 
 class test_ResultSet:
 

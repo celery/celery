@@ -168,7 +168,7 @@ authorcheck:
 
 .PHONY: docker-build
 docker-build:
-	@docker compose -f docker/docker-compose.yml build
+	@DOCKER_BUILDKIT=1 docker compose -f docker/docker-compose.yml build
 
 .PHONY: docker-lint
 docker-lint:
