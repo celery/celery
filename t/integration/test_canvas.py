@@ -379,7 +379,6 @@ class test_chain:
         assert result == 10
 
     @flaky
-    @pytest.mark.skip(reason="Fails due to broken integration tests infra")
     def test_groupresult_serialization(self, manager):
         """Test GroupResult is correctly serialized
         to save in the result backend"""
