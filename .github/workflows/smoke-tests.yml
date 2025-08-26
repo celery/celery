@@ -1,0 +1,57 @@
+name: Smoke Tests
+
+on:
+  workflow_call:
+    inputs:
+      module_name:
+        description: 'Name of the test module to run (e.g., test_broker_failover.py)'
+        required: true
+        type: string
+      python_versions:
+        description: 'JSON array of Python versions to test'
+        required: false
+        type: string
+        default: '["3.13"]'
+
+jobs:
+  testing-with:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ${{ fromJson(inputs.python_versions) }}
+
+    steps:
+      - name: Fetch Docker Images
+        run: |
+          docker pull redis:latest
+          docker pull rabbitmq:latest
+
+      - name: Install apt packages
+        run: |
+          sudo apt update
+          sudo apt-get install -y procps  # Install procps to enable sysctl
+          sudo sysctl -w vm.overcommit_memory=1
+
+      - uses: actions/checkout@v5
+      - name: Setup Docker Builder
+        uses: useblacksmith/setup-docker-builder@v1
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: useblacksmith/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          allow-prereleases: true
+          cache: 'pip'
+          cache-dependency-path: '**/setup.py'
+
+      - name: Install tox
+        run: python -m pip install --upgrade pip tox tox-gh-actions
+
+      - name: Run tox for "${{ matrix.python-version }}-smoke-${{ inputs.module_name }}"
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 20
+          max_attempts: 5
+          retry_wait_seconds: 60
+          command: |
+            tox --verbose --verbose -e "${{ matrix.python-version }}-smoke" -- -k ${{ inputs.module_name }} -n auto
