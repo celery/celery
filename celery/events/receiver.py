@@ -43,19 +43,18 @@ class EventReceiver(ConsumerMixin):
         self.handlers = {} if handlers is None else handlers
         self.routing_key = routing_key
         self.node_id = node_id or uuid()
-        cfg = self.app.conf
-        self.queue_prefix = queue_prefix or cfg.event_queue_prefix
+        self.queue_prefix = queue_prefix or self.app.conf.event_queue_prefix
         self.exchange = get_exchange(
             self.connection or self.app.connection_for_write(),
-            name=cfg.event_exchange)
+            name=self.app.conf.event_exchange)
         if queue_ttl is None:
-            queue_ttl = cfg.event_queue_ttl
+            queue_ttl = self.app.conf.event_queue_ttl
         if queue_expires is None:
-            queue_expires = cfg.event_queue_expires
+            queue_expires = self.app.conf.event_queue_expires
         if queue_exclusive is None:
-            queue_exclusive = cfg.event_queue_exclusive
+            queue_exclusive = self.app.conf.event_queue_exclusive
         if queue_durable is None:
-            queue_durable = cfg.event_queue_durable
+            queue_durable = self.app.conf.event_queue_durable
         if queue_exclusive and queue_durable:
             raise ImproperlyConfigured(
                 'Queue cannot be both exclusive and durable, '
