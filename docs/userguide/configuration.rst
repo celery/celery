@@ -2627,6 +2627,7 @@ If enabled (default), any queues specified that aren't defined in
 
 ``task_create_missing_queue_type``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. versionadded:: 5.6
 
 Default: ``"classic"``
 
@@ -2641,6 +2642,8 @@ of RabbitMQ queue to create.
 
 ``task_create_missing_queue_exchange_type``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. versionadded:: 5.6
+
 Default: ``None``
 
 If this option is None or the empty string (the default), Celery leaves the
@@ -3461,6 +3464,7 @@ event queue will be deleted (``x-expires``).
 ``event_queue_durable``
 ~~~~~~~~~~~~~~~~~~~~~~~~
 :transports supported: ``amqp``
+.. versionadded:: 5.6
 
 Default: ``False``
 
@@ -3471,6 +3475,7 @@ If enabled, the event receiver's queue will be marked as *durable*, meaning it w
 ``event_queue_exclusive``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 :transports supported: ``amqp``
+.. versionadded:: 5.6
 
 Default: ``False``
 
