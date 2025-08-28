@@ -2640,7 +2640,7 @@ of RabbitMQ queue to create.
 .. setting:: task_create_missing_queue_exchange_type
 
 ``task_create_missing_queue_exchange_type``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Default: ``None``
 
 If this option is None or the empty string (the default), Celery leaves the
