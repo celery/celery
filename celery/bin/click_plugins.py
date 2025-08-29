@@ -44,7 +44,6 @@ import traceback
 
 import click
 
-
 __version__ = '2.0'
 
 
@@ -166,7 +165,7 @@ class BrokenCommand(click.Command):
         # There are several ways to get a traceback from an exception, but
         # 'TracebackException()' seems to be the most portable across actively
         # supported versions of Python.
-        tbe = traceback.TracebackException.from_exception(exception)
+        the = traceback.TracebackException.from_exception(exception)
 
         # A message for '$ cli command --help'. Contains full traceback and a
         # helpful note. The intention is to nudge users to figure out which
@@ -179,7 +178,7 @@ class BrokenCommand(click.Command):
             module=_module(entry_point),
             name=entry_point.name,
             ls=os.linesep,
-            tb=''.join(tbe.format())
+            tb=''.join(the.format())
         )
 
         # Replace the broken command's summary with a warning about how it
@@ -188,8 +187,8 @@ class BrokenCommand(click.Command):
         # a little hint for what to do about it. U+2020 is a "dagger", whose
         # modern use typically indicates a footnote.
         self.short_help = (
-            f"\u2020 Warning: could not load plugin. Invoke command with"
-            f" '--help' for traceback."
+            "\u2020 Warning: could not load plugin. Invoke command with"
+            " '--help' for traceback."
         )
 
     def invoke(self, ctx):
