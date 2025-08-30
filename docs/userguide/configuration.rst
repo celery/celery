@@ -112,6 +112,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_REDIS_PASSWORD``                  :setting:`redis_password`
 ``CELERY_REDIS_PORT``                      :setting:`redis_port`
 ``CELERY_REDIS_BACKEND_USE_SSL``           :setting:`redis_backend_use_ssl`
+``CELERY_REDIS_BACKEND_CREDENTIAL_PROVIDER``           :setting:`redis_backend_credential_provider`
 ``CELERY_RESULT_BACKEND``                  :setting:`result_backend`
 ``CELERY_MAX_CACHED_RESULTS``              :setting:`result_cache_max`
 ``CELERY_MESSAGE_COMPRESSION``             :setting:`result_compression`
@@ -758,6 +759,7 @@ Can be one of the following:
 .. _`AzureBlockBlob`: https://azure.microsoft.com/en-us/services/storage/blobs/
 .. _`S3`: https://aws.amazon.com/s3/
 .. _`GCS`: https://cloud.google.com/storage/
+.. _`redisCredentialProvider`: https://redis.readthedocs.io/en/stable/examples/connection_examples.html#Connecting-to-a-redis-instance-with-standard-credential-provider
 
 
 .. setting:: result_backend_always_retry
@@ -1338,6 +1340,16 @@ The Redis backend supports SSL. This value must be set in
 the form of a dictionary. The valid key-value pairs are
 the same as the ones mentioned in the ``redis`` sub-section
 under :setting:`broker_use_ssl`.
+
+``redis_backend_credential_provider``
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: Disabled.
+
+The Redis backend supports credential provider. This value must be set in
+the form of a class path string or a class instance. e.g. ``mymodule.myfile.myclass``
+check more details in `redisCredentialProvider`_ doc.
+
 
 .. setting:: redis_max_connections
 
