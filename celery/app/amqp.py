@@ -207,7 +207,7 @@ class Queues(dict):
         else:
             exchange = self.autoexchange(name)
 
-        return Queue(name, exchange, queue_arguments=queue_arguments)
+        return Queue(name, exchange, name, queue_arguments=queue_arguments)
 
     @property
     def consume_from(self):
