@@ -370,6 +370,10 @@ class basetest_RedisBackend:
         self.b = self.Backend(app=self.app)
 
 
+class MyCredentialProvider(CredentialProvider):
+    pass
+
+
 class test_RedisBackend(basetest_RedisBackend):
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_reduce(self):
@@ -402,6 +406,13 @@ class test_RedisBackend(basetest_RedisBackend):
         self.app.conf.redis_backend_credential_provider = "redis.CredentialProvider"
         x = self.Backend(app=self.app)
 
+        assert x.connparams
+        assert 'credential_provider' in x.connparams
+        assert 'username' not in x.connparams
+        assert 'password' not in x.connparams
+
+        # with local credential provider
+        self.app.conf.redis_backend_credential_provider = MyCredentialProvider()
         assert x.connparams
         assert 'credential_provider' in x.connparams
         assert 'username' not in x.connparams
@@ -450,6 +461,16 @@ class test_RedisBackend(basetest_RedisBackend):
         assert isinstance(x.connparams['credential_provider'], CredentialProvider)
         assert "username" not in x.connparams
         assert "password" not in x.connparams
+
+        # without username and password
+        x = self.Backend(
+            'redis://@vandelay.com:123/1?credential_provider=redis.CredentialProvider', app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert isinstance(x.connparams['credential_provider'], CredentialProvider)
 
     def test_timeouts_in_url_coerced(self):
         pytest.importorskip('redis')

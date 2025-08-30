@@ -1346,6 +1346,8 @@ the form of a dictionary. The valid key-value pairs are
 the same as the ones mentioned in the ``redis`` sub-section
 under :setting:`broker_use_ssl`.
 
+.. setting:: redis_backend_credential_provider
+
 ``redis_backend_credential_provider``
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1354,7 +1356,6 @@ Default: Disabled.
 The Redis backend supports credential provider. This value must be set in
 the form of a class path string or a class instance. e.g. ``mymodule.myfile.myclass``
 check more details in `redisCredentialProvider`_ doc.
-
 
 .. setting:: redis_max_connections
 

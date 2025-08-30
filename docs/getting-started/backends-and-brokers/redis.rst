@@ -42,7 +42,7 @@ If redis credential provider should be used, the URL needs to be in the followin
 
 .. code-block:: text
 
-    redis://:password@hostname:port/db_number?credential_provider=mymodule.myfile.myclass
+    redis://@hostname:port/db_number?credential_provider=mymodule.myfile.myclass
 
 
 If a Unix socket connection should be used, the URL needs to be in the format:
