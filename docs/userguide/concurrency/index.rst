@@ -20,6 +20,8 @@ Overview of Concurrency Options
 
 - `prefork`: The default option, ideal for CPU-bound tasks and most use cases.
   It is robust and recommended unless there's a specific need for another model.
+- `spawn`: Uses Python's ``spawn`` start method. Helpful when libraries are not
+  fork-safe, for example when using CUDA.
 - `eventlet` and `gevent`: Designed for IO-bound tasks, these models use
   greenlets for high concurrency. Note that certain features, like `soft_timeout`,
   are not available in these modes.  These have detailed documentation pages
@@ -35,6 +37,7 @@ Overview of Concurrency Options
 
     eventlet
     gevent
+    spawn
 
 .. note::
     While alternative models like `eventlet` and `gevent` are available, they

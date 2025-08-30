@@ -358,3 +358,11 @@ actually needed, which can be useful in certain deployment scenarios where you w
 more control over database schema management.
 
 See :ref:`conf-database-result-backend` for complete documentation.
+
+Spawn Pool Option
+-----------------
+
+Added a new ``spawn`` pool implementation. This pool uses Python's
+``spawn`` start method when launching worker processes which is helpful
+when libraries are not fork-safe (for example CUDA based frameworks).
+Enable it with ``-P spawn`` on the command line.

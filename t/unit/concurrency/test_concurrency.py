@@ -163,6 +163,7 @@ class test_get_available_pool_names:
     def test_no_concurrent_futures__returns_no_threads_pool_name(self):
         expected_pool_names = (
             'prefork',
+            'spawn',
             'eventlet',
             'gevent',
             'solo',
@@ -176,6 +177,7 @@ class test_get_available_pool_names:
     def test_concurrent_futures__returns_threads_pool_name(self):
         expected_pool_names = (
             'prefork',
+            'spawn',
             'eventlet',
             'gevent',
             'solo',

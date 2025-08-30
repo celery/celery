@@ -788,6 +788,10 @@ to describe the task prefetching *limit*.  There's no actual prefetching involve
 Disabling the prefetch limits is possible, but that means the worker will
 consume as many tasks as it can, as fast as possible.
 
+Since version 5.5 you can use the :option:`--disable-prefetch <celery worker --disable-prefetch>`
+flag (or set :setting:`worker_disable_prefetch` to ``True``) so that a worker
+only fetches a task when one of its processes is free.
+
 A discussion on prefetch limits, and configuration settings for a worker
 that only reserves one task at a time is found here:
 :ref:`optimizing-prefetch-limit`.
