@@ -374,6 +374,10 @@ class MyCredentialProvider(CredentialProvider):
     pass
 
 
+class NonCredentialProvider:
+    pass
+
+
 class test_RedisBackend(basetest_RedisBackend):
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_reduce(self):
@@ -417,6 +421,20 @@ class test_RedisBackend(basetest_RedisBackend):
         assert 'credential_provider' in x.connparams
         assert 'username' not in x.connparams
         assert 'password' not in x.connparams
+
+        # raise ImportError
+        self.app.conf.redis_backend_credential_provider = "not_exist.CredentialProvider"
+        with pytest.raises(ImportError):
+            x = self.Backend(app=self.app)
+            assert x.connparams
+            assert 'credential_provider' in x.connparams
+
+        # raise value Error
+        self.app.conf.redis_backend_credential_provider = NonCredentialProvider()
+        with pytest.raises(ValueError):
+            x = self.Backend(app=self.app)
+            assert x.connparams
+            assert 'credential_provider' in x.connparams
 
     def test_url(self):
         self.app.conf.redis_socket_timeout = 30.0
@@ -464,13 +482,23 @@ class test_RedisBackend(basetest_RedisBackend):
 
         # without username and password
         x = self.Backend(
-            'redis://@vandelay.com:123/1?credential_provider=redis.CredentialProvider', app=self.app,
+            'redis://@vandelay.com:123/1?credential_provider=redis.UsernamePasswordCredentialProvider', app=self.app,
         )
         assert x.connparams
         assert x.connparams['host'] == 'vandelay.com'
         assert x.connparams['db'] == 1
         assert x.connparams['port'] == 123
         assert isinstance(x.connparams['credential_provider'], CredentialProvider)
+
+        # raise valueError
+        with pytest.raises(ValueError):
+            # some non-credential provider class
+            # not ideal but serve purpose
+            x = self.Backend(
+                'redis://@vandelay.com:123/1?credential_provider=abc.ABC', app=self.app,
+            )
+            assert x.connparams
+            assert 'credential_provider' in x.connparams
 
     def test_timeouts_in_url_coerced(self):
         pytest.importorskip('redis')
