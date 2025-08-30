@@ -10,7 +10,7 @@ from unittest.mock import ANY, Mock, call, patch
 import pytest
 
 try:
-    from redis import exceptions, CredentialProvider
+    from redis import CredentialProvider, exceptions
 except ImportError:
     exceptions = None
     CredentialProvider = None
