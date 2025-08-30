@@ -1,4 +1,6 @@
 """Async I/O backend support utilities."""
+
+import logging
 import socket
 import threading
 import time
