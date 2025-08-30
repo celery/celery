@@ -10,9 +10,10 @@ from unittest.mock import ANY, Mock, call, patch
 import pytest
 
 try:
-    from redis import exceptions
+    from redis import exceptions, CredentialProvider
 except ImportError:
     exceptions = None
+    CredentialProvider = None
 
 from celery import signature, states, uuid
 from celery.canvas import Signature
@@ -397,6 +398,15 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['username'] == 'username'
         assert x.connparams['password'] == 'password'
 
+    def test_credential_provider_from_redis_conf(self):
+        self.app.conf.redis_backend_credential_provider = "redis.CredentialProvider"
+        x = self.Backend(app=self.app)
+
+        assert x.connparams
+        assert 'credential_provider' in x.connparams
+        assert 'username' not in x.connparams
+        assert 'password' not in x.connparams
+
     def test_url(self):
         self.app.conf.redis_socket_timeout = 30.0
         self.app.conf.redis_socket_connect_timeout = 100.0
@@ -423,6 +433,23 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['password'] == 'bosco'
         assert x.connparams['socket_timeout'] == 30.0
         assert x.connparams['socket_connect_timeout'] == 100.0
+
+    def test_url_with_credential_provider(self):
+        self.app.conf.redis_socket_timeout = 30.0
+        self.app.conf.redis_socket_connect_timeout = 100.0
+        x = self.Backend(
+            'redis://:bosco@vandelay.com:123/1?credential_provider=redis.CredentialProvider', app=self.app,
+        )
+
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert x.connparams['socket_timeout'] == 30.0
+        assert x.connparams['socket_connect_timeout'] == 100.0
+        assert isinstance(x.connparams['credential_provider'], CredentialProvider)
+        assert "username" not in x.connparams
+        assert "password" not in x.connparams
 
     def test_timeouts_in_url_coerced(self):
         pytest.importorskip('redis')
