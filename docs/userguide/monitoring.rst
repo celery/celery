@@ -814,3 +814,24 @@ worker-offline
 :signature: ``worker-offline(hostname, timestamp, freq, sw_ident, sw_ver, sw_sys)``
 
 The worker has disconnected from the broker.
+
+Mailbox Configuration (Advanced)
+--------------------------------
+
+Celery uses `kombu.pidbox.Mailbox` internally to send control and broadcast commands
+to workers.
+
+.. versionadded:: Kombu 5.6.0
+
+Advanced users can configure the behavior of this mailbox by customizing how it is created.
+The following parameters are now supported by `Mailbox`:
+
+- ``durable`` (default: ``False``): If set to ``True``, the control exchanges will survive broker restarts.
+- ``exclusive`` (default: ``False``): If set to ``True``, the exchanges will be usable by only one connection.
+
+.. warning::
+
+    Setting both ``durable=True`` and ``exclusive=True`` is not permitted and will
+    raise an error, as these two options are mutually incompatible in AMQP.
+
+See :setting:`event_queue_durable` and :setting:`event_queue_exclusive` for advanced configuration.
