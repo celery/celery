@@ -490,6 +490,14 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['port'] == 123
         assert isinstance(x.connparams['credential_provider'], CredentialProvider)
 
+        # raise importError
+        with pytest.raises(ImportError):
+            x = self.Backend(
+                'redis://@vandelay.com:123/1?credential_provider=not_exist.CredentialProvider', app=self.app,
+            )
+            assert x.connparams
+            assert 'credential_provider' in x.connparams
+
         # raise valueError
         with pytest.raises(ValueError):
             # some non-credential provider class
