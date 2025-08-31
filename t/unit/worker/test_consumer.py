@@ -855,6 +855,72 @@ class test_Tasks:
         assert record.levelname == "INFO"
         assert record.msg == "Global QoS is disabled. Prefetch count in now static."
 
+    def test_qos_with_worker_eta_task_limit(self):
+        """Test QoS is instantiated with worker_eta_task_limit as max_prefetch."""
+        c = self.c
+        c.app.conf.worker_eta_task_limit = 100
+        c.initial_prefetch_count = 10
+        c.task_consumer = Mock()
+        c.app.amqp.TaskConsumer = Mock(return_value=c.task_consumer)
+        c.connection.default_channel.basic_qos = Mock()
+        c.update_strategies = Mock()
+        c.on_decode_error = Mock()
+
+        tasks = Tasks(c)
+
+        with patch('celery.worker.consumer.tasks.QoS') as mock_qos:
+            tasks.start(c)
+
+            # Verify QoS was called with max_prefetch set to worker_eta_task_limit
+            mock_qos.assert_called_once()
+            args, kwargs = mock_qos.call_args
+            assert len(args) == 2  # callback and initial_value
+            assert kwargs.get('max_prefetch') == 100
+
+    def test_qos_without_worker_eta_task_limit(self):
+        """Test QoS is instantiated with None max_prefetch when worker_eta_task_limit is None."""
+        c = self.c
+        c.app.conf.worker_eta_task_limit = None
+        c.initial_prefetch_count = 10
+        c.task_consumer = Mock()
+        c.app.amqp.TaskConsumer = Mock(return_value=c.task_consumer)
+        c.connection.default_channel.basic_qos = Mock()
+        c.update_strategies = Mock()
+        c.on_decode_error = Mock()
+
+        tasks = Tasks(c)
+
+        with patch('celery.worker.consumer.tasks.QoS') as mock_qos:
+            tasks.start(c)
+
+            # Verify QoS was called with max_prefetch set to None
+            mock_qos.assert_called_once()
+            args, kwargs = mock_qos.call_args
+            assert len(args) == 2  # callback and initial_value
+            assert kwargs.get('max_prefetch') is None
+
+    def test_qos_with_zero_worker_eta_task_limit(self):
+        """Test that QoS respects zero as a valid worker_eta_task_limit value."""
+        c = self.c
+        c.app.conf.worker_eta_task_limit = 0
+        c.initial_prefetch_count = 10
+        c.task_consumer = Mock()
+        c.app.amqp.TaskConsumer = Mock(return_value=c.task_consumer)
+        c.connection.default_channel.basic_qos = Mock()
+        c.update_strategies = Mock()
+        c.on_decode_error = Mock()
+
+        tasks = Tasks(c)
+
+        with patch('celery.worker.consumer.tasks.QoS') as mock_qos:
+            tasks.start(c)
+
+            # Verify QoS was called with max_prefetch set to 0
+            mock_qos.assert_called_once()
+            args, kwargs = mock_qos.call_args
+            assert len(args) == 2  # callback and initial_value
+            assert kwargs.get('max_prefetch') == 0
+
 
 class test_Agent:
 

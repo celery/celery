@@ -46,7 +46,10 @@ class Tasks(bootsteps.StartStopStep):
                 prefetch_count=prefetch_count,
                 apply_global=qos_global,
             )
-        c.qos = QoS(set_prefetch_count, c.initial_prefetch_count)
+        eta_task_limit = c.app.conf.worker_eta_task_limit
+        c.qos = QoS(
+            set_prefetch_count, c.initial_prefetch_count, max_prefetch=eta_task_limit
+        )
 
         if c.app.conf.worker_disable_prefetch:
             from types import MethodType
@@ -95,7 +98,9 @@ class Tasks(bootsteps.StartStopStep):
         qos_global = not c.connection.qos_semantics_matches_spec
 
         if c.app.conf.worker_detect_quorum_queues:
-            using_quorum_queues, qname = detect_quorum_queues(c.app, c.connection.transport.driver_type)
+            using_quorum_queues, _ = detect_quorum_queues(
+                c.app, c.connection.transport.driver_type
+            )
 
             if using_quorum_queues:
                 qos_global = False
