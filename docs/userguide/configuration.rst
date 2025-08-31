@@ -3203,6 +3203,8 @@ For more on prefetching, read :ref:`optimizing-prefetch-limit`
 ``worker_disable_prefetch``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. versionadded:: 5.4
+
 Default: ``False``.
 
 When enabled, a worker will only consume messages from the broker when it
