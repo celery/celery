@@ -3203,7 +3203,7 @@ For more on prefetching, read :ref:`optimizing-prefetch-limit`
 ``worker_disable_prefetch``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 5.4
+.. versionadded:: 5.6
 
 Default: ``False``.
 
