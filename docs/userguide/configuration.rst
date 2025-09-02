@@ -1348,6 +1348,8 @@ under :setting:`broker_use_ssl`.
 
 .. setting:: redis_backend_credential_provider
 
+.. versionadded:: 5.6
+
 ``redis_backend_credential_provider``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
