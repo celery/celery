@@ -1349,7 +1349,7 @@ under :setting:`broker_use_ssl`.
 .. setting:: redis_backend_credential_provider
 
 ``redis_backend_credential_provider``
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Default: Disabled.
 
