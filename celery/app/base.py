@@ -407,6 +407,26 @@ class Celery:
         self.on_init()
         _register_app(self)
 
+    __slots__ = (
+        "clock",
+        "amqp_cls",
+        "events_cls",
+        "loader_cls",
+        "log_cls",
+        "control_cls",
+        "task_cls",
+        "set_as_current",
+        "registry_cls",
+        "user_options",
+        "steps",
+        "autofinalize",
+        "namespace",
+        "strict_typing",
+        # adding '__dict__' to get dynamic assignment
+        "__dict__",
+        "__weakref__",
+        )
+
     def _get_default_loader(self):
         # the --loader command-line argument sets the environment variable.
         return (
