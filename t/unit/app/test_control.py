@@ -4,7 +4,7 @@ import pytest
 
 from celery import uuid
 from celery.app import control
-from celery.exceptions import DuplicateNodenameWarning
+from celery.exceptions import DuplicateNodenameWarning, ImproperlyConfigured
 from celery.utils.collections import LimitedSet
 
 
@@ -291,6 +291,7 @@ class test_Control:
             self.mytask.name, soft=10, hard=20,
             destination='a@q.com', limit=99,
         )
+
         self.assert_control_called_with_args(
             'time_limit',
             destination='a@q.com',
@@ -564,3 +565,18 @@ class test_Control:
         self.app.conf.control_exchange = 'test_exchange'
         c = control.Control(self.app)
         assert c.mailbox.namespace == 'test_exchange'
+
+    def test_control_mailbox_queue_options(self):
+        self.app.conf.control_queue_durable = True
+        self.app.conf.control_queue_exclusive = False
+
+        c = control.Control(self.app)
+        assert c.mailbox.queue_durable is True
+        assert c.mailbox.queue_exclusive is False
+
+    def test_control_mailbox_invalid_combination(self):
+        self.app.conf.control_queue_durable = True
+        self.app.conf.control_queue_exclusive = True
+
+        with pytest.raises(ImproperlyConfigured):
+            control.Control(self.app)

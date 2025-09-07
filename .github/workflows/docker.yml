@@ -29,7 +29,9 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2204
     timeout-minutes: 60
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
+    - name: Setup Docker Builder
+      uses: useblacksmith/setup-docker-builder@v1
     - name: Build Docker container
       run: make docker-build
 
@@ -37,7 +39,9 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2204
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
+    - name: Setup Docker Builder
+      uses: useblacksmith/setup-docker-builder@v1
     - name: "Build smoke tests container: dev"
       run: docker build -f t/smoke/workers/docker/dev .
 
@@ -45,7 +49,9 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2204
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
+    - name: Setup Docker Builder
+      uses: useblacksmith/setup-docker-builder@v1
     - name: "Build smoke tests container: latest"
       run: docker build -f t/smoke/workers/docker/pypi .
 
@@ -53,7 +59,9 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2204
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
+    - name: Setup Docker Builder
+      uses: useblacksmith/setup-docker-builder@v1
     - name: "Build smoke tests container: pypi"
       run: docker build -f t/smoke/workers/docker/pypi --build-arg CELERY_VERSION="5" .
 
@@ -61,6 +69,8 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2204
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
+    - name: Setup Docker Builder
+      uses: useblacksmith/setup-docker-builder@v1
     - name: "Build smoke tests container: legacy"
       run: docker build -f t/smoke/workers/docker/pypi --build-arg CELERY_VERSION="4" .
