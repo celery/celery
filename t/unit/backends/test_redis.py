@@ -417,6 +417,7 @@ class test_RedisBackend(basetest_RedisBackend):
 
         # with local credential provider
         self.app.conf.redis_backend_credential_provider = MyCredentialProvider()
+        x = self.Backend(app=self.app)
         assert x.connparams
         assert 'credential_provider' in x.connparams
         assert 'username' not in x.connparams
@@ -425,16 +426,12 @@ class test_RedisBackend(basetest_RedisBackend):
         # raise ImportError
         self.app.conf.redis_backend_credential_provider = "not_exist.CredentialProvider"
         with pytest.raises(ImportError):
-            x = self.Backend(app=self.app)
-            assert x.connparams
-            assert 'credential_provider' in x.connparams
+            self.Backend(app=self.app)
 
         # raise value Error
         self.app.conf.redis_backend_credential_provider = NonCredentialProvider()
         with pytest.raises(ValueError):
-            x = self.Backend(app=self.app)
-            assert x.connparams
-            assert 'credential_provider' in x.connparams
+            self.Backend(app=self.app)
 
     def test_url(self):
         self.app.conf.redis_socket_timeout = 30.0
@@ -492,21 +489,17 @@ class test_RedisBackend(basetest_RedisBackend):
 
         # raise importError
         with pytest.raises(ImportError):
-            x = self.Backend(
+            self.Backend(
                 'redis://@vandelay.com:123/1?credential_provider=not_exist.CredentialProvider', app=self.app,
             )
-            assert x.connparams
-            assert 'credential_provider' in x.connparams
 
         # raise valueError
         with pytest.raises(ValueError):
             # some non-credential provider class
             # not ideal but serve purpose
-            x = self.Backend(
+            self.Backend(
                 'redis://@vandelay.com:123/1?credential_provider=abc.ABC', app=self.app,
             )
-            assert x.connparams
-            assert 'credential_provider' in x.connparams
 
     def test_timeouts_in_url_coerced(self):
         pytest.importorskip('redis')
