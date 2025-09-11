@@ -114,7 +114,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_REDIS_PASSWORD``                  :setting:`redis_password`
 ``CELERY_REDIS_PORT``                      :setting:`redis_port`
 ``CELERY_REDIS_BACKEND_USE_SSL``           :setting:`redis_backend_use_ssl`
-``CELERY_REDIS_BACKEND_CREDENTIAL_PROVIDER``           :setting:`redis_backend_credential_provider`
+``CELERY_REDIS_BACKEND_CREDENTIAL_PROVIDER`` :setting:`redis_backend_credential_provider`
 ``CELERY_RESULT_BACKEND``                  :setting:`result_backend`
 ``CELERY_MAX_CACHED_RESULTS``              :setting:`result_cache_max`
 ``CELERY_MESSAGE_COMPRESSION``             :setting:`result_compression`
