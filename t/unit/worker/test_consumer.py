@@ -495,6 +495,155 @@ class test_Consumer(ConsumerTestCase):
                 with pytest.raises(ConnectionError):
                     c.ensure_connected(conn)
 
+    def test_disable_prefetch_not_enabled(self):
+        """Test that disable_prefetch doesn't affect behavior when disabled"""
+        self.app.conf.worker_disable_prefetch = False
+
+        # Test the core logic by creating a mock consumer and Tasks instance
+        from celery.worker.consumer.tasks import Tasks
+        consumer = Mock()
+        consumer.app = self.app
+        consumer.pool = Mock()
+        consumer.pool.num_processes = 4
+        consumer.controller = Mock()
+        consumer.controller.max_concurrency = None
+        consumer.initial_prefetch_count = 16
+        consumer.connection = Mock()
+        consumer.connection.default_channel = Mock()
+        consumer.update_strategies = Mock()
+        consumer.on_decode_error = Mock()
+
+        # Mock task consumer
+        consumer.task_consumer = Mock()
+        consumer.task_consumer.channel = Mock()
+        consumer.task_consumer.channel.qos = Mock()
+        original_can_consume = Mock(return_value=True)
+        consumer.task_consumer.channel.qos.can_consume = original_can_consume
+        consumer.task_consumer.qos = Mock()
+
+        consumer.app.amqp = Mock()
+        consumer.app.amqp.TaskConsumer = Mock(return_value=consumer.task_consumer)
+
+        tasks_instance = Tasks(consumer)
+        tasks_instance.start(consumer)
+
+        # Should not modify can_consume method when disabled
+        assert consumer.task_consumer.channel.qos.can_consume == original_can_consume
+
+    def test_disable_prefetch_enabled_basic(self):
+        """Test that disable_prefetch modifies can_consume when enabled"""
+        self.app.conf.worker_disable_prefetch = True
+
+        # Test the core logic by creating a mock consumer and Tasks instance
+        from celery.worker.consumer.tasks import Tasks
+        consumer = Mock()
+        consumer.app = self.app
+        consumer.pool = Mock()
+        consumer.pool.num_processes = 4
+        consumer.controller = Mock()
+        consumer.controller.max_concurrency = None
+        consumer.initial_prefetch_count = 16
+        consumer.connection = Mock()
+        consumer.connection.default_channel = Mock()
+        consumer.update_strategies = Mock()
+        consumer.on_decode_error = Mock()
+
+        # Mock task consumer
+        consumer.task_consumer = Mock()
+        consumer.task_consumer.channel = Mock()
+        consumer.task_consumer.channel.qos = Mock()
+        original_can_consume = Mock(return_value=True)
+        consumer.task_consumer.channel.qos.can_consume = original_can_consume
+        consumer.task_consumer.qos = Mock()
+
+        consumer.app.amqp = Mock()
+        consumer.app.amqp.TaskConsumer = Mock(return_value=consumer.task_consumer)
+
+        tasks_instance = Tasks(consumer)
+
+        with patch('celery.worker.state.reserved_requests', []):
+            tasks_instance.start(consumer)
+
+            # Should modify can_consume method when enabled
+            assert callable(consumer.task_consumer.channel.qos.can_consume)
+            assert consumer.task_consumer.channel.qos.can_consume != original_can_consume
+
+    def test_disable_prefetch_respects_reserved_requests_limit(self):
+        """Test that disable_prefetch respects reserved requests limit"""
+        self.app.conf.worker_disable_prefetch = True
+
+        # Test the core logic by creating a mock consumer and Tasks instance
+        from celery.worker.consumer.tasks import Tasks
+        consumer = Mock()
+        consumer.app = self.app
+        consumer.pool = Mock()
+        consumer.pool.num_processes = 4
+        consumer.controller = Mock()
+        consumer.controller.max_concurrency = None
+        consumer.initial_prefetch_count = 16
+        consumer.connection = Mock()
+        consumer.connection.default_channel = Mock()
+        consumer.update_strategies = Mock()
+        consumer.on_decode_error = Mock()
+
+        # Mock task consumer
+        consumer.task_consumer = Mock()
+        consumer.task_consumer.channel = Mock()
+        consumer.task_consumer.channel.qos = Mock()
+        consumer.task_consumer.channel.qos.can_consume = Mock(return_value=True)
+        consumer.task_consumer.qos = Mock()
+
+        consumer.app.amqp = Mock()
+        consumer.app.amqp.TaskConsumer = Mock(return_value=consumer.task_consumer)
+
+        tasks_instance = Tasks(consumer)
+
+        # Mock 4 reserved requests (at limit of 4)
+        mock_requests = [Mock(), Mock(), Mock(), Mock()]
+        with patch('celery.worker.state.reserved_requests', mock_requests):
+            tasks_instance.start(consumer)
+
+            # Should not be able to consume when at limit
+            assert consumer.task_consumer.channel.qos.can_consume() is False
+
+    def test_disable_prefetch_respects_autoscale_max_concurrency(self):
+        """Test that disable_prefetch respects autoscale max_concurrency limit"""
+        self.app.conf.worker_disable_prefetch = True
+
+        # Test the core logic by creating a mock consumer and Tasks instance
+        from celery.worker.consumer.tasks import Tasks
+        consumer = Mock()
+        consumer.app = self.app
+        consumer.pool = Mock()
+        consumer.pool.num_processes = 4
+        consumer.controller = Mock()
+        consumer.controller.max_concurrency = 2  # Lower than pool processes
+        consumer.initial_prefetch_count = 16
+        consumer.connection = Mock()
+        consumer.connection.default_channel = Mock()
+        consumer.update_strategies = Mock()
+        consumer.on_decode_error = Mock()
+
+        # Mock task consumer
+        consumer.task_consumer = Mock()
+        consumer.task_consumer.channel = Mock()
+        consumer.task_consumer.channel.qos = Mock()
+        consumer.task_consumer.channel.qos.can_consume = Mock(return_value=True)
+        consumer.task_consumer.qos = Mock()
+
+        consumer.app.amqp = Mock()
+        consumer.app.amqp.TaskConsumer = Mock(return_value=consumer.task_consumer)
+
+        tasks_instance = Tasks(consumer)
+
+        # Mock 2 reserved requests (at autoscale limit of 2)
+        mock_requests = [Mock(), Mock()]
+        with patch('celery.worker.state.reserved_requests', mock_requests):
+            tasks_instance.start(consumer)
+
+            # Should not be able to consume when at autoscale limit
+            assert consumer.task_consumer.channel.qos.can_consume() is False
+
 
 @pytest.mark.parametrize(
     "broker_connection_retry_on_startup,is_connection_loss_on_startup",
@@ -705,6 +854,72 @@ class test_Tasks:
         record = caplog.records[0]
         assert record.levelname == "INFO"
         assert record.msg == "Global QoS is disabled. Prefetch count in now static."
+
+    def test_qos_with_worker_eta_task_limit(self):
+        """Test QoS is instantiated with worker_eta_task_limit as max_prefetch."""
+        c = self.c
+        c.app.conf.worker_eta_task_limit = 100
+        c.initial_prefetch_count = 10
+        c.task_consumer = Mock()
+        c.app.amqp.TaskConsumer = Mock(return_value=c.task_consumer)
+        c.connection.default_channel.basic_qos = Mock()
+        c.update_strategies = Mock()
+        c.on_decode_error = Mock()
+
+        tasks = Tasks(c)
+
+        with patch('celery.worker.consumer.tasks.QoS') as mock_qos:
+            tasks.start(c)
+
+            # Verify QoS was called with max_prefetch set to worker_eta_task_limit
+            mock_qos.assert_called_once()
+            args, kwargs = mock_qos.call_args
+            assert len(args) == 2  # callback and initial_value
+            assert kwargs.get('max_prefetch') == 100
+
+    def test_qos_without_worker_eta_task_limit(self):
+        """Test QoS is instantiated with None max_prefetch when worker_eta_task_limit is None."""
+        c = self.c
+        c.app.conf.worker_eta_task_limit = None
+        c.initial_prefetch_count = 10
+        c.task_consumer = Mock()
+        c.app.amqp.TaskConsumer = Mock(return_value=c.task_consumer)
+        c.connection.default_channel.basic_qos = Mock()
+        c.update_strategies = Mock()
+        c.on_decode_error = Mock()
+
+        tasks = Tasks(c)
+
+        with patch('celery.worker.consumer.tasks.QoS') as mock_qos:
+            tasks.start(c)
+
+            # Verify QoS was called with max_prefetch set to None
+            mock_qos.assert_called_once()
+            args, kwargs = mock_qos.call_args
+            assert len(args) == 2  # callback and initial_value
+            assert kwargs.get('max_prefetch') is None
+
+    def test_qos_with_zero_worker_eta_task_limit(self):
+        """Test that QoS respects zero as a valid worker_eta_task_limit value."""
+        c = self.c
+        c.app.conf.worker_eta_task_limit = 0
+        c.initial_prefetch_count = 10
+        c.task_consumer = Mock()
+        c.app.amqp.TaskConsumer = Mock(return_value=c.task_consumer)
+        c.connection.default_channel.basic_qos = Mock()
+        c.update_strategies = Mock()
+        c.on_decode_error = Mock()
+
+        tasks = Tasks(c)
+
+        with patch('celery.worker.consumer.tasks.QoS') as mock_qos:
+            tasks.start(c)
+
+            # Verify QoS was called with max_prefetch set to 0
+            mock_qos.assert_called_once()
+            args, kwargs = mock_qos.call_args
+            assert len(args) == 2  # callback and initial_value
+            assert kwargs.get('max_prefetch') == 0
 
 
 class test_Agent:
