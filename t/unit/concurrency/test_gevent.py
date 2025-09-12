@@ -131,9 +131,23 @@ class test_apply_timeout:
 
             def __exit__(self, *exc_info):
                 pass
+
         timeout_callback = Mock(name='timeout_callback')
-        apply_target = Mock(name='apply_target')
         getpid = Mock(name='getpid')
+        
+        # Mock apply_target to simulate the behavior of base.apply_target
+        # which creates Timeout(timeout) when timeout is provided
+        def mock_apply_target(*args, **kwargs):
+            if 'timeout' in kwargs and 'Timeout' in kwargs:
+                timeout_val = kwargs['timeout']
+                Timeout_class = kwargs['Timeout']
+                # Simulate creating the Timeout context manager
+                with Timeout_class(timeout_val):
+                    pass
+            return Mock()
+        
+        apply_target = Mock(name='apply_target', side_effect=mock_apply_target)
+        
         apply_timeout(
             Mock(), timeout=10, callback=Mock(name='callback'),
             timeout_callback=timeout_callback, getpid=getpid,
