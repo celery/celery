@@ -21,13 +21,17 @@ logger = get_logger('celery.pool')
 
 def apply_target(target, args=(), kwargs=None, callback=None,
                  accept_callback=None, pid=None, getpid=os.getpid,
-                 propagate=(), monotonic=time.monotonic, **_):
+                 propagate=(), timeout=None, Timeout=None, monotonic=time.monotonic, **_):
     """Apply function within pool context."""
     kwargs = {} if not kwargs else kwargs
     if accept_callback:
         accept_callback(pid or getpid(), monotonic())
     try:
-        ret = target(*args, **kwargs)
+        if timeout and Timeout:
+            with Timeout(timeout):
+                ret = target(*args, **kwargs)
+        else:
+            ret = target(*args, **kwargs)
     except propagate:
         raise
     except Exception:
