@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14', 'pypy3.10']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14', 'pypy3.11']
         os: ["blacksmith-4vcpu-ubuntu-2404", "windows-latest"]
         exclude:
             - python-version: '3.9'
@@ -46,7 +46,7 @@ jobs:
               os: "windows-latest"
             - python-version: '3.14'
               os: "windows-latest"
-            - python-version: 'pypy3.10'
+            - python-version: 'pypy3.11'
               os: "windows-latest"
 
     steps:
