@@ -1420,6 +1420,18 @@ Default: :const:`False`
 Socket TCP keepalive to keep connections healthy to the Redis server,
 used by the redis result backend.
 
+.. setting:: redis_client_name
+
+``redis_client_name``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7.1
+
+Default: :const:`None`
+
+Sets the client name for Redis connections used by the result backend.
+This can help identify connections in Redis monitoring tools.
+
 .. _conf-cassandra-result-backend:
 
 Cassandra/AstraDB backend settings
