@@ -12,6 +12,7 @@ __all__ = ('Task', 'TaskExtended', 'TaskSet')
 
 DialectSpecificInteger = sa.Integer().with_variant(sa.BigInteger, 'mssql')
 
+
 class Task(ResultModelBase):
     """Task result/status."""
 
