@@ -1425,7 +1425,7 @@ used by the redis result backend.
 ``redis_client_name``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 5.7.1
+.. versionadded:: 5.6
 
 Default: :const:`None`
 
