@@ -453,6 +453,31 @@ class test_chain(CanvasCase):
         from celery._state import current_app
         assert chain().app is current_app
 
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_chain_app_uses_public_property_not_private_attribute(self):
+        from celery._state import current_app
+
+        task1 = self.add.s(1, 1)
+        task2 = self.add.s(2, 2)
+
+        task1._app = None
+        task2._app = None
+
+        c = _chain(task1, task2)
+        c._app = None
+
+        assert c.app is current_app
+
+    def test_chain_app_respects_task_app_property(self):
+        task1 = self.add.s(1, 1)
+        task2 = self.add.s(2, 2)
+
+        c = _chain(task1, task2)
+        c._app = None
+
+        assert c.app is task1.app
+        assert c.app is self.app
+
     def test_handles_dicts(self):
         c = chain(
             self.add.s(5, 5), dict(self.add.s(8)), app=self.app,

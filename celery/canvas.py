@@ -1292,7 +1292,7 @@ class _chain(Signature):
         app = self._app
         if app is None:
             try:
-                app = self.tasks[0]._app
+                app = self.tasks[0].app
             except LookupError:
                 pass
         return app or current_app
