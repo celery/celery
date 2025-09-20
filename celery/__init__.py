@@ -1,4 +1,4 @@
-"""Distributed Task Queue."""
+"""Distributed Task Queue.""" 
 # :copyright: (c) 2017-2026 Asif Saif Uddin, celery core and individual
 #                 contributors, All rights reserved.
 # :copyright: (c) 2015-2016 Ask Solem.  All rights reserved.
