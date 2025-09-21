@@ -50,8 +50,8 @@ class test_ModelsIdFieldTypeVariations:
 
     def test_for_mssql_dialect(self):
         """Test that ID columns use BigInteger for MSSQL and Integer for other dialects."""
-        from sqlalchemy.dialects import mssql, postgresql, mysql, sqlite, oracle
         from sqlalchemy import BigInteger, Integer
+        from sqlalchemy.dialects import mssql, mysql, oracle, postgresql, sqlite
 
         models = [Task, TaskSet]
         id_columns = [m.__table__.columns['id'] for m in models]
