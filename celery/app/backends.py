@@ -20,6 +20,7 @@ BACKEND_ALIASES = {
     'sentinel': 'celery.backends.redis:SentinelBackend',
     'mongodb': 'celery.backends.mongodb:MongoBackend',
     'db': 'celery.backends.database:DatabaseBackend',
+    'db-json': 'celery.backends.database:JSONDatabaseBackend',
     'database': 'celery.backends.database:DatabaseBackend',
     'elasticsearch': 'celery.backends.elasticsearch:ElasticsearchBackend',
     'cassandra': 'celery.backends.cassandra:CassandraBackend',

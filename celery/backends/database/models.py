@@ -2,28 +2,21 @@
 from datetime import datetime, timezone
 
 import sqlalchemy as sa
-from sqlalchemy.types import PickleType
+from sqlalchemy.types import PickleType, JSON as sa_JSON
 
 from celery import states
 
 from .session import ResultModelBase
 
-__all__ = ('Task', 'TaskExtended', 'TaskSet')
+__all__ = ('Task', 'TaskExtended', 'TaskSet',
+           'TaskJSON', 'TaskExtendedJSON', 'TaskSetJSON',)
 
 DialectSpecificInteger = sa.Integer().with_variant(sa.BigInteger, 'mssql')
 
 
-class Task(ResultModelBase):
-    """Task result/status."""
-
-    __tablename__ = 'celery_taskmeta'
-    __table_args__ = {'sqlite_autoincrement': True}
-
-    id = sa.Column(DialectSpecificInteger, sa.Sequence('task_id_sequence'),
-                   primary_key=True, autoincrement=True)
+class TaskColumnsMixin:
     task_id = sa.Column(sa.String(155), unique=True)
     status = sa.Column(sa.String(50), default=states.PENDING)
-    result = sa.Column(PickleType, nullable=True)
     date_done = sa.Column(sa.DateTime, default=datetime.now(timezone.utc),
                           onupdate=datetime.now(timezone.utc), nullable=True)
     traceback = sa.Column(sa.Text, nullable=True)
@@ -43,6 +36,7 @@ class Task(ResultModelBase):
     def __repr__(self):
         return '<Task {0.task_id} state: {0.status}>'.format(self)
 
+
     @classmethod
     def configure(cls, schema=None, name=None):
         cls.__table__.schema = schema
@@ -50,12 +44,7 @@ class Task(ResultModelBase):
         cls.__table__.name = name or cls.__tablename__
 
 
-class TaskExtended(Task):
-    """For the extend result."""
-
-    __tablename__ = 'celery_taskmeta'
-    __table_args__ = {'sqlite_autoincrement': True, 'extend_existing': True}
-
+class TaskExtendedColumnsMixin(TaskColumnsMixin):
     name = sa.Column(sa.String(155), nullable=True)
     args = sa.Column(sa.LargeBinary, nullable=True)
     kwargs = sa.Column(sa.LargeBinary, nullable=True)
@@ -76,18 +65,10 @@ class TaskExtended(Task):
         return task_dict
 
 
-class TaskSet(ResultModelBase):
-    """TaskSet result."""
-
-    __tablename__ = 'celery_tasksetmeta'
-    __table_args__ = {'sqlite_autoincrement': True}
-
-    id = sa.Column(DialectSpecificInteger, sa.Sequence('taskset_id_sequence'),
-                   autoincrement=True, primary_key=True)
+class TaskSetColumnsMixin:
+    """TaskSet columns mixin."""
     taskset_id = sa.Column(sa.String(155), unique=True)
-    result = sa.Column(PickleType, nullable=True)
-    date_done = sa.Column(sa.DateTime, default=datetime.now(timezone.utc),
-                          nullable=True)
+    date_done = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), nullable=True)
 
     def __init__(self, taskset_id, result):
         self.taskset_id = taskset_id
@@ -108,3 +89,68 @@ class TaskSet(ResultModelBase):
         cls.__table__.schema = schema
         cls.id.default.schema = schema
         cls.__table__.name = name or cls.__tablename__
+
+
+class Task(TaskColumnsMixin, ResultModelBase):
+    """Task result/status."""
+
+    __tablename__ = 'celery_taskmeta'
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    id = sa.Column(DialectSpecificInteger, sa.Sequence('task_id_sequence'),
+                   primary_key=True, autoincrement=True)
+    result = sa.Column(PickleType, nullable=True)
+
+
+class TaskExtended(TaskExtendedColumnsMixin, ResultModelBase):
+    """For the extend result."""
+
+    __tablename__ = 'celery_taskmeta'
+    __table_args__ = {'sqlite_autoincrement': True, 'extend_existing': True}
+
+    id = sa.Column(DialectSpecificInteger, sa.Sequence('task_id_sequence'),
+                   primary_key=True, autoincrement=True)
+    result = sa.Column(PickleType, nullable=True)
+
+
+class TaskSet(TaskSetColumnsMixin, ResultModelBase):
+    """TaskSet result."""
+    __tablename__ = 'celery_tasksetmeta'
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    id = sa.Column(DialectSpecificInteger, sa.Sequence('taskset_id_sequence'),
+                   autoincrement=True, primary_key=True)
+    result = sa.Column(PickleType, nullable=True)
+
+
+class TaskJSON(TaskColumnsMixin, ResultModelBase):
+    """Task JSON result/status."""
+
+    __tablename__ = 'celery_taskmeta_json'
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    id = sa.Column(DialectSpecificInteger, sa.Sequence('task_id_sequence_json'),
+                   primary_key=True, autoincrement=True)
+    result = sa.Column(sa_JSON, nullable=True)
+
+
+class TaskExtendedJSON(TaskExtendedColumnsMixin, ResultModelBase):
+    """Extended task with JSON result."""
+
+    __tablename__ = 'celery_taskmeta_json'
+    __table_args__ = {'sqlite_autoincrement': True, 'extend_existing': True}
+
+    id = sa.Column(DialectSpecificInteger, sa.Sequence('task_id_sequence_json'),
+                   primary_key=True, autoincrement=True)
+    result = sa.Column(sa_JSON, nullable=True)
+
+
+class TaskSetJSON(TaskSetColumnsMixin, ResultModelBase):
+    """TaskSet JSON result."""
+
+    __tablename__ = 'celery_tasksetmeta_json'
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    id = sa.Column(DialectSpecificInteger, sa.Sequence('taskset_id_sequence_json'),
+                   autoincrement=True, primary_key=True)
+    result = sa.Column(sa_JSON, nullable=True)

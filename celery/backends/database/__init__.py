@@ -9,7 +9,7 @@ from celery.backends.base import BaseBackend
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.time import maybe_timedelta
 
-from .models import Task, TaskExtended, TaskSet
+from .models import Task, TaskExtended, TaskSet, TaskJSON, TaskSetJSON, TaskExtendedJSON
 from .session import SessionManager
 
 try:
@@ -22,7 +22,7 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-__all__ = ('DatabaseBackend',)
+__all__ = ('DatabaseBackend', 'JSONDatabaseBackend')
 
 
 @contextmanager
@@ -65,6 +65,7 @@ class DatabaseBackend(BaseBackend):
 
     task_cls = Task
     taskset_cls = TaskSet
+    task_extended_cls = TaskExtended
 
     def __init__(self, dburi=None, engine_options=None, url=None, **kwargs):
         # The `url` argument was added later and is used by
@@ -74,7 +75,7 @@ class DatabaseBackend(BaseBackend):
         conf = self.app.conf
 
         if self.extended_result:
-            self.task_cls = TaskExtended
+            self.task_cls = self.task_extended_cls
 
         self.url = url or dburi or conf.database_url
         self.engine_options = dict(
@@ -232,3 +233,11 @@ class DatabaseBackend(BaseBackend):
              'expires': self.expires,
              'engine_options': self.engine_options})
         return super().__reduce__(args, kwargs)
+
+
+class JSONDatabaseBackend(DatabaseBackend):
+    """The database result backend using JSON encoded results."""
+
+    task_cls = TaskJSON
+    taskset_cls = TaskSetJSON
+    task_extended_cls = TaskExtendedJSON
