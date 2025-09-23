@@ -14,7 +14,12 @@ __all__ = ('Task', 'TaskExtended', 'TaskSet',
 DialectSpecificInteger = sa.Integer().with_variant(sa.BigInteger, 'mssql')
 
 
-class TaskColumnsMixin:
+class TaskBase(ResultModelBase):
+    """Base class for task models."""
+    __abstract__ = True
+
+    id = sa.Column(DialectSpecificInteger, sa.Sequence('task_id_sequence'),
+                   primary_key=True, autoincrement=True)
     task_id = sa.Column(sa.String(155), unique=True)
     status = sa.Column(sa.String(50), default=states.PENDING)
     date_done = sa.Column(sa.DateTime, default=datetime.now(timezone.utc),
@@ -44,29 +49,14 @@ class TaskColumnsMixin:
         cls.__table__.name = name or cls.__tablename__
 
 
-class TaskExtendedColumnsMixin(TaskColumnsMixin):
-    name = sa.Column(sa.String(155), nullable=True)
-    args = sa.Column(sa.LargeBinary, nullable=True)
-    kwargs = sa.Column(sa.LargeBinary, nullable=True)
-    worker = sa.Column(sa.String(155), nullable=True)
-    retries = sa.Column(sa.Integer, nullable=True)
-    queue = sa.Column(sa.String(155), nullable=True)
-
-    def to_dict(self):
-        task_dict = super().to_dict()
-        task_dict.update({
-            'name': self.name,
-            'args': self.args,
-            'kwargs': self.kwargs,
-            'worker': self.worker,
-            'retries': self.retries,
-            'queue': self.queue,
-        })
-        return task_dict
 
 
-class TaskSetColumnsMixin:
-    """TaskSet columns mixin."""
+class TaskSetBase(ResultModelBase):
+    """Base class for taskset models."""
+    __abstract__ = True
+
+    id = sa.Column(DialectSpecificInteger, sa.Sequence('taskset_id_sequence'),
+                   autoincrement=True, primary_key=True)
     taskset_id = sa.Column(sa.String(155), unique=True)
     date_done = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), nullable=True)
 
@@ -91,39 +81,15 @@ class TaskSetColumnsMixin:
         cls.__table__.name = name or cls.__tablename__
 
 
-class Task(TaskColumnsMixin, ResultModelBase):
+class Task(TaskBase):
     """Task result/status."""
 
     __tablename__ = 'celery_taskmeta'
     __table_args__ = {'sqlite_autoincrement': True}
 
-    id = sa.Column(DialectSpecificInteger, sa.Sequence('task_id_sequence'),
-                   primary_key=True, autoincrement=True)
     result = sa.Column(PickleType, nullable=True)
 
-
-class TaskExtended(TaskExtendedColumnsMixin, ResultModelBase):
-    """For the extend result."""
-
-    __tablename__ = 'celery_taskmeta'
-    __table_args__ = {'sqlite_autoincrement': True, 'extend_existing': True}
-
-    id = sa.Column(DialectSpecificInteger, sa.Sequence('task_id_sequence'),
-                   primary_key=True, autoincrement=True)
-    result = sa.Column(PickleType, nullable=True)
-
-
-class TaskSet(TaskSetColumnsMixin, ResultModelBase):
-    """TaskSet result."""
-    __tablename__ = 'celery_tasksetmeta'
-    __table_args__ = {'sqlite_autoincrement': True}
-
-    id = sa.Column(DialectSpecificInteger, sa.Sequence('taskset_id_sequence'),
-                   autoincrement=True, primary_key=True)
-    result = sa.Column(PickleType, nullable=True)
-
-
-class TaskJSON(TaskColumnsMixin, ResultModelBase):
+class TaskJSON(TaskBase):
     """Task JSON result/status."""
 
     __tablename__ = 'celery_taskmeta_json'
@@ -134,7 +100,35 @@ class TaskJSON(TaskColumnsMixin, ResultModelBase):
     result = sa.Column(sa_JSON, nullable=True)
 
 
-class TaskExtendedJSON(TaskExtendedColumnsMixin, ResultModelBase):
+class TaskExtended(TaskBase):
+    """For the extend result."""
+
+    __tablename__ = 'celery_taskmeta'
+    __table_args__ = {'sqlite_autoincrement': True, 'extend_existing': True}
+
+    name = sa.Column(sa.String(155), nullable=True)
+    args = sa.Column(sa.LargeBinary, nullable=True)
+    kwargs = sa.Column(sa.LargeBinary, nullable=True)
+    worker = sa.Column(sa.String(155), nullable=True)
+    retries = sa.Column(sa.Integer, nullable=True)
+    queue = sa.Column(sa.String(155), nullable=True)
+
+    result = sa.Column(PickleType, nullable=True)
+
+    def to_dict(self):
+        task_dict = super().to_dict()
+        task_dict.update({
+            'name': self.name,
+            'args': self.args,
+            'kwargs': self.kwargs,
+            'worker': self.worker,
+            'retries': self.retries,
+            'queue': self.queue,
+        })
+        return task_dict
+
+
+class TaskExtendedJSON(TaskBase):
     """Extended task with JSON result."""
 
     __tablename__ = 'celery_taskmeta_json'
@@ -145,7 +139,15 @@ class TaskExtendedJSON(TaskExtendedColumnsMixin, ResultModelBase):
     result = sa.Column(sa_JSON, nullable=True)
 
 
-class TaskSetJSON(TaskSetColumnsMixin, ResultModelBase):
+class TaskSet(TaskSetBase):
+    """TaskSet result."""
+    __tablename__ = 'celery_tasksetmeta'
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    result = sa.Column(PickleType, nullable=True)
+
+
+class TaskSetJSON(TaskSetBase):
     """TaskSet JSON result."""
 
     __tablename__ = 'celery_tasksetmeta_json'
