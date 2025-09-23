@@ -9,7 +9,7 @@ from celery.backends.base import BaseBackend
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.time import maybe_timedelta
 
-from .models import Task, TaskExtended, TaskSet, TaskJSON, TaskSetJSON, TaskExtendedJSON
+from .models import Task, TaskExtended, TaskExtendedJSON, TaskJSON, TaskSet, TaskSetJSON
 from .session import SessionManager
 
 try:

@@ -2,7 +2,8 @@
 from datetime import datetime, timezone
 
 import sqlalchemy as sa
-from sqlalchemy.types import PickleType, JSON as sa_JSON
+from sqlalchemy.types import JSON as sa_JSON
+from sqlalchemy.types import PickleType
 
 from celery import states
 
