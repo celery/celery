@@ -42,14 +42,11 @@ class TaskBase(ResultModelBase):
     def __repr__(self):
         return '<Task {0.task_id} state: {0.status}>'.format(self)
 
-
     @classmethod
     def configure(cls, schema=None, name=None):
         cls.__table__.schema = schema
         cls.id.default.schema = schema
         cls.__table__.name = name or cls.__tablename__
-
-
 
 
 class TaskSetBase(ResultModelBase):
@@ -59,7 +56,8 @@ class TaskSetBase(ResultModelBase):
     id = sa.Column(DialectSpecificInteger, sa.Sequence('taskset_id_sequence'),
                    autoincrement=True, primary_key=True)
     taskset_id = sa.Column(sa.String(155), unique=True)
-    date_done = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), nullable=True)
+    date_done = sa.Column(sa.DateTime, default=datetime.now(timezone.utc),
+                          nullable=True)
 
     def __init__(self, taskset_id, result):
         self.taskset_id = taskset_id
@@ -90,13 +88,15 @@ class Task(TaskBase):
 
     result = sa.Column(PickleType, nullable=True)
 
+
 class TaskJSON(TaskBase):
     """Task JSON result/status."""
 
     __tablename__ = 'celery_taskmeta_json'
     __table_args__ = {'sqlite_autoincrement': True}
 
-    id = sa.Column(DialectSpecificInteger, sa.Sequence('task_id_sequence_json'),
+    id = sa.Column(DialectSpecificInteger,
+                   sa.Sequence('task_id_sequence_json'),
                    primary_key=True, autoincrement=True)
     result = sa.Column(sa_JSON, nullable=True)
 
@@ -135,7 +135,8 @@ class TaskExtendedJSON(TaskBase):
     __tablename__ = 'celery_taskmeta_json'
     __table_args__ = {'sqlite_autoincrement': True, 'extend_existing': True}
 
-    id = sa.Column(DialectSpecificInteger, sa.Sequence('task_id_sequence_json'),
+    id = sa.Column(DialectSpecificInteger,
+                   sa.Sequence('task_id_sequence_json'),
                    primary_key=True, autoincrement=True)
     result = sa.Column(sa_JSON, nullable=True)
 
@@ -154,6 +155,7 @@ class TaskSetJSON(TaskSetBase):
     __tablename__ = 'celery_tasksetmeta_json'
     __table_args__ = {'sqlite_autoincrement': True}
 
-    id = sa.Column(DialectSpecificInteger, sa.Sequence('taskset_id_sequence_json'),
+    id = sa.Column(DialectSpecificInteger,
+                   sa.Sequence('taskset_id_sequence_json'),
                    autoincrement=True, primary_key=True)
     result = sa.Column(sa_JSON, nullable=True)
