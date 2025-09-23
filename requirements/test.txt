@@ -19,3 +19,5 @@ pre-commit>=4.0.1; python_version >= '3.9'
 -r extras/mongodb.txt
 -r extras/gcs.txt
 -r extras/pydantic.txt
+-r extras/azureblockblob.txt
+-r extras/gevent.txt
