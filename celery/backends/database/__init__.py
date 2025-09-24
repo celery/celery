@@ -93,7 +93,7 @@ class DatabaseBackend(BaseBackend):
 
         schemas = conf.database_table_schemas or {}
         tablenames = conf.database_table_names or {}
-        schema_extensions = schema_extensions or {}
+        schema_extensions = schema_extensions or conf.get('database_schema_extensions', {})
         self.task_cls.configure(
             schema=schemas.get('task'),
             name=tablenames.get('task'),
