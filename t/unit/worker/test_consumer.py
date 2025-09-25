@@ -412,8 +412,8 @@ class test_Consumer(ConsumerTestCase):
         assert error.call_args[0][3] == 'Trying again in 2.00 seconds... (1/3)'
         errback(Mock(), 4)
         assert error.call_args[0][3] == 'Trying again in 4.00 seconds... (2/3)'
-        errback(Mock(), 6)
-        assert error.call_args[0][3] == 'Trying again in 6.00 seconds... (3/3)'
+        errback(Mock(), 12)
+        assert error.call_args[0][3] == 'Trying again in 12.00 seconds... (3/3)'
 
     def test_cancel_long_running_tasks_on_connection_loss(self):
         c = self.get_consumer()
