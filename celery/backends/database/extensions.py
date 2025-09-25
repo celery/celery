@@ -15,7 +15,7 @@ class SchemaExtension(ABC):
     @abstractmethod
     def extend(self, table: Table, metadata: MetaData) -> None:
         """Extend or modify the given table in place."""
-        ...
+        ...  # pragma: no cover
 
 
 class JsonResultExtension(SchemaExtension):
