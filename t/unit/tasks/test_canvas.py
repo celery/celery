@@ -1243,6 +1243,12 @@ class test_group(CanvasCase):
             assert isinstance(result, AsyncResult)
             assert group_id is not None
 
+    def test_task_replace_with_group_preserves_group_order(self):
+        self.app.conf.task_always_eager = True
+        sig = self.replace_with_group.s(1, 2)
+        res = self.helper_test_get_delay(sig.delay())
+        assert res == [3, 2]
+
 
 class test_chord(CanvasCase):
     def test__get_app_does_not_exhaust_generator(self):
