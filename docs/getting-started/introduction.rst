@@ -25,7 +25,7 @@ A Celery system can consist of multiple workers and brokers, giving way
 to high availability and horizontal scaling.
 
 Celery is written in Python, but the protocol can be implemented in any
-language. In addition to Python there's node-celery_ for Node.js,
+language. In addition to Python, there's node-celery_ and `ts-celery`_ for Node.js,
 a `PHP client`_, `gocelery`_, `gopher-celery`_ for Go, and `rusty-celery`_ for Rust.
 
 Language interoperability can also be achieved
@@ -36,6 +36,7 @@ exposing an HTTP endpoint and having a task that requests it (webhooks).
 .. _`gocelery`: https://github.com/gocelery/gocelery
 .. _`gopher-celery`: https://github.com/marselester/gopher-celery
 .. _`rusty-celery`: https://github.com/rusty-celery/rusty-celery
+.. _`ts-celery`: https://github.com/node-celery-ts/node-celery-ts
 
 What do I need?
 ===============
