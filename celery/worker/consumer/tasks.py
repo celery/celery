@@ -51,22 +51,6 @@ class Tasks(bootsteps.StartStopStep):
             set_prefetch_count, c.initial_prefetch_count, max_prefetch=eta_task_limit
         )
 
-        if c.app.conf.worker_disable_prefetch:
-            from types import MethodType
-
-            from celery.worker import state
-            channel_qos = c.task_consumer.channel.qos
-            original_can_consume = channel_qos.can_consume
-
-            def can_consume(self):
-                # Prefer autoscaler's max_concurrency if set; otherwise fall back to pool size
-                limit = getattr(c.controller, "max_concurrency", None) or c.pool.num_processes
-                if len(state.reserved_requests) >= limit:
-                    return False
-                return original_can_consume()
-
-            channel_qos.can_consume = MethodType(can_consume, channel_qos)
-
     def stop(self, c):
         """Stop task consumer."""
         if c.task_consumer:
