@@ -492,7 +492,7 @@ class Consumer:
         def _error_handler(exc, interval, next_step=CONNECTION_RETRY_STEP):
             if getattr(conn, 'alt', None) and interval == 0:
                 next_step = CONNECTION_FAILOVER
-            else:
+            elif interval > 0:
                 self.broker_connection_retry_attempt += 1
             next_step = next_step.format(
                 when=humanize_seconds(interval, 'in', ' '),
