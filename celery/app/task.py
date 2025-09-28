@@ -544,7 +544,7 @@ class Task:
                 If supplied, this value will be used as the task’s id instead
                 of generating one automatically. Be careful to avoid collisions
                 when overriding task ids.
-                
+
         Returns:
             celery.result.AsyncResult: Promise of future evaluation.
 
