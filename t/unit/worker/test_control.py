@@ -835,7 +835,7 @@ class test_ControlPanel:
 
         control._revoke(state, ['task-1'])
 
-        assert 'task-1' in revoked
+        assert 'task-1' in worker_state.revoked
 
     @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
     def test_revoke_terminate_backend_update(self):
