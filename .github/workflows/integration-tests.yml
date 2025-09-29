@@ -1,0 +1,71 @@
+name: Integration Tests
+
+on:
+  workflow_call:
+    inputs:
+      module_name:
+        description: 'Name of the test module to run (e.g., test_backend.py)'
+        required: true
+        type: string
+      python_versions:
+        description: 'JSON array of Python versions to test'
+        required: false
+        type: string
+        default: '["3.8", "3.14"]'
+      tox_environments:
+        description: 'JSON array of tox environments to test'
+        required: false
+        type: string
+        default: '["redis", "rabbitmq", "rabbitmq_redis"]'
+
+jobs:
+  testing-with:
+    timeout-minutes: 240
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ${{ fromJson(inputs.python_versions) }}
+        toxenv: ${{ fromJson(inputs.tox_environments) }}
+
+    services:
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
+        env:
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+      rabbitmq:
+        image: rabbitmq
+        ports:
+          - 5672:5672
+        env:
+          RABBITMQ_DEFAULT_USER: guest
+          RABBITMQ_DEFAULT_PASS: guest
+
+    steps:
+      - name: Install apt packages
+        run: |
+          sudo apt-get update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
+
+      - uses: actions/checkout@v5
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: useblacksmith/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          allow-prereleases: true
+          cache: 'pip'
+          cache-dependency-path: '**/setup.py'
+      - name: Install tox
+        run: python -m pip install --upgrade pip 'tox' tox-gh-actions
+      - name: >
+          Run tox for
+          "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}-${{ inputs.module_name }}"
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 15
+          max_attempts: 5
+          retry_wait_seconds: 0
+          command: |
+            tox --verbose --verbose -e "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -- -k ${{ inputs.module_name }} -vv

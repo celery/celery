@@ -114,33 +114,33 @@ class DelayedDelivery(bootsteps.StartStopStep):
             OSError: If there are network-related issues
             Exception: For other unexpected errors during setup
         """
-        connection: Connection = c.app.connection_for_write(url=broker_url)
-        queue_type = c.app.conf.broker_native_delayed_delivery_queue_type
-        logger.debug(
-            "Setting up delayed delivery for broker %r with queue type %r",
-            broker_url, queue_type
-        )
+        with c.app.connection_for_write(url=broker_url) as connection:
+            queue_type = c.app.conf.broker_native_delayed_delivery_queue_type
+            logger.debug(
+                "Setting up delayed delivery for broker %r with queue type %r",
+                broker_url, queue_type
+            )
 
-        try:
-            declare_native_delayed_delivery_exchanges_and_queues(
-                connection,
-                queue_type
-            )
-        except Exception as e:
-            logger.warning(
-                "Failed to declare exchanges and queues for %r: %s",
-                broker_url, str(e)
-            )
-            raise
+            try:
+                declare_native_delayed_delivery_exchanges_and_queues(
+                    connection,
+                    queue_type
+                )
+            except Exception as e:
+                logger.warning(
+                    "Failed to declare exchanges and queues for %r: %s",
+                    broker_url, str(e)
+                )
+                raise
 
-        try:
-            self._bind_queues(c.app, connection)
-        except Exception as e:
-            logger.warning(
-                "Failed to bind queues for %r: %s",
-                broker_url, str(e)
-            )
-            raise
+            try:
+                self._bind_queues(c.app, connection)
+            except Exception as e:
+                logger.warning(
+                    "Failed to bind queues for %r: %s",
+                    broker_url, str(e)
+                )
+                raise
 
     def _bind_queues(self, app: Celery, connection: Connection) -> None:
         """Bind all application queues to delayed delivery exchanges.
@@ -168,7 +168,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
                 )
                 raise
 
-    def _on_retry(self, exc: Exception, interval_range: Iterator[float], intervals_count: int) -> None:
+    def _on_retry(self, exc: Exception, interval_range: Iterator[float], intervals_count: int) -> float:
         """Callback for retry attempts.
 
         Args:
@@ -176,10 +176,12 @@ class DelayedDelivery(bootsteps.StartStopStep):
             interval_range: An iterator which returns the time in seconds to sleep next
             intervals_count: Number of retry attempts so far
         """
+        interval = next(interval_range)
         logger.warning(
-            "Retrying delayed delivery setup (attempt %d/%d) after error: %s",
-            intervals_count + 1, MAX_RETRIES, str(exc)
+            "Retrying delayed delivery setup (attempt %d/%d) after error: %s. Sleeping %.2f seconds.",
+            intervals_count + 1, MAX_RETRIES, str(exc), interval
         )
+        return interval
 
     def _validate_configuration(self, app: Celery) -> None:
         """Validate all required configuration settings.
