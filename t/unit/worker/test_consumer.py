@@ -894,6 +894,7 @@ class test_Tasks:
         c = self.c
         c.connection.transport.driver_type = 'amqp'
         c.app.conf.broker_native_delayed_delivery = True
+        c.app.conf.worker_disable_prefetch = False  # Prevent our warning from interfering
         c.app.amqp.queues = {"celery": Mock(queue_arguments={"x-queue-type": "quorum"})}
         tasks = Tasks(c)
 
