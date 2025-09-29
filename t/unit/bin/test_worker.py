@@ -119,9 +119,9 @@ def test_disable_prefetch_ignored_for_non_redis_brokers(mock_app, mock_consumer)
     mock_app.conf.worker_disable_prefetch = True
     mock_consumer.connection.transport.driver_type = 'amqp'  # RabbitMQ
     original_can_consume = mock_consumer.task_consumer.channel.qos.can_consume
-    
+
     tasks_instance = Tasks(mock_consumer)
     tasks_instance.start(mock_consumer)
-    
+
     # Should not modify can_consume method for non-Redis brokers
     assert mock_consumer.task_consumer.channel.qos.can_consume == original_can_consume
