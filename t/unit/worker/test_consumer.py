@@ -405,6 +405,8 @@ class test_Consumer(ConsumerTestCase):
         self.app.conf.broker_connection_max_retries = 3
         self.app._connection = _amqp_connection()
         conn = self.app._connection.return_value
+        # Placeholder alt connection to satisfy failover condition
+        conn.alt = [conn]
         c = self.get_consumer()
         assert c.connect()
         errback = conn.ensure_connection.call_args[0][0]
@@ -412,8 +414,10 @@ class test_Consumer(ConsumerTestCase):
         assert error.call_args[0][3] == 'Trying again in 2.00 seconds... (1/3)'
         errback(Mock(), 4)
         assert error.call_args[0][3] == 'Trying again in 4.00 seconds... (2/3)'
-        errback(Mock(), 6)
-        assert error.call_args[0][3] == 'Trying again in 6.00 seconds... (3/3)'
+        errback(Mock(), 12)
+        assert error.call_args[0][3] == 'Trying again in 12.00 seconds... (3/3)'
+        errback(Mock(), 0)
+        assert getattr(c, 'broker_connection_retry_attempt', 0) == 3
 
     def test_cancel_long_running_tasks_on_connection_loss(self):
         c = self.get_consumer()

@@ -32,13 +32,13 @@ from celery.platforms import pyimplementation
 from celery.utils.collections import DictAttribute
 from celery.utils.objects import Bunch
 from celery.utils.serialization import pickle
-from celery.utils.time import localize, timezone, to_utc
+from celery.utils.time import LocalTimezone, localize, timezone, to_utc
 from t.unit import conftest
 
 if sys.version_info >= (3, 9):
     from zoneinfo import ZoneInfo
 else:
-    from backports.zoneinfo import ZoneInfo  # noqa
+    from backports.zoneinfo import ZoneInfo
 
 THIS_IS_A_KEY = 'this is a value'
 
@@ -1176,13 +1176,39 @@ class test_App:
         sig = self.app.signature('foo', (1, 2))
         assert sig.app is self.app
 
-    def test_timezone__none_set(self):
+    def test_timezone_none_set(self):
         self.app.conf.timezone = None
         self.app.conf.enable_utc = True
         assert self.app.timezone == timezone.utc
         del self.app.timezone
         self.app.conf.enable_utc = False
         assert self.app.timezone == timezone.local
+
+    def test_use_local_timezone(self):
+        self.app.conf.timezone = None
+        self.app.conf.enable_utc = False
+
+        self._clear_timezone_cache()
+        try:
+            assert isinstance(self.app.timezone, ZoneInfo)
+        finally:
+            self._clear_timezone_cache()
+
+    @patch("celery.utils.time.get_localzone")
+    def test_use_local_timezone_failure(self, mock_get_localzone):
+        mock_get_localzone.side_effect = Exception("Failed to get local timezone")
+        self.app.conf.timezone = None
+        self.app.conf.enable_utc = False
+
+        self._clear_timezone_cache()
+        try:
+            assert isinstance(self.app.timezone, LocalTimezone)
+        finally:
+            self._clear_timezone_cache()
+
+    def _clear_timezone_cache(self):
+        del self.app.timezone
+        del timezone.local
 
     def test_uses_utc_timezone(self):
         self.app.conf.timezone = None
