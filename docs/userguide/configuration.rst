@@ -3217,6 +3217,10 @@ early acknowledgments, enable :setting:`worker_disable_prefetch`.
 When this option is enabled the worker only fetches a task from the broker
 when one of its processes is available.
 
+.. note::
+
+    This feature is currently only supported when using Redis as the broker.
+
 You can also enable this via the :option:`--disable-prefetch <celery worker --disable-prefetch>`
 command line flag.
 
@@ -3257,6 +3261,12 @@ When enabled, a worker will only consume messages from the broker when it
 has an available process to execute them. This disables prefetching while
 still using early acknowledgments, ensuring that tasks are fairly
 distributed between workers.
+
+.. note::
+
+    This feature is currently only supported when using Redis as the broker.
+    Using this setting with other brokers will result in a warning and the
+    setting will be ignored.
 
 .. setting:: worker_enable_prefetch_count_reduction
 
