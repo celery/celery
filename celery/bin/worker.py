@@ -189,7 +189,8 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               value: ctx.obj.app.conf.worker_disable_prefetch if value is None else value,
               cls=CeleryOption,
               help_group="Worker Options",
-              help="Disable broker prefetching. The worker will only fetch a task when a process slot is available.")
+              help="Disable broker prefetching. The worker will only fetch a task when a process slot is available. "
+                   "Only supported with Redis brokers.")
 @click.option('-c',
               '--concurrency',
               type=int,
