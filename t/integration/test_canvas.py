@@ -1576,8 +1576,6 @@ class test_group:
         assert res_obj.get(timeout=TIMEOUT) == [42, 1337]
 
     def test_task_replace_with_group_preserves_group_order(self, manager):
-        # if not manager.app.conf.result_backend.startswith("redis"):
-        #     raise pytest.skip("Requires redis result backend.")
         orig_sig = group([add_to_all.s([2, 1], 1), add_to_all.s([4, 3], 1)] * 10)
         res_obj = orig_sig.delay()
         assert res_obj.get(timeout=TIMEOUT) == [[3, 2], [5, 4]] * 10
