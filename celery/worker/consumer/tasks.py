@@ -52,6 +52,16 @@ class Tasks(bootsteps.StartStopStep):
         )
 
         if c.app.conf.worker_disable_prefetch:
+            # Only apply disable-prefetch for Redis brokers
+            is_redis_broker = c.connection.transport.driver_type == 'redis'
+            if not is_redis_broker:
+                logger.warning(
+                    f"worker_disable_prefetch is only supported for Redis brokers. "
+                    f"Current broker transport: {c.connection.transport.driver_type}. "
+                    f"Ignoring disable_prefetch setting."
+                )
+                return
+
             from types import MethodType
 
             from celery.worker import state

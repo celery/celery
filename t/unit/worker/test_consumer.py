@@ -405,6 +405,8 @@ class test_Consumer(ConsumerTestCase):
         self.app.conf.broker_connection_max_retries = 3
         self.app._connection = _amqp_connection()
         conn = self.app._connection.return_value
+        # Placeholder alt connection to satisfy failover condition
+        conn.alt = [conn]
         c = self.get_consumer()
         assert c.connect()
         errback = conn.ensure_connection.call_args[0][0]
@@ -412,8 +414,10 @@ class test_Consumer(ConsumerTestCase):
         assert error.call_args[0][3] == 'Trying again in 2.00 seconds... (1/3)'
         errback(Mock(), 4)
         assert error.call_args[0][3] == 'Trying again in 4.00 seconds... (2/3)'
-        errback(Mock(), 6)
-        assert error.call_args[0][3] == 'Trying again in 6.00 seconds... (3/3)'
+        errback(Mock(), 12)
+        assert error.call_args[0][3] == 'Trying again in 12.00 seconds... (3/3)'
+        errback(Mock(), 0)
+        assert getattr(c, 'broker_connection_retry_attempt', 0) == 3
 
     def test_cancel_long_running_tasks_on_connection_loss(self):
         c = self.get_consumer()
@@ -510,6 +514,8 @@ class test_Consumer(ConsumerTestCase):
         consumer.initial_prefetch_count = 16
         consumer.connection = Mock()
         consumer.connection.default_channel = Mock()
+        consumer.connection.transport = Mock()
+        consumer.connection.transport.driver_type = 'redis'
         consumer.update_strategies = Mock()
         consumer.on_decode_error = Mock()
 
@@ -545,6 +551,8 @@ class test_Consumer(ConsumerTestCase):
         consumer.initial_prefetch_count = 16
         consumer.connection = Mock()
         consumer.connection.default_channel = Mock()
+        consumer.connection.transport = Mock()
+        consumer.connection.transport.driver_type = 'redis'
         consumer.update_strategies = Mock()
         consumer.on_decode_error = Mock()
 
@@ -583,6 +591,8 @@ class test_Consumer(ConsumerTestCase):
         consumer.initial_prefetch_count = 16
         consumer.connection = Mock()
         consumer.connection.default_channel = Mock()
+        consumer.connection.transport = Mock()
+        consumer.connection.transport.driver_type = 'redis'
         consumer.update_strategies = Mock()
         consumer.on_decode_error = Mock()
 
@@ -621,6 +631,8 @@ class test_Consumer(ConsumerTestCase):
         consumer.initial_prefetch_count = 16
         consumer.connection = Mock()
         consumer.connection.default_channel = Mock()
+        consumer.connection.transport = Mock()
+        consumer.connection.transport.driver_type = 'redis'
         consumer.update_strategies = Mock()
         consumer.on_decode_error = Mock()
 
@@ -643,6 +655,45 @@ class test_Consumer(ConsumerTestCase):
 
             # Should not be able to consume when at autoscale limit
             assert consumer.task_consumer.channel.qos.can_consume() is False
+
+    def test_disable_prefetch_ignored_for_non_redis_brokers(self):
+        """Test that disable_prefetch is ignored for non-Redis brokers."""
+        self.app.conf.worker_disable_prefetch = True
+
+        # Test the core logic by creating a mock consumer and Tasks instance
+        from celery.worker.consumer.tasks import Tasks
+        consumer = Mock()
+        consumer.app = self.app
+        consumer.pool = Mock()
+        consumer.pool.num_processes = 4
+        consumer.controller = Mock()
+        consumer.controller.max_concurrency = None
+        consumer.initial_prefetch_count = 16
+        consumer.connection = Mock()
+        consumer.connection.default_channel = Mock()
+        consumer.connection.transport = Mock()
+        consumer.connection.transport.driver_type = 'amqp'  # RabbitMQ
+        consumer.connection.qos_semantics_matches_spec = True
+        consumer.update_strategies = Mock()
+        consumer.on_decode_error = Mock()
+
+        # Mock task consumer
+        consumer.task_consumer = Mock()
+        consumer.task_consumer.channel = Mock()
+        consumer.task_consumer.channel.qos = Mock()
+        original_can_consume = Mock(return_value=True)
+        consumer.task_consumer.channel.qos.can_consume = original_can_consume
+        consumer.task_consumer.qos = Mock()
+
+        consumer.app.amqp = Mock()
+        consumer.app.amqp.TaskConsumer = Mock(return_value=consumer.task_consumer)
+        consumer.app.amqp.queues = {}  # Empty dict for quorum queue detection
+
+        tasks_instance = Tasks(consumer)
+        tasks_instance.start(consumer)
+
+        # Should not modify can_consume method for non-Redis brokers
+        assert consumer.task_consumer.channel.qos.can_consume == original_can_consume
 
 
 @pytest.mark.parametrize(
@@ -843,6 +894,7 @@ class test_Tasks:
         c = self.c
         c.connection.transport.driver_type = 'amqp'
         c.app.conf.broker_native_delayed_delivery = True
+        c.app.conf.worker_disable_prefetch = False  # Prevent our warning from interfering
         c.app.amqp.queues = {"celery": Mock(queue_arguments={"x-queue-type": "quorum"})}
         tasks = Tasks(c)
 
