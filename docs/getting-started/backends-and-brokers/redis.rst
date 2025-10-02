@@ -38,6 +38,13 @@ Where the URL is in the format of:
 all fields after the scheme are optional, and will default to ``localhost``
 on port 6379, using database 0.
 
+If redis credential provider should be used, the URL needs to be in the following format:
+
+.. code-block:: text
+
+    redis://@hostname:port/db_number?credential_provider=mymodule.myfile.myclass
+
+
 If a Unix socket connection should be used, the URL needs to be in the format:
 
 .. code-block:: text

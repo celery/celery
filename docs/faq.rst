@@ -790,7 +790,8 @@ consume as many tasks as it can, as fast as possible.
 
 You can use the :option:`--disable-prefetch <celery worker --disable-prefetch>`
 flag (or set :setting:`worker_disable_prefetch` to ``True``) so that a worker
-only fetches a task when one of its processes is free.
+only fetches a task when one of its processes is free. This feature is currently
+only supported when using Redis as the broker.
 
 A discussion on prefetch limits, and configuration settings for a worker
 that only reserves one task at a time is found here:

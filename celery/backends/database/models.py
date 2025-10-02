@@ -10,6 +10,8 @@ from .session import ResultModelBase
 
 __all__ = ('Task', 'TaskExtended', 'TaskSet')
 
+DialectSpecificInteger = sa.Integer().with_variant(sa.BigInteger, 'mssql')
+
 
 class Task(ResultModelBase):
     """Task result/status."""
@@ -17,7 +19,7 @@ class Task(ResultModelBase):
     __tablename__ = 'celery_taskmeta'
     __table_args__ = {'sqlite_autoincrement': True}
 
-    id = sa.Column(sa.Integer, sa.Sequence('task_id_sequence'),
+    id = sa.Column(DialectSpecificInteger, sa.Sequence('task_id_sequence'),
                    primary_key=True, autoincrement=True)
     task_id = sa.Column(sa.String(155), unique=True)
     status = sa.Column(sa.String(50), default=states.PENDING)
@@ -80,7 +82,7 @@ class TaskSet(ResultModelBase):
     __tablename__ = 'celery_tasksetmeta'
     __table_args__ = {'sqlite_autoincrement': True}
 
-    id = sa.Column(sa.Integer, sa.Sequence('taskset_id_sequence'),
+    id = sa.Column(DialectSpecificInteger, sa.Sequence('taskset_id_sequence'),
                    autoincrement=True, primary_key=True)
     taskset_id = sa.Column(sa.String(155), unique=True)
     result = sa.Column(PickleType, nullable=True)

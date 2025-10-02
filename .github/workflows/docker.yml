@@ -26,7 +26,7 @@ on:
 
 jobs:
   docker-build:
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@v5
@@ -36,7 +36,7 @@ jobs:
       run: make docker-build
 
   smoke-tests_dev:
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 10
     steps:
     - uses: actions/checkout@v5
@@ -46,7 +46,7 @@ jobs:
       run: docker build -f t/smoke/workers/docker/dev .
 
   smoke-tests_latest:
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 10
     steps:
     - uses: actions/checkout@v5
@@ -56,7 +56,7 @@ jobs:
       run: docker build -f t/smoke/workers/docker/pypi .
 
   smoke-tests_pypi:
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 10
     steps:
     - uses: actions/checkout@v5

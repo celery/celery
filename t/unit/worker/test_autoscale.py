@@ -259,6 +259,8 @@ class test_Autoscaler:
         # Mock the connection and other required attributes
         consumer.connection = Mock()
         consumer.connection.default_channel = Mock()
+        consumer.connection.transport = Mock()
+        consumer.connection.transport.driver_type = 'redis'
         consumer.initial_prefetch_count = 20
         consumer.update_strategies = Mock()
         consumer.on_decode_error = Mock()

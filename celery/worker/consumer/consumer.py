@@ -158,6 +158,10 @@ class Consumer:
     #: connection attempt.
     first_connection_attempt = True
 
+    #: Counter to track number of conn retry attempts
+    #: to broker. Will be reset to 0 once successful
+    broker_connection_retry_attempt = 0
+
     class Blueprint(bootsteps.Blueprint):
         """Consumer blueprint."""
 
@@ -489,9 +493,11 @@ class Consumer:
         def _error_handler(exc, interval, next_step=CONNECTION_RETRY_STEP):
             if getattr(conn, 'alt', None) and interval == 0:
                 next_step = CONNECTION_FAILOVER
+            elif interval > 0:
+                self.broker_connection_retry_attempt += 1
             next_step = next_step.format(
                 when=humanize_seconds(interval, 'in', ' '),
-                retries=int(interval / 2),
+                retries=self.broker_connection_retry_attempt,
                 max_retries=self.app.conf.broker_connection_max_retries)
             error(CONNECTION_ERROR, conn.as_uri(), exc, next_step)
 
@@ -533,6 +539,7 @@ class Consumer:
             callback=maybe_shutdown,
         )
         self.first_connection_attempt = False
+        self.broker_connection_retry_attempt = 0
         return conn
 
     def _flush_events(self):

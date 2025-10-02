@@ -114,6 +114,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_REDIS_PASSWORD``                  :setting:`redis_password`
 ``CELERY_REDIS_PORT``                      :setting:`redis_port`
 ``CELERY_REDIS_BACKEND_USE_SSL``           :setting:`redis_backend_use_ssl`
+``CELERY_REDIS_BACKEND_CREDENTIAL_PROVIDER`` :setting:`redis_backend_credential_provider`
 ``CELERY_RESULT_BACKEND``                  :setting:`result_backend`
 ``CELERY_MAX_CACHED_RESULTS``              :setting:`result_cache_max`
 ``CELERY_MESSAGE_COMPRESSION``             :setting:`result_compression`
@@ -763,6 +764,7 @@ Can be one of the following:
 .. _`AzureBlockBlob`: https://azure.microsoft.com/en-us/services/storage/blobs/
 .. _`S3`: https://aws.amazon.com/s3/
 .. _`GCS`: https://cloud.google.com/storage/
+.. _`RedisCredentialProvider`: https://redis.readthedocs.io/en/stable/examples/connection_examples.html#Connecting-to-a-redis-instance-with-standard-credential-provider
 
 
 .. setting:: result_backend_always_retry
@@ -1344,6 +1346,19 @@ the form of a dictionary. The valid key-value pairs are
 the same as the ones mentioned in the ``redis`` sub-section
 under :setting:`broker_use_ssl`.
 
+.. setting:: redis_backend_credential_provider
+
+.. versionadded:: 5.6
+
+``redis_backend_credential_provider``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: Disabled.
+
+The Redis backend supports credential provider. This value must be set in
+the form of a class path string or a class instance. e.g. ``mymodule.myfile.myclass``
+check more details in `RedisCredentialProvider`_ doc.
+
 .. setting:: redis_max_connections
 
 ``redis_max_connections``
@@ -1404,6 +1419,18 @@ Default: :const:`False`
 
 Socket TCP keepalive to keep connections healthy to the Redis server,
 used by the redis result backend.
+
+.. setting:: redis_client_name
+
+``redis_client_name``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.6
+
+Default: :const:`None`
+
+Sets the client name for Redis connections used by the result backend.
+This can help identify connections in Redis monitoring tools.
 
 .. _conf-cassandra-result-backend:
 
@@ -3190,6 +3217,10 @@ early acknowledgments, enable :setting:`worker_disable_prefetch`.
 When this option is enabled the worker only fetches a task from the broker
 when one of its processes is available.
 
+.. note::
+
+    This feature is currently only supported when using Redis as the broker.
+
 You can also enable this via the :option:`--disable-prefetch <celery worker --disable-prefetch>`
 command line flag.
 
@@ -3230,6 +3261,12 @@ When enabled, a worker will only consume messages from the broker when it
 has an available process to execute them. This disables prefetching while
 still using early acknowledgments, ensuring that tasks are fairly
 distributed between workers.
+
+.. note::
+
+    This feature is currently only supported when using Redis as the broker.
+    Using this setting with other brokers will result in a warning and the
+    setting will be ignored.
 
 .. setting:: worker_enable_prefetch_count_reduction
 
