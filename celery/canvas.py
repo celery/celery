@@ -2261,7 +2261,14 @@ class _chord(Signature):
             body.delay([])
             header_result = self.app.GroupResult(*header_result_args)
 
-        bodyres.parent = header_result
+        bodyres_root = bodyres
+        seen = set()
+        while bodyres_root.parent is not None:
+            if bodyres_root.id in seen:
+                raise RuntimeError('Recursive result parents')
+            seen.add(bodyres_root.id)
+            bodyres_root = bodyres_root.parent
+        bodyres_root.parent = header_result
         return bodyres
 
     def clone(self, *args, **kwargs):
