@@ -1741,7 +1741,7 @@ class group(Signature):
 
     def _apply_tasks(self, tasks, producer=None, app=None, p=None,
                      add_to_parent=None, chord=None,
-                     args=None, kwargs=None, **options):
+                     args=None, kwargs=None, group_index=None, **options):
         """Run all the tasks in the group.
 
         This is used by :meth:`apply_async` to run all the tasks in the group

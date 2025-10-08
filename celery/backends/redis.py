@@ -5,9 +5,11 @@ from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 from urllib.parse import unquote
 
+from kombu.utils import symbol_by_name
 from kombu.utils.functional import retry_over_time
 from kombu.utils.objects import cached_property
 from kombu.utils.url import _parse_url, maybe_sanitize_url
+from redis import CredentialProvider
 
 from celery import states
 from celery._state import task_join_will_block
@@ -129,9 +131,9 @@ class ResultConsumer(BaseResultConsumer):
         except self._connection_errors:
             try:
                 self._ensure(self._reconnect_pubsub, ())
-            except self._connection_errors:
+            except self._connection_errors as e:
                 logger.critical(E_RETRY_LIMIT_EXCEEDED)
-                raise
+                raise RuntimeError(E_RETRY_LIMIT_EXCEEDED) from e
 
     def _maybe_cancel_ready_task(self, meta):
         if meta['status'] in states.READY_STATES:
@@ -230,6 +232,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         retry_on_timeout = _get('redis_retry_on_timeout')
         socket_keepalive = _get('redis_socket_keepalive')
         health_check_interval = _get('redis_backend_health_check_interval')
+        credential_provider = _get('redis_backend_credential_provider')
 
         self.connparams = {
             'host': _get('redis_host') or 'localhost',
@@ -241,6 +244,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             'retry_on_timeout': retry_on_timeout or False,
             'socket_connect_timeout':
                 socket_connect_timeout and float(socket_connect_timeout),
+            'client_name': _get('redis_client_name'),
         }
 
         username = _get('redis_username')
@@ -253,6 +257,23 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             # TODO: Include this in connparams' definition once we drop
             #       support for py-redis<3.4.0.
             self.connparams['username'] = username
+
+        if credential_provider:
+            # if credential provider passed as string or query param
+            if isinstance(credential_provider, str):
+                credential_provider_cls = symbol_by_name(credential_provider)
+                credential_provider = credential_provider_cls()
+
+            if not isinstance(credential_provider, CredentialProvider):
+                raise ValueError(
+                    "Credential provider is not an instance of a redis.CredentialProvider or a subclass"
+                )
+
+            self.connparams['credential_provider'] = credential_provider
+
+            # drop username and password if credential provider is configured
+            self.connparams.pop("username", None)
+            self.connparams.pop("password", None)
 
         if health_check_interval:
             self.connparams["health_check_interval"] = health_check_interval
@@ -349,6 +370,23 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         db = connparams.get('db') or 0
         db = db.strip('/') if isinstance(db, str) else db
         connparams['db'] = int(db)
+
+        # credential provider as query string
+        credential_provider = query.pop("credential_provider", None)
+        if credential_provider:
+            if isinstance(credential_provider, str):
+                credential_provider_cls = symbol_by_name(credential_provider)
+                credential_provider = credential_provider_cls()
+
+            if not isinstance(credential_provider, CredentialProvider):
+                raise ValueError(
+                    "Credential provider is not an instance of a redis.CredentialProvider or a subclass"
+                )
+
+            connparams['credential_provider'] = credential_provider
+            # drop username and password if credential provider is configured
+            connparams.pop("username", None)
+            connparams.pop("password", None)
 
         for key, value in query.items():
             if key in redis.connection.URL_QUERY_ARGUMENT_PARSERS:

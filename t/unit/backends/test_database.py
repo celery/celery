@@ -46,6 +46,26 @@ class test_session_cleanup:
 
 
 @skip.if_pypy
+class test_ModelsIdFieldTypeVariations:
+
+    def test_for_mssql_dialect(self):
+        """Test that ID columns use BigInteger for MSSQL and Integer for other dialects."""
+        from sqlalchemy import BigInteger, Integer
+        from sqlalchemy.dialects import mssql, mysql, oracle, postgresql, sqlite
+
+        models = [Task, TaskSet]
+        id_columns = [m.__table__.columns['id'] for m in models]
+
+        for dialect in [mssql, postgresql, mysql, sqlite, oracle]:
+            for id_column in id_columns:
+                compiled_type = id_column.type.dialect_impl(dialect.dialect())
+                if dialect == mssql:
+                    assert isinstance(compiled_type, BigInteger)
+                else:
+                    assert isinstance(compiled_type, Integer)
+
+
+@skip.if_pypy
 class test_DatabaseBackend:
 
     @pytest.fixture(autouse=True)
