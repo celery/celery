@@ -538,6 +538,13 @@ class Task:
                 The headers can be used as an overlay for custom labeling
                 using the :ref:`canvas-stamping` feature.
 
+            task_id (str): Optional argument to override the default task id.
+                By default, Celery generates a unique id (UUID4) for every task
+                submission. You can instead provide your own string identifier.
+                If supplied, this value will be used as the task’s id instead
+                of generating one automatically. Be careful to avoid collisions
+                when overriding task ids.
+
         Returns:
             celery.result.AsyncResult: Promise of future evaluation.
 
