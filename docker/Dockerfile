@@ -92,7 +92,7 @@ RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
     pyenv exec python3.11 -m pip install --upgrade pip setuptools wheel && \
     pyenv exec python3.10 -m pip install --upgrade pip setuptools wheel && \
     pyenv exec python3.9 -m pip install --upgrade pip setuptools wheel && \
-    pyenv exec pypy3.10 -m pip install --upgrade pip setuptools wheel
+    pyenv exec pypy3.11 -m pip install --upgrade pip setuptools wheel
 
 # Install requirements first to leverage Docker layer caching
 # Split into separate RUN commands to reduce memory pressure and improve layer caching
