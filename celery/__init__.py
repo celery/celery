@@ -17,7 +17,7 @@ from . import local
 
 SERIES = 'recovery'
 
-__version__ = '5.6.0b1'
+__version__ = '5.6.0b2'
 __author__ = 'Ask Solem'
 __contact__ = 'auvipy@gmail.com'
 __homepage__ = 'https://docs.celeryq.dev/'
