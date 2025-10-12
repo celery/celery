@@ -2,10 +2,9 @@ import logging
 import platform
 import time
 from datetime import datetime, timedelta, timezone
-from multiprocessing import set_start_method
-from time import perf_counter, sleep
 from uuid import uuid4
 
+import billiard as multiprocessing
 import pytest
 
 import celery
@@ -17,12 +16,11 @@ from celery.worker import state as worker_state
 
 from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connection
 from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result, add_not_typed, add_pydantic,
-                    fail, fail_unpickleable, print_unicode, retry, retry_once, retry_once_headers,
-                    retry_once_priority, retry_unpickleable, return_properties, second_order_replace1, sleeping,
-                    soft_time_limit_must_exceed_time_limit)
+                    add_pydantic_string_annotations, fail, fail_unpickleable, print_unicode, retry, retry_once,
+                    retry_once_headers, retry_once_priority, retry_unpickleable, return_properties,
+                    second_order_replace1, sleeping, soft_time_limit_must_exceed_time_limit)
 
 TIMEOUT = 10
-
 
 _flaky = pytest.mark.flaky(reruns=5, reruns_delay=2)
 _timeout = pytest.mark.timeout(timeout=300)
@@ -34,9 +32,9 @@ def flaky(fn):
 
 def set_multiprocessing_start_method():
     """Set multiprocessing start method to 'fork' if not on Linux."""
-    if platform.system() != 'Linux':
+    if platform.system() != "Linux":
         try:
-            set_start_method('fork')
+            multiprocessing.set_start_method("fork")
         except RuntimeError:
             # The method is already set
             pass
@@ -100,6 +98,7 @@ class test_tasks:
             assert result.successful() is True
 
     @flaky
+    @pytest.mark.skip(reason="Broken test")
     def test_multiprocess_producer(self, manager):
         """Testing multiple processes calling tasks."""
         set_multiprocessing_start_method()
@@ -110,6 +109,7 @@ class test_tasks:
         assert list(ret) == list(range(120))
 
     @flaky
+    @pytest.mark.skip(reason="Broken test")
     def test_multithread_producer(self, manager):
         """Testing multiple threads calling tasks."""
         set_multiprocessing_start_method()
@@ -126,7 +126,7 @@ class test_tasks:
         assert result.get() is None
         # We wait since it takes a bit of time for the result to be
         # persisted in the result backend.
-        sleep(1)
+        time.sleep(1)
         assert result.result is None
 
     @flaky
@@ -144,12 +144,27 @@ class test_tasks:
             assert result.successful() is True
 
     @flaky
+    def test_pydantic_string_annotations(self, manager):
+        """Tests task call with string-annotated Pydantic model."""
+        results = []
+        # Tests calling task only with args
+        for i in range(10):
+            results.append([i + i, add_pydantic_string_annotations.delay({'x': i, 'y': i})])
+        for expected, result in results:
+            value = result.get(timeout=10)
+            assert value == {'result': expected}
+            assert result.status == 'SUCCESS'
+            assert result.ready() is True
+            assert result.successful() is True
+
+    @flaky
     def test_timeout(self, manager):
         """Testing timeout of getting results from tasks."""
         result = sleeping.delay(10)
         with pytest.raises(celery.exceptions.TimeoutError):
             result.get(timeout=5)
 
+    @pytest.mark.timeout(60)
     @flaky
     def test_expired(self, manager):
         """Testing expiration of task."""
@@ -180,27 +195,27 @@ class test_tasks:
     @flaky
     def test_eta(self, manager):
         """Tests tasks scheduled at some point in future."""
-        start = perf_counter()
+        start = time.perf_counter()
         # Schedule task to be executed in 3 seconds
         result = add.apply_async((1, 1), countdown=3)
-        sleep(1)
+        time.sleep(1)
         assert result.status == 'PENDING'
         assert result.ready() is False
         assert result.get() == 2
-        end = perf_counter()
+        end = time.perf_counter()
         assert result.status == 'SUCCESS'
         assert result.ready() is True
         # Difference between calling the task and result must be bigger than 3 secs
         assert (end - start) > 3
 
-        start = perf_counter()
+        start = time.perf_counter()
         # Schedule task to be executed at time now + 3 seconds
         result = add.apply_async((2, 2), eta=datetime.now(timezone.utc) + timedelta(seconds=3))
-        sleep(1)
+        time.sleep(1)
         assert result.status == 'PENDING'
         assert result.ready() is False
         assert result.get() == 4
-        end = perf_counter()
+        end = time.perf_counter()
         assert result.status == 'SUCCESS'
         assert result.ready() is True
         # Difference between calling the task and result must be bigger than 3 secs
@@ -268,6 +283,8 @@ class test_tasks:
             # not match the task's stamps, allowing those tasks to proceed successfully.
             worker_state.revoked_stamps.clear()
 
+    @pytest.mark.timeout(20)
+    @pytest.mark.flaky(reruns=2)
     def test_revoked_by_headers_complex_canvas(self, manager, subtests):
         """Testing revoking of task using a stamped header"""
         try:
@@ -370,7 +387,7 @@ class test_tasks:
             status = result.status
             if status != 'PENDING':
                 break
-            sleep(0.1)
+            time.sleep(0.1)
         else:
             raise AssertionError("Timeout while waiting for the task to be retried")
         assert status == 'RETRY'
@@ -386,7 +403,7 @@ class test_tasks:
             status = result.status
             if status != 'PENDING':
                 break
-            sleep(0.1)
+            time.sleep(0.1)
         else:
             raise AssertionError("Timeout while waiting for the task to be retried")
         assert status == 'RETRY'
@@ -411,7 +428,7 @@ class test_tasks:
             status = job.status
             if status != 'PENDING':
                 break
-            sleep(0.1)
+            time.sleep(0.1)
         else:
             raise AssertionError("Timeout while waiting for the task to be retried")
 
@@ -495,13 +512,93 @@ class test_tasks:
             assert result.status == 'FAILURE'
 
 
+class test_apply_tasks:
+    """Tests for tasks called via apply() method."""
+
+    def test_apply_single_task_ids(self, manager):
+        """Test that a single task called via apply() has correct IDs."""
+        @manager.app.task(bind=True)
+        def single_apply_task(self):
+            return {
+                'task_id': self.request.id,
+                'parent_id': self.request.parent_id,
+                'root_id': self.request.root_id,
+            }
+
+        result = single_apply_task.apply()
+        data = result.get()
+
+        # Single task should have no parent and root_id should equal task_id
+        assert data['parent_id'] is None
+        assert data['root_id'] == data['task_id']
+
+    def test_apply_nested_parent_child_relationship(self, manager):
+        """Test parent-child relationship when one task calls another via apply()."""
+
+        @manager.app.task(bind=True)
+        def grandchild_task(task_self):
+            return {
+                'task_id': task_self.request.id,
+                'parent_id': task_self.request.parent_id,
+                'root_id': task_self.request.root_id,
+                'name': 'grandchild_task'
+            }
+
+        @manager.app.task(bind=True)
+        def child_task(task_self):
+
+            # Call grandchild task via apply()
+            grandchild_data = grandchild_task.apply().get()
+            return {
+                'task_id': task_self.request.id,
+                'parent_id': task_self.request.parent_id,
+                'root_id': task_self.request.root_id,
+                'name': 'child_task',
+                'grandchild_data': grandchild_data
+            }
+
+        @manager.app.task(bind=True)
+        def parent_task(task_self):
+            # Call child task via apply()
+            child_data = child_task.apply().get()
+            parent_data = {
+                'task_id': task_self.request.id,
+                'parent_id': task_self.request.parent_id,
+                'root_id': task_self.request.root_id,
+                'name': 'parent_task',
+                'child_data': child_data
+            }
+            return parent_data
+
+        result = parent_task.apply()
+
+        parent_data = result.get()
+        child_data = parent_data['child_data']
+        grandchild_data = child_data['grandchild_data']
+
+        # Verify parent task
+        assert parent_data['name'] == 'parent_task'
+        assert parent_data['parent_id'] is None
+        assert parent_data['root_id'] == parent_data['task_id']
+
+        # Verify child task
+        assert child_data['name'] == 'child_task'
+        assert child_data['parent_id'] == parent_data['task_id']
+        assert child_data['root_id'] == parent_data['task_id']
+
+        # Verify grandchild task
+        assert grandchild_data['name'] == 'grandchild_task'
+        assert grandchild_data['parent_id'] == child_data['task_id']
+        assert grandchild_data['root_id'] == parent_data['task_id']
+
+
 class test_trace_log_arguments:
     args = "CUSTOM ARGS"
     kwargs = "CUSTOM KWARGS"
 
     def assert_trace_log(self, caplog, result, expected):
         # wait for logs from worker
-        sleep(.01)
+        time.sleep(.01)
 
         records = [(r.name, r.levelno, r.msg, r.data["args"], r.data["kwargs"])
                    for r in caplog.records

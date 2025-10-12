@@ -4,11 +4,7 @@ import sys
 import warnings
 from contextlib import contextmanager
 from importlib import import_module, reload
-
-try:
-    from importlib.metadata import entry_points
-except ImportError:
-    from importlib_metadata import entry_points
+from importlib.metadata import entry_points
 
 from kombu.utils.imports import symbol_by_name
 

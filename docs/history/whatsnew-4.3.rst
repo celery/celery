@@ -92,7 +92,6 @@ Artem Vasilyev <artem.v.vasilyev@gmail.com>
 Asif Saif Uddin (Auvi) <auvipy@gmail.com>
 aviadatsnyk <aviad@snyk.io>
 Axel Haustant <noirbizarre@users.noreply.github.com>
-Benjamin Pereto <github@sandchaschte.ch>
 Bojan Jovanovic <bojan.jovanovic.gtech@gmail.com>
 Brett Jackson <brett@brettjackson.org>
 Brett Randall <javabrett@gmail.com>
