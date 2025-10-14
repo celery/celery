@@ -1,6 +1,7 @@
 """Utilities related to dates, times, intervals, and timezones."""
 from __future__ import annotations
 
+import logging
 import numbers
 import os
 import random
@@ -17,6 +18,7 @@ from dateutil import tz as dateutil_tz
 from dateutil.parser import isoparse
 from kombu.utils.functional import reprcall
 from kombu.utils.objects import cached_property
+from tzlocal import get_localzone
 
 from .functional import dictfilter
 from .text import pluralize
@@ -26,6 +28,7 @@ if sys.version_info >= (3, 9):
 else:
     from backports.zoneinfo import ZoneInfo
 
+logger = logging.getLogger(__name__)
 
 __all__ = (
     'LocalTimezone', 'timezone', 'maybe_timedelta',
@@ -117,7 +120,7 @@ class LocalTimezone(tzinfo):
 
 class _Zone:
     """Timezone class that provides the timezone for the application.
-    If `enable_utc` is disabled, LocalTimezone is provided as the timezone provider through local().
+    If `enable_utc` is disabled, local system timezone is provided as the timezone provider through local().
     Otherwise, this class provides a UTC ZoneInfo instance as the timezone provider for the application.
 
     Additionally this class provides a few utility methods for converting datetimes.
@@ -158,9 +161,16 @@ class _Zone:
         return zone
 
     @cached_property
-    def local(self) -> LocalTimezone:
-        """Return LocalTimezone instance for the application."""
-        return LocalTimezone()
+    def local(self) -> tzinfo:
+        """Return the local system timezone for the application."""
+        try:
+            timezone = get_localzone()
+        except Exception as ex:
+            timezone = None
+            logger.warning("Failed to retrieve local timezone (%s): %s", type(ex).__name__, ex)
+        if timezone is None:
+            return LocalTimezone()
+        return timezone
 
     @cached_property
     def utc(self) -> tzinfo:
@@ -204,7 +214,7 @@ def delta_resolution(dt: datetime, delta: timedelta) -> datetime:
 def remaining(
         start: datetime, ends_in: timedelta, now: Callable | None = None,
         relative: bool = False) -> timedelta:
-    """Calculate the remaining time for a start date and a timedelta.
+    """Calculate the real remaining time for a start date and a timedelta.
 
     For example, "how many seconds left for 30 seconds after start?"
 
@@ -221,18 +231,22 @@ def remaining(
         ~datetime.timedelta: Remaining time.
     """
     now = now or datetime.now(datetime_timezone.utc)
-    if str(
-            start.tzinfo) == str(
-            now.tzinfo) and now.utcoffset() != start.utcoffset():
-        # DST started/ended
-        start = start.replace(tzinfo=now.tzinfo)
     end_date = start + ends_in
     if relative:
         end_date = delta_resolution(end_date, ends_in).replace(microsecond=0)
-    ret = end_date - now
+
+    # Using UTC to calculate real time difference.
+    # Python by default uses wall time in arithmetic between datetimes with
+    # equal non-UTC timezones.
+    now_utc = now.astimezone(timezone.utc)
+    end_date_utc = end_date.astimezone(timezone.utc)
+    ret = end_date_utc - now_utc
     if C_REMDEBUG:  # pragma: no cover
-        print('rem: NOW:{!r} START:{!r} ENDS_IN:{!r} END_DATE:{} REM:{}'.format(
-            now, start, ends_in, end_date, ret))
+        print(
+            'rem: NOW:{!r} NOW_UTC:{!r} START:{!r} ENDS_IN:{!r} '
+            'END_DATE:{} END_DATE_UTC:{!r} REM:{}'.format(
+                now, now_utc, start, ends_in, end_date, end_date_utc, ret)
+        )
     return ret
 
 

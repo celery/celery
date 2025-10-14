@@ -124,14 +124,27 @@ def pydantic_wrapper(
         dump_kwargs = {}
     dump_kwargs.setdefault('mode', 'json')
 
+    # If a file uses `from __future__ import annotations`, all annotations will
+    # be strings. `typing.get_type_hints()` can turn these back into real
+    # types, but can also sometimes fail due to circular imports. Try that
+    # first, and fall back to annotations from `inspect.signature()`.
     task_signature = inspect.signature(task_fun)
+
+    try:
+        type_hints = typing.get_type_hints(task_fun)
+    except (NameError, AttributeError, TypeError):
+        # Fall back to raw annotations from inspect if get_type_hints fails
+        type_hints = None
 
     @functools.wraps(task_fun)
     def wrapper(*task_args, **task_kwargs):
         # Validate task parameters if type hinted as BaseModel
         bound_args = task_signature.bind(*task_args, **task_kwargs)
         for arg_name, arg_value in bound_args.arguments.items():
-            arg_annotation = task_signature.parameters[arg_name].annotation
+            if type_hints and arg_name in type_hints:
+                arg_annotation = type_hints[arg_name]
+            else:
+                arg_annotation = task_signature.parameters[arg_name].annotation
 
             optional_arg = get_optional_arg(arg_annotation)
             if optional_arg is not None and arg_value is not None:
@@ -149,7 +162,11 @@ def pydantic_wrapper(
 
         # Dump Pydantic model if the returned value is an instance of pydantic.BaseModel *and* its
         # class matches the typehint
-        return_annotation = task_signature.return_annotation
+        if type_hints and 'return' in type_hints:
+            return_annotation = type_hints['return']
+        else:
+            return_annotation = task_signature.return_annotation
+
         optional_return_annotation = get_optional_arg(return_annotation)
         if optional_return_annotation is not None:
             return_annotation = optional_return_annotation
@@ -832,31 +849,39 @@ class Celery:
         options = router.route(
             options, route_name or name, args, kwargs, task_type)
 
-        is_native_delayed_delivery = detect_quorum_queues(self,
-                                                          self.producer_pool.connections.connection.transport_cls)[0]
-        if is_native_delayed_delivery and options['queue'].exchange.type != 'direct':
-            if eta:
-                if isinstance(eta, str):
-                    eta = isoparse(eta)
-                countdown = (maybe_make_aware(eta) - self.now()).total_seconds()
+        driver_type = self.producer_pool.connections.connection.transport.driver_type
 
-            if countdown:
-                if countdown > 0:
-                    routing_key = calculate_routing_key(int(countdown), options["queue"].routing_key)
-                    exchange = Exchange(
-                        'celery_delayed_27',
-                        type='topic',
-                    )
-                    del options['queue']
-                    options['routing_key'] = routing_key
-                    options['exchange'] = exchange
-        elif is_native_delayed_delivery and options['queue'].exchange.type == 'direct':
-            logger.warning(
-                'Direct exchanges are not supported with native delayed delivery.\n'
-                f'{options["queue"].exchange.name} is a direct exchange but should be a topic exchange or '
-                'a fanout exchange in order for native delayed delivery to work properly.\n'
-                'If quorum queues are used, this task may block the worker process until the ETA arrives.'
-            )
+        if (eta or countdown) and detect_quorum_queues(self, driver_type)[0]:
+
+            queue = options.get("queue")
+            exchange_type = queue.exchange.type if queue else options["exchange_type"]
+            routing_key = queue.routing_key if queue else options["routing_key"]
+            exchange_name = queue.exchange.name if queue else options["exchange"]
+
+            if exchange_type != 'direct':
+                if eta:
+                    if isinstance(eta, str):
+                        eta = isoparse(eta)
+                    countdown = (maybe_make_aware(eta) - self.now()).total_seconds()
+
+                if countdown:
+                    if countdown > 0:
+                        routing_key = calculate_routing_key(int(countdown), routing_key)
+                        exchange = Exchange(
+                            'celery_delayed_27',
+                            type='topic',
+                        )
+                        options.pop("queue", None)
+                        options['routing_key'] = routing_key
+                        options['exchange'] = exchange
+
+            else:
+                logger.warning(
+                    'Direct exchanges are not supported with native delayed delivery.\n'
+                    f'{exchange_name} is a direct exchange but should be a topic exchange or '
+                    'a fanout exchange in order for native delayed delivery to work properly.\n'
+                    'If quorum queues are used, this task may block the worker process until the ETA arrives.'
+                )
 
         if expires is not None:
             if isinstance(expires, datetime):

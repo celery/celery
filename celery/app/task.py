@@ -535,6 +535,15 @@ class Task:
             publisher (kombu.Producer): Deprecated alias to ``producer``.
 
             headers (Dict): Message headers to be included in the message.
+                The headers can be used as an overlay for custom labeling
+                using the :ref:`canvas-stamping` feature.
+
+            task_id (str): Optional argument to override the default task id.
+                By default, Celery generates a unique id (UUID4) for every task
+                submission. You can instead provide your own string identifier.
+                If supplied, this value will be used as the task’s id instead
+                of generating one automatically. Be careful to avoid collisions
+                when overriding task ids.
 
         Returns:
             celery.result.AsyncResult: Promise of future evaluation.
@@ -788,12 +797,22 @@ class Task:
         if throw is None:
             throw = app.conf.task_eager_propagates
 
+        parent_task = _task_stack.top
+        if parent_task and parent_task.request:
+            parent_id = parent_task.request.id
+            root_id = parent_task.request.root_id or task_id
+        else:
+            parent_id = None
+            root_id = task_id
+
         # Make sure we get the task instance, not class.
         task = app._tasks[self.name]
 
         request = {
             'id': task_id,
             'task': self.name,
+            'parent_id': parent_id,
+            'root_id': root_id,
             'retries': retries,
             'is_eager': True,
             'logfile': logfile,

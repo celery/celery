@@ -1,1 +1,2 @@
-pymongo==4.11
+kombu[mongodb]
+

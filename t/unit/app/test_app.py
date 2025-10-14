@@ -32,13 +32,13 @@ from celery.platforms import pyimplementation
 from celery.utils.collections import DictAttribute
 from celery.utils.objects import Bunch
 from celery.utils.serialization import pickle
-from celery.utils.time import localize, timezone, to_utc
+from celery.utils.time import LocalTimezone, localize, timezone, to_utc
 from t.unit import conftest
 
 if sys.version_info >= (3, 9):
     from zoneinfo import ZoneInfo
 else:
-    from backports.zoneinfo import ZoneInfo  # noqa
+    from backports.zoneinfo import ZoneInfo
 
 THIS_IS_A_KEY = 'this is a value'
 
@@ -1176,13 +1176,39 @@ class test_App:
         sig = self.app.signature('foo', (1, 2))
         assert sig.app is self.app
 
-    def test_timezone__none_set(self):
+    def test_timezone_none_set(self):
         self.app.conf.timezone = None
         self.app.conf.enable_utc = True
         assert self.app.timezone == timezone.utc
         del self.app.timezone
         self.app.conf.enable_utc = False
         assert self.app.timezone == timezone.local
+
+    def test_use_local_timezone(self):
+        self.app.conf.timezone = None
+        self.app.conf.enable_utc = False
+
+        self._clear_timezone_cache()
+        try:
+            assert isinstance(self.app.timezone, ZoneInfo)
+        finally:
+            self._clear_timezone_cache()
+
+    @patch("celery.utils.time.get_localzone")
+    def test_use_local_timezone_failure(self, mock_get_localzone):
+        mock_get_localzone.side_effect = Exception("Failed to get local timezone")
+        self.app.conf.timezone = None
+        self.app.conf.enable_utc = False
+
+        self._clear_timezone_cache()
+        try:
+            assert isinstance(self.app.timezone, LocalTimezone)
+        finally:
+            self._clear_timezone_cache()
+
+    def _clear_timezone_cache(self):
+        del self.app.timezone
+        del timezone.local
 
     def test_uses_utc_timezone(self):
         self.app.conf.timezone = None
@@ -1448,6 +1474,60 @@ class test_App:
             exchange=exchange,
             routing_key='0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.1.1.1.0.testcelery'
         )
+        driver_type_stub = self.app.amqp.producer_pool.connections.connection.transport.driver_type
+        detect_quorum_queues.assert_called_once_with(self.app, driver_type_stub)
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery__no_queue_arg__no_eta(self, detect_quorum_queues):
+        self.app.amqp = MagicMock(name='amqp')
+        options = {
+            'routing_key': 'testcelery',
+            'exchange': 'testcelery',
+            'exchange_type': 'topic',
+        }
+        self.app.amqp.router.route.return_value = options
+
+        self.app.send_task(
+            name='foo',
+            args=(1, 2),
+        )
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            **options,
+        )
+        assert not detect_quorum_queues.called
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery__no_queue_arg__with_countdown(self, detect_quorum_queues):
+        self.app.amqp = MagicMock(name='amqp')
+        options = {
+            'routing_key': 'testcelery',
+            'exchange': 'testcelery',
+            'exchange_type': 'topic',
+        }
+        self.app.amqp.router.route.return_value = options
+
+        self.app.send_task(
+            name='foo',
+            args=(1, 2),
+            countdown=30,
+        )
+        exchange = Exchange(
+            'celery_delayed_27',
+            type='topic',
+        )
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            exchange=exchange,
+            routing_key='0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.1.1.1.0.testcelery',
+            exchange_type="topic",
+        )
+        driver_type_stub = self.app.amqp.producer_pool.connections.connection.transport.driver_type
+        detect_quorum_queues.assert_called_once_with(self.app, driver_type_stub)
 
     @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
     def test_native_delayed_delivery_eta_datetime(self, detect_quorum_queues):

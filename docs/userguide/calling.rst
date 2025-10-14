@@ -56,6 +56,8 @@ The API defines a standard set of execution options, as well as three methods:
     - ``T.apply_async(expires=now + timedelta(days=2))``
         expires in 2 days, set using :class:`~datetime.datetime`.
 
+    - ``T.apply_async(task_id=f'my_own_task_id')``
+        sets the id of the task to my_own_task_id instead of a uuid that is normally generated
 
 Example
 -------
@@ -516,6 +518,13 @@ json -- JSON is supported in many programming languages, is now
         into JSON and then back into a dictionary, the dictionary may not equal
         the original one. That is, ``loads(dumps(x)) != x`` if x has non-string
         keys.
+
+    .. warning::
+
+        With more complex workflows created using :ref:`guide-canvas`, the JSON
+        serializer has been observed to drastically inflate message sizes due to
+        recursive references, leading to resource issues. The *pickle* serializer
+        is not vulnerable to this and may therefore be preferable in such cases.
 
 pickle -- If you have no desire to support any language other than
     Python, then using the pickle encoding will gain you the support of

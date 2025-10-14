@@ -1,5 +1,5 @@
-pytest==8.3.4
-pytest-celery[all]>=1.1.3
+pytest==8.4.2
+pytest-celery[all]>=1.2.0,<1.3.0
 pytest-rerunfailures>=14.0,<15.0; python_version >= "3.8" and python_version < "3.9"
 pytest-rerunfailures>=15.0; python_version >= "3.9" and python_version < "4.0"
 pytest-subtests<0.14.0; python_version < "3.9"
@@ -18,3 +18,5 @@ pre-commit>=4.0.1; python_version >= '3.9'
 -r extras/mongodb.txt
 -r extras/gcs.txt
 -r extras/pydantic.txt
+-r extras/azureblockblob.txt
+-r extras/gevent.txt
