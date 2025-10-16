@@ -284,6 +284,37 @@ class test_DjangoWorkerFixup(FixupCase):
             # it to optimize connection handling.
             conn.close_if_unusable_or_obsolete.assert_not_called()
 
+    def test_close_database_closes_conn_pool(self):
+        with self.fixup_context(self.app) as (f, _, _):
+            conn = Mock()
+            conn.close_pool = Mock()
+            f._db.connections.all = Mock(return_value=[conn])
+            f.close_database()
+            conn.close.assert_called_once_with()
+            conn.close_pool.assert_called_once_with()
+
+    def test_close_database_skip_conn_pool(self):
+        class Connection:
+            """Mock connection without `close_pool` method."""
+            def close(self):
+                pass
+
+        with self.fixup_context(self.app) as (f, _, _):
+            conn = Mock(spec=Connection)
+            f._db.connections.all = Mock(return_value=[conn])
+            f.close_database()
+            assert not hasattr(conn, "close_pool")
+            conn.close.assert_called_once_with()
+
+    def test_close_database_suppresses_close_pool_keyerror(self):
+        with self.fixup_context(self.app) as (f, _, _):
+            conn = Mock()
+            conn.close_pool = Mock(side_effect=KeyError("pool already closed"))
+            f._db.connections.all = Mock(return_value=[conn])
+            f.close_database()  # should not raise
+            conn.close.assert_called_once_with()
+            conn.close_pool.assert_called_once_with()
+
     def test_close_cache_raises_error(self):
         with self.fixup_context(self.app) as (f, _, _):
             f._cache.close_caches.side_effect = AttributeError
