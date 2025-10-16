@@ -711,7 +711,7 @@ class test_PersistentScheduler:
 
     def test_create_schedule_corrupted_pickle_error(self):
         """
-        Test that any UnpicklingError that might happen when opening beat-schedule.db are caught
+        Test that any UnpicklingError that might happen when opening beat-schedule.db is caught
         """
         s = create_persistent_scheduler()[0](app=self.app,
                                              schedule_filename='schedule')
