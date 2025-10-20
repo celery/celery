@@ -171,18 +171,25 @@ class DelayedDelivery(bootsteps.StartStopStep):
                 # We must re-raise on retried exceptions to ensure they are
                 # caught with the outer retry_over_time mechanism.
                 #
-                # This could be removed if kombu used the `except*` clause to
-                # catch specific exceptions from an ExceptionGroup.
+                # This could be removed if:
+                # * The minimum python version for Celery and Kombu is increased
+                #   to 3.11.
+                # * Kombu updated to use the `except*` clause to catch specific
+                #   exceptions from an ExceptionGroup.
+                # * We switch to using ExceptionGroup below to raise multiple
+                #   exceptions.
                 if isinstance(e, RETRIED_EXCEPTIONS):
                     raise
 
                 exceptions.append(e)
 
         if exceptions:
-            raise ExceptionGroup(
+            # Raise a single exception summarizing all binding failures
+            # In Python 3.11+, we could use ExceptionGroup here instead.
+            raise RuntimeError(
                 ("One or more failures occurred while binding queues to "
-                 "delayed delivery exchanges"),
-                exceptions,
+                 "delayed delivery exchanges\n") +
+                "\n".join(str(e) for e in exceptions),
             )
 
     def _on_retry(self, exc: Exception, interval_range: Iterator[float], intervals_count: int) -> float:
