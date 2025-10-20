@@ -5,6 +5,9 @@ of native delayed delivery functionality when using quorum queues.
 """
 from typing import Iterator, List, Optional, Set, Union, ValuesView
 
+# Backport of PEP 654 for Python versions < 3.11
+# In Python 3.11+, exceptiongroup uses the built-in ExceptionGroup
+from exceptiongroup import ExceptionGroup
 from kombu import Connection, Queue
 from kombu.transport.native_delayed_delivery import (bind_queue_to_native_delayed_delivery_exchange,
                                                      declare_native_delayed_delivery_exchanges_and_queues)
@@ -171,25 +174,22 @@ class DelayedDelivery(bootsteps.StartStopStep):
                 # We must re-raise on retried exceptions to ensure they are
                 # caught with the outer retry_over_time mechanism.
                 #
-                # This could be removed if:
-                # * The minimum python version for Celery and Kombu is increased
-                #   to 3.11.
-                # * Kombu updated to use the `except*` clause to catch specific
-                #   exceptions from an ExceptionGroup.
-                # * We switch to using ExceptionGroup below to raise multiple
-                #   exceptions.
+                # This could be removed if one of:
+                # * The minimum python version for Celery and Kombu is
+                #   increased to 3.11. Kombu updated to use the `except*`
+                #   clause to catch specific exceptions from an ExceptionGroup.
+                # * Kombu's retry_over_time utility is updated to use the
+                #   catch utility from agronholm's exceptiongroup backport.
                 if isinstance(e, RETRIED_EXCEPTIONS):
                     raise
 
                 exceptions.append(e)
 
         if exceptions:
-            # Raise a single exception summarizing all binding failures
-            # In Python 3.11+, we could use ExceptionGroup here instead.
-            raise RuntimeError(
+            raise ExceptionGroup(
                 ("One or more failures occurred while binding queues to "
-                 "delayed delivery exchanges\n") +
-                "\n".join(str(e) for e in exceptions),
+                 "delayed delivery exchanges\n"),
+                exceptions,
             )
 
     def _on_retry(self, exc: Exception, interval_range: Iterator[float], intervals_count: int) -> float:

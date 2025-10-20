@@ -6,4 +6,5 @@ click-didyoumean>=0.3.0
 click-repl>=0.2.0
 click-plugins>=1.1.1
 python-dateutil>=2.8.2
+exceptiongroup>=1.3.0
 tzlocal

@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from amqp import NotFound
+from exceptiongroup import ExceptionGroup
 from kombu import Exchange, Queue
 from kombu.utils.functional import retry_over_time
 
@@ -383,7 +384,7 @@ class test_DelayedDelivery:
         delayed_delivery = DelayedDelivery(consumer_mock)
 
         # Should raise RuntimeError containing both exceptions messages
-        with pytest.raises(RuntimeError) as exc_info:
+        with pytest.raises(ExceptionGroup) as exc_info:
             delayed_delivery._setup_delayed_delivery(consumer_mock, 'amqp://')
 
         # Verify the RuntimeError message contains both exceptions
@@ -391,8 +392,19 @@ class test_DelayedDelivery:
         assert str(exception_group) == (
             "One or more failures occurred while binding queues to delayed "
             "delivery exchanges\n"
-            "Queue1 binding failed\n"
-            "Queue3 binding failed"
+            " (2 sub-exceptions)"
+        )
+
+        # Verify the ExceptionGroup contains both exceptions
+        exceptions = exception_group.exceptions
+        assert len(exceptions) == 2
+        assert any(
+            isinstance(ex, ValueError) and str(ex) == "Queue1 binding failed"
+            for ex in exceptions
+        )
+        assert any(
+            isinstance(ex, RuntimeError) and str(ex) == "Queue3 binding failed"
+            for ex in exceptions
         )
 
         # Verify bind was called for all three queues
