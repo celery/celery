@@ -397,3 +397,61 @@ class test_DelayedDelivery:
 
         # Verify bind was called for all three queues
         assert mock_bind.call_count == 3
+
+    @patch('celery.worker.consumer.delayed_delivery.bind_queue_to_native_delayed_delivery_exchange')
+    def test_bind_retries_on_retried_exception(self, mock_bind, caplog):
+        """
+        Test that retried exceptions from
+        bind_queue_to_native_delayed_delivery_exchange trigger the retry
+        mechanism.
+        """
+        consumer_mock = MagicMock()
+        consumer_mock.app.conf.broker_native_delayed_delivery_queue_type = \
+            'classic'
+        consumer_mock.app.conf.broker_url = 'amqp://'
+
+        # Create a queue
+        queue1 = Queue('queue1', exchange=Exchange('exchange1', type='topic'))
+        consumer_mock.app.amqp.queues = {'queue1': queue1}
+
+        # Track bind attempts
+        bind_attempts = [0]
+
+        # Make bind raise a ConnectionRefusedError twice, then succeed
+        # This simulates a transient connection issue that resolves on retry
+        def bind_side_effect(connection, queue):
+            bind_attempts[0] += 1
+            if bind_attempts[0] <= 2:
+                # ConnectionRefusedError is one of the RETRIED_EXCEPTIONS
+                raise ConnectionRefusedError("Connection refused")
+            # Succeed on third attempt
+
+        mock_bind.side_effect = bind_side_effect
+
+        delayed_delivery = DelayedDelivery(consumer_mock)
+        delayed_delivery.start(consumer_mock)
+
+        # Verify bind was attempted multiple times (indicating retries
+        # occurred)
+        assert bind_attempts[0] == 3, \
+            "Expected 3 bind attempts (2 failures + 1 success), got " + \
+            f"{bind_attempts[0]}"
+
+        # Verify retry warnings were logged
+        warning_logs = [r for r in caplog.records if r.levelname == "WARNING"]
+        retry_warnings = [
+            r for r in warning_logs
+            if "Retrying delayed delivery setup" in r.message
+        ]
+
+        # Should have 2 retry warnings (one for each failed attempt)
+        assert len(retry_warnings) == 2, \
+            f"Expected 2 retry warnings, got {len(retry_warnings)}. " + \
+            f"All warnings: {[r.message for r in warning_logs]}"
+
+        # Verify the retry messages contain the expected information and
+        # correct attempt numbers
+        assert "Connection refused" in retry_warnings[0].message
+        assert "attempt 1/" in retry_warnings[0].message
+        assert "Connection refused" in retry_warnings[1].message
+        assert "attempt 2/" in retry_warnings[1].message
