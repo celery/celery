@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 from kombu import Exchange, Queue
 from kombu.utils.functional import retry_over_time
+from amqp import NotFound
 
 from celery.worker.consumer.delayed_delivery import MAX_RETRIES, RETRY_INTERVAL, DelayedDelivery
 
@@ -306,3 +307,93 @@ class test_DelayedDelivery:
         assert len([r for r in caplog.records if r.levelname == "CRITICAL"]) == 1
         assert any("Failed to bind queue" in r.message for r in caplog.records)
         assert any("Failed to setup delayed delivery for all broker URLs" in r.message for r in caplog.records)
+
+    @patch('celery.worker.consumer.delayed_delivery.bind_queue_to_native_delayed_delivery_exchange')
+    def test_bind_queues_continues_after_failure(self, mock_bind, caplog):
+        """
+        Test that binding continues for remaining queues after one fails.
+        """
+        consumer_mock = MagicMock()
+        consumer_mock.app.conf.broker_native_delayed_delivery_queue_type = \
+            'classic'
+        consumer_mock.app.conf.broker_url = 'amqp://'
+
+        # Create three queues
+        queue1 = Queue('queue1', exchange=Exchange('exchange1', type='topic'))
+        queue2 = Queue('queue2', exchange=Exchange('exchange2', type='topic'))
+        queue3 = Queue('queue3', exchange=Exchange('exchange3', type='topic'))
+
+        consumer_mock.app.amqp.queues = {
+            'queue1': queue1,
+            'queue2': queue2,
+            'queue3': queue3,
+        }
+
+        # Make the second queue fail to bind
+        def bind_side_effect(connection, queue):
+            if queue.name == 'queue2':
+                raise NotFound(
+                    reply_text="NOT_FOUND - no queue 'queue2' in vhost '/'",
+                    method_name="Queue.bind",
+                    reply_code=404,
+                )
+
+        mock_bind.side_effect = bind_side_effect
+
+        delayed_delivery = DelayedDelivery(consumer_mock)
+        delayed_delivery.start(consumer_mock)
+
+        # Verify that bind was called for all three queues
+        assert mock_bind.call_count == 3
+
+        # Verify error was logged for queue2
+        error_logs = [r for r in caplog.records if r.levelname == "ERROR"]
+        expected_msg = \
+            "Queue.bind: (404) NOT_FOUND - no queue 'queue2' in vhost '/'"
+        assert any(expected_msg in r.message for r in error_logs)
+
+    @patch('celery.worker.consumer.delayed_delivery.bind_queue_to_native_delayed_delivery_exchange')
+    def test_bind_queues_raises_exception_group_on_failures(self, mock_bind):
+        """Test that ExceptionGroup is raised with all binding failures."""
+        consumer_mock = MagicMock()
+        consumer_mock.app.conf.broker_native_delayed_delivery_queue_type = \
+            'classic'
+        consumer_mock.app.conf.broker_url = 'amqp://'
+
+        # Create three queues
+        queue1 = Queue('queue1', exchange=Exchange('exchange1', type='topic'))
+        queue2 = Queue('queue2', exchange=Exchange('exchange2', type='topic'))
+        queue3 = Queue('queue3', exchange=Exchange('exchange3', type='topic'))
+
+        consumer_mock.app.amqp.queues = {
+            'queue1': queue1,
+            'queue2': queue2,
+            'queue3': queue3,
+        }
+
+        # Make queue1 and queue3 fail with different errors
+        def bind_side_effect(connection, queue):
+            if queue.name == 'queue1':
+                raise ValueError("Queue1 binding failed")
+            elif queue.name == 'queue3':
+                raise RuntimeError("Queue3 binding failed")
+
+        mock_bind.side_effect = bind_side_effect
+
+        delayed_delivery = DelayedDelivery(consumer_mock)
+
+        # Should raise ExceptionGroup containing both exceptions
+        with pytest.raises(ExceptionGroup) as exc_info:
+            delayed_delivery._setup_delayed_delivery(consumer_mock, 'amqp://')
+
+        # Verify the ExceptionGroup contains both exceptions
+        exception_group = exc_info.value
+        assert len(exception_group.exceptions) == 2
+
+        # Verify the exceptions are the expected types
+        exception_types = [type(e) for e in exception_group.exceptions]
+        assert ValueError in exception_types
+        assert RuntimeError in exception_types
+
+        # Verify bind was called for all three queues
+        assert mock_bind.call_count == 3

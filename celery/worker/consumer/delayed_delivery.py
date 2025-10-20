@@ -23,7 +23,7 @@ logger = get_logger(__name__)
 # Default retry settings
 RETRY_INTERVAL = 1.0  # seconds between retries
 MAX_RETRIES = 3      # maximum number of retries
-
+RETRIED_EXCEPTIONS = (ConnectionRefusedError, OSError)
 
 # Valid queue types for delayed delivery
 VALID_QUEUE_TYPES = {'classic', 'quorum'}
@@ -84,7 +84,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
                 retry_over_time(
                     self._setup_delayed_delivery,
                     args=(c, broker_url),
-                    catch=(ConnectionRefusedError, OSError),
+                    catch=RETRIED_EXCEPTIONS,
                     errback=self._on_retry,
                     interval_start=RETRY_INTERVAL,
                     max_retries=MAX_RETRIES,
@@ -157,6 +157,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
             logger.warning("No queues found to bind for delayed delivery")
             return
 
+        exceptions: list[Exception] = []
         for queue in queues:
             try:
                 logger.debug("Binding queue %r to delayed delivery exchange", queue.name)
@@ -166,7 +167,23 @@ class DelayedDelivery(bootsteps.StartStopStep):
                     "Failed to bind queue %r: %s",
                     queue.name, str(e)
                 )
-                raise
+
+                # We must re-raise on retried exceptions to ensure they are
+                # caught with the outer retry_over_time mechanism.
+                #
+                # This could be removed if kombu used the `except*` clause to
+                # catch specific exceptions from an ExceptionGroup.
+                if isinstance(e, RETRIED_EXCEPTIONS):
+                    raise
+
+                exceptions.append(e)
+
+        if exceptions:
+            raise ExceptionGroup(
+                "One or more failures occurred while bidning queues to " +
+                "delayed delivery exchanges",
+                exceptions,
+            )
 
     def _on_retry(self, exc: Exception, interval_range: Iterator[float], intervals_count: int) -> float:
         """Callback for retry attempts.
