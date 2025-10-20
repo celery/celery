@@ -180,7 +180,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
 
         if exceptions:
             raise ExceptionGroup(
-                "One or more failures occurred while bidning queues to " +
+                "One or more failures occurred while binding queues to " +
                 "delayed delivery exchanges",
                 exceptions,
             )

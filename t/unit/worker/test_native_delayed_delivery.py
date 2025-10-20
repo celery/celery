@@ -4,9 +4,9 @@ from typing import Iterator
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+from amqp import NotFound
 from kombu import Exchange, Queue
 from kombu.utils.functional import retry_over_time
-from amqp import NotFound
 
 from celery.worker.consumer.delayed_delivery import MAX_RETRIES, RETRY_INTERVAL, DelayedDelivery
 
