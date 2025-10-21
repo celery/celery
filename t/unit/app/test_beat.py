@@ -722,7 +722,7 @@ class test_PersistentScheduler:
         # self._store['entries'] = {} will throw a pickle.UnpicklingError
         s._store.__getitem__.side_effect = pickle.UnpicklingError("test")
         # then, when _create_schedule tries to reset _store['entries'],
-        # throw another error, specifically UnpicklingError
+        # throw another error, specifically pickle.UnpicklingError
         expected_error = pickle.UnpicklingError("test")
         s._store.__setitem__.side_effect = expected_error
 
