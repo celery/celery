@@ -391,8 +391,7 @@ class test_DelayedDelivery:
         exception_group = exc_info.value
         assert str(exception_group) == (
             "One or more failures occurred while binding queues to delayed "
-            "delivery exchanges\n"
-            " (2 sub-exceptions)"
+            "delivery exchanges (2 sub-exceptions)"
         )
 
         # Verify the ExceptionGroup contains both exceptions
