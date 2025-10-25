@@ -1,12 +1,11 @@
 import itertools
+# Backport of PEP 654 for Python versions < 3.11
+import sys
 from logging import LogRecord
 from typing import Iterator
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
-
-# Backport of PEP 654 for Python versions < 3.11
-import sys
 
 if sys.version_info >= (3, 11):
     from builtins import ExceptionGroup
@@ -16,11 +15,7 @@ else:
 from kombu import Exchange, Queue
 from kombu.utils.functional import retry_over_time
 
-from celery.worker.consumer.delayed_delivery import (
-    MAX_RETRIES,
-    RETRY_INTERVAL,
-    DelayedDelivery,
-)
+from celery.worker.consumer.delayed_delivery import MAX_RETRIES, RETRY_INTERVAL, DelayedDelivery
 
 
 class test_DelayedDelivery:
