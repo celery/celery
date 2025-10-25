@@ -3,14 +3,22 @@
 This module provides the DelayedDelivery bootstep which handles setup and configuration
 of native delayed delivery functionality when using quorum queues.
 """
+
 from typing import Iterator, List, Optional, Set, Union, ValuesView
 
 # Backport of PEP 654 for Python versions < 3.11
 # In Python 3.11+, exceptiongroup uses the built-in ExceptionGroup
-from exceptiongroup import ExceptionGroup
+import sys
+
+if sys.version_info >= (3, 11):
+    from builtins import ExceptionGroup
+else:
+    from exceptiongroup import ExceptionGroup
 from kombu import Connection, Queue
-from kombu.transport.native_delayed_delivery import (bind_queue_to_native_delayed_delivery_exchange,
-                                                     declare_native_delayed_delivery_exchanges_and_queues)
+from kombu.transport.native_delayed_delivery import (
+    bind_queue_to_native_delayed_delivery_exchange,
+    declare_native_delayed_delivery_exchanges_and_queues,
+)
 from kombu.utils.functional import retry_over_time
 
 from celery import Celery, bootsteps
@@ -18,18 +26,18 @@ from celery.utils.log import get_logger
 from celery.utils.quorum_queues import detect_quorum_queues
 from celery.worker.consumer import Consumer, Tasks
 
-__all__ = ('DelayedDelivery',)
+__all__ = ("DelayedDelivery",)
 
 logger = get_logger(__name__)
 
 
 # Default retry settings
 RETRY_INTERVAL = 1.0  # seconds between retries
-MAX_RETRIES = 3      # maximum number of retries
+MAX_RETRIES = 3  # maximum number of retries
 RETRIED_EXCEPTIONS = (ConnectionRefusedError, OSError)
 
 # Valid queue types for delayed delivery
-VALID_QUEUE_TYPES = {'classic', 'quorum'}
+VALID_QUEUE_TYPES = {"classic", "quorum"}
 
 
 class DelayedDelivery(bootsteps.StartStopStep):
@@ -57,7 +65,9 @@ class DelayedDelivery(bootsteps.StartStopStep):
         Returns:
             bool: True if quorum queues are detected, False otherwise
         """
-        return detect_quorum_queues(c.app, c.app.connection_for_write().transport.driver_type)[0]
+        return detect_quorum_queues(
+            c.app, c.app.connection_for_write().transport.driver_type
+        )[0]
 
     def start(self, c: Consumer) -> None:
         """Initialize delayed delivery for all broker URLs.
@@ -94,8 +104,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
                 )
             except Exception as e:
                 logger.warning(
-                    "Failed to setup delayed delivery for %r: %s",
-                    broker_url, str(e)
+                    "Failed to setup delayed delivery for %r: %s", broker_url, str(e)
                 )
                 setup_errors.append((broker_url, e))
 
@@ -121,28 +130,26 @@ class DelayedDelivery(bootsteps.StartStopStep):
             queue_type = c.app.conf.broker_native_delayed_delivery_queue_type
             logger.debug(
                 "Setting up delayed delivery for broker %r with queue type %r",
-                broker_url, queue_type
+                broker_url,
+                queue_type,
             )
 
             try:
                 declare_native_delayed_delivery_exchanges_and_queues(
-                    connection,
-                    queue_type
+                    connection, queue_type
                 )
             except Exception as e:
                 logger.warning(
                     "Failed to declare exchanges and queues for %r: %s",
-                    broker_url, str(e)
+                    broker_url,
+                    str(e),
                 )
                 raise
 
             try:
                 self._bind_queues(c.app, connection)
             except Exception as e:
-                logger.warning(
-                    "Failed to bind queues for %r: %s",
-                    broker_url, str(e)
-                )
+                logger.warning("Failed to bind queues for %r: %s", broker_url, str(e))
                 raise
 
     def _bind_queues(self, app: Celery, connection: Connection) -> None:
@@ -163,13 +170,12 @@ class DelayedDelivery(bootsteps.StartStopStep):
         exceptions: list[Exception] = []
         for queue in queues:
             try:
-                logger.debug("Binding queue %r to delayed delivery exchange", queue.name)
+                logger.debug(
+                    "Binding queue %r to delayed delivery exchange", queue.name
+                )
                 bind_queue_to_native_delayed_delivery_exchange(connection, queue)
             except Exception as e:
-                logger.error(
-                    "Failed to bind queue %r: %s",
-                    queue.name, str(e)
-                )
+                logger.error("Failed to bind queue %r: %s", queue.name, str(e))
 
                 # We must re-raise on retried exceptions to ensure they are
                 # caught with the outer retry_over_time mechanism.
@@ -187,12 +193,16 @@ class DelayedDelivery(bootsteps.StartStopStep):
 
         if exceptions:
             raise ExceptionGroup(
-                ("One or more failures occurred while binding queues to "
-                 "delayed delivery exchanges"),
+                (
+                    "One or more failures occurred while binding queues to "
+                    "delayed delivery exchanges"
+                ),
                 exceptions,
             )
 
-    def _on_retry(self, exc: Exception, interval_range: Iterator[float], intervals_count: int) -> float:
+    def _on_retry(
+        self, exc: Exception, interval_range: Iterator[float], intervals_count: int
+    ) -> float:
         """Callback for retry attempts.
 
         Args:
@@ -203,7 +213,10 @@ class DelayedDelivery(bootsteps.StartStopStep):
         interval = next(interval_range)
         logger.warning(
             "Retrying delayed delivery setup (attempt %d/%d) after error: %s. Sleeping %.2f seconds.",
-            intervals_count + 1, MAX_RETRIES, str(exc), interval
+            intervals_count + 1,
+            MAX_RETRIES,
+            str(exc),
+            interval,
         )
         return interval
 
@@ -245,7 +258,9 @@ class DelayedDelivery(bootsteps.StartStopStep):
                 raise ValueError("All broker URLs must be strings")
             brokers = broker_urls
         else:
-            raise ValueError(f"broker_url must be a string or list, got {broker_urls!r}")
+            raise ValueError(
+                f"broker_url must be a string or list, got {broker_urls!r}"
+            )
 
         valid_urls = {url for url in brokers}
 
@@ -264,7 +279,9 @@ class DelayedDelivery(bootsteps.StartStopStep):
             ValueError: If queue type is invalid
         """
         if not queue_type:
-            raise ValueError("broker_native_delayed_delivery_queue_type is not configured")
+            raise ValueError(
+                "broker_native_delayed_delivery_queue_type is not configured"
+            )
 
         if queue_type not in VALID_QUEUE_TYPES:
             sorted_types = sorted(VALID_QUEUE_TYPES)
