@@ -1208,6 +1208,12 @@ This is a dict supporting the following keys:
     constructor.  See the :mod:`pymongo` docs to see a list of arguments
     supported.
 
+.. note::
+
+    With pymongo>=4.14, options are case-sensitive when they were previously
+    case-insensitive.  See :class:`~pymongo.mongo_client.MongoClient` to
+    determine the correct case.
+
 .. _example-mongodb-result-config:
 
 Example configuration
