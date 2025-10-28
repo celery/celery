@@ -40,3 +40,4 @@ statefilename.*
 dump.rdb
 .env
 junit.xml
+venv/
