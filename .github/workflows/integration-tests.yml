@@ -44,11 +44,6 @@ jobs:
         env:
           RABBITMQ_DEFAULT_USER: guest
           RABBITMQ_DEFAULT_PASS: guest
-        options: >-
-          --health-cmd "rabbitmq-diagnostics check_port_connectivity"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
 
     steps:
       - name: Install apt packages
@@ -65,18 +60,6 @@ jobs:
           cache-dependency-path: '**/setup.py'
       - name: Install tox
         run: python -m pip install --upgrade pip 'tox' tox-gh-actions
-      - name: Wait for Redis & RabbitMQ
-        run: |
-          echo "Waiting for Redis..."
-          for i in {1..10}; do
-            if nc -z localhost 6379; then echo "Redis is up"; break; fi
-            sleep 3
-          done
-          echo "Waiting for RabbitMQ..."
-          for i in {1..10}; do
-            if nc -z localhost 5672; then echo "RabbitMQ is up"; break; fi
-            sleep 3
-          done
       - name: >
           Run tox for
           "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}-${{ inputs.module_name }}"
