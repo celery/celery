@@ -419,7 +419,7 @@ class test_tasks:
         job = retry_unpickleable.delay(
             "foo",
             "bar",
-            retry_kwargs={"countdown": 10, "max_retries": 2},
+            retry_kwargs={"countdown": 10, "max_retries": 1},
         )
 
         # Wait for the task to raise the Retry exception
