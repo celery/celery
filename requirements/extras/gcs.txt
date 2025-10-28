@@ -1,4 +1,4 @@
 google-cloud-storage>=2.10.0
-google-cloud-firestore==2.20.1
-grpcio==1.67.0 ; python_version < "3.9"
-grpcio==1.75.0 ; python_version >= "3.9"
+google-cloud-firestore==2.21.0
+grpcio==1.75.1
+

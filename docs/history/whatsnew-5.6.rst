@@ -63,7 +63,8 @@ The 5.6.0 release is a new feature release for Celery.
 Releases in the 5.x series are codenamed after songs of `Jon Hopkins <https://en.wikipedia.org/wiki/Jon_Hopkins>`_.
 This release has been codenamed `Recovery <https://www.youtube.com/watch?v=MaqlsAmlbzo>`_.
 
-This is the last version to support Python 3.8.
+This is the last version to support Python 3.9.
+Support for Python 3.8 was removed after v5.6.0b1.
 
 *— Tomer Nosrati*
 
@@ -145,7 +146,6 @@ Supported Python Versions
 
 The supported Python versions are:
 
-- CPython 3.8
 - CPython 3.9
 - CPython 3.10
 - CPython 3.11
@@ -153,10 +153,10 @@ The supported Python versions are:
 - CPython 3.13
 - PyPy3.10 (``pypy3``)
 
-Python 3.8 Support
+Python 3.9 Support
 ------------------
 
-Python 3.8 will reach EOL in October, 2024.
+Python 3.9 will reach EOL in October, 2025.
 
 Minimum Dependencies
 --------------------

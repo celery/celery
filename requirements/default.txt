@@ -1,10 +1,10 @@
 billiard>=4.2.1,<5.0
-kombu>=5.6.0rc1,<5.7
+kombu>=5.6.0rc2,<5.7
 vine>=5.1.0,<6.0
 click>=8.1.2,<9.0
 click-didyoumean>=0.3.0
 click-repl>=0.2.0
 click-plugins>=1.1.1
-backports.zoneinfo[tzdata]>=0.2.1; python_version < '3.9'
 python-dateutil>=2.8.2
+exceptiongroup>=1.3.0
 tzlocal
