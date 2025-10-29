@@ -434,10 +434,9 @@ class Celery:
             parse_url(url)
         except ValueError as e:
             raise ImproperlyConfigured(
-                f"Invalid broker URL: {url}, {e}. \n\n"
-                "Special characters in credentials must be percent-encoded\n"
-                "and, hosts must be a valid IPv4/IPv6 Address, "
-                "or a valid DNS name.\n"
+                f"Invalid broker URL: {url}, {e}.\n\n"
+                "Special characters in credentials must be percent-encoded.\n"
+                "Please ensure the broker URL is valid and properly formatted.\n"
             ) from e
 
     def set_current(self):
