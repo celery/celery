@@ -2837,9 +2837,15 @@ information.
 
 .. warning::
 
-    Special characters in usernames and passwords must be percent-encoded::
-        broker_url = 'amqp://user%40example.com:p%40ssword@localhost' # amqp://user@example.com:p@ssword@localhost
+    Special characters in usernames and passwords must be percent-encoded.
 
+    For example:
+
+        # Before encoding (decoded form):
+        broker_url = 'amqp://user@example.com:p@ssword@localhost'
+
+        # After percent-encoding special characters:
+        broker_url = 'amqp://user%40example.com:p%40ssword@localhost'
 .. setting:: broker_read_url
 
 .. setting:: broker_write_url
