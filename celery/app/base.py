@@ -436,7 +436,7 @@ class Celery:
             raise ImproperlyConfigured(
                 f"Invalid broker URL: {url}, {e}. \n\n"
                 "Special characters in credentials must be percent-encoded\n"
-                "and, hosts must be a valid IPV4/IPV6 Address, "
+                "and, hosts must be a valid IPv4/IPv6 Address, "
                 "or a valid DNS name.\n"
             ) from e
 
