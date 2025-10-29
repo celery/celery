@@ -11,7 +11,6 @@ from collections import UserDict, defaultdict, deque
 from datetime import datetime
 from datetime import timezone as datetime_timezone
 from operator import attrgetter
-from urllib.parse import quote
 
 from click.exceptions import Exit
 from dateutil.parser import isoparse
@@ -237,8 +236,8 @@ class Celery:
             This is used as the prefix for auto-generated task names.
 
     Keyword Arguments:
-        broker (str): 
-            URL of the default broker used. Special characters in Special characters in
+        broker (str):
+            URL of the default broker used. Special characters in
             credentials must be percent-encoded.
         backend (Union[str, Type[celery.backends.base.Backend]]):
             The result store backend class, or the name of the backend
@@ -437,8 +436,10 @@ class Celery:
             parse_url(url)
         except ValueError as e:
             raise ImproperlyConfigured(
-                f"Invalid broker URL: {url}, {e}. \n\nSpecial characters in credentials must be percent-encoded\n"
-                "and, hosts must be a valid IPV4/IPV6 Address, or a valid DNS name.\n"
+                f"Invalid broker URL: {url}, {e}. \n\n"
+                "Special characters in credentials must be percent-encoded\n"
+                "and, hosts must be a valid IPV4/IPV6 Address, "
+                "or a valid DNS name.\n"
             ) from e
 
     def set_current(self):
