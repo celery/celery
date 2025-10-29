@@ -11,6 +11,7 @@ from collections import UserDict, defaultdict, deque
 from datetime import datetime
 from datetime import timezone as datetime_timezone
 from operator import attrgetter
+from urllib.parse import quote
 
 from click.exceptions import Exit
 from dateutil.parser import isoparse
@@ -20,6 +21,7 @@ from kombu.common import oid_from
 from kombu.transport.native_delayed_delivery import calculate_routing_key
 from kombu.utils.compat import register_after_fork
 from kombu.utils.objects import cached_property
+from kombu.utils.url import parse_url
 from kombu.utils.uuid import uuid
 from vine import starpromise
 
@@ -235,7 +237,9 @@ class Celery:
             This is used as the prefix for auto-generated task names.
 
     Keyword Arguments:
-        broker (str): URL of the default broker used.
+        broker (str): 
+            URL of the default broker used. Special characters in Special characters in
+            credentials must be percent-encoded.
         backend (Union[str, Type[celery.backends.base.Backend]]):
             The result store backend class, or the name of the backend
             class to use.
@@ -363,6 +367,9 @@ class Celery:
         # args instead of the new way that pickles a dict of keywords.
         self._using_v1_reduce = app_has_custom(self, '__reduce_args__')
 
+        # Validate broker URL
+        self._validate_broker_url(broker)
+
         # these options are moved to the config to
         # simplify pickling of the app object.
         self._preconf = changes or {}
@@ -422,6 +429,17 @@ class Celery:
         if value is not None:
             self._preconf[key] = value
             self._preconf_set_by_auto.add(key)
+
+    def _validate_broker_url(self, url):
+        if not url:
+            return
+        try:
+            parse_url(url)
+        except ValueError as e:
+            raise ImproperlyConfigured(
+                f"Invalid broker URL: {url}, {e}. \n\nSpecial characters in credentials must be percent-encoded\n"
+                "and, hosts must be a valid IPV4/IPV6 Address, or a valid DNS name.\n"
+            ) from e
 
     def set_current(self):
         """Make this the current app for this thread."""
