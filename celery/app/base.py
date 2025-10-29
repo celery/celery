@@ -236,9 +236,7 @@ class Celery:
             This is used as the prefix for auto-generated task names.
 
     Keyword Arguments:
-        broker (str):
-            URL of the default broker used. Special characters in
-            credentials must be percent-encoded.
+        broker (str): URL of the default broker used.
         backend (Union[str, Type[celery.backends.base.Backend]]):
             The result store backend class, or the name of the backend
             class to use.
