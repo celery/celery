@@ -8,6 +8,33 @@ This document contains change notes for bugfix & new features
 in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
 an overview of what's new in Celery 5.6.
 
+.. _version-5.6.0rc1:
+
+5.6.0rc1
+========
+
+:release-date: 2025-11-02
+:release-by: Tomer Nosrati
+
+Celery v5.6.0 Release Candidate 1 is now available for testing.
+Please help us test this version and report any issues.
+
+What's Changed
+~~~~~~~~~~~~~~
+
+- Add support for Django Connection pool (#9953)
+- Pin tblib to ==3.1.0 (#9967)
+- fix(worker): continue to attempt to bind other queues after a native delayed delivery binding failure has occurred (#9959)
+- Handle UnpicklingError in persistent scheduler initialization (#9952)
+- Bug Fix: Nested Chords Fail When Using django-celery-results with a Redis Backend (#9950)
+- Add support pymongo  4.12 (#9665)
+- Make tests compatible with pymongo >= 4.14 (#9968)
+- tblib updated from 3.1.0 to 3.2.0 (#9970)
+- Fix remaining function typing and docstring (#9971)
+- Fix regex pattern in version parsing and remove duplicate entry in __all__ (#9978)
+- Bump Kombu to v5.6.0 and removed <5.7 limit on kombu (#9981)
+- Prepare for (pre) release: v5.6.0rc1 (#9982)
+
 .. _version-5.6.0b2:
 
 5.6.0b2
