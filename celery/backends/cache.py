@@ -58,7 +58,15 @@ def get_memcache_client():
             base_client = HashClient(servers, **kwargs)
         else:
             # For single server, use base Client with first server
-            base_client = Client(servers[0], **kwargs)
+            if not servers:
+                raise ImproperlyConfigured("No memcache servers provided")
+            server = servers[0]
+            if isinstance(server, (str, tuple)):
+                base_client = Client(server, **kwargs)
+            else:
+                raise ImproperlyConfigured(
+                    f"Memcache server address must be a string or tuple, got {type(server)}: {server!r}"
+                )
 
         # Wrap with RetryingClient if retry options are specified
         if retry_attempts is not None:
