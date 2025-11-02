@@ -53,7 +53,8 @@ def process_initializer(app, hostname):
     app.loader.init_worker()
     app.loader.init_worker_process()
     if app.conf.worker_proc_use_process_group:
-        os.setpgrp()
+        if hasattr(os, "setpgrp"):
+            os.setpgrp()
     logfile = os.environ.get('CELERY_LOG_FILE') or None
     if logfile and '%i' in logfile.lower():
         # logfile path will differ so need to set up logging again.
