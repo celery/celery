@@ -632,7 +632,12 @@ class AsynPool(_pool.Pool):
                 assert proc.outqR_fd in hub.readers
                 error('Timed out waiting for UP message from %r', proc)
                 if kill_pg:
-                    os.killpg(os.getpgid(proc.pid), 9)
+                    # Only attempt to use killpg/getpgid if available (not on Windows)
+                    if hasattr(os, "killpg") and hasattr(os, "getpgid"):
+                        os.killpg(os.getpgid(proc.pid), 9)
+                    else:
+                        # Fallback: kill the process directly if process groups are not supported
+                        os.kill(proc.pid, 9)
                 else:
                     os.kill(proc.pid, 9)
 
