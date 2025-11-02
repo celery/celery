@@ -3407,7 +3407,7 @@ The timeout in seconds (int/float) when waiting for a new worker process to star
 .. setting:: worker_proc_use_process_group
 
 ``worker_proc_use_process_group``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Default: Disabled by default.
 
