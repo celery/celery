@@ -75,7 +75,9 @@ class Hub(bootsteps.StartStopStep):
         return self
 
     def start(self, w):
-        pass
+        # ensure the kombu hub's poller is created (accessing the
+        # property ensures this)
+        _ = w.hub.poller
 
     def stop(self, w):
         w.hub.close()
