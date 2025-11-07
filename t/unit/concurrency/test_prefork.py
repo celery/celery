@@ -619,6 +619,7 @@ class test_TaskPool:
         mock_event_class.return_value = mock_shutdown_event
 
         thread_target = None
+
         def capture_thread(*args, **kwargs):
             nonlocal thread_target
             thread_target = kwargs['target']
