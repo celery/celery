@@ -670,7 +670,7 @@ Sender is the :class:`celery.beat.Service` instance.
 ``beat_shutdown``
 ~~~~~~~~~~~~~~~~~~~
 
-Dispatched when the :program:`celery beat` finished its shutdown process.
+Dispatched when the :program:`celery beat` finishes its shutdown process.
 
 Sender is the :class:`celery.beat.Service` instance.
 
