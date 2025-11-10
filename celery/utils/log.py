@@ -5,8 +5,9 @@ import os
 import sys
 import threading
 import traceback
+from collections.abc import Sequence  # noqa: F401
 from contextlib import contextmanager
-from typing import AnyStr, Sequence  # noqa
+from typing import AnyStr  # noqa: F401
 
 from kombu.log import LOG_LEVELS
 from kombu.log import get_logger as _get_logger

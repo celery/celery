@@ -1,15 +1,10 @@
-import sys
 from datetime import datetime, timedelta
 from datetime import timezone as _timezone
 from datetime import tzinfo
 from unittest.mock import Mock, patch
+from zoneinfo import ZoneInfo
 
 import pytest
-
-if sys.version_info >= (3, 9):
-    from zoneinfo import ZoneInfo
-else:
-    from backports.zoneinfo import ZoneInfo
 
 from celery.utils.iso8601 import parse_iso8601
 from celery.utils.time import (LocalTimezone, delta_resolution, ffwd, get_exponential_backoff_interval,

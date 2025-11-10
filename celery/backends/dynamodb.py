@@ -2,7 +2,7 @@
 from collections import namedtuple
 from ipaddress import ip_address
 from time import sleep, time
-from typing import Any, Dict
+from typing import Any
 
 from kombu.utils.url import _parse_url as parse_url
 
@@ -473,7 +473,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
             })
         return put_request
 
-    def _prepare_init_count_request(self, key: str) -> Dict[str, Any]:
+    def _prepare_init_count_request(self, key: str) -> dict[str, Any]:
         """Construct the counter initialization request parameters"""
         timestamp = time()
         return {
@@ -491,7 +491,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
             }
         }
 
-    def _prepare_inc_count_request(self, key: str) -> Dict[str, Any]:
+    def _prepare_inc_count_request(self, key: str) -> dict[str, Any]:
         """Construct the counter increment request parameters"""
         return {
             'TableName': self.table_name,

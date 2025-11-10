@@ -16,13 +16,13 @@ import bisect
 import sys
 import threading
 from collections import defaultdict
-from collections.abc import Callable
+from collections.abc import Callable, Mapping  # noqa: F401
 from datetime import datetime
 from decimal import Decimal
 from itertools import islice
 from operator import itemgetter
 from time import time
-from typing import Mapping, Optional  # noqa
+from typing import Optional
 from weakref import WeakSet, ref
 
 from kombu.clocks import timetuple

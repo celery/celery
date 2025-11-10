@@ -7,10 +7,11 @@
 import os
 import sys
 import threading
+from collections.abc import Iterator
 from itertools import count
 from threading import TIMEOUT_MAX as THREAD_TIMEOUT_MAX
 from time import sleep
-from typing import Any, Callable, Iterator, Optional, Tuple
+from typing import Any, Callable, Optional
 
 from kombu.asynchronous.timer import Entry
 from kombu.asynchronous.timer import Timer as Schedule
@@ -79,7 +80,7 @@ class Timer(threading.Thread):
     def run(self) -> None:
         try:
             self.running = True
-            self.scheduler: Iterator[Tuple[Optional[float], Optional[Entry]]] = iter(self.schedule)
+            self.scheduler: Iterator[tuple[Optional[float], Optional[Entry]]] = iter(self.schedule)
 
             while not self.__is_shutdown.is_set():
                 delay = self._next_entry()

@@ -62,10 +62,10 @@ def test_annotation_issubclass() -> None:
         base_model: BaseModel,
         list_arg: list,  # type: ignore[type-arg]  # what we test
         dict_arg: dict,  # type: ignore[type-arg]  # what we test
-        list_typing_arg: typing.List,  # type: ignore[type-arg]  # what we test
-        dict_typing_arg: typing.Dict,  # type: ignore[type-arg]  # what we test
-        list_typing_generic_arg: typing.List[str],
-        dict_typing_generic_arg: typing.Dict[str, str],
+        list_typing_arg: list,  # type: ignore[type-arg]  # what we test
+        dict_typing_arg: dict,  # type: ignore[type-arg]  # what we test
+        list_typing_generic_arg: list[str],
+        dict_typing_generic_arg: dict[str, str],
     ) -> None:
         pass
 
