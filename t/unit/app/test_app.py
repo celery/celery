@@ -3,7 +3,6 @@ import importlib
 import itertools
 import os
 import ssl
-import sys
 import typing
 import uuid
 from copy import deepcopy
@@ -550,7 +549,6 @@ class test_App:
             assert foo(None) == 2
             check.assert_called_with(None, kwarg=True)
 
-    @pytest.mark.skipif(sys.version_info < (3, 9), reason="Notation is only supported in Python 3.9 or newer.")
     def test_task_with_pydantic_with_dict_args(self):
         """Test pydantic task receiving and returning a generic dict argument."""
         with self.Celery() as app:
@@ -564,7 +562,6 @@ class test_App:
             assert foo({'a': 'b'}, kwarg={'c': 'd'}) == {'x': 'y'}
             check.assert_called_once_with({'a': 'b'}, kwarg={'c': 'd'})
 
-    @pytest.mark.skipif(sys.version_info < (3, 9), reason="Notation is only supported in Python 3.9 or newer.")
     def test_task_with_pydantic_with_list_args(self):
         """Test pydantic task receiving and returning a generic dict argument."""
         with self.Celery() as app:
@@ -662,7 +659,6 @@ class test_App:
             assert foo({'arg_value': 1}, kwarg={'kwarg_value': 2}) == {'ret_value': 1}
             check.assert_called_with(ArgModel(arg_value=1), kwarg=KwargModel(kwarg_value=2))
 
-    @pytest.mark.skipif(sys.version_info < (3, 9), reason="Notation is only supported in Python 3.9 or newer.")
     def test_task_with_pydantic_with_generic_return_value(self):
         """Test pydantic task receiving and returning an optional argument."""
         class ReturnModel(BaseModel):
