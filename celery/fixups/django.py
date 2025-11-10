@@ -1,4 +1,5 @@
 """Django-specific customization."""
+import contextlib
 import os
 import sys
 import warnings
@@ -201,6 +202,10 @@ class DjangoWorkerFixup:
         for conn in self._db.connections.all():
             try:
                 conn.close()
+                pool_enabled = self._settings.DATABASES.get(conn.alias, {}).get("OPTIONS", {}).get("pool")
+                if pool_enabled and hasattr(conn, "close_pool"):
+                    with contextlib.suppress(KeyError):
+                        conn.close_pool()
             except self.interface_errors:
                 pass
             except self.DatabaseError as exc:

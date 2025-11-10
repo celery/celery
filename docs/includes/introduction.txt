@@ -1,4 +1,4 @@
-:Version: 5.6.0b1 (recovery)
+:Version: 5.6.0rc1 (recovery)
 :Web: https://docs.celeryq.dev/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/

@@ -613,6 +613,31 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['port'] == 123
         assert "health_check_interval" not in x.connparams
 
+    def test_backend_redis_client_name(self):
+        pytest.importorskip('redis')
+
+        self.app.conf.redis_client_name = 'celery-worker'
+        x = self.Backend(
+            'redis://vandelay.com:123//1', app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert x.connparams['client_name'] == 'celery-worker'
+
+    def test_backend_redis_client_name_not_set(self):
+        pytest.importorskip('redis')
+
+        x = self.Backend(
+            'redis://vandelay.com:123//1', app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert x.connparams['client_name'] is None
+
     @pytest.mark.parametrize('cert_str', [
         "required",
         "CERT_REQUIRED",
@@ -1260,7 +1285,7 @@ class test_RedisBackend_chords_complex(basetest_RedisBackend):
         self.b.client.zrange.assert_not_called()
         self.b.client.lrange.assert_not_called()
         # Confirm that the `GroupResult.restore` mock was called
-        complex_header_result.assert_called_once_with(request.group)
+        complex_header_result.assert_called_once_with(request.group, app=self.b.app)
         # Confirm that the callback was called with the `join()`ed group result
         if supports_native_join:
             expected_join = mock_result_obj.join_native

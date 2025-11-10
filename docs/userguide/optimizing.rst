@@ -186,7 +186,8 @@ prefetching by enabling :setting:`worker_disable_prefetch`. With this
 setting the worker fetches a new task only when an execution slot is
 free, preventing tasks from waiting behind long running ones on busy
 workers. This can also be set from the command line using
-:option:`--disable-prefetch <celery worker --disable-prefetch>`.
+:option:`--disable-prefetch <celery worker --disable-prefetch>`. This feature
+is currently only supported when using Redis as the broker.
 
 Memory Usage
 ------------

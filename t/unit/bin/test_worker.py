@@ -19,6 +19,7 @@ def mock_app():
     app = Mock()
     app.conf = Mock()
     app.conf.worker_disable_prefetch = False
+    app.conf.worker_detect_quorum_queues = False
     return app
 
 
@@ -37,10 +38,14 @@ def mock_consumer(mock_app):
     original_can_consume = Mock(return_value=True)
     consumer.task_consumer.channel.qos.can_consume = original_can_consume
     consumer.connection = Mock()
+    consumer.connection.transport = Mock()
+    consumer.connection.transport.driver_type = 'redis'  # Default to Redis for existing tests
+    consumer.connection.qos_semantics_matches_spec = True
     consumer.update_strategies = Mock()
     consumer.on_decode_error = Mock()
     consumer.app.amqp = Mock()
     consumer.app.amqp.TaskConsumer = Mock(return_value=consumer.task_consumer)
+    consumer.app.amqp.queues = {}  # Empty dict for quorum queue detection
     return consumer
 
 
@@ -106,4 +111,17 @@ def test_disable_prefetch_none_preserves_behavior(mock_app, mock_consumer):
     original_can_consume = mock_consumer.task_consumer.channel.qos.can_consume
     tasks_instance = Tasks(mock_consumer)
     tasks_instance.start(mock_consumer)
+    assert mock_consumer.task_consumer.channel.qos.can_consume == original_can_consume
+
+
+def test_disable_prefetch_ignored_for_non_redis_brokers(mock_app, mock_consumer):
+    """Test that disable_prefetch is ignored for non-Redis brokers."""
+    mock_app.conf.worker_disable_prefetch = True
+    mock_consumer.connection.transport.driver_type = 'amqp'  # RabbitMQ
+    original_can_consume = mock_consumer.task_consumer.channel.qos.can_consume
+
+    tasks_instance = Tasks(mock_consumer)
+    tasks_instance.start(mock_consumer)
+
+    # Should not modify can_consume method for non-Redis brokers
     assert mock_consumer.task_consumer.channel.qos.can_consume == original_can_consume

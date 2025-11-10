@@ -11,7 +11,7 @@ on:
         description: 'JSON array of Python versions to test'
         required: false
         type: string
-        default: '["3.8", "3.14"]'
+        default: '["3.9", "3.14"]'
       tox_environments:
         description: 'JSON array of tox environments to test'
         required: false
@@ -37,9 +37,10 @@ jobs:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
       rabbitmq:
-        image: rabbitmq
+        image: rabbitmq:management
         ports:
           - 5672:5672
+          - 15672:15672
         env:
           RABBITMQ_DEFAULT_USER: guest
           RABBITMQ_DEFAULT_PASS: guest
