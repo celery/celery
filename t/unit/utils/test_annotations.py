@@ -82,7 +82,6 @@ def test_annotation_issubclass() -> None:
     assert annotation_issubclass(parameters['dict_typing_generic_arg'].annotation, BaseModel) is False
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason="Notation is only supported in Python 3.9 or newer.")
 def test_annotation_issubclass_with_generic_classes() -> None:
     def func(list_arg: list[str], dict_arg: dict[str, str]) -> None:
         pass
