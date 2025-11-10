@@ -13,6 +13,7 @@ from logging import LogRecord
 from pickle import dumps, loads
 from typing import Optional
 from unittest.mock import ANY, DEFAULT, MagicMock, Mock, patch
+from zoneinfo import ZoneInfo
 
 import pytest
 from kombu import Exchange, Queue
@@ -34,11 +35,6 @@ from celery.utils.objects import Bunch
 from celery.utils.serialization import pickle
 from celery.utils.time import LocalTimezone, localize, timezone, to_utc
 from t.unit import conftest
-
-if sys.version_info >= (3, 9):
-    from zoneinfo import ZoneInfo
-else:
-    from backports.zoneinfo import ZoneInfo
 
 THIS_IS_A_KEY = 'this is a value'
 

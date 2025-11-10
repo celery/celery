@@ -1,5 +1,5 @@
 import os
-from typing import Any, Type
+from typing import Any
 
 import pytest
 from pytest_celery import CeleryWorkerContainer, defaults
@@ -66,7 +66,7 @@ default_worker_container = container(
 
 
 @pytest.fixture
-def default_worker_container_cls() -> Type[CeleryWorkerContainer]:
+def default_worker_container_cls() -> type[CeleryWorkerContainer]:
     """Replace the default pytest-celery worker container with the smoke tests worker container.
 
     This will allow the default fixtures of pytest-celery to use the custom worker
@@ -76,7 +76,7 @@ def default_worker_container_cls() -> Type[CeleryWorkerContainer]:
 
 
 @pytest.fixture(scope="session")
-def default_worker_container_session_cls() -> Type[CeleryWorkerContainer]:
+def default_worker_container_session_cls() -> type[CeleryWorkerContainer]:
     """Replace the default pytest-celery worker container with the smoke tests worker container.
 
     This will allow the default fixtures of pytest-celery to use the custom worker
