@@ -107,8 +107,8 @@ def pydantic_wrapper(
     task_fun: typing.Callable[..., typing.Any],
     task_name: str,
     strict: bool = True,
-    context: typing.Optional[dict[str, typing.Any]] = None,
-    dump_kwargs: typing.Optional[dict[str, typing.Any]] = None
+    context: dict[str, typing.Any] | None = None,
+    dump_kwargs: dict[str, typing.Any] | None = None
 ):
     """Wrapper to validate arguments and serialize return values using Pydantic."""
     try:
@@ -569,8 +569,8 @@ class Celery:
         bind=False,
         pydantic: bool = False,
         pydantic_strict: bool = False,
-        pydantic_context: typing.Optional[dict[str, typing.Any]] = None,
-        pydantic_dump_kwargs: typing.Optional[dict[str, typing.Any]] = None,
+        pydantic_context: dict[str, typing.Any] | None = None,
+        pydantic_dump_kwargs: dict[str, typing.Any] | None = None,
         **options,
     ):
         if not self.finalized and not self.autofinalize:

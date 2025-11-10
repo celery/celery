@@ -1,11 +1,10 @@
 """Integration testing utilities."""
-import socket
 import sys
 from collections import defaultdict
-from collections.abc import Sequence  # noqa: F401
+from collections.abc import Callable, Sequence  # noqa: F401
 from functools import partial
 from itertools import count
-from typing import Any, Callable, TextIO  # noqa: F401
+from typing import Any, TextIO  # noqa: F401
 
 from kombu.exceptions import ContentDisallowed
 from kombu.utils.functional import retry_over_time
@@ -121,7 +120,7 @@ class ManagerMixin:
             received[:] = []
             try:
                 return r.get(callback=on_result, propagate=propagate, **kwargs)
-            except (socket.timeout, TimeoutError) as exc:
+            except TimeoutError as exc:
                 waiting_for = self.missing_results(r)
                 self.remark(
                     'Still waiting for {}/{}: [{}]: {!r}'.format(

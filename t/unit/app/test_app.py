@@ -4,14 +4,12 @@ import itertools
 import os
 import ssl
 import sys
-import typing
 import uuid
 from copy import deepcopy
 from datetime import datetime, timedelta
 from datetime import timezone as datetime_timezone
 from logging import LogRecord
 from pickle import dumps, loads
-from typing import Optional
 from unittest.mock import ANY, DEFAULT, MagicMock, Mock, patch
 from zoneinfo import ZoneInfo
 
@@ -538,7 +536,7 @@ class test_App:
             check = Mock()
 
             @app.task(pydantic=True)
-            def foo(arg: Optional[int], kwarg: Optional[bool] = True) -> Optional[int]:
+            def foo(arg: int | None, kwarg: bool | None = True) -> int | None:
                 check(arg, kwarg=kwarg)
                 if isinstance(arg, int):
                     return 1
@@ -650,7 +648,7 @@ class test_App:
             check = Mock()
 
             @app.task(pydantic=True)
-            def foo(arg: Optional[ArgModel], kwarg: Optional[KwargModel] = None) -> Optional[ReturnModel]:
+            def foo(arg: ArgModel | None, kwarg: KwargModel | None = None) -> ReturnModel | None:
                 check(arg, kwarg=kwarg)
                 if isinstance(arg, ArgModel):
                     return ReturnModel(ret_value=1)
@@ -766,7 +764,7 @@ class test_App:
 
         class RetModel(BaseModel):
             value: datetime
-            unset_value: typing.Optional[int] = 99  # this would be in the output, if exclude_unset weren't True
+            unset_value: int | None = 99  # this would be in the output, if exclude_unset weren't True
 
         with self.Celery() as app:
             check = Mock()

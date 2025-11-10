@@ -27,11 +27,11 @@ def test_is_none_type_with_optional_annotations() -> None:
 def test_get_optional_arg() -> None:
     def func(
         arg: int,
-        optional: typing.Optional[int],
-        optional2: typing.Union[int, None],
-        optional3: typing.Union[None, int],
-        not_optional1: typing.Union[str, int],
-        not_optional2: typing.Union[str, int, bool],
+        optional: int | None,
+        optional2: int | None,
+        optional3: None | int,
+        not_optional1: str | int,
+        not_optional2: str | int | bool,
     ) -> None:
         pass
 

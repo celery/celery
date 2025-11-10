@@ -11,12 +11,12 @@ Very slow with no limits, super quick with limits.
 """
 import traceback
 from collections import deque, namedtuple
-from collections.abc import Iterator, Sequence  # noqa: F401
+from collections.abc import Callable, Iterator, Sequence  # noqa: F401
 from decimal import Decimal
 from itertools import chain
 from numbers import Number
 from pprint import _recursion
-from typing import Any, AnyStr, Callable, Optional  # noqa: F401
+from typing import Any, AnyStr, Optional  # noqa: F401
 
 from .text import truncate
 
@@ -196,7 +196,7 @@ def _reprseq(val, lit_start, lit_end, builtin_type, chainer):
 
 
 def reprstream(stack: deque,
-               seen: Optional[set] = None,
+               seen: set | None = None,
                maxlevels: int = 3,
                level: int = 0,
                isinstance: Callable = isinstance) -> Iterator[Any]:

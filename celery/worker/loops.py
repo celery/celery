@@ -1,6 +1,5 @@
 """The consumers highly-optimized inner loop."""
 import errno
-import socket
 
 from celery import bootsteps
 from celery.exceptions import WorkerLostError
@@ -130,7 +129,7 @@ def synloop(obj, connection, consumer, blueprint, hub, qos,
         try:
             perform_pending_operations()
             connection.drain_events(timeout=2.0)
-        except socket.timeout:
+        except TimeoutError:
             pass
         except OSError:
             if blueprint.state == RUN:

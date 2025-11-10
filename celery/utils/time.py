@@ -7,11 +7,12 @@ import os
 import random
 import time as _time
 from calendar import monthrange
+from collections.abc import Callable
 from datetime import date, datetime, timedelta
 from datetime import timezone as datetime_timezone
 from datetime import tzinfo
 from types import ModuleType
-from typing import Any, Callable
+from typing import Any
 from zoneinfo import ZoneInfo
 
 from dateutil import tz as dateutil_tz
