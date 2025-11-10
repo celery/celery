@@ -156,7 +156,13 @@ class TaskPool(BasePool):
                         try:
                             hub.fire_timers()
                         except Exception:
-                            pass
+                            logger.warning(
+                                "Exception in timer thread during prefork on_stop()",
+                                exc_info=True,
+                            )
+                        # 0.5 seconds was chosen as a balance between joining quickly
+                        # after the pool join is complete and sleeping long enough to
+                        # avoid excessive CPU usage.
                         time.sleep(0.5)
 
                 timer_thread = threading.Thread(target=fire_timers_loop, daemon=True)
