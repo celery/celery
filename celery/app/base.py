@@ -435,7 +435,7 @@ class Celery:
         except ValueError as e:
             raise ImproperlyConfigured(
                 f"Invalid broker URL: {url}, {e}.\n\n"
-                "Special characters in credentials must be percent-encoded.\n"
+                "Special characters in userinfo must be percent-encoded.\n"
                 "Please ensure the broker URL is valid and properly formatted.\n"
             ) from e
 
