@@ -2,11 +2,11 @@
 import time
 from collections import OrderedDict as _OrderedDict
 from collections import deque
-from collections.abc import Callable, Mapping, MutableMapping, MutableSet, Sequence
+from collections.abc import Callable, Iterable, Mapping, MutableMapping, MutableSet, Sequence  # noqa: F401
 from heapq import heapify, heappop, heappush
 from itertools import chain, count
 from queue import Empty
-from typing import Any, Dict, Iterable, List  # noqa
+from typing import Any
 
 from .functional import first, uniq
 from .text import match_case
@@ -360,12 +360,12 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
 
     Arguments:
         changes (Mapping): Map of configuration changes.
-        defaults (List[Mapping]): List of dictionaries containing
+        defaults (list[Mapping]): List of dictionaries containing
             the default configuration.
     """
 
     def __init__(self, changes, defaults=None, keys=None, prefix=None):
-        # type: (Mapping, Mapping, List[str], str) -> None
+        # type: (Mapping, Mapping, list[str], str) -> None
         defaults = [] if defaults is None else defaults
         super().__init__(changes, *defaults)
         self.__dict__.update(

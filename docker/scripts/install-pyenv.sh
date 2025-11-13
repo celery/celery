@@ -11,5 +11,3 @@ VERSION_ALIAS="python3.13" pyenv install 3.13.1
 VERSION_ALIAS="python3.12" pyenv install 3.12.8
 VERSION_ALIAS="python3.11" pyenv install 3.11.11
 VERSION_ALIAS="python3.10" pyenv install 3.10.16
-VERSION_ALIAS="python3.9" pyenv install 3.9.21
-VERSION_ALIAS="python3.8" pyenv install 3.8.20

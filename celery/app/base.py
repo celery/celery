@@ -107,8 +107,8 @@ def pydantic_wrapper(
     task_fun: typing.Callable[..., typing.Any],
     task_name: str,
     strict: bool = True,
-    context: typing.Optional[typing.Dict[str, typing.Any]] = None,
-    dump_kwargs: typing.Optional[typing.Dict[str, typing.Any]] = None
+    context: dict[str, typing.Any] | None = None,
+    dump_kwargs: dict[str, typing.Any] | None = None
 ):
     """Wrapper to validate arguments and serialize return values using Pydantic."""
     try:
@@ -116,7 +116,7 @@ def pydantic_wrapper(
     except ModuleNotFoundError as ex:
         raise ImproperlyConfigured('You need to install pydantic to use pydantic model serialization.') from ex
 
-    BaseModel: typing.Type['BaseModel'] = pydantic.BaseModel  # noqa: F811  # only defined when type checking
+    BaseModel: type['BaseModel'] = pydantic.BaseModel  # noqa: F811  # only defined when type checking
 
     if context is None:
         context = {}
@@ -569,8 +569,8 @@ class Celery:
         bind=False,
         pydantic: bool = False,
         pydantic_strict: bool = False,
-        pydantic_context: typing.Optional[typing.Dict[str, typing.Any]] = None,
-        pydantic_dump_kwargs: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        pydantic_context: dict[str, typing.Any] | None = None,
+        pydantic_dump_kwargs: dict[str, typing.Any] | None = None,
         **options,
     ):
         if not self.finalized and not self.autofinalize:

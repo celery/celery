@@ -309,7 +309,7 @@ class test_Consumer(ConsumerCase):
 
             def drain_events(self, **kwargs):
                 self.obj.connection = None
-                raise socket.timeout(10)
+                raise TimeoutError(10)
 
         c = self.NoopConsumer()
         c.connection = Connection(self.app.conf.broker_url)
@@ -611,7 +611,7 @@ class test_Consumer(ConsumerCase):
             def drain_events(self, **kwargs):
                 if not self.calls:
                     self.calls += 1
-                    raise socket.timeout()
+                    raise TimeoutError()
                 self.obj.connection = None
                 controller.box._node_shutdown.set()
 

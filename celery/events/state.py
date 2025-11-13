@@ -16,13 +16,12 @@ import bisect
 import sys
 import threading
 from collections import defaultdict
-from collections.abc import Callable
+from collections.abc import Callable, Mapping  # noqa: F401
 from datetime import datetime
 from decimal import Decimal
 from itertools import islice
 from operator import itemgetter
 from time import time
-from typing import Mapping, Optional  # noqa
 from weakref import WeakSet, ref
 
 from kombu.clocks import timetuple
@@ -647,7 +646,7 @@ class State:
         ]
         heap.sort()
 
-    def itertasks(self, limit: Optional[int] = None):
+    def itertasks(self, limit: int | None = None):
         for index, row in enumerate(self.tasks.items()):
             yield row
             if limit and index + 1 >= limit:

@@ -1,7 +1,8 @@
 """Fixtures and testing utilities for :pypi:`pytest <pytest>`."""
 import os
+from collections.abc import Mapping, Sequence  # noqa: F401
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Mapping, Sequence, Union  # noqa
+from typing import TYPE_CHECKING, Any, Union  # noqa: F401
 
 import pytest
 

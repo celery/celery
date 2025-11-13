@@ -1,9 +1,10 @@
 """Functional-style utilities."""
 import inspect
 from collections import UserList
+from collections.abc import Callable
 from functools import partial
 from itertools import islice, tee, zip_longest
-from typing import Any, Callable
+from typing import Any
 
 from kombu.utils.functional import LRUCache, dictfilter, is_list, lazy, maybe_evaluate, maybe_list, memoize
 from vine import promise

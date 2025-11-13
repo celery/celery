@@ -1,5 +1,4 @@
 """Message migration tools (Broker <-> Broker)."""
-import socket
 from functools import partial
 from itertools import cycle, islice
 
@@ -277,7 +276,7 @@ class Filterer:
                                    timeout=self.timeout,
                                    ignore_timeouts=self.forever):
                     pass
-            except socket.timeout:
+            except TimeoutError:
                 pass
             except StopFiltering:
                 pass

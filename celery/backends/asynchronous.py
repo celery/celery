@@ -1,7 +1,6 @@
 """Async I/O backend support utilities."""
 
 import logging
-import socket
 import threading
 import time
 from collections import deque
@@ -74,10 +73,10 @@ class Drainer:
         while 1:
             # Total time spent may exceed a single call to wait()
             if timeout and time.monotonic() - time_start >= timeout:
-                raise socket.timeout()
+                raise TimeoutError()
             try:
                 yield self.wait_for(p, wait, timeout=interval)
-            except socket.timeout:
+            except TimeoutError:
                 pass
             if on_interval:
                 on_interval()
@@ -117,7 +116,7 @@ class greenletDrainer(Drainer):
                 try:
                     self.result_consumer.drain_events(timeout=1)
                     self._send_drain_complete_event()
-                except socket.timeout:
+                except TimeoutError:
                     pass
         except Exception as e:
             self._exc = e
@@ -334,7 +333,7 @@ class BaseResultConsumer:
                     on_interval=on_interval):
                 yield
                 sleep(0)
-        except socket.timeout:
+        except TimeoutError:
             raise TimeoutError('The operation timed out.')
         finally:
             self.on_message = prev_on_m

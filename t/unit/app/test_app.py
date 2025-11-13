@@ -3,16 +3,14 @@ import importlib
 import itertools
 import os
 import ssl
-import sys
-import typing
 import uuid
 from copy import deepcopy
 from datetime import datetime, timedelta
 from datetime import timezone as datetime_timezone
 from logging import LogRecord
 from pickle import dumps, loads
-from typing import Optional
 from unittest.mock import ANY, DEFAULT, MagicMock, Mock, patch
+from zoneinfo import ZoneInfo
 
 import pytest
 from kombu import Exchange, Queue
@@ -34,11 +32,6 @@ from celery.utils.objects import Bunch
 from celery.utils.serialization import pickle
 from celery.utils.time import LocalTimezone, localize, timezone, to_utc
 from t.unit import conftest
-
-if sys.version_info >= (3, 9):
-    from zoneinfo import ZoneInfo
-else:
-    from backports.zoneinfo import ZoneInfo
 
 THIS_IS_A_KEY = 'this is a value'
 
@@ -542,7 +535,7 @@ class test_App:
             check = Mock()
 
             @app.task(pydantic=True)
-            def foo(arg: Optional[int], kwarg: Optional[bool] = True) -> Optional[int]:
+            def foo(arg: int | None, kwarg: bool | None = True) -> int | None:
                 check(arg, kwarg=kwarg)
                 if isinstance(arg, int):
                     return 1
@@ -554,7 +547,6 @@ class test_App:
             assert foo(None) == 2
             check.assert_called_with(None, kwarg=True)
 
-    @pytest.mark.skipif(sys.version_info < (3, 9), reason="Notation is only supported in Python 3.9 or newer.")
     def test_task_with_pydantic_with_dict_args(self):
         """Test pydantic task receiving and returning a generic dict argument."""
         with self.Celery() as app:
@@ -568,7 +560,6 @@ class test_App:
             assert foo({'a': 'b'}, kwarg={'c': 'd'}) == {'x': 'y'}
             check.assert_called_once_with({'a': 'b'}, kwarg={'c': 'd'})
 
-    @pytest.mark.skipif(sys.version_info < (3, 9), reason="Notation is only supported in Python 3.9 or newer.")
     def test_task_with_pydantic_with_list_args(self):
         """Test pydantic task receiving and returning a generic dict argument."""
         with self.Celery() as app:
@@ -654,7 +645,7 @@ class test_App:
             check = Mock()
 
             @app.task(pydantic=True)
-            def foo(arg: Optional[ArgModel], kwarg: Optional[KwargModel] = None) -> Optional[ReturnModel]:
+            def foo(arg: ArgModel | None, kwarg: KwargModel | None = None) -> ReturnModel | None:
                 check(arg, kwarg=kwarg)
                 if isinstance(arg, ArgModel):
                     return ReturnModel(ret_value=1)
@@ -666,7 +657,6 @@ class test_App:
             assert foo({'arg_value': 1}, kwarg={'kwarg_value': 2}) == {'ret_value': 1}
             check.assert_called_with(ArgModel(arg_value=1), kwarg=KwargModel(kwarg_value=2))
 
-    @pytest.mark.skipif(sys.version_info < (3, 9), reason="Notation is only supported in Python 3.9 or newer.")
     def test_task_with_pydantic_with_generic_return_value(self):
         """Test pydantic task receiving and returning an optional argument."""
         class ReturnModel(BaseModel):
@@ -770,7 +760,7 @@ class test_App:
 
         class RetModel(BaseModel):
             value: datetime
-            unset_value: typing.Optional[int] = 99  # this would be in the output, if exclude_unset weren't True
+            unset_value: int | None = 99  # this would be in the output, if exclude_unset weren't True
 
         with self.Celery() as app:
             check = Mock()
