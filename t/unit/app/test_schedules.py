@@ -1,20 +1,14 @@
-import sys
 import time
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pickle import dumps, loads
 from unittest import TestCase
 from unittest.mock import Mock
+from zoneinfo import ZoneInfo
 
 import pytest
 
 from celery.schedules import ParseException, crontab, crontab_parser, schedule, solar
-
-if sys.version_info >= (3, 9):
-    from zoneinfo import ZoneInfo
-else:
-    from backports.zoneinfo import ZoneInfo
-
 
 assertions = TestCase('__init__')
 

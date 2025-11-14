@@ -2,8 +2,9 @@
 import logging
 import os
 import threading
+from collections.abc import Iterable
 from contextlib import contextmanager
-from typing import Any, Iterable, Optional, Union
+from typing import Any, Optional, Union
 
 import celery.worker.consumer  # noqa
 from celery import Celery, worker

@@ -3,17 +3,13 @@ import pickle
 import sys
 from datetime import date, datetime, time, timedelta, timezone
 from unittest.mock import Mock
+from zoneinfo import ZoneInfo
 
 import pytest
 from kombu import Queue
 
 from celery.utils.serialization import (STRTOBOOL_DEFAULT_TABLE, UnpickleableExceptionWrapper, ensure_serializable,
                                         get_pickleable_etype, jsonify, strtobool)
-
-if sys.version_info >= (3, 9):
-    from zoneinfo import ZoneInfo
-else:
-    from backports.zoneinfo import ZoneInfo
 
 
 class test_AAPickle:
