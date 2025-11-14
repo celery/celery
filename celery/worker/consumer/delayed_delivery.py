@@ -12,6 +12,7 @@ from kombu import Connection, Queue
 from kombu.transport.native_delayed_delivery import (bind_queue_to_native_delayed_delivery_exchange,
                                                      declare_native_delayed_delivery_exchanges_and_queues)
 from kombu.utils.functional import retry_over_time
+from kombu.utils.url import maybe_sanitize_url
 
 from celery import Celery, bootsteps
 from celery.utils.log import get_logger
@@ -95,7 +96,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
             except Exception as e:
                 logger.warning(
                     "Failed to setup delayed delivery for %r: %s",
-                    broker_url, str(e)
+                    maybe_sanitize_url(broker_url), str(e)
                 )
                 setup_errors.append((broker_url, e))
 
@@ -121,7 +122,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
             queue_type = c.app.conf.broker_native_delayed_delivery_queue_type
             logger.debug(
                 "Setting up delayed delivery for broker %r with queue type %r",
-                broker_url, queue_type
+                maybe_sanitize_url(broker_url), queue_type
             )
 
             try:
@@ -132,7 +133,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
             except Exception as e:
                 logger.warning(
                     "Failed to declare exchanges and queues for %r: %s",
-                    broker_url, str(e)
+                    maybe_sanitize_url(broker_url), str(e)
                 )
                 raise
 
@@ -141,7 +142,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
             except Exception as e:
                 logger.warning(
                     "Failed to bind queues for %r: %s",
-                    broker_url, str(e)
+                    maybe_sanitize_url(broker_url), str(e)
                 )
                 raise
 
