@@ -409,6 +409,10 @@ def on_cold_shutdown(worker: Worker):
     # Initiate soft shutdown process (if enabled and tasks are running)
     worker.wait_for_soft_shutdown()
 
+    # Stop consuming new tasks to prevents requeued messages from being immediately redelivered
+    if worker.consumer.task_consumer:
+        worker.consumer.task_consumer.cancel()
+
     # Cancel all unacked requests and allow the worker to terminate naturally
     worker.consumer.cancel_all_unacked_requests()
 
@@ -416,7 +420,8 @@ def on_cold_shutdown(worker: Worker):
     state.should_terminate = True
 
     # Stop the pool to allow successful tasks call on_success()
-    worker.consumer.pool.stop()
+    if worker.consumer.pool:
+        worker.consumer.pool.stop()
 
 
 # Allow SIGTERM to be remapped to SIGQUIT to initiate cold shutdown instead of warm shutdown using SIGTERM

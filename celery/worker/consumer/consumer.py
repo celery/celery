@@ -767,7 +767,10 @@ class Consumer:
 
         if requests_to_cancel:
             for request in requests_to_cancel:
-                request.cancel(self.pool)
+                # For acks_late tasks, don't emit RETRY signal since broker will handle redelivery
+                # For non-acks_late tasks, emit RETRY signal as usual
+                emit_retry = not request.task.acks_late
+                request.cancel(self.pool, emit_retry=emit_retry)
 
 
 class Evloop(bootsteps.StartStopStep):
