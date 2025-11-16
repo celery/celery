@@ -575,6 +575,39 @@ class test_Request(RequestCase):
         pool.terminate_job.assert_not_called()
         assert job._terminate_on_ack is None
 
+    def test_cancel__emit_retry_true(self):
+        pool = Mock()
+        signum = signal.SIGTERM
+        job = self.get_request(self.mytask.s(1, f='x'))
+        job._apply_result = Mock(name='_apply_result')
+        job.task.backend.mark_as_retry = Mock(name='mark_as_retry')
+        job.task.on_retry = Mock(name='on_retry')
+        with self.assert_signal_called(
+                task_retry, sender=job.task, request=job._context,
+                einfo=None):
+            job.time_start = monotonic()
+            job.worker_pid = 314
+            job.cancel(pool, signal='TERM', emit_retry=True)
+            pool.terminate_job.assert_called_with(job.worker_pid, signum)
+            job.task.backend.mark_as_retry.assert_called_once()
+            job.task.on_retry.assert_called_once()
+            assert job._already_cancelled is True
+
+    def test_cancel__emit_retry_false(self):
+        pool = Mock()
+        signum = signal.SIGTERM
+        job = self.get_request(self.mytask.s(1, f='x'))
+        job._apply_result = Mock(name='_apply_result')
+        job.task.backend.mark_as_retry = Mock(name='mark_as_retry')
+        job.task.on_retry = Mock(name='on_retry')
+        job.time_start = monotonic()
+        job.worker_pid = 314
+        job.cancel(pool, signal='TERM', emit_retry=False)
+        pool.terminate_job.assert_called_with(job.worker_pid, signum)
+        job.task.backend.mark_as_retry.assert_not_called()
+        job.task.on_retry.assert_not_called()
+        assert job._already_cancelled is True
+
     def test_revoked_expires_expired(self):
         job = self.get_request(self.mytask.s(1, f='x').set(
             expires=datetime.now(timezone.utc) - timedelta(days=1)
