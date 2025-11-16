@@ -741,8 +741,10 @@ class Consumer:
             self=self, state=self.blueprint.human_state(),
         )
 
-    def cancel_all_unacked_requests(self):
-        """Cancel all active requests that either do not require late acknowledgments or,
+    def cancel_active_requests(self):
+        """Cancel active requests during shutdown.
+
+        Cancels all active requests that either do not require late acknowledgments or,
         if they do, have not been acknowledged yet.
 
         Does not cancel successful tasks, even if they have not been acknowledged yet.

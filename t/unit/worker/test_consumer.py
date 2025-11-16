@@ -453,7 +453,7 @@ class test_Consumer(ConsumerTestCase):
             c.on_connection_error_after_connected(Mock())
 
     @pytest.mark.usefixtures('depends_on_current_app')
-    def test_cancel_all_unacked_requests(self):
+    def test_cancel_active_requests(self):
         c = self.get_consumer()
 
         mock_request_acks_late_not_acknowledged = Mock(id='1')
@@ -469,7 +469,7 @@ class test_Consumer(ConsumerTestCase):
         active_requests.add(mock_request_acks_late_acknowledged)
         active_requests.add(mock_request_acks_early)
 
-        c.cancel_all_unacked_requests()
+        c.cancel_active_requests()
 
         # acks_late unacknowledged tasks should be cancelled without RETRY
         mock_request_acks_late_not_acknowledged.cancel.assert_called_once_with(c.pool, emit_retry=False)
@@ -481,7 +481,7 @@ class test_Consumer(ConsumerTestCase):
         active_requests.clear()
 
     @pytest.mark.usefixtures('depends_on_current_app')
-    def test_cancel_all_unacked_requests_preserves_successful_tasks(self):
+    def test_cancel_active_requests_preserves_successful_tasks(self):
         c = self.get_consumer()
 
         mock_successful_request = Mock(id='successful-task')
@@ -493,7 +493,7 @@ class test_Consumer(ConsumerTestCase):
         successful_requests.add('successful-task')
 
         try:
-            c.cancel_all_unacked_requests()
+            c.cancel_active_requests()
             mock_successful_request.cancel.assert_not_called()
         finally:
             active_requests.clear()
