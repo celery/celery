@@ -872,6 +872,7 @@ class test_Request(RequestCase):
 
     def test_on_failure_should_terminate(self):
         from celery.worker import state
+        original_should_terminate = state.should_terminate
         state.should_terminate = True
         job = self.xRequest()
         job.send_event = Mock(name='send_event')
