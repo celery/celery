@@ -42,9 +42,11 @@ jobs:
               os: "windows-latest"
             - python-version: '3.11'
               os: "windows-latest"
+            - python-version: '3.12'
+              os: "windows-latest"
             - python-version: '3.13'
               os: "windows-latest"
-            - python-version: '3.14'
+            - python-version: '3.14t'
               os: "windows-latest"
             - python-version: 'pypy3.11'
               os: "windows-latest"
@@ -89,7 +91,7 @@ jobs:
     needs: [Unit]
     if: needs.Unit.result == 'success'
     strategy:
-      max-parallel: 5
+      max-parallel: 6
       matrix:
         module: [
           'test_backend.py',
@@ -113,7 +115,7 @@ jobs:
     needs: [Unit]
     if: needs.Unit.result == 'success'
     strategy:
-      max-parallel: 5
+      max-parallel: 6
       matrix:
         module: [
           'test_broker_failover.py',
