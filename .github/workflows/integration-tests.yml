@@ -11,7 +11,7 @@ on:
         description: 'JSON array of Python versions to test'
         required: false
         type: string
-        default: '["3.9", "3.14"]'
+        default: '["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.14t"]'
       tox_environments:
         description: 'JSON array of tox environments to test'
         required: false
