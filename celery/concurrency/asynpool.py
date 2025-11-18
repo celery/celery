@@ -406,7 +406,7 @@ class ResultHandler(_pool.ResultHandler):
             try:
                 setblocking(reader, 0)
             except OSError:
-                return remove(fd)
+                remove(fd)
 
 
 class AsynPool(_pool.Pool):
