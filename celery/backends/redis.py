@@ -221,16 +221,17 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         if host and '://' in host:
             url, host = host, None
 
-        self.max_connections = (
-            max_connections or
-            _get('redis_max_connections') or
-            self.max_connections)
+        if max_connections is not None:
+            self.max_connections = max_connections
+        elif _get('redis_max_connections') is not None:
+            self.max_connections = _get('redis_max_connections')
         self._ConnectionPool = connection_pool
 
         socket_timeout = _get('redis_socket_timeout')
         socket_connect_timeout = _get('redis_socket_connect_timeout')
         retry_on_timeout = _get('redis_retry_on_timeout')
         socket_keepalive = _get('redis_socket_keepalive')
+        socket_keepalive_options = self._transport_options.get('socket_keepalive_options', {})
         health_check_interval = _get('redis_backend_health_check_interval')
         credential_provider = _get('redis_backend_credential_provider')
 
@@ -281,6 +282,8 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         # absent in redis.connection.UnixDomainSocketConnection
         if socket_keepalive:
             self.connparams['socket_keepalive'] = socket_keepalive
+            if socket_keepalive_options:
+                self.connparams['socket_keepalive_options'] = socket_keepalive_options
 
         # "redis_backend_use_ssl" must be a dict with the keys:
         # 'ssl_cert_reqs', 'ssl_ca_certs', 'ssl_certfile', 'ssl_keyfile'
@@ -500,7 +503,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     def _chord_zset(self):
         return self._transport_options.get('result_chord_ordered', True)
 
-    @cached_property
+    @property
     def _transport_options(self):
         return self.app.conf.get('result_backend_transport_options', {})
 
