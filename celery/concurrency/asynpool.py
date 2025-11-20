@@ -408,7 +408,6 @@ class ResultHandler(_pool.ResultHandler):
                 setblocking(reader, 0)
             except OSError:
                 result = remove(fd)
-                
         return result
 
 
