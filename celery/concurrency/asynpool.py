@@ -391,6 +391,7 @@ class ResultHandler(_pool.ResultHandler):
             setblocking(reader, 1)
         except OSError:
             return remove(fd)
+        result = None
         try:
             if reader.poll(0):
                 task = reader.recv()
@@ -398,7 +399,7 @@ class ResultHandler(_pool.ResultHandler):
                 task = None
                 sleep(0.5)
         except (OSError, EOFError):
-            return remove(fd)
+            result = remove(fd)
         else:
             if task:
                 on_state_change(task)
@@ -406,7 +407,9 @@ class ResultHandler(_pool.ResultHandler):
             try:
                 setblocking(reader, 0)
             except OSError:
-                remove(fd)
+                result = remove(fd)
+                
+        return result
 
 
 class AsynPool(_pool.Pool):
