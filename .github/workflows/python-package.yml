@@ -56,7 +56,7 @@ jobs:
       if: startsWith(matrix.os, 'blacksmith-4vcpu-ubuntu')
       run: |
         sudo apt-get update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Set up Python ${{ matrix.python-version }}
       uses: useblacksmith/setup-python@v6
       with:
