@@ -6,6 +6,7 @@ from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 from urllib.parse import unquote
 
 from kombu.utils import symbol_by_name
+from kombu.utils.encoding import bytes_to_str, str_to_bytes
 from kombu.utils.functional import retry_over_time
 from kombu.utils.objects import cached_property
 from kombu.utils.url import _parse_url, maybe_sanitize_url
@@ -209,6 +210,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     #: Maximal length of string value in Redis.
     #: 512 MB - https://redis.io/topics/data-types
     _MAX_STR_VALUE_SIZE = 536870912
+    _CHUNK_TOKEN = "REDIS_CHUNK_KEYS"
 
     def __init__(self, host=None, port=None, db=None, password=None,
                  max_connections=None, url=None,
@@ -233,6 +235,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         socket_keepalive = _get('redis_socket_keepalive')
         health_check_interval = _get('redis_backend_health_check_interval')
         credential_provider = _get('redis_backend_credential_provider')
+        self._chunk_large_results = _get('redis_chunk_large_results') or False
 
         self.connparams = {
             'host': _get('redis_host') or 'localhost',
@@ -417,7 +420,18 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             self.result_consumer.consume_from(task_id)
 
     def get(self, key):
-        return self.client.get(key)
+        value = self.client.get(key)
+        if self._chunk_large_results:
+            value = self._check_for_chunked_result(value)
+        return value
+
+    def _check_for_chunked_result(self, value):
+        if isinstance(value, str) and value.startswith(self._CHUNK_TOKEN):
+            chunk_keys = value.split(",")[1:]
+            chunk_keys = [str_to_bytes(entry) for entry in chunk_keys]
+            chunks = self.mget(chunk_keys)
+            value = "".join(chunk if chunk else "" for chunk in chunks)
+        return value
 
     def mget(self, keys):
         return self.client.mget(keys)
@@ -439,9 +453,28 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
     def set(self, key, value, **retry_policy):
         if isinstance(value, str) and len(value) > self._MAX_STR_VALUE_SIZE:
-            raise BackendStoreError('value too large for Redis backend')
+            if self._chunk_large_results:
+                return self._set_chunked_results(key, value, **retry_policy)
+            else:
+                raise BackendStoreError('value too large for Redis backend')
 
         return self.ensure(self._set, (key, value), **retry_policy)
+
+    def _set_chunked_results(self, key, value, **retry_policy):
+        if self.task_keyprefix not in key:
+            raise BackendStoreError("Invalid key: Task Prefix must be in the key to use chunked results")
+
+        chunk_size = self._MAX_STR_VALUE_SIZE - 1024
+        chunks = [value[i:i + chunk_size] for i in range(0, len(value), chunk_size)]
+
+        value_for_merge = [self._CHUNK_TOKEN]
+        for index, chunk in enumerate(chunks):
+            new_key = key.replace(self.task_keyprefix, b"task-chunk-" + str_to_bytes(str(index)))
+            value_for_merge.append(bytes_to_str(new_key))
+            self.ensure(self._set, (new_key, chunk), **retry_policy)
+
+        merged_value = ",".join(value_for_merge)
+        return self.ensure(self._set, (key, merged_value), **retry_policy)
 
     def _set(self, key, value):
         with self.client.pipeline() as pipe:

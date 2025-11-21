@@ -1438,6 +1438,19 @@ Default: :const:`None`
 Sets the client name for Redis connections used by the result backend.
 This can help identify connections in Redis monitoring tools.
 
+.. setting:: redis_chunk_large_results
+
+``redis_chunk_large_results``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.6
+
+Default: :const:`False`
+
+Redis has a maximum value size of 512MB.
+Enabling this setting will chunk the values that exceed this size into smaller pieces.
+When retrieving the result, the chunks will be reassembled into the original value.
+
 .. _conf-cassandra-result-backend:
 
 Cassandra/AstraDB backend settings
