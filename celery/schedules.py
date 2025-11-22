@@ -4,8 +4,9 @@ from __future__ import annotations
 import re
 from bisect import bisect, bisect_left
 from collections import namedtuple
+from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime, timedelta, tzinfo
-from typing import Any, Callable, Iterable, Mapping, Sequence, Union
+from typing import Any, Callable, Union
 
 from kombu.utils.objects import cached_property
 

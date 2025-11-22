@@ -11,11 +11,12 @@ Very slow with no limits, super quick with limits.
 """
 import traceback
 from collections import deque, namedtuple
+from collections.abc import Iterator, Sequence  # noqa: F401
 from decimal import Decimal
 from itertools import chain
 from numbers import Number
 from pprint import _recursion
-from typing import Any, AnyStr, Callable, Dict, Iterator, List, Optional, Sequence, Set, Tuple  # noqa
+from typing import Any, AnyStr, Callable, Optional  # noqa: F401
 
 from .text import truncate
 
@@ -64,7 +65,7 @@ LIT_TUPLE_END_SV = _literal(',)', False, -1)
 
 
 def saferepr(o, maxlen=None, maxlevels=3, seen=None):
-    # type: (Any, int, int, Set) -> str
+    # type: (Any, int, int, set) -> str
     """Safe version of :func:`repr`.
 
     Warning:
@@ -80,7 +81,7 @@ def saferepr(o, maxlen=None, maxlevels=3, seen=None):
 def _chaindict(mapping,
                LIT_DICT_KVSEP=LIT_DICT_KVSEP,
                LIT_LIST_SEP=LIT_LIST_SEP):
-    # type: (Dict, _literal, _literal) -> Iterator[Any]
+    # type: (dict, _literal, _literal) -> Iterator[Any]
     size = len(mapping)
     for i, (k, v) in enumerate(mapping.items()):
         yield _key(k)
@@ -91,7 +92,7 @@ def _chaindict(mapping,
 
 
 def _chainlist(it, LIT_LIST_SEP=LIT_LIST_SEP):
-    # type: (List) -> Iterator[Any]
+    # type: (list) -> Iterator[Any]
     size = len(it)
     for i, v in enumerate(it):
         yield v
@@ -100,7 +101,7 @@ def _chainlist(it, LIT_LIST_SEP=LIT_LIST_SEP):
 
 
 def _repr_empty_set(s):
-    # type: (Set) -> str
+    # type: (set) -> str
     return f'{type(s).__name__}()'
 
 
@@ -156,7 +157,7 @@ def _repr(obj):
 
 
 def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
-    # type: (Any, int, int, Set) -> str
+    # type: (Any, int, int, set) -> str
     stack = deque([iter([o])])
     for token, it in reprstream(stack, seen=seen, maxlevels=maxlevels):
         if maxlen is not None and maxlen <= 0:
@@ -184,7 +185,7 @@ def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
 
 
 def _reprseq(val, lit_start, lit_end, builtin_type, chainer):
-    # type: (Sequence, _literal, _literal, Any, Any) -> Tuple[Any, ...]
+    # type: (Sequence, _literal, _literal, Any, Any) -> tuple[Any, ...]
     if type(val) is builtin_type:
         return lit_start, lit_end, chainer(val)
     return (
@@ -195,7 +196,7 @@ def _reprseq(val, lit_start, lit_end, builtin_type, chainer):
 
 
 def reprstream(stack: deque,
-               seen: Optional[Set] = None,
+               seen: Optional[set] = None,
                maxlevels: int = 3,
                level: int = 0,
                isinstance: Callable = isinstance) -> Iterator[Any]:

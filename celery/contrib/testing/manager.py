@@ -2,9 +2,10 @@
 import socket
 import sys
 from collections import defaultdict
+from collections.abc import Sequence  # noqa: F401
 from functools import partial
 from itertools import count
-from typing import Any, Callable, Dict, Sequence, TextIO, Tuple  # noqa
+from typing import Any, Callable, TextIO  # noqa: F401
 
 from kombu.exceptions import ContentDisallowed
 from kombu.utils.functional import retry_over_time
@@ -50,8 +51,8 @@ class ManagerMixin:
         fun,  # type: Callable
         catch,  # type: Sequence[Any]
         desc="thing",  # type: str
-        args=(),  # type: Tuple
-        kwargs=None,  # type: Dict
+        args=(),  # type: tuple
+        kwargs=None,  # type: dict
         errback=None,  # type: Callable
         max_retries=10,  # type: int
         interval_start=0.1,  # type: float
