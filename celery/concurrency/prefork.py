@@ -173,6 +173,11 @@ class TaskPool(BasePool):
                 finally:
                     shutdown_event.set()
                     timer_thread.join(timeout=1.0)
+
+                    if timer_thread.is_alive():
+                        logger.warning(
+                            "Timer thread in prefork on_stop() did not terminate cleanly"
+                        )
             else:
                 self._pool.join()
 

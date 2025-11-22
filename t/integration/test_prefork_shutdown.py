@@ -15,7 +15,11 @@ from celery.worker import state
 from .tasks import sleeping
 
 TEST_HEARTBEAT = 2
-LONG_TASK_DURATION = 10  # Exceeds 4-second timeout (2 * 2-second heartbeat)
+
+# Exceeds AMQP connection timeout (~4 seconds: broker closes after missing
+# 2 consecutive 2-second heartbeats)
+LONG_TASK_DURATION = 10
+
 TIMEOUT = LONG_TASK_DURATION * 2
 
 
@@ -44,7 +48,7 @@ def heartbeat_worker(celery_session_app):
         yield worker
 
     celery_session_app.conf.broker_heartbeat = original_heartbeat
-    celery_session_app.conf.acks_late = original_acks_late
+    celery_session_app.conf.task_acks_late = original_acks_late
 
 
 class test_prefork_shutdown:
@@ -61,9 +65,9 @@ class test_prefork_shutdown:
         long-running tasks, heartbeats continue to be sent to maintain the
         broker connection.
 
-        - Heartbeat frames sent every 3 seconds
-        - Connection closes after 12 seconds (two missed frames) without heartbeats
-        - Tasks run 15 seconds to exceed 12-second threshold
+        - Heartbeat frames sent every 2 seconds
+        - Connection closes after 4 seconds (two missed frames) without heartbeats
+        - Tasks run 10 seconds to exceed 4-second threshold
         """
 
         # Submit multiple long-running tasks that will be active during shutdown
