@@ -8,6 +8,27 @@ This document contains change notes for bugfix & new features
 in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
 an overview of what's new in Celery 5.6.
 
+.. _version-5.6.0rc2:
+
+5.6.0rc2
+========
+
+:release-date: 2025-11-22
+:release-by: Tomer Nosrati
+
+Celery v5.6.0 Release Candidate 2 is now available for testing.
+Please help us test this version and report any issues.
+
+What's Changed
+~~~~~~~~~~~~~~
+
+- Remove Python 4.0 version condition for pytest dependencies (#9993)
+- Sanitize broker URL in delayed delivery logs (avoid leaking credentials) (#9997)
+- Don't fail task on timeout during cold shutdown (#9678)
+- Add Py39-314t to CI (#9999)
+- asynpool: Don't return from inside a finally block (#10000)
+- Prepare for (pre) release: v5.6.0rc2 (#10005)
+
 .. _version-5.6.0rc1:
 
 5.6.0rc1
