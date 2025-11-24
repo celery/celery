@@ -3,7 +3,7 @@
 This module provides the DelayedDelivery bootstep which handles setup and configuration
 of native delayed delivery functionality when using quorum queues.
 """
-from typing import Iterator, List, Optional, Set, Union, ValuesView
+from collections.abc import Iterator, ValuesView
 
 # Backport of PEP 654 for Python versions < 3.11
 # In Python 3.11+, exceptiongroup uses the built-in ExceptionGroup
@@ -223,7 +223,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
         # Validate queue type
         self._validate_queue_type(app.conf.broker_native_delayed_delivery_queue_type)
 
-    def _validate_broker_urls(self, broker_urls: Union[str, List[str]]) -> Set[str]:
+    def _validate_broker_urls(self, broker_urls: str | list[str]) -> set[str]:
         """Validate and split broker URLs.
 
         Args:
@@ -255,7 +255,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
 
         return valid_urls
 
-    def _validate_queue_type(self, queue_type: Optional[str]) -> None:
+    def _validate_queue_type(self, queue_type: str | None) -> None:
         """Validate the queue type configuration.
 
         Args:

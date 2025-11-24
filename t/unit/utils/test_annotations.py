@@ -27,11 +27,11 @@ def test_is_none_type_with_optional_annotations() -> None:
 def test_get_optional_arg() -> None:
     def func(
         arg: int,
-        optional: typing.Optional[int],
-        optional2: typing.Union[int, None],
-        optional3: typing.Union[None, int],
-        not_optional1: typing.Union[str, int],
-        not_optional2: typing.Union[str, int, bool],
+        optional: int | None,
+        optional2: int | None,
+        optional3: None | int,
+        not_optional1: str | int,
+        not_optional2: str | int | bool,
     ) -> None:
         pass
 
@@ -62,10 +62,10 @@ def test_annotation_issubclass() -> None:
         base_model: BaseModel,
         list_arg: list,  # type: ignore[type-arg]  # what we test
         dict_arg: dict,  # type: ignore[type-arg]  # what we test
-        list_typing_arg: typing.List,  # type: ignore[type-arg]  # what we test
-        dict_typing_arg: typing.Dict,  # type: ignore[type-arg]  # what we test
-        list_typing_generic_arg: typing.List[str],
-        dict_typing_generic_arg: typing.Dict[str, str],
+        list_typing_arg: list,  # type: ignore[type-arg]  # what we test
+        dict_typing_arg: dict,  # type: ignore[type-arg]  # what we test
+        list_typing_generic_arg: list[str],
+        dict_typing_generic_arg: dict[str, str],
     ) -> None:
         pass
 
@@ -82,7 +82,6 @@ def test_annotation_issubclass() -> None:
     assert annotation_issubclass(parameters['dict_typing_generic_arg'].annotation, BaseModel) is False
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason="Notation is only supported in Python 3.9 or newer.")
 def test_annotation_issubclass_with_generic_classes() -> None:
     def func(list_arg: list[str], dict_arg: dict[str, str]) -> None:
         pass

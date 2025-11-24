@@ -3,7 +3,7 @@ import logging
 import os
 import sys
 import time
-from typing import Any, Dict
+from typing import Any
 
 from billiard.einfo import ExceptionInfo
 from billiard.exceptions import WorkerLostError
@@ -155,7 +155,7 @@ class BasePool:
                              callbacks_propagate=self.callbacks_propagate,
                              **options)
 
-    def _get_info(self) -> Dict[str, Any]:
+    def _get_info(self) -> dict[str, Any]:
         """
         Return configuration and statistics information. Subclasses should
         augment the data as required.

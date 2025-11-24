@@ -98,7 +98,7 @@ class X:
 
         def first(*args, **kwargs):
             mock.side_effect = socket.error()
-            raise socket.timeout()
+            raise TimeoutError()
         mock.side_effect = first
 
     def close_then_error(self, mock=None, mod=0, exc=None):

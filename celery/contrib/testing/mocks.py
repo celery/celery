@@ -1,7 +1,8 @@
 """Useful mocks for unit testing."""
 import numbers
+from collections.abc import Mapping, Sequence  # noqa: F401
 from datetime import datetime, timedelta
-from typing import Any, Mapping, Sequence  # noqa
+from typing import Any  # noqa: F401
 from unittest.mock import Mock
 
 from celery import Celery  # noqa

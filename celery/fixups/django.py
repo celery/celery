@@ -5,7 +5,7 @@ import sys
 import warnings
 from datetime import datetime, timezone
 from importlib import import_module
-from typing import IO, TYPE_CHECKING, Any, List, Optional, cast
+from typing import IO, TYPE_CHECKING, Any, Optional, cast
 
 from kombu.utils.imports import symbol_by_name
 from kombu.utils.objects import cached_property
@@ -107,7 +107,7 @@ class DjangoFixup:
     def now(self, utc: bool = False) -> datetime:
         return datetime.now(timezone.utc) if utc else self._now()
 
-    def autodiscover_tasks(self) -> List[str]:
+    def autodiscover_tasks(self) -> list[str]:
         from django.apps import apps
         return [config.name for config in apps.get_app_configs()]
 

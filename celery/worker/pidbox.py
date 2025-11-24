@@ -1,5 +1,4 @@
 """Worker Pidbox (remote control)."""
-import socket
 import threading
 
 from kombu.common import ignore_errors
@@ -116,7 +115,7 @@ class gPidbox(Pidbox):
                         self._do_reset(c, connection)
                     try:
                         connection.drain_events(timeout=1.0)
-                    except socket.timeout:
+                    except TimeoutError:
                         pass
         finally:
             stopped.set()

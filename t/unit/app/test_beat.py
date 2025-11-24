@@ -1,10 +1,10 @@
 import dbm
 import errno
 import pickle
-import sys
 from datetime import datetime, timedelta, timezone
 from pickle import dumps, loads
 from unittest.mock import MagicMock, Mock, call, patch
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -12,11 +12,6 @@ from celery import __version__, beat, uuid
 from celery.beat import BeatLazyFunc, event_t
 from celery.schedules import crontab, schedule
 from celery.utils.objects import Bunch
-
-if sys.version_info >= (3, 9):
-    from zoneinfo import ZoneInfo
-else:
-    from backports.zoneinfo import ZoneInfo
 
 
 class MockShelve(dict):
