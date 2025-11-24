@@ -1443,7 +1443,7 @@ This can help identify connections in Redis monitoring tools.
 ``redis_chunk_large_results``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 5.6
+.. versionadded:: 5.7
 
 Default: :const:`False`
 
