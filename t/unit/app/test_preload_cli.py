@@ -1,5 +1,4 @@
 import contextlib
-from typing import Tuple
 from unittest.mock import patch
 
 import pytest
@@ -28,7 +27,7 @@ def reset_command_params_between_each_test():
         ("shell",),
     ]
 )
-def test_preload_options(subcommand_with_params: Tuple[str, ...], isolated_cli_runner: CliRunner):
+def test_preload_options(subcommand_with_params: tuple[str, ...], isolated_cli_runner: CliRunner):
     # Verify commands like shell and purge can accept preload options.
     # Projects like Pyramid-Celery's ini option should be valid preload
     # options.

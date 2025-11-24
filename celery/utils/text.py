@@ -5,9 +5,9 @@ import io
 import re
 from functools import partial
 from pprint import pformat
-from re import Match
+from re import Match, Pattern
 from textwrap import fill
-from typing import Any, Callable, Pattern
+from typing import Any, Callable
 
 __all__ = (
     'abbr', 'abbrtask', 'dedent', 'dedent_initial',

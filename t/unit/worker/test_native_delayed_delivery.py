@@ -1,6 +1,6 @@
 import itertools
+from collections.abc import Iterator
 from logging import LogRecord
-from typing import Iterator
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
