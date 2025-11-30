@@ -8,6 +8,120 @@ This document contains change notes for bugfix & new features
 in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
 an overview of what's new in Celery 5.6.
 
+.. _version-5.6.0:
+
+5.6.0
+=====
+
+:release-date: 2025-11-30
+:release-by: Tomer Nosrati
+
+Celery v5.6.0 is now available.
+
+Key Highlights
+~~~~~~~~~~~~~~
+
+See :ref:`whatsnew-5.6` for a complete overview or read the main highlights below.
+
+Python 3.9 Minimum Version
+--------------------------
+
+Celery 5.6.0 drops support for Python 3.8 (EOL). The minimum required Python
+version is now 3.9. Users still on Python 3.8 must upgrade their Python version
+before upgrading to Celery 5.6.0.
+
+Additionally, this release includes initial support for Python 3.14.
+
+SQS: Reverted to ``pycurl`` from ``urllib3``
+--------------------------------------------
+
+The switch from ``pycurl`` to ``urllib3`` for the SQS transport (introduced in
+Celery 5.5.0 via Kombu) has been reverted due to critical issues affecting SQS
+users:
+
+- Processing throughput dropped from ~100 tasks/sec to ~3/sec in some environments
+- ``UnknownOperationException`` errors causing container crash loops
+- Silent message processing failures with no error logs
+
+Users of the SQS transport must ensure ``pycurl`` is installed. If you removed
+``pycurl`` after upgrading to Celery 5.5.0, you will need to reinstall it.
+
+Contributed by `@auvipy <https://github.com/auvipy>`_ in
+`#9620 <https://github.com/celery/celery/pull/9620>`_.
+
+Security Fix: Broker Credential Leak Prevention
+------------------------------------------------
+
+Fixed a security issue where broker URLs containing passwords were being logged
+in plaintext by the delayed delivery mechanism. Broker credentials are now
+properly sanitized in all log output.
+
+Contributed by `@giancarloromeo <https://github.com/giancarloromeo>`_ in
+`#9997 <https://github.com/celery/celery/pull/9997>`_.
+
+Memory Leak Fixes
+-----------------
+
+Two significant memory leaks have been fixed in this release:
+
+**Exception Handling Memory Leak**: Fixed a critical memory leak in task exception
+handling that was particularly severe on Python 3.11+ due to enhanced traceback
+data. The fix properly breaks reference cycles in tracebacks to allow garbage
+collection.
+
+Contributed by `@jaiganeshs21 <https://github.com/jaiganeshs21>`_ in
+`#9799 <https://github.com/celery/celery/pull/9799>`_.
+
+**Pending Result Memory Leak**: Fixed a memory leak where ``AsyncResult``
+subscriptions were not being cleaned up when results were forgotten.
+
+Contributed by `@tsoos99dev <https://github.com/tsoos99dev>`_ in
+`#9806 <https://github.com/celery/celery/pull/9806>`_.
+
+ETA Task Memory Limit
+---------------------
+
+New configuration option :setting:`worker_eta_task_limit` to prevent out-of-memory
+crashes when workers fetch large numbers of ETA or countdown tasks. Previously,
+workers could exhaust available memory when the broker contained many scheduled tasks.
+
+Example usage:
+
+.. code-block:: python
+
+    app.conf.worker_eta_task_limit = 1000
+
+Contributed by `@sashu2310 <https://github.com/sashu2310>`_ in
+`#9853 <https://github.com/celery/celery/pull/9853>`_.
+
+Queue Type Selection for Auto-created Queues
+--------------------------------------------
+
+New configuration options allow specifying the queue type and exchange type when
+Celery auto-creates missing queues. This is particularly useful for RabbitMQ users
+who want to use quorum queues with auto-created queues.
+
+Configuration options:
+
+- :setting:`task_create_missing_queue_type`: Sets the queue type for auto-created
+  queues (e.g., ``quorum``, ``classic``)
+- :setting:`task_create_missing_queue_exchange_type`: Sets the exchange type for
+  auto-created queues
+
+Example usage:
+
+.. code-block:: python
+
+    app.conf.task_create_missing_queue_type = 'quorum'
+
+Contributed by `@ghirailghiro <https://github.com/ghirailghiro>`_ in
+`#9815 <https://github.com/celery/celery/pull/9815>`_.
+
+What's Changed
+~~~~~~~~~~~~~~
+
+- Prepare for release: v5.6.0 (#10010)
+
 .. _version-5.6.0rc2:
 
 5.6.0rc2
