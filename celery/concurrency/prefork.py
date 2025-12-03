@@ -165,7 +165,11 @@ class TaskPool(BasePool):
                         # avoid excessive CPU usage.
                         time.sleep(0.5)
 
-                timer_thread = threading.Thread(target=fire_timers_loop, daemon=True)
+                timer_thread = threading.Thread(
+                    target=fire_timers_loop,
+                    daemon=True,
+                    name="prefork-timer-shutdown",
+                )
                 timer_thread.start()
 
                 try:
