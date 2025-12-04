@@ -127,9 +127,10 @@ and will call :func:`WorkController.stop() <celery.worker.worker.WorkController.
 - The next :sig:`INT` signal will trigger the next stage of the shutdown process.
 
 .. versionchanged:: 5.6
-    In previous versions of Celery, heartbeats to the broker were not sent during warm shutdown. This caused the
-    broker to terminate the connection, which meant that tasks were not able to complete. As of version 5.6,
-    heartbeats are now maintained during warm shutdown and tasks are able to complete before the worker terminates.
+    In previous versions of Celery, when the prefork pool was in use, heartbeats to the broker were not sent during
+    warm shutdown. This caused the broker to terminate the connection, which meant that tasks were not able to complete.
+    As of version 5.6, when the prefork pool is in use, heartbeats are now maintained during warm shutdown and tasks are
+    able to complete before the worker terminates.
 
 .. _worker-cold-shutdown:
 
