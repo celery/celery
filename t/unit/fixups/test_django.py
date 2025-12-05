@@ -262,7 +262,7 @@ class test_DjangoWorkerFixup(FixupCase):
             f.interface_errors = ()
 
             f._db.connections = Mock()  # ConnectionHandler
-            f._db.connections.all.side_effect = lambda: conns
+            f._db.connections.all.side_effect = lambda initialized_only: conns
 
             f._close_database()
             conns[0].close.assert_called_with()

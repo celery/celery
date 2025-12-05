@@ -199,7 +199,7 @@ class DjangoWorkerFixup:
         self._db_recycles += 1
 
     def _close_database(self) -> None:
-        for conn in self._db.connections.all():
+        for conn in self._db.connections.all(initialized_only=True):
             try:
                 conn.close()
                 pool_enabled = self._settings.DATABASES.get(conn.alias, {}).get("OPTIONS", {}).get("pool")
