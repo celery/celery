@@ -460,6 +460,13 @@ You can handle this error too:
     ... except add.OperationalError as exc:
     ...     logger.exception('Sending task raised: %r', exc)
 
+.. note::
+
+    With RabbitMQ, these errors only indicate the broker is unreachable.
+    Messages can still be silently dropped when the broker hits resource
+    limits. Enable ``confirm_publish`` in :setting:`broker_transport_options`
+    to detect this.
+
 .. _calling-serializers:
 
 Serializers
