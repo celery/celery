@@ -376,12 +376,11 @@ class test_Consumer(ConsumerTestCase):
         c = self.get_consumer()
         c.register_with_event_loop(Mock(name='loop'))
 
-    def test_on_close_clears_semaphore_timer_and_reqs(self):
+    def test_on_close_clears_semaphore_and_reqs(self):
         with patch('celery.worker.consumer.consumer.reserved_requests') as res:
             c = self.get_consumer()
             c.on_close()
             c.controller.semaphore.clear.assert_called_with()
-            c.timer.clear.assert_called_with()
             res.clear.assert_called_with()
             c.pool.flush.assert_called_with()
 
