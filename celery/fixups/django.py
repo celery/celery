@@ -202,7 +202,7 @@ class DjangoWorkerFixup:
         try:
             connections = self._db.connections.all(initialized_only=True)
         except TypeError:
-            # Support Django < 3.1
+            # Support Django < 4.1
             connections = self._db.connections.all()
 
         for conn in connections:
