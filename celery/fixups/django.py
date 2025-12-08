@@ -11,7 +11,6 @@ from kombu.utils.imports import symbol_by_name
 from kombu.utils.objects import cached_property
 
 from celery import _state, signals
-from celery.concurrency import get_implementation
 from celery.exceptions import FixupWarning, ImproperlyConfigured
 
 if TYPE_CHECKING:
@@ -200,7 +199,7 @@ class DjangoWorkerFixup:
         self._db_recycles += 1
 
     def _close_database(self) -> None:
-        is_prefork = get_implementation(self.app.conf.worker_pool) == "prefork"
+        is_prefork = self.app.conf.get('worker_pool', 'prefork') == "prefork"
 
         for conn in self._db.connections.all():
             try:
