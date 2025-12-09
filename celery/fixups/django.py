@@ -199,9 +199,15 @@ class DjangoWorkerFixup:
         self._db_recycles += 1
 
     def _close_database(self) -> None:
+        try:
+            connections = self._db.connections.all(initialized_only=True)
+        except TypeError:
+            # Support Django < 4.1
+            connections = self._db.connections.all()
+
         is_prefork = self.app.conf.get('worker_pool', 'prefork') == "prefork"
 
-        for conn in self._db.connections.all():
+        for conn in connections:
             try:
                 conn.close()
                 pool_enabled = self._settings.DATABASES.get(conn.alias, {}).get("OPTIONS", {}).get("pool")
