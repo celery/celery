@@ -205,11 +205,13 @@ class DjangoWorkerFixup:
             # Support Django < 4.1
             connections = self._db.connections.all()
 
+        is_prefork = self.app.conf.get('worker_pool', 'prefork') == "prefork"
+
         for conn in connections:
             try:
                 conn.close()
                 pool_enabled = self._settings.DATABASES.get(conn.alias, {}).get("OPTIONS", {}).get("pool")
-                if pool_enabled and hasattr(conn, "close_pool"):
+                if pool_enabled and is_prefork and hasattr(conn, "close_pool"):
                     with contextlib.suppress(KeyError):
                         conn.close_pool()
             except self.interface_errors:
