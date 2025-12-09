@@ -199,11 +199,13 @@ class DjangoWorkerFixup:
         self._db_recycles += 1
 
     def _close_database(self) -> None:
+        is_prefork = self.app.conf.get('worker_pool', 'prefork') == "prefork"
+
         for conn in self._db.connections.all():
             try:
                 conn.close()
                 pool_enabled = self._settings.DATABASES.get(conn.alias, {}).get("OPTIONS", {}).get("pool")
-                if pool_enabled and hasattr(conn, "close_pool"):
+                if pool_enabled and is_prefork and hasattr(conn, "close_pool"):
                     with contextlib.suppress(KeyError):
                         conn.close_pool()
             except self.interface_errors:
