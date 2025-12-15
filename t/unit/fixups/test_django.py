@@ -3,7 +3,9 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
+from celery.concurrency.thread import TaskPool as ThreadTaskPool
 from celery.fixups.django import DjangoFixup, DjangoWorkerFixup, FixupWarning, _maybe_close_fd, fixup
+from celery.worker import WorkController
 from t.unit import conftest
 
 
@@ -11,11 +13,11 @@ class FixupCase:
     Fixup = None
 
     @contextmanager
-    def fixup_context(self, app):
+    def fixup_context(self, app, **kwargs):
         with patch('celery.fixups.django.DjangoWorkerFixup.validate_models'):
             with patch('celery.fixups.django.symbol_by_name') as symbyname:
                 with patch('celery.fixups.django.import_module') as impmod:
-                    f = self.Fixup(app)
+                    f = self.Fixup(app, **kwargs)
                     yield f, impmod, symbyname
 
 
@@ -168,9 +170,10 @@ class test_DjangoWorkerFixup(FixupCase):
             assert f
 
     def test_install(self):
+        worker = WorkController(self.app)
         self.app.conf = {'CELERY_DB_REUSE_MAX': None}
         self.app.loader = Mock()
-        with self.fixup_context(self.app) as (f, _, _):
+        with self.fixup_context(self.app, worker=worker) as (f, _, _):
             with patch('celery.fixups.django.signals') as sigs:
                 f.install()
                 sigs.beat_embedded_init.connect.assert_called_with(
@@ -332,6 +335,28 @@ class test_DjangoWorkerFixup(FixupCase):
 
             conn.reset_mock()
             f._settings.DATABASES["default"] = {"OPTIONS": {"pool": False}}
+            f.close_database()
+            conn.close.assert_called_once_with()
+            conn.close_pool.assert_not_called()
+
+    def test_close_database_conn_pool_thread_pool(self):
+        class DJSettings:
+            DATABASES = {}
+
+        with self.fixup_context(self.app) as (f, _, _):
+            conn = Mock()
+            conn.alias = "default"
+            conn.close_pool = Mock()
+            f._db.connections.all = Mock(return_value=[conn])
+            f._settings = DJSettings
+
+            f._settings.DATABASES["default"] = {"OPTIONS": {"pool": True}}
+            f.close_database()
+            conn.close.assert_called_once_with()
+            conn.close_pool.assert_called_once_with()
+
+            conn.reset_mock()
+            f.worker.pool_cls = ThreadTaskPool
             f.close_database()
             conn.close.assert_called_once_with()
             conn.close_pool.assert_not_called()

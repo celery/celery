@@ -12,6 +12,7 @@ from kombu.utils.objects import cached_property
 
 from celery import _state, signals
 from celery.exceptions import FixupWarning, ImproperlyConfigured
+from celery.worker import WorkController
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -102,6 +103,8 @@ class DjangoFixup:
         self.worker_fixup.validate_models()
 
     def on_worker_init(self, **kwargs: Any) -> None:
+        worker: "WorkController" = kwargs.get("sender")
+        self.worker_fixup.worker = worker
         self.worker_fixup.install()
 
     def now(self, utc: bool = False) -> datetime:
@@ -119,8 +122,9 @@ class DjangoFixup:
 class DjangoWorkerFixup:
     _db_recycles = 0
 
-    def __init__(self, app: "Celery") -> None:
+    def __init__(self, app: "Celery", worker: Optional["WorkController"] = None) -> None:
         self.app = app
+        self.worker = worker or WorkController(app)
         self.db_reuse_max = self.app.conf.get('CELERY_DB_REUSE_MAX', None)
         self._db = cast("DjangoDBModule", import_module('django.db'))
         self._cache = import_module('django.core.cache')
@@ -205,7 +209,7 @@ class DjangoWorkerFixup:
             # Support Django < 4.1
             connections = self._db.connections.all()
 
-        is_prefork = self.app.conf.get('worker_pool', 'prefork') == "prefork"
+        is_prefork = "prefork" in self.worker.pool_cls.__module__
 
         for conn in connections:
             try:
