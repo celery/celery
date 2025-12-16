@@ -151,10 +151,19 @@ class test_DjangoFixup(FixupCase):
     def test_on_worker_init(self):
         with self.fixup_context(self.app) as (f, _, _):
             with patch('celery.fixups.django.DjangoWorkerFixup') as DWF:
-                f.on_worker_init()
+                mock_worker = Mock(name="worker")
+                f.on_worker_init(sender=mock_worker)
+                assert DWF.return_value.worker == mock_worker
+
                 DWF.assert_called_with(f.app)
                 DWF.return_value.install.assert_called_with()
                 assert f._worker_fixup is DWF.return_value
+
+    def test_on_worker_init_warns_without_sender(self):
+        with self.fixup_context(self.app) as (f, _, _):
+            with patch("celery.fixups.django.DjangoWorkerFixup"):
+                with pytest.warns(FixupWarning, match="called without a sender"):
+                    f.on_worker_init(sender=None)
 
 
 class InterfaceError(Exception):
