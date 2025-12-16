@@ -5,7 +5,6 @@ import pytest
 
 from celery.concurrency.thread import TaskPool as ThreadTaskPool
 from celery.fixups.django import DjangoFixup, DjangoWorkerFixup, FixupWarning, _maybe_close_fd, fixup
-from celery.worker import WorkController
 from t.unit import conftest
 
 
@@ -170,7 +169,8 @@ class test_DjangoWorkerFixup(FixupCase):
             assert f
 
     def test_install(self):
-        worker = WorkController(self.app)
+        worker = Mock()
+        worker.pool_cls = Mock(__module__='celery.concurrency.prefork')
         self.app.conf = {'CELERY_DB_REUSE_MAX': None}
         self.app.loader = Mock()
         with self.fixup_context(self.app, worker=worker) as (f, _, _):
@@ -357,6 +357,7 @@ class test_DjangoWorkerFixup(FixupCase):
 
             conn.reset_mock()
             f.worker.pool_cls = ThreadTaskPool
+            assert "prefork" not in ThreadTaskPool.__module__
             f.close_database()
             conn.close.assert_called_once_with()
             conn.close_pool.assert_not_called()

@@ -103,8 +103,16 @@ class DjangoFixup:
         self.worker_fixup.validate_models()
 
     def on_worker_init(self, **kwargs: Any) -> None:
-        worker: "WorkController" = kwargs.get("sender")
-        self.worker_fixup.worker = worker
+        worker: Optional["WorkController"] = kwargs.get("sender")
+        if worker:
+            self.worker_fixup.worker = worker
+        else:
+            warnings.warn(
+                "DjangoFixup.on_worker_init called without a sender (worker instance). "
+                "This may indicate a misconfiguration or an internal error.",
+                FixupWarning,
+                stacklevel=2,
+            )
         self.worker_fixup.install()
 
     def now(self, utc: bool = False) -> datetime:
