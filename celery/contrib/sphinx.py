@@ -29,7 +29,23 @@ and you can also refer to the tasks using `:task:proj.tasks.add`
 syntax.
 
 Use ``.. autotask::`` to alternatively manually document a task.
+
+Sphinx 9.0+ Compatibility
+-------------------------
+
+Sphinx 9.0 introduced a rewritten autodoc implementation. The Celery
+extension requires the legacy class-based autodoc mode to function
+correctly. When using Sphinx 9.0 or later, add the following to your
+:file:`conf.py`:
+
+.. code-block:: python
+
+    autodoc_use_legacy_class_based = True
+
+The extension will automatically enable this setting if not configured,
+but it is recommended to set it explicitly to avoid warnings.
 """
+import warnings
 from inspect import signature
 
 from docutils import nodes
@@ -94,7 +110,24 @@ def autodoc_skip_member_handler(app, what, name, obj, skip, options):
 
 def setup(app):
     """Setup Sphinx extension."""
+    import sphinx
+
     app.setup_extension('sphinx.ext.autodoc')
+
+    # Sphinx 9.0+ rewrote autodoc; TaskDocumenter requires legacy mode.
+    # See: https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
+    sphinx_version = tuple(int(x) for x in sphinx.__version__.split('.')[:2])
+    if sphinx_version >= (9, 0):
+        if not getattr(app.config, 'autodoc_use_legacy_class_based', False):
+            warnings.warn(
+                "Sphinx 9.0+ detected. celery.contrib.sphinx requires "
+                "'autodoc_use_legacy_class_based = True' in conf.py. "
+                "Enabling it automatically.",
+                UserWarning,
+                stacklevel=2
+            )
+            app.config.autodoc_use_legacy_class_based = True
+
     app.add_autodocumenter(TaskDocumenter)
     app.add_directive_to_domain('py', 'task', TaskDirective)
     app.add_config_value('celery_task_prefix', '(task)', True)

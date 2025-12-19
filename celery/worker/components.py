@@ -75,7 +75,10 @@ class Hub(bootsteps.StartStopStep):
         return self
 
     def start(self, w):
-        pass
+        # Ensure the kombu hub's poller is initialized before the event loop starts.
+        # Since asynloop() no longer resets the hub on exit (to preserve timers
+        # during shutdown), we must initialize the poller upfront.
+        _ = w.hub.poller
 
     def stop(self, w):
         w.hub.close()

@@ -37,8 +37,8 @@ While this version is **mostly** backward compatible with previous versions
 it's important that you read the following section as this release
 is a new major version.
 
-This version is officially supported on CPython 3.8, 3.9, 3.10, 3.11, 3.12 and 3.13.
-and is also supported on PyPy3.10+.
+This version is officially supported on CPython 3.9, 3.10, 3.11, 3.12 and 3.13,
+and is also supported on PyPy3.11+.
 
 .. _`website`: https://celery.readthedocs.io
 
@@ -151,7 +151,7 @@ The supported Python versions are:
 - CPython 3.11
 - CPython 3.12
 - CPython 3.13
-- PyPy3.10 (``pypy3``)
+- PyPy3.11 (``pypy3``)
 
 Python 3.9 Support
 ------------------
@@ -180,7 +180,7 @@ SQLAlchemy 1.4.x & 2.0.x is now supported in Celery v5.6.
 Billiard
 ~~~~~~~~
 
-Minimum required version is now 4.2.1.
+Minimum required version is now 4.2.4.
 
 Django
 ~~~~~~
@@ -193,4 +193,94 @@ Also added --skip-checks flag to bypass django core checks.
 News
 ====
 
-Will be added as we get closer to the release.
+SQS: Reverted to ``pycurl`` from ``urllib3``
+--------------------------------------------
+
+The switch from ``pycurl`` to ``urllib3`` for the SQS transport (introduced in
+Celery 5.5.0 via Kombu) has been reverted due to critical issues affecting SQS
+users.
+
+Security Fix: Broker Credential Leak Prevention
+------------------------------------------------
+
+Fixed a security issue where broker URLs containing passwords were being logged
+in plaintext by the delayed delivery mechanism. Broker credentials are now
+properly sanitized in all log output.
+
+Memory Leak Fixes
+-----------------
+
+Two significant memory leaks have been fixed in this release:
+
+**Exception Handling Memory Leak**: Fixed a critical memory leak in task exception
+handling that was particularly severe on Python 3.11+ due to enhanced traceback
+data. The fix properly breaks reference cycles in tracebacks to allow garbage
+collection. This resolves a long-standing issue that caused worker memory to grow
+unbounded over time.
+
+**Pending Result Memory Leak**: Fixed a memory leak where ``AsyncResult``
+subscriptions were not being cleaned up when results were forgotten. This affected
+users who frequently use ``AsyncResult.forget()`` in their workflows.
+
+ETA Task Memory Limit
+---------------------
+
+New configuration option to prevent out-of-memory crashes when workers fetch
+large numbers of ETA or countdown tasks. Previously, workers could exhaust
+available memory when the broker contained many scheduled tasks.
+
+Configuration option:
+
+- :setting:`worker_eta_task_limit`: Sets the maximum number of ETA tasks to hold
+  in worker memory at once (default: ``None``, unlimited)
+
+Example usage:
+
+.. code-block:: python
+
+    app.conf.worker_eta_task_limit = 1000
+
+Queue Type Selection for Auto-created Queues
+--------------------------------------------
+
+New configuration options allow specifying the queue type and exchange type when
+Celery auto-creates missing queues. This is particularly useful for RabbitMQ users
+who want to use quorum queues with auto-created queues.
+
+Configuration options:
+
+- :setting:`task_create_missing_queue_type`: Sets the queue type for auto-created
+  queues (e.g., ``quorum``, ``classic``)
+- :setting:`task_create_missing_queue_exchange_type`: Sets the exchange type for
+  auto-created queues
+
+Example usage:
+
+.. code-block:: python
+
+    app.conf.task_create_missing_queue_type = 'quorum'
+
+Django Connection Pool Support
+------------------------------
+
+Fixed an issue where Django applications using psycopg3 connection pooling would
+experience ``psycopg_pool.PoolTimeout`` errors after worker forks. Celery now
+properly closes Django's connection pools before forking, similar to how Django
+itself handles this in its autoreload mechanism.
+
+Redis Backend Improvements
+--------------------------
+
+**Credential Provider Support**: Added the :setting:`redis_backend_credential_provider`
+setting to the Redis backend. This enables integration with AWS ElastiCache using
+IAM authentication and other credential provider mechanisms.
+
+**Client Name Support**: Added the :setting:`redis_client_name` setting to the Redis
+backend, making it easier to identify Celery connections when monitoring Redis servers.
+
+Cold Shutdown Improvements
+--------------------------
+
+Fixed an issue where tasks would incorrectly fail with a timeout error during
+cold shutdown. The worker now properly skips timeout failure handling during
+the cold shutdown phase, allowing tasks to complete or be properly requeued.

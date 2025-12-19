@@ -460,6 +460,13 @@ You can handle this error too:
     ... except add.OperationalError as exc:
     ...     logger.exception('Sending task raised: %r', exc)
 
+.. note::
+
+    With RabbitMQ, these errors only indicate the broker is unreachable.
+    Messages can still be silently dropped when the broker hits resource
+    limits. Enable ``confirm_publish`` in :setting:`broker_transport_options`
+    to detect this.
+
 .. _calling-serializers:
 
 Serializers
@@ -804,6 +811,24 @@ setting or by using the ``ignore_result`` option:
 
 If you'd like to store additional metadata about the task in the result backend
 set the :setting:`result_extended` setting to ``True``.
+
+.. note::
+
+   ``result_extended`` controls what *Celery* includes as extended task metadata,
+   but it does not automatically add scheduler-specific metadata.
+   For example, some integrations (e.g. :pypi:`django-celery-beat` together with
+   :pypi:`django-celery-results`) may record the *periodic task name* in the result
+   backend only when the scheduler provides it as part of the published message.
+
+   When you call tasks manually using ``apply_async``/``delay``, that periodic task
+   context is usually not present unless you add it explicitly (e.g. via message
+   headers/properties in ``apply_async`` options). For example:
+
+   .. code-block:: python
+
+      result = task.apply_async(
+          headers={"periodic_task_name": "task_name"},
+      )
 
 .. seealso::
 
