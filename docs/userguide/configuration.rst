@@ -3123,6 +3123,14 @@ won't retry forever if the broker isn't available at the first task execution):
 
     broker_transport_options = {'max_retries': 5}
 
+Example enabling publisher confirms (supported by the ``pyamqp`` transport).
+Without this, messages can be silently dropped when the broker hits resource
+limits:
+
+.. code-block:: python
+
+    broker_transport_options = {'confirm_publish': True}
+
 .. _conf-worker:
 
 Worker
