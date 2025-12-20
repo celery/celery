@@ -8,6 +8,16 @@ This document contains change notes for bugfix & new features
 in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
 an overview of what's new in Celery 5.6.
 
+.. _version-5.6.1:
+
+5.6.1
+=====
+
+:release-date: TBA
+:release-by:
+
+- Fix Redis Sentinel ACL authentication support
+
 .. _version-5.6.0:
 
 5.6.0

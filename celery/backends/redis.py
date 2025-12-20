@@ -683,8 +683,8 @@ class SentinelBackend(RedisBackend):
         for param in ("host", "port", "db", "password"):
             connparams.pop(param)
 
-        # Adding db/password in connparams to connect to the correct instance
-        for param in ("db", "password"):
+        # Adding db/password/username in connparams to connect to the correct instance
+        for param in ("db", "password", "username"):
             if connparams['hosts'] and param in connparams['hosts'][0]:
                 connparams[param] = connparams['hosts'][0].get(param)
         return connparams
@@ -709,7 +709,12 @@ class SentinelBackend(RedisBackend):
 
         master_name = self._transport_options.get("master_name", None)
 
+        credentials = {
+            k: params[k] for k in ("username", "password") if k in params
+        }
+
         return sentinel_instance.master_for(
             service_name=master_name,
             redis_class=self._get_client(),
+            **credentials,
         ).connection_pool

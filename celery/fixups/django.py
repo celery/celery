@@ -12,6 +12,7 @@ from kombu.utils.objects import cached_property
 
 from celery import _state, signals
 from celery.exceptions import FixupWarning, ImproperlyConfigured
+from celery.worker import WorkController
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -102,6 +103,16 @@ class DjangoFixup:
         self.worker_fixup.validate_models()
 
     def on_worker_init(self, **kwargs: Any) -> None:
+        worker: Optional["WorkController"] = kwargs.get("sender")
+        if worker:
+            self.worker_fixup.worker = worker
+        else:
+            warnings.warn(
+                "DjangoFixup.on_worker_init called without a sender (worker instance). "
+                "This may indicate a misconfiguration or an internal error.",
+                FixupWarning,
+                stacklevel=2,
+            )
         self.worker_fixup.install()
 
     def now(self, utc: bool = False) -> datetime:
@@ -119,8 +130,9 @@ class DjangoFixup:
 class DjangoWorkerFixup:
     _db_recycles = 0
 
-    def __init__(self, app: "Celery") -> None:
+    def __init__(self, app: "Celery", worker: Optional["WorkController"] = None) -> None:
         self.app = app
+        self.worker = worker or WorkController(app)
         self.db_reuse_max = self.app.conf.get('CELERY_DB_REUSE_MAX', None)
         self._db = cast("DjangoDBModule", import_module('django.db'))
         self._cache = import_module('django.core.cache')
@@ -199,11 +211,19 @@ class DjangoWorkerFixup:
         self._db_recycles += 1
 
     def _close_database(self) -> None:
-        for conn in self._db.connections.all():
+        try:
+            connections = self._db.connections.all(initialized_only=True)
+        except TypeError:
+            # Support Django < 4.1
+            connections = self._db.connections.all()
+
+        is_prefork = "prefork" in self.worker.pool_cls.__module__
+
+        for conn in connections:
             try:
                 conn.close()
                 pool_enabled = self._settings.DATABASES.get(conn.alias, {}).get("OPTIONS", {}).get("pool")
-                if pool_enabled and hasattr(conn, "close_pool"):
+                if pool_enabled and is_prefork and hasattr(conn, "close_pool"):
                     with contextlib.suppress(KeyError):
                         conn.close_pool()
             except self.interface_errors:
