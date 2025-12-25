@@ -6,7 +6,7 @@ import click
 from kombu.utils.json import dumps
 
 from celery.bin.base import COMMA_SEPARATED_LIST, CeleryCommand, CeleryOption, handle_preload_options
-from celery.exceptions import CeleryCommandException
+from celery.exceptions import CeleryCommandException, OperationalError
 from celery.platforms import EX_UNAVAILABLE
 from celery.utils import text
 from celery.worker.control import Panel
@@ -128,9 +128,19 @@ def _get_commands_of_type(type_: _RemoteControlType) -> dict:
 def status(ctx, timeout, destination, json, **kwargs):
     """Show list of workers that are online."""
     callback = None if json else partial(_say_remote_command_reply, ctx)
-    replies = ctx.obj.app.control.inspect(timeout=timeout,
-                                          destination=destination,
-                                          callback=callback).ping()
+    try:
+        replies = ctx.obj.app.control.inspect(timeout=timeout,
+                                              destination=destination,
+                                              callback=callback).ping()
+    except OperationalError as exc:
+        raise CeleryCommandException(
+            message=(
+                'Could not connect to the message broker. '
+                'Please make sure your broker (e.g., RabbitMQ or Redis) is running '
+                f'and the connection settings are correct. Reason: {exc}'
+            ),
+            exit_code=EX_UNAVAILABLE
+        )
 
     if not replies:
         raise CeleryCommandException(

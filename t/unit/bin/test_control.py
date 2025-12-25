@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 from click.testing import CliRunner
+from kombu.exceptions import OperationalError
 
 from celery.bin.celery import celery
 from celery.platforms import EX_UNAVAILABLE
@@ -80,3 +81,19 @@ def test_listing_remote_commands(celery_cmd, expected_regex, isolated_cli_runner
     )
     assert res.exit_code == 0, (res, res.stdout)
     assert expected_regex.search(res.stdout)
+
+
+def test_status_shows_user_friendly_error_on_broker_connection_failure(isolated_cli_runner: CliRunner):
+    with patch(
+        'celery.app.base.Celery.connection_or_acquire'
+    ) as mock_conn:
+        mock_conn.side_effect = OperationalError('[Errno 111] Connection refused')
+        res = isolated_cli_runner.invoke(
+            celery,
+            [*_GLOBAL_OPTIONS, 'status', *_INSPECT_OPTIONS],
+        )
+
+    assert res.exit_code == EX_UNAVAILABLE, (res, res.output)
+    assert 'Traceback' not in res.output
+    assert 'Error: Could not connect to the message broker.' in res.output
+    assert 'Connection refused' in res.output
