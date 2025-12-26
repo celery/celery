@@ -117,9 +117,7 @@ class ResultConsumer(BaseResultConsumer):
         if self.subscribed_to:
             self._pubsub.subscribe(*self.subscribed_to)
         else:
-            self._pubsub.connection = self._pubsub.connection_pool.get_connection(
-                'pubsub', self._pubsub.shard_hint
-            )
+            self._pubsub.connection = self._pubsub.connection_pool.get_connection()
             # even if there is nothing to subscribe, we should not lose the callback after connecting.
             # The on_connect callback will re-subscribe to any channels we previously subscribed to.
             self._pubsub.connection.register_connect_callback(self._pubsub.on_connect)
