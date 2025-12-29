@@ -13,10 +13,23 @@ an overview of what's new in Celery 5.6.
 5.6.1
 =====
 
-:release-date: TBA
-:release-by:
+:release-date: 2025-12-29
+:release-by: Tomer Nosrati
 
-- Fix Redis Sentinel ACL authentication support
+What's Changed
+~~~~~~~~~~~~~~
+
+- Fix Redis Sentinel ACL authentication support (#10013)
+- Fix: Broker heartbeats not sent during graceful shutdown (#9986)
+- docs #5410 -- Document confirm_publish broker transport option (#10016)
+- close DB pools only in prefork mode (#10020)
+- Fix: Avoid unnecessary Django database connection creation during cleanup (#10015)
+- reliable prefork detection (#10023)
+- better coverage (#10029)
+- Docs: clarify `result_extended` vs periodic task metadata and show `headers["periodic_task_name"]` example (#10030)
+- Stop importing pytest_subtests (#10032)
+- Only use exceptiongroup backport for Python < 3.11 (#10033)
+- Prepare for release: v5.6.1 (#10037)
 
 .. _version-5.6.0:
 
