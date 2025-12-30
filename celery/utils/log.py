@@ -195,6 +195,7 @@ class LoggingProxy:
         self.logger = logger
         self.loglevel = mlevel(loglevel or self.logger.level or self.loglevel)
         self._safewrap_handlers()
+        self._buffer = ""
 
     def _safewrap_handlers(self):
         # Make the logger handlers dump internal errors to
@@ -227,10 +228,15 @@ class LoggingProxy:
         if data and not self.closed:
             self._thread.recurse_protection = True
             try:
-                safe_data = safe_str(data).rstrip('\n')
-                if safe_data:
-                    self.logger.log(self.loglevel, safe_data)
-                    return len(safe_data)
+                text = safe_str(data)
+                self._buffer += text
+
+                while '\n' in self._buffer:
+                    line, self._buffer = self._buffer.split('\n', 1)
+                    if line:
+                        self.logger.log(self.loglevel, line)
+
+                return len(text)
             finally:
                 self._thread.recurse_protection = False
         return 0
@@ -244,11 +250,12 @@ class LoggingProxy:
         """
         for part in sequence:
             self.write(part)
-
+    
     def flush(self):
-        # This object is not buffered so any :meth:`flush`
-        # requests are ignored.
-        pass
+        if self._buffer:
+            self.logger.log(self.loglevel, self._buffer)
+            self._buffer = ""
+
 
     def close(self):
         # when the object is closed, no write requests are
