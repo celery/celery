@@ -2,6 +2,7 @@
 
 import datetime
 import time
+import typing
 from collections import deque
 from contextlib import contextmanager
 from weakref import proxy
@@ -383,6 +384,9 @@ class AsyncResult(ResultBase):
             if parent:
                 graph.add_edge(parent, node)
         return graph
+
+    def __class_getitem__(cls, key):
+        return typing.GenericAlias(cls, key)
 
     def __str__(self):
         """`str(self) -> self.id`."""

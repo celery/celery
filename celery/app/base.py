@@ -1266,6 +1266,9 @@ class Celery:
 
         return type(name or Class.__name__, (Class,), attrs)
 
+    def __class_getitem__(cls, key):
+        return typing.GenericAlias(cls, key)
+
     def _rgetattr(self, path):
         return attrgetter(path)(self)
 
