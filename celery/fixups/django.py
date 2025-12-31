@@ -217,7 +217,11 @@ class DjangoWorkerFixup:
             # Support Django < 4.1
             connections = self._db.connections.all()
 
-        is_prefork = "prefork" in self.worker.pool_cls.__module__
+        pool_cls = self.worker.pool_cls
+        if isinstance(pool_cls, str):
+            is_prefork = "prefork" in pool_cls
+        else:
+            is_prefork = "prefork" in pool_cls.__module__
 
         for conn in connections:
             try:

@@ -371,6 +371,44 @@ class test_DjangoWorkerFixup(FixupCase):
             conn.close.assert_called_once_with()
             conn.close_pool.assert_not_called()
 
+    def test_close_database_pool_cls_as_string(self):
+        """Test that pool_cls as string doesn't raise AttributeError.
+
+        When pool_cls is a string (e.g., 'prefork') instead of a class,
+        accessing __module__ would raise AttributeError. This test ensures
+        the fix handles both string and class types correctly.
+        """
+        class DJSettings:
+            DATABASES = {}
+
+        with self.fixup_context(self.app) as (f, _, _):
+            conn = Mock()
+            conn.alias = "default"
+            conn.close_pool = Mock()
+            f._db.connections.all = Mock(return_value=[conn])
+            f._settings = DJSettings
+            f._settings.DATABASES["default"] = {"OPTIONS": {"pool": True}}
+
+            # Test with pool_cls as string 'prefork' - should call close_pool
+            f.worker.pool_cls = 'prefork'
+            f.close_database()
+            conn.close.assert_called_once_with()
+            conn.close_pool.assert_called_once_with()
+
+            # Test with pool_cls as string 'threads' - should NOT call close_pool
+            conn.reset_mock()
+            f.worker.pool_cls = 'threads'
+            f.close_database()
+            conn.close.assert_called_once_with()
+            conn.close_pool.assert_not_called()
+
+            # Test with pool_cls as string containing 'prefork' path
+            conn.reset_mock()
+            f.worker.pool_cls = 'celery.concurrency.prefork'
+            f.close_database()
+            conn.close.assert_called_once_with()
+            conn.close_pool.assert_called_once_with()
+
     def test_close_cache_raises_error(self):
         with self.fixup_context(self.app) as (f, _, _):
             f._cache.close_caches.side_effect = AttributeError
