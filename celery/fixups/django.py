@@ -129,10 +129,10 @@ class DjangoFixup:
 
 class DjangoWorkerFixup:
     _db_recycles = 0
+    worker = None  # Set via on_worker_init callback to avoid recursive WorkController instantiation
 
-    def __init__(self, app: "Celery", worker: Optional["WorkController"] = None) -> None:
+    def __init__(self, app: "Celery") -> None:
         self.app = app
-        self.worker = worker or WorkController(app)
         self.db_reuse_max = self.app.conf.get('CELERY_DB_REUSE_MAX', None)
         self._db = cast("DjangoDBModule", import_module('django.db'))
         self._cache = import_module('django.core.cache')
@@ -217,7 +217,7 @@ class DjangoWorkerFixup:
             # Support Django < 4.1
             connections = self._db.connections.all()
 
-        is_prefork = "prefork" in self.worker.pool_cls.__module__
+        is_prefork = self.worker is not None and "prefork" in self.worker.pool_cls.__module__
 
         for conn in connections:
             try:

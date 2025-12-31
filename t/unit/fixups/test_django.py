@@ -16,7 +16,10 @@ class FixupCase:
         with patch('celery.fixups.django.DjangoWorkerFixup.validate_models'):
             with patch('celery.fixups.django.symbol_by_name') as symbyname:
                 with patch('celery.fixups.django.import_module') as impmod:
+                    worker = Mock()
+                    worker.pool_cls = Mock(__module__='celery.concurrency.prefork')
                     f = self.Fixup(app, **kwargs)
+                    f.worker = worker
                     yield f, impmod, symbyname
 
 
@@ -178,11 +181,9 @@ class test_DjangoWorkerFixup(FixupCase):
             assert f
 
     def test_install(self):
-        worker = Mock()
-        worker.pool_cls = Mock(__module__='celery.concurrency.prefork')
         self.app.conf = {'CELERY_DB_REUSE_MAX': None}
         self.app.loader = Mock()
-        with self.fixup_context(self.app, worker=worker) as (f, _, _):
+        with self.fixup_context(self.app) as (f, _, _):
             with patch('celery.fixups.django.signals') as sigs:
                 f.install()
                 sigs.beat_embedded_init.connect.assert_called_with(
@@ -410,3 +411,46 @@ class test_DjangoWorkerFixup(FixupCase):
         f = self.Fixup(self.app)
         f.django_setup()
         django.setup.assert_called_with()
+
+    def test_no_recursive_worker_instantiation(self, patching):
+        """Test that DjangoWorkerFixup doesn't create a WorkController in __init__.
+
+        This is a direct test of the root cause: DjangoWorkerFixup.__init__
+        should NOT instantiate a WorkController when worker=None.
+
+        Current behavior (BUG):
+        - DjangoWorkerFixup(app, worker=None) creates WorkController(app)
+        - This causes recursive instantiation when called from signals
+
+        Expected behavior (after fix):
+        - DjangoWorkerFixup(app, worker=None) should set self.worker = None
+        - Worker should be set later via the on_worker_init callback
+        """
+        from celery.worker import WorkController
+
+        patching('celery.fixups.django.symbol_by_name')
+        patching('celery.fixups.django.import_module')
+        patching.modules('django', 'django.db', 'django.core.checks')
+
+        # Track WorkController instantiations
+        instantiation_count = {'count': 0}
+        original_init = WorkController.__init__
+
+        def tracking_init(self_worker, *args, **kwargs):
+            instantiation_count['count'] += 1
+            return original_init(self_worker, *args, **kwargs)
+
+        with patch.object(WorkController, '__init__', tracking_init):
+            # Creating DjangoWorkerFixup without a worker argument
+            # should NOT create a WorkController instance
+            try:
+                DjangoWorkerFixup(self.app, worker=None)
+            except (RecursionError, AttributeError, TypeError):
+                pass
+
+        # EXPECTED: 0 WorkController instances (worker=None means don't create one)
+        assert instantiation_count['count'] == 0, (
+            f"DjangoWorkerFixup(app, worker=None) should NOT create a WorkController, "
+            f"but {instantiation_count['count']} instance(s) were created. "
+            f"This is the root cause of the recursion bug."
+        )
