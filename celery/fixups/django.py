@@ -210,6 +210,12 @@ class DjangoWorkerFixup:
             self._close_database()
         self._db_recycles += 1
 
+    def _is_prefork(self) -> bool:
+        if self.worker is None:
+            return False
+        pool = self.worker.pool_cls if isinstance(self.worker.pool_cls, str) else self.worker.pool_cls.__module__
+        return "prefork" in pool
+
     def _close_database(self) -> None:
         try:
             connections = self._db.connections.all(initialized_only=True)
@@ -217,7 +223,7 @@ class DjangoWorkerFixup:
             # Support Django < 4.1
             connections = self._db.connections.all()
 
-        is_prefork = self.worker is not None and "prefork" in self.worker.pool_cls.__module__
+        is_prefork = self._is_prefork()
 
         for conn in connections:
             try:

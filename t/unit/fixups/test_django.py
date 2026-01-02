@@ -443,14 +443,11 @@ class test_DjangoWorkerFixup(FixupCase):
         with patch.object(WorkController, '__init__', tracking_init):
             # Creating DjangoWorkerFixup without a worker argument
             # should NOT create a WorkController instance
-            try:
-                DjangoWorkerFixup(self.app, worker=None)
-            except (RecursionError, AttributeError, TypeError):
-                pass
+            DjangoWorkerFixup(self.app)
 
-        # EXPECTED: 0 WorkController instances (worker=None means don't create one)
+        # EXPECTED: 0 WorkController instances created
         assert instantiation_count['count'] == 0, (
-            f"DjangoWorkerFixup(app, worker=None) should NOT create a WorkController, "
+            f"DjangoWorkerFixup(app) should NOT create a WorkController, "
             f"but {instantiation_count['count']} instance(s) were created. "
             f"This is the root cause of the recursion bug."
         )
