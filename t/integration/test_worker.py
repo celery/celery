@@ -1,4 +1,3 @@
-import os
 import subprocess
 
 import pytest
@@ -21,7 +20,7 @@ def test_run_worker():
         "Shutting down...") != -1, output
 
 
-def test_django_fixup_direct_worker(caplog):
+def test_django_fixup_direct_worker(caplog, monkeypatch):
     """Test Django fixup by directly instantiating Celery worker without subprocess."""
     import logging
 
@@ -31,7 +30,7 @@ def test_django_fixup_direct_worker(caplog):
     caplog.set_level(logging.DEBUG)
 
     # Configure Django settings
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 't.integration.test_django_settings')
+    monkeypatch.setenv('DJANGO_SETTINGS_MODULE', 't.integration.test_django_settings')
     django.setup()
 
     # Create Celery app with Django integration

@@ -412,19 +412,31 @@ class test_DjangoWorkerFixup(FixupCase):
         f.django_setup()
         django.setup.assert_called_with()
 
+    def test__is_prefork(self):
+        with self.fixup_context(self.app) as (f, _, _):
+            f.worker.pool_cls = Mock(__module__='celery.concurrency.prefork')
+            assert f._is_prefork()
+
+            f.worker.pool_cls = "prefork"
+            assert f._is_prefork()
+
+            f.worker.pool_cls = Mock(__module__='celery.concurrency.thread')
+            assert not f._is_prefork()
+
+            f.worker = None
+            assert not f._is_prefork()
+
     def test_no_recursive_worker_instantiation(self, patching):
-        """Test that DjangoWorkerFixup doesn't create a WorkController in __init__.
+        """Regression test: DjangoWorkerFixup must not create a WorkController in __init__.
 
-        This is a direct test of the root cause: DjangoWorkerFixup.__init__
-        should NOT instantiate a WorkController when worker=None.
+        Historically, DjangoWorkerFixup.__init__ instantiated a WorkController when
+        called with worker=None, which could cause recursive instantiation when
+        invoked from worker lifecycle signals.
 
-        Current behavior (BUG):
-        - DjangoWorkerFixup(app, worker=None) creates WorkController(app)
-        - This causes recursive instantiation when called from signals
-
-        Expected behavior (after fix):
-        - DjangoWorkerFixup(app, worker=None) should set self.worker = None
-        - Worker should be set later via the on_worker_init callback
+        This test verifies the fixed behavior:
+        - DjangoWorkerFixup(app, worker=None) must not create a WorkController
+        - It should instead leave self.worker unset and rely on on_worker_init
+          to attach the actual worker instance later
         """
         from celery.worker import WorkController
 
