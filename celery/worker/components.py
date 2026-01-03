@@ -194,6 +194,7 @@ class Beat(bootsteps.StartStopStep):
 
     def create(self, w):
         from celery.beat import EmbeddedService
+
         # Defensive check: pool_cls may be a string (e.g., 'gevent') or a class
         pool_module = w.pool_cls if isinstance(w.pool_cls, str) else w.pool_cls.__module__
         if pool_module.endswith(('gevent', 'eventlet')):
