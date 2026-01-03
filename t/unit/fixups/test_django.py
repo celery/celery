@@ -287,6 +287,37 @@ class test_DjangoWorkerFixup(FixupCase):
             with pytest.raises(KeyError):
                 f._close_database()
 
+    def test__close_database_django_pre_41(self):
+        """Test that Django < 4.1 (without initialized_only parameter) is handled."""
+        with self.fixup_context(self.app) as (f, _, _):
+            conns = [Mock(), Mock()]
+            f.DatabaseError = KeyError
+            f.interface_errors = ()
+
+            # Mock Django < 4.1 behavior: connections.all() doesn't accept initialized_only
+            f._db.connections = Mock()
+
+            def all_without_initialized_only(**kwargs):
+                if 'initialized_only' in kwargs:
+                    raise TypeError("all() got an unexpected keyword argument 'initialized_only'")
+                return conns
+
+            f._db.connections.all = Mock(side_effect=all_without_initialized_only)
+
+            # Should fall back to calling all() without initialized_only
+            f._close_database()
+
+            # Verify it was called twice: first with initialized_only (raises), then without
+            assert f._db.connections.all.call_count == 2
+            # First call with initialized_only=True
+            f._db.connections.all.assert_any_call(initialized_only=True)
+            # Second call without arguments (fallback)
+            f._db.connections.all.assert_any_call()
+
+            # Verify connections were closed
+            conns[0].close.assert_called_with()
+            conns[1].close.assert_called_with()
+
     def test_close_database_always_closes_connections(self):
         with self.fixup_context(self.app) as (f, _, _):
             conn = Mock()
