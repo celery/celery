@@ -848,7 +848,7 @@ class test_ControlPanel:
             'task-1', reason='revoked', store_result=True
         )
 
-    def test_revoke_by_stamped_headers_backend_update(self):
+    def test_revoke_by_stamped_headers_terminates_matching_request(self):
         state = self.create_state()
         state.consumer = Mock()
 
