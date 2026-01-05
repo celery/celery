@@ -108,7 +108,7 @@ Worker Shutdown
 
 We will use the terms *Warm, Soft, Cold, Hard* to describe the different stages of worker shutdown.
 The worker will initiate the shutdown process when it receives the :sig:`TERM` or :sig:`QUIT` signal.
-The :sig:`INT` (Ctrl-C) signal is also handled during the shutdown process and always triggers the 
+The :sig:`INT` (Ctrl-C) signal is also handled during the shutdown process and always triggers the
 next stage of the shutdown process.
 
 .. _worker-warm-shutdown:
@@ -125,6 +125,12 @@ and will call :func:`WorkController.stop() <celery.worker.worker.WorkController.
 
 - Additional :sig:`TERM` signals will be ignored during the warm shutdown process.
 - The next :sig:`INT` signal will trigger the next stage of the shutdown process.
+
+.. versionchanged:: 5.6
+    In previous versions of Celery, when the prefork pool was in use, heartbeats to the broker were not sent during
+    warm shutdown. This caused the broker to terminate the connection, which meant that tasks were not able to complete.
+    As of version 5.6, when the prefork pool is in use, heartbeats are now maintained during warm shutdown and tasks are
+    able to complete before the worker terminates.
 
 .. _worker-cold-shutdown:
 
@@ -537,6 +543,14 @@ of any signal defined in the :mod:`signal` module in the Python Standard
 Library.
 
 Terminating a task also revokes it.
+
+.. versionchanged:: 5.6
+
+   When a task is revoked, the result backend is now immediately updated
+   to reflect the ``REVOKED`` status. Previously, the backend was only
+   updated when a worker attempted to process the revoked task, which
+   could leave tasks with ETA/countdown in ``PENDING`` status indefinitely
+   if the worker was shut down before the scheduled time.
 
 **Example**
 
