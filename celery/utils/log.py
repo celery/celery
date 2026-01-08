@@ -250,12 +250,11 @@ class LoggingProxy:
         """
         for part in sequence:
             self.write(part)
-    
+
     def flush(self):
         if self._buffer:
             self.logger.log(self.loglevel, self._buffer)
             self._buffer = ""
-
 
     def close(self):
         # when the object is closed, no write requests are

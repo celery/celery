@@ -316,33 +316,32 @@ class test_default_logger:
             logfile=None,
             root=False,
         )
-    
+
         with conftest.wrap_logger(logger) as sio:
             p = LoggingProxy(logger, loglevel=logging.WARNING)
-    
+
             p.write("raise NoSuchNameDefined()")
             p.write("\n")
-    
+
             p.write("      ")
             p.write("^")
             p.write("^")
             p.write("^")
             p.write("^")
             p.write("\n")
-    
+
             p.write("NameError: name 'NoSuchNameDefined' is not defined")
             p.write("\n")
-    
+
             p.flush()
-    
+
             output = sio.getvalue().splitlines()
-    
+
             assert output == [
                 "raise NoSuchNameDefined()",
                 "      ^^^^",
                 "NameError: name 'NoSuchNameDefined' is not defined",
             ]
-
 
 
 class test_task_logger(test_default_logger):
