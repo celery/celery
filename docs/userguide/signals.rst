@@ -821,14 +821,14 @@ It can be used to add additional command-line arguments to the
 .. code-block:: python
 
     from celery import Celery, signals
-    from click import option
+    from click import Option
 
     app = Celery()
     
     # Celery 5.0+ uses click for its command-line interface.
     # Use click.option to add new command-line arguments.
-    app.user_options['preload'].add(option(
-        '--monitoring', is_flag=True,
+    app.user_options['preload'].add(Option(
+        ('--monitoring',), is_flag=True,
         help='Enable our external monitoring utility, blahblah',
     ))
 
