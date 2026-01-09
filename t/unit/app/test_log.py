@@ -346,6 +346,7 @@ class test_default_logger:
                 "NameError: name 'NoSuchNameDefined' is not defined",
             ]
 
+
 class test_task_logger(test_default_logger):
 
     def setup_method(self):
