@@ -255,7 +255,7 @@ class LoggingProxy:
     def flush(self):
         if getattr(self._thread, 'recurse_protection', False):
             return
-       
+
         buffer = getattr(self._thread, "buffer", "")
         if buffer:
             self._thread.recurse_protection = True
@@ -264,7 +264,7 @@ class LoggingProxy:
                 self._thread.buffer = ""
             finally:
                 self._thread.recurse_protection = False
-       
+
     def close(self):
         # when the object is closed, no write requests are
         # forwarded to the logging object anymore.
