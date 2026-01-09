@@ -195,7 +195,6 @@ class LoggingProxy:
         self.logger = logger
         self.loglevel = mlevel(loglevel or self.logger.level or self.loglevel)
         self._safewrap_handlers()
-        self._buffer = ""
 
     def _safewrap_handlers(self):
         # Make the logger handlers dump internal errors to
@@ -229,13 +228,15 @@ class LoggingProxy:
             self._thread.recurse_protection = True
             try:
                 text = safe_str(data)
-                self._buffer += text
+                buffer = getattr(self._thread, "buffer", "")
+                buffer += text
 
-                while '\n' in self._buffer:
-                    line, self._buffer = self._buffer.split('\n', 1)
+                while '\n' in buffer:
+                    line, buffer = buffer.split('\n', 1)
                     if line:
                         self.logger.log(self.loglevel, line)
 
+                self._thread.buffer = buffer
                 return len(text)
             finally:
                 self._thread.recurse_protection = False
@@ -252,14 +253,24 @@ class LoggingProxy:
             self.write(part)
 
     def flush(self):
-        if self._buffer:
-            self.logger.log(self.loglevel, self._buffer)
-            self._buffer = ""
-
+        if getattr(self._thread, 'recurse_protection', False):
+            return
+       
+        buffer = getattr(self._thread, "buffer", "")
+        if buffer:
+            self._thread.recurse_protection = True
+            try:
+                self.logger.log(self.loglevel, buffer)
+                self._thread.buffer = ""
+            finally:
+                self._thread.recurse_protection = False
+       
     def close(self):
         # when the object is closed, no write requests are
         # forwarded to the logging object anymore.
         self.closed = True
+        if hasattr(self._thread, "buffer"):
+            self._thread.buffer = ""
 
     def isatty(self):
         """Here for file support."""
