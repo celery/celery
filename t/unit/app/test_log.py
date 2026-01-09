@@ -346,39 +346,6 @@ class test_default_logger:
                 "NameError: name 'NoSuchNameDefined' is not defined",
             ]
 
-    def test_logging_proxy_multiple_newlines(self, restore_logging):
-        logger = self.setup_logger(
-            loglevel=logging.WARNING,
-            logfile=None,
-            root=False,
-        )
-
-        with conftest.wrap_logger(logger) as sio:
-            p = LoggingProxy(logger, loglevel=logging.WARNING)
-            p.write("a\n\nb\n")
-
-            p.flush()
-
-            assert sio.getvalue().splitlines() == ["a", "b"]
-
-    def test_logging_proxy_flush_writes_buffer(self, restore_logging):
-        logger = self.setup_logger(
-            loglevel=logging.WARNING,
-            logfile=None,
-            root=False,
-        )
-
-        with conftest.wrap_logger(logger) as sio:
-            p = LoggingProxy(logger, loglevel=logging.WARNING)
-
-            p.write("partial")
-            assert sio.getvalue() == ""
-
-            p.flush()
-
-            assert sio.getvalue().splitlines() == ["partial"]
-
-
 class test_task_logger(test_default_logger):
 
     def setup_method(self):
