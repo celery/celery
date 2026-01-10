@@ -1,5 +1,6 @@
 """Task implementation: request context and the task base class."""
 import sys
+import typing
 
 from billiard.einfo import ExceptionInfo, ExceptionWithTraceback
 from kombu import serialization
@@ -412,6 +413,9 @@ class Task:
         finally:
             self.pop_request()
             _task_stack.pop()
+
+    def __class_getitem__(cls, key):
+        return typing.GenericAlias(cls, key)
 
     def __reduce__(self):
         # - tasks are pickled into the name of the task only, and the receiver
