@@ -542,7 +542,7 @@ class AMQP:
                 queue_exchange_routing_key = None
 
             # convert to anon-exchange and use qname as default routing key, when exchange not set and direct ex
-            # provided the queue itself does not have have a exchange or routing_key configured
+            # provided the queue itself does not have an exchange or routing_key configured
             if (
                 (not (exchange or queue_exchange_name) and not (routing_key or queue_exchange_routing_key))
                 and exchange_type == 'direct'
