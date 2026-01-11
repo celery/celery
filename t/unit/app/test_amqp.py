@@ -271,7 +271,6 @@ class test_AMQP(test_AMQP_Base):
 
     def test_send_task_message__queue_string(self):
         prod = Mock(name='producer')
-        # assert self.app.conf.task_queues[0].name == ''
         self.app.amqp.send_task_message(
             prod, 'foo', self.simple_message_no_sent_event,
             queue='foo', retry=False,
