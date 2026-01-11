@@ -533,13 +533,24 @@ class AMQP:
                     exchange_type = queue.exchange.type
                 except AttributeError:
                     exchange_type = 'direct'
+            
+            try:
+                queue_exchange_name = queue.exchange.name
+                queue_exchange_routing_key = queue.routing_key
+            except AttributeError:
+                queue_exchange_name = None
+                queue_routing_key = None
 
-            # convert to anon-exchange, when exchange not set and direct ex.
-            if (not exchange or not routing_key) and exchange_type == 'direct':
+            # convert to anon-exchange and use qname as default routing key, when exchange not set and direct ex
+            # provided the queue itself does not have have a exchange or routing_key configured
+            if (not (exchange or queue_exchange_name) or not (routing_key or queue_exchange_routing_key)) and exchange_type == 'direct':
                 exchange, routing_key = '', qname
             elif exchange is None:
                 # not topic exchange, and exchange not undefined
                 exchange = queue.exchange.name or default_exchange
+                routing_key = routing_key or queue.routing_key or default_rkey
+            if not routing_key:
+                # exchange is not None but routing_key is
                 routing_key = routing_key or queue.routing_key or default_rkey
             if declare is None and queue and not isinstance(queue, Broadcast):
                 declare = [queue]
