@@ -144,7 +144,7 @@ class test_Inspect:
                     'time_start': None,
                     'acknowledged': False,
                     'delivery_info': {
-                        'exchange': '',
+                        'exchange': 'celery',
                         'routing_key': 'celery',
                         'priority': 0,
                         'redelivered': False
@@ -178,7 +178,7 @@ class test_Inspect:
                     'time_start': ANY,
                     'acknowledged': True,
                     'delivery_info': {
-                        'exchange': '',
+                        'exchange': 'celery',
                         'routing_key': 'celery',
                         'priority': 0,
                         'redelivered': False
