@@ -1,7 +1,7 @@
-from tasks import identity, identity_task
 from visitors import FullVisitor, MonitoringIdStampingVisitor
 
 from celery import chain, group
+from tasks import identity, identity_task
 
 
 def run_example1():
