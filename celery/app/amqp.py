@@ -554,7 +554,7 @@ class AMQP:
                 routing_key = routing_key or queue.routing_key or default_rkey
             if not routing_key:
                 # exchange is not None but routing_key is
-                routing_key = routing_key or queue.routing_key or default_rkey
+                routing_key = queue.routing_key or default_rkey
             if declare is None and queue and not isinstance(queue, Broadcast):
                 declare = [queue]
 
