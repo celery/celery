@@ -1,10 +1,10 @@
 from time import sleep
 
+from tasks import identity_task, mul, wait_for_revoke, xsum
 from visitors import MonitoringIdStampingVisitor
 
 from celery.canvas import Signature, chain, chord, group
 from celery.result import AsyncResult
-from tasks import identity_task, mul, wait_for_revoke, xsum
 
 
 def create_canvas(n: int) -> Signature:
