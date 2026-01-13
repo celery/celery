@@ -1,6 +1,6 @@
 """Object related utilities, including introspection, etc."""
-from functools import reduce
 import types
+from functools import reduce
 
 __all__ = ('Bunch', 'FallbackContext', 'getitem_property', 'mro_lookup')
 

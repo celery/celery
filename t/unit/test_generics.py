@@ -5,12 +5,12 @@ from typing import get_args
 import pytest
 
 from celery.app import Celery
-from celery.app.task import Task, Context
+from celery.app.task import Context, Task
 from celery.canvas import Signature
 from celery.local import class_property
 from celery.result import AsyncResult
 from celery.utils.objects import FallbackContext
-from celery.utils.threads import _LocalStack, _FastLocalStack
+from celery.utils.threads import _FastLocalStack, _LocalStack
 
 
 class test_Generics:
