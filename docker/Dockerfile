@@ -35,6 +35,15 @@ RUN apt-get update && apt-get install -y build-essential \
     libssl-dev \
     sudo
 
+# Configuration methods for a global Rust installation
+ENV RUSTUP_HOME=/usr/local/rustup \
+    CARGO_HOME=/usr/local/cargo \
+    PATH=/usr/local/cargo/bin:$PATH
+
+# Installing Rust
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+
+
 # Setup variables. Even though changing these may cause unnecessary invalidation of
 # unrelated elements, grouping them together makes the Dockerfile read better.
 ENV PROVISIONING=/provisioning
