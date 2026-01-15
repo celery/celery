@@ -1,4 +1,4 @@
-FROM debian:bookworm-slim
+FROM debian:bookworm-slim AS developer-base
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONIOENCODING=UTF-8
@@ -35,13 +35,25 @@ RUN apt-get update && apt-get install -y build-essential \
     libssl-dev \
     sudo
 
-# Configuration for a global Rust installation
+# Rust environment variables
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH
 
-# Installing Rust
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+# Install Rust toolchain to support building Rust-based Python dependencies
+# especially for PyPy 3.11 on arm64 architectures.
+RUN dpkgArch="$(dpkg --print-architecture)" && \
+    if [ "$dpkgArch" = "amd64" ]; then rustArch='x86_64-unknown-linux-gnu'; \
+    elif [ "$dpkgArch" = "arm64" ]; then rustArch='aarch64-unknown-linux-gnu'; \
+    else echo "Unsupported arch: $dpkgArch" && exit 1; fi && \
+    url="https://static.rust-lang.org/rustup/dist/${rustArch}/rustup-init" && \
+    wget "$url" && \
+    chmod +x rustup-init && \
+    ./rustup-init -y --no-modify-path --default-toolchain stable && \
+    rm rustup-init && \
+    chmod -R a+w $RUSTUP_HOME $CARGO_HOME
+
+
 
 
 # Setup variables. Even though changing these may cause unnecessary invalidation of
