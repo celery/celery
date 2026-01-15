@@ -1,4 +1,4 @@
-FROM debian:bookworm-slim AS developer-base
+FROM debian:bookworm-slim
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONIOENCODING=UTF-8
