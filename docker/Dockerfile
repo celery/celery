@@ -40,6 +40,9 @@ ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH
 
+# pass
+RUN uname -m && dpkg --print-architecture
+
 # Install Rust toolchain to support building Rust-based Python dependencies
 # especially for PyPy 3.11 on arm64 architectures.
 RUN dpkgArch="$(dpkg --print-architecture)" && \
