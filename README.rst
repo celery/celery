@@ -37,7 +37,7 @@ Sponsors
 Blacksmith
 ----------
 
-.. image:: ./docs/images/blacksmith-logo-white-on-black.svg
+.. image:: https://github.com/celery/celery/blob/main/docs/images/blacksmith-logo-white-on-black.svg
    :alt: Blacksmith logo
    :width: 240px
    :target: https://blacksmith.sh/
@@ -47,7 +47,7 @@ Blacksmith
 CloudAMQP
 ---------
 
-.. image:: ./docs/images/cloudamqp-logo-lightbg.svg
+.. image:: https://github.com/celery/celery/blob/main/docs/images/cloudamqp-logo-lightbg.svg
    :alt: CloudAMQP logo
    :width: 240px
    :target: https://www.cloudamqp.com/
