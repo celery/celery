@@ -35,6 +35,30 @@ RUN apt-get update && apt-get install -y build-essential \
     libssl-dev \
     sudo
 
+# Rust environment variables
+ENV RUSTUP_HOME=/usr/local/rustup \
+    CARGO_HOME=/usr/local/cargo \
+    PATH=/usr/local/cargo/bin:$PATH
+
+# pass
+RUN uname -m && dpkg --print-architecture
+
+# Install Rust toolchain to support building Rust-based Python dependencies
+# especially for PyPy 3.11 on arm64 architectures.
+RUN dpkgArch="$(dpkg --print-architecture)" && \
+    if [ "$dpkgArch" = "amd64" ]; then rustArch='x86_64-unknown-linux-gnu'; \
+    elif [ "$dpkgArch" = "arm64" ]; then rustArch='aarch64-unknown-linux-gnu'; \
+    else echo "Unsupported arch: $dpkgArch" && exit 1; fi && \
+    url="https://static.rust-lang.org/rustup/dist/${rustArch}/rustup-init" && \
+    wget "$url" && \
+    chmod +x rustup-init && \
+    ./rustup-init -y --no-modify-path --default-toolchain stable && \
+    rm rustup-init && \
+    chmod -R a+w $RUSTUP_HOME $CARGO_HOME
+
+
+
+
 # Setup variables. Even though changing these may cause unnecessary invalidation of
 # unrelated elements, grouping them together makes the Dockerfile read better.
 ENV PROVISIONING=/provisioning
