@@ -8,6 +8,7 @@ from collections import OrderedDict, UserList, defaultdict
 from functools import partial
 from subprocess import Popen
 from time import sleep
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from kombu.utils.encoding import from_utf8
 from kombu.utils.objects import cached_property
@@ -449,9 +450,19 @@ class Cluster(UserList):
     def _stop_nodes(self, retry=None, on_down=None, sig=signal.SIGTERM):
         on_down = on_down if on_down is not None else self.on_node_down
         nodes = list(self.getpids(on_down=on_down))
-        if nodes:
-            for node in self.shutdown_nodes(nodes, sig=sig, retry=retry):
-                maybe_call(on_down, node)
+        if not nodes:
+            return
+        def _shutdown_single_node(node):
+            return list(self.shutdown_nodes([node], sig=sig, retry=retry))
+        max_threads = min(len(nodes), 64)
+        with ThreadPoolExecutor(max_workers=max_threads) as executor:
+            future_to_node = {
+                executor.submit(_shutdown_single_node, node): node for node in nodes
+            }
+            for future in as_completed(future_to_node):
+                down_node = future.result()
+                if down_node:
+                    maybe_call(on_down, down_node)
 
     def shutdown_nodes(self, nodes, sig=signal.SIGTERM, retry=None):
         P = set(nodes)
