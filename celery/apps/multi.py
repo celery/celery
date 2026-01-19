@@ -5,10 +5,10 @@ import shlex
 import signal
 import sys
 from collections import OrderedDict, UserList, defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import partial
 from subprocess import Popen
 from time import sleep
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from kombu.utils.encoding import from_utf8
 from kombu.utils.objects import cached_property

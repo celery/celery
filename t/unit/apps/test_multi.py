@@ -3,7 +3,7 @@ import os
 import signal
 import sys
 import time
-from unittest.mock import Mock, call, patch, MagicMock
+from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
 
