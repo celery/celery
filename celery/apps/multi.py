@@ -452,8 +452,10 @@ class Cluster(UserList):
         nodes = list(self.getpids(on_down=on_down))
         if not nodes:
             return
+
         def _shutdown_single_node(node):
             return list(self.shutdown_nodes([node], sig=sig, retry=retry))
+
         max_threads = min(len(nodes), 64)
         with ThreadPoolExecutor(max_workers=max_threads) as executor:
             future_to_node = {

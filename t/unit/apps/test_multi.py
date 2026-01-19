@@ -442,7 +442,6 @@ class test_Cluster:
         self.Pidfile.side_effect = pids
 
 
-
 class test_Cluster_stop_nodes_concurrent:
 
     def setup_method(self):
@@ -496,4 +495,3 @@ class test_Cluster_stop_nodes_concurrent:
             with patch.object(self.cluster, 'shutdown_nodes', side_effect=failing_shutdown):
                 with pytest.raises(RuntimeError):
                     self.cluster._stop_nodes()
-
