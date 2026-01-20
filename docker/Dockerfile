@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y build-essential \
     libmemcached-dev \
     make \
     liblzma-dev \
+    libssl-dev \
     libreadline-dev \
     libbz2-dev \
     llvm \
@@ -27,6 +28,7 @@ RUN apt-get update && apt-get install -y build-essential \
     libsqlite3-dev \
     wget \
     pypy3 \
+    pypy-dev \
     pypy3-venv \
     pypy3-lib \
     python3-openssl \
@@ -34,7 +36,8 @@ RUN apt-get update && apt-get install -y build-essential \
     zlib1g-dev \
     pkg-config \
     libssl-dev \
-    sudo
+    sudo \
+    && rm -rf /var/lib/apt/lists/*
 
 # Explicitly set compilers to avoid Exec format errors on arm64
 ENV CC=gcc
@@ -44,6 +47,10 @@ ENV CXX=g++
 # when installing Python packages with pip on Debian-based images    
 RUN pypy3 -m venv /opt/pypy-venv
 ENV PATH="/opt/pypy-venv/bin:$PATH"
+
+ENV CFLAGS="$(pypy3-config --includes)"
+ENV CPPFLAGS="$(pypy3-config --includes)"
+
 
 RUN pip install --upgrade pip setuptools wheel
 
