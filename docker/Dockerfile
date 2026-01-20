@@ -27,6 +27,7 @@ RUN apt-get update && apt-get install -y build-essential \
     libsqlite3-dev \
     wget \
     pypy3 \
+    pypy3-venv \
     pypy3-lib \
     python3-openssl \
     libncursesw5-dev \
@@ -34,6 +35,17 @@ RUN apt-get update && apt-get install -y build-essential \
     pkg-config \
     libssl-dev \
     sudo
+
+# Explicitly set compilers to avoid Exec format errors on arm64
+ENV CC=gcc
+ENV CXX=g++
+
+# Use virtualenv to avoid PEP 668 (externally-managed-environment)
+# when installing Python packages with pip on Debian-based images    
+RUN pypy3 -m venv /opt/pypy-venv
+ENV PATH="/opt/pypy-venv/bin:$PATH"
+
+RUN pip install --upgrade pip setuptools wheel
 
 # Rust environment variables
 ENV RUSTUP_HOME=/usr/local/rustup \
@@ -43,8 +55,8 @@ ENV RUSTUP_HOME=/usr/local/rustup \
 # pass
 RUN uname -m && dpkg --print-architecture
 
-# Install Rust toolchain to support building Rust-based Python dependencies
-# especially for PyPy 3.11 on arm64 architectures.
+# Rust is required to build native Python extensions
+# (e.g. grpcio / pydantic-core) on PyPy 3.11 for arm64
 RUN dpkgArch="$(dpkg --print-architecture)" && \
     if [ "$dpkgArch" = "amd64" ]; then rustArch='x86_64-unknown-linux-gnu'; \
     elif [ "$dpkgArch" = "arm64" ]; then rustArch='aarch64-unknown-linux-gnu'; \
@@ -56,7 +68,7 @@ RUN dpkgArch="$(dpkg --print-architecture)" && \
     rm rustup-init && \
     chmod -R a+w $RUSTUP_HOME $CARGO_HOME
 
-
+RUN pip install grpcio
 
 
 # Setup variables. Even though changing these may cause unnecessary invalidation of
