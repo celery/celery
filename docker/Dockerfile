@@ -28,7 +28,7 @@ RUN apt-get update && apt-get install -y build-essential \
     libsqlite3-dev \
     wget \
     pypy3 \
-    pypy-dev \
+    pypy3-dev \
     pypy3-venv \
     pypy3-lib \
     python3-openssl \
