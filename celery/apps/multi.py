@@ -462,9 +462,10 @@ class Cluster(UserList):
                 executor.submit(_shutdown_single_node, node): node for node in nodes
             }
             for future in as_completed(future_to_node):
-                down_node = future.result()
-                if down_node:
-                    maybe_call(on_down, down_node)
+                down_nodes = future.result()
+                if down_nodes:
+                    for node in down_nodes:
+                        maybe_call(on_down, node)
 
     def shutdown_nodes(self, nodes, sig=signal.SIGTERM, retry=None):
         P = set(nodes)

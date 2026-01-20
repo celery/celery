@@ -478,7 +478,7 @@ class test_Cluster_stop_nodes_concurrent:
 
         with patch.object(self.cluster, 'getpids', return_value=nodes):
             with patch.object(self.cluster, 'shutdown_nodes') as mock_shutdown:
-                mock_shutdown.return_value = nodes
+                mock_shutdown.return_value = iter(nodes)
                 self.cluster._stop_nodes(sig=custom_sig, retry=custom_retry)
 
                 mock_shutdown.assert_called_with(
