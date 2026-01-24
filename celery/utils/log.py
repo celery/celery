@@ -228,15 +228,16 @@ class LoggingProxy:
             self._thread.recurse_protection = True
             try:
                 text = safe_str(data)
-                if "\n" in text:
-                    buffer = getattr(self._thread, "buffer", "")
-                    if buffer:
-                        text = buffer + text
-                        self._thread.buffer = ""
+                buffer = getattr(self._thread, "buffer", "")
+                if "\n" not in text:
+                    self._thread.buffer = buffer + text
+                    return len(text)
+                text = buffer + text
+                self._thread.buffer = ""
+                log_message = text.rstrip("\n")
+                if log_message:
+                    self.logger.log(self.loglevel, log_message)
 
-                    self.logger.log(self.loglevel, text.rstrip("\n"))
-                else:
-                    self._thread.buffer = getattr(self._thread, "buffer", "") + text
                 return len(text)
             finally:
                 self._thread.recurse_protection = False
