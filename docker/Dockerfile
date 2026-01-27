@@ -48,11 +48,11 @@ ENV CXX=g++
 RUN pypy3 -m venv /opt/pypy-venv
 ENV PATH="/opt/pypy-venv/bin:$PATH"
 
-ENV CFLAGS="$(pypy3-config --includes)"
-ENV CPPFLAGS="$(pypy3-config --includes)"
+RUN pypy3 -m pip install --upgrade pip setuptools wheel
 
+ENV CFLAGS="-I/usr/include/pypy3.9"
+ENV CPPFLAGS="-I/usr/include/pypy3.9"
 
-RUN pip install --upgrade pip setuptools wheel
 
 # Rust environment variables
 ENV RUSTUP_HOME=/usr/local/rustup \
