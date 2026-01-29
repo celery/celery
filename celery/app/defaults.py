@@ -200,6 +200,7 @@ NAMESPACES = Namespace(
         socket_connect_timeout=Option(None, type='float'),
         retry_on_timeout=Option(False, type='bool'),
         socket_keepalive=Option(False, type='bool'),
+        chunk_large_results=Option(False, type='bool'),
     ),
     result=Namespace(
         __old__=old_ns('celery_result'),
