@@ -1,1 +1,1 @@
-pylibmc==1.6.3; platform_system != "Windows"
+pymemcache>=3.4.0
