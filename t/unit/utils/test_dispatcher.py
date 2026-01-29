@@ -2,6 +2,8 @@ import gc
 import sys
 import time
 
+import pytest
+
 from celery.utils.dispatch import Signal
 
 if sys.platform.startswith('java'):
@@ -121,7 +123,8 @@ class test_Signal:
 
         a_signal.connect(fails)
         try:
-            a_signal.send(sender=self, val='test')
+            with pytest.raises(ValueError, match='this'):
+                a_signal.send(sender=self, val='test')
         finally:
             a_signal.disconnect(fails)
         self._testIsClean(a_signal)
