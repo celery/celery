@@ -536,11 +536,6 @@ documentation.
 .. _`Contributing to Celery`:
     https://docs.celeryq.dev/en/stable/contributing.html
 
-|oc-contributors|
-
-.. |oc-contributors| image:: https://opencollective.com/celery/contributors.svg?width=890&button=false
-    :target: https://github.com/celery/celery/graphs/contributors
-
 Backers
 -------
 
