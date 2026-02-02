@@ -34,7 +34,7 @@ def rename_widget(widget_id, name):
 @shared_task(
     bind=True,
     autoretry_for=(Exception,),
-    retry_kwargs={"max_retries": 2, "countdown": 10 * 60},  # retry 2 times in 10 minutes
+    retry_kwargs={"max_retries": 2, "countdown": 10 * 60},  # retry up to 2 times with 10 minutes between retries
 )
 def error_task():
     raise Exception("Test error")
