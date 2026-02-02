@@ -40,6 +40,7 @@ def rename_widget(widget_id, name):
 def error_task(self):
     raise Exception("Test error")
 
+
 @shared_task(
     bind=True,
     autoretry_for=(Exception,),
