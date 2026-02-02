@@ -30,7 +30,6 @@ def rename_widget(widget_id, name):
     w = Widget.objects.get(id=widget_id)
     w.name = name
     w.save()
-    
 @shared_task(
     bind=True,
     autoretry_for=(Exception,),
