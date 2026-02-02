@@ -47,4 +47,3 @@ def error_task(self):
 )
 def error_backoff_test(self):
     raise Exception("Test error")
-    return "Success"
