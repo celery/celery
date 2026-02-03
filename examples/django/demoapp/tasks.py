@@ -31,6 +31,7 @@ def rename_widget(widget_id, name):
     w.name = name
     w.save()
 
+
 @shared_task(
     bind=True,
     autoretry_for=(Exception,),
