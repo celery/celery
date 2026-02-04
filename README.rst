@@ -120,17 +120,19 @@ in such a way that the client enqueues an URL to be requested by a worker.
 What do I need?
 ===============
 
-Celery version 5.5.x runs on:
+Celery version 5.6.x runs on:
 
-- Python (3.8, 3.9, 3.10, 3.11, 3.12, 3.13)
+- Python (3.9, 3.10, 3.11, 3.12, 3.13)
 - PyPy3.9+ (v7.3.12+)
 
-
-This is the version of celery which will support Python 3.8 or newer.
+This is the last version of Celery which will support Python 3.9.
+Celery v5.7.x will work on Python 3.10 or newer versions.
 
 If you're running an older version of Python, you need to be running
 an older version of Celery:
 
+
+- Python 3.8: Celery 5.5 or earlier.
 - Python 3.7: Celery 5.2 or earlier.
 - Python 3.6: Celery 5.1 or earlier.
 - Python 2.7: Celery 4.x series.
@@ -535,11 +537,6 @@ documentation.
 
 .. _`Contributing to Celery`:
     https://docs.celeryq.dev/en/stable/contributing.html
-
-|oc-contributors|
-
-.. |oc-contributors| image:: https://opencollective.com/celery/contributors.svg?width=890&button=false
-    :target: https://github.com/celery/celery/graphs/contributors
 
 Backers
 -------
