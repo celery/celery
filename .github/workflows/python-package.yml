@@ -40,9 +40,11 @@ jobs:
               os: "windows-latest"
             - python-version: '3.11'
               os: "windows-latest"
+            - python-version: '3.12'
+              os: "windows-latest"
             - python-version: '3.13'
               os: "windows-latest"
-            - python-version: '3.14'
+            - python-version: '3.14t'
               os: "windows-latest"
             - python-version: 'pypy3.11'
               os: "windows-latest"
@@ -52,7 +54,7 @@ jobs:
       if: startsWith(matrix.os, 'blacksmith-4vcpu-ubuntu')
       run: |
         sudo apt-get update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Set up Python ${{ matrix.python-version }}
       uses: useblacksmith/setup-python@v6
       with:
@@ -87,7 +89,6 @@ jobs:
     needs: [Unit]
     if: needs.Unit.result == 'success'
     strategy:
-      max-parallel: 5
       matrix:
         module: [
           'test_backend.py',
@@ -111,7 +112,6 @@ jobs:
     needs: [Unit]
     if: needs.Unit.result == 'success'
     strategy:
-      max-parallel: 5
       matrix:
         module: [
           'test_broker_failover.py',

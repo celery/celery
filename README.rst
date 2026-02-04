@@ -2,7 +2,7 @@
 
 |build-status| |coverage| |license| |wheel| |semgrep| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 5.6.0rc1 (recovery)
+:Version: 5.6.2 (recovery)
 :Web: https://docs.celeryq.dev/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -37,7 +37,7 @@ Sponsors
 Blacksmith
 ----------
 
-.. image:: ./docs/images/blacksmith-logo-white-on-black.svg
+.. image:: https://github.com/celery/celery/blob/main/docs/images/blacksmith-logo-white-on-black.svg
    :alt: Blacksmith logo
    :width: 240px
    :target: https://blacksmith.sh/
@@ -47,7 +47,7 @@ Blacksmith
 CloudAMQP
 ---------
 
-.. image:: ./docs/images/cloudamqp-logo-lightbg.svg
+.. image:: https://github.com/celery/celery/blob/main/docs/images/cloudamqp-logo-lightbg.svg
    :alt: CloudAMQP logo
    :width: 240px
    :target: https://www.cloudamqp.com/
@@ -535,11 +535,6 @@ documentation.
 
 .. _`Contributing to Celery`:
     https://docs.celeryq.dev/en/stable/contributing.html
-
-|oc-contributors|
-
-.. |oc-contributors| image:: https://opencollective.com/celery/contributors.svg?width=890&button=false
-    :target: https://github.com/celery/celery/graphs/contributors
 
 Backers
 -------
