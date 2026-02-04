@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y build-essential \
     libmemcached-dev \
     make \
     liblzma-dev \
+    libssl-dev \
     libreadline-dev \
     libbz2-dev \
     llvm \
@@ -27,13 +28,55 @@ RUN apt-get update && apt-get install -y build-essential \
     libsqlite3-dev \
     wget \
     pypy3 \
+    pypy3-dev \
+    pypy3-venv \
     pypy3-lib \
     python3-openssl \
     libncursesw5-dev \
     zlib1g-dev \
     pkg-config \
     libssl-dev \
-    sudo
+    sudo \
+    && rm -rf /var/lib/apt/lists/*
+
+# Explicitly set compilers to avoid Exec format errors on arm64
+ENV CC=gcc
+ENV CXX=g++
+
+# Use virtualenv to avoid PEP 668 (externally-managed-environment)
+# when installing Python packages with pip on Debian-based images    
+RUN pypy3 -m venv /opt/pypy-venv
+ENV PATH="/opt/pypy-venv/bin:$PATH"
+
+RUN pypy3 -m pip install --upgrade pip setuptools wheel
+
+ENV CFLAGS="-I/usr/include/pypy3.9"
+ENV CPPFLAGS="-I/usr/include/pypy3.9"
+
+
+# Rust environment variables
+ENV RUSTUP_HOME=/usr/local/rustup \
+    CARGO_HOME=/usr/local/cargo \
+    PATH=/usr/local/cargo/bin:$PATH
+
+# pass
+RUN uname -m && dpkg --print-architecture
+
+# Rust is required to build native Python extensions
+# (e.g. grpcio / pydantic-core) on PyPy 3.11 for arm64
+RUN dpkgArch="$(dpkg --print-architecture)" && \
+    if [ "$dpkgArch" = "amd64" ]; then rustArch='x86_64-unknown-linux-gnu'; \
+    elif [ "$dpkgArch" = "arm64" ]; then rustArch='aarch64-unknown-linux-gnu'; \
+    else echo "Unsupported arch: $dpkgArch" && exit 1; fi && \
+    url="https://static.rust-lang.org/rustup/dist/${rustArch}/rustup-init" && \
+    wget "$url" && \
+    chmod +x rustup-init && \
+    ./rustup-init -y --no-modify-path --default-toolchain stable && \
+    rm rustup-init && \
+    chmod -R a+w $RUSTUP_HOME $CARGO_HOME
+
+RUN pip install grpcio
+
 
 # Setup variables. Even though changing these may cause unnecessary invalidation of
 # unrelated elements, grouping them together makes the Dockerfile read better.
