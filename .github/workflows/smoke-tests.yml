@@ -11,7 +11,7 @@ on:
         description: 'JSON array of Python versions to test'
         required: false
         type: string
-        default: '["3.13"]'
+        default: '["3.10", "3.11", "3.12", "3.13", "3.14", "3.14t"]'
 
 jobs:
   testing-with:
@@ -33,7 +33,7 @@ jobs:
           sudo apt-get install -y procps  # Install procps to enable sysctl
           sudo sysctl -w vm.overcommit_memory=1
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup Docker Builder
         uses: useblacksmith/setup-docker-builder@v1
       - name: Set up Python ${{ matrix.python-version }}

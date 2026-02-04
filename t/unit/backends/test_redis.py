@@ -173,7 +173,8 @@ class Sentinel(conftest.MockCallbacks):
         self.min_other_sentinels = min_other_sentinels
         self.connection_kwargs = connection_kwargs
 
-    def master_for(self, service_name, redis_class):
+    def master_for(self, service_name, redis_class, **kwargs):
+        self.master_for_kwargs = kwargs
         return random.choice(self.sentinels)
 
 
@@ -1285,7 +1286,7 @@ class test_RedisBackend_chords_complex(basetest_RedisBackend):
         self.b.client.zrange.assert_not_called()
         self.b.client.lrange.assert_not_called()
         # Confirm that the `GroupResult.restore` mock was called
-        complex_header_result.assert_called_once_with(request.group)
+        complex_header_result.assert_called_once_with(request.group, app=self.b.app)
         # Confirm that the callback was called with the `join()`ed group result
         if supports_native_join:
             expected_join = mock_result_obj.join_native
@@ -1417,3 +1418,56 @@ class test_SentinelBackend:
 
         from celery.backends.redis import SentinelManagedSSLConnection
         assert x.connparams['connection_class'] is SentinelManagedSSLConnection
+
+    def test_url_with_acl_credentials(self):
+        x = self.Backend(
+            'sentinel://myuser:mypass@github.com:123/1;'
+            'sentinel://myuser:mypass@github.com:124/1',
+            app=self.app,
+        )
+        assert x.connparams
+        assert "host" not in x.connparams
+        assert x.connparams['db'] == 1
+        assert "port" not in x.connparams
+        assert x.connparams['password'] == "mypass"
+        assert x.connparams['username'] == "myuser"
+        assert len(x.connparams['hosts']) == 2
+
+        expected_usernames = ["myuser", "myuser"]
+        found_usernames = [cp['username'] for cp in x.connparams['hosts']]
+        assert found_usernames == expected_usernames
+
+    def test_get_pool_with_acl_credentials(self):
+        x = self.Backend(
+            'sentinel://myuser:mypass@github.com:123/1;'
+            'sentinel://myuser:mypass@github.com:124/1',
+            app=self.app,
+        )
+        with patch.object(x, '_get_sentinel_instance') as mock_get_sentinel:
+            mock_sentinel = Mock()
+            mock_sentinel.master_for.return_value = Mock(connection_pool=Mock())
+            mock_get_sentinel.return_value = mock_sentinel
+
+            x._get_pool(**x.connparams)
+
+            mock_sentinel.master_for.assert_called_once()
+            call_kwargs = mock_sentinel.master_for.call_args[1]
+            assert call_kwargs.get('username') == 'myuser'
+            assert call_kwargs.get('password') == 'mypass'
+
+    def test_get_pool_with_password_only(self):
+        x = self.Backend(
+            'sentinel://:mypass@github.com:123/1',
+            app=self.app,
+        )
+        with patch.object(x, '_get_sentinel_instance') as mock_get_sentinel:
+            mock_sentinel = Mock()
+            mock_sentinel.master_for.return_value = Mock(connection_pool=Mock())
+            mock_get_sentinel.return_value = mock_sentinel
+
+            x._get_pool(**x.connparams)
+
+            mock_sentinel.master_for.assert_called_once()
+            call_kwargs = mock_sentinel.master_for.call_args[1]
+            assert 'username' not in call_kwargs
+            assert call_kwargs.get('password') == 'mypass'

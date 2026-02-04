@@ -75,7 +75,10 @@ class Hub(bootsteps.StartStopStep):
         return self
 
     def start(self, w):
-        pass
+        # Ensure the kombu hub's poller is initialized before the event loop starts.
+        # Since asynloop() no longer resets the hub on exit (to preserve timers
+        # during shutdown), we must initialize the poller upfront.
+        _ = w.hub.poller
 
     def stop(self, w):
         w.hub.close()
@@ -191,7 +194,10 @@ class Beat(bootsteps.StartStopStep):
 
     def create(self, w):
         from celery.beat import EmbeddedService
-        if w.pool_cls.__module__.endswith(('gevent', 'eventlet')):
+
+        # Defensive check: pool_cls may be a string (e.g., 'gevent') or a class
+        pool_module = w.pool_cls if isinstance(w.pool_cls, str) else w.pool_cls.__module__
+        if pool_module.endswith(('gevent', 'eventlet')):
             raise ImproperlyConfigured(ERR_B_GREEN)
         b = w.beat = EmbeddedService(w.app,
                                      schedule_filename=w.schedule_filename,

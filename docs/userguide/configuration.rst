@@ -1208,6 +1208,12 @@ This is a dict supporting the following keys:
     constructor.  See the :mod:`pymongo` docs to see a list of arguments
     supported.
 
+.. note::
+
+    With pymongo>=4.14, options are case-sensitive when they were previously
+    case-insensitive.  See :class:`~pymongo.mongo_client.MongoClient` to
+    determine the correct case.
+
 .. _example-mongodb-result-config:
 
 Example configuration
@@ -3116,6 +3122,14 @@ won't retry forever if the broker isn't available at the first task execution):
 .. code-block:: python
 
     broker_transport_options = {'max_retries': 5}
+
+Example enabling publisher confirms (supported by the ``pyamqp`` transport).
+Without this, messages can be silently dropped when the broker hits resource
+limits:
+
+.. code-block:: python
+
+    broker_transport_options = {'confirm_publish': True}
 
 .. _conf-worker:
 

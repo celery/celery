@@ -212,7 +212,7 @@ def delta_resolution(dt: datetime, delta: timedelta) -> datetime:
 
 
 def remaining(
-        start: datetime, ends_in: timedelta, now: Callable | None = None,
+        start: datetime, ends_in: timedelta, now: datetime | None = None,
         relative: bool = False) -> timedelta:
     """Calculate the real remaining time for a start date and a timedelta.
 
@@ -224,7 +224,7 @@ def remaining(
         relative (bool): If enabled the end time will be calculated
             using :func:`delta_resolution` (i.e., rounded to the
             resolution of `ends_in`).
-        now (Callable): Function returning the current time and date.
+        now (~datetime.datetime): Current time and date.
             Defaults to :func:`datetime.now(timezone.utc)`.
 
     Returns:
