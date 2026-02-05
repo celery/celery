@@ -2,7 +2,8 @@ import errno
 import os
 import signal
 import sys
-from unittest.mock import Mock, call, patch
+import time
+from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
 
@@ -439,3 +440,58 @@ class test_Cluster:
                 except KeyError:
                     raise ValueError()
         self.Pidfile.side_effect = pids
+
+
+class test_Cluster_stop_nodes_concurrent:
+
+    def setup_method(self):
+        self.on_down = MagicMock(name='on_down')
+        self.cluster = Cluster(['n1', 'n2', 'n3'], on_node_down=self.on_down)
+
+    def test_stop_nodes_concurrency_timing(self):
+        nodes = [('n1', 101), ('n2', 102), ('n3', 103)]
+
+        def slow_shutdown(nodes_list, **kwargs):
+            time.sleep(0.3)
+            return nodes_list
+
+        with patch.object(self.cluster, 'getpids', return_value=nodes):
+            with patch.object(self.cluster, 'shutdown_nodes', side_effect=slow_shutdown):
+                start_time = time.time()
+                self.cluster._stop_nodes()
+                duration = time.time() - start_time
+
+        assert duration < 0.6
+        assert self.on_down.call_count == 3
+
+    def test_stop_nodes_empty_list(self):
+        with patch.object(self.cluster, 'getpids', return_value=[]):
+            with patch('celery.apps.multi.ThreadPoolExecutor') as mock_executor:
+                self.cluster._stop_nodes()
+                assert not mock_executor.called
+                assert not self.on_down.called
+
+    def test_stop_nodes_preserves_sig_and_retry(self):
+        nodes = [('n1', 101)]
+        custom_sig = 'SIGUSR1'
+        custom_retry = 5
+
+        with patch.object(self.cluster, 'getpids', return_value=nodes):
+            with patch.object(self.cluster, 'shutdown_nodes') as mock_shutdown:
+                mock_shutdown.return_value = iter(nodes)
+                self.cluster._stop_nodes(sig=custom_sig, retry=custom_retry)
+
+                mock_shutdown.assert_called_with(
+                    [('n1', 101)], sig=custom_sig, retry=custom_retry
+                )
+
+    def test_stop_nodes_error_propagation(self):
+        nodes = [('n1', 101)]
+
+        def failing_shutdown(*args, **kwargs):
+            raise RuntimeError("Crashed")
+
+        with patch.object(self.cluster, 'getpids', return_value=nodes):
+            with patch.object(self.cluster, 'shutdown_nodes', side_effect=failing_shutdown):
+                with pytest.raises(RuntimeError):
+                    self.cluster._stop_nodes()
