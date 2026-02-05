@@ -306,3 +306,4 @@ Narasux, 2024/09/09
 Colin Watson, 2025/03/01
 Lucas Infante, 2025/05/15
 Diego Margoni, 2025/07/01
+Michael Reznik, 2026/01/24
