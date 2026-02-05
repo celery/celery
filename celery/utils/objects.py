@@ -1,4 +1,5 @@
 """Object related utilities, including introspection, etc."""
+import types
 from functools import reduce
 
 __all__ = ('Bunch', 'FallbackContext', 'getitem_property', 'mro_lookup')
@@ -89,6 +90,8 @@ class FallbackContext:
     def __exit__(self, *exc_info):
         if self._context is not None:
             return self._context.__exit__(*exc_info)
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 
 class getitem_property:
