@@ -426,7 +426,7 @@ class test_task_retries(TasksCase):
 
     def test_signature_from_request__filters_x_death_headers(self):
         """
-        Test that X-Death headers are filtered out during retires to prevent
+        Test that X-Death headers are filtered out during retries to prevent
         RabbitMQ cycle detection.
         """
 

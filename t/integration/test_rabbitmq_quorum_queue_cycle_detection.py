@@ -3,7 +3,7 @@ Integration tests for RabbitMQ cycle detection bug with quorum queues.
 
 This reproduces the conditions for
 https://github.com/celery/celery/issues/9867 when running against RabbitMQ
-<4.0.
+<4.0.1.
 """
 
 import os
@@ -70,14 +70,14 @@ def create_test_app_with_quorum_queues():
     # Enable result extended to track retries
     app.conf.result_extended = True
 
-    return app, queue_name
+    return app
 
 
 @pytest.mark.amqp
 @pytest.mark.timeout(35)
-def test_countdown_task_with_retry_loses_message():
+def test_countdown_task_with_retry():
     """Test where a countdown task gets retried with the same delay."""
-    app, queue_name = create_test_app_with_quorum_queues()
+    app = create_test_app_with_quorum_queues()
 
     @app.task(bind=True, default_retry_delay=3, max_retries=1)
     def countdown_task_with_retry(self):
@@ -114,9 +114,9 @@ def test_countdown_task_with_retry_loses_message():
 
 @pytest.mark.amqp
 @pytest.mark.timeout(35)
-def test_non_eta_task_with_multiple_retries_loses_message():
+def test_non_eta_task_with_multiple_retries():
     """Test where a task gets retried twice with the same delay."""
-    app, queue_name = create_test_app_with_quorum_queues()
+    app = create_test_app_with_quorum_queues()
 
     @app.task(bind=True, max_retries=2)
     def non_eta_task_with_retries(self):
