@@ -168,7 +168,8 @@ class DjangoWorkerFixup:
             if c and c.connection:
                 self._maybe_close_db_fd(c)
 
-        # use the _ version to avoid DB_REUSE preventing the conn.close() call
+        # use the _close_database(force=True) to avoid DB_REUSE preventing connection closure
+        # and to ensure full connection close (not just close_if_unusable_or_obsolete) on worker process init
         self._close_database(force=True)
         self.close_cache()
 
