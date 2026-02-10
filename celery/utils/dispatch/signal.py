@@ -258,7 +258,9 @@ class Signal:  # pragma: no cover
     def send(self, sender, **named):
         """Send signal from sender to all connected receivers.
 
-        If any receiver raises an error, the exception is re-raised after logging.
+        If any receiver raises an error, the exception is returned as the
+        corresponding response. (This is different from the "send" in
+        Django signals. In Celery "send" and "send_robust" do the same thing.)
 
         Arguments:
             sender (Any): The sender of the signal.
@@ -266,9 +268,7 @@ class Signal:  # pragma: no cover
             **named (Any): Named arguments which will be passed to receivers.
 
         Returns:
-            List: of tuple pairs: ``[(receiver, response), … ]``.
-                Only contains successful responses, as exceptions
-                are re-raised.
+            List: of tuple pairs: `[(receiver, response), … ]`.
         """
         responses = []
         if not self.receivers or \
@@ -283,7 +283,7 @@ class Signal:  # pragma: no cover
                     exc.__traceback__ = sys.exc_info()[2]
                 logger.exception(
                     'Signal handler %r raised: %r', receiver, exc)
-                raise
+                responses.append((receiver, exc))
             else:
                 responses.append((receiver, response))
         return responses
