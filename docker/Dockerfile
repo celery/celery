@@ -85,6 +85,8 @@ RUN chmod gu+x /entrypoint
 # Define the local pyenvs
 RUN pyenv local 3.13 3.12 3.11 3.10 pypy3.11
 
+ENV PIP_CONSTRAINTS=$HOME/requirements/constraints.txt
+
 RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
     pyenv exec python3.13 -m pip install --upgrade pip setuptools wheel && \
     pyenv exec python3.12 -m pip install --upgrade pip setuptools wheel && \
