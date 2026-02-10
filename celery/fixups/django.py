@@ -200,6 +200,16 @@ class DjangoWorkerFixup:
         self._db_recycles += 1
 
     def _close_database(self, force: bool = False) -> None:
+        """Close database connections.
+
+        Args:
+            force: If True, unconditionally close all connections via conn.close().
+                   If False (default), only close unusable or obsolete connections
+                   via conn.close_if_unusable_or_obsolete().
+
+        Use force=True during worker process initialization to ensure clean slate.
+        Use default (False) during normal task lifecycle for connection reuse optimization.
+        """
         for conn in self._db.connections.all():
             try:
                 if force:
