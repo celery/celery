@@ -266,7 +266,9 @@ class Signal:  # pragma: no cover
             **named (Any): Named arguments which will be passed to receivers.
 
         Returns:
-            List: of tuple pairs: `[(receiver, response), … ]`.
+            List: of tuple pairs: ``[(receiver, response), … ]``.
+                Only contains successful responses, as exceptions
+                are re-raised.
         """
         responses = []
         if not self.receivers or \
