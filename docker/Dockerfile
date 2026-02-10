@@ -85,8 +85,6 @@ RUN chmod gu+x /entrypoint
 # Define the local pyenvs
 RUN pyenv local 3.13 3.12 3.11 3.10 pypy3.11
 
-ENV PIP_CONSTRAINTS=$HOME/requirements/constraints.txt
-
 RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
     pyenv exec python3.13 -m pip install --upgrade pip setuptools wheel && \
     pyenv exec python3.12 -m pip install --upgrade pip setuptools wheel && \
@@ -104,7 +102,8 @@ RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
     -r requirements/test-ci-base.txt \
     -r requirements/test-ci-default.txt \
     -r requirements/test-integration.txt \
-    -r requirements/test.txt
+    -r requirements/test.txt \
+    --build-constraint requirements/constraints.txt
 
 RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
     pyenv exec python3.12 -m pip install -r requirements/default.txt \
@@ -114,7 +113,8 @@ RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
     -r requirements/test-ci-base.txt \
     -r requirements/test-ci-default.txt \
     -r requirements/test-integration.txt \
-    -r requirements/test.txt
+    -r requirements/test.txt \
+    --build-constraint requirements/constraints.txt
 
 RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
     pyenv exec python3.11 -m pip install -r requirements/default.txt \
@@ -124,7 +124,8 @@ RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
     -r requirements/test-ci-base.txt \
     -r requirements/test-ci-default.txt \
     -r requirements/test-integration.txt \
-    -r requirements/test.txt
+    -r requirements/test.txt \
+    --build-constraint requirements/constraints.txt
 
 RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
     pyenv exec python3.10 -m pip install -r requirements/default.txt \
@@ -134,8 +135,8 @@ RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
     -r requirements/test-ci-base.txt \
     -r requirements/test-ci-default.txt \
     -r requirements/test-integration.txt \
-    -r requirements/test.txt
-
+    -r requirements/test.txt \
+    --build-constraint requirements/constraints.txt
 
 RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
     pyenv exec pypy3.11 -m pip install -r requirements/default.txt \
@@ -145,7 +146,8 @@ RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
     -r requirements/test-ci-base.txt \
     -r requirements/test-ci-default.txt \
     -r requirements/test-integration.txt \
-    -r requirements/test.txt
+    -r requirements/test.txt \
+    --build-constraint requirements/constraints.txt
 
 COPY --chown=1000:1000 . $HOME/celery
 
