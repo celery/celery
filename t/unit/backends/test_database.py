@@ -66,6 +66,19 @@ class test_ModelsIdFieldTypeVariations:
 
 
 @skip.if_pypy
+class test_DateDoneIndex:
+    """Test that date_done columns have index=True on Task and TaskSet models."""
+
+    def test_task_date_done_has_index(self):
+        col = Task.__table__.columns['date_done']
+        assert col.index is True, "Task.date_done should have index=True"
+
+    def test_taskset_date_done_has_index(self):
+        col = TaskSet.__table__.columns['date_done']
+        assert col.index is True, "TaskSet.date_done should have index=True"
+
+
+@skip.if_pypy
 class test_DatabaseBackend:
 
     @pytest.fixture(autouse=True)
