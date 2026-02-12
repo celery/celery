@@ -75,8 +75,10 @@ class test_DateDoneColumnDefaults:
     """
 
     def test_task_date_done_default_is_callable(self):
-        """Task.date_done default should be a callable (lambda)."""
+        """Task.date_done default should be a callable."""
         col = Task.__table__.columns['date_done']
+        assert col.default is not None, \
+            "Task.date_done should have a default"
         assert callable(col.default.arg), \
             "Task.date_done default should be a callable, not a fixed datetime"
 
@@ -89,8 +91,10 @@ class test_DateDoneColumnDefaults:
             "Task.date_done onupdate should be a callable, not a fixed datetime"
 
     def test_taskset_date_done_default_is_callable(self):
-        """TaskSet.date_done default should be a callable (lambda)."""
+        """TaskSet.date_done default should be a callable."""
         col = TaskSet.__table__.columns['date_done']
+        assert col.default is not None, \
+            "TaskSet.date_done should have a default"
         assert callable(col.default.arg), \
             "TaskSet.date_done default should be a callable, not a fixed datetime"
 
