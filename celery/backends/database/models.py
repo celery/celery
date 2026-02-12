@@ -24,8 +24,8 @@ class Task(ResultModelBase):
     task_id = sa.Column(sa.String(155), unique=True)
     status = sa.Column(sa.String(50), default=states.PENDING)
     result = sa.Column(PickleType, nullable=True)
-    date_done = sa.Column(sa.DateTime, default=datetime.now(timezone.utc),
-                          onupdate=datetime.now(timezone.utc), nullable=True)
+    date_done = sa.Column(sa.DateTime, default=lambda: datetime.now(timezone.utc),
+                          onupdate=lambda: datetime.now(timezone.utc), nullable=True)
     traceback = sa.Column(sa.Text, nullable=True)
 
     def __init__(self, task_id):
@@ -86,7 +86,7 @@ class TaskSet(ResultModelBase):
                    autoincrement=True, primary_key=True)
     taskset_id = sa.Column(sa.String(155), unique=True)
     result = sa.Column(PickleType, nullable=True)
-    date_done = sa.Column(sa.DateTime, default=datetime.now(timezone.utc),
+    date_done = sa.Column(sa.DateTime, default=lambda: datetime.now(timezone.utc),
                           nullable=True)
 
     def __init__(self, taskset_id, result):
