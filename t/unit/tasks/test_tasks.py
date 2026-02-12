@@ -471,6 +471,12 @@ class test_task_retries(TasksCase):
         sig = self.retry_task.signature_from_request()
         assert sig.options['shadow'] == 'test'
 
+    def test_signature_from_request__passes_ignore_result(self):
+        self.retry_task.push_request()
+        self.retry_task.request.ignore_result = True
+        sig = self.retry_task.signature_from_request()
+        assert sig.options['ignore_result'] is True
+
     def test_retry_kwargs_can_be_empty(self):
         self.retry_task_mockapply.push_request()
         try:
