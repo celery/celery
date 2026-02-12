@@ -457,7 +457,7 @@ class Control:
         """Create new :class:`Inspect` instance."""
         return self.app.subclass_with_self(Inspect, reverse='control.inspect')
 
-    def purge(self, connection=None):
+    def purge(self, connection=None, retry=False, retry_errback=None):
         """Discard all waiting tasks.
 
         This will ignore all tasks waiting for execution, and they will
@@ -467,11 +467,19 @@ class Control:
             connection (kombu.Connection): Optional specific connection
                 instance to use.  If not provided a connection will
                 be acquired from the connection pool.
+            retry (bool): If enabled, retries the broker connection
+                according to ``broker_connection_max_retries`` before purging.
+            retry_errback (Callable): Optional callback used for logging each
+                retry attempt.
 
         Returns:
             int: the number of tasks discarded.
         """
         with self.app.connection_or_acquire(connection) as conn:
+            if retry:
+                conn = conn.ensure_connection(
+                    retry_errback, self.app.conf.broker_connection_max_retries,
+                )
             return self.app.amqp.TaskConsumer(conn).purge()
     discard_all = purge
 

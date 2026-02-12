@@ -2,6 +2,7 @@ import os
 import socket
 import sys
 from collections import deque
+from contextlib import nullcontext
 from datetime import datetime, timedelta
 from functools import partial
 from queue import Empty
@@ -19,7 +20,7 @@ from kombu.transport.memory import Transport
 from kombu.utils.uuid import uuid
 
 import t.skip
-from celery.apps.worker import safe_say
+from celery.apps.worker import Worker, safe_say
 from celery.bootsteps import CLOSE, RUN, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
 from celery.exceptions import (ImproperlyConfigured, InvalidTaskError, TaskRevokedError, WorkerShutdown,
@@ -1242,3 +1243,37 @@ class test_WorkerApp:
         captured = capfd.readouterr()
         assert "\nout\n" == captured.out
         assert "" == captured.err
+
+    def test_purge_messages_uses_retry_when_enabled_on_startup(self):
+        worker = Mock(name='worker')
+        worker.app = Mock(name='app')
+        worker.app.conf.broker_connection_retry = True
+        worker.app.conf.broker_connection_retry_on_startup = True
+        worker.app.conf.broker_connection_max_retries = 3
+        worker.app.control.purge.return_value = 0
+
+        connection = Mock(name='connection')
+        worker.app.connection_for_write.return_value = nullcontext(connection)
+
+        Worker.purge_messages(worker)
+
+        worker.app.control.purge.assert_called_once()
+        assert worker.app.control.purge.call_args.kwargs['connection'] is connection
+        assert worker.app.control.purge.call_args.kwargs['retry'] is True
+        assert callable(worker.app.control.purge.call_args.kwargs['retry_errback'])
+
+    def test_purge_messages_disables_retry_when_startup_retry_is_false(self):
+        worker = Mock(name='worker')
+        worker.app = Mock(name='app')
+        worker.app.conf.broker_connection_retry = True
+        worker.app.conf.broker_connection_retry_on_startup = False
+        worker.app.conf.broker_connection_max_retries = 3
+        worker.app.control.purge.return_value = 0
+
+        connection = Mock(name='connection')
+        worker.app.connection_for_write.return_value = nullcontext(connection)
+
+        Worker.purge_messages(worker)
+
+        worker.app.control.purge.assert_called_once()
+        assert worker.app.control.purge.call_args.kwargs['retry'] is False

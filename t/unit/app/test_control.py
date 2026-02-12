@@ -1,3 +1,4 @@
+from contextlib import nullcontext
 from unittest.mock import Mock
 
 import pytest
@@ -255,6 +256,21 @@ class test_Control:
         self.app.amqp.TaskConsumer = Mock(name='TaskConsumer')
         self.app.control.purge()
         self.app.amqp.TaskConsumer().purge.assert_called_with()
+
+    def test_purge_with_retry(self):
+        self.app.amqp.TaskConsumer = Mock(name='TaskConsumer')
+        conn = Mock(name='connection')
+        conn.ensure_connection.return_value = conn
+        self.app.connection_or_acquire = Mock(return_value=nullcontext(conn))
+        retry_errback = Mock(name='retry_errback')
+
+        self.app.control.purge(retry=True, retry_errback=retry_errback)
+
+        conn.ensure_connection.assert_called_once_with(
+            retry_errback, self.app.conf.broker_connection_max_retries,
+        )
+        self.app.amqp.TaskConsumer.assert_called_once_with(conn)
+        self.app.amqp.TaskConsumer.return_value.purge.assert_called_once_with()
 
     def test_rate_limit(self):
         self.app.control.rate_limit(self.mytask.name, '100/m')
