@@ -629,6 +629,7 @@ class Backend:
                 if self.always_retry and self.exception_safe_to_retry(exc):
                     if retries < self.max_retries:
                         retries += 1
+                        self.on_backend_retryable_error(exc)
 
                         # get_exponential_backoff_interval computes integers
                         # and time.sleep accept floats for sub second sleep
@@ -689,6 +690,10 @@ class Backend:
         """
         return False
 
+    def on_backend_retryable_error(self, exc):
+        """Hook called before retrying a recoverable backend exception."""
+        return None
+
     def get_task_meta(self, task_id, cache=True):
         """Get task meta from backend.
 
@@ -710,6 +715,7 @@ class Backend:
                 if self.always_retry and self.exception_safe_to_retry(exc):
                     if retries < self.max_retries:
                         retries += 1
+                        self.on_backend_retryable_error(exc)
 
                         # get_exponential_backoff_interval computes integers
                         # and time.sleep accept floats for sub second sleep
