@@ -1,7 +1,7 @@
 from collections.abc import Mapping, MutableMapping
 from unittest.mock import Mock
 
-from celery.app.utils import Settings, bugreport, filter_hidden_settings
+from celery.app.utils import Settings, bugreport, filter_hidden_settings, get_broker_connection_retry_configuration
 
 
 class test_Settings:
@@ -57,3 +57,48 @@ class test_bugreport:
         conn.transport = None
 
         bugreport(self.app)
+
+
+class test_get_broker_connection_retry_configuration:
+
+    def test_startup_uses_broker_connection_retry_on_startup(self):
+        self.app.conf.broker_connection_retry = False
+        self.app.conf.broker_connection_retry_on_startup = True
+
+        retry_enabled, setting_name, warning = (
+            get_broker_connection_retry_configuration(
+                self.app.conf, first_connection_attempt=True,
+            )
+        )
+
+        assert retry_enabled is True
+        assert setting_name == 'broker_connection_retry_on_startup'
+        assert warning is None
+
+    def test_non_startup_uses_broker_connection_retry(self):
+        self.app.conf.broker_connection_retry = False
+        self.app.conf.broker_connection_retry_on_startup = True
+
+        retry_enabled, setting_name, warning = (
+            get_broker_connection_retry_configuration(
+                self.app.conf, first_connection_attempt=False,
+            )
+        )
+
+        assert retry_enabled is False
+        assert setting_name == 'broker_connection_retry'
+        assert warning is None
+
+    def test_startup_warns_when_retry_on_startup_is_unset_and_retry_disabled(self):
+        self.app.conf.broker_connection_retry = False
+        self.app.conf.broker_connection_retry_on_startup = None
+
+        retry_enabled, setting_name, warning = (
+            get_broker_connection_retry_configuration(
+                self.app.conf, first_connection_attempt=True,
+            )
+        )
+
+        assert retry_enabled is False
+        assert setting_name == 'broker_connection_retry'
+        assert warning is not None

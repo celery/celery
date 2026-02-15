@@ -12,6 +12,7 @@ import platform as _platform
 import sys
 from datetime import datetime
 from functools import partial
+from warnings import warn
 
 from billiard.common import REMAP_SIGTERM
 from billiard.process import current_process
@@ -19,6 +20,7 @@ from kombu.utils.encoding import safe_str
 
 from celery import VERSION_BANNER, platforms, signals
 from celery.app import trace
+from celery.app.utils import get_broker_connection_retry_configuration
 from celery.loaders.app import AppLoader
 from celery.platforms import EX_FAILURE, EX_OK, check_privileges, isatty
 from celery.utils import static, term
@@ -26,6 +28,7 @@ from celery.utils.debug import cry
 from celery.utils.imports import qualname
 from celery.utils.log import get_logger, in_sighandler, set_in_sighandler
 from celery.utils.text import pluralize
+from celery.utils.time import humanize_seconds
 from celery.worker import WorkController
 
 __all__ = ('Worker',)
@@ -184,8 +187,25 @@ class Worker(WorkController):
         )
 
     def purge_messages(self):
+        retry_enabled, _, warning = get_broker_connection_retry_configuration(
+            self.app.conf, first_connection_attempt=True,
+        )
+        if warning is not None:
+            warn(warning)
+
         with self.app.connection_for_write() as connection:
-            count = self.app.control.purge(connection=connection)
+            def _error_handler(exc, interval):
+                logger.error(
+                    'purge: Cannot connect to %s: %s. Trying again %s...',
+                    connection.as_uri(), exc,
+                    humanize_seconds(interval, 'in', ' '),
+                )
+
+            count = self.app.control.purge(
+                connection=connection,
+                retry=retry_enabled,
+                retry_errback=_error_handler,
+            )
             if count:  # pragma: no cover
                 print(f"purge: Erased {count} {pluralize(count, 'message')} from the queue.\n", flush=True)
 

@@ -9,7 +9,7 @@ from types import ModuleType
 
 from kombu.utils.url import maybe_sanitize_url
 
-from celery.exceptions import ImproperlyConfigured
+from celery.exceptions import CPendingDeprecationWarning, ImproperlyConfigured
 from celery.platforms import pyimplementation
 from celery.utils.collections import ConfigurationView
 from celery.utils.imports import import_from_cwd, qualname, symbol_by_name
@@ -20,6 +20,7 @@ from .defaults import _OLD_DEFAULTS, _OLD_SETTING_KEYS, _TO_NEW_KEY, _TO_OLD_KEY
 __all__ = (
     'Settings', 'appstr', 'bugreport',
     'filter_hidden_settings', 'find_app',
+    'get_broker_connection_retry_configuration',
 )
 
 #: Format used to generate bug-report information.
@@ -65,6 +66,24 @@ FMT_REPLACE_SETTING = '{replace:<36} -> {with_}'
 def appstr(app):
     """String used in __repr__ etc, to id app instances."""
     return f'{app.main or "__main__"} at {id(app):#x}'
+
+
+def get_broker_connection_retry_configuration(conf, first_connection_attempt=False):
+    """Resolve the retry flag and setting name for a broker connection attempt."""
+    if first_connection_attempt and conf.broker_connection_retry_on_startup is not None:
+        return bool(conf.broker_connection_retry_on_startup), 'broker_connection_retry_on_startup', None
+
+    retry_enabled = bool(conf.broker_connection_retry)
+    warning = None
+    if first_connection_attempt and conf.broker_connection_retry_on_startup is None and not retry_enabled:
+        warning = CPendingDeprecationWarning(
+            "The broker_connection_retry configuration setting will no longer determine\n"
+            "whether broker connection retries are made during startup in Celery 6.0 and above.\n"
+            "If you wish to refrain from retrying connections on startup,\n"
+            "you should set broker_connection_retry_on_startup to False instead."
+        )
+
+    return retry_enabled, 'broker_connection_retry', warning
 
 
 class Settings(ConfigurationView):
