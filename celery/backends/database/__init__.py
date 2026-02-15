@@ -92,9 +92,25 @@ class DatabaseBackend(BaseBackend):
             self.task_cls = TaskExtended
 
         self.url = url or dburi or conf.database_url
-        self.engine_options = dict(DEFAULT_DATABASE_ENGINE_OPTIONS)
-        self.engine_options.update(conf.database_engine_options or {})
-        self.engine_options.update(engine_options or {})
+
+        # Start with the default engine options, but allow explicit empty dicts
+        # from configuration or constructor arguments to disable all defaults.
+        engine_options_base = dict(DEFAULT_DATABASE_ENGINE_OPTIONS)
+
+        conf_engine_options = conf.database_engine_options
+        if conf_engine_options is not None:
+            if not conf_engine_options:
+                engine_options_base = {}
+            else:
+                engine_options_base.update(conf_engine_options)
+
+        if engine_options is not None:
+            if not engine_options:
+                engine_options_base = {}
+            else:
+                engine_options_base.update(engine_options)
+
+        self.engine_options = engine_options_base
         self.short_lived_sessions = kwargs.get(
             'short_lived_sessions',
             conf.database_short_lived_sessions)
