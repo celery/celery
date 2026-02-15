@@ -78,6 +78,39 @@ class test_DateDoneIndex:
         assert col.index is True, "TaskSet.date_done should have index=True"
 
 
+class test_DateDoneColumnDefaults:
+    """Test that date_done column defaults are callables, not fixed values.
+
+    The default and onupdate values must be callables (lambdas) so that
+    datetime.now() is evaluated per-row at INSERT/UPDATE time, not once
+    at module import time.
+    """
+
+    def test_task_date_done_default_is_callable(self):
+        """Task.date_done default should be a callable."""
+        col = Task.__table__.columns['date_done']
+        assert col.default is not None, \
+            "Task.date_done should have a default"
+        assert callable(col.default.arg), \
+            "Task.date_done default should be a callable, not a fixed datetime"
+
+    def test_task_date_done_onupdate_is_callable(self):
+        """Task.date_done onupdate should be a callable (lambda)."""
+        col = Task.__table__.columns['date_done']
+        assert col.onupdate is not None, \
+            "Task.date_done should have an onupdate"
+        assert callable(col.onupdate.arg), \
+            "Task.date_done onupdate should be a callable, not a fixed datetime"
+
+    def test_taskset_date_done_default_is_callable(self):
+        """TaskSet.date_done default should be a callable."""
+        col = TaskSet.__table__.columns['date_done']
+        assert col.default is not None, \
+            "TaskSet.date_done should have a default"
+        assert callable(col.default.arg), \
+            "TaskSet.date_done default should be a callable, not a fixed datetime"
+
+
 @skip.if_pypy
 class test_DatabaseBackend:
 
