@@ -6,7 +6,6 @@ from datetime import datetime, timedelta, timezone
 from time import monotonic, sleep
 
 import pytest
-import pytest_subtests  # noqa
 
 from celery import chain, chord, group, signature
 from celery.backends.base import BaseKeyValueStoreBackend

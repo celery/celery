@@ -70,12 +70,11 @@ RUN pyenv install 3.13 && \
     pyenv install 3.12 && \
     pyenv install 3.11 && \
     pyenv install 3.10 && \
-    pyenv install 3.9 && \
     pyenv install pypy3.11
 
 
 # Set global Python versions
-RUN pyenv global 3.13 3.12 3.11 3.10 3.9 pypy3.11
+RUN pyenv global 3.13 3.12 3.11 3.10 pypy3.11
 
 # Install celery
 WORKDIR $HOME
@@ -84,14 +83,13 @@ COPY --chown=1000:1000 docker/entrypoint /entrypoint
 RUN chmod gu+x /entrypoint
 
 # Define the local pyenvs
-RUN pyenv local 3.13 3.12 3.11 3.10 3.9 pypy3.11
+RUN pyenv local 3.13 3.12 3.11 3.10 pypy3.11
 
 RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
     pyenv exec python3.13 -m pip install --upgrade pip setuptools wheel && \
     pyenv exec python3.12 -m pip install --upgrade pip setuptools wheel && \
     pyenv exec python3.11 -m pip install --upgrade pip setuptools wheel && \
     pyenv exec python3.10 -m pip install --upgrade pip setuptools wheel && \
-    pyenv exec python3.9 -m pip install --upgrade pip setuptools wheel && \
     pyenv exec pypy3.11 -m pip install --upgrade pip setuptools wheel
 
 # Install requirements first to leverage Docker layer caching
@@ -104,7 +102,8 @@ RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
     -r requirements/test-ci-base.txt \
     -r requirements/test-ci-default.txt \
     -r requirements/test-integration.txt \
-    -r requirements/test.txt
+    -r requirements/test.txt \
+    --build-constraint requirements/constraints.txt
 
 RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
     pyenv exec python3.12 -m pip install -r requirements/default.txt \
@@ -114,7 +113,8 @@ RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
     -r requirements/test-ci-base.txt \
     -r requirements/test-ci-default.txt \
     -r requirements/test-integration.txt \
-    -r requirements/test.txt
+    -r requirements/test.txt \
+    --build-constraint requirements/constraints.txt
 
 RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
     pyenv exec python3.11 -m pip install -r requirements/default.txt \
@@ -124,7 +124,8 @@ RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
     -r requirements/test-ci-base.txt \
     -r requirements/test-ci-default.txt \
     -r requirements/test-integration.txt \
-    -r requirements/test.txt
+    -r requirements/test.txt \
+    --build-constraint requirements/constraints.txt
 
 RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
     pyenv exec python3.10 -m pip install -r requirements/default.txt \
@@ -134,17 +135,8 @@ RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
     -r requirements/test-ci-base.txt \
     -r requirements/test-ci-default.txt \
     -r requirements/test-integration.txt \
-    -r requirements/test.txt
-
-RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
-    pyenv exec python3.9 -m pip install -r requirements/default.txt \
-    -r requirements/dev.txt \
-    -r requirements/docs.txt \
-    -r requirements/pkgutils.txt \
-    -r requirements/test-ci-base.txt \
-    -r requirements/test-ci-default.txt \
-    -r requirements/test-integration.txt \
-    -r requirements/test.txt
+    -r requirements/test.txt \
+    --build-constraint requirements/constraints.txt
 
 RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
     pyenv exec pypy3.11 -m pip install -r requirements/default.txt \
@@ -154,7 +146,8 @@ RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
     -r requirements/test-ci-base.txt \
     -r requirements/test-ci-default.txt \
     -r requirements/test-integration.txt \
-    -r requirements/test.txt
+    -r requirements/test.txt \
+    --build-constraint requirements/constraints.txt
 
 COPY --chown=1000:1000 . $HOME/celery
 
@@ -164,7 +157,6 @@ RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
     pyenv exec python3.12 -m pip install --no-deps -e $HOME/celery && \
     pyenv exec python3.11 -m pip install --no-deps -e $HOME/celery && \
     pyenv exec python3.10 -m pip install --no-deps -e $HOME/celery && \
-    pyenv exec python3.9 -m pip install --no-deps -e $HOME/celery && \
     pyenv exec pypy3.11 -m pip install --no-deps -e $HOME/celery
 
 WORKDIR $HOME/celery

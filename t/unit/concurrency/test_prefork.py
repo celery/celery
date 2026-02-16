@@ -488,6 +488,31 @@ class test_AsynPool:
             sender=pool,
         )
 
+    def test_untrack_child_process_without_sentinel_poll(self):
+        """_untrack_child_process must not raise when proc lacks _sentinel_poll.
+
+        Race condition during cold shutdown can cause _untrack_child_process to
+        be called with a process that never had _sentinel_poll set or had it
+        cleared. Use getattr for safe access.
+        """
+        pytest.importorskip('multiprocessing')
+        pool = asynpool.AsynPool(processes=1, threads=False)
+        hub = Mock(name='hub')
+        proc = object()  # No _sentinel_poll attribute
+        pool._untrack_child_process(proc, hub)  # Should not raise AttributeError
+        hub.remove.assert_not_called()
+
+    def test_untrack_child_process_with_sentinel_poll(self):
+        """_untrack_child_process cleans up when proc has _sentinel_poll set."""
+        pytest.importorskip('multiprocessing')
+        pool = asynpool.AsynPool(processes=1, threads=False)
+        hub = Mock(name='hub')
+        fd = os.open(os.devnull, os.O_RDONLY)
+        proc = Mock(_sentinel_poll=fd)
+        pool._untrack_child_process(proc, hub)
+        hub.remove.assert_called_once_with(fd)
+        assert proc._sentinel_poll is None
+
 
 @t.skip.if_win32
 class test_ResultHandler:

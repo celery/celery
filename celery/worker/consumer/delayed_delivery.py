@@ -3,11 +3,13 @@
 This module provides the DelayedDelivery bootstep which handles setup and configuration
 of native delayed delivery functionality when using quorum queues.
 """
+import sys
 from typing import Iterator, List, Optional, Set, Union, ValuesView
 
-# Backport of PEP 654 for Python versions < 3.11
-# In Python 3.11+, exceptiongroup uses the built-in ExceptionGroup
-from exceptiongroup import ExceptionGroup
+if sys.version_info < (3, 11):  # pragma: no cover
+    # Backport of PEP 654 for Python versions < 3.11
+    from exceptiongroup import ExceptionGroup
+
 from kombu import Connection, Queue
 from kombu.transport.native_delayed_delivery import (bind_queue_to_native_delayed_delivery_exchange,
                                                      declare_native_delayed_delivery_exchanges_and_queues)

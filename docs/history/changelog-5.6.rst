@@ -8,6 +8,44 @@ This document contains change notes for bugfix & new features
 in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
 an overview of what's new in Celery 5.6.
 
+.. _version-5.6.2:
+
+5.6.2
+=====
+
+:release-date: 2026-01-04
+:release-by: Tomer Nosrati
+
+What's Changed
+~~~~~~~~~~~~~~
+
+- Fix recursive WorkController instantiation in DjangoWorkerFixup + AttributeError when pool_cls is a string (#10045)
+- Bugfix: Revoked tasks now immediately update backend status to REVOKED (#9869)
+- Prepare for release: v5.6.2 (#10049)
+
+.. _version-5.6.1:
+
+5.6.1
+=====
+
+:release-date: 2025-12-29
+:release-by: Tomer Nosrati
+
+What's Changed
+~~~~~~~~~~~~~~
+
+- Fix Redis Sentinel ACL authentication support (#10013)
+- Fix: Broker heartbeats not sent during graceful shutdown (#9986)
+- docs #5410 -- Document confirm_publish broker transport option (#10016)
+- close DB pools only in prefork mode (#10020)
+- Fix: Avoid unnecessary Django database connection creation during cleanup (#10015)
+- reliable prefork detection (#10023)
+- better coverage (#10029)
+- Docs: clarify `result_extended` vs periodic task metadata and show `headers["periodic_task_name"]` example (#10030)
+- Stop importing pytest_subtests (#10032)
+- Only use exceptiongroup backport for Python < 3.11 (#10033)
+- Prepare for release: v5.6.1 (#10037)
+
 .. _version-5.6.0:
 
 5.6.0
