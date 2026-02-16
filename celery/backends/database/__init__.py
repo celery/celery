@@ -30,10 +30,6 @@ RETRYABLE_DB_ERRORS = (
     InvalidRequestError,
     StaleDataError,
 )
-DEFAULT_DATABASE_ENGINE_OPTIONS = {
-    'pool_pre_ping': True,
-    'pool_recycle': 3600,
-}
 
 
 @contextmanager
@@ -93,24 +89,13 @@ class DatabaseBackend(BaseBackend):
 
         self.url = url or dburi or conf.database_url
 
-        # Start with the default engine options, but allow explicit empty dicts
-        # from configuration or constructor arguments to disable all defaults.
-        engine_options_base = dict(DEFAULT_DATABASE_ENGINE_OPTIONS)
-
-        conf_engine_options = conf.database_engine_options
-        if conf_engine_options is not None:
-            if not conf_engine_options:
-                engine_options_base = {}
-            else:
-                engine_options_base.update(conf_engine_options)
-
-        if engine_options is not None:
-            if not engine_options:
-                engine_options_base = {}
-            else:
-                engine_options_base.update(engine_options)
-
-        self.engine_options = engine_options_base
+        # Merge engine options: defaults from config <- constructor overrides
+        # The defaults (pool_pre_ping=True, pool_recycle=3600) are defined in
+        # celery/app/defaults.py under database_engine_options
+        self.engine_options = dict(
+            conf.database_engine_options or {},
+            **(engine_options or {})
+        )
         self.short_lived_sessions = kwargs.get(
             'short_lived_sessions',
             conf.database_short_lived_sessions)
