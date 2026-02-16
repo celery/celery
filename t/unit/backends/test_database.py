@@ -165,6 +165,25 @@ class test_DatabaseBackend:
 
         assert calls[0] == 3
 
+    def test_retry_helper_hook_failure_continues(self):
+        from celery.backends.database import DatabaseError
+
+        calls = [0]
+
+        mock_backend = Mock()
+        mock_backend.on_backend_retryable_error = Mock(side_effect=RuntimeError("hook failed"))
+
+        @retry
+        def raises_with_backend(backend):
+            calls[0] += 1
+            raise DatabaseError(1, 2, 3)
+
+        with pytest.raises(DatabaseError):
+            raises_with_backend(mock_backend, max_retries=3)
+
+        assert calls[0] == 3
+        assert mock_backend.on_backend_retryable_error.call_count == 3
+
     def test_missing_dburi_raises_ImproperlyConfigured(self):
         self.app.conf.database_url = None
         with pytest.raises(ImproperlyConfigured):

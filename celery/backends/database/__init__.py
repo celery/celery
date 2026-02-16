@@ -56,7 +56,12 @@ def retry(fun):
                 backend = args[0] if args else None
                 on_retryable_error = getattr(backend, 'on_backend_retryable_error', None)
                 if callable(on_retryable_error):
-                    on_retryable_error(exc)
+                    try:
+                        on_retryable_error(exc)
+                    except Exception:
+                        logger.exception(
+                            "on_backend_retryable_error hook failed; continuing retry loop",
+                        )
                 logger.warning(
                     'Failed operation %s.  Retrying %s more times.',
                     fun.__name__, max_retries - retries - 1,
