@@ -13,7 +13,7 @@ from .models import Task, TaskExtended, TaskSet
 from .session import SessionManager
 
 try:
-    from sqlalchemy.exc import DatabaseError, InvalidRequestError
+    from sqlalchemy.exc import DatabaseError, InterfaceError, InvalidRequestError
     from sqlalchemy.orm.exc import StaleDataError
 except ImportError:
     raise ImproperlyConfigured(
@@ -23,6 +23,13 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 __all__ = ('DatabaseBackend',)
+
+RETRYABLE_DB_ERRORS = (
+    DatabaseError,
+    InterfaceError,
+    InvalidRequestError,
+    StaleDataError,
+)
 
 
 @contextmanager
@@ -45,7 +52,16 @@ def retry(fun):
         for retries in range(max_retries):
             try:
                 return fun(*args, **kwargs)
-            except (DatabaseError, InvalidRequestError, StaleDataError):
+            except RETRYABLE_DB_ERRORS as exc:
+                backend = args[0] if args else None
+                on_retryable_error = getattr(backend, 'on_backend_retryable_error', None)
+                if callable(on_retryable_error):
+                    try:
+                        on_retryable_error(exc)
+                    except Exception:
+                        logger.exception(
+                            "on_backend_retryable_error hook failed; continuing retry loop",
+                        )
                 logger.warning(
                     'Failed operation %s.  Retrying %s more times.',
                     fun.__name__, max_retries - retries - 1,
@@ -77,9 +93,14 @@ class DatabaseBackend(BaseBackend):
             self.task_cls = TaskExtended
 
         self.url = url or dburi or conf.database_url
+
+        # Merge engine options: defaults from config <- constructor overrides
+        # The defaults (pool_pre_ping=True, pool_recycle=3600) are defined in
+        # celery/app/defaults.py under database_engine_options
         self.engine_options = dict(
-            engine_options or {},
-            **conf.database_engine_options or {})
+            conf.database_engine_options or {},
+            **(engine_options or {})
+        )
         self.short_lived_sessions = kwargs.get(
             'short_lived_sessions',
             conf.database_short_lived_sessions)
@@ -107,6 +128,12 @@ class DatabaseBackend(BaseBackend):
     @property
     def extended_result(self):
         return self.app.conf.find_value_for_key('extended', 'result')
+
+    def exception_safe_to_retry(self, exc):
+        return isinstance(exc, RETRYABLE_DB_ERRORS)
+
+    def on_backend_retryable_error(self, exc):
+        self.session_manager.invalidate(self.url)
 
     def _create_tables(self):
         """Create the task and taskset tables."""

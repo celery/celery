@@ -126,10 +126,114 @@ class test_DatabaseBackend:
             raises(max_retries=5)
         assert calls[0] == 5
 
+    def test_retry_helper_calls_on_backend_retryable_error(self):
+        from celery.backends.database import DatabaseError
+
+        calls = [0]
+        hook_calls = []
+
+        mock_backend = Mock()
+        mock_backend.on_backend_retryable_error = Mock(side_effect=lambda exc: hook_calls.append(exc))
+
+        @retry
+        def raises_with_backend(backend):
+            calls[0] += 1
+            raise DatabaseError(1, 2, 3)
+
+        with pytest.raises(DatabaseError):
+            raises_with_backend(mock_backend, max_retries=3)
+
+        assert calls[0] == 3
+        assert mock_backend.on_backend_retryable_error.call_count == 3
+        for exc in hook_calls:
+            assert isinstance(exc, DatabaseError)
+
+    def test_retry_helper_without_hook(self):
+        from celery.backends.database import DatabaseError
+
+        calls = [0]
+
+        mock_backend = Mock(spec=[])
+
+        @retry
+        def raises_with_backend(backend):
+            calls[0] += 1
+            raise DatabaseError(1, 2, 3)
+
+        with pytest.raises(DatabaseError):
+            raises_with_backend(mock_backend, max_retries=3)
+
+        assert calls[0] == 3
+
+    def test_retry_helper_hook_failure_continues(self):
+        from celery.backends.database import DatabaseError
+
+        calls = [0]
+
+        mock_backend = Mock()
+        mock_backend.on_backend_retryable_error = Mock(side_effect=RuntimeError("hook failed"))
+
+        @retry
+        def raises_with_backend(backend):
+            calls[0] += 1
+            raise DatabaseError(1, 2, 3)
+
+        with pytest.raises(DatabaseError):
+            raises_with_backend(mock_backend, max_retries=3)
+
+        assert calls[0] == 3
+        assert mock_backend.on_backend_retryable_error.call_count == 3
+
     def test_missing_dburi_raises_ImproperlyConfigured(self):
         self.app.conf.database_url = None
         with pytest.raises(ImproperlyConfigured):
             DatabaseBackend(app=self.app)
+
+    def test_engine_options_include_pool_health_defaults(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.engine_options["pool_pre_ping"] is True
+        assert tb.engine_options["pool_recycle"] == 3600
+
+    def test_engine_options_explicit_values_override_defaults(self):
+        self.app.conf.database_engine_options = {"pool_pre_ping": False}
+        tb = DatabaseBackend(
+            self.uri,
+            app=self.app,
+            engine_options={"pool_recycle": 15},
+        )
+        assert tb.engine_options["pool_pre_ping"] is False
+        assert tb.engine_options["pool_recycle"] == 15
+
+    def test_exception_safe_to_retry(self):
+        from celery.backends.database import DatabaseError, InvalidRequestError, StaleDataError
+
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.exception_safe_to_retry(DatabaseError("", "", Exception("db error")))
+        assert tb.exception_safe_to_retry(InvalidRequestError())
+        assert tb.exception_safe_to_retry(StaleDataError())
+        assert not tb.exception_safe_to_retry(RuntimeError("not retryable"))
+
+    def test_exception_safe_to_retry_with_interface_error(self):
+        from celery.backends.database import InterfaceError
+
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.exception_safe_to_retry(InterfaceError("", None, Exception("connection lost")))
+
+    def test_on_backend_retryable_error_invalidates_session(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb.session_manager.invalidate = Mock()
+
+        tb.on_backend_retryable_error(RuntimeError("retryable"))
+        tb.session_manager.invalidate.assert_called_once_with(tb.url)
+
+    def test_on_backend_retryable_error_called_with_exception(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb.session_manager.invalidate = Mock()
+        mock_exc = RuntimeError("connection lost")
+
+        tb.on_backend_retryable_error(mock_exc)
+
+        tb.session_manager.invalidate.assert_called_once_with(tb.url)
 
     def test_table_schema_config(self):
         self.app.conf.database_table_schemas = {
@@ -444,6 +548,34 @@ class test_SessionManager:
         assert engine is create_engine()
         engine2 = s.get_engine('dburi', foo=1)
         assert engine2 is engine
+
+    def test_invalidate_disposes_cached_engine(self):
+        s = SessionManager()
+        engine = Mock()
+        s._engines['dburi'] = engine
+        s._sessions['dburi'] = Mock()
+
+        s.invalidate('dburi')
+
+        assert 'dburi' not in s._engines
+        assert 'dburi' not in s._sessions
+        engine.dispose.assert_called_once_with()
+
+    def test_invalidate_nonexistent_dburi_is_noop(self):
+        s = SessionManager()
+        s.invalidate('nonexistent-dburi')
+        assert 'nonexistent-dburi' not in s._engines
+        assert 'nonexistent-dburi' not in s._sessions
+
+    def test_invalidate_only_engine_cached(self):
+        s = SessionManager()
+        engine = Mock()
+        s._engines['dburi'] = engine
+
+        s.invalidate('dburi')
+
+        assert 'dburi' not in s._engines
+        engine.dispose.assert_called_once_with()
 
     @patch('celery.backends.database.session.sessionmaker')
     def test_create_session_forked(self, sessionmaker):

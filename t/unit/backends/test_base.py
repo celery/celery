@@ -1492,6 +1492,7 @@ class test_backend_retries:
             b = BaseBackend(app=self.app)
             b.exception_safe_to_retry = lambda exc: True
             b._sleep = Mock()
+            b.on_backend_retryable_error = Mock()
             b._get_task_meta_for = Mock()
             b._get_task_meta_for.side_effect = [
                 Exception("failed"),
@@ -1500,6 +1501,7 @@ class test_backend_retries:
             res = b.get_task_meta(sentinel.task_id)
             assert res == {'status': states.SUCCESS, 'result': 42}
             assert b._sleep.call_count == 1
+            b.on_backend_retryable_error.assert_called_once()
         finally:
             self.app.conf.result_backend_always_retry = prev
 
@@ -1554,6 +1556,7 @@ class test_backend_retries:
             b = BaseBackend(app=self.app)
             b.exception_safe_to_retry = lambda exc: True
             b._sleep = Mock()
+            b.on_backend_retryable_error = Mock()
             b._get_task_meta_for = Mock()
             b._get_task_meta_for.return_value = {
                 'status': states.RETRY,
@@ -1583,6 +1586,7 @@ class test_backend_retries:
             b = BaseBackend(app=self.app)
             b.exception_safe_to_retry = lambda exc: True
             b._sleep = Mock()
+            b.on_backend_retryable_error = Mock()
             b._get_task_meta_for = Mock()
             b._get_task_meta_for.return_value = {
                 'status': states.RETRY,
@@ -1600,6 +1604,56 @@ class test_backend_retries:
             res = b.store_result(sentinel.task_id, 42, states.SUCCESS)
             assert res == 42
             assert b._sleep.call_count == 1
+            b.on_backend_retryable_error.assert_called_once()
+        finally:
+            self.app.conf.result_backend_always_retry = prev
+
+    def test_get_with_retries_hook_failure_continues(self):
+        self.app.conf.result_backend_always_retry, prev = True, self.app.conf.result_backend_always_retry
+
+        try:
+            b = BaseBackend(app=self.app)
+            b.exception_safe_to_retry = lambda exc: True
+            b._sleep = Mock()
+            b.on_backend_retryable_error = Mock(side_effect=RuntimeError("hook failed"))
+            b._get_task_meta_for = Mock()
+            b._get_task_meta_for.side_effect = [
+                Exception("failed"),
+                {'status': states.SUCCESS, 'result': 42}
+            ]
+            res = b.get_task_meta(sentinel.task_id)
+            assert res == {'status': states.SUCCESS, 'result': 42}
+            assert b._sleep.call_count == 1
+            b.on_backend_retryable_error.assert_called_once()
+        finally:
+            self.app.conf.result_backend_always_retry = prev
+
+    def test_store_result_with_retries_hook_failure_continues(self):
+        self.app.conf.result_backend_always_retry, prev = True, self.app.conf.result_backend_always_retry
+
+        try:
+            b = BaseBackend(app=self.app)
+            b.exception_safe_to_retry = lambda exc: True
+            b._sleep = Mock()
+            b.on_backend_retryable_error = Mock(side_effect=RuntimeError("hook failed"))
+            b._get_task_meta_for = Mock()
+            b._get_task_meta_for.return_value = {
+                'status': states.RETRY,
+                'result': {
+                    "exc_type": "Exception",
+                    "exc_message": ["failed"],
+                    "exc_module": "builtins",
+                },
+            }
+            b._store_result = Mock()
+            b._store_result.side_effect = [
+                Exception("failed"),
+                42
+            ]
+            res = b.store_result(sentinel.task_id, 42, states.SUCCESS)
+            assert res == 42
+            assert b._sleep.call_count == 1
+            b.on_backend_retryable_error.assert_called_once()
         finally:
             self.app.conf.result_backend_always_retry = prev
 

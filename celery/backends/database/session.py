@@ -60,6 +60,13 @@ class SessionManager:
             return engine, self._sessions[dburi]
         return engine, sessionmaker(bind=engine)
 
+    def invalidate(self, dburi):
+        """Dispose cached engine/session state for a database URI."""
+        self._sessions.pop(dburi, None)
+        engine = self._engines.pop(dburi, None)
+        if engine is not None:
+            engine.dispose()
+
     def prepare_models(self, engine):
         if not self.prepared:
             # SQLAlchemy will check if the items exist before trying to

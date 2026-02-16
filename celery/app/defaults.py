@@ -247,6 +247,10 @@ NAMESPACES = Namespace(
     database=Namespace(
         url=Option(old={'celery_result_dburi'}),
         engine_options=Option(
+            {
+                'pool_pre_ping': True,
+                'pool_recycle': 3600,
+            },
             type='dict', old={'celery_result_engine_options'},
         ),
         short_lived_sessions=Option(
