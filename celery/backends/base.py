@@ -720,7 +720,12 @@ class Backend:
                 if self.always_retry and self.exception_safe_to_retry(exc):
                     if retries < self.max_retries:
                         retries += 1
-                        self.on_backend_retryable_error(exc)
+                        try:
+                            self.on_backend_retryable_error(exc)
+                        except Exception:
+                            logger.exception(
+                                "on_backend_retryable_error hook failed; continuing retry loop",
+                            )
 
                         # get_exponential_backoff_interval computes integers
                         # and time.sleep accept floats for sub second sleep
