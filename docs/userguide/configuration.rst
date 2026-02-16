@@ -1019,7 +1019,7 @@ Default: True by default.
 
 Default: ``{'pool_pre_ping': True, 'pool_recycle': 3600}``
 
-.. versionchanged:: 5.6
+.. versionchanged:: 5.7
 
     The default was changed from ``{}`` to include ``pool_pre_ping=True``
     and ``pool_recycle=3600`` for improved connection health handling.
