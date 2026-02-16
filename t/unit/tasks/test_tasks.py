@@ -424,6 +424,37 @@ class test_task_retries(TasksCase):
         sig = self.retry_task.signature_from_request()
         assert sig.options['headers']['custom'] == 10.1
 
+    def test_signature_from_request__filters_x_death_headers(self):
+        """
+        Test that X-Death headers are filtered out during retries to prevent
+        RabbitMQ cycle detection.
+        """
+
+        self.retry_task.push_request()
+        self.retry_task.request.headers = {
+            'custom': 10.1,
+            'x-death': [{'count': 1, 'queue': 'celery_delayed_0'}],
+            'x-first-death-exchange': 'celery_delayed_0',
+            'x-first-death-queue': 'celery_delayed_0',
+            'x-first-death-reason': 'expired',
+            'x-last-death-exchange': 'celery_delayed_0',
+            'x-last-death-queue': 'celery_delayed_0',
+            'x-last-death-reason': 'expired',
+        }
+        sig = self.retry_task.signature_from_request()
+
+        # Custom headers should be preserved
+        assert sig.options['headers']['custom'] == 10.1
+
+        # X-Death related headers should be filtered out
+        assert 'x-death' not in sig.options['headers']
+        assert 'x-first-death-exchange' not in sig.options['headers']
+        assert 'x-first-death-queue' not in sig.options['headers']
+        assert 'x-first-death-reason' not in sig.options['headers']
+        assert 'x-last-death-exchange' not in sig.options['headers']
+        assert 'x-last-death-queue' not in sig.options['headers']
+        assert 'x-last-death-reason' not in sig.options['headers']
+
     def test_signature_from_request__delivery_info(self):
         self.retry_task.push_request()
         self.retry_task.request.delivery_info = {

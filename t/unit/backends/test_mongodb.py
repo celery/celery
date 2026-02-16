@@ -390,7 +390,7 @@ class test_MongoBackend:
                                                             upsert=True)
         assert sentinel.result == ret_val
 
-        mock_collection.replace_one.side_effect = InvalidDocument()
+        mock_collection.replace_one.side_effect = InvalidDocument("bad")
         with pytest.raises(EncodeError):
             self.backend._store_result(
                 sentinel.task_id, sentinel.result, sentinel.status)
@@ -417,7 +417,7 @@ class test_MongoBackend:
         assert parameters['parent_id'] == sentinel.parent_id
         assert sentinel.result == ret_val
 
-        mock_collection.replace_one.side_effect = InvalidDocument()
+        mock_collection.replace_one.side_effect = InvalidDocument("bad")
         with pytest.raises(EncodeError):
             self.backend._store_result(
                 sentinel.task_id, sentinel.result, sentinel.status)
