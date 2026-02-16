@@ -1017,13 +1017,23 @@ Default: True by default.
 ``database_engine_options``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Default: ``{}`` (empty mapping).
+Default: ``{'pool_pre_ping': True, 'pool_recycle': 3600}``
+
+.. versionchanged:: 5.6
+
+    The default was changed from ``{}`` to include ``pool_pre_ping=True``
+    and ``pool_recycle=3600`` for improved connection health handling.
+    This helps prevent stale connection errors such as
+    ``(OperationalError) (2006, 'MySQL server has gone away')``.
 
 To specify additional SQLAlchemy database engine options you can use
 the :setting:`database_engine_options` setting::
 
     # echo enables verbose logging from SQLAlchemy.
     app.conf.database_engine_options = {'echo': True}
+
+    # To disable the default pool health options:
+    app.conf.database_engine_options = {'pool_pre_ping': False, 'pool_recycle': None}
 
 .. setting:: database_short_lived_sessions
 
