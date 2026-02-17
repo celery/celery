@@ -76,6 +76,16 @@ class test_solar:
         with pytest.raises(ValueError):
             solar('asdqwewqew', 60, 60, app=self.app)
 
+    def test_dusk_horizons_are_negative(self):
+        """All dusk events should have negative horizons (sun below horizon)."""
+        for event in ('dusk_civil', 'dusk_nautical', 'dusk_astronomical'):
+            s = solar(event, 50, 10, app=self.app)
+            horizon = float(s.cal.horizon)
+            assert horizon < 0, (
+                f"{event} horizon should be negative (below horizon), "
+                f"got {s.cal.horizon}"
+            )
+
     def test_event_uses_center(self):
         s = solar('solar_noon', 60, 60, app=self.app)
         for ev, is_center in s._use_center_l.items():
