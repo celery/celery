@@ -32,6 +32,7 @@ from billiard.pool import ACK, NACK, RUN, TERMINATE, WorkersJoined
 from billiard.queues import _SimpleQueue
 from kombu.asynchronous import ERR, WRITE
 from kombu.serialization import pickle as _pickle
+from kombu.serialization import registry as serializer_registry
 from kombu.utils.eventio import SELECT_BAD_FD
 from kombu.utils.functional import fxrange
 from vine import promise
@@ -474,6 +475,8 @@ class AsynPool(_pool.Pool):
 
         super().__init__(processes, *args, **kwargs)
 
+        self._serializer = self._initargs[0].conf.worker_pool_serializer
+
         for proc in self._pool:
             # create initial mappings, these will be updated
             # as processes are recycled, or found lost elsewhere.
@@ -525,7 +528,7 @@ class AsynPool(_pool.Pool):
         self.handle_result_event = self._result_handler.handle_event
         self._create_timelimit_handlers(hub)
         self._create_process_handlers(hub)
-        self._create_write_handlers(hub)
+        self._create_write_handlers(hub, dumps=serializer_registry._encoders[self._serializer][-1])
 
         # Add handler for when a process exits (calls maintain_pool)
         [self._track_child_process(w, hub) for w in self._pool]
