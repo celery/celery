@@ -574,6 +574,27 @@ class crontab(BaseSchedule):
         # caching global ffwd
         last_run_at = self.maybe_make_aware(last_run_at)
         now = self.maybe_make_aware(self.now())
+
+        # During DST fall-back, the same local hour occurs twice but with
+        # different UTC offsets.  If the offset decreased (fall-back) and the
+        # current local time matches the crontab pattern, the task should be
+        # considered due because real (UTC) time has elapsed even though the
+        # local clock shows the same or earlier hour.  See #10107.
+        last_offset = last_run_at.utcoffset()
+        now_offset = now.utcoffset()
+        if (last_offset is not None and now_offset is not None
+                and last_offset > now_offset):
+            dow_num_now = now.isoweekday() % 7
+            now_matches = (
+                now.month in self.month_of_year
+                and now.day in self.day_of_month
+                and dow_num_now in self.day_of_week
+                and now.hour in self.hour
+                and now.minute in self.minute
+            )
+            if now_matches:
+                return self.to_local(last_run_at), timedelta(0), self.to_local(now)
+
         dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7
 
         execute_this_date = (

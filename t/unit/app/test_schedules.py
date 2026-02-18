@@ -539,6 +539,40 @@ class test_crontab_remaining_estimate:
 
         assert next == datetime(2023, 1, 29, 0, 0, tzinfo=tz)
 
+    def test_hourly_crontab_during_dst_fall_back(self):
+        # Test for #10107: hourly crontab skips execution during fall-back
+        # DST transition when the same local hour occurs twice.
+        tzname = "US/Pacific"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        # Hourly at the top of each hour
+        ct = self.crontab(minute=0, hour='*')
+
+        # Fall-back Nov 3, 2024 US/Pacific:
+        #   1:00 AM PDT (UTC-7, fold=0) = 08:00 UTC
+        #   1:00 AM PST (UTC-8, fold=1) = 09:00 UTC
+        last_run_at = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=0)  # 1 AM PDT
+        now = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=1)          # 1 AM PST
+        ct.nowfun = lambda: now
+
+        remaining = ct.remaining_estimate(last_run_at)
+        # One real hour has passed (8 UTC → 9 UTC), task should be due
+        assert remaining.total_seconds() <= 0
+
+    def test_hourly_crontab_during_dst_fall_back_is_due(self):
+        # Same as above but testing via is_due()
+        tzname = "US/Pacific"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = self.crontab(minute=0, hour='*')
+
+        last_run_at = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=0)  # 1 AM PDT
+        now = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=1)          # 1 AM PST
+        ct.nowfun = lambda: now
+
+        is_due, next_time = ct.is_due(last_run_at)
+        assert is_due
+
 
 class test_crontab_is_due:
 
