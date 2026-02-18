@@ -609,22 +609,12 @@ class Backend:
     def _sleep(self, amount):
         time.sleep(amount)
 
-    def store_result(self, task_id, result, state,
-                     traceback=None, request=None, **kwargs):
-        """Update task state and result.
-
-        if always_retry_backend_operation is activated, in the event of a recoverable exception,
-        then retry operation with an exponential backoff until a limit has been reached.
-        """
-        result = self.encode_result(result, state)
-
+    def _ensure_retryable(self, func, *args, fallback_exc=None, fallback_msg=None, **kwargs):
+        """Helper to execute a function with the backend's retry policy."""
         retries = 0
-
         while True:
             try:
-                self._store_result(task_id, result, state, traceback,
-                                   request=request, **kwargs)
-                return result
+                return func(*args, **kwargs)
             except Exception as exc:
                 if self.always_retry and self.exception_safe_to_retry(exc):
                     if retries < self.max_retries:
@@ -643,11 +633,33 @@ class Backend:
                             self.max_sleep_between_retries_ms, True) / 1000
                         self._sleep(sleep_amount)
                     else:
-                        raise_with_context(
-                            BackendStoreError("failed to store result on the backend", task_id=task_id, state=state),
-                        )
+                        if fallback_exc:
+                            raise_with_context(fallback_exc(fallback_msg, **kwargs))
+                        raise
                 else:
                     raise
+
+    def store_result(self, task_id, result, state,
+                     traceback=None, request=None, **kwargs):
+        """Update task state and result.
+
+        if always_retry_backend_operation is activated, in the event of a recoverable exception,
+        then retry operation with an exponential backoff until a limit has been reached.
+        """
+        result = self.encode_result(result, state)
+
+        kwargs.update({'task_id': task_id, 'state': state})
+
+        self._ensure_retryable(
+            self._store_result,
+            fallback_exc=BackendStoreError,
+            fallback_msg="failed to store result on the backend",
+            result=result,
+            traceback=traceback,
+            request=request,
+            **kwargs
+        )
+        return result
 
     def forget(self, task_id):
         self._cache.pop(task_id, None)
@@ -711,34 +723,13 @@ class Backend:
                 return self._cache[task_id]
             except KeyError:
                 pass
-        retries = 0
-        while True:
-            try:
-                meta = self._get_task_meta_for(task_id)
-                break
-            except Exception as exc:
-                if self.always_retry and self.exception_safe_to_retry(exc):
-                    if retries < self.max_retries:
-                        retries += 1
-                        try:
-                            self.on_backend_retryable_error(exc)
-                        except Exception:
-                            logger.exception(
-                                "on_backend_retryable_error hook failed; continuing retry loop",
-                            )
 
-                        # get_exponential_backoff_interval computes integers
-                        # and time.sleep accept floats for sub second sleep
-                        sleep_amount = get_exponential_backoff_interval(
-                            self.base_sleep_between_retries_ms, retries,
-                            self.max_sleep_between_retries_ms, True) / 1000
-                        self._sleep(sleep_amount)
-                    else:
-                        raise_with_context(
-                            BackendGetMetaError("failed to get meta", task_id=task_id),
-                        )
-                else:
-                    raise
+        meta = self._ensure_retryable(
+            self._get_task_meta_for,
+            fallback_exc=BackendGetMetaError,
+            fallback_msg="failed to get meta",
+            task_id=task_id
+        )
 
         if cache and meta.get('status') == states.SUCCESS:
             self._cache[task_id] = meta
