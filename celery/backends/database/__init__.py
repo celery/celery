@@ -7,6 +7,7 @@ from vine.utils import wraps
 from celery import states
 from celery.backends.base import BaseBackend
 from celery.exceptions import ImproperlyConfigured
+from celery.utils.imports import symbol_by_name
 from celery.utils.time import maybe_timedelta
 
 from .models import Task, TaskExtended, TaskSet
@@ -119,7 +120,12 @@ class DatabaseBackend(BaseBackend):
                 'Missing connection string! Do you have the'
                 ' database_url setting set to a real value?')
 
-        self.session_manager = SessionManager()
+        engine_callback = kwargs.get(
+            'engine_callback', conf.database_engine_callback)
+        if isinstance(engine_callback, str):
+            engine_callback = symbol_by_name(engine_callback)
+        self.session_manager = SessionManager(
+            engine_callback=engine_callback)
 
         create_tables_at_setup = conf.database_create_tables_at_setup
         if create_tables_at_setup is True:
