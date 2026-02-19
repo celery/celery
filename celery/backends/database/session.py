@@ -29,11 +29,12 @@ def _after_fork_cleanup_session(session):
 class SessionManager:
     """Manage SQLAlchemy sessions."""
 
-    def __init__(self):
+    def __init__(self, engine_callback=None):
         self._engines = {}
         self._sessions = {}
         self.forked = False
         self.prepared = False
+        self.engine_callback = engine_callback
         if register_after_fork is not None:
             register_after_fork(self, _after_fork_cleanup_session)
 
@@ -46,11 +47,16 @@ class SessionManager:
                 return self._engines[dburi]
             except KeyError:
                 engine = self._engines[dburi] = create_engine(dburi, **kwargs)
+                if self.engine_callback:
+                    self.engine_callback(engine)
                 return engine
         else:
             kwargs = {k: v for k, v in kwargs.items() if
                       not k.startswith('pool')}
-            return create_engine(dburi, poolclass=NullPool, **kwargs)
+            engine = create_engine(dburi, poolclass=NullPool, **kwargs)
+            if self.engine_callback:
+                self.engine_callback(engine)
+            return engine
 
     def create_session(self, dburi, short_lived_sessions=False, **kwargs):
         engine = self.get_engine(dburi, **kwargs)

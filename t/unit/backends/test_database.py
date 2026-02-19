@@ -633,3 +633,131 @@ class test_SessionManager:
             manager.prepare_models(engine)
 
         assert mock_create_all.call_count == PREPARE_MODELS_MAX_RETRIES + 1
+
+
+@skip.if_pypy
+class test_EngineCallback:
+
+    @pytest.fixture(autouse=True)
+    def remove_db(self):
+        yield
+        if os.path.exists(DB_PATH):
+            os.remove(DB_PATH)
+
+    def setup_method(self):
+        self.uri = 'sqlite:///' + DB_PATH
+
+    def test_no_callback_default_behavior(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.session_manager.engine_callback is None
+
+    def test_callback_from_config(self):
+        callback = Mock()
+        self.app.conf.database_engine_callback = callback
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.session_manager.engine_callback is callback
+        callback.assert_called_once()
+        engine = callback.call_args[0][0]
+        assert hasattr(engine, 'execute') or hasattr(engine, 'connect')
+
+    def test_callback_from_constructor_kwarg(self):
+        callback = Mock()
+        tb = DatabaseBackend(self.uri, app=self.app, engine_callback=callback)
+        assert tb.session_manager.engine_callback is callback
+        callback.assert_called_once()
+
+    def test_constructor_kwarg_overrides_config(self):
+        config_callback = Mock()
+        kwarg_callback = Mock()
+        self.app.conf.database_engine_callback = config_callback
+        tb = DatabaseBackend(
+            self.uri, app=self.app, engine_callback=kwarg_callback)
+        assert tb.session_manager.engine_callback is kwarg_callback
+        kwarg_callback.assert_called_once()
+        config_callback.assert_not_called()
+
+    def test_callback_from_dotted_path(self):
+        self.app.conf.database_engine_callback = (
+            'unittest.mock:Mock'
+        )
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.session_manager.engine_callback is not None
+        assert callable(tb.session_manager.engine_callback)
+
+    @patch('celery.backends.database.session.create_engine')
+    def test_callback_called_in_forked_mode(self, create_engine):
+        callback = Mock()
+        s = SessionManager(engine_callback=callback)
+        s._after_fork()
+        s.get_engine('dburi')
+        callback.assert_called_once_with(create_engine.return_value)
+
+    @patch('celery.backends.database.session.create_engine')
+    def test_callback_called_in_non_forked_mode(self, create_engine):
+        callback = Mock()
+        s = SessionManager(engine_callback=callback)
+        s.get_engine('dburi')
+        callback.assert_called_once_with(create_engine.return_value)
+
+    @patch('celery.backends.database.session.create_engine')
+    def test_callback_reapplied_after_invalidate(self, create_engine):
+        callback = Mock()
+        s = SessionManager(engine_callback=callback)
+        s._after_fork()
+
+        s.get_engine('dburi')
+        assert callback.call_count == 1
+
+        s.invalidate('dburi')
+
+        s.get_engine('dburi')
+        assert callback.call_count == 2
+
+    @patch('celery.backends.database.session.create_engine')
+    def test_cached_engine_skips_callback(self, create_engine):
+        callback = Mock()
+        s = SessionManager(engine_callback=callback)
+        s._after_fork()
+
+        s.get_engine('dburi')
+        s.get_engine('dburi')
+        callback.assert_called_once()
+
+    def test_callback_fires_before_create_tables(self):
+        call_order = []
+
+        def track_callback(engine):
+            call_order.append('callback')
+
+        original_create_all = ResultModelBase.metadata.create_all
+
+        def track_create_all(bind, **kwargs):
+            call_order.append('create_all')
+            return original_create_all(bind, **kwargs)
+
+        with patch.object(
+            ResultModelBase.metadata, 'create_all', side_effect=track_create_all
+        ):
+            DatabaseBackend(
+                self.uri, app=self.app, engine_callback=track_callback)
+
+        assert call_order == ['callback', 'create_all']
+
+    def test_do_connect_event_integration(self):
+        """Integration test: engine_callback registers a do_connect event
+        that modifies connection params on every new connection."""
+        connect_calls = []
+
+        def register_do_connect(engine):
+            from sqlalchemy import event
+
+            @event.listens_for(engine, 'do_connect')
+            def on_connect(dialect, conn_rec, cargs, cparams):
+                connect_calls.append(cparams.copy())
+
+        tb = DatabaseBackend(
+            self.uri, app=self.app, engine_callback=register_do_connect)
+
+        tid = 'test-task-id'
+        tb.mark_as_done(tid, 42)
+        assert len(connect_calls) >= 1
