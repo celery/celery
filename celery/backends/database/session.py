@@ -48,10 +48,10 @@ class SessionManager:
                 engine = self._engines[dburi] = create_engine(dburi, **kwargs)
                 return engine
         else:
-            unsupport_nullpool_kwargs = {'max_overflow'}
+            unsupported_nullpool_kwargs = {'max_overflow', 'echo_pool'}
             kwargs = {
                 k: v for k, v in kwargs.items()
-                if not k.startswith('pool') and k not in unsupport_nullpool_kwargs
+                if not k.startswith('pool') and k not in unsupported_nullpool_kwargs
             }
             return create_engine(dburi, poolclass=NullPool, **kwargs)
 

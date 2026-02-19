@@ -645,10 +645,9 @@ class test_SessionManager:
         s = SessionManager()
         s.forked = False  # Ensure we're in the non-forked code path
 
-        s.get_engine('dburi', echo=True, pool_size=10, max_overflow=5)
+        s.get_engine('dburi', echo_pool=True, pool_size=10, max_overflow=5)
 
         mock_create_engine.assert_called_once_with(
             'dburi',
             poolclass=NullPool,
-            echo=True
         )
