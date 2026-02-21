@@ -54,6 +54,13 @@ class test_proto1_to_proto2:
         assert decoded
         assert not utc
 
+    def test_message_with_timelimit_sets_explicit_fields(self):
+        self.body['timelimit'] = (10, 3)
+        _, headers, _, _ = proto1_to_proto2(self.message, self.body)
+        assert headers['timelimit'] == (10, 3)
+        assert headers['time_limit'] == 10
+        assert headers['soft_time_limit'] == 3
+
 
 class test_default_strategy_proto2:
 
@@ -356,3 +363,10 @@ class test_hybrid_to_proto2:
     def test_custom_headers(self):
         _, headers, _, _ = hybrid_to_proto2(self.message, self.body)
         assert headers.get("custom") == "header"
+
+    def test_timelimit_sets_explicit_fields(self):
+        self.body['timelimit'] = (10, 3)
+        _, headers, _, _ = hybrid_to_proto2(self.message, self.body)
+        assert headers.get('timelimit') == (10, 3)
+        assert headers.get('time_limit') == 10
+        assert headers.get('soft_time_limit') == 3

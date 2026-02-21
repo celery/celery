@@ -245,6 +245,22 @@ class test_AMQP(test_AMQP_Base):
         with pytest.raises(ValueError):
             self.app.amqp.as_task_v2(uuid(), 'foo', countdown=-1232132323123)
 
+    def test_as_task_v2_includes_explicit_time_limit_fields(self):
+        message = self.app.amqp.as_task_v2(
+            uuid(), 'foo', time_limit=10, soft_time_limit=3,
+        )
+        assert message.headers['timelimit'] == [10, 3]
+        assert message.headers['time_limit'] == 10
+        assert message.headers['soft_time_limit'] == 3
+
+    def test_as_task_v1_includes_explicit_time_limit_fields(self):
+        message = self.app.amqp.as_task_v1(
+            uuid(), 'foo', time_limit=10, soft_time_limit=3,
+        )
+        assert message.body['timelimit'] == (10, 3)
+        assert message.body['time_limit'] == 10
+        assert message.body['soft_time_limit'] == 3
+
     def test_Queues__with_max_priority(self):
         x = self.app.amqp.Queues({}, max_priority=23)
         assert x.max_priority == 23

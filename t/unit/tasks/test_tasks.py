@@ -911,6 +911,23 @@ class test_tasks(TasksCase):
 
         self.app.send_task = old_send_task
 
+    def test_time_limits_from_app_config_are_applied_to_task(self):
+        self.app.conf.task_time_limit = 10
+        self.app.conf.task_soft_time_limit = 3
+
+        @self.app.task(shared=False)
+        def limited():
+            return True
+
+        assert limited.time_limit == 10
+        assert limited.soft_time_limit == 3
+
+        with patch.object(self.app, 'send_task') as send_task:
+            limited.delay()
+            _, kwargs = send_task.call_args
+            assert kwargs['time_limit'] == 10
+            assert kwargs['soft_time_limit'] == 3
+
     def test_inherit_parent_priority_child_task(self):
         self.app.conf.task_inherit_parent_priority = True
 
