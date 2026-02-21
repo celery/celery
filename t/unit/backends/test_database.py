@@ -758,3 +758,21 @@ class test_SessionManager:
             manager.prepare_models(engine)
 
         assert mock_create_all.call_count == PREPARE_MODELS_MAX_RETRIES + 1
+
+    @patch('celery.backends.database.session.create_engine')
+    def test_get_engine_filters_nullpool_unsupported_kwargs(self, mock_create_engine):
+        """
+        Test that QueuePool-specific kwargs (like pool_size and max_overflow)
+        are filtered out when creating an engine with NullPool.
+        """
+        from celery.backends.database.session import NullPool
+
+        s = SessionManager()
+        s.forked = False  # Ensure we're in the non-forked code path
+
+        s.get_engine('dburi', echo_pool=True, pool_size=10, max_overflow=5)
+
+        mock_create_engine.assert_called_once_with(
+            'dburi',
+            poolclass=NullPool,
+        )
