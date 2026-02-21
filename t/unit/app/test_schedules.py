@@ -608,7 +608,40 @@ class test_crontab_remaining_estimate:
         is_due, next_time = ct.is_due(last_run_at)
         assert not is_due
 
+    def test_daily_crontab_during_dst_fall_back_not_due(self):
+        # Daily at 1:00 AM should not fire twice on the same calendar day
+        # when the hour 1:00 occurs twice during fall-back.
+        tzname = "US/Pacific"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        # Daily at 1:00 AM local time
+        ct = self.crontab(minute=0, hour=1)
 
+        # Fall-back Nov 3, 2024 US/Pacific:
+        #   1:00 AM PDT (UTC-7, fold=0) = 08:00 UTC
+        #   1:00 AM PST (UTC-8, fold=1) = 09:00 UTC
+        last_run_at = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=0)  # 1 AM PDT
+        now = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=1)          # 1 AM PST
+        ct.nowfun = lambda: now
+
+        remaining = ct.remaining_estimate(last_run_at)
+        # Task ran once at 1:00 AM PDT; it should next run the following day,
+        # so it must not be considered due again at 1:00 AM PST.
+        assert remaining.total_seconds() > 0
+
+    def test_daily_crontab_during_dst_fall_back_is_not_due(self):
+        # Same daily scenario as above, but checked via is_due()
+        tzname = "US/Pacific"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = self.crontab(minute=0, hour=1)
+
+        last_run_at = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=0)  # 1 AM PDT
+        now = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=1)          # 1 AM PST
+        ct.nowfun = lambda: now
+
+        is_due, next_time = ct.is_due(last_run_at)
+        assert not is_due
 class test_crontab_is_due:
 
     def setup_method(self):
