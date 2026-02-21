@@ -2,8 +2,6 @@
 import logging
 from contextlib import contextmanager
 
-from vine.utils import wraps
-
 from celery import states
 from celery.backends.base import BaseBackend
 from celery.exceptions import ImproperlyConfigured
@@ -41,35 +39,6 @@ def session_cleanup(session):
         raise
     finally:
         session.close()
-
-
-def retry(fun):
-
-    @wraps(fun)
-    def _inner(*args, **kwargs):
-        max_retries = kwargs.pop('max_retries', 3)
-
-        for retries in range(max_retries):
-            try:
-                return fun(*args, **kwargs)
-            except RETRYABLE_DB_ERRORS as exc:
-                backend = args[0] if args else None
-                on_retryable_error = getattr(backend, 'on_backend_retryable_error', None)
-                if callable(on_retryable_error):
-                    try:
-                        on_retryable_error(exc)
-                    except Exception:
-                        logger.exception(
-                            "on_backend_retryable_error hook failed; continuing retry loop",
-                        )
-                logger.warning(
-                    'Failed operation %s.  Retrying %s more times.',
-                    fun.__name__, max_retries - retries - 1,
-                    exc_info=True)
-                if retries + 1 >= max_retries:
-                    raise
-
-    return _inner
 
 
 class DatabaseBackend(BaseBackend):
@@ -147,7 +116,6 @@ class DatabaseBackend(BaseBackend):
             short_lived_sessions=self.short_lived_sessions,
             **self.engine_options)
 
-    @retry
     def _store_result(self, task_id, result, state, traceback=None,
                       request=None, **kwargs):
         """Store return value and state of an executed task."""
@@ -183,7 +151,6 @@ class DatabaseBackend(BaseBackend):
             value = meta.get(column)
             setattr(task, column, value)
 
-    @retry
     def _get_task_meta_for(self, task_id):
         """Get task meta-data for a task by id."""
         session = self.ResultSession()
@@ -201,7 +168,6 @@ class DatabaseBackend(BaseBackend):
                 data['kwargs'] = self.decode(data['kwargs'])
             return self.meta_from_decoded(data)
 
-    @retry
     def _save_group(self, group_id, result):
         """Store the result of an executed group."""
         session = self.ResultSession()
@@ -212,7 +178,6 @@ class DatabaseBackend(BaseBackend):
             session.commit()
             return result
 
-    @retry
     def _restore_group(self, group_id):
         """Get meta-data for group by id."""
         session = self.ResultSession()
@@ -222,7 +187,6 @@ class DatabaseBackend(BaseBackend):
             if group:
                 return group.to_dict()
 
-    @retry
     def _delete_group(self, group_id):
         """Delete meta-data for group by id."""
         session = self.ResultSession()
@@ -232,7 +196,6 @@ class DatabaseBackend(BaseBackend):
             session.flush()
             session.commit()
 
-    @retry
     def _forget(self, task_id):
         """Forget about result."""
         session = self.ResultSession()
