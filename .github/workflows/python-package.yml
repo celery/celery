@@ -93,15 +93,21 @@ jobs:
         module: [
           'test_backend.py',
           'test_canvas.py',
+          'test_django_settings.py',
           'test_inspect.py',
           'test_loader.py',
           'test_mem_leak_in_exception_handling.py',
+          'test_native_delayed_delivery_binding.py',
+          'test_prefork_shutdown.py',
           'test_quorum_queue_qos_cluster_simulation.py',
           'test_rabbitmq_chord_unlock_routing.py',
           'test_rabbitmq_default_queue_type_fallback.py',
+          'test_rabbitmq_quorum_queue_cycle_detection.py',
           'test_security.py',
+          'test_serialization_config.py',
           'test_serialization.py',
           'test_tasks.py',
+          'test_worker_config.py',
           'test_worker.py'
         ]
     uses: ./.github/workflows/integration-tests.yml
