@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 from click.testing import CliRunner
+from kombu.exceptions import OperationalError
 
 from celery.bin.celery import celery
 from celery.platforms import EX_UNAVAILABLE
@@ -80,3 +81,60 @@ def test_listing_remote_commands(celery_cmd, expected_regex, isolated_cli_runner
     )
     assert res.exit_code == 0, (res, res.stdout)
     assert expected_regex.search(res.stdout)
+
+
+def test_status_shows_friendly_error_when_broker_unreachable(isolated_cli_runner: CliRunner):
+    with patch('celery.app.control.Inspect.ping',
+               side_effect=OperationalError('[Errno 61] Connection refused')):
+        res = isolated_cli_runner.invoke(
+            celery,
+            [*_GLOBAL_OPTIONS, 'status'],
+            catch_exceptions=False,
+        )
+    assert res.exit_code == EX_UNAVAILABLE, (res, res.output)
+    assert 'Error: Could not connect to the message broker.' in res.output
+    assert 'Reason: [Errno 61] Connection refused' in res.output
+    assert 'Traceback' not in res.output
+
+
+def test_status_unexpected_error_is_summarized(isolated_cli_runner: CliRunner):
+    with patch('celery.app.control.Inspect.ping',
+               side_effect=RuntimeError('boom')):
+        res = isolated_cli_runner.invoke(
+            celery,
+            [*_GLOBAL_OPTIONS, 'status'],
+            catch_exceptions=False,
+        )
+    assert res.exit_code == EX_UNAVAILABLE, (res, res.output)
+    assert 'Error: Unable to run the `status` command. Reason: boom' in res.output
+    assert 'Traceback' not in res.output
+
+
+def test_graph_workers_shows_friendly_error_when_broker_unreachable(
+    isolated_cli_runner: CliRunner,
+):
+    with patch('celery.app.control.Inspect.stats',
+               side_effect=OperationalError('connection failed')):
+        res = isolated_cli_runner.invoke(
+            celery,
+            [*_GLOBAL_OPTIONS, 'graph', 'workers'],
+            catch_exceptions=False,
+        )
+    assert res.exit_code == EX_UNAVAILABLE, (res, res.output)
+    assert 'Error: Could not connect to the message broker.' in res.output
+    assert 'Reason: connection failed' in res.output
+
+
+def test_events_dump_shows_friendly_error_when_broker_unreachable(
+    isolated_cli_runner: CliRunner,
+):
+    with patch('celery.bin.events._run_evdump',
+               side_effect=OperationalError('connection failed')):
+        res = isolated_cli_runner.invoke(
+            celery,
+            [*_GLOBAL_OPTIONS, 'events', '--dump'],
+            catch_exceptions=False,
+        )
+    assert res.exit_code == EX_UNAVAILABLE, (res, res.output)
+    assert 'Error: Could not connect to the message broker.' in res.output
+    assert 'Reason: connection failed' in res.output
