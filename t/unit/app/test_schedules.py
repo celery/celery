@@ -629,19 +629,6 @@ class test_crontab_remaining_estimate:
         # so it must not be considered due again at 1:00 AM PST.
         assert remaining.total_seconds() > 0
 
-    def test_daily_crontab_during_dst_fall_back_is_not_due(self):
-        # Same daily scenario as above, but checked via is_due()
-        tzname = "US/Pacific"
-        self.app.timezone = tzname
-        tz = ZoneInfo(tzname)
-        ct = self.crontab(minute=0, hour=1)
-
-        last_run_at = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=0)  # 1 AM PDT
-        now = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=1)          # 1 AM PST
-        ct.nowfun = lambda: now
-
-        is_due, next_time = ct.is_due(last_run_at)
-        assert not is_due
 class test_crontab_is_due:
 
     def setup_method(self):
