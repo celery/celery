@@ -1002,8 +1002,25 @@ strings (this is the part of the URI that comes after the ``db+`` prefix).
     database index. The built-in periodic task ``celery.backend_cleanup``
     queries on ``date_done`` to delete expired task results, so adding an
     index significantly improves cleanup performance on large tables.
+
     Since SQLAlchemy's ``create_all()`` will not alter existing tables, you
-    should add the indexes manually:
+    will need to update your database schema. If you are using Alembic for
+    schema migrations, you can generate an empty revision and apply the
+    following operations:
+
+    .. code-block:: python
+
+        from alembic import op
+
+        def upgrade():
+            op.create_index('ix_celery_taskmeta_date_done', 'celery_taskmeta', ['date_done'])
+            op.create_index('ix_celery_tasksetmeta_date_done', 'celery_tasksetmeta', ['date_done'])
+
+        def downgrade():
+            op.drop_index('ix_celery_tasksetmeta_date_done', table_name='celery_tasksetmeta')
+            op.drop_index('ix_celery_taskmeta_date_done', table_name='celery_taskmeta')
+
+    Otherwise, you can add the indexes manually using SQL:
 
     .. code-block:: sql
 
