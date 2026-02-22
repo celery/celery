@@ -608,7 +608,55 @@ class test_crontab_remaining_estimate:
         is_due, next_time = ct.is_due(last_run_at)
         assert not is_due
 
+    def test_hourly_crontab_during_dst_spring_forward_is_due(self):
+        # Hourly schedule across the spring-forward gap should still be due.
+        # In US/Pacific on 2024-03-10, clocks jump from 2 AM to 3 AM.
+        tzname = "US/Pacific"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = self.crontab(minute=0, hour='*')
 
+        # Last run before the jump at 1 AM PST.
+        last_run_at = datetime(2024, 3, 10, 1, 0, tzinfo=tz)
+        # Now is 3 AM PDT after the 2 AM hour was skipped.
+        now = datetime(2024, 3, 10, 3, 0, tzinfo=tz)
+        ct.nowfun = lambda: now
+
+        is_due, next_time = ct.is_due(last_run_at)
+        assert is_due
+
+    def test_minutely_crontab_during_dst_fall_back_is_due(self):
+        # Minute-level schedule during fall-back should still be due when the
+        # clock repeats the 1 AM hour.
+        tzname = "US/Pacific"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = self.crontab(minute='*', hour='*')
+
+        # First occurrence of 1:00 AM (PDT, fold=0).
+        last_run_at = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=0)
+        # Second occurrence of 1:00 AM (PST, fold=1), one hour later in real time.
+        now = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=1)
+        ct.nowfun = lambda: now
+
+        is_due, next_time = ct.is_due(last_run_at)
+        assert is_due
+
+    def test_daily_crontab_during_dst_fall_back_europe_london_not_due(self):
+        # Mirror the US/Pacific daily fall-back behavior in Europe/London.
+        # Europe/London falls back from 2 AM BST to 1 AM GMT.
+        tzname = "Europe/London"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = self.crontab(minute=0, hour=1)
+
+        # First 1 AM (BST, fold=0) and second 1 AM (GMT, fold=1).
+        last_run_at = datetime(2024, 10, 27, 1, 0, tzinfo=tz, fold=0)
+        now = datetime(2024, 10, 27, 1, 0, tzinfo=tz, fold=1)
+        ct.nowfun = lambda: now
+
+        is_due, next_time = ct.is_due(last_run_at)
+        assert not is_due
 class test_crontab_is_due:
 
     def setup_method(self):
