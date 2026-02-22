@@ -658,6 +658,73 @@ class test_crontab_remaining_estimate:
         is_due, next_time = ct.is_due(last_run_at)
         assert not is_due
 
+    def test_hourly_crontab_during_dst_fall_back_europe_london_is_due(self):
+        # Hourly schedule should fire during Europe/London fall-back.
+        # Oct 27, 2024: clocks go back from 2 AM BST to 1 AM GMT.
+        tzname = "Europe/London"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = self.crontab(minute=0, hour='*')
+
+        # First 1 AM (BST, fold=0) and second 1 AM (GMT, fold=1).
+        last_run_at = datetime(2024, 10, 27, 1, 0, tzinfo=tz, fold=0)
+        now = datetime(2024, 10, 27, 1, 0, tzinfo=tz, fold=1)
+        ct.nowfun = lambda: now
+
+        is_due, next_time = ct.is_due(last_run_at)
+        assert is_due
+
+    def test_every_30_min_crontab_during_dst_fall_back_is_due(self):
+        # Sub-hourly (every 30 min) schedule during fall-back should be due
+        # when a full hour of real time has elapsed.
+        tzname = "US/Pacific"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = self.crontab(minute='*/30', hour='*')
+
+        last_run_at = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=0)
+        now = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=1)
+        ct.nowfun = lambda: now
+
+        is_due, next_time = ct.is_due(last_run_at)
+        assert is_due
+
+    def test_hourly_crontab_no_dst_transition_normal_behavior(self):
+        # Regression: hourly schedule in a DST-aware timezone should work
+        # normally when no DST transition is happening.
+        tzname = "US/Pacific"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = self.crontab(minute=0, hour='*')
+
+        # Normal day, 2 PM to 3 PM — one hour elapsed, task should be due.
+        last_run_at = datetime(2024, 7, 15, 14, 0, tzinfo=tz)
+        now = datetime(2024, 7, 15, 15, 0, tzinfo=tz)
+        ct.nowfun = lambda: now
+
+        is_due, next_time = ct.is_due(last_run_at)
+        assert is_due
+
+    def test_daily_crontab_at_skipped_spring_forward_hour(self):
+        # Daily task scheduled at 2 AM when 2 AM is skipped during spring
+        # forward (clocks jump from 2 AM to 3 AM).  The task should become
+        # due shortly after the gap.
+        tzname = "US/Pacific"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = self.crontab(minute=0, hour=2)
+
+        # Last ran yesterday at 2 AM.
+        last_run_at = datetime(2024, 3, 9, 2, 0, tzinfo=tz)
+        # Now is 3 AM on the spring-forward day — 2 AM was skipped.
+        now = datetime(2024, 3, 10, 3, 0, tzinfo=tz)
+        ct.nowfun = lambda: now
+
+        is_due, next_time = ct.is_due(last_run_at)
+        # The task missed its 2 AM slot but enough time has passed that
+        # is_due should return True (it's been ~25 hours).
+        assert is_due
+
 
 class test_crontab_is_due:
 
