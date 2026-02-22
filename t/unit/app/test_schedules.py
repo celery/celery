@@ -608,6 +608,7 @@ class test_crontab_remaining_estimate:
         is_due, next_time = ct.is_due(last_run_at)
         assert not is_due
 
+
 class test_crontab_is_due:
 
     def setup_method(self):
