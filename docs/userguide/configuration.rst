@@ -1317,7 +1317,7 @@ only work for Celery, not for Redis directly).
 
 If a Unix socket connection should be used, the URL needs to be in the format:::
 
-    result_backend = 'socket:///path/to/redis.sock'
+    result_backend = 'redis+socket:///path/to/redis.sock'
 
 The fields of the URL are defined as follows:
 
