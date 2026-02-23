@@ -12,6 +12,10 @@ on:
   workflow_dispatch:
 
 name: Semgrep
+
+permissions:
+  contents: read
+
 jobs:
   semgrep:
     name: Scan
