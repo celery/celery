@@ -463,7 +463,7 @@ The default queue is named `celery`. To get all available queues, invoke:
 .. _monitoring-prometheus:
 
 Prometheus
-=====
+=========
 
 While Prometheus monitoring is not a native part of Celery,
 you can easily monitor your Celery workers using Prometheus via Flower.
