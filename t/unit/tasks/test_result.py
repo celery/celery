@@ -390,6 +390,17 @@ class test_AsyncResult:
 
         assert not self.app.AsyncResult(uuid()).ready()
 
+    def test_exists(self):
+        """Test that exists() returns True for stored results and False for unknown IDs."""
+        # Tasks with stored results should exist
+        assert self.app.AsyncResult(self.task1["id"]).exists()
+        assert self.app.AsyncResult(self.task2["id"]).exists()
+        assert self.app.AsyncResult(self.task3["id"]).exists()
+
+        # A random/unknown task ID should not exist
+        assert not self.app.AsyncResult(uuid()).exists()
+
+
     @pytest.mark.skipif(
         platform.python_implementation() == "PyPy",
         reason="Mocking here doesn't play well with PyPy",

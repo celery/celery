@@ -224,6 +224,10 @@ class MongoBackend(BaseBackend):
             })
         return {'status': states.PENDING, 'result': None}
 
+    def task_result_exists(self, task_id):
+        """Check if a result exists in MongoDB for the given task ID."""
+        return bool(self.collection.find_one({"_id": task_id}))
+
     def _save_group(self, group_id, result):
         """Save the group result."""
         meta = {
