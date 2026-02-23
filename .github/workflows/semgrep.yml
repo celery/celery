@@ -12,6 +12,10 @@ on:
   workflow_dispatch:
 
 name: Semgrep
+
+permissions:
+  contents: read
+
 jobs:
   semgrep:
     name: Scan
@@ -21,5 +25,5 @@ jobs:
     container:
       image: returntocorp/semgrep
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - run: semgrep ci

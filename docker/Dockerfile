@@ -1,7 +1,7 @@
 FROM debian:bookworm-slim
 
-ENV PYTHONUNBUFFERED 1
-ENV PYTHONIOENCODING UTF-8
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONIOENCODING=UTF-8
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -37,9 +37,10 @@ RUN apt-get update && apt-get install -y build-essential \
 
 # Setup variables. Even though changing these may cause unnecessary invalidation of
 # unrelated elements, grouping them together makes the Dockerfile read better.
-ENV PROVISIONING /provisioning
+ENV PROVISIONING=/provisioning
 ENV PIP_NO_CACHE_DIR=off
 ENV PYTHONDONTWRITEBYTECODE=1
+ENV PIP_PREFER_BINARY=1
 
 
 ARG CELERY_USER=developer
@@ -47,7 +48,7 @@ ARG CELERY_USER=developer
 # Check for mandatory build arguments
 RUN : "${CELERY_USER:?CELERY_USER build argument needs to be set and non-empty.}"
 
-ENV HOME /home/$CELERY_USER
+ENV HOME=/home/$CELERY_USER
 ENV PATH="$HOME/.pyenv/bin:$PATH"
 
 # Copy and run setup scripts
@@ -65,17 +66,15 @@ USER $CELERY_USER
 RUN curl https://pyenv.run | bash
 
 # Install required Python versions
-RUN pyenv install 3.13
-RUN pyenv install 3.12
-RUN pyenv install 3.11
-RUN pyenv install 3.10
-RUN pyenv install 3.9
-RUN pyenv install 3.8
-RUN pyenv install pypy3.10
+RUN pyenv install 3.13 && \
+    pyenv install 3.12 && \
+    pyenv install 3.11 && \
+    pyenv install 3.10 && \
+    pyenv install pypy3.11
 
 
 # Set global Python versions
-RUN pyenv global 3.13 3.12 3.11 3.10 3.9 3.8 pypy3.10
+RUN pyenv global 3.13 3.12 3.11 3.10 pypy3.11
 
 # Install celery
 WORKDIR $HOME
@@ -84,90 +83,81 @@ COPY --chown=1000:1000 docker/entrypoint /entrypoint
 RUN chmod gu+x /entrypoint
 
 # Define the local pyenvs
-RUN pyenv local 3.13 3.12 3.11 3.10 3.9 3.8 pypy3.10
+RUN pyenv local 3.13 3.12 3.11 3.10 pypy3.11
 
-RUN pyenv exec python3.13 -m pip install --upgrade pip setuptools wheel && \
+RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
+    pyenv exec python3.13 -m pip install --upgrade pip setuptools wheel && \
     pyenv exec python3.12 -m pip install --upgrade pip setuptools wheel && \
     pyenv exec python3.11 -m pip install --upgrade pip setuptools wheel && \
     pyenv exec python3.10 -m pip install --upgrade pip setuptools wheel && \
-    pyenv exec python3.9 -m pip install --upgrade pip setuptools wheel && \
-    pyenv exec python3.8 -m pip install --upgrade pip setuptools wheel && \
-    pyenv exec pypy3.10 -m pip install --upgrade pip setuptools wheel
+    pyenv exec pypy3.11 -m pip install --upgrade pip setuptools wheel
 
-COPY --chown=1000:1000 . $HOME/celery
-
-RUN pyenv exec python3.13 -m pip install -e $HOME/celery && \
-    pyenv exec python3.12 -m pip install -e $HOME/celery && \
-    pyenv exec python3.11 -m pip install -e $HOME/celery && \
-    pyenv exec python3.10 -m pip install -e $HOME/celery && \
-    pyenv exec python3.9 -m pip install -e $HOME/celery && \
-    pyenv exec python3.8 -m pip install -e $HOME/celery && \
-    pyenv exec pypy3.10 -m pip install -e $HOME/celery
-
-# Setup one celery environment for basic development use
-RUN pyenv exec python3.13 -m pip install -r requirements/default.txt \
+# Install requirements first to leverage Docker layer caching
+# Split into separate RUN commands to reduce memory pressure and improve layer caching
+RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
+    pyenv exec python3.13 -m pip install -r requirements/default.txt \
     -r requirements/dev.txt \
     -r requirements/docs.txt \
     -r requirements/pkgutils.txt \
     -r requirements/test-ci-base.txt \
     -r requirements/test-ci-default.txt \
     -r requirements/test-integration.txt \
-    -r requirements/test-pypy3.txt \
-    -r requirements/test.txt && \
-  pyenv exec python3.12 -m pip install -r requirements/default.txt \
-  -r requirements/dev.txt \
-  -r requirements/docs.txt \
-  -r requirements/pkgutils.txt \
-  -r requirements/test-ci-base.txt \
-  -r requirements/test-ci-default.txt \
-  -r requirements/test-integration.txt \
-  -r requirements/test-pypy3.txt \
-  -r requirements/test.txt && \
-  pyenv exec python3.11 -m pip install -r requirements/default.txt \
-  -r requirements/dev.txt \
-  -r requirements/docs.txt \
-  -r requirements/pkgutils.txt \
-  -r requirements/test-ci-base.txt \
-  -r requirements/test-ci-default.txt \
-  -r requirements/test-integration.txt \
-  -r requirements/test-pypy3.txt \
-  -r requirements/test.txt && \
-  pyenv exec python3.10 -m pip install -r requirements/default.txt \
-  -r requirements/dev.txt \
-  -r requirements/docs.txt \
-  -r requirements/pkgutils.txt \
-  -r requirements/test-ci-base.txt \
-  -r requirements/test-ci-default.txt \
-  -r requirements/test-integration.txt \
-  -r requirements/test-pypy3.txt \
-  -r requirements/test.txt && \
-  pyenv exec python3.9 -m pip install -r requirements/default.txt \
-  -r requirements/dev.txt \
-  -r requirements/docs.txt \
-  -r requirements/pkgutils.txt \
-  -r requirements/test-ci-base.txt \
-  -r requirements/test-ci-default.txt \
-  -r requirements/test-integration.txt \
-  -r requirements/test-pypy3.txt \
-  -r requirements/test.txt && \
-  pyenv exec python3.8 -m pip install -r requirements/default.txt \
-  -r requirements/dev.txt \
-  -r requirements/docs.txt \
-  -r requirements/pkgutils.txt \
-  -r requirements/test-ci-base.txt \
-  -r requirements/test-ci-default.txt \
-  -r requirements/test-integration.txt \
-  -r requirements/test-pypy3.txt \
-  -r requirements/test.txt && \
-  pyenv exec pypy3.10 -m pip install -r requirements/default.txt \
-  -r requirements/dev.txt \
-  -r requirements/docs.txt \
-  -r requirements/pkgutils.txt \
-  -r requirements/test-ci-base.txt \
-  -r requirements/test-ci-default.txt \
-  -r requirements/test-integration.txt \
-  -r requirements/test-pypy3.txt \
-  -r requirements/test.txt
+    -r requirements/test.txt \
+    --build-constraint requirements/constraints.txt
+
+RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
+    pyenv exec python3.12 -m pip install -r requirements/default.txt \
+    -r requirements/dev.txt \
+    -r requirements/docs.txt \
+    -r requirements/pkgutils.txt \
+    -r requirements/test-ci-base.txt \
+    -r requirements/test-ci-default.txt \
+    -r requirements/test-integration.txt \
+    -r requirements/test.txt \
+    --build-constraint requirements/constraints.txt
+
+RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
+    pyenv exec python3.11 -m pip install -r requirements/default.txt \
+    -r requirements/dev.txt \
+    -r requirements/docs.txt \
+    -r requirements/pkgutils.txt \
+    -r requirements/test-ci-base.txt \
+    -r requirements/test-ci-default.txt \
+    -r requirements/test-integration.txt \
+    -r requirements/test.txt \
+    --build-constraint requirements/constraints.txt
+
+RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
+    pyenv exec python3.10 -m pip install -r requirements/default.txt \
+    -r requirements/dev.txt \
+    -r requirements/docs.txt \
+    -r requirements/pkgutils.txt \
+    -r requirements/test-ci-base.txt \
+    -r requirements/test-ci-default.txt \
+    -r requirements/test-integration.txt \
+    -r requirements/test.txt \
+    --build-constraint requirements/constraints.txt
+
+RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
+    pyenv exec pypy3.11 -m pip install -r requirements/default.txt \
+    -r requirements/dev.txt \
+    -r requirements/docs.txt \
+    -r requirements/pkgutils.txt \
+    -r requirements/test-ci-base.txt \
+    -r requirements/test-ci-default.txt \
+    -r requirements/test-integration.txt \
+    -r requirements/test.txt \
+    --build-constraint requirements/constraints.txt
+
+COPY --chown=1000:1000 . $HOME/celery
+
+# Install celery in editable mode (dependencies already installed above)
+RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
+    pyenv exec python3.13 -m pip install --no-deps -e $HOME/celery && \
+    pyenv exec python3.12 -m pip install --no-deps -e $HOME/celery && \
+    pyenv exec python3.11 -m pip install --no-deps -e $HOME/celery && \
+    pyenv exec python3.10 -m pip install --no-deps -e $HOME/celery && \
+    pyenv exec pypy3.11 -m pip install --no-deps -e $HOME/celery
 
 WORKDIR $HOME/celery
 

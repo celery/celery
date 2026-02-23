@@ -9,6 +9,12 @@ from unittest.mock import ANY, Mock, call, patch
 
 import pytest
 
+try:
+    from redis import CredentialProvider, exceptions
+except ImportError:
+    exceptions = None
+    CredentialProvider = None
+
 from celery import signature, states, uuid
 from celery.canvas import Signature
 from celery.contrib.testing.mocks import ContextMock
@@ -167,7 +173,8 @@ class Sentinel(conftest.MockCallbacks):
         self.min_other_sentinels = min_other_sentinels
         self.connection_kwargs = connection_kwargs
 
-    def master_for(self, service_name, redis_class):
+    def master_for(self, service_name, redis_class, **kwargs):
+        self.master_for_kwargs = kwargs
         return random.choice(self.sentinels)
 
 
@@ -364,6 +371,14 @@ class basetest_RedisBackend:
         self.b = self.Backend(app=self.app)
 
 
+class MyCredentialProvider(CredentialProvider):
+    pass
+
+
+class NonCredentialProvider:
+    pass
+
+
 class test_RedisBackend(basetest_RedisBackend):
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_reduce(self):
@@ -392,6 +407,33 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['username'] == 'username'
         assert x.connparams['password'] == 'password'
 
+    def test_credential_provider_from_redis_conf(self):
+        self.app.conf.redis_backend_credential_provider = "redis.CredentialProvider"
+        x = self.Backend(app=self.app)
+
+        assert x.connparams
+        assert 'credential_provider' in x.connparams
+        assert 'username' not in x.connparams
+        assert 'password' not in x.connparams
+
+        # with local credential provider
+        self.app.conf.redis_backend_credential_provider = MyCredentialProvider()
+        x = self.Backend(app=self.app)
+        assert x.connparams
+        assert 'credential_provider' in x.connparams
+        assert 'username' not in x.connparams
+        assert 'password' not in x.connparams
+
+        # raise ImportError
+        self.app.conf.redis_backend_credential_provider = "not_exist.CredentialProvider"
+        with pytest.raises(ImportError):
+            self.Backend(app=self.app)
+
+        # raise value Error
+        self.app.conf.redis_backend_credential_provider = NonCredentialProvider()
+        with pytest.raises(ValueError):
+            self.Backend(app=self.app)
+
     def test_url(self):
         self.app.conf.redis_socket_timeout = 30.0
         self.app.conf.redis_socket_connect_timeout = 100.0
@@ -418,6 +460,47 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['password'] == 'bosco'
         assert x.connparams['socket_timeout'] == 30.0
         assert x.connparams['socket_connect_timeout'] == 100.0
+
+    def test_url_with_credential_provider(self):
+        self.app.conf.redis_socket_timeout = 30.0
+        self.app.conf.redis_socket_connect_timeout = 100.0
+        x = self.Backend(
+            'redis://:bosco@vandelay.com:123/1?credential_provider=redis.CredentialProvider', app=self.app,
+        )
+
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert x.connparams['socket_timeout'] == 30.0
+        assert x.connparams['socket_connect_timeout'] == 100.0
+        assert isinstance(x.connparams['credential_provider'], CredentialProvider)
+        assert "username" not in x.connparams
+        assert "password" not in x.connparams
+
+        # without username and password
+        x = self.Backend(
+            'redis://@vandelay.com:123/1?credential_provider=redis.UsernamePasswordCredentialProvider', app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert isinstance(x.connparams['credential_provider'], CredentialProvider)
+
+        # raise importError
+        with pytest.raises(ImportError):
+            self.Backend(
+                'redis://@vandelay.com:123/1?credential_provider=not_exist.CredentialProvider', app=self.app,
+            )
+
+        # raise valueError
+        with pytest.raises(ValueError):
+            # some non-credential provider class
+            # not ideal but serve purpose
+            self.Backend(
+                'redis://@vandelay.com:123/1?credential_provider=abc.ABC', app=self.app,
+            )
 
     def test_timeouts_in_url_coerced(self):
         pytest.importorskip('redis')
@@ -530,6 +613,31 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['db'] == 1
         assert x.connparams['port'] == 123
         assert "health_check_interval" not in x.connparams
+
+    def test_backend_redis_client_name(self):
+        pytest.importorskip('redis')
+
+        self.app.conf.redis_client_name = 'celery-worker'
+        x = self.Backend(
+            'redis://vandelay.com:123//1', app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert x.connparams['client_name'] == 'celery-worker'
+
+    def test_backend_redis_client_name_not_set(self):
+        pytest.importorskip('redis')
+
+        x = self.Backend(
+            'redis://vandelay.com:123//1', app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert x.connparams['client_name'] is None
 
     @pytest.mark.parametrize('cert_str', [
         "required",
@@ -693,6 +801,14 @@ class test_RedisBackend(basetest_RedisBackend):
             fn, b.connection_errors, (), {}, ANY,
             max_retries=2, interval_start=0, interval_step=0.01, interval_max=1
         )
+
+    def test_exception_safe_to_retry(self):
+        b = self.Backend(app=self.app)
+        assert not b.exception_safe_to_retry(Exception("failed"))
+        assert not b.exception_safe_to_retry(BaseException("failed"))
+        assert not b.exception_safe_to_retry(exceptions.RedisError("redis error"))
+        assert b.exception_safe_to_retry(exceptions.ConnectionError("service unavailable"))
+        assert b.exception_safe_to_retry(exceptions.TimeoutError("timeout"))
 
     def test_incr(self):
         self.b.client = Mock(name='client')
@@ -1170,7 +1286,7 @@ class test_RedisBackend_chords_complex(basetest_RedisBackend):
         self.b.client.zrange.assert_not_called()
         self.b.client.lrange.assert_not_called()
         # Confirm that the `GroupResult.restore` mock was called
-        complex_header_result.assert_called_once_with(request.group)
+        complex_header_result.assert_called_once_with(request.group, app=self.b.app)
         # Confirm that the callback was called with the `join()`ed group result
         if supports_native_join:
             expected_join = mock_result_obj.join_native
@@ -1302,3 +1418,56 @@ class test_SentinelBackend:
 
         from celery.backends.redis import SentinelManagedSSLConnection
         assert x.connparams['connection_class'] is SentinelManagedSSLConnection
+
+    def test_url_with_acl_credentials(self):
+        x = self.Backend(
+            'sentinel://myuser:mypass@github.com:123/1;'
+            'sentinel://myuser:mypass@github.com:124/1',
+            app=self.app,
+        )
+        assert x.connparams
+        assert "host" not in x.connparams
+        assert x.connparams['db'] == 1
+        assert "port" not in x.connparams
+        assert x.connparams['password'] == "mypass"
+        assert x.connparams['username'] == "myuser"
+        assert len(x.connparams['hosts']) == 2
+
+        expected_usernames = ["myuser", "myuser"]
+        found_usernames = [cp['username'] for cp in x.connparams['hosts']]
+        assert found_usernames == expected_usernames
+
+    def test_get_pool_with_acl_credentials(self):
+        x = self.Backend(
+            'sentinel://myuser:mypass@github.com:123/1;'
+            'sentinel://myuser:mypass@github.com:124/1',
+            app=self.app,
+        )
+        with patch.object(x, '_get_sentinel_instance') as mock_get_sentinel:
+            mock_sentinel = Mock()
+            mock_sentinel.master_for.return_value = Mock(connection_pool=Mock())
+            mock_get_sentinel.return_value = mock_sentinel
+
+            x._get_pool(**x.connparams)
+
+            mock_sentinel.master_for.assert_called_once()
+            call_kwargs = mock_sentinel.master_for.call_args[1]
+            assert call_kwargs.get('username') == 'myuser'
+            assert call_kwargs.get('password') == 'mypass'
+
+    def test_get_pool_with_password_only(self):
+        x = self.Backend(
+            'sentinel://:mypass@github.com:123/1',
+            app=self.app,
+        )
+        with patch.object(x, '_get_sentinel_instance') as mock_get_sentinel:
+            mock_sentinel = Mock()
+            mock_sentinel.master_for.return_value = Mock(connection_pool=Mock())
+            mock_get_sentinel.return_value = mock_sentinel
+
+            x._get_pool(**x.connparams)
+
+            mock_sentinel.master_for.assert_called_once()
+            call_kwargs = mock_sentinel.master_for.call_args[1]
+            assert 'username' not in call_kwargs
+            assert call_kwargs.get('password') == 'mypass'

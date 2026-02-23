@@ -30,6 +30,10 @@ test_worker_stopped = Signal(
 class TestWorkController(worker.WorkController):
     """Worker that can synchronize on being fully started."""
 
+    # When this class is imported in pytest files, prevent pytest from thinking
+    # this is a test class
+    __test__ = False
+
     logger_queue = None
 
     def __init__(self, *args, **kwargs):
@@ -38,7 +42,9 @@ class TestWorkController(worker.WorkController):
 
         super().__init__(*args, **kwargs)
 
-        if self.pool_cls.__module__.split('.')[-1] == 'prefork':
+        # Defensive check: pool_cls may be a string (e.g., 'prefork') or a class
+        pool_module = self.pool_cls if isinstance(self.pool_cls, str) else self.pool_cls.__module__
+        if pool_module.split('.')[-1] == 'prefork':
             from billiard import Queue
             self.logger_queue = Queue()
             self.pid = os.getpid()

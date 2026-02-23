@@ -1741,7 +1741,7 @@ class group(Signature):
 
     def _apply_tasks(self, tasks, producer=None, app=None, p=None,
                      add_to_parent=None, chord=None,
-                     args=None, kwargs=None, **options):
+                     args=None, kwargs=None, group_index=None, **options):
         """Run all the tasks in the group.
 
         This is used by :meth:`apply_async` to run all the tasks in the group
@@ -2234,7 +2234,8 @@ class _chord(Signature):
             options.pop('task_id', None)
             body.options.update(options)
 
-        bodyres = body.freeze(task_id, root_id=root_id)
+        body_task_id = task_id or uuid()
+        bodyres = body.freeze(body_task_id, group_id=group_id, root_id=root_id)
 
         # Chains should not be passed to the header tasks. See #3771
         options.pop('chain', None)
@@ -2306,6 +2307,13 @@ class _chord(Signature):
                 "regarding how errbacks should behave when used with chords.",
                 CPendingDeprecationWarning
             )
+
+        # Edge case for nested chords in the header
+        for task in maybe_list(self.tasks) or []:
+            if isinstance(task, chord):
+                # Let the nested chord do the error linking itself on its
+                # header and body where needed, based on the current configuration
+                task.link_error(errback)
 
         self.body.link_error(errback)
         return errback

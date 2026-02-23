@@ -12,6 +12,7 @@ import traceback
 from calendar import timegm
 from collections import namedtuple
 from functools import total_ordering
+from pickle import UnpicklingError
 from threading import Event, Thread
 
 from billiard import ensure_multiprocessing
@@ -569,11 +570,11 @@ class PersistentScheduler(Scheduler):
         for _ in (1, 2):
             try:
                 self._store['entries']
-            except (KeyError, UnicodeDecodeError, TypeError):
+            except (KeyError, UnicodeDecodeError, TypeError, UnpicklingError):
                 # new schedule db
                 try:
                     self._store['entries'] = {}
-                except (KeyError, UnicodeDecodeError, TypeError) + dbm.error as exc:
+                except (KeyError, UnicodeDecodeError, TypeError, UnpicklingError) + dbm.error as exc:
                     self._store = self._destroy_open_corrupted_schedule(exc)
                     continue
             else:
@@ -626,8 +627,8 @@ class Service:
         self._is_stopped = Event()
 
     def __reduce__(self):
-        return self.__class__, (self.max_interval, self.schedule_filename,
-                                self.scheduler_cls, self.app)
+        return self.__class__, (self.app, self.max_interval,
+                                self.schedule_filename, self.scheduler_cls)
 
     def start(self, embedded_process=False):
         info('beat: Starting...')

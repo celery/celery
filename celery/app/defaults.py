@@ -150,6 +150,8 @@ NAMESPACES = Namespace(
     control=Namespace(
         queue_ttl=Option(300.0, type='float'),
         queue_expires=Option(10.0, type='float'),
+        queue_exclusive=Option(False, type='bool'),
+        queue_durable=Option(False, type='bool'),
         exchange=Option('celery', type='string'),
     ),
     couchbase=Namespace(
@@ -179,6 +181,8 @@ NAMESPACES = Namespace(
         queue_expires=Option(60.0, type='float'),
         queue_ttl=Option(5.0, type='float'),
         queue_prefix=Option('celeryev'),
+        queue_exclusive=Option(False, type='bool'),
+        queue_durable=Option(False, type='bool'),
         serializer=Option('json'),
         exchange=Option('celeryev', type='string'),
     ),
@@ -243,6 +247,10 @@ NAMESPACES = Namespace(
     database=Namespace(
         url=Option(old={'celery_result_dburi'}),
         engine_options=Option(
+            {
+                'pool_pre_ping': True,
+                'pool_recycle': 3600,
+            },
             type='dict', old={'celery_result_engine_options'},
         ),
         short_lived_sessions=Option(
@@ -260,6 +268,8 @@ NAMESPACES = Namespace(
         annotations=Option(type='any'),
         compression=Option(type='string', old={'celery_message_compression'}),
         create_missing_queues=Option(True, type='bool'),
+        create_missing_queue_type=Option('classic', type='string'),
+        create_missing_queue_exchange_type=Option(None, type='string'),
         inherit_parent_priority=Option(False, type='bool'),
         default_delivery_mode=Option(2, type='string'),
         default_queue=Option('celery'),
@@ -336,7 +346,9 @@ NAMESPACES = Namespace(
         pool_restarts=Option(False, type='bool'),
         proc_alive_timeout=Option(4.0, type='float'),
         prefetch_multiplier=Option(4, type='int'),
+        eta_task_limit=Option(None, type='int'),
         enable_prefetch_count_reduction=Option(True, type='bool'),
+        disable_prefetch=Option(False, type='bool'),
         redirect_stdouts=Option(
             True, type='bool', old={'celery_redirect_stdouts'},
         ),

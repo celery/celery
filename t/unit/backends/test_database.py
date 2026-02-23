@@ -46,6 +46,72 @@ class test_session_cleanup:
 
 
 @skip.if_pypy
+class test_ModelsIdFieldTypeVariations:
+
+    def test_for_mssql_dialect(self):
+        """Test that ID columns use BigInteger for MSSQL and Integer for other dialects."""
+        from sqlalchemy import BigInteger, Integer
+        from sqlalchemy.dialects import mssql, mysql, oracle, postgresql, sqlite
+
+        models = [Task, TaskSet]
+        id_columns = [m.__table__.columns['id'] for m in models]
+
+        for dialect in [mssql, postgresql, mysql, sqlite, oracle]:
+            for id_column in id_columns:
+                compiled_type = id_column.type.dialect_impl(dialect.dialect())
+                if dialect == mssql:
+                    assert isinstance(compiled_type, BigInteger)
+                else:
+                    assert isinstance(compiled_type, Integer)
+
+
+@skip.if_pypy
+class test_DateDoneIndex:
+    """Test that date_done columns have index=True on Task and TaskSet models."""
+
+    def test_task_date_done_has_index(self):
+        col = Task.__table__.columns['date_done']
+        assert col.index is True, "Task.date_done should have index=True"
+
+    def test_taskset_date_done_has_index(self):
+        col = TaskSet.__table__.columns['date_done']
+        assert col.index is True, "TaskSet.date_done should have index=True"
+
+
+class test_DateDoneColumnDefaults:
+    """Test that date_done column defaults are callables, not fixed values.
+
+    The default and onupdate values must be callables (lambdas) so that
+    datetime.now() is evaluated per-row at INSERT/UPDATE time, not once
+    at module import time.
+    """
+
+    def test_task_date_done_default_is_callable(self):
+        """Task.date_done default should be a callable."""
+        col = Task.__table__.columns['date_done']
+        assert col.default is not None, \
+            "Task.date_done should have a default"
+        assert callable(col.default.arg), \
+            "Task.date_done default should be a callable, not a fixed datetime"
+
+    def test_task_date_done_onupdate_is_callable(self):
+        """Task.date_done onupdate should be a callable (lambda)."""
+        col = Task.__table__.columns['date_done']
+        assert col.onupdate is not None, \
+            "Task.date_done should have an onupdate"
+        assert callable(col.onupdate.arg), \
+            "Task.date_done onupdate should be a callable, not a fixed datetime"
+
+    def test_taskset_date_done_default_is_callable(self):
+        """TaskSet.date_done default should be a callable."""
+        col = TaskSet.__table__.columns['date_done']
+        assert col.default is not None, \
+            "TaskSet.date_done should have a default"
+        assert callable(col.default.arg), \
+            "TaskSet.date_done default should be a callable, not a fixed datetime"
+
+
+@skip.if_pypy
 class test_DatabaseBackend:
 
     @pytest.fixture(autouse=True)
@@ -72,10 +138,114 @@ class test_DatabaseBackend:
             raises(max_retries=5)
         assert calls[0] == 5
 
+    def test_retry_helper_calls_on_backend_retryable_error(self):
+        from celery.backends.database import DatabaseError
+
+        calls = [0]
+        hook_calls = []
+
+        mock_backend = Mock()
+        mock_backend.on_backend_retryable_error = Mock(side_effect=lambda exc: hook_calls.append(exc))
+
+        @retry
+        def raises_with_backend(backend):
+            calls[0] += 1
+            raise DatabaseError(1, 2, 3)
+
+        with pytest.raises(DatabaseError):
+            raises_with_backend(mock_backend, max_retries=3)
+
+        assert calls[0] == 3
+        assert mock_backend.on_backend_retryable_error.call_count == 3
+        for exc in hook_calls:
+            assert isinstance(exc, DatabaseError)
+
+    def test_retry_helper_without_hook(self):
+        from celery.backends.database import DatabaseError
+
+        calls = [0]
+
+        mock_backend = Mock(spec=[])
+
+        @retry
+        def raises_with_backend(backend):
+            calls[0] += 1
+            raise DatabaseError(1, 2, 3)
+
+        with pytest.raises(DatabaseError):
+            raises_with_backend(mock_backend, max_retries=3)
+
+        assert calls[0] == 3
+
+    def test_retry_helper_hook_failure_continues(self):
+        from celery.backends.database import DatabaseError
+
+        calls = [0]
+
+        mock_backend = Mock()
+        mock_backend.on_backend_retryable_error = Mock(side_effect=RuntimeError("hook failed"))
+
+        @retry
+        def raises_with_backend(backend):
+            calls[0] += 1
+            raise DatabaseError(1, 2, 3)
+
+        with pytest.raises(DatabaseError):
+            raises_with_backend(mock_backend, max_retries=3)
+
+        assert calls[0] == 3
+        assert mock_backend.on_backend_retryable_error.call_count == 3
+
     def test_missing_dburi_raises_ImproperlyConfigured(self):
         self.app.conf.database_url = None
         with pytest.raises(ImproperlyConfigured):
             DatabaseBackend(app=self.app)
+
+    def test_engine_options_include_pool_health_defaults(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.engine_options["pool_pre_ping"] is True
+        assert tb.engine_options["pool_recycle"] == 3600
+
+    def test_engine_options_explicit_values_override_defaults(self):
+        self.app.conf.database_engine_options = {"pool_pre_ping": False}
+        tb = DatabaseBackend(
+            self.uri,
+            app=self.app,
+            engine_options={"pool_recycle": 15},
+        )
+        assert tb.engine_options["pool_pre_ping"] is False
+        assert tb.engine_options["pool_recycle"] == 15
+
+    def test_exception_safe_to_retry(self):
+        from celery.backends.database import DatabaseError, InvalidRequestError, StaleDataError
+
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.exception_safe_to_retry(DatabaseError("", "", Exception("db error")))
+        assert tb.exception_safe_to_retry(InvalidRequestError())
+        assert tb.exception_safe_to_retry(StaleDataError())
+        assert not tb.exception_safe_to_retry(RuntimeError("not retryable"))
+
+    def test_exception_safe_to_retry_with_interface_error(self):
+        from celery.backends.database import InterfaceError
+
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.exception_safe_to_retry(InterfaceError("", None, Exception("connection lost")))
+
+    def test_on_backend_retryable_error_invalidates_session(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb.session_manager.invalidate = Mock()
+
+        tb.on_backend_retryable_error(RuntimeError("retryable"))
+        tb.session_manager.invalidate.assert_called_once_with(tb.url)
+
+    def test_on_backend_retryable_error_called_with_exception(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb.session_manager.invalidate = Mock()
+        mock_exc = RuntimeError("connection lost")
+
+        tb.on_backend_retryable_error(mock_exc)
+
+        tb.session_manager.invalidate.assert_called_once_with(tb.url)
 
     def test_table_schema_config(self):
         self.app.conf.database_table_schemas = {
@@ -391,6 +561,34 @@ class test_SessionManager:
         engine2 = s.get_engine('dburi', foo=1)
         assert engine2 is engine
 
+    def test_invalidate_disposes_cached_engine(self):
+        s = SessionManager()
+        engine = Mock()
+        s._engines['dburi'] = engine
+        s._sessions['dburi'] = Mock()
+
+        s.invalidate('dburi')
+
+        assert 'dburi' not in s._engines
+        assert 'dburi' not in s._sessions
+        engine.dispose.assert_called_once_with()
+
+    def test_invalidate_nonexistent_dburi_is_noop(self):
+        s = SessionManager()
+        s.invalidate('nonexistent-dburi')
+        assert 'nonexistent-dburi' not in s._engines
+        assert 'nonexistent-dburi' not in s._sessions
+
+    def test_invalidate_only_engine_cached(self):
+        s = SessionManager()
+        engine = Mock()
+        s._engines['dburi'] = engine
+
+        s.invalidate('dburi')
+
+        assert 'dburi' not in s._engines
+        engine.dispose.assert_called_once_with()
+
     @patch('celery.backends.database.session.sessionmaker')
     def test_create_session_forked(self, sessionmaker):
         s = SessionManager()
@@ -447,3 +645,21 @@ class test_SessionManager:
             manager.prepare_models(engine)
 
         assert mock_create_all.call_count == PREPARE_MODELS_MAX_RETRIES + 1
+
+    @patch('celery.backends.database.session.create_engine')
+    def test_get_engine_filters_nullpool_unsupported_kwargs(self, mock_create_engine):
+        """
+        Test that QueuePool-specific kwargs (like pool_size and max_overflow)
+        are filtered out when creating an engine with NullPool.
+        """
+        from celery.backends.database.session import NullPool
+
+        s = SessionManager()
+        s.forked = False  # Ensure we're in the non-forked code path
+
+        s.get_engine('dburi', echo_pool=True, pool_size=10, max_overflow=5)
+
+        mock_create_engine.assert_called_once_with(
+            'dburi',
+            poolclass=NullPool,
+        )

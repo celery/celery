@@ -488,6 +488,31 @@ class test_AsynPool:
             sender=pool,
         )
 
+    def test_untrack_child_process_without_sentinel_poll(self):
+        """_untrack_child_process must not raise when proc lacks _sentinel_poll.
+
+        Race condition during cold shutdown can cause _untrack_child_process to
+        be called with a process that never had _sentinel_poll set or had it
+        cleared. Use getattr for safe access.
+        """
+        pytest.importorskip('multiprocessing')
+        pool = asynpool.AsynPool(processes=1, threads=False)
+        hub = Mock(name='hub')
+        proc = object()  # No _sentinel_poll attribute
+        pool._untrack_child_process(proc, hub)  # Should not raise AttributeError
+        hub.remove.assert_not_called()
+
+    def test_untrack_child_process_with_sentinel_poll(self):
+        """_untrack_child_process cleans up when proc has _sentinel_poll set."""
+        pytest.importorskip('multiprocessing')
+        pool = asynpool.AsynPool(processes=1, threads=False)
+        hub = Mock(name='hub')
+        fd = os.open(os.devnull, os.O_RDONLY)
+        proc = Mock(_sentinel_poll=fd)
+        pool._untrack_child_process(proc, hub)
+        hub.remove.assert_called_once_with(fd)
+        assert proc._sentinel_poll is None
+
 
 @t.skip.if_win32
 class test_ResultHandler:
@@ -571,6 +596,85 @@ class test_TaskPool:
         pool._pool._state = mp.CLOSE
         pool.on_close()
         pool._pool.close.assert_not_called()
+
+    @patch('celery.concurrency.prefork.get_event_loop')
+    @patch('celery.concurrency.prefork.threading.Thread')
+    def test_on_stop_with_hub_fires_timers(self, mock_thread, mock_get_event_loop):
+        pool = TaskPool(10)
+        mock_pool = Mock(name='pool')
+        mock_pool._state = mp.RUN
+        pool._pool = mock_pool
+
+        mock_hub = Mock(name='hub')
+        mock_get_event_loop.return_value = mock_hub
+        mock_timer_thread = Mock(name='timer_thread')
+        mock_thread.return_value = mock_timer_thread
+
+        pool.on_stop()
+
+        mock_pool.close.assert_called_with()
+        mock_pool.join.assert_called_with()
+        mock_get_event_loop.assert_called_once()
+        mock_thread.assert_called_once()
+        assert mock_thread.call_args[1]['daemon'] is True
+        mock_timer_thread.start.assert_called_once()
+        mock_timer_thread.join.assert_called_once_with(timeout=1.0)
+
+    @patch('celery.concurrency.prefork.get_event_loop')
+    @patch('celery.concurrency.prefork.threading.Thread')
+    @patch('celery.concurrency.prefork.threading.Event')
+    def test_on_stop_timer_thread_handles_exceptions(
+        self,
+        mock_event_class,
+        mock_thread,
+        mock_get_event_loop,
+    ):
+        pool = TaskPool(10)
+        mock_pool = Mock(name='pool')
+        mock_pool._state = mp.RUN
+        pool._pool = mock_pool
+
+        mock_hub = Mock(name='hub')
+        mock_hub.fire_timers.side_effect = [Exception("Hub error"), None]
+        mock_get_event_loop.return_value = mock_hub
+
+        mock_shutdown_event = Mock(name='shutdown_event')
+        # Simulate two loop iterations and then shutdown
+        mock_shutdown_event.is_set.side_effect = [False, False, True]
+        mock_event_class.return_value = mock_shutdown_event
+
+        thread_target = None
+
+        def capture_thread(*args, **kwargs):
+            nonlocal thread_target
+            thread_target = kwargs['target']
+            mock_timer_thread = Mock(name='timer_thread')
+            return mock_timer_thread
+
+        mock_thread.side_effect = capture_thread
+
+        pool.on_stop()
+
+        with patch('celery.concurrency.prefork.time.sleep'):
+            thread_target()
+
+        # Should match number of loop iterations allowed by mock_shutdown_event.is_set.side_effect
+        assert mock_hub.fire_timers.call_count == 2
+
+    @patch('celery.concurrency.prefork.get_event_loop')
+    def test_on_stop_no_hub(self, mock_get_event_loop):
+        pool = TaskPool(10)
+        mock_pool = Mock(name='pool')
+        mock_pool._state = mp.RUN
+        pool._pool = mock_pool
+
+        mock_get_event_loop.return_value = None
+
+        pool.on_stop()
+
+        mock_pool.close.assert_called_with()
+        mock_pool.join.assert_called_with()
+        mock_get_event_loop.assert_called_once()
 
     def test_apply_async(self):
         pool = TaskPool(10)

@@ -31,7 +31,8 @@ from celery.utils.objects import Bunch
 from celery.utils.text import truncate
 from celery.utils.time import humanize_seconds, rate
 from celery.worker import loops
-from celery.worker.state import active_requests, maybe_shutdown, requests, reserved_requests, task_reserved
+from celery.worker.state import (active_requests, maybe_shutdown, requests, reserved_requests, successful_requests,
+                                 task_reserved)
 
 __all__ = ('Consumer', 'Evloop', 'dump_body')
 
@@ -156,6 +157,10 @@ class Consumer:
     #: This flag will be turned off after the first failed
     #: connection attempt.
     first_connection_attempt = True
+
+    #: Counter to track number of conn retry attempts
+    #: to broker. Will be reset to 0 once successful
+    broker_connection_retry_attempt = 0
 
     class Blueprint(bootsteps.Blueprint):
         """Consumer blueprint."""
@@ -451,8 +456,6 @@ class Consumer:
         # to the current channel.
         if self.controller and self.controller.semaphore:
             self.controller.semaphore.clear()
-        if self.timer:
-            self.timer.clear()
         for bucket in self.task_buckets.values():
             if bucket:
                 bucket.clear_pending()
@@ -488,9 +491,11 @@ class Consumer:
         def _error_handler(exc, interval, next_step=CONNECTION_RETRY_STEP):
             if getattr(conn, 'alt', None) and interval == 0:
                 next_step = CONNECTION_FAILOVER
+            elif interval > 0:
+                self.broker_connection_retry_attempt += 1
             next_step = next_step.format(
                 when=humanize_seconds(interval, 'in', ' '),
-                retries=int(interval / 2),
+                retries=self.broker_connection_retry_attempt,
                 max_retries=self.app.conf.broker_connection_max_retries)
             error(CONNECTION_ERROR, conn.as_uri(), exc, next_step)
 
@@ -532,6 +537,7 @@ class Consumer:
             callback=maybe_shutdown,
         )
         self.first_connection_attempt = False
+        self.broker_connection_retry_attempt = 0
         return conn
 
     def _flush_events(self):
@@ -733,9 +739,13 @@ class Consumer:
             self=self, state=self.blueprint.human_state(),
         )
 
-    def cancel_all_unacked_requests(self):
-        """Cancel all active requests that either do not require late acknowledgments or,
+    def cancel_active_requests(self):
+        """Cancel active requests during shutdown.
+
+        Cancels all active requests that either do not require late acknowledgments or,
         if they do, have not been acknowledged yet.
+
+        Does not cancel successful tasks, even if they have not been acknowledged yet.
         """
 
         def should_cancel(request):
@@ -745,6 +755,9 @@ class Consumer:
 
             if not request.acknowledged:
                 # Task is late acknowledged, but it has not been acknowledged yet, cancel it.
+                if request.id in successful_requests:
+                    # Unless it was successful, in which case we don't want to cancel it.
+                    return False
                 return True
 
             # Task is late acknowledged, but it has already been acknowledged.
@@ -754,7 +767,10 @@ class Consumer:
 
         if requests_to_cancel:
             for request in requests_to_cancel:
-                request.cancel(self.pool)
+                # For acks_late tasks, don't emit RETRY signal since broker will handle redelivery
+                # For non-acks_late tasks, emit RETRY signal as usual
+                emit_retry = not request.task.acks_late
+                request.cancel(self.pool, emit_retry=emit_retry)
 
 
 class Evloop(bootsteps.StartStopStep):

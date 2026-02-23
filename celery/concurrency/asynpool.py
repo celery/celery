@@ -391,6 +391,7 @@ class ResultHandler(_pool.ResultHandler):
             setblocking(reader, 1)
         except OSError:
             return remove(fd)
+        result = None
         try:
             if reader.poll(0):
                 task = reader.recv()
@@ -398,7 +399,7 @@ class ResultHandler(_pool.ResultHandler):
                 task = None
                 sleep(0.5)
         except (OSError, EOFError):
-            return remove(fd)
+            result = remove(fd)
         else:
             if task:
                 on_state_change(task)
@@ -406,7 +407,8 @@ class ResultHandler(_pool.ResultHandler):
             try:
                 setblocking(reader, 0)
             except OSError:
-                return remove(fd)
+                result = remove(fd)
+        return result
 
 
 class AsynPool(_pool.Pool):
@@ -511,10 +513,11 @@ class AsynPool(_pool.Pool):
             self._event_process_exit, hub, proc)
 
     def _untrack_child_process(self, proc, hub):
-        if proc._sentinel_poll is not None:
-            fd, proc._sentinel_poll = proc._sentinel_poll, None
-            hub.remove(fd)
-            os.close(fd)
+        sentinel_poll = getattr(proc, '_sentinel_poll', None)
+        if sentinel_poll is not None:
+            proc._sentinel_poll = None
+            hub.remove(sentinel_poll)
+            os.close(sentinel_poll)
 
     def register_with_event_loop(self, hub):
         """Register the async pool with the current event loop."""

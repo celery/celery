@@ -36,6 +36,17 @@ R_BOUND_TASK = '<class {0.__name__} of {app}{flags}>'
 R_UNBOUND_TASK = '<unbound {0.__name__}{flags}>'
 R_INSTANCE = '<@task: {0.name} of {app}{flags}>'
 
+# Filtered headers relating to dead-lettering in RabbitMQ.
+X_DEATH_HEADERS = {
+    'x-death',
+    'x-first-death-exchange',
+    'x-first-death-queue',
+    'x-first-death-reason',
+    'x-last-death-exchange',
+    'x-last-death-queue',
+    'x-last-death-reason',
+}
+
 #: Here for backwards compatibility as tasks no longer use a custom meta-class.
 TaskType = type
 
@@ -123,6 +134,14 @@ class Context:
     def __repr__(self):
         return f'<Context: {vars(self)!r}>'
 
+    def _filter_x_death_headers(self, headers):
+        """Filter out X-Death headers to prevent RabbitMQ cycle detection."""
+        headers = headers.copy() if headers else {}
+        for x_death_header in X_DEATH_HEADERS:
+            headers.pop(x_death_header, None)
+
+        return headers
+
     def as_execution_options(self):
         limit_hard, limit_soft = self.timelimit or (None, None)
         execution_options = {
@@ -139,7 +158,7 @@ class Context:
             'expires': self.expires,
             'soft_time_limit': limit_soft,
             'time_limit': limit_hard,
-            'headers': self.headers,
+            'headers': self._filter_x_death_headers(self.headers),
             'retries': self.retries,
             'reply_to': self.reply_to,
             'replaced_task_nesting': self.replaced_task_nesting,
@@ -535,6 +554,15 @@ class Task:
             publisher (kombu.Producer): Deprecated alias to ``producer``.
 
             headers (Dict): Message headers to be included in the message.
+                The headers can be used as an overlay for custom labeling
+                using the :ref:`canvas-stamping` feature.
+
+            task_id (str): Optional argument to override the default task id.
+                By default, Celery generates a unique id (UUID4) for every task
+                submission. You can instead provide your own string identifier.
+                If supplied, this value will be used as the task’s id instead
+                of generating one automatically. Be careful to avoid collisions
+                when overriding task ids.
 
         Returns:
             celery.result.AsyncResult: Promise of future evaluation.
@@ -788,12 +816,22 @@ class Task:
         if throw is None:
             throw = app.conf.task_eager_propagates
 
+        parent_task = _task_stack.top
+        if parent_task and parent_task.request:
+            parent_id = parent_task.request.id
+            root_id = parent_task.request.root_id or task_id
+        else:
+            parent_id = None
+            root_id = task_id
+
         # Make sure we get the task instance, not class.
         task = app._tasks[self.name]
 
         request = {
             'id': task_id,
             'task': self.name,
+            'parent_id': parent_id,
+            'root_id': root_id,
             'retries': retries,
             'is_eager': True,
             'logfile': logfile,

@@ -424,6 +424,37 @@ class test_task_retries(TasksCase):
         sig = self.retry_task.signature_from_request()
         assert sig.options['headers']['custom'] == 10.1
 
+    def test_signature_from_request__filters_x_death_headers(self):
+        """
+        Test that X-Death headers are filtered out during retries to prevent
+        RabbitMQ cycle detection.
+        """
+
+        self.retry_task.push_request()
+        self.retry_task.request.headers = {
+            'custom': 10.1,
+            'x-death': [{'count': 1, 'queue': 'celery_delayed_0'}],
+            'x-first-death-exchange': 'celery_delayed_0',
+            'x-first-death-queue': 'celery_delayed_0',
+            'x-first-death-reason': 'expired',
+            'x-last-death-exchange': 'celery_delayed_0',
+            'x-last-death-queue': 'celery_delayed_0',
+            'x-last-death-reason': 'expired',
+        }
+        sig = self.retry_task.signature_from_request()
+
+        # Custom headers should be preserved
+        assert sig.options['headers']['custom'] == 10.1
+
+        # X-Death related headers should be filtered out
+        assert 'x-death' not in sig.options['headers']
+        assert 'x-first-death-exchange' not in sig.options['headers']
+        assert 'x-first-death-queue' not in sig.options['headers']
+        assert 'x-first-death-reason' not in sig.options['headers']
+        assert 'x-last-death-exchange' not in sig.options['headers']
+        assert 'x-last-death-queue' not in sig.options['headers']
+        assert 'x-last-death-reason' not in sig.options['headers']
+
     def test_signature_from_request__delivery_info(self):
         self.retry_task.push_request()
         self.retry_task.request.delivery_info = {
@@ -1502,6 +1533,115 @@ class test_apply_task(TasksCase):
             'routing_key': 'myroutingkey',
             'priority': 4,
         }
+
+    def test_apply_single_task_ids(self):
+        """Test that a single task called via apply() has correct IDs."""
+
+        @self.app.task(bind=True)
+        def simple_task(task_self):
+            return {
+                'task_id': task_self.request.id,
+                'parent_id': task_self.request.parent_id,
+                'root_id': task_self.request.root_id,
+            }
+
+        result = simple_task.apply()
+        assert isinstance(result, EagerResult)
+
+        data = result.get()
+
+        # Single task should have no parent and root_id should equal task_id
+        assert data['parent_id'] is None
+        assert data['root_id'] == data['task_id']
+
+    def test_apply_nested_parent_child_relationship(self):
+        """Test parent-child relationship when one task calls another via apply()."""
+
+        @self.app.task(bind=True)
+        def grandchild_task(task_self):
+            return {
+                'task_id': task_self.request.id,
+                'parent_id': task_self.request.parent_id,
+                'root_id': task_self.request.root_id,
+                'name': 'grandchild_task'
+            }
+
+        @self.app.task(bind=True)
+        def child_task(task_self):
+
+            # Call grandchild task via apply()
+            grandchild_data = grandchild_task.apply().get()
+            return {
+                'task_id': task_self.request.id,
+                'parent_id': task_self.request.parent_id,
+                'root_id': task_self.request.root_id,
+                'name': 'child_task',
+                'grandchild_data': grandchild_data
+            }
+
+        @self.app.task(bind=True)
+        def parent_task(task_self):
+            # Call child task via apply()
+            child_data = child_task.apply().get()
+            parent_data = {
+                'task_id': task_self.request.id,
+                'parent_id': task_self.request.parent_id,
+                'root_id': task_self.request.root_id,
+                'name': 'parent_task',
+                'child_data': child_data
+            }
+            return parent_data
+
+        result = parent_task.apply()
+        assert isinstance(result, EagerResult)
+
+        parent_data = result.get()
+        child_data = parent_data['child_data']
+        grandchild_data = child_data['grandchild_data']
+
+        # Verify parent task
+        assert parent_data['name'] == 'parent_task'
+        assert parent_data['parent_id'] is None
+        assert parent_data['root_id'] == parent_data['task_id']
+
+        # Verify child task
+        assert child_data['name'] == 'child_task'
+        assert child_data['parent_id'] == parent_data['task_id']
+        assert child_data['root_id'] == parent_data['task_id']
+
+        # Verify grandchild task
+        assert grandchild_data['name'] == 'grandchild_task'
+        assert grandchild_data['parent_id'] == child_data['task_id']
+        assert grandchild_data['root_id'] == parent_data['task_id']
+
+    def test_apply_with_parent_task_no_root_id(self):
+        """Test apply() behavior when parent task has no root_id."""
+
+        @self.app.task(bind=True)
+        def test_task(task_self):
+            return {
+                'task_id': task_self.request.id,
+                'parent_id': task_self.request.parent_id,
+                'root_id': task_self.request.root_id,
+            }
+
+        # Create a mock parent task with no root_id
+        mock_parent = Mock()
+        mock_parent.request = Mock(
+            id='parent-id-123',
+            root_id=None,
+            callbacks=[]
+        )
+
+        # Mock _task_stack to return our mock parent
+        with patch('celery.app.task._task_stack') as mock_task_stack:
+            mock_task_stack.top = mock_parent
+            result = test_task.apply()
+            data = result.get()
+
+            # Should use current task_id as root_id when parent has no root_id
+            assert data['parent_id'] == 'parent-id-123'
+            assert data['root_id'] == data['task_id']
 
 
 class test_apply_async(TasksCase):

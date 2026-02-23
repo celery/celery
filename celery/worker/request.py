@@ -422,29 +422,34 @@ class Request:
             if obj is not None:
                 obj.terminate(signal)
 
-    def cancel(self, pool, signal=None):
+    def cancel(self, pool, signal=None, emit_retry=True):
         signal = _signals.signum(signal or TERM_SIGNAME)
         if self.time_start:
             pool.terminate_job(self.worker_pid, signal)
-            self._announce_cancelled()
+            self._announce_cancelled(emit_retry=emit_retry)
 
         if self._apply_result is not None:
             obj = self._apply_result()  # is a weakref
             if obj is not None:
                 obj.terminate(signal)
 
-    def _announce_cancelled(self):
+    def _announce_cancelled(self, emit_retry=True):
         task_ready(self)
         self.send_event('task-cancelled')
-        reason = 'cancelled by Celery'
-        exc = Retry(message=reason)
-        self.task.backend.mark_as_retry(self.id,
-                                        exc,
-                                        request=self._context)
 
-        self.task.on_retry(exc, self.id, self.args, self.kwargs, None)
+        if emit_retry:
+            reason = 'cancelled by Celery'
+            exc = Retry(message=reason)
+            self.task.backend.mark_as_retry(self.id,
+                                            exc,
+                                            request=self._context)
+
+            self.task.on_retry(exc, self.id, self.args, self.kwargs, None)
+
         self._already_cancelled = True
-        send_retry(self.task, request=self._context, einfo=None)
+
+        if emit_retry:
+            send_retry(self.task, request=self._context, einfo=None)
 
     def _announce_revoked(self, reason, terminated, signum, expired):
         task_ready(self)
@@ -525,14 +530,16 @@ class Request:
                  timeout, self.name, self.id)
         else:
             task_ready(self)
-            error('Hard time limit (%ss) exceeded for %s[%s]',
-                  timeout, self.name, self.id)
-            exc = TimeLimitExceeded(timeout)
+            # This is a special case where the task timeout handling is done during
+            # the cold shutdown process.
+            if not state.should_terminate:
+                error('Hard time limit (%ss) exceeded for %s[%s]', timeout, self.name, self.id)
+                exc = TimeLimitExceeded(timeout)
 
-            self.task.backend.mark_as_failure(
-                self.id, exc, request=self._context,
-                store_result=self.store_errors,
-            )
+                self.task.backend.mark_as_failure(
+                    self.id, exc, request=self._context,
+                    store_result=self.store_errors,
+                )
 
             if self.task.acks_late and self.task.acks_on_failure_or_timeout:
                 self.acknowledge()
@@ -602,8 +609,8 @@ class Request:
         is_worker_lost = isinstance(exc, WorkerLostError)
         if self.task.acks_late:
             reject = (
-                self.task.reject_on_worker_lost and
-                is_worker_lost
+                (self.task.reject_on_worker_lost and is_worker_lost)
+                or (isinstance(exc, TimeLimitExceeded) and not self.task.acks_on_failure_or_timeout)
             )
             ack = self.task.acks_on_failure_or_timeout
             if reject:
@@ -616,6 +623,12 @@ class Request:
                 # supporting the behaviour where a task failed and
                 # need to be removed from prefetched local queue
                 self.reject(requeue=False)
+
+        # This is a special case where the task failure handling is done during
+        # the cold shutdown process.
+        if state.should_terminate:
+            return_ok = True
+            send_failed_event = False
 
         # This is a special case where the process would not have had time
         # to write the result.

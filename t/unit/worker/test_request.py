@@ -15,7 +15,8 @@ from celery import states
 from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task, mro_lookup, reset_worker_optimizations,
                               setup_worker_optimizations, trace_task, trace_task_ret)
 from celery.backends.base import BaseDictBackend
-from celery.exceptions import Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError, Terminated, WorkerLostError
+from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError, Terminated,
+                               TimeLimitExceeded, WorkerLostError)
 from celery.signals import task_failure, task_retry, task_revoked
 from celery.worker import request as module
 from celery.worker import strategy
@@ -398,6 +399,45 @@ class test_Request(RequestCase):
                                                                  request=req._context,
                                                                  store_result=True)
 
+    def test_on_failure_TimeLimitExceeded_acks(self):
+        try:
+            raise TimeLimitExceeded()
+        except TimeLimitExceeded:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.acks_late = True
+        req.task.acks_on_failure_or_timeout = True
+        req.delivery_info['redelivered'] = False
+        req.task.backend = Mock()
+
+        req.on_failure(einfo)
+
+        req.on_ack.assert_called_with(
+            req_logger, req.connection_errors)
+        req.task.backend.mark_as_failure.assert_called_once_with(req.id,
+                                                                 einfo.exception.exc,
+                                                                 request=req._context,
+                                                                 store_result=True)
+
+    def test_on_failure_TimeLimitExceeded_rejects_with_requeue(self):
+        try:
+            raise TimeLimitExceeded()
+        except TimeLimitExceeded:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.acks_late = True
+        req.task.acks_on_failure_or_timeout = False
+        req.delivery_info['redelivered'] = False
+        req.task.backend = Mock()
+
+        req.on_failure(einfo)
+
+        req.on_reject.assert_called_with(
+            req_logger, req.connection_errors, True)
+        req.task.backend.mark_as_failure.assert_not_called()
+
     def test_tzlocal_is_cached(self):
         req = self.get_request(self.add.s(2, 2))
         req._tzlocal = 'foo'
@@ -534,6 +574,39 @@ class test_Request(RequestCase):
         job.cancel(pool, signal='TERM')
         pool.terminate_job.assert_not_called()
         assert job._terminate_on_ack is None
+
+    def test_cancel__emit_retry_true(self):
+        pool = Mock()
+        signum = signal.SIGTERM
+        job = self.get_request(self.mytask.s(1, f='x'))
+        job._apply_result = Mock(name='_apply_result')
+        job.task.backend.mark_as_retry = Mock(name='mark_as_retry')
+        job.task.on_retry = Mock(name='on_retry')
+        with self.assert_signal_called(
+                task_retry, sender=job.task, request=job._context,
+                einfo=None):
+            job.time_start = monotonic()
+            job.worker_pid = 314
+            job.cancel(pool, signal='TERM', emit_retry=True)
+            pool.terminate_job.assert_called_with(job.worker_pid, signum)
+            job.task.backend.mark_as_retry.assert_called_once()
+            job.task.on_retry.assert_called_once()
+            assert job._already_cancelled is True
+
+    def test_cancel__emit_retry_false(self):
+        pool = Mock()
+        signum = signal.SIGTERM
+        job = self.get_request(self.mytask.s(1, f='x'))
+        job._apply_result = Mock(name='_apply_result')
+        job.task.backend.mark_as_retry = Mock(name='mark_as_retry')
+        job.task.on_retry = Mock(name='on_retry')
+        job.time_start = monotonic()
+        job.worker_pid = 314
+        job.cancel(pool, signal='TERM', emit_retry=False)
+        pool.terminate_job.assert_called_with(job.worker_pid, signum)
+        job.task.backend.mark_as_retry.assert_not_called()
+        job.task.on_retry.assert_not_called()
+        assert job._already_cancelled is True
 
     def test_revoked_expires_expired(self):
         job = self.get_request(self.mytask.s(1, f='x').set(
@@ -830,6 +903,26 @@ class test_Request(RequestCase):
         job.on_failure(exc_info)
         assert not job.eventer.send.called
 
+    def test_on_failure_should_terminate(self):
+        from celery.worker import state
+        original_should_terminate = state.should_terminate
+        state.should_terminate = True
+        job = self.xRequest()
+        job.send_event = Mock(name='send_event')
+        job.task.backend = Mock(name='backend')
+
+        try:
+            try:
+                raise KeyError('foo')
+            except KeyError:
+                exc_info = ExceptionInfo()
+                job.on_failure(exc_info)
+
+            job.send_event.assert_not_called()
+            job.task.backend.mark_as_failure.assert_not_called()
+        finally:
+            state.should_terminate = original_should_terminate
+
     def test_from_message_invalid_kwargs(self):
         m = self.TaskMessage(self.mytask.name, args=(), kwargs='foo')
         req = Request(m, app=self.app)
@@ -896,6 +989,21 @@ class test_Request(RequestCase):
         job = self.xRequest()
         job.on_timeout(soft=True, timeout=1336)
         assert self.mytask.backend.get_status(job.id) == states.PENDING
+
+    def test_on_timeout_should_terminate(self, patching):
+        from celery.worker import state
+        warn = patching('celery.worker.request.warn')
+        error = patching('celery.worker.request.error')
+
+        original_should_terminate = state.should_terminate
+        try:
+            state.should_terminate = True
+            job = self.xRequest()
+            job.on_timeout(None, None)
+            warn.assert_not_called()
+            error.assert_not_called()
+        finally:
+            state.should_terminate = original_should_terminate
 
     def test_fast_trace_task(self):
         assert self.app.use_fast_trace_task is False

@@ -108,7 +108,7 @@ Worker Shutdown
 
 We will use the terms *Warm, Soft, Cold, Hard* to describe the different stages of worker shutdown.
 The worker will initiate the shutdown process when it receives the :sig:`TERM` or :sig:`QUIT` signal.
-The :sig:`INT` (Ctrl-C) signal is also handled during the shutdown process and always triggers the 
+The :sig:`INT` (Ctrl-C) signal is also handled during the shutdown process and always triggers the
 next stage of the shutdown process.
 
 .. _worker-warm-shutdown:
@@ -125,6 +125,12 @@ and will call :func:`WorkController.stop() <celery.worker.worker.WorkController.
 
 - Additional :sig:`TERM` signals will be ignored during the warm shutdown process.
 - The next :sig:`INT` signal will trigger the next stage of the shutdown process.
+
+.. versionchanged:: 5.6
+    In previous versions of Celery, when the prefork pool was in use, heartbeats to the broker were not sent during
+    warm shutdown. This caused the broker to terminate the connection, which meant that tasks were not able to complete.
+    As of version 5.6, when the prefork pool is in use, heartbeats are now maintained during warm shutdown and tasks are
+    able to complete before the worker terminates.
 
 .. _worker-cold-shutdown:
 
@@ -538,6 +544,14 @@ Library.
 
 Terminating a task also revokes it.
 
+.. versionchanged:: 5.6
+
+   When a task is revoked, the result backend is now immediately updated
+   to reflect the ``REVOKED`` status. Previously, the backend was only
+   updated when a worker attempted to process the revoked task, which
+   could leave tasks with ETA/countdown in ``PENDING`` status indefinitely
+   if the worker was shut down before the scheduled time.
+
 **Example**
 
 .. code-block:: pycon
@@ -613,13 +627,13 @@ Note that remote control commands must be working for revokes to work.
 Remote control commands are only supported by the RabbitMQ (amqp) and Redis
 at this point.
 
-.. control:: revoke_by_stamped_header
+.. control:: revoke_by_stamped_headers
 
-``revoke_by_stamped_header``: Revoking tasks by their stamped headers
----------------------------------------------------------------------
+``revoke_by_stamped_headers``: Revoking tasks by their stamped headers
+----------------------------------------------------------------------
 :pool support: all, terminate only supported by prefork and eventlet
 :broker support: *amqp, redis*
-:command: :program:`celery -A proj control revoke_by_stamped_header <header=value>`
+:command: :program:`celery -A proj control revoke_by_stamped_headers <header=value>`
 
 This command is similar to :meth:`~@control.revoke`, but instead of
 specifying the task id(s), you specify the stamped header(s) as key-value pair(s),
@@ -641,11 +655,11 @@ and each task that has a stamped header matching the key-value pair(s) will be r
 
 .. code-block:: pycon
 
-    >>> app.control.revoke_by_stamped_header({'header': 'value'})
+    >>> app.control.revoke_by_stamped_headers({'header': 'value'})
 
-    >>> app.control.revoke_by_stamped_header({'header': 'value'}, terminate=True)
+    >>> app.control.revoke_by_stamped_headers({'header': 'value'}, terminate=True)
 
-    >>> app.control.revoke_by_stamped_header({'header': 'value'}, terminate=True, signal='SIGKILL')
+    >>> app.control.revoke_by_stamped_headers({'header': 'value'}, terminate=True, signal='SIGKILL')
 
 
 Revoking multiple tasks by stamped headers
@@ -653,14 +667,14 @@ Revoking multiple tasks by stamped headers
 
 .. versionadded:: 5.3
 
-The ``revoke_by_stamped_header`` method also accepts a list argument, where it will revoke
+The ``revoke_by_stamped_headers`` method also accepts a list argument, where it will revoke
 by several headers or several values.
 
 **Example**
 
 .. code-block:: pycon
 
-    >> app.control.revoke_by_stamped_header({
+    >> app.control.revoke_by_stamped_headers({
     ...    'header_A': 'value_1',
     ...    'header_B': ['value_2', 'value_3'],
     })
@@ -672,11 +686,11 @@ and all of the tasks that have a stamped header ``header_B`` with values ``value
 
 .. code-block:: console
 
-    $ celery -A proj control revoke_by_stamped_header stamped_header_key_A=stamped_header_value_1 stamped_header_key_B=stamped_header_value_2
+    $ celery -A proj control revoke_by_stamped_headers stamped_header_key_A=stamped_header_value_1 stamped_header_key_B=stamped_header_value_2
 
-    $ celery -A proj control revoke_by_stamped_header stamped_header_key_A=stamped_header_value_1 stamped_header_key_B=stamped_header_value_2 --terminate
+    $ celery -A proj control revoke_by_stamped_headers stamped_header_key_A=stamped_header_value_1 stamped_header_key_B=stamped_header_value_2 --terminate
 
-    $ celery -A proj control revoke_by_stamped_header stamped_header_key_A=stamped_header_value_1 stamped_header_key_B=stamped_header_value_2 --terminate --signal=SIGKILL
+    $ celery -A proj control revoke_by_stamped_headers stamped_header_key_A=stamped_header_value_1 stamped_header_key_B=stamped_header_value_2 --terminate --signal=SIGKILL
 
 .. _worker-time-limits:
 
