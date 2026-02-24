@@ -667,7 +667,7 @@ class Backend:
 
     def forget(self, task_id):
         self._cache.pop(task_id, None)
-        self._ensure_retryable(self._forget, task_id)
+        self._ensure_retryable(self._forget, task_id=task_id)
 
     def _forget(self, task_id):
         raise NotImplementedError('backend does not implement forget.')
@@ -755,7 +755,7 @@ class Backend:
             except KeyError:
                 pass
 
-        meta = self._ensure_retryable(self._restore_group, group_id)
+        meta = self._ensure_retryable(self._restore_group, group_id=group_id)
         if cache and meta is not None:
             self._cache[group_id] = meta
         return meta
@@ -768,11 +768,15 @@ class Backend:
 
     def save_group(self, group_id, result):
         """Store the result of an executed group."""
-        return self._ensure_retryable(self._save_group, group_id, result)
+        return self._ensure_retryable(
+            self._save_group,
+            group_id=group_id,
+            result=result
+        )
 
     def delete_group(self, group_id):
         self._cache.pop(group_id, None)
-        return self._ensure_retryable(self._delete_group, group_id)
+        return self._ensure_retryable(self._delete_group, group_id=group_id)
 
     def cleanup(self):
         """Backend cleanup."""
