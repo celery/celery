@@ -290,6 +290,23 @@ class test_DatabaseBackend:
         assert meta['result'] is None
         assert meta['traceback'] is None
 
+    def test_task_result_exists_for_missing_task(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.task_result_exists('xxx-does-not-exist') is False
+
+    def test_task_result_exists_after_mark_as_done(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        assert tb.task_result_exists(tid) is False
+        tb.mark_as_done(tid, 42)
+        assert tb.task_result_exists(tid) is True
+
+    def test_task_result_exists_after_mark_as_failure(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        tb.mark_as_failure(tid, RuntimeError('fail'), traceback='tb')
+        assert tb.task_result_exists(tid) is True
+
     def test_mark_as_done(self):
         tb = DatabaseBackend(self.uri, app=self.app)
 

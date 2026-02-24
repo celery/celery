@@ -205,11 +205,9 @@ class DatabaseBackend(BaseBackend):
         """Check if a result exists in the database for the given task ID."""
         session = self.ResultSession()
         with session_cleanup(session):
-            return bool(
-                session.query(self.task_cls)
-                .filter(self.task_cls.task_id == task_id)
-                .count()
-            )
+            return session.query(self.task_cls).filter(
+                self.task_cls.task_id == task_id
+            ).first() is not None
 
     @retry
     def _save_group(self, group_id, result):

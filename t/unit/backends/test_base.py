@@ -494,6 +494,27 @@ class test_BaseBackend_dict:
         self.b.serializer = 'pickle'
         assert isinstance(self.b.prepare_value(g), self.app.GroupResult)
 
+    def test_task_result_exists_true(self):
+        b = DictBackend(app=self.app)
+        b._get_task_meta_for = Mock(return_value={
+            'status': states.SUCCESS, 'result': 42,
+        })
+        assert b.task_result_exists('task-exists') is True
+
+    def test_task_result_exists_false(self):
+        b = DictBackend(app=self.app)
+        b._get_task_meta_for = Mock(return_value={
+            'status': states.PENDING, 'result': None,
+        })
+        assert b.task_result_exists('task-missing') is False
+
+    def test_task_result_exists_failure_state(self):
+        b = DictBackend(app=self.app)
+        b._get_task_meta_for = Mock(return_value={
+            'status': states.FAILURE, 'result': None,
+        })
+        assert b.task_result_exists('task-failed') is True
+
     def test_is_cached(self):
         b = BaseBackend(app=self.app, max_cached_results=1)
         b._cache['foo'] = 1
@@ -1386,6 +1407,31 @@ class test_KeyValueStoreBackend:
 
     def test_restore_missing_group(self):
         assert self.b.restore_group('xxx-nonexistant') is None
+
+    def test_task_result_exists_after_store(self):
+        tid = uuid()
+        self.b.mark_as_done(tid, 'result')
+        assert self.b.task_result_exists(tid) is True
+
+    def test_task_result_exists_missing(self):
+        assert self.b.task_result_exists('xxx-nonexistant') is False
+
+    def test_task_result_exists_after_failure(self):
+        tid = uuid()
+        self.b.mark_as_failure(tid, RuntimeError('failed'), traceback='tb')
+        assert self.b.task_result_exists(tid) is True
+
+    def test_task_result_exists_after_retry(self):
+        tid = uuid()
+        self.b.mark_as_retry(tid, RuntimeError('retry'), traceback='tb')
+        assert self.b.task_result_exists(tid) is True
+
+    def test_task_result_exists_after_forget(self):
+        tid = uuid()
+        self.b.mark_as_done(tid, 'result')
+        assert self.b.task_result_exists(tid) is True
+        self.b.forget(tid)
+        assert self.b.task_result_exists(tid) is False
 
 
 class test_KeyValueStoreBackend_interface:
