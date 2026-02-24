@@ -226,7 +226,7 @@ def inspect(ctx, command, timeout, destination, json, **kwargs):
               help='Use json as output format.')
 @click.pass_context
 @handle_preload_options
-def control(ctx, command, timeout, destination, json):
+def control(ctx, command, timeout, destination, json, **kwargs):
     """Send the COMMAND control command to the workers.
 
     Availability: RabbitMQ (AMQP), Redis, and MongoDB transports.
