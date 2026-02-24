@@ -392,14 +392,27 @@ class test_AsyncResult:
 
     def test_exists(self):
         """Test that exists() returns True for stored results and False for unknown IDs."""
-        # Tasks with stored results should exist
+        # Tasks with stored results should exist (SUCCESS, FAILURE, RETRY)
         assert self.app.AsyncResult(self.task1["id"]).exists()
         assert self.app.AsyncResult(self.task2["id"]).exists()
         assert self.app.AsyncResult(self.task3["id"]).exists()
 
+        # RETRY state should also exist
+        assert self.app.AsyncResult(self.task4["id"]).exists()
+
         # A random/unknown task ID should not exist
         assert not self.app.AsyncResult(uuid()).exists()
 
+        # Multiple unknown IDs should all return False
+        assert not self.app.AsyncResult(uuid()).exists()
+        assert not self.app.AsyncResult("totally-fake-id").exists()
+
+    def test_exists_returns_bool(self):
+        """Test that exists() returns a proper boolean type."""
+        result_exists = self.app.AsyncResult(self.task1["id"]).exists()
+        result_missing = self.app.AsyncResult(uuid()).exists()
+        assert isinstance(result_exists, bool)
+        assert isinstance(result_missing, bool)
 
     @pytest.mark.skipif(
         platform.python_implementation() == "PyPy",
