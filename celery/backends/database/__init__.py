@@ -58,6 +58,12 @@ class DatabaseBackend(BaseBackend):
                          url=url, **kwargs)
         conf = self.app.conf
 
+        # Override retry defaults to preserve backward compatibility.
+        # Previously, DatabaseBackend used a custom @retry decorator that always
+        # retried with max_retries=3. We maintain this behavior by default.
+        self.always_retry = conf.get('result_backend_always_retry', True)
+        self.max_retries = conf.get('result_backend_max_retries', 3)
+
         if self.extended_result:
             self.task_cls = TaskExtended
 

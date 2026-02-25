@@ -112,7 +112,7 @@ def test_database_backend_get_task_meta_transient_failure(db_retry_app):
         meta = backend.get_task_meta(task_id, cache=False)
 
     # Ensure it failed once and succeeded on the second try
-    assert call_count[0] >= 2
+    assert call_count[0] == 2
 
     # Verify the final retrieved data is correct
     assert meta['status'] == 'SUCCESS'
