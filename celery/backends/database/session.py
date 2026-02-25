@@ -51,8 +51,11 @@ class SessionManager:
                     self.engine_callback(engine)
                 return engine
         else:
-            kwargs = {k: v for k, v in kwargs.items() if
-                      not k.startswith('pool')}
+            unsupported_nullpool_kwargs = {'max_overflow', 'echo_pool'}
+            kwargs = {
+                k: v for k, v in kwargs.items()
+                if not k.startswith('pool') and k not in unsupported_nullpool_kwargs
+            }
             engine = create_engine(dburi, poolclass=NullPool, **kwargs)
             if self.engine_callback:
                 self.engine_callback(engine)
