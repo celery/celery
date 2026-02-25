@@ -237,7 +237,7 @@ class MongoBackend(BaseBackend):
             bool: ``True`` if a result document exists for ``task_id``,
             otherwise ``False``.
 
-        .. versionadded:: 5.3.0
+        .. versionadded:: 5.7.0
         """
         return bool(self.collection.find_one({"_id": task_id}))
 
