@@ -619,6 +619,10 @@ class Backend:
                 if self.always_retry and self.exception_safe_to_retry(exc):
                     if retries < self.max_retries:
                         retries += 1
+                        logger.warning(
+                            'Failed operation %s. Retrying %s more times.',
+                            getattr(func, '__name__', repr(func)), self.max_retries - retries,
+                            exc_info=True)
                         try:
                             self.on_backend_retryable_error(exc)
                         except Exception:
