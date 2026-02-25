@@ -18,8 +18,8 @@ from celery import current_app, signals
 from celery.app.task import Context
 from celery.app.trace import fast_trace_task, trace_task, trace_task_ret
 from celery.concurrency.base import BasePool
-from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError, Terminated,
-                               TimeLimitExceeded, WorkerLostError)
+from celery.exceptions import (Ignore, InvalidTaskError, MaxRetriesExceededError, Reject, Retry, TaskRevokedError,
+                               Terminated, TimeLimitExceeded, WorkerLostError)
 from celery.platforms import signals as _signals
 from celery.utils.functional import maybe, maybe_list, noop
 from celery.utils.log import get_logger
@@ -76,6 +76,7 @@ class Request:
     _terminate_on_ack = None
     _apply_result = None
     _tzlocal = None
+    _rejection_count = 0
 
     if not IS_PYPY:  # pragma: no cover
         __slots__ = (
@@ -84,7 +85,7 @@ class Request:
             '_task', '_eta', '_expires', '_request_dict', '_on_reject', '_utc',
             '_content_type', '_content_encoding', '_argsrepr', '_kwargsrepr',
             '_args', '_kwargs', '_decoded', '__payload',
-            '__weakref__', '__dict__',
+            '__weakref__', '__dict__', '_rejection_count',
         )
 
     def __init__(self, message, on_ack=noop,
@@ -663,7 +664,31 @@ class Request:
             self.acknowledged = True
 
     def reject(self, requeue=False):
+        """Reject the task message.
+        
+        If requeue=True and max_retries is set, will check if max retries
+        have been exceeded before requeuing. If max retries exceeded,
+        will reject without requeue.
+        """
         if not self.acknowledged:
+            if requeue:
+                max_retries = getattr(self.task, 'max_retries', None)
+                
+                if max_retries is not None:
+                    self._rejection_count += 1
+                    if self._rejection_count >= max_retries:
+                        warn('Max retries (%d) exceeded for task %s[%s], rejecting without requeue',
+                             max_retries, self.name, self.id)
+                        requeue = False
+                        self.task.backend.mark_as_failure(
+                            self.id,
+                            MaxRetriesExceededError(
+                                f"Max retries ({max_retries}) exceeded for task {self.name}[{self.id}]"
+                            ),
+                            request=self._context,
+                            store_result=self.store_errors,
+                        )
+
             self._on_reject(logger, self._connection_errors, requeue)
             self.acknowledged = True
             self.send_event('task-rejected', requeue=requeue)
