@@ -755,7 +755,12 @@ class Backend:
             bool: :const:`True` if the backend has a result for the task,
                 :const:`False` otherwise.
         """
-        return self._get_task_meta_for(task_id)["status"] != states.PENDING
+        get_meta = getattr(self, "_get_task_meta_for", None)
+        if get_meta is None:
+            meta = self.get_task_meta(task_id)
+        else:
+            meta = get_meta(task_id)
+        return meta.get("status") != states.PENDING
 
     def reload_group_result(self, group_id):
         """Reload group result, even if it has been previously fetched."""
