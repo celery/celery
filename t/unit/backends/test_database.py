@@ -681,6 +681,11 @@ class test_EngineCallback:
         tb = DatabaseBackend(self.uri, app=self.app)
         assert tb.session_manager.engine_callback is None
 
+    def test_non_callable_callback_raises(self):
+        self.app.conf.database_engine_callback = 42
+        with pytest.raises(ImproperlyConfigured):
+            DatabaseBackend(self.uri, app=self.app)
+
     def test_callback_from_config(self):
         callback = Mock()
         self.app.conf.database_engine_callback = callback
