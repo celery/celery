@@ -266,6 +266,9 @@ NAMESPACES = Namespace(
         acks_on_failure_or_timeout=Option(True, type='bool'),
         always_eager=Option(False, type='bool'),
         annotations=Option(type='any'),
+        args_repr_function=Option(
+            'celery.utils.saferepr.saferepr', type='any',
+        ),
         compression=Option(type='string', old={'celery_message_compression'}),
         create_missing_queues=Option(True, type='bool'),
         create_missing_queue_type=Option('classic', type='string'),
