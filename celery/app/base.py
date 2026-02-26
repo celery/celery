@@ -918,8 +918,7 @@ class Celery:
                     parent_id = parent.request.id
 
                 if conf.task_inherit_parent_priority:
-                    options.setdefault('priority',
-                                       parent.request.delivery_info.get('priority'))
+                    options.update({'priority': parent.request.delivery_info.get('priority')})
 
         # alias for 'task_as_v2'
         message = amqp.create_task_message(
