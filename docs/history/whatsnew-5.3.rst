@@ -249,8 +249,8 @@ A switch have been made to zoneinfo for handling timezone data instead of pytz.
 Support for out-of-tree worker pool implementations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Prior to version 5.3, Celery had a fixed notion of the worker pool types it supports.
-Celery v5.3.0 introduces the the possibility of an out-of-tree worker pool implementation.
-This feature ensure that the current worker pool implementations consistently call into
+Celery v5.3.0 introduces the possibility of an out-of-tree worker pool implementation.
+This feature ensures that the current worker pool implementations consistently call into
 BasePool._get_info(), and enhance it to report the work pool class in use via the 
 "celery inspect stats" command. For example:
 
@@ -345,7 +345,6 @@ Known Issues
 ------------
 Canvas header stamping has issues in a hybrid Celery 4.x. & Celery 5.3.x 
 environment and is not safe for production use at the moment.
-
 
 
 
