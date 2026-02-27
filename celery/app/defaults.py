@@ -263,7 +263,13 @@ NAMESPACES = Namespace(
     task=Namespace(
         __old__=OLD_NS,
         acks_late=Option(False, type='bool'),
-        acks_on_failure_or_timeout=Option(True, type='bool'),
+        acks_on_failure_or_timeout=Option(
+            True, type='bool',
+            deprecate_by='6.0', remove_by='7.0',
+            alt='task_acks_on_failure and task_acks_on_timeout',
+        ),
+        acks_on_failure=Option(None, type='bool'),
+        acks_on_timeout=Option(None, type='bool'),
         always_eager=Option(False, type='bool'),
         annotations=Option(type='any'),
         compression=Option(type='string', old={'celery_message_compression'}),

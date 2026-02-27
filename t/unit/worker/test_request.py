@@ -408,6 +408,8 @@ class test_Request(RequestCase):
         req = self.get_request(self.add.s(2, 2))
         req.task.acks_late = True
         req.task.acks_on_failure_or_timeout = True
+        req.task.acks_on_timeout = True
+        req.task.acks_on_failure = True
         req.delivery_info['redelivered'] = False
         req.task.backend = Mock()
 
@@ -429,6 +431,8 @@ class test_Request(RequestCase):
         req = self.get_request(self.add.s(2, 2))
         req.task.acks_late = True
         req.task.acks_on_failure_or_timeout = False
+        req.task.acks_on_timeout = False
+        req.task.acks_on_failure = False
         req.delivery_info['redelivered'] = False
         req.task.backend = Mock()
 
@@ -837,6 +841,8 @@ class test_Request(RequestCase):
         job._on_reject = Mock()
         self.mytask.acks_late = True
         self.mytask.acks_on_failure_or_timeout = False
+        self.mytask.acks_on_failure = False
+        self.mytask.acks_on_timeout = False
         try:
             raise KeyError('foo')
         except KeyError:
@@ -852,6 +858,8 @@ class test_Request(RequestCase):
         job.time_start = 1
         self.mytask.acks_late = True
         self.mytask.acks_on_failure_or_timeout = True
+        self.mytask.acks_on_failure = True
+        self.mytask.acks_on_timeout = True
         try:
             raise KeyError('foo')
         except KeyError:
@@ -865,6 +873,8 @@ class test_Request(RequestCase):
         job.time_start = 1
         self.mytask.acks_late = True
         self.mytask.acks_on_failure_or_timeout = False
+        self.mytask.acks_on_failure = False
+        self.mytask.acks_on_timeout = False
         try:
             raise KeyError('foo')
         except KeyError:
@@ -880,6 +890,103 @@ class test_Request(RequestCase):
         job = self.xRequest()
         job.time_start = 1
         self.mytask.acks_late = True
+        self.mytask.acks_on_failure = True
+        self.mytask.acks_on_timeout = True
+        try:
+            raise KeyError('foo')
+        except KeyError:
+            exc_info = ExceptionInfo()
+            job.on_failure(exc_info)
+        assert job.acknowledged is True
+
+    def test_on_failure_acks_on_failure_true_independent_of_timeout(self):
+        """acks_on_failure=True should ack on regular failure regardless of acks_on_timeout."""
+        job = self.xRequest()
+        job.time_start = 1
+        self.mytask.acks_late = True
+        self.mytask.acks_on_failure = True
+        self.mytask.acks_on_timeout = False
+        try:
+            raise KeyError('foo')
+        except KeyError:
+            exc_info = ExceptionInfo()
+            job.on_failure(exc_info)
+        assert job.acknowledged is True
+
+    def test_on_failure_acks_on_failure_false_rejects(self):
+        """acks_on_failure=False should reject (not requeue) on regular failure."""
+        job = self.xRequest()
+        job.time_start = 1
+        job._on_reject = Mock()
+        self.mytask.acks_late = True
+        self.mytask.acks_on_failure = False
+        self.mytask.acks_on_timeout = True
+        try:
+            raise KeyError('foo')
+        except KeyError:
+            exc_info = ExceptionInfo()
+            job.on_failure(exc_info)
+        assert job.acknowledged is True
+        job._on_reject.assert_called_with(req_logger, job.connection_errors,
+                                          False)
+
+    def test_on_failure_timelimit_uses_acks_on_timeout_not_failure(self):
+        """TimeLimitExceeded in on_failure should use acks_on_timeout, not acks_on_failure."""
+        try:
+            raise TimeLimitExceeded()
+        except TimeLimitExceeded:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.acks_late = True
+        req.task.acks_on_failure = True
+        req.task.acks_on_timeout = False
+        req.delivery_info['redelivered'] = False
+        req.task.backend = Mock()
+
+        req.on_failure(einfo)
+
+        req.on_reject.assert_called_with(
+            req_logger, req.connection_errors, True)
+
+    def test_on_failure_mixed_acks_on_failure_true_timeout_false(self):
+        """Main use case: ack failures (dead letter) but requeue timeouts."""
+        job = self.xRequest()
+        job.time_start = 1
+        self.mytask.acks_late = True
+        self.mytask.acks_on_failure = True
+        self.mytask.acks_on_timeout = False
+        try:
+            raise KeyError('foo')
+        except KeyError:
+            exc_info = ExceptionInfo()
+            job.on_failure(exc_info)
+        assert job.acknowledged is True
+
+        try:
+            raise TimeLimitExceeded()
+        except TimeLimitExceeded:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.acks_late = True
+        req.task.acks_on_failure = True
+        req.task.acks_on_timeout = False
+        req.delivery_info['redelivered'] = False
+        req.task.backend = Mock()
+
+        req.on_failure(einfo)
+
+        req.on_reject.assert_called_with(
+            req_logger, req.connection_errors, True)
+
+    def test_on_failure_backward_compat_old_combined_flag(self):
+        """When only old combined flag is set, both failure and timeout behave the same."""
+        job = self.xRequest()
+        job.time_start = 1
+        self.mytask.acks_late = True
+        self.mytask.acks_on_failure = True
+        self.mytask.acks_on_timeout = True
         try:
             raise KeyError('foo')
         except KeyError:
@@ -951,8 +1058,10 @@ class test_Request(RequestCase):
 
         job = self.xRequest()
         job.acknowledge = Mock(name='ack')
+        job.reject = Mock(name='reject')
         job.task.acks_late = True
         job.task.acks_on_failure_or_timeout = True
+        job.task.acks_on_timeout = True
         job.on_timeout(soft=False, timeout=1337)
         assert 'Hard time limit' in error.call_args[0][0]
         assert self.mytask.backend.get_status(job.id) == states.FAILURE
@@ -960,19 +1069,54 @@ class test_Request(RequestCase):
 
         job = self.xRequest()
         job.acknowledge = Mock(name='ack')
+        job.reject = Mock(name='reject')
         job.task.acks_late = True
         job.task.acks_on_failure_or_timeout = False
+        job.task.acks_on_timeout = False
         job.on_timeout(soft=False, timeout=1337)
         assert 'Hard time limit' in error.call_args[0][0]
         assert self.mytask.backend.get_status(job.id) == states.FAILURE
         job.acknowledge.assert_not_called()
+        job.reject.assert_called_with(requeue=True)
 
         job = self.xRequest()
         job.acknowledge = Mock(name='ack')
+        job.reject = Mock(name='reject')
         job.task.acks_late = False
         job.task.acks_on_failure_or_timeout = True
+        job.task.acks_on_timeout = True
         job.on_timeout(soft=False, timeout=1335)
         job.acknowledge.assert_not_called()
+
+    def test_on_hard_timeout_acks_on_timeout_true(self, patching):
+        """on_timeout with acks_on_timeout=True should acknowledge regardless of acks_on_failure."""
+        error = patching('celery.worker.request.error')
+
+        job = self.xRequest()
+        job.acknowledge = Mock(name='ack')
+        job.reject = Mock(name='reject')
+        job.task.acks_late = True
+        job.task.acks_on_timeout = True
+        job.task.acks_on_failure = False
+        job.on_timeout(soft=False, timeout=1337)
+        assert 'Hard time limit' in error.call_args[0][0]
+        job.acknowledge.assert_called_with()
+        job.reject.assert_not_called()
+
+    def test_on_hard_timeout_acks_on_timeout_false_requeues(self, patching):
+        """on_timeout with acks_on_timeout=False should reject with requeue."""
+        error = patching('celery.worker.request.error')
+
+        job = self.xRequest()
+        job.acknowledge = Mock(name='ack')
+        job.reject = Mock(name='reject')
+        job.task.acks_late = True
+        job.task.acks_on_timeout = False
+        job.task.acks_on_failure = True
+        job.on_timeout(soft=False, timeout=1337)
+        assert 'Hard time limit' in error.call_args[0][0]
+        job.acknowledge.assert_not_called()
+        job.reject.assert_called_with(requeue=True)
 
     def test_on_soft_timeout(self, patching):
         warn = patching('celery.worker.request.warn')

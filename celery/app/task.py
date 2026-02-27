@@ -296,7 +296,32 @@ class Task:
     #:
     #: The application default can be overridden with the
     #: :setting:`task_acks_on_failure_or_timeout` setting.
+    #:
+    #: .. deprecated:: 5.7
+    #:     Use :attr:`acks_on_failure` and :attr:`acks_on_timeout` instead.
     acks_on_failure_or_timeout = None
+
+    #: When enabled messages for this task will be acknowledged on failure.
+    #: Falls back to :attr:`acks_on_failure_or_timeout` if :const:`None`.
+    #:
+    #: Configuring this setting only applies to tasks that are
+    #: acknowledged **after** they have been executed and only if
+    #: :setting:`task_acks_late` is enabled.
+    #:
+    #: The application default can be overridden with the
+    #: :setting:`task_acks_on_failure` setting.
+    acks_on_failure = None
+
+    #: When enabled messages for this task will be acknowledged on timeout.
+    #: Falls back to :attr:`acks_on_failure_or_timeout` if :const:`None`.
+    #:
+    #: Configuring this setting only applies to tasks that are
+    #: acknowledged **after** they have been executed and only if
+    #: :setting:`task_acks_late` is enabled.
+    #:
+    #: The application default can be overridden with the
+    #: :setting:`task_acks_on_timeout` setting.
+    acks_on_timeout = None
 
     #: Even if :attr:`acks_late` is enabled, the worker will
     #: acknowledge tasks when the worker process executing them abruptly
@@ -348,6 +373,8 @@ class Task:
         ('track_started', 'task_track_started'),
         ('acks_late', 'task_acks_late'),
         ('acks_on_failure_or_timeout', 'task_acks_on_failure_or_timeout'),
+        ('acks_on_failure', 'task_acks_on_failure'),
+        ('acks_on_timeout', 'task_acks_on_timeout'),
         ('reject_on_worker_lost', 'task_reject_on_worker_lost'),
         ('ignore_result', 'task_ignore_result'),
         ('store_eager_result', 'task_store_eager_result'),
@@ -372,6 +399,19 @@ class Task:
         for attr_name, config_name in cls.from_config:
             if getattr(cls, attr_name, None) is None:
                 setattr(cls, attr_name, conf[config_name])
+
+        if cls.acks_on_failure is None:
+            cls.acks_on_failure = (
+                cls.acks_on_failure_or_timeout
+                if cls.acks_on_failure_or_timeout is not None
+                else True
+            )
+        if cls.acks_on_timeout is None:
+            cls.acks_on_timeout = (
+                cls.acks_on_failure_or_timeout
+                if cls.acks_on_failure_or_timeout is not None
+                else True
+            )
 
         # decorate with annotations from config.
         if not was_bound:
