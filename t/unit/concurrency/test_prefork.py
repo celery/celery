@@ -3,7 +3,7 @@ import os
 import socket
 import tempfile
 from itertools import cycle
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from billiard.pool import ApplyResult
@@ -668,12 +668,72 @@ class test_AsynPool:
         # And removed once it signalled completion
         assert ack_gen not in pool._active_writers
 
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_write_ack_coroutine_handles_oserror(self, _create_worker_process):
+        """flush() should discard the coroutine if OSError is raised during next()."""
+        pool = asynpool.AsynPool(processes=1, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
 
-@t.skip.if_win32
-class test_ResultHandler:
+        ack_gen = MagicMock(name='ack_gen')
+        ack_gen.__name__ = '_write_ack'
+        ack_gen.__next__.side_effect = OSError()
 
-    def setup_method(self):
-        pytest.importorskip('multiprocessing')
+        pool._cache = {}
+        pool._active_writers = {ack_gen}
+        pool.outbound_buffer.clear()
+        pool.flush()
+
+        assert ack_gen not in pool._active_writers
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_write_ack_coroutine_handles_eoferror(self, _create_worker_process):
+        """flush() should discard the coroutine if EOFError is raised during next()."""
+        pool = asynpool.AsynPool(processes=1, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        ack_gen = MagicMock(name='ack_gen')
+        ack_gen.__name__ = '_write_ack'
+        ack_gen.__next__.side_effect = EOFError()
+
+        pool._cache = {}
+        pool._active_writers = {ack_gen}
+        pool.outbound_buffer.clear()
+        pool.flush()
+
+        assert ack_gen not in pool._active_writers
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_not_started_write_job_is_discarded(self, _create_worker_process):
+        """flush() should discard a _write_job generator that has not started yet.
+
+        When gen_not_started() returns True the job has not been written to the
+        pipe at all, so it is safe to discard it and let the broker redeliver.
+        """
+        pool = asynpool.AsynPool(processes=1, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        gen = Mock(name='gen')
+        gen.__name__ = '_write_job'
+
+        with patch.object(asynpool, 'gen_not_started', return_value=True):
+            job = Mock(name='job')
+            job._accepted = True
+            job._writer.return_value = gen
+
+            pool._cache = {1: job}
+            pool._active_writers = {gen}
+            pool.outbound_buffer.clear()
+
+            pool.flush()
+
+        job.discard.assert_called_once()
+        assert gen not in pool._active_writers
 
     def test_process_result(self):
         x = asynpool.ResultHandler(
