@@ -3,7 +3,7 @@ import datetime
 import platform
 import traceback
 from contextlib import contextmanager
-from unittest.mock import patch, Mock, call
+from unittest.mock import Mock, call, patch
 
 import pytest
 
