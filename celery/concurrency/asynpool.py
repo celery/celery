@@ -472,7 +472,7 @@ class AsynPool(_pool.Pool):
 
         self.write_stats = Counter()
 
-        super().__init__(processes, *args, **kwargs)
+        super().__init__(processes, *args, synack=synack, **kwargs)
 
         for proc in self._pool:
             # create initial mappings, these will be updated

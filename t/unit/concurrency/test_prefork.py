@@ -514,8 +514,7 @@ class test_AsynPool:
         assert proc._sentinel_poll is None
 
     @t.skip.if_pypy
-    @patch('billiard.pool.Pool._create_worker_process')
-    def test_flush_no_synack_discards_unaccepted_jobs(self, _create_worker_process):
+    def test_flush_no_synack_discards_unaccepted_jobs(self):
         """flush() should discard unaccepted jobs when synack is disabled.
 
         Previously, flush() only handled the synack case. Without synack,
@@ -543,8 +542,7 @@ class test_AsynPool:
         job2.discard.assert_not_called()
 
     @t.skip.if_pypy
-    @patch('billiard.pool.Pool._create_worker_process')
-    def test_flush_synack_cancels_unaccepted_jobs(self, _create_worker_process):
+    def test_flush_synack_cancels_unaccepted_jobs(self):
         """flush() should call _cancel() on unaccepted jobs when synack is enabled."""
         pool = asynpool.AsynPool(processes=1, synack=True, threads=False)
         pool._state = asynpool.RUN
