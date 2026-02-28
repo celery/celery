@@ -24,7 +24,7 @@ def trace(
 ):
     t = build_tracer(task.name, task, eager=eager, propagate=propagate, app=app, **opts)
     ret = t(task_id, args, kwargs, request)
-    return ret.retval, ret.info
+    return ret.retval, ret.info, ret.runtime
 
 
 class TraceCase:
@@ -53,7 +53,7 @@ class TraceCase:
 
 class test_trace(TraceCase):
     def test_trace_successful(self):
-        retval, info = self.trace(self.add, (2, 2), {})
+        retval, info, _ = self.trace(self.add, (2, 2), {})
         assert info is None
         assert retval == 4
 
@@ -123,8 +123,10 @@ class test_trace(TraceCase):
         on_success = Mock()
         signals.task_success.connect(on_success)
         try:
-            self.trace(self.add, (2, 2), {})
+            _, _, expected_runtime = self.trace(self.add, (2, 2), {})
             on_success.assert_called()
+            runtime = on_success.call_args[1]['runtime']
+            assert expected_runtime == runtime
         finally:
             signals.task_success.receivers[:] = []
 
@@ -288,7 +290,7 @@ class test_trace(TraceCase):
         def ignored():
             raise Ignore()
 
-        retval, info = self.trace(ignored, (), {})
+        retval, info, _ = self.trace(ignored, (), {})
         assert info.state == states.IGNORED
         mock_traceback_clear.assert_called()
 
@@ -298,7 +300,7 @@ class test_trace(TraceCase):
         def rejecting():
             raise Reject()
 
-        retval, info = self.trace(rejecting, (), {})
+        retval, info, _ = self.trace(rejecting, (), {})
         assert info.state == states.REJECTED
         mock_traceback_clear.assert_called()
 
@@ -312,7 +314,7 @@ class test_trace(TraceCase):
         sig = Mock(name='sig')
         request = {'callbacks': [sig], 'root_id': 'root'}
         maybe_signature.return_value = sig
-        retval, _ = self.trace(self.add, (2, 2), {}, request=request)
+        retval, _, _ = self.trace(self.add, (2, 2), {}, request=request)
         sig.apply_async.assert_called_with(
             (4,), parent_id='id-1', root_id='root', priority=None
         )
@@ -323,7 +325,7 @@ class test_trace(TraceCase):
         sig2 = Mock(name='sig2')
         request = {'chain': [sig2, sig], 'root_id': 'root'}
         maybe_signature.return_value = sig
-        retval, _ = self.trace(self.add, (2, 2), {}, request=request)
+        retval, _, _ = self.trace(self.add, (2, 2), {}, request=request)
         sig.apply_async.assert_called_with(
             (4,), parent_id='id-1', root_id='root', chain=[sig2], priority=None
         )
@@ -339,7 +341,7 @@ class test_trace(TraceCase):
             'delivery_info': {'priority': 42},
         }
         maybe_signature.return_value = sig
-        retval, _ = self.trace(self.add, (2, 2), {}, request=request)
+        retval, _, _ = self.trace(self.add, (2, 2), {}, request=request)
         sig.apply_async.assert_called_with(
             (4,), parent_id='id-1', root_id='root', chain=[sig2], priority=42
         )
@@ -350,7 +352,7 @@ class test_trace(TraceCase):
         request = {'callbacks': [sig], 'root_id': 'root'}
         maybe_signature.return_value = sig
         sig.apply_async.side_effect = EncodeError()
-        retval, einfo = self.trace(self.add, (2, 2), {}, request=request)
+        retval, einfo, _ = self.trace(self.add, (2, 2), {}, request=request)
         assert einfo.state == states.FAILURE
 
     @patch('celery.canvas.maybe_signature')
@@ -366,7 +368,7 @@ class test_trace(TraceCase):
             return s
 
         maybe_signature.side_effect = pass_value
-        retval, _ = self.trace(self.add, (2, 2), {}, request=request)
+        retval, _, _ = self.trace(self.add, (2, 2), {}, request=request)
         group_.assert_called_with((4,), parent_id='id-1', root_id='root', priority=None)
         sig3.apply_async.assert_called_with(
             (4,), parent_id='id-1', root_id='root', priority=None
@@ -385,7 +387,7 @@ class test_trace(TraceCase):
             return s
 
         maybe_signature.side_effect = pass_value
-        retval, _ = self.trace(self.add, (2, 2), {}, request=request)
+        retval, _, _ = self.trace(self.add, (2, 2), {}, request=request)
         sig1.apply_async.assert_called_with(
             (4,), parent_id='id-1', root_id='root', priority=None
         )
@@ -400,7 +402,7 @@ class test_trace(TraceCase):
     @patch('celery.app.trace.traceback_clear')
     def test_trace_Retry(self, mock_traceback_clear):
         exc = Retry('foo', 'bar')
-        _, info = self.trace(self.raises, (exc,), {})
+        _, info, _ = self.trace(self.raises, (exc,), {})
         assert info.state == states.RETRY
         assert info.retval is exc
         mock_traceback_clear.assert_called()
@@ -408,7 +410,7 @@ class test_trace(TraceCase):
     @patch('celery.app.trace.traceback_clear')
     def test_trace_exception(self, mock_traceback_clear):
         exc = KeyError('foo')
-        _, info = self.trace(self.raises, (exc,), {})
+        _, info, _ = self.trace(self.raises, (exc,), {})
         assert info.state == states.FAILURE
         assert info.retval is exc
         mock_traceback_clear.assert_called()
@@ -490,8 +492,8 @@ class test_trace(TraceCase):
         task_id = str(uuid4())
         request = {'id': task_id, 'delivery_info': {'redelivered': True}}
 
-        assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (2, None)
-        assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (None, None)
+        assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (2, None, ANY)
+        assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (None, None, ANY)
 
         self.app.conf.worker_deduplicate_successful_tasks = False
 
@@ -512,8 +514,8 @@ class test_trace(TraceCase):
 
         with patch('celery.app.trace.AsyncResult') as async_result_mock:
             async_result_mock().state.return_value = PENDING
-            assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (2, None)
-            assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (2, None)
+            assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (2, None, ANY)
+            assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (2, None, ANY)
 
         self.app.conf.worker_deduplicate_successful_tasks = False
 
@@ -533,10 +535,10 @@ class test_trace(TraceCase):
         request = {'id': task_id, 'delivery_info': {'redelivered': True}}
 
         with patch('celery.app.trace.AsyncResult') as async_result_mock:
-            assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (2, None)
+            assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (2, None, ANY)
             state_property = PropertyMock(side_effect=BackendGetMetaError)
             type(async_result_mock()).state = state_property
-            assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (2, None)
+            assert trace(self.app, add, (1, 1), task_id=task_id, request=request) == (2, None, ANY)
 
         self.app.conf.worker_deduplicate_successful_tasks = False
 
@@ -559,7 +561,7 @@ class test_trace(TraceCase):
         successful_requests.add(task_id)
 
         assert trace(self.app, add, (1, 1), task_id=task_id,
-                     request=request) == (None, None)
+                     request=request) == (None, None, ANY)
 
         successful_requests.clear()
         self.app.conf.worker_deduplicate_successful_tasks = False
