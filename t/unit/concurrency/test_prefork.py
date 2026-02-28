@@ -635,6 +635,39 @@ class test_AsynPool:
 
             mock_flush.assert_called_once_with(proc, gen)
 
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_write_ack_coroutine_is_advanced_not_dropped(self, _create_worker_process):
+        """flush() must not silently drop _write_ack generators (synack mode).
+
+        _write_ack coroutines are added to _active_writers by send_ack() but
+        are NOT mapped in owned_by (which is built from _cache job writers only).
+        Dropping them mid-write leaves a partially-written ack on the synq pipe
+        and hangs the worker process waiting for the ack that never arrives.
+        flush() must advance them to completion instead.
+        """
+        pool = asynpool.AsynPool(processes=1, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        # Simulate a _write_ack generator (name != '_write_job', not in owned_by)
+        ack_gen = Mock(name='ack_gen')
+        ack_gen.__name__ = '_write_ack'
+        # First call to next() returns normally (still writing),
+        # second raises StopIteration (write complete).
+        ack_gen.__next__ = Mock(side_effect=[None, StopIteration()])
+
+        pool._cache = {}
+        pool._active_writers = {ack_gen}
+        pool.outbound_buffer.clear()
+
+        pool.flush()
+
+        # Generator should have been advanced (not just silently discarded)
+        assert ack_gen.__next__.called
+        # And removed once it signalled completion
+        assert ack_gen not in pool._active_writers
+
 
 @t.skip.if_win32
 class test_ResultHandler:

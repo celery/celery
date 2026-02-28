@@ -1052,16 +1052,27 @@ class AsynPool(_pool.Pool):
                             try:
                                 job = owned_by[gen]
                             except KeyError:
-                                pass
+                                # Generator not in owned_by — not a _write_job
+                                # (e.g. a _write_ack coroutine added by send_ack()).
+                                # These *MUST* complete or the worker process will
+                                # hang waiting for the ack.  Advance it one step;
+                                # the generator raises StopIteration/OSError when
+                                # done or when the peer process has already died.
+                                try:
+                                    next(gen)
+                                except (StopIteration, OSError, EOFError):
+                                    self._active_writers.discard(gen)
                             else:
                                 job_proc = job._write_to
                                 if job_proc._is_alive():
+                                    # _flush_writer calls
+                                    # _active_writers.discard(gen) in its finally.
                                     self._flush_writer(job_proc, gen)
                                 else:
                                     # Process is dead, job will never
                                     # complete - discard from cache.
                                     job.discard()
-                            self._active_writers.discard(gen)
+                                    self._active_writers.discard(gen)
                     # workers may have exited in the meantime.
                     self.maintain_pool()
                     sleep(next(intervals))  # don't busyloop
