@@ -5,6 +5,7 @@ import ssl
 from contextlib import contextmanager
 from datetime import timedelta
 from pickle import dumps, loads
+from platform import system
 from unittest.mock import ANY, Mock, call, patch
 
 import pytest
@@ -535,6 +536,7 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['socket_timeout'] == 30.0
         assert 'socket_connect_timeout' not in x.connparams
         assert 'socket_keepalive' not in x.connparams
+        assert 'socket_keepalive_options' not in x.connparams
         assert x.connparams['db'] == 3
 
     def test_backend_ssl(self):
@@ -1211,6 +1213,36 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             task.backend.fail_from_current_stack.assert_called_with(
                 callback.id, exc=ANY,
             )
+
+    @pytest.mark.skipif(system() != 'Linux', reason="Test supported only for Linux setup")
+    def test_socket_keepalive_options(self):
+        pytest.importorskip('redis')
+        from socket import TCP_KEEPCNT, TCP_KEEPIDLE, TCP_KEEPINTVL
+
+        self.app.conf.redis_socket_keepalive = True
+        self.app.conf.result_backend_transport_options = {
+            'socket_keepalive_options': {
+                TCP_KEEPIDLE: 300,
+                TCP_KEEPCNT: 9,
+                TCP_KEEPINTVL: 45
+            }
+        }
+
+        x = self.Backend('redis://:bosco@vandelay.com:123//1', app=self.app)
+
+        assert x.connparams['socket_keepalive'] is True
+        assert x.connparams['socket_keepalive_options'] == {4: 300, 6: 9, 5: 45}
+
+    def test_setup_proper_max_connection_value_depends_on_passed_value(self):
+        x = self.Backend('redis://:bosco@vandelay.com:123//1', app=self.app)
+        assert x.connparams['max_connections'] is None
+
+        x = self.Backend('redis://:bosco@vandelay.com:123//1', app=self.app, max_connections=0)
+        assert x.connparams['max_connections'] == 0
+
+        self.app.conf.redis_max_connections = 10
+        x = self.Backend('redis://:bosco@vandelay.com:123//1', app=self.app)
+        assert x.connparams['max_connections'] == 10
 
 
 class test_RedisBackend_chords_complex(basetest_RedisBackend):
