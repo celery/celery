@@ -341,18 +341,20 @@ class AsyncResult(ResultBase):
                     raise IncompleteStream()
 
     def exists(self):
-        """Return :const:`True` if a result exists in the backend for this task.
+        """Return :const:`True` if the backend has stored state for this task.
 
-        This can be used to distinguish between a task that is truly
-        pending (waiting for execution) and a task ID that has never
-        been submitted or whose result has been forgotten/expired.
+        This checks whether the result backend has ever seen this task ID
+        and has any state/metadata recorded for it (for example, ``PENDING``,
+        ``SUCCESS``, ``FAILURE``, etc.).
 
-        Without this method, both cases return ``PENDING`` as the state,
-        making them indistinguishable.
+        Note that many backends only create entries once a worker reports
+        state. In such setups, a task that is merely queued but not yet
+        started will also return :const:`False` here, even though it is
+        still pending in the broker.
 
         Returns:
-            bool: :const:`True` if the backend has a result stored for
-                this task ID, :const:`False` otherwise.
+            bool: :const:`True` if the backend has state stored for this
+                task ID, :const:`False` otherwise.
 
         .. versionadded:: 5.7.0
         """
