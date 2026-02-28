@@ -239,7 +239,7 @@ class MongoBackend(BaseBackend):
 
         .. versionadded:: 5.7.0
         """
-        return bool(self.collection.find_one({"_id": task_id}))
+        return bool(self.collection.find_one({"_id": task_id}, {"_id": 1}))
 
     def _save_group(self, group_id, result):
         """Save the group result."""
