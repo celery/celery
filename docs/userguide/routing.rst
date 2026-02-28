@@ -276,7 +276,7 @@ This means that even though there are 10 (0-9) priority levels, these are
 consolidated into 4 levels by default to save resources. This means that a
 queue named celery will really be split into 4 queues.
 
-The highest priority queue will be named celery, and the the other queues will
+The highest priority queue will be named celery, and the other queues will
 have a separator (by default `\x06\x16`) and their priority number appended to
 the queue name.
 
