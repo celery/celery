@@ -353,6 +353,8 @@ class AsyncResult(ResultBase):
         Returns:
             bool: :const:`True` if the backend has a result stored for
                 this task ID, :const:`False` otherwise.
+
+        .. versionadded:: 5.7.0
         """
         return self.backend.task_result_exists(self.id)
 

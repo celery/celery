@@ -3,7 +3,7 @@ import datetime
 import platform
 import traceback
 from contextlib import contextmanager
-from unittest.mock import Mock, call, patch
+from unittest.mock import patch, Mock, call
 
 import pytest
 
@@ -413,6 +413,16 @@ class test_AsyncResult:
         result_missing = self.app.AsyncResult(uuid()).exists()
         assert isinstance(result_exists, bool)
         assert isinstance(result_missing, bool)
+
+    def test_exists_delegates_to_backend(self):
+        """Test that exists() properly delegates to backend.task_result_exists()."""
+        result = self.app.AsyncResult(self.task1["id"])
+        with patch.object(result.backend, 'task_result_exists', return_value=True) as mock_exists:
+            assert result.exists() is True
+            mock_exists.assert_called_once_with(self.task1["id"])
+
+        with patch.object(result.backend, 'task_result_exists', return_value=False) as mock_exists:
+            assert result.exists() is False
 
     @pytest.mark.skipif(
         platform.python_implementation() == "PyPy",

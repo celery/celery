@@ -754,6 +754,8 @@ class Backend:
         Returns:
             bool: :const:`True` if the backend has a result for the task,
                 :const:`False` otherwise.
+
+        .. versionadded:: 5.7.0
         """
         get_meta = getattr(self, "_get_task_meta_for", None)
         if get_meta is None:
@@ -1139,6 +1141,8 @@ class BaseKeyValueStoreBackend(Backend):
         Returns:
             bool: :const:`True` if the backend has a result for the task,
                 :const:`False` otherwise.
+
+        .. versionadded:: 5.7.0
         """
         return bool(self.get(self.get_key_for_task(task_id)))
 

@@ -515,6 +515,51 @@ class test_BaseBackend_dict:
         })
         assert b.task_result_exists('task-failed') is True
 
+    def test_task_result_exists_fallback_to_get_task_meta(self):
+        """Test the fallback path when _get_task_meta_for is not available."""
+        b = BaseBackend(app=self.app)
+        b.get_task_meta = Mock(return_value={
+            'status': states.SUCCESS, 'result': 42,
+        })
+        assert b.task_result_exists('task-exists') is True
+        b.get_task_meta.assert_called_once_with('task-exists')
+
+    def test_task_result_exists_fallback_pending(self):
+        """Test the fallback path returns False for PENDING status."""
+        b = BaseBackend(app=self.app)
+        b.get_task_meta = Mock(return_value={
+            'status': states.PENDING, 'result': None,
+        })
+        assert b.task_result_exists('task-missing') is False
+
+    def test_task_result_exists_started_state(self):
+        b = DictBackend(app=self.app)
+        b._get_task_meta_for = Mock(return_value={
+            'status': states.STARTED, 'result': None,
+        })
+        assert b.task_result_exists('task-started') is True
+
+    def test_task_result_exists_revoked_state(self):
+        b = DictBackend(app=self.app)
+        b._get_task_meta_for = Mock(return_value={
+            'status': states.REVOKED, 'result': None,
+        })
+        assert b.task_result_exists('task-revoked') is True
+
+    def test_task_result_exists_rejected_state(self):
+        b = DictBackend(app=self.app)
+        b._get_task_meta_for = Mock(return_value={
+            'status': states.REJECTED, 'result': None,
+        })
+        assert b.task_result_exists('task-rejected') is True
+
+    def test_task_result_exists_retry_state(self):
+        b = DictBackend(app=self.app)
+        b._get_task_meta_for = Mock(return_value={
+            'status': states.RETRY, 'result': None,
+        })
+        assert b.task_result_exists('task-retry') is True
+
     def test_is_cached(self):
         b = BaseBackend(app=self.app, max_cached_results=1)
         b._cache['foo'] = 1

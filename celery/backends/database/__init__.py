@@ -202,7 +202,10 @@ class DatabaseBackend(BaseBackend):
             return self.meta_from_decoded(data)
 
     def task_result_exists(self, task_id):
-        """Check if a result exists in the database for the given task ID."""
+        """Check if a result exists in the database for the given task ID.
+
+        .. versionadded:: 5.7.0
+        """
         session = self.ResultSession()
         with session_cleanup(session):
             return session.query(self.task_cls).filter(
