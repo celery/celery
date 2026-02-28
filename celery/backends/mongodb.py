@@ -224,6 +224,23 @@ class MongoBackend(BaseBackend):
             })
         return {'status': states.PENDING, 'result': None}
 
+    def task_result_exists(self, task_id):
+        """Return whether a stored result exists for the given task.
+
+        This checks the backend's task result collection for a document
+        whose ``_id`` matches the given ``task_id``.
+
+        Args:
+            task_id (str): The id of the task to look up in MongoDB.
+
+        Returns:
+            bool: ``True`` if a result document exists for ``task_id``,
+            otherwise ``False``.
+
+        .. versionadded:: 5.7.0
+        """
+        return bool(self.collection.find_one({"_id": task_id}, {"_id": 1}))
+
     def _save_group(self, group_id, result):
         """Save the group result."""
         meta = {

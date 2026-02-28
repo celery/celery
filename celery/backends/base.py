@@ -748,6 +748,22 @@ class Backend:
         """Reload task result, even if it has been previously fetched."""
         self._cache[task_id] = self.get_task_meta(task_id, cache=False)
 
+    def task_result_exists(self, task_id):
+        """Check if a result exists in the backend for the given task ID.
+
+        Returns:
+            bool: :const:`True` if the backend has a result for the task,
+                :const:`False` otherwise.
+
+        .. versionadded:: 5.7.0
+        """
+        get_meta = getattr(self, "_get_task_meta_for", None)
+        if get_meta is None:
+            meta = self.get_task_meta(task_id)
+        else:
+            meta = get_meta(task_id)
+        return meta.get("status") != states.PENDING
+
     def reload_group_result(self, group_id):
         """Reload group result, even if it has been previously fetched."""
         self._cache[group_id] = self.get_group_meta(group_id, cache=False)
@@ -1113,6 +1129,22 @@ class BaseKeyValueStoreBackend(Backend):
         if not meta:
             return {'status': states.PENDING, 'result': None}
         return self.decode_result(meta)
+
+    def task_result_exists(self, task_id):
+        """Check if a result exists in the backend for the given task ID.
+
+        This overrides the base implementation to directly check for
+        the existence of the key in the store, which is more accurate
+        than checking the status since tasks stored with PENDING status
+        would still be detected.
+
+        Returns:
+            bool: :const:`True` if the backend has a result for the task,
+                :const:`False` otherwise.
+
+        .. versionadded:: 5.7.0
+        """
+        return self.get(self.get_key_for_task(task_id)) is not None
 
     def _restore_group(self, group_id):
         """Get task meta-data for a task by id."""
