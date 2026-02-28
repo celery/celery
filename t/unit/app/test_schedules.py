@@ -542,7 +542,7 @@ class test_crontab_remaining_estimate:
     def test_hourly_crontab_during_dst_fall_back(self):
         # Test for #10107: hourly crontab skips execution during fall-back
         # DST transition when the same local hour occurs twice.
-        tzname = "US/Pacific"
+        tzname = "America/Los_Angeles"
         self.app.timezone = tzname
         tz = ZoneInfo(tzname)
         # Hourly at the top of each hour
