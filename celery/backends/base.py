@@ -1144,7 +1144,7 @@ class BaseKeyValueStoreBackend(Backend):
 
         .. versionadded:: 5.7.0
         """
-        return bool(self.get(self.get_key_for_task(task_id)))
+        return self.get(self.get_key_for_task(task_id)) is not None
 
     def _restore_group(self, group_id):
         """Get task meta-data for a task by id."""
