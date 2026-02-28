@@ -616,7 +616,7 @@ has been executed, not *right before* (the default behavior).
 ``task_acks_on_failure_or_timeout``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. deprecated:: 5.7
+.. deprecated:: 6.0
     Use :setting:`task_acks_on_failure` and :setting:`task_acks_on_timeout` instead.
 
 Default: Enabled

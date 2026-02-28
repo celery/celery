@@ -297,7 +297,7 @@ class Task:
     #: The application default can be overridden with the
     #: :setting:`task_acks_on_failure_or_timeout` setting.
     #:
-    #: .. deprecated:: 5.7
+    #: .. deprecated:: 6.0
     #:     Use :attr:`acks_on_failure` and :attr:`acks_on_timeout` instead.
     acks_on_failure_or_timeout = None
 

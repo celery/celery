@@ -981,18 +981,39 @@ class test_Request(RequestCase):
             req_logger, req.connection_errors, True)
 
     def test_on_failure_backward_compat_old_combined_flag(self):
-        """When only old combined flag is set, both failure and timeout behave the same."""
+        """When only old combined flag is set, bind() resolves new flags from it."""
+        # Simulate what bind() does: old flag True -> both new flags become True
+        self.mytask.acks_late = True
+        self.mytask.acks_on_failure_or_timeout = True
+        self.mytask.acks_on_failure = True  # as bind() would set
+        self.mytask.acks_on_timeout = True  # as bind() would set
+
+        # Regular failure should be acked
         job = self.xRequest()
         job.time_start = 1
-        self.mytask.acks_late = True
-        self.mytask.acks_on_failure = True
-        self.mytask.acks_on_timeout = True
         try:
             raise KeyError('foo')
         except KeyError:
             exc_info = ExceptionInfo()
             job.on_failure(exc_info)
         assert job.acknowledged is True
+
+        # Simulate old flag False -> both new flags become False
+        self.mytask.acks_on_failure_or_timeout = False
+        self.mytask.acks_on_failure = False  # as bind() would set
+        self.mytask.acks_on_timeout = False  # as bind() would set
+
+        job = self.xRequest()
+        job.time_start = 1
+        job._on_reject = Mock()
+        try:
+            raise KeyError('foo')
+        except KeyError:
+            exc_info = ExceptionInfo()
+            job.on_failure(exc_info)
+        assert job.acknowledged is True
+        job._on_reject.assert_called_with(req_logger, job.connection_errors,
+                                          False)
 
     def test_on_failure_task_cancelled(self):
         job = self.xRequest()
