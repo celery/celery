@@ -251,7 +251,7 @@ Support for out-of-tree worker pool implementations
 Prior to version 5.3, Celery had a fixed notion of the worker pool types it supports.
 Celery v5.3.0 introduces the possibility of an out-of-tree worker pool implementation.
 This feature ensures that the current worker pool implementations consistently call into
-BasePool._get_info(), and enhance it to report the work pool class in use via the 
+BasePool._get_info(), and enhances it to report the worker pool class in use via the
 "celery inspect stats" command. For example:
 
 $ celery -A ... inspect stats
