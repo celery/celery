@@ -8,6 +8,7 @@ and so on.
 """
 from __future__ import annotations
 
+import json
 import numbers
 import socket
 import sys
@@ -50,7 +51,7 @@ class Beat:
                  scheduler_cls: str | None = None,  # XXX use scheduler
                  redirect_stdouts: bool | None = None,
                  redirect_stdouts_level: str | None = None,
-                 quiet: bool = False, **kwargs: Any) -> None:
+                 quiet: bool = False, json_output: bool = False, **kwargs: Any) -> None:
         self.app = app = app or self.app
         either = self.app.either
         self.loglevel = loglevel
@@ -63,6 +64,7 @@ class Beat:
         self.redirect_stdouts_level = either(
             'worker_redirect_stdouts_level', redirect_stdouts_level)
         self.quiet = quiet
+        self.json_output = json_output
 
         self.max_interval = max_interval
         self.socket_timeout = socket_timeout
@@ -77,11 +79,37 @@ class Beat:
 
     def run(self) -> None:
         if not self.quiet:
-            print(str(self.colored.cyan(
-                f'celery beat v{VERSION_BANNER} is starting.')))
+            if self.json_output:
+                startup_json = self.get_startup_json()
+                print(json.dumps(startup_json, indent=2, default=str))
+            else:
+                print(str(self.colored.cyan(
+                    f'celery beat v{VERSION_BANNER} is starting.')))
         self.init_loader()
         self.set_process_title()
         self.start_scheduler()
+
+    def get_startup_json(self) -> dict:
+        """Get startup information as a JSON-serializable dictionary."""
+        service = self.Service(
+            app=self.app,
+            max_interval=self.max_interval,
+            scheduler_cls=self.scheduler_cls,
+            schedule_filename=self.schedule,
+        )
+        scheduler = service.get_scheduler(lazy=True)
+        
+        return {
+            "localtime": datetime.now().replace(microsecond=0).isoformat(),
+            "configuration": {
+                "broker": self.app.connection().as_uri(),
+                "loader": qualname(self.app.loader),
+                "scheduler": qualname(scheduler),
+                "db": self.schedule,
+                "logfile": f"{self.logfile or '[stderr]'}@%{LOG_LEVELS[self.loglevel]}",
+                "maxinterval": f"{humanize_seconds(scheduler.max_interval)} ({scheduler.max_interval}s)"
+            }
+        }
 
     def setup_logging(self, colorize: bool | None = None) -> None:
         if colorize is None and self.no_color is not None:
@@ -100,7 +128,7 @@ class Beat:
             schedule_filename=self.schedule,
         )
 
-        if not self.quiet:
+        if not self.quiet and not self.json_output:
             print(self.banner(service))
 
         self.setup_logging()
@@ -112,9 +140,22 @@ class Beat:
             self.install_sync_handler(service)
             service.start()
         except Exception as exc:
-            logger.critical('beat raised exception %s: %r',
-                            exc.__class__, exc,
-                            exc_info=True)
+            if self.json_output:
+                error_json = {
+                    "celery_beat": {
+                        "status": "error",
+                        "timestamp": datetime.now().replace(microsecond=0).isoformat(),
+                        "error": {
+                            "type": exc.__class__.__name__,
+                            "message": str(exc)
+                        }
+                    }
+                }
+                print(json.dumps(error_json, indent=2, default=str))
+            else:
+                logger.critical('beat raised exception %s: %r',
+                                exc.__class__, exc,
+                                exc_info=True)
             raise
 
     def banner(self, service: beat.Service) -> str:
