@@ -1000,11 +1000,14 @@ class AsynPool(_pool.Pool):
         if self._state == TERMINATE:
             return
         # cancel all tasks that haven't been accepted so that NACK is sent
-        # if synack is enabled.
-        if self.synack:
-            for job in self._cache.values():
-                if not job._accepted:
+        # if synack is enabled, otherwise discard them from the cache
+        # since they will be redelivered by the broker.
+        for job in tuple(self._cache.values()):
+            if not job._accepted:
+                if self.synack:
                     job._cancel()
+                else:
+                    job.discard()
 
         # clear the outgoing buffer as the tasks will be redelivered by
         # the broker anyway.

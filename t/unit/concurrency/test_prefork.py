@@ -513,6 +513,57 @@ class test_AsynPool:
         hub.remove.assert_called_once_with(fd)
         assert proc._sentinel_poll is None
 
+    @t.skip.if_pypy
+    def test_flush_no_synack_discards_unaccepted_jobs(self):
+        """flush() should discard unaccepted jobs when synack is disabled.
+
+        Previously, flush() only handled the synack case. Without synack,
+        unaccepted jobs were never cleaned from the cache, leading to stale
+        entries.
+        """
+        pool = asynpool.AsynPool(processes=1, synack=False, threads=False)
+        pool._state = asynpool.RUN
+
+        job1 = Mock(name='job1')
+        job1._accepted = False
+        job1._writer.return_value = None
+        job2 = Mock(name='job2')
+        job2._accepted = True
+        job2._writer.return_value = None
+
+        pool._cache = {1: job1, 2: job2}
+        pool.outbound_buffer.clear()
+        pool._active_writers.clear()
+
+        pool.flush()
+
+        job1.discard.assert_called_once()
+        job2.discard.assert_not_called()
+
+    @t.skip.if_pypy
+    def test_flush_synack_cancels_unaccepted_jobs(self):
+        """flush() should call _cancel() on unaccepted jobs when synack is enabled."""
+        pool = asynpool.AsynPool(processes=1, synack=True, threads=False)
+        pool._state = asynpool.RUN
+
+        job1 = Mock(name='job1')
+        job1._accepted = False
+        job1._writer.return_value = None
+        job2 = Mock(name='job2')
+        job2._accepted = True
+        job2._writer.return_value = None
+
+        pool._cache = {1: job1, 2: job2}
+        pool.outbound_buffer.clear()
+        pool._active_writers.clear()
+
+        pool.flush()
+
+        job1._cancel.assert_called_once()
+        job1.discard.assert_not_called()
+        job2._cancel.assert_not_called()
+
+
 
 @t.skip.if_win32
 class test_ResultHandler:
