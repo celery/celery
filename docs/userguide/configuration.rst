@@ -1161,7 +1161,7 @@ you to customize the table names:
 
 Default: :const:`None`.
 
-.. versionadded:: 5.4
+.. versionadded:: 5.7.0
 An optional callable (or dotted import path to one) that receives the
 SQLAlchemy engine immediately after it's created. Use this to register
 event listeners or apply any engine-level customization.
