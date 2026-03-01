@@ -309,7 +309,10 @@ class Celery:
     #: Signal sent after app has prepared the configuration.
     on_after_configure = None
 
-    #: Signal sent after app has been finalized.
+    #: Signal sent after the app has been finalized (i.e., all pending
+    #: task decorators have been evaluated, built-in tasks loaded, and
+    #: every task has been bound to the app).  This is the earliest point
+    #: at which the full task registry is available.
     on_after_finalize = None
 
     #: Signal sent by every new process after fork.
