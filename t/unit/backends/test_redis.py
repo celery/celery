@@ -917,6 +917,37 @@ class test_RedisBackend(basetest_RedisBackend):
         with pytest.raises(BackendStoreError):
             self.b.set('key', 'x' * (self.b._MAX_STR_VALUE_SIZE + 1))
 
+    def test_chunked_on_large_value(self):
+        tid = uuid()
+        key = self.b.get_key_for_task(tid)
+        value = 'x' * (self.b._MAX_STR_VALUE_SIZE + 1)
+        self.b._chunk_large_results = True
+        self.b.set(key, value)
+
+        return_value = self.b.get(key)
+
+        chunk_key = key.replace(self.b.task_keyprefix, b"task-chunk-1")
+        self.b.client.get.assert_called_with(chunk_key)
+
+        assert value == return_value
+
+    def test_chunked_on_large_value_store_results(self):
+        tid = uuid()
+        value = 'x' * (self.b._MAX_STR_VALUE_SIZE + 1)
+        self.b._chunk_large_results = True
+        self.b.store_result(tid, value, states.SUCCESS)
+        assert self.b.get_state(tid) == states.SUCCESS
+        assert self.b.get_result(tid) == value
+
+    def test_chunked_on_large_value_raise_error_on_key_name(self):
+        value = 'x' * (self.b._MAX_STR_VALUE_SIZE + 1)
+        self.b._chunk_large_results = True
+
+        with pytest.raises(BackendStoreError) as err:
+            self.b.set(b"key", value)
+
+        assert str(err.value).startswith("Invalid key")
+
 
 class test_RedisBackend_chords_simple(basetest_RedisBackend):
     @pytest.fixture(scope="class", autouse=True)
