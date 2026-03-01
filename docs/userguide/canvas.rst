@@ -144,11 +144,14 @@ creates partials:
         not be obvious. A non-commutative task like
         ``subtract(x, y) -> x - y`` makes this clear:
 
-        .. code-block:: pycon
+        .. code-block:: python
 
-            >>> partial = subtract.s(10)    # incomplete: second arg only
-            >>> partial.delay(30)           # -> subtract(30, 10) = 20
+            @app.task
+            def subtract(x, y):
+                return x - y
 
+            partial = subtract.s(10)    # incomplete: second arg only
+            partial.delay(30)           # -> subtract(30, 10) = 20
         Here ``delay(30)`` prepends ``30`` as the first argument, resulting
         in ``subtract(30, 10)`` — not ``subtract(10, 30)``.
 
