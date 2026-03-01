@@ -11,7 +11,7 @@ from celery.exceptions import ImproperlyConfigured
 
 pytest.importorskip('sqlalchemy')
 
-from celery.backends.database import DatabaseBackend, retry, session, session_cleanup  # noqa
+from celery.backends.database import DatabaseBackend, session, session_cleanup  # noqa
 from celery.backends.database.models import Task, TaskSet  # noqa
 from celery.backends.database.session import PREPARE_MODELS_MAX_RETRIES, ResultModelBase, SessionManager  # noqa
 from t import skip  # noqa
@@ -124,77 +124,202 @@ class test_DatabaseBackend:
         self.uri = 'sqlite:///' + DB_PATH
         self.app.conf.result_serializer = 'pickle'
 
-    def test_retry_helper(self):
+    def test_store_result_retries_on_database_error(self):
+        """Test that _store_result retries when database errors occur."""
         from celery.backends.database import DatabaseError
 
-        calls = [0]
+        self.app.conf.result_backend_always_retry = True
+        self.app.conf.result_backend_max_retries = 3
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb._sleep = Mock()
 
-        @retry
-        def raises():
-            calls[0] += 1
-            raise DatabaseError(1, 2, 3)
+        original_store = tb._store_result
+        call_count = [0]
 
-        with pytest.raises(DatabaseError):
-            raises(max_retries=5)
-        assert calls[0] == 5
+        def failing_store(*args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] < 3:
+                raise DatabaseError("connection lost", "SELECT 1", [], Exception())
+            return original_store(*args, **kwargs)
 
-    def test_retry_helper_calls_on_backend_retryable_error(self):
+        tb._store_result = failing_store
+
+        tb.store_result('task_id_1', {'result': 42}, states.SUCCESS)
+        assert call_count[0] == 3
+        assert tb._sleep.call_count == 2
+
+    def test_get_task_meta_retries_on_database_error(self):
+        """Test that _get_task_meta_for retries when database errors occur."""
         from celery.backends.database import DatabaseError
 
-        calls = [0]
-        hook_calls = []
+        self.app.conf.result_backend_always_retry = True
+        self.app.conf.result_backend_max_retries = 2
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb._sleep = Mock()
 
-        mock_backend = Mock()
-        mock_backend.on_backend_retryable_error = Mock(side_effect=lambda exc: hook_calls.append(exc))
+        tb.store_result('task_id_2', {'result': 'test'}, states.SUCCESS)
 
-        @retry
-        def raises_with_backend(backend):
-            calls[0] += 1
-            raise DatabaseError(1, 2, 3)
+        original_get = tb._get_task_meta_for
+        call_count = [0]
 
-        with pytest.raises(DatabaseError):
-            raises_with_backend(mock_backend, max_retries=3)
+        def failing_get(*args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                raise DatabaseError("temporary failure", None, None)
+            return original_get(*args, **kwargs)
 
-        assert calls[0] == 3
-        assert mock_backend.on_backend_retryable_error.call_count == 3
-        for exc in hook_calls:
-            assert isinstance(exc, DatabaseError)
+        tb._get_task_meta_for = failing_get
 
-    def test_retry_helper_without_hook(self):
+        meta = tb.get_task_meta('task_id_2')
+        assert meta['status'] == states.SUCCESS
+        assert call_count[0] == 2
+        assert tb._sleep.call_count == 1
+
+    def test_save_group_retries_on_database_error(self):
+        """Test that _save_group retries when database errors occur."""
         from celery.backends.database import DatabaseError
 
-        calls = [0]
+        self.app.conf.result_backend_always_retry = True
+        self.app.conf.result_backend_max_retries = 2
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb._sleep = Mock()
 
-        mock_backend = Mock(spec=[])
+        original_save_group = tb._save_group
+        call_count = [0]
 
-        @retry
-        def raises_with_backend(backend):
-            calls[0] += 1
-            raise DatabaseError(1, 2, 3)
+        def failing_save_group(*args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                raise DatabaseError("connection error", None, None)
+            return original_save_group(*args, **kwargs)
 
-        with pytest.raises(DatabaseError):
-            raises_with_backend(mock_backend, max_retries=3)
+        tb._save_group = failing_save_group
 
-        assert calls[0] == 3
+        tb.save_group('group_id_1', {'result': ['task1', 'task2']})
+        assert call_count[0] == 2
+        assert tb._sleep.call_count == 1
 
-    def test_retry_helper_hook_failure_continues(self):
+    def test_forget_retries_on_database_error(self):
+        """Test that _forget retries when database errors occur."""
         from celery.backends.database import DatabaseError
 
-        calls = [0]
+        self.app.conf.result_backend_always_retry = True
+        self.app.conf.result_backend_max_retries = 2
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb._sleep = Mock()
 
-        mock_backend = Mock()
-        mock_backend.on_backend_retryable_error = Mock(side_effect=RuntimeError("hook failed"))
+        tb.store_result('task_id_3', {'result': 'to_forget'}, states.SUCCESS)
 
-        @retry
-        def raises_with_backend(backend):
-            calls[0] += 1
-            raise DatabaseError(1, 2, 3)
+        original_forget = tb._forget
+        call_count = [0]
 
-        with pytest.raises(DatabaseError):
-            raises_with_backend(mock_backend, max_retries=3)
+        def failing_forget(*args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                raise DatabaseError("temporary error", None, None)
+            return original_forget(*args, **kwargs)
 
-        assert calls[0] == 3
-        assert mock_backend.on_backend_retryable_error.call_count == 3
+        tb._forget = failing_forget
+
+        tb.forget('task_id_3')
+        assert call_count[0] == 2
+        assert tb._sleep.call_count == 1
+
+    def test_retries_respect_max_retries_config(self):
+        """Test that retries stop after max_retries is reached."""
+        from celery.backends.database import DatabaseError
+        from celery.exceptions import BackendStoreError
+
+        self.app.conf.result_backend_always_retry = True
+        self.app.conf.result_backend_max_retries = 2
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb._sleep = Mock()
+
+        call_count = [0]
+
+        def always_failing_store(*args, **kwargs):
+            call_count[0] += 1
+            raise DatabaseError("persistent failure", None, None)
+
+        tb._store_result = always_failing_store
+
+        with pytest.raises(BackendStoreError):
+            tb.store_result('task_id_4', {'result': 42}, states.SUCCESS)
+
+        assert call_count[0] == 3
+        assert tb._sleep.call_count == 2
+
+    def test_retries_call_on_backend_retryable_error_hook(self):
+        """Test that on_backend_retryable_error is called during retries."""
+        from celery.backends.database import DatabaseError
+
+        self.app.conf.result_backend_always_retry = True
+        self.app.conf.result_backend_max_retries = 2
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb._sleep = Mock()
+        tb.session_manager.invalidate = Mock()
+
+        original_store = tb._store_result
+        call_count = [0]
+
+        def failing_store(*args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                raise DatabaseError("connection lost", "SELECT 1", [], Exception())
+            return original_store(*args, **kwargs)
+
+        tb._store_result = failing_store
+
+        tb.store_result('task_id_5', {'result': 42}, states.SUCCESS)
+
+        tb.session_manager.invalidate.assert_called_once_with(tb.url)
+        assert tb._sleep.call_count == 1
+
+    def test_non_retryable_exceptions_propagate_immediately(self):
+        """Test that non-retryable exceptions are not retried and propagate directly."""
+        self.app.conf.result_backend_always_retry = True
+        self.app.conf.result_backend_max_retries = 5
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb._sleep = Mock()
+
+        call_count = [0]
+
+        def failing_store(*args, **kwargs):
+            call_count[0] += 1
+            raise ValueError("not a database error")
+
+        tb._store_result = failing_store
+
+        with pytest.raises(ValueError, match="not a database error"):
+            tb.store_result('task_id_6', {'result': 42}, states.SUCCESS)
+
+        assert call_count[0] == 1
+        assert tb._sleep.call_count == 0
+
+    def test_without_fallback_exc_reaching_max_retries(self):
+        """
+        Test that _ensure_retryable raises the original exception
+        when max retries are reached and no fallback_exc is provided.
+        """
+        self.app.conf.result_backend_always_retry, prev = True, self.app.conf.result_backend_always_retry
+        self.app.conf.result_backend_max_retries, prev_max_retries = 0, self.app.conf.result_backend_max_retries
+
+        expected_exc = Exception("operation failed")
+        try:
+            tb = DatabaseBackend(self.uri, app=self.app)
+            tb.exception_safe_to_retry = lambda exc: True
+            tb._sleep = Mock()
+            tb._forget = Mock()
+            tb._forget.side_effect = expected_exc
+            try:
+                tb.forget('dummy_task_id')
+                assert False, "Should have raised the original exception"
+            except Exception as exc:
+                assert exc == expected_exc
+                assert tb._sleep.call_count == 0
+        finally:
+            self.app.conf.result_backend_always_retry = prev
+            self.app.conf.result_backend_max_retries = prev_max_retries
 
     def test_missing_dburi_raises_ImproperlyConfigured(self):
         self.app.conf.database_url = None

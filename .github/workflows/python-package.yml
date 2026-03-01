@@ -93,6 +93,7 @@ jobs:
         module: [
           'test_backend.py',
           'test_canvas.py',
+          'test_database_backend.py',
           'test_inspect.py',
           'test_loader.py',
           'test_mem_leak_in_exception_handling.py',
