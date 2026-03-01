@@ -810,6 +810,43 @@ class test_RedisBackend(basetest_RedisBackend):
         assert b.exception_safe_to_retry(exceptions.ConnectionError("service unavailable"))
         assert b.exception_safe_to_retry(exceptions.TimeoutError("timeout"))
 
+    def test_additional_connection_errors(self):
+        self.app.conf.result_backend_transport_options = dict(
+            additional_connection_errors=(ConnectionError,),
+        )
+        b = self.Backend(app=self.app)
+        assert ConnectionError in b.connection_errors
+        assert b.exception_safe_to_retry(ConnectionError("custom"))
+
+    def test_additional_connection_errors_string(self):
+        self.app.conf.result_backend_transport_options = dict(
+            additional_connection_errors=(
+                't.unit.backends.test_redis.ConnectionError',
+            ),
+        )
+        b = self.Backend(app=self.app)
+        assert ConnectionError in b.connection_errors
+        assert b.exception_safe_to_retry(ConnectionError("custom"))
+
+    def test_additional_connection_errors_passed_to_result_consumer(self):
+        self.app.conf.result_backend_transport_options = dict(
+            additional_connection_errors=(ConnectionError,),
+        )
+        b = self.Backend(app=self.app)
+        assert ConnectionError in b.result_consumer._connection_errors
+
+    def test_additional_connection_errors_empty(self):
+        self.app.conf.result_backend_transport_options = dict(
+            additional_connection_errors=(),
+        )
+        b = self.Backend(app=self.app)
+        assert ConnectionError not in b.connection_errors
+
+    def test_additional_connection_errors_not_set(self):
+        self.app.conf.result_backend_transport_options = {}
+        b = self.Backend(app=self.app)
+        assert ConnectionError not in b.connection_errors
+
     def test_incr(self):
         self.b.client = Mock(name='client')
         self.b.incr('foo')
