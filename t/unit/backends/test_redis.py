@@ -871,6 +871,13 @@ class test_RedisBackend(basetest_RedisBackend):
         assert ConnectionError in b.connection_errors
         assert int not in b.connection_errors
 
+    def test_additional_connection_errors_non_type_ignored(self):
+        self.app.conf.result_backend_transport_options = dict(
+            additional_connection_errors=(ConnectionError, 42),
+        )
+        b = self.Backend(app=self.app)
+        assert ConnectionError in b.connection_errors
+
     def test_additional_connection_errors_bad_import_ignored(self):
         self.app.conf.result_backend_transport_options = dict(
             additional_connection_errors=(
