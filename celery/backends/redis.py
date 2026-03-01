@@ -321,7 +321,9 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         self.connection_errors, self.channel_errors = (
             get_redis_error_classes() if get_redis_error_classes
             else ((), ()))
-        additional = self._transport_options.get(
+        transport_options = self.app.conf.get(
+            'result_backend_transport_options', {})
+        additional = transport_options.get(
             'additional_connection_errors', ())
         if isinstance(additional, (str, type)):
             additional = (additional,)
