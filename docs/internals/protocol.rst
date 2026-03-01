@@ -50,7 +50,7 @@ Definition
         'kwargsrepr': str repr(kwargs),
         'origin': str nodename,
         'replaced_task_nesting': int,
-        'compression': string compression_method,
+        'compression': string compression_method (optional; omitted when no compression is used, matches kombu compressor names such as 'zlib', 'bzip2', 'gzip'),
     }
 
     body = (
