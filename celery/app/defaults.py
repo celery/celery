@@ -253,6 +253,7 @@ NAMESPACES = Namespace(
             },
             type='dict', old={'celery_result_engine_options'},
         ),
+        engine_callback=Option(type='any'),
         short_lived_sessions=Option(
             False, type='bool', old={'celery_result_db_short_lived_sessions'},
         ),
