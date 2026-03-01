@@ -9,10 +9,8 @@ from .base import KeyValueStoreBackend
 
 __all__ = ('CacheBackend',)
 
-_imp = [None]
-
 REQUIRES_BACKEND = """\
-The Memcached backend requires either pylibmc or python-memcached.\
+The Memcached backend requires pymemcache.\
 """
 
 UNKNOWN_BACKEND = """\
@@ -25,33 +23,65 @@ Please use one of the following backends instead: {1}\
 _DUMMY_CLIENT_CACHE = LRUCache(limit=5000)
 
 
-def import_best_memcache():
-    if _imp[0] is None:
-        is_pylibmc, memcache_key_t = False, bytes_to_str
-        try:
-            import pylibmc as memcache
-            is_pylibmc = True
-        except ImportError:
-            try:
-                import memcache
-            except ImportError:
-                raise ImproperlyConfigured(REQUIRES_BACKEND)
-        _imp[0] = (is_pylibmc, memcache, memcache_key_t)
-    return _imp[0]
+def get_memcache_client():
+    """Get pymemcache client factory."""
+    try:
+        from pymemcache.client.base import Client
+        from pymemcache.client.hash import HashClient
+        from pymemcache.client.retrying import RetryingClient
+    except ImportError:
+        raise ImproperlyConfigured(REQUIRES_BACKEND)
 
+    def ClientFactory(servers=None, **kwargs):
+        """Create a pymemcache client with optional retry support.
 
-def get_best_memcache(*args, **kwargs):
-    # pylint: disable=unpacking-non-sequence
-    #   This is most definitely a sequence, but pylint thinks it's not.
-    is_pylibmc, memcache, key_t = import_best_memcache()
-    Client = _Client = memcache.Client
+        Args:
+            servers: List of server addresses
+            **kwargs: Additional options including:
+                - retry_attempts: Number of retry attempts (enables RetryingClient)
+                - retry_delay: Delay between retries in seconds
+                - retry_for: List of exceptions to retry for
+                - do_not_retry_for: List of exceptions to not retry for
+                - behaviors: Ignored for backward compatibility with pylibmc
+        """
+        # Remove pylibmc-specific options for backward compatibility
+        kwargs.pop('behaviors', None)
 
-    if not is_pylibmc:
-        def Client(*args, **kwargs):  # noqa: F811
-            kwargs.pop('behaviors', None)
-            return _Client(*args, **kwargs)
+        # Extract retry-related options
+        retry_attempts = kwargs.pop('retry_attempts', None)
+        retry_delay = kwargs.pop('retry_delay', None)
+        retry_for = kwargs.pop('retry_for', None)
+        do_not_retry_for = kwargs.pop('do_not_retry_for', None)
 
-    return Client, key_t
+        # Use HashClient for multiple servers, base Client for single server
+        if len(servers) > 1:
+            base_client = HashClient(servers, **kwargs)
+        else:
+            # For single server, use base Client with first server
+            if not servers:
+                raise ImproperlyConfigured("No memcache servers provided")
+            server = servers[0]
+            if isinstance(server, (str, tuple)):
+                base_client = Client(server, **kwargs)
+            else:
+                raise ImproperlyConfigured(
+                    f"Memcache server address must be a string or tuple, got {type(server)}: {server!r}"
+                )
+
+        # Wrap with RetryingClient if retry options are specified
+        if retry_attempts is not None:
+            retry_kwargs = {'attempts': retry_attempts}
+            if retry_delay is not None:
+                retry_kwargs['retry_delay'] = retry_delay
+            if retry_for is not None:
+                retry_kwargs['retry_for'] = retry_for
+            if do_not_retry_for is not None:
+                retry_kwargs['do_not_retry_for'] = do_not_retry_for
+            return RetryingClient(base_client, **retry_kwargs)
+
+        return base_client
+
+    return ClientFactory, bytes_to_str
 
 
 class DummyClient:
@@ -80,9 +110,10 @@ class DummyClient:
 
 
 backends = {
-    'memcache': get_best_memcache,
-    'memcached': get_best_memcache,
-    'pylibmc': get_best_memcache,
+    'memcache': get_memcache_client,
+    'memcached': get_memcache_client,
+    'pylibmc': get_memcache_client,  # Backward compatibility
+    'pymemcache': get_memcache_client,
     'memory': lambda: (DummyClient, ensure_bytes),
 }
 
