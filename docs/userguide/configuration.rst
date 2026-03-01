@@ -2956,6 +2956,17 @@ The brokers will then be used in the :setting:`broker_failover_strategy`.
 See :ref:`kombu:connection-urls` in the Kombu documentation for more
 information.
 
+.. warning::
+
+    Special characters in usernames and passwords must be percent-encoded.
+
+    For example:
+
+        # Before encoding (decoded form):
+        broker_url = 'amqp://user@example.com:p@ssword@localhost'
+
+        # After percent-encoding special characters:
+        broker_url = 'amqp://user%40example.com:p%40ssword@localhost'
 .. setting:: broker_read_url
 
 .. setting:: broker_write_url
