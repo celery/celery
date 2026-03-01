@@ -751,7 +751,11 @@ class test_trace(TraceCase):
             'chain': chain_list,
         }
 
-        trace(self.app, add, (1, 1), task_id=task_id, request=request)
+        with patch('celery.canvas.maybe_signature') as mock_signature:
+            mock_signature.return_value.apply_async = Mock()
+            trace(self.app, add, (1, 1), task_id=task_id, request=request)
+            call_args = mock_signature.return_value.apply_async.call_args
+            assert call_args[1]['chain'] == chain_list[:-1]
         assert len(chain_list) == original_length
 
     def test_deduplicate_successful_tasks__backend_dedup_dispatches_callbacks(self):
