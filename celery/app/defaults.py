@@ -263,7 +263,13 @@ NAMESPACES = Namespace(
     task=Namespace(
         __old__=OLD_NS,
         acks_late=Option(False, type='bool'),
-        acks_on_failure_or_timeout=Option(True, type='bool'),
+        acks_on_failure_or_timeout=Option(
+            True, type='bool',
+            deprecate_by='6.0', remove_by='7.0',
+            alt='task_acks_on_failure and task_acks_on_timeout',
+        ),
+        acks_on_failure=Option(None, type='bool'),
+        acks_on_timeout=Option(None, type='bool'),
         always_eager=Option(False, type='bool'),
         annotations=Option(type='any'),
         compression=Option(type='string', old={'celery_message_compression'}),
@@ -408,7 +414,7 @@ _OLD_SETTING_KEYS = set(_TO_NEW_KEY.keys())
 def find_deprecated_settings(source):  # pragma: no cover
     from celery.utils import deprecated
     for name, opt in flatten(NAMESPACES):
-        if (opt.deprecate_by or opt.remove_by) and getattr(source, name, None):
+        if (opt.deprecate_by or opt.remove_by) and getattr(source, name, None) is not None:
             deprecated.warn(description=f'The {name!r} setting',
                             deprecation=opt.deprecate_by,
                             removal=opt.remove_by,
