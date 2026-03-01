@@ -137,6 +137,21 @@ creates partials:
         >>> partial.delay(4)            # 4 + 2
         >>> partial.apply_async((4,))  # same
 
+    .. note::
+
+        Additional args passed to ``delay``/``apply_async`` are **prepended**
+        to the signature args. Since ``add`` is commutative, the ordering may
+        not be obvious. Consider a non-commutative task like
+        ``subtract(x, y) -> x - y``:
+
+        .. code-block:: pycon
+
+            >>> partial = subtract.s(10)    # incomplete: second arg only
+            >>> partial.delay(30)           # -> subtract(30, 10) = 20
+
+        Here it's clear that ``delay(30)`` prepends ``30`` as the first
+        argument, resulting in ``subtract(30, 10)`` — not ``subtract(10, 30)``.
+
 - Any keyword arguments added will be merged with the kwargs in the signature,
   with the new keyword arguments taking precedence:
 
