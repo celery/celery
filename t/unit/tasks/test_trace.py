@@ -564,6 +564,132 @@ class test_trace(TraceCase):
         successful_requests.clear()
         self.app.conf.worker_deduplicate_successful_tasks = False
 
+    def test_deduplicate_successful_tasks__backend_dedup_dispatches_chain(self):
+        """Issue #9835: When dedup fires via backend state check, chain must still be dispatched."""
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        backend = CacheBackend(app=self.app, backend='memory')
+        add.backend = backend
+        add.store_eager_result = True
+        add.ignore_result = False
+        add.acks_late = True
+
+        self.app.conf.worker_deduplicate_successful_tasks = True
+        task_id = str(uuid4())
+        request = {'id': task_id, 'delivery_info': {'redelivered': True}}
+
+        # First trace: executes normally, stores SUCCESS
+        trace(self.app, add, (1, 1), task_id=task_id, request=request)
+
+        # Second trace: redelivered, backend shows SUCCESS — should dispatch chain
+        chain_sig = self.add.s(10)
+        request_with_chain = {
+            'id': task_id,
+            'delivery_info': {'redelivered': True},
+            'chain': [chain_sig],
+        }
+
+        with patch('celery.canvas.maybe_signature') as mock_signature:
+            mock_apply = Mock()
+            mock_signature.return_value.apply_async = mock_apply
+            trace(self.app, add, (1, 1), task_id=task_id, request=request_with_chain)
+            mock_apply.assert_called_once()
+
+        self.app.conf.worker_deduplicate_successful_tasks = False
+
+    def test_deduplicate_successful_tasks__inmemory_dedup_skips_chain(self):
+        """In-memory dedup means this worker already dispatched the chain — no re-dispatch."""
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        backend = CacheBackend(app=self.app, backend='memory')
+        add.backend = backend
+        add.store_eager_result = True
+        add.ignore_result = False
+        add.acks_late = True
+
+        self.app.conf.worker_deduplicate_successful_tasks = True
+
+        task_id = str(uuid4())
+        request_with_chain = {
+            'id': task_id,
+            'delivery_info': {'redelivered': True},
+            'chain': [self.add.s(10)],
+        }
+
+        # Pre-populate in-memory set — simulates this worker already processed it
+        successful_requests.add(task_id)
+
+        with patch('celery.canvas.maybe_signature') as mock_signature:
+            mock_apply = Mock()
+            mock_signature.return_value.apply_async = mock_apply
+            trace(self.app, add, (1, 1), task_id=task_id, request=request_with_chain)
+            # In-memory dedup returns immediately — chain should NOT be dispatched again
+            mock_apply.assert_not_called()
+
+        successful_requests.clear()
+        self.app.conf.worker_deduplicate_successful_tasks = False
+
+    def test_chain_dispatch_does_not_mutate_request_chain(self):
+        """Issue #9835: chain.pop() mutates task_request.chain in-place — it should not."""
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        backend = CacheBackend(app=self.app, backend='memory')
+        add.backend = backend
+        add.store_eager_result = True
+        add.ignore_result = False
+
+        chain_list = [self.add.s(10), self.add.s(20)]
+        original_length = len(chain_list)
+        request = {
+            'id': str(uuid4()),
+            'delivery_info': {'redelivered': False},
+            'chain': chain_list,
+        }
+
+        trace(self.app, add, (1, 1), request=request)
+        assert len(chain_list) == original_length
+
+    def test_deduplicate_successful_tasks__backend_dedup_dispatches_callbacks(self):
+        """Issue #9835: When dedup fires via backend state check, callbacks must still be dispatched."""
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        backend = CacheBackend(app=self.app, backend='memory')
+        add.backend = backend
+        add.store_eager_result = True
+        add.ignore_result = False
+        add.acks_late = True
+
+        self.app.conf.worker_deduplicate_successful_tasks = True
+        task_id = str(uuid4())
+        request = {'id': task_id, 'delivery_info': {'redelivered': True}}
+
+        # First trace: executes normally, stores SUCCESS
+        trace(self.app, add, (1, 1), task_id=task_id, request=request)
+
+        # Second trace: redelivered, backend shows SUCCESS — should dispatch callbacks
+        callback_sig = self.add.s(99)
+        request_with_callbacks = {
+            'id': task_id,
+            'delivery_info': {'redelivered': True},
+            'callbacks': [callback_sig],
+        }
+
+        with patch('celery.canvas.maybe_signature') as mock_signature:
+            mock_apply = Mock()
+            mock_signature.return_value.apply_async = mock_apply
+            trace(self.app, add, (1, 1), task_id=task_id, request=request_with_callbacks)
+            mock_apply.assert_called_once()
+
+        self.app.conf.worker_deduplicate_successful_tasks = False
+
 
 class test_TraceInfo(TraceCase):
     class TI(TraceInfo):
