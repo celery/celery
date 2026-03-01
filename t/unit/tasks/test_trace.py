@@ -597,6 +597,7 @@ class test_trace(TraceCase):
             assert call_args[1]['parent_id'] == task_id
             assert 'root_id' in call_args[1]
 
+        successful_requests.discard(task_id)
         self.app.conf.worker_deduplicate_successful_tasks = False
 
     def test_deduplicate_successful_tasks__backend_dedup_multi_element_chain(self):
@@ -632,6 +633,7 @@ class test_trace(TraceCase):
             call_args = mock_apply.call_args
             assert call_args[1]['chain'] == [step3]
 
+        successful_requests.discard(task_id)
         self.app.conf.worker_deduplicate_successful_tasks = False
 
     def test_deduplicate_successful_tasks__backend_dedup_adds_to_successful_requests(self):
@@ -742,13 +744,14 @@ class test_trace(TraceCase):
 
         chain_list = [self.add.s(10), self.add.s(20)]
         original_length = len(chain_list)
+        task_id = str(uuid4())
         request = {
-            'id': str(uuid4()),
+            'id': task_id,
             'delivery_info': {'redelivered': False},
             'chain': chain_list,
         }
 
-        trace(self.app, add, (1, 1), request=request)
+        trace(self.app, add, (1, 1), task_id=task_id, request=request)
         assert len(chain_list) == original_length
 
     def test_deduplicate_successful_tasks__backend_dedup_dispatches_callbacks(self):
@@ -783,6 +786,7 @@ class test_trace(TraceCase):
             assert call_args[0] == ((2,),)
             assert call_args[1]['parent_id'] == task_id
 
+        successful_requests.discard(task_id)
         self.app.conf.worker_deduplicate_successful_tasks = False
 
     def test_deduplicate_successful_tasks__backend_dedup_chain_and_callbacks(self):
@@ -815,6 +819,7 @@ class test_trace(TraceCase):
             trace(self.app, add, (1, 1), task_id=task_id, request=request_both)
             assert mock_apply.call_count == 2
 
+        successful_requests.discard(task_id)
         self.app.conf.worker_deduplicate_successful_tasks = False
 
     def test_deduplicate_successful_tasks__backend_dedup_dispatch_failure_logged(self):
