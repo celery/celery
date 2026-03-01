@@ -5,6 +5,7 @@ import inspect
 import os
 import sys
 import threading
+import types
 import typing
 import warnings
 from collections import UserDict, defaultdict, deque
@@ -1265,6 +1266,8 @@ class Celery:
             attrs['__reduce__'] = __reduce__
 
         return type(name or Class.__name__, (Class,), attrs)
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
     def _rgetattr(self, path):
         return attrgetter(path)(self)
