@@ -452,7 +452,9 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             'name': get_task_name(task_request, name),
                             'description': 'Task already completed successfully.'
                         })
-                        # tasks that were already completed by another worker.
+                        _root_id = task_request.root_id or uuid
+                        _priority = task_request.delivery_info.get('priority') if \
+                            inherit_parent_priority else None
                         try:
                             stored_retval = r.result
                             _chain = task_request.chain
@@ -462,22 +464,42 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                     (stored_retval,),
                                     chain=_chain[:-1],
                                     parent_id=uuid,
-                                    root_id=task_request.root_id or uuid,
-                                    priority=(
-                                        task_request.delivery_info.get('priority')
-                                        if inherit_parent_priority else None
-                                    ),
+                                    root_id=_root_id,
+                                    priority=_priority,
                                 )
                             _callbacks = task_request.callbacks
                             if _callbacks:
-                                for cb in _callbacks:
-                                    signature(cb, app=app).apply_async(
+                                if len(_callbacks) > 1:
+                                    sigs, groups = [], []
+                                    for sig in _callbacks:
+                                        sig = signature(sig, app=app)
+                                        if isinstance(sig, group):
+                                            groups.append(sig)
+                                        else:
+                                            sigs.append(sig)
+                                    for group_ in groups:
+                                        group_.apply_async(
+                                            (stored_retval,),
+                                            parent_id=uuid, root_id=_root_id,
+                                            priority=_priority,
+                                        )
+                                    if sigs:
+                                        group(sigs, app=app).apply_async(
+                                            (stored_retval,),
+                                            parent_id=uuid, root_id=_root_id,
+                                            priority=_priority,
+                                        )
+                                else:
+                                    signature(_callbacks[0], app=app).apply_async(
                                         (stored_retval,),
-                                        parent_id=uuid,
-                                        root_id=task_request.root_id or uuid,
+                                        parent_id=uuid, root_id=_root_id,
+                                        priority=_priority,
                                     )
+                            successful_requests.add(task_request.id)
+                        except MemoryError:
+                            raise
                         except Exception:
-                            logger.warning(
+                            logger.error(
                                 'Failed to dispatch chain/callbacks for '
                                 'deduplicated task %s',
                                 task_request.id,
