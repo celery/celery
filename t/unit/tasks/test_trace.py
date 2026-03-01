@@ -144,6 +144,19 @@ class test_trace(TraceCase):
         assert args[2].chord == request['chord']
         assert not args[3]
 
+    def test_request_ignore_result_override_stores_result(self):
+        @self.app.task(shared=False, ignore_result=True)
+        def add(x, y):
+            return x + y
+
+        add.backend = Mock(name='backend')
+
+        self.trace(add, (2, 2), {}, eager=False, request={'ignore_result': False})
+        add.backend.mark_as_done.assert_called_once()
+        args, kwargs = add.backend.mark_as_done.call_args
+        assert kwargs == {}
+        assert args[3] is True
+
     def test_when_backend_cleanup_raises(self):
         @self.app.task(shared=False)
         def add(x, y):
@@ -577,6 +590,18 @@ class test_TraceInfo(TraceCase):
             self.add_cast,
             self.add_cast.request,
             store_errors=self.add_cast.store_errors_even_if_ignored,
+            call_errbacks=True,
+        )
+
+    def test_handle_error_state_with_request_ignore_result_override(self):
+        x = self.TI(states.FAILURE)
+        x.handle_failure = Mock()
+        req = Context({'ignore_result': False})
+        x.handle_error_state(self.add_cast, req)
+        x.handle_failure.assert_called_with(
+            self.add_cast,
+            req,
+            store_errors=True,
             call_errbacks=True,
         )
 

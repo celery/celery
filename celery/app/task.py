@@ -163,6 +163,7 @@ class Context:
             'retries': self.retries,
             'reply_to': self.reply_to,
             'replaced_task_nesting': self.replaced_task_nesting,
+            'ignore_result': self.ignore_result,
             'origin': self.origin,
         }
         if hasattr(self, 'stamps') and hasattr(self, 'stamped_headers'):
