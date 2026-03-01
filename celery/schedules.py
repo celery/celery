@@ -574,6 +574,41 @@ class crontab(BaseSchedule):
         # caching global ffwd
         last_run_at = self.maybe_make_aware(last_run_at)
         now = self.maybe_make_aware(self.now())
+
+        # During DST fall-back, the same local hour occurs twice but with
+        # different UTC offsets.  If the offset decreased (fall-back) and the
+        # current local time matches the crontab pattern, the task should be
+        # considered due because real (UTC) time has elapsed even though the
+        # local clock shows the same or earlier hour.  See #10107.
+        #
+        # Guards against false positives:
+        # - UTC proximity check: only trigger when the fall-back transition
+        #   happened recently (within 2 hours), not months/years apart.
+        # - Same-day check: last_run and now must be on the same calendar day.
+        # - Hour wildcard check: only apply to schedules where hour='*'
+        #   (e.g. hourly tasks).  A daily task at hour=1 that already ran at
+        #   1:00 AM PDT should NOT fire again at 1:00 AM PST.
+        last_offset = last_run_at.utcoffset()
+        now_offset = now.utcoffset()
+        if (last_offset is not None and now_offset is not None
+                and last_offset > now_offset
+                and self._orig_hour == '*'):
+            last_utc = last_run_at - last_offset
+            now_utc = now - now_offset
+            utc_delta = now_utc - last_utc
+            if (timedelta(0) < utc_delta <= timedelta(hours=2)
+                    and last_run_at.date() == now.date()):
+                dow_num_now = now.isoweekday() % 7
+                now_matches = (
+                    now.month in self.month_of_year
+                    and now.day in self.day_of_month
+                    and dow_num_now in self.day_of_week
+                    and now.hour in self.hour
+                    and now.minute in self.minute
+                )
+                if now_matches:
+                    return self.to_local(last_run_at), timedelta(0), self.to_local(now)
+
         dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7
 
         execute_this_date = (
