@@ -323,12 +323,24 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             else ((), ()))
         additional = self._transport_options.get(
             'additional_connection_errors', ())
+        # Normalize common scalar misconfigurations (single str/type) to a 1-tuple.
+        if isinstance(additional, (str, type)):
+            additional = (additional,)
         if additional:
-            extra = tuple(
-                symbol_by_name(cls) if isinstance(cls, str) else cls
-                for cls in additional
-            )
-            self.connection_errors = self.connection_errors + extra
+            extra = []
+            for cls in additional:
+                resolved = symbol_by_name(cls) if isinstance(cls, str) else cls
+                # Ensure we only add valid exception classes; skip invalid entries.
+                if isinstance(resolved, type) and issubclass(resolved, BaseException):
+                    extra.append(resolved)
+                else:
+                    logger.warning(
+                        "Ignoring invalid additional_connection_errors entry %r: "
+                        "expected an exception class or dotted path to one.",
+                        resolved,
+                    )
+            if extra:
+                self.connection_errors = self.connection_errors + tuple(extra)
         self.result_consumer = self.ResultConsumer(
             self, self.app, self.accept,
             self._pending_results, self._pending_messages,
