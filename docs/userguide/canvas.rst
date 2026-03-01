@@ -141,8 +141,13 @@ creates partials:
 
         Additional args passed to ``delay``/``apply_async`` are **prepended**
         to the signature args. Since ``add`` is commutative, the ordering may
-        not be obvious. Consider a non-commutative task like
-        ``subtract(x, y) -> x - y``:
+        not be obvious. Consider a non-commutative task:
+
+        .. code-block:: python
+
+            @app.task
+            def subtract(x, y):
+                return x - y
 
         .. code-block:: pycon
 
