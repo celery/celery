@@ -826,6 +826,46 @@ class test_trace(TraceCase):
         successful_requests.discard(task_id)
         self.app.conf.worker_deduplicate_successful_tasks = False
 
+    def test_deduplicate_successful_tasks__backend_dedup_skips_when_children_present(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        backend = CacheBackend(app=self.app, backend='memory')
+        add.backend = backend
+        add.store_eager_result = True
+        add.ignore_result = False
+        add.acks_late = True
+
+        self.app.conf.worker_deduplicate_successful_tasks = True
+        task_id = str(uuid4())
+        request = {'id': task_id, 'delivery_info': {'redelivered': True}}
+
+        trace(self.app, add, (1, 1), task_id=task_id, request=request)
+
+        request_with_chain = {
+            'id': task_id,
+            'delivery_info': {'redelivered': True},
+            'chain': [self.add.s(10)],
+            'callbacks': [self.add.s(99)],
+        }
+
+        meta_with_children = {
+            'status': 'SUCCESS', 'result': 2,
+            'children': [('some-child-id', None)],
+        }
+        with patch('celery.canvas.maybe_signature') as mock_signature:
+            mock_apply = Mock()
+            mock_signature.return_value.apply_async = mock_apply
+            with patch('celery.result.AsyncResult._get_task_meta',
+                       return_value=meta_with_children):
+                trace(self.app, add, (1, 1), task_id=task_id,
+                      request=request_with_chain)
+            mock_apply.assert_not_called()
+
+        successful_requests.discard(task_id)
+        self.app.conf.worker_deduplicate_successful_tasks = False
+
     def test_deduplicate_successful_tasks__backend_dedup_dispatch_failure_logged(self):
         @self.app.task(shared=False)
         def add(x, y):
