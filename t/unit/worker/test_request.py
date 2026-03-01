@@ -248,6 +248,24 @@ class test_Request(RequestCase):
                                    exclude_headers=['shadow'])
         assert request.name == 't.unit.worker.test_request.add'
 
+    def test_time_limit_fields_are_available_on_request_and_context(self):
+        request = self.get_request(self.add.s(2, 2).set(
+            time_limit=10, soft_time_limit=3,
+        ))
+        assert tuple(request.time_limits) == (10, 3)
+        assert request.time_limit == 10
+        assert request.soft_time_limit == 3
+        assert request.request_dict['time_limit'] == 10
+        assert request.request_dict['soft_time_limit'] == 3
+        assert request._context.time_limit == 10
+        assert request._context.soft_time_limit == 3
+
+    def test_time_limit_fields_from_legacy_timelimit_header(self):
+        request = self.xRequest(timelimit=(10, 3))
+        assert tuple(request.time_limits) == (10, 3)
+        assert request.time_limit == 10
+        assert request.soft_time_limit == 3
+
     def test_invalid_eta_raises_InvalidTaskError(self):
         with pytest.raises(InvalidTaskError):
             self.get_request(self.add.s(2, 2).set(eta='12345'))

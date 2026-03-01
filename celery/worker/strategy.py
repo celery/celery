@@ -34,6 +34,11 @@ def hybrid_to_proto2(message, body):
             'Task keyword arguments must be a mapping',
         )
 
+    timelimit = body.get('timelimit', (None, None))
+    if not isinstance(timelimit, (tuple, list)) or len(timelimit) < 2:
+        timelimit = (body.get('time_limit'), body.get('soft_time_limit'))
+    time_limit, soft_time_limit = timelimit[:2]
+
     headers = {
         'lang': body.get('lang'),
         'task': body.get('task'),
@@ -46,7 +51,9 @@ def hybrid_to_proto2(message, body):
         'eta': body.get('eta'),
         'expires': body.get('expires'),
         'retries': body.get('retries', 0),
-        'timelimit': body.get('timelimit', (None, None)),
+        'timelimit': (time_limit, soft_time_limit),
+        'time_limit': time_limit,
+        'soft_time_limit': soft_time_limit,
         'argsrepr': body.get('argsrepr'),
         'kwargsrepr': body.get('kwargsrepr'),
         'origin': body.get('origin'),
@@ -83,6 +90,10 @@ def proto1_to_proto2(message, body):
         kwargsrepr=saferepr(kwargs),
         headers=message.headers,
     )
+    timelimit = body.get('timelimit')
+    if isinstance(timelimit, (tuple, list)) and len(timelimit) >= 2:
+        body.setdefault('time_limit', timelimit[0])
+        body.setdefault('soft_time_limit', timelimit[1])
     try:
         body['group'] = body['taskset']
     except KeyError:

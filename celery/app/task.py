@@ -104,6 +104,8 @@ class Context:
     shadow = None
     taskset = None   # compat alias to group
     timelimit = None
+    time_limit = None
+    soft_time_limit = None
     utc = None
     stamped_headers = None
     stamps = None
@@ -124,7 +126,11 @@ class Context:
         return headers
 
     def update(self, *args, **kwargs):
-        return self.__dict__.update(*args, **kwargs)
+        self.__dict__.update(*args, **kwargs)
+        timelimit = self.__dict__.get('timelimit')
+        if isinstance(timelimit, (list, tuple)) and len(timelimit) >= 2:
+            self.time_limit, self.soft_time_limit = timelimit[:2]
+        return None
 
     def clear(self):
         return self.__dict__.clear()
@@ -371,6 +377,8 @@ class Task:
         ('serializer', 'task_serializer'),
         ('rate_limit', 'task_default_rate_limit'),
         ('priority', 'task_default_priority'),
+        ('time_limit', 'task_time_limit'),
+        ('soft_time_limit', 'task_soft_time_limit'),
         ('track_started', 'task_track_started'),
         ('acks_late', 'task_acks_late'),
         ('acks_on_failure_or_timeout', 'task_acks_on_failure_or_timeout'),
