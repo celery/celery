@@ -459,16 +459,6 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             stored_retval = r.result
                             _meta = r._get_task_meta()
                             _children = _meta.get('children')
-                            _chain = task_request.chain
-                            if _chain and not _children:
-                                _chsig = signature(_chain[-1], app=app)
-                                _chsig.apply_async(
-                                    (stored_retval,),
-                                    chain=_chain[:-1],
-                                    parent_id=uuid,
-                                    root_id=_root_id,
-                                    priority=_priority,
-                                )
                             _callbacks = task_request.callbacks
                             if _callbacks and not _children:
                                 if len(_callbacks) > 1:
@@ -497,6 +487,16 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                         parent_id=uuid, root_id=_root_id,
                                         priority=_priority,
                                     )
+                            _chain = task_request.chain
+                            if _chain and not _children:
+                                _chsig = signature(_chain[-1], app=app)
+                                _chsig.apply_async(
+                                    (stored_retval,),
+                                    chain=_chain[:-1],
+                                    parent_id=uuid,
+                                    root_id=_root_id,
+                                    priority=_priority,
+                                )
                             successful_requests.add(task_request.id)
                         except MemoryError:
                             raise
