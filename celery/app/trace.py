@@ -457,8 +457,10 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             inherit_parent_priority else None
                         try:
                             stored_retval = r.result
+                            _meta = r._get_task_meta()
+                            _children = _meta.get('children')
                             _chain = task_request.chain
-                            if _chain:
+                            if _chain and not _children:
                                 _chsig = signature(_chain[-1], app=app)
                                 _chsig.apply_async(
                                     (stored_retval,),
@@ -468,7 +470,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                     priority=_priority,
                                 )
                             _callbacks = task_request.callbacks
-                            if _callbacks:
+                            if _callbacks and not _children:
                                 if len(_callbacks) > 1:
                                     sigs, groups = [], []
                                     for sig in _callbacks:
