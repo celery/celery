@@ -646,7 +646,7 @@ class test_AsynPool:
         and hangs the worker process waiting for the ack that never arrives.
         flush() must advance them to completion instead.
         """
-        pool = asynpool.AsynPool(processes=1, synack=False, threads=False)
+        pool = asynpool.AsynPool(processes=1, synack=True, threads=False)
         pool._state = asynpool.RUN
         pool.maintain_pool = Mock(name='maintain_pool')
 
@@ -672,7 +672,7 @@ class test_AsynPool:
     @patch('billiard.pool.Pool._create_worker_process')
     def test_flush_write_ack_coroutine_handles_oserror(self, _create_worker_process):
         """flush() should discard the coroutine if OSError is raised during next()."""
-        pool = asynpool.AsynPool(processes=1, synack=False, threads=False)
+        pool = asynpool.AsynPool(processes=1, synack=True, threads=False)
         pool._state = asynpool.RUN
         pool.maintain_pool = Mock(name='maintain_pool')
 
@@ -691,7 +691,7 @@ class test_AsynPool:
     @patch('billiard.pool.Pool._create_worker_process')
     def test_flush_write_ack_coroutine_handles_eoferror(self, _create_worker_process):
         """flush() should discard the coroutine if EOFError is raised during next()."""
-        pool = asynpool.AsynPool(processes=1, synack=False, threads=False)
+        pool = asynpool.AsynPool(processes=1, synack=True, threads=False)
         pool._state = asynpool.RUN
         pool.maintain_pool = Mock(name='maintain_pool')
 
