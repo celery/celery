@@ -36,6 +36,17 @@ R_BOUND_TASK = '<class {0.__name__} of {app}{flags}>'
 R_UNBOUND_TASK = '<unbound {0.__name__}{flags}>'
 R_INSTANCE = '<@task: {0.name} of {app}{flags}>'
 
+# Filtered headers relating to dead-lettering in RabbitMQ.
+X_DEATH_HEADERS = {
+    'x-death',
+    'x-first-death-exchange',
+    'x-first-death-queue',
+    'x-first-death-reason',
+    'x-last-death-exchange',
+    'x-last-death-queue',
+    'x-last-death-reason',
+}
+
 #: Here for backwards compatibility as tasks no longer use a custom meta-class.
 TaskType = type
 
@@ -123,6 +134,14 @@ class Context:
     def __repr__(self):
         return f'<Context: {vars(self)!r}>'
 
+    def _filter_x_death_headers(self, headers):
+        """Filter out X-Death headers to prevent RabbitMQ cycle detection."""
+        headers = headers.copy() if headers else {}
+        for x_death_header in X_DEATH_HEADERS:
+            headers.pop(x_death_header, None)
+
+        return headers
+
     def as_execution_options(self):
         limit_hard, limit_soft = self.timelimit or (None, None)
         execution_options = {
@@ -139,7 +158,7 @@ class Context:
             'expires': self.expires,
             'soft_time_limit': limit_soft,
             'time_limit': limit_hard,
-            'headers': self.headers,
+            'headers': self._filter_x_death_headers(self.headers),
             'retries': self.retries,
             'reply_to': self.reply_to,
             'replaced_task_nesting': self.replaced_task_nesting,
@@ -277,7 +296,32 @@ class Task:
     #:
     #: The application default can be overridden with the
     #: :setting:`task_acks_on_failure_or_timeout` setting.
+    #:
+    #: .. deprecated:: 6.0
+    #:     Use :attr:`acks_on_failure` and :attr:`acks_on_timeout` instead.
     acks_on_failure_or_timeout = None
+
+    #: When enabled messages for this task will be acknowledged on failure.
+    #: Falls back to :attr:`acks_on_failure_or_timeout` if :const:`None`.
+    #:
+    #: Configuring this setting only applies to tasks that are
+    #: acknowledged **after** they have been executed and only if
+    #: :setting:`task_acks_late` is enabled.
+    #:
+    #: The application default can be overridden with the
+    #: :setting:`task_acks_on_failure` setting.
+    acks_on_failure = None
+
+    #: When enabled messages for this task will be acknowledged on timeout.
+    #: Falls back to :attr:`acks_on_failure_or_timeout` if :const:`None`.
+    #:
+    #: Configuring this setting only applies to tasks that are
+    #: acknowledged **after** they have been executed and only if
+    #: :setting:`task_acks_late` is enabled.
+    #:
+    #: The application default can be overridden with the
+    #: :setting:`task_acks_on_timeout` setting.
+    acks_on_timeout = None
 
     #: Even if :attr:`acks_late` is enabled, the worker will
     #: acknowledge tasks when the worker process executing them abruptly
@@ -329,6 +373,8 @@ class Task:
         ('track_started', 'task_track_started'),
         ('acks_late', 'task_acks_late'),
         ('acks_on_failure_or_timeout', 'task_acks_on_failure_or_timeout'),
+        ('acks_on_failure', 'task_acks_on_failure'),
+        ('acks_on_timeout', 'task_acks_on_timeout'),
         ('reject_on_worker_lost', 'task_reject_on_worker_lost'),
         ('ignore_result', 'task_ignore_result'),
         ('store_eager_result', 'task_store_eager_result'),
@@ -353,6 +399,19 @@ class Task:
         for attr_name, config_name in cls.from_config:
             if getattr(cls, attr_name, None) is None:
                 setattr(cls, attr_name, conf[config_name])
+
+        if cls.acks_on_failure is None:
+            cls.acks_on_failure = (
+                cls.acks_on_failure_or_timeout
+                if cls.acks_on_failure_or_timeout is not None
+                else True
+            )
+        if cls.acks_on_timeout is None:
+            cls.acks_on_timeout = (
+                cls.acks_on_failure_or_timeout
+                if cls.acks_on_failure_or_timeout is not None
+                else True
+            )
 
         # decorate with annotations from config.
         if not was_bound:

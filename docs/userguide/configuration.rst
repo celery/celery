@@ -616,10 +616,45 @@ has been executed, not *right before* (the default behavior).
 ``task_acks_on_failure_or_timeout``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. deprecated:: 6.0
+    Use :setting:`task_acks_on_failure` and :setting:`task_acks_on_timeout` instead.
+
 Default: Enabled
 
 When enabled messages for all tasks will be acknowledged even if they
 fail or time out.
+
+Configuring this setting only applies to tasks that are
+acknowledged **after** they have been executed and only if
+:setting:`task_acks_late` is enabled.
+
+.. setting:: task_acks_on_failure
+
+``task_acks_on_failure``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: :const:`None` (falls back to :setting:`task_acks_on_failure_or_timeout`)
+
+When enabled messages for tasks that fail will be acknowledged.
+When disabled failed task messages will be rejected without requeue.
+
+Configuring this setting only applies to tasks that are
+acknowledged **after** they have been executed and only if
+:setting:`task_acks_late` is enabled.
+
+.. setting:: task_acks_on_timeout
+
+``task_acks_on_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: :const:`None` (falls back to :setting:`task_acks_on_failure_or_timeout`)
+
+When enabled, messages for tasks that time out will be acknowledged.
+When disabled, timed-out task messages will be rejected and requeued.
 
 Configuring this setting only applies to tasks that are
 acknowledged **after** they have been executed and only if
@@ -995,6 +1030,38 @@ strings (this is the part of the URI that comes after the ``db+`` prefix).
 .. _`Connection String`:
     http://www.sqlalchemy.org/docs/core/engines.html#database-urls
 
+.. note::
+
+    If you are upgrading from Celery 5.6 or earlier, the ``date_done`` column
+    in ``celery_taskmeta`` and ``celery_tasksetmeta`` tables does not have a
+    database index. The built-in periodic task ``celery.backend_cleanup``
+    queries on ``date_done`` to delete expired task results, so adding an
+    index significantly improves cleanup performance on large tables.
+
+    Since SQLAlchemy's ``create_all()`` will not alter existing tables, you
+    will need to update your database schema. If you are using Alembic for
+    schema migrations, you can generate an empty revision and apply the
+    following operations:
+
+    .. code-block:: python
+
+        from alembic import op
+
+        def upgrade():
+            op.create_index('ix_celery_taskmeta_date_done', 'celery_taskmeta', ['date_done'])
+            op.create_index('ix_celery_tasksetmeta_date_done', 'celery_tasksetmeta', ['date_done'])
+
+        def downgrade():
+            op.drop_index('ix_celery_tasksetmeta_date_done', table_name='celery_tasksetmeta')
+            op.drop_index('ix_celery_taskmeta_date_done', table_name='celery_taskmeta')
+
+    Otherwise, you can add the indexes manually using SQL:
+
+    .. code-block:: sql
+
+        CREATE INDEX ix_celery_taskmeta_date_done ON celery_taskmeta (date_done);
+        CREATE INDEX ix_celery_tasksetmeta_date_done ON celery_tasksetmeta (date_done);
+
 .. setting:: database_create_tables_at_setup
 
 ``database_create_tables_at_setup``
@@ -1017,13 +1084,23 @@ Default: True by default.
 ``database_engine_options``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Default: ``{}`` (empty mapping).
+Default: ``{'pool_pre_ping': True, 'pool_recycle': 3600}``
+
+.. versionchanged:: 5.7
+
+    The default was changed from ``{}`` to include ``pool_pre_ping=True``
+    and ``pool_recycle=3600`` for improved connection health handling.
+    This helps prevent stale connection errors such as
+    ``(OperationalError) (2006, 'MySQL server has gone away')``.
 
 To specify additional SQLAlchemy database engine options you can use
 the :setting:`database_engine_options` setting::
 
     # echo enables verbose logging from SQLAlchemy.
     app.conf.database_engine_options = {'echo': True}
+
+    # To disable the default pool health options:
+    app.conf.database_engine_options = {'pool_pre_ping': False, 'pool_recycle': None}
 
 .. setting:: database_short_lived_sessions
 
