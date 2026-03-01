@@ -1561,18 +1561,24 @@ This can help identify connections in Redis monitoring tools.
 
 .. _conf-cassandra-result-backend:
 
-Cassandra/AstraDB backend settings
-----------------------------------
+Cassandra/ScyllaDB/AstraDB backend settings
+--------------------------------------------
 
 .. note::
 
     This Cassandra backend driver requires :pypi:`cassandra-driver`.
 
-    This backend can refer to either a regular Cassandra installation
-    or a managed Astra DB instance. Depending on which one, exactly one
-    between the :setting:`cassandra_servers` and
-    :setting:`cassandra_secure_bundle_path` settings must be provided
-    (but not both).
+    This backend can refer to either a regular Cassandra installation,
+    a ScyllaDB installation, or a managed Astra DB instance.
+
+    **ScyllaDB Compatibility:** ScyllaDB is a drop-in replacement for Cassandra
+    and works with the same backend driver and configuration. Simply use
+    ``scylladb://`` as the result backend URL, or use ``cassandra://`` - both
+    will work identically with ScyllaDB servers.
+
+    Depending on which database you use, exactly one between the
+    :setting:`cassandra_servers` and :setting:`cassandra_secure_bundle_path`
+    settings must be provided (but not both).
 
     To install, use :command:`pip`:
 
@@ -1751,6 +1757,26 @@ Example configuration (Astra DB)
     }
     cassandra_secure_bundle_path = '/path/to/secure-connect-bundle.zip'
     cassandra_entry_ttl = 86400
+
+Example configuration (ScyllaDB)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ScyllaDB is a drop-in replacement for Cassandra and uses the exact same
+configuration. You can use either the ``scylladb://`` or ``cassandra://``
+result backend URL:
+
+.. code-block:: python
+
+    result_backend = 'scylladb://'
+    cassandra_servers = ['localhost']
+    cassandra_keyspace = 'celery'
+    cassandra_table = 'tasks'
+    cassandra_read_consistency = 'QUORUM'
+    cassandra_write_consistency = 'QUORUM'
+    cassandra_entry_ttl = 86400
+
+The same Cassandra driver (``cassandra-driver``) is used for ScyllaDB.
+All configuration options documented for Cassandra work identically with ScyllaDB.
 
 Additional configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~
