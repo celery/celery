@@ -260,10 +260,12 @@ class test_default_logger:
             p.write('\n')
             assert sio.getvalue() == ''
             write_res = p.write('foo ')
+            p.flush()
             assert sio.getvalue() == 'foo \n'
             assert write_res == 4
             lines = ['baz', 'xuzzy']
             p.writelines(lines)
+            p.flush()
             for line in lines:
                 assert line in sio.getvalue()
             p.flush()
@@ -288,6 +290,7 @@ class test_default_logger:
             p.write(b'\n')
             assert str(sio.getvalue()) == ''
             write_res = p.write(b'foo ')
+            p.flush()
             assert str(sio.getvalue()) == 'foo \n'
             assert write_res == 4
             p.flush()
@@ -303,11 +306,45 @@ class test_default_logger:
         logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
                                    root=False)
         p = LoggingProxy(logger, loglevel=logging.ERROR)
+
         p._thread.recurse_protection = True
         try:
             assert p.write('FOOFO') == 0
         finally:
             p._thread.recurse_protection = False
+
+    def test_logging_proxy_reassembles_lines(self, restore_logging):
+        logger = self.setup_logger(
+            loglevel=logging.WARNING,
+            logfile=None,
+            root=False,
+        )
+
+        with conftest.wrap_logger(logger) as sio:
+            p = LoggingProxy(logger, loglevel=logging.WARNING)
+
+            p.write("raise NoSuchNameDefined()")
+            p.write("\n")
+
+            p.write("      ")
+            p.write("^")
+            p.write("^")
+            p.write("^")
+            p.write("^")
+            p.write("\n")
+
+            p.write("NameError: name 'NoSuchNameDefined' is not defined")
+            p.write("\n")
+
+            p.flush()
+
+            output = sio.getvalue().splitlines()
+
+            assert output == [
+                "raise NoSuchNameDefined()",
+                "      ^^^^",
+                "NameError: name 'NoSuchNameDefined' is not defined",
+            ]
 
 
 class test_task_logger(test_default_logger):
