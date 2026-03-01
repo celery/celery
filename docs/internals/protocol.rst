@@ -49,7 +49,8 @@ Definition
         'argsrepr': str repr(args),
         'kwargsrepr': str repr(kwargs),
         'origin': str nodename,
-        'replaced_task_nesting': int
+        'replaced_task_nesting': int,
+        'compression': string compression_method,
     }
 
     body = (
