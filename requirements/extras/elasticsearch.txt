@@ -1,2 +1,2 @@
 elasticsearch<=9.1.2
-elastic-transport<=9.1.0
+elastic-transport<=9.2.1
