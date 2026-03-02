@@ -460,43 +460,100 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             _meta = r._get_task_meta()
                             _children = _meta.get('children')
                             _callbacks = task_request.callbacks
-                            if _callbacks and not _children:
-                                if len(_callbacks) > 1:
-                                    sigs, groups = [], []
-                                    for sig in _callbacks:
-                                        sig = signature(sig, app=app)
-                                        if isinstance(sig, group):
-                                            groups.append(sig)
-                                        else:
-                                            sigs.append(sig)
-                                    for group_ in groups:
-                                        group_.apply_async(
-                                            (stored_retval,),
-                                            parent_id=uuid, root_id=_root_id,
-                                            priority=_priority,
-                                        )
-                                    if sigs:
-                                        group(sigs, app=app).apply_async(
-                                            (stored_retval,),
-                                            parent_id=uuid, root_id=_root_id,
-                                            priority=_priority,
-                                        )
-                                else:
-                                    signature(_callbacks[0], app=app).apply_async(
-                                        (stored_retval,),
-                                        parent_id=uuid, root_id=_root_id,
-                                        priority=_priority,
-                                    )
                             _chain = task_request.chain
-                            if _chain and not _children:
-                                _chsig = signature(_chain[-1], app=app)
-                                _chsig.apply_async(
-                                    (stored_retval,),
-                                    chain=_chain[:-1],
-                                    parent_id=uuid,
-                                    root_id=_root_id,
-                                    priority=_priority,
-                                )
+                            if (_callbacks or _chain) and not _children:
+                                # Mirror the normal success path by pushing task/request
+                                # context so dispatched signatures can register themselves
+                                # as children of this request.
+                                context_pushed = False
+                                try:
+                                    try:
+                                        push_task(task)
+                                        push_request(task_request)
+                                        context_pushed = True
+                                    except Exception:
+                                        logger.error(
+                                            'Failed to push task/request context for '
+                                            'deduplicated task %s',
+                                            task_request.id,
+                                            exc_info=True,
+                                        )
+                                    # Dispatch callbacks (if any) under the pushed context.
+                                    if _callbacks:
+                                        if len(_callbacks) > 1:
+                                            sigs, groups = [], []
+                                            for sig in _callbacks:
+                                                sig = signature(sig, app=app)
+                                                if isinstance(sig, group):
+                                                    groups.append(sig)
+                                                else:
+                                                    sigs.append(sig)
+                                            for group_ in groups:
+                                                group_.apply_async(
+                                                    (stored_retval,),
+                                                    parent_id=uuid, root_id=_root_id,
+                                                    priority=_priority,
+                                                )
+                                            if sigs:
+                                                group(sigs, app=app).apply_async(
+                                                    (stored_retval,),
+                                                    parent_id=uuid, root_id=_root_id,
+                                                    priority=_priority,
+                                                )
+                                        else:
+                                            signature(_callbacks[0], app=app).apply_async(
+                                                (stored_retval,),
+                                                parent_id=uuid, root_id=_root_id,
+                                                priority=_priority,
+                                            )
+                                    # Dispatch chain (if any) under the same context.
+                                    if _chain:
+                                        _chsig = signature(_chain[-1], app=app)
+                                        _chsig.apply_async(
+                                            (stored_retval,),
+                                            chain=_chain[:-1],
+                                            parent_id=uuid,
+                                            root_id=_root_id,
+                                            priority=_priority,
+                                        )
+                                finally:
+                                    if context_pushed:
+                                        try:
+                                            pop_request()
+                                        except Exception:
+                                            logger.error(
+                                                'Failed to pop request context for '
+                                                'deduplicated task %s',
+                                                task_request.id,
+                                                exc_info=True,
+                                            )
+                                        try:
+                                            pop_task()
+                                        except Exception:
+                                            logger.error(
+                                                'Failed to pop task context for '
+                                                'deduplicated task %s',
+                                                task_request.id,
+                                                exc_info=True,
+                                            )
+                                # If children were registered during dispatch, persist them
+                                # in the backend meta so future redeliveries see them.
+                                if getattr(task_request, 'children', None):
+                                    _meta['children'] = task_request.children
+                                    try:
+                                        app.backend.store_result(
+                                            task_request.id,
+                                            stored_retval,
+                                            states.SUCCESS,
+                                            request=task_request,
+                                        )
+                                    except Exception:
+                                        logger.error(
+                                            'Failed to persist children for '
+                                            'deduplicated task %s',
+                                            task_request.id,
+                                            exc_info=True,
+                                        )
                             successful_requests.add(task_request.id)
                         except MemoryError:
                             raise
