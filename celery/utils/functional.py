@@ -313,8 +313,6 @@ def _argsfromspec(spec, replace_defaults=True):
 
 
 if sys.version_info >= (3, 14):
-    import annotationlib as _annotationlib
-
     def _getfullargspec(fun):
         # In Python 3.14+, inspect.getfullargspec evaluates annotations by default
         # (PEP 649). This raises NameError for types only imported under TYPE_CHECKING,
