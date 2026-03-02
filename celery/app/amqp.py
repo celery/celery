@@ -549,7 +549,7 @@ class AMQP:
             ):
                 exchange, routing_key = '', qname
             elif exchange is None:
-                # not topic exchange, and exchange not undefined
+                # exchange is undefined (None): resolve from queue or default exchange/routing key
                 exchange = queue.exchange.name or default_exchange
                 routing_key = routing_key or queue.routing_key or default_rkey
             if not routing_key:
