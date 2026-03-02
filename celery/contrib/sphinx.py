@@ -49,7 +49,7 @@ import warnings
 from inspect import signature
 
 from docutils import nodes
-from sphinx.domains.python import PyFunction
+from sphinx.domains.python import PyFunction, PyXRefRole
 from sphinx.ext.autodoc import FunctionDocumenter
 
 from celery.app.task import BaseTask
@@ -130,6 +130,7 @@ def setup(app):
 
     app.add_autodocumenter(TaskDocumenter)
     app.add_directive_to_domain('py', 'task', TaskDirective)
+    app.add_role_to_domain('py', 'task', PyXRefRole(fix_parens=True))
     app.add_config_value('celery_task_prefix', '(task)', True)
     app.connect('autodoc-skip-member', autodoc_skip_member_handler)
 

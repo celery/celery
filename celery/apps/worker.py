@@ -17,7 +17,7 @@ from billiard.common import REMAP_SIGTERM
 from billiard.process import current_process
 from kombu.utils.encoding import safe_str
 
-from celery import VERSION_BANNER, platforms, signals
+from celery import VERSION_BANNER, _original_os_write, platforms, signals
 from celery.app import trace
 from celery.loaders.app import AppLoader
 from celery.platforms import EX_FAILURE, EX_OK, check_privileges, isatty
@@ -78,8 +78,14 @@ def active_thread_count():
 
 
 def safe_say(msg, f=sys.__stderr__):
+    """
+    Uses the original (unpatched) os.write to avoid issues with eventlet/gevent
+    monkey-patching. When using eventlet>=0.37.0, the patched os.write calls
+    hubs.trampoline() which raises RuntimeError if called from within the
+    hub's event loop (e.g., during signal handling).
+    """
     if hasattr(f, 'fileno') and f.fileno() is not None:
-        os.write(f.fileno(), f'\n{msg}\n'.encode())
+        _original_os_write(f.fileno(), f'\n{msg}\n'.encode())
 
 
 class Worker(WorkController):
