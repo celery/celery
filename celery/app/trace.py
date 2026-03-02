@@ -557,13 +557,14 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             successful_requests.add(task_request.id)
                         except MemoryError:
                             raise
-                        except Exception:
+                        except Exception as exc:
                             logger.error(
                                 'Failed to dispatch chain/callbacks for '
                                 'deduplicated task %s',
                                 task_request.id,
                                 exc_info=True,
                             )
+                            raise Reject(exc, requeue=True)
                         return trace_ok_t(R, I, T, Rstr)
 
             push_task(task)
@@ -709,6 +710,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                          exc_info=True)
         except MemoryError:
             raise
+        except Reject:
+            raise
         except Exception as exc:
             _signal_internal_error(task, uuid, args, kwargs, request, exc)
             if eager:
@@ -728,6 +731,8 @@ def trace_task(task, uuid, args, kwargs, request=None, **opts):
         if task.__trace__ is None:
             task.__trace__ = build_tracer(task.name, task, **opts)
         return task.__trace__(uuid, args, kwargs, request)
+    except Reject:
+        raise
     except Exception as exc:
         _signal_internal_error(task, uuid, args, kwargs, request, exc)
         return trace_ok_t(report_internal_error(task, exc), TraceInfo(FAILURE, exc), 0.0, None)

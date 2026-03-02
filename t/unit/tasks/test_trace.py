@@ -694,7 +694,8 @@ class test_trace(TraceCase):
         with patch('celery.canvas.maybe_signature') as mock_signature:
             mock_signature.return_value.apply_async.side_effect = RuntimeError('broker down')
             with patch('celery.app.trace.logger'):
-                trace(self.app, add, (1, 1), task_id=task_id, request=request_with_chain)
+                with pytest.raises(Reject):
+                    trace(self.app, add, (1, 1), task_id=task_id, request=request_with_chain)
 
         assert task_id not in successful_requests
 
@@ -892,7 +893,8 @@ class test_trace(TraceCase):
         with patch('celery.canvas.maybe_signature') as mock_signature:
             mock_signature.return_value.apply_async.side_effect = RuntimeError('broker down')
             with patch('celery.app.trace.logger') as mock_logger:
-                trace(self.app, add, (1, 1), task_id=task_id, request=request_with_chain)
+                with pytest.raises(Reject):
+                    trace(self.app, add, (1, 1), task_id=task_id, request=request_with_chain)
                 mock_logger.error.assert_called_once()
                 assert 'deduplicated task' in mock_logger.error.call_args[0][0]
 
