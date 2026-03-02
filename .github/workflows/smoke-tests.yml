@@ -13,6 +13,9 @@ on:
         type: string
         default: '["3.10", "3.11", "3.12", "3.13", "3.14", "3.14t"]'
 
+permissions:
+  contents: read
+
 jobs:
   testing-with:
     runs-on: blacksmith-4vcpu-ubuntu-2404
