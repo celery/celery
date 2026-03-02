@@ -10,7 +10,18 @@ from .session import ResultModelBase
 
 __all__ = ('Task', 'TaskExtended', 'TaskSet')
 
+
 DialectSpecificInteger = sa.Integer().with_variant(sa.BigInteger, 'mssql')
+
+
+def _get_utc_now():
+    """Return current UTC datetime.
+
+    This helper is used as a callable for SQLAlchemy column defaults
+    to ensure the timestamp is evaluated at INSERT/UPDATE time,
+    not at module import time.
+    """
+    return datetime.now(timezone.utc)
 
 
 class Task(ResultModelBase):
@@ -24,8 +35,8 @@ class Task(ResultModelBase):
     task_id = sa.Column(sa.String(155), unique=True)
     status = sa.Column(sa.String(50), default=states.PENDING)
     result = sa.Column(PickleType, nullable=True)
-    date_done = sa.Column(sa.DateTime, default=datetime.now(timezone.utc),
-                          onupdate=datetime.now(timezone.utc), nullable=True)
+    date_done = sa.Column(sa.DateTime, default=_get_utc_now,
+                          onupdate=_get_utc_now, nullable=True, index=True)
     traceback = sa.Column(sa.Text, nullable=True)
 
     def __init__(self, task_id):
@@ -86,8 +97,8 @@ class TaskSet(ResultModelBase):
                    autoincrement=True, primary_key=True)
     taskset_id = sa.Column(sa.String(155), unique=True)
     result = sa.Column(PickleType, nullable=True)
-    date_done = sa.Column(sa.DateTime, default=datetime.now(timezone.utc),
-                          nullable=True)
+    date_done = sa.Column(sa.DateTime, default=_get_utc_now,
+                          nullable=True, index=True)
 
     def __init__(self, taskset_id, result):
         self.taskset_id = taskset_id

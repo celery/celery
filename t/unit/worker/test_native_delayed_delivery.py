@@ -1,11 +1,14 @@
 import itertools
+import sys
 from logging import LogRecord
 from typing import Iterator
 from unittest.mock import MagicMock, Mock, patch
 
+if sys.version_info < (3, 11):  # pragma: no cover
+    from exceptiongroup import ExceptionGroup
+
 import pytest
 from amqp import NotFound
-from exceptiongroup import ExceptionGroup
 from kombu import Exchange, Queue
 from kombu.utils.functional import retry_over_time
 
