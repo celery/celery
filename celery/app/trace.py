@@ -409,6 +409,49 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         )
         return I, R, I.state, I.retval
 
+    def _dispatch_callbacks_and_chain(
+        retval, callbacks, chain, parent_id, root_id, priority,
+    ):
+        """Dispatch callbacks and chain for a completed task.
+
+        Shared by both the normal success path and the dedup fast-path
+        to keep dispatch logic in one place.
+        """
+        if callbacks:
+            if len(callbacks) > 1:
+                sigs, groups = [], []
+                for sig in callbacks:
+                    sig = signature(sig, app=app)
+                    if isinstance(sig, group):
+                        groups.append(sig)
+                    else:
+                        sigs.append(sig)
+                for group_ in groups:
+                    group_.apply_async(
+                        (retval,),
+                        parent_id=parent_id, root_id=root_id,
+                        priority=priority,
+                    )
+                if sigs:
+                    group(sigs, app=app).apply_async(
+                        (retval,),
+                        parent_id=parent_id, root_id=root_id,
+                        priority=priority,
+                    )
+            else:
+                signature(callbacks[0], app=app).apply_async(
+                    (retval,),
+                    parent_id=parent_id, root_id=root_id,
+                    priority=priority,
+                )
+        if chain:
+            _chsig = signature(chain[-1], app=app)
+            _chsig.apply_async(
+                (retval,), chain=chain[:-1],
+                parent_id=parent_id, root_id=root_id,
+                priority=priority,
+            )
+
     def trace_task(uuid, args, kwargs, request=None):
         # R      - is the possibly prepared return value.
         # I      - is the Info object.
@@ -457,106 +500,15 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             inherit_parent_priority else None
                         try:
                             stored_retval = r.result
-                            _meta = r._get_task_meta()
-                            _children = _meta.get('children')
+                            _children = r._get_task_meta().get('children')
                             _callbacks = task_request.callbacks
                             _chain = task_request.chain
                             if (_callbacks or _chain) and not _children:
-                                # Mirror the normal success path by pushing task/request
-                                # context so dispatched signatures can register themselves
-                                # as children of this request.
-                                task_pushed = False
-                                request_pushed = False
-                                try:
-                                    try:
-                                        push_task(task)
-                                        task_pushed = True
-                                        push_request(task_request)
-                                        request_pushed = True
-                                    except Exception:
-                                        logger.error(
-                                            'Failed to push task/request context for '
-                                            'deduplicated task %s',
-                                            task_request.id,
-                                            exc_info=True,
-                                        )
-                                    # Dispatch callbacks (if any) under the pushed context.
-                                    if _callbacks:
-                                        if len(_callbacks) > 1:
-                                            sigs, groups = [], []
-                                            for sig in _callbacks:
-                                                sig = signature(sig, app=app)
-                                                if isinstance(sig, group):
-                                                    groups.append(sig)
-                                                else:
-                                                    sigs.append(sig)
-                                            for group_ in groups:
-                                                group_.apply_async(
-                                                    (stored_retval,),
-                                                    parent_id=uuid, root_id=_root_id,
-                                                    priority=_priority,
-                                                )
-                                            if sigs:
-                                                group(sigs, app=app).apply_async(
-                                                    (stored_retval,),
-                                                    parent_id=uuid, root_id=_root_id,
-                                                    priority=_priority,
-                                                )
-                                        else:
-                                            signature(_callbacks[0], app=app).apply_async(
-                                                (stored_retval,),
-                                                parent_id=uuid, root_id=_root_id,
-                                                priority=_priority,
-                                            )
-                                    # Dispatch chain (if any) under the same context.
-                                    if _chain:
-                                        _chsig = signature(_chain[-1], app=app)
-                                        _chsig.apply_async(
-                                            (stored_retval,),
-                                            chain=_chain[:-1],
-                                            parent_id=uuid,
-                                            root_id=_root_id,
-                                            priority=_priority,
-                                        )
-                                finally:
-                                    if request_pushed:
-                                        try:
-                                            pop_request()
-                                        except Exception:
-                                            logger.error(
-                                                'Failed to pop request context for '
-                                                'deduplicated task %s',
-                                                task_request.id,
-                                                exc_info=True,
-                                            )
-                                    if task_pushed:
-                                        try:
-                                            pop_task()
-                                        except Exception:
-                                            logger.error(
-                                                'Failed to pop task context for '
-                                                'deduplicated task %s',
-                                                task_request.id,
-                                                exc_info=True,
-                                            )
-                                # If children were registered during dispatch, persist them
-                                # in the backend meta so future redeliveries see them.
-                                if getattr(task_request, 'children', None):
-                                    _meta['children'] = task_request.children
-                                    try:
-                                        app.backend.store_result(
-                                            task_request.id,
-                                            stored_retval,
-                                            states.SUCCESS,
-                                            request=task_request,
-                                        )
-                                    except Exception:
-                                        logger.error(
-                                            'Failed to persist children for '
-                                            'deduplicated task %s',
-                                            task_request.id,
-                                            exc_info=True,
-                                        )
+                                _dispatch_callbacks_and_chain(
+                                    stored_retval, _callbacks, _chain,
+                                    parent_id=uuid, root_id=_root_id,
+                                    priority=_priority,
+                                )
                             successful_requests.add(task_request.id)
                         except MemoryError:
                             raise
@@ -626,43 +578,12 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         # separately, so need to call them separately
                         # so that the trail's not added multiple times :(
                         # (Issue #1936)
-                        callbacks = task.request.callbacks
-                        if callbacks:
-                            if len(task.request.callbacks) > 1:
-                                sigs, groups = [], []
-                                for sig in callbacks:
-                                    sig = signature(sig, app=app)
-                                    if isinstance(sig, group):
-                                        groups.append(sig)
-                                    else:
-                                        sigs.append(sig)
-                                for group_ in groups:
-                                    group_.apply_async(
-                                        (retval,),
-                                        parent_id=uuid, root_id=root_id,
-                                        priority=task_priority
-                                    )
-                                if sigs:
-                                    group(sigs, app=app).apply_async(
-                                        (retval,),
-                                        parent_id=uuid, root_id=root_id,
-                                        priority=task_priority
-                                    )
-                            else:
-                                signature(callbacks[0], app=app).apply_async(
-                                    (retval,), parent_id=uuid, root_id=root_id,
-                                    priority=task_priority
-                                )
-
-                        # execute first task in chain
-                        chain = task_request.chain
-                        if chain:
-                            _chsig = signature(chain[-1], app=app)
-                            _chsig.apply_async(
-                                (retval,), chain=chain[:-1],
-                                parent_id=uuid, root_id=root_id,
-                                priority=task_priority
-                            )
+                        _dispatch_callbacks_and_chain(
+                            retval, task.request.callbacks,
+                            task_request.chain,
+                            parent_id=uuid, root_id=root_id,
+                            priority=task_priority,
+                        )
                         task.backend.mark_as_done(
                             uuid, retval, task_request, publish_result,
                         )
