@@ -313,37 +313,38 @@ def _argsfromspec(spec, replace_defaults=True):
 
 
 if sys.version_info >= (3, 14):
+    import annotationlib as _annotationlib
+
     def _getfullargspec(fun):
         # In Python 3.14+, inspect.getfullargspec evaluates annotations by default
-        # (PEP 649). This raises NameError for types only imported under TYPE_CHECKING,
-        # which getfullargspec then wraps as TypeError('unsupported callable').
-        # We don't need annotations here, so fall back to reading the code object directly.
-        try:
-            return inspect.getfullargspec(fun)
-        except TypeError:
-            pass
-
-        # Bound methods need their underlying function's code object.
-        func = getattr(fun, '__func__', fun)
-        code = func.__code__
-        CO_VARARGS = 0x04
-        CO_VARKEYWORDS = 0x08
-        nargs = code.co_argcount
-        nkwonly = code.co_kwonlyargcount
-        varnames = code.co_varnames
-        args = list(varnames[:nargs])
-        kwonlyargs = list(varnames[nargs:nargs + nkwonly])
-        offset = nargs + nkwonly
-        varargs = varnames[offset] if code.co_flags & CO_VARARGS else None
-        offset += bool(code.co_flags & CO_VARARGS)
-        varkw = varnames[offset] if code.co_flags & CO_VARKEYWORDS else None
+        # (PEP 649), raising NameError for TYPE_CHECKING-only types. We don't need
+        # annotations here, so use Format.STRING to avoid evaluation.
+        # For bound methods, use __func__ so that 'self' is included in args,
+        # matching the behaviour of getfullargspec on older Python versions.
+        target = getattr(fun, '__func__', fun)
+        sig = inspect.signature(target, annotation_format=_annotationlib.Format.STRING)
+        args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults = [], None, None, [], [], {}
+        for name, param in sig.parameters.items():
+            kind = param.kind
+            if kind in (param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD):
+                args.append(name)
+                if param.default is not param.empty:
+                    defaults.append(param.default)
+            elif kind == param.VAR_POSITIONAL:
+                varargs = name
+            elif kind == param.KEYWORD_ONLY:
+                kwonlyargs.append(name)
+                if param.default is not param.empty:
+                    kwonlydefaults[name] = param.default
+            elif kind == param.VAR_KEYWORD:
+                varkw = name
         return inspect.FullArgSpec(
             args=args,
             varargs=varargs,
             varkw=varkw,
-            defaults=func.__defaults__,
+            defaults=tuple(defaults) or None,
             kwonlyargs=kwonlyargs,
-            kwonlydefaults=func.__kwdefaults__,
+            kwonlydefaults=kwonlydefaults or None,
             annotations={},
         )
 else:
