@@ -58,6 +58,18 @@ __all__ = ('Celery',)
 
 logger = get_logger(__name__)
 
+if sys.version_info >= (3, 14):
+    import annotationlib
+
+    def _get_annotations(fun):
+        # In Python 3.14+, annotations are deferred by default (PEP 649).
+        # Accessing fun.__annotations__ evaluates them, raising NameError for
+        # types only available under TYPE_CHECKING. Use STRING format instead.
+        return inspect.get_annotations(fun, format=annotationlib.Format.STRING)
+else:
+    def _get_annotations(fun):
+        return fun.__annotations__
+
 BUILTIN_FIXUPS = {
     'celery.fixups.django:fixup',
 }
@@ -595,7 +607,7 @@ class Celery:
                 '_decorated': True,
                 '__doc__': fun.__doc__,
                 '__module__': fun.__module__,
-                '__annotations__': fun.__annotations__,
+                '__annotations__': _get_annotations(fun),
                 '__header__': self.type_checker(fun, bound=bind),
                 '__wrapped__': run}, **options))()
             # for some reason __qualname__ cannot be set in type()

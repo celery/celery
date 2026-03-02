@@ -1,5 +1,6 @@
 """Functional-style utilities."""
 import inspect
+import sys
 from collections import UserList
 from functools import partial
 from itertools import islice, tee, zip_longest
@@ -311,6 +312,46 @@ def _argsfromspec(spec, replace_defaults=True):
     ]))
 
 
+if sys.version_info >= (3, 14):
+    import annotationlib as _annotationlib
+
+    def _getfullargspec(fun):
+        # In Python 3.14+, inspect.getfullargspec evaluates annotations by default
+        # (PEP 649). This raises NameError for types only imported under TYPE_CHECKING,
+        # which getfullargspec then wraps as TypeError('unsupported callable').
+        # We don't need annotations here, so fall back to reading the code object directly.
+        try:
+            return inspect.getfullargspec(fun)
+        except TypeError:
+            pass
+
+        # Bound methods need their underlying function's code object.
+        func = getattr(fun, '__func__', fun)
+        code = func.__code__
+        CO_VARARGS = 0x04
+        CO_VARKEYWORDS = 0x08
+        nargs = code.co_argcount
+        nkwonly = code.co_kwonlyargcount
+        varnames = code.co_varnames
+        args = list(varnames[:nargs])
+        kwonlyargs = list(varnames[nargs:nargs + nkwonly])
+        offset = nargs + nkwonly
+        varargs = varnames[offset] if code.co_flags & CO_VARARGS else None
+        offset += bool(code.co_flags & CO_VARARGS)
+        varkw = varnames[offset] if code.co_flags & CO_VARKEYWORDS else None
+        return inspect.FullArgSpec(
+            args=args,
+            varargs=varargs,
+            varkw=varkw,
+            defaults=func.__defaults__,
+            kwonlyargs=kwonlyargs,
+            kwonlydefaults=func.__kwdefaults__,
+            annotations={},
+        )
+else:
+    _getfullargspec = inspect.getfullargspec
+
+
 def head_from_fun(fun: Callable[..., Any], bound: bool = False) -> str:
     """Generate signature function from actual function."""
     # we could use inspect.Signature here, but that implementation
@@ -329,7 +370,7 @@ def head_from_fun(fun: Callable[..., Any], bound: bool = False) -> str:
         name = fun.__name__
     definition = FUNHEAD_TEMPLATE.format(
         fun_name=name,
-        fun_args=_argsfromspec(inspect.getfullargspec(fun)),
+        fun_args=_argsfromspec(_getfullargspec(fun)),
         fun_value=1,
     )
     logger.debug(definition)
