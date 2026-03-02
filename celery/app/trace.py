@@ -465,12 +465,14 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                 # Mirror the normal success path by pushing task/request
                                 # context so dispatched signatures can register themselves
                                 # as children of this request.
-                                context_pushed = False
+                                task_pushed = False
+                                request_pushed = False
                                 try:
                                     try:
                                         push_task(task)
+                                        task_pushed = True
                                         push_request(task_request)
-                                        context_pushed = True
+                                        request_pushed = True
                                     except Exception:
                                         logger.error(
                                             'Failed to push task/request context for '
@@ -517,7 +519,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                             priority=_priority,
                                         )
                                 finally:
-                                    if context_pushed:
+                                    if request_pushed:
                                         try:
                                             pop_request()
                                         except Exception:
@@ -527,6 +529,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                                 task_request.id,
                                                 exc_info=True,
                                             )
+                                    if task_pushed:
                                         try:
                                             pop_task()
                                         except Exception:
