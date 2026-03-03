@@ -453,20 +453,12 @@ class Cluster(UserList):
         if not nodes:
             return
 
-        def _shutdown_single_node(node):
-            return list(self.shutdown_nodes([node], sig=sig, retry=retry))
-
-        max_threads = min(len(nodes), 64)
-        with ThreadPoolExecutor(max_workers=max_threads) as executor:
-            future_to_node = {
-                executor.submit(_shutdown_single_node, node): node for node in nodes
-            }
-            for future in as_completed(future_to_node):
-                down_nodes = future.result()
-                if down_nodes:
-                    for node in down_nodes:
-                        maybe_call(on_down, node)
-
+        # Run shutdown_nodes sequentially in the current thread to ensure
+        # that all lifecycle callbacks (which may write to stdout) are
+        # executed from a single thread and avoid interleaved/garbled output.
+        for node in nodes:
+            for down_node in self.shutdown_nodes([node], sig=sig, retry=retry):
+                maybe_call(on_down, down_node)
     def shutdown_nodes(self, nodes, sig=signal.SIGTERM, retry=None):
         P = set(nodes)
         maybe_call(self.on_stopping_preamble, nodes)
