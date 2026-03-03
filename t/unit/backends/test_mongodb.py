@@ -130,17 +130,21 @@ class test_MongoBackend:
                'celerydatabase?replicaSet=rs0')
         mb = MongoBackend(app=self.app, url=uri)
         assert mb.mongo_host == MONGODB_BACKEND_HOST
-        assert mb.options == dict(
-            mb._prepare_client_options(),
-            replicaset='rs0',
-        )
+        if 'replicaSet' in mb.options:  # pragma: no cover  # pymongo >= 4.14
+            replicaset_option = 'replicaSet'
+        else:  # pragma: no cover  # pymongo < 4.14
+            replicaset_option = 'replicaset'
+        assert mb.options == {
+            **mb._prepare_client_options(),
+            replicaset_option: 'rs0',
+        }
         assert mb.user == CELERY_USER
         assert mb.password == CELERY_PASSWORD
         assert mb.database_name == CELERY_DATABASE
 
         # same uri, change some parameters in backend settings
         self.app.conf.mongodb_backend_settings = {
-            'replicaset': 'rs1',
+            replicaset_option: 'rs1',
             'user': 'backenduser',
             'database': 'another_db',
             'options': {
@@ -149,11 +153,11 @@ class test_MongoBackend:
         }
         mb = MongoBackend(app=self.app, url=uri)
         assert mb.mongo_host == MONGODB_BACKEND_HOST
-        assert mb.options == dict(
-            mb._prepare_client_options(),
-            replicaset='rs1',
-            socketKeepAlive=True,
-        )
+        assert mb.options == {
+            **mb._prepare_client_options(),
+            replicaset_option: 'rs1',
+            'socketKeepAlive': True,
+        }
         assert mb.user == 'backenduser'
         assert mb.password == CELERY_PASSWORD
         assert mb.database_name == 'another_db'
@@ -222,11 +226,15 @@ class test_MongoBackend:
 
         with patch('dns.resolver.resolve', side_effect=resolver):
             mb = self.perform_seedlist_assertions()
-            assert mb.options == dict(
-                mb._prepare_client_options(),
-                replicaset='rs0',
-                tls=True
-            )
+            if 'replicaSet' in mb.options:  # pragma: no cover  # pymongo >= 4.14
+                replicaset_option = 'replicaSet'
+            else:  # pragma: no cover  # pymongo < 4.14
+                replicaset_option = 'replicaset'
+            assert mb.options == {
+                **mb._prepare_client_options(),
+                replicaset_option: 'rs0',
+                'tls': True,
+            }
 
     def perform_seedlist_assertions(self):
         mb = MongoBackend(app=self.app, url=MONGODB_SEEDLIST_URI)
@@ -299,12 +307,15 @@ class test_MongoBackend:
             mb = MongoBackend(app=self.app, url=uri)
             mock_Connection.return_value = sentinel.connection
             connection = mb._get_connection()
+            if 'authMechanism' in mb.options:  # pragma: no cover  # pymongo >= 4.14
+                authmechanism_option = 'authMechanism'
+            else:  # pragma: no cover  # pymongo < 4.14
+                authmechanism_option = 'authmechanism'
             mock_Connection.assert_called_once_with(
                 host=['localhost:27017'],
                 username=CELERY_USER,
                 password=CELERY_PASSWORD,
-                authmechanism='SCRAM-SHA-256',
-                **mb._prepare_client_options()
+                **{**mb._prepare_client_options(), authmechanism_option: 'SCRAM-SHA-256'}
             )
             assert sentinel.connection == connection
 
@@ -319,10 +330,13 @@ class test_MongoBackend:
                 'SCRAM-SHA-256 requires a username.')
             with pytest.raises(ConfigurationError):
                 mb._get_connection()
+            if 'authMechanism' in mb.options:  # pragma: no cover  # pymongo >= 4.14
+                authmechanism_option = 'authMechanism'
+            else:  # pragma: no cover  # pymongo < 4.14
+                authmechanism_option = 'authmechanism'
             mock_Connection.assert_called_once_with(
                 host=['localhost:27017'],
-                authmechanism='SCRAM-SHA-256',
-                **mb._prepare_client_options()
+                **{**mb._prepare_client_options(), authmechanism_option: 'SCRAM-SHA-256'}
             )
 
     @patch('celery.backends.mongodb.MongoBackend._get_connection')
@@ -376,7 +390,7 @@ class test_MongoBackend:
                                                             upsert=True)
         assert sentinel.result == ret_val
 
-        mock_collection.replace_one.side_effect = InvalidDocument()
+        mock_collection.replace_one.side_effect = InvalidDocument("bad")
         with pytest.raises(EncodeError):
             self.backend._store_result(
                 sentinel.task_id, sentinel.result, sentinel.status)
@@ -403,7 +417,7 @@ class test_MongoBackend:
         assert parameters['parent_id'] == sentinel.parent_id
         assert sentinel.result == ret_val
 
-        mock_collection.replace_one.side_effect = InvalidDocument()
+        mock_collection.replace_one.side_effect = InvalidDocument("bad")
         with pytest.raises(EncodeError):
             self.backend._store_result(
                 sentinel.task_id, sentinel.result, sentinel.status)

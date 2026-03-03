@@ -19,7 +19,7 @@ from celery.worker.consumer.gossip import Gossip
 from celery.worker.consumer.heart import Heart
 from celery.worker.consumer.mingle import Mingle
 from celery.worker.consumer.tasks import Tasks
-from celery.worker.state import active_requests
+from celery.worker.state import active_requests, successful_requests
 
 
 class ConsumerTestCase:
@@ -376,12 +376,11 @@ class test_Consumer(ConsumerTestCase):
         c = self.get_consumer()
         c.register_with_event_loop(Mock(name='loop'))
 
-    def test_on_close_clears_semaphore_timer_and_reqs(self):
+    def test_on_close_clears_semaphore_and_reqs(self):
         with patch('celery.worker.consumer.consumer.reserved_requests') as res:
             c = self.get_consumer()
             c.on_close()
             c.controller.semaphore.clear.assert_called_with()
-            c.timer.clear.assert_called_with()
             res.clear.assert_called_with()
             c.pool.flush.assert_called_with()
 
@@ -453,7 +452,7 @@ class test_Consumer(ConsumerTestCase):
             c.on_connection_error_after_connected(Mock())
 
     @pytest.mark.usefixtures('depends_on_current_app')
-    def test_cancel_all_unacked_requests(self):
+    def test_cancel_active_requests(self):
         c = self.get_consumer()
 
         mock_request_acks_late_not_acknowledged = Mock(id='1')
@@ -469,13 +468,35 @@ class test_Consumer(ConsumerTestCase):
         active_requests.add(mock_request_acks_late_acknowledged)
         active_requests.add(mock_request_acks_early)
 
-        c.cancel_all_unacked_requests()
+        c.cancel_active_requests()
 
-        mock_request_acks_late_not_acknowledged.cancel.assert_called_once_with(c.pool)
+        # acks_late unacknowledged tasks should be cancelled without RETRY
+        mock_request_acks_late_not_acknowledged.cancel.assert_called_once_with(c.pool, emit_retry=False)
+        # acks_late acknowledged tasks should NOT be cancelled
         mock_request_acks_late_acknowledged.cancel.assert_not_called()
-        mock_request_acks_early.cancel.assert_called_once_with(c.pool)
+        # Non-acks_late tasks should be cancelled normally (with RETRY)
+        mock_request_acks_early.cancel.assert_called_once_with(c.pool, emit_retry=True)
 
         active_requests.clear()
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_cancel_active_requests_preserves_successful_tasks(self):
+        c = self.get_consumer()
+
+        mock_successful_request = Mock(id='successful-task')
+        mock_successful_request.task.acks_late = True
+        mock_successful_request.acknowledged = False
+
+        active_requests.add(mock_successful_request)
+
+        successful_requests.add('successful-task')
+
+        try:
+            c.cancel_active_requests()
+            mock_successful_request.cancel.assert_not_called()
+        finally:
+            active_requests.clear()
+            successful_requests.clear()
 
     @pytest.mark.parametrize("broker_connection_retry", [True, False])
     @pytest.mark.parametrize("broker_connection_retry_on_startup", [None, False])

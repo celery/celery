@@ -173,7 +173,8 @@ class Sentinel(conftest.MockCallbacks):
         self.min_other_sentinels = min_other_sentinels
         self.connection_kwargs = connection_kwargs
 
-    def master_for(self, service_name, redis_class):
+    def master_for(self, service_name, redis_class, **kwargs):
+        self.master_for_kwargs = kwargs
         return random.choice(self.sentinels)
 
 
@@ -916,6 +917,98 @@ class test_RedisBackend(basetest_RedisBackend):
         with pytest.raises(BackendStoreError):
             self.b.set('key', 'x' * (self.b._MAX_STR_VALUE_SIZE + 1))
 
+    def test_driver_info_with_driverinfo_class(self):
+        """Test that DriverInfo is used when available."""
+        from celery import __version__
+
+        # Mock DriverInfo class and instance
+        mock_driver_info_instance = Mock()
+        mock_add_upstream_result = Mock()
+        mock_driver_info_instance.add_upstream_driver.return_value = mock_add_upstream_result
+
+        mock_driver_info_class = Mock(return_value=mock_driver_info_instance)
+
+        with patch('redis.DriverInfo', mock_driver_info_class, create=True):
+            x = self.Backend(app=self.app)
+
+            # Should have driver_info in connparams
+            assert 'driver_info' in x.connparams
+            assert x.connparams['driver_info'] == mock_add_upstream_result
+
+            # Verify DriverInfo() was called and add_upstream_driver was called
+            mock_driver_info_class.assert_called_once_with()
+            mock_driver_info_instance.add_upstream_driver.assert_called_once_with(
+                'celery',
+                __version__
+            )
+
+    def test_driver_info_fallback_to_lib_name(self):
+        """Test fallback to lib_name/lib_version when DriverInfo not available."""
+        from celery import __version__
+
+        # Ensure DriverInfo import fails
+        with patch('redis.DriverInfo', side_effect=ImportError, create=True):
+            # Mock redis.__version__ to test lib_version
+            with patch('redis.__version__', '5.0.8'):
+                x = self.Backend(app=self.app)
+
+                # Should have lib_name/lib_version in connparams
+                assert 'lib_name' in x.connparams
+                assert 'lib_version' in x.connparams
+                # lib_name should follow redis-py convention
+                assert x.connparams['lib_name'] == f'redis-py(celery_v{__version__})'
+                # lib_version should be redis-py version
+                assert x.connparams['lib_version'] == '5.0.8'
+                # Should NOT have driver_info
+                assert 'driver_info' not in x.connparams
+
+    def test_driver_info_fallback_with_attribute_error(self):
+        """Test fallback when DriverInfo raises AttributeError."""
+        from celery import __version__
+
+        # Ensure DriverInfo raises AttributeError
+        with patch('redis.DriverInfo', side_effect=AttributeError, create=True):
+            # Mock redis.__version__ to test lib_version
+            with patch('redis.__version__', '5.0.8'):
+                x = self.Backend(app=self.app)
+
+                # Should have lib_name/lib_version in connparams
+                assert 'lib_name' in x.connparams
+                assert 'lib_version' in x.connparams
+                assert x.connparams['lib_name'] == f'redis-py(celery_v{__version__})'
+                assert x.connparams['lib_version'] == '5.0.8'
+                # Should NOT have driver_info
+                assert 'driver_info' not in x.connparams
+
+    def test_driver_info_fallback_redis_version_unknown(self):
+        """Test fallback when redis.__version__ is not available."""
+        import redis
+
+        from celery import __version__
+
+        # Ensure DriverInfo import fails
+        with patch('redis.DriverInfo', side_effect=ImportError, create=True):
+            # Save original __version__ and delete it temporarily
+            original_version = getattr(redis, '__version__', None)
+            try:
+                if hasattr(redis, '__version__'):
+                    delattr(redis, '__version__')
+
+                x = self.Backend(app=self.app)
+
+                # Should have lib_name/lib_version in connparams
+                assert 'lib_name' in x.connparams
+                assert 'lib_version' in x.connparams
+                assert x.connparams['lib_name'] == f'redis-py(celery_v{__version__})'
+                # lib_version should be 'unknown' when redis.__version__ not available
+                assert x.connparams['lib_version'] == 'unknown'
+                # Should NOT have driver_info
+                assert 'driver_info' not in x.connparams
+            finally:
+                # Restore original __version__
+                if original_version is not None:
+                    redis.__version__ = original_version
+
 
 class test_RedisBackend_chords_simple(basetest_RedisBackend):
     @pytest.fixture(scope="class", autouse=True)
@@ -1285,7 +1378,7 @@ class test_RedisBackend_chords_complex(basetest_RedisBackend):
         self.b.client.zrange.assert_not_called()
         self.b.client.lrange.assert_not_called()
         # Confirm that the `GroupResult.restore` mock was called
-        complex_header_result.assert_called_once_with(request.group)
+        complex_header_result.assert_called_once_with(request.group, app=self.b.app)
         # Confirm that the callback was called with the `join()`ed group result
         if supports_native_join:
             expected_join = mock_result_obj.join_native
@@ -1417,3 +1510,56 @@ class test_SentinelBackend:
 
         from celery.backends.redis import SentinelManagedSSLConnection
         assert x.connparams['connection_class'] is SentinelManagedSSLConnection
+
+    def test_url_with_acl_credentials(self):
+        x = self.Backend(
+            'sentinel://myuser:mypass@github.com:123/1;'
+            'sentinel://myuser:mypass@github.com:124/1',
+            app=self.app,
+        )
+        assert x.connparams
+        assert "host" not in x.connparams
+        assert x.connparams['db'] == 1
+        assert "port" not in x.connparams
+        assert x.connparams['password'] == "mypass"
+        assert x.connparams['username'] == "myuser"
+        assert len(x.connparams['hosts']) == 2
+
+        expected_usernames = ["myuser", "myuser"]
+        found_usernames = [cp['username'] for cp in x.connparams['hosts']]
+        assert found_usernames == expected_usernames
+
+    def test_get_pool_with_acl_credentials(self):
+        x = self.Backend(
+            'sentinel://myuser:mypass@github.com:123/1;'
+            'sentinel://myuser:mypass@github.com:124/1',
+            app=self.app,
+        )
+        with patch.object(x, '_get_sentinel_instance') as mock_get_sentinel:
+            mock_sentinel = Mock()
+            mock_sentinel.master_for.return_value = Mock(connection_pool=Mock())
+            mock_get_sentinel.return_value = mock_sentinel
+
+            x._get_pool(**x.connparams)
+
+            mock_sentinel.master_for.assert_called_once()
+            call_kwargs = mock_sentinel.master_for.call_args[1]
+            assert call_kwargs.get('username') == 'myuser'
+            assert call_kwargs.get('password') == 'mypass'
+
+    def test_get_pool_with_password_only(self):
+        x = self.Backend(
+            'sentinel://:mypass@github.com:123/1',
+            app=self.app,
+        )
+        with patch.object(x, '_get_sentinel_instance') as mock_get_sentinel:
+            mock_sentinel = Mock()
+            mock_sentinel.master_for.return_value = Mock(connection_pool=Mock())
+            mock_get_sentinel.return_value = mock_sentinel
+
+            x._get_pool(**x.connparams)
+
+            mock_sentinel.master_for.assert_called_once()
+            call_kwargs = mock_sentinel.master_for.call_args[1]
+            assert 'username' not in call_kwargs
+            assert call_kwargs.get('password') == 'mypass'

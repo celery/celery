@@ -97,12 +97,19 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
                 next(loop)
             except StopIteration:
                 loop = hub.create_loop()
-    finally:
+    except Exception:
+        # Reset the hub on error (e.g. connection loss) to clean up
+        # stale file descriptors and callbacks from the old connection.
+        # We intentionally do NOT reset on normal exit (graceful shutdown)
+        # so that timers (e.g. heartbeat) keep firing while the pool drains.
+        # WorkerShutdown/WorkerTerminate extend SystemExit (not Exception)
+        # so they won't be caught here.
         try:
             hub.reset()
         except Exception as exc:  # pylint: disable=broad-except
             logger.exception(
                 'Error cleaning up after event loop: %r', exc)
+        raise
 
 
 def synloop(obj, connection, consumer, blueprint, hub, qos,

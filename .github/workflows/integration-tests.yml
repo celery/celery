@@ -11,7 +11,7 @@ on:
         description: 'JSON array of Python versions to test'
         required: false
         type: string
-        default: '["3.9", "3.14"]'
+        default: '["3.10", "3.11", "3.12", "3.13", "3.14", "3.14t"]'
       tox_environments:
         description: 'JSON array of tox environments to test'
         required: false
@@ -37,9 +37,10 @@ jobs:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
       rabbitmq:
-        image: rabbitmq
+        image: rabbitmq:management
         ports:
           - 5672:5672
+          - 15672:15672
         env:
           RABBITMQ_DEFAULT_USER: guest
           RABBITMQ_DEFAULT_PASS: guest
@@ -49,7 +50,7 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Set up Python ${{ matrix.python-version }}
         uses: useblacksmith/setup-python@v6
         with:
