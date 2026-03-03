@@ -2,8 +2,8 @@
 
 import datetime
 import time
-import warnings
 import types
+import warnings
 from collections import deque
 from contextlib import contextmanager
 from weakref import proxy
