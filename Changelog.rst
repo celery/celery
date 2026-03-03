@@ -276,7 +276,7 @@ What's Changed
 - Add xfail test for RabbitMQ quorum queue global QoS race condition (#9770)
 - fix: (#8786) time out when chord header fails with group body (#9788)
 - Fix #9738 : Add root_id and parent_id to .apply() (#9784)
-- Replace DelayedDelivery connection creation to use context manger (#9793)
+- Replace DelayedDelivery connection creation to use context manager (#9793)
 - Fix #9794: Pydantic integration fails with __future__.annotations. (#9795)
 - add go and rust implementation in docs (#9800)
 - Fix memory leak in exception handling (Issue #8882) (#9799)

@@ -1031,7 +1031,7 @@ News
 - **Beat**: No longer attempts to upgrade a newly created database file
   (Issue #1923).
 
-- **Beat**: New setting :setting:``CELERYBEAT_SYNC_EVERY`` can be be used
+- **Beat**: New setting :setting:``CELERYBEAT_SYNC_EVERY`` can be used
   to control file sync by specifying the number of tasks to send between
   each sync.
 

@@ -268,7 +268,7 @@ Group result ordering
 
 Versions of Celery up to and including 4.4.6 used an unsorted list to store
 result objects for groups in the Redis backend. This can cause those results to
-be be returned in a different order to their associated tasks in the original
+be returned in a different order to their associated tasks in the original
 group instantiation. Celery 4.4.7 introduced an opt-in behaviour which fixes
 this issue and ensures that group results are returned in the same order the
 tasks were defined, matching the behaviour of other backends. In Celery 5.0

@@ -453,6 +453,62 @@ class test_asynloop:
 
         x.hub.timer.call_repeatedly.assert_not_called()
 
+    def test_hub_reset_on_connection_error(self):
+        x = X(self.app)
+        x.hub.readers = {6: Mock()}
+        x.hub.timer._queue = [1]
+        x.hub.reset = Mock(name='hub.reset()')
+        x.close_then_error(x.hub.poller.poll)
+        x.hub.fire_timers.return_value = 33.37
+        poller = x.hub.poller
+        poller.poll.return_value = []
+        with pytest.raises(socket.error):
+            asynloop(*x.args)
+        x.hub.reset.assert_called_once()
+
+    def test_hub_not_reset_on_graceful_shutdown(self):
+        x = X(self.app)
+        x.hub.reset = Mock(name='hub.reset()')
+        x.hub.on_tick.add(x.closer(mod=2))
+        asynloop(*x.args)
+        x.hub.reset.assert_not_called()
+
+    def test_hub_not_reset_on_worker_shutdown(self):
+        x = X(self.app)
+        x.hub.reset = Mock(name='hub.reset()')
+        state.should_stop = 303
+        try:
+            with pytest.raises(WorkerShutdown):
+                asynloop(*x.args)
+        finally:
+            state.should_stop = None
+        x.hub.reset.assert_not_called()
+
+    def test_hub_not_reset_on_worker_terminate(self):
+        x = X(self.app)
+        x.hub.reset = Mock(name='hub.reset()')
+        state.should_terminate = True
+        try:
+            with pytest.raises(WorkerTerminate):
+                asynloop(*x.args)
+        finally:
+            state.should_terminate = None
+        x.hub.reset.assert_not_called()
+
+    def test_hub_reset_error_still_reraises_original(self):
+        x = X(self.app)
+        x.hub.readers = {6: Mock()}
+        x.hub.timer._queue = [1]
+        x.hub.reset = Mock(name='hub.reset()', side_effect=RuntimeError('reset failed'))
+        x.close_then_error(x.hub.poller.poll)
+        x.hub.fire_timers.return_value = 33.37
+        poller = x.hub.poller
+        poller.poll.return_value = []
+        # The original socket.error should still be raised, not the RuntimeError from reset()
+        with pytest.raises(socket.error):
+            asynloop(*x.args)
+        x.hub.reset.assert_called_once()
+
 
 class test_synloop:
 

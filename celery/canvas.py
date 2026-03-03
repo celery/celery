@@ -7,6 +7,7 @@
 
 import itertools
 import operator
+import types
 import warnings
 from abc import ABCMeta, abstractmethod
 from collections import deque
@@ -809,6 +810,8 @@ class Signature(dict):
         """
         args, kwargs, _ = self._merge(args, kwargs, {}, force=True)
         return reprcall(self['task'], args, kwargs)
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
     def __deepcopy__(self, memo):
         memo[id(self)] = self
