@@ -8,6 +8,21 @@ This document contains change notes for bugfix & new features
 in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
 an overview of what's new in Celery 5.6.
 
+.. _version-5.6.2:
+
+5.6.2
+=====
+
+:release-date: 2026-01-04
+:release-by: Tomer Nosrati
+
+What's Changed
+~~~~~~~~~~~~~~
+
+- Fix recursive WorkController instantiation in DjangoWorkerFixup + AttributeError when pool_cls is a string (#10045)
+- Bugfix: Revoked tasks now immediately update backend status to REVOKED (#9869)
+- Prepare for release: v5.6.2 (#10049)
+
 .. _version-5.6.1:
 
 5.6.1
@@ -261,7 +276,7 @@ What's Changed
 - Add xfail test for RabbitMQ quorum queue global QoS race condition (#9770)
 - fix: (#8786) time out when chord header fails with group body (#9788)
 - Fix #9738 : Add root_id and parent_id to .apply() (#9784)
-- Replace DelayedDelivery connection creation to use context manger (#9793)
+- Replace DelayedDelivery connection creation to use context manager (#9793)
 - Fix #9794: Pydantic integration fails with __future__.annotations. (#9795)
 - add go and rust implementation in docs (#9800)
 - Fix memory leak in exception handling (Issue #8882) (#9799)
