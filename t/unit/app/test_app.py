@@ -831,6 +831,7 @@ class test_App:
             assert typing.get_type_hints(foo) == {
                 'parameter': int, 'return': type(None)}
 
+    @pytest.mark.skipif(sys.version_info < (3, 14), reason="PEP 649 deferred annotations require Python 3.14+")
     def test_task_with_type_checking_annotation(self):
         # Regression test for https://github.com/celery/celery/discussions/10099
         # On Python 3.14+, annotations are deferred (PEP 649). Registering a task

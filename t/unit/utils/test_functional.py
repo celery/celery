@@ -1,4 +1,5 @@
 import collections
+import sys
 
 import pytest
 from kombu.utils.functional import lazy
@@ -368,6 +369,7 @@ class test_head_from_fun:
 
         g(b=3)
 
+    @pytest.mark.skipif(sys.version_info < (3, 14), reason="PEP 649 deferred annotations require Python 3.14+")
     def test_type_checking_annotation(self):
         # Regression test for https://github.com/celery/celery/discussions/10099
         # On Python 3.14+, annotations are deferred (PEP 649). Functions with
