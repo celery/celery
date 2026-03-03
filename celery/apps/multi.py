@@ -5,6 +5,7 @@ import shlex
 import signal
 import sys
 from collections import OrderedDict, UserList, defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import partial
 from subprocess import Popen
 from time import sleep
@@ -449,10 +450,15 @@ class Cluster(UserList):
     def _stop_nodes(self, retry=None, on_down=None, sig=signal.SIGTERM):
         on_down = on_down if on_down is not None else self.on_node_down
         nodes = list(self.getpids(on_down=on_down))
-        if nodes:
-            for node in self.shutdown_nodes(nodes, sig=sig, retry=retry):
-                maybe_call(on_down, node)
+        if not nodes:
+            return
 
+        # Run shutdown_nodes sequentially in the current thread to ensure
+        # that all lifecycle callbacks (which may write to stdout) are
+        # executed from a single thread and avoid interleaved/garbled output.
+        for node in nodes:
+            for down_node in self.shutdown_nodes([node], sig=sig, retry=retry):
+                maybe_call(on_down, down_node)
     def shutdown_nodes(self, nodes, sig=signal.SIGTERM, retry=None):
         P = set(nodes)
         maybe_call(self.on_stopping_preamble, nodes)
