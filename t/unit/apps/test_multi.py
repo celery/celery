@@ -473,7 +473,7 @@ class test_Cluster_stop_nodes_concurrent:
 
     def test_stop_nodes_preserves_sig_and_retry(self):
         nodes = [('n1', 101)]
-        custom_sig = 'SIGUSR1'
+        custom_sig = signal.SIGUSR1
         custom_retry = 5
 
         with patch.object(self.cluster, 'getpids', return_value=nodes):
