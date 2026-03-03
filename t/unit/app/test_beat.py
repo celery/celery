@@ -441,6 +441,17 @@ class test_Scheduler:
         scheduler.tick()
         assert scheduler._heap[0].entry.schedule == schedule_10
 
+    def test_due_ticks_do_not_rebuild_heap_without_schedule_change(self):
+        scheduler = mScheduler(app=self.app)
+        scheduler.add(name='test_due_ticks_do_not_rebuild_heap',
+                      schedule=always_due)
+        with patch.object(
+            scheduler, 'populate_heap', wraps=scheduler.populate_heap,
+        ) as populate_heap:
+            assert scheduler.tick() == 0
+            assert scheduler.tick() == 0
+        assert populate_heap.call_count == 1
+
     def test_schedule_no_remain(self):
         scheduler = mScheduler(app=self.app)
         scheduler.add(name='test_schedule_no_remain',
