@@ -266,9 +266,6 @@ Features
 .. figure:: ../images/dashboard.png
    :width: 700px
 
-.. figure:: ../images/monitor.png
-   :width: 700px
-
 More screenshots_:
 
 .. _screenshots: https://github.com/mher/flower/tree/master/docs/screenshots
@@ -302,9 +299,9 @@ Broker URL can also be passed through the
 
 .. code-block:: console
 
-    $ celery flower --broker=amqp://guest:guest@localhost:5672//
+    $ celery --broker=amqp://guest:guest@localhost:5672// flower
     or
-    $ celery flower --broker=redis://guest:guest@localhost:6379/0
+    $ celery --broker=redis://guest:guest@localhost:6379/0 flower
 
 Then, you can visit flower in your web browser :
 
@@ -356,7 +353,7 @@ and it includes a tool to dump events to :file:`stdout`:
 
     $ celery -A proj events --dump
 
-For a complete list of options use :option:`--help <celery --help>`:
+For a complete list of options use :option:`!--help`:
 
 .. code-block:: console
 
@@ -462,6 +459,18 @@ The default queue is named `celery`. To get all available queues, invoke:
     database numbers to separate Celery applications from each other (virtual
     hosts), but this won't affect the monitoring events used by for example
     Flower as Redis pub/sub commands are global rather than database based.
+
+.. _monitoring-prometheus:
+
+Prometheus
+=========
+
+While Prometheus monitoring is not a native part of Celery,
+you can easily monitor your Celery workers using Prometheus via Flower.
+Flower also provides pre-made Grafana dashboards to easily graph the amount
+of tasks, workers and other instrumental statistics.
+
+To set up Prometheus, refer to the Flower documentation: https://flower.readthedocs.io/en/latest/prometheus-integration.html
 
 .. _monitoring-munin:
 
@@ -739,7 +748,7 @@ Sent if the execution of the task failed.
 task-rejected
 ~~~~~~~~~~~~~
 
-:signature: ``task-rejected(uuid, requeued)``
+:signature: ``task-rejected(uuid, requeue)``
 
 The task was rejected by the worker, possibly to be re-queued or moved to a
 dead letter queue.
@@ -817,3 +826,24 @@ worker-offline
 :signature: ``worker-offline(hostname, timestamp, freq, sw_ident, sw_ver, sw_sys)``
 
 The worker has disconnected from the broker.
+
+Mailbox Configuration (Advanced)
+--------------------------------
+
+Celery uses `kombu.pidbox.Mailbox` internally to send control and broadcast commands
+to workers.
+
+.. versionadded:: Kombu 5.6.0
+
+Advanced users can configure the behavior of this mailbox by customizing how it is created.
+The following parameters are now supported by `Mailbox`:
+
+- ``durable`` (default: ``False``): If set to ``True``, the control exchanges will survive broker restarts.
+- ``exclusive`` (default: ``False``): If set to ``True``, the exchanges will be usable by only one connection.
+
+.. warning::
+
+    Setting both ``durable=True`` and ``exclusive=True`` is not permitted and will
+    raise an error, as these two options are mutually incompatible in AMQP.
+
+See :setting:`event_queue_durable` and :setting:`event_queue_exclusive` for advanced configuration.

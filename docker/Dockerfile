@@ -1,16 +1,19 @@
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 
-ENV PYTHONUNBUFFERED 1
-ENV PYTHONIOENCODING UTF-8
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONIOENCODING=UTF-8
 
 ARG DEBIAN_FRONTEND=noninteractive
 
 # Pypy3 is installed from a package manager because it takes so long to build.
 RUN apt-get update && apt-get install -y build-essential \
     libcurl4-openssl-dev \
+    apt-utils \
+    debconf \
     libffi-dev \
     tk-dev \
     xz-utils \
+    ca-certificates \
     curl \
     lsb-release \
     git \
@@ -34,14 +37,18 @@ RUN apt-get update && apt-get install -y build-essential \
 
 # Setup variables. Even though changing these may cause unnecessary invalidation of
 # unrelated elements, grouping them together makes the Dockerfile read better.
-ENV PROVISIONING /provisioning
+ENV PROVISIONING=/provisioning
+ENV PIP_NO_CACHE_DIR=off
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PIP_PREFER_BINARY=1
+
 
 ARG CELERY_USER=developer
 
 # Check for mandatory build arguments
 RUN : "${CELERY_USER:?CELERY_USER build argument needs to be set and non-empty.}"
 
-ENV HOME /home/$CELERY_USER
+ENV HOME=/home/$CELERY_USER
 ENV PATH="$HOME/.pyenv/bin:$PATH"
 
 # Copy and run setup scripts
@@ -50,14 +57,24 @@ WORKDIR $PROVISIONING
 # Scripts will lose their executable flags on copy. To avoid the extra instructions
 # we call the shell directly.
 #RUN sh install-couchbase.sh
-COPY docker/scripts/create-linux-user.sh .
-RUN sh create-linux-user.sh
+RUN useradd -m -s /bin/bash $CELERY_USER
 
 # Swap to the celery user so packages and celery are not installed as root.
 USER $CELERY_USER
 
-COPY docker/scripts/install-pyenv.sh .
-RUN sh install-pyenv.sh
+# Install pyenv
+RUN curl https://pyenv.run | bash
+
+# Install required Python versions
+RUN pyenv install 3.13 && \
+    pyenv install 3.12 && \
+    pyenv install 3.11 && \
+    pyenv install 3.10 && \
+    pyenv install pypy3.11
+
+
+# Set global Python versions
+RUN pyenv global 3.13 3.12 3.11 3.10 pypy3.11
 
 # Install celery
 WORKDIR $HOME
@@ -66,47 +83,85 @@ COPY --chown=1000:1000 docker/entrypoint /entrypoint
 RUN chmod gu+x /entrypoint
 
 # Define the local pyenvs
-RUN pyenv local python3.9 python3.8 python3.7 python3.10
+RUN pyenv local 3.13 3.12 3.11 3.10 pypy3.11
 
-RUN pyenv exec python3.9 -m pip install --upgrade pip setuptools wheel && \
-    pyenv exec python3.8 -m pip install --upgrade pip setuptools wheel && \
-    pyenv exec python3.7 -m pip install --upgrade pip setuptools wheel && \
-    pyenv exec python3.10 -m pip install --upgrade pip setuptools wheel
+RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
+    pyenv exec python3.13 -m pip install --upgrade pip setuptools wheel && \
+    pyenv exec python3.12 -m pip install --upgrade pip setuptools wheel && \
+    pyenv exec python3.11 -m pip install --upgrade pip setuptools wheel && \
+    pyenv exec python3.10 -m pip install --upgrade pip setuptools wheel && \
+    pyenv exec pypy3.11 -m pip install --upgrade pip setuptools wheel
 
-# Setup one celery environment for basic development use
-RUN pyenv exec python3.9 -m pip install \
-  -r requirements/dev.txt \
-  -r requirements/test.txt \
-  -r requirements/test-ci-default.txt \
-  -r requirements/docs.txt \
-  -r requirements/test-integration.txt \
-  -r requirements/pkgutils.txt && \
-  pyenv exec python3.8 -m pip install \
-  -r requirements/dev.txt \
-  -r requirements/test.txt \
-  -r requirements/test-ci-default.txt \
-  -r requirements/docs.txt \
-  -r requirements/test-integration.txt \
-  -r requirements/pkgutils.txt && \
-  pyenv exec python3.7 -m pip install \
-  -r requirements/dev.txt \
-  -r requirements/test.txt \
-  -r requirements/test-ci-default.txt \
-  -r requirements/docs.txt \
-  -r requirements/test-integration.txt \
-  -r requirements/pkgutils.txt && \
-  pyenv exec python3.10 -m pip install \
-  -r requirements/dev.txt \
-  -r requirements/test.txt \
-  -r requirements/test-ci-default.txt \
-  -r requirements/docs.txt \
-  -r requirements/test-integration.txt \
-  -r requirements/pkgutils.txt
- 
+# Install requirements first to leverage Docker layer caching
+# Split into separate RUN commands to reduce memory pressure and improve layer caching
+RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
+    pyenv exec python3.13 -m pip install -r requirements/default.txt \
+    -r requirements/dev.txt \
+    -r requirements/docs.txt \
+    -r requirements/pkgutils.txt \
+    -r requirements/test-ci-base.txt \
+    -r requirements/test-ci-default.txt \
+    -r requirements/test-integration.txt \
+    -r requirements/test.txt \
+    --build-constraint requirements/constraints.txt
+
+RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
+    pyenv exec python3.12 -m pip install -r requirements/default.txt \
+    -r requirements/dev.txt \
+    -r requirements/docs.txt \
+    -r requirements/pkgutils.txt \
+    -r requirements/test-ci-base.txt \
+    -r requirements/test-ci-default.txt \
+    -r requirements/test-integration.txt \
+    -r requirements/test.txt \
+    --build-constraint requirements/constraints.txt
+
+RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
+    pyenv exec python3.11 -m pip install -r requirements/default.txt \
+    -r requirements/dev.txt \
+    -r requirements/docs.txt \
+    -r requirements/pkgutils.txt \
+    -r requirements/test-ci-base.txt \
+    -r requirements/test-ci-default.txt \
+    -r requirements/test-integration.txt \
+    -r requirements/test.txt \
+    --build-constraint requirements/constraints.txt
+
+RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
+    pyenv exec python3.10 -m pip install -r requirements/default.txt \
+    -r requirements/dev.txt \
+    -r requirements/docs.txt \
+    -r requirements/pkgutils.txt \
+    -r requirements/test-ci-base.txt \
+    -r requirements/test-ci-default.txt \
+    -r requirements/test-integration.txt \
+    -r requirements/test.txt \
+    --build-constraint requirements/constraints.txt
+
+RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
+    pyenv exec pypy3.11 -m pip install -r requirements/default.txt \
+    -r requirements/dev.txt \
+    -r requirements/docs.txt \
+    -r requirements/pkgutils.txt \
+    -r requirements/test-ci-base.txt \
+    -r requirements/test-ci-default.txt \
+    -r requirements/test-integration.txt \
+    -r requirements/test.txt \
+    --build-constraint requirements/constraints.txt
 
 COPY --chown=1000:1000 . $HOME/celery
 
+# Install celery in editable mode (dependencies already installed above)
+RUN --mount=type=cache,target=/home/$CELERY_USER/.cache/pip \
+    pyenv exec python3.13 -m pip install --no-deps -e $HOME/celery && \
+    pyenv exec python3.12 -m pip install --no-deps -e $HOME/celery && \
+    pyenv exec python3.11 -m pip install --no-deps -e $HOME/celery && \
+    pyenv exec python3.10 -m pip install --no-deps -e $HOME/celery && \
+    pyenv exec pypy3.11 -m pip install --no-deps -e $HOME/celery
+
 WORKDIR $HOME/celery
+
+RUN git config --global --add safe.directory /home/developer/celery
 
 # Setup the entrypoint, this ensures pyenv is initialized when a container is started
 # and that any compiled files from earlier steps or from mounts are removed to avoid

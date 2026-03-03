@@ -11,6 +11,11 @@ from .utils import get_digest_algorithm, reraise_errors
 
 __all__ = ('SecureSerializer', 'register_auth')
 
+# Note: we guarantee that this value won't appear in the serialized data,
+# so we can use it as a separator.
+# If you change this value, make sure it's not present in the serialized data.
+DEFAULT_SEPARATOR = str_to_bytes("\x00\x01")
+
 
 class SecureSerializer:
     """Signed serializer."""
@@ -29,7 +34,8 @@ class SecureSerializer:
         assert self._cert is not None
         with reraise_errors('Unable to serialize: {0!r}', (Exception,)):
             content_type, content_encoding, body = dumps(
-                bytes_to_str(data), serializer=self._serializer)
+                data, serializer=self._serializer)
+
             # What we sign is the serialized body, not the body itself.
             # this way the receiver doesn't have to decode the contents
             # to verify the signature (and thus avoiding potential flaws
@@ -48,43 +54,26 @@ class SecureSerializer:
                                        payload['signer'],
                                        payload['body'])
             self._cert_store[signer].verify(body, signature, self._digest)
-        return loads(bytes_to_str(body), payload['content_type'],
+        return loads(body, payload['content_type'],
                      payload['content_encoding'], force=True)
 
     def _pack(self, body, content_type, content_encoding, signer, signature,
-              sep=str_to_bytes('\x00\x01')):
+              sep=DEFAULT_SEPARATOR):
         fields = sep.join(
-            ensure_bytes(s) for s in [signer, signature, content_type,
-                                      content_encoding, body]
+            ensure_bytes(s) for s in [b64encode(signer), b64encode(signature),
+                                      content_type, content_encoding, body]
         )
         return b64encode(fields)
 
-    def _unpack(self, payload, sep=str_to_bytes('\x00\x01')):
+    def _unpack(self, payload, sep=DEFAULT_SEPARATOR):
         raw_payload = b64decode(ensure_bytes(payload))
-        first_sep = raw_payload.find(sep)
-
-        signer = raw_payload[:first_sep]
-        signer_cert = self._cert_store[signer]
-
-        # shift 3 bits right to get signature length
-        # 2048bit rsa key has a signature length of 256
-        # 4096bit rsa key has a signature length of 512
-        sig_len = signer_cert.get_pubkey().key_size >> 3
-        sep_len = len(sep)
-        signature_start_position = first_sep + sep_len
-        signature_end_position = signature_start_position + sig_len
-        signature = raw_payload[
-            signature_start_position:signature_end_position
-        ]
-
-        v = raw_payload[signature_end_position + sep_len:].split(sep)
-
+        v = raw_payload.split(sep, maxsplit=4)
         return {
-            'signer': signer,
-            'signature': signature,
-            'content_type': bytes_to_str(v[0]),
-            'content_encoding': bytes_to_str(v[1]),
-            'body': bytes_to_str(v[2]),
+            'signer': b64decode(v[0]),
+            'signature': b64decode(v[1]),
+            'content_type': bytes_to_str(v[2]),
+            'content_encoding': bytes_to_str(v[3]),
+            'body': v[4],
         }
 
 

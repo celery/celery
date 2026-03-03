@@ -23,7 +23,7 @@ class test_unpickle_task:
 
 class test_TaskRegistry:
 
-    def setup(self):
+    def setup_method(self):
         self.mytask = self.app.task(name='A', shared=False)(returns)
         self.missing_name_task = self.app.task(
             name=None, shared=False)(returns)

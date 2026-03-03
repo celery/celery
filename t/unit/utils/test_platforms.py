@@ -21,7 +21,7 @@ from t.unit import conftest
 
 try:
     import resource
-except ImportError:  # pragma: no cover
+except ImportError:
     resource = None
 
 
@@ -691,6 +691,15 @@ class test_Pidfile:
         p = Pidfile('/var/pid')
         p.read_pid = Mock()
         p.read_pid.return_value = None
+        p.remove = Mock()
+
+        assert p.remove_if_stale()
+        p.remove.assert_called_with()
+
+    def test_remove_if_stale_same_pid(self):
+        p = Pidfile('/var/pid')
+        p.read_pid = Mock()
+        p.read_pid.return_value = os.getpid()
         p.remove = Mock()
 
         assert p.remove_if_stale()

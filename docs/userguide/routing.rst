@@ -276,7 +276,7 @@ This means that even though there are 10 (0-9) priority levels, these are
 consolidated into 4 levels by default to save resources. This means that a
 queue named celery will really be split into 4 queues.
 
-The highest priority queue will be named celery, and the the other queues will
+The highest priority queue will be named celery, and the other queues will
 have a separator (by default `\x06\x16`) and their priority number appended to
 the queue name.
 
@@ -304,8 +304,8 @@ The config above will give you these queue names:
 
 
 That said, note that this will never be as good as priorities implemented at the
-server level, and may be approximate at best. But it may still be good enough
-for your application.
+broker server level, and may be approximate at best. But it may still be good
+enough for your application.
 
 
 AMQP Primer

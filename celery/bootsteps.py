@@ -13,7 +13,7 @@ from .utils.log import get_logger
 
 try:
     from greenlet import GreenletExit
-except ImportError:  # pragma: no cover
+except ImportError:
     IGNORE_ERRORS = ()
 else:
     IGNORE_ERRORS = (GreenletExit,)

@@ -1,5 +1,4 @@
 import logging
-from collections import defaultdict
 from contextlib import contextmanager
 from unittest.mock import ANY, Mock, patch
 
@@ -18,7 +17,7 @@ from celery.worker.strategy import hybrid_to_proto2, proto1_to_proto2
 
 class test_proto1_to_proto2:
 
-    def setup(self):
+    def setup_method(self):
         self.message = Mock(name='message')
         self.body = {
             'args': (1,),
@@ -58,7 +57,7 @@ class test_proto1_to_proto2:
 
 class test_default_strategy_proto2:
 
-    def setup(self):
+    def setup_method(self):
         @self.app.task(shared=False)
         def add(x, y):
             return x + y
@@ -99,8 +98,8 @@ class test_default_strategy_proto2:
             assert not self.was_reserved()
             called = self.consumer.timer.call_at.called
             if called:
-                assert self.consumer.timer.call_at.call_args[0][1] == \
-                    self.consumer._limit_post_eta
+                callback = self.consumer.timer.call_at.call_args[0][1]
+                assert callback == self.consumer._limit_post_eta
             return called
 
         def was_scheduled(self):
@@ -117,7 +116,7 @@ class test_default_strategy_proto2:
             if self.was_rate_limited():
                 return self.consumer._limit_task.call_args[0][0]
             if self.was_scheduled():
-                return self.consumer.timer.call_at.call_args[0][0]
+                return self.consumer.timer.call_at.call_args[0][2][0]
             raise ValueError('request not handled')
 
     @contextmanager
@@ -128,10 +127,15 @@ class test_default_strategy_proto2:
 
         reserved = Mock()
         consumer = Mock()
-        consumer.task_buckets = defaultdict(lambda: None)
+        # Create a proper mock for task_buckets that supports __getitem__
+        task_buckets_mock = Mock()
+        task_buckets_mock.__getitem__ = Mock(side_effect=lambda key: None)
+        consumer.task_buckets = task_buckets_mock
         if limit:
             bucket = TokenBucket(rate(limit), capacity=1)
-            consumer.task_buckets[sig.task] = bucket
+            task_buckets_mock.__getitem__.side_effect = (
+                lambda key: bucket if key == sig.task else None
+            )
         consumer.controller.state.revoked = set()
         consumer.disable_rate_limits = not rate_limits
         consumer.event_dispatcher.enabled = events
@@ -176,9 +180,22 @@ class test_default_strategy_proto2:
         for record in caplog.records:
             if record.msg == LOG_RECEIVED:
                 assert record.levelno == logging.INFO
+                assert record.args['eta'] is None
                 break
         else:
             raise ValueError("Expected message not in captured log records")
+
+    def test_log_eta_task_received(self, caplog):
+        caplog.set_level(logging.INFO, logger="celery.worker.strategy")
+        with self._context(self.add.s(2, 2).set(countdown=10)) as C:
+            C()
+            req = C.get_request()
+            for record in caplog.records:
+                if record.msg == LOG_RECEIVED:
+                    assert record.args['eta'] == req.eta
+                    break
+            else:
+                raise ValueError("Expected message not in captured log records")
 
     def test_log_task_received_custom(self, caplog):
         caplog.set_level(logging.INFO, logger="celery.worker.strategy")
@@ -191,7 +208,23 @@ class test_default_strategy_proto2:
             C()
         for record in caplog.records:
             if record.msg == custom_fmt:
-                assert set(record.args) == {"id", "name", "kwargs", "args"}
+                assert set(record.args) == {"id", "name", "kwargs", "args", "eta"}
+                break
+        else:
+            raise ValueError("Expected message not in captured log records")
+
+    def test_log_task_arguments(self, caplog):
+        caplog.set_level(logging.INFO, logger="celery.worker.strategy")
+        args = "CUSTOM ARGS"
+        kwargs = "CUSTOM KWARGS"
+        with self._context(
+            self.add.s(2, 2).set(argsrepr=args, kwargsrepr=kwargs)
+        ) as C:
+            C()
+        for record in caplog.records:
+            if record.msg == LOG_RECEIVED:
+                assert record.args["args"] == args
+                assert record.args["kwargs"] == kwargs
                 break
         else:
             raise ValueError("Expected message not in captured log records")
@@ -301,7 +334,7 @@ class test_custom_request_for_default_strategy(test_default_strategy_proto2):
 
 class test_hybrid_to_proto2:
 
-    def setup(self):
+    def setup_method(self):
         self.message = Mock(name='message', headers={"custom": "header"})
         self.body = {
             'args': (1,),

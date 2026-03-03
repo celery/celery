@@ -133,7 +133,7 @@ def get_task_callback(*args, **kwargs):
 
 class test_asynloop:
 
-    def setup(self):
+    def setup_method(self):
         @self.app.task(shared=False)
         def add(x, y):
             return x + y
@@ -363,7 +363,7 @@ class test_asynloop:
 
     def test_poll_write_generator(self):
         x = X(self.app)
-        x.hub.remove = Mock(name='hub.remove()')
+        x.hub.remove_writer = Mock(name='hub.remove_writer()')
 
         def Gen():
             yield 1
@@ -376,7 +376,7 @@ class test_asynloop:
         with pytest.raises(socket.error):
             asynloop(*x.args)
         assert gen.gi_frame.f_lasti != -1
-        x.hub.remove.assert_not_called()
+        x.hub.remove_writer.assert_not_called()
 
     def test_poll_write_generator_stopped(self):
         x = X(self.app)
@@ -388,7 +388,7 @@ class test_asynloop:
         x.hub.add_writer(6, gen)
         x.hub.on_tick.add(x.close_then_error(Mock(name='tick'), 2))
         x.hub.poller.poll.return_value = [(6, WRITE)]
-        x.hub.remove = Mock(name='hub.remove()')
+        x.hub.remove_writer = Mock(name='hub.remove_writer()')
         with pytest.raises(socket.error):
             asynloop(*x.args)
         assert gen.gi_frame is None
@@ -452,6 +452,62 @@ class test_asynloop:
         asynloop(*x.args)
 
         x.hub.timer.call_repeatedly.assert_not_called()
+
+    def test_hub_reset_on_connection_error(self):
+        x = X(self.app)
+        x.hub.readers = {6: Mock()}
+        x.hub.timer._queue = [1]
+        x.hub.reset = Mock(name='hub.reset()')
+        x.close_then_error(x.hub.poller.poll)
+        x.hub.fire_timers.return_value = 33.37
+        poller = x.hub.poller
+        poller.poll.return_value = []
+        with pytest.raises(socket.error):
+            asynloop(*x.args)
+        x.hub.reset.assert_called_once()
+
+    def test_hub_not_reset_on_graceful_shutdown(self):
+        x = X(self.app)
+        x.hub.reset = Mock(name='hub.reset()')
+        x.hub.on_tick.add(x.closer(mod=2))
+        asynloop(*x.args)
+        x.hub.reset.assert_not_called()
+
+    def test_hub_not_reset_on_worker_shutdown(self):
+        x = X(self.app)
+        x.hub.reset = Mock(name='hub.reset()')
+        state.should_stop = 303
+        try:
+            with pytest.raises(WorkerShutdown):
+                asynloop(*x.args)
+        finally:
+            state.should_stop = None
+        x.hub.reset.assert_not_called()
+
+    def test_hub_not_reset_on_worker_terminate(self):
+        x = X(self.app)
+        x.hub.reset = Mock(name='hub.reset()')
+        state.should_terminate = True
+        try:
+            with pytest.raises(WorkerTerminate):
+                asynloop(*x.args)
+        finally:
+            state.should_terminate = None
+        x.hub.reset.assert_not_called()
+
+    def test_hub_reset_error_still_reraises_original(self):
+        x = X(self.app)
+        x.hub.readers = {6: Mock()}
+        x.hub.timer._queue = [1]
+        x.hub.reset = Mock(name='hub.reset()', side_effect=RuntimeError('reset failed'))
+        x.close_then_error(x.hub.poller.poll)
+        x.hub.fire_timers.return_value = 33.37
+        poller = x.hub.poller
+        poller.poll.return_value = []
+        # The original socket.error should still be raised, not the RuntimeError from reset()
+        with pytest.raises(socket.error):
+            asynloop(*x.args)
+        x.hub.reset.assert_called_once()
 
 
 class test_synloop:
@@ -529,7 +585,7 @@ class test_synloop:
 
 class test_quick_drain:
 
-    def setup(self):
+    def setup_method(self):
         self.connection = Mock(name='connection')
 
     def test_drain(self):

@@ -4,6 +4,7 @@ from unittest.mock import Mock, PropertyMock, patch, sentinel
 import pytest
 
 from celery import canvas, group, result, uuid
+from celery.canvas import Signature
 from celery.exceptions import ChordError, Retry
 from celery.result import AsyncResult, EagerResult, GroupResult
 
@@ -12,9 +13,14 @@ def passthru(x):
     return x
 
 
+class AnySignatureWithTask(Signature):
+    def __eq__(self, other):
+        return self.task == other.task
+
+
 class ChordCase:
 
-    def setup(self):
+    def setup_method(self):
 
         @self.app.task(shared=False)
         def add(x, y):
@@ -209,17 +215,26 @@ class test_unlock_chord_task(ChordCase):
     def test_unlock_join_timeout_custom(self):
         self._test_unlock_join_timeout(timeout=5.0)
 
-    def test_unlock_with_chord_params(self):
+    def test_unlock_with_chord_params_default(self):
         @self.app.task(shared=False)
         def mul(x, y):
             return x * y
 
         from celery import chord
-        ch = chord(group(mul.s(1, 1), mul.s(2, 2)), mul.s(), interval=10)
+        g = group(mul.s(1, 1), mul.s(2, 2))
+        body = mul.s()
+        ch = chord(g, body, interval=10)
 
         with patch.object(ch, 'run') as run:
             ch.apply_async()
-            run.assert_called_once_with(group(mul.s(1, 1), mul.s(2, 2)), mul.s(), (), task_id=None, interval=10)
+            run.assert_called_once_with(
+                AnySignatureWithTask(g),
+                mul.s(),
+                (),
+                task_id=None,
+                kwargs={},
+                interval=10,
+            )
 
     def test_unlock_with_chord_params_and_task_id(self):
         @self.app.task(shared=False)
@@ -227,15 +242,19 @@ class test_unlock_chord_task(ChordCase):
             return x * y
 
         from celery import chord
-        ch = chord(group(mul.s(1, 1), mul.s(2, 2)), mul.s(), interval=10)
+        g = group(mul.s(1, 1), mul.s(2, 2))
+        body = mul.s()
+        ch = chord(g, body, interval=10)
 
         with patch.object(ch, 'run') as run:
             ch.apply_async(task_id=sentinel.task_id)
+
             run.assert_called_once_with(
-                group(mul.s(1, 1), mul.s(2, 2)),
+                AnySignatureWithTask(g),
                 mul.s(),
                 (),
                 task_id=sentinel.task_id,
+                kwargs={},
                 interval=10,
             )
 
@@ -300,7 +319,7 @@ class test_chord(ChordCase):
 
 class test_add_to_chord:
 
-    def setup(self):
+    def setup_method(self):
 
         @self.app.task(shared=False)
         def add(x, y):

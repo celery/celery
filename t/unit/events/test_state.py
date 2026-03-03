@@ -126,7 +126,7 @@ class ev_logical_clock_ordering(replay):
             QTEV('succeeded', tB, 'w2', name='tB', clock=offset + 9),
             QTEV('started', tC, 'w2', name='tC', clock=offset + 10),
             QTEV('received', tA, 'w3', name='tA', clock=offset + 13),
-            QTEV('succeded', tC, 'w2', name='tC', clock=offset + 12),
+            QTEV('succeeded', tC, 'w2', name='tC', clock=offset + 12),
             QTEV('started', tA, 'w3', name='tA', clock=offset + 14),
             QTEV('succeeded', tA, 'w3', name='TA', clock=offset + 16),
         ]

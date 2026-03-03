@@ -50,7 +50,7 @@ schedule manually.
 
 .. admonition:: Django Users
 
-    Celery recommends and is compatible with the new ``USE_TZ`` setting introduced
+    Celery recommends and is compatible with the ``USE_TZ`` setting introduced
     in Django 1.4.
 
     For Django users the time zone specified in the ``TIME_ZONE`` setting
@@ -90,9 +90,14 @@ beat schedule list.
     app = Celery()
 
     @app.on_after_configure.connect
-    def setup_periodic_tasks(sender, **kwargs):
+    def setup_periodic_tasks(sender: Celery, **kwargs):
         # Calls test('hello') every 10 seconds.
         sender.add_periodic_task(10.0, test.s('hello'), name='add every 10')
+
+        # Calls test('hello') every 30 seconds.
+        # It uses the same signature of previous task, an explicit name is
+        # defined to avoid this task replacing the previous one defined.
+        sender.add_periodic_task(30.0, test.s('hello'), name='add every 30')
 
         # Calls test('world') every 30 seconds
         sender.add_periodic_task(30.0, test.s('world'), expires=10)

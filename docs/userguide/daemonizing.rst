@@ -14,9 +14,9 @@ You can check if your Linux distribution uses systemd by typing:
 
 .. code-block:: console
 
-  $ systemd --version
-  systemd 237
-  +PAM +AUDIT +SELINUX +IMA +APPARMOR +SMACK +SYSVINIT +UTMP +LIBCRYPTSETUP +GCRYPT +GNUTLS +ACL +XZ +LZ4 +SECCOMP +BLKID +ELFUTILS +KMOD -IDN2 +IDN -PCRE2 default-hierarchy=hybrid
+    $ systemctl --version
+    systemd 249 (v249.9-1.fc35)
+    +PAM +AUDIT +SELINUX -APPARMOR +IMA +SMACK +SECCOMP +GCRYPT +GNUTLS +OPENSSL +ACL +BLKID +CURL +ELFUTILS +FIDO2 +IDN2 -IDN +IPTC +KMOD +LIBCRYPTSETUP +LIBFDISK +PCRE2 +PWQUALITY +P11KIT +QRENCODE +BZIP2 +LZ4 +XZ +ZLIB +ZSTD +XKBCOMMON +UTMP +SYSVINIT default-hierarchy=unified
 
 If you have output similar to the above, please refer to
 :ref:`our systemd documentation <daemon-systemd-generic>` for guidance.
@@ -41,7 +41,7 @@ This directory contains generic bash init-scripts for the
 these should run on Linux, FreeBSD, OpenBSD, and other Unix-like platforms.
 
 .. _`extra/generic-init.d/`:
-    https://github.com/celery/celery/tree/master/extra/generic-init.d/
+    https://github.com/celery/celery/tree/main/extra/generic-init.d/
 
 .. _generic-initd-celeryd:
 
@@ -373,7 +373,7 @@ Usage ``systemd``
 * `extra/systemd/`_
 
 .. _`extra/systemd/`:
-    https://github.com/celery/celery/tree/master/extra/systemd/
+    https://github.com/celery/celery/tree/main/extra/systemd/
 
 .. _generic-systemd-celery:
 
@@ -541,7 +541,7 @@ or production environment (inadvertently) as root.
 * `extra/supervisord/`_
 
 .. _`extra/supervisord/`:
-    https://github.com/celery/celery/tree/master/extra/supervisord/
+    https://github.com/celery/celery/tree/main/extra/supervisord/
 
 .. _daemon-launchd:
 
@@ -551,4 +551,4 @@ or production environment (inadvertently) as root.
 * `extra/macOS`_
 
 .. _`extra/macOS`:
-    https://github.com/celery/celery/tree/master/extra/macOS/
+    https://github.com/celery/celery/tree/main/extra/macOS/

@@ -469,7 +469,7 @@ class MultiTool(TermLogger):
 )
 @click.pass_context
 @handle_preload_options
-def multi(ctx):
+def multi(ctx, **kwargs):
     """Start multiple worker instances."""
     cmd = MultiTool(quiet=ctx.obj.quiet, no_color=ctx.obj.no_color)
     # In 4.x, celery multi ignores the global --app option.

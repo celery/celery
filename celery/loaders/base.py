@@ -3,7 +3,7 @@ import importlib
 import os
 import re
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 
 from kombu.utils import json
 from kombu.utils.objects import cached_property
@@ -62,7 +62,7 @@ class BaseLoader:
 
     def now(self, utc=True):
         if utc:
-            return datetime.utcnow()
+            return datetime.now(timezone.utc)
         return datetime.now()
 
     def on_task_init(self, task_id, task):
@@ -253,10 +253,12 @@ def find_related_module(package, related_name):
     # Django 1.7 allows for specifying a class name in INSTALLED_APPS.
     # (Issue #2248).
     try:
+        # Return package itself when no related_name.
         module = importlib.import_module(package)
         if not related_name and module:
             return module
-    except ImportError:
+    except ModuleNotFoundError:
+        # On import error, try to walk package up one level.
         package, _, _ = package.rpartition('.')
         if not package:
             raise
@@ -264,9 +266,13 @@ def find_related_module(package, related_name):
     module_name = f'{package}.{related_name}'
 
     try:
+        # Try to find related_name under package.
         return importlib.import_module(module_name)
-    except ImportError as e:
-        import_exc_name = getattr(e, 'name', module_name)
-        if import_exc_name is not None and import_exc_name != module_name:
-            raise e
-        return
+    except ModuleNotFoundError as e:
+        import_exc_name = getattr(e, 'name', None)
+        # If candidate does not exist, then return None.
+        if import_exc_name and module_name == import_exc_name:
+            return
+
+        # Otherwise, raise because error probably originated from a nested import.
+        raise e
