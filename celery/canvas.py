@@ -39,7 +39,7 @@ __all__ = (
     'group', 'chord', 'signature', 'maybe_signature',
 )
 
-_FAST_PATH_IMMUTABLE_TYPES = (str, bytes, int, float, bool, type(None))
+_FAST_PATH_IMMUTABLE_TYPES = (str, bytes, int, float, type(None))
 
 
 def _clone_options(options):
@@ -474,7 +474,7 @@ class Signature(dict):
         signature = Signature.from_dict({'task': self.task,
                                          'args': tuple(args),
                                          'kwargs': kwargs,
-                                         'options': _clone_options(opts),
+                                         'options': deepcopy(opts),
                                          'subtask_type': self.subtask_type,
                                          'immutable': self.immutable},
                                         app=self._app)
