@@ -114,9 +114,18 @@ class Request:
             self.name = self._request_dict['shadow'] or self.name
         self._root_id = self._request_dict.get('root_id')
         self._parent_id = self._request_dict.get('parent_id')
-        timelimit = self._request_dict.get('timelimit', None)
-        if timelimit:
-            self.time_limits = timelimit
+        timelimit = self._request_dict.get('timelimit')
+        if not isinstance(timelimit, (tuple, list)) or len(timelimit) < 2:
+            timelimit = (
+                self._request_dict.get('time_limit'),
+                self._request_dict.get('soft_time_limit'),
+            )
+        if isinstance(timelimit, (tuple, list)) and len(timelimit) >= 2:
+            self.time_limits = timelimit[:2]
+        time_limit, soft_time_limit = self.time_limits
+        self._request_dict.setdefault('timelimit', (time_limit, soft_time_limit))
+        self._request_dict.setdefault('time_limit', time_limit)
+        self._request_dict.setdefault('soft_time_limit', soft_time_limit)
         self._argsrepr = self._request_dict.get('argsrepr', '')
         self._kwargsrepr = self._request_dict.get('kwargsrepr', '')
         self._on_ack = on_ack
@@ -746,6 +755,14 @@ class Request:
     def group_index(self):
         # used by backend.on_chord_part_return to order return values in group
         return self._request_dict.get('group_index')
+
+    @property
+    def time_limit(self):
+        return self.time_limits[0]
+
+    @property
+    def soft_time_limit(self):
+        return self.time_limits[1]
 
 
 def create_request_cls(base, task, pool, hostname, eventer,
