@@ -1,5 +1,6 @@
 """The periodic task scheduler."""
 
+import copy
 import dbm
 import errno
 import heapq
@@ -258,6 +259,10 @@ class Scheduler:
         self.Producer = Producer or app.amqp.Producer
         self._heap = None
         self._heap_invalidated = True
+        self._last_schedule = None
+        self._uses_custom_schedules_equal = (
+            type(self).schedules_equal is not Scheduler.schedules_equal
+        )
         self.sync_every_tasks = (
             app.conf.beat_sync_every if sync_every_tasks is None
             else sync_every_tasks)
@@ -334,7 +339,23 @@ class Scheduler:
         adjust = self.adjust
         max_interval = self.max_interval
 
-        if self._heap_invalidated:
+        # Backward compatibility: custom scheduler implementations may override
+        # schedules_equal() and expect tick() to call it to detect updates.
+        if self._uses_custom_schedules_equal:
+            if (self._last_schedule is None or
+                    not self.schedules_equal(self._last_schedule, self.schedule)):
+                self._heap_invalidated = True
+
+            try:
+                self._last_schedule = copy.copy(self.schedule)
+            except Exception:
+                # Keep correctness over performance:
+                # if we cannot safely snapshot the schedule, fall back to
+                # per-tick invalidation to preserve legacy semantics.
+                self._last_schedule = None
+                self._heap_invalidated = True
+
+        if self._heap is None or self._heap_invalidated:
             self.populate_heap()
             self._heap_invalidated = False
 

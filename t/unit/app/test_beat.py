@@ -452,6 +452,26 @@ class test_Scheduler:
             assert scheduler.tick() == 0
         assert populate_heap.call_count == 1
 
+    def test_tick_calls_custom_schedules_equal_override(self):
+        class CustomScheduler(mScheduler):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.schedules_equal_called = 0
+
+            def schedules_equal(self, old_schedules, new_schedules):
+                self.schedules_equal_called += 1
+                return super().schedules_equal(old_schedules, new_schedules)
+
+        scheduler = CustomScheduler(app=self.app)
+        scheduler.add(name='test_tick_calls_custom_schedules_equal_override',
+                      schedule=always_due)
+
+        scheduler.tick()
+        scheduler.tick()
+        scheduler.tick()
+
+        assert scheduler.schedules_equal_called == 2
+
     def test_schedule_no_remain(self):
         scheduler = mScheduler(app=self.app)
         scheduler.add(name='test_schedule_no_remain',
