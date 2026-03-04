@@ -441,6 +441,48 @@ class test_chain:
         assert res.get(timeout=TIMEOUT) == 12
 
     @flaky
+    def test_chain_of_explicit_chords(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c1 = chain(
+            chord(group(add.si(1, 0), add.si(1, 0)), tsum.s()),
+            chord(group(add.s(1), add.s(1)), tsum.s()),
+            chord(group(add.s(0), add.s(0)), tsum.s()),
+        )
+        c2 = chain(
+            chord(group(add.s(10), add.s(10)), tsum.s()),
+            chord(group(add.s(0), add.s(0)), tsum.s()),
+            chord(group(add.s(1), add.s(1)), tsum.s()),
+        )
+        c = c1 | c2
+        res = c()
+        assert res.get(timeout=TIMEOUT) == 178
+
+    @flaky
+    def test_chain_of_six_chords(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = chain(
+            chord(group(add.si(1, 0), add.si(1, 0), add.si(1, 0)), tsum.s()),
+            chord(group(add.s(1), add.s(1), add.s(1)), tsum.s()),
+            chord(group(add.s(1), add.s(1), add.s(1)), tsum.s()),
+            chord(group(add.s(1), add.s(1), add.s(1)), tsum.s()),
+            chord(group(add.s(1), add.s(1), add.s(1)), tsum.s()),
+            chord(group(add.s(1), add.s(1), add.s(1)), tsum.s()),
+            chord(group(add.s(1), add.s(1), add.s(1)), tsum.s()),
+            chord(group(add.s(1), add.s(1), add.s(1)), tsum.s()),
+            chord(group(add.s(0), add.s(0), add.s(0)), tsum.s()),
+        )
+        res = c()
+        assert res.get(timeout=TIMEOUT) == 29520
+
+    @flaky
     def test_chain_of_a_chord_and_a_group_with_two_tasks(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
