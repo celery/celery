@@ -344,13 +344,14 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                     )
                     continue
                 if (isinstance(resolved, type)
-                        and issubclass(resolved, BaseException)):
+                        and issubclass(resolved, Exception)):
                     extra.append(resolved)
                 else:
                     logger.warning(
                         'Ignoring invalid additional_connection_errors'
-                        ' entry %r: expected an exception class or'
-                        ' dotted path to one.', resolved,
+                        ' entry %r (resolved: %r): expected an'
+                        ' exception class or dotted path to one.',
+                        cls, resolved,
                     )
             if extra:
                 self.connection_errors = (
