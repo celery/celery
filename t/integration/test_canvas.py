@@ -3730,5 +3730,3 @@ class test_stamping_mechanism:
         with subtests.test(msg="Expect canvas to fail"):
             with pytest.raises(ExpectedException):
                 canvas.apply_async().get(timeout=TIMEOUT)
-
-
