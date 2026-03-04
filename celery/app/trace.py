@@ -414,8 +414,14 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     ):
         """Dispatch callbacks and chain for a completed task.
 
-        Shared by both the normal success path and the dedup fast-path
-        to keep dispatch logic in one place.
+        Dispatches link callbacks and then the next chain step.
+        Does NOT fire task lifecycle signals (on_success, task_postrun)
+        or call mark_as_done — callers handle those separately.
+
+        Note: dispatch is not atomic.  If callbacks succeed but the
+        chain step fails (or vice-versa), a Reject + redeliver may
+        re-dispatch the already-sent callbacks.  This is acceptable
+        under Celery's at-least-once delivery model.
         """
         if callbacks:
             if len(callbacks) > 1:
@@ -499,8 +505,14 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         _priority = task_request.delivery_info.get('priority') if \
                             inherit_parent_priority else None
                         try:
-                            stored_retval = r.result
-                            _children = r._get_task_meta().get('children')
+                            _meta = r._get_task_meta()
+                            stored_retval = _meta.get('result')
+                            # Children are populated by mark_as_done on the
+                            # original execution.  If present, callbacks were
+                            # already dispatched — skip to avoid duplicates.
+                            # Requires the backend to persist extended result
+                            # metadata (result_extended=True).
+                            _children = _meta.get('children')
                             _callbacks = task_request.callbacks
                             _chain = task_request.chain
                             if (_callbacks or _chain) and not _children:
@@ -513,6 +525,10 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         except MemoryError:
                             raise
                         except Exception as exc:
+                            # Permanent failures (malformed signature, etc.)
+                            # will requeue indefinitely.  Broker-level
+                            # dead-letter / max-delivery-count policies are
+                            # the intended circuit-breaker.
                             logger.error(
                                 'Failed to dispatch chain/callbacks for '
                                 'deduplicated task %s',

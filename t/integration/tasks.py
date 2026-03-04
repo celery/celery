@@ -522,6 +522,29 @@ if LEGACY_TASKS_DISABLED:
         self.replace(signature(replace_with))
 
 
+@shared_task(bind=True, acks_late=True)
+def store_success_then_reject(self):
+    """First delivery: store SUCCESS manually, then Reject to trigger redelivery.
+    Second delivery: dedup finds SUCCESS, dispatches chain."""
+    from celery.backends.base import states
+    from celery.exceptions import Reject
+    if not self.request.delivery_info.get('redelivered'):
+        self.backend.store_result(self.request.id, 'first-pass', states.SUCCESS)
+        raise Reject(requeue=True)
+    # When dedup is enabled the fast-path intercepts before reaching here,
+    # so 'dedup-pass' is only returned when dedup is disabled.
+    return 'dedup-pass'
+
+
+@shared_task(bind=True, acks_late=True)
+def reject_then_succeed(self):
+    """First delivery: Reject(requeue=True). Second delivery: succeed normally."""
+    from celery.exceptions import Reject
+    if not self.request.delivery_info.get('redelivered'):
+        raise Reject(requeue=True)
+    return 'second-pass'
+
+
 @shared_task(soft_time_limit=2, time_limit=1)
 def soft_time_limit_must_exceed_time_limit():
     pass
