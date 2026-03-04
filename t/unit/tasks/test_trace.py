@@ -12,9 +12,9 @@ from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task, get_log_
                               log_policy_unexpected, reset_worker_optimizations, setup_worker_optimizations,
                               trace_task, trace_task_ret, traceback_clear)
 from celery.backends.base import BaseDictBackend
-from celery.result import AsyncResult
 from celery.backends.cache import CacheBackend
 from celery.exceptions import BackendGetMetaError, Ignore, Reject, Retry
+from celery.result import AsyncResult
 from celery.states import PENDING
 from celery.worker.state import successful_requests
 

@@ -20,10 +20,9 @@ from .tasks import (ExpectedException, StampOnReplace, add, add_chord_to_chord, 
                     add_to_all_to_chord, build_chain_inside_task, collect_ids, delayed_sum,
                     delayed_sum_with_soft_guard, errback_new_style, errback_old_style, fail, fail_replaced, identity,
                     ids, mul, print_unicode, raise_error, redis_count, redis_echo, redis_echo_group_id,
-                    replace_with_chain, replace_with_chain_which_raises,
-                    replace_with_empty_chain, replace_with_stamped_task, retry_once, return_exception,
-                    return_priority, second_order_replace1, tsum,
-                    write_to_file_and_return_int, xsum)
+                    replace_with_chain, replace_with_chain_which_raises, replace_with_empty_chain,
+                    replace_with_stamped_task, retry_once, return_exception, return_priority, second_order_replace1,
+                    tsum, write_to_file_and_return_int, xsum)
 
 TIMEOUT = 60
 
