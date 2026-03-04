@@ -1728,7 +1728,7 @@ class test_App:
         assert not detect_quorum_queues.called
 
     def test_broker_pool_acquire_timeout_default(self):
-        assert self.app.conf.broker_pool_acquire_timeout == 120
+        assert self.app.conf.broker_pool_acquire_timeout is None
 
     def test_acquire_connection_raises_on_pool_exhaustion(self):
         self.app.conf.broker_pool_limit = 5
