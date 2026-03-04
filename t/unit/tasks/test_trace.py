@@ -12,6 +12,7 @@ from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task, get_log_
                               log_policy_unexpected, reset_worker_optimizations, setup_worker_optimizations,
                               trace_task, trace_task_ret, traceback_clear)
 from celery.backends.base import BaseDictBackend
+from celery.result import AsyncResult
 from celery.backends.cache import CacheBackend
 from celery.exceptions import BackendGetMetaError, Ignore, Reject, Retry
 from celery.states import PENDING
@@ -1026,6 +1027,56 @@ class test_trace(TraceCase):
             mock_signature.return_value.apply_async = mock_apply
             trace(self.app, add, (1, 1), task_id=task_id, request=request_empty_chain)
             mock_apply.assert_not_called()
+
+        successful_requests.discard(task_id)
+        self.app.conf.worker_deduplicate_successful_tasks = False
+
+    def test_deduplicate_successful_tasks__backend_read_failure_rejects(self):
+        """When _get_task_meta() fails after state==SUCCESS, the exception
+        is caught and re-raised as Reject(requeue=True)."""
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        backend = CacheBackend(app=self.app, backend='memory')
+        add.backend = backend
+        add.store_eager_result = True
+        add.ignore_result = False
+        add.acks_late = True
+
+        self.app.conf.worker_deduplicate_successful_tasks = True
+        task_id = str(uuid4())
+        request = {'id': task_id, 'delivery_info': {'redelivered': True}}
+
+        trace(self.app, add, (1, 1), task_id=task_id, request=request)
+
+        successful_requests.discard(task_id)
+
+        request_with_chain = {
+            'id': task_id,
+            'delivery_info': {'redelivered': True},
+            'chain': [self.add.s(10)],
+        }
+
+        # First call to _get_task_meta (from r.state) returns normally;
+        # second call (line 508 in trace.py) raises to simulate a
+        # transient backend failure during dispatch.
+        original = AsyncResult._get_task_meta
+        call_count = 0
+
+        def fail_on_second_call(self_):
+            nonlocal call_count
+            call_count += 1
+            if call_count >= 2:
+                raise ConnectionError('redis gone')
+            return original(self_)
+
+        with patch.object(AsyncResult, '_get_task_meta', fail_on_second_call):
+            with patch('celery.app.trace.logger'):
+                with pytest.raises(Reject):
+                    trace(self.app, add, (1, 1), task_id=task_id, request=request_with_chain)
+
+        assert task_id not in successful_requests
 
         successful_requests.discard(task_id)
         self.app.conf.worker_deduplicate_successful_tasks = False

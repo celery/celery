@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from celery import Signature, Task, chain, chord, group, shared_task
 from celery.canvas import signature
-from celery.exceptions import SoftTimeLimitExceeded
+from celery.exceptions import Reject, SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 
 LEGACY_TASKS_DISABLED = True
@@ -527,7 +527,6 @@ def store_success_then_reject(self):
     """First delivery: store SUCCESS manually, then Reject to trigger redelivery.
     Second delivery: dedup finds SUCCESS, dispatches chain."""
     from celery.backends.base import states
-    from celery.exceptions import Reject
     if not self.request.delivery_info.get('redelivered'):
         self.backend.store_result(self.request.id, 'first-pass', states.SUCCESS)
         raise Reject(requeue=True)
@@ -539,7 +538,6 @@ def store_success_then_reject(self):
 @shared_task(bind=True, acks_late=True)
 def reject_then_succeed(self):
     """First delivery: Reject(requeue=True). Second delivery: succeed normally."""
-    from celery.exceptions import Reject
     if not self.request.delivery_info.get('redelivered'):
         raise Reject(requeue=True)
     return 'second-pass'

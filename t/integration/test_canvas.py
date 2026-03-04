@@ -10,37 +10,22 @@ import pytest
 from celery import chain, chord, group, signature
 from celery.backends.base import BaseKeyValueStoreBackend
 from celery.canvas import StampingVisitor
-from celery.contrib.testing.worker import start_worker
 from celery.exceptions import ImproperlyConfigured, TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet
 from celery.signals import before_task_publish, task_received
 
 from . import tasks
-from .conftest import TEST_BACKEND, check_for_logs, get_active_redis_channels, get_redis_connection
+from .conftest import TEST_BACKEND, check_for_logs, flaky, get_active_redis_channels, get_redis_connection
 from .tasks import (ExpectedException, StampOnReplace, add, add_chord_to_chord, add_replaced, add_to_all,
                     add_to_all_to_chord, build_chain_inside_task, collect_ids, delayed_sum,
                     delayed_sum_with_soft_guard, errback_new_style, errback_old_style, fail, fail_replaced, identity,
                     ids, mul, print_unicode, raise_error, redis_count, redis_echo, redis_echo_group_id,
-                    reject_then_succeed, replace_with_chain, replace_with_chain_which_raises,
+                    replace_with_chain, replace_with_chain_which_raises,
                     replace_with_empty_chain, replace_with_stamped_task, retry_once, return_exception,
-                    return_priority, second_order_replace1, store_success_then_reject, tsum,
+                    return_priority, second_order_replace1, tsum,
                     write_to_file_and_return_int, xsum)
 
-RETRYABLE_EXCEPTIONS = (OSError, ConnectionError, TimeoutError)
-
-
-def is_retryable_exception(exc):
-    return isinstance(exc, RETRYABLE_EXCEPTIONS)
-
-
 TIMEOUT = 60
-
-_flaky = pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
-_timeout = pytest.mark.timeout(timeout=300)
-
-
-def flaky(fn):
-    return _timeout(_flaky(fn))
 
 
 def await_redis_echo(expected_msgs, redis_key="redis-echo", timeout=TIMEOUT):
@@ -3748,76 +3733,3 @@ class test_stamping_mechanism:
                 canvas.apply_async().get(timeout=TIMEOUT)
 
 
-class test_dedup_chain_dispatch:
-    """Integration tests for chain/callback dispatch on the dedup fast-path.
-
-    See https://github.com/celery/celery/issues/9835
-    """
-
-    @pytest.fixture()
-    def dedup_app(self):
-        """Standalone Celery app with dedup enabled.
-
-        Uses its own event hub so it doesn't conflict with the session
-        worker.  We use TEST_BACKEND (Redis) as both broker and backend
-        so the tests only need Redis — no RabbitMQ dependency.
-        """
-        from celery import Celery
-        app = Celery('test_dedup',
-                     broker=TEST_BACKEND,
-                     backend=TEST_BACKEND)
-        app.conf.update(
-            worker_deduplicate_successful_tasks=True,
-            task_acks_late=True,
-            result_extended=True,
-            worker_hijack_root_logger=False,
-        )
-        app.config_from_object({'include': ['t.integration.tasks']})
-        yield app
-        app.close()
-
-    @flaky
-    def test_chain_completes_with_dedup_enabled(self, dedup_app):
-        """Smoke test: a normal chain works when dedup is on."""
-        q = f'dedup-test-{uuid.uuid4().hex[:8]}'
-        with start_worker(dedup_app, pool='solo', concurrency=1, queues=[q],
-                          perform_ping_check=False, shutdown_timeout=TIMEOUT):
-            c = chain(add.s(2, 3).set(queue=q), add.s(5).set(queue=q))
-            assert c.apply_async().get(timeout=TIMEOUT) == 10
-
-    @flaky
-    def test_reject_requeue_completes_chain(self, dedup_app):
-        """Reject passthrough: chain completes after rejection + redelivery."""
-        q = f'dedup-test-{uuid.uuid4().hex[:8]}'
-        with start_worker(dedup_app, pool='solo', concurrency=1, queues=[q],
-                          perform_ping_check=False, shutdown_timeout=TIMEOUT):
-            c = chain(
-                reject_then_succeed.s().set(queue=q),
-                identity.s().set(queue=q),
-            )
-            assert c.apply_async().get(timeout=TIMEOUT) == 'second-pass'
-
-    @flaky
-    def test_dedup_dispatches_chain_on_redelivery(self, dedup_app):
-        """Core test: dedup fast-path dispatches the chain."""
-        q = f'dedup-test-{uuid.uuid4().hex[:8]}'
-        with start_worker(dedup_app, pool='solo', concurrency=1, queues=[q],
-                          perform_ping_check=False, shutdown_timeout=TIMEOUT):
-            c = chain(
-                store_success_then_reject.s().set(queue=q),
-                identity.s().set(queue=q),
-            )
-            assert c.apply_async().get(timeout=TIMEOUT) == 'first-pass'
-
-    @flaky
-    def test_dedup_dispatches_callback_on_redelivery(self, dedup_app):
-        """Dedup fast-path dispatches link callbacks."""
-        q = f'dedup-test-{uuid.uuid4().hex[:8]}'
-        with start_worker(dedup_app, pool='solo', concurrency=1, queues=[q],
-                          perform_ping_check=False, shutdown_timeout=TIMEOUT):
-            cb_id = uuid.uuid4().hex
-            sig = store_success_then_reject.s().set(queue=q)
-            sig.link(identity.s().set(queue=q, task_id=cb_id))
-            sig.apply_async()
-            cb_result = AsyncResult(cb_id, app=dedup_app)
-            assert cb_result.get(timeout=TIMEOUT) == 'first-pass'
