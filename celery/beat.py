@@ -334,7 +334,7 @@ class Scheduler:
         adjust = self.adjust
         max_interval = self.max_interval
 
-        if self._heap is None or self._heap_invalidated:
+        if self._heap_invalidated:
             self.populate_heap()
             self._heap_invalidated = False
 
