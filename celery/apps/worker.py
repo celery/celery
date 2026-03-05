@@ -173,9 +173,14 @@ class Worker(WorkController):
             pool = pool.__module__
         is_gevent_pool = 'gevent' in pool
         is_eventlet_pool = 'eventlet' in pool
-        if not is_gevent_pool and is_gevent_monkey_patched():
+        # Only perform monkey-patch detection if the corresponding
+        # libraries are already imported, to avoid importing them
+        # implicitly (which may have side effects) for non-green pools.
+        gevent_in_use = 'gevent' in sys.modules
+        eventlet_in_use = 'eventlet' in sys.modules
+        if gevent_in_use and not is_gevent_pool and is_gevent_monkey_patched():
             logger.warning(W_GEVENT_MONKEY_PATCHED_WITH_WRONG_POOL, pool)
-        if not is_eventlet_pool and is_eventlet_monkey_patched():
+        if eventlet_in_use and not is_eventlet_pool and is_eventlet_monkey_patched():
             logger.warning(W_EVENTLET_MONKEY_PATCHED_WITH_WRONG_POOL, pool)
 
     def emit_banner(self):
