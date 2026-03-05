@@ -1,10 +1,7 @@
 """Tests for celery.utils.warning module."""
 from unittest.mock import patch
 
-from celery.utils.warning import (
-    is_gevent_monkey_patched,
-    is_eventlet_monkey_patched,
-)
+from celery.utils.warning import is_eventlet_monkey_patched, is_gevent_monkey_patched
 
 
 class test_monkey_patch_detection:
