@@ -27,6 +27,7 @@ To fix this, either:
   1. Use the eventlet pool by starting the worker with: celery worker -P eventlet
   2. Remove the eventlet.monkey_patch() call from your code"""
 
+
 def is_gevent_monkey_patched():
     """Detect if gevent monkey patching has been applied.
 
@@ -40,6 +41,7 @@ def is_gevent_monkey_patched():
         return monkey.is_module_patched('socket')
     except ImportError:
         return False
+
 
 def is_eventlet_monkey_patched():
     """Detect if eventlet monkey patching has been applied.
