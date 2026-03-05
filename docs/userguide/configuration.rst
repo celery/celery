@@ -3127,11 +3127,11 @@ Default: :const:`None` (block indefinitely).
 
 The maximum number of seconds to wait when acquiring a connection or producer
 from the broker pool. When all :setting:`broker_pool_limit` connections are in
-use, :meth:`~@pool.acquire` will block up to this many seconds before raising
+use, ``pool.acquire`` will block up to this many seconds before raising
 :exc:`~celery.exceptions.OperationalError`.
 
 Set this to a positive number (e.g. ``120``) to prevent
-:meth:`~@send_task` / ``apply_async`` calls from blocking indefinitely under
+``send_task`` / ``apply_async`` calls from blocking indefinitely under
 high concurrency. When :const:`None`, the previous behavior of blocking
 without a timeout is preserved.
 
