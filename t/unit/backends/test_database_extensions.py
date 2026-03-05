@@ -118,3 +118,39 @@ class test_SchemaExtensions:
         assert isinstance(col_type, JSON), (
             "Expected result column type to be JSON after JsonResultExtension"
         )
+
+    def test_protected_column_warning(self) -> None:
+        """Modifying a protected column should emit a warning."""
+
+        class OverrideStatusExtension(SchemaExtension):
+            def extend(self, table: Table, metadata: MetaData) -> None:
+                if table.name == "celery_taskmeta":
+                    table.c.status.type = String(255)
+
+        import celery.backends.database.extensions as ext_mod
+        with pytest.MonkeyPatch.context() as mp:
+            warnings = []
+            mp.setattr(ext_mod.logger, "warning", lambda *a, **kw: warnings.append(a))
+            DatabaseBackend(
+                self.uri,
+                app=self.app,
+                schema_extensions={"task": [OverrideStatusExtension()]},
+            )
+            assert any("protected column" in str(w) for w in warnings), (
+                "Expected a warning about modifying a protected column"
+            )
+
+    def test_no_warning_for_safe_column(self) -> None:
+        """Modifying 'result' (non-protected) should NOT emit a warning."""
+        import celery.backends.database.extensions as ext_mod
+        with pytest.MonkeyPatch.context() as mp:
+            warnings = []
+            mp.setattr(ext_mod.logger, "warning", lambda *a, **kw: warnings.append(a))
+            DatabaseBackend(
+                self.uri,
+                app=self.app,
+                schema_extensions={"task": [JsonResultExtension()]},
+            )
+            assert not warnings, (
+                "No warning expected when modifying non-protected 'result' column"
+            )

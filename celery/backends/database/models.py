@@ -6,6 +6,7 @@ from sqlalchemy.types import PickleType
 
 from celery import states
 
+from .extensions import _warn_if_protected
 from .session import ResultModelBase
 
 __all__ = ('Task', 'TaskExtended', 'TaskSet')
@@ -60,8 +61,13 @@ class Task(ResultModelBase):
         cls.id.default.schema = schema
         cls.__table__.name = name or cls.__tablename__
 
-        for ext in (extensions or ()):
-            ext.extend(cls.__table__, cls.__table__.metadata)
+        if extensions:
+            original_types = {
+                c.name: c.type for c in cls.__table__.columns
+            }
+            for ext in extensions:
+                ext.extend(cls.__table__, cls.__table__.metadata)
+            _warn_if_protected(cls.__table__, original_types)
 
 
 class TaskExtended(Task):
@@ -123,5 +129,10 @@ class TaskSet(ResultModelBase):
         cls.id.default.schema = schema
         cls.__table__.name = name or cls.__tablename__
 
-        for ext in (extensions or ()):
-            ext.extend(cls.__table__, cls.__table__.metadata)
+        if extensions:
+            original_types = {
+                c.name: c.type for c in cls.__table__.columns
+            }
+            for ext in extensions:
+                ext.extend(cls.__table__, cls.__table__.metadata)
+            _warn_if_protected(cls.__table__, original_types)
