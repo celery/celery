@@ -81,12 +81,11 @@ def _warn_if_protected(table: Table, original_types: dict) -> None:
     for col_name in protected:
         col = table.c.get(col_name)
         if col is not None and col_name in original_types:
-            if type(col.type) is not type(original_types[col_name]):
+            before, after = repr(original_types[col_name]), repr(col.type)
+            if before != after:
                 logger.warning(
                     "Schema extension modified protected column '%s.%s' "
                     "(type changed from %s to %s). This may break core "
                     "Celery functionality.",
-                    table.name, col_name,
-                    type(original_types[col_name]).__name__,
-                    type(col.type).__name__,
+                    table.name, col_name, before, after,
                 )
