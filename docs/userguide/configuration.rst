@@ -3121,7 +3121,7 @@ connections will be established and closed for every use.
 ``broker_pool_acquire_timeout``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 5.6
+.. versionadded:: 5.7
 
 Default: :const:`None` (block indefinitely).
 
