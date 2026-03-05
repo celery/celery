@@ -615,8 +615,8 @@ class test_chain(CanvasCase):
         c = chain(*chords)
         assert isinstance(c, _chain)
         sizes = [len(json.dumps(task.__json__())) for task in c.tasks]
-        assert sizes[0] == sizes[-1], (
-            f"First chord ({sizes[0]} bytes) should equal last chord ({sizes[-1]} bytes)"
+        assert max(sizes) == min(sizes), (
+            f"Chord sizes not constant across chain: {sizes}"
         )
 
     def test_chord_or_task_still_nests(self):
