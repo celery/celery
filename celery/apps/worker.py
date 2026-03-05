@@ -26,6 +26,8 @@ from celery.utils.debug import cry
 from celery.utils.imports import qualname
 from celery.utils.log import get_logger, in_sighandler, set_in_sighandler
 from celery.utils.text import pluralize
+from celery.utils.warning import (W_EVENTLET_MONKEY_PATCHED_WITH_WRONG_POOL, W_GEVENT_MONKEY_PATCHED_WITH_WRONG_POOL,
+                                  is_eventlet_monkey_patched, is_gevent_monkey_patched)
 from celery.worker import WorkController
 
 __all__ = ('Worker',)
@@ -165,6 +167,17 @@ class Worker(WorkController):
                     "to Celery 6.0."
                 )
 
+        # Check for gevent/eventlet monkey patching with a non-green pool
+        pool = self.pool_cls
+        if not isinstance(pool, str):
+            pool = pool.__module__
+        is_gevent_pool = 'gevent' in pool
+        is_eventlet_pool = 'eventlet' in pool
+        if not is_gevent_pool and is_gevent_monkey_patched():
+            logger.warning(W_GEVENT_MONKEY_PATCHED_WITH_WRONG_POOL, pool)
+        if not is_eventlet_pool and is_eventlet_monkey_patched():
+            logger.warning(W_EVENTLET_MONKEY_PATCHED_WITH_WRONG_POOL, pool)
+
     def emit_banner(self):
         # Dump configuration to screen so we have some basic information
         # for when users sends bug reports.
@@ -249,6 +262,7 @@ class Worker(WorkController):
                     banner[i] = ' '.join([ARTLINES[i], banner[i]])
                 except IndexError:
                     banner[i] = ' ' * 16 + banner[i]
+
         return '\n'.join(banner) + '\n'
 
     def install_platform_tweaks(self, worker):
