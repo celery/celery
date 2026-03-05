@@ -7,69 +7,85 @@ from celery.utils.warning import is_eventlet_monkey_patched, is_gevent_monkey_pa
 class test_monkey_patch_detection:
 
     def test_detect_gevent_monkey_patched_when_not_patched(self):
-        """Test detect_gevent_monkey_patched returns False when gevent is not imported."""
-        with patch.dict('sys.modules', {'gevent': None}):
-            # When gevent cannot be imported, should return False
-            result = is_gevent_monkey_patched()
-        # In a normal test environment without gevent patching, should be False
-        assert result is False or result is True  # depends on test environment
+        """Test detect_gevent_monkey_patched returns False when gevent is not monkey patched."""
+        from types import SimpleNamespace
 
-    @patch('celery.utils.warning.monkey', create=True)
-    def test_detect_gevent_monkey_patched_when_patched(self, mock_monkey):
-        """Test is_gevent_monkey_patched returns True when gevent is patched."""
-        mock_monkey.is_module_patched.return_value = True
-        with patch.dict('sys.modules', {'gevent.monkey': mock_monkey}):
-            with patch('celery.utils.warning.is_gevent_monkey_patched') as mock_detect:
-                mock_detect.return_value = True
-                assert mock_detect() is True
+        fake_monkey = SimpleNamespace()
+        fake_monkey.is_module_patched = lambda *args, **kwargs: False
+        fake_gevent = SimpleNamespace(monkey=fake_monkey)
+
+        with patch.dict('sys.modules', {'gevent': fake_gevent, 'gevent.monkey': fake_monkey}):
+            result = is_gevent_monkey_patched()
+
+        assert result is False
+
+    def test_detect_gevent_monkey_patched_when_patched(self):
+        """Test is_gevent_monkey_patched returns True when gevent is monkey patched."""
+        from types import SimpleNamespace
+
+        fake_monkey = SimpleNamespace()
+        fake_monkey.is_module_patched = lambda *args, **kwargs: True
+        fake_gevent = SimpleNamespace(monkey=fake_monkey)
+
+        with patch.dict('sys.modules', {'gevent': fake_gevent, 'gevent.monkey': fake_monkey}):
+            result = is_gevent_monkey_patched()
+
+        assert result is True
 
     def test_detect_gevent_monkey_patched_import_error(self):
         """Test detect_gevent_monkey_patched returns False when gevent import fails."""
-        with patch.dict('sys.modules', {'gevent': None, 'gevent.monkey': None}):
-            # Force ImportError by removing gevent
-            import sys
-            gevent_backup = sys.modules.get('gevent')
-            gevent_monkey_backup = sys.modules.get('gevent.monkey')
-            try:
-                sys.modules['gevent'] = None
-                # The function should handle ImportError gracefully
-                # This is tricky to test as we need to actually cause an ImportError
-            finally:
-                if gevent_backup is not None:
-                    sys.modules['gevent'] = gevent_backup
-                if gevent_monkey_backup is not None:
-                    sys.modules['gevent.monkey'] = gevent_monkey_backup
+        import builtins
+
+        real_import = builtins.__import__
+
+        def failing_import(name, *args, **kwargs):
+            if name.startswith('gevent'):
+                raise ImportError("Simulated gevent import failure")
+            return real_import(name, *args, **kwargs)
+
+        with patch('builtins.__import__', side_effect=failing_import):
+            result = is_gevent_monkey_patched()
+
+        assert result is False
 
     def test_detect_eventlet_monkey_patched_when_not_patched(self):
-        """Test detect_eventlet_monkey_patched returns False when eventlet is not imported."""
-        with patch.dict('sys.modules', {'eventlet': None}):
-            # When eventlet cannot be imported, should return False
-            result = is_eventlet_monkey_patched()
-        # In a normal test environment without eventlet patching, should be False
-        assert result is False or result is True  # depends on test environment
+        """Test detect_eventlet_monkey_patched returns False when eventlet is not monkey patched."""
+        from types import SimpleNamespace
 
-    @patch('celery.utils.warning.patcher', create=True)
-    def test_detect_eventlet_monkey_patched_when_patched(self, mock_patcher):
-        """Test is_eventlet_monkey_patched returns True when eventlet is patched."""
-        mock_patcher.is_monkey_patched.return_value = True
-        with patch.dict('sys.modules', {'eventlet.patcher': mock_patcher}):
-            with patch('celery.utils.warning.is_eventlet_monkey_patched') as mock_detect:
-                mock_detect.return_value = True
-                assert mock_detect() is True
+        fake_patcher = SimpleNamespace()
+        fake_patcher.is_monkey_patched = lambda *args, **kwargs: False
+        fake_eventlet = SimpleNamespace(patcher=fake_patcher)
+
+        with patch.dict('sys.modules', {'eventlet': fake_eventlet, 'eventlet.patcher': fake_patcher}):
+            result = is_eventlet_monkey_patched()
+
+        assert result is False
+
+    def test_detect_eventlet_monkey_patched_when_patched(self):
+        """Test is_eventlet_monkey_patched returns True when eventlet is monkey patched."""
+        from types import SimpleNamespace
+
+        fake_patcher = SimpleNamespace()
+        fake_patcher.is_monkey_patched = lambda *args, **kwargs: True
+        fake_eventlet = SimpleNamespace(patcher=fake_patcher)
+
+        with patch.dict('sys.modules', {'eventlet': fake_eventlet, 'eventlet.patcher': fake_patcher}):
+            result = is_eventlet_monkey_patched()
+
+        assert result is True
 
     def test_detect_eventlet_monkey_patched_import_error(self):
         """Test detect_eventlet_monkey_patched returns False when eventlet import fails."""
-        with patch.dict('sys.modules', {'eventlet': None, 'eventlet.patcher': None}):
-            # Force ImportError by removing eventlet
-            import sys
-            eventlet_backup = sys.modules.get('eventlet')
-            eventlet_patcher_backup = sys.modules.get('eventlet.patcher')
-            try:
-                sys.modules['eventlet'] = None
-                # The function should handle ImportError gracefully
-                # This is tricky to test as we need to actually cause an ImportError
-            finally:
-                if eventlet_backup is not None:
-                    sys.modules['eventlet'] = eventlet_backup
-                if eventlet_patcher_backup is not None:
-                    sys.modules['eventlet.patcher'] = eventlet_patcher_backup
+        import builtins
+
+        real_import = builtins.__import__
+
+        def failing_import(name, *args, **kwargs):
+            if name.startswith('eventlet'):
+                raise ImportError("Simulated eventlet import failure")
+            return real_import(name, *args, **kwargs)
+
+        with patch('builtins.__import__', side_effect=failing_import):
+            result = is_eventlet_monkey_patched()
+
+        assert result is False
