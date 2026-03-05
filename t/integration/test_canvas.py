@@ -462,7 +462,7 @@ class test_chain:
         assert res.get(timeout=TIMEOUT) == 178
 
     @flaky
-    def test_chain_of_six_chords(self, manager):
+    def test_chain_of_nine_chords(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
         except NotImplementedError as e:
