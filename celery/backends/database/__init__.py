@@ -57,6 +57,7 @@ class DatabaseBackend(BaseBackend):
                  dburi=None,
                  engine_options=None,
                  url=None,
+                 *,
                  schema_extensions: Optional[Dict[Literal['task', 'group'], List[SchemaExtension]]] = None,
                  **kwargs):
         # The `url` argument was added later and is used by
