@@ -154,6 +154,22 @@ def get_task_name(request, default):
     return getattr(request, 'shadow', None) or default
 
 
+def get_request_ignore_result(task, req):
+    """Get the effective ignore_result value for this request."""
+    if req is None:
+        return task.ignore_result
+
+    if isinstance(req, Context):
+        if 'ignore_result' in req.__dict__:
+            return req.ignore_result
+        return task.ignore_result
+
+    if isinstance(req, dict):
+        return req.get('ignore_result', task.ignore_result)
+
+    return getattr(req, 'ignore_result', task.ignore_result)
+
+
 class TraceInfo:
     """Information about task execution."""
 
@@ -165,7 +181,7 @@ class TraceInfo:
 
     def handle_error_state(self, task, req,
                            eager=False, call_errbacks=True):
-        if task.ignore_result:
+        if get_request_ignore_result(task, req):
             store_errors = task.store_errors_even_if_ignored
         elif eager and task.store_eager_result:
             store_errors = True
@@ -353,16 +369,6 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     fun = task if task_has_custom(task, '__call__') else task.run
 
     loader = loader or app.loader
-    ignore_result = task.ignore_result
-    track_started = task.track_started
-    track_started = not eager and (task.track_started and not ignore_result)
-
-    # #6476
-    if eager and not ignore_result and task.store_eager_result:
-        publish_result = True
-    else:
-        publish_result = not eager and not ignore_result
-
     deduplicate_successful_tasks = ((app.conf.task_acks_late or task.acks_late)
                                     and app.conf.worker_deduplicate_successful_tasks
                                     and app.backend.persistent)
@@ -433,6 +439,14 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
 
             task_request = Context(request or {}, args=args,
                                    called_directly=False, kwargs=kwargs)
+            ignore_result = get_request_ignore_result(task, task_request)
+            track_started = not eager and (task.track_started and not ignore_result)
+
+            # #6476
+            if eager and not ignore_result and task.store_eager_result:
+                publish_result = True
+            else:
+                publish_result = not eager and not ignore_result
 
             redelivered = (task_request.delivery_info
                            and task_request.delivery_info.get('redelivered', False))

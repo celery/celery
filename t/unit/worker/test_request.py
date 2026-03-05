@@ -248,6 +248,11 @@ class test_Request(RequestCase):
                                    exclude_headers=['shadow'])
         assert request.name == 't.unit.worker.test_request.add'
 
+    def test_ignore_result_defaults_to_task_setting_when_header_missing(self):
+        self.add.ignore_result = True
+        request = self.get_request(self.add.s(2, 2))
+        assert request.ignore_result is True
+
     def test_invalid_eta_raises_InvalidTaskError(self):
         with pytest.raises(InvalidTaskError):
             self.get_request(self.add.s(2, 2).set(eta='12345'))
@@ -454,6 +459,9 @@ class test_Request(RequestCase):
         self.mytask.ignore_result = True
         job = self.xRequest()
         assert not job.store_errors
+
+        job = self.xRequest(ignore_result=False)
+        assert job.store_errors
 
         self.mytask.store_errors_even_if_ignored = True
         job = self.xRequest()
