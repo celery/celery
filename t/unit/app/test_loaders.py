@@ -234,19 +234,74 @@ class test_autodiscovery:
             base.autodiscover_tasks(['foo'])
             frm.assert_called()
 
-    def test_find_related_module(self):
+    # Happy - get something back
+    def test_find_related_module__when_existent_package_alone(self):
         with patch('importlib.import_module') as imp:
             imp.return_value = Mock()
             imp.return_value.__path__ = 'foo'
-            assert base.find_related_module('bar', 'tasks').__path__ == 'foo'
-            imp.assert_any_call('bar')
-            imp.assert_any_call('bar.tasks')
+            assert base.find_related_module('foo', None).__path__ == 'foo'
+            imp.assert_called_once_with('foo')
 
-            imp.reset_mock()
-            assert base.find_related_module('bar', None).__path__ == 'foo'
-            imp.assert_called_once_with('bar')
+    def test_find_related_module__when_existent_package_and_related_name(self):
+        with patch('importlib.import_module') as imp:
+            first_import = Mock()
+            first_import.__path__ = 'foo'
+            second_import = Mock()
+            second_import.__path__ = 'foo/tasks'
+            imp.side_effect = [first_import, second_import]
+            assert base.find_related_module('foo', 'tasks').__path__ == 'foo/tasks'
+            imp.assert_any_call('foo')
+            imp.assert_any_call('foo.tasks')
 
-            imp.side_effect = ImportError()
-            with pytest.raises(ImportError):
-                base.find_related_module('bar', 'tasks')
-            assert base.find_related_module('bar.foo', 'tasks') is None
+    def test_find_related_module__when_existent_package_parent_and_related_name(self):
+        with patch('importlib.import_module') as imp:
+            first_import = ModuleNotFoundError(name='foo.BarApp')  # Ref issue #2248
+            second_import = Mock()
+            second_import.__path__ = 'foo/tasks'
+            imp.side_effect = [first_import, second_import]
+            assert base.find_related_module('foo.BarApp', 'tasks').__path__ == 'foo/tasks'
+            imp.assert_any_call('foo.BarApp')
+            imp.assert_any_call('foo.tasks')
+
+    # Sad - nothing returned
+    def test_find_related_module__when_package_exists_but_related_name_does_not(self):
+        with patch('importlib.import_module') as imp:
+            first_import = Mock()
+            first_import.__path__ = 'foo'
+            second_import = ModuleNotFoundError(name='foo.tasks')
+            imp.side_effect = [first_import, second_import]
+            assert base.find_related_module('foo', 'tasks') is None
+            imp.assert_any_call('foo')
+            imp.assert_any_call('foo.tasks')
+
+    def test_find_related_module__when_existent_package_parent_but_no_related_name(self):
+        with patch('importlib.import_module') as imp:
+            first_import = ModuleNotFoundError(name='foo.bar')
+            second_import = ModuleNotFoundError(name='foo.tasks')
+            imp.side_effect = [first_import, second_import]
+            assert base.find_related_module('foo.bar', 'tasks') is None
+            imp.assert_any_call('foo.bar')
+            imp.assert_any_call('foo.tasks')
+
+    # Sad - errors
+    def test_find_related_module__when_no_package_parent(self):
+        with patch('importlib.import_module') as imp:
+            non_existent_import = ModuleNotFoundError(name='foo')
+            imp.side_effect = non_existent_import
+            with pytest.raises(ModuleNotFoundError) as exc:
+                base.find_related_module('foo', 'tasks')
+
+            assert exc.value.name == 'foo'
+            imp.assert_called_once_with('foo')
+
+    def test_find_related_module__when_nested_import_missing(self):
+        expected_error = 'dummy import error - e.g. missing nested package'
+        with patch('importlib.import_module') as imp:
+            first_import = Mock()
+            first_import.__path__ = 'foo'
+            second_import = ModuleNotFoundError(expected_error)
+            imp.side_effect = [first_import, second_import]
+            with pytest.raises(ModuleNotFoundError) as exc:
+                base.find_related_module('foo', 'tasks')
+
+            assert exc.value.msg == expected_error

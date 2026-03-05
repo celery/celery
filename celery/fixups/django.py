@@ -1,8 +1,9 @@
 """Django-specific customization."""
+import contextlib
 import os
 import sys
 import warnings
-from datetime import datetime
+from datetime import datetime, timezone
 from importlib import import_module
 from typing import IO, TYPE_CHECKING, Any, List, Optional, cast
 
@@ -11,11 +12,13 @@ from kombu.utils.objects import cached_property
 
 from celery import _state, signals
 from celery.exceptions import FixupWarning, ImproperlyConfigured
+from celery.worker import WorkController
 
 if TYPE_CHECKING:
     from types import ModuleType
     from typing import Protocol
 
+    from django.db.backends.base.base import BaseDatabaseWrapper
     from django.db.utils import ConnectionHandler
 
     from celery.app.base import Celery
@@ -78,6 +81,9 @@ class DjangoFixup:
         self._settings = symbol_by_name('django.conf:settings')
         self.app.loader.now = self.now
 
+        if not self.app._custom_task_cls_used:
+            self.app.task_cls = 'celery.contrib.django.task:DjangoTask'
+
         signals.import_modules.connect(self.on_import_modules)
         signals.worker_init.connect(self.on_worker_init)
         return self
@@ -97,10 +103,20 @@ class DjangoFixup:
         self.worker_fixup.validate_models()
 
     def on_worker_init(self, **kwargs: Any) -> None:
+        worker: Optional["WorkController"] = kwargs.get("sender")
+        if worker:
+            self.worker_fixup.worker = worker
+        else:
+            warnings.warn(
+                "DjangoFixup.on_worker_init called without a sender (worker instance). "
+                "This may indicate a misconfiguration or an internal error.",
+                FixupWarning,
+                stacklevel=2,
+            )
         self.worker_fixup.install()
 
     def now(self, utc: bool = False) -> datetime:
-        return datetime.utcnow() if utc else self._now()
+        return datetime.now(timezone.utc) if utc else self._now()
 
     def autodiscover_tasks(self) -> List[str]:
         from django.apps import apps
@@ -113,6 +129,7 @@ class DjangoFixup:
 
 class DjangoWorkerFixup:
     _db_recycles = 0
+    worker = None  # Set via on_worker_init callback to avoid recursive WorkController instantiation
 
     def __init__(self, app: "Celery") -> None:
         self.app = app
@@ -161,15 +178,16 @@ class DjangoWorkerFixup:
         # network IO that close() might cause.
         for c in self._db.connections.all():
             if c and c.connection:
-                self._maybe_close_db_fd(c.connection)
+                self._maybe_close_db_fd(c)
 
         # use the _ version to avoid DB_REUSE preventing the conn.close() call
-        self._close_database(force=True)
+        self._close_database()
         self.close_cache()
 
-    def _maybe_close_db_fd(self, fd: IO) -> None:
+    def _maybe_close_db_fd(self, c: "BaseDatabaseWrapper") -> None:
         try:
-            _maybe_close_fd(fd)
+            with c.wrap_database_errors:
+                _maybe_close_fd(c.connection)
         except self.interface_errors:
             pass
 
@@ -192,13 +210,28 @@ class DjangoWorkerFixup:
             self._close_database()
         self._db_recycles += 1
 
-    def _close_database(self, force: bool = False) -> None:
-        for conn in self._db.connections.all():
+    def _is_prefork(self) -> bool:
+        if self.worker is None:
+            return False
+        pool = self.worker.pool_cls if isinstance(self.worker.pool_cls, str) else self.worker.pool_cls.__module__
+        return "prefork" in pool
+
+    def _close_database(self) -> None:
+        try:
+            connections = self._db.connections.all(initialized_only=True)
+        except TypeError:
+            # Support Django < 4.1
+            connections = self._db.connections.all()
+
+        is_prefork = self._is_prefork()
+
+        for conn in connections:
             try:
-                if force:
-                    conn.close()
-                else:
-                    conn.close_if_unusable_or_obsolete()
+                conn.close()
+                pool_enabled = self._settings.DATABASES.get(conn.alias, {}).get("OPTIONS", {}).get("pool")
+                if pool_enabled and is_prefork and hasattr(conn, "close_pool"):
+                    with contextlib.suppress(KeyError):
+                        conn.close_pool()
             except self.interface_errors:
                 pass
             except self.DatabaseError as exc:

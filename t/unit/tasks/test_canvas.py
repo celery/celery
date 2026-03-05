@@ -4,7 +4,6 @@ from collections.abc import Iterable
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
-import pytest_subtests  # noqa
 
 from celery._state import _task_stack
 from celery.canvas import (Signature, _chain, _maybe_group, _merge_dictionaries, chain, chord, chunks, group,
@@ -90,15 +89,7 @@ class CanvasCase:
 
         @self.app.task(shared=False)
         def xprod(numbers):
-            try:
-                return math.prod(numbers)
-            except AttributeError:
-                #  TODO: Drop this backport once
-                #        we drop support for Python 3.7
-                import operator
-                from functools import reduce
-
-                return reduce(operator.mul, numbers)
+            return math.prod(numbers)
 
         self.xprod = xprod
 
@@ -476,6 +467,13 @@ class test_chain(CanvasCase):
         c = g1 | g2
         assert isinstance(c, chord)
 
+    def test_prepare_steps_set_last_task_id_to_chain(self):
+        last_task = self.add.s(2).set(task_id='42')
+        c = self.add.s(4) | last_task
+        assert c.id is None
+        tasks, _ = c.prepare_steps((), {}, c.tasks, last_task_id=last_task.id)
+        assert c.id == last_task.id
+
     def test_group_to_chord(self):
         c = (
             self.add.s(5) |
@@ -563,6 +561,36 @@ class test_chain(CanvasCase):
         new_chain = c | t  # t should be chained with the body of c[0] and create a new chord
         assert isinstance(new_chain, _chain)
         assert isinstance(new_chain.tasks[0].body, chord)
+
+    @pytest.mark.parametrize(
+        "group_last_task",
+        [False, True],
+    )
+    def test_chain_of_chord_upgrade_on_chaining__protocol_2(
+            self, group_last_task):
+        c = chain(
+            group([self.add.s(i, i) for i in range(5)], app=self.app),
+            group([self.add.s(i, i) for i in range(10, 15)], app=self.app),
+            group([self.add.s(i, i) for i in range(20, 25)], app=self.app),
+            self.add.s(30) if not group_last_task else group(self.add.s(30),
+                                                             app=self.app))
+        assert isinstance(c, _chain)
+        assert len(
+            c.tasks
+        ) == 1, "Consecutive chords should be further upgraded to a single chord."
+        assert isinstance(c.tasks[0], chord)
+
+    def test_chain_of_chord_upgrade_on_chaining__protocol_3(self):
+        c = chain(
+            chain([self.add.s(i, i) for i in range(5)]),
+            group([self.add.s(i, i) for i in range(10, 15)], app=self.app),
+            chord([signature('header')], signature('body'), app=self.app),
+            group([self.add.s(i, i) for i in range(20, 25)], app=self.app))
+        assert isinstance(c, _chain)
+        assert isinstance(
+            c.tasks[-1], chord
+        ), "Chord followed by a group should be upgraded to a single chord with chained body."
+        assert len(c.tasks) == 6
 
     def test_apply_options(self):
 
@@ -782,6 +810,22 @@ class test_chain(CanvasCase):
         assert signature(flat_chain.tasks[1].options['link'][0]) == signature('link_b')
         assert signature(flat_chain.tasks[1].options['link_error'][0]) == signature('link_ab')
 
+    def test_group_in_center_of_chain(self):
+        t1 = chain(self.add.si(1, 1), group(self.add.si(1, 1), self.add.si(1, 1)),
+                   self.add.si(1, 1) | self.add.si(1, 1))
+        t2 = chord([self.add.si(1, 1), self.add.si(1, 1)], t1)
+        t2.freeze()  # should not raise
+
+    def test_upgrade_to_chord_on_chain(self):
+        group1 = group(self.add.si(10, 10), self.add.si(10, 10))
+        group2 = group(self.xsum.s(), self.xsum.s())
+        chord1 = group1 | group2
+        chain1 = (self.xsum.si([5]) | self.add.s(1))
+        final_task = chain(chord1, chain1)
+        assert len(final_task.tasks) == 1 and isinstance(final_task.tasks[0], chord)
+        assert isinstance(final_task.tasks[0].body, chord)
+        assert final_task.tasks[0].body.body == chain1
+
 
 class test_group(CanvasCase):
     def test_repr(self):
@@ -861,6 +905,16 @@ class test_group(CanvasCase):
         # it gets called
         for child_sig in g1.tasks:
             child_sig.link_error.assert_called_with(sig.clone(immutable=True))
+
+    def test_link_error_with_dict_sig(self):
+        g1 = group(Mock(name='t1'), Mock(name='t2'), app=self.app)
+        errback = signature('tcb')
+        errback_dict = dict(errback)
+        g1.link_error(errback_dict)
+        # We expect that all group children will be given the errback to ensure
+        # it gets called
+        for child_sig in g1.tasks:
+            child_sig.link_error.assert_called_with(errback.clone(immutable=True))
 
     def test_apply_empty(self):
         x = group(app=self.app)
@@ -1187,6 +1241,12 @@ class test_group(CanvasCase):
             assert task.args[1] == 0
             assert isinstance(result, AsyncResult)
             assert group_id is not None
+
+    def test_task_replace_with_group_preserves_group_order(self):
+        self.app.conf.task_always_eager = True
+        sig = self.replace_with_group.s(1, 2)
+        res = self.helper_test_get_delay(sig.delay())
+        assert res == [3, 2]
 
 
 class test_chord(CanvasCase):
@@ -1683,10 +1743,18 @@ class test_chord(CanvasCase):
             group(signature('t'), signature('t'))
         ]
         for chord_header in headers:
-            c = chord(chord_header, signature('t'))
+            c = chord(chord_header, signature('t'), app=self.app)
             sig = signature('t')
             errback = c.link_error(sig)
             assert errback == sig
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_flag_allow_error_cb_on_chord_header_with_dict_callback(self):
+        self.app.conf.task_allow_error_cb_on_chord_header = True
+        c = chord(group(signature('th1'), signature('th2')), signature('tbody'), app=self.app)
+        errback_dict = dict(signature('tcb'))
+        errback = c.link_error(errback_dict)
+        assert errback == errback_dict
 
     def test_chord__or__group_of_single_task(self):
         """ Test chaining a chord to a group of a single task. """
@@ -1712,13 +1780,109 @@ class test_chord(CanvasCase):
     def test_link_error_on_chord_header(self, header):
         """ Test that link_error on a chord also links the header """
         self.app.conf.task_allow_error_cb_on_chord_header = True
-        c = chord(header, signature('body'))
+        c = chord(header, signature('body'), app=self.app)
         err = signature('err')
         errback = c.link_error(err)
         assert errback == err
         for header_task in c.tasks:
             assert header_task.options['link_error'] == [err.clone(immutable=True)]
-        assert c.body.options['link_error'] == [err]
+        assert c.body.options["link_error"] == [err]
+
+    def test_chord_run_ensures_body_has_valid_task_id(self):
+        """Test that chord.run() ensures body always gets a valid task ID.
+
+        This is the unit test for the fix to issue #9773. The chord body should always
+        be frozen with a valid task ID to prevent "task_id must not be empty" errors.
+        """
+        # Create a chord with header group and body chain
+        header = group([self.add.s(1, 1), self.add.s(2, 2)])
+        body = chain(self.add.s(10, 10), self.add.s(20, 20))
+        test_chord = chord(header, body)
+
+        # Set up specific IDs for testing
+        chord_task_id = "test-chord-id"
+        group_task_id = "test-group-id"
+        header.options["task_id"] = group_task_id
+
+        # Use patch to spy on body.freeze method
+        with patch.object(body, "freeze", wraps=body.freeze) as mock_freeze:
+            test_chord.run(header, body, (), task_id=chord_task_id)
+
+            # Assert that body.freeze was called with the provided task_id and group_id
+            mock_freeze.assert_called_once_with(
+                chord_task_id, group_id=group_task_id, root_id=None
+            )
+
+    def test_chord_run_generates_task_id_when_none_provided(self):
+        """Test that chord.run() generates a task_id when none is provided."""
+        # Create a chord with header group and body chain (no task_id set)
+        header = group([self.add.s(1, 1), self.add.s(2, 2)])
+        body = chain(self.add.s(10, 10), self.add.s(20, 20))
+        test_chord = chord(header, body)
+
+        # Set group ID
+        group_id = "test-group-id"
+        header.options["task_id"] = group_id
+
+        # Use patch to spy on body.freeze method
+        with patch.object(body, "freeze", wraps=body.freeze) as mock_freeze:
+            test_chord.run(header, body, (), task_id=None)
+
+            # Assert that body.freeze was called with a generated UUID and group_id
+            mock_freeze.assert_called_once()
+            args, kwargs = mock_freeze.call_args
+            body_task_id = args[0] if args else kwargs.get("_id")
+            passed_group_id = kwargs.get("group_id")
+
+            # Body should get a unique task ID (not None, not group_id)
+            assert body_task_id is not None
+            assert body_task_id != group_id  # Should be different from group_id
+            assert passed_group_id == group_id  # But should know its group
+
+    def test_chord_run_body_freeze_prevents_task_id_empty_error(self):
+        """Test that proper body.freeze() call prevents 'task_id must not be empty' error.
+
+        This test ensures that when chord body is frozen with a valid task ID,
+        subsequent error handling won't encounter the "task_id must not be empty" error.
+        """
+        # Create chord components
+        header = group([self.add.s(1, 1), self.add.s(2, 2)])
+        body = chain(self.add.s(10, 10), self.add.s(20, 20))
+        test_chord = chord(header, body)
+
+        # Set a group task ID
+        group_id = "test-group-12345"
+        header.options["task_id"] = group_id
+
+        # Run the chord with external task ID
+        external_task_id = "external-task-id"
+        result = test_chord.run(header, body, (), task_id=external_task_id)
+
+        # Verify the frozen result has the external task ID, not group_id
+        assert result.id == external_task_id
+        assert body.id is not None
+        assert result.parent is not None
+
+        # Body should know its group but have its own ID
+        assert body.options.get('group_id') == group_id or body.id != group_id
+
+    def test_chord_run_body_freeze_with_no_external_task_id(self):
+        """Test chord body gets unique ID when no external task_id provided."""
+        header = group([self.add.s(1, 1), self.add.s(2, 2)])
+        body = chain(self.add.s(10, 10), self.add.s(20, 20))
+        test_chord = chord(header, body)
+
+        group_id = "test-group-12345"
+        header.options["task_id"] = group_id
+
+        # Run chord without external task ID
+        result = test_chord.run(header, body, (), task_id=None)
+
+        # Body should get unique ID, different from group_id
+        assert result.id is not None
+        assert result.id != group_id
+        assert body.id is not None
+        assert body.id != group_id
 
 
 class test_maybe_signature(CanvasCase):

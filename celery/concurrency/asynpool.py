@@ -103,26 +103,35 @@ def _get_job_writer(job):
         return writer()  # is a weakref
 
 
+def _ensure_integral_fd(fd):
+    return fd if isinstance(fd, Integral) else fd.fileno()
+
+
 if hasattr(select, 'poll'):
     def _select_imp(readers=None, writers=None, err=None, timeout=0,
                     poll=select.poll, POLLIN=select.POLLIN,
                     POLLOUT=select.POLLOUT, POLLERR=select.POLLERR):
         poller = poll()
         register = poller.register
+        fd_to_mask = {}
 
         if readers:
-            [register(fd, POLLIN) for fd in readers]
+            for fd in map(_ensure_integral_fd, readers):
+                fd_to_mask[fd] = fd_to_mask.get(fd, 0) | POLLIN
         if writers:
-            [register(fd, POLLOUT) for fd in writers]
+            for fd in map(_ensure_integral_fd, writers):
+                fd_to_mask[fd] = fd_to_mask.get(fd, 0) | POLLOUT
         if err:
-            [register(fd, POLLERR) for fd in err]
+            for fd in map(_ensure_integral_fd, err):
+                fd_to_mask[fd] = fd_to_mask.get(fd, 0) | POLLERR
+
+        for fd, event_mask in fd_to_mask.items():
+            register(fd, event_mask)
 
         R, W = set(), set()
         timeout = 0 if timeout and timeout < 0 else round(timeout * 1e3)
         events = poller.poll(timeout)
         for fd, event in events:
-            if not isinstance(fd, Integral):
-                fd = fd.fileno()
             if event & POLLIN:
                 R.add(fd)
             if event & POLLOUT:
@@ -194,7 +203,7 @@ def iterate_file_descriptors_safely(fds_iter, source_data,
     or possibly other reasons, so safely manage our lists of FDs.
     :param fds_iter: the file descriptors to iterate and apply hub_method
     :param source_data: data source to remove FD if it renders OSError
-    :param hub_method: the method to call with with each fd and kwargs
+    :param hub_method: the method to call with each fd and kwargs
     :*args to pass through to the hub_method;
     with a special syntax string '*fd*' represents a substitution
     for the current fd object in the iteration (for some callers).
@@ -382,6 +391,7 @@ class ResultHandler(_pool.ResultHandler):
             setblocking(reader, 1)
         except OSError:
             return remove(fd)
+        result = None
         try:
             if reader.poll(0):
                 task = reader.recv()
@@ -389,7 +399,7 @@ class ResultHandler(_pool.ResultHandler):
                 task = None
                 sleep(0.5)
         except (OSError, EOFError):
-            return remove(fd)
+            result = remove(fd)
         else:
             if task:
                 on_state_change(task)
@@ -397,7 +407,8 @@ class ResultHandler(_pool.ResultHandler):
             try:
                 setblocking(reader, 0)
             except OSError:
-                return remove(fd)
+                result = remove(fd)
+        return result
 
 
 class AsynPool(_pool.Pool):
@@ -461,7 +472,7 @@ class AsynPool(_pool.Pool):
 
         self.write_stats = Counter()
 
-        super().__init__(processes, *args, **kwargs)
+        super().__init__(processes, *args, synack=synack, **kwargs)
 
         for proc in self._pool:
             # create initial mappings, these will be updated
@@ -502,10 +513,11 @@ class AsynPool(_pool.Pool):
             self._event_process_exit, hub, proc)
 
     def _untrack_child_process(self, proc, hub):
-        if proc._sentinel_poll is not None:
-            fd, proc._sentinel_poll = proc._sentinel_poll, None
-            hub.remove(fd)
-            os.close(fd)
+        sentinel_poll = getattr(proc, '_sentinel_poll', None)
+        if sentinel_poll is not None:
+            proc._sentinel_poll = None
+            hub.remove(sentinel_poll)
+            os.close(sentinel_poll)
 
     def register_with_event_loop(self, hub):
         """Register the async pool with the current event loop."""
@@ -772,7 +784,7 @@ class AsynPool(_pool.Pool):
                     None, WRITE | ERR, consolidate=True)
             else:
                 iterate_file_descriptors_safely(
-                    inactive, all_inqueues, hub_remove)
+                    inactive, all_inqueues, hub.remove_writer)
         self.on_poll_start = on_poll_start
 
         def on_inqueue_close(fd, proc):
@@ -818,7 +830,7 @@ class AsynPool(_pool.Pool):
                     # worker is already busy with another task
                     continue
                 if ready_fd not in all_inqueues:
-                    hub_remove(ready_fd)
+                    hub.remove_writer(ready_fd)
                     continue
                 try:
                     job = pop_message()
@@ -829,7 +841,7 @@ class AsynPool(_pool.Pool):
                     # this may create a spinloop where the event loop
                     # always wakes up.
                     for inqfd in diff(active_writes):
-                        hub_remove(inqfd)
+                        hub.remove_writer(inqfd)
                     break
 
                 else:
@@ -927,7 +939,7 @@ class AsynPool(_pool.Pool):
                     else:
                         errors = 0
             finally:
-                hub_remove(fd)
+                hub.remove_writer(fd)
                 write_stats[proc.index] += 1
                 # message written, so this fd is now available
                 active_writes.discard(fd)
@@ -988,11 +1000,14 @@ class AsynPool(_pool.Pool):
         if self._state == TERMINATE:
             return
         # cancel all tasks that haven't been accepted so that NACK is sent
-        # if synack is enabled.
-        if self.synack:
-            for job in self._cache.values():
-                if not job._accepted:
+        # if synack is enabled, otherwise discard them from the cache
+        # since they will be redelivered by the broker.
+        for job in tuple(self._cache.values()):
+            if not job._accepted:
+                if self.synack:
                     job._cancel()
+                else:
+                    job.discard()
 
         # clear the outgoing buffer as the tasks will be redelivered by
         # the broker anyway.
@@ -1017,36 +1032,47 @@ class AsynPool(_pool.Pool):
                     if writer is not None:
                         owned_by[writer] = job
 
-                if not self._active_writers:
-                    self._cache.clear()
-                else:
-                    while self._active_writers:
-                        writers = list(self._active_writers)
-                        for gen in writers:
-                            if (gen.__name__ == '_write_job' and
-                                    gen_not_started(gen)):
-                                # hasn't started writing the job so can
-                                # discard the task, but we must also remove
-                                # it from the Pool._cache.
-                                try:
-                                    job = owned_by[gen]
-                                except KeyError:
-                                    pass
-                                else:
-                                    # removes from Pool._cache
-                                    job.discard()
-                                self._active_writers.discard(gen)
+                while self._active_writers:
+                    writers = list(self._active_writers)
+                    for gen in writers:
+                        if (gen.__name__ == '_write_job' and
+                                gen_not_started(gen)):
+                            # hasn't started writing the job so can
+                            # discard the task, but we must also remove
+                            # it from the Pool._cache.
+                            try:
+                                job = owned_by[gen]
+                            except KeyError:
+                                pass
                             else:
+                                # removes from Pool._cache
+                                job.discard()
+                            self._active_writers.discard(gen)
+                        else:
+                            try:
+                                job = owned_by[gen]
+                            except KeyError:
+                                # Generator not in owned_by — not a _write_job
+                                # (e.g. a _write_ack coroutine added by send_ack()).
+                                # These *MUST* complete or the worker process will
+                                # hang waiting for the ack.  Advance it one step;
+                                # the generator raises StopIteration/OSError when
+                                # done or when the peer process has already died.
                                 try:
-                                    job = owned_by[gen]
-                                except KeyError:
-                                    pass
+                                    next(gen)
+                                except (StopIteration, OSError, EOFError):
+                                    self._active_writers.discard(gen)
+                            else:
+                                job_proc = job._write_to
+                                if job_proc._is_alive():
+                                    # _flush_writer calls
+                                    # _active_writers.discard(gen) in its finally.
+                                    self._flush_writer(job_proc, gen)
                                 else:
-                                    job_proc = job._write_to
-                                    if job_proc._is_alive():
-                                        self._flush_writer(job_proc, gen)
-
+                                    # Process is dead, job will never
+                                    # complete - discard from cache.
                                     job.discard()
+                                    self._active_writers.discard(gen)
                     # workers may have exited in the meantime.
                     self.maintain_pool()
                     sleep(next(intervals))  # don't busyloop

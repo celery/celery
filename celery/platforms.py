@@ -42,7 +42,7 @@ __all__ = (
     'DaemonContext', 'detached', 'parse_uid', 'parse_gid', 'setgroups',
     'initgroups', 'setgid', 'setuid', 'maybe_drop_privileges', 'signals',
     'signal_name', 'set_process_title', 'set_mp_process_title',
-    'get_errno_name', 'ignore_errno', 'fd_by_path',
+    'get_errno_name', 'ignore_errno', 'fd_by_path', 'isatty',
 )
 
 # exitcodes
@@ -93,6 +93,14 @@ SIGNAMES = {
     if sig.startswith('SIG') and '_' not in sig
 }
 SIGMAP = {getattr(_signal, name): name for name in SIGNAMES}
+
+
+def isatty(fh):
+    """Return true if the process has a controlling terminal."""
+    try:
+        return fh.isatty()
+    except AttributeError:
+        pass
 
 
 def pyimplementation():
@@ -186,10 +194,14 @@ class Pidfile:
         if not pid:
             self.remove()
             return True
+        if pid == os.getpid():
+            # this can be common in k8s pod with PID of 1 - don't kill
+            self.remove()
+            return True
 
         try:
             os.kill(pid, 0)
-        except os.error as exc:
+        except OSError as exc:
             if exc.errno == errno.ESRCH or exc.errno == errno.EPERM:
                 print('Stale pidfile exists - Removing it.', file=sys.stderr)
                 self.remove()

@@ -1,5 +1,6 @@
 """The ``celery control``, ``. inspect`` and ``. status`` programs."""
 from functools import partial
+from typing import Literal
 
 import click
 from kombu.utils.json import dumps
@@ -39,16 +40,67 @@ def _consume_arguments(meta, method, args):
         args[:] = args[i:]
 
 
-def _compile_arguments(action, args):
-    meta = Panel.meta[action]
+def _compile_arguments(command, args):
+    meta = Panel.meta[command]
     arguments = {}
     if meta.args:
         arguments.update({
-            k: v for k, v in _consume_arguments(meta, action, args)
+            k: v for k, v in _consume_arguments(meta, command, args)
         })
     if meta.variadic:
         arguments.update({meta.variadic: args})
     return arguments
+
+
+_RemoteControlType = Literal['inspect', 'control']
+
+
+def _verify_command_name(type_: _RemoteControlType, command: str) -> None:
+    choices = _get_commands_of_type(type_)
+
+    if command not in choices:
+        command_listing = ", ".join(choices)
+        raise click.UsageError(
+            message=f'Command {command} not recognized. Available {type_} commands: {command_listing}',
+        )
+
+
+def _list_option(type_: _RemoteControlType):
+    def callback(ctx: click.Context, param, value) -> None:
+        if not value:
+            return
+        choices = _get_commands_of_type(type_)
+
+        formatter = click.HelpFormatter()
+
+        with formatter.section(f'{type_.capitalize()} Commands'):
+            command_list = []
+            for command_name, info in choices.items():
+                if info.signature:
+                    command_preview = f'{command_name} {info.signature}'
+                else:
+                    command_preview = command_name
+                command_list.append((command_preview, info.help))
+            formatter.write_dl(command_list)
+        ctx.obj.echo(formatter.getvalue(), nl=False)
+        ctx.exit()
+
+    return click.option(
+        '--list',
+        is_flag=True,
+        help=f'List available {type_} commands and exit.',
+        expose_value=False,
+        is_eager=True,
+        callback=callback,
+    )
+
+
+def _get_commands_of_type(type_: _RemoteControlType) -> dict:
+    command_name_info_pairs = [
+        (name, info) for name, info in Panel.meta.items()
+        if info.type == type_ and info.visible
+    ]
+    return dict(sorted(command_name_info_pairs))
 
 
 @click.command(cls=CeleryCommand)
@@ -96,10 +148,8 @@ def status(ctx, timeout, destination, json, **kwargs):
 
 @click.command(cls=CeleryCommand,
                context_settings={'allow_extra_args': True})
-@click.argument("action", type=click.Choice([
-    name for name, info in Panel.meta.items()
-    if info.type == 'inspect' and info.visible
-]))
+@click.argument('command')
+@_list_option('inspect')
 @click.option('-t',
               '--timeout',
               cls=CeleryOption,
@@ -121,19 +171,19 @@ def status(ctx, timeout, destination, json, **kwargs):
               help='Use json as output format.')
 @click.pass_context
 @handle_preload_options
-def inspect(ctx, action, timeout, destination, json, **kwargs):
-    """Inspect the worker at runtime.
+def inspect(ctx, command, timeout, destination, json, **kwargs):
+    """Inspect the workers by sending them the COMMAND inspect command.
 
     Availability: RabbitMQ (AMQP) and Redis transports.
     """
+    _verify_command_name('inspect', command)
     callback = None if json else partial(_say_remote_command_reply, ctx,
                                          show_reply=True)
-    arguments = _compile_arguments(action, ctx.args)
+    arguments = _compile_arguments(command, ctx.args)
     inspect = ctx.obj.app.control.inspect(timeout=timeout,
                                           destination=destination,
                                           callback=callback)
-    replies = inspect._request(action,
-                               **arguments)
+    replies = inspect._request(command, **arguments)
 
     if not replies:
         raise CeleryCommandException(
@@ -153,10 +203,8 @@ def inspect(ctx, action, timeout, destination, json, **kwargs):
 
 @click.command(cls=CeleryCommand,
                context_settings={'allow_extra_args': True})
-@click.argument("action", type=click.Choice([
-    name for name, info in Panel.meta.items()
-    if info.type == 'control' and info.visible
-]))
+@click.argument('command')
+@_list_option('control')
 @click.option('-t',
               '--timeout',
               cls=CeleryOption,
@@ -178,16 +226,17 @@ def inspect(ctx, action, timeout, destination, json, **kwargs):
               help='Use json as output format.')
 @click.pass_context
 @handle_preload_options
-def control(ctx, action, timeout, destination, json):
-    """Workers remote control.
+def control(ctx, command, timeout, destination, json):
+    """Send the COMMAND control command to the workers.
 
     Availability: RabbitMQ (AMQP), Redis, and MongoDB transports.
     """
+    _verify_command_name('control', command)
     callback = None if json else partial(_say_remote_command_reply, ctx,
                                          show_reply=True)
     args = ctx.args
-    arguments = _compile_arguments(action, args)
-    replies = ctx.obj.app.control.broadcast(action, timeout=timeout,
+    arguments = _compile_arguments(command, args)
+    replies = ctx.obj.app.control.broadcast(command, timeout=timeout,
                                             destination=destination,
                                             callback=callback,
                                             reply=True,

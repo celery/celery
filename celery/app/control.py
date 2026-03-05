@@ -20,7 +20,7 @@ from kombu.utils.compat import register_after_fork
 from kombu.utils.functional import lazy
 from kombu.utils.objects import cached_property
 
-from celery.exceptions import DuplicateNodenameWarning
+from celery.exceptions import DuplicateNodenameWarning, ImproperlyConfigured
 from celery.utils.log import get_logger
 from celery.utils.text import pluralize
 
@@ -360,7 +360,7 @@ class Inspect:
                 * ``routing_key`` - Routing key used when task was published
                 * ``priority`` - Priority used when task was published
                 * ``redelivered`` - True if the task was redelivered
-            * ``worker_pid`` - PID of worker processin the task
+            * ``worker_pid`` - PID of worker processing the task
 
         """
         # signature used be unary: query_task(ids=[id1, id2])
@@ -428,6 +428,12 @@ class Control:
 
     def __init__(self, app=None):
         self.app = app
+        if (app.conf.control_queue_durable and
+                app.conf.control_queue_exclusive):
+            raise ImproperlyConfigured(
+                "control_queue_durable and control_queue_exclusive cannot both be True "
+                "(exclusive queues are automatically deleted and cannot be durable).",
+            )
         self.mailbox = self.Mailbox(
             app.conf.control_exchange,
             type='fanout',
@@ -437,6 +443,8 @@ class Control:
             queue_ttl=app.conf.control_queue_ttl,
             reply_queue_ttl=app.conf.control_queue_ttl,
             queue_expires=app.conf.control_queue_expires,
+            queue_exclusive=app.conf.control_queue_exclusive,
+            queue_durable=app.conf.control_queue_durable,
             reply_queue_expires=app.conf.control_queue_expires,
         )
         register_after_fork(self, _after_fork_cleanup_control)
@@ -527,7 +535,8 @@ class Control:
         if result:
             for host in result:
                 for response in host.values():
-                    task_ids.update(response['ok'])
+                    if isinstance(response['ok'], set):
+                        task_ids.update(response['ok'])
 
         if task_ids:
             return self.revoke(list(task_ids), destination=destination, terminate=terminate, signal=signal, **kwargs)

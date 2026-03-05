@@ -2,6 +2,7 @@
 
 import datetime
 import time
+import types
 from collections import deque
 from contextlib import contextmanager
 from weakref import proxy
@@ -137,6 +138,8 @@ class AsyncResult(ResultBase):
         self._cache = None
         if self.parent:
             self.parent.forget()
+
+        self.backend.remove_pending_result(self)
         self.backend.forget(self.id)
 
     def revoke(self, connection=None, terminate=False, signal=None,
@@ -381,6 +384,8 @@ class AsyncResult(ResultBase):
             if parent:
                 graph.add_edge(parent, node)
         return graph
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
     def __str__(self):
         """`str(self) -> self.id`."""
@@ -984,13 +989,14 @@ class GroupResult(ResultSet):
 class EagerResult(AsyncResult):
     """Result that we know has already been executed."""
 
-    def __init__(self, id, ret_value, state, traceback=None):
+    def __init__(self, id, ret_value, state, traceback=None, name=None):
         # pylint: disable=super-init-not-called
         # XXX should really not be inheriting from AsyncResult
         self.id = id
         self._result = ret_value
         self._state = state
         self._traceback = traceback
+        self._name = name
         self.on_ready = promise()
         self.on_ready(self)
 
@@ -1043,6 +1049,7 @@ class EagerResult(AsyncResult):
             'result': self._result,
             'status': self._state,
             'traceback': self._traceback,
+            'name': self._name,
         }
 
     @property

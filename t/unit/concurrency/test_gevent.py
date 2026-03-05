@@ -8,7 +8,6 @@ gevent_modules = (
     'gevent.monkey',
     'gevent.pool',
     'gevent.signal',
-    'greenlet',
 )
 
 
@@ -83,6 +82,38 @@ class test_TaskPool:
         x._pool = [4, 5, 6]
         assert x.num_processes == 3
 
+    def test_terminate_job(self):
+        func = Mock()
+        pool = TaskPool(10)
+        pool.on_start()
+        pool.on_apply(func)
+
+        assert len(pool._pool_map.keys()) == 1
+        pid = list(pool._pool_map.keys())[0]
+        greenlet = pool._pool_map[pid]
+        greenlet.link.assert_called_once()
+
+        pool.terminate_job(pid)
+        import gevent
+
+        gevent.kill.assert_called_once()
+
+    def test_make_killable_target(self):
+        def valid_target():
+            return "some result..."
+
+        def terminating_target():
+            from greenlet import GreenletExit
+            raise GreenletExit
+
+        assert TaskPool._make_killable_target(valid_target)() == "some result..."
+        assert TaskPool._make_killable_target(terminating_target)() == (False, None, None)
+
+    def test_cleanup_after_job_finish(self):
+        testMap = {'1': None}
+        TaskPool._cleanup_after_job_finish(None, testMap, '1')
+        assert len(testMap) == 0
+
 
 class test_apply_timeout:
 
@@ -102,9 +133,10 @@ class test_apply_timeout:
                 pass
         timeout_callback = Mock(name='timeout_callback')
         apply_target = Mock(name='apply_target')
+        getpid = Mock(name='getpid')
         apply_timeout(
             Mock(), timeout=10, callback=Mock(name='callback'),
-            timeout_callback=timeout_callback,
+            timeout_callback=timeout_callback, getpid=getpid,
             apply_target=apply_target, Timeout=Timeout,
         )
         assert Timeout.value == 10
@@ -113,7 +145,7 @@ class test_apply_timeout:
         apply_target.side_effect = Timeout(10)
         apply_timeout(
             Mock(), timeout=10, callback=Mock(),
-            timeout_callback=timeout_callback,
+            timeout_callback=timeout_callback, getpid=getpid,
             apply_target=apply_target, Timeout=Timeout,
         )
         timeout_callback.assert_called_with(False, 10)

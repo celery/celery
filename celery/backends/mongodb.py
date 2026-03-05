@@ -1,5 +1,5 @@
 """MongoDB result store backend."""
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from kombu.exceptions import EncodeError
 from kombu.utils.objects import cached_property
@@ -20,6 +20,7 @@ if pymongo:
         from bson.binary import Binary
     except ImportError:
         from pymongo.binary import Binary
+    from pymongo import uri_parser
     from pymongo.errors import InvalidDocument
 else:                                       # pragma: no cover
     Binary = None
@@ -73,7 +74,7 @@ class MongoBackend(BaseBackend):
         if self.url:
             self.url = self._ensure_mongodb_uri_compliance(self.url)
 
-            uri_data = pymongo.uri_parser.parse_uri(self.url)
+            uri_data = uri_parser.parse_uri(self.url)
             # build the hosts list to create a mongo connection
             hostslist = [
                 f'{x[0]}:{x[1]}' for x in uri_data['nodelist']
@@ -228,7 +229,7 @@ class MongoBackend(BaseBackend):
         meta = {
             '_id': group_id,
             'result': self.encode([i.id for i in result]),
-            'date_done': datetime.utcnow(),
+            'date_done': datetime.now(timezone.utc),
         }
         self.group_collection.replace_one({'_id': group_id}, meta, upsert=True)
         return result

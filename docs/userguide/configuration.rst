@@ -79,6 +79,7 @@ have been moved into a new  ``task_`` prefix.
 ``BROKER_FAILOVER_STRATEGY``               :setting:`broker_failover_strategy`
 ``BROKER_HEARTBEAT``                       :setting:`broker_heartbeat`
 ``BROKER_LOGIN_METHOD``                    :setting:`broker_login_method`
+``BROKER_NATIVE_DELAYED_DELIVERY_QUEUE_TYPE`` :setting:`broker_native_delayed_delivery_queue_type`
 ``BROKER_POOL_LIMIT``                      :setting:`broker_pool_limit`
 ``BROKER_USE_SSL``                         :setting:`broker_use_ssl`
 ``CELERY_CACHE_BACKEND``                   :setting:`cache_backend`
@@ -102,6 +103,8 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_MONGODB_BACKEND_SETTINGS``        :setting:`mongodb_backend_settings`
 ``CELERY_EVENT_QUEUE_EXPIRES``             :setting:`event_queue_expires`
 ``CELERY_EVENT_QUEUE_TTL``                 :setting:`event_queue_ttl`
+``CELERY_EVENT_QUEUE_DURABLE``             :setting:`event_queue_durable`
+``CELERY_EVENT_QUEUE_EXCLUSIVE``           :setting:`event_queue_exclusive`
 ``CELERY_EVENT_QUEUE_PREFIX``              :setting:`event_queue_prefix`
 ``CELERY_EVENT_SERIALIZER``                :setting:`event_serializer`
 ``CELERY_REDIS_DB``                        :setting:`redis_db`
@@ -111,6 +114,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_REDIS_PASSWORD``                  :setting:`redis_password`
 ``CELERY_REDIS_PORT``                      :setting:`redis_port`
 ``CELERY_REDIS_BACKEND_USE_SSL``           :setting:`redis_backend_use_ssl`
+``CELERY_REDIS_BACKEND_CREDENTIAL_PROVIDER`` :setting:`redis_backend_credential_provider`
 ``CELERY_RESULT_BACKEND``                  :setting:`result_backend`
 ``CELERY_MAX_CACHED_RESULTS``              :setting:`result_cache_max`
 ``CELERY_MESSAGE_COMPRESSION``             :setting:`result_compression`
@@ -133,10 +137,13 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_ANNOTATIONS``                     :setting:`task_annotations`
 ``CELERY_COMPRESSION``                     :setting:`task_compression`
 ``CELERY_CREATE_MISSING_QUEUES``           :setting:`task_create_missing_queues`
+``CELERY_CREATE_MISSING_QUEUE_TYPE``       :setting:`task_create_missing_queue_type`
+``CELERY_CREATE_MISSING_QUEUE_EXCHANGE_TYPE`` :setting:`task_create_missing_queue_exchange_type`
 ``CELERY_DEFAULT_DELIVERY_MODE``           :setting:`task_default_delivery_mode`
 ``CELERY_DEFAULT_EXCHANGE``                :setting:`task_default_exchange`
 ``CELERY_DEFAULT_EXCHANGE_TYPE``           :setting:`task_default_exchange_type`
 ``CELERY_DEFAULT_QUEUE``                   :setting:`task_default_queue`
+``CELERY_DEFAULT_QUEUE_TYPE``              :setting:`task_default_queue_type`
 ``CELERY_DEFAULT_RATE_LIMIT``              :setting:`task_default_rate_limit`
 ``CELERY_DEFAULT_ROUTING_KEY``             :setting:`task_default_routing_key`
 ``CELERY_EAGER_PROPAGATES``                :setting:`task_eager_propagates`
@@ -168,6 +175,8 @@ have been moved into a new  ``task_`` prefix.
 ``CELERYD_POOL_PUTLOCKS``                  :setting:`worker_pool_putlocks`
 ``CELERYD_POOL_RESTARTS``                  :setting:`worker_pool_restarts`
 ``CELERYD_PREFETCH_MULTIPLIER``            :setting:`worker_prefetch_multiplier`
+``CELERYD_ETA_TASK_LIMIT``                 :setting:`worker_eta_task_limit`
+``CELERYD_ENABLE_PREFETCH_COUNT_REDUCTION``:setting:`worker_enable_prefetch_count_reduction`
 ``CELERYD_REDIRECT_STDOUTS``               :setting:`worker_redirect_stdouts`
 ``CELERYD_REDIRECT_STDOUTS_LEVEL``         :setting:`worker_redirect_stdouts_level`
 ``CELERY_SEND_EVENTS``                     :setting:`worker_send_task_events`
@@ -175,6 +184,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_WORKER_TASK_LOG_FORMAT``          :setting:`worker_task_log_format`
 ``CELERYD_TIMER``                          :setting:`worker_timer`
 ``CELERYD_TIMER_PRECISION``                :setting:`worker_timer_precision`
+``CELERYD_DETECT_QUORUM_QUEUES``           :setting:`worker_detect_quorum_queues`
 ========================================== ==============================================
 
 Configuration Directives
@@ -606,10 +616,45 @@ has been executed, not *right before* (the default behavior).
 ``task_acks_on_failure_or_timeout``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. deprecated:: 6.0
+    Use :setting:`task_acks_on_failure` and :setting:`task_acks_on_timeout` instead.
+
 Default: Enabled
 
 When enabled messages for all tasks will be acknowledged even if they
 fail or time out.
+
+Configuring this setting only applies to tasks that are
+acknowledged **after** they have been executed and only if
+:setting:`task_acks_late` is enabled.
+
+.. setting:: task_acks_on_failure
+
+``task_acks_on_failure``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: :const:`None` (falls back to :setting:`task_acks_on_failure_or_timeout`)
+
+When enabled messages for tasks that fail will be acknowledged.
+When disabled failed task messages will be rejected without requeue.
+
+Configuring this setting only applies to tasks that are
+acknowledged **after** they have been executed and only if
+:setting:`task_acks_late` is enabled.
+
+.. setting:: task_acks_on_timeout
+
+``task_acks_on_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: :const:`None` (falls back to :setting:`task_acks_on_failure_or_timeout`)
+
+When enabled, messages for tasks that time out will be acknowledged.
+When disabled, timed-out task messages will be rejected and requeued.
 
 Configuring this setting only applies to tasks that are
 acknowledged **after** they have been executed and only if
@@ -682,7 +727,7 @@ Can be one of the following:
     Use `Memcached`_ to store the results.
     See :ref:`conf-cache-result-backend`.
 
-* mongodb
+* ``mongodb``
     Use `MongoDB`_ to store the results.
     See :ref:`conf-mongodb-result-backend`.
 
@@ -730,6 +775,10 @@ Can be one of the following:
     Use the `S3`_ to store the results
     See :ref:`conf-s3-result-backend`.
 
+* ``gcs``
+    Use the `GCS`_ to store the results
+    See :ref:`conf-gcs-result-backend`.
+
 .. warning:
 
     While the AMQP result backend is very efficient, you must make sure
@@ -749,6 +798,8 @@ Can be one of the following:
 .. _`Consul`: https://consul.io/
 .. _`AzureBlockBlob`: https://azure.microsoft.com/en-us/services/storage/blobs/
 .. _`S3`: https://aws.amazon.com/s3/
+.. _`GCS`: https://cloud.google.com/storage/
+.. _`RedisCredentialProvider`: https://redis.readthedocs.io/en/stable/examples/connection_examples.html#Connecting-to-a-redis-instance-with-standard-credential-provider
 
 
 .. setting:: result_backend_always_retry
@@ -758,8 +809,17 @@ Can be one of the following:
 
 Default: :const:`False`
 
-If enable, backend will try to retry on the event of recoverable exceptions instead of propagating the exception.
-It will use an exponential backoff sleep time between 2 retries.
+.. versionchanged:: 5.7
+
+    The :class:`~celery.backends.database.DatabaseBackend` overrides this
+    setting to :const:`True` by default to preserve backward compatibility
+    with the automatic retry behavior that was previously provided by an
+    internal ``@retry`` decorator. Other backends continue to default to
+    :const:`False`.
+
+If enabled, the backend will try to retry on the event of recoverable
+exceptions instead of propagating the exception.
+It will use an exponential backoff sleep time between retries.
 
 
 .. setting:: result_backend_max_sleep_between_retries_ms
@@ -789,7 +849,14 @@ This specifies the base amount of sleep time between two backend operation retry
 
 Default: Inf
 
-This is the maximum of retries in case of recoverable exceptions.
+.. versionchanged:: 5.7
+
+    The :class:`~celery.backends.database.DatabaseBackend` overrides this
+    setting to ``3`` by default to preserve backward compatibility with the
+    behavior previously provided by an internal ``@retry`` decorator.
+    Other backends continue to default to :const:`Inf` (unlimited retries).
+
+This is the maximum number of retries in case of recoverable exceptions.
 
 
 .. setting:: result_backend_thread_safe
@@ -876,9 +943,9 @@ on backend specifications).
 .. note::
 
     For the moment this only works with the AMQP, database, cache, Couchbase,
-    and Redis backends.
+    filesystem and Redis backends.
 
-    When using the database backend, ``celery beat`` must be
+    When using the database or filesystem backend, ``celery beat`` must be
     running for the results to be expired.
 
 .. setting:: result_cache_max
@@ -942,6 +1009,34 @@ Example:
 Database backend settings
 -------------------------
 
+.. note::
+
+    **Retry configuration for the Database backend**
+
+    As of Celery 5.7, :class:`~celery.backends.database.DatabaseBackend`
+    uses the unified retry mechanism provided by
+    :class:`~celery.backends.base.BaseBackend` for all backend operations
+    (``store_result``, ``get_task_meta``, ``save_group``, ``delete_group``,
+    ``get_group_meta``, and ``forget``).  The database backend preserves
+    backward-compatible defaults:
+
+    * :setting:`result_backend_always_retry` defaults to :const:`True`
+    * :setting:`result_backend_max_retries` defaults to ``3``
+
+    These defaults can be overridden via the standard configuration settings.
+    For example, to disable automatic retries:
+
+    .. code-block:: python
+
+        result_backend_always_retry = False
+
+    Or to increase the retry limit:
+
+    .. code-block:: python
+
+        result_backend_always_retry = True
+        result_backend_max_retries = 10
+
 Database URL Examples
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -979,18 +1074,77 @@ strings (this is the part of the URI that comes after the ``db+`` prefix).
 .. _`Connection String`:
     http://www.sqlalchemy.org/docs/core/engines.html#database-urls
 
+.. note::
+
+    If you are upgrading from Celery 5.6 or earlier, the ``date_done`` column
+    in ``celery_taskmeta`` and ``celery_tasksetmeta`` tables does not have a
+    database index. The built-in periodic task ``celery.backend_cleanup``
+    queries on ``date_done`` to delete expired task results, so adding an
+    index significantly improves cleanup performance on large tables.
+
+    Since SQLAlchemy's ``create_all()`` will not alter existing tables, you
+    will need to update your database schema. If you are using Alembic for
+    schema migrations, you can generate an empty revision and apply the
+    following operations:
+
+    .. code-block:: python
+
+        from alembic import op
+
+        def upgrade():
+            op.create_index('ix_celery_taskmeta_date_done', 'celery_taskmeta', ['date_done'])
+            op.create_index('ix_celery_tasksetmeta_date_done', 'celery_tasksetmeta', ['date_done'])
+
+        def downgrade():
+            op.drop_index('ix_celery_tasksetmeta_date_done', table_name='celery_tasksetmeta')
+            op.drop_index('ix_celery_taskmeta_date_done', table_name='celery_taskmeta')
+
+    Otherwise, you can add the indexes manually using SQL:
+
+    .. code-block:: sql
+
+        CREATE INDEX ix_celery_taskmeta_date_done ON celery_taskmeta (date_done);
+        CREATE INDEX ix_celery_tasksetmeta_date_done ON celery_tasksetmeta (date_done);
+
+.. setting:: database_create_tables_at_setup
+
+``database_create_tables_at_setup``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.5.0
+
+Default: True by default.
+
+- If `True`, Celery will create the tables in the database during setup.
+- If `False`, Celery will create the tables lazily, i.e. wait for the first task
+  to be executed before creating the tables.
+
+.. note::
+    Before celery 5.5, the tables were created lazily i.e. it was equivalent to
+    `database_create_tables_at_setup` set to False.
+
 .. setting:: database_engine_options
 
 ``database_engine_options``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Default: ``{}`` (empty mapping).
+Default: ``{'pool_pre_ping': True, 'pool_recycle': 3600}``
+
+.. versionchanged:: 5.7
+
+    The default was changed from ``{}`` to include ``pool_pre_ping=True``
+    and ``pool_recycle=3600`` for improved connection health handling.
+    This helps prevent stale connection errors such as
+    ``(OperationalError) (2006, 'MySQL server has gone away')``.
 
 To specify additional SQLAlchemy database engine options you can use
 the :setting:`database_engine_options` setting::
 
     # echo enables verbose logging from SQLAlchemy.
     app.conf.database_engine_options = {'echo': True}
+
+    # To disable the default pool health options:
+    app.conf.database_engine_options = {'pool_pre_ping': False, 'pool_recycle': None}
 
 .. setting:: database_short_lived_sessions
 
@@ -1175,6 +1329,12 @@ This is a dict supporting the following keys:
     constructor.  See the :mod:`pymongo` docs to see a list of arguments
     supported.
 
+.. note::
+
+    With pymongo>=4.14, options are case-sensitive when they were previously
+    case-insensitive.  See :class:`~pymongo.mongo_client.MongoClient` to
+    determine the correct case.
+
 .. _example-mongodb-result-config:
 
 Example configuration
@@ -1313,6 +1473,19 @@ the form of a dictionary. The valid key-value pairs are
 the same as the ones mentioned in the ``redis`` sub-section
 under :setting:`broker_use_ssl`.
 
+.. setting:: redis_backend_credential_provider
+
+.. versionadded:: 5.6
+
+``redis_backend_credential_provider``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: Disabled.
+
+The Redis backend supports credential provider. This value must be set in
+the form of a class path string or a class instance. e.g. ``mymodule.myfile.myclass``
+check more details in `RedisCredentialProvider`_ doc.
+
 .. setting:: redis_max_connections
 
 ``redis_max_connections``
@@ -1373,6 +1546,18 @@ Default: :const:`False`
 
 Socket TCP keepalive to keep connections healthy to the Redis server,
 used by the redis result backend.
+
+.. setting:: redis_client_name
+
+``redis_client_name``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.6
+
+Default: :const:`None`
+
+Sets the client name for Redis connections used by the result backend.
+This can help identify connections in Redis monitoring tools.
 
 .. _conf-cassandra-result-backend:
 
@@ -1570,7 +1755,7 @@ Example configuration (Astra DB)
 Additional configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Cassandra driver, when estabilishing the connection, undergoes a stage
+The Cassandra driver, when establishing the connection, undergoes a stage
 of negotiating the protocol version with the server(s). Similarly,
 a load-balancing policy is automatically supplied (by default
 ``DCAwareRoundRobinPolicy``, which in turn has a ``local_dc`` setting, also
@@ -1644,7 +1829,7 @@ Default: None.
 
 The s3 access key id. For example::
 
-    s3_access_key_id = 'acces_key_id'
+    s3_access_key_id = 'access_key_id'
 
 .. setting:: s3_secret_access_key
 
@@ -1655,7 +1840,7 @@ Default: None.
 
 The s3 secret access key. For example::
 
-    s3_secret_access_key = 'acces_secret_access_key'
+    s3_secret_access_key = 'access_secret_access_key'
 
 .. setting:: s3_bucket
 
@@ -1796,6 +1981,108 @@ Timeout in seconds for establishing the azure block blob connection.
 Default: 120.
 
 Timeout in seconds for reading of an azure block blob.
+
+.. _conf-gcs-result-backend:
+
+GCS backend settings
+--------------------
+
+.. note::
+
+    This gcs backend driver requires :pypi:`google-cloud-storage` and :pypi:`google-cloud-firestore`.
+
+    To install, use :command:`gcs`:
+
+    .. code-block:: console
+
+        $ pip install celery[gcs]
+
+    See :ref:`bundles` for information on combining multiple extension
+    requirements.
+
+GCS could be configured via the URL provided in :setting:`result_backend`, for example::
+
+    result_backend = 'gs://mybucket/some-prefix?gcs_project=myproject&ttl=600'
+    result_backend = 'gs://mybucket/some-prefix?gcs_project=myproject?firestore_project=myproject2&ttl=600'
+
+This backend requires the following configuration directives to be set:
+
+.. setting:: gcs_bucket
+
+``gcs_bucket``
+~~~~~~~~~~~~~~
+
+Default: None.
+
+The gcs bucket name. For example::
+
+    gcs_bucket = 'bucket_name'
+
+.. setting:: gcs_project
+
+``gcs_project``
+~~~~~~~~~~~~~~~
+
+Default: None.
+
+The gcs project name. For example::
+
+    gcs_project = 'test-project'
+
+.. setting:: gcs_base_path
+
+``gcs_base_path``
+~~~~~~~~~~~~~~~~~
+
+Default: None.
+
+A base path in the gcs bucket to use to store all result keys. For example::
+
+    gcs_base_path = '/prefix'
+
+``gcs_ttl``
+~~~~~~~~~~~
+
+Default: 0.
+
+The time to live in seconds for the results blobs.
+Requires a GCS bucket with "Delete" Object Lifecycle Management action enabled.
+Use it to automatically delete results from Cloud Storage Buckets.
+
+For example to auto remove results after 24 hours::
+
+    gcs_ttl = 86400
+
+``gcs_threadpool_maxsize``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 10.
+
+Threadpool size for GCS operations. Same value defines the connection pool size.
+Allows to control the number of concurrent operations. For example::
+
+    gcs_threadpool_maxsize = 20
+
+``firestore_project``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: gcs_project.
+
+The Firestore project for Chord reference counting. Allows native chord ref counts.
+If not specified defaults to :setting:`gcs_project`.
+For example::
+
+    firestore_project = 'test-project2'
+
+Example configuration
+~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    gcs_bucket = 'mybucket'
+    gcs_project = 'myproject'
+    gcs_base_path = '/celery_result_backend'
+    gcs_ttl = 86400
 
 .. _conf-elasticsearch-result-backend:
 
@@ -2491,6 +2778,51 @@ If enabled (default), any queues specified that aren't defined in
 :setting:`task_queues` will be automatically created. See
 :ref:`routing-automatic`.
 
+.. setting:: task_create_missing_queue_type
+
+``task_create_missing_queue_type``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. versionadded:: 5.6
+
+Default: ``"classic"``
+
+When Celery needs to declare a queue that doesn’t exist (i.e., when
+``task_create_missing_queues`` is enabled), this setting defines what type
+of RabbitMQ queue to create.
+
+- ``"classic"`` (default): declares a standard classic queue.
+- ``"quorum"``: declares a RabbitMQ quorum queue (adds ``x-queue-type: quorum``).
+
+.. setting:: task_create_missing_queue_exchange_type
+
+``task_create_missing_queue_exchange_type``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. versionadded:: 5.6
+
+Default: ``None``
+
+If this option is None or the empty string (the default), Celery leaves the
+exchange exactly as returned by your :attr:`app.amqp.Queues.autoexchange`
+hook.
+
+You can set this to a specific exchange type, such as ``"direct"``, ``"topic"``, or
+``"fanout"``, to create the missing queue with that exchange type.
+
+.. tip::
+
+Combine this setting with task_create_missing_queue_type = "quorum"
+to create quorum queues bound to a topic exchange, for example::
+
+    app.conf.task_create_missing_queues=True
+    app.conf.task_create_missing_queue_type="quorum"
+    app.conf.task_create_missing_queue_exchange_type="topic"
+
+.. note::
+
+Like the queue-type setting above, this option does not affect queues
+that you define explicitly in :setting:`task_queues`; it applies only to
+queues created implicitly at runtime.
+
 .. setting:: task_default_queue
 
 ``task_default_queue``
@@ -2509,6 +2841,34 @@ that queue.
 .. seealso::
 
     :ref:`routing-changing-default-queue`
+
+.. setting:: task_default_queue_type
+
+``task_default_queue_type``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.5
+
+Default: ``"classic"``.
+
+This setting is used to allow changing the default queue type for the
+:setting:`task_default_queue` queue. The other viable option is ``"quorum"`` which
+is only supported by RabbitMQ and sets the queue type to ``quorum`` using the ``x-queue-type``
+queue argument.
+
+If the :setting:`worker_detect_quorum_queues` setting is enabled, the worker will
+automatically detect the queue type and disable the global QoS accordingly.
+
+.. warning::
+
+    Quorum queues require confirm publish to be enabled.
+    Use :setting:`broker_transport_options` to enable confirm publish by setting:
+
+    .. code-block:: python
+
+        broker_transport_options = {"confirm_publish": True}
+
+    For more information, see `RabbitMQ documentation <https://www.rabbitmq.com/docs/quorum-queues#use-cases>`_.
 
 .. setting:: task_default_exchange
 
@@ -2817,10 +3177,10 @@ Default: 100.
 Maximum number of retries before we give up re-establishing a connection
 to the AMQP broker.
 
-If this is set to :const:`0` or :const:`None`, we'll retry forever.
+If this is set to :const:`None`, we'll retry forever.
 
 ``broker_channel_error_retry``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 5.3
 
@@ -2840,6 +3200,22 @@ Also, this option doesn't work when `broker_connection_retry` is `False`.
 Default: ``"AMQPLAIN"``.
 
 Set custom amqp login method.
+
+.. setting:: broker_native_delayed_delivery_queue_type
+
+``broker_native_delayed_delivery_queue_type``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.5
+
+:transports supported: ``pyamqp``
+
+Default: ``"quorum"``.
+
+This setting is used to allow changing the default queue type for the
+native delayed delivery queues. The other viable option is ``"classic"`` which
+is only supported by RabbitMQ and sets the queue type to ``classic`` using the ``x-queue-type``
+queue argument.
 
 .. setting:: broker_transport_options
 
@@ -2867,6 +3243,14 @@ won't retry forever if the broker isn't available at the first task execution):
 .. code-block:: python
 
     broker_transport_options = {'max_retries': 5}
+
+Example enabling publisher confirms (supported by the ``pyamqp`` transport).
+Without this, messages can be silently dropped when the broker hits resource
+limits:
+
+.. code-block:: python
+
+    broker_transport_options = {'confirm_publish': True}
 
 .. _conf-worker:
 
@@ -2959,15 +3343,103 @@ workers, note that the first worker to start will receive four times the
 number of messages initially. Thus the tasks may not be fairly distributed
 to the workers.
 
-To disable prefetching, set :setting:`worker_prefetch_multiplier` to 1.
-Changing that setting to 0 will allow the worker to keep consuming
-as many messages as it wants.
+To limit the broker to only deliver one message per process at a time,
+set :setting:`worker_prefetch_multiplier` to 1. Changing that setting to 0
+will allow the worker to keep consuming as many messages as it wants.
+
+If you need to completely disable broker prefetching while still using
+early acknowledgments, enable :setting:`worker_disable_prefetch`.
+When this option is enabled the worker only fetches a task from the broker
+when one of its processes is available.
+
+.. note::
+
+    This feature is currently only supported when using Redis as the broker.
+
+You can also enable this via the :option:`--disable-prefetch <celery worker --disable-prefetch>`
+command line flag.
 
 For more on prefetching, read :ref:`optimizing-prefetch-limit`
+
+.. setting:: worker_eta_task_limit
+
+``worker_eta_task_limit``
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.6
+
+Default: No limit (None).
+
+The maximum number of ETA/countdown tasks that a worker can hold in memory at once.
+When this limit is reached, the worker will not receive new tasks from the broker
+until some of the existing ETA tasks are executed.
+
+This setting helps prevent memory exhaustion when a queue contains a large number
+of tasks with ETA/countdown values, as these tasks are held in memory until their
+execution time. Without this limit, workers may fetch thousands of ETA tasks into
+memory, potentially causing out-of-memory issues.
 
 .. note::
 
     Tasks with ETA/countdown aren't affected by prefetch limits.
+
+.. setting:: worker_disable_prefetch
+
+``worker_disable_prefetch``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.6
+
+Default: ``False``.
+
+When enabled, a worker will only consume messages from the broker when it
+has an available process to execute them. This disables prefetching while
+still using early acknowledgments, ensuring that tasks are fairly
+distributed between workers.
+
+.. note::
+
+    This feature is currently only supported when using Redis as the broker.
+    Using this setting with other brokers will result in a warning and the
+    setting will be ignored.
+
+.. setting:: worker_enable_prefetch_count_reduction
+
+``worker_enable_prefetch_count_reduction``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: Enabled.
+
+The ``worker_enable_prefetch_count_reduction`` setting governs the restoration behavior of the
+prefetch count to its maximum allowable value following a connection loss to the message
+broker. By default, this setting is enabled.
+
+Upon a connection loss, Celery will attempt to reconnect to the broker automatically,
+provided the :setting:`broker_connection_retry_on_startup` or :setting:`broker_connection_retry`
+is not set to False. During the period of lost connection, the message broker does not keep track
+of the number of tasks already fetched. Therefore, to manage the task load effectively and prevent
+overloading, Celery reduces the prefetch count based on the number of tasks that are
+currently running.
+
+The prefetch count is the number of messages that a worker will fetch from the broker at
+a time. The reduced prefetch count helps ensure that tasks are not fetched excessively
+during periods of reconnection.
+
+With ``worker_enable_prefetch_count_reduction`` set to its default value (Enabled), the prefetch
+count will be gradually restored to its maximum allowed value each time a task that was
+running before the connection was lost is completed. This behavior helps maintain a
+balanced distribution of tasks among the workers while managing the load effectively.
+
+To disable the reduction and restoration of the prefetch count to its maximum allowed value on
+reconnection, set ``worker_enable_prefetch_count_reduction`` to False. Disabling this setting might
+be useful in scenarios where a fixed prefetch count is desired to control the rate of task
+processing or manage the worker load, especially in environments with fluctuating connectivity.
+
+The ``worker_enable_prefetch_count_reduction`` setting provides a way to control the
+restoration behavior of the prefetch count following a connection loss, aiding in
+maintaining a balanced task distribution and effective load management across the workers.
 
 .. setting:: worker_lost_wait
 
@@ -2997,16 +3469,16 @@ it's replaced with a new one. Default is no limit.
 Default: No limit.
 Type: int (kilobytes)
 
-Maximum amount of resident memory, in kilobytes, that may be consumed by a
-worker before it will be replaced by a new worker. If a single
-task causes a worker to exceed this limit, the task will be
-completed, and the worker will be replaced afterwards.
+Maximum amount of resident memory, in kilobytes (1024 bytes), that may be
+consumed by a worker before it will be replaced by a new worker. If a single
+task causes a worker to exceed this limit, the task will be completed, and the
+worker will be replaced afterwards.
 
 Example:
 
 .. code-block:: python
 
-    worker_max_memory_per_child = 12000  # 12MB
+    worker_max_memory_per_child = 12288  # 12 * 1024 = 12 MB
 
 .. setting:: worker_disable_rate_limits
 
@@ -3091,6 +3563,62 @@ are recorded as such in the result backend as long as :setting:`task_ignore_resu
     will be set to ``True`` by default as the current behavior leads to more
     problems than it solves.
 
+.. setting:: worker_detect_quorum_queues
+
+``worker_detect_quorum_queues``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.5
+
+Default: Enabled.
+
+Automatically detect if any of the queues in :setting:`task_queues` are quorum queues
+(including the :setting:`task_default_queue`) and disable the global QoS if any quorum queue is detected.
+
+.. setting:: worker_soft_shutdown_timeout
+
+``worker_soft_shutdown_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.5
+
+Default: 0.0.
+
+The standard :ref:`warm shutdown <worker-warm-shutdown>` will wait for all tasks to finish before shutting down
+unless the cold shutdown is triggered. The :ref:`soft shutdown <worker-soft-shutdown>` will add a waiting time
+before the cold shutdown is initiated. This setting specifies how long the worker will wait before the cold shutdown
+is initiated and the worker is terminated.
+
+This will apply also when the worker initiate :ref:`cold shutdown <worker-cold-shutdown>` without doing a warm shutdown first.
+
+If the value is set to 0.0, the soft shutdown will be practically disabled. Regardless of the value, the soft shutdown
+will be disabled if there are no tasks running (unless :setting:`worker_enable_soft_shutdown_on_idle` is enabled).
+
+Experiment with this value to find the optimal time for your tasks to finish gracefully before the worker is terminated.
+Recommended values can be 10, 30, 60 seconds. Too high value can lead to a long waiting time before the worker is terminated
+and trigger a :sig:`KILL` signal to forcefully terminate the worker by the host system.
+
+.. setting:: worker_enable_soft_shutdown_on_idle
+
+``worker_enable_soft_shutdown_on_idle``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.5
+
+Default: False.
+
+If the :setting:`worker_soft_shutdown_timeout` is set to a value greater than 0.0, the worker will skip
+the :ref:`soft shutdown <worker-soft-shutdown>` anyways if there are no tasks running. This setting will
+enable the soft shutdown even if there are no tasks running.
+
+.. tip::
+
+    When the worker received ETA tasks, but the ETA has not been reached yet, and a shutdown is initiated,
+    the worker will **skip** the soft shutdown and initiate the cold shutdown immediately if there are no
+    tasks running. This may lead to failure in re-queueing the ETA tasks during worker teardown. To mitigate
+    this, enable this configuration to ensure the worker waits regadless, which gives enough time for a
+    graceful shutdown and successful re-queueing of the ETA tasks.
+
 .. _conf-events:
 
 Events
@@ -3144,6 +3672,33 @@ Default: 60.0 seconds.
 Expiry time in seconds (int/float) for when after a monitor clients
 event queue will be deleted (``x-expires``).
 
+.. setting:: event_queue_durable
+
+``event_queue_durable``
+~~~~~~~~~~~~~~~~~~~~~~~~
+:transports supported: ``amqp``
+.. versionadded:: 5.6
+
+Default: ``False``
+
+If enabled, the event receiver's queue will be marked as *durable*, meaning it will survive broker restarts.
+
+.. setting:: event_queue_exclusive
+
+``event_queue_exclusive``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+:transports supported: ``amqp``
+.. versionadded:: 5.6
+
+Default: ``False``
+
+If enabled, the event queue will be *exclusive* to the current connection and automatically deleted when the connection closes.
+
+.. warning::
+
+   You **cannot** set both ``event_queue_durable`` and ``event_queue_exclusive`` to ``True`` at the same time.
+   Celery will raise an :exc:`ImproperlyConfigured` error if both are set.
+
 .. setting:: event_queue_prefix
 
 ``event_queue_prefix``
@@ -3178,6 +3733,73 @@ Message serialization format used when sending event messages.
 .. seealso::
 
     :ref:`calling-serializers`.
+
+
+.. setting:: events_logfile
+
+``events_logfile``
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional file path for :program:`celery events` to log into (defaults to `stdout`).
+
+.. setting:: events_pidfile
+
+``events_pidfile``
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional file path for :program:`celery events` to create/store its PID file (default to no PID file created).
+
+.. setting:: events_uid
+
+``events_uid``
+~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional user ID to use when events :program:`celery events` drops its privileges (defaults to no UID change).
+
+.. setting:: events_gid
+
+``events_gid``
+~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional group ID to use when :program:`celery events` daemon drops its privileges (defaults to no GID change).
+
+.. setting:: events_umask
+
+``events_umask``
+~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional `umask` to use when :program:`celery events` creates files (log, pid...) when daemonizing.
+
+.. setting:: events_executable
+
+``events_executable``
+~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional `python` executable path for :program:`celery events` to use when deaemonizing (defaults to :data:`sys.executable`).
 
 
 .. _conf-control:
@@ -3232,6 +3854,31 @@ Name of the control command exchange.
     This option is in experimental stage, please use it with caution.
 
 .. _conf-logging:
+
+.. setting:: control_queue_durable
+
+``control_queue_durable``
+-------------------------
+
+- **Default:** ``False``
+- **Type:** ``bool``
+
+If set to ``True``, the control exchange and queue will be durable — they will survive broker restarts.
+
+.. setting:: control_queue_exclusive
+
+``control_queue_exclusive``
+---------------------------
+
+- **Default:** ``False``
+- **Type:** ``bool``
+
+If set to ``True``, the control queue will be exclusive to a single connection. This is generally not recommended in distributed environments.
+
+.. warning::
+
+   Setting both ``control_queue_durable`` and ``control_queue_exclusive`` to ``True`` is not supported and will raise an error.
+
 
 Logging
 -------
@@ -3448,6 +4095,72 @@ Default: ``"kombu.asynchronous.hub.timer:Timer"``.
 Name of the ETA scheduler class used by the worker.
 Default is or set by the pool implementation.
 
+.. setting:: worker_logfile
+
+``worker_logfile``
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional file path for :program:`celery worker` to log into (defaults to `stdout`).
+
+.. setting:: worker_pidfile
+
+``worker_pidfile``
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional file path for :program:`celery worker` to create/store its PID file (defaults to no PID file created).
+
+.. setting:: worker_uid
+
+``worker_uid``
+~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional user ID to use when :program:`celery worker` daemon drops its privileges (defaults to no UID change).
+
+.. setting:: worker_gid
+
+``worker_gid``
+~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional group ID to use when :program:`celery worker` daemon drops its privileges (defaults to no GID change).
+
+.. setting:: worker_umask
+
+``worker_umask``
+~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional `umask` to use when :program:`celery worker` creates files (log, pid...) when daemonizing.
+
+.. setting:: worker_executable
+
+``worker_executable``
+~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional `python` executable path for :program:`celery worker` to use when deaemonizing (defaults to :data:`sys.executable`).
+
 .. _conf-celerybeat:
 
 Beat Settings (:program:`celery beat`)
@@ -3534,3 +4247,73 @@ Default: None.
 When using cron, the number of seconds :mod:`~celery.bin.beat` can look back
 when deciding whether a cron schedule is due. When set to `None`, cronjobs that
 are past due will always run immediately.
+
+.. warning::
+
+    Setting this higher than 3600 (1 hour) is highly discouraged.
+
+.. setting:: beat_logfile
+
+``beat_logfile``
+~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional file path for :program:`celery beat` to log into (defaults to `stdout`).
+
+.. setting:: beat_pidfile
+
+``beat_pidfile``
+~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional file path for :program:`celery beat` to create/store it PID file (defaults to no PID file created).
+
+.. setting:: beat_uid
+
+``beat_uid``
+~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional user ID to use when beat :program:`celery beat` drops its privileges (defaults to no UID change).
+
+.. setting:: beat_gid
+
+``beat_gid``
+~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional group ID to use when :program:`celery beat` daemon drops its privileges (defaults to no GID change).
+
+.. setting:: beat_umask
+
+``beat_umask``
+~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional `umask` to use when :program:`celery beat` creates files (log, pid...) when daemonizing.
+
+.. setting:: beat_executable
+
+``beat_executable``
+~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.4
+
+Default: :const:`None`
+
+An optional `python` executable path for :program:`celery beat` to use when deaemonizing (defaults to :data:`sys.executable`).

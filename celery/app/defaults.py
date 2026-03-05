@@ -95,6 +95,7 @@ NAMESPACES = Namespace(
         heartbeat=Option(120, type='int'),
         heartbeat_checkrate=Option(3.0, type='int'),
         login_method=Option(None, type='string'),
+        native_delayed_delivery_queue_type=Option(default='quorum', type='string'),
         pool_limit=Option(10, type='int'),
         use_ssl=Option(False, type='bool'),
 
@@ -140,9 +141,17 @@ NAMESPACES = Namespace(
         connection_timeout=Option(20, type='int'),
         read_timeout=Option(120, type='int'),
     ),
+    gcs=Namespace(
+        bucket=Option(type='string'),
+        project=Option(type='string'),
+        base_path=Option('', type='string'),
+        ttl=Option(0, type='float'),
+    ),
     control=Namespace(
         queue_ttl=Option(300.0, type='float'),
         queue_expires=Option(10.0, type='float'),
+        queue_exclusive=Option(False, type='bool'),
+        queue_durable=Option(False, type='bool'),
         exchange=Option('celery', type='string'),
     ),
     couchbase=Namespace(
@@ -172,6 +181,8 @@ NAMESPACES = Namespace(
         queue_expires=Option(60.0, type='float'),
         queue_ttl=Option(5.0, type='float'),
         queue_prefix=Option('celeryev'),
+        queue_exclusive=Option(False, type='bool'),
+        queue_durable=Option(False, type='bool'),
         serializer=Option('json'),
         exchange=Option('celeryev', type='string'),
     ),
@@ -236,6 +247,10 @@ NAMESPACES = Namespace(
     database=Namespace(
         url=Option(old={'celery_result_dburi'}),
         engine_options=Option(
+            {
+                'pool_pre_ping': True,
+                'pool_recycle': 3600,
+            },
             type='dict', old={'celery_result_engine_options'},
         ),
         short_lived_sessions=Option(
@@ -243,18 +258,28 @@ NAMESPACES = Namespace(
         ),
         table_schemas=Option(type='dict'),
         table_names=Option(type='dict', old={'celery_result_db_tablenames'}),
+        create_tables_at_setup=Option(True, type='bool'),
     ),
     task=Namespace(
         __old__=OLD_NS,
         acks_late=Option(False, type='bool'),
-        acks_on_failure_or_timeout=Option(True, type='bool'),
+        acks_on_failure_or_timeout=Option(
+            True, type='bool',
+            deprecate_by='6.0', remove_by='7.0',
+            alt='task_acks_on_failure and task_acks_on_timeout',
+        ),
+        acks_on_failure=Option(None, type='bool'),
+        acks_on_timeout=Option(None, type='bool'),
         always_eager=Option(False, type='bool'),
         annotations=Option(type='any'),
         compression=Option(type='string', old={'celery_message_compression'}),
         create_missing_queues=Option(True, type='bool'),
+        create_missing_queue_type=Option('classic', type='string'),
+        create_missing_queue_exchange_type=Option(None, type='string'),
         inherit_parent_priority=Option(False, type='bool'),
         default_delivery_mode=Option(2, type='string'),
         default_queue=Option('celery'),
+        default_queue_type=Option('classic', type='string'),
         default_exchange=Option(None, type='string'),  # taken from queue
         default_exchange_type=Option('direct'),
         default_routing_key=Option(None, type='string'),  # taken from queue
@@ -302,6 +327,8 @@ NAMESPACES = Namespace(
         cancel_long_running_tasks_on_connection_loss=Option(
             False, type='bool'
         ),
+        soft_shutdown_timeout=Option(0.0, type='float'),
+        enable_soft_shutdown_on_idle=Option(False, type='bool'),
         concurrency=Option(None, type='int'),
         consumer=Option('celery.worker.consumer:Consumer', type='string'),
         direct=Option(False, type='bool', old={'celery_worker_direct'}),
@@ -325,6 +352,9 @@ NAMESPACES = Namespace(
         pool_restarts=Option(False, type='bool'),
         proc_alive_timeout=Option(4.0, type='float'),
         prefetch_multiplier=Option(4, type='int'),
+        eta_task_limit=Option(None, type='int'),
+        enable_prefetch_count_reduction=Option(True, type='bool'),
+        disable_prefetch=Option(False, type='bool'),
         redirect_stdouts=Option(
             True, type='bool', old={'celery_redirect_stdouts'},
         ),
@@ -338,6 +368,7 @@ NAMESPACES = Namespace(
         task_log_format=Option(DEFAULT_TASK_LOG_FMT),
         timer=Option(type='string'),
         timer_precision=Option(1.0, type='float'),
+        detect_quorum_queues=Option(True, type='bool'),
     ),
 )
 
@@ -383,7 +414,7 @@ _OLD_SETTING_KEYS = set(_TO_NEW_KEY.keys())
 def find_deprecated_settings(source):  # pragma: no cover
     from celery.utils import deprecated
     for name, opt in flatten(NAMESPACES):
-        if (opt.deprecate_by or opt.remove_by) and getattr(source, name, None):
+        if (opt.deprecate_by or opt.remove_by) and getattr(source, name, None) is not None:
             deprecated.warn(description=f'The {name!r} setting',
                             deprecation=opt.deprecate_by,
                             removal=opt.remove_by,

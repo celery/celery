@@ -48,7 +48,7 @@ class test_LocalTimezone:
 class test_iso8601:
 
     def test_parse_with_timezone(self):
-        d = datetime.utcnow().replace(tzinfo=ZoneInfo("UTC"))
+        d = datetime.now(_timezone.utc).replace(tzinfo=ZoneInfo("UTC"))
         assert parse_iso8601(d.isoformat()) == d
         # 2013-06-07T20:12:51.775877+00:00
         iso = d.isoformat()
@@ -124,7 +124,7 @@ def test_maybe_timedelta(arg, expected):
 
 def test_remaining():
     # Relative
-    remaining(datetime.utcnow(), timedelta(hours=1), relative=True)
+    remaining(datetime.now(_timezone.utc), timedelta(hours=1), relative=True)
 
     """
     The upcoming cases check whether the next run is calculated correctly
@@ -177,6 +177,41 @@ def test_remaining():
     next_run = now + rem_time
     assert next_run == next_actual_time
 
+    """
+    Case 4: DST check between now and next_run
+    Suppose start (which is last_run_time) and now are in EST while next_run
+    is in EDT, then check that the remaining time returned is the exact real
+    time difference (not wall time).
+    For example, between
+    2019-03-10 01:30:00-05:00 and
+    2019-03-10 03:30:00-04:00
+    There is only 1 hour difference in real time, but 2 on wall time.
+    Python by default uses wall time in arithmetic between datetimes with
+    equal non-UTC timezones.
+    In 2019, DST starts on March 10
+    """
+    start = datetime(
+        day=10, month=3, year=2019, hour=1,
+        minute=30, tzinfo=eastern_tz)  # EST
+
+    now = datetime(
+        day=10, month=3, year=2019, hour=1,
+        minute=30, tzinfo=eastern_tz)  # EST
+    delta = ffwd(hour=3, year=2019, microsecond=0, minute=30,
+                 second=0, day=10, weeks=0, month=3)
+    # `next_actual_time` is the next time to run (derived from delta)
+    next_actual_time = datetime(
+        day=10, month=3, year=2019, hour=3, minute=30, tzinfo=eastern_tz)  # EDT
+    assert start.tzname() == "EST"
+    assert now.tzname() == "EST"
+    assert next_actual_time.tzname() == "EDT"
+    rem_time = remaining(start, delta, now)
+    assert rem_time.total_seconds() == 3600
+    next_run_utc = now.astimezone(ZoneInfo("UTC")) + rem_time
+    next_run_edt = next_run_utc.astimezone(eastern_tz)
+    assert next_run_utc == next_actual_time
+    assert next_run_edt == next_actual_time
+
 
 class test_timezone:
 
@@ -188,38 +223,38 @@ class test_timezone:
         assert timezone.tz_or_local(timezone.utc)
 
     def test_to_local(self):
-        assert timezone.to_local(make_aware(datetime.utcnow(), timezone.utc))
-        assert timezone.to_local(datetime.utcnow())
+        assert timezone.to_local(make_aware(datetime.now(_timezone.utc), timezone.utc))
+        assert timezone.to_local(datetime.now(_timezone.utc))
 
     def test_to_local_fallback(self):
         assert timezone.to_local_fallback(
-            make_aware(datetime.utcnow(), timezone.utc))
-        assert timezone.to_local_fallback(datetime.utcnow())
+            make_aware(datetime.now(_timezone.utc), timezone.utc))
+        assert timezone.to_local_fallback(datetime.now(_timezone.utc))
 
 
 class test_make_aware:
 
     def test_standard_tz(self):
         tz = tzinfo()
-        wtz = make_aware(datetime.utcnow(), tz)
+        wtz = make_aware(datetime.now(_timezone.utc), tz)
         assert wtz.tzinfo == tz
 
     def test_tz_when_zoneinfo(self):
         tz = ZoneInfo('US/Eastern')
-        wtz = make_aware(datetime.utcnow(), tz)
+        wtz = make_aware(datetime.now(_timezone.utc), tz)
         assert wtz.tzinfo == tz
 
     def test_maybe_make_aware(self):
-        aware = datetime.utcnow().replace(tzinfo=timezone.utc)
+        aware = datetime.now(_timezone.utc).replace(tzinfo=timezone.utc)
         assert maybe_make_aware(aware)
-        naive = datetime.utcnow()
+        naive = datetime.now()
         assert maybe_make_aware(naive)
         assert maybe_make_aware(naive).tzinfo is ZoneInfo("UTC")
 
         tz = ZoneInfo('US/Eastern')
-        eastern = datetime.utcnow().replace(tzinfo=tz)
+        eastern = datetime.now(_timezone.utc).replace(tzinfo=tz)
         assert maybe_make_aware(eastern).tzinfo is tz
-        utcnow = datetime.utcnow()
+        utcnow = datetime.now()
         assert maybe_make_aware(utcnow, 'UTC').tzinfo is ZoneInfo("UTC")
 
 
@@ -232,17 +267,17 @@ class test_localize:
                 return None  # Mock no utcoffset specified
 
         tz = tzz()
-        assert localize(make_aware(datetime.utcnow(), tz), tz)
+        assert localize(make_aware(datetime.now(_timezone.utc), tz), tz)
 
     @patch('dateutil.tz.datetime_ambiguous')
     def test_when_zoneinfo(self, datetime_ambiguous_mock):
         datetime_ambiguous_mock.return_value = False
         tz = ZoneInfo("US/Eastern")
-        assert localize(make_aware(datetime.utcnow(), tz), tz)
+        assert localize(make_aware(datetime.now(_timezone.utc), tz), tz)
 
         datetime_ambiguous_mock.return_value = True
         tz2 = ZoneInfo("US/Eastern")
-        assert localize(make_aware(datetime.utcnow(), tz2), tz2)
+        assert localize(make_aware(datetime.now(_timezone.utc), tz2), tz2)
 
     @patch('dateutil.tz.datetime_ambiguous')
     def test_when_is_ambiguous(self, datetime_ambiguous_mock):
@@ -256,11 +291,11 @@ class test_localize:
 
         datetime_ambiguous_mock.return_value = False
         tz = tzz()
-        assert localize(make_aware(datetime.utcnow(), tz), tz)
+        assert localize(make_aware(datetime.now(_timezone.utc), tz), tz)
 
         datetime_ambiguous_mock.return_value = True
         tz2 = tzz()
-        assert localize(make_aware(datetime.utcnow(), tz2), tz2)
+        assert localize(make_aware(datetime.now(_timezone.utc), tz2), tz2)
 
     def test_localize_changes_utc_dt(self):
         now_utc_time = datetime.now(tz=ZoneInfo("UTC"))

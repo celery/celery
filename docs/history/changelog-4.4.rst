@@ -556,8 +556,6 @@ Documentation Fixes by:
   we introduced this new configuration option to specify the
   accepted content from the backend.
 
-  Contributed by **Benjamin Pereto**
-
 - **Canvas**: Fixed error callback processing for class based tasks.
 
   Contributed by **Victor Mireyev**
@@ -584,8 +582,6 @@ Documentation Fixes by:
   It was previously horribly broken.
 
   We now depend on cryptography instead of pyOpenSSL for this serializer.
-
-  Contributed by **Benjamin Pereto**
 
 - **Command Line**: :program:`celery report` now reports kernel version along
   with other platform details.

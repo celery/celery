@@ -31,7 +31,8 @@ from celery.utils.objects import Bunch
 from celery.utils.text import truncate
 from celery.utils.time import humanize_seconds, rate
 from celery.worker import loops
-from celery.worker.state import active_requests, maybe_shutdown, requests, reserved_requests, task_reserved
+from celery.worker.state import (active_requests, maybe_shutdown, requests, reserved_requests, successful_requests,
+                                 task_reserved)
 
 __all__ = ('Consumer', 'Evloop', 'dump_body')
 
@@ -157,6 +158,10 @@ class Consumer:
     #: connection attempt.
     first_connection_attempt = True
 
+    #: Counter to track number of conn retry attempts
+    #: to broker. Will be reset to 0 once successful
+    broker_connection_retry_attempt = 0
+
     class Blueprint(bootsteps.Blueprint):
         """Consumer blueprint."""
 
@@ -169,6 +174,7 @@ class Consumer:
             'celery.worker.consumer.heart:Heart',
             'celery.worker.consumer.control:Control',
             'celery.worker.consumer.tasks:Tasks',
+            'celery.worker.consumer.delayed_delivery:DelayedDelivery',
             'celery.worker.consumer.consumer:Evloop',
             'celery.worker.consumer.agent:Agent',
         ]
@@ -390,19 +396,20 @@ class Consumer:
         else:
             warnings.warn(CANCEL_TASKS_BY_DEFAULT, CPendingDeprecationWarning)
 
-        self.initial_prefetch_count = max(
-            self.prefetch_multiplier,
-            self.max_prefetch_count - len(tuple(active_requests)) * self.prefetch_multiplier
-        )
-
-        self._maximum_prefetch_restored = self.initial_prefetch_count == self.max_prefetch_count
-        if not self._maximum_prefetch_restored:
-            logger.info(
-                f"Temporarily reducing the prefetch count to {self.initial_prefetch_count} to avoid over-fetching "
-                f"since {len(tuple(active_requests))} tasks are currently being processed.\n"
-                f"The prefetch count will be gradually restored to {self.max_prefetch_count} as the tasks "
-                "complete processing."
+        if self.app.conf.worker_enable_prefetch_count_reduction:
+            self.initial_prefetch_count = max(
+                self.prefetch_multiplier,
+                self.max_prefetch_count - len(tuple(active_requests)) * self.prefetch_multiplier
             )
+
+            self._maximum_prefetch_restored = self.initial_prefetch_count == self.max_prefetch_count
+            if not self._maximum_prefetch_restored:
+                logger.info(
+                    f"Temporarily reducing the prefetch count to {self.initial_prefetch_count} to avoid "
+                    f"over-fetching since {len(tuple(active_requests))} tasks are currently being processed.\n"
+                    f"The prefetch count will be gradually restored to {self.max_prefetch_count} as the tasks "
+                    "complete processing."
+                )
 
     def register_with_event_loop(self, hub):
         self.blueprint.send_all(
@@ -411,6 +418,7 @@ class Consumer:
         )
 
     def shutdown(self):
+        self.perform_pending_operations()
         self.blueprint.shutdown(self)
 
     def stop(self):
@@ -448,8 +456,6 @@ class Consumer:
         # to the current channel.
         if self.controller and self.controller.semaphore:
             self.controller.semaphore.clear()
-        if self.timer:
-            self.timer.clear()
         for bucket in self.task_buckets.values():
             if bucket:
                 bucket.clear_pending()
@@ -475,9 +481,9 @@ class Consumer:
         return self.ensure_connected(
             self.app.connection_for_read(heartbeat=heartbeat))
 
-    def connection_for_write(self, heartbeat=None):
+    def connection_for_write(self, url=None, heartbeat=None):
         return self.ensure_connected(
-            self.app.connection_for_write(heartbeat=heartbeat))
+            self.app.connection_for_write(url=url, heartbeat=heartbeat))
 
     def ensure_connected(self, conn):
         # Callback called for each retry while the connection
@@ -485,9 +491,11 @@ class Consumer:
         def _error_handler(exc, interval, next_step=CONNECTION_RETRY_STEP):
             if getattr(conn, 'alt', None) and interval == 0:
                 next_step = CONNECTION_FAILOVER
+            elif interval > 0:
+                self.broker_connection_retry_attempt += 1
             next_step = next_step.format(
                 when=humanize_seconds(interval, 'in', ' '),
-                retries=int(interval / 2),
+                retries=self.broker_connection_retry_attempt,
                 max_retries=self.app.conf.broker_connection_max_retries)
             error(CONNECTION_ERROR, conn.as_uri(), exc, next_step)
 
@@ -504,13 +512,14 @@ class Consumer:
             # to determine whether connection retries are disabled.
             retry_disabled = not self.app.conf.broker_connection_retry
 
-            warnings.warn(
-                CPendingDeprecationWarning(
-                    f"The broker_connection_retry configuration setting will no longer determine\n"
-                    f"whether broker connection retries are made during startup in Celery 6.0 and above.\n"
-                    f"If you wish to retain the existing behavior for retrying connections on startup,\n"
-                    f"you should set broker_connection_retry_on_startup to {self.app.conf.broker_connection_retry}.")
-            )
+            if retry_disabled:
+                warnings.warn(
+                    CPendingDeprecationWarning(
+                        "The broker_connection_retry configuration setting will no longer determine\n"
+                        "whether broker connection retries are made during startup in Celery 6.0 and above.\n"
+                        "If you wish to refrain from retrying connections on startup,\n"
+                        "you should set broker_connection_retry_on_startup to False instead.")
+                )
         else:
             if self.first_connection_attempt:
                 retry_disabled = not self.app.conf.broker_connection_retry_on_startup
@@ -528,6 +537,7 @@ class Consumer:
             callback=maybe_shutdown,
         )
         self.first_connection_attempt = False
+        self.broker_connection_retry_attempt = 0
         return conn
 
     def _flush_events(self):
@@ -696,7 +706,10 @@ class Consumer:
 
     def _restore_prefetch_count_after_connection_restart(self, p, *args):
         with self.qos._mutex:
-            if self._maximum_prefetch_restored:
+            if any((
+                not self.app.conf.worker_enable_prefetch_count_reduction,
+                self._maximum_prefetch_restored,
+            )):
                 return
 
             new_prefetch_count = min(self.max_prefetch_count, self._new_prefetch_count)
@@ -725,6 +738,39 @@ class Consumer:
         return '<Consumer: {self.hostname} ({state})>'.format(
             self=self, state=self.blueprint.human_state(),
         )
+
+    def cancel_active_requests(self):
+        """Cancel active requests during shutdown.
+
+        Cancels all active requests that either do not require late acknowledgments or,
+        if they do, have not been acknowledged yet.
+
+        Does not cancel successful tasks, even if they have not been acknowledged yet.
+        """
+
+        def should_cancel(request):
+            if not request.task.acks_late:
+                # Task does not require late acknowledgment, cancel it.
+                return True
+
+            if not request.acknowledged:
+                # Task is late acknowledged, but it has not been acknowledged yet, cancel it.
+                if request.id in successful_requests:
+                    # Unless it was successful, in which case we don't want to cancel it.
+                    return False
+                return True
+
+            # Task is late acknowledged, but it has already been acknowledged.
+            return False  # Do not cancel and allow it to gracefully finish as it has already been acknowledged.
+
+        requests_to_cancel = tuple(filter(should_cancel, active_requests))
+
+        if requests_to_cancel:
+            for request in requests_to_cancel:
+                # For acks_late tasks, don't emit RETRY signal since broker will handle redelivery
+                # For non-acks_late tasks, emit RETRY signal as usual
+                emit_retry = not request.task.acks_late
+                request.cancel(self.pool, emit_retry=emit_retry)
 
 
 class Evloop(bootsteps.StartStopStep):

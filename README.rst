@@ -2,22 +2,27 @@
 
 |build-status| |coverage| |license| |wheel| |semgrep| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 5.3.4 (emerald-rush)
+:Version: 5.6.2 (recovery)
 :Web: https://docs.celeryq.dev/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
+:DeepWiki: |deepwiki|
 :Keywords: task, queue, job, async, rabbitmq, amqp, redis,
   python, distributed, actors
 
 Donations
 =========
 
-This project relies on your generous donations.
+Open Collective
+---------------
 
-If you are using Celery to create a commercial product, please consider becoming our `backer`_ or our `sponsor`_ to ensure Celery's future.
+.. image:: https://opencollective.com/static/images/opencollectivelogo-footer-n.svg
+   :alt: Open Collective logo
+   :width: 200px
 
-.. _`backer`: https://opencollective.com/celery#backer
-.. _`sponsor`: https://opencollective.com/celery#sponsor
+`Open Collective <https://opencollective.com/celery>`_ is our community-powered funding platform that fuels Celery's
+ongoing development. Your sponsorship directly supports improvements, maintenance, and innovative features that keep
+Celery robust and reliable.
 
 For enterprise
 ==============
@@ -25,6 +30,63 @@ For enterprise
 Available as part of the Tidelift Subscription.
 
 The maintainers of ``celery`` and thousands of other packages are working with Tidelift to deliver commercial support and maintenance for the open source dependencies you use to build your applications. Save time, reduce risk, and improve code health, while paying the maintainers of the exact dependencies you use. `Learn more. <https://tidelift.com/subscription/pkg/pypi-celery?utm_source=pypi-celery&utm_medium=referral&utm_campaign=enterprise&utm_term=repo>`_
+
+Sponsors
+========
+
+Blacksmith
+----------
+
+.. image:: https://github.com/celery/celery/blob/main/docs/images/blacksmith-logo-white-on-black.svg
+   :alt: Blacksmith logo
+   :width: 240px
+   :target: https://blacksmith.sh/
+
+`Official Announcement <https://www.linkedin.com/pulse/celery-now-powered-blacksmith-tomer-nosrati-ew68e/?trackingId=DWHH49WqS2iOW8Jf5N1kEg%3D%3D>`_
+
+CloudAMQP
+---------
+
+.. image:: https://github.com/celery/celery/blob/main/docs/images/cloudamqp-logo-lightbg.svg
+   :alt: CloudAMQP logo
+   :width: 240px
+   :target: https://www.cloudamqp.com/
+
+`CloudAMQP <https://www.cloudamqp.com/>`_ is an industry leading RabbitMQ as a service provider.
+If you need highly available message queues, a perfect choice would be to use CloudAMQP.
+With 24,000+ running instances, CloudAMQP is the leading hosting provider of RabbitMQ,
+with customers all over the world.
+
+Upstash
+-------
+
+.. image:: https://upstash.com/logo/upstash-dark-bg.svg
+   :alt: Upstash logo
+   :width: 200px
+   :target: https://upstash.com/?code=celery
+
+`Upstash <http://upstash.com/?code=celery>`_ offers a serverless Redis database service,
+providing a seamless solution for Celery users looking to leverage
+serverless architectures. Upstash's serverless Redis service is designed
+with an eventual consistency model and durable storage, facilitated
+through a multi-tier storage architecture.
+
+Dragonfly
+---------
+
+.. image:: https://github.com/celery/celery/raw/main/docs/images/dragonfly.svg
+   :alt: Dragonfly logo
+   :width: 150px
+   :target: https://www.dragonflydb.io/
+
+`Dragonfly <https://www.dragonflydb.io/>`_ is a drop-in Redis replacement that cuts costs and boosts performance.
+Designed to fully utilize the power of modern cloud hardware and deliver on the data demands of modern applications,
+Dragonfly frees developers from the limits of traditional in-memory data stores.
+
+
+
+.. |oc-sponsor-1| image:: https://opencollective.com/celery/sponsor/0/avatar.svg
+    :target: https://opencollective.com/celery/sponsor/0/website
 
 What's a Task Queue?
 ====================
@@ -58,17 +120,19 @@ in such a way that the client enqueues an URL to be requested by a worker.
 What do I need?
 ===============
 
-Celery version 5.3.4 runs on:
+Celery version 5.6.x runs on:
 
-- Python (3.8, 3.9, 3.10, 3.11)
-- PyPy3.8+ (v7.3.11+)
+- Python (3.9, 3.10, 3.11, 3.12, 3.13)
+- PyPy3.9+ (v7.3.12+)
 
-
-This is the version of celery which will support Python 3.8 or newer.
+This is the last version of Celery which will support Python 3.9.
+Celery v5.7.x will work on Python 3.10 or newer versions.
 
 If you're running an older version of Python, you need to be running
 an older version of Celery:
 
+
+- Python 3.8: Celery 5.5 or earlier.
 - Python 3.7: Celery 5.2 or earlier.
 - Python 3.6: Celery 5.1 or earlier.
 - Python 2.7: Celery 4.x series.
@@ -92,7 +156,7 @@ Get Started
 ===========
 
 If this is the first time you're trying to use Celery, or you're
-new to Celery v5.3.4 coming from previous versions then you should read our
+new to Celery v5.6.x coming from previous versions then you should read our
 getting started tutorials:
 
 - `First steps with Celery`_
@@ -156,7 +220,7 @@ It supports...
 
     - **Message Transports**
 
-        - RabbitMQ_, Redis_, Amazon SQS
+        - RabbitMQ_, Redis_, Amazon SQS, Google Pub/Sub
 
     - **Concurrency**
 
@@ -168,6 +232,7 @@ It supports...
         - memcached
         - SQLAlchemy, Django ORM
         - Apache Cassandra, IronCache, Elasticsearch
+        - Google Cloud Storage
 
     - **Serialization**
 
@@ -201,6 +266,8 @@ integration packages:
     +--------------------+------------------------+
     | `Tornado`_         | `tornado-celery`_      |
     +--------------------+------------------------+
+    | `FastAPI`_         | not needed             |
+    +--------------------+------------------------+
 
 The integration packages aren't strictly necessary, but they can make
 development easier, and sometimes they add important hooks like closing
@@ -217,6 +284,7 @@ database connections at ``fork``.
 .. _`web2py-celery`: https://code.google.com/p/web2py-celery/
 .. _`Tornado`: https://www.tornadoweb.org/
 .. _`tornado-celery`: https://github.com/mher/tornado-celery/
+.. _`FastAPI`: https://fastapi.tiangolo.com/
 
 .. _celery-documentation:
 
@@ -225,8 +293,6 @@ Documentation
 
 The `latest documentation`_ is hosted at Read The Docs, containing user guides,
 tutorials, and an API reference.
-
-最新的中文文档托管在 https://www.celerycn.io/ 中，包含用户指南、教程、API接口等。
 
 .. _`latest documentation`: https://docs.celeryq.dev/en/latest/
 
@@ -317,6 +383,9 @@ Transports and Backends
 :``celery[s3]``:
     for using S3 Storage as a result backend.
 
+:``celery[gcs]``:
+    for using Google Cloud Storage as a result backend.
+
 :``celery[couchbase]``:
     for using Couchbase as a result backend.
 
@@ -352,6 +421,10 @@ Transports and Backends
 
     You should probably not use this in your requirements, it's here
     for informational purposes only.
+
+:``celery[gcpubsub]``:
+    for using Google Pub/Sub as a message transport.
+
 
 
 .. _celery-installing-from-source:
@@ -465,11 +538,6 @@ documentation.
 .. _`Contributing to Celery`:
     https://docs.celeryq.dev/en/stable/contributing.html
 
-|oc-contributors|
-
-.. |oc-contributors| image:: https://opencollective.com/celery/contributors.svg?width=890&button=false
-    :target: https://github.com/celery/celery/graphs/contributors
-
 Backers
 -------
 
@@ -481,19 +549,6 @@ Thank you to all our backers! 🙏 [`Become a backer`_]
 
 .. |oc-backers| image:: https://opencollective.com/celery/backers.svg?width=890
     :target: https://opencollective.com/celery#backers
-
-Sponsors
---------
-
-Support this project by becoming a sponsor. Your logo will show up here with a
-link to your website. [`Become a sponsor`_]
-
-.. _`Become a sponsor`: https://opencollective.com/celery#sponsor
-
-|oc-sponsors|
-
-.. |oc-sponsors| image:: https://opencollective.com/celery/sponsor/0/avatar.svg
-    :target: https://opencollective.com/celery/sponsor/0/website
 
 .. _license:
 
@@ -543,3 +598,8 @@ file in the top distribution directory for the full license text.
 .. |downloads| image:: https://pepy.tech/badge/celery
     :alt: Downloads
     :target: https://pepy.tech/project/celery
+
+.. |deepwiki| image:: https://devin.ai/assets/deepwiki-badge.png
+    :alt: Ask http://DeepWiki.com
+    :target: https://deepwiki.com/celery/celery
+    :width: 125px

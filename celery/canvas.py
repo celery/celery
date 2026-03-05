@@ -7,6 +7,7 @@
 
 import itertools
 import operator
+import types
 import warnings
 from abc import ABCMeta, abstractmethod
 from collections import deque
@@ -396,7 +397,7 @@ class Signature(dict):
         else:
             args, kwargs, options = self.args, self.kwargs, self.options
         # pylint: disable=too-many-function-args
-        #   Borks on this, as it's a property
+        #   Works on this, as it's a property
         return _apply(args, kwargs, **options)
 
     def _merge(self, args=None, kwargs=None, options=None, force=False):
@@ -515,7 +516,7 @@ class Signature(dict):
         if group_index is not None:
             opts['group_index'] = group_index
         # pylint: disable=too-many-function-args
-        #   Borks on this, as it's a property.
+        #   Works on this, as it's a property.
         return self.AsyncResult(tid)
 
     _freeze = freeze
@@ -810,6 +811,8 @@ class Signature(dict):
         args, kwargs, _ = self._merge(args, kwargs, {}, force=True)
         return reprcall(self['task'], args, kwargs)
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
     def __deepcopy__(self, memo):
         memo[id(self)] = self
         return dict(self)  # TODO: Potential bug of being a shallow copy
@@ -958,6 +961,8 @@ class _chain(Signature):
         if isinstance(other, group):
             # unroll group with one member
             other = maybe_unroll_group(other)
+            if not isinstance(other, group):
+                return self.__or__(other)
             # chain | group() -> chain
             tasks = self.unchain_tasks()
             if not tasks:
@@ -972,15 +977,20 @@ class _chain(Signature):
                 tasks, other), app=self._app)
         elif isinstance(other, _chain):
             # chain | chain -> chain
-            # use type(self) for _chain subclasses
-            return type(self)(seq_concat_seq(
-                self.unchain_tasks(), other.unchain_tasks()), app=self._app)
+            return reduce(operator.or_, other.unchain_tasks(), self)
         elif isinstance(other, Signature):
             if self.tasks and isinstance(self.tasks[-1], group):
                 # CHAIN [last item is group] | TASK -> chord
                 sig = self.clone()
                 sig.tasks[-1] = chord(
                     sig.tasks[-1], other, app=self._app)
+                # In the scenario where the second-to-last item in a chain is a chord,
+                # it leads to a situation where two consecutive chords are formed.
+                # In such cases, a further upgrade can be considered.
+                # This would involve chaining the body of the second-to-last chord with the last chord."
+                if len(sig.tasks) > 1 and isinstance(sig.tasks[-2], chord):
+                    sig.tasks[-2].body = sig.tasks[-2].body | sig.tasks[-1]
+                    sig.tasks = sig.tasks[:-1]
                 return sig
             elif self.tasks and isinstance(self.tasks[-1], chord):
                 # CHAIN [last item is chord] -> chain with chord body.
@@ -1216,6 +1226,12 @@ class _chain(Signature):
                         task, body=prev_task,
                         root_id=root_id, app=app,
                     )
+                if tasks:
+                    prev_task = tasks[-1]
+                    prev_res = results[-1]
+                else:
+                    prev_task = None
+                    prev_res = None
 
             if is_last_task:
                 # chain(task_id=id) means task id is set for the last task
@@ -1261,6 +1277,7 @@ class _chain(Signature):
                 while node.parent:
                     node = node.parent
                 prev_res = node
+        self.id = last_task_id
         return tasks, results
 
     def apply(self, args=None, kwargs=None, **options):
@@ -1672,6 +1689,8 @@ class group(Signature):
         #
         # We return a concretised tuple of the signatures actually applied to
         # each child task signature, of which there might be none!
+        sig = maybe_signature(sig)
+
         return tuple(child_task.link_error(sig.clone(immutable=True)) for child_task in self.tasks)
 
     def _prepared(self, tasks, partial_args, group_id, root_id, app,
@@ -1725,7 +1744,7 @@ class group(Signature):
 
     def _apply_tasks(self, tasks, producer=None, app=None, p=None,
                      add_to_parent=None, chord=None,
-                     args=None, kwargs=None, **options):
+                     args=None, kwargs=None, group_index=None, **options):
         """Run all the tasks in the group.
 
         This is used by :meth:`apply_async` to run all the tasks in the group
@@ -2218,7 +2237,8 @@ class _chord(Signature):
             options.pop('task_id', None)
             body.options.update(options)
 
-        bodyres = body.freeze(task_id, root_id=root_id)
+        body_task_id = task_id or uuid()
+        bodyres = body.freeze(body_task_id, group_id=group_id, root_id=root_id)
 
         # Chains should not be passed to the header tasks. See #3771
         options.pop('chain', None)
@@ -2271,6 +2291,8 @@ class _chord(Signature):
             ``False`` (the current default), then the error callback will only be
             applied to the body.
         """
+        errback = maybe_signature(errback)
+
         if self.app.conf.task_allow_error_cb_on_chord_header:
             for task in maybe_list(self.tasks) or []:
                 task.link_error(errback.clone(immutable=True))
@@ -2288,6 +2310,13 @@ class _chord(Signature):
                 "regarding how errbacks should behave when used with chords.",
                 CPendingDeprecationWarning
             )
+
+        # Edge case for nested chords in the header
+        for task in maybe_list(self.tasks) or []:
+            if isinstance(task, chord):
+                # Let the nested chord do the error linking itself on its
+                # header and body where needed, based on the current configuration
+                task.link_error(errback)
 
         self.body.link_error(errback)
         return errback

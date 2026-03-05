@@ -4,13 +4,12 @@ import os
 import re
 
 import setuptools
-import setuptools.command.test
 
 NAME = 'celery'
 
 # -*- Extras -*-
 
-EXTENSIONS = {
+EXTENSIONS = (
     'arangodb',
     'auth',
     'azureblockblob',
@@ -25,11 +24,13 @@ EXTENSIONS = {
     'elasticsearch',
     'eventlet',
     'gevent',
+    'gcs',
     'librabbitmq',
     'memcache',
     'mongodb',
     'msgpack',
     'pymemcache',
+    'pydantic',
     'pyro',
     'pytest',
     'redis',
@@ -42,7 +43,7 @@ EXTENSIONS = {
     'yaml',
     'zookeeper',
     'zstd'
-}
+)
 
 # -*- Distribution Meta -*-
 
@@ -146,7 +147,7 @@ setuptools.setup(
     license='BSD-3-Clause',
     platforms=['any'],
     install_requires=install_requires(),
-    python_requires=">=3.8",
+    python_requires=">=3.10",
     tests_require=reqs('test.txt'),
     extras_require=extras_require(),
     include_package_data=True,
@@ -164,16 +165,15 @@ setuptools.setup(
     },
     classifiers=[
         "Development Status :: 5 - Production/Stable",
-        "License :: OSI Approved :: BSD License",
         "Topic :: System :: Distributed Computing",
         "Topic :: Software Development :: Object Brokering",
         "Framework :: Celery",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
         "Operating System :: OS Independent"

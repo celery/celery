@@ -210,7 +210,7 @@ class test_ArangoDbBackend:
         self.backend.cleanup()
         self.backend.db.AQLQuery.assert_not_called()
 
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(datetime.timezone.utc)
         self.backend.app.now = Mock(return_value=now)
         self.backend.expires = 86400
         expected_checkpoint = (now - self.backend.expires_delta).isoformat()

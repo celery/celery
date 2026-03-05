@@ -3,10 +3,10 @@ import logging
 import os
 import threading
 from contextlib import contextmanager
-from typing import Any, Iterable, Union  # noqa
+from typing import Any, Iterable, Optional, Union
 
 import celery.worker.consumer  # noqa
-from celery import Celery, worker  # noqa
+from celery import Celery, worker
 from celery.result import _set_task_join_will_block, allow_join_result
 from celery.utils.dispatch import Signal
 from celery.utils.nodenames import anon_nodename
@@ -30,6 +30,10 @@ test_worker_stopped = Signal(
 class TestWorkController(worker.WorkController):
     """Worker that can synchronize on being fully started."""
 
+    # When this class is imported in pytest files, prevent pytest from thinking
+    # this is a test class
+    __test__ = False
+
     logger_queue = None
 
     def __init__(self, *args, **kwargs):
@@ -38,7 +42,9 @@ class TestWorkController(worker.WorkController):
 
         super().__init__(*args, **kwargs)
 
-        if self.pool_cls.__module__.split('.')[-1] == 'prefork':
+        # Defensive check: pool_cls may be a string (e.g., 'prefork') or a class
+        pool_module = self.pool_cls if isinstance(self.pool_cls, str) else self.pool_cls.__module__
+        if pool_module.split('.')[-1] == 'prefork':
             from billiard import Queue
             self.logger_queue = Queue()
             self.pid = os.getpid()
@@ -131,16 +137,15 @@ def start_worker(
 
 
 @contextmanager
-def _start_worker_thread(app,
-                         concurrency=1,
-                         pool='solo',
-                         loglevel=WORKER_LOGLEVEL,
-                         logfile=None,
-                         WorkController=TestWorkController,
-                         perform_ping_check=True,
-                         shutdown_timeout=10.0,
-                         **kwargs):
-    # type: (Celery, int, str, Union[str, int], str, Any, **Any) -> Iterable
+def _start_worker_thread(app: Celery,
+                         concurrency: int = 1,
+                         pool: str = 'solo',
+                         loglevel: Union[str, int] = WORKER_LOGLEVEL,
+                         logfile: Optional[str] = None,
+                         WorkController: Any = TestWorkController,
+                         perform_ping_check: bool = True,
+                         shutdown_timeout: float = 10.0,
+                         **kwargs) -> Iterable[worker.WorkController]:
     """Start Celery worker in a thread.
 
     Yields:
@@ -156,7 +161,7 @@ def _start_worker_thread(app,
     worker = WorkController(
         app=app,
         concurrency=concurrency,
-        hostname=anon_nodename(),
+        hostname=kwargs.pop("hostname", anon_nodename()),
         pool=pool,
         loglevel=loglevel,
         logfile=logfile,
@@ -211,8 +216,7 @@ def _start_worker_process(app,
         cluster.stopwait()
 
 
-def setup_app_for_worker(app, loglevel, logfile) -> None:
-    # type: (Celery, Union[str, int], str) -> None
+def setup_app_for_worker(app: Celery, loglevel: Union[str, int], logfile: str) -> None:
     """Setup the app to be used for starting an embedded worker."""
     app.finalize()
     app.set_current()

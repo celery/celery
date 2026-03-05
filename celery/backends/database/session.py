@@ -48,8 +48,11 @@ class SessionManager:
                 engine = self._engines[dburi] = create_engine(dburi, **kwargs)
                 return engine
         else:
-            kwargs = {k: v for k, v in kwargs.items() if
-                      not k.startswith('pool')}
+            unsupported_nullpool_kwargs = {'max_overflow', 'echo_pool'}
+            kwargs = {
+                k: v for k, v in kwargs.items()
+                if not k.startswith('pool') and k not in unsupported_nullpool_kwargs
+            }
             return create_engine(dburi, poolclass=NullPool, **kwargs)
 
     def create_session(self, dburi, short_lived_sessions=False, **kwargs):
@@ -59,6 +62,13 @@ class SessionManager:
                 self._sessions[dburi] = sessionmaker(bind=engine)
             return engine, self._sessions[dburi]
         return engine, sessionmaker(bind=engine)
+
+    def invalidate(self, dburi):
+        """Dispose cached engine/session state for a database URI."""
+        self._sessions.pop(dburi, None)
+        engine = self._engines.pop(dburi, None)
+        if engine is not None:
+            engine.dispose()
 
     def prepare_models(self, engine):
         if not self.prepared:

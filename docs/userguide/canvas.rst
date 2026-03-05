@@ -137,6 +137,24 @@ creates partials:
         >>> partial.delay(4)            # 4 + 2
         >>> partial.apply_async((4,))  # same
 
+    .. note::
+
+        Additional args passed to ``delay``/``apply_async`` are **prepended**
+        to the signature args. Since ``add`` is commutative, the ordering may
+        not be obvious. A non-commutative task like
+        ``subtract(x, y) -> x - y`` makes this clear:
+
+        .. code-block:: python
+
+            @app.task
+            def subtract(x, y):
+                return x - y
+
+            partial = subtract.s(10)    # incomplete: second arg only
+            partial.delay(30)           # -> subtract(30, 10) = 20
+        Here ``delay(30)`` prepends ``30`` as the first argument, resulting
+        in ``subtract(30, 10)`` — not ``subtract(10, 30)``.
+
 - Any keyword arguments added will be merged with the kwargs in the signature,
   with the new keyword arguments taking precedence:
 
@@ -244,7 +262,7 @@ arguments:
     >>> add.apply_async((2, 2), link=add.s(8))
 
 As expected this will first launch one task calculating :math:`2 + 2`, then
-another task calculating :math:`8 + 4`.
+another task calculating :math:`4 + 8`.
 
 The Primitives
 ==============
@@ -461,21 +479,18 @@ Here're some examples:
 
         >>> res = (add.s(4, 4) | group(add.si(i, i) for i in range(10)))()
         >>> res.get()
-        <GroupResult: de44df8c-821d-4c84-9a6a-44769c738f98 [
-            bc01831b-9486-4e51-b046-480d7c9b78de,
-            2650a1b8-32bf-4771-a645-b0a35dcc791b,
-            dcbee2a5-e92d-4b03-b6eb-7aec60fd30cf,
-            59f92e0a-23ea-41ce-9fad-8645a0e7759c,
-            26e1e707-eccf-4bf4-bbd8-1e1729c3cce3,
-            2d10a5f4-37f0-41b2-96ac-a973b1df024d,
-            e13d3bdb-7ae3-4101-81a4-6f17ee21df2d,
-            104b2be0-7b75-44eb-ac8e-f9220bdfa140,
-            c5c551a5-0386-4973-aa37-b65cbeb2624b,
-            83f72d71-4b71-428e-b604-6f16599a9f37]>
+        [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
 
         >>> res.parent.get()
         8
 
+
+.. warning::
+
+    With more complex workflows, the default JSON serializer has been observed to
+    drastically inflate message sizes due to recursive references, leading to
+    resource issues. The *pickle* serializer is not vulnerable to this and may
+    therefore be preferable in such cases.
 
 .. _canvas-chain:
 
@@ -613,6 +628,13 @@ Chains can also be made using the ``|`` (pipe) operator:
 .. code-block:: pycon
 
     >>> (add.s(2, 2) | mul.s(8) | mul.s(10)).apply_async()
+
+Task ID
+~~~~~~~
+
+.. versionadded:: 5.4
+
+A chain will inherit the task id of the last task in the chain.
 
 Graphs
 ~~~~~~
@@ -810,6 +832,48 @@ It supports the following operations:
     Gather the results of all subtasks
     and return them in the same order as they were called (as a list).
 
+.. _group-unrolling:
+
+Group Unrolling
+~~~~~~~~~~~~~~~
+
+A group with a single signature will be unrolled to a single signature when chained.
+This means that the following group may pass either a list of results or a single result to the chain
+depending on the number of items in the group.
+
+.. code-block:: pycon
+
+    >>> from celery import chain, group
+    >>> from tasks import add
+    >>> chain(add.s(2, 2), group(add.s(1)), add.s(1))
+    add(2, 2) | add(1) | add(1)
+    >>> chain(add.s(2, 2), group(add.s(1), add.s(2)), add.s(1))
+    add(2, 2) | %add((add(1), add(2)), 1)
+
+This means that you should be careful and make sure the ``add`` task can accept either a list or a single item as input
+if you plan to use it as part of a larger canvas.
+
+.. warning::
+
+    In Celery 4.x the following group below would not unroll into a chain due to a bug but instead the canvas would be
+    upgraded into a chord.
+
+    .. code-block:: pycon
+
+        >>> from celery import chain, group
+        >>> from tasks import add
+        >>> chain(group(add.s(1, 1)), add.s(2))
+        %add([add(1, 1)], 2)
+
+    In Celery 5.x this bug was fixed and the group is correctly unrolled into a single signature.
+
+    .. code-block:: pycon
+
+        >>> from celery import chain, group
+        >>> from tasks import add
+        >>> chain(group(add.s(1, 1)), add.s(2))
+        add(1, 1) | add(2)
+
 .. _canvas-chord:
 
 Chords
@@ -993,11 +1057,11 @@ Example implementation:
         raise self.retry(countdown=interval, max_retries=max_retries)
 
 
-This is used by all result backends except Redis and Memcached: they
+This is used by all result backends except Redis, Memcached and DynamoDB: they
 increment a counter after each task in the header, then applies the callback
 when the counter exceeds the number of tasks in the set.
 
-The Redis and Memcached approach is a much better solution, but not easily
+The Redis, Memcached and DynamoDB approach is a much better solution, but not easily
 implemented in other backends (suggestions welcome!).
 
 .. note::
@@ -1135,6 +1199,8 @@ of one:
 This means that the first task will have a countdown of one second, the second
 task a countdown of two seconds, and so on.
 
+.. _canvas-stamping:
+
 Stamping
 ========
 
@@ -1218,19 +1284,25 @@ the external monitoring system, etc.
         def on_signature(self, sig, **headers) -> dict:
             return {'monitoring_id': uuid4().hex}
 
-.. note::
+.. important::
 
-    The ``stamped_headers`` key returned in ``on_signature`` (or any other visitor method) is used to
-    specify the headers that will be stamped on the task. If this key is not specified, the stamping
-    visitor will assume all keys in the returned dictionary are the stamped headers from the visitor.
+    The ``stamped_headers`` key in the dictionary returned by ``on_signature()`` (or any other visitor method) is **optional**:
 
-    This means the following code block will result in the same behavior as the previous example.
+    .. code-block:: python
 
-.. code-block:: python
-
-    class MonitoringIdStampingVisitor(StampingVisitor):
+        # Approach 1: Without stamped_headers - ALL keys are treated as stamps
         def on_signature(self, sig, **headers) -> dict:
-            return {'monitoring_id': uuid4().hex, 'stamped_headers': ['monitoring_id']}
+            return {'monitoring_id': uuid4().hex}  # monitoring_id becomes a stamp
+
+        # Approach 2: With stamped_headers - ONLY listed keys are stamps
+        def on_signature(self, sig, **headers) -> dict:
+            return {
+                'monitoring_id': uuid4().hex,      # This will be a stamp
+                'other_data': 'value',             # This will NOT be a stamp
+                'stamped_headers': ['monitoring_id']  # Only monitoring_id is stamped
+            }
+
+    If the ``stamped_headers`` key is not specified, the stamping visitor will assume all keys in the returned dictionary are stamped headers.
 
 Next, let's see how to use the ``MonitoringIdStampingVisitor`` example stamping visitor.
 
@@ -1261,18 +1333,24 @@ visitor will be applied to the callback as well.
 
     The callback must be linked to the signature before stamping.
 
-For example, let's examine the following custom stamping visitor.
+For example, let's examine the following custom stamping visitor that uses the
+implicit approach where all returned dictionary keys are automatically treated as
+stamped headers without explicitly specifying `stamped_headers`.
 
 .. code-block:: python
 
     class CustomStampingVisitor(StampingVisitor):
         def on_signature(self, sig, **headers) -> dict:
+            # 'header' will automatically be treated as a stamped header
+            # without needing to specify 'stamped_headers': ['header']
             return {'header': 'value'}
 
         def on_callback(self, callback, **header) -> dict:
+            # 'on_callback' will automatically be treated as a stamped header
             return {'on_callback': True}
 
         def on_errback(self, errback, **header) -> dict:
+            # 'on_errback' will automatically be treated as a stamped header
             return {'on_errback': True}
 
 This custom stamping visitor will stamp the signature, callbacks, and errbacks with ``{'header': 'value'}``

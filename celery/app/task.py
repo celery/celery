@@ -1,5 +1,6 @@
 """Task implementation: request context and the task base class."""
 import sys
+import types
 
 from billiard.einfo import ExceptionInfo, ExceptionWithTraceback
 from kombu import serialization
@@ -35,6 +36,17 @@ extract_exec_options = mattrgetter(
 R_BOUND_TASK = '<class {0.__name__} of {app}{flags}>'
 R_UNBOUND_TASK = '<unbound {0.__name__}{flags}>'
 R_INSTANCE = '<@task: {0.name} of {app}{flags}>'
+
+# Filtered headers relating to dead-lettering in RabbitMQ.
+X_DEATH_HEADERS = {
+    'x-death',
+    'x-first-death-exchange',
+    'x-first-death-queue',
+    'x-first-death-reason',
+    'x-last-death-exchange',
+    'x-last-death-queue',
+    'x-last-death-reason',
+}
 
 #: Here for backwards compatibility as tasks no longer use a custom meta-class.
 TaskType = type
@@ -104,7 +116,7 @@ class Context:
     def _get_custom_headers(self, *args, **kwargs):
         headers = {}
         headers.update(*args, **kwargs)
-        celery_keys = {*Context.__dict__.keys(), 'lang', 'task', 'argsrepr', 'kwargsrepr'}
+        celery_keys = {*Context.__dict__.keys(), 'lang', 'task', 'argsrepr', 'kwargsrepr', 'compression'}
         for key in celery_keys:
             headers.pop(key, None)
         if not headers:
@@ -123,6 +135,14 @@ class Context:
     def __repr__(self):
         return f'<Context: {vars(self)!r}>'
 
+    def _filter_x_death_headers(self, headers):
+        """Filter out X-Death headers to prevent RabbitMQ cycle detection."""
+        headers = headers.copy() if headers else {}
+        for x_death_header in X_DEATH_HEADERS:
+            headers.pop(x_death_header, None)
+
+        return headers
+
     def as_execution_options(self):
         limit_hard, limit_soft = self.timelimit or (None, None)
         execution_options = {
@@ -139,7 +159,7 @@ class Context:
             'expires': self.expires,
             'soft_time_limit': limit_soft,
             'time_limit': limit_hard,
-            'headers': self.headers,
+            'headers': self._filter_x_death_headers(self.headers),
             'retries': self.retries,
             'reply_to': self.reply_to,
             'replaced_task_nesting': self.replaced_task_nesting,
@@ -277,7 +297,32 @@ class Task:
     #:
     #: The application default can be overridden with the
     #: :setting:`task_acks_on_failure_or_timeout` setting.
+    #:
+    #: .. deprecated:: 6.0
+    #:     Use :attr:`acks_on_failure` and :attr:`acks_on_timeout` instead.
     acks_on_failure_or_timeout = None
+
+    #: When enabled messages for this task will be acknowledged on failure.
+    #: Falls back to :attr:`acks_on_failure_or_timeout` if :const:`None`.
+    #:
+    #: Configuring this setting only applies to tasks that are
+    #: acknowledged **after** they have been executed and only if
+    #: :setting:`task_acks_late` is enabled.
+    #:
+    #: The application default can be overridden with the
+    #: :setting:`task_acks_on_failure` setting.
+    acks_on_failure = None
+
+    #: When enabled messages for this task will be acknowledged on timeout.
+    #: Falls back to :attr:`acks_on_failure_or_timeout` if :const:`None`.
+    #:
+    #: Configuring this setting only applies to tasks that are
+    #: acknowledged **after** they have been executed and only if
+    #: :setting:`task_acks_late` is enabled.
+    #:
+    #: The application default can be overridden with the
+    #: :setting:`task_acks_on_timeout` setting.
+    acks_on_timeout = None
 
     #: Even if :attr:`acks_late` is enabled, the worker will
     #: acknowledge tasks when the worker process executing them abruptly
@@ -329,6 +374,8 @@ class Task:
         ('track_started', 'task_track_started'),
         ('acks_late', 'task_acks_late'),
         ('acks_on_failure_or_timeout', 'task_acks_on_failure_or_timeout'),
+        ('acks_on_failure', 'task_acks_on_failure'),
+        ('acks_on_timeout', 'task_acks_on_timeout'),
         ('reject_on_worker_lost', 'task_reject_on_worker_lost'),
         ('ignore_result', 'task_ignore_result'),
         ('store_eager_result', 'task_store_eager_result'),
@@ -353,6 +400,19 @@ class Task:
         for attr_name, config_name in cls.from_config:
             if getattr(cls, attr_name, None) is None:
                 setattr(cls, attr_name, conf[config_name])
+
+        if cls.acks_on_failure is None:
+            cls.acks_on_failure = (
+                cls.acks_on_failure_or_timeout
+                if cls.acks_on_failure_or_timeout is not None
+                else True
+            )
+        if cls.acks_on_timeout is None:
+            cls.acks_on_timeout = (
+                cls.acks_on_failure_or_timeout
+                if cls.acks_on_failure_or_timeout is not None
+                else True
+            )
 
         # decorate with annotations from config.
         if not was_bound:
@@ -413,6 +473,8 @@ class Task:
             self.pop_request()
             _task_stack.pop()
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
     def __reduce__(self):
         # - tasks are pickled into the name of the task only, and the receiver
         # - simply grabs it from the local registry.
@@ -466,7 +528,7 @@ class Task:
             shadow (str): Override task name used in logs/monitoring.
                 Default is retrieved from :meth:`shadow_name`.
 
-            connection (kombu.Connection): Re-use existing broker connection
+            connection (kombu.Connection): Reuse existing broker connection
                 instead of acquiring one from the connection pool.
 
             retry (bool): If enabled sending of the task message will be
@@ -535,6 +597,15 @@ class Task:
             publisher (kombu.Producer): Deprecated alias to ``producer``.
 
             headers (Dict): Message headers to be included in the message.
+                The headers can be used as an overlay for custom labeling
+                using the :ref:`canvas-stamping` feature.
+
+            task_id (str): Optional argument to override the default task id.
+                By default, Celery generates a unique id (UUID4) for every task
+                submission. You can instead provide your own string identifier.
+                If supplied, this value will be used as the task’s id instead
+                of generating one automatically. Be careful to avoid collisions
+                when overriding task ids.
 
         Returns:
             celery.result.AsyncResult: Promise of future evaluation.
@@ -543,6 +614,8 @@ class Task:
             TypeError: If not enough arguments are passed, or too many
                 arguments are passed.  Note that signature checks may
                 be disabled by specifying ``@task(typing=False)``.
+            ValueError: If soft_time_limit and time_limit both are set
+                but soft_time_limit is greater than time_limit
             kombu.exceptions.OperationalError: If a connection to the
                transport cannot be made, or if the connection is lost.
 
@@ -550,6 +623,9 @@ class Task:
             Also supports all keyword arguments supported by
             :meth:`kombu.Producer.publish`.
         """
+        if self.soft_time_limit and self.time_limit and self.soft_time_limit > self.time_limit:
+            raise ValueError('soft_time_limit must be less than or equal to time_limit')
+
         if self.typing:
             try:
                 check_arguments = self.__header__
@@ -783,11 +859,22 @@ class Task:
         if throw is None:
             throw = app.conf.task_eager_propagates
 
+        parent_task = _task_stack.top
+        if parent_task and parent_task.request:
+            parent_id = parent_task.request.id
+            root_id = parent_task.request.root_id or task_id
+        else:
+            parent_id = None
+            root_id = task_id
+
         # Make sure we get the task instance, not class.
         task = app._tasks[self.name]
 
         request = {
             'id': task_id,
+            'task': self.name,
+            'parent_id': parent_id,
+            'root_id': root_id,
             'retries': retries,
             'is_eager': True,
             'logfile': logfile,
@@ -824,7 +911,7 @@ class Task:
         if isinstance(retval, Retry) and retval.sig is not None:
             return retval.sig.apply(retries=retries + 1)
         state = states.SUCCESS if ret.info is None else ret.info.state
-        return EagerResult(task_id, retval, state, traceback=tb)
+        return EagerResult(task_id, retval, state, traceback=tb, name=self.name)
 
     def AsyncResult(self, task_id, **kwargs):
         """Get AsyncResult instance for the specified task.
@@ -1108,7 +1195,7 @@ class Task:
         return result
 
     def push_request(self, *args, **kwargs):
-        self.request_stack.push(Context(*args, **kwargs))
+        self.request_stack.push(Context(*args, **{**self.request.__dict__, **kwargs}))
 
     def pop_request(self):
         self.request_stack.pop()

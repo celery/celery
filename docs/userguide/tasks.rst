@@ -795,6 +795,118 @@ You can also set `autoretry_for`, `max_retries`, `retry_backoff`, `retry_backoff
 	This allows to exclude some exceptions that match `autoretry_for
 	<Task.autoretry_for>`:attr: but for which you don't want a retry.
 
+.. _task-pydantic:
+
+Argument validation with Pydantic
+=================================
+
+.. versionadded:: 5.5.0
+
+You can use Pydantic_ to validate and convert arguments as well as serializing
+results based on typehints by passing ``pydantic=True``.
+
+.. NOTE::
+
+   Argument validation only covers arguments/return values on the task side. You still have
+   serialize arguments yourself when invoking a task with ``delay()`` or ``apply_async()``.
+
+For example:
+
+.. code-block:: python
+
+    from pydantic import BaseModel
+
+    class ArgModel(BaseModel):
+        value: int
+
+    class ReturnModel(BaseModel):
+        value: str
+
+    @app.task(pydantic=True)
+    def x(arg: ArgModel) -> ReturnModel:
+        # args/kwargs type hinted as Pydantic model will be converted
+        assert isinstance(arg, ArgModel)
+
+        # The returned model will be converted to a dict automatically
+        return ReturnModel(value=f"example: {arg.value}")
+
+The task can then be called using a dict matching the model, and you'll receive
+the returned model "dumped" (serialized using ``BaseModel.model_dump()``):
+
+.. code-block:: python
+
+   >>> result = x.delay({'value': 1})
+   >>> result.get(timeout=1)
+   {'value': 'example: 1'}
+
+Union types, arguments to generics
+----------------------------------
+
+Union types (e.g. ``Union[SomeModel, OtherModel]``) or arguments to generics (e.g.
+``list[SomeModel]``) are **not** supported.
+
+In case you want to support a list or similar types, it is recommended to use
+``pydantic.RootModel``.
+
+
+Optional parameters/return values
+---------------------------------
+
+Optional parameters or return values are also handled properly. For example, given this task:
+
+.. code-block:: python
+
+    from typing import Optional
+
+    # models are the same as above
+
+    @app.task(pydantic=True)
+    def x(arg: Optional[ArgModel] = None) -> Optional[ReturnModel]:
+        if arg is None:
+            return None
+        return ReturnModel(value=f"example: {arg.value}")
+
+You'll get the following behavior:
+
+.. code-block:: python
+
+    >>> result = x.delay()
+   >>> result.get(timeout=1) is None
+   True
+   >>> result = x.delay({'value': 1})
+   >>> result.get(timeout=1)
+   {'value': 'example: 1'}
+
+Return value handling
+---------------------
+
+Return values will only be serialized if the returned model matches the annotation. If you pass a
+model instance of a different type, it will *not* be serialized. ``mypy`` should already catch such
+errors and you should fix your typehints then.
+
+
+Pydantic parameters
+-------------------
+
+There are a few more options influencing Pydantic behavior:
+
+.. attribute:: Task.pydantic_strict
+
+   By default, `strict mode <https://docs.pydantic.dev/dev/concepts/strict_mode/>`_
+   is disabled. You can pass ``True`` to enable strict model validation.
+
+.. attribute:: Task.pydantic_context
+
+   Pass `additional validation context
+   <https://docs.pydantic.dev/dev/concepts/validators/#validation-context>`_ during
+   Pydantic model validation. The context already includes the application object as
+   ``celery_app`` and the task name as ``celery_task_name`` by default.
+
+.. attribute:: Task.pydantic_dump_kwargs
+
+   When serializing a result, pass these additional arguments to ``dump_kwargs()``.
+   By default, only ``mode='json'`` is passed.
+
 
 .. _task-options:
 
@@ -1465,9 +1577,47 @@ The default value is the class provided by Celery: ``'celery.app.task:Task'``.
 Handlers
 --------
 
+Task handlers are methods that execute at specific points in a task's lifecycle.
+All handlers run **synchronously** within the same worker process and thread
+that executes the task.
+
+Execution timeline
+~~~~~~~~~~~~~~~~~~
+
+The following diagram shows the exact order of execution:
+
+.. code-block:: text
+
+    Worker Process Timeline
+    ┌───────────────────────────────────────────────────────────────┐
+    │  1. before_start()      ← Blocks until complete               │
+    │  2. run()               ← Your task function                  │
+    │  3. [Result Backend]    ← State + return value persisted      │
+    │  4. on_success() OR     ← Outcome-specific handler            │
+    │     on_retry() OR       │                                     │
+    │     on_failure()        │                                     │
+    │  5. after_return()      ← Always runs last                    │
+    └───────────────────────────────────────────────────────────────┘
+
+.. important::
+   
+   **Key points:**
+   
+   - All handlers run in the **same worker process** as your task
+   - ``before_start`` **blocks** the task - ``run()`` won't start until it completes
+   - Result backend is updated **before** ``on_success``/``on_failure`` - other clients can see the task as finished while handlers are still running
+   - ``after_return`` **always** executes, regardless of task outcome
+
+Available handlers
+~~~~~~~~~~~~~~~~~~
+
 .. method:: before_start(self, task_id, args, kwargs)
 
     Run by the worker before the task starts executing.
+
+    .. note::
+       This handler **blocks** the task: the :py:meth:`run` method will *not* begin
+       until ``before_start`` returns.
 
     .. versionadded:: 5.2
 
@@ -1477,54 +1627,16 @@ Handlers
 
     The return value of this handler is ignored.
 
-.. method:: after_return(self, status, retval, task_id, args, kwargs, einfo)
-
-    Handler called after the task returns.
-
-    :param status: Current task state.
-    :param retval: Task return value/exception.
-    :param task_id: Unique id of the task.
-    :param args: Original arguments for the task that returned.
-    :param kwargs: Original keyword arguments for the task
-                   that returned.
-
-    :keyword einfo: :class:`~billiard.einfo.ExceptionInfo`
-                    instance, containing the traceback (if any).
-
-    The return value of this handler is ignored.
-
-.. method:: on_failure(self, exc, task_id, args, kwargs, einfo)
-
-    This is run by the worker when the task fails.
-
-    :param exc: The exception raised by the task.
-    :param task_id: Unique id of the failed task.
-    :param args: Original arguments for the task that failed.
-    :param kwargs: Original keyword arguments for the task
-                       that failed.
-
-    :keyword einfo: :class:`~billiard.einfo.ExceptionInfo`
-                           instance, containing the traceback.
-
-    The return value of this handler is ignored.
-
-.. method:: on_retry(self, exc, task_id, args, kwargs, einfo)
-
-    This is run by the worker when the task is to be retried.
-
-    :param exc: The exception sent to :meth:`~@Task.retry`.
-    :param task_id: Unique id of the retried task.
-    :param args: Original arguments for the retried task.
-    :param kwargs: Original keyword arguments for the retried task.
-
-    :keyword einfo: :class:`~billiard.einfo.ExceptionInfo`
-                    instance, containing the traceback.
-
-    The return value of this handler is ignored.
-
 .. method:: on_success(self, retval, task_id, args, kwargs)
 
+    Success handler.
+
     Run by the worker if the task executes successfully.
+
+    .. note::
+       Invoked **after** the task result has already been persisted in the
+       result backend. External clients may observe the task as ``SUCCESS``
+       while this handler is still running.
 
     :param retval: The return value of the task.
     :param task_id: Unique id of the executed task.
@@ -1532,6 +1644,90 @@ Handlers
     :param kwargs: Original keyword arguments for the executed task.
 
     The return value of this handler is ignored.
+
+.. method:: on_retry(self, exc, task_id, args, kwargs, einfo)
+
+    Retry handler.
+
+    Run by the worker when the task is to be retried.
+
+    .. note::
+       Invoked **after** the task state has been updated to ``RETRY`` in the
+       result backend but **before** the retry is scheduled.
+
+    :param exc: The exception sent to :meth:`retry`.
+    :param task_id: Unique id of the retried task.
+    :param args: Original arguments for the retried task.
+    :param kwargs: Original keyword arguments for the retried task.
+    :param einfo: :class:`~billiard.einfo.ExceptionInfo` instance.
+
+    The return value of this handler is ignored.
+
+.. method:: on_failure(self, exc, task_id, args, kwargs, einfo)
+
+    Failure handler.
+
+    Run by the worker when the task fails.
+
+    .. note::
+       Invoked **after** the task result has already been persisted in the
+       result backend with ``FAILURE`` state. External clients may observe
+       the task as failed while this handler is still running.
+
+    :param exc: The exception raised by the task.
+    :param task_id: Unique id of the failed task.
+    :param args: Original arguments for the failed task.
+    :param kwargs: Original keyword arguments for the failed task.
+    :param einfo: :class:`~billiard.einfo.ExceptionInfo` instance.
+
+    The return value of this handler is ignored.
+
+.. method:: after_return(self, status, retval, task_id, args, kwargs, einfo)
+
+    Handler called after the task returns.
+
+    .. note::
+       Executes **after** ``on_success``/``on_retry``/``on_failure``. This is the
+       final hook in the task lifecycle and **always** runs, regardless of outcome.
+
+    :param status: Current task state.
+    :param retval: Task return value/exception.
+    :param task_id: Unique id of the task.
+    :param args: Original arguments for the task that returned.
+    :param kwargs: Original keyword arguments for the task that returned.
+    :param einfo: :class:`~billiard.einfo.ExceptionInfo` instance.
+
+    The return value of this handler is ignored.
+
+Example usage
+~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    import time
+    from celery import Task
+
+    class MyTask(Task):
+        
+        def before_start(self, task_id, args, kwargs):
+            print(f"Task {task_id} starting with args {args}")
+            # This blocks - run() won't start until this returns
+            
+        def on_success(self, retval, task_id, args, kwargs):
+            print(f"Task {task_id} succeeded with result: {retval}")
+            # Result is already visible to clients at this point
+            
+        def on_failure(self, exc, task_id, args, kwargs, einfo):
+            print(f"Task {task_id} failed: {exc}")
+            # Task state is already FAILURE in backend
+            
+        def after_return(self, status, retval, task_id, args, kwargs, einfo):
+            print(f"Task {task_id} finished with status: {status}")
+            # Always runs last
+
+    @app.task(base=MyTask)
+    def my_task(x, y):
+        return x + y
 
 .. _task-requests-and-custom-requests:
 
@@ -1927,12 +2123,10 @@ then passing the primary key to a task. It uses the `transaction.atomic`
 decorator, that will commit the transaction when the view returns, or
 roll back if the view raises an exception.
 
-There's a race condition if the task starts executing
-before the transaction has been committed; The database object doesn't exist
-yet!
+There is a race condition because transactions are atomic. This means the article object is not persisted to the database until after the view function returns a response. If the asynchronous task starts executing before the transaction is committed, it may attempt to query the article object before it exists. To prevent this, we need to ensure that the transaction is committed before triggering the task.
 
-The solution is to use the ``on_commit`` callback to launch your Celery task
-once all transactions have been committed successfully.
+The solution is to use
+:meth:`~celery.contrib.django.task.DjangoTask.delay_on_commit` instead:
 
 .. code-block:: python
 
@@ -1942,7 +2136,31 @@ once all transactions have been committed successfully.
     @transaction.atomic
     def create_article(request):
         article = Article.objects.create()
-        transaction.on_commit(lambda: expand_abbreviations.delay(article.pk))
+        expand_abbreviations.delay_on_commit(article.pk)
+        return HttpResponseRedirect('/articles/')
+
+This method was added in Celery 5.4. It's a shortcut that uses Django's
+``on_commit`` callback to launch your Celery task once all transactions
+have been committed successfully.
+
+With Celery <5.4
+~~~~~~~~~~~~~~~~
+
+If you're using an older version of Celery, you can replicate this behaviour
+using the Django callback directly as follows:
+
+.. code-block:: python
+
+    import functools
+    from django.db import transaction
+    from django.http import HttpResponseRedirect
+
+    @transaction.atomic
+    def create_article(request):
+        article = Article.objects.create()
+        transaction.on_commit(
+            functools.partial(expand_abbreviations.delay, article.pk)
+        )
         return HttpResponseRedirect('/articles/')
 
 .. note::
@@ -2091,3 +2309,4 @@ To make API calls to `Akismet`_ I use the `akismet.py`_ library written by
 .. _`Michael Foord`: http://www.voidspace.org.uk/
 .. _`exponential backoff`: https://en.wikipedia.org/wiki/Exponential_backoff
 .. _`jitter`: https://en.wikipedia.org/wiki/Jitter
+.. _`Pydantic`: https://docs.pydantic.dev/

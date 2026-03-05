@@ -54,6 +54,9 @@ def _boundmethod_safe_weakref(obj):
 def _make_lookup_key(receiver, sender, dispatch_uid):
     if dispatch_uid:
         return (dispatch_uid, _make_id(sender))
+    # Issue #9119 - retry-wrapped functions use the underlying function for dispatch_uid
+    elif hasattr(receiver, '_dispatch_uid'):
+        return (receiver._dispatch_uid, _make_id(sender))
     else:
         return (_make_id(receiver), _make_id(sender))
 
@@ -170,6 +173,7 @@ class Signal:  # pragma: no cover
                         # it up later with the original func id
                         options['dispatch_uid'] = _make_id(fun)
                     fun = _retry_receiver(fun)
+                    fun._dispatch_uid = options['dispatch_uid']
 
                 self._connect_signal(fun, sender, options['weak'],
                                      options['dispatch_uid'])

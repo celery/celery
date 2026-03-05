@@ -34,6 +34,7 @@ BACKEND_ALIASES = {
     'azureblockblob': 'celery.backends.azureblockblob:AzureBlockBlobBackend',
     'arangodb': 'celery.backends.arangodb:ArangoDbBackend',
     's3': 'celery.backends.s3:S3Backend',
+    'gs': 'celery.backends.gcs:GCSBackend',
 }
 
 
