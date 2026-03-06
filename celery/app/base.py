@@ -21,6 +21,7 @@ from kombu.common import oid_from
 from kombu.transport.native_delayed_delivery import calculate_routing_key
 from kombu.utils.compat import register_after_fork
 from kombu.utils.objects import cached_property
+from kombu.utils.url import parse_url
 from kombu.utils.uuid import uuid
 from vine import starpromise
 
@@ -368,6 +369,9 @@ class Celery:
         # args instead of the new way that pickles a dict of keywords.
         self._using_v1_reduce = app_has_custom(self, '__reduce_args__')
 
+        # Validate broker URL
+        self._validate_broker_url(broker)
+
         # these options are moved to the config to
         # simplify pickling of the app object.
         self._preconf = changes or {}
@@ -427,6 +431,18 @@ class Celery:
         if value is not None:
             self._preconf[key] = value
             self._preconf_set_by_auto.add(key)
+
+    def _validate_broker_url(self, url):
+        if not url:
+            return
+        try:
+            parse_url(url)
+        except ValueError as e:
+            raise ImproperlyConfigured(
+                f"Invalid broker URL: {url}, {e}.\n\n"
+                "Special characters in userinfo must be percent-encoded.\n"
+                "Please ensure the broker URL is valid and properly formatted.\n"
+            ) from e
 
     def set_current(self):
         """Make this the current app for this thread."""
