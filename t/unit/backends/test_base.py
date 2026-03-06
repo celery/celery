@@ -426,7 +426,7 @@ class test_BaseBackend_dict:
         b = BaseBackend(self.app)
         b._save_group = Mock()
         b.save_group('foofoo', 'xxx')
-        b._save_group.assert_called_with('foofoo', 'xxx')
+        b._save_group.assert_called_with(group_id='foofoo', result='xxx')
 
     def test_add_to_chord_interface(self):
         b = BaseBackend(self.app)

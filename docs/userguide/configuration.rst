@@ -809,8 +809,17 @@ Can be one of the following:
 
 Default: :const:`False`
 
-If enable, backend will try to retry on the event of recoverable exceptions instead of propagating the exception.
-It will use an exponential backoff sleep time between 2 retries.
+.. versionchanged:: 5.7
+
+    The :class:`~celery.backends.database.DatabaseBackend` overrides this
+    setting to :const:`True` by default to preserve backward compatibility
+    with the automatic retry behavior that was previously provided by an
+    internal ``@retry`` decorator. Other backends continue to default to
+    :const:`False`.
+
+If enabled, the backend will try to retry on the event of recoverable
+exceptions instead of propagating the exception.
+It will use an exponential backoff sleep time between retries.
 
 
 .. setting:: result_backend_max_sleep_between_retries_ms
@@ -840,7 +849,14 @@ This specifies the base amount of sleep time between two backend operation retry
 
 Default: Inf
 
-This is the maximum of retries in case of recoverable exceptions.
+.. versionchanged:: 5.7
+
+    The :class:`~celery.backends.database.DatabaseBackend` overrides this
+    setting to ``3`` by default to preserve backward compatibility with the
+    behavior previously provided by an internal ``@retry`` decorator.
+    Other backends continue to default to :const:`Inf` (unlimited retries).
+
+This is the maximum number of retries in case of recoverable exceptions.
 
 
 .. setting:: result_backend_thread_safe
@@ -992,6 +1008,34 @@ Example:
 
 Database backend settings
 -------------------------
+
+.. note::
+
+    **Retry configuration for the Database backend**
+
+    As of Celery 5.7, :class:`~celery.backends.database.DatabaseBackend`
+    uses the unified retry mechanism provided by
+    :class:`~celery.backends.base.BaseBackend` for all backend operations
+    (``store_result``, ``get_task_meta``, ``save_group``, ``delete_group``,
+    ``get_group_meta``, and ``forget``).  The database backend preserves
+    backward-compatible defaults:
+
+    * :setting:`result_backend_always_retry` defaults to :const:`True`
+    * :setting:`result_backend_max_retries` defaults to ``3``
+
+    These defaults can be overridden via the standard configuration settings.
+    For example, to disable automatic retries:
+
+    .. code-block:: python
+
+        result_backend_always_retry = False
+
+    Or to increase the retry limit:
+
+    .. code-block:: python
+
+        result_backend_always_retry = True
+        result_backend_max_retries = 10
 
 Database URL Examples
 ~~~~~~~~~~~~~~~~~~~~~

@@ -117,9 +117,7 @@ class ResultConsumer(BaseResultConsumer):
         if self.subscribed_to:
             self._pubsub.subscribe(*self.subscribed_to)
         else:
-            self._pubsub.connection = self._pubsub.connection_pool.get_connection(
-                'pubsub', self._pubsub.shard_hint
-            )
+            self._pubsub.connection = self._pubsub.connection_pool.get_connection()
             # even if there is nothing to subscribe, we should not lose the callback after connecting.
             # The on_connect callback will re-subscribe to any channels we previously subscribed to.
             self._pubsub.connection.register_connect_callback(self._pubsub.on_connect)
@@ -318,6 +316,9 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
         self.url = url
 
+        # Add driver identification for redis-py
+        self._add_driver_info()
+
         self.connection_errors, self.channel_errors = (
             get_redis_error_classes() if get_redis_error_classes
             else ((), ()))
@@ -397,6 +398,31 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         # Query parameters override other parameters
         connparams.update(query)
         return connparams
+
+    def _add_driver_info(self):
+        """Add driver identification to connection parameters.
+
+        Uses DriverInfo class if available, or falls back to
+        lib_name/lib_version for older versions.
+        """
+        from celery import __version__
+
+        # Try to use DriverInfo class
+        try:
+            from redis import DriverInfo
+            driver_info = DriverInfo().add_upstream_driver('celery', __version__)
+            self.connparams['driver_info'] = driver_info
+        except (ImportError, AttributeError):
+            # Fallback: use lib_name/lib_version
+            # Format: lib_name='redis-py(celery_v{version})'
+            self.connparams['lib_name'] = f'redis-py(celery_v{__version__})'
+            # lib_version should be the redis client version
+            try:
+                import redis
+                redis_version = redis.__version__
+            except (ImportError, AttributeError):
+                redis_version = 'unknown'
+            self.connparams['lib_version'] = redis_version
 
     def exception_safe_to_retry(self, exc):
         if isinstance(exc, self.connection_errors):
