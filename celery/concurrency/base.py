@@ -4,7 +4,7 @@ import os
 import sys
 import time
 from threading import Event, Thread
-from typing import Any, Dict
+from typing import Any, Callable, Dict
 
 from billiard.einfo import ExceptionInfo
 from billiard.exceptions import WorkerLostError
@@ -191,7 +191,8 @@ class AsyncPoolShutdownMixin:
     long-running tasks drain from the pool.
     """
 
-    def start_timer_event_loop(self, pool_type: str) -> tuple[Event, Thread] | None:
+    @staticmethod
+    def start_timer_event_loop(*, pool_type: str) -> tuple[Event, Thread] | None:
         # Keep firing timers (for heartbeats on async transports) while
         # the pool drains. If not using an async transport, no hub exists
         # and the timer thread is not created.
@@ -221,3 +222,21 @@ class AsyncPoolShutdownMixin:
             timer_thread.start()
 
             return shutdown_event, timer_thread
+
+    @classmethod
+    def shutdown_with_timer_loop(cls, *, pool_type: str, shutdown_function: Callable):
+        if event_loop_started := cls.start_timer_event_loop(pool_type=pool_type):
+            shutdown_event, timer_thread = event_loop_started
+
+            try:
+                shutdown_function()
+            finally:
+                shutdown_event.set()
+                timer_thread.join(timeout=1.0)
+
+                if timer_thread.is_alive():
+                    logger.warning(
+                        f"Timer thread in {pool_type} on_stop() did not terminate cleanly"
+                    )
+        else:
+            shutdown_function()

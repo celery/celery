@@ -14,7 +14,6 @@ from celery._state import _set_task_join_will_block, set_default_app
 from celery.app import trace
 from celery.concurrency.base import AsyncPoolShutdownMixin, BasePool
 from celery.utils.functional import noop
-from celery.utils.log import get_logger
 
 from .asynpool import AsynPool
 
@@ -30,9 +29,6 @@ if REMAP_SIGTERM:
     WORKER_SIGIGNORE = {'SIGINT', TERM_SIGNAME}
 else:
     WORKER_SIGIGNORE = {'SIGINT'}
-
-logger = get_logger(__name__)
-warning, debug = logger.warning, logger.debug
 
 
 def process_initializer(app, hostname):
@@ -140,22 +136,9 @@ class TaskPool(BasePool, AsyncPoolShutdownMixin):
         """Gracefully stop the pool."""
         if self._pool is not None and self._pool._state in (RUN, CLOSE):
             self._pool.close()
-
-            if event_loop_started := self.start_timer_event_loop(pool_type="prefork"):
-                shutdown_event, timer_thread = event_loop_started
-                try:
-                    self._pool.join()
-                finally:
-                    shutdown_event.set()
-                    timer_thread.join(timeout=1.0)
-
-                    if timer_thread.is_alive():
-                        logger.warning(
-                            "Timer thread in prefork on_stop() did not terminate cleanly"
-                        )
-            else:
-                self._pool.join()
-
+            self.shutdown_with_timer_loop(
+                pool_type="prefork", shutdown_function=self._pool.join
+            )
             self._pool = None
 
     def on_terminate(self):

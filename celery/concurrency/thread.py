@@ -4,8 +4,6 @@ from __future__ import annotations
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 from typing import TYPE_CHECKING, Any, Callable
 
-from celery.utils.log import get_logger
-
 from .base import AsyncPoolShutdownMixin, BasePool, apply_target
 
 __all__ = ('TaskPool',)
@@ -18,8 +16,6 @@ if TYPE_CHECKING:
     # `TargetFunction` should be a Protocol that represents fast_trace_task and
     # trace_task_ret.
     TargetFunction = Callable[..., Any]
-
-logger = get_logger(__name__)
 
 
 class ApplyResult:
@@ -43,23 +39,9 @@ class TaskPool(BasePool, AsyncPoolShutdownMixin):
         self.executor = ThreadPoolExecutor(max_workers=self.limit)
 
     def on_stop(self) -> None:
-        if event_loop_started := self.start_timer_event_loop(pool_type="thread"):
-            shutdown_event, timer_thread = event_loop_started
-
-            try:
-                self.executor.shutdown()
-            finally:
-                shutdown_event.set()
-                timer_thread.join(timeout=1.0)
-
-                if timer_thread.is_alive():
-                    logger.warning(
-                        "Timer thread in thread on_stop() did not terminate cleanly"
-                    )
-
-        else:
-            self.executor.shutdown()
-
+        self.shutdown_with_timer_loop(
+            pool_type="threads", shutdown_function=self.executor.shutdown
+        )
         super().on_stop()
 
     def on_apply(
