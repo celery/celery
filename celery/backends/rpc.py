@@ -73,7 +73,8 @@ class ResultConsumer(BaseResultConsumer):
 
     def drain_events(self, timeout=None):
         if self._connection:
-            return self._connection.drain_events(timeout=timeout)
+            with self._handle_connection_errors():
+                return self._connection.drain_events(timeout=timeout)
         elif timeout:
             time.sleep(timeout)
 
