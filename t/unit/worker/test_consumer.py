@@ -534,6 +534,8 @@ class test_Consumer(ConsumerTestCase):
         consumer.controller.max_concurrency = None
         consumer.initial_prefetch_count = 16
         consumer.connection = Mock()
+        consumer.connection.connection_errors = ()
+        consumer.connection.channel_errors = ()
         consumer.connection.default_channel = Mock()
         consumer.connection.transport = Mock()
         consumer.connection.transport.driver_type = 'redis'
@@ -571,6 +573,8 @@ class test_Consumer(ConsumerTestCase):
         consumer.controller.max_concurrency = None
         consumer.initial_prefetch_count = 16
         consumer.connection = Mock()
+        consumer.connection.connection_errors = ()
+        consumer.connection.channel_errors = ()
         consumer.connection.default_channel = Mock()
         consumer.connection.transport = Mock()
         consumer.connection.transport.driver_type = 'redis'
@@ -611,6 +615,8 @@ class test_Consumer(ConsumerTestCase):
         consumer.controller.max_concurrency = None
         consumer.initial_prefetch_count = 16
         consumer.connection = Mock()
+        consumer.connection.connection_errors = ()
+        consumer.connection.channel_errors = ()
         consumer.connection.default_channel = Mock()
         consumer.connection.transport = Mock()
         consumer.connection.transport.driver_type = 'redis'
@@ -651,6 +657,8 @@ class test_Consumer(ConsumerTestCase):
         consumer.controller.max_concurrency = 2  # Lower than pool processes
         consumer.initial_prefetch_count = 16
         consumer.connection = Mock()
+        consumer.connection.connection_errors = ()
+        consumer.connection.channel_errors = ()
         consumer.connection.default_channel = Mock()
         consumer.connection.transport = Mock()
         consumer.connection.transport.driver_type = 'redis'
@@ -691,6 +699,8 @@ class test_Consumer(ConsumerTestCase):
         consumer.controller.max_concurrency = None
         consumer.initial_prefetch_count = 16
         consumer.connection = Mock()
+        consumer.connection.connection_errors = ()
+        consumer.connection.channel_errors = ()
         consumer.connection.default_channel = Mock()
         consumer.connection.transport = Mock()
         consumer.connection.transport.driver_type = 'amqp'  # RabbitMQ
