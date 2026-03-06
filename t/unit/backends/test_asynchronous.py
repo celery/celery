@@ -141,6 +141,37 @@ class DrainerTests:
         assert not p.ready, 'Promise should remain un-fulfilled'
         assert on_interval.call_count < 20, 'Should have limited number of calls to on_interval'
 
+    def test_drain_catches_and_logs_oserror(self):
+        p = promise()
+
+        def fulfill_promise_thread():
+            self.sleep(self.interval * 2)
+            p('done')
+
+        fulfill_thread = self.schedule_thread(fulfill_promise_thread)
+
+        state = {"call_count": 0}
+
+        def mock_drain_events(*args, **kwargs):
+            state["call_count"] += 1
+            if state["call_count"] == 1:
+                raise OSError("Simulated broker restart (Connection Reset)")
+            return None
+
+        with patch.object(self.drainer.result_consumer, 'drain_events', side_effect=mock_drain_events):
+            with patch('logging.warning') as mock_log:
+                for _ in self.drainer.drain_events_until(
+                    p,
+                    interval=self.interval,
+                    timeout=self.MAX_TIMEOUT
+                ):
+                    pass
+
+        self.teardown_thread(fulfill_thread)
+
+        assert p.ready, 'Should have terminated with promise being ready despite OSError'
+        assert mock_log.called, 'logging.warning should have been called'
+
 
 class GreenletDrainerTests(DrainerTests):
     def test_drain_raises_when_greenlet_already_exited(self):
@@ -181,6 +212,24 @@ class GreenletDrainerTests(DrainerTests):
                 self.drainer.start()
 
             self.teardown_thread(thread)
+
+    def test_run_catches_and_logs_oserror(self):
+        def mock_drain_events(*args, **kwargs):
+            if not hasattr(mock_drain_events, 'has_raised'):
+                mock_drain_events.has_raised = True
+                raise OSError("Simulated broker restart in greenlet")
+            else:
+                self.drainer._stopped.set()
+
+        with patch.object(self.drainer.result_consumer, 'drain_events', side_effect=mock_drain_events):
+            with patch('logging.warning') as mock_log:
+                thread = self.schedule_thread(self.drainer.run)
+                self.teardown_thread(thread)
+
+        assert mock_log.called, 'logging.warning should have been called when OSError was raised'
+        call_args = mock_log.call_args[0][0]
+        assert 'connection error during drain_events' in call_args
+        assert self.drainer._exc is None, 'The drainer should not have an exception set after handling OSError'
 
 
 @pytest.mark.skipif(
