@@ -3,10 +3,12 @@ import logging
 import os
 import sys
 import time
+from threading import Event, Thread
 from typing import Any, Dict
 
 from billiard.einfo import ExceptionInfo
 from billiard.exceptions import WorkerLostError
+from kombu.asynchronous import get_event_loop
 from kombu.utils.encoding import safe_repr
 
 from celery.exceptions import WorkerShutdown, WorkerTerminate, reraise
@@ -14,7 +16,7 @@ from celery.utils import timer2
 from celery.utils.log import get_logger
 from celery.utils.text import truncate
 
-__all__ = ('BasePool', 'apply_target')
+__all__ = ('AsyncPoolShutdownMixin', 'BasePool', 'apply_target')
 
 logger = get_logger('celery.pool')
 
@@ -178,3 +180,44 @@ class BasePool:
     @property
     def num_processes(self):
         return self.limit
+
+
+class AsyncPoolShutdownMixin:
+    """
+    Provides a utility method for async pool (e.g. prefork, threads) shutdown.
+
+    These pools must start their own timer thread to continue firing timer events
+    during pool shutdown. This allows heartbeats to continue to be sent while
+    long-running tasks drain from the pool.
+    """
+
+    def start_timer_event_loop(self, pool_type: str) -> tuple[Event, Thread] | None:
+        # Keep firing timers (for heartbeats on async transports) while
+        # the pool drains. If not using an async transport, no hub exists
+        # and the timer thread is not created.
+        hub = get_event_loop()
+        if hub is not None:
+            shutdown_event = Event()
+
+            def fire_timers_loop():
+                while not shutdown_event.is_set():
+                    try:
+                        hub.fire_timers()
+                    except Exception:
+                        logger.warning(
+                            f"Exception in timer thread during {pool_type} on_stop()",
+                            exc_info=True,
+                        )
+                    # 0.5 seconds was chosen as a balance between joining quickly
+                    # after the thread/pool join is complete and sleeping long enough to
+                    # avoid excessive CPU usage.
+                    time.sleep(0.5)
+
+            timer_thread = Thread(
+                target=fire_timers_loop,
+                daemon=True,
+                name=f"{pool_type}-timer-shutdown",
+            )
+            timer_thread.start()
+
+            return shutdown_event, timer_thread
