@@ -230,11 +230,14 @@ class test_greenletDrainer:
 
         drainer.result_consumer.drain_events = Mock(side_effect=drain)
 
-        with patch.object(logging, 'warning') as mock_warn:
+        with patch.object(logging, 'warning') as mock_warn, \
+                patch('celery.backends.asynchronous.time.sleep') as mock_sleep:
             drainer.run()
 
         assert calls[0] >= 4
         assert mock_warn.call_count >= 3
+        # backoff sleep should have been called once per OSError
+        assert mock_sleep.call_count >= 3
         assert drainer._exc is None
 
     # -- run: unexpected Exception is stored and re-raised ------------------

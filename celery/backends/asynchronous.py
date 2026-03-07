@@ -82,13 +82,14 @@ class Drainer:
             except OSError:
                 # Recoverable connection error (e.g. broker restart).
                 # drain_events handles reconnection internally; if an
-                # OSError still leaks through, we log and continue the
-                # loop rather than propagating to the caller.
+                # OSError still leaks through, we log, sleep for one
+                # interval, and continue rather than spinning hot.
                 logging.warning(
                     'Drainer: connection error during drain_events, '
                     'will retry on next loop iteration.',
                     exc_info=True,
                 )
+                time.sleep(interval)
 
             if on_interval:
                 on_interval()
@@ -133,13 +134,14 @@ class greenletDrainer(Drainer):
                 except OSError:
                     # Recoverable connection errors (e.g. broker restart)
                     # are handled inside drain_events via reconnection.
-                    # If something still leaks through, we log and retry
-                    # instead of killing the drainer permanently.
+                    # If something still leaks through, we log, back off
+                    # briefly, and retry instead of spinning hot.
                     logging.warning(
                         'Drainer: connection error during drain_events, '
                         'will retry on next loop iteration.',
                         exc_info=True,
                     )
+                    time.sleep(1)
         except Exception as e:
             self._exc = e
             raise
