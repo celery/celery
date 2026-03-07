@@ -325,9 +325,6 @@ class test_greenletDrainer:
 # 3. Integration tests with real greenlet runtimes (gevent + eventlet)
 # ---------------------------------------------------------------------------
 
-pytest.importorskip('gevent')
-pytest.importorskip('eventlet')
-
 
 @pytest.fixture(autouse=True)
 def setup_eventlet():
@@ -555,6 +552,7 @@ class GreenletDrainerTests(DrainerTests):
 class test_EventletDrainer(GreenletDrainerTests):
     @pytest.fixture(autouse=True)
     def setup_drainer(self):
+        pytest.importorskip('eventlet')
         self.drainer = self.get_drainer('eventlet')
 
     @cached_property
@@ -610,6 +608,7 @@ class test_Drainer(DrainerTests):
 class test_GeventDrainer(GreenletDrainerTests):
     @pytest.fixture(autouse=True)
     def setup_drainer(self):
+        pytest.importorskip('gevent')
         self.drainer = self.get_drainer('gevent')
 
     @cached_property
