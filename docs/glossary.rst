@@ -107,8 +107,10 @@ Glossary
         by the number of pool slots (threads/processes/greenthreads).
 
         .. note::
-            If you are using eta or countdown tasks, the prefetch multiplier is not applied.
-            The :setting:`worker_eta_task_limit` setting is used instead. See :setting:`worker_eta_task_limit`.
+            If you are using eta or countdown tasks, the :setting:`worker_prefetch_multiplier`
+            still determines the prefetch count, but the :setting:`worker_eta_task_limit`
+            setting acts as an upper limit on the number of eta/countdown tasks that can be
+            prefetched. See :setting:`worker_eta_task_limit`.
 
     `prefetch count`
         Maximum number of unacknowledged messages a consumer can hold and if
