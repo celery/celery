@@ -3381,8 +3381,18 @@ memory, potentially causing out-of-memory issues.
 
 .. note::
 
-    :setting:`worker_eta_task_limit` serves as an upper bound on the number of ETA/countdown tasks the worker can hold at once, overriding the effective prefetch count derived from :setting:`worker_prefetch_multiplier` if it would otherwise exceed this limit.
+    Tasks with ETA/countdown are fetched into memory and scheduled on an internal
+    timer, so they are not constrained by the per-process prefetch window derived
+    from :setting:`worker_prefetch_multiplier` in the same way as immediately
+    executed tasks. This is why ``--prefetch-multiplier=1`` can appear to have no
+    effect when many ETA/countdown tasks are present.
 
+    :setting:`worker_eta_task_limit` configures the maximum number of ETA/countdown
+    tasks a worker will hold in memory and also sets an overall cap on
+    unacknowledged messages via kombu's QoS ``max_prefetch``. If the prefetch count
+    implied by :setting:`worker_prefetch_multiplier` would exceed this cap, the
+    worker will stop consuming new messages until previously received tasks have
+    been acknowledged.
 .. setting:: worker_disable_prefetch
 
 ``worker_disable_prefetch``
