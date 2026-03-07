@@ -441,6 +441,65 @@ class test_Scheduler:
         scheduler.tick()
         assert scheduler._heap[0].entry.schedule == schedule_10
 
+    def test_due_ticks_do_not_rebuild_heap_without_schedule_change(self):
+        scheduler = mScheduler(app=self.app)
+        scheduler.add(name='test_due_ticks_do_not_rebuild_heap',
+                      schedule=always_due)
+        with patch.object(
+            scheduler, 'populate_heap', wraps=scheduler.populate_heap,
+        ) as populate_heap:
+            assert scheduler.tick() == 0
+            assert scheduler.tick() == 0
+        assert populate_heap.call_count == 1
+
+    def test_tick_calls_custom_schedules_equal_override(self):
+        class CustomScheduler(mScheduler):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.schedules_equal_called = 0
+                self.force_not_equal = False
+
+            def schedules_equal(self, old_schedules, new_schedules):
+                self.schedules_equal_called += 1
+                if self.force_not_equal:
+                    return False
+                return super().schedules_equal(old_schedules, new_schedules)
+
+        scheduler = CustomScheduler(app=self.app)
+        scheduler.add(name='test_tick_calls_custom_schedules_equal_override',
+                      schedule=always_due)
+
+        with patch.object(
+            scheduler, 'populate_heap', wraps=scheduler.populate_heap,
+        ) as populate_heap:
+            scheduler.tick()
+            initial_populate_calls = populate_heap.call_count
+
+            scheduler.force_not_equal = True
+            scheduler.tick()
+            scheduler.tick()
+
+        assert scheduler.schedules_equal_called == 2
+        assert populate_heap.call_count > initial_populate_calls
+
+    def test_tick_uses_instance_patched_schedules_equal(self):
+        scheduler = mScheduler(app=self.app)
+        scheduler.add(name='test_tick_uses_instance_patched_schedules_equal',
+                      schedule=always_due)
+
+        with patch.object(
+            scheduler, 'populate_heap', wraps=scheduler.populate_heap,
+        ) as populate_heap:
+            scheduler.tick()
+            initial_populate_calls = populate_heap.call_count
+
+            with patch.object(scheduler, 'schedules_equal', return_value=False) as patched:
+                scheduler.tick()
+                scheduler.tick()
+
+            patched.assert_called_once()
+        assert populate_heap.call_count > initial_populate_calls
+
     def test_schedule_no_remain(self):
         scheduler = mScheduler(app=self.app)
         scheduler.add(name='test_schedule_no_remain',
