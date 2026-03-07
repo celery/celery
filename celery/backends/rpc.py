@@ -90,13 +90,21 @@ class ResultConsumer(BaseResultConsumer):
             try:
                 self._consumer.cancel()
             except Exception:
-                pass
+                logger.debug(
+                    'RPC result consumer: error while cancelling stale '
+                    'consumer during reconnect',
+                    exc_info=True,
+                )
 
         if self._connection is not None:
             try:
                 self._connection.close()
             except Exception:
-                pass
+                logger.debug(
+                    'RPC result consumer: error while closing stale '
+                    'connection during reconnect',
+                    exc_info=True,
+                )
             self._connection = None
 
         # Establish a fresh connection and consumer.
