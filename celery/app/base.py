@@ -63,9 +63,15 @@ if sys.version_info >= (3, 14):
 
     def _get_annotations(fun):
         # In Python 3.14+, annotations are deferred by default (PEP 649).
-        # Accessing fun.__annotations__ evaluates them, raising NameError for
-        # types only available under TYPE_CHECKING. Use STRING format instead.
-        return inspect.get_annotations(fun, format=annotationlib.Format.STRING)
+        # Accessing fun.__annotations__ (or inspect.get_annotations without a
+        # format) evaluates them and may raise NameError for types only
+        # available under TYPE_CHECKING. To preserve previous behavior, first
+        # try to return evaluated annotations; if that fails with NameError,
+        # fall back to returning stringified annotations instead.
+        try:
+            return inspect.get_annotations(fun)
+        except NameError:
+            return inspect.get_annotations(fun, format=annotationlib.Format.STRING)
 else:
     def _get_annotations(fun):
         return fun.__annotations__
