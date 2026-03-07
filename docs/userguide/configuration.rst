@@ -3381,7 +3381,7 @@ memory, potentially causing out-of-memory issues.
 
 .. note::
 
-    Tasks with ETA/countdown aren't affected by prefetch limits. :setting:`worker_eta_task_limit` will be used instead of the prefetch multiplier :setting:`worker_prefetch_multiplier` when prefetching ETA/countdown tasks.
+    :setting:`worker_eta_task_limit` serves as an upper bound on the number of ETA/countdown tasks the worker can hold at once, overriding the effective prefetch count derived from :setting:`worker_prefetch_multiplier` if it would otherwise exceed this limit.
 
 .. setting:: worker_disable_prefetch
 
