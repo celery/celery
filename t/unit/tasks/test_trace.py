@@ -1081,6 +1081,52 @@ class test_trace(TraceCase):
         successful_requests.discard(task_id)
         self.app.conf.worker_deduplicate_successful_tasks = False
 
+    def test_ignore_result_priority__request_overrides_task_true(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        add.backend = Mock(name='backend')
+        add.ignore_result = True
+        request = {'ignore_result': False}
+
+        self.trace(add, (2, 2), {}, request=request, eager=False)
+
+        add.backend.mark_as_done.assert_called_with(ANY, 4, ANY, True)
+
+    def test_ignore_result_priority__request_overrides_task_false(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        add.backend = Mock(name='backend')
+        add.ignore_result = False
+        request = {'ignore_result': True}
+
+        self.trace(add, (2, 2), {}, request=request, eager=False)
+
+        add.backend.mark_as_done.assert_called_with(ANY, 4, ANY, False)
+
+    def test_ignore_result_priority__request_overrides_app_config(self):
+        prev_ignore = self.app.conf.task_ignore_result
+
+        try:
+            self.app.conf.task_ignore_result = True
+
+            @self.app.task(shared=False)
+            def add(x, y):
+                return x + y
+
+            add.backend = Mock(name='backend')
+
+            assert add.ignore_result is True
+
+            request = {'ignore_result': False}
+            self.trace(add, (2, 2), {}, request=request, eager=False)
+
+            add.backend.mark_as_done.assert_called_with(ANY, 4, ANY, True)
+        finally:
+            self.app.conf.task_ignore_result = prev_ignore
 
 class test_TraceInfo(TraceCase):
     class TI(TraceInfo):
