@@ -1,4 +1,5 @@
 import collections
+import sys
 
 import pytest
 from kombu.utils.functional import lazy
@@ -367,6 +368,21 @@ class test_head_from_fun:
             g(a=2, c=1)
 
         g(b=3)
+
+    @pytest.mark.skipif(sys.version_info < (3, 14), reason="PEP 649 deferred annotations require Python 3.14+")
+    def test_type_checking_annotation(self):
+        # Regression test for https://github.com/celery/celery/discussions/10099
+        # On Python 3.14+, annotations are deferred (PEP 649). Functions with
+        # annotations referencing TYPE_CHECKING-only types must not raise NameError.
+        local = {}
+        exec('def f(args: Sequence[str], x: int = 0): return args', {}, local)
+        f = local['f']
+
+        g = head_from_fun(f)
+        with pytest.raises(TypeError):
+            g()
+        g(1)
+        g(1, 2)
 
 
 class test_fun_takes_argument:
