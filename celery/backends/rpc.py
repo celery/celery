@@ -44,12 +44,14 @@ class ResultConsumer(BaseResultConsumer):
 
     _connection = None
     _consumer = None
+    _no_ack = True
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._create_binding = self.backend._create_binding
 
     def start(self, initial_task_id, no_ack=True, **kwargs):
+        self._no_ack = no_ack
         self._connection = self.app.connection()
         initial_queue = self._create_binding(initial_task_id)
         self._consumer = self.Consumer(
@@ -113,7 +115,7 @@ class ResultConsumer(BaseResultConsumer):
             self._connection.default_channel,
             old_queues,
             callbacks=[self.on_state_change],
-            no_ack=True,
+            no_ack=self._no_ack,
             accept=self.accept,
         )
         self._consumer.consume()
