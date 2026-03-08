@@ -2,7 +2,9 @@
 
 RPC-style result backend, using reply-to and one queue per client.
 """
+import logging
 import time
+from contextlib import contextmanager
 
 import kombu
 from kombu.common import maybe_declare
@@ -16,6 +18,8 @@ from . import base
 from .asynchronous import AsyncBackendMixin, BaseResultConsumer
 
 __all__ = ('BacklogLimitExceeded', 'RPCBackend')
+
+logger = logging.getLogger(__name__)
 
 E_NO_CHORD_SUPPORT = """
 The "rpc" result backend does not support chords!
@@ -40,12 +44,14 @@ class ResultConsumer(BaseResultConsumer):
 
     _connection = None
     _consumer = None
+    _no_ack = True
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._create_binding = self.backend._create_binding
 
     def start(self, initial_task_id, no_ack=True, **kwargs):
+        self._no_ack = no_ack
         self._connection = self.app.connection()
         initial_queue = self._create_binding(initial_task_id)
         self._consumer = self.Consumer(
@@ -54,11 +60,66 @@ class ResultConsumer(BaseResultConsumer):
             accept=self.accept)
         self._consumer.consume()
 
+    @contextmanager
+    def _handle_connection_errors(self):
+        """Context manager that catches broker connection/channel errors and reconnects."""
+        try:
+            yield
+        except (self._connection.connection_errors
+                + self._connection.channel_errors) as exc:
+            logger.warning(
+                'RPC result consumer: connection lost (%s), '
+                'attempting to reconnect...', exc,
+            )
+            self._reconnect()
+
     def drain_events(self, timeout=None):
         if self._connection:
-            return self._connection.drain_events(timeout=timeout)
+            with self._handle_connection_errors():
+                return self._connection.drain_events(timeout=timeout)
         elif timeout:
             time.sleep(timeout)
+
+    def _reconnect(self):
+        """Close the stale connection and rebuild the consumer.
+
+        Re-subscribes to every queue that the old consumer was listening on
+        so that pending results can still be drained.
+        """
+        old_queues = []
+        if self._consumer is not None:
+            old_queues = list(self._consumer.queues)
+            try:
+                self._consumer.cancel()
+            except Exception:
+                logger.debug(
+                    'RPC result consumer: error while cancelling stale '
+                    'consumer during reconnect',
+                    exc_info=True,
+                )
+
+        if self._connection is not None:
+            try:
+                self._connection.close()
+            except Exception:
+                logger.debug(
+                    'RPC result consumer: error while closing stale '
+                    'connection during reconnect',
+                    exc_info=True,
+                )
+            self._connection = None
+
+        # Establish a fresh connection and consumer.
+        self._connection = self.app.connection()
+        self._consumer = self.Consumer(
+            self._connection.default_channel,
+            old_queues,
+            callbacks=[self.on_state_change],
+            no_ack=self._no_ack,
+            accept=self.accept,
+        )
+        self._consumer.consume()
+        logger.info('RPC result consumer: reconnected successfully.')
 
     def stop(self):
         try:
