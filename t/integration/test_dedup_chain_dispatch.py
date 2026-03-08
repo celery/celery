@@ -1,8 +1,9 @@
 """Integration tests for chain/callback dispatch on the dedup fast-path.
 
-When ``deduplicate_successful_tasks=True`` and ``acks_late=True``, a
-redelivered task that hits the dedup fast-path in ``trace.py`` must still
-dispatch its chain and link callbacks.
+When ``worker_deduplicate_successful_tasks=True`` and
+``task_acks_late=True``, a redelivered task that hits the dedup
+fast-path in ``trace.py`` must still dispatch its chain and link
+callbacks.
 
 See https://github.com/celery/celery/issues/9835
 """
