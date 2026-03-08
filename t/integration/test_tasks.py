@@ -770,7 +770,7 @@ class test_task_replacement:
         assert redis_messages == expected_messages
 
 
-class TestPoolAcquireTimeout:
+class test_pool_acquire_timeout:
     """Integration tests for broker_pool_acquire_timeout setting (#9929)."""
 
     @flaky

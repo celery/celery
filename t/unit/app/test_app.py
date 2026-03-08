@@ -1691,7 +1691,7 @@ class test_App:
             ctx = self.app.producer_or_acquire()
             assert ctx.fb_kwargs == {'timeout': 30}
 
-    def test_producer_or_acquire_no_timeout_when_none(self):
+    def test_producer_or_acquire_passes_timeout_none_through(self):
         self.app.conf.broker_pool_acquire_timeout = None
         with patch.object(
             type(self.app), 'producer_pool',
