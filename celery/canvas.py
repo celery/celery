@@ -39,7 +39,7 @@ __all__ = (
     'group', 'chord', 'signature', 'maybe_signature',
 )
 
-_FAST_PATH_IMMUTABLE_TYPES = (str, bytes, int, float, type(None))
+_FAST_PATH_IMMUTABLE_TYPES = (str, bytes, int, float, bool, type(None))
 
 
 def _clone_options(options):
