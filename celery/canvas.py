@@ -992,13 +992,13 @@ class _chain(Signature):
                     sig.tasks[-2].body = sig.tasks[-2].body | sig.tasks[-1]
                     sig.tasks = sig.tasks[:-1]
                 return sig
-            elif self.tasks and isinstance(self.tasks[-1], chord):
-                # CHAIN [last item is chord] -> chain with chord body.
+            elif self.tasks and isinstance(self.tasks[-1], chord) and not isinstance(other, chord):
+                # CHAIN [last item is chord] | TASK -> chain with chord body.
                 sig = self.clone()
                 sig.tasks[-1].body = sig.tasks[-1].body | other
                 return sig
             else:
-                # chain | task -> chain
+                # chain | task/chord -> chain
                 # use type(self) for _chain subclasses
                 return type(self)(seq_concat_item(
                     self.unchain_tasks(), other), app=self._app)
