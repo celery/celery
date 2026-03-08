@@ -831,6 +831,26 @@ class test_App:
             assert typing.get_type_hints(foo) == {
                 'parameter': int, 'return': type(None)}
 
+    @pytest.mark.skipif(sys.version_info < (3, 14), reason="PEP 649 deferred annotations require Python 3.14+")
+    def test_task_with_type_checking_annotation(self):
+        # Regression test for https://github.com/celery/celery/discussions/10099
+        # On Python 3.14+, annotations are deferred (PEP 649). Registering a task
+        # whose annotations reference TYPE_CHECKING-only types must not raise NameError.
+        local = {}
+        exec(
+            'def foo(args: Sequence[str], x: int = 0): return args',
+            {'app': None},
+            local,
+        )
+        raw_fun = local['foo']
+
+        with self.Celery() as app:
+            task = app.task(raw_fun)
+            result = task.apply(args=(['hello'],))
+            assert result.result == ['hello']
+            # Annotations should be stored as strings, not evaluated
+            assert task.__annotations__['args'] == 'Sequence[str]'
+
     def test_annotate_decorator(self):
         from celery.app.task import Task
 
