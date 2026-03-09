@@ -1203,6 +1203,8 @@ you to customize the table names:
 ``database_engine_callback``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. versionadded:: 5.7.0
+
 Default: :const:`None`.
 
 An optional callable (or dotted import path to one) that receives the
