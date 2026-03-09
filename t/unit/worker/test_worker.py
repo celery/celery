@@ -111,6 +111,8 @@ class test_Consumer(ConsumerCase):
         c.task_consumer = Mock(name='.task_consumer')
         c.qos = QoS(c.task_consumer.qos, 10)
         c.connection = Mock(name='.connection')
+        c.connection.connection_errors = ()
+        c.connection.channel_errors = ()
         c.controller = c.app.WorkController()
         c.heart = Mock(name='.heart')
         c.controller.consumer = c
@@ -249,6 +251,8 @@ class test_Consumer(ConsumerCase):
         c.task_consumer = Mock()
         c.event_dispatcher = mock_event_dispatcher()
         c.connection = Mock(name='.connection')
+        c.connection.connection_errors = ()
+        c.connection.channel_errors = ()
         c.connection.get_heartbeat_interval.return_value = 0
         c.connection.drain_events.side_effect = WorkerShutdown()
 
@@ -1242,3 +1246,26 @@ class test_WorkerApp:
         captured = capfd.readouterr()
         assert "\nout\n" == captured.out
         assert "" == captured.err
+
+    def test_safe_say_uses_original_os_write(self):
+        from celery import _original_os_write
+        from celery.apps.worker import _original_os_write as worker_os_write
+
+        assert _original_os_write is not None
+        assert callable(_original_os_write)
+        assert worker_os_write is _original_os_write
+        assert _original_os_write.__name__ == 'write'
+
+    def test_safe_say_works_with_patched_os_write(self, capfd):
+        original_write = os.write
+
+        def patched_write(fd, data):
+            raise RuntimeError("do not call blocking functions from the mainloop")
+
+        try:
+            os.write = patched_write
+            safe_say("test message")
+            captured = capfd.readouterr()
+            assert "\ntest message\n" == captured.err
+        finally:
+            os.write = original_write

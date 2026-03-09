@@ -663,7 +663,6 @@ class test_stamping_mechanism(CanvasCase):
 
         class CustomStampingVisitor(StampingVisitor):
             def on_signature(self, actual_sig, **headers) -> dict:
-                nonlocal expected_sig
                 assert actual_sig == expected_sig
                 return {"header": "value"}
 

@@ -134,6 +134,15 @@ class test_Queues:
         queues.add(q)
         assert queues[qname].queue_arguments == expected
 
+    def test_missing_queue_quorum(self):
+        queues = Queues(create_missing_queue_type="quorum",
+                        create_missing_queue_exchange_type="topic")
+
+        q = queues.new_missing("spontaneous")
+        assert q.name == "spontaneous"
+        assert q.queue_arguments == {"x-queue-type": "quorum"}
+        assert q.exchange.type == "topic"
+
 
 class test_default_queues:
 
@@ -359,6 +368,22 @@ class test_AMQP(test_AMQP_Base):
         self.app.send_task('task.create_pr')
         router = self.app.amqp.router
         assert router != router_was
+
+    def test_create_missing_queue_type_from_conf(self):
+        self.app.conf.task_create_missing_queue_type = "quorum"
+        self.app.conf.task_create_missing_queue_exchange_type = "topic"
+        self.app.amqp.__dict__.pop("queues", None)
+        q = self.app.amqp.queues["auto"]
+        assert q.queue_arguments == {"x-queue-type": "quorum"}
+        assert q.exchange.type == "topic"
+
+    def test_create_missing_queue_type_explicit_param(self):
+        qmap = self.app.amqp.Queues({}, create_missing=True,
+                                    create_missing_queue_type="quorum",
+                                    create_missing_queue_exchange_type="topic")
+        q = qmap["auto"]
+        assert q.queue_arguments == {"x-queue-type": "quorum"}
+        assert q.exchange.type == "topic"
 
 
 class test_as_task_v2(test_AMQP_Base):

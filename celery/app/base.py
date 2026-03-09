@@ -5,6 +5,7 @@ import inspect
 import os
 import sys
 import threading
+import types
 import typing
 import warnings
 from collections import UserDict, defaultdict, deque
@@ -56,6 +57,24 @@ if typing.TYPE_CHECKING:  # pragma: no cover  # codecov does not capture this
 __all__ = ('Celery',)
 
 logger = get_logger(__name__)
+
+if sys.version_info >= (3, 14):
+    import annotationlib
+
+    def _get_annotations(fun):
+        # In Python 3.14+, annotations are deferred by default (PEP 649).
+        # Accessing fun.__annotations__ (or inspect.get_annotations without a
+        # format) evaluates them and may raise NameError for types only
+        # available under TYPE_CHECKING. To preserve previous behavior, first
+        # try to return evaluated annotations; if that fails with NameError,
+        # fall back to returning stringified annotations instead.
+        try:
+            return inspect.get_annotations(fun)
+        except NameError:
+            return inspect.get_annotations(fun, format=annotationlib.Format.STRING)
+else:
+    def _get_annotations(fun):
+        return fun.__annotations__
 
 BUILTIN_FIXUPS = {
     'celery.fixups.django:fixup',
@@ -124,14 +143,27 @@ def pydantic_wrapper(
         dump_kwargs = {}
     dump_kwargs.setdefault('mode', 'json')
 
+    # If a file uses `from __future__ import annotations`, all annotations will
+    # be strings. `typing.get_type_hints()` can turn these back into real
+    # types, but can also sometimes fail due to circular imports. Try that
+    # first, and fall back to annotations from `inspect.signature()`.
     task_signature = inspect.signature(task_fun)
+
+    try:
+        type_hints = typing.get_type_hints(task_fun)
+    except (NameError, AttributeError, TypeError):
+        # Fall back to raw annotations from inspect if get_type_hints fails
+        type_hints = None
 
     @functools.wraps(task_fun)
     def wrapper(*task_args, **task_kwargs):
         # Validate task parameters if type hinted as BaseModel
         bound_args = task_signature.bind(*task_args, **task_kwargs)
         for arg_name, arg_value in bound_args.arguments.items():
-            arg_annotation = task_signature.parameters[arg_name].annotation
+            if type_hints and arg_name in type_hints:
+                arg_annotation = type_hints[arg_name]
+            else:
+                arg_annotation = task_signature.parameters[arg_name].annotation
 
             optional_arg = get_optional_arg(arg_annotation)
             if optional_arg is not None and arg_value is not None:
@@ -149,7 +181,11 @@ def pydantic_wrapper(
 
         # Dump Pydantic model if the returned value is an instance of pydantic.BaseModel *and* its
         # class matches the typehint
-        return_annotation = task_signature.return_annotation
+        if type_hints and 'return' in type_hints:
+            return_annotation = type_hints['return']
+        else:
+            return_annotation = task_signature.return_annotation
+
         optional_return_annotation = get_optional_arg(return_annotation)
         if optional_return_annotation is not None:
             return_annotation = optional_return_annotation
@@ -291,7 +327,11 @@ class Celery:
     #: Signal sent after app has prepared the configuration.
     on_after_configure = None
 
-    #: Signal sent after app has been finalized.
+    #: Signal sent after the app has been finalized (i.e., all pending
+    #: task decorators have been evaluated, built-in tasks loaded, and
+    #: every currently registered task has been bound to the app).  This is
+    #: the earliest point at which the task registry is initialized/stable
+    #: and safe to inspect for tasks currently registered with this app.
     on_after_finalize = None
 
     #: Signal sent by every new process after fork.
@@ -573,7 +613,7 @@ class Celery:
                 '_decorated': True,
                 '__doc__': fun.__doc__,
                 '__module__': fun.__module__,
-                '__annotations__': fun.__annotations__,
+                '__annotations__': _get_annotations(fun),
                 '__header__': self.type_checker(fun, bound=bind),
                 '__wrapped__': run}, **options))()
             # for some reason __qualname__ cannot be set in type()
@@ -1248,6 +1288,8 @@ class Celery:
             attrs['__reduce__'] = __reduce__
 
         return type(name or Class.__name__, (Class,), attrs)
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
     def _rgetattr(self, path):
         return attrgetter(path)(self)

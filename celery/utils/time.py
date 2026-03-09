@@ -1,6 +1,7 @@
 """Utilities related to dates, times, intervals, and timezones."""
 from __future__ import annotations
 
+import logging
 import numbers
 import os
 import random
@@ -17,6 +18,7 @@ from dateutil import tz as dateutil_tz
 from dateutil.parser import isoparse
 from kombu.utils.functional import reprcall
 from kombu.utils.objects import cached_property
+from tzlocal import get_localzone
 
 from .functional import dictfilter
 from .text import pluralize
@@ -26,6 +28,7 @@ if sys.version_info >= (3, 9):
 else:
     from backports.zoneinfo import ZoneInfo
 
+logger = logging.getLogger(__name__)
 
 __all__ = (
     'LocalTimezone', 'timezone', 'maybe_timedelta',
@@ -117,7 +120,7 @@ class LocalTimezone(tzinfo):
 
 class _Zone:
     """Timezone class that provides the timezone for the application.
-    If `enable_utc` is disabled, LocalTimezone is provided as the timezone provider through local().
+    If `enable_utc` is disabled, local system timezone is provided as the timezone provider through local().
     Otherwise, this class provides a UTC ZoneInfo instance as the timezone provider for the application.
 
     Additionally this class provides a few utility methods for converting datetimes.
@@ -158,9 +161,16 @@ class _Zone:
         return zone
 
     @cached_property
-    def local(self) -> LocalTimezone:
-        """Return LocalTimezone instance for the application."""
-        return LocalTimezone()
+    def local(self) -> tzinfo:
+        """Return the local system timezone for the application."""
+        try:
+            timezone = get_localzone()
+        except Exception as ex:
+            timezone = None
+            logger.warning("Failed to retrieve local timezone (%s): %s", type(ex).__name__, ex)
+        if timezone is None:
+            return LocalTimezone()
+        return timezone
 
     @cached_property
     def utc(self) -> tzinfo:
@@ -202,7 +212,7 @@ def delta_resolution(dt: datetime, delta: timedelta) -> datetime:
 
 
 def remaining(
-        start: datetime, ends_in: timedelta, now: Callable | None = None,
+        start: datetime, ends_in: timedelta, now: datetime | None = None,
         relative: bool = False) -> timedelta:
     """Calculate the real remaining time for a start date and a timedelta.
 
@@ -214,7 +224,7 @@ def remaining(
         relative (bool): If enabled the end time will be calculated
             using :func:`delta_resolution` (i.e., rounded to the
             resolution of `ends_in`).
-        now (Callable): Function returning the current time and date.
+        now (~datetime.datetime): Current time and date.
             Defaults to :func:`datetime.now(timezone.utc)`.
 
     Returns:

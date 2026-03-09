@@ -2,6 +2,7 @@
 
 import datetime
 import time
+import types
 from collections import deque
 from contextlib import contextmanager
 from weakref import proxy
@@ -137,6 +138,8 @@ class AsyncResult(ResultBase):
         self._cache = None
         if self.parent:
             self.parent.forget()
+
+        self.backend.remove_pending_result(self)
         self.backend.forget(self.id)
 
     def revoke(self, connection=None, terminate=False, signal=None,
@@ -381,6 +384,8 @@ class AsyncResult(ResultBase):
             if parent:
                 graph.add_edge(parent, node)
         return graph
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
     def __str__(self):
         """`str(self) -> self.id`."""

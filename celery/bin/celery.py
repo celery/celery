@@ -3,11 +3,7 @@ import os
 import pathlib
 import sys
 import traceback
-
-try:
-    from importlib.metadata import entry_points
-except ImportError:
-    from importlib_metadata import entry_points
+from importlib.metadata import entry_points
 
 import click
 import click.exceptions
