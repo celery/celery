@@ -4,7 +4,6 @@ RPC-style result backend, using reply-to and one queue per client.
 """
 import logging
 import time
-from contextlib import contextmanager
 
 import kombu
 from kombu.common import maybe_declare
@@ -53,6 +52,10 @@ class ResultConsumer(BaseResultConsumer):
     def start(self, initial_task_id, no_ack=True, **kwargs):
         self._no_ack = no_ack
         self._connection = self.app.connection()
+        self._connection_errors = (
+            self._connection.connection_errors
+            + self._connection.channel_errors
+        )
         initial_queue = self._create_binding(initial_task_id)
         self._consumer = self.Consumer(
             self._connection.default_channel, [initial_queue],
@@ -60,22 +63,9 @@ class ResultConsumer(BaseResultConsumer):
             accept=self.accept)
         self._consumer.consume()
 
-    @contextmanager
-    def _handle_connection_errors(self):
-        """Context manager that catches broker connection/channel errors and reconnects."""
-        try:
-            yield
-        except (self._connection.connection_errors
-                + self._connection.channel_errors) as exc:
-            logger.warning(
-                'RPC result consumer: connection lost (%s), '
-                'attempting to reconnect...', exc,
-            )
-            self._reconnect()
-
     def drain_events(self, timeout=None):
         if self._connection:
-            with self._handle_connection_errors():
+            with self.reconnect_on_error():
                 return self._connection.drain_events(timeout=timeout)
         elif timeout:
             time.sleep(timeout)
@@ -86,6 +76,9 @@ class ResultConsumer(BaseResultConsumer):
         Re-subscribes to every queue that the old consumer was listening on
         so that pending results can still be drained.
         """
+        logger.warning(
+            'RPC result consumer: connection lost, attempting to reconnect...',
+        )
         old_queues = []
         if self._consumer is not None:
             old_queues = list(self._consumer.queues)
