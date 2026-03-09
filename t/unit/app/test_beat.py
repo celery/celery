@@ -482,6 +482,33 @@ class test_Scheduler:
         assert scheduler.schedules_equal_called == 2
         assert populate_heap.call_count > initial_populate_calls
 
+    def test_tick_does_not_rebuild_heap_when_custom_schedules_equal_matches(self):
+        class CustomScheduler(mScheduler):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.schedules_equal_called = 0
+
+            def schedules_equal(self, old_schedules, new_schedules):
+                self.schedules_equal_called += 1
+                return super().schedules_equal(old_schedules, new_schedules)
+
+        scheduler = CustomScheduler(app=self.app)
+        scheduler.add(
+            name='test_tick_does_not_rebuild_heap_when_custom_schedules_equal_matches',
+            schedule=always_due,
+        )
+
+        with patch.object(
+            scheduler, 'populate_heap', wraps=scheduler.populate_heap,
+        ) as populate_heap:
+            scheduler.tick()
+            initial_populate_calls = populate_heap.call_count
+
+            scheduler.tick()
+
+        assert scheduler.schedules_equal_called == 1
+        assert populate_heap.call_count == initial_populate_calls
+
     def test_tick_uses_instance_patched_schedules_equal(self):
         scheduler = mScheduler(app=self.app)
         scheduler.add(name='test_tick_uses_instance_patched_schedules_equal',
@@ -499,6 +526,27 @@ class test_Scheduler:
 
             patched.assert_called_once()
         assert populate_heap.call_count > initial_populate_calls
+
+    def test_tick_invalidates_heap_when_schedule_snapshot_copy_fails(self):
+        class CustomScheduler(mScheduler):
+            def schedules_equal(self, old_schedules, new_schedules):
+                return super().schedules_equal(old_schedules, new_schedules)
+
+        scheduler = CustomScheduler(app=self.app)
+        scheduler.add(
+            name='test_tick_invalidates_heap_when_schedule_snapshot_copy_fails',
+            schedule=always_due,
+        )
+
+        with patch('celery.beat.copy.copy', side_effect=RuntimeError('copy failed')):
+            with patch.object(
+                scheduler, 'populate_heap', wraps=scheduler.populate_heap,
+            ) as populate_heap:
+                scheduler.tick()
+
+        assert scheduler._last_schedule is None
+        assert scheduler._heap_invalidated is False
+        assert populate_heap.call_count == 1
 
     def test_schedule_no_remain(self):
         scheduler = mScheduler(app=self.app)
