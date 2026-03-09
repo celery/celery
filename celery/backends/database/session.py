@@ -46,9 +46,10 @@ class SessionManager:
             try:
                 return self._engines[dburi]
             except KeyError:
-                engine = self._engines[dburi] = create_engine(dburi, **kwargs)
-                if self.engine_callback:
+                engine = create_engine(dburi, **kwargs)
+                if self.engine_callback is not None:
                     self.engine_callback(engine)
+                self._engines[dburi] = engine
                 return engine
         else:
             unsupported_nullpool_kwargs = {'max_overflow', 'echo_pool'}
@@ -57,7 +58,7 @@ class SessionManager:
                 if not k.startswith('pool') and k not in unsupported_nullpool_kwargs
             }
             engine = create_engine(dburi, poolclass=NullPool, **kwargs)
-            if self.engine_callback:
+            if self.engine_callback is not None:
                 self.engine_callback(engine)
             return engine
 
