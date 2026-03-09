@@ -1669,6 +1669,33 @@ class test_App:
         )
 
     @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery_eta_is_now(self, detect_quorum_queues):
+        """When eta equals now, countdown is 0 (falsy) — no delayed routing."""
+        self.app.amqp = MagicMock(name='amqp')
+        now = datetime(2024, 8, 24, tzinfo=datetime_timezone.utc)
+        self.app.amqp.router.route.return_value = {
+            'queue': Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        }
+        self.app.now = Mock(return_value=now)
+
+        self.app.send_task('foo', (1, 2), eta=now.isoformat())
+
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            queue=Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        )
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
     def test_native_delayed_delivery_direct_exchange(self, detect_quorum_queues, caplog):
         self.app.amqp = MagicMock(name='amqp')
         self.app.amqp.router.route.return_value = {
