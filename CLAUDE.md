@@ -19,6 +19,9 @@ tox -e 3.13-unit -- -k "test_name_pattern"
 # Run a specific test file
 tox -e 3.13-unit -- t/unit/app/test_base.py
 
+# Run tests directly with pytest (faster iteration, skips coverage; requires tox venv)
+.tox/3.13-unit/bin/pytest t/unit/app/test_base.py -x -k "test_name"
+
 # Run integration tests (requires local RabbitMQ + Redis)
 tox -e 3.13-integration-rabbitmq_redis
 
@@ -64,6 +67,10 @@ make docker-docs
 - **`celery/beat.py`** — Periodic task scheduler. `celery/apps/beat.py` is the beat application.
 
 - **`celery/concurrency/`** — Execution pool implementations (prefork via billiard, threads, eventlet, gevent).
+
+- **`celery/signals.py`** — Signal definitions (task_prerun, task_postrun, worker_ready, etc.) used throughout for extensibility. Based on `blinker`-style dispatch.
+
+- **`celery/contrib/`** — Utilities: `pytest.py` provides the pytest plugin and fixtures (`celery_app`, `celery_worker`), `django/` has Django integration, `abortable.py` supports task abortion.
 
 ### Key Patterns
 
