@@ -487,6 +487,25 @@ class test_fun_accepts_kwargs:
     def test_rejects(self, fun):
         assert not fun_accepts_kwargs(fun)
 
+    @pytest.mark.skipif(sys.version_info < (3, 14), reason="PEP 649 deferred annotations require Python 3.14+")
+    def test_type_checking_annotation(self):
+        # Regression test for https://github.com/celery/celery/discussions/10099
+        # On Python 3.14+, annotations are deferred (PEP 649). Calling
+        # fun_accepts_kwargs on a function whose annotations reference
+        # TYPE_CHECKING-only types must not raise NameError.
+        #
+        # This reproduces the failure seen with on_after_finalize.connect:
+        #   def setup_periodic_tasks(sender: Celery, **kwargs: object) -> None: ...
+        # where 'Celery' is only imported under TYPE_CHECKING.
+        local = {}
+        exec('def f(sender: Celery, **kwargs: object) -> None: pass', {}, local)
+        f = local['f']
+        assert fun_accepts_kwargs(f) is True
+
+        exec('def g(sender: Celery) -> None: pass', {}, local)
+        g = local['g']
+        assert fun_accepts_kwargs(g) is False
+
 
 @pytest.mark.parametrize('value,expected', [
     (5, True),
