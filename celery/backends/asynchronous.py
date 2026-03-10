@@ -5,6 +5,7 @@ import socket
 import threading
 import time
 from collections import deque
+from contextlib import contextmanager
 from queue import Empty
 from time import sleep
 from weakref import WeakKeyDictionary
@@ -13,9 +14,17 @@ from kombu.utils.compat import detect_environment
 
 from celery import states
 from celery.exceptions import TimeoutError
+from celery.utils.log import get_logger
 from celery.utils.threads import THREAD_TIMEOUT_MAX
 
 E_CELERY_RESTART_REQUIRED = "Celery must be restarted because a shutdown signal was detected."
+
+E_RETRY_LIMIT_EXCEEDED = """
+Retry limit exceeded while trying to reconnect to the Celery result store
+backend. The Celery application must be restarted.
+"""
+
+logger = get_logger(__name__)
 
 __all__ = (
     'AsyncBackendMixin', 'BaseResultConsumer', 'Drainer',
@@ -307,6 +316,11 @@ class AsyncBackendMixin:
 class BaseResultConsumer:
     """Manager responsible for consuming result messages."""
 
+    #: Tuple of transport-layer exceptions that signal a lost connection.
+    #: Subclasses should override this with the appropriate exception types
+    #: so that :meth:`reconnect_on_error` can catch and recover from them.
+    _connection_errors = ()
+
     def __init__(self, backend, app, accept,
                  pending_results, pending_messages):
         self.backend = backend
@@ -320,6 +334,34 @@ class BaseResultConsumer:
 
     def start(self, initial_task_id, **kwargs):
         raise NotImplementedError()
+
+    @contextmanager
+    def reconnect_on_error(self):
+        """Context manager that catches connection errors and reconnects.
+
+        Wraps a block of code so that any :attr:`_connection_errors` raised
+        inside it trigger a call to :meth:`_reconnect`.  If reconnection
+        itself raises a connection error the consumer is considered
+        unrecoverable and a :exc:`RuntimeError` is raised to signal that
+        the Celery application must be restarted.
+        """
+        try:
+            yield
+        except self._connection_errors:
+            try:
+                self._reconnect()
+            except self._connection_errors as exc:
+                logger.critical(E_RETRY_LIMIT_EXCEEDED)
+                raise RuntimeError(E_RETRY_LIMIT_EXCEEDED) from exc
+
+    def _reconnect(self):
+        """Re-establish the backend connection.
+
+        Subclasses must override this method to perform the transport-specific
+        reconnection logic that should be executed when a connection error is
+        caught by :meth:`reconnect_on_error`.
+        """
+        pass
 
     def stop(self):
         pass
