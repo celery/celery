@@ -30,6 +30,7 @@ class test_RPCResultConsumer:
             'Server unexpectedly closed connection'
         )
         consumer._connection = mock_conn
+        consumer._connection_errors = mock_conn.connection_errors + mock_conn.channel_errors
 
         mock_consumer = Mock(name='consumer')
         mock_consumer.queues = [Mock(name='queue1')]
@@ -62,6 +63,7 @@ class test_RPCResultConsumer:
         mock_conn.channel_errors = ()
         mock_conn.drain_events.side_effect = ConnectionError('reset')
         consumer._connection = mock_conn
+        consumer._connection_errors = mock_conn.connection_errors + mock_conn.channel_errors
 
         queue1, queue2 = Mock(name='q1'), Mock(name='q2')
         mock_consumer = Mock(name='consumer')
@@ -120,6 +122,7 @@ class test_RPCResultConsumer:
         mock_conn.channel_errors = (KeyError,)
         mock_conn.drain_events.side_effect = KeyError('channel closed')
         consumer._connection = mock_conn
+        consumer._connection_errors = mock_conn.connection_errors + mock_conn.channel_errors
 
         mock_consumer = Mock(name='consumer')
         mock_consumer.queues = []

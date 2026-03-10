@@ -9,7 +9,8 @@ from unittest.mock import Mock, patch
 import pytest
 from vine import promise
 
-from celery.backends.asynchronous import E_CELERY_RESTART_REQUIRED, BaseResultConsumer, greenletDrainer
+from celery.backends.asynchronous import (E_CELERY_RESTART_REQUIRED, E_RETRY_LIMIT_EXCEEDED, BaseResultConsumer,
+                                          greenletDrainer)
 from celery.backends.base import Backend
 from celery.utils import cached_property
 
@@ -633,3 +634,82 @@ class test_GeventDrainer(GreenletDrainerTests):
     def teardown_thread(self, thread):
         import gevent
         gevent.wait([thread])
+
+
+class test_BaseResultConsumer_reconnect:
+
+    def _make_consumer(self, app):
+        return _make_consumer(app)
+
+    def test_reconnect_on_error_no_exception_passes_through(self, app):
+        consumer = self._make_consumer(app)
+        result = []
+        with consumer.reconnect_on_error():
+            result.append('ok')
+        assert result == ['ok']
+
+    def test_reconnect_on_error_ignores_non_connection_error(self, app):
+        consumer = self._make_consumer(app)
+        with pytest.raises(ValueError):
+            with consumer.reconnect_on_error():
+                raise ValueError('unrelated')
+
+    def test_reconnect_on_error_default_connection_errors_empty(self, app):
+        consumer = self._make_consumer(app)
+        assert consumer._connection_errors == ()
+
+        class FakeConnError(Exception):
+            pass
+
+        with pytest.raises(FakeConnError):
+            with consumer.reconnect_on_error():
+                raise FakeConnError('dropped')
+
+    def test_reconnect_on_error_calls_reconnect_on_connection_error(self, app):
+        consumer = self._make_consumer(app)
+
+        class FakeConnError(Exception):
+            pass
+
+        consumer._connection_errors = (FakeConnError,)
+        consumer._reconnect = Mock()
+
+        with consumer.reconnect_on_error():
+            raise FakeConnError('dropped')
+
+        consumer._reconnect.assert_called_once_with()
+
+    def test_reconnect_on_error_raises_runtime_when_reconnect_also_fails(self, app):
+        consumer = self._make_consumer(app)
+
+        class FakeConnError(Exception):
+            pass
+
+        consumer._connection_errors = (FakeConnError,)
+        consumer._reconnect = Mock(side_effect=FakeConnError('still down'))
+
+        with pytest.raises(RuntimeError, match='Retry limit exceeded'):
+            with consumer.reconnect_on_error():
+                raise FakeConnError('dropped')
+
+    def test_reconnect_on_error_runtime_chained_from_connection_error(self, app):
+        consumer = self._make_consumer(app)
+
+        class FakeConnError(Exception):
+            pass
+
+        consumer._connection_errors = (FakeConnError,)
+        original = FakeConnError('still down')
+        consumer._reconnect = Mock(side_effect=original)
+
+        with pytest.raises(RuntimeError) as exc_info:
+            with consumer.reconnect_on_error():
+                raise FakeConnError('dropped')
+
+        assert exc_info.value.__cause__ is original
+
+    def test_reconnect_base_implementation_is_noop(self, app):
+        consumer = self._make_consumer(app)
+
+        assert consumer._reconnect() is None
+
