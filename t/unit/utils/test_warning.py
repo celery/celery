@@ -1,7 +1,8 @@
 """Tests for celery.utils.warning module."""
 from unittest.mock import patch
 
-from celery.utils.warning import is_eventlet_monkey_patched, is_gevent_monkey_patched
+from celery.utils.warning import (is_eventlet_monkey_patched, is_eventlet_pool, is_gevent_monkey_patched,
+                                  is_gevent_pool)
 
 
 class test_monkey_patch_detection:
@@ -43,8 +44,9 @@ class test_monkey_patch_detection:
                 raise ImportError("Simulated gevent import failure")
             return real_import(name, *args, **kwargs)
 
-        with patch('builtins.__import__', side_effect=failing_import):
-            result = is_gevent_monkey_patched()
+        with patch.dict('sys.modules', {'gevent': None, 'gevent.monkey': None}):
+            with patch('builtins.__import__', side_effect=failing_import):
+                result = is_gevent_monkey_patched()
 
         assert result is False
 
@@ -85,7 +87,31 @@ class test_monkey_patch_detection:
                 raise ImportError("Simulated eventlet import failure")
             return real_import(name, *args, **kwargs)
 
-        with patch('builtins.__import__', side_effect=failing_import):
-            result = is_eventlet_monkey_patched()
+        with patch.dict('sys.modules', {'eventlet': None, 'eventlet.patcher': None}):
+            with patch('builtins.__import__', side_effect=failing_import):
+                result = is_eventlet_monkey_patched()
 
         assert result is False
+
+
+class test_pool_detection:
+
+    def test_is_gevent_pool_returns_true_when_pool_matches(self):
+        """Test is_gevent_pool returns True when pool_module matches gevent."""
+        assert is_gevent_pool('celery.concurrency.gevent') is True
+
+    def test_is_gevent_pool_returns_false_when_pool_differs(self):
+        """Test is_gevent_pool returns False when pool_module doesn't match."""
+        assert is_gevent_pool('celery.concurrency.prefork') is False
+        assert is_gevent_pool('celery.concurrency.eventlet') is False
+        assert is_gevent_pool('') is False
+
+    def test_is_eventlet_pool_returns_true_when_pool_matches(self):
+        """Test is_eventlet_pool returns True when pool_module matches eventlet."""
+        assert is_eventlet_pool('celery.concurrency.eventlet') is True
+
+    def test_is_eventlet_pool_returns_false_when_pool_differs(self):
+        """Test is_eventlet_pool returns False when pool_module doesn't match."""
+        assert is_eventlet_pool('celery.concurrency.prefork') is False
+        assert is_eventlet_pool('celery.concurrency.gevent') is False
+        assert is_eventlet_pool('') is False

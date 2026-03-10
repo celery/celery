@@ -56,3 +56,11 @@ def is_eventlet_monkey_patched():
         return patcher.is_monkey_patched('socket')
     except ImportError:
         return False
+
+
+def is_gevent_pool(pool_module: str) -> bool:
+    return pool_module == 'celery.concurrency.gevent'
+
+
+def is_eventlet_pool(pool_module: str) -> bool:
+    return pool_module == 'celery.concurrency.eventlet'
