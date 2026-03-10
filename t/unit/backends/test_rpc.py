@@ -39,6 +39,8 @@ class test_RPCResultConsumer:
         # Patch app.connection() to return a fresh mock connection
         # and Consumer to return a mock consumer.
         new_conn = Mock(name='new_connection')
+        new_conn.connection_errors = (OSError,)
+        new_conn.channel_errors = ()
         new_kombu_consumer = Mock(name='new_kombu_consumer')
         consumer.app = Mock()
         consumer.app.connection.return_value = new_conn
@@ -71,6 +73,8 @@ class test_RPCResultConsumer:
         consumer._consumer = mock_consumer
 
         new_conn = Mock(name='new_connection')
+        new_conn.connection_errors = (ConnectionError,)
+        new_conn.channel_errors = ()
         consumer.app = Mock()
         consumer.app.connection.return_value = new_conn
         consumer.Consumer = Mock(return_value=Mock(name='new_kombu_consumer'))
@@ -88,6 +92,7 @@ class test_RPCResultConsumer:
         mock_conn.channel_errors = ()
         mock_conn.drain_events.side_effect = RuntimeError('unexpected')
         consumer._connection = mock_conn
+        consumer._connection_errors = mock_conn.connection_errors + mock_conn.channel_errors
 
         with pytest.raises(RuntimeError, match='unexpected'):
             consumer.drain_events(timeout=1)
@@ -104,6 +109,8 @@ class test_RPCResultConsumer:
         consumer._consumer = mock_consumer
 
         new_conn = Mock(name='new_connection')
+        new_conn.connection_errors = (OSError,)
+        new_conn.channel_errors = ()
         new_kombu_consumer = Mock(name='new_kombu_consumer')
         consumer.app = Mock()
         consumer.app.connection.return_value = new_conn
@@ -129,6 +136,8 @@ class test_RPCResultConsumer:
         consumer._consumer = mock_consumer
 
         new_conn = Mock(name='new_connection')
+        new_conn.connection_errors = ()
+        new_conn.channel_errors = (KeyError,)
         consumer.app = Mock()
         consumer.app.connection.return_value = new_conn
         consumer.Consumer = Mock(return_value=Mock(name='new_kombu_consumer'))
@@ -136,6 +145,29 @@ class test_RPCResultConsumer:
         consumer.drain_events(timeout=1)
 
         assert consumer._connection is new_conn
+
+    def test_drain_events_raises_runtime_when_reconnect_also_fails(self):
+        consumer = self.get_consumer()
+
+        class FakeConnError(Exception):
+            pass
+
+        mock_conn = Mock(name='connection')
+        mock_conn.connection_errors = (FakeConnError,)
+        mock_conn.channel_errors = ()
+        mock_conn.drain_events.side_effect = FakeConnError('dropped')
+        consumer._connection = mock_conn
+        consumer._connection_errors = mock_conn.connection_errors + mock_conn.channel_errors
+
+        mock_consumer = Mock(name='consumer')
+        mock_consumer.queues = []
+        consumer._consumer = mock_consumer
+
+        consumer.app = Mock()
+        consumer.app.connection.side_effect = FakeConnError('still down')
+
+        with pytest.raises(RuntimeError, match='Retry limit exceeded'):
+            consumer.drain_events(timeout=1)
 
 
 class test_RPCBackend:

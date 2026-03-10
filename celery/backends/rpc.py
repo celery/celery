@@ -78,6 +78,7 @@ class ResultConsumer(BaseResultConsumer):
         """
         logger.warning(
             'RPC result consumer: connection lost, attempting to reconnect...',
+            exc_info=True,
         )
         old_queues = []
         if self._consumer is not None:
@@ -104,6 +105,10 @@ class ResultConsumer(BaseResultConsumer):
 
         # Establish a fresh connection and consumer.
         self._connection = self.app.connection()
+        self._connection_errors = (
+            self._connection.connection_errors
+            + self._connection.channel_errors
+        )
         self._consumer = self.Consumer(
             self._connection.default_channel,
             old_queues,
