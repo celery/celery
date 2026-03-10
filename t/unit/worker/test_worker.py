@@ -7,7 +7,7 @@ from functools import partial
 from queue import Empty
 from queue import Queue as FastQueue
 from threading import Event
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from amqp import ChannelError
@@ -1288,7 +1288,8 @@ class test_on_start_monkey_patch_warnings:
         worker = app.Worker(pool='prefork', quiet=True)
         with patch.object(worker, 'install_platform_tweaks'):
             with patch.object(worker, 'set_process_status'):
-                worker.on_start()
+                with patch.dict(sys.modules, {'gevent': MagicMock()}):
+                    worker.on_start()
 
         mock_logger.warning.assert_called()
         warning_messages = [call[0][0] for call in mock_logger.warning.call_args_list if call[0]]
@@ -1307,7 +1308,8 @@ class test_on_start_monkey_patch_warnings:
         worker = app.Worker(pool='prefork', quiet=True)
         with patch.object(worker, 'install_platform_tweaks'):
             with patch.object(worker, 'set_process_status'):
-                worker.on_start()
+                with patch.dict(sys.modules, {'eventlet': MagicMock()}):
+                    worker.on_start()
 
         mock_logger.warning.assert_called()
         warning_messages = [call[0][0] for call in mock_logger.warning.call_args_list if call[0]]
