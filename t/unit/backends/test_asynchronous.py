@@ -9,8 +9,7 @@ from unittest.mock import Mock, patch
 import pytest
 from vine import promise
 
-from celery.backends.asynchronous import (E_CELERY_RESTART_REQUIRED, E_RETRY_LIMIT_EXCEEDED, BaseResultConsumer,
-                                          greenletDrainer)
+from celery.backends.asynchronous import E_CELERY_RESTART_REQUIRED, BaseResultConsumer, greenletDrainer
 from celery.backends.base import Backend
 from celery.utils import cached_property
 
@@ -712,4 +711,3 @@ class test_BaseResultConsumer_reconnect:
         consumer = self._make_consumer(app)
 
         assert consumer._reconnect() is None
-
