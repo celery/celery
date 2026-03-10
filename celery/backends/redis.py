@@ -1,6 +1,5 @@
 """Redis result store backend."""
 import time
-from contextlib import contextmanager
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 from urllib.parse import unquote
@@ -72,11 +71,6 @@ CERT_REQUIRED, CERT_OPTIONAL, or CERT_NONE
 
 E_LOST = 'Connection to Redis lost: Retry (%s/%s) %s.'
 
-E_RETRY_LIMIT_EXCEEDED = """
-Retry limit exceeded while trying to reconnect to the Celery redis result \
-store backend. The Celery application must be restarted.
-"""
-
 logger = get_logger(__name__)
 
 
@@ -122,16 +116,9 @@ class ResultConsumer(BaseResultConsumer):
             # The on_connect callback will re-subscribe to any channels we previously subscribed to.
             self._pubsub.connection.register_connect_callback(self._pubsub.on_connect)
 
-    @contextmanager
-    def reconnect_on_error(self):
-        try:
-            yield
-        except self._connection_errors:
-            try:
-                self._ensure(self._reconnect_pubsub, ())
-            except self._connection_errors as e:
-                logger.critical(E_RETRY_LIMIT_EXCEEDED)
-                raise RuntimeError(E_RETRY_LIMIT_EXCEEDED) from e
+    def _reconnect(self):
+        """Re-establish the Redis pub/sub connection with retry."""
+        self._ensure(self._reconnect_pubsub, ())
 
     def _maybe_cancel_ready_task(self, meta):
         if meta['status'] in states.READY_STATES:
