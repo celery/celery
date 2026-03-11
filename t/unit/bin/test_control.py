@@ -83,10 +83,10 @@ def test_listing_remote_commands(celery_cmd, expected_regex, isolated_cli_runner
     assert expected_regex.search(res.stdout)
 
 
-def test_status_shows_friendly_error_when_broker_unreachable(isolated_cli_runner: CliRunner):
+def test_status_shows_friendly_error_when_broker_unreachable(cli_runner: CliRunner):
     with patch('celery.app.control.Inspect.ping',
                side_effect=OperationalError('[Errno 61] Connection refused')):
-        res = isolated_cli_runner.invoke(
+        res = cli_runner.invoke(
             celery,
             [*_GLOBAL_OPTIONS, 'status'],
             catch_exceptions=False,
@@ -97,10 +97,10 @@ def test_status_shows_friendly_error_when_broker_unreachable(isolated_cli_runner
     assert 'Traceback' not in res.output
 
 
-def test_status_unexpected_error_is_summarized(isolated_cli_runner: CliRunner):
+def test_status_unexpected_error_is_summarized(cli_runner: CliRunner):
     with patch('celery.app.control.Inspect.ping',
                side_effect=RuntimeError('boom')):
-        res = isolated_cli_runner.invoke(
+        res = cli_runner.invoke(
             celery,
             [*_GLOBAL_OPTIONS, 'status'],
             catch_exceptions=False,
@@ -111,11 +111,11 @@ def test_status_unexpected_error_is_summarized(isolated_cli_runner: CliRunner):
 
 
 def test_graph_workers_shows_friendly_error_when_broker_unreachable(
-    isolated_cli_runner: CliRunner,
+    cli_runner: CliRunner,
 ):
     with patch('celery.app.control.Inspect.stats',
                side_effect=OperationalError('connection failed')):
-        res = isolated_cli_runner.invoke(
+        res = cli_runner.invoke(
             celery,
             [*_GLOBAL_OPTIONS, 'graph', 'workers'],
             catch_exceptions=False,
@@ -126,11 +126,11 @@ def test_graph_workers_shows_friendly_error_when_broker_unreachable(
 
 
 def test_events_dump_shows_friendly_error_when_broker_unreachable(
-    isolated_cli_runner: CliRunner,
+    cli_runner: CliRunner,
 ):
     with patch('celery.bin.events._run_evdump',
                side_effect=OperationalError('connection failed')):
-        res = isolated_cli_runner.invoke(
+        res = cli_runner.invoke(
             celery,
             [*_GLOBAL_OPTIONS, 'events', '--dump'],
             catch_exceptions=False,
@@ -155,10 +155,10 @@ def test_handle_remote_command_error_reraises_click_exception():
     assert exc_info.value is original
 
 
-def test_inspect_shows_friendly_error_when_broker_unreachable(isolated_cli_runner: CliRunner):
+def test_inspect_shows_friendly_error_when_broker_unreachable(cli_runner: CliRunner):
     with patch('celery.app.control.Inspect._request',
                side_effect=OperationalError('connection refused')):
-        res = isolated_cli_runner.invoke(
+        res = cli_runner.invoke(
             celery,
             [*_GLOBAL_OPTIONS, 'inspect', *_INSPECT_OPTIONS, 'custom_inspect_cmd', '1'],
             catch_exceptions=False,
@@ -169,10 +169,10 @@ def test_inspect_shows_friendly_error_when_broker_unreachable(isolated_cli_runne
     assert 'Traceback' not in res.output
 
 
-def test_inspect_unexpected_error_is_summarized(isolated_cli_runner: CliRunner):
+def test_inspect_unexpected_error_is_summarized(cli_runner: CliRunner):
     with patch('celery.app.control.Inspect._request',
                side_effect=RuntimeError('inspect boom')):
-        res = isolated_cli_runner.invoke(
+        res = cli_runner.invoke(
             celery,
             [*_GLOBAL_OPTIONS, 'inspect', *_INSPECT_OPTIONS, 'custom_inspect_cmd', '1'],
             catch_exceptions=False,
@@ -182,10 +182,10 @@ def test_inspect_unexpected_error_is_summarized(isolated_cli_runner: CliRunner):
     assert 'Traceback' not in res.output
 
 
-def test_control_shows_friendly_error_when_broker_unreachable(isolated_cli_runner: CliRunner):
+def test_control_shows_friendly_error_when_broker_unreachable(cli_runner: CliRunner):
     with patch('celery.app.control.Control.broadcast',
                side_effect=OperationalError('connection refused')):
-        res = isolated_cli_runner.invoke(
+        res = cli_runner.invoke(
             celery,
             [*_GLOBAL_OPTIONS, 'control', *_INSPECT_OPTIONS, 'custom_control_cmd', '1', '2'],
             catch_exceptions=False,
@@ -196,10 +196,10 @@ def test_control_shows_friendly_error_when_broker_unreachable(isolated_cli_runne
     assert 'Traceback' not in res.output
 
 
-def test_control_unexpected_error_is_summarized(isolated_cli_runner: CliRunner):
+def test_control_unexpected_error_is_summarized(cli_runner: CliRunner):
     with patch('celery.app.control.Control.broadcast',
                side_effect=RuntimeError('control boom')):
-        res = isolated_cli_runner.invoke(
+        res = cli_runner.invoke(
             celery,
             [*_GLOBAL_OPTIONS, 'control', *_INSPECT_OPTIONS, 'custom_control_cmd', '1', '2'],
             catch_exceptions=False,
@@ -209,10 +209,10 @@ def test_control_unexpected_error_is_summarized(isolated_cli_runner: CliRunner):
     assert 'Traceback' not in res.output
 
 
-def test_events_camera_shows_friendly_error_when_broker_unreachable(isolated_cli_runner: CliRunner):
+def test_events_camera_shows_friendly_error_when_broker_unreachable(cli_runner: CliRunner):
     with patch('celery.bin.events._run_evcam',
                side_effect=OperationalError('connection failed')):
-        res = isolated_cli_runner.invoke(
+        res = cli_runner.invoke(
             celery,
             [*_GLOBAL_OPTIONS, 'events', '--camera', 'myapp.MyCameraClass'],
             catch_exceptions=False,
@@ -223,10 +223,10 @@ def test_events_camera_shows_friendly_error_when_broker_unreachable(isolated_cli
     assert 'Traceback' not in res.output
 
 
-def test_events_evtop_shows_friendly_error_when_broker_unreachable(isolated_cli_runner: CliRunner):
+def test_events_evtop_shows_friendly_error_when_broker_unreachable(cli_runner: CliRunner):
     with patch('celery.bin.events._run_evtop',
                side_effect=OperationalError('connection failed')):
-        res = isolated_cli_runner.invoke(
+        res = cli_runner.invoke(
             celery,
             [*_GLOBAL_OPTIONS, 'events'],
             catch_exceptions=False,
