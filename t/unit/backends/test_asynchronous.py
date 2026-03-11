@@ -1,3 +1,4 @@
+import logging
 import os
 import socket
 import sys
@@ -8,17 +9,325 @@ from unittest.mock import Mock, patch
 import pytest
 from vine import promise
 
-from celery.backends.asynchronous import E_CELERY_RESTART_REQUIRED, BaseResultConsumer
+from celery.backends.asynchronous import E_CELERY_RESTART_REQUIRED, BaseResultConsumer, greenletDrainer
 from celery.backends.base import Backend
 from celery.utils import cached_property
 
-pytest.importorskip('gevent')
-pytest.importorskip('eventlet')
+# ---- helpers ---------------------------------------------------------------
+
+
+def _make_consumer(app, environment='default'):
+    """Create a BaseResultConsumer with a mocked drainer environment."""
+    with patch('celery.backends.asynchronous.detect_environment') as det:
+        det.return_value = environment
+        backend = Backend(app)
+        consumer = BaseResultConsumer(
+            backend, app, backend.accept,
+            pending_results={}, pending_messages={},
+        )
+    return consumer
+
+
+# ---------------------------------------------------------------------------
+# 1. Drainer (default / synchronous) -- no gevent / eventlet needed
+# ---------------------------------------------------------------------------
+
+class test_Drainer_without_greenlets:
+
+    # -- drain_events_until: normal flow ------------------------------------
+
+    def test_drain_fulfils_promise(self, app):
+        """Loop exits once the promise is fulfilled."""
+        consumer = _make_consumer(app)
+        drainer = consumer.drainer
+        p = promise()
+        calls = [0]
+
+        def wait(timeout=None):
+            calls[0] += 1
+            if calls[0] >= 3:
+                p('done')
+
+        for _ in drainer.drain_events_until(
+                p, wait=wait, interval=0.01, timeout=5):
+            pass
+
+        assert p.ready
+        assert calls[0] >= 3
+
+    def test_drain_calls_on_interval(self, app):
+        """on_interval callback is invoked every iteration."""
+        consumer = _make_consumer(app)
+        drainer = consumer.drainer
+        p = promise()
+        on_interval = Mock()
+        calls = [0]
+
+        def wait(timeout=None):
+            calls[0] += 1
+            if calls[0] >= 3:
+                p('done')
+
+        for _ in drainer.drain_events_until(
+                p, wait=wait, interval=0.01, timeout=5,
+                on_interval=on_interval):
+            pass
+
+        assert on_interval.call_count >= 2
+
+    def test_drain_raises_timeout(self, app):
+        """socket.timeout raised when total elapsed time exceeds *timeout*."""
+        consumer = _make_consumer(app)
+        drainer = consumer.drainer
+        p = promise()
+
+        def wait(timeout=None):
+            time.sleep(0.02)
+
+        with pytest.raises(socket.timeout):
+            for _ in drainer.drain_events_until(
+                    p, wait=wait, interval=0.01, timeout=0.05):
+                pass
+
+        assert not p.ready
+
+    def test_drain_uses_result_consumer_drain_events_by_default(self, app):
+        """When *wait* is None, result_consumer.drain_events is used."""
+        consumer = _make_consumer(app)
+        drainer = consumer.drainer
+        p = promise()
+        calls = [0]
+
+        def mock_drain(timeout=None):
+            calls[0] += 1
+            if calls[0] >= 2:
+                p('done')
+
+        consumer.drain_events = mock_drain
+
+        for _ in drainer.drain_events_until(p, interval=0.01, timeout=5):
+            pass
+
+        assert p.ready
+        assert calls[0] >= 2
+
+    # -- drain_events_until: socket.timeout from wait -----------------------
+
+    def test_drain_swallows_socket_timeout_from_wait(self, app):
+        """socket.timeout raised inside wait() must be silently caught."""
+        consumer = _make_consumer(app)
+        drainer = consumer.drainer
+        p = promise()
+        calls = [0]
+
+        def wait(timeout=None):
+            calls[0] += 1
+            if calls[0] <= 2:
+                raise socket.timeout('idle')
+            p('done')
+
+        for _ in drainer.drain_events_until(
+                p, wait=wait, interval=0.01, timeout=5):
+            pass
+
+        assert p.ready
+
+    # -- drain_events_until: OSError from wait ------------------------------
+
+    def test_drain_catches_oserror_and_logs(self, app):
+        """OSError from wait() must be caught, logged, loop continues."""
+        consumer = _make_consumer(app)
+        drainer = consumer.drainer
+        p = promise()
+        calls = [0]
+
+        def wait(timeout=None):
+            calls[0] += 1
+            if calls[0] <= 2:
+                raise OSError('broker away')
+            p('done')
+
+        with patch.object(logging, 'warning') as mock_warn:
+            for _ in drainer.drain_events_until(
+                    p, wait=wait, interval=0.01, timeout=5):
+                pass
+
+        assert p.ready
+        assert mock_warn.call_count >= 2
+
+    # -- wait_for -----------------------------------------------------------
+
+    def test_wait_for_calls_wait_with_timeout(self, app):
+        """Drainer.wait_for delegates to the wait callback."""
+        consumer = _make_consumer(app)
+        drainer = consumer.drainer
+        p = promise()
+        wait = Mock()
+        drainer.wait_for(p, wait, timeout=0.5)
+        wait.assert_called_once_with(timeout=0.5)
+
+
+# ---------------------------------------------------------------------------
+# 2. greenletDrainer -- tested synchronously (no real greenlet spawning)
+# ---------------------------------------------------------------------------
+
+class test_greenletDrainer:
+
+    def _make_greenlet_drainer(self, app):
+        consumer = _make_consumer(app)
+        drainer = greenletDrainer(consumer)
+        return drainer
+
+    # -- run: normal stop ---------------------------------------------------
+
+    def test_run_exits_when_stopped(self, app):
+        """run() exits cleanly when _stopped is set."""
+        drainer = self._make_greenlet_drainer(app)
+        calls = [0]
+
+        def drain(timeout=None):
+            calls[0] += 1
+            if calls[0] >= 3:
+                drainer._stopped.set()
+
+        drainer.result_consumer.drain_events = Mock(side_effect=drain)
+        drainer.run()
+
+        assert drainer._shutdown.is_set()
+        assert drainer._exc is None
+
+    # -- run: socket.timeout is swallowed -----------------------------------
+
+    def test_run_swallows_socket_timeout(self, app):
+        """socket.timeout inside run() must be silently caught."""
+        drainer = self._make_greenlet_drainer(app)
+        calls = [0]
+
+        def drain(timeout=None):
+            calls[0] += 1
+            if calls[0] <= 3:
+                raise socket.timeout('idle')
+            drainer._stopped.set()
+
+        drainer.result_consumer.drain_events = Mock(side_effect=drain)
+        drainer.run()
+
+        assert calls[0] >= 4
+        assert drainer._exc is None
+
+    # -- run: OSError is caught and logged ----------------------------------
+
+    def test_run_catches_oserror_and_logs(self, app):
+        """OSError in run() must be caught/logged, loop continues."""
+        drainer = self._make_greenlet_drainer(app)
+        calls = [0]
+
+        def drain(timeout=None):
+            calls[0] += 1
+            if calls[0] <= 3:
+                raise OSError('connection reset')
+            drainer._stopped.set()
+
+        drainer.result_consumer.drain_events = Mock(side_effect=drain)
+
+        with patch.object(logging, 'warning') as mock_warn, \
+                patch('celery.backends.asynchronous.time.sleep') as mock_sleep:
+            drainer.run()
+
+        assert calls[0] >= 4
+        assert mock_warn.call_count >= 3
+        # backoff sleep should have been called once per OSError
+        assert mock_sleep.call_count >= 3
+        assert drainer._exc is None
+
+    # -- run: unexpected Exception is stored and re-raised ------------------
+
+    def test_run_stores_and_reraises_unexpected_exception(self, app):
+        """Non-OSError / non-timeout exceptions must propagate and be stored."""
+        drainer = self._make_greenlet_drainer(app)
+
+        def drain(timeout=None):
+            raise RuntimeError('unexpected')
+
+        drainer.result_consumer.drain_events = Mock(side_effect=drain)
+
+        with pytest.raises(RuntimeError, match='unexpected'):
+            drainer.run()
+
+        assert drainer._exc is not None
+        assert drainer._shutdown.is_set()
+
+    # -- _ensure_not_shut_down ----------------------------------------------
+
+    def test_ensure_not_shut_down_raises_stored_exc(self, app):
+        """If run() failed, _ensure_not_shut_down re-raises the exception."""
+        drainer = self._make_greenlet_drainer(app)
+        drainer._shutdown.set()
+        drainer._exc = ValueError('boom')
+
+        with pytest.raises(ValueError, match='boom'):
+            drainer._ensure_not_shut_down()
+
+    def test_ensure_not_shut_down_raises_restart_msg(self, app):
+        """If stopped cleanly, _ensure_not_shut_down raises restart msg."""
+        drainer = self._make_greenlet_drainer(app)
+        drainer._shutdown.set()
+        drainer._exc = None
+
+        with pytest.raises(Exception, match=E_CELERY_RESTART_REQUIRED):
+            drainer._ensure_not_shut_down()
+
+    def test_ensure_not_shut_down_noop_when_running(self, app):
+        """No-op when _shutdown is not set."""
+        drainer = self._make_greenlet_drainer(app)
+        # Should not raise
+        drainer._ensure_not_shut_down()
+
+    # -- start / stop -------------------------------------------------------
+
+    def test_start_spawns_and_waits(self, app):
+        """start() calls spawn(run) and waits for _started."""
+        drainer = self._make_greenlet_drainer(app)
+
+        def fake_spawn(func):
+            # Run synchronously with immediate stop.
+            drainer._stopped.set()
+            func()
+
+        drainer.spawn = fake_spawn
+        drainer.result_consumer.drain_events = Mock(
+            side_effect=lambda timeout=None: drainer._stopped.set()
+        )
+        drainer.start()
+
+        assert drainer._started.is_set()
+        assert drainer._shutdown.is_set()
+
+    def test_start_raises_if_already_shut_down(self, app):
+        """start() raises if drainer already completed."""
+        drainer = self._make_greenlet_drainer(app)
+        drainer._shutdown.set()
+
+        with pytest.raises(Exception, match=E_CELERY_RESTART_REQUIRED):
+            drainer.start()
+
+    def test_stop_signals_and_waits(self, app):
+        """stop() sets _stopped and waits for _shutdown."""
+        drainer = self._make_greenlet_drainer(app)
+        # Pre-set _shutdown so wait returns immediately.
+        drainer._shutdown.set()
+        drainer.stop()
+
+        assert drainer._stopped.is_set()
+
+
+# ---------------------------------------------------------------------------
+# 3. Integration tests with real greenlet runtimes (gevent + eventlet)
+# ---------------------------------------------------------------------------
 
 
 @pytest.fixture(autouse=True)
 def setup_eventlet():
-    # By default eventlet will patch the DNS resolver when imported.
     os.environ.update(EVENTLET_NO_GREENDNS='yes')
 
 
@@ -141,6 +450,40 @@ class DrainerTests:
         assert not p.ready, 'Promise should remain un-fulfilled'
         assert on_interval.call_count < 20, 'Should have limited number of calls to on_interval'
 
+    def test_drain_catches_and_logs_oserror(self):
+        p = promise()
+
+        def fulfill():
+            self.sleep(self.interval * 2)
+            p('done')
+
+        t = self.schedule_thread(fulfill)
+
+        state = {'n': 0}
+
+        def flaky(*args, **kwargs):
+            state['n'] += 1
+            if state['n'] == 1:
+                raise OSError('simulated broker restart')
+            # Yield to hub so the promise thread can run.
+            self.result_consumer_drain_events(
+                timeout=kwargs.get('timeout', None),
+            )
+
+        with patch.object(
+            self.drainer.result_consumer, 'drain_events',
+            side_effect=flaky,
+        ):
+            with patch('logging.warning') as mock_warn:
+                for _ in self.drainer.drain_events_until(
+                        p, interval=self.interval,
+                        timeout=self.MAX_TIMEOUT):
+                    pass
+
+        self.teardown_thread(t)
+        assert p.ready
+        assert mock_warn.called
+
 
 class GreenletDrainerTests(DrainerTests):
     def test_drain_raises_when_greenlet_already_exited(self):
@@ -182,6 +525,25 @@ class GreenletDrainerTests(DrainerTests):
 
             self.teardown_thread(thread)
 
+    def test_run_catches_and_logs_oserror(self):
+        def flaky(*args, **kwargs):
+            if not hasattr(flaky, '_raised'):
+                flaky._raised = True
+                raise OSError('simulated broker restart in greenlet')
+            self.drainer._stopped.set()
+
+        with patch.object(
+            self.drainer.result_consumer, 'drain_events',
+            side_effect=flaky,
+        ):
+            with patch('logging.warning') as mock_warn:
+                t = self.schedule_thread(self.drainer.run)
+                self.teardown_thread(t)
+
+        assert mock_warn.called
+        assert 'connection error during drain_events' in mock_warn.call_args[0][0]
+        assert self.drainer._exc is None
+
 
 @pytest.mark.skipif(
     sys.platform == "win32",
@@ -190,6 +552,7 @@ class GreenletDrainerTests(DrainerTests):
 class test_EventletDrainer(GreenletDrainerTests):
     @pytest.fixture(autouse=True)
     def setup_drainer(self):
+        pytest.importorskip('eventlet')
         self.drainer = self.get_drainer('eventlet')
 
     @cached_property
@@ -245,6 +608,7 @@ class test_Drainer(DrainerTests):
 class test_GeventDrainer(GreenletDrainerTests):
     @pytest.fixture(autouse=True)
     def setup_drainer(self):
+        pytest.importorskip('gevent')
         self.drainer = self.get_drainer('gevent')
 
     @cached_property
@@ -269,3 +633,81 @@ class test_GeventDrainer(GreenletDrainerTests):
     def teardown_thread(self, thread):
         import gevent
         gevent.wait([thread])
+
+
+class test_BaseResultConsumer_reconnect:
+
+    def _make_consumer(self, app):
+        return _make_consumer(app)
+
+    def test_reconnect_on_error_no_exception_passes_through(self, app):
+        consumer = self._make_consumer(app)
+        result = []
+        with consumer.reconnect_on_error():
+            result.append('ok')
+        assert result == ['ok']
+
+    def test_reconnect_on_error_ignores_non_connection_error(self, app):
+        consumer = self._make_consumer(app)
+        with pytest.raises(ValueError):
+            with consumer.reconnect_on_error():
+                raise ValueError('unrelated')
+
+    def test_reconnect_on_error_default_connection_errors_empty(self, app):
+        consumer = self._make_consumer(app)
+        assert consumer._connection_errors == ()
+
+        class FakeConnError(Exception):
+            pass
+
+        with pytest.raises(FakeConnError):
+            with consumer.reconnect_on_error():
+                raise FakeConnError('dropped')
+
+    def test_reconnect_on_error_calls_reconnect_on_connection_error(self, app):
+        consumer = self._make_consumer(app)
+
+        class FakeConnError(Exception):
+            pass
+
+        consumer._connection_errors = (FakeConnError,)
+        consumer._reconnect = Mock()
+
+        with consumer.reconnect_on_error():
+            raise FakeConnError('dropped')
+
+        consumer._reconnect.assert_called_once_with()
+
+    def test_reconnect_on_error_raises_runtime_when_reconnect_also_fails(self, app):
+        consumer = self._make_consumer(app)
+
+        class FakeConnError(Exception):
+            pass
+
+        consumer._connection_errors = (FakeConnError,)
+        consumer._reconnect = Mock(side_effect=FakeConnError('still down'))
+
+        with pytest.raises(RuntimeError, match='Retry limit exceeded'):
+            with consumer.reconnect_on_error():
+                raise FakeConnError('dropped')
+
+    def test_reconnect_on_error_runtime_chained_from_connection_error(self, app):
+        consumer = self._make_consumer(app)
+
+        class FakeConnError(Exception):
+            pass
+
+        consumer._connection_errors = (FakeConnError,)
+        original = FakeConnError('still down')
+        consumer._reconnect = Mock(side_effect=original)
+
+        with pytest.raises(RuntimeError) as exc_info:
+            with consumer.reconnect_on_error():
+                raise FakeConnError('dropped')
+
+        assert exc_info.value.__cause__ is original
+
+    def test_reconnect_base_implementation_is_noop(self, app):
+        consumer = self._make_consumer(app)
+
+        assert consumer._reconnect() is None

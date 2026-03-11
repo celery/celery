@@ -17,7 +17,7 @@ repos:
         exclude: ^celery/app/task\.py$|^celery/backends/cache\.py$
 
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.1
+    rev: v2.4.2
     hooks:
       - id: codespell # See pyproject.toml for args
         args: [--toml, pyproject.toml, --write-changes]
