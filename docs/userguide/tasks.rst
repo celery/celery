@@ -1597,6 +1597,7 @@ The following diagram shows the exact order of execution:
     │     on_retry() OR       │                                     │
     │     on_failure()        │                                     │
     │  5. after_return()      ← Runs last on terminal states        │
+    │                          (skipped for RETRY/REJECTED/IGNORED) │
     └───────────────────────────────────────────────────────────────┘
 
 .. important::
