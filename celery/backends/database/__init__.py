@@ -182,7 +182,6 @@ class DatabaseBackend(BaseBackend):
                 self.task_cls.task_id == task_id
             ).first() is not None
 
-    @retry
     def _save_group(self, group_id, result):
         """Store the result of an executed group."""
         session = self.ResultSession()
