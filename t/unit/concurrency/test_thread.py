@@ -44,22 +44,26 @@ class test_thread_TaskPool:
             started.set()
             shutdown.wait(timeout=30)
 
-        # Submit a long-running task to occupy the single thread
-        x.on_apply(blocking_task, (), {}, noop, noop)
+        try:
+            # Submit a long-running task to occupy the single thread
+            x.on_apply(blocking_task, (), {}, noop, noop)
 
-        # Wait until the first task is actually running
-        assert started.wait(timeout=5), "Timed out waiting for blocking_task to start"
+            # Wait until the first task is actually running
+            assert started.wait(timeout=5), "Timed out waiting for blocking_task to start"
 
-        # Submit another task — guaranteed to be pending
-        result = x.on_apply(noop, (), {}, noop, noop)
+            # Submit another task — guaranteed to be pending
+            result = x.on_apply(noop, (), {}, noop, noop)
 
-        # Stop the pool — should cancel the pending future
-        x.on_stop()
+            # Stop the pool — should cancel the pending future
+            x.on_stop()
 
-        # Release the blocking task so the thread can exit
-        shutdown.set()
-
-        # The pending future should have been cancelled
-        assert result.f.cancelled(), (
-            "Pending futures should be cancelled on stop"
-        )
+            # The pending future should have been cancelled
+            assert result.f.cancelled(), (
+                "Pending futures should be cancelled on stop"
+            )
+        finally:
+            # Release the blocking thread and ensure pool is stopped
+            # even if the test fails, preventing thread leaks.
+            # on_stop() is idempotent — safe to call twice.
+            shutdown.set()
+            x.on_stop()
