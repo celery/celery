@@ -48,7 +48,7 @@ class test_thread_TaskPool:
         x.on_apply(blocking_task, (), {}, noop, noop)
 
         # Wait until the first task is actually running
-        started.wait(timeout=5)
+        assert started.wait(timeout=5), "Timed out waiting for blocking_task to start"
 
         # Submit another task — guaranteed to be pending
         result = x.on_apply(time.sleep, (10,), {}, noop, noop)
