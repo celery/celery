@@ -1597,7 +1597,7 @@ The following diagram shows the exact order of execution:
     │     on_retry() OR       │                                     │
     │     on_failure()        │                                     │
     │  5. after_return()      ← Runs last on terminal states        │
-    │                          (skipped for RETRY/REJECTED/IGNORED) │
+    │                       (skipped for RETRY/REJECTED/IGNORED)    │
     └───────────────────────────────────────────────────────────────┘
 
 .. important::
@@ -1690,12 +1690,13 @@ Available handlers
     Handler called after the task returns.
 
     .. note::
-       Executes **after** ``on_success``/``on_retry``/``on_failure``. This is the
-       final hook in the task lifecycle when the task reaches a terminal state.
+        Executes after the outcome-specific handler when the task reaches a
+        terminal state.
 
-       It is not executed for ``RETRY``, ``REJECTED``, or ``IGNORED`` states. If a
-       hook is needed for every attempt, consider using the :signal:`task_postrun`
-       signal.
+        In practice, this means it runs after ``on_success`` or ``on_failure``.
+        It is not executed for ``RETRY``, ``REJECTED``, or ``IGNORED`` states.
+        If a hook is needed for every attempt, consider using the
+        :signal:`task_postrun` signal.
 
     :param status: Current task state.
     :param retval: Task return value/exception.
