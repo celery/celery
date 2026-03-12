@@ -32,17 +32,17 @@ class test_thread_TaskPool:
 
     def test_on_stop_cancels_pending_futures(self):
         import threading
-        import time
 
         from celery.concurrency import thread
 
         x = thread.TaskPool(limit=1)
 
         started = threading.Event()
+        shutdown = threading.Event()
 
         def blocking_task():
             started.set()
-            time.sleep(10)
+            shutdown.wait(timeout=30)
 
         # Submit a long-running task to occupy the single thread
         x.on_apply(blocking_task, (), {}, noop, noop)
@@ -51,10 +51,13 @@ class test_thread_TaskPool:
         assert started.wait(timeout=5), "Timed out waiting for blocking_task to start"
 
         # Submit another task — guaranteed to be pending
-        result = x.on_apply(time.sleep, (10,), {}, noop, noop)
+        result = x.on_apply(noop, (), {}, noop, noop)
 
         # Stop the pool — should cancel the pending future
         x.on_stop()
+
+        # Release the blocking task so the thread can exit
+        shutdown.set()
 
         # The pending future should have been cancelled
         assert result.f.cancelled(), (
