@@ -42,7 +42,7 @@ class test_thread_TaskPool:
 
         def blocking_task():
             started.set()
-            shutdown.wait(timeout=30)
+            shutdown.wait(timeout=5)
 
         try:
             # Submit a long-running task to occupy the single thread
