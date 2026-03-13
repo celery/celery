@@ -351,6 +351,8 @@ class AsyncResult(ResultBase):
         Without this method, both cases return ``PENDING`` as the state,
         making them indistinguishable.
 
+        .. versionadded:: 5.7.0
+
         Returns:
             bool: :const:`True` if the backend has a result stored for
                 this task ID, :const:`False` otherwise.

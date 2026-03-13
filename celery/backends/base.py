@@ -750,6 +750,8 @@ class Backend:
     def task_result_exists(self, task_id):
         """Check if a result exists in the backend for the given task ID.
 
+        .. versionadded:: 5.7.0
+
         Returns:
             bool: :const:`True` if the backend has a result for the task,
                 :const:`False` otherwise.
@@ -1133,6 +1135,8 @@ class BaseKeyValueStoreBackend(Backend):
         the existence of the key in the store, which is more accurate
         than checking the status since tasks stored with PENDING status
         would still be detected.
+
+        .. versionadded:: 5.7.0
 
         Returns:
             bool: :const:`True` if the backend has a result for the task,
