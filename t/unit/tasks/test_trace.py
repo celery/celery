@@ -1128,6 +1128,7 @@ class test_trace(TraceCase):
         finally:
             self.app.conf.task_ignore_result = prev_ignore
 
+
 class test_TraceInfo(TraceCase):
     class TI(TraceInfo):
         __slots__ = TraceInfo.__slots__ + ('__dict__',)
