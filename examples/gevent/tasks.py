@@ -7,7 +7,7 @@ from celery import task
 def urlopen(url):
     print(f'Opening: {url}')
     try:
-        requests.get(url)
+        requests.get(url, timeout=10.0)
     except requests.exceptions.RequestException as exc:
         print(f'Exception for {url}: {exc!r}')
         return url, 0

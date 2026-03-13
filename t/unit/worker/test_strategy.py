@@ -79,7 +79,9 @@ class test_default_strategy_proto2:
             self.consumer = consumer
             self.message = message
 
-        def __call__(self, callbacks=[], **kwargs):
+        def __call__(self, callbacks=None, **kwargs):
+            if callbacks is None:
+                callbacks = []
             return self.s(
                 self.message,
                 (self.message.payload

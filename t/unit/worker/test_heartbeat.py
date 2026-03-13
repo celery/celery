@@ -23,8 +23,10 @@ class MockDispatcher:
 
 class MockTimer:
 
-    def call_repeatedly(self, secs, fun, args=(), kwargs={}):
+    def call_repeatedly(self, secs, fun, args=(), kwargs=None):
 
+        if kwargs is None:
+            kwargs = {}
         class entry(tuple):
             canceled = False
 

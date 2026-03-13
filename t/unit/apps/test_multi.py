@@ -236,7 +236,9 @@ class test_Node:
         )
 
     @patch('celery.apps.multi.Popen')
-    def test_waitexec(self, Popen, argv=['A', 'B']):
+    def test_waitexec(self, Popen, argv=None):
+        if argv is None:
+            argv = []
         on_spawn = Mock(name='on_spawn')
         on_signalled = Mock(name='on_signalled')
         on_failure = Mock(name='on_failure')

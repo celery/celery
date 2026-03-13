@@ -116,7 +116,9 @@ class test_Persistent:
         for id in ids:
             p.db.setdefault('revoked', LimitedSet()).add(id)
 
-    def test_merge(self, p, data=['foo', 'bar', 'baz']):
+    def test_merge(self, p, data=None):
+        if data is None:
+            data = []
         state.revoked.update(data)
         p.merge()
         for item in data:
@@ -147,7 +149,11 @@ class test_Persistent:
             assert d['zrevoked'] is revoked
 
     def test_sync(self, p,
-                  data1=['foo', 'bar', 'baz'], data2=['baz', 'ini', 'koz']):
+                  data1=None, data2=None):
+        if data1 is None:
+            data1 = []
+        if data2 is None:
+            data2 = []
         self.add_revoked(p, *data1)
         for item in data2:
             state.revoked.add(item)
@@ -171,10 +177,9 @@ class SimpleReq:
 @pytest.mark.usefixtures('reset_state')
 class test_state:
 
-    def test_accepted(self, requests=[SimpleReq('foo'),
-                                      SimpleReq('bar'),
-                                      SimpleReq('baz'),
-                                      SimpleReq('baz')]):
+    def test_accepted(self, requests=None):
+        if requests is None:
+            requests = []
         for request in requests:
             state.task_accepted(request)
         for req in requests:
@@ -183,8 +188,9 @@ class test_state:
         assert state.total_count['bar'] == 1
         assert state.total_count['baz'] == 2
 
-    def test_ready(self, requests=[SimpleReq('foo'),
-                                   SimpleReq('bar')]):
+    def test_ready(self, requests=None):
+        if requests is None:
+            requests = []
         for request in requests:
             state.task_accepted(request)
         assert len(state.active_requests) == 2

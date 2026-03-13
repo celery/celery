@@ -20,9 +20,11 @@ from celery.worker.state import successful_requests
 
 
 def trace(
-    app, task, args=(), kwargs={}, propagate=False,
+    app, task, args=(), kwargs=None, propagate=False,
     eager=True, request=None, task_id='id-1', **opts
 ):
+    if kwargs is None:
+        kwargs = {}
     t = build_tracer(task.name, task, eager=eager, propagate=propagate, app=app, **opts)
     ret = t(task_id, args, kwargs, request)
     return ret.retval, ret.info
