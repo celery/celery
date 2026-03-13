@@ -165,10 +165,13 @@ def get_actual_ignore_result(task, req):
 
     actual = getattr(req, 'ignore_result', None)
 
+    # Context defines `ignore_result = False` at class level (see Context
+    # in celery/app/task.py). getattr() above would return the class default
+    # (False) even when the request never set it explicitly, making it
+    # impossible to distinguish "override=False" from "not set". We check
+    # __dict__ to detect only instance-level (i.e., explicitly set) values.
     if isinstance(req, Context) and 'ignore_result' not in req.__dict__:
         actual = None
-    elif isinstance(req, dict):
-        actual = req.get('ignore_result')
 
     return actual if actual is not None else task.ignore_result
 
