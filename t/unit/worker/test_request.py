@@ -447,6 +447,34 @@ class test_Request(RequestCase):
         req._tzlocal = 'foo'
         assert req.tzlocal == 'foo'
 
+    def test_ignore_result_from_request_true(self):
+        req = self.get_request(self.add.s(2, 2).set(ignore_result=True))
+        assert req.ignore_result is True
+
+    def test_ignore_result_from_request_false(self):
+        req = self.get_request(self.add.s(2, 2).set(ignore_result=False))
+        assert req.ignore_result is False
+
+    def test_ignore_result_default_from_task_false(self):
+        req = self.get_request(self.add.s(2, 2))
+        assert req.ignore_result is False
+
+    def test_ignore_result_default_from_task_true(self):
+        self.add.ignore_result = True
+        try:
+            req = self.get_request(self.add.s(2, 2))
+            assert req.ignore_result is True
+        finally:
+            self.add.ignore_result = False
+
+    def test_ignore_result_request_overrides_task_true(self):
+        self.add.ignore_result = True
+        try:
+            req = self.get_request(self.add.s(2, 2).set(ignore_result=False))
+            assert req.ignore_result is False
+        finally:
+            self.add.ignore_result = False
+
     def test_task_wrapper_repr(self):
         assert repr(self.xRequest())
 
