@@ -638,7 +638,9 @@ class MockAsyncResultSuccess(AsyncResult):
 class SimpleBackend(SyncBackendMixin):
     ids = []
 
-    def __init__(self, ids=[]):
+    def __init__(self, ids=None):
+        if ids is None:
+            ids = []
         self.ids = ids
 
     def _ensure_not_eager(self):

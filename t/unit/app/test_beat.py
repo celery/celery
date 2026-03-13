@@ -492,8 +492,12 @@ class test_Scheduler:
         scheduler.populate_heap()
         assert scheduler._heap == [event_t(1, 5, scheduler.schedule['foo'])]
 
-    def create_schedule_entry(self, schedule=None, args=(), kwargs={},
-                              options={}, task=None):
+    def create_schedule_entry(self, schedule=None, args=(), kwargs=None,
+                              options=None, task=None):
+        if kwargs is None:
+            kwargs = {}
+        if options is None:
+            options = {}
         entry = {
             'name': 'celery.unittest.add',
             'schedule': schedule,

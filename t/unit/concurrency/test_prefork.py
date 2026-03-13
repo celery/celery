@@ -179,7 +179,9 @@ class MockPool:
 
 class ExeMockPool(MockPool):
 
-    def apply_async(self, target, args=(), kwargs={}, callback=noop):
+    def apply_async(self, target, args=(), kwargs=None, callback=noop):
+        if kwargs is None:
+            kwargs = {}
         from threading import Timer
         res = target(*args, **kwargs)
         Timer(0.1, callback, (res,)).start()

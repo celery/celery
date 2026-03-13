@@ -51,7 +51,7 @@ def crawl(url, seen=None):
 
     with Timeout(5, False):
         try:
-            response = requests.get(url)
+            response = requests.get(url, timeout=10.0)
         except requests.exception.RequestError:
             return
 

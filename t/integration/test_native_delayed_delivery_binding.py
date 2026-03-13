@@ -52,7 +52,7 @@ def get_bindings_for_exchange(exchange_name, vhost='/'):
         f"{get_management_api_url()}/exchanges/{vhost_encoded}/"
         f"{exchange_encoded}/bindings/source"
     )
-    response = requests.get(api_url, auth=HTTPBasicAuth(user, password))
+    response = requests.get(api_url, auth=HTTPBasicAuth(user, password), timeout=10.0)
     response.raise_for_status()
     return response.json()
 
@@ -74,7 +74,7 @@ def get_bindings_for_queue(queue_name, vhost='/'):
         f"{get_management_api_url()}/queues/{vhost_encoded}/{queue_encoded}/"
         "bindings"
     )
-    response = requests.get(api_url, auth=HTTPBasicAuth(user, password))
+    response = requests.get(api_url, auth=HTTPBasicAuth(user, password), timeout=10.0)
     response.raise_for_status()
     return response.json()
 
