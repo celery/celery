@@ -1,4 +1,5 @@
 import operator
+import time
 
 import pytest
 
@@ -44,6 +45,7 @@ class test_thread_TaskPool:
             started.set()
             shutdown.wait(timeout=5)
 
+        stop_thread = None
         try:
             # Submit a long-running task to occupy the single thread
             x.on_apply(blocking_task, (), {}, noop, noop)
@@ -54,16 +56,30 @@ class test_thread_TaskPool:
             # Submit another task — guaranteed to be pending
             result = x.on_apply(noop, (), {}, noop, noop)
 
-            # Stop the pool — should cancel the pending future
-            x.on_stop()
+            # Stop the pool in a background thread — should cancel the pending future
+            def _run_on_stop():
+                x.on_stop()
 
-            # The pending future should have been cancelled
-            assert result.f.cancelled(), (
-                "Pending futures should be cancelled on stop"
-            )
+            stop_thread = threading.Thread(target=_run_on_stop)
+            stop_thread.start()
+
+            # Wait (bounded) until the pending future has been cancelled
+            deadline = time.time() + 5.0
+            while not result.f.cancelled() and time.time() < deadline:
+                time.sleep(0.01)
+
+            if not result.f.cancelled():
+                pytest.fail("Pending futures should be cancelled on stop")
+
+            # Once cancellation is observed, release the blocking thread so on_stop can finish
+            shutdown.set()
+            if stop_thread is not None:
+                stop_thread.join(timeout=5.0)
         finally:
             # Release the blocking thread and ensure pool is stopped
             # even if the test fails, preventing thread leaks.
             # on_stop() is idempotent — safe to call twice.
             shutdown.set()
+            if stop_thread is not None and stop_thread.is_alive():
+                stop_thread.join(timeout=5.0)
             x.on_stop()
