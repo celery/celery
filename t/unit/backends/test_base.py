@@ -568,6 +568,39 @@ class test_BaseBackend_dict:
         b.mark_as_failure('id', exc, request=request)
         assert self.errback.last_result == 5
 
+    def test_new_style_errback_exception_is_logged_and_does_not_halt_remaining(self):
+        # A failing new-style errback must not prevent subsequent errbacks
+        # from running. The error should be logged instead of propagating.
+        call_order = []
+
+        @self.app.task(shared=False)
+        def failing_errback(request, exc, traceback):
+            call_order.append('failing')
+            raise RuntimeError('errback failure')
+
+        @self.app.task(shared=False)
+        def succeeding_errback(request, exc, traceback):
+            call_order.append('succeeding')
+
+        b = BaseBackend(app=self.app)
+        b._store_result = Mock()
+        request = Mock(name='request')
+        request.errbacks = [
+            failing_errback.s(),
+            succeeding_errback.s(),
+        ]
+        exc = KeyError('original')
+
+        with patch('celery.backends.base.logger') as mock_logger:
+            b.mark_as_failure('id', exc, request=request)
+
+        assert 'failing' in call_order
+        assert 'succeeding' in call_order
+        assert call_order.index('failing') < call_order.index('succeeding')
+        mock_logger.error.assert_called_once()
+        log_args = mock_logger.error.call_args[0]
+        assert 'errback' in log_args[0]
+
     @patch('celery.backends.base.group')
     def test_class_based_task_can_be_used_as_error_callback(self, mock_group):
         b = BaseBackend(app=self.app)
