@@ -1170,6 +1170,35 @@ class test_TraceInfo(TraceCase):
             call_errbacks=True,
         )
 
+    def test_handle_error_state_missing_request_store_errors_false_while_task_ignore_result_true(self):
+        x = self.TI(states.FAILURE)
+        x.handle_failure = Mock()
+
+        self.add.ignore_result = True
+        self.add.store_errors_even_if_ignored = False
+
+        x.handle_error_state(self.add, None)
+        x.handle_failure.assert_called_once_with(
+            self.add,
+            None,
+            store_errors=False,
+            call_errbacks=True,
+        )
+
+    def test_handle_error_state_missing_request_store_errors_true_while_task_ignore_result_false(self):
+        x = self.TI(states.FAILURE)
+        x.handle_failure = Mock()
+
+        self.add.ignore_result = False
+
+        x.handle_error_state(self.add, None)
+        x.handle_failure.assert_called_once_with(
+            self.add,
+            None,
+            store_errors=True,
+            call_errbacks=True,
+        )
+
     @patch('celery.app.trace.ExceptionInfo')
     def test_handle_reject(self, ExceptionInfo):
         x = self.TI(states.FAILURE)
