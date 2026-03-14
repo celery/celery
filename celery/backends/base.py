@@ -264,6 +264,10 @@ class Backend:
                 ):
                     try:
                         errback(request, exc, traceback)
+                    except NotRegistered:
+                        # Let NotRegistered bubble up so the outer handler can
+                        # append this errback to old_signature and forward it.
+                        raise
                     except Exception as inner_exc:
                         logger.error(
                             'Error calling errback %r: %r',
