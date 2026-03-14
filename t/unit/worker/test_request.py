@@ -188,13 +188,14 @@ class test_Request(RequestCase):
                     sig,
                     Request=Request,
                     exclude_headers=None,
+                    headers=None,
                     **kwargs):
         msg = self.task_message_from_sig(self.app, sig)
-        headers = None
-        if exclude_headers:
-            headers = msg.headers
-            for header in exclude_headers:
-                headers.pop(header)
+        if headers is None:
+            headers = msg.headers.copy()
+            if exclude_headers:
+                for header in exclude_headers:
+                    headers.pop(header, None)
         return Request(
             msg,
             on_ack=Mock(name='on_ack'),
@@ -485,6 +486,27 @@ class test_Request(RequestCase):
 
         self.mytask.store_errors_even_if_ignored = True
         job = self.xRequest()
+        assert job.store_errors
+
+    def test_store_errors_default(self):
+        self.mytask.ignore_result = False
+        job = self.xRequest()
+        assert job.store_errors
+
+    def test_store_errors_task_ignore_result(self):
+        self.mytask.ignore_result = True
+        job = self.xRequest()
+        assert not job.store_errors
+
+    def test_store_errors_request_overrides_task_ignore_result(self):
+        self.mytask.ignore_result = True
+        msg = self.task_message_from_sig(self.app, self.mytask.s())
+        headers = msg.headers.copy()
+        headers['ignore_result'] = False
+        job = self.get_request(
+            self.mytask.s(),
+            headers=headers,
+        )
         assert job.store_errors
 
     def test_send_event(self):
