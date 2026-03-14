@@ -262,7 +262,14 @@ class Backend:
                         not isinstance(errback.type.__header__, partial) and
                         arity_greater(errback.type.__header__, 1)
                 ):
-                    errback(request, exc, traceback)
+                    try:
+                        errback(request, exc, traceback)
+                    except Exception as inner_exc:
+                        logger.error(
+                            'Error calling errback %r: %r',
+                            errback, inner_exc,
+                            exc_info=True,
+                        )
                 else:
                     old_signature.append(errback)
             except NotRegistered:
