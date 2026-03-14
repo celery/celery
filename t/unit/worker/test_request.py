@@ -509,6 +509,14 @@ class test_Request(RequestCase):
         )
         assert job.store_errors
 
+    def test_ignore_result_from_request_none(self):
+        self.mytask.ignore_result = True
+        msg = self.task_message_from_sig(self.app, self.mytask.s())
+        headers = msg.headers.copy()
+        headers['ignore_result'] = None
+        job = self.get_request(self.mytask.s(), headers=headers)
+        assert job._ignore_result is True
+
     def test_send_event(self):
         job = self.xRequest()
         job.eventer = Mock(name='.eventer')

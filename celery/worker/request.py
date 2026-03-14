@@ -125,9 +125,10 @@ class Request:
         self._eventer = eventer
         self._connection_errors = connection_errors or ()
         self._task = task or self._app.tasks[self._type]
-        self._ignore_result = self._request_dict.get(
-            'ignore_result', self._task.ignore_result,
-        )
+        ignore_result = self._request_dict.get('ignore_result', None)
+        if ignore_result is None:
+            ignore_result = self._task.ignore_result
+        self._ignore_result = ignore_result
 
         # timezone means the message is timezone-aware, and the only timezone
         # supported at this point is UTC.
