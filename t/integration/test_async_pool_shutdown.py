@@ -1,10 +1,9 @@
-"""Integration tests for prefork pool shutdown behaviour.
+"""Integration tests for prefork/thread pool shutdown behaviour.
 
-These tests verify that the prefork pool gracefully shuts down and maintains
+These tests verify that the pool gracefully shuts down and maintains
 heartbeats during the shutdown process, preventing connection loss during
 worker drain.
 """
-
 from time import sleep
 
 import pytest
@@ -23,9 +22,10 @@ LONG_TASK_DURATION = 10
 TIMEOUT = LONG_TASK_DURATION * 2
 
 
-@pytest.fixture
-def heartbeat_worker(celery_session_app):
+@pytest.fixture(params=["prefork", "threads"])
+def heartbeat_worker(request, celery_session_app):
     """Worker with short heartbeat for testing purposes."""
+    pool_type = request.param
 
     # Temporarily lower heartbeat for this test
     original_heartbeat = celery_session_app.conf.broker_heartbeat
@@ -34,34 +34,40 @@ def heartbeat_worker(celery_session_app):
     original_acks_late = celery_session_app.conf.task_acks_late
     celery_session_app.conf.task_acks_late = True
 
-    with start_worker(
-        celery_session_app,
-        pool="prefork",
-        without_heartbeat=False,
-        concurrency=4,
-        shutdown_timeout=TIMEOUT,
-        perform_ping_check=False,
-    ) as worker:
-        # Verify that low heartbeat is configured correctly
-        assert worker.consumer.amqheartbeat == TEST_HEARTBEAT
+    try:
+        with start_worker(
+            celery_session_app,
+            pool=pool_type,
+            without_heartbeat=False,
+            concurrency=4,
+            shutdown_timeout=TIMEOUT,
+            perform_ping_check=False,
+        ) as worker:
+            # Verify that low heartbeat is configured correctly
+            assert worker.consumer.amqheartbeat == TEST_HEARTBEAT
 
-        yield worker
+            yield worker
 
-    celery_session_app.conf.broker_heartbeat = original_heartbeat
-    celery_session_app.conf.task_acks_late = original_acks_late
+    finally:
+        state.should_stop = False
+        state.should_terminate = False
+
+        celery_session_app.conf.broker_heartbeat = original_heartbeat
+        celery_session_app.conf.task_acks_late = original_acks_late
 
 
-class test_prefork_shutdown:
-    """Test prefork shutdown with heartbeat maintenance."""
+class test_async_pool_shutdown:
+    """Test pool shutdown with heartbeat maintenance."""
 
     # Test timeout should be longer than worker timeout
     @pytest.mark.timeout(timeout=TIMEOUT * 2)
     @pytest.mark.usefixtures("heartbeat_worker")
     def test_shutdown_with_long_running_tasks(self):
-        """Test that graceful shutdown completes long-running tasks without
+        """
+        Test that graceful shutdown completes long-running tasks without
         connection loss.
 
-        This test verifies that when the prefork pool is shutting down with
+        This test verifies that when the pool is shutting down with
         long-running tasks, heartbeats continue to be sent to maintain the
         broker connection.
 
