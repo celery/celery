@@ -118,7 +118,7 @@ class test_Persistent:
 
     def test_merge(self, p, data=None):
         if data is None:
-            data = []
+            data = ['foo', 'bar', 'baz']
         state.revoked.update(data)
         p.merge()
         for item in data:
