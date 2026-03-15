@@ -628,7 +628,8 @@ class ResultSet(ResultBase):
 
     def update(self, results):
         """Extend from iterable of results."""
-        self.results.extend(r for r in results if r not in self.results)
+        existing = set(self.results)
+        self.results.extend(r for r in results if r not in existing)
 
     def clear(self):
         """Remove all results from this set."""
@@ -959,7 +960,6 @@ class GroupResult(ResultSet):
 
     def __bool__(self):
         return bool(self.id or self.results)
-    __nonzero__ = __bool__  # Included for Py2 backwards compatibility
 
     def __eq__(self, other):
         if isinstance(other, GroupResult):
