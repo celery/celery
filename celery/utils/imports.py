@@ -165,11 +165,18 @@ def load_extension_classes(namespace):
     For new code that only needs the raw entry point metadata
     ``(name, value)``, use :func:`load_extension_class_names` instead.
     """
+    from celery.exceptions import CDeprecationWarning
     warnings.warn(
         "load_extension_classes() is deprecated and will be removed in a "
         "future release; use load_extension_class_names() instead.",
-        DeprecationWarning,
+        CDeprecationWarning,
         stacklevel=2,
     )
     for name, value in load_extension_class_names(namespace):
-        yield name, symbol_by_name(value)
+        try:
+            cls = symbol_by_name(value)
+        except (ImportError, SyntaxError) as exc:
+            warnings.warn(
+                f'Cannot load {namespace} extension {value!r}: {exc!r}')
+        else:
+            yield name, cls
