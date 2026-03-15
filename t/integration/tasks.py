@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from celery import Signature, Task, chain, chord, group, shared_task
 from celery.canvas import signature
-from celery.exceptions import SoftTimeLimitExceeded
+from celery.exceptions import Reject, SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 
 LEGACY_TASKS_DISABLED = True
@@ -520,6 +520,27 @@ if LEGACY_TASKS_DISABLED:
         if replace_with is None:
             replace_with = replaced_with_me.s()
         self.replace(signature(replace_with))
+
+
+@shared_task(bind=True, acks_late=True)
+def store_success_then_reject(self):
+    """First delivery: store SUCCESS manually, then Reject to trigger redelivery.
+    Second delivery: dedup finds SUCCESS, dispatches chain."""
+    from celery.backends.base import states
+    if not self.request.delivery_info.get('redelivered'):
+        self.backend.store_result(self.request.id, 'first-pass', states.SUCCESS)
+        raise Reject(requeue=True)
+    # When dedup is enabled the fast-path intercepts before reaching here,
+    # so 'dedup-pass' is only returned when dedup is disabled.
+    return 'dedup-pass'
+
+
+@shared_task(bind=True, acks_late=True)
+def reject_then_succeed(self):
+    """First delivery: Reject(requeue=True). Second delivery: succeed normally."""
+    if not self.request.delivery_info.get('redelivered'):
+        raise Reject(requeue=True)
+    return 'second-pass'
 
 
 @shared_task(soft_time_limit=2, time_limit=1)

@@ -592,6 +592,40 @@ class test_chain(CanvasCase):
         ), "Chord followed by a group should be upgraded to a single chord with chained body."
         assert len(c.tasks) == 6
 
+    def test_chain_of_chords_stays_flat(self):
+        c = chain(
+            chord([signature('h1'), signature('h2')], signature('b1'), app=self.app),
+            chord([signature('h3'), signature('h4')], signature('b2'), app=self.app),
+            chord([signature('h5'), signature('h6')], signature('b3'), app=self.app),
+        )
+        assert isinstance(c, _chain)
+        assert len(c.tasks) == 3
+        for task in c.tasks:
+            assert isinstance(task, chord)
+        assert not isinstance(c.tasks[0].body, _chain)
+        assert not isinstance(c.tasks[1].body, _chain)
+        assert not isinstance(c.tasks[2].body, _chain)
+
+    def test_chain_of_chords_serialized_size_constant(self):
+        chords = [
+            chord([signature(f'h{i}_{j}') for j in range(3)],
+                  signature(f'b{i}'), app=self.app)
+            for i in range(6)
+        ]
+        c = chain(*chords)
+        assert isinstance(c, _chain)
+        sizes = [len(json.dumps(task.__json__())) for task in c.tasks]
+        assert max(sizes) == min(sizes), (
+            f"Chord sizes not constant across chain: {sizes}"
+        )
+
+    def test_chord_or_task_still_nests(self):
+        c = chord([signature('h1')], signature('b1'), app=self.app)
+        t = signature('t1')
+        result = chain(c) | t
+        assert isinstance(result, _chain)
+        assert isinstance(result.tasks[0].body, _chain)
+
     def test_apply_options(self):
 
         class static(Signature):
