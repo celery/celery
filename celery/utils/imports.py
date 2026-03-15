@@ -157,8 +157,13 @@ def load_extension_classes(namespace):
     """Deprecated wrapper for :func:`load_extension_class_names`.
 
     This helper previously lived in :mod:`celery.utils.imports` and may be
-    imported by third-party code. It now delegates to
-    :func:`load_extension_class_names` but only yields the entry point values.
+    imported by third-party code. It retains its original behavior of
+    importing each entry point target via :func:`symbol_by_name` and yielding
+    ``(name, cls)`` tuples, where ``name`` is the entry point name and
+    ``cls`` is the imported object.
+
+    For new code that only needs the raw entry point metadata
+    ``(name, value)``, use :func:`load_extension_class_names` instead.
     """
     warnings.warn(
         "load_extension_classes() is deprecated and will be removed in a "
@@ -166,5 +171,5 @@ def load_extension_classes(namespace):
         DeprecationWarning,
         stacklevel=2,
     )
-    for _name, value in load_extension_class_names(namespace):
-        yield value
+    for name, value in load_extension_class_names(namespace):
+        yield name, symbol_by_name(value)
