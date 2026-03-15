@@ -447,10 +447,6 @@ class class_property:
         return self.__class__(self.__get, setter)
 
 
-def reclassmethod(method):
-    return classmethod(fun_of_method(method))
-
-
 class LazyModule(ModuleType):
     _compat_modules = ()
     _all_by_module = {}
