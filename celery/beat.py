@@ -266,6 +266,20 @@ class Scheduler:
         if not lazy:
             self.setup_schedule()
 
+    @property
+    def old_schedulers(self):
+        """Backward compatible alias for :attr:`_last_schedule`.
+
+        This attribute previously existed as a public attribute and may
+        be accessed by external integrations for debugging or
+        introspection.
+        """
+        return self._last_schedule
+
+    @old_schedulers.setter
+    def old_schedulers(self, value):
+        self._last_schedule = value
+
     def install_default_entries(self, data):
         entries = {}
         if self.app.conf.result_expires and \
