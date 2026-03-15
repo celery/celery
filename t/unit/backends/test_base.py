@@ -426,7 +426,7 @@ class test_BaseBackend_dict:
         b = BaseBackend(self.app)
         b._save_group = Mock()
         b.save_group('foofoo', 'xxx')
-        b._save_group.assert_called_with('foofoo', 'xxx')
+        b._save_group.assert_called_with(group_id='foofoo', result='xxx')
 
     def test_add_to_chord_interface(self):
         b = BaseBackend(self.app)
@@ -493,6 +493,27 @@ class test_BaseBackend_dict:
 
         self.b.serializer = 'pickle'
         assert isinstance(self.b.prepare_value(g), self.app.GroupResult)
+
+    def test_task_result_exists_true(self):
+        b = DictBackend(app=self.app)
+        b._get_task_meta_for = Mock(return_value={
+            'status': states.SUCCESS, 'result': 42,
+        })
+        assert b.task_result_exists('task-exists') is True
+
+    def test_task_result_exists_false(self):
+        b = DictBackend(app=self.app)
+        b._get_task_meta_for = Mock(return_value={
+            'status': states.PENDING, 'result': None,
+        })
+        assert b.task_result_exists('task-missing') is False
+
+    def test_task_result_exists_failure_state(self):
+        b = DictBackend(app=self.app)
+        b._get_task_meta_for = Mock(return_value={
+            'status': states.FAILURE, 'result': None,
+        })
+        assert b.task_result_exists('task-failed') is True
 
     def test_is_cached(self):
         b = BaseBackend(app=self.app, max_cached_results=1)
@@ -1387,6 +1408,31 @@ class test_KeyValueStoreBackend:
     def test_restore_missing_group(self):
         assert self.b.restore_group('xxx-nonexistant') is None
 
+    def test_task_result_exists_after_store(self):
+        tid = uuid()
+        self.b.mark_as_done(tid, 'result')
+        assert self.b.task_result_exists(tid) is True
+
+    def test_task_result_exists_missing(self):
+        assert self.b.task_result_exists('xxx-nonexistant') is False
+
+    def test_task_result_exists_after_failure(self):
+        tid = uuid()
+        self.b.mark_as_failure(tid, RuntimeError('failed'), traceback='tb')
+        assert self.b.task_result_exists(tid) is True
+
+    def test_task_result_exists_after_retry(self):
+        tid = uuid()
+        self.b.mark_as_retry(tid, RuntimeError('retry'), traceback='tb')
+        assert self.b.task_result_exists(tid) is True
+
+    def test_task_result_exists_after_forget(self):
+        tid = uuid()
+        self.b.mark_as_done(tid, 'result')
+        assert self.b.task_result_exists(tid) is True
+        self.b.forget(tid)
+        assert self.b.task_result_exists(tid) is False
+
 
 class test_KeyValueStoreBackend_interface:
 
@@ -1492,6 +1538,7 @@ class test_backend_retries:
             b = BaseBackend(app=self.app)
             b.exception_safe_to_retry = lambda exc: True
             b._sleep = Mock()
+            b.on_backend_retryable_error = Mock()
             b._get_task_meta_for = Mock()
             b._get_task_meta_for.side_effect = [
                 Exception("failed"),
@@ -1500,6 +1547,7 @@ class test_backend_retries:
             res = b.get_task_meta(sentinel.task_id)
             assert res == {'status': states.SUCCESS, 'result': 42}
             assert b._sleep.call_count == 1
+            b.on_backend_retryable_error.assert_called_once()
         finally:
             self.app.conf.result_backend_always_retry = prev
 
@@ -1554,6 +1602,7 @@ class test_backend_retries:
             b = BaseBackend(app=self.app)
             b.exception_safe_to_retry = lambda exc: True
             b._sleep = Mock()
+            b.on_backend_retryable_error = Mock()
             b._get_task_meta_for = Mock()
             b._get_task_meta_for.return_value = {
                 'status': states.RETRY,
@@ -1583,6 +1632,7 @@ class test_backend_retries:
             b = BaseBackend(app=self.app)
             b.exception_safe_to_retry = lambda exc: True
             b._sleep = Mock()
+            b.on_backend_retryable_error = Mock()
             b._get_task_meta_for = Mock()
             b._get_task_meta_for.return_value = {
                 'status': states.RETRY,
@@ -1600,6 +1650,56 @@ class test_backend_retries:
             res = b.store_result(sentinel.task_id, 42, states.SUCCESS)
             assert res == 42
             assert b._sleep.call_count == 1
+            b.on_backend_retryable_error.assert_called_once()
+        finally:
+            self.app.conf.result_backend_always_retry = prev
+
+    def test_get_with_retries_hook_failure_continues(self):
+        self.app.conf.result_backend_always_retry, prev = True, self.app.conf.result_backend_always_retry
+
+        try:
+            b = BaseBackend(app=self.app)
+            b.exception_safe_to_retry = lambda exc: True
+            b._sleep = Mock()
+            b.on_backend_retryable_error = Mock(side_effect=RuntimeError("hook failed"))
+            b._get_task_meta_for = Mock()
+            b._get_task_meta_for.side_effect = [
+                Exception("failed"),
+                {'status': states.SUCCESS, 'result': 42}
+            ]
+            res = b.get_task_meta(sentinel.task_id)
+            assert res == {'status': states.SUCCESS, 'result': 42}
+            assert b._sleep.call_count == 1
+            b.on_backend_retryable_error.assert_called_once()
+        finally:
+            self.app.conf.result_backend_always_retry = prev
+
+    def test_store_result_with_retries_hook_failure_continues(self):
+        self.app.conf.result_backend_always_retry, prev = True, self.app.conf.result_backend_always_retry
+
+        try:
+            b = BaseBackend(app=self.app)
+            b.exception_safe_to_retry = lambda exc: True
+            b._sleep = Mock()
+            b.on_backend_retryable_error = Mock(side_effect=RuntimeError("hook failed"))
+            b._get_task_meta_for = Mock()
+            b._get_task_meta_for.return_value = {
+                'status': states.RETRY,
+                'result': {
+                    "exc_type": "Exception",
+                    "exc_message": ["failed"],
+                    "exc_module": "builtins",
+                },
+            }
+            b._store_result = Mock()
+            b._store_result.side_effect = [
+                Exception("failed"),
+                42
+            ]
+            res = b.store_result(sentinel.task_id, 42, states.SUCCESS)
+            assert res == 42
+            assert b._sleep.call_count == 1
+            b.on_backend_retryable_error.assert_called_once()
         finally:
             self.app.conf.result_backend_always_retry = prev
 

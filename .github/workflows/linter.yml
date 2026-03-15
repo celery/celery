@@ -2,6 +2,9 @@ name: Linter
 
 on: [pull_request, workflow_dispatch]
 
+permissions:
+  contents: read
+
 jobs:
   linter:
     runs-on: blacksmith-4vcpu-ubuntu-2204

@@ -390,7 +390,7 @@ class test_MongoBackend:
                                                             upsert=True)
         assert sentinel.result == ret_val
 
-        mock_collection.replace_one.side_effect = InvalidDocument()
+        mock_collection.replace_one.side_effect = InvalidDocument("bad")
         with pytest.raises(EncodeError):
             self.backend._store_result(
                 sentinel.task_id, sentinel.result, sentinel.status)
@@ -417,7 +417,7 @@ class test_MongoBackend:
         assert parameters['parent_id'] == sentinel.parent_id
         assert sentinel.result == ret_val
 
-        mock_collection.replace_one.side_effect = InvalidDocument()
+        mock_collection.replace_one.side_effect = InvalidDocument("bad")
         with pytest.raises(EncodeError):
             self.backend._store_result(
                 sentinel.task_id, sentinel.result, sentinel.status)
@@ -480,6 +480,30 @@ class test_MongoBackend:
         mock_get_database.assert_called_once_with()
         mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
         assert {'status': states.PENDING, 'result': None} == ret_val
+
+    @patch('celery.backends.mongodb.MongoBackend._get_database')
+    def test_task_result_exists_found(self, mock_get_database):
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
+        mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
+        mock_collection = Mock()
+        mock_collection.find_one.return_value = {'_id': sentinel.task_id, 'status': 'SUCCESS'}
+        mock_get_database.return_value = mock_database
+        mock_database.__getitem__.return_value = mock_collection
+
+        assert self.backend.task_result_exists(sentinel.task_id) is True
+        mock_collection.find_one.assert_called_once_with({"_id": sentinel.task_id})
+
+    @patch('celery.backends.mongodb.MongoBackend._get_database')
+    def test_task_result_exists_not_found(self, mock_get_database):
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
+        mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
+        mock_collection = Mock()
+        mock_collection.find_one.return_value = None
+        mock_get_database.return_value = mock_database
+        mock_database.__getitem__.return_value = mock_collection
+
+        assert self.backend.task_result_exists(sentinel.task_id) is False
+        mock_collection.find_one.assert_called_once_with({"_id": sentinel.task_id})
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
     def test_save_group(self, mock_get_database):
