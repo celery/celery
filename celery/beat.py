@@ -365,8 +365,9 @@ class Scheduler:
                 self._last_schedule = copy.copy(self.schedule)
             except Exception:
                 # Keep correctness over performance:
-                # if we cannot safely snapshot the schedule, fall back to
-                # per-tick invalidation to preserve legacy semantics.
+                # if we cannot safely snapshot the schedule, invalidate the
+                # heap for this tick (and subsequent ticks while snapshotting
+                # keeps failing) to preserve legacy semantics.
                 self._last_schedule = None
                 self._heap_invalidated = True
 
