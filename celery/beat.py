@@ -258,7 +258,8 @@ class Scheduler:
                              self.max_interval)
         self.Producer = Producer or app.amqp.Producer
         self._heap = None
-        self.old_schedulers = None
+        self._heap_invalidated = True
+        self._last_schedule = None
         self.sync_every_tasks = (
             app.conf.beat_sync_every if sync_every_tasks is None
             else sync_every_tasks)
@@ -322,6 +323,10 @@ class Scheduler:
             ))
         heapify(self._heap)
 
+    def _has_custom_schedules_equal(self):
+        method = self.schedules_equal
+        return getattr(method, '__func__', method) is not Scheduler.schedules_equal
+
     # pylint disable=redefined-outer-name
     def tick(self, event_t=event_t, min=min, heappop=heapq.heappop,
              heappush=heapq.heappush):
@@ -335,10 +340,25 @@ class Scheduler:
         adjust = self.adjust
         max_interval = self.max_interval
 
-        if (self._heap is None or
-                not self.schedules_equal(self.old_schedulers, self.schedule)):
-            self.old_schedulers = copy.copy(self.schedule)
+        # Backward compatibility: custom scheduler implementations may override
+        # schedules_equal() and expect tick() to call it to detect updates.
+        if self._has_custom_schedules_equal():
+            if (self._last_schedule is None or
+                    not self.schedules_equal(self._last_schedule, self.schedule)):
+                self._heap_invalidated = True
+
+            try:
+                self._last_schedule = copy.copy(self.schedule)
+            except Exception:
+                # Keep correctness over performance:
+                # if we cannot safely snapshot the schedule, fall back to
+                # per-tick invalidation to preserve legacy semantics.
+                self._last_schedule = None
+                self._heap_invalidated = True
+
+        if self._heap is None or self._heap_invalidated:
             self.populate_heap()
+            self._heap_invalidated = False
 
         H = self._heap
 
@@ -441,6 +461,7 @@ class Scheduler:
     def add(self, **kwargs):
         entry = self.Entry(app=self.app, **kwargs)
         self.schedule[entry.name] = entry
+        self._heap_invalidated = True
         return entry
 
     def _maybe_entry(self, name, entry):
@@ -454,6 +475,8 @@ class Scheduler:
             name: self._maybe_entry(name, entry)
             for name, entry in dict_.items()
         })
+        if dict_:
+            self._heap_invalidated = True
 
     def merge_inplace(self, b):
         schedule = self.schedule
@@ -470,6 +493,7 @@ class Scheduler:
                 schedule[key].update(entry)
             else:
                 schedule[key] = entry
+        self._heap_invalidated = True
 
     def _ensure_connected(self):
         # callback called for each retry while the connection
@@ -487,6 +511,7 @@ class Scheduler:
 
     def set_schedule(self, schedule):
         self.data = schedule
+        self._heap_invalidated = True
     schedule = property(get_schedule, set_schedule)
 
     @cached_property
@@ -594,6 +619,7 @@ class PersistentScheduler(Scheduler):
 
     def set_schedule(self, schedule):
         self._store['entries'] = schedule
+        self._heap_invalidated = True
     schedule = property(get_schedule, set_schedule)
 
     def sync(self):
