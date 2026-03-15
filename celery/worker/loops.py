@@ -143,8 +143,23 @@ def synloop(obj, connection, consumer, blueprint, hub, qos,
             if blueprint.state == RUN:
                 raise
 
-    while blueprint.state == RUN and obj.connection:
-        try:
-            state.maybe_shutdown()
-        finally:
-            _loop_cycle()
+    try:
+        while blueprint.state == RUN and obj.connection:
+            try:
+                state.maybe_shutdown()
+            finally:
+                _loop_cycle()
+    except Exception:
+        # Reset the hub on error (e.g. connection loss) to clean up
+        # stale state from the old connection, matching the cleanup
+        # already done in asynloop.  Without this, the synloop
+        # (used by gevent/eventlet pools) could leave stale callbacks
+        # that prevent consumer re-registration after reconnection.
+        # See: https://github.com/celery/celery/issues/9191
+        if hub is not None:
+            try:
+                hub.reset()
+            except Exception as exc:  # pylint: disable=broad-except
+                logger.exception(
+                    'Error cleaning up after sync event loop: %r', exc)
+        raise
