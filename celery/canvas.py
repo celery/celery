@@ -474,7 +474,7 @@ class Signature(dict):
         signature = Signature.from_dict({'task': self.task,
                                          'args': tuple(args),
                                          'kwargs': kwargs,
-                                         'options': deepcopy(opts),
+                                         'options': _clone_options(opts),
                                          'subtask_type': self.subtask_type,
                                          'immutable': self.immutable},
                                         app=self._app)
