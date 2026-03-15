@@ -229,13 +229,10 @@ class Pidfile:
         finally:
             pidfile.close()
 
-        rfh = open(self.path)
-        try:
+        with open(self.path) as rfh:
             if rfh.read() != content:
                 raise LockFailed(
                     "Inconsistency: Pidfile content doesn't match at re-read")
-        finally:
-            rfh.close()
 
 
 PIDFile = Pidfile  # XXX compat alias
@@ -419,7 +416,9 @@ def detached(logfile=None, pidfile=None, uid=None, gid=None, umask=0,
     def after_chdir_do():
         # Since without stderr any errors will be silently suppressed,
         # we need to know that we have access to the logfile.
-        logfile and open(logfile, 'a').close()
+        if logfile:
+            with open(logfile, 'a'):
+                pass
         # Doesn't actually create the pidfile, but makes sure it's not stale.
         if pidfile:
             _create_pidlock(pidfile).release()
