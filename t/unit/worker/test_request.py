@@ -188,13 +188,14 @@ class test_Request(RequestCase):
                     sig,
                     Request=Request,
                     exclude_headers=None,
+                    headers=None,
                     **kwargs):
         msg = self.task_message_from_sig(self.app, sig)
-        headers = None
-        if exclude_headers:
-            headers = msg.headers
-            for header in exclude_headers:
-                headers.pop(header)
+        if headers is None:
+            headers = msg.headers.copy()
+            if exclude_headers:
+                for header in exclude_headers:
+                    headers.pop(header, None)
         return Request(
             msg,
             on_ack=Mock(name='on_ack'),
@@ -443,6 +444,34 @@ class test_Request(RequestCase):
         req._tzlocal = 'foo'
         assert req.tzlocal == 'foo'
 
+    def test_ignore_result_from_request_true(self):
+        req = self.get_request(self.add.s(2, 2).set(ignore_result=True))
+        assert req.ignore_result is True
+
+    def test_ignore_result_from_request_false(self):
+        req = self.get_request(self.add.s(2, 2).set(ignore_result=False))
+        assert req.ignore_result is False
+
+    def test_ignore_result_default_from_task_false(self):
+        req = self.get_request(self.add.s(2, 2))
+        assert req.ignore_result is False
+
+    def test_ignore_result_default_from_task_true(self):
+        self.add.ignore_result = True
+        try:
+            req = self.get_request(self.add.s(2, 2))
+            assert req.ignore_result is True
+        finally:
+            self.add.ignore_result = False
+
+    def test_ignore_result_request_overrides_task_true(self):
+        self.add.ignore_result = True
+        try:
+            req = self.get_request(self.add.s(2, 2).set(ignore_result=False))
+            assert req.ignore_result is False
+        finally:
+            self.add.ignore_result = False
+
     def test_task_wrapper_repr(self):
         assert repr(self.xRequest())
 
@@ -454,6 +483,35 @@ class test_Request(RequestCase):
         self.mytask.store_errors_even_if_ignored = True
         job = self.xRequest()
         assert job.store_errors
+
+    def test_store_errors_default(self):
+        self.mytask.ignore_result = False
+        job = self.xRequest()
+        assert job.store_errors
+
+    def test_store_errors_task_ignore_result(self):
+        self.mytask.ignore_result = True
+        job = self.xRequest()
+        assert not job.store_errors
+
+    def test_store_errors_request_overrides_task_ignore_result(self):
+        self.mytask.ignore_result = True
+        msg = self.task_message_from_sig(self.app, self.mytask.s())
+        headers = msg.headers.copy()
+        headers['ignore_result'] = False
+        job = self.get_request(
+            self.mytask.s(),
+            headers=headers,
+        )
+        assert job.store_errors
+
+    def test_ignore_result_from_request_none(self):
+        self.mytask.ignore_result = True
+        msg = self.task_message_from_sig(self.app, self.mytask.s())
+        headers = msg.headers.copy()
+        headers['ignore_result'] = None
+        job = self.get_request(self.mytask.s(), headers=headers)
+        assert job._ignore_result is True
 
     def test_send_event(self):
         job = self.xRequest()
