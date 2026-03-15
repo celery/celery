@@ -52,7 +52,7 @@ CloudAMQP
    :width: 240px
    :target: https://www.cloudamqp.com/
 
-`CloudAMQP <https://www.cloudamqp.com/>`_ is a industry leading RabbitMQ as a service provider.
+`CloudAMQP <https://www.cloudamqp.com/>`_ is an industry leading RabbitMQ as a service provider.
 If you need highly available message queues, a perfect choice would be to use CloudAMQP.
 With 24,000+ running instances, CloudAMQP is the leading hosting provider of RabbitMQ,
 with customers all over the world.
@@ -156,7 +156,7 @@ Get Started
 ===========
 
 If this is the first time you're trying to use Celery, or you're
-new to Celery v5.5.x coming from previous versions then you should read our
+new to Celery v5.6.x coming from previous versions then you should read our
 getting started tutorials:
 
 - `First steps with Celery`_

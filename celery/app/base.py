@@ -5,6 +5,7 @@ import inspect
 import os
 import sys
 import threading
+import types
 import typing
 import warnings
 from collections import UserDict, defaultdict, deque
@@ -56,6 +57,24 @@ if typing.TYPE_CHECKING:  # pragma: no cover  # codecov does not capture this
 __all__ = ('Celery',)
 
 logger = get_logger(__name__)
+
+if sys.version_info >= (3, 14):
+    import annotationlib
+
+    def _get_annotations(fun):
+        # In Python 3.14+, annotations are deferred by default (PEP 649).
+        # Accessing fun.__annotations__ (or inspect.get_annotations without a
+        # format) evaluates them and may raise NameError for types only
+        # available under TYPE_CHECKING. To preserve previous behavior, first
+        # try to return evaluated annotations; if that fails with NameError,
+        # fall back to returning stringified annotations instead.
+        try:
+            return inspect.get_annotations(fun)
+        except NameError:
+            return inspect.get_annotations(fun, format=annotationlib.Format.STRING)
+else:
+    def _get_annotations(fun):
+        return fun.__annotations__
 
 BUILTIN_FIXUPS = {
     'celery.fixups.django:fixup',
@@ -308,7 +327,11 @@ class Celery:
     #: Signal sent after app has prepared the configuration.
     on_after_configure = None
 
-    #: Signal sent after app has been finalized.
+    #: Signal sent after the app has been finalized (i.e., all pending
+    #: task decorators have been evaluated, built-in tasks loaded, and
+    #: every currently registered task has been bound to the app).  This is
+    #: the earliest point at which the task registry is initialized/stable
+    #: and safe to inspect for tasks currently registered with this app.
     on_after_finalize = None
 
     #: Signal sent by every new process after fork.
@@ -590,7 +613,7 @@ class Celery:
                 '_decorated': True,
                 '__doc__': fun.__doc__,
                 '__module__': fun.__module__,
-                '__annotations__': fun.__annotations__,
+                '__annotations__': _get_annotations(fun),
                 '__header__': self.type_checker(fun, bound=bind),
                 '__wrapped__': run}, **options))()
             # for some reason __qualname__ cannot be set in type()
@@ -1265,6 +1288,8 @@ class Celery:
             attrs['__reduce__'] = __reduce__
 
         return type(name or Class.__name__, (Class,), attrs)
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
     def _rgetattr(self, path):
         return attrgetter(path)(self)

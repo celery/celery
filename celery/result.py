@@ -2,6 +2,7 @@
 
 import datetime
 import time
+import types
 from collections import deque
 from contextlib import contextmanager
 from weakref import proxy
@@ -340,6 +341,24 @@ class AsyncResult(ResultBase):
                 if is_incomplete_stream:
                     raise IncompleteStream()
 
+    def exists(self):
+        """Return :const:`True` if a result exists in the backend for this task.
+
+        This can be used to distinguish between a task that is truly
+        pending (waiting for execution) and a task ID that has never
+        been submitted or whose result has been forgotten/expired.
+
+        Without this method, both cases return ``PENDING`` as the state,
+        making them indistinguishable.
+
+        .. versionadded:: 5.7.0
+
+        Returns:
+            bool: :const:`True` if the backend has a result stored for
+                this task ID, :const:`False` otherwise.
+        """
+        return self.backend.task_result_exists(self.id)
+
     def ready(self):
         """Return :const:`True` if the task has executed.
 
@@ -383,6 +402,8 @@ class AsyncResult(ResultBase):
             if parent:
                 graph.add_edge(parent, node)
         return graph
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
     def __str__(self):
         """`str(self) -> self.id`."""
