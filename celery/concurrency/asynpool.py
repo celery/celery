@@ -1195,41 +1195,11 @@ class AsynPool(_pool.Pool):
             }
         }
 
-    def _process_cleanup_queues(self, proc):
-        """Called to clean up queues after process exit."""
-        if not proc.dead:
-            try:
-                self._queues[self._find_worker_queues(proc)] = None
-            except (KeyError, ValueError):
-                pass
-
-    @staticmethod
-    def _stop_task_handler(task_handler):
-        """Called at shutdown to tell processes that we're shutting down."""
-        for proc in task_handler.pool:
-            try:
-                setblocking(proc.inq._writer, 1)
-            except OSError:
-                pass
-            else:
-                try:
-                    proc.inq.put(None)
-                except OSError as exc:
-                    if exc.errno != errno.EBADF:
-                        raise
-
     def create_result_handler(self):
         return super().create_result_handler(
             fileno_to_outq=self._fileno_to_outq,
             on_process_alive=self.on_process_alive,
         )
-
-    def _process_register_queues(self, proc, queues):
-        """Mark new ownership for ``queues`` to update fileno indices."""
-        assert queues in self._queues
-        b = len(self._queues)
-        self._queues[queues] = proc
-        assert b == len(self._queues)
 
     def _find_worker_queues(self, proc):
         """Find the queues owned by ``proc``."""
@@ -1238,16 +1208,6 @@ class AsynPool(_pool.Pool):
                         if owner == proc)
         except StopIteration:
             raise ValueError(proc)
-
-    def _setup_queues(self):
-        # this is only used by the original pool that used a shared
-        # queue for all processes.
-        self._quick_put = None
-
-        # these attributes are unused by this class, but we'll still
-        # have to initialize them for compatibility.
-        self._inqueue = self._outqueue = \
-            self._quick_get = self._poll_result = None
 
     def process_flush_queues(self, proc):
         """Flush all queues.
@@ -1345,41 +1305,6 @@ class AsynPool(_pool.Pool):
         size = len(body)
         header = pack('>I', size)
         return header, body, size
-
-    @classmethod
-    def _set_result_sentinel(cls, _outqueue, _pool):
-        # unused
-        pass
-
-    def _help_stuff_finish_args(self):
-        # Pool._help_stuff_finished is a classmethod so we have to use this
-        # trick to modify the arguments passed to it.
-        return (self._pool,)
-
-    @classmethod
-    def _help_stuff_finish(cls, pool):
-        # pylint: disable=arguments-differ
-        debug(
-            'removing tasks from inqueue until task handler finished',
-        )
-        fileno_to_proc = {}
-        inqR = set()
-        for w in pool:
-            try:
-                fd = w.inq._reader.fileno()
-                inqR.add(fd)
-                fileno_to_proc[fd] = w
-            except OSError:
-                pass
-        while inqR:
-            readable, _, again = _select(inqR, timeout=0.5)
-            if again:
-                continue
-            if not readable:
-                break
-            for fd in readable:
-                fileno_to_proc[fd].inq._reader.recv()
-            sleep(0)
 
     @property
     def timers(self):

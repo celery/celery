@@ -71,12 +71,6 @@ EXTRA_INFO_FMT = """
 """
 
 
-def active_thread_count():
-    from threading import enumerate
-    return sum(1 for t in enumerate()
-               if not t.name.startswith('Dummy-'))
-
-
 def safe_say(msg, f=sys.__stderr__):
     """
     Uses the original (unpatched) os.write to avoid issues with eventlet/gevent

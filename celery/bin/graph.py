@@ -48,7 +48,6 @@ def workers(ctx):
                                    node._label.split('://')[0])
 
     class Node:
-        force_label = None
         scheme = {}
 
         def __init__(self, label, pos=None):

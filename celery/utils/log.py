@@ -21,7 +21,6 @@ __all__ = (
     'get_multiprocessing_logger', 'reset_multiprocessing_logger', 'LOG_LEVELS'
 )
 
-_process_aware = False
 _in_sighandler = False
 
 MP_LOG = os.environ.get('MP_LOG', False)
