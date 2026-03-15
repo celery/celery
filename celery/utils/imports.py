@@ -1,7 +1,6 @@
 """Utilities related to importing modules and symbols by name."""
 import os
 import sys
-import warnings
 from contextlib import contextmanager
 from importlib import import_module, reload
 from importlib.metadata import entry_points
@@ -151,5 +150,3 @@ def load_extension_class_names(namespace):
             _entry_points = entry_points().select(group=namespace)
     for ep in _entry_points:
         yield ep.name, ep.value
-
-
