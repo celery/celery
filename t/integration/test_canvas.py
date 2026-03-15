@@ -15,7 +15,7 @@ from celery.result import AsyncResult, GroupResult, ResultSet
 from celery.signals import before_task_publish, task_received
 
 from . import tasks
-from .conftest import TEST_BACKEND, check_for_logs, get_active_redis_channels, get_redis_connection
+from .conftest import TEST_BACKEND, check_for_logs, flaky, get_active_redis_channels, get_redis_connection
 from .tasks import (ExpectedException, StampOnReplace, add, add_chord_to_chord, add_replaced, add_to_all,
                     add_to_all_to_chord, build_chain_inside_task, collect_ids, delayed_sum,
                     delayed_sum_with_soft_guard, errback_new_style, errback_old_style, fail, fail_replaced, identity,
@@ -24,21 +24,7 @@ from .tasks import (ExpectedException, StampOnReplace, add, add_chord_to_chord, 
                     replace_with_stamped_task, retry_once, return_exception, return_priority, second_order_replace1,
                     tsum, write_to_file_and_return_int, xsum)
 
-RETRYABLE_EXCEPTIONS = (OSError, ConnectionError, TimeoutError)
-
-
-def is_retryable_exception(exc):
-    return isinstance(exc, RETRYABLE_EXCEPTIONS)
-
-
 TIMEOUT = 60
-
-_flaky = pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
-_timeout = pytest.mark.timeout(timeout=300)
-
-
-def flaky(fn):
-    return _timeout(_flaky(fn))
 
 
 def await_redis_echo(expected_msgs, redis_key="redis-echo", timeout=TIMEOUT):
@@ -439,6 +425,48 @@ class test_chain:
 
         res = c()
         assert res.get(timeout=TIMEOUT) == 12
+
+    @flaky
+    def test_chain_of_explicit_chords(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c1 = chain(
+            chord(group(add.si(1, 0), add.si(1, 0)), tsum.s()),
+            chord(group(add.s(1), add.s(1)), tsum.s()),
+            chord(group(add.s(0), add.s(0)), tsum.s()),
+        )
+        c2 = chain(
+            chord(group(add.s(10), add.s(10)), tsum.s()),
+            chord(group(add.s(0), add.s(0)), tsum.s()),
+            chord(group(add.s(1), add.s(1)), tsum.s()),
+        )
+        c = c1 | c2
+        res = c()
+        assert res.get(timeout=TIMEOUT) == 178
+
+    @flaky
+    def test_chain_of_nine_chords(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = chain(
+            chord(group(add.si(1, 0), add.si(1, 0), add.si(1, 0)), tsum.s()),
+            chord(group(add.s(1), add.s(1), add.s(1)), tsum.s()),
+            chord(group(add.s(1), add.s(1), add.s(1)), tsum.s()),
+            chord(group(add.s(1), add.s(1), add.s(1)), tsum.s()),
+            chord(group(add.s(1), add.s(1), add.s(1)), tsum.s()),
+            chord(group(add.s(1), add.s(1), add.s(1)), tsum.s()),
+            chord(group(add.s(1), add.s(1), add.s(1)), tsum.s()),
+            chord(group(add.s(1), add.s(1), add.s(1)), tsum.s()),
+            chord(group(add.s(0), add.s(0), add.s(0)), tsum.s()),
+        )
+        res = c()
+        assert res.get(timeout=TIMEOUT) == 29520
 
     @flaky
     def test_chain_of_a_chord_and_a_group_with_two_tasks(self, manager):
