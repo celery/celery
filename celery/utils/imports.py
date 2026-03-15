@@ -1,10 +1,10 @@
 """Utilities related to importing modules and symbols by name."""
 import os
 import sys
+import warnings
 from contextlib import contextmanager
 from importlib import import_module, reload
 from importlib.metadata import entry_points
-import warnings
 
 from kombu.utils.imports import symbol_by_name
 
