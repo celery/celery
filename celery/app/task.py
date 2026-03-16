@@ -104,6 +104,8 @@ class Context:
     shadow = None
     taskset = None   # compat alias to group
     timelimit = None
+    time_limit = None
+    soft_time_limit = None
     utc = None
     stamped_headers = None
     stamps = None
@@ -124,7 +126,10 @@ class Context:
         return headers
 
     def update(self, *args, **kwargs):
-        return self.__dict__.update(*args, **kwargs)
+        self.__dict__.update(*args, **kwargs)
+        timelimit = self.__dict__.get('timelimit')
+        if isinstance(timelimit, (list, tuple)) and len(timelimit) >= 2:
+            self.time_limit, self.soft_time_limit = timelimit[0], timelimit[1]
 
     def clear(self):
         return self.__dict__.clear()
