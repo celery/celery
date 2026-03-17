@@ -509,6 +509,22 @@ class test_Scheduler:
         assert scheduler.schedules_equal_called == 1
         assert populate_heap.call_count == initial_populate_calls
 
+    def test_tick_does_not_copy_schedule_when_custom_schedules_equal_matches(self):
+        class CustomScheduler(mScheduler):
+            def schedules_equal(self, old_schedules, new_schedules):
+                return super().schedules_equal(old_schedules, new_schedules)
+
+        scheduler = CustomScheduler(app=self.app)
+        scheduler.add(
+            name='test_tick_does_not_copy_schedule_when_custom_schedules_equal_matches',
+            schedule=always_due,
+        )
+
+        scheduler.tick()
+
+        with patch('celery.beat.copy.copy', side_effect=AssertionError('copy should not be called')):
+            scheduler.tick()
+
     def test_tick_uses_instance_patched_schedules_equal(self):
         scheduler = mScheduler(app=self.app)
         scheduler.add(name='test_tick_uses_instance_patched_schedules_equal',
@@ -596,8 +612,10 @@ class test_Scheduler:
         scheduler.update_from_dict(
             {'foo': {'schedule': mocked_schedule(True, 10)}}
         )
+        scheduler._heap_invalidated = True
         scheduler.populate_heap()
         assert scheduler._heap == [event_t(1, 5, scheduler.schedule['foo'])]
+        assert scheduler._heap_invalidated is False
 
     def create_schedule_entry(self, schedule=None, args=(), kwargs={},
                               options={}, task=None):

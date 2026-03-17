@@ -336,6 +336,7 @@ class Scheduler:
                 priority, entry
             ))
         heapify(self._heap)
+        self._heap_invalidated = False
 
     def _has_custom_schedules_equal(self):
         method = self.schedules_equal
@@ -361,19 +362,18 @@ class Scheduler:
                     not self.schedules_equal(self._last_schedule, self.schedule)):
                 self._heap_invalidated = True
 
-            try:
-                self._last_schedule = copy.copy(self.schedule)
-            except Exception:
-                # Keep correctness over performance:
-                # if we cannot safely snapshot the schedule, invalidate the
-                # heap for this tick (and subsequent ticks while snapshotting
-                # keeps failing) to preserve legacy semantics.
-                self._last_schedule = None
-                self._heap_invalidated = True
+                try:
+                    self._last_schedule = copy.copy(self.schedule)
+                except Exception:
+                    # Keep correctness over performance:
+                    # if we cannot safely snapshot the schedule, invalidate the
+                    # heap for this tick (and subsequent ticks while snapshotting
+                    # keeps failing) to preserve legacy semantics.
+                    self._last_schedule = None
+                    self._heap_invalidated = True
 
         if self._heap is None or self._heap_invalidated:
             self.populate_heap()
-            self._heap_invalidated = False
 
         H = self._heap
 
