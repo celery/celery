@@ -1527,6 +1527,21 @@ class test_apply_task(TasksCase):
         assert captured['time_limit'] == 30
         assert captured['soft_time_limit'] == 20
 
+    def test_apply_without_time_limit_keeps_timelimit_none(self):
+        """When no time limits are configured, timelimit in request must remain None."""
+        captured = {}
+
+        @self.app.task(bind=True, shared=False)
+        def check_request(self):
+            captured['timelimit'] = self.request.timelimit
+            captured['time_limit'] = self.request.time_limit
+            captured['soft_time_limit'] = self.request.soft_time_limit
+
+        check_request.apply()
+        assert captured['timelimit'] is None
+        assert captured['time_limit'] is None
+        assert captured['soft_time_limit'] is None
+
     def test_apply_throw(self):
         with pytest.raises(KeyError):
             self.raising.apply(throw=True)
