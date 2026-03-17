@@ -268,11 +268,14 @@ class Scheduler:
 
     @property
     def old_schedulers(self):
-        """Backward compatible alias for :attr:`_last_schedule`.
+        """Alias for :attr:`_last_schedule`, kept for compatibility.
 
         This attribute previously existed as a public attribute and may
         be accessed by external integrations for debugging or
-        introspection.
+        introspection. It reflects the internal ``_last_schedule`` state,
+        which may be ``None`` for the lifetime of the instance and is not
+        guaranteed to match the historic behavior of ``old_schedulers`` in
+        older Celery versions.
         """
         return self._last_schedule
 
