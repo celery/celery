@@ -607,6 +607,14 @@ class test_synloop:
         with pytest.raises(socket.error):
             synloop(*x.args)
 
+    def test_hub_reset_error_is_logged(self):
+        x = X(self.app)
+        x.hub.reset = Mock(name='hub.reset()', side_effect=RuntimeError('reset failed'))
+        x.timeout_then_error(x.connection.drain_events)
+        with pytest.raises(socket.error):
+            synloop(*x.args)
+        x.hub.reset.assert_called_once()
+
 
 class test_quick_drain:
 
