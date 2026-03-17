@@ -890,8 +890,10 @@ class Task:
             'callbacks': maybe_list(link),
             'errbacks': maybe_list(link_error),
             'headers': headers,
-            'timelimit': None if self.time_limit is None and self.soft_time_limit is None
-                         else [self.time_limit, self.soft_time_limit],
+            'timelimit': (
+                None if self.time_limit is None and self.soft_time_limit is None
+                else [self.time_limit, self.soft_time_limit]
+            ),
             'ignore_result': options.get('ignore_result', False),
             'delivery_info': {
                 'is_eager': True,
