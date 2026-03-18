@@ -1203,7 +1203,7 @@ you to customize the table names:
 ``database_engine_callback``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 5.7.0
+.. versionadded:: 5.7
 
 Default: :const:`None`.
 
