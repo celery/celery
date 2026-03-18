@@ -266,8 +266,8 @@ class Backend:
                         errback(request, exc, traceback)
                     except Exception as inner_exc:
                         logger.exception(
-                            'Error in new-style errback %s: %r',
-                            errback.task, inner_exc
+                            'Error in new-style errback %s for task %s: %r',
+                            errback.task, request.id, inner_exc
                         )
                 else:
                     old_signature.append(errback)

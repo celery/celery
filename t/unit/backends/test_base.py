@@ -583,7 +583,7 @@ class test_BaseBackend_dict:
         def good_errback(request, exc, traceback):
             call_order.append('good')
 
-        request = Mock(name='request')
+        request = Mock(name='request', id='test-task-id')
         request.errbacks = [
             bad_errback.s(),
             good_errback.s(),
