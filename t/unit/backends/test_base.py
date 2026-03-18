@@ -589,8 +589,7 @@ class test_BaseBackend_dict:
             good_errback.s(),
         ]
         b.mark_as_failure('id', KeyError(), request=request)
-        assert 'bad' in call_order
-        assert 'good' in call_order
+        assert call_order == ['bad', 'good']
 
     @patch('celery.backends.base.group')
     def test_class_based_task_can_be_used_as_error_callback(self, mock_group):
