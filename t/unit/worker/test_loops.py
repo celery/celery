@@ -609,11 +609,21 @@ class test_synloop:
 
     def test_hub_reset_error_is_logged(self):
         x = X(self.app)
-        x.hub.reset = Mock(name='hub.reset()', side_effect=RuntimeError('reset failed'))
+        reset_error = RuntimeError('reset failed')
+        x.hub.reset = Mock(name='hub.reset()', side_effect=reset_error)
         x.timeout_then_error(x.connection.drain_events)
         with pytest.raises(socket.error):
             synloop(*x.args)
         x.hub.reset.assert_called_once()
+
+    def test_hub_reset_error_logs_exception(self, caplog):
+        x = X(self.app)
+        reset_error = RuntimeError('reset failed')
+        x.hub.reset = Mock(name='hub.reset()', side_effect=reset_error)
+        x.timeout_then_error(x.connection.drain_events)
+        with pytest.raises(socket.error):
+            synloop(*x.args)
+        assert 'Error cleaning up after sync event loop' in caplog.text
 
 
 class test_quick_drain:
