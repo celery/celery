@@ -1187,6 +1187,8 @@ class _chain(Signature):
             if not isinstance(task, abstract.CallableSignature):
                 task = from_dict(task, app=app)
             if isinstance(task, group):
+                if not task.tasks:
+                    continue
                 # when groups are nested, they are unrolled - all tasks within
                 # groups should be called in parallel
                 task = maybe_unroll_group(task)
