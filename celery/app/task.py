@@ -48,6 +48,10 @@ X_DEATH_HEADERS = {
     'x-last-death-reason',
 }
 
+CONTEXT_CUSTOM_HEADER_KEYS = frozenset({
+    'lang', 'task', 'argsrepr', 'kwargsrepr', 'compression',
+})
+
 #: Here for backwards compatibility as tasks no longer use a custom meta-class.
 TaskType = type
 
@@ -116,8 +120,7 @@ class Context:
     def _get_custom_headers(self, *args, **kwargs):
         headers = {}
         headers.update(*args, **kwargs)
-        celery_keys = {*Context.__dict__.keys(), 'lang', 'task', 'argsrepr', 'kwargsrepr', 'compression'}
-        for key in celery_keys:
+        for key in self._custom_header_keys:
             headers.pop(key, None)
         if not headers:
             return None
@@ -178,6 +181,9 @@ class Context:
         if self._children is None:
             self._children = []
         return self._children
+
+
+Context._custom_header_keys = frozenset(Context.__dict__) | CONTEXT_CUSTOM_HEADER_KEYS
 
 
 @abstract.CallableTask.register
