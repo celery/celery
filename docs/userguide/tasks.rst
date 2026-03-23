@@ -1042,6 +1042,13 @@ General
     If :const:`True`, errors will be stored even if the task is configured
     to ignore results.
 
+    .. versionchanged:: 5.7
+        Previously, if the ``ignore_result`` key was missing from the request 
+        message, ``store_errors`` would default to ``True``, ignoring the 
+        task's own ``ignore_result`` setting. The worker now correctly 
+        falls back to ``Task.ignore_result`` when no per-request override 
+        is present.
+
 .. attribute:: Task.serializer
 
     A string identifying the default serialization
