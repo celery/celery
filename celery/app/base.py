@@ -892,6 +892,24 @@ class Celery:
                 if filtered_opts:
                     options = dict(filtered_opts, **options)
 
+        # Some execution options (time_limit, soft_time_limit, expires)
+        # are also passed as explicit arguments to create_task_message.
+        # Pop them from options to avoid "got multiple values for argument"
+        # errors; use the task-level value as fallback when the caller
+        # did not provide an explicit value.
+        if time_limit is None:
+            time_limit = options.pop('time_limit', None)
+        else:
+            options.pop('time_limit', None)
+        if soft_time_limit is None:
+            soft_time_limit = options.pop('soft_time_limit', None)
+        else:
+            options.pop('soft_time_limit', None)
+        if expires is None:
+            expires = options.pop('expires', None)
+        else:
+            options.pop('expires', None)
+
         ignore_result = options.pop('ignore_result', False)
         options = router.route(
             options, route_name or name, args, kwargs, task_type)
