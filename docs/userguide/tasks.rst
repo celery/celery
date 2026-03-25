@@ -351,6 +351,22 @@ The request defines the following attributes:
 :timelimit: A tuple of the current ``(soft, hard)`` time limits active for
             this task (if any).
 
+:time_limit: The hard time limit (in seconds) active for this task, or :const:`None`
+             if no hard limit is set. This value is unpacked from :attr:`timelimit`
+             and reflects limits configured via :setting:`task_time_limit`,
+             task-level ``time_limit``, or the ``time_limit`` argument passed to
+             :meth:`~@Task.apply_async`.
+
+             .. versionadded:: 5.7
+
+:soft_time_limit: The soft time limit (in seconds) active for this task, or :const:`None`
+                  if no soft limit is set. This value is unpacked from :attr:`timelimit`
+                  and reflects limits configured via :setting:`task_soft_time_limit`,
+                  task-level ``soft_time_limit``, or the ``soft_time_limit`` argument
+                  passed to :meth:`~@Task.apply_async`.
+
+                  .. versionadded:: 5.7
+
 :callbacks: A list of signatures to be called if this task returns successfully.
 
 :errbacks: A list of signatures to be called if this task fails.
@@ -1043,10 +1059,10 @@ General
     to ignore results.
 
     .. versionchanged:: 5.7
-        Previously, if the ``ignore_result`` key was missing from the request 
-        message, ``store_errors`` would default to ``True``, ignoring the 
-        task's own ``ignore_result`` setting. The worker now correctly 
-        falls back to ``Task.ignore_result`` when no per-request override 
+        Previously, if the ``ignore_result`` key was missing from the request
+        message, ``store_errors`` would default to ``True``, ignoring the
+        task's own ``ignore_result`` setting. The worker now correctly
+        falls back to ``Task.ignore_result`` when no per-request override
         is present.
 
 .. attribute:: Task.serializer
@@ -1608,9 +1624,9 @@ The following diagram shows the exact order of execution:
     └───────────────────────────────────────────────────────────────┘
 
 .. important::
-   
+
    **Key points:**
-   
+
    - All handlers run in the **same worker process** as your task
    - ``before_start`` **blocks** the task - ``run()`` won't start until it completes
    - Result backend is updated **before** ``on_success``/``on_failure`` - other clients can see the task as finished while handlers are still running
@@ -1723,19 +1739,19 @@ Example usage
     from celery import Task
 
     class MyTask(Task):
-        
+
         def before_start(self, task_id, args, kwargs):
             print(f"Task {task_id} starting with args {args}")
             # This blocks - run() won't start until this returns
-            
+
         def on_success(self, retval, task_id, args, kwargs):
             print(f"Task {task_id} succeeded with result: {retval}")
             # Result is already visible to clients at this point
-            
+
         def on_failure(self, exc, task_id, args, kwargs, einfo):
             print(f"Task {task_id} failed: {exc}")
             # Task state is already FAILURE in backend
-            
+
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
             print(f"Task {task_id} finished with status: {status}")
             # Always runs last
