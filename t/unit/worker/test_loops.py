@@ -535,7 +535,7 @@ class test_asynloop:
         # hub.timer.clear() must still be called even if hub.reset() raises.
         # The two cleanup calls are in separate try/except blocks so that a
         # failure in hub.reset() does not prevent stale timer entries from
-        # being discarded — the exact scenario Copilot flagged.
+        # being discarded, avoiding stale timers persisting after a reset error.
         x = X(self.app)
         x.hub.readers = {6: Mock()}
         x.hub.timer._queue = [1]
