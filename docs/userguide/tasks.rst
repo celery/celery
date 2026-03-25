@@ -1042,6 +1042,13 @@ General
     If :const:`True`, errors will be stored even if the task is configured
     to ignore results.
 
+    .. versionchanged:: 5.7
+        Previously, if the ``ignore_result`` key was missing from the request 
+        message, ``store_errors`` would default to ``True``, ignoring the 
+        task's own ``ignore_result`` setting. The worker now correctly 
+        falls back to ``Task.ignore_result`` when no per-request override 
+        is present.
+
 .. attribute:: Task.serializer
 
     A string identifying the default serialization
@@ -1596,7 +1603,8 @@ The following diagram shows the exact order of execution:
     │  4. on_success() OR     ← Outcome-specific handler            │
     │     on_retry() OR       │                                     │
     │     on_failure()        │                                     │
-    │  5. after_return()      ← Always runs last                    │
+    │  5. after_return()      ← Runs last on terminal states        │
+    │                       (skipped for RETRY/REJECTED/IGNORED)    │
     └───────────────────────────────────────────────────────────────┘
 
 .. important::
@@ -1606,7 +1614,9 @@ The following diagram shows the exact order of execution:
    - All handlers run in the **same worker process** as your task
    - ``before_start`` **blocks** the task - ``run()`` won't start until it completes
    - Result backend is updated **before** ``on_success``/``on_failure`` - other clients can see the task as finished while handlers are still running
-   - ``after_return`` **always** executes, regardless of task outcome
+   - ``after_return`` executes when the task reaches a terminal state.
+     It does not run for ``RETRY``, ``REJECTED``, or ``IGNORED``. If you need
+     a hook that fires on every attempt, use the :signal:`task_postrun` signal.
 
 Available handlers
 ~~~~~~~~~~~~~~~~~~
@@ -1687,8 +1697,13 @@ Available handlers
     Handler called after the task returns.
 
     .. note::
-       Executes **after** ``on_success``/``on_retry``/``on_failure``. This is the
-       final hook in the task lifecycle and **always** runs, regardless of outcome.
+        Executes after the outcome-specific handler when the task reaches a
+        terminal state.
+
+        In practice, this means it runs after ``on_success`` or ``on_failure``.
+        It is not executed for ``RETRY``, ``REJECTED``, or ``IGNORED`` states.
+        If a hook is needed for every attempt, consider using the
+        :signal:`task_postrun` signal.
 
     :param status: Current task state.
     :param retval: Task return value/exception.
