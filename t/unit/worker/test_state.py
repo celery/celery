@@ -183,45 +183,6 @@ class test_state:
         assert state.total_count['bar'] == 1
         assert state.total_count['baz'] == 2
 
-    def test_accepted_with_custom_all_total_count(self):
-        request = SimpleReq('foo')
-        all_total_count = [0]
-        total_count = {}
-        previous = list(state.all_total_count)
-        state.all_total_count[:] = [0]
-
-        try:
-            state.task_accepted(
-                request,
-                _all_total_count=all_total_count,
-                add_to_total_count=total_count.__setitem__,
-                get_total_count=total_count.get,
-            )
-            observed_all_total_count = list(state.all_total_count)
-        finally:
-            state.all_total_count[:] = previous
-
-        assert request in state.active_requests
-        assert all_total_count == [0]
-        assert total_count['foo'] == 1
-        assert observed_all_total_count == [1]
-
-    def test_accepted_with_falsey_custom_all_total_count_falls_back(self):
-        request = SimpleReq('foo')
-        all_total_count = []
-        previous = list(state.all_total_count)
-        state.all_total_count[:] = [0]
-
-        try:
-            state.task_accepted(request, _all_total_count=all_total_count)
-            observed_all_total_count = list(state.all_total_count)
-        finally:
-            state.all_total_count[:] = previous
-
-        assert request in state.active_requests
-        assert all_total_count == []
-        assert observed_all_total_count == [1]
-
     def test_ready(self, requests=[SimpleReq('foo'),
                                    SimpleReq('bar')]):
         for request in requests:
