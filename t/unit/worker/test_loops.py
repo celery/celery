@@ -531,6 +531,22 @@ class test_asynloop:
             asynloop(*x.args)
         x.hub.timer.clear.assert_called_once()
 
+    def test_hub_timer_cleared_even_when_reset_raises(self):
+        # hub.timer.clear() must still be called even if hub.reset() raises.
+        # The two cleanup calls are in separate try/except blocks so that a
+        # failure in hub.reset() does not prevent stale timer entries from
+        # being discarded — the exact scenario Copilot flagged.
+        x = X(self.app)
+        x.hub.readers = {6: Mock()}
+        x.hub.timer._queue = [1]
+        x.hub.reset = Mock(name='hub.reset()', side_effect=RuntimeError('reset failed'))
+        x.close_then_error(x.hub.poller.poll)
+        x.hub.fire_timers.return_value = 33.37
+        x.hub.poller.poll.return_value = []
+        with pytest.raises(socket.error):
+            asynloop(*x.args)
+        x.hub.timer.clear.assert_called_once()
+
     def test_hub_not_reset_on_graceful_shutdown(self):
         x = X(self.app)
         x.hub.reset = Mock(name='hub.reset()')

@@ -112,10 +112,21 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
         # so they won't be caught here.
         try:
             hub.reset()
-            hub.timer.clear()
         except Exception as exc:  # pylint: disable=broad-except
             logger.exception(
                 'Error cleaning up after event loop: %r', exc)
+        # Clear stale timer entries accumulated across reconnects (e.g.
+        # maybe_restore_messages registered via call_repeatedly). Without
+        # this, each reconnect appends a new entry; all of them fire during
+        # the reconnect window, raise again, and trigger another restart.
+        # Use a separate try/except so this always runs even if hub.reset()
+        # raised above. Timers are re-registered by register_with_event_loop
+        # when blueprint.start() is called after reconnect.
+        try:
+            hub.timer.clear()
+        except Exception as exc:  # pylint: disable=broad-except
+            logger.exception(
+                'Error clearing hub timer after event loop: %r', exc)
         raise
 
 
