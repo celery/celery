@@ -154,6 +154,28 @@ def get_task_name(request, default):
     return getattr(request, 'shadow', None) or default
 
 
+def get_actual_ignore_result(task, req):
+    """Return the effective ignore_result, with request overriding task.
+
+    If req provides an explicit ignore_result, that value is used;
+    otherwise task.ignore_result is returned.
+    """
+    if req is None:
+        return task.ignore_result
+
+    actual = getattr(req, 'ignore_result', None)
+
+    # Context defines `ignore_result = False` at class level (see Context
+    # in celery/app/task.py). getattr() above would return the class default
+    # (False) even when the request never set it explicitly, making it
+    # impossible to distinguish "override=False" from "not set". We check
+    # __dict__ to detect only instance-level (i.e., explicitly set) values.
+    if isinstance(req, Context) and 'ignore_result' not in req.__dict__:
+        actual = None
+
+    return actual if actual is not None else task.ignore_result
+
+
 class TraceInfo:
     """Information about task execution."""
 
@@ -165,7 +187,9 @@ class TraceInfo:
 
     def handle_error_state(self, task, req,
                            eager=False, call_errbacks=True):
-        if task.ignore_result:
+        ignore_result = get_actual_ignore_result(task, req)
+
+        if ignore_result:
             store_errors = task.store_errors_even_if_ignored
         elif eager and task.store_eager_result:
             store_errors = True
@@ -353,16 +377,6 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     fun = task if task_has_custom(task, '__call__') else task.run
 
     loader = loader or app.loader
-    ignore_result = task.ignore_result
-    track_started = task.track_started
-    track_started = not eager and (task.track_started and not ignore_result)
-
-    # #6476
-    if eager and not ignore_result and task.store_eager_result:
-        publish_result = True
-    else:
-        publish_result = not eager and not ignore_result
-
     deduplicate_successful_tasks = ((app.conf.task_acks_late or task.acks_late)
                                     and app.conf.worker_deduplicate_successful_tasks
                                     and app.backend.persistent)
@@ -482,6 +496,14 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
 
             task_request = Context(request or {}, args=args,
                                    called_directly=False, kwargs=kwargs)
+
+            ignore_result = get_actual_ignore_result(task, task_request)
+            track_started = not eager and (task.track_started and not ignore_result)
+            # #6476
+            if eager and not ignore_result and task.store_eager_result:
+                publish_result = True
+            else:
+                publish_result = not eager and not ignore_result
 
             redelivered = (task_request.delivery_info
                            and task_request.delivery_info.get('redelivered', False))
