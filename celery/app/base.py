@@ -868,6 +868,25 @@ class Celery:
                 'task_always_eager has no effect on send_task',
             ), stacklevel=2)
 
+        # If the task is registered locally, apply its execution options
+        # (e.g. serializer, queue, compression) as defaults so that
+        # send_task() honours per-task settings. Explicitly passed
+        # options take precedence.
+        if task_type is None:
+            try:
+                task_type = self.tasks[name]
+            except KeyError:
+                pass
+        if task_type is not None and hasattr(task_type, '_get_exec_options'):
+            task_exec_options = task_type._get_exec_options()
+            if task_exec_options:
+                # Only merge non-None values so we don't override
+                # defaults with None.
+                filtered_opts = {k: v for k, v in task_exec_options.items()
+                                 if v is not None}
+                if filtered_opts:
+                    options = dict(filtered_opts, **options)
+
         ignore_result = options.pop('ignore_result', False)
         options = router.route(
             options, route_name or name, args, kwargs, task_type)
