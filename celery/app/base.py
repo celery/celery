@@ -873,10 +873,15 @@ class Celery:
         # send_task() honours per-task settings. Explicitly passed
         # options take precedence.
         if task_type is None:
-            try:
-                task_type = self.tasks[name]
-            except KeyError:
-                pass
+            registry = self.tasks
+            get = getattr(registry, 'get', None)
+            if callable(get):
+                task_type = get(name)
+            else:
+                try:
+                    task_type = registry[name]
+                except KeyError:
+                    task_type = None
         if task_type is not None and hasattr(task_type, '_get_exec_options'):
             task_exec_options = task_type._get_exec_options()
             if task_exec_options:
