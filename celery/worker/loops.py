@@ -100,12 +100,19 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     except Exception:
         # Reset the hub on error (e.g. connection loss) to clean up
         # stale file descriptors and callbacks from the old connection.
+        # Also clear the timer queue so that stale periodic entries added by
+        # register_with_event_loop (e.g. maybe_restore_messages) do not fire
+        # against the broken connection after reconnect and trigger another
+        # crash before the new connection is fully established.
+        # All hub timers are re-registered during blueprint.start() once this
+        # exception propagates and the consumer reconnects.
         # We intentionally do NOT reset on normal exit (graceful shutdown)
         # so that timers (e.g. heartbeat) keep firing while the pool drains.
         # WorkerShutdown/WorkerTerminate extend SystemExit (not Exception)
         # so they won't be caught here.
         try:
             hub.reset()
+            hub.timer.clear()
         except Exception as exc:  # pylint: disable=broad-except
             logger.exception(
                 'Error cleaning up after event loop: %r', exc)
