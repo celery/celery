@@ -51,7 +51,7 @@ jobs:
         run: python -m pip install --upgrade pip tox tox-gh-actions
 
       - name: Run tox for "${{ matrix.python-version }}-smoke-${{ inputs.module_name }}"
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 20
           max_attempts: 5

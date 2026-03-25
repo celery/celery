@@ -63,7 +63,7 @@ jobs:
       - name: >
           Run tox for
           "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}-${{ inputs.module_name }}"
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 15
           max_attempts: 5
