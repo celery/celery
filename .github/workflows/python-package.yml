@@ -5,7 +5,7 @@ name: Celery
 
 on:
   push:
-    branches: [ 'main']
+    branches: [ 'main', 'v5.6.x' ]
     paths:
         - '**.py'
         - '**.txt'
@@ -13,7 +13,7 @@ on:
         - '**.toml'
         - "tox.ini"
   pull_request:
-    branches: [ 'main' ]
+    branches: [ 'main', 'v5.6.x' ]
     paths:
         - '**.py'
         - '**.txt'

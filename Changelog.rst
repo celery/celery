@@ -8,6 +8,69 @@ This document contains change notes for bugfix & new features
 in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
 an overview of what's new in Celery 5.6.
 
+.. _version-5.6.3:
+
+5.6.3
+=====
+
+:release-date: 2026-03-26
+:release-by: Tomer Nosrati
+
+What's Changed
+~~~~~~~~~~~~~~
+
+- Fix Django worker recursion bug + defensive checks for pool_cls.__module__ (#10048)
+- Docs: Update user_preload_options example to use click. (#10056)
+- Fix invalid configuration key "bootstrap_servers" in Kafka demo (#10060)
+- Fix broken images on PyPI page (#10066)
+- Remove broken reference. (#10071)
+- Removed --dist=loadscope from smoke tests (#10073)
+- Docs: Clarify task_retry signal args may be None (#10076)
+- Update example for Django (#10081)
+- Make tests compatible with pymongo >= 4.16 (#10074)
+- fix: source install of cassandra-driver (#10105)
+- fix: register task cross-reference role in Sphinx extension (#10100)
+- fix: avoid cycle detection in native delayed delivery (#10095)
+- fix(asynpool): avoid AttributeError when proc lacks _sentinel_poll (#10086)
+- fix dusk_astronomical horizon sign (+18 -> -18) (#10121)
+- Fix/10106 onupdate col use lambda func (#10108)
+- Fix warm shutdown RuntimeError with eventlet>=0.37.0 (#10083) (#10123)
+- Fix 10109 db backend connection health (#10124)
+- Database Backend filter unsupport sql engine arguments with nullpool #7355 (#10134)
+- fix(beat): correct argument order in Service.__reduce__ (#10137)
+- ci: declare explicit read-only token permissions in workflow jobs (#10139)
+- chore: 'boto3to' to 'boto3 to' (#10133)
+- Database Backend: Add missing index on date_done (Fixes #10097) (#10098)
+- docs: fix typo in CONTRIBUTING.rst (#10141)
+- Refer to Flower / Prometheus for monitoring (#10140)
+- docs: remove duplicated words in broker and routing docs (#10146)
+- docs: fix stale version reference and grammar in README (#10145)
+- docs: fix wording in Celery 5.3 worker pool notes (#10149)
+- docs: fix duplicated wording in 3.1 changelog entry (#10152)
+- docs: fix changelog typo in context manager wording (#10144)
+- Fix/10096 worker fails to reconnect after redis failover (#10151)
+- Improve on_after_finalize signal documentation (#10155)
+- Add non-commutative example to clarify partial arg ordering in canvas docs (#10157)
+- Remove redundant test_isa_mapping test (fixes #10077) (#10103)
+- Upgrade pytest-celery to >=1.3.0 and adopt PYTEST_CELERY_PKG build arg (#10162)
+- Remove deprecated args from redis get_connection call (#10036)
+- Fix #6912 rpc backend reconnection error (#10179)
+- Fix NameError with TYPE_CHECKING annotations on Python 3.14+ (PEP 649) (#10165)
+- docs: Add elaboration on prefetch multiplier settings (worker_prefetch_multiplier) and worker_eta_task_limit (#10181)
+- Fix O(K²) message bloat in a chain of chords (#10171)
+- Fix mock connection interfaces to prevent `TypeError` during exception handling (#10178)
+- fix(trace): dispatch chain/callbacks on dedup fast-path for redelivered tasks (#10159)
+- Extract `reconnect_on_error` to `BaseResultConsumer` (#10189)
+- pep 649 (#10187)
+- Fix#9722 friendly status errors for CLI (#10190)
+- docs: clarify after_return behavior for retried tasks (#10192)
+- Add compression header to message protocol docs (#10156)
+- docs: fix duplicated word in bootsteps comment (#10153)
+- Remove outdated autoreloader section from extending docs (#10154)
+- Fix: prioritize request ignore_result over task definition (#10184)
+- fix: clear the timer while catch the exception (#10218)
+- Prepare for release: v5.6.3 (#10221)
+
 .. _version-5.6.2:
 
 5.6.2
