@@ -24,7 +24,7 @@ _original_os_write = os.write
 
 SERIES = 'recovery'
 
-__version__ = '5.6.2'
+__version__ = '5.6.3'
 __author__ = 'Ask Solem'
 __contact__ = 'auvipy@gmail.com'
 __homepage__ = 'https://docs.celeryq.dev/'
