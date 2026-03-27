@@ -115,8 +115,8 @@ class test_schedule:
         assert s1 == s2
 
 
-# This is needed for test_crontab_parser because datetime.utcnow doesn't pickle
-# in python 2
+# This is needed for test_crontab_parser because datetime.utcnow doesn't
+# serialize in python 2
 def utcnow():
     return datetime.now(timezone.utc)
 
