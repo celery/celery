@@ -288,6 +288,35 @@ class test_App:
         with self.Celery(broker='foo://baribaz') as app:
             assert app.conf.broker_url == 'foo://baribaz'
 
+    def test_broker_url_validation_with_special_characters(self):
+        """Test that broker URLs with unencoded special characters raise helpful errors."""
+        # Test invalid URL with unencoded brackets (looks like IPv6)
+        with pytest.raises(ImproperlyConfigured, match='Invalid broker URL'):
+            with self.Celery(broker='pyamqp://user[name:password@localhost//'):
+                pass
+
+        with pytest.raises(ImproperlyConfigured, match='percent-encoded'):
+            with self.Celery(broker='pyamqp://user[name:password@localhost//'):
+                pass
+
+    def test_broker_url_validation_with_encoded_characters(self):
+        """Test that properly encoded broker URLs are accepted."""
+        from urllib.parse import quote
+
+        # Test with properly encoded credentials
+        username = quote('g+u[est')
+        password = quote('pa+sword')
+        broker_url = f'pyamqp://{username}:{password}@localhost//'
+
+        with self.Celery(broker=broker_url) as app:
+            assert app.conf.broker_url == broker_url
+
+    def test_broker_url_validation_none(self):
+        """Test that None broker URL is accepted (defaults to memory://)."""
+        with self.Celery(broker=None) as app:
+            # When broker=None, Celery defaults to memory://
+            assert app.conf.broker_url == 'memory://'
+
     def test_pending_configuration_non_true__kwargs(self):
         with self.Celery(task_create_missing_queues=False) as app:
             assert app.conf.task_create_missing_queues is False
