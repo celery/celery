@@ -868,6 +868,56 @@ class Celery:
                 'task_always_eager has no effect on send_task',
             ), stacklevel=2)
 
+        # If the task is registered locally, apply its execution options
+        # (e.g. serializer, queue, compression) as defaults so that
+        # send_task() honours per-task settings. Explicitly passed
+        # options take precedence.
+        if task_type is None:
+            registry = self.tasks
+            get = getattr(registry, 'get', None)
+            if callable(get):
+                task_type = get(name)
+            else:
+                try:
+                    task_type = registry[name]
+                except KeyError:
+                    task_type = None
+        if task_type is not None and hasattr(task_type, '_get_exec_options'):
+            get_exec_options = task_type._get_exec_options
+            try:
+                task_exec_options = get_exec_options()
+            except TypeError:
+                # If _get_exec_options is an unbound function (e.g., accessed
+                # on a Task class rather than an instance), calling it without
+                # a self argument will raise TypeError. In that case, fall
+                # back to the previous behavior and ignore exec options.
+                task_exec_options = None
+            if task_exec_options:
+                # Only merge non-None values so we don't override
+                # defaults with None.
+                filtered_opts = {k: v for k, v in task_exec_options.items()
+                                 if v is not None}
+                if filtered_opts:
+                    options = dict(filtered_opts, **options)
+
+        # Some execution options (time_limit, soft_time_limit, expires)
+        # are also passed as explicit arguments to create_task_message.
+        # Pop them from options to avoid "got multiple values for argument"
+        # errors; use the task-level value as fallback when the caller
+        # did not provide an explicit value.
+        if time_limit is None:
+            time_limit = options.pop('time_limit', None)
+        else:
+            options.pop('time_limit', None)
+        if soft_time_limit is None:
+            soft_time_limit = options.pop('soft_time_limit', None)
+        else:
+            options.pop('soft_time_limit', None)
+        if expires is None:
+            expires = options.pop('expires', None)
+        else:
+            options.pop('expires', None)
+
         ignore_result = options.pop('ignore_result', False)
         options = router.route(
             options, route_name or name, args, kwargs, task_type)

@@ -1332,6 +1332,121 @@ class test_App:
             self.app.amqp.Producer(), 'foo',
             self.app.amqp.create_task_message())
 
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_honours_task_serializer(self, detect_quorum_queues):
+        """send_task should use the registered task's serializer when called by name."""
+
+        @self.app.task(name='test_task_with_serializer', serializer='json')
+        def test_task():
+            pass
+
+        self.app.conf.task_serializer = 'msgpack'
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        self.app.send_task('test_task_with_serializer', (1,),
+                           connection=connection, router=router)
+
+        # Verify the serializer from the task definition ('json') was passed
+        # through to send_task_message, not the app default ('msgpack').
+        call_kwargs = self.app.amqp.send_task_message.call_args
+        assert call_kwargs[1].get('serializer') == 'json', \
+            "send_task should use the task's serializer, not the app default"
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_explicit_serializer_overrides_task(self, detect_quorum_queues):
+        """Explicitly passed serializer should override the task's serializer."""
+
+        @self.app.task(name='test_task_with_serializer2', serializer='json')
+        def test_task():
+            pass
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        self.app.send_task('test_task_with_serializer2', (1,),
+                           connection=connection, router=router,
+                           serializer='pickle')
+
+        call_kwargs = self.app.amqp.send_task_message.call_args
+        assert call_kwargs[1].get('serializer') == 'pickle', \
+            "Explicitly passed serializer should override task's serializer"
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_unregistered_task_uses_defaults(self, detect_quorum_queues):
+        """send_task for unregistered task names should still use app defaults."""
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        self.app.send_task('unregistered_task', (1,),
+                           connection=connection, router=router)
+
+        # Should not raise and should proceed normally without task exec options
+        self.app.amqp.send_task_message.assert_called_once()
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_with_task_time_limit_no_duplicate_kwargs(self, detect_quorum_queues):
+        """send_task should not raise TypeError when the registered task has time_limit set."""
+
+        @self.app.task(name='test_task_with_time_limit', time_limit=300, soft_time_limit=120)
+        def test_task():
+            pass
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        # This should not raise "got multiple values for argument 'time_limit'"
+        self.app.send_task('test_task_with_time_limit', (1,),
+                           connection=connection, router=router)
+
+        self.app.amqp.create_task_message.assert_called_once()
+        call_args = self.app.amqp.create_task_message.call_args
+        # time_limit and soft_time_limit should be passed as positional args,
+        # not duplicated in **options
+        assert 'time_limit' not in call_args[1], \
+            "time_limit should not appear in kwargs (passed positionally)"
+        assert 'soft_time_limit' not in call_args[1], \
+            "soft_time_limit should not appear in kwargs (passed positionally)"
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_explicit_time_limit_overrides_task(self, detect_quorum_queues):
+        """Explicitly passed time_limit should override the task's time_limit."""
+
+        @self.app.task(name='test_task_tl_override', time_limit=300, soft_time_limit=120)
+        def test_task():
+            pass
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        # Explicit time_limit=60 should win over task's time_limit=300
+        self.app.send_task('test_task_tl_override', (1,),
+                           connection=connection, router=router,
+                           time_limit=60, soft_time_limit=30)
+
+        call_args = self.app.amqp.create_task_message.call_args
+        _, kwargs = call_args
+        assert kwargs['time_limit'] == 60, \
+            "Explicit time_limit should override task-level time_limit"
+        assert kwargs['soft_time_limit'] == 30, \
+            "Explicit soft_time_limit should override task-level soft_time_limit"
+
     def test_send_task_sent_event(self):
 
         class Dispatcher:
