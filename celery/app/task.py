@@ -126,11 +126,31 @@ class Context:
         return headers
 
     def update(self, *args, **kwargs):
-        self.__dict__.update(*args, **kwargs)
-        timelimit = self.__dict__.get('timelimit')
-        if isinstance(timelimit, (list, tuple)) and len(timelimit) >= 2:
-            self.time_limit, self.soft_time_limit = timelimit[0], timelimit[1]
+        # Detect whether this update call explicitly provided a "timelimit"
+        # key (either via positional mapping args or keyword arguments).
+        provided_timelimit = False
+        for mapping in args:
+            try:
+                if 'timelimit' in mapping:
+                    provided_timelimit = True
+                    break
+            except Exception:
+                # If an arg isn't a mapping, just ignore it for timelimit detection.
+                continue
+        if not provided_timelimit and 'timelimit' in kwargs:
+            provided_timelimit = True
 
+        self.__dict__.update(*args, **kwargs)
+
+        if provided_timelimit:
+            timelimit = self.__dict__.get('timelimit')
+            if isinstance(timelimit, (list, tuple)) and len(timelimit) >= 2:
+                self.time_limit, self.soft_time_limit = timelimit[0], timelimit[1]
+            else:
+                # Explicitly clear any previously set values when timelimit is
+                # provided but is None or otherwise invalid.
+                self.time_limit = None
+                self.soft_time_limit = None
     def clear(self):
         return self.__dict__.clear()
 
