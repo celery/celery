@@ -115,8 +115,8 @@ class test_schedule:
         assert s1 == s2
 
 
-# This is needed for test_crontab_parser because datetime.utcnow doesn't pickle
-# in python 2
+# Module-level helper used as crontab(nowfun=...) in pickling tests.
+# Defined at top level so it is picklable/serializable.
 def utcnow():
     return datetime.now(timezone.utc)
 
