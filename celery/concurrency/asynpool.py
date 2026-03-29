@@ -26,12 +26,12 @@ from struct import pack, unpack, unpack_from
 from time import sleep
 from weakref import WeakValueDictionary, ref
 
+import dill as _pickle
 from billiard import pool as _pool
 from billiard.compat import isblocking, setblocking
 from billiard.pool import ACK, NACK, RUN, TERMINATE, WorkersJoined
 from billiard.queues import _SimpleQueue
 from kombu.asynchronous import ERR, WRITE
-from kombu.serialization import pickle as _pickle
 from kombu.utils.eventio import SELECT_BAD_FD
 from kombu.utils.functional import fxrange
 from vine import promise
