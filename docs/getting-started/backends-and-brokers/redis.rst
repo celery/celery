@@ -143,6 +143,27 @@ To configure the connection timeouts for the Redis result backend, use the ``ret
 
 See :func:`~kombu.utils.functional.retry_over_time` for the possible retry policy options.
 
+.. _redis-result-backend-additional-connection-errors:
+
+Additional connection errors
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Some Redis proxies or cloud providers may raise custom exceptions that Celery
+does not recognize as connection errors. To have these retried automatically,
+use the ``additional_connection_errors`` key under
+:setting:`result_backend_transport_options`:
+
+
+.. code-block:: python
+
+    app.conf.result_backend_transport_options = {
+        'additional_connection_errors': (
+            'my_redis_proxy.CustomConnectionError',
+        ),
+    }
+
+Both dotted import strings and exception classes are supported.
+
 .. _redis-serverless:
 
 Serverless
