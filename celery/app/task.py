@@ -151,6 +151,7 @@ class Context:
                 # provided but is None or otherwise invalid.
                 self.time_limit = None
                 self.soft_time_limit = None
+
     def clear(self):
         return self.__dict__.clear()
 
