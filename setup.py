@@ -23,6 +23,7 @@ EXTENSIONS = (
     'dynamodb',
     'elasticsearch',
     'eventlet',
+    'gcpubsub',
     'gevent',
     'gcs',
     'librabbitmq',
