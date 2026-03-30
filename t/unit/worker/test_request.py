@@ -4,7 +4,7 @@ import signal
 import socket
 from datetime import datetime, timedelta, timezone
 from time import monotonic, time
-from unittest.mock import Mock, patch
+from unittest.mock import ANY, Mock, patch
 
 import pytest
 from billiard.einfo import ExceptionInfo
@@ -1228,7 +1228,50 @@ class test_Request(RequestCase):
         finally:
             state.should_terminate = original_should_terminate
 
-    def test_fast_trace_task(self):
+    def test_on_hard_timeout_calls_task_on_failure(self, patching):
+        """Hard timeout must invoke task.on_failure so user hooks fire."""
+        patching('celery.worker.request.error')
+
+        job = self.xRequest()
+        job.task.on_failure = Mock(name='on_failure')
+        job.on_timeout(soft=False, timeout=1337)
+
+        job.task.on_failure.assert_called_once()
+        call_args = job.task.on_failure.call_args[0]
+        exc, task_id = call_args[0], call_args[1]
+        assert isinstance(exc, TimeLimitExceeded)
+        assert task_id == job.id
+
+    def test_on_hard_timeout_sends_task_failure_signal(self, patching):
+        """Hard timeout must send the task_failure signal."""
+        patching('celery.worker.request.error')
+
+        handler = Mock(name='signal_handler')
+        task_failure.connect(handler)
+        try:
+            job = self.xRequest()
+            job.on_timeout(soft=False, timeout=1337)
+        finally:
+            task_failure.disconnect(handler)
+
+        handler.assert_called_once()
+        kwargs = handler.call_args[1]
+        assert isinstance(kwargs['exception'], TimeLimitExceeded)
+        assert kwargs['task_id'] == job.id
+
+    def test_on_hard_timeout_sends_task_failed_event(self, patching):
+        """Hard timeout must emit a task-failed monitoring event."""
+        patching('celery.worker.request.error')
+
+        job = self.xRequest()
+        job.send_event = Mock(name='send_event')
+        job.on_timeout(soft=False, timeout=1337)
+
+        job.send_event.assert_called_once_with(
+            'task-failed',
+            exception=ANY,
+            traceback=ANY,
+        )
         assert self.app.use_fast_trace_task is False
         setup_worker_optimizations(self.app)
         assert self.app.use_fast_trace_task is True

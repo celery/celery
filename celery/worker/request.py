@@ -10,7 +10,7 @@ from time import monotonic, time
 from weakref import ref
 
 from billiard.common import TERM_SIGNAME
-from billiard.einfo import ExceptionWithTraceback
+from billiard.einfo import ExceptionInfo, ExceptionWithTraceback
 from kombu.utils.encoding import safe_repr, safe_str
 from kombu.utils.objects import cached_property
 
@@ -542,6 +542,32 @@ class Request:
                 self.task.backend.mark_as_failure(
                     self.id, exc, request=self._context,
                     store_result=self.store_errors,
+                )
+
+                # Invoke the same failure hooks that a normal task failure
+                # triggers so that on_failure callbacks, errbacks, and
+                # the task_failure signal all fire for hard timeouts.
+                try:
+                    raise exc
+                except TimeLimitExceeded:
+                    einfo = ExceptionInfo()
+
+                self.task.on_failure(exc, self.id, self.args, self.kwargs, einfo)
+
+                signals.task_failure.send(
+                    sender=self.task,
+                    task_id=self.id,
+                    exception=exc,
+                    args=self.args,
+                    kwargs=self.kwargs,
+                    traceback=einfo.traceback,
+                    einfo=einfo,
+                )
+
+                self.send_event(
+                    'task-failed',
+                    exception=safe_repr(exc),
+                    traceback=einfo.traceback,
                 )
 
             if self.task.acks_late:
