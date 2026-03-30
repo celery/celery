@@ -1028,6 +1028,29 @@ General
     The soft time limit for this task.
     When not set the workers default is used.
 
+.. note::
+
+    **Hard vs soft time limit failure semantics**
+
+    When a *soft* time limit fires, a :exc:`~celery.exceptions.SoftTimeLimitExceeded`
+    exception is raised inside the worker child process, so
+    :meth:`~celery.app.task.Task.on_failure`, errbacks, and the
+    :signal:`task_failure` signal are all invoked normally.
+
+    When a *hard* time limit fires the child process is killed and the
+    timeout is handled in the parent (main worker) process.
+    :meth:`~celery.app.task.Task.on_failure`, errbacks, and the
+    :signal:`task_failure` signal are also invoked from the parent process
+    so that cleanup hooks fire consistently for both limit types.
+
+    .. versionchanged:: 5.7
+
+        Hard time limits now invoke :meth:`~celery.app.task.Task.on_failure`,
+        errbacks, and :signal:`task_failure` in the parent worker process,
+        matching the behavior of soft time limits.
+        Previously only :meth:`~celery.backends.base.BaseBackend.mark_as_failure`
+        was called.
+
 .. attribute:: Task.ignore_result
 
     Don't store task state. Note that this means you can't use
@@ -1043,10 +1066,10 @@ General
     to ignore results.
 
     .. versionchanged:: 5.7
-        Previously, if the ``ignore_result`` key was missing from the request 
-        message, ``store_errors`` would default to ``True``, ignoring the 
-        task's own ``ignore_result`` setting. The worker now correctly 
-        falls back to ``Task.ignore_result`` when no per-request override 
+        Previously, if the ``ignore_result`` key was missing from the request
+        message, ``store_errors`` would default to ``True``, ignoring the
+        task's own ``ignore_result`` setting. The worker now correctly
+        falls back to ``Task.ignore_result`` when no per-request override
         is present.
 
 .. attribute:: Task.serializer
@@ -1608,9 +1631,9 @@ The following diagram shows the exact order of execution:
     └───────────────────────────────────────────────────────────────┘
 
 .. important::
-   
+
    **Key points:**
-   
+
    - All handlers run in the **same worker process** as your task
    - ``before_start`` **blocks** the task - ``run()`` won't start until it completes
    - Result backend is updated **before** ``on_success``/``on_failure`` - other clients can see the task as finished while handlers are still running
@@ -1723,19 +1746,19 @@ Example usage
     from celery import Task
 
     class MyTask(Task):
-        
+
         def before_start(self, task_id, args, kwargs):
             print(f"Task {task_id} starting with args {args}")
             # This blocks - run() won't start until this returns
-            
+
         def on_success(self, retval, task_id, args, kwargs):
             print(f"Task {task_id} succeeded with result: {retval}")
             # Result is already visible to clients at this point
-            
+
         def on_failure(self, exc, task_id, args, kwargs, einfo):
             print(f"Task {task_id} failed: {exc}")
             # Task state is already FAILURE in backend
-            
+
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
             print(f"Task {task_id} finished with status: {status}")
             # Always runs last
@@ -1764,8 +1787,9 @@ strongly recommend to inherit from `celery.worker.request.Request`:class:.
 When using the `pre-forking worker <worker-concurrency>`:ref:, the methods
 `~celery.worker.request.Request.on_timeout`:meth: and
 `~celery.worker.request.Request.on_failure`:meth: are executed in the main
-worker process.  An application may leverage such facility to detect failures
-which are not detected using `celery.app.task.Task.on_failure`:meth:.
+worker process.  An application may leverage this facility to add extra
+observability or side-effects around task failures and timeouts beyond what
+`celery.app.task.Task.on_failure`:meth: provides.
 
 As an example, the following custom request detects and logs hard time
 limits, and other failures.
