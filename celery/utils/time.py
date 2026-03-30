@@ -229,7 +229,9 @@ def remaining(
         if now.utcoffset() > start.utcoffset() or isinstance(ends_in, ffwd):
             start = start.replace(tzinfo=now.tzinfo)
         elif isinstance(start.tzinfo, ZoneInfo) and not isinstance(ends_in, ffwd):
-            transition_offset = timedelta(hours=1)
+            offset_delta = start.utcoffset() - now.utcoffset()
+            if offset_delta > ZERO:
+                transition_offset = offset_delta
     end_date = start + ends_in - transition_offset
     if relative:
         end_date = delta_resolution(end_date, ends_in).replace(microsecond=0)
