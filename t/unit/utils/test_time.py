@@ -5,7 +5,7 @@ from datetime import tzinfo
 from unittest.mock import Mock, patch
 
 import pytest
-import pytz
+pytz = pytest.importorskip('pytz')
 
 if sys.version_info >= (3, 9):
     from zoneinfo import ZoneInfo
