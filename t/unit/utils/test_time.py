@@ -229,11 +229,11 @@ def test_remaining():
     assert next_run == next_actual_time
     
     """
-    Case 5: DST check (pytz, ffwd)
-    Suppose start (which is last_run_time) is in EST while next_run is in EDT,
+    Case 6: DST end check (pytz, ffwd)
+    Suppose start (which is last_run_time) is in EDT while next_run is in EST,
     then check whether the `next_run` is actually the time specified in the
-    start (i.e. there is not an hour diff due to DST).
-    In 2019, DST starts on March 10
+    start (i.e. there is not an hour diff due to the end of DST).
+    This scenario models the end of DST on November 6, 2022.
     """
     start = eastern_tz_pytz.localize(datetime(day=6, month=11, year=2022, hour=1, minute=15), is_dst=True)
     now = eastern_tz_pytz.localize(datetime(day=6, month=11, year=2022, hour=5, minute=0), is_dst=False)
