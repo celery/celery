@@ -57,7 +57,6 @@ class DatabaseBackend(BaseBackend):
                  dburi=None,
                  engine_options=None,
                  url=None,
-                 url=None,
                  *,
                  schema_extensions: Optional[Dict[Literal['task', 'group'], List[SchemaExtension]]] = None,
                  **kwargs):
