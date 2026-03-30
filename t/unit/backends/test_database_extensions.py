@@ -1,4 +1,5 @@
 import pytest
+
 pytest.importorskip("sqlalchemy")
 from sqlalchemy import Index, MetaData, String, Table
 from sqlalchemy.types import JSON, PickleType
