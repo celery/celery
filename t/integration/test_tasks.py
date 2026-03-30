@@ -18,7 +18,8 @@ from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connect
 from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result, add_not_typed, add_pydantic,
                     add_pydantic_string_annotations, fail, fail_unpickleable, print_unicode, retry, retry_once,
                     retry_once_headers, retry_once_priority, retry_unpickleable, return_properties,
-                    second_order_replace1, sleeping, soft_time_limit_must_exceed_time_limit)
+                    return_request_time_limits, second_order_replace1, sleeping,
+                    soft_time_limit_must_exceed_time_limit, task_with_declared_time_limits)
 
 TIMEOUT = 10
 
@@ -524,6 +525,42 @@ class test_tasks:
             result.get(timeout=5)
 
             assert result.status == 'FAILURE'
+
+    @flaky
+    def test_request_time_limits_set_via_apply_async(self, manager):
+        """time_limit and soft_time_limit passed to apply_async must be accessible
+        via task.request.time_limit and task.request.soft_time_limit inside the task."""
+        result = return_request_time_limits.apply_async(time_limit=30, soft_time_limit=20)
+        data = result.get(timeout=TIMEOUT)
+        assert data['time_limit'] == 30
+        assert data['soft_time_limit'] == 20
+
+    @flaky
+    def test_request_time_limits_none_when_not_configured(self, manager):
+        """When no time limits are set, task.request.time_limit and
+        task.request.soft_time_limit must both be None."""
+        result = return_request_time_limits.apply_async()
+        data = result.get(timeout=TIMEOUT)
+        assert data['time_limit'] is None
+        assert data['soft_time_limit'] is None
+
+    @flaky
+    def test_request_time_limits_from_task_declaration(self, manager):
+        """A task with time_limit and soft_time_limit declared at class level must
+        expose those values via task.request.time_limit and task.request.soft_time_limit."""
+        result = task_with_declared_time_limits.apply_async()
+        data = result.get(timeout=TIMEOUT)
+        assert data['time_limit'] == 60
+        assert data['soft_time_limit'] == 45
+
+    @flaky
+    def test_apply_async_time_limits_override_task_declaration(self, manager):
+        """time_limit and soft_time_limit passed to apply_async must override
+        values declared at the task class level."""
+        result = task_with_declared_time_limits.apply_async(time_limit=10, soft_time_limit=5)
+        data = result.get(timeout=TIMEOUT)
+        assert data['time_limit'] == 10
+        assert data['soft_time_limit'] == 5
 
 
 class test_apply_tasks:

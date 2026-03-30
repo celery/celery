@@ -399,6 +399,12 @@ def fun_takes_argument(name, fun, position=None):
 
 def fun_accepts_kwargs(fun):
     """Return true if function accepts arbitrary keyword arguments."""
+    # inspect.signature evaluates annotations in Python 3.14+ (PEP 649),
+    # which raises NameError for types only imported under TYPE_CHECKING.
+    # Check co_flags directly to avoid touching annotations entirely.
+    code = getattr(fun, '__code__', None)
+    if code is not None:
+        return bool(code.co_flags & inspect.CO_VARKEYWORDS)
     return any(
         p for p in inspect.signature(fun).parameters.values()
         if p.kind == p.VAR_KEYWORD
