@@ -348,8 +348,8 @@ The request defines the following attributes:
 :called_directly: This flag is set to true if the task wasn't
                   executed by the worker.
 
-:timelimit: A tuple of the current ``(hard, soft)`` time limits active for
-            this task (if any).
+:timelimit: A 2-item sequence ``(hard, soft)`` of the current time limits
+            active for this task (if any).
 
 :time_limit: The hard time limit (in seconds) active for this task, or :const:`None`
              if no hard limit is set. This value is unpacked from :attr:`timelimit`
