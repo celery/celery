@@ -3125,15 +3125,16 @@ connections will be established and closed for every use.
 
 Default: :const:`None` (block indefinitely).
 
-The maximum number of seconds to wait when acquiring a connection or producer
+The maximum number of seconds Celery will wait when high-level sending APIs
+such as :meth:`~celery.app.base.Celery.send_task` or
+:meth:`~celery.app.task.Task.apply_async` acquire a connection or producer
 from the broker pool. When all :setting:`broker_pool_limit` connections are in
-use, ``pool.acquire`` will block up to this many seconds before raising
+use, such calls will block up to this many seconds before raising
 :exc:`~celery.exceptions.OperationalError`.
 
-Set this to a positive number (e.g. ``120``) to prevent
-``send_task`` / ``apply_async`` calls from blocking indefinitely under
-high concurrency. When :const:`None`, the previous behavior of blocking
-without a timeout is preserved.
+Set this to a positive number (e.g. ``120``) to prevent these calls from
+blocking indefinitely under high concurrency. When :const:`None`, the
+previous behavior of blocking without a timeout is preserved.
 
 .. setting:: broker_connection_timeout
 
