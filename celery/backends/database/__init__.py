@@ -71,7 +71,7 @@ class DatabaseBackend(BaseBackend):
             (Added as a keyword-only argument in 5.4.0.)
         :param kwargs: Additional keyword arguments.
 
-        .. versionchanged:: 5.4.0
+        .. versionchanged:: 5.7.0
             The `schema_extensions` parameter is now a keyword-only argument to avoid breaking
             existing code that passes arguments positionally. If you previously passed arguments
             positionally, please update your code to use keyword arguments for new parameters.
