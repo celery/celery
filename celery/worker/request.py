@@ -14,9 +14,9 @@ from billiard.einfo import ExceptionInfo, ExceptionWithTraceback
 from kombu.utils.encoding import safe_repr, safe_str
 from kombu.utils.objects import cached_property
 
-from celery import current_app, signals
+from celery import current_app, signals, states
 from celery.app.task import Context
-from celery.app.trace import fast_trace_task, trace_task, trace_task_ret
+from celery.app.trace import fast_trace_task, task_has_custom, trace_task, trace_task_ret
 from celery.concurrency.base import BasePool
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError, Terminated,
                                TimeLimitExceeded, WorkerLostError)
@@ -554,6 +554,11 @@ class Request:
 
                 self.task.on_failure(exc, self.id, self.args, self.kwargs, einfo)
 
+                if task_has_custom(self.task, 'after_return'):
+                    self.task.after_return(
+                        states.FAILURE, exc, self.id, self.args, self.kwargs, einfo,
+                    )
+
                 signals.task_failure.send(
                     sender=self.task,
                     task_id=self.id,
@@ -566,7 +571,7 @@ class Request:
 
                 self.send_event(
                     'task-failed',
-                    exception=safe_repr(exc),
+                    exception=safe_repr(get_pickled_exception(einfo.exception)),
                     traceback=einfo.traceback,
                 )
 

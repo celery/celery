@@ -1272,6 +1272,35 @@ class test_Request(RequestCase):
             exception=ANY,
             traceback=ANY,
         )
+
+    def test_on_hard_timeout_calls_after_return(self, patching):
+        """Hard timeout must invoke task.after_return when overridden."""
+        patching('celery.worker.request.error')
+
+        after_return_mock = Mock(name='after_return')
+
+        class TaskWithAfterReturn(self.app.Task):
+            name = 'test.task_with_after_return'
+
+            def run(self):
+                pass
+
+            def after_return(self, status, retval, task_id, args, kwargs, einfo):
+                after_return_mock(status, retval, task_id, args, kwargs, einfo)
+
+        task_instance = TaskWithAfterReturn()
+        self.app.tasks.register(task_instance)
+
+        job = self.xRequest(name=TaskWithAfterReturn.name)
+        job.on_timeout(soft=False, timeout=1337)
+
+        after_return_mock.assert_called_once()
+        call_args = after_return_mock.call_args[0]
+        assert call_args[0] == 'FAILURE'
+        assert isinstance(call_args[1], TimeLimitExceeded)
+        assert call_args[2] == job.id
+
+    def test_fast_trace_task(self):
         assert self.app.use_fast_trace_task is False
         setup_worker_optimizations(self.app)
         assert self.app.use_fast_trace_task is True
