@@ -57,9 +57,25 @@ class DatabaseBackend(BaseBackend):
                  dburi=None,
                  engine_options=None,
                  url=None,
+                 url=None,
                  *,
                  schema_extensions: Optional[Dict[Literal['task', 'group'], List[SchemaExtension]]] = None,
                  **kwargs):
+        """
+        Initialize the DatabaseBackend.
+
+        :param dburi: Database URI.
+        :param engine_options: SQLAlchemy engine options.
+        :param url: Alternative way to specify the database URL.
+        :param schema_extensions: Optional dictionary of schema extensions for 'task' and 'group'.
+            (Added as a keyword-only argument in 5.4.0.)
+        :param kwargs: Additional keyword arguments.
+
+        .. versionchanged:: 5.4.0
+            The `schema_extensions` parameter is now a keyword-only argument to avoid breaking
+            existing code that passes arguments positionally. If you previously passed arguments
+            positionally, please update your code to use keyword arguments for new parameters.
+        """
         # The `url` argument was added later and is used by
         # the app to set backend by url (celery.app.backends.by_url)
         super().__init__(expires_type=maybe_timedelta,
