@@ -1033,9 +1033,12 @@ General
     **Hard vs soft time limit failure semantics**
 
     When a *soft* time limit fires, a :exc:`~celery.exceptions.SoftTimeLimitExceeded`
-    exception is raised inside the worker child process, so
+    exception is raised inside the worker child process. If this exception
+    propagates and causes the task attempt to fail,
     :meth:`~celery.app.task.Task.on_failure`, errbacks, and the
-    :signal:`task_failure` signal are all invoked normally.
+    :signal:`task_failure` signal are all invoked as for any other task failure.
+    Task code may also catch :exc:`~celery.exceptions.SoftTimeLimitExceeded`
+    and exit normally, in which case these failure hooks are not triggered.
 
     When a *hard* time limit fires the child process is killed and the
     timeout is handled in the parent (main worker) process.
