@@ -1007,8 +1007,16 @@ class test_EagerResult:
 
     def test_get(self):
         tid = uuid()
-        res_subtask_async = EagerResult(tid, 'x', 'x', states.SUCCESS)
-        res_subtask_async.get()
+        res_subtask_async = EagerResult(tid, 'x', states.SUCCESS)
+        assert res_subtask_async.get() == 'x'
+
+    def test_get_sync_subtask_option(self):
+        tid = uuid()
+        res_subtask_async = EagerResult(tid, 'x', states.SUCCESS)
+        with pytest.deprecated_call():
+            assert res_subtask_async.get(disable_sync_subtasks=False) == 'x'
+        with pytest.deprecated_call():
+            assert res_subtask_async.get(disable_sync_subtasks=True) == 'x'
 
     def test_populate_name(self):
         res = EagerResult('x', 'x', states.SUCCESS, None, 'test_task')
