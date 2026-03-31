@@ -699,9 +699,10 @@ class test_call_task_errbacks:
 
     def test_new_style_errback_exception_is_caught(self):
         """Exception raised by new-style errback should not propagate."""
-        from celery.backends.base import BaseBackend
+        from unittest.mock import MagicMock, Mock, patch
+
         from celery.app.utils import Settings
-        from unittest.mock import patch, Mock, MagicMock
+        from celery.backends.base import BaseBackend
 
         b = self._make_backend()
 
@@ -727,8 +728,9 @@ class test_call_task_errbacks:
 
     def test_new_style_errback_exception_does_not_crash_flow(self):
         """Exception in one new-style errback should not prevent others from running."""
+        from unittest.mock import Mock, call, patch
+
         from celery.backends.base import BaseBackend
-        from unittest.mock import patch, Mock, call
 
         b = self._make_backend()
 
@@ -774,8 +776,9 @@ class test_call_task_errbacks:
 
     def test_new_style_errback_exception_logged(self):
         """Exception in new-style errback should be logged via logger.exception."""
+        from unittest.mock import Mock, patch
+
         from celery.backends.base import BaseBackend
-        from unittest.mock import patch, Mock
 
         b = self._make_backend()
 
@@ -802,9 +805,10 @@ class test_call_task_errbacks:
 
     def test_new_style_errback_wrapped_in_try_except(self):
         """Verify the try/except wraps the errback call by checking no exception escapes."""
-        from celery.backends.base import BaseBackend
-        from unittest.mock import patch, Mock
         import inspect
+        from unittest.mock import Mock, patch
+
+        from celery.backends.base import BaseBackend
 
         b = self._make_backend()
 
