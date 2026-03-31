@@ -556,7 +556,7 @@ class Request:
 
                 if task_has_custom(self.task, 'after_return'):
                     self.task.after_return(
-                        states.FAILURE, exc, self.id, self.args, self.kwargs, einfo,
+                        states.FAILURE, exc, self.id, self.args, self.kwargs, None,
                     )
 
                 signals.task_failure.send(
