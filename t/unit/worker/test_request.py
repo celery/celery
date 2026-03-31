@@ -1300,7 +1300,33 @@ class test_Request(RequestCase):
         assert isinstance(call_args[1], TimeLimitExceeded)
         assert call_args[2] == job.id
 
-    def test_fast_trace_task(self):
+    def test_on_hard_timeout_clears_synthetic_traceback(self, patching):
+        """exc.__traceback__ must be None after on_timeout returns (memory leak fix #8882).
+
+        The synthetic traceback created to build ExceptionInfo captures the
+        on_timeout frame, which holds self (the Request object) and all task
+        state.  If not cleared this prevents timely garbage-collection under
+        frequent hard timeouts.
+        """
+        patching('celery.worker.request.error')
+
+        captured = {}
+        original_mark = self.mytask.backend.mark_as_failure
+
+        def capture_exc(task_id, exc, **kw):
+            captured['exc'] = exc
+            return original_mark(task_id, exc, **kw)
+
+        with patch.object(self.mytask.backend, 'mark_as_failure', capture_exc):
+            job = self.xRequest()
+            job.on_timeout(soft=False, timeout=1337)
+
+        assert 'exc' in captured, "mark_as_failure should have been called"
+        assert captured['exc'].__traceback__ is None, (
+            "exc.__traceback__ must be cleared after on_timeout to prevent "
+            "the on_timeout frame (and its locals including self/Request) from "
+            "being retained by the traceback reference cycle"
+        )
         assert self.app.use_fast_trace_task is False
         setup_worker_optimizations(self.app)
         assert self.app.use_fast_trace_task is True
