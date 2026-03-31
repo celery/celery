@@ -565,7 +565,7 @@ class Request:
                     exception=exc,
                     args=self.args,
                     kwargs=self.kwargs,
-                    traceback=einfo.traceback,
+                    traceback=exc.__traceback__,
                     einfo=einfo,
                 )
 
