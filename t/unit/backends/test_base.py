@@ -658,6 +658,174 @@ class test_BaseBackend_dict:
             'exc_message': (),
             'exc_type': 'object',
             'exc_module': 'builtins'
+
+
+class test_call_task_errbacks:
+    """Tests for _call_task_errbacks new-style errback exception handling."""
+
+    def setup_method(self):
+        self.app = celery.app
+
+    def _make_backend(self):
+        from celery.backends.base import BaseBackend
+        return BaseBackend(app=self.app)
+
+    def _make_request(self, errbacks):
+        """Create a mock request with the given errbacks list."""
+        request = Mock()
+        request.errbacks = errbacks
+        request.id = 'test-task-id'
+        request.root_id = 'test-root-id'
+        request.delivery_info = {}
+        return request
+
+    def _make_new_style_errback(self, side_effect=None):
+        """
+        Create a mock errback signature that looks like a new-style errback
+        (has __header__ attribute with arity > 1).
+        """
+        from functools import partial as functools_partial
+        errback_sig = Mock()
+        errback_sig._app = self.app
+        # Make it look like a new-style errback: has __header__, not partial, arity > 1
+        header_mock = Mock()
+        errback_sig.type = Mock()
+        errback_sig.type.__header__ = header_mock
+        # Ensure it's not a partial
+        assert not isinstance(errback_sig.type.__header__, functools_partial)
+        if side_effect:
+            errback_sig.side_effect = side_effect
+        return errback_sig
+
+    def test_new_style_errback_exception_is_caught(self):
+        """Exception raised by new-style errback should not propagate."""
+        from celery.backends.base import BaseBackend
+        from celery.app.utils import Settings
+        from unittest.mock import patch, Mock, MagicMock
+
+        b = self._make_backend()
+
+        errback_sig = Mock()
+        errback_sig._app = self.app
+        errback_sig.side_effect = RuntimeError('errback failed')
+
+        # Patch to ensure it's treated as new-style
+        header_mock = Mock()
+        errback_sig.type = Mock()
+        errback_sig.type.__header__ = header_mock
+
+        raw_errback = {'task': 'some_task'}
+        request = self._make_request([raw_errback])
+
+        with patch.object(self.app, 'signature', return_value=errback_sig), \
+             patch('celery.backends.base.arity_greater', return_value=True), \
+             patch('celery.backends.base.logger') as mock_logger:
+            # Should NOT raise — exception must be caught internally
+            b._call_task_errbacks(request, ValueError('task failed'), 'tb')
+            # Logger should have been called with exception info
+            assert mock_logger.exception.called
+
+    def test_new_style_errback_exception_does_not_crash_flow(self):
+        """Exception in one new-style errback should not prevent others from running."""
+        from celery.backends.base import BaseBackend
+        from unittest.mock import patch, Mock, call
+
+        b = self._make_backend()
+
+        call_order = []
+
+        def make_errback_sig(name, should_raise=False):
+            sig = Mock(name=name)
+            sig._app = self.app
+            header_mock = Mock()
+            sig.type = Mock()
+            sig.type.__header__ = header_mock
+            if should_raise:
+                def _call(*args, **kwargs):
+                    call_order.append(name)
+                    raise RuntimeError(f'{name} failed')
+                sig.side_effect = _call
+            else:
+                def _call(*args, **kwargs):
+                    call_order.append(name)
+                sig.side_effect = _call
+            return sig
+
+        raw_errbacks = [{'task': 'errback1'}, {'task': 'errback2'}, {'task': 'errback3'}]
+        request = self._make_request(raw_errbacks)
+
+        sig1 = make_errback_sig('errback1', should_raise=False)
+        sig2 = make_errback_sig('errback2', should_raise=True)
+        sig3 = make_errback_sig('errback3', should_raise=False)
+
+        sigs = [sig1, sig2, sig3]
+        sig_iter = iter(sigs)
+
+        def _signature(eb):
+            return next(sig_iter)
+
+        with patch.object(self.app, 'signature', side_effect=_signature), \
+             patch('celery.backends.base.arity_greater', return_value=True), \
+             patch('celery.backends.base.logger'):
+            b._call_task_errbacks(request, ValueError('task failed'), 'tb')
+
+        # All three errbacks should have been called
+        assert call_order == ['errback1', 'errback2', 'errback3']
+
+    def test_new_style_errback_exception_logged(self):
+        """Exception in new-style errback should be logged via logger.exception."""
+        from celery.backends.base import BaseBackend
+        from unittest.mock import patch, Mock
+
+        b = self._make_backend()
+
+        exc_to_raise = RuntimeError('something went wrong in errback')
+        errback_sig = Mock()
+        errback_sig._app = self.app
+        errback_sig.side_effect = exc_to_raise
+        errback_sig.type = Mock()
+        errback_sig.type.__header__ = Mock()
+
+        request = self._make_request([{'task': 'failing_errback'}])
+
+        with patch.object(self.app, 'signature', return_value=errback_sig), \
+             patch('celery.backends.base.arity_greater', return_value=True), \
+             patch('celery.backends.base.logger') as mock_logger:
+            b._call_task_errbacks(request, ValueError('original failure'), 'tb')
+
+        mock_logger.exception.assert_called_once()
+        # Ensure the errback and exception are mentioned in the log call
+        log_args = mock_logger.exception.call_args
+        assert exc_to_raise in log_args[0] or exc_to_raise in log_args[1].values() or \
+               any(exc_to_raise is a for a in log_args[0]) or \
+               str(exc_to_raise) in str(log_args)
+
+    def test_new_style_errback_wrapped_in_try_except(self):
+        """Verify the try/except wraps the errback call by checking no exception escapes."""
+        from celery.backends.base import BaseBackend
+        from unittest.mock import patch, Mock
+        import inspect
+
+        b = self._make_backend()
+
+        # This test ensures the function itself doesn't re-raise
+        errback_sig = Mock()
+        errback_sig._app = self.app
+        errback_sig.side_effect = Exception('inner exception')
+        errback_sig.type = Mock()
+        errback_sig.type.__header__ = Mock()
+
+        request = self._make_request([{'task': 'eb'}])
+
+        with patch.object(self.app, 'signature', return_value=errback_sig), \
+             patch('celery.backends.base.arity_greater', return_value=True), \
+             patch('celery.backends.base.logger'):
+            try:
+                b._call_task_errbacks(request, ValueError('fail'), 'tb')
+            except Exception as e:
+                raise AssertionError(
+                    f'Exception escaped _call_task_errbacks: {e!r}'
+                ) from e
         }
 
         with pytest.raises(SecurityError,
