@@ -579,7 +579,7 @@ class ResultSet(ResultBase):
 
     _app = None
 
-    #: List of results in in the set.
+    #: List of results in the set.
     results = None
 
     def __init__(self, results, app=None, ready_barrier=None, **kwargs):
@@ -783,7 +783,6 @@ class ResultSet(ResultBase):
         if disable_sync_subtasks:
             assert_will_not_block()
         time_start = time.monotonic()
-        remaining = None
 
         if on_message is not None:
             raise ImproperlyConfigured(
@@ -1046,7 +1045,7 @@ class EagerResult(AsyncResult):
         Arguments:
             timeout: No effect. This method never waits.
             propagate (bool): Re-raise exception if the task failed.
-            disable_sync_subtask: No effect.
+            disable_sync_subtasks: No effect.
 
         Raises:
             Exception: If the task raised an exception and `propagate` is True.
