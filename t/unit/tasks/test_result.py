@@ -1010,13 +1010,18 @@ class test_EagerResult:
         res_subtask_async = EagerResult(tid, 'x', states.SUCCESS)
         assert res_subtask_async.get() == 'x'
 
-    def test_get_sync_subtask_option(self):
+    def test_get_sync_subtask_option(self, recwarn):
         tid = uuid()
         res_subtask_async = EagerResult(tid, 'x', states.SUCCESS)
         with pytest.deprecated_call():
             assert res_subtask_async.get(disable_sync_subtasks=False) == 'x'
         with pytest.deprecated_call():
             assert res_subtask_async.get(disable_sync_subtasks=True) == 'x'
+
+        rs = ResultSet([res_subtask_async])
+        # this must not raise a warning (it calls EagerResult.get)
+        rs.get(disable_sync_subtasks=False)
+        assert len(recwarn) == 0
 
     def test_populate_name(self):
         res = EagerResult('x', 'x', states.SUCCESS, None, 'test_task')

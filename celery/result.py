@@ -1,6 +1,7 @@
 """Task results/state and results for groups of tasks."""
 
 import datetime
+import inspect
 import time
 import types
 import warnings
@@ -1051,9 +1052,12 @@ class EagerResult(AsyncResult):
             Exception: If the task raised an exception and `propagate` is True.
         """
         if disable_sync_subtasks is not None:
-            warnings.warn(
-                'Passing `disable_sync_subtasks` to EagerResult.get has no effect.',
-                CDeprecationWarning, stacklevel=2)
+            stack = inspect.stack()
+            # if this method was called from outside Celery
+            if stack[1].filename != __file__:
+                warnings.warn(
+                    'Passing `disable_sync_subtasks` to EagerResult.get has no effect.',
+                    CDeprecationWarning, stacklevel=2)
         if self.successful():
             return self.result
         elif self.state in states.PROPAGATE_STATES:
