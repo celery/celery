@@ -1050,7 +1050,7 @@ class EagerResult(AsyncResult):
         Raises:
             Exception: If the task raised an exception and `propagate` is True.
         """
-        if disable_sync_subtasks is not None:
+        if disable_sync_subtasks is False:
             warnings.warn(
                 'Passing `disable_sync_subtasks` to EagerResult.get has no effect.',
                 CDeprecationWarning, stacklevel=2)
