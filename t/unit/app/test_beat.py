@@ -415,7 +415,7 @@ class test_Scheduler:
         scheduler = mScheduler(app=self.app)
 
         now_ts = 1514797200.2
-        now = datetime.utcfromtimestamp(now_ts)
+        now = datetime.fromtimestamp(now_ts, tz=timezone.utc)
         schedule_half = schedule(timedelta(seconds=0.5), nowfun=lambda: now)
         scheduler.add(name='half_second_schedule', schedule=schedule_half)
 
