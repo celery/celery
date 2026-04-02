@@ -1015,7 +1015,8 @@ class test_EagerResult:
         res_subtask_async = EagerResult(tid, 'x', states.SUCCESS)
         with pytest.deprecated_call():
             assert res_subtask_async.get(disable_sync_subtasks=False) == 'x'
-        assert res_subtask_async.get(disable_sync_subtasks=True) == 'x'
+        with pytest.deprecated_call():
+            assert res_subtask_async.get(disable_sync_subtasks=True) == 'x'
 
     def test_populate_name(self):
         res = EagerResult('x', 'x', states.SUCCESS, None, 'test_task')
