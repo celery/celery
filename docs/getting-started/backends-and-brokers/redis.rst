@@ -148,6 +148,8 @@ See :func:`~kombu.utils.functional.retry_over_time` for the possible retry polic
 Additional connection errors
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. versionadded:: 5.7
+
 Some Redis proxies or cloud providers may raise custom exceptions that Celery
 does not recognize as connection errors. To have these retried automatically,
 use the ``additional_connection_errors`` key under
