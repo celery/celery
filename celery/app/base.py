@@ -1109,7 +1109,7 @@ class Celery:
             pool_limit = self.conf.broker_pool_limit
             raise OperationalError(
                 f"Timed out waiting for a broker producer after "
-                f"{timeout}s. All {pool_limit} connections are in use. "
+                f"{timeout}s. All {pool_limit} producer slots are in use. "
                 f"Consider increasing broker_pool_limit (currently "
                 f"{pool_limit}) or broker_pool_acquire_timeout "
                 f"(currently {timeout}s)."
