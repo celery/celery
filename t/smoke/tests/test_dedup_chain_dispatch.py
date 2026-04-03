@@ -17,7 +17,7 @@ from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup
 from celery import Celery
 from celery.canvas import chain
 from celery.result import AsyncResult
-from t.integration.tasks import identity, store_success_then_reject
+from t.integration.tasks import identity, reject_then_succeed, store_success_then_reject
 
 
 class test_dedup_chain_dispatch:
@@ -29,6 +29,15 @@ class test_dedup_chain_dispatch:
         app.conf.worker_deduplicate_successful_tasks = True
         app.conf.task_acks_late = True
         return app
+
+    def test_reject_requeue_completes_chain(self, celery_setup: CeleryTestSetup):
+        """Reject passthrough: chain completes after rejection + redelivery."""
+        queue = celery_setup.worker.worker_queue
+        c = chain(
+            reject_then_succeed.s().set(queue=queue),
+            identity.s().set(queue=queue),
+        )
+        assert c.apply_async().get(timeout=RESULT_TIMEOUT) == 'second-pass'
 
     def test_dedup_dispatches_chain_on_redelivery(self, celery_setup: CeleryTestSetup):
         """Core: dedup fast-path dispatches the chain on redelivery."""
