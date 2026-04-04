@@ -313,8 +313,15 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             'result_backend_transport_options', {})
         additional = transport_options.get(
             'additional_connection_errors', ())
-        if isinstance(additional, (str, type)):
+        if additional is None:
+            additional = ()
+        elif isinstance(additional, (str, type)):
             additional = (additional,)
+        else:
+            try:
+                iter(additional)
+            except TypeError:
+                additional = (additional,)
         if additional:
             extra = []
             for cls in additional:
