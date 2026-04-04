@@ -32,7 +32,7 @@ class Connection(bootsteps.StartStopStep):
             ignore_errors(connection, connection.close)
 
     def shutdown(self, c):
-        # We must set self.connection to None here, so
+        # We must set c.connection to None here, so
         # that the green pidbox thread exits.
         self.stop(c)
 
