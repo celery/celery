@@ -15,7 +15,14 @@ from t.smoke.tasks import add
 
 
 class test_quorum_qos:
-    """Quorum queue task execution with QoS-related settings."""
+    """Quorum queue task execution with QoS-related settings.
+
+    Note: The original integration test (test_quorum_queue_qos_cluster_simulation)
+    spawned 3 billiard processes to test multi-worker QoS race conditions. That
+    scenario cannot be reproduced in the single-worker smoke test framework.
+    These tests verify that QoS-related settings work correctly on quorum queues
+    in a single-worker environment.
+    """
 
     @pytest.fixture
     def default_worker_app(self, default_worker_app: Celery) -> Celery:

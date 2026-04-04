@@ -9,12 +9,24 @@ from __future__ import annotations
 import pytest
 from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup
 
-from celery import chord
+from celery import Celery, chord
 from t.smoke.tasks import add, summarize_results
 
 
 class test_chord_unlock_routing:
     """Chord unlock routing to quorum queues with topic exchanges."""
+
+    @pytest.fixture
+    def default_worker_app(self, default_worker_app: Celery) -> Celery:
+        app = default_worker_app
+        app.conf.task_default_exchange_type = "topic"
+        app.conf.task_routes = {
+            "celery.chord_unlock": {
+                "queue": app.conf.task_default_queue or "celery",
+                "exchange_type": "topic",
+            },
+        }
+        return app
 
     @pytest.mark.xfail(
         reason="chord_unlock routed to quorum/topic queue intermittently fails under load",
