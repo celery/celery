@@ -156,6 +156,7 @@ class test_worker_shutdown(SuiteOperations):
         def default_worker_app(self, default_worker_app: Celery) -> Celery:
             app = default_worker_app
             app.conf.broker_heartbeat = 2
+            app.conf.task_acks_late = True
             return app
 
         def test_shutdown_with_long_running_tasks(self, celery_setup: CeleryTestSetup):
