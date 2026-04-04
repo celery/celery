@@ -14,7 +14,7 @@ from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.utils.collections import LimitedSet
 from celery.utils.quorum_queues import detect_quorum_queues
 from celery.worker.consumer.agent import Agent
-from celery.worker.consumer.consumer import CANCEL_TASKS_BY_DEFAULT, CLOSE, TERMINATE, Consumer
+from celery.worker.consumer.consumer import CANCEL_TASKS_BY_DEFAULT, CLOSE, COLLECT_SOCKET_TIMEOUT, TERMINATE, Consumer
 from celery.worker.consumer.gossip import Gossip
 from celery.worker.consumer.heart import Heart
 from celery.worker.consumer.mingle import Mingle
@@ -370,14 +370,14 @@ class test_Consumer(ConsumerTestCase):
         c.blueprint.start.side_effect = socket.error()
         c.blueprint.restart.side_effect = self._closer(c)
         c.start()
-        c.connection.collect.assert_called_with(socket_timeout=5)
+        c.connection.collect.assert_called_with(socket_timeout=COLLECT_SOCKET_TIMEOUT)
 
     def test_collects_with_socket_timeout_on_connection_error(self):
         # collect() must always be called with an explicit socket_timeout to
         # prevent the cleanup path from blocking indefinitely on a dead socket.
         c = self.get_consumer()
         c.on_connection_error_after_connected(Mock())
-        c.connection.collect.assert_called_once_with(socket_timeout=5)
+        c.connection.collect.assert_called_once_with(socket_timeout=COLLECT_SOCKET_TIMEOUT)
 
     def test_register_with_event_loop(self):
         c = self.get_consumer()

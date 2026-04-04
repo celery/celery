@@ -61,6 +61,11 @@ CONNECTION_FAILOVER = """\
 Will retry using next failover.\
 """
 
+#: Timeout (seconds) passed to ``connection.collect()`` when cleaning up
+#: a broken broker connection.  Prevents the cleanup path from blocking
+#: indefinitely on a dead socket (see :issue:`9705`).
+COLLECT_SOCKET_TIMEOUT = 5.0
+
 UNKNOWN_FORMAT = """\
 Received and deleted unknown message.  Wrong destination?!?
 
@@ -388,7 +393,7 @@ class Consumer:
             # cannot block indefinitely.  The default of None would set
             # the global socket timeout to blocking-forever, which can
             # cause the worker to hang here and never reach the reconnect.
-            self.connection.collect(socket_timeout=5)
+            self.connection.collect(socket_timeout=COLLECT_SOCKET_TIMEOUT)
         except Exception:  # pylint: disable=broad-except
             pass
 
