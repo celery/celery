@@ -383,7 +383,12 @@ class Consumer:
     def on_connection_error_after_connected(self, exc):
         warn(CONNECTION_RETRY, exc_info=True)
         try:
-            self.connection.collect()
+            # Pass an explicit socket_timeout so that cleanup I/O on a
+            # broken connection (e.g. _brpop_read during Channel.close)
+            # cannot block indefinitely.  The default of None would set
+            # the global socket timeout to blocking-forever, which can
+            # cause the worker to hang here and never reach the reconnect.
+            self.connection.collect(socket_timeout=5)
         except Exception:  # pylint: disable=broad-except
             pass
 
