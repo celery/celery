@@ -789,10 +789,13 @@ class ResultSet(ResultBase):
         Returns:
             list: A list of task return values in the same order as the
                 results in this set. If ``callback`` is provided, the
-                callback handles each value and an empty list is returned.
-                If any task failed and ``propagate`` is false, the
-                corresponding position in the list contains the exception
-                instance instead of a return value.
+                callback handles each value and no aggregated results are
+                returned (``join()`` returns an empty list; note that
+                :meth:`join_native`, which :meth:`get` may delegate to,
+                returns ``None`` in that case). If any task failed and
+                ``propagate`` is false, the corresponding position in the
+                list contains the exception instance instead of a return
+                value.
         """
         if disable_sync_subtasks:
             assert_will_not_block()
