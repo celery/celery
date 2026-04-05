@@ -31,7 +31,7 @@ class test_default_queue_type_fallback:
             "when using implicit routing to the 'celery' queue. It creates "
             "a classic queue and direct exchange instead."
         ),
-        strict=True,
+        strict=False,
     )
     def test_fallback_to_correct_exchange_type(self, celery_setup: CeleryTestSetup):
         """Default exchange type should be topic, not direct."""

@@ -17,11 +17,8 @@ from t.smoke.tests.quorum_queues.conftest import RabbitMQManagementBroker
 
 
 class test_native_delayed_delivery_binding:
-    """Verify delayed delivery bindings are created on worker startup.
-
-    The worker's task_queues includes a non-consumed queue (queue-a) whose
-    binding may fail. The consumed queue must still get its delayed delivery
-    bindings despite the earlier failure.
+    """Verify the worker's consumed queue receives native delayed-delivery
+    bindings on startup, alongside its immediate delivery binding.
     """
 
     @pytest.fixture
@@ -46,9 +43,10 @@ class test_native_delayed_delivery_binding:
         response.raise_for_status()
         delayed_bindings = response.json()
 
+        expected_rk = f"#.{queue}"
         queue_delayed_bindings = [
             b for b in delayed_bindings
-            if queue in b.get("routing_key", "")
+            if b.get("routing_key") == expected_rk
         ]
         assert len(queue_delayed_bindings) >= 1, (
             f"Expected delayed delivery binding for {queue!r}, "

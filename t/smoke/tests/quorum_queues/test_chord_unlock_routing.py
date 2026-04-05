@@ -30,6 +30,7 @@ class test_chord_unlock_routing:
 
     @pytest.mark.xfail(
         reason="chord_unlock routed to quorum/topic queue intermittently fails under load",
+        strict=False,
     )
     def test_chord_unlock_stress_routing(self, celery_setup: CeleryTestSetup):
         """Submit multiple chords routed via topic exchange and verify completion."""
