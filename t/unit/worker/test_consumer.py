@@ -367,18 +367,27 @@ class test_Consumer(ConsumerTestCase):
 
     def test_collects_at_restart(self):
         c = self.get_consumer()
-        c.connection.collect.side_effect = MemoryError()
+        old_conn = c.connection
+        old_conn.collect.side_effect = MemoryError()
         c.blueprint.start.side_effect = socket.error()
         c.blueprint.restart.side_effect = self._closer(c)
         c.start()
-        c.connection.collect.assert_called_with(socket_timeout=COLLECT_SOCKET_TIMEOUT)
+        old_conn.collect.assert_called_with(socket_timeout=COLLECT_SOCKET_TIMEOUT)
+        # The broken connection is closed and cleared by the error handler
+        old_conn.close.assert_called_once()
+        assert c.connection is None
 
     def test_collects_with_socket_timeout_on_connection_error(self):
         # collect() must always be called with an explicit socket_timeout to
         # prevent the cleanup path from blocking indefinitely on a dead socket.
         c = self.get_consumer()
+        old_conn = c.connection
         c.on_connection_error_after_connected(Mock())
-        c.connection.collect.assert_called_once_with(socket_timeout=COLLECT_SOCKET_TIMEOUT)
+        old_conn.collect.assert_called_once_with(socket_timeout=COLLECT_SOCKET_TIMEOUT)
+        # The broken connection must be closed and cleared so that
+        # blueprint.restart() starts fresh.
+        old_conn.close.assert_called_once()
+        assert c.connection is None
 
     def test_register_with_event_loop(self):
         c = self.get_consumer()
@@ -1093,59 +1102,64 @@ class test_ConnectionStep:
         return step, c
 
     # ------------------------------------------------------------------
-    # stop() — the core fix: must close c.connection during restart
+    # shutdown() - closes the connection for final cleanup
     # ------------------------------------------------------------------
 
-    def test_stop_closes_connection(self):
-        """stop() closes c.connection and sets it to None."""
+    def test_shutdown_closes_connection(self):
+        """shutdown() closes c.connection and sets it to None."""
         step, c = self._get_step_and_consumer()
         conn = Mock(name='conn')
         c.connection = conn
 
-        step.stop(c)
+        step.shutdown(c)
 
         conn.close.assert_called_once()
         assert c.connection is None
 
-    def test_stop_is_safe_when_connection_is_none(self):
-        """stop() does not crash when c.connection is already None."""
+    def test_shutdown_is_safe_when_connection_is_none(self):
+        """shutdown() does not crash when c.connection is already None."""
         step, c = self._get_step_and_consumer()
         c.connection = None
 
-        step.stop(c)  # must not raise
+        step.shutdown(c)  # must not raise
 
-    def test_stop_ignores_close_errors(self):
-        """stop() swallows exceptions raised by connection.close()."""
+    # ------------------------------------------------------------------
+    # close_connection() - used by error handler and shutdown
+    # ------------------------------------------------------------------
+
+    def test_close_connection_closes_and_clears(self):
+        """close_connection() closes c.connection and sets it to None."""
         step, c = self._get_step_and_consumer()
-        # ignore_errors(conn, fn) reads conn.connection_errors + conn.channel_errors,
-        # so the mock connection needs real exception tuples.
+        conn = Mock(name='conn')
+        c.connection = conn
+
+        step.close_connection(c)
+
+        conn.close.assert_called_once()
+        assert c.connection is None
+
+    def test_close_connection_ignores_close_errors(self):
+        """close_connection() swallows exceptions from connection.close()."""
+        step, c = self._get_step_and_consumer()
         conn = Mock(name='conn')
         conn.connection_errors = (OSError,)
         conn.channel_errors = ()
         conn.close.side_effect = OSError('socket already closed')
         c.connection = conn
 
-        step.stop(c)  # must not raise
+        step.close_connection(c)  # must not raise
 
         assert c.connection is None
 
-    # ------------------------------------------------------------------
-    # shutdown() — must delegate to stop() so the logic lives in one place
-    # ------------------------------------------------------------------
-
-    def test_shutdown_delegates_to_stop(self):
-        """shutdown() reuses stop() so both paths close the connection."""
-        from celery.worker.consumer.connection import Connection
+    def test_close_connection_is_safe_when_none(self):
+        """close_connection() does not crash when c.connection is None."""
         step, c = self._get_step_and_consumer()
-        conn = Mock(name='conn')
-        c.connection = conn
+        c.connection = None
 
-        with patch.object(Connection, 'stop') as mock_stop:
-            step.shutdown(c)
-            mock_stop.assert_called_once_with(c)
+        step.close_connection(c)  # must not raise
 
     # ------------------------------------------------------------------
-    # start() — sanity check that the connection is stored on c
+    # start() - sanity check that the connection is stored on c
     # ------------------------------------------------------------------
 
     def test_start_stores_connection_on_consumer(self):

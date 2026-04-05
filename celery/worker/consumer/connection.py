@@ -21,12 +21,13 @@ class Connection(bootsteps.StartStopStep):
         c.connection = c.connect()
         info('Connected to %s', c.connection.as_uri())
 
-    def stop(self, c):
-        # Called during blueprint.restart() on connection loss.
-        # c.connection lives on the consumer, not on self.obj, so the
-        # inherited StartStopStep.stop() (which guards on self.obj) would
-        # be a no-op.  We must close it explicitly here so that the old,
-        # broken socket is released before the reconnect attempt.
+    def close_connection(self, c):
+        """Close and clear c.connection.
+
+        Used by shutdown() for final cleanup. The error handler in
+        on_connection_error_after_connected() performs the same close
+        inline to release the broken socket before blueprint.restart().
+        """
         connection, c.connection = c.connection, None
         if connection:
             ignore_errors(connection, connection.close)
@@ -34,7 +35,7 @@ class Connection(bootsteps.StartStopStep):
     def shutdown(self, c):
         # We must set c.connection to None here, so
         # that the green pidbox thread exits.
-        self.stop(c)
+        self.close_connection(c)
 
     def info(self, c):
         params = 'N/A'
