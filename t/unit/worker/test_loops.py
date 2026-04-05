@@ -466,6 +466,87 @@ class test_asynloop:
             asynloop(*x.args)
         x.hub.reset.assert_called_once()
 
+    def test_hub_timer_cleared_on_connection_error(self):
+        # Stale timer entries (e.g. maybe_restore_messages) must be cleared
+        # when the event loop exits due to a connection error.  Without this,
+        # entries accumulated across reconnects can fire against the broken
+        # connection and crash the loop again before the new connection is
+        # fully established, causing a rapid restart loop.
+        x = X(self.app)
+        x.hub.readers = {6: Mock()}
+        x.hub.timer._queue = [1]
+        x.hub.reset = Mock(name='hub.reset()')
+        x.close_then_error(x.hub.poller.poll)
+        x.hub.fire_timers.return_value = 33.37
+        x.hub.poller.poll.return_value = []
+        with pytest.raises(socket.error):
+            asynloop(*x.args)
+        x.hub.timer.clear.assert_called_once()
+
+    def test_hub_timer_not_cleared_on_graceful_shutdown(self):
+        # On graceful shutdown the timer queue must be left intact so that
+        # periodic timers (e.g. heartbeat) keep firing while the pool drains.
+        x = X(self.app)
+        x.hub.reset = Mock(name='hub.reset()')
+        x.hub.on_tick.add(x.closer(mod=2))
+        asynloop(*x.args)
+        x.hub.timer.clear.assert_not_called()
+
+    def test_hub_timer_not_cleared_on_worker_shutdown(self):
+        x = X(self.app)
+        x.hub.reset = Mock(name='hub.reset()')
+        state.should_stop = 303
+        try:
+            with pytest.raises(WorkerShutdown):
+                asynloop(*x.args)
+        finally:
+            state.should_stop = None
+        x.hub.timer.clear.assert_not_called()
+
+    def test_hub_timer_not_cleared_on_worker_terminate(self):
+        x = X(self.app)
+        x.hub.reset = Mock(name='hub.reset()')
+        state.should_terminate = True
+        try:
+            with pytest.raises(WorkerTerminate):
+                asynloop(*x.args)
+        finally:
+            state.should_terminate = None
+        x.hub.timer.clear.assert_not_called()
+
+    def test_hub_timer_clear_error_still_reraises_original(self):
+        # If hub.timer.clear() itself raises, the original connection error
+        # must still be propagated, not the cleanup error.
+        x = X(self.app)
+        x.hub.readers = {6: Mock()}
+        x.hub.timer._queue = [1]
+        x.hub.reset = Mock(name='hub.reset()')
+        x.hub.timer.clear = Mock(
+            name='hub.timer.clear()', side_effect=RuntimeError('clear failed')
+        )
+        x.close_then_error(x.hub.poller.poll)
+        x.hub.fire_timers.return_value = 33.37
+        x.hub.poller.poll.return_value = []
+        with pytest.raises(socket.error):
+            asynloop(*x.args)
+        x.hub.timer.clear.assert_called_once()
+
+    def test_hub_timer_cleared_even_when_reset_raises(self):
+        # hub.timer.clear() must still be called even if hub.reset() raises.
+        # The two cleanup calls are in separate try/except blocks so that a
+        # failure in hub.reset() does not prevent stale timer entries from
+        # being discarded, avoiding stale timers persisting after a reset error.
+        x = X(self.app)
+        x.hub.readers = {6: Mock()}
+        x.hub.timer._queue = [1]
+        x.hub.reset = Mock(name='hub.reset()', side_effect=RuntimeError('reset failed'))
+        x.close_then_error(x.hub.poller.poll)
+        x.hub.fire_timers.return_value = 33.37
+        x.hub.poller.poll.return_value = []
+        with pytest.raises(socket.error):
+            asynloop(*x.args)
+        x.hub.timer.clear.assert_called_once()
+
     def test_hub_not_reset_on_graceful_shutdown(self):
         x = X(self.app)
         x.hub.reset = Mock(name='hub.reset()')
@@ -581,6 +662,49 @@ class test_synloop:
         synloop(*x.args)
 
         x.obj.timer.call_repeatedly.assert_not_called()
+
+    def test_hub_reset_on_connection_error(self):
+        x = X(self.app)
+        x.hub.reset = Mock(name='hub.reset()')
+        x.timeout_then_error(x.connection.drain_events)
+        with pytest.raises(socket.error):
+            synloop(*x.args)
+        x.hub.reset.assert_called_once()
+
+    def test_hub_not_reset_on_graceful_shutdown(self):
+        x = X(self.app)
+        x.hub.reset = Mock(name='hub.reset()')
+
+        def drain_events(timeout):
+            x.blueprint.state = CLOSE
+        x.connection.drain_events.side_effect = drain_events
+        synloop(*x.args)
+        x.hub.reset.assert_not_called()
+
+    def test_hub_reset_with_none_hub(self):
+        x = X(self.app)
+        x.args[4] = None  # hub is None
+        x.timeout_then_error(x.connection.drain_events)
+        with pytest.raises(socket.error):
+            synloop(*x.args)
+
+    def test_hub_reset_error_is_logged(self):
+        x = X(self.app)
+        reset_error = RuntimeError('reset failed')
+        x.hub.reset = Mock(name='hub.reset()', side_effect=reset_error)
+        x.timeout_then_error(x.connection.drain_events)
+        with pytest.raises(socket.error):
+            synloop(*x.args)
+        x.hub.reset.assert_called_once()
+
+    def test_hub_reset_error_logs_exception(self, caplog):
+        x = X(self.app)
+        reset_error = RuntimeError('reset failed')
+        x.hub.reset = Mock(name='hub.reset()', side_effect=reset_error)
+        x.timeout_then_error(x.connection.drain_events)
+        with pytest.raises(socket.error):
+            synloop(*x.args)
+        assert 'Error cleaning up after sync event loop' in caplog.text
 
 
 class test_quick_drain:
