@@ -1,1 +1,1 @@
-msgpack==1.1.0
+kombu[msgpack]

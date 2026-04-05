@@ -6,7 +6,6 @@ from datetime import datetime, timedelta, timezone
 from time import monotonic, sleep
 
 import pytest
-import pytest_subtests  # noqa
 
 from celery import chain, chord, group, signature
 from celery.backends.base import BaseKeyValueStoreBackend
@@ -16,7 +15,7 @@ from celery.result import AsyncResult, GroupResult, ResultSet
 from celery.signals import before_task_publish, task_received
 
 from . import tasks
-from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connection
+from .conftest import TEST_BACKEND, check_for_logs, flaky, get_active_redis_channels, get_redis_connection
 from .tasks import (ExpectedException, StampOnReplace, add, add_chord_to_chord, add_replaced, add_to_all,
                     add_to_all_to_chord, build_chain_inside_task, collect_ids, delayed_sum,
                     delayed_sum_with_soft_guard, errback_new_style, errback_old_style, fail, fail_replaced, identity,
@@ -25,21 +24,7 @@ from .tasks import (ExpectedException, StampOnReplace, add, add_chord_to_chord, 
                     replace_with_stamped_task, retry_once, return_exception, return_priority, second_order_replace1,
                     tsum, write_to_file_and_return_int, xsum)
 
-RETRYABLE_EXCEPTIONS = (OSError, ConnectionError, TimeoutError)
-
-
-def is_retryable_exception(exc):
-    return isinstance(exc, RETRYABLE_EXCEPTIONS)
-
-
 TIMEOUT = 60
-
-_flaky = pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
-_timeout = pytest.mark.timeout(timeout=300)
-
-
-def flaky(fn):
-    return _timeout(_flaky(fn))
 
 
 def await_redis_echo(expected_msgs, redis_key="redis-echo", timeout=TIMEOUT):
@@ -440,6 +425,48 @@ class test_chain:
 
         res = c()
         assert res.get(timeout=TIMEOUT) == 12
+
+    @flaky
+    def test_chain_of_explicit_chords(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c1 = chain(
+            chord(group(add.si(1, 0), add.si(1, 0)), tsum.s()),
+            chord(group(add.s(1), add.s(1)), tsum.s()),
+            chord(group(add.s(0), add.s(0)), tsum.s()),
+        )
+        c2 = chain(
+            chord(group(add.s(10), add.s(10)), tsum.s()),
+            chord(group(add.s(0), add.s(0)), tsum.s()),
+            chord(group(add.s(1), add.s(1)), tsum.s()),
+        )
+        c = c1 | c2
+        res = c()
+        assert res.get(timeout=TIMEOUT) == 178
+
+    @flaky
+    def test_chain_of_nine_chords(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = chain(
+            chord(group(add.si(1, 0), add.si(1, 0), add.si(1, 0)), tsum.s()),
+            chord(group(add.s(1), add.s(1), add.s(1)), tsum.s()),
+            chord(group(add.s(1), add.s(1), add.s(1)), tsum.s()),
+            chord(group(add.s(1), add.s(1), add.s(1)), tsum.s()),
+            chord(group(add.s(1), add.s(1), add.s(1)), tsum.s()),
+            chord(group(add.s(1), add.s(1), add.s(1)), tsum.s()),
+            chord(group(add.s(1), add.s(1), add.s(1)), tsum.s()),
+            chord(group(add.s(1), add.s(1), add.s(1)), tsum.s()),
+            chord(group(add.s(0), add.s(0), add.s(0)), tsum.s()),
+        )
+        res = c()
+        assert res.get(timeout=TIMEOUT) == 29520
 
     @flaky
     def test_chain_of_a_chord_and_a_group_with_two_tasks(self, manager):
@@ -1574,6 +1601,13 @@ class test_group:
         orig_sig = group(identity.s(42), replace_with_chain.s(1337))
         res_obj = orig_sig.delay()
         assert res_obj.get(timeout=TIMEOUT) == [42, 1337]
+
+    def test_task_replace_with_group_preserves_group_order(self, manager):
+        if manager.app.conf.result_backend.startswith("rpc"):
+            raise pytest.skip("RPC result backend does not support replacing with a group")
+        orig_sig = group([add_to_all.s([2, 1], 1), add_to_all.s([4, 3], 1)] * 10)
+        res_obj = orig_sig.delay()
+        assert res_obj.get(timeout=TIMEOUT) == [[3, 2], [5, 4]] * 10
 
 
 def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
@@ -2862,6 +2896,60 @@ class test_chord:
         res_obj = orig_sig.delay()
         assert res_obj.get(timeout=TIMEOUT) == [42]
 
+    def test_nested_chord_header_link_error(self, manager, subtests):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        errback_msg = "errback called"
+        errback_key = "echo_errback"
+        errback_sig = redis_echo.si(errback_msg, redis_key=errback_key)
+
+        body_msg = "chord body called"
+        body_key = "echo_body"
+        body_sig = redis_echo.si(body_msg, redis_key=body_key)
+
+        redis_connection.delete(errback_key, body_key)
+
+        manager.app.conf.task_allow_error_cb_on_chord_header = False
+
+        chord_inner = chord(
+            [identity.si("t1"), fail.si()],
+            identity.si("t2 (body)"),
+        )
+        chord_outer = chord(
+            group(
+                [
+                    identity.si("t3"),
+                    chord_inner,
+                ],
+            ),
+            body_sig,
+        )
+        chord_outer.link_error(errback_sig)
+        chord_outer.delay()
+
+        with subtests.test(msg="Confirm the body was not executed"):
+            with pytest.raises(TimeoutError):
+                # confirm the chord body was not called
+                await_redis_echo((body_msg,), redis_key=body_key, timeout=10)
+            # Double check
+            assert not redis_connection.exists(body_key), "Chord body was called when it should have not"
+
+        with subtests.test(msg="Confirm only one errback was called"):
+            await_redis_echo((errback_msg,), redis_key=errback_key, timeout=10)
+            with pytest.raises(TimeoutError):
+                # Double check
+                await_redis_echo((errback_msg,), redis_key=errback_key, timeout=10)
+
+        # Cleanup
+        redis_connection.delete(errback_key)
+
     def test_enabling_flag_allow_error_cb_on_chord_header(self, manager, subtests):
         """
         Test that the flag allow_error_callback_on_chord_header works as
@@ -3096,6 +3184,90 @@ class test_chord:
                 sig.apply_async().get(timeout=TIMEOUT)
 
         redis_connection.delete(errback_key, body_key)
+
+    @flaky
+    @pytest.mark.parametrize(
+        "input_body",
+        [
+            (lambda: add.si(9, 7)),
+            (
+                lambda: chain(
+                    add.si(9, 7),
+                    add.si(5, 7),
+                )
+            ),
+            (
+                lambda: group(
+                    [
+                        add.si(9, 7),
+                        add.si(5, 7),
+                    ]
+                )
+            ),
+            (
+                lambda: chord(
+                    group(
+                        [
+                            add.si(1, 1),
+                            add.si(2, 2),
+                        ]
+                    ),
+                    add.si(10, 10),
+                )
+            ),
+        ],
+        ids=[
+            "body is a single_task",
+            "body is a chain",
+            "body is a group",
+            "body is a chord",
+        ],
+    )
+    def test_chord_error_propagation_with_different_body_types(
+        self, manager, caplog, input_body
+    ) -> None:
+        """Integration test for issue #9773: task_id must not be empty on chain of groups.
+
+        This test reproduces the exact scenario from GitHub issue #9773 where a chord
+        with a failing group task and a chain body causes a ValueError during error handling.
+
+        The test verifies that:
+        1. The chord executes without the "task_id must not be empty" error
+        2. The failure from the group properly propagates to the chain body
+        3. Error handling works correctly with proper task IDs
+
+        Args:
+            input_body (callable): A callable that returns a Celery signature for the body of the chord.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        # Create the failing group header (same for all tests)
+        failing_chord = chain(
+            group(
+                [
+                    add.si(15, 7),
+                    # failing task
+                    fail.si(),
+                ]
+            ),
+            # dynamic parametrized body
+            input_body(),
+        )
+
+        result = failing_chord.apply_async()
+
+        # The chain should fail due to the failing task in the group
+        with pytest.raises(ExpectedException):
+            result.get(timeout=TIMEOUT)
+
+        # Verify that error propagation worked correctly without the task_id error
+        # This test passes if no "task_id must not be empty" error was logged
+        # Check if the message appears in the logs (it shouldn't)
+        error_found = check_for_logs(caplog=caplog, message="ValueError: task_id must not be empty")
+        assert not error_found, "The 'task_id must not be empty' error was found in the logs"
 
 
 class test_signature_serialization:

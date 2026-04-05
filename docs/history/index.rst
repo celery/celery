@@ -13,6 +13,8 @@ version please visit :ref:`changelog`.
 .. toctree::
     :maxdepth: 2
 
+    whatsnew-5.6
+    changelog-5.6
     whatsnew-5.5
     changelog-5.5
     whatsnew-5.4

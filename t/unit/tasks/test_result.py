@@ -390,6 +390,30 @@ class test_AsyncResult:
 
         assert not self.app.AsyncResult(uuid()).ready()
 
+    def test_exists(self):
+        """Test that exists() returns True for stored results and False for unknown IDs."""
+        # Tasks with stored results should exist (SUCCESS, FAILURE, RETRY)
+        assert self.app.AsyncResult(self.task1["id"]).exists()
+        assert self.app.AsyncResult(self.task2["id"]).exists()
+        assert self.app.AsyncResult(self.task3["id"]).exists()
+
+        # RETRY state should also exist
+        assert self.app.AsyncResult(self.task4["id"]).exists()
+
+        # A random/unknown task ID should not exist
+        assert not self.app.AsyncResult(uuid()).exists()
+
+        # Multiple unknown IDs should all return False
+        assert not self.app.AsyncResult(uuid()).exists()
+        assert not self.app.AsyncResult("totally-fake-id").exists()
+
+    def test_exists_returns_bool(self):
+        """Test that exists() returns a proper boolean type."""
+        result_exists = self.app.AsyncResult(self.task1["id"]).exists()
+        result_missing = self.app.AsyncResult(uuid()).exists()
+        assert isinstance(result_exists, bool)
+        assert isinstance(result_missing, bool)
+
     @pytest.mark.skipif(
         platform.python_implementation() == "PyPy",
         reason="Mocking here doesn't play well with PyPy",
@@ -448,6 +472,20 @@ class test_AsyncResult:
 
         result = Backend(app=self.app)._get_result_meta(None, states.SUCCESS, None, None)
         assert result.get('date_done') == date
+
+    def test_forget_remove_pending_result(self):
+        with patch('celery.result.AsyncResult.backend') as backend:
+            result = self.app.AsyncResult(self.task1['id'])
+            result.backend = backend
+            result_clone = copy.copy(result)
+            result.forget()
+            backend.remove_pending_result.assert_called_once_with(
+                result_clone
+            )
+
+        result = self.app.AsyncResult(self.task1['id'])
+        result.backend = None
+        del result
 
 
 class test_ResultSet:

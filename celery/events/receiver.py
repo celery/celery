@@ -8,6 +8,7 @@ from kombu.mixins import ConsumerMixin
 
 from celery import uuid
 from celery.app import app_or_default
+from celery.exceptions import ImproperlyConfigured
 from celery.utils.time import adjust_timestamp
 
 from .event import get_exchange
@@ -34,7 +35,9 @@ class EventReceiver(ConsumerMixin):
 
     def __init__(self, channel, handlers=None, routing_key='#',
                  node_id=None, app=None, queue_prefix=None,
-                 accept=None, queue_ttl=None, queue_expires=None):
+                 accept=None, queue_ttl=None, queue_expires=None,
+                 queue_exclusive=None,
+                 queue_durable=None):
         self.app = app_or_default(app or self.app)
         self.channel = maybe_channel(channel)
         self.handlers = {} if handlers is None else handlers
@@ -48,11 +51,22 @@ class EventReceiver(ConsumerMixin):
             queue_ttl = self.app.conf.event_queue_ttl
         if queue_expires is None:
             queue_expires = self.app.conf.event_queue_expires
+        if queue_exclusive is None:
+            queue_exclusive = self.app.conf.event_queue_exclusive
+        if queue_durable is None:
+            queue_durable = self.app.conf.event_queue_durable
+        if queue_exclusive and queue_durable:
+            raise ImproperlyConfigured(
+                'Queue cannot be both exclusive and durable, '
+                'choose one or the other.'
+            )
         self.queue = Queue(
             '.'.join([self.queue_prefix, self.node_id]),
             exchange=self.exchange,
             routing_key=self.routing_key,
-            auto_delete=True, durable=False,
+            auto_delete=not queue_durable,
+            durable=queue_durable,
+            exclusive=queue_exclusive,
             message_ttl=queue_ttl,
             expires=queue_expires,
         )
