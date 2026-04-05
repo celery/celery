@@ -258,9 +258,6 @@ A default priority for all tasks can also be specified using the
 
     app.conf.task_default_priority = 5
 
-.. _amqp-primer:
-
-
 .. _redis-message-priorities:
 
 Redis Message Priorities
@@ -321,6 +318,8 @@ That said, note that this will never be as good as priorities implemented at the
 broker server level, and may be approximate at best. But it may still be good
 enough for your application.
 
+
+.. _amqp-primer:
 
 AMQP Primer
 ===========
