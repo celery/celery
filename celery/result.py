@@ -1,8 +1,10 @@
 """Task results/state and results for groups of tasks."""
 
 import datetime
+import inspect
 import time
 import types
+import warnings
 from collections import deque
 from contextlib import contextmanager
 from weakref import proxy
@@ -14,7 +16,7 @@ from vine import Thenable, barrier, promise
 from . import current_app, states
 from ._state import _set_task_join_will_block, task_join_will_block
 from .app import app_or_default
-from .exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
+from .exceptions import CDeprecationWarning, ImproperlyConfigured, IncompleteStream, TimeoutError
 from .utils.graph import DependencyGraph, GraphFormatter
 
 try:
@@ -578,7 +580,7 @@ class ResultSet(ResultBase):
 
     _app = None
 
-    #: List of results in in the set.
+    #: List of results in the set.
     results = None
 
     def __init__(self, results, app=None, ready_barrier=None, **kwargs):
@@ -782,7 +784,6 @@ class ResultSet(ResultBase):
         if disable_sync_subtasks:
             assert_will_not_block()
         time_start = time.monotonic()
-        remaining = None
 
         if on_message is not None:
             raise ImproperlyConfigured(
@@ -1038,10 +1039,25 @@ class EagerResult(AsyncResult):
         return True
 
     def get(self, timeout=None, propagate=True,
-            disable_sync_subtasks=True, **kwargs):
-        if disable_sync_subtasks:
-            assert_will_not_block()
+            disable_sync_subtasks=None,         # deprecated
+            **kwargs):
+        """Return the result of an eagerly executed task.
 
+        Arguments:
+            timeout: No effect. This method never waits.
+            propagate (bool): Re-raise exception if the task failed.
+            disable_sync_subtasks: No effect.
+
+        Raises:
+            Exception: If the task raised an exception and `propagate` is True.
+        """
+        if disable_sync_subtasks is not None:
+            stack = inspect.stack()
+            # if this method was called from outside Celery
+            if stack[1].filename != __file__:
+                warnings.warn(
+                    'Passing `disable_sync_subtasks` to EagerResult.get has no effect.',
+                    CDeprecationWarning, stacklevel=2)
         if self.successful():
             return self.result
         elif self.state in states.PROPAGATE_STATES:

@@ -1005,14 +1005,23 @@ class test_EagerResult:
         res = self.raising.apply(args=[3, 3])
         assert not res.revoke()
 
-    @patch('celery.result.task_join_will_block')
-    def test_get_sync_subtask_option(self, task_join_will_block):
-        task_join_will_block.return_value = True
+    def test_get(self):
         tid = uuid()
-        res_subtask_async = EagerResult(tid, 'x', 'x', states.SUCCESS)
-        with pytest.raises(RuntimeError):
-            res_subtask_async.get()
-        res_subtask_async.get(disable_sync_subtasks=False)
+        res_subtask_async = EagerResult(tid, 'x', states.SUCCESS)
+        assert res_subtask_async.get() == 'x'
+
+    def test_get_sync_subtask_option(self, recwarn):
+        tid = uuid()
+        res_subtask_async = EagerResult(tid, 'x', states.SUCCESS)
+        with pytest.deprecated_call():
+            assert res_subtask_async.get(disable_sync_subtasks=False) == 'x'
+        with pytest.deprecated_call():
+            assert res_subtask_async.get(disable_sync_subtasks=True) == 'x'
+
+        rs = ResultSet([res_subtask_async])
+        # this must not raise a warning (it calls EagerResult.get)
+        rs.get(disable_sync_subtasks=False)
+        assert len(recwarn) == 0
 
     def test_populate_name(self):
         res = EagerResult('x', 'x', states.SUCCESS, None, 'test_task')
