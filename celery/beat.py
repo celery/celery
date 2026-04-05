@@ -400,14 +400,19 @@ class Scheduler:
         try:
             entry_args = _evaluate_entry_args(entry.args)
             entry_kwargs = _evaluate_entry_kwargs(entry.kwargs)
+
+            # Add custom header to identify tasks from Celery Beat
+            options = entry.options.copy()
+            options.setdefault('headers', {})['celery_beat_task'] = True
+
             if task:
                 return task.apply_async(entry_args, entry_kwargs,
                                         producer=producer,
-                                        **entry.options)
+                                        **options)
             else:
                 return self.send_task(entry.task, entry_args, entry_kwargs,
                                       producer=producer,
-                                      **entry.options)
+                                      **options)
         except Exception as exc:  # pylint: disable=broad-except
             reraise(SchedulingError, SchedulingError(
                 "Couldn't apply scheduled task {0.name}: {exc}".format(
