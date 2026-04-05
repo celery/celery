@@ -48,6 +48,12 @@ __all__ = (
 # exitcodes
 EX_OK = getattr(os, 'EX_OK', 0)
 EX_FAILURE = 1
+
+# Maximum file descriptors to iterate when /proc is unavailable.
+# Prevents excessive iteration in containers where fdmax can be ~1 billion.
+# See: https://github.com/celery/celery/issues/9886
+_FDMAX_FALLBACK_LIMIT = 8192
+
 EX_UNAVAILABLE = getattr(os, 'EX_UNAVAILABLE', 69)
 EX_USAGE = getattr(os, 'EX_USAGE', 64)
 EX_CANTCREAT = getattr(os, 'EX_CANTCREAT', 73)
@@ -304,7 +310,17 @@ def fd_by_path(paths):
         except OSError:
             return False
 
-    return [_fd for _fd in range(get_fdmax(2048)) if fd_in_stats(_fd)]
+    # On Linux, use /proc to get the actual open file descriptors efficiently.
+    # On other systems (macOS, BSD, etc.), fall back to iterating up to a capped limit.
+    # This prevents extremely long iteration in containers where fdmax can be ~1 billion.
+    # See: https://github.com/celery/celery/issues/9886
+    try:
+        fds = [int(fd) for fd in os.listdir(f'/proc/{os.getpid()}/fd')]
+    except (OSError, FileNotFoundError):
+        # /proc not available (non-Linux) or permission denied
+        fds = range(min(get_fdmax(2048), _FDMAX_FALLBACK_LIMIT))
+
+    return [_fd for _fd in fds if fd_in_stats(_fd)]
 
 
 class DaemonContext:
