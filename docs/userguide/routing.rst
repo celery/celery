@@ -226,9 +226,11 @@ RabbitMQ Message Priorities
 .. versionadded:: 4.0
 
 With RabbitMQ, **higher priority numbers denote higher priority**: a task
-with ``priority=9`` is processed before a task with ``priority=0``. This
-matches RabbitMQ's native ``x-max-priority`` semantics and is the opposite
-of how Redis handles priorities (see :ref:`redis-message-priorities`).
+with ``priority=9`` will generally be delivered ahead of a task with
+``priority=0``. This matches RabbitMQ's native ``x-max-priority``
+semantics and is the opposite of how Redis handles priorities (see
+:ref:`redis-message-priorities`); it describes broker ordering rather than
+a strict guarantee about worker processing order.
 
 Queues can be configured to support priorities by setting the
 ``x-max-priority`` argument:
