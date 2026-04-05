@@ -4,7 +4,7 @@ from __future__ import annotations
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 from typing import TYPE_CHECKING, Any, Callable
 
-from .base import BasePool, apply_target
+from .base import AsyncPoolShutdownMixin, BasePool, apply_target
 
 __all__ = ('TaskPool',)
 
@@ -27,7 +27,7 @@ class ApplyResult:
         wait([self.f], timeout)
 
 
-class TaskPool(BasePool):
+class TaskPool(BasePool, AsyncPoolShutdownMixin):
     """Thread Task Pool."""
     limit: int
 
@@ -39,7 +39,9 @@ class TaskPool(BasePool):
         self.executor = ThreadPoolExecutor(max_workers=self.limit)
 
     def on_stop(self) -> None:
-        self.executor.shutdown()
+        self.shutdown_with_timer_loop(
+            pool_type="threads", shutdown_function=self.executor.shutdown
+        )
         super().on_stop()
 
     def on_apply(

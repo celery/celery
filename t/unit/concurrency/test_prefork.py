@@ -812,8 +812,8 @@ class test_TaskPool:
         pool.on_close()
         pool._pool.close.assert_not_called()
 
-    @patch('celery.concurrency.prefork.get_event_loop')
-    @patch('celery.concurrency.prefork.threading.Thread')
+    @patch('celery.concurrency.base.get_event_loop')
+    @patch('celery.concurrency.base.Thread')
     def test_on_stop_with_hub_fires_timers(self, mock_thread, mock_get_event_loop):
         pool = TaskPool(10)
         mock_pool = Mock(name='pool')
@@ -835,9 +835,9 @@ class test_TaskPool:
         mock_timer_thread.start.assert_called_once()
         mock_timer_thread.join.assert_called_once_with(timeout=1.0)
 
-    @patch('celery.concurrency.prefork.get_event_loop')
-    @patch('celery.concurrency.prefork.threading.Thread')
-    @patch('celery.concurrency.prefork.threading.Event')
+    @patch('celery.concurrency.base.get_event_loop')
+    @patch('celery.concurrency.base.Thread')
+    @patch('celery.concurrency.base.Event')
     def test_on_stop_timer_thread_handles_exceptions(
         self,
         mock_event_class,
@@ -870,13 +870,13 @@ class test_TaskPool:
 
         pool.on_stop()
 
-        with patch('celery.concurrency.prefork.time.sleep'):
+        with patch('celery.concurrency.base.time.sleep'):
             thread_target()
 
         # Should match number of loop iterations allowed by mock_shutdown_event.is_set.side_effect
         assert mock_hub.fire_timers.call_count == 2
 
-    @patch('celery.concurrency.prefork.get_event_loop')
+    @patch('celery.concurrency.base.get_event_loop')
     def test_on_stop_no_hub(self, mock_get_event_loop):
         pool = TaskPool(10)
         mock_pool = Mock(name='pool')
