@@ -271,6 +271,12 @@ class Backend:
                 # If the task is not registered there, the worker will raise
                 # NotRegistered.
                 old_signature.append(errback)
+            except Exception:
+                # Log and continue so that one failing errback does not
+                # prevent subsequent errbacks from running.
+                self._logger.exception(
+                    'errback %r raised exception', errback,
+                )
 
         if old_signature:
             # Previously errback was called as a task so we still
