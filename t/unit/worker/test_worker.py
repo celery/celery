@@ -148,7 +148,7 @@ class test_Consumer(ConsumerCase):
         c.blueprint.state = RUN
         c.event_dispatcher = None
         c.blueprint.restart(c)
-        assert c.connection
+        assert c.connection is None
 
         c.blueprint.state = RUN
         c.shutdown()
