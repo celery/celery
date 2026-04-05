@@ -192,30 +192,6 @@ def _start_worker_thread(app: Celery,
         state.should_terminate = None
 
 
-@contextmanager
-def _start_worker_process(app,
-                          concurrency=1,
-                          pool='solo',
-                          loglevel=WORKER_LOGLEVEL,
-                          logfile=None,
-                          **kwargs):
-    # type (Celery, int, str, Union[int, str], str, **Any) -> Iterable
-    """Start worker in separate process.
-
-    Yields:
-        celery.app.worker.Worker: worker instance.
-    """
-    from celery.apps.multi import Cluster, Node
-
-    app.set_current()
-    cluster = Cluster([Node('testworker1@%h')])
-    cluster.start()
-    try:
-        yield
-    finally:
-        cluster.stopwait()
-
-
 def setup_app_for_worker(app: Celery, loglevel: Union[str, int], logfile: str) -> None:
     """Setup the app to be used for starting an embedded worker."""
     app.finalize()
