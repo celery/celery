@@ -4,6 +4,7 @@ Reproduces Celery Discussion #9742: when chord_unlock is routed to a
 quorum queue via topic exchange, it may not be consumed even if declared
 and bound.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -11,10 +12,20 @@ from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup
 
 from celery import Celery, chord
 from t.smoke.tasks import add, summarize_results
+from t.smoke.tests.quorum_queues.conftest import QuorumWorkerContainer
 
 
 class test_chord_unlock_routing:
     """Chord unlock routing to quorum queues with topic exchanges."""
+
+    @pytest.fixture
+    def default_worker_container_cls(self):
+        class ChordUnlockWorker(QuorumWorkerContainer):
+            @classmethod
+            def worker_queue(cls) -> str:
+                return "celery,chord_unlock_queue"
+
+        return ChordUnlockWorker
 
     @pytest.fixture
     def default_worker_app(self, default_worker_app: Celery) -> Celery:
@@ -22,7 +33,7 @@ class test_chord_unlock_routing:
         app.conf.task_default_exchange_type = "topic"
         app.conf.task_routes = {
             "celery.chord_unlock": {
-                "queue": app.conf.task_default_queue or "celery",
+                "queue": "chord_unlock_queue",
                 "exchange_type": "topic",
             },
         }
