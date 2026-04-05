@@ -154,8 +154,8 @@ class test_consumer:
 
         Regression test for GH-9705: collect() on a dead connection could
         block indefinitely.  The fix passes an explicit socket_timeout to
-        collect() and ensures Connection.stop() closes the old socket
-        during blueprint.restart().
+        collect() and closes the broken connection in the error handler
+        before blueprint.restart() begins the reconnect cycle.
         """
         queue = celery_setup.worker.worker_queue
 
@@ -169,7 +169,7 @@ class test_consumer:
             timeout=RESULT_TIMEOUT,
         )
 
-        # 3. Restart the broker immediately — before the bug-fix the worker
+        # 3. Restart the broker immediately. Before the fix the worker
         #    would hang in collect() and never reach the reconnect step.
         celery_setup.broker.restart()
 

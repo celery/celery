@@ -14,6 +14,7 @@ from time import sleep
 from billiard.common import restart_state
 from billiard.exceptions import RestartFreqExceeded
 from kombu.asynchronous.semaphore import DummyLock
+from kombu.common import ignore_errors
 from kombu.exceptions import ContentDisallowed, DecodeError
 from kombu.utils.compat import _detect_environment
 from kombu.utils.encoding import safe_repr
@@ -396,6 +397,15 @@ class Consumer:
             self.connection.collect(socket_timeout=COLLECT_SOCKET_TIMEOUT)
         except Exception:  # pylint: disable=broad-except
             pass
+
+        # Close the broken connection so the old socket is released
+        # before blueprint.restart() begins the reconnect cycle.
+        # We close here rather than in Connection.stop() because stop()
+        # also runs during graceful shutdown where the connection must
+        # stay open for in-flight task acks.
+        connection, self.connection = self.connection, None
+        if connection:
+            ignore_errors(connection, connection.close)
 
         if self.app.conf.worker_cancel_long_running_tasks_on_connection_loss:
             for request in tuple(active_requests):
