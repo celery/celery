@@ -142,6 +142,41 @@ class test_worker_shutdown(SuiteOperations):
 
         assert_container_exited(worker)
 
+    class test_heartbeat_during_shutdown(SuiteOperations):
+        """Heartbeat maintenance during prefork shutdown with long-running tasks.
+
+        With broker_heartbeat=2, AMQP closes the connection after ~4 seconds
+        (2 missed heartbeats). Tasks running 10 seconds must not lose the
+        broker connection during graceful shutdown.
+
+        See https://github.com/celery/celery/pull/9986
+        """
+
+        @pytest.fixture
+        def default_worker_app(self, default_worker_app: Celery) -> Celery:
+            app = default_worker_app
+            app.conf.broker_heartbeat = 2
+            app.conf.task_acks_late = True
+            return app
+
+        def test_shutdown_with_long_running_tasks(self, celery_setup: CeleryTestSetup):
+            queue = celery_setup.worker.worker_queue
+            worker = celery_setup.worker
+
+            results = []
+            for _ in range(3):
+                sig = long_running_task.si(10, verbose=True).set(queue=queue)
+                results.append(sig.delay())
+
+            worker.assert_log_exists("Starting long running task")
+            self.kill_worker(worker, WorkerKill.Method.SIGTERM)
+            worker.assert_log_exists("worker: Warm shutdown (MainProcess)")
+
+            assert_container_exited(worker)
+            for res in results:
+                assert res.get(RESULT_TIMEOUT)
+                assert res.state == 'SUCCESS'
+
     class test_REMAP_SIGTERM(SuiteOperations):
         @pytest.fixture
         def default_worker_env(self, default_worker_env: dict) -> dict:
