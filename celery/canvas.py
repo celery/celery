@@ -1095,12 +1095,13 @@ class _chain(Signature):
     # TODO figure out why we are always cloning before freeze
     def freeze(self, _id=None, group_id=None, chord=None,
                root_id=None, parent_id=None, group_index=None):
-        """Freeze the chain, returning an AsyncResult for the first step.
+        """Freeze the chain, returning an AsyncResult for the chain's final result.
 
         If the chain contains only empty groups (no-ops), all steps are
         discarded and a minimal AsyncResult is returned so that callers
-        can safely access .id and .parent without a
-        NoneType error.  (Issue #9772)
+        can safely access .id and .parent without a NoneType error.
+        This placeholder result is not backed by any task execution and
+        will never complete.  (Issue #9772)
         """
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
