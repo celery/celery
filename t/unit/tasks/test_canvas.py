@@ -1047,7 +1047,6 @@ class test_chain(CanvasCase):
         assert len(tasks) == 2
         assert len(results) == 2
 
-
     def test_chain_leading_empty_group_as_dict_strip(self):
         """Leading empty group passed as a serialized dict should be stripped.
 
@@ -1508,7 +1507,6 @@ class test_group(CanvasCase):
         sig = self.replace_with_group.s(1, 2)
         res = self.helper_test_get_delay(sig.delay())
         assert res == [3, 2]
-
 
     def test_group_prepared_skips_empty_chain(self):
         """_prepared() must skip empty chains that appear as group members.
