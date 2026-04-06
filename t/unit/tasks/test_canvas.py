@@ -968,6 +968,18 @@ class test_chain(CanvasCase):
         assert tasks == []
         assert results == []
 
+    def test_chain_only_empty_groups_freeze_returns_result(self):
+        """chain(group(), group()).freeze() must return an AsyncResult, not None.
+
+        Callers rely on freeze() returning an object with .id and .parent.
+        Regression test for issue #9772.
+        """
+        c = _chain(group(), group(), app=self.app)
+        res = c.freeze()
+        # Must not be None -- callers expect .id / .parent
+        assert res is not None
+        assert res.id is not None
+
     def test_nested_chain_with_leading_empty_group(self):
         """_chain(_chain(group(), add.s(x)), add.s(y)) -- inner empty group stripped.
 
@@ -1265,15 +1277,13 @@ class test_group(CanvasCase):
         # the encapsulated chains - in this case 1 for each child chord
         mock_set_chord_size.assert_has_calls((call(ANY, 1),) * child_count)
 
-    @pytest.mark.xfail(reason="Invalid canvas setup with bad exception")
     def test_apply_contains_chords_containing_empty_chain(self):
         gchild_sig = chain(tuple())
         child_count = 24
         child_chord = chord((gchild_sig,), self.add.si(0, 0))
         group_sig = group((child_chord,) * child_count)
-        # This is an invalid setup because we can't complete a chord header if
-        # there are no actual tasks which will run in it. However, the current
-        # behaviour of an `IndexError` isn't particularly helpful to a user.
+        # Previously this raised IndexError due to empty chain handling.
+        # Fixed by Issue #9772 -- empty chains now resolve gracefully.
         group_sig.apply_async()
 
     def test_apply_contains_chords_containing_chain_with_empty_tail(self):

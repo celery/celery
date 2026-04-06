@@ -1102,7 +1102,12 @@ class _chain(Signature):
             self.app, _id, group_id, chord, clone=False,
             group_index=group_index,
         )
-        return results[0] if results else None
+        if results:
+            return results[0]
+        # All steps were empty groups (no-ops); return a minimal
+        # AsyncResult so callers can safely access .id / .parent.
+        # (Issue #9772)
+        return self.app.AsyncResult(_id or uuid())
 
     def stamp(self, visitor=None, append_stamps=False, **headers):
         visitor_headers = None
