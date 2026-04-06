@@ -999,6 +999,54 @@ class test_chain(CanvasCase):
             f"Expected (5, 10) on first task, got {first_task.args}"
         )
 
+    def test_nested_chain_multiple_leading_empty_groups_after_splice(self):
+        """_chain(_chain(group(), group(), add.s(x)), add.s(y)) -- spliced empty groups.
+
+        After the inner chain is spliced into the outer loop, the two
+        leading empty groups must be skipped and partial args must still
+        reach the first real task.
+        Regression test for issue #9772.
+        """
+        inner = _chain(group(), group(), self.add.s(10), app=self.app)
+        outer = _chain(inner, self.add.s(20), app=self.app)
+        tasks, results = outer.prepare_steps((7,), {}, outer.tasks)
+        assert len(tasks) == 2
+        assert len(results) == 2
+        first_task = tasks[-1]
+        assert first_task.args == (7, 10), (
+            f"Expected (7, 10) on first task, got {first_task.args}"
+        )
+
+    def test_nested_chain_only_empty_groups_spliced(self):
+        """_chain(_chain(group(), group()), add.s(x)) -- inner chain is all empty groups.
+
+        After splicing, the inner chain contributes no real tasks.
+        The outer add.s(x) should still receive partial args correctly.
+        Regression test for issue #9772.
+        """
+        inner = _chain(group(), group(), app=self.app)
+        outer = _chain(inner, self.add.s(10), app=self.app)
+        tasks, results = outer.prepare_steps((3,), {}, outer.tasks)
+        assert len(tasks) == 1
+        assert len(results) == 1
+        first_task = tasks[-1]
+        assert first_task.args == (3, 10), (
+            f"Expected (3, 10) on first task, got {first_task.args}"
+        )
+
+    def test_nested_chain_trailing_empty_group_after_splice(self):
+        """_chain(add.s(x), _chain(add.s(y), group())) -- trailing empty in spliced chain.
+
+        The trailing empty group from the inner chain should be silently
+        dropped after splicing.
+        Regression test for issue #9772.
+        """
+        inner = _chain(self.add.s(10), group(), app=self.app)
+        outer = _chain(self.add.s(1, 2), inner, app=self.app)
+        tasks, results = outer.prepare_steps((), {}, outer.tasks)
+        assert len(tasks) == 2
+        assert len(results) == 2
+
 
 class test_group(CanvasCase):
     def test_repr(self):
