@@ -890,6 +890,85 @@ class test_chain(CanvasCase):
         first_task = tasks[-1]
         assert first_task.args == (2, 2)
 
+    def test_chain_empty_group_first_args_go_to_first_real_task(self):
+        """chain(group(), add.s(y))(x) -- args pass through to first real task.
+
+        Regression test for issue #9772 / PR #10245.
+        """
+        c = _chain(group(), self.add.s(10), app=self.app)
+        tasks, _ = c.prepare_steps((1, 2), {}, c.tasks)
+        # tasks are in reverse order; last element is the first logical task
+        first_task = tasks[-1]
+        assert first_task.args == (1, 2, 10), (
+            f"Expected args (1, 2, 10) on first real task, got {first_task.args}"
+        )
+
+    def test_chain_multiple_leading_empty_groups_args(self):
+        """chain(group(), group(), add.s(y))(x) -- multiple leading empty groups.
+
+        Regression test for issue #9772 / PR #10245.
+        """
+        c = _chain(group(), group(), self.add.s(10), app=self.app)
+        tasks, _ = c.prepare_steps((3,), {}, c.tasks)
+        first_task = tasks[-1]
+        assert first_task.args == (3, 10), (
+            f"Expected args (3, 10) on first real task, got {first_task.args}"
+        )
+
+    def test_chain_empty_group_in_middle(self):
+        """chain(add.s(x), group(), add.s(y)) -- empty group in middle.
+
+        The empty group should be silently skipped without affecting the chain.
+        Regression test for issue #9772 / PR #10245.
+        """
+        c = _chain(self.add.s(1, 2), group(), self.add.s(10), app=self.app)
+        tasks, results = c.prepare_steps((), {}, c.tasks)
+        # Should produce 2 real tasks, not crash
+        assert len(tasks) == 2
+        assert len(results) == 2
+
+    def test_chain_trailing_empty_group(self):
+        """chain(add.s(x), group()) -- trailing empty group.
+
+        The trailing empty group should be silently dropped.
+        Regression test for issue #9772 / PR #10245.
+        """
+        c = _chain(self.add.s(1, 2), group(), app=self.app)
+        tasks, results = c.prepare_steps((), {}, c.tasks)
+        assert len(tasks) == 1
+        assert len(results) == 1
+
+    def test_chain_empty_group_args_reach_correct_task(self):
+        """chain(group(), add.s(x), add.s(y))(z) -- z goes to add.s(x), not add.s(y).
+
+        Verifies that partial args are prepended to the chain's *first* real
+        task (add.s(x)), not the *last* task (add.s(y)).
+        Regression test for issue #9772 / PR #10245.
+        """
+        c = _chain(group(), self.add.s(100), self.add.s(200), app=self.app)
+        tasks, _ = c.prepare_steps((5,), {}, c.tasks)
+        # tasks is in reverse order: [add.s(200), add.s(100)]
+        first_logical_task = tasks[-1]   # add.s(100) with args prepended
+        last_logical_task = tasks[0]     # add.s(200) with NO extra args
+        assert first_logical_task.args == (5, 100), (
+            f"Expected (5, 100) on first task, got {first_logical_task.args}"
+        )
+        assert last_logical_task.args == (200,), (
+            f"Expected (200,) on last task (no extra args), got {last_logical_task.args}"
+        )
+
+    def test_chain_only_empty_groups(self):
+        """chain(group(), group()) -- chain of only empty groups.
+
+        Should produce an empty result without crashing.
+        Regression test for issue #9772 / PR #10245.
+        """
+        c = _chain(group(), group(), app=self.app)
+        tasks, results = c.prepare_steps((), {}, c.tasks)
+        assert tasks == []
+        assert results == []
+
+
 
 class test_group(CanvasCase):
     def test_repr(self):
