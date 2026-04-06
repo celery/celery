@@ -1095,6 +1095,14 @@ class _chain(Signature):
     # TODO figure out why we are always cloning before freeze
     def freeze(self, _id=None, group_id=None, chord=None,
                root_id=None, parent_id=None, group_index=None):
+        """Freeze the chain, returning an AsyncResult for the chain's final result.
+
+        If the chain contains only empty groups (no-ops), all steps are
+        discarded and a minimal AsyncResult is returned so that callers
+        can safely access .id and .parent without a NoneType error.
+        This placeholder result is not backed by any task execution and
+        will never complete.  (Issue #9772)
+        """
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
         _, results = self._frozen = self.prepare_steps(
@@ -1102,7 +1110,12 @@ class _chain(Signature):
             self.app, _id, group_id, chord, clone=False,
             group_index=group_index,
         )
-        return results[0]
+        if results:
+            return results[0]
+        # All steps were empty groups (no-ops); return a minimal
+        # AsyncResult so callers can safely access .id / .parent.
+        # (Issue #9772)
+        return self.app.AsyncResult(_id or uuid())
 
     def stamp(self, visitor=None, append_stamps=False, **headers):
         visitor_headers = None
@@ -1165,6 +1178,26 @@ class _chain(Signature):
             use_link = True
         steps = deque(tasks)
 
+        # Strip leading empty groups from the chain so that
+        # is_first_task (not steps) is correct after popping all items.
+        # Empty groups anywhere in the chain are no-ops and should be
+        # skipped (Issue #9772), but leading ones must be removed up
+        # front because the reverse-iteration loop relies on `not steps`
+        # to detect the original chain's first task for applying partial
+        # args/kwargs.
+        while steps:
+            head = steps[0]
+            if not isinstance(head, abstract.CallableSignature):
+                head = from_dict(head, app=app)
+                steps[0] = head
+            if isinstance(head, group):
+                head = maybe_unroll_group(head)
+                steps[0] = head
+            if isinstance(head, group) and not head.tasks:
+                steps.popleft()
+                continue
+            break
+
         # optimization: now the pop func is a local variable
         steps_pop = steps.pop
         steps_extend = steps.extend
@@ -1178,11 +1211,16 @@ class _chain(Signature):
         # passed as the ``chain`` message field.
         # As it's reversed the worker can just do ``chain.pop()`` to
         # get the next task in the chain.
+        # Whether partial args have been applied to the logically first
+        # task.  With empty-group skipping and chain-splicing the simple
+        # ``not steps`` heuristic can misfire, so we defer args
+        # application when needed and track it with this flag.
+        # (Issue #9772)
+        applied_first_args = False
+
         while steps:
             task = steps_pop()
-            # if steps is not empty, this is the first task - reverse order
-            # if i = 0, this is the last task - again, because we're reversed
-            is_first_task, is_last_task = not steps, not i
+            is_last_task = not i
 
             if not isinstance(task, abstract.CallableSignature):
                 task = from_dict(task, app=app)
@@ -1191,19 +1229,28 @@ class _chain(Signature):
                 # groups should be called in parallel
                 task = maybe_unroll_group(task)
 
-            # first task gets partial args from chain
-            if clone:
-                if is_first_task:
-                    task = task.clone(args, kwargs)
-                else:
-                    task = task.clone()
-            elif is_first_task:
-                task.args = tuple(args) + tuple(task.args)
+            if isinstance(task, group) and not task.tasks:
+                # skip empty groups as they are no-ops
+                # Issue #9772
+                continue
 
             if isinstance(task, _chain):
                 # splice (unroll) the chain
                 steps_extend(task.tasks)
                 continue
+
+            is_first_task = not steps
+
+            # first task gets partial args from chain
+            if clone:
+                if is_first_task:
+                    task = task.clone(args, kwargs)
+                    applied_first_args = True
+                else:
+                    task = task.clone()
+            elif is_first_task:
+                task.args = tuple(args) + tuple(task.args)
+                applied_first_args = True
 
             # TODO why isn't this asserting is_last_task == False?
             if isinstance(task, group) and prev_task:
@@ -1273,10 +1320,24 @@ class _chain(Signature):
 
                 # We need to change that so that it points to the
                 # group result object.
-                node = res
-                while node.parent:
-                    node = node.parent
-                prev_res = node
+                if res is not None:
+                    node = res
+                    while node.parent:
+                        node = node.parent
+                    prev_res = node
+        # If partial args were not applied during the loop (e.g. because
+        # chain-splicing or empty-group skipping meant ``not steps``
+        # was never True for the first real task), apply them now to
+        # the logically first task -- the last element of ``tasks``
+        # (which is in reverse order).
+        if not applied_first_args and tasks and (args or kwargs):
+            first_task = tasks[-1]
+            if clone:
+                tasks[-1] = first_task.clone(args, kwargs)
+            else:
+                first_task.args = tuple(args) + tuple(first_task.args)
+                first_task.kwargs = dict(kwargs, **first_task.kwargs)
+
         self.id = last_task_id
         return tasks, results
 
@@ -1459,6 +1520,26 @@ class chunks(Signature):
     @classmethod
     def apply_chunks(cls, task, it, n, app=None):
         return cls(task, it, n, app=app)()
+
+
+def _chain_effectively_empty(task):
+    """Return True if *task* is a chain whose members are all empty groups.
+
+    A chain with no tasks is trivially empty.  A chain whose tasks are
+    all empty groups (after unrolling single-member groups) is
+    *effectively* empty because every step is a no-op.  (Issue #9772)
+    """
+    if not isinstance(task, _chain):
+        return False
+    if not task.tasks:
+        return True
+    for t in task.tasks:
+        if isinstance(t, group):
+            t = maybe_unroll_group(t)
+        if not isinstance(t, group) or t.tasks:
+            return False
+    return True
+
 
 
 def _maybe_group(tasks, app):
@@ -1737,6 +1818,9 @@ class group(Signature):
                     task.tasks, partial_args, group_id, root_id, app,
                 )
                 yield from unroll
+            elif _chain_effectively_empty(task):
+                # Skip empty/effectively-empty chains -- they are no-ops.  (Issue #9772)
+                continue
             else:
                 if partial_args and not task.immutable:
                     task.args = tuple(partial_args) + tuple(task.args)
@@ -1920,6 +2004,10 @@ class group(Signature):
             # if this is a group, flatten it by adding all of the group's tasks to the stack
             if isinstance(task, group):
                 stack.extendleft(task.tasks)
+            elif _chain_effectively_empty(task):
+                # Skip empty chains -- they are no-ops and would produce
+                # fabricated results that never complete.  (Issue #9772)
+                continue
             else:
                 new_tasks.append(task)
                 yield task.freeze(group_id=group_id,
