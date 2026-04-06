@@ -1048,6 +1048,41 @@ class test_chain(CanvasCase):
         assert len(results) == 2
 
 
+    def test_chain_leading_empty_group_as_dict_strip(self):
+        """Leading empty group passed as a serialized dict should be stripped.
+
+        Exercises the from_dict conversion path in the leading empty-group
+        strip loop of prepare_steps().  (Issue #9772)
+        """
+        # Serialize an empty group to a dict so it enters the
+        # ``not isinstance(head, CallableSignature)`` branch.
+        empty_dict = dict(group())
+        c = _chain(app=self.app)
+        c.tasks = [empty_dict, self.add.s(10)]
+        tasks, results = c.prepare_steps((5,), {}, c.tasks)
+        assert len(tasks) == 1
+        first_task = tasks[-1]
+        assert first_task.args == (5, 10), (
+            f"Expected (5, 10), got {first_task.args}"
+        )
+
+    def test_chain_freeze_nested_chain_leading_empty_group_no_clone(self):
+        """freeze() uses clone=False; the applied_first_args fallback must
+        work for nested chains with leading empty groups.
+
+        When the inner chain is spliced, its leading empty group prevents
+        ``is_first_task`` from firing.  The post-loop fallback must apply
+        partial args to the first real task without cloning.
+        (Issue #9772)
+        """
+        inner = _chain(group(), self.add.s(10), app=self.app)
+        outer = _chain(inner, self.add.s(20), app=self.app)
+        outer.args = (5,)
+        res = outer.freeze()
+        # freeze() returns the result for the first step; it must not crash.
+        assert res is not None
+
+
 class test_group(CanvasCase):
     def test_repr(self):
         x = group([self.add.s(2, 2), self.add.s(4, 4)])
@@ -1473,6 +1508,24 @@ class test_group(CanvasCase):
         sig = self.replace_with_group.s(1, 2)
         res = self.helper_test_get_delay(sig.delay())
         assert res == [3, 2]
+
+
+    def test_group_prepared_skips_empty_chain(self):
+        """_prepared() must skip empty chains that appear as group members.
+
+        An empty chain (``chain()``) in a group is a no-op and should be
+        silently dropped so it does not produce a fabricated result.
+        (Issue #9772)
+        """
+        empty_chain = _chain(app=self.app)  # chain with no tasks
+        real_task = self.add.s(1, 2)
+        g = group(empty_chain, real_task)
+        _, group_id, root_id = g._freeze_gid({})
+        prepared = list(g._prepared(g.tasks, [], group_id, root_id, self.app))
+        # Only the real task should appear; the empty chain is skipped.
+        assert len(prepared) == 1
+        task, result, gid = prepared[0]
+        assert task.args == (1, 2)
 
 
 class test_chord(CanvasCase):
