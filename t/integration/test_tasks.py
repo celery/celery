@@ -805,3 +805,50 @@ class test_task_replacement:
         redis_messages = list(redis_connection.lrange("redis-echo", 0, -1))
         expected_messages = [b"In A", b"In B", b"In/Out C", b"Out B", b"Out A"]
         assert redis_messages == expected_messages
+
+
+class test_pool_acquire_timeout:
+    """Integration tests for broker_pool_acquire_timeout setting (#9929)."""
+
+    @flaky
+    def test_task_succeeds_with_pool_timeout_configured(self, manager):
+        """Normal task dispatch works with timeout configured."""
+        app = manager.app
+        orig = app.conf.broker_pool_acquire_timeout
+        app.conf.broker_pool_acquire_timeout = 30
+        try:
+            result = add.delay(1, 2)
+            assert result.get(timeout=TIMEOUT) == 3
+        finally:
+            app.conf.broker_pool_acquire_timeout = orig
+
+    @flaky
+    def test_pool_timeout_none_blocks_successfully(self, manager):
+        """Default None timeout (block forever) still works."""
+        app = manager.app
+        assert app.conf.broker_pool_acquire_timeout is None
+        result = add.delay(4, 5)
+        assert result.get(timeout=TIMEOUT) == 9
+
+    @flaky
+    def test_concurrent_apply_async_with_timeout(self, manager):
+        """Concurrent task dispatch with pool timeout doesn't block."""
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        app = manager.app
+        orig_timeout = app.conf.broker_pool_acquire_timeout
+        app.conf.broker_pool_acquire_timeout = 10
+        try:
+            results = []
+            with ThreadPoolExecutor(max_workers=20) as executor:
+                futures = [
+                    executor.submit(add.delay, i, i)
+                    for i in range(50)
+                ]
+                for future in as_completed(futures):
+                    results.append(future.result())
+            # All tasks should complete successfully
+            for r in results:
+                assert r.get(timeout=TIMEOUT) is not None
+        finally:
+            app.conf.broker_pool_acquire_timeout = orig_timeout

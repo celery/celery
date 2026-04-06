@@ -21,12 +21,21 @@ class Connection(bootsteps.StartStopStep):
         c.connection = c.connect()
         info('Connected to %s', c.connection.as_uri())
 
-    def shutdown(self, c):
-        # We must set self.connection to None here, so
-        # that the green pidbox thread exits.
+    def close_connection(self, c):
+        """Close and clear c.connection.
+
+        Used by shutdown() for final cleanup. The error handler in
+        on_connection_error_after_connected() performs the same close
+        inline to release the broken socket before blueprint.restart().
+        """
         connection, c.connection = c.connection, None
         if connection:
             ignore_errors(connection, connection.close)
+
+    def shutdown(self, c):
+        # We must set c.connection to None here, so
+        # that the green pidbox thread exits.
+        self.close_connection(c)
 
     def info(self, c):
         params = 'N/A'

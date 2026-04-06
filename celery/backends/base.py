@@ -317,6 +317,13 @@ class Backend:
         # Handle group callbacks specially to prevent hanging body tasks
         if isinstance(callback, group):
             return self._handle_group_chord_error(group_callback=callback, backend=backend, exc=exc)
+
+        # Generate an ID if missing so the error can be stored.
+        callback_id = callback.id
+        if not callback_id:
+            from kombu.utils.uuid import uuid
+            callback_id = callback.options['task_id'] = uuid()
+
         # We have to make a fake request since either the callback failed or
         # we're pretending it did since we don't have information about the
         # chord part(s) which failed. This request is constructed as a best
@@ -330,9 +337,9 @@ class Backend:
         try:
             self._call_task_errbacks(fake_request, exc, None)
         except Exception as eb_exc:  # pylint: disable=broad-except
-            return backend.fail_from_current_stack(callback.id, exc=eb_exc)
+            return backend.fail_from_current_stack(callback_id, exc=eb_exc)
         else:
-            return backend.fail_from_current_stack(callback.id, exc=exc)
+            return backend.fail_from_current_stack(callback_id, exc=exc)
 
     def _handle_group_chord_error(self, group_callback, backend, exc=None):
         """Handle chord errors when the callback is a group.
