@@ -1796,6 +1796,9 @@ class group(Signature):
                     task.tasks, partial_args, group_id, root_id, app,
                 )
                 yield from unroll
+            elif isinstance(task, _chain) and not task.tasks:
+                # Skip empty chains -- they are no-ops.  (Issue #9772)
+                continue
             else:
                 if partial_args and not task.immutable:
                     task.args = tuple(partial_args) + tuple(task.args)
@@ -1979,6 +1982,10 @@ class group(Signature):
             # if this is a group, flatten it by adding all of the group's tasks to the stack
             if isinstance(task, group):
                 stack.extendleft(task.tasks)
+            elif isinstance(task, _chain) and not task.tasks:
+                # Skip empty chains -- they are no-ops and would produce
+                # fabricated results that never complete.  (Issue #9772)
+                continue
             else:
                 new_tasks.append(task)
                 yield task.freeze(group_id=group_id,

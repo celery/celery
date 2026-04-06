@@ -1326,12 +1326,19 @@ class test_group(CanvasCase):
         mock_set_chord_size.assert_has_calls((call(ANY, 1),) * child_count)
 
     def test_apply_contains_chords_containing_empty_chain(self):
+        """A chord whose header contains only empty chains should not hang.
+
+        Empty chains are no-ops; when every header member is an empty chain
+        the header group is effectively empty and the chord body should be
+        executed immediately.  Regression test for issue #9772.
+        """
         gchild_sig = chain(tuple())
         child_count = 24
         child_chord = chord((gchild_sig,), self.add.si(0, 0))
         group_sig = group((child_chord,) * child_count)
-        # Previously this raised IndexError due to empty chain handling.
-        # Fixed by Issue #9772 -- empty chains now resolve gracefully.
+        # Previously this raised IndexError.  After fixing #9772 the empty
+        # chains are stripped from the chord header, so the header is empty
+        # and the chord body is executed immediately (no pending result).
         group_sig.apply_async()
 
     def test_apply_contains_chords_containing_chain_with_empty_tail(self):
