@@ -1522,6 +1522,26 @@ class chunks(Signature):
         return cls(task, it, n, app=app)()
 
 
+def _chain_effectively_empty(task):
+    """Return True if *task* is a chain whose members are all empty groups.
+
+    A chain with no tasks is trivially empty.  A chain whose tasks are
+    all empty groups (after unrolling single-member groups) is
+    *effectively* empty because every step is a no-op.  (Issue #9772)
+    """
+    if not isinstance(task, _chain):
+        return False
+    if not task.tasks:
+        return True
+    for t in task.tasks:
+        if isinstance(t, group):
+            t = maybe_unroll_group(t)
+        if not isinstance(t, group) or t.tasks:
+            return False
+    return True
+
+
+
 def _maybe_group(tasks, app):
     if isinstance(tasks, dict):
         tasks = signature(tasks, app=app)
@@ -1798,8 +1818,8 @@ class group(Signature):
                     task.tasks, partial_args, group_id, root_id, app,
                 )
                 yield from unroll
-            elif isinstance(task, _chain) and not task.tasks:
-                # Skip empty chains -- they are no-ops.  (Issue #9772)
+            elif _chain_effectively_empty(task):
+                # Skip empty/effectively-empty chains -- they are no-ops.  (Issue #9772)
                 continue
             else:
                 if partial_args and not task.immutable:
@@ -1984,7 +2004,7 @@ class group(Signature):
             # if this is a group, flatten it by adding all of the group's tasks to the stack
             if isinstance(task, group):
                 stack.extendleft(task.tasks)
-            elif isinstance(task, _chain) and not task.tasks:
+            elif _chain_effectively_empty(task):
                 # Skip empty chains -- they are no-ops and would produce
                 # fabricated results that never complete.  (Issue #9772)
                 continue

@@ -1370,10 +1370,20 @@ class test_group(CanvasCase):
         child_count = 24
         child_chord = chord((gchild_sig,), self.add.si(0, 0))
         group_sig = group((child_chord,) * child_count)
-        # Previously this raised IndexError.  After fixing #9772 the empty
-        # chains are stripped from the chord header, so the header is empty
-        # and the chord body is executed immediately (no pending result).
-        group_sig.apply_async()
+        with patch(
+            "celery.canvas.Signature.apply_async",
+        ) as mock_apply_async:
+            # Previously this raised IndexError.  After fixing #9772 the
+            # empty chains are stripped from the chord header, so apply_async
+            # should not be called for any header tasks (they are all no-ops).
+            group_sig.apply_async()
+        # No header tasks should be applied -- every chain is empty.
+        # The child_count calls we see are the chord bodies being applied
+        # (each chord's body is self.add.si(0, 0)).
+        assert mock_apply_async.call_count == child_count, (
+            f"Expected {child_count} apply_async calls (one per chord body), "
+            f"got {mock_apply_async.call_count}"
+        )
 
     def test_apply_contains_chords_containing_chain_with_empty_tail(self):
         ggchild_count = 42
@@ -1525,6 +1535,25 @@ class test_group(CanvasCase):
         task, result, gid = prepared[0]
         assert task.args == (1, 2)
 
+
+
+    def test_group_prepared_skips_effectively_empty_chain(self):
+        """_prepared() must skip chains whose tasks are all empty groups.
+
+        A chain like _chain(group(), group()) has a non-empty .tasks list,
+        but every member is a no-op.  Such chains must be detected and
+        skipped to avoid producing fabricated results that never complete.
+        (Issue #9772)
+        """
+        effectively_empty = _chain(group(), group(), app=self.app)
+        real_task = self.add.s(1, 2)
+        g = group(effectively_empty, real_task)
+        _, group_id, root_id = g._freeze_gid({})
+        prepared = list(g._prepared(g.tasks, [], group_id, root_id, self.app))
+        # Only the real task should appear; the effectively-empty chain is skipped.
+        assert len(prepared) == 1
+        task, result, gid = prepared[0]
+        assert task.args == (1, 2)
 
 class test_chord(CanvasCase):
     def test__get_app_does_not_exhaust_generator(self):
