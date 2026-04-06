@@ -3292,8 +3292,15 @@ class test_chord:
         )
         result = c.apply_async()
 
-        with pytest.raises((ExpectedException, Exception)):
+        try:
             result.get(timeout=TIMEOUT)
+        except Exception as exc:
+            assert not isinstance(exc, TypeError), (
+                f"Internal TypeError raised: {exc}"
+            )
+            assert "task_id must not be empty" not in str(exc), (
+                f"Internal ValueError raised: {exc}"
+            )
 
         error_found = check_for_logs(
             caplog=caplog,
