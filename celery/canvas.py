@@ -1336,6 +1336,7 @@ class _chain(Signature):
                 tasks[-1] = first_task.clone(args, kwargs)
             else:
                 first_task.args = tuple(args) + tuple(first_task.args)
+                first_task.kwargs = dict(kwargs, **first_task.kwargs)
 
         self.id = last_task_id
         return tasks, results
