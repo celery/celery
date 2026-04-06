@@ -987,6 +987,7 @@ class test_chain(CanvasCase):
             f"Expected (5, 10) on first task, got {first_task.args}"
         )
 
+
 class test_group(CanvasCase):
     def test_repr(self):
         x = group([self.add.s(2, 2), self.add.s(4, 4)])
