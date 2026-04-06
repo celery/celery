@@ -1173,6 +1173,7 @@ class _chain(Signature):
         prev_res = None
         tasks, results = [], []
         i = 0
+        first_task_args_applied = False
         # NOTE: We are doing this in reverse order.
         # The result is a list of tasks in reverse order, that is
         # passed as the ``chain`` message field.
@@ -1191,24 +1192,29 @@ class _chain(Signature):
                 # groups should be called in parallel
                 task = maybe_unroll_group(task)
 
-            # first task gets partial args from chain
-            if clone:
-                if is_first_task:
-                    task = task.clone(args, kwargs)
-                else:
-                    task = task.clone()
-            elif is_first_task:
-                task.args = tuple(args) + tuple(task.args)
+            if isinstance(task, group) and not task.tasks:
+                # skip empty groups as they are no-ops
+                # Issue #9772
+                continue
 
             if isinstance(task, _chain):
                 # splice (unroll) the chain
                 steps_extend(task.tasks)
                 continue
 
-            if isinstance(task, group) and not task.tasks:
-                # skip empty groups as they are no-ops
-                # Issue #9772
-                continue
+            # The first non-empty step in the chain receives the chain's
+            # partial args/kwargs.  We track this separately from
+            # is_first_task because empty groups that were skipped above
+            # may have already consumed the positional is_first_task flag.
+            should_apply_first_args = not first_task_args_applied
+            if clone:
+                if should_apply_first_args:
+                    task = task.clone(args, kwargs)
+                else:
+                    task = task.clone()
+            elif should_apply_first_args:
+                task.args = tuple(args) + tuple(task.args)
+            first_task_args_applied = True
 
             # TODO why isn't this asserting is_last_task == False?
             if isinstance(task, group) and prev_task:

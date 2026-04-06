@@ -875,6 +875,21 @@ class test_chain(CanvasCase):
         c = chain(self.add.s(2, 2), group(), self.add.s(4, 4))
         c.freeze()  # should not raise
 
+    def test_chain_empty_group_first_passes_args(self):
+        """When an empty group precedes a real task, partial args must
+        be forwarded to the first non-empty step.
+
+        Regression test for PR #10245 review feedback.
+        """
+        # Use _chain directly to avoid the chain() constructor converting
+        # group() | task into a chord.
+        c = _chain(group(), self.add.s(), app=self.app)
+        tasks, _ = c.prepare_steps((2, 2), {}, c.tasks)
+        # tasks are returned in reverse order; the first logical task
+        # (add) is last in the list.
+        first_task = tasks[-1]
+        assert first_task.args == (2, 2)
+
 
 class test_group(CanvasCase):
     def test_repr(self):
