@@ -879,7 +879,7 @@ class test_chain(CanvasCase):
         """When an empty group precedes a real task, partial args must
         be forwarded to the first non-empty step.
 
-        Regression test for PR #10245 review feedback.
+        Regression test for issue #9772.
         """
         # Use _chain directly to avoid the chain() constructor converting
         # group() | task into a chord.
@@ -893,7 +893,7 @@ class test_chain(CanvasCase):
     def test_chain_empty_group_first_args_go_to_first_real_task(self):
         """chain(group(), add.s(y))(x) -- args pass through to first real task.
 
-        Regression test for issue #9772 / PR #10245.
+        Regression test for issue #9772.
         """
         c = _chain(group(), self.add.s(10), app=self.app)
         tasks, _ = c.prepare_steps((1, 2), {}, c.tasks)
@@ -906,7 +906,7 @@ class test_chain(CanvasCase):
     def test_chain_multiple_leading_empty_groups_args(self):
         """chain(group(), group(), add.s(y))(x) -- multiple leading empty groups.
 
-        Regression test for issue #9772 / PR #10245.
+        Regression test for issue #9772.
         """
         c = _chain(group(), group(), self.add.s(10), app=self.app)
         tasks, _ = c.prepare_steps((3,), {}, c.tasks)
@@ -919,7 +919,7 @@ class test_chain(CanvasCase):
         """chain(add.s(x), group(), add.s(y)) -- empty group in middle.
 
         The empty group should be silently skipped without affecting the chain.
-        Regression test for issue #9772 / PR #10245.
+        Regression test for issue #9772.
         """
         c = _chain(self.add.s(1, 2), group(), self.add.s(10), app=self.app)
         tasks, results = c.prepare_steps((), {}, c.tasks)
@@ -931,7 +931,7 @@ class test_chain(CanvasCase):
         """chain(add.s(x), group()) -- trailing empty group.
 
         The trailing empty group should be silently dropped.
-        Regression test for issue #9772 / PR #10245.
+        Regression test for issue #9772.
         """
         c = _chain(self.add.s(1, 2), group(), app=self.app)
         tasks, results = c.prepare_steps((), {}, c.tasks)
@@ -943,7 +943,7 @@ class test_chain(CanvasCase):
 
         Verifies that partial args are prepended to the chain's *first* real
         task (add.s(x)), not the *last* task (add.s(y)).
-        Regression test for issue #9772 / PR #10245.
+        Regression test for issue #9772.
         """
         c = _chain(group(), self.add.s(100), self.add.s(200), app=self.app)
         tasks, _ = c.prepare_steps((5,), {}, c.tasks)
@@ -961,14 +961,31 @@ class test_chain(CanvasCase):
         """chain(group(), group()) -- chain of only empty groups.
 
         Should produce an empty result without crashing.
-        Regression test for issue #9772 / PR #10245.
+        Regression test for issue #9772.
         """
         c = _chain(group(), group(), app=self.app)
         tasks, results = c.prepare_steps((), {}, c.tasks)
         assert tasks == []
         assert results == []
 
+    def test_nested_chain_with_leading_empty_group(self):
+        """_chain(_chain(group(), add.s(x)), add.s(y)) -- inner empty group stripped.
 
+        When a nested chain contains a leading empty group, the splice
+        (unroll) should expose it to the main loop which skips it.
+        Regression test for issue #9772.
+        """
+        inner = _chain(group(), self.add.s(10), app=self.app)
+        outer = _chain(inner, self.add.s(20), app=self.app)
+        tasks, results = outer.prepare_steps((5,), {}, outer.tasks)
+        # Should produce 2 real tasks: add.s(10) and add.s(20)
+        assert len(tasks) == 2
+        assert len(results) == 2
+        # First logical task (last in reversed list) should get args
+        first_task = tasks[-1]
+        assert first_task.args == (5, 10), (
+            f"Expected (5, 10) on first task, got {first_task.args}"
+        )
 
 class test_group(CanvasCase):
     def test_repr(self):

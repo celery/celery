@@ -1198,11 +1198,16 @@ class _chain(Signature):
         # passed as the ``chain`` message field.
         # As it's reversed the worker can just do ``chain.pop()`` to
         # get the next task in the chain.
+        # Whether partial args have been applied to the logically first
+        # task.  With empty-group skipping and chain-splicing the simple
+        # ``not steps`` heuristic can misfire, so we defer args
+        # application when needed and track it with this flag.
+        # (Issue #9772)
+        applied_first_args = False
+
         while steps:
             task = steps_pop()
-            # if steps is not empty, this is the first task - reverse order
-            # if i = 0, this is the last task - again, because we're reversed
-            is_first_task, is_last_task = not steps, not i
+            is_last_task = not i
 
             if not isinstance(task, abstract.CallableSignature):
                 task = from_dict(task, app=app)
@@ -1221,14 +1226,18 @@ class _chain(Signature):
                 steps_extend(task.tasks)
                 continue
 
+            is_first_task = not steps
+
             # first task gets partial args from chain
             if clone:
                 if is_first_task:
                     task = task.clone(args, kwargs)
+                    applied_first_args = True
                 else:
                     task = task.clone()
             elif is_first_task:
                 task.args = tuple(args) + tuple(task.args)
+                applied_first_args = True
 
             # TODO why isn't this asserting is_last_task == False?
             if isinstance(task, group) and prev_task:
@@ -1303,6 +1312,18 @@ class _chain(Signature):
                     while node.parent:
                         node = node.parent
                     prev_res = node
+        # If partial args were not applied during the loop (e.g. because
+        # chain-splicing or empty-group skipping meant ``not steps``
+        # was never True for the first real task), apply them now to
+        # the logically first task -- the last element of ``tasks``
+        # (which is in reverse order).
+        if not applied_first_args and tasks and (args or kwargs):
+            first_task = tasks[-1]
+            if clone:
+                tasks[-1] = first_task.clone(args, kwargs)
+            else:
+                first_task.args = tuple(args) + tuple(first_task.args)
+
         self.id = last_task_id
         return tasks, results
 
