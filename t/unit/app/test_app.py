@@ -16,6 +16,7 @@ from unittest.mock import ANY, DEFAULT, MagicMock, Mock, patch
 
 import pytest
 from kombu import Exchange, Queue
+from kombu.exceptions import LimitExceeded
 from pydantic import BaseModel, ValidationInfo, model_validator
 from vine import promise
 
@@ -26,7 +27,7 @@ from celery.app import base as _appbase
 from celery.app import defaults
 from celery.backends.base import Backend
 from celery.contrib.testing.mocks import ContextMock
-from celery.exceptions import ImproperlyConfigured
+from celery.exceptions import ImproperlyConfigured, OperationalError
 from celery.loaders.base import unconfigured
 from celery.platforms import pyimplementation
 from celery.utils.collections import DictAttribute
@@ -1783,6 +1784,33 @@ class test_App:
         )
 
     @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery_eta_is_now(self, detect_quorum_queues):
+        """When eta equals now, countdown is 0 (falsy) — no delayed routing."""
+        self.app.amqp = MagicMock(name='amqp')
+        now = datetime(2024, 8, 24, tzinfo=datetime_timezone.utc)
+        self.app.amqp.router.route.return_value = {
+            'queue': Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        }
+        self.app.now = Mock(return_value=now)
+
+        self.app.send_task('foo', (1, 2), eta=now.isoformat())
+
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            queue=Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        )
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
     def test_native_delayed_delivery_direct_exchange(self, detect_quorum_queues, caplog):
         self.app.amqp = MagicMock(name='amqp')
         self.app.amqp.router.route.return_value = {
@@ -1815,6 +1843,118 @@ class test_App:
             "a fanout exchange in order for native delayed delivery to work properly.\n"
             "If quorum queues are used, this task may block the worker process until the ETA arrives."
         )
+
+    def test_producer_or_acquire_passes_configured_timeout(self):
+        self.app.conf.broker_pool_acquire_timeout = 30
+        with patch.object(
+            type(self.app), 'producer_pool',
+            new_callable=lambda: property(lambda self: MagicMock())
+        ):
+            ctx = self.app.producer_or_acquire()
+            assert ctx.fb_kwargs == {'timeout': 30}
+
+    def test_producer_or_acquire_passes_timeout_none_through(self):
+        self.app.conf.broker_pool_acquire_timeout = None
+        with patch.object(
+            type(self.app), 'producer_pool',
+            new_callable=lambda: property(lambda self: MagicMock())
+        ):
+            ctx = self.app.producer_or_acquire()
+            assert ctx.fb_kwargs == {'timeout': None}
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_raises_on_pool_exhaustion(self, detect_quorum_queues):
+        self.app.conf.broker_pool_limit = 5
+        self.app.conf.broker_pool_acquire_timeout = 10
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {}
+
+        with patch.object(
+            type(self.app), 'producer_pool', new_callable=lambda: property(lambda self: MagicMock(
+                acquire=MagicMock(side_effect=LimitExceeded(5))
+            ))
+        ):
+            with pytest.raises(OperationalError, match="broker_pool_limit"):
+                self.app.send_task('foo', (1, 2))
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_send_task_skips_driver_type_without_eta_countdown(self, detect_quorum_queues):
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {
+            'routing_key': 'testcelery',
+            'exchange': 'testcelery',
+            'exchange_type': 'topic',
+        }
+
+        self.app.send_task(name='foo', args=(1, 2))
+        assert not detect_quorum_queues.called
+
+    def test_broker_pool_acquire_timeout_default(self):
+        assert self.app.conf.broker_pool_acquire_timeout is None
+
+    def test_acquire_connection_raises_on_pool_exhaustion(self):
+        self.app.conf.broker_pool_limit = 5
+        self.app.conf.broker_pool_acquire_timeout = 10
+        with patch.object(
+            type(self.app), 'pool',
+            new_callable=lambda: property(lambda self: MagicMock(
+                acquire=MagicMock(side_effect=LimitExceeded(5))
+            ))
+        ):
+            with pytest.raises(OperationalError, match="broker_pool_limit"):
+                self.app._acquire_connection(pool=True)
+
+    def test_acquire_connection_without_pool(self):
+        with patch.object(self.app, 'connection_for_write') as mock_conn:
+            result = self.app._acquire_connection(pool=False)
+            mock_conn.assert_called_once()
+            assert result == mock_conn.return_value
+
+    def test_acquire_connection_success_with_pool(self):
+        self.app.conf.broker_pool_acquire_timeout = 30
+        mock_pool = MagicMock()
+        with patch.object(
+            type(self.app), 'pool',
+            new_callable=lambda: property(lambda self: mock_pool)
+        ):
+            result = self.app._acquire_connection(pool=True)
+            mock_pool.acquire.assert_called_once_with(block=True, timeout=30)
+            assert result == mock_pool.acquire.return_value
+
+    def test_acquire_producer_success(self):
+        mock_pool = MagicMock()
+        with patch.object(
+            type(self.app), 'producer_pool',
+            new_callable=lambda: property(lambda self: mock_pool)
+        ):
+            result = self.app._acquire_producer(timeout=30)
+            mock_pool.acquire.assert_called_once_with(block=True, timeout=30)
+            assert result == mock_pool.acquire.return_value
+
+    def test_acquire_producer_raises_on_pool_exhaustion(self):
+        self.app.conf.broker_pool_limit = 5
+        with patch.object(
+            type(self.app), 'producer_pool',
+            new_callable=lambda: property(lambda self: MagicMock(
+                acquire=MagicMock(side_effect=LimitExceeded(5))
+            ))
+        ):
+            with pytest.raises(OperationalError, match="broker producer"):
+                self.app._acquire_producer(timeout=10)
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_with_eta_no_quorum_queues(self, detect_quorum_queues):
+        """When eta is set but quorum queues are not detected, skip native delayed delivery."""
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {
+            'queue': Queue('testcelery', routing_key='testcelery',
+                           exchange=Exchange('testcelery', type='topic'))
+        }
+
+        self.app.send_task('foo', (1, 2), countdown=10)
+        detect_quorum_queues.assert_called_once()
+        # Should still send, just without native delayed delivery routing
+        self.app.amqp.send_task_message.assert_called_once()
 
 
 class test_defaults:

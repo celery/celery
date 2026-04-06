@@ -18,6 +18,7 @@ from dateutil.parser import isoparse
 from kombu import Exchange, pools
 from kombu.clocks import LamportClock
 from kombu.common import oid_from
+from kombu.exceptions import LimitExceeded
 from kombu.transport.native_delayed_delivery import calculate_routing_key
 from kombu.utils.compat import register_after_fork
 from kombu.utils.objects import cached_property
@@ -27,7 +28,7 @@ from vine import starpromise
 from celery import platforms, signals
 from celery._state import (_announce_app_finalized, _deregister_app, _register_app, _set_current_app, _task_stack,
                            connect_on_app_finalize, get_current_app, get_current_worker_task, set_default_app)
-from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
+from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured, OperationalError
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.utils import abstract
@@ -926,39 +927,39 @@ class Celery:
         options = router.route(
             options, route_name or name, args, kwargs, task_type)
 
-        driver_type = self.producer_pool.connections.connection.transport.driver_type
+        if eta or countdown:
+            driver_type = self.producer_pool.connections.connection.transport.driver_type
+            if detect_quorum_queues(self, driver_type)[0]:
 
-        if (eta or countdown) and detect_quorum_queues(self, driver_type)[0]:
+                queue = options.get("queue")
+                exchange_type = queue.exchange.type if queue else options["exchange_type"]
+                routing_key = queue.routing_key if queue else options["routing_key"]
+                exchange_name = queue.exchange.name if queue else options["exchange"]
 
-            queue = options.get("queue")
-            exchange_type = queue.exchange.type if queue else options["exchange_type"]
-            routing_key = queue.routing_key if queue else options["routing_key"]
-            exchange_name = queue.exchange.name if queue else options["exchange"]
+                if exchange_type != 'direct':
+                    if eta:
+                        if isinstance(eta, str):
+                            eta = isoparse(eta)
+                        countdown = (maybe_make_aware(eta) - self.now()).total_seconds()
 
-            if exchange_type != 'direct':
-                if eta:
-                    if isinstance(eta, str):
-                        eta = isoparse(eta)
-                    countdown = (maybe_make_aware(eta) - self.now()).total_seconds()
+                    if countdown:
+                        if countdown > 0:
+                            routing_key = calculate_routing_key(int(countdown), routing_key)
+                            exchange = Exchange(
+                                'celery_delayed_27',
+                                type='topic',
+                            )
+                            options.pop("queue", None)
+                            options['routing_key'] = routing_key
+                            options['exchange'] = exchange
 
-                if countdown:
-                    if countdown > 0:
-                        routing_key = calculate_routing_key(int(countdown), routing_key)
-                        exchange = Exchange(
-                            'celery_delayed_27',
-                            type='topic',
-                        )
-                        options.pop("queue", None)
-                        options['routing_key'] = routing_key
-                        options['exchange'] = exchange
-
-            else:
-                logger.warning(
-                    'Direct exchanges are not supported with native delayed delivery.\n'
-                    f'{exchange_name} is a direct exchange but should be a topic exchange or '
-                    'a fanout exchange in order for native delayed delivery to work properly.\n'
-                    'If quorum queues are used, this task may block the worker process until the ETA arrives.'
-                )
+                else:
+                    logger.warning(
+                        'Direct exchanges are not supported with native delayed delivery.\n'
+                        f'{exchange_name} is a direct exchange but should be a topic exchange or '
+                        'a fanout exchange in order for native delayed delivery to work properly.\n'
+                        'If quorum queues are used, this task may block the worker process until the ETA arrives.'
+                    )
 
         if expires is not None:
             if isinstance(expires, datetime):
@@ -1126,7 +1127,18 @@ class Celery:
     def _acquire_connection(self, pool=True):
         """Helper for :meth:`connection_or_acquire`."""
         if pool:
-            return self.pool.acquire(block=True)
+            timeout = self.conf.broker_pool_acquire_timeout
+            try:
+                return self.pool.acquire(block=True, timeout=timeout)
+            except LimitExceeded as exc:
+                pool_limit = self.conf.broker_pool_limit
+                raise OperationalError(
+                    f"Timed out waiting for a broker connection after "
+                    f"{timeout}s. All {pool_limit} connections are in use. "
+                    f"Consider increasing broker_pool_limit (currently "
+                    f"{pool_limit}) or broker_pool_acquire_timeout "
+                    f"(currently {timeout}s)."
+                ) from exc
         return self.connection_for_write()
 
     def connection_or_acquire(self, connection=None, pool=True, *_, **__):
@@ -1143,6 +1155,20 @@ class Celery:
 
     default_connection = connection_or_acquire  # XXX compat
 
+    def _acquire_producer(self, timeout=None):
+        """Helper for :meth:`producer_or_acquire`."""
+        try:
+            return self.producer_pool.acquire(block=True, timeout=timeout)
+        except LimitExceeded as exc:
+            pool_limit = self.conf.broker_pool_limit
+            raise OperationalError(
+                f"Timed out waiting for a broker producer after "
+                f"{timeout}s. All {pool_limit} producer slots are in use. "
+                f"Consider increasing broker_pool_limit (currently "
+                f"{pool_limit}) or broker_pool_acquire_timeout "
+                f"(currently {timeout}s)."
+            ) from exc
+
     def producer_or_acquire(self, producer=None):
         """Context used to acquire a producer from the pool.
 
@@ -1153,8 +1179,9 @@ class Celery:
             producer (kombu.Producer): If not provided, a producer
                 will be acquired from the producer pool.
         """
+        timeout = self.conf.broker_pool_acquire_timeout
         return FallbackContext(
-            producer, self.producer_pool.acquire, block=True,
+            producer, self._acquire_producer, timeout=timeout,
         )
 
     default_producer = producer_or_acquire  # XXX compat
