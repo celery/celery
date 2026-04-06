@@ -860,6 +860,21 @@ class test_chain(CanvasCase):
         assert isinstance(final_task.tasks[0].body, chord)
         assert final_task.tasks[0].body.body == chain1
 
+    def test_chain_with_empty_group_does_not_crash(self):
+        """Test that chaining empty groups does not raise AttributeError.
+
+        Regression test for https://github.com/celery/celery/issues/9772
+        """
+        # chain(group([task1, task2]), group(), group()) should not raise
+        g1 = group([self.add.s(2, 2), self.add.s(4, 4)])
+        c = chain(g1, group(), group())
+        c.freeze()  # should not raise AttributeError
+
+    def test_chain_empty_group_between_tasks(self):
+        """An empty group between tasks in a chain should be skipped."""
+        c = chain(self.add.s(2, 2), group(), self.add.s(4, 4))
+        c.freeze()  # should not raise
+
 
 class test_group(CanvasCase):
     def test_repr(self):

@@ -1102,7 +1102,7 @@ class _chain(Signature):
             self.app, _id, group_id, chord, clone=False,
             group_index=group_index,
         )
-        return results[0]
+        return results[0] if results else None
 
     def stamp(self, visitor=None, append_stamps=False, **headers):
         visitor_headers = None
@@ -1205,6 +1205,11 @@ class _chain(Signature):
                 steps_extend(task.tasks)
                 continue
 
+            if isinstance(task, group) and not task.tasks:
+                # skip empty groups as they are no-ops
+                # Issue #9772
+                continue
+
             # TODO why isn't this asserting is_last_task == False?
             if isinstance(task, group) and prev_task:
                 # automatically upgrade group(...) | s to chord(group, s)
@@ -1273,10 +1278,11 @@ class _chain(Signature):
 
                 # We need to change that so that it points to the
                 # group result object.
-                node = res
-                while node.parent:
-                    node = node.parent
-                prev_res = node
+                if res is not None:
+                    node = res
+                    while node.parent:
+                        node = node.parent
+                    prev_res = node
         self.id = last_task_id
         return tasks, results
 
