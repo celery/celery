@@ -318,7 +318,7 @@ class Backend:
         if isinstance(callback, group):
             return self._handle_group_chord_error(group_callback=callback, backend=backend, exc=exc)
 
-        # Generate an ID if missing so the error can be stored (#4834).
+        # Generate an ID if missing so the error can be stored.
         callback_id = callback.id
         if not callback_id:
             from kombu.utils.uuid import uuid

@@ -1260,7 +1260,7 @@ class _chain(Signature):
             if link_error:
                 for errback in maybe_list(link_error):
                     task.link_error(errback)
-                    # Propagate to chord body for chord_error_from_stack (#4834).
+                    # Propagate to chord body for chord_error_from_stack.
                     if isinstance(task, chord) and task.body:
                         task.body.link_error(errback)
 
@@ -1280,7 +1280,7 @@ class _chain(Signature):
                 while node.parent:
                     node = node.parent
                 prev_res = node
-        # Use the last task's actual ID, not the input parameter (#4834).
+        # Use the last task's actual ID, not the input parameter.
         self.id = results[0].id if results else last_task_id
         return tasks, results
 
