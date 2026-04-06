@@ -868,10 +868,13 @@ class Celery:
                 'task_always_eager has no effect on send_task',
             ), stacklevel=2)
 
-        # If the task is registered locally, apply its execution options
-        # (e.g. serializer, queue, compression) as defaults so that
-        # send_task() honours per-task settings. Explicitly passed
-        # options take precedence.
+        # If the caller did not supply a task_type (i.e. a plain
+        # send_task("name", ...) call), look it up in the local registry
+        # and apply its execution options as defaults.  We intentionally
+        # skip this when task_type was already provided (e.g. from
+        # Task.apply_async) because apply_async already merged exec
+        # options — doing it again would override explicit caller values.
+        resolved_from_registry = False
         if task_type is None:
             registry = self.tasks
             get = getattr(registry, 'get', None)
@@ -882,7 +885,8 @@ class Celery:
                     task_type = registry[name]
                 except KeyError:
                     task_type = None
-        if task_type is not None and hasattr(task_type, '_get_exec_options'):
+            resolved_from_registry = task_type is not None
+        if resolved_from_registry and hasattr(task_type, '_get_exec_options'):
             get_exec_options = task_type._get_exec_options
             try:
                 task_exec_options = get_exec_options()
