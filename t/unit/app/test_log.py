@@ -187,6 +187,17 @@ class test_default_logger:
     def test_setup_logging_subsystem_no_mputil(self, restore_logging, mask_modules):
         self.app.log.setup_logging_subsystem()
 
+    def test_setup_logging_subsystem_handler_exception_propagates(self, restore_logging):
+        @signals.setup_logging.connect
+        def failing_handler(**kwargs):
+            raise ValueError("test error")
+
+        try:
+            with pytest.raises(ValueError, match="test error"):
+                self.app.log.setup_logging_subsystem(loglevel=logging.DEBUG)
+        finally:
+            signals.setup_logging.disconnect(failing_handler)
+
     def test_setup_logger(self, restore_logging):
         logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
                                    root=False, colorize=True)
@@ -335,6 +346,9 @@ class test_task_logger(test_default_logger):
 
     def get_logger(self, *args, **kwargs):
         return get_task_logger('test_task_logger')
+
+    def test_setup_logging_subsystem_handler_exception_propagates(self, restore_logging):
+        pytest.skip("Not applicable to task logger")
 
     def test_renaming_base_logger(self):
         with pytest.raises(RuntimeError):
