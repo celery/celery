@@ -1450,6 +1450,114 @@ class test_App:
         assert args[15] == 30, \
             "Explicit soft_time_limit should override task-level soft_time_limit"
 
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_explicit_expires_pops_from_options(self, detect_quorum_queues):
+        """When expires is passed explicitly, it should be popped from merged options."""
+
+        @self.app.task(name='test_task_expires', expires=600)
+        def test_task():
+            pass
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        self.app.send_task('test_task_expires', (1,),
+                           connection=connection, router=router,
+                           expires=120)
+
+        call_args = self.app.amqp.create_task_message.call_args
+        # expires is positional arg at index 8
+        assert call_args[0][8] == 120, \
+            "Explicit expires should override task-level expires"
+        assert 'expires' not in call_args[1], \
+            "expires should not appear in kwargs (passed positionally)"
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_registry_without_get_method(self, detect_quorum_queues):
+        """send_task should handle registries that lack a .get() method."""
+
+        @self.app.task(name='test_task_no_get', serializer='json')
+        def test_task():
+            pass
+
+        # Replace the registry with one that has no .get() but supports __getitem__
+        real_registry = self.app.tasks
+
+        class DictLikeRegistry:
+            def __getitem__(self, key):
+                return real_registry[key]
+
+            def __contains__(self, key):
+                return key in real_registry
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        with patch.object(type(self.app), 'tasks',
+                          new_callable=lambda: property(lambda self: DictLikeRegistry())):
+            self.app.send_task('test_task_no_get', (1,),
+                               connection=connection, router=router)
+
+        call_kwargs = self.app.amqp.send_task_message.call_args
+        assert call_kwargs[1].get('serializer') == 'json', \
+            "Task serializer should be applied even with registry lacking .get()"
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_registry_without_get_keyerror(self, detect_quorum_queues):
+        """send_task should handle KeyError from registries lacking .get()."""
+
+        class DictLikeRegistry:
+            def __getitem__(self, key):
+                raise KeyError(key)
+
+            def __contains__(self, key):
+                return False
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        with patch.object(type(self.app), 'tasks',
+                          new_callable=lambda: property(lambda self: DictLikeRegistry())):
+            # Should not raise — gracefully handles missing task
+            self.app.send_task('nonexistent_task', (1,),
+                               connection=connection, router=router)
+
+        self.app.amqp.send_task_message.assert_called_once()
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_get_exec_options_typeerror(self, detect_quorum_queues):
+        """send_task should handle TypeError from _get_exec_options gracefully."""
+
+        @self.app.task(name='test_task_typeerror_exec')
+        def test_task():
+            pass
+
+        # Replace _get_exec_options with a function that raises TypeError
+        # (simulates an unbound method accessed on a class)
+        task_instance = self.app.tasks['test_task_typeerror_exec']
+        task_instance._get_exec_options = Mock(side_effect=TypeError("unbound"))
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        # Should not raise — TypeError should be caught and ignored
+        self.app.send_task('test_task_typeerror_exec', (1,),
+                           connection=connection, router=router)
+
+        self.app.amqp.send_task_message.assert_called_once()
+
     def test_send_task_sent_event(self):
 
         class Dispatcher:
