@@ -216,6 +216,72 @@ class test_Consumer(ConsumerTestCase):
         with subtests.test("_maximum_prefetch_restored becomes False"):
             assert c._maximum_prefetch_restored is False
 
+    @patch('celery.worker.consumer.consumer.active_requests', new_callable=set)
+    def test_prefetch_count_reduction_runs_when_qos_global_default(
+            self, active_requests_mock, subtests):
+        """Default ``qos_global=None`` must preserve legacy reduction behavior.
+
+        Guards against a regression where someone tightens the #9512 check
+        from ``is False`` to ``not qos_global``: the default ``None`` (set
+        when the Tasks bootstep has not yet recorded a value) would then
+        incorrectly skip the reduction.
+        """
+        self.app.conf.worker_enable_prefetch_count_reduction = True
+
+        reqs = {Mock() for _ in range(2)}
+        active_requests_mock.update(reqs)
+
+        c = self.get_consumer()
+        c.qos = Mock()
+        c.blueprint = Mock()
+        # Do NOT set c.qos_global; verify the __init__ default is None.
+        assert c.qos_global is None
+
+        def bp_start(*_, **__):
+            if c.restart_count > 1:
+                c.blueprint.state = CLOSE
+            else:
+                raise ConnectionError
+
+        c.blueprint.start.side_effect = bp_start
+
+        c.start()
+
+        with subtests.test("initial_prefetch_count is reduced"):
+            assert c.initial_prefetch_count == 1
+
+        with subtests.test("_maximum_prefetch_restored becomes False"):
+            assert c._maximum_prefetch_restored is False
+
+    def test_restore_prefetch_count_after_connection_restart_qos_global_false(self):
+        """Restoration callback must remain a clean no-op when qos_global=False.
+
+        With the #9512 fix, ``_maximum_prefetch_restored`` stays True so the
+        callback should return early. This test guards the early-exit path
+        and ensures the callback never tries to push a stale prefetch value
+        to the broker in per-consumer QoS mode.
+        """
+        self.app.conf.worker_enable_prefetch_count_reduction = True
+
+        c = self.get_consumer()
+        c.qos = Mock()
+        c.qos_global = False
+
+        class MutexMock:
+            def __enter__(self):
+                pass
+
+            def __exit__(self, *args):
+                pass
+
+        c.qos._mutex = MutexMock()
+
+        # _maximum_prefetch_restored remains True (no reduction happened),
+        # so the callback should return None without touching qos.
+        assert c._maximum_prefetch_restored is True
+        assert c._restore_prefetch_count_after_connection_restart(None) is None
+        c.qos.set.assert_not_called()
+
     def test_restore_prefetch_count_after_connection_restart_negative(self):
         self.app.conf.worker_enable_prefetch_count_reduction = False
 
