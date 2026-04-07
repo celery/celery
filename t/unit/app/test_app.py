@@ -1,5 +1,6 @@
 import gc
 import importlib
+import inspect
 import itertools
 import os
 import ssl
@@ -25,6 +26,7 @@ from celery import app as _app
 from celery import current_app, shared_task
 from celery.app import base as _appbase
 from celery.app import defaults
+from celery.app.amqp import AMQP
 from celery.backends.base import Backend
 from celery.contrib.testing.mocks import ContextMock
 from celery.exceptions import ImproperlyConfigured, OperationalError
@@ -1443,11 +1445,12 @@ class test_App:
 
         call_args = self.app.amqp.create_task_message.call_args
         args, kwargs = call_args
-        # time_limit and soft_time_limit are passed as positional args
-        # at positions 14 and 15 in create_task_message
-        assert args[14] == 60, \
+        bound = inspect.signature(AMQP.as_task_v2).bind(
+            None, *args, **kwargs
+        )
+        assert bound.arguments['time_limit'] == 60, \
             "Explicit time_limit should override task-level time_limit"
-        assert args[15] == 30, \
+        assert bound.arguments['soft_time_limit'] == 30, \
             "Explicit soft_time_limit should override task-level soft_time_limit"
 
     @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
@@ -1469,8 +1472,11 @@ class test_App:
                            expires=120)
 
         call_args = self.app.amqp.create_task_message.call_args
-        # expires is positional arg at index 8
-        assert call_args[0][8] == 120, \
+        args, kwargs = call_args
+        bound = inspect.signature(AMQP.as_task_v2).bind(
+            None, *args, **kwargs
+        )
+        assert bound.arguments['expires'] == 120, \
             "Explicit expires should override task-level expires"
         assert 'expires' not in call_args[1], \
             "expires should not appear in kwargs (passed positionally)"
