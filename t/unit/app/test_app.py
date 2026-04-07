@@ -1442,10 +1442,12 @@ class test_App:
                            time_limit=60, soft_time_limit=30)
 
         call_args = self.app.amqp.create_task_message.call_args
-        _, kwargs = call_args
-        assert kwargs['time_limit'] == 60, \
+        args, kwargs = call_args
+        # time_limit and soft_time_limit are passed as positional args
+        # at positions 14 and 15 in create_task_message
+        assert args[14] == 60, \
             "Explicit time_limit should override task-level time_limit"
-        assert kwargs['soft_time_limit'] == 30, \
+        assert args[15] == 30, \
             "Explicit soft_time_limit should override task-level soft_time_limit"
 
     def test_send_task_sent_event(self):
