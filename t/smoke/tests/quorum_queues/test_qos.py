@@ -74,6 +74,10 @@ class test_quorum_qos_prefetch_reduction_skipped_on_reconnect:
         app.conf.worker_enable_prefetch_count_reduction = True
         return app
 
+    # No RedisTestBroker xfail guard is needed: the ``quorum_queues/``
+    # conftest forces a RabbitMQ broker, so this test class only ever
+    # runs against amqp where the bug actually manifests.
+
     def test_skip_log_emitted_after_broker_restart(self, celery_setup: CeleryTestSetup):
         """The new ``Skipping prefetch count reduction`` log appears,
         and the legacy ``Temporarily reducing the prefetch count`` log
@@ -83,6 +87,11 @@ class test_quorum_qos_prefetch_reduction_skipped_on_reconnect:
         # in-flight requests at the moment of broker disconnection.
         sig = group(long_running_task.s(420) for _ in range(4))
         sig.apply_async(queue=queue)
+        # Wait until the tasks have actually been picked up by the pool
+        # so ``active_requests`` is non-empty when the broker dies. Without
+        # this barrier the test could pass on a pre-fix build because the
+        # reduction code path would never even be entered.
+        celery_setup.worker.wait_for_log("Starting long running task")
 
         celery_setup.broker.restart()
 
@@ -91,20 +100,41 @@ class test_quorum_qos_prefetch_reduction_skipped_on_reconnect:
         )
         # The legacy reduction log must not appear: in per-consumer QoS
         # mode the reduction would silently strand the consumer at the
-        # reduced prefetch forever.
-        assert "Temporarily reducing the prefetch count" not in celery_setup.worker.logs()
+        # reduced prefetch forever. ``assert_log_does_not_exist`` polls
+        # for a short window so this is not a stale-snapshot race.
+        celery_setup.worker.assert_log_does_not_exist(
+            "Temporarily reducing the prefetch count"
+        )
 
     def test_worker_resumes_consuming_after_broker_restart(self, celery_setup: CeleryTestSetup):
         """A task submitted after broker restart still gets processed.
 
-        With the bug, the worker would be stuck at a reduced prefetch
-        and unable to deliver new messages to idle pool processes once
-        the in-flight tasks finished. With the fix the new consumer
-        starts at the full prefetch and continues to consume normally.
+        Two long-running tasks are placed in flight so the connection
+        error path actually enters the reduction code under test (without
+        active requests the bug branch is never reached and the test
+        would silently pass on a pre-fix build).
+
+        Two in-flight is deliberately less than ``worker_concurrency=4``
+        so that two pool slots remain free for the post-restart noop.
+        After the broker restarts and ``task_acks_late`` causes the two
+        long-running tasks to be redelivered:
+
+        - On a pre-fix build the consumer is stranded at the reduced
+          prefetch (max(1, 4-2)=2). Both prefetch slots are taken by the
+          redelivered long-running tasks, so the noop is never fetched
+          and the test times out.
+        - On a post-fix build the consumer keeps its full prefetch of 4.
+          The two redelivered long-running tasks take two prefetch slots
+          and two pool slots; the noop is fetched into a free prefetch
+          slot, dispatched to a free pool process, and completes.
         """
         queue = celery_setup.worker.worker_queue
         # Confirm the worker is healthy before perturbing it.
         assert noop.s().apply_async(queue=queue).get(timeout=RESULT_TIMEOUT) is None
+
+        sig = group(long_running_task.s(420) for _ in range(2))
+        sig.apply_async(queue=queue)
+        celery_setup.worker.wait_for_log("Starting long running task")
 
         celery_setup.broker.restart()
 

@@ -137,18 +137,35 @@ class test_Consumer(ConsumerTestCase):
         with subtests.test("maximum prefetch is reached"):
             assert c._maximum_prefetch_restored is expected_maximum
 
+    @pytest.mark.parametrize(
+        'qos_global,expected_initial,expected_maximum,expected_log_substring',
+        [
+            # qos_global=False (per-consumer QoS, e.g. quorum queues):
+            # reduction must be skipped because basic.qos updates do not
+            # propagate to the already-running consumer. See #9512.
+            (False, 2, True, "Skipping prefetch count reduction"),
+            # qos_global=True (classic channel-wide QoS): legacy reduction
+            # still runs because basic.qos updates propagate normally.
+            (True, 1, False, "Temporarily reducing the prefetch count"),
+            # qos_global=None (default; Tasks bootstep has not yet recorded
+            # a value): legacy reduction must still run. Guards against a
+            # future regression where someone tightens the ``is False``
+            # check to ``not qos_global``, which would silently skip
+            # reduction in the unknown-state case too.
+            (None, 1, False, "Temporarily reducing the prefetch count"),
+        ],
+        ids=['qos_global_false', 'qos_global_true', 'qos_global_default_none'],
+    )
     @patch('celery.worker.consumer.consumer.active_requests', new_callable=set)
-    def test_prefetch_count_reduction_skipped_when_qos_global_false(
-            self, active_requests_mock, subtests):
-        """Regression test for celery/celery#9512.
+    def test_prefetch_count_reduction_respects_qos_global(
+            self, active_requests_mock, qos_global, expected_initial,
+            expected_maximum, expected_log_substring, caplog, subtests):
+        """Regression coverage for celery/celery#9512.
 
-        When ``qos_global=False`` (per-consumer QoS, e.g. quorum queues),
-        ``basic.qos`` updates do not propagate to already-running consumers.
-        The gradual restoration mechanism is therefore a no-op and the
-        worker would get stuck at the reduced prefetch count forever.
-
-        The reduction must be skipped entirely in this mode so the new
-        consumer created on reconnect starts at the full prefetch count.
+        ``on_connection_error_after_connected`` must skip the prefetch
+        reduction iff ``qos_global is False``, and emit a log explaining
+        the skip. The legacy reduction path must remain unchanged for
+        ``qos_global=True`` and the unknown default ``None``.
         """
         self.app.conf.worker_enable_prefetch_count_reduction = True
 
@@ -159,8 +176,12 @@ class test_Consumer(ConsumerTestCase):
         c = self.get_consumer()
         c.qos = Mock()
         c.blueprint = Mock()
-        # Simulate Tasks bootstep having recorded per-consumer QoS mode.
-        c.qos_global = False
+        if qos_global is None:
+            # Verify the __init__ default; do not overwrite.
+            assert c.qos_global is None
+        else:
+            # Simulate Tasks bootstep having recorded the QoS mode.
+            c.qos_global = qos_global
 
         def bp_start(*_, **__):
             if c.restart_count > 1:
@@ -170,117 +191,24 @@ class test_Consumer(ConsumerTestCase):
 
         c.blueprint.start.side_effect = bp_start
 
-        c.start()
+        with caplog.at_level(logging.INFO, logger='celery.worker.consumer.consumer'):
+            c.start()
 
-        with subtests.test("initial_prefetch_count is not reduced"):
-            # max_prefetch_count = pool.num_processes * prefetch_multiplier = 2 * 1 = 2
-            assert c.initial_prefetch_count == 2
+        # max_prefetch_count = pool.num_processes * prefetch_multiplier = 2 * 1 = 2
+        with subtests.test(f"initial_prefetch_count == {expected_initial}"):
+            assert c.initial_prefetch_count == expected_initial
 
-        with subtests.test("_maximum_prefetch_restored stays True"):
-            # No reduction means nothing to restore.
-            assert c._maximum_prefetch_restored is True
+        with subtests.test(f"_maximum_prefetch_restored is {expected_maximum}"):
+            assert c._maximum_prefetch_restored is expected_maximum
 
-    @patch('celery.worker.consumer.consumer.active_requests', new_callable=set)
-    def test_prefetch_count_reduction_runs_when_qos_global_true(
-            self, active_requests_mock, subtests):
-        """Reduction must still run on classic queues (qos_global=True).
-
-        Guards against an over-correction of the #9512 fix that would
-        also disable the reduction in the channel-wide QoS case where
-        ``basic.qos`` does propagate to running consumers.
-        """
-        self.app.conf.worker_enable_prefetch_count_reduction = True
-
-        reqs = {Mock() for _ in range(2)}
-        active_requests_mock.update(reqs)
-
-        c = self.get_consumer()
-        c.qos = Mock()
-        c.blueprint = Mock()
-        c.qos_global = True
-
-        def bp_start(*_, **__):
-            if c.restart_count > 1:
-                c.blueprint.state = CLOSE
-            else:
-                raise ConnectionError
-
-        c.blueprint.start.side_effect = bp_start
-
-        c.start()
-
-        with subtests.test("initial_prefetch_count is reduced"):
-            # 2 active requests reduces from max=2 down to prefetch_multiplier=1
-            assert c.initial_prefetch_count == 1
-
-        with subtests.test("_maximum_prefetch_restored becomes False"):
-            assert c._maximum_prefetch_restored is False
-
-    @patch('celery.worker.consumer.consumer.active_requests', new_callable=set)
-    def test_prefetch_count_reduction_runs_when_qos_global_default(
-            self, active_requests_mock, subtests):
-        """Default ``qos_global=None`` must preserve legacy reduction behavior.
-
-        Guards against a regression where someone tightens the #9512 check
-        from ``is False`` to ``not qos_global``: the default ``None`` (set
-        when the Tasks bootstep has not yet recorded a value) would then
-        incorrectly skip the reduction.
-        """
-        self.app.conf.worker_enable_prefetch_count_reduction = True
-
-        reqs = {Mock() for _ in range(2)}
-        active_requests_mock.update(reqs)
-
-        c = self.get_consumer()
-        c.qos = Mock()
-        c.blueprint = Mock()
-        # Do NOT set c.qos_global; verify the __init__ default is None.
-        assert c.qos_global is None
-
-        def bp_start(*_, **__):
-            if c.restart_count > 1:
-                c.blueprint.state = CLOSE
-            else:
-                raise ConnectionError
-
-        c.blueprint.start.side_effect = bp_start
-
-        c.start()
-
-        with subtests.test("initial_prefetch_count is reduced"):
-            assert c.initial_prefetch_count == 1
-
-        with subtests.test("_maximum_prefetch_restored becomes False"):
-            assert c._maximum_prefetch_restored is False
-
-    def test_restore_prefetch_count_after_connection_restart_qos_global_false(self):
-        """Restoration callback must remain a clean no-op when qos_global=False.
-
-        With the #9512 fix, ``_maximum_prefetch_restored`` stays True so the
-        callback should return early. This test guards the early-exit path
-        and ensures the callback never tries to push a stale prefetch value
-        to the broker in per-consumer QoS mode.
-        """
-        self.app.conf.worker_enable_prefetch_count_reduction = True
-
-        c = self.get_consumer()
-        c.qos = Mock()
-        c.qos_global = False
-
-        class MutexMock:
-            def __enter__(self):
-                pass
-
-            def __exit__(self, *args):
-                pass
-
-        c.qos._mutex = MutexMock()
-
-        # _maximum_prefetch_restored remains True (no reduction happened),
-        # so the callback should return None without touching qos.
-        assert c._maximum_prefetch_restored is True
-        assert c._restore_prefetch_count_after_connection_restart(None) is None
-        c.qos.set.assert_not_called()
+        with subtests.test(f"log contains '{expected_log_substring}'"):
+            assert any(
+                expected_log_substring in record.getMessage()
+                for record in caplog.records
+            ), (
+                f"expected a log record matching {expected_log_substring!r}, "
+                f"got: {[r.getMessage() for r in caplog.records]}"
+            )
 
     def test_restore_prefetch_count_after_connection_restart_negative(self):
         self.app.conf.worker_enable_prefetch_count_reduction = False
