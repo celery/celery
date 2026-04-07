@@ -37,10 +37,9 @@ jobs:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
       rabbitmq:
-        image: rabbitmq:management
+        image: rabbitmq:latest
         ports:
           - 5672:5672
-          - 15672:15672
         env:
           RABBITMQ_DEFAULT_USER: guest
           RABBITMQ_DEFAULT_PASS: guest
