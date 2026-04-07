@@ -1,0 +1,2 @@
+To test https://github.com/celery/celery/pull/10250 as the integration tests won't run without changes matching the following patterns:
+https://github.com/celery/celery/blob/72e9240aa1e22b5a124534f6b469d32629a066e2/.github/workflows/python-package.yml#L10-L22
