@@ -137,6 +137,85 @@ class test_Consumer(ConsumerTestCase):
         with subtests.test("maximum prefetch is reached"):
             assert c._maximum_prefetch_restored is expected_maximum
 
+    @patch('celery.worker.consumer.consumer.active_requests', new_callable=set)
+    def test_prefetch_count_reduction_skipped_when_qos_global_false(
+            self, active_requests_mock, subtests):
+        """Regression test for celery/celery#9512.
+
+        When ``qos_global=False`` (per-consumer QoS, e.g. quorum queues),
+        ``basic.qos`` updates do not propagate to already-running consumers.
+        The gradual restoration mechanism is therefore a no-op and the
+        worker would get stuck at the reduced prefetch count forever.
+
+        The reduction must be skipped entirely in this mode so the new
+        consumer created on reconnect starts at the full prefetch count.
+        """
+        self.app.conf.worker_enable_prefetch_count_reduction = True
+
+        # Two active in-flight requests at the moment of connection loss.
+        reqs = {Mock() for _ in range(2)}
+        active_requests_mock.update(reqs)
+
+        c = self.get_consumer()
+        c.qos = Mock()
+        c.blueprint = Mock()
+        # Simulate Tasks bootstep having recorded per-consumer QoS mode.
+        c.qos_global = False
+
+        def bp_start(*_, **__):
+            if c.restart_count > 1:
+                c.blueprint.state = CLOSE
+            else:
+                raise ConnectionError
+
+        c.blueprint.start.side_effect = bp_start
+
+        c.start()
+
+        with subtests.test("initial_prefetch_count is not reduced"):
+            # max_prefetch_count = pool.num_processes * prefetch_multiplier = 2 * 1 = 2
+            assert c.initial_prefetch_count == 2
+
+        with subtests.test("_maximum_prefetch_restored stays True"):
+            # No reduction means nothing to restore.
+            assert c._maximum_prefetch_restored is True
+
+    @patch('celery.worker.consumer.consumer.active_requests', new_callable=set)
+    def test_prefetch_count_reduction_runs_when_qos_global_true(
+            self, active_requests_mock, subtests):
+        """Reduction must still run on classic queues (qos_global=True).
+
+        Guards against an over-correction of the #9512 fix that would
+        also disable the reduction in the channel-wide QoS case where
+        ``basic.qos`` does propagate to running consumers.
+        """
+        self.app.conf.worker_enable_prefetch_count_reduction = True
+
+        reqs = {Mock() for _ in range(2)}
+        active_requests_mock.update(reqs)
+
+        c = self.get_consumer()
+        c.qos = Mock()
+        c.blueprint = Mock()
+        c.qos_global = True
+
+        def bp_start(*_, **__):
+            if c.restart_count > 1:
+                c.blueprint.state = CLOSE
+            else:
+                raise ConnectionError
+
+        c.blueprint.start.side_effect = bp_start
+
+        c.start()
+
+        with subtests.test("initial_prefetch_count is reduced"):
+            # 2 active requests reduces from max=2 down to prefetch_multiplier=1
+            assert c.initial_prefetch_count == 1
+
+        with subtests.test("_maximum_prefetch_restored becomes False"):
+            assert c._maximum_prefetch_restored is False
+
     def test_restore_prefetch_count_after_connection_restart_negative(self):
         self.app.conf.worker_enable_prefetch_count_reduction = False
 
@@ -954,6 +1033,32 @@ class test_Tasks:
         record = caplog.records[0]
         assert record.levelname == "INFO"
         assert record.msg == "Global QoS is disabled. Prefetch count in now static."
+
+    def test_start_records_qos_global_on_consumer_quorum(self):
+        """Tasks.start() must store the effective qos_global on the consumer.
+
+        Regression test for celery/celery#9512: the connection-error path
+        in Consumer.on_connection_error_after_connected needs to know the
+        QoS mode to decide whether prefetch reduction is safe.
+        """
+        c = self.c
+        c.connection.transport.driver_type = 'amqp'
+        c.app.amqp.queues = {"celery": Mock(queue_arguments={"x-queue-type": "quorum"})}
+        tasks = Tasks(c)
+
+        tasks.start(c)
+
+        assert c.qos_global is False
+
+    def test_start_records_qos_global_on_consumer_classic(self):
+        """Classic queues keep the legacy channel-wide QoS mode."""
+        c = self.c
+        c.app.amqp.queues = {"celery": Mock(queue_arguments=None)}
+        tasks = Tasks(c)
+
+        tasks.start(c)
+
+        assert c.qos_global is True
 
     def test_qos_with_worker_eta_task_limit(self):
         """Test QoS is instantiated with worker_eta_task_limit as max_prefetch."""
