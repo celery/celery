@@ -210,6 +210,36 @@ class test_Consumer(ConsumerTestCase):
                 f"got: {[r.getMessage() for r in caplog.records]}"
             )
 
+    @patch('celery.worker.consumer.consumer.active_requests', new_callable=set)
+    def test_on_connection_error_skip_resets_prior_reduced_state(
+            self, active_requests_mock):
+        """Skip path must clear state left over by an earlier legacy reduction.
+
+        Edge case raised in PR review: if a previous reconnect took the
+        legacy reduction path (because ``qos_global`` was ``None`` or
+        ``True`` at that time), ``initial_prefetch_count`` may already be
+        below ``max_prefetch_count``. When a subsequent reconnect takes
+        the new per-consumer-QoS skip path, the stale reduced value must
+        be reset; otherwise the new consumer would be created at the old
+        reduced prefetch count even though we claimed to "skip" reduction.
+        """
+        self.app.conf.worker_enable_prefetch_count_reduction = True
+        active_requests_mock.update({Mock() for _ in range(2)})
+
+        c = self.get_consumer()
+        c.qos = Mock()
+        c.qos_global = False
+
+        # Simulate state left over from a prior legacy reduction cycle.
+        c.initial_prefetch_count = 1
+        c._maximum_prefetch_restored = False
+
+        c.on_connection_error_after_connected(ConnectionError('simulated'))
+
+        # max_prefetch_count = pool.num_processes * prefetch_multiplier = 2 * 1 = 2
+        assert c.initial_prefetch_count == c.max_prefetch_count
+        assert c._maximum_prefetch_restored is True
+
     def test_restore_prefetch_count_after_connection_restart_negative(self):
         self.app.conf.worker_enable_prefetch_count_reduction = False
 
