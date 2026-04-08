@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import pytest
 from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup
+from pytest_docker_tools.wrappers.container import wait_for_callable
 
 from celery import Celery
 from celery.canvas import group
@@ -45,6 +46,22 @@ class test_quorum_qos:
         results = [add.s(i, i).set(queue=queue).delay() for i in range(5)]
         for i, result in enumerate(results):
             assert result.get(timeout=RESULT_TIMEOUT) == i * 2
+
+
+def _wait_for_log_count(worker, log: str, count: int, timeout: int = RESULT_TIMEOUT) -> None:
+    """Block until ``log`` appears at least ``count`` times in worker logs.
+
+    ``pytest_celery``'s ``wait_for_log`` only checks substring presence,
+    so calling it twice for the same string returns immediately after the
+    first match. Tests that need N tasks to actually be in flight at the
+    moment of a broker disconnect need a counted barrier to avoid a race
+    where only one task has started when the disconnect fires.
+    """
+    wait_for_callable(
+        message=f"Waiting for worker to log '{log}' at least {count} times",
+        func=lambda: worker.logs().count(log) >= count,
+        timeout=timeout,
+    )
 
 
 class test_quorum_qos_prefetch_reduction_skipped_on_reconnect:
@@ -87,11 +104,13 @@ class test_quorum_qos_prefetch_reduction_skipped_on_reconnect:
         # in-flight requests at the moment of broker disconnection.
         sig = group(long_running_task.s(420) for _ in range(4))
         sig.apply_async(queue=queue)
-        # Wait until the tasks have actually been picked up by the pool
-        # so ``active_requests`` is non-empty when the broker dies. Without
-        # this barrier the test could pass on a pre-fix build because the
-        # reduction code path would never even be entered.
-        celery_setup.worker.wait_for_log("Starting long running task")
+        # Wait until all 4 tasks have actually been picked up by the pool
+        # so ``active_requests`` has the expected size when the broker
+        # dies. A plain substring ``wait_for_log`` would return as soon as
+        # the first task logs, which could let the test pass on a pre-fix
+        # build where fewer active requests mean a smaller (or no)
+        # reduction.
+        _wait_for_log_count(celery_setup.worker, "Starting long running task", 4)
 
         celery_setup.broker.restart()
 
@@ -134,7 +153,13 @@ class test_quorum_qos_prefetch_reduction_skipped_on_reconnect:
 
         sig = group(long_running_task.s(420) for _ in range(2))
         sig.apply_async(queue=queue)
-        celery_setup.worker.wait_for_log("Starting long running task")
+        # Both tasks must be in flight before the broker restart so
+        # ``len(active_requests) == 2`` when the reduction is computed on
+        # a pre-fix build. A single ``wait_for_log`` returns as soon as
+        # the first task starts, which would compute max(1, 4-1)=3 instead
+        # of max(1, 4-2)=2 and leave enough prefetch slots free for the
+        # post-restart noop to succeed even on the buggy path.
+        _wait_for_log_count(celery_setup.worker, "Starting long running task", 2)
 
         celery_setup.broker.restart()
 
