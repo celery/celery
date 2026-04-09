@@ -14,7 +14,8 @@ from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.utils.collections import LimitedSet
 from celery.utils.quorum_queues import detect_quorum_queues
 from celery.worker.consumer.agent import Agent
-from celery.worker.consumer.consumer import CANCEL_TASKS_BY_DEFAULT, CLOSE, TERMINATE, Consumer
+from celery.worker.consumer.consumer import (CANCEL_TASKS_BY_DEFAULT, CLOSE, COLLECT_SOCKET_TIMEOUT, TERMINATE,
+                                             Consumer)
 from celery.worker.consumer.gossip import Gossip
 from celery.worker.consumer.heart import Heart
 from celery.worker.consumer.mingle import Mingle
@@ -366,11 +367,27 @@ class test_Consumer(ConsumerTestCase):
 
     def test_collects_at_restart(self):
         c = self.get_consumer()
-        c.connection.collect.side_effect = MemoryError()
+        old_conn = c.connection
+        old_conn.collect.side_effect = MemoryError()
         c.blueprint.start.side_effect = socket.error()
         c.blueprint.restart.side_effect = self._closer(c)
         c.start()
-        c.connection.collect.assert_called_with()
+        old_conn.collect.assert_called_with(socket_timeout=COLLECT_SOCKET_TIMEOUT)
+        # The broken connection is closed and cleared by the error handler
+        old_conn.close.assert_called_once()
+        assert c.connection is None
+
+    def test_collects_with_socket_timeout_on_connection_error(self):
+        # collect() must always be called with an explicit socket_timeout to
+        # prevent the cleanup path from blocking indefinitely on a dead socket.
+        c = self.get_consumer()
+        old_conn = c.connection
+        c.on_connection_error_after_connected(Mock())
+        old_conn.collect.assert_called_once_with(socket_timeout=COLLECT_SOCKET_TIMEOUT)
+        # The broken connection must be closed and cleared so that
+        # blueprint.restart() starts fresh.
+        old_conn.close.assert_called_once()
+        assert c.connection is None
 
     def test_register_with_event_loop(self):
         c = self.get_consumer()
@@ -1070,6 +1087,94 @@ def _amqp_connection():
     connection.return_value = ContextMock(name='connection')
     connection.return_value.transport.driver_type = 'amqp'
     return connection
+
+
+class test_ConnectionStep:
+    """Tests for the Connection bootstep (celery.worker.consumer.connection)."""
+
+    def _get_step_and_consumer(self):
+        from celery.worker.consumer.connection import Connection
+        c = Mock(name='consumer')
+        c.connect.return_value = Mock(name='kombu_conn')
+        c.connect.return_value.as_uri.return_value = 'redis://localhost/0'
+        step = Connection.__new__(Connection)
+        step.obj = None  # mirrors StartStopStep default
+        return step, c
+
+    # ------------------------------------------------------------------
+    # shutdown() - closes the connection for final cleanup
+    # ------------------------------------------------------------------
+
+    def test_shutdown_closes_connection(self):
+        """shutdown() closes c.connection and sets it to None."""
+        step, c = self._get_step_and_consumer()
+        conn = Mock(name='conn')
+        c.connection = conn
+
+        step.shutdown(c)
+
+        conn.close.assert_called_once()
+        assert c.connection is None
+
+    def test_shutdown_is_safe_when_connection_is_none(self):
+        """shutdown() does not crash when c.connection is already None."""
+        step, c = self._get_step_and_consumer()
+        c.connection = None
+
+        step.shutdown(c)  # must not raise
+
+    # ------------------------------------------------------------------
+    # close_connection() - used by error handler and shutdown
+    # ------------------------------------------------------------------
+
+    def test_close_connection_closes_and_clears(self):
+        """close_connection() closes c.connection and sets it to None."""
+        step, c = self._get_step_and_consumer()
+        conn = Mock(name='conn')
+        c.connection = conn
+
+        step.close_connection(c)
+
+        conn.close.assert_called_once()
+        assert c.connection is None
+
+    def test_close_connection_ignores_close_errors(self):
+        """close_connection() swallows exceptions from connection.close()."""
+        step, c = self._get_step_and_consumer()
+        conn = Mock(name='conn')
+        conn.connection_errors = (OSError,)
+        conn.channel_errors = ()
+        conn.close.side_effect = OSError('socket already closed')
+        c.connection = conn
+
+        step.close_connection(c)  # must not raise
+
+        assert c.connection is None
+
+    def test_close_connection_is_safe_when_none(self):
+        """close_connection() does not crash when c.connection is None."""
+        step, c = self._get_step_and_consumer()
+        c.connection = None
+
+        step.close_connection(c)  # must not raise
+
+    # ------------------------------------------------------------------
+    # start() - sanity check that the connection is stored on c
+    # ------------------------------------------------------------------
+
+    def test_start_stores_connection_on_consumer(self):
+        """start() calls c.connect() and stores the result on c.connection."""
+        from celery.worker.consumer.connection import Connection
+        c = Mock(name='consumer')
+        step = Connection(c)
+
+        fake_conn = Mock(name='kombu_conn')
+        fake_conn.as_uri.return_value = 'redis://localhost/0'
+        c.connect.return_value = fake_conn
+
+        step.start(c)
+
+        assert c.connection is fake_conn
 
 
 class test_Gossip:
