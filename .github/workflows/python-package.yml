@@ -5,19 +5,26 @@ name: Celery
 
 on:
   push:
-    branches: [ 'master', '5.0' ]
+    branches: [ 'main']
     paths:
         - '**.py'
         - '**.txt'
         - '.github/workflows/python-package.yml'
         - '**.toml'
+        - "tox.ini"
   pull_request:
-    branches: [ 'master', '5.0' ]
+    branches: [ 'main' ]
     paths:
         - '**.py'
         - '**.txt'
         - '**.toml'
         - '.github/workflows/python-package.yml'
+        - "tox.ini"
+  workflow_dispatch:
+
+
+permissions:
+  contents: read # to fetch code (actions/checkout)
 
 jobs:
   Unit:
@@ -26,45 +33,106 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', 'pypy-3.7','pypy-3.8']
-        os: ["ubuntu-20.04", "windows-2019"]
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14', 'pypy3.11']
+        os: ["blacksmith-4vcpu-ubuntu-2404", "windows-latest"]
+        exclude:
+            - python-version: '3.10'
+              os: "windows-latest"
+            - python-version: '3.11'
+              os: "windows-latest"
+            - python-version: '3.12'
+              os: "windows-latest"
+            - python-version: '3.13'
+              os: "windows-latest"
+            - python-version: '3.14t'
+              os: "windows-latest"
+            - python-version: 'pypy3.11'
+              os: "windows-latest"
 
     steps:
     - name: Install apt packages
-      if: startsWith(matrix.os, 'ubuntu-')
+      if: startsWith(matrix.os, 'blacksmith-4vcpu-ubuntu')
       run: |
-        sudo apt update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev gnutls-dev httping expect libmemcached-dev
-    - uses: actions/checkout@v2.4.0
+        sudo apt-get update && sudo apt-get install -f libcurl4-openssl-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
+    - uses: actions/checkout@v6
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2.2.2
+      uses: useblacksmith/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
-
-    - name: Get pip cache dir
-      id: pip-cache
-      run: |
-        echo "::set-output name=dir::$(pip cache dir)"
-    - name: Cache
-      uses: actions/cache@v2.1.6
-      with:
-        path: ${{ steps.pip-cache.outputs.dir }}
-        key:
-          ${{ matrix.python-version }}-${{matrix.os}}-${{ hashFiles('**/setup.py') }}
-        restore-keys: |
-          ${{ matrix.python-version }}-${{matrix.os}}
+        allow-prereleases: true
+        cache: 'pip'
+        cache-dependency-path: '**/setup.py'
 
     - name: Install tox
-      run: python -m pip install --upgrade pip tox tox-gh-actions
+      run: python -m pip install --upgrade pip 'tox' tox-gh-actions
     - name: >
         Run tox for
         "${{ matrix.python-version }}-unit"
-      timeout-minutes: 20
+      timeout-minutes: 30
       run: |
         tox --verbose --verbose
 
-    - uses: codecov/codecov-action@v2.1.0
+    - uses: codecov/codecov-action@v5
       with:
         flags: unittests # optional
         fail_ci_if_error: true # optional (default = false)
+        token: ${{ secrets.CODECOV_TOKEN }}
         verbose: true # optional (default = false)
 
+    - name: Upload test results to Codecov
+      if: ${{ !cancelled() }}
+      uses: codecov/test-results-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+  Integration-tests:
+    needs: [Unit]
+    if: needs.Unit.result == 'success'
+    strategy:
+      matrix:
+        module: [
+          'test_backend.py',
+          'test_canvas.py',
+          'test_database_backend.py',
+          'test_inspect.py',
+          'test_loader.py',
+          'test_mem_leak_in_exception_handling.py',
+          'test_security.py',
+          'test_serialization.py',
+          'test_tasks.py',
+          'test_worker.py'
+        ]
+    uses: ./.github/workflows/integration-tests.yml
+    with:
+      module_name: ${{ matrix.module }}
+
+  Smoke-tests:
+    needs: [Unit]
+    if: needs.Unit.result == 'success'
+    strategy:
+      matrix:
+        module: [
+          'test_broker_failover.py',
+          'test_worker_failover.py',
+          'test_native_delayed_delivery.py',
+          'test_quorum_queues.py',
+          'test_cycle_detection.py',
+          'test_native_delayed_delivery_binding.py',
+          'test_chord_unlock_routing.py',
+          'test_default_queue_type.py',
+          'test_qos.py',
+          'test_hybrid_cluster.py',
+          'test_revoke.py',
+          'test_visitor.py',
+          'test_canvas.py',
+          'test_consumer.py',
+          'test_dedup_chain_dispatch.py',
+          'test_control.py',
+          'test_signals.py',
+          'test_tasks.py',
+          'test_thread_safe.py',
+          'test_worker.py'
+        ]
+    uses: ./.github/workflows/smoke-tests.yml
+    with:
+      module_name: ${{ matrix.module }}

@@ -3,7 +3,7 @@ from celery.contrib.abortable import AbortableAsyncResult, AbortableTask
 
 class test_AbortableTask:
 
-    def setup(self):
+    def setup_method(self):
         @self.app.task(base=AbortableTask, shared=False)
         def abortable():
             return True

@@ -176,6 +176,7 @@ class Gossip(bootsteps.ConsumerStep):
             channel,
             queues=[ev.queue],
             on_message=partial(self.on_message, ev.event_from_message),
+            accept=ev.accept,
             no_ack=True
         )]
 

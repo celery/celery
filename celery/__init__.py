@@ -1,5 +1,5 @@
 """Distributed Task Queue."""
-# :copyright: (c) 2016-2026 Asif Saif Uddin, celery core and individual
+# :copyright: (c) 2017-2026 Asif Saif Uddin, celery core and individual
 #                 contributors, All rights reserved.
 # :copyright: (c) 2015-2016 Ask Solem.  All rights reserved.
 # :copyright: (c) 2012-2014 GoPivotal, Inc., All rights reserved.
@@ -15,12 +15,19 @@ from collections import namedtuple
 # Lazy loading
 from . import local
 
-SERIES = 'dawn-chorus'
+# Save original os.write before eventlet/gevent can monkey-patch it.
+# This is needed for signal handlers (e.g., SIGINT) which may run inside
+# the eventlet hub's event loop. Using the patched os.write from within
+# the hub causes: RuntimeError('do not call blocking functions from the mainloop')
+# See: https://github.com/celery/celery/issues/10083
+_original_os_write = os.write
 
-__version__ = '5.2.1'
+SERIES = 'recovery'
+
+__version__ = '5.6.2'
 __author__ = 'Ask Solem'
 __contact__ = 'auvipy@gmail.com'
-__homepage__ = 'http://celeryproject.org'
+__homepage__ = 'https://docs.celeryq.dev/'
 __docformat__ = 'restructuredtext'
 __keywords__ = 'task job queue distributed messaging actor'
 
@@ -42,7 +49,7 @@ version_info_t = namedtuple('version_info_t', (
 # bumpversion can only search for {current_version}
 # so we have to parse the version here.
 _temp = re.match(
-    r'(\d+)\.(\d+).(\d+)(.+)?', __version__).groups()
+    r'(\d+)\.(\d+)\.(\d+)(.+)?', __version__).groups()
 VERSION = version_info = version_info_t(
     int(_temp[0]), int(_temp[1]), int(_temp[2]), _temp[3] or '', '')
 del _temp
@@ -70,8 +77,7 @@ if STATICA_HACK:  # pragma: no cover
     from celery.app.base import Celery
     from celery.app.task import Task
     from celery.app.utils import bugreport
-    from celery.canvas import (chain, chord, chunks, group,  # noqa
-                               maybe_signature, signature, subtask, xmap,
+    from celery.canvas import (chain, chord, chunks, group, maybe_signature, signature, subtask, xmap,  # noqa
                                xstarmap)
     from celery.utils import uuid
 
@@ -170,4 +176,5 @@ old_module, new_module = local.recreate_module(  # pragma: no cover
     version_info=version_info,
     maybe_patch_concurrency=maybe_patch_concurrency,
     _find_option_with_arg=_find_option_with_arg,
+    _original_os_write=_original_os_write,
 )

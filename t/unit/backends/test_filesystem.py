@@ -17,7 +17,7 @@ from celery.exceptions import ImproperlyConfigured
 @t.skip.if_win32
 class test_FilesystemBackend:
 
-    def setup(self):
+    def setup_method(self):
         self.directory = tempfile.mkdtemp()
         self.url = 'file://' + self.directory
         self.path = self.directory.encode('ascii')

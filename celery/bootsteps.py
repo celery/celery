@@ -13,7 +13,7 @@ from .utils.log import get_logger
 
 try:
     from greenlet import GreenletExit
-except ImportError:  # pragma: no cover
+except ImportError:
     IGNORE_ERRORS = ()
 else:
     IGNORE_ERRORS = (GreenletExit,)
@@ -303,7 +303,7 @@ class Step(metaclass=StepType):
     #: Set this to true if the step is enabled based on some condition.
     conditional = False
 
-    #: List of other steps that that must be started before this step.
+    #: List of other steps that must be started before this step.
     #: Note that all dependencies must be in the same blueprint.
     requires = ()
 

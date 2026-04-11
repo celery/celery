@@ -2,13 +2,13 @@ import pickle
 from collections.abc import Mapping
 from itertools import count
 from time import monotonic
+from unittest.mock import Mock
 
 import pytest
 from billiard.einfo import ExceptionInfo
 
 import t.skip
-from celery.utils.collections import (AttributeDict, BufferMap,
-                                      ConfigurationView, DictAttribute,
+from celery.utils.collections import (AttributeDict, BufferMap, ChainMap, ConfigurationView, DictAttribute,
                                       LimitedSet, Messagebuffer)
 from celery.utils.objects import Bunch
 
@@ -53,7 +53,7 @@ class test_DictAttribute:
 
 class test_ConfigurationView:
 
-    def setup(self):
+    def setup_method(self):
         self.view = ConfigurationView(
             {'changed_key': 1, 'both': 2},
             [
@@ -128,10 +128,6 @@ class test_ConfigurationView:
         self.view.clear()
         assert len(self.view) == 2
 
-    def test_isa_mapping(self):
-        from collections.abc import Mapping
-        assert issubclass(ConfigurationView, Mapping)
-
     def test_isa_mutable_mapping(self):
         from collections.abc import MutableMapping
         assert issubclass(ConfigurationView, MutableMapping)
@@ -146,8 +142,8 @@ class test_ExceptionInfo:
         except Exception:
             einfo = ExceptionInfo()
             assert str(einfo) == einfo.traceback
-            assert isinstance(einfo.exception, LookupError)
-            assert einfo.exception.args == ('The quick brown fox jumps...',)
+            assert isinstance(einfo.exception.exc, LookupError)
+            assert einfo.exception.exc.args == ('The quick brown fox jumps...',)
             assert einfo.traceback
 
             assert repr(einfo)
@@ -449,3 +445,16 @@ class test_BufferMap:
 
     def test_repr(self):
         assert repr(Messagebuffer(10, [1, 2, 3]))
+
+
+class test_ChainMap:
+
+    def test_observers_not_shared(self):
+        a = ChainMap()
+        b = ChainMap()
+        callback = Mock()
+        a.bind_to(callback)
+        b.update(x=1)
+        callback.assert_not_called()
+        a.update(x=1)
+        callback.assert_called_once_with(x=1)

@@ -1,7 +1,6 @@
 """Celery Application."""
 from celery import _state
-from celery._state import (app_or_default, disable_trace, enable_trace,
-                           pop_current_task, push_current_task)
+from celery._state import app_or_default, disable_trace, enable_trace, pop_current_task, push_current_task
 from celery.local import Proxy
 
 from .base import Celery

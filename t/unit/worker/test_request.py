@@ -2,9 +2,9 @@ import numbers
 import os
 import signal
 import socket
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from time import monotonic, time
-from unittest.mock import Mock, patch
+from unittest.mock import ANY, Mock, patch
 
 import pytest
 from billiard.einfo import ExceptionInfo
@@ -12,24 +12,22 @@ from kombu.utils.encoding import from_utf8, safe_repr, safe_str
 from kombu.utils.uuid import uuid
 
 from celery import states
-from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task,
-                              mro_lookup, reset_worker_optimizations,
-                              setup_worker_optimizations, trace_task,
-                              trace_task_ret)
+from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task, mro_lookup, reset_worker_optimizations,
+                              setup_worker_optimizations, trace_task, trace_task_ret)
 from celery.backends.base import BaseDictBackend
-from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
-                               TaskRevokedError, Terminated, WorkerLostError)
+from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError, Terminated,
+                               TimeLimitExceeded, WorkerLostError)
 from celery.signals import task_failure, task_retry, task_revoked
 from celery.worker import request as module
 from celery.worker import strategy
 from celery.worker.request import Request, create_request_cls
 from celery.worker.request import logger as req_logger
-from celery.worker.state import revoked
+from celery.worker.state import revoked, revoked_stamps
 
 
 class RequestCase:
 
-    def setup(self):
+    def setup_method(self):
         self.app.conf.result_serializer = 'pickle'
 
         @self.app.task(shared=False)
@@ -190,13 +188,14 @@ class test_Request(RequestCase):
                     sig,
                     Request=Request,
                     exclude_headers=None,
+                    headers=None,
                     **kwargs):
         msg = self.task_message_from_sig(self.app, sig)
-        headers = None
-        if exclude_headers:
-            headers = msg.headers
-            for header in exclude_headers:
-                headers.pop(header)
+        if headers is None:
+            headers = msg.headers.copy()
+            if exclude_headers:
+                for header in exclude_headers:
+                    headers.pop(header, None)
         return Request(
             msg,
             on_ack=Mock(name='on_ack'),
@@ -388,7 +387,7 @@ class test_Request(RequestCase):
             task_failure,
             sender=req.task,
             task_id=req.id,
-            exception=einfo.exception,
+            exception=einfo.exception.exc,
             args=req.args,
             kwargs=req.kwargs,
             traceback=einfo.traceback,
@@ -397,14 +396,85 @@ class test_Request(RequestCase):
             req.on_failure(einfo)
 
         req.task.backend.mark_as_failure.assert_called_once_with(req.id,
-                                                                 einfo.exception,
+                                                                 einfo.exception.exc,
                                                                  request=req._context,
                                                                  store_result=True)
+
+    def test_on_failure_TimeLimitExceeded_acks(self):
+        try:
+            raise TimeLimitExceeded()
+        except TimeLimitExceeded:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.acks_late = True
+        req.task.acks_on_failure_or_timeout = True
+        req.task.acks_on_timeout = True
+        req.task.acks_on_failure = True
+        req.delivery_info['redelivered'] = False
+        req.task.backend = Mock()
+
+        req.on_failure(einfo)
+
+        req.on_ack.assert_called_with(
+            req_logger, req.connection_errors)
+        req.task.backend.mark_as_failure.assert_called_once_with(req.id,
+                                                                 einfo.exception.exc,
+                                                                 request=req._context,
+                                                                 store_result=True)
+
+    def test_on_failure_TimeLimitExceeded_rejects_with_requeue(self):
+        try:
+            raise TimeLimitExceeded()
+        except TimeLimitExceeded:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.acks_late = True
+        req.task.acks_on_failure_or_timeout = False
+        req.task.acks_on_timeout = False
+        req.task.acks_on_failure = False
+        req.delivery_info['redelivered'] = False
+        req.task.backend = Mock()
+
+        req.on_failure(einfo)
+
+        req.on_reject.assert_called_with(
+            req_logger, req.connection_errors, True)
+        req.task.backend.mark_as_failure.assert_not_called()
 
     def test_tzlocal_is_cached(self):
         req = self.get_request(self.add.s(2, 2))
         req._tzlocal = 'foo'
         assert req.tzlocal == 'foo'
+
+    def test_ignore_result_from_request_true(self):
+        req = self.get_request(self.add.s(2, 2).set(ignore_result=True))
+        assert req.ignore_result is True
+
+    def test_ignore_result_from_request_false(self):
+        req = self.get_request(self.add.s(2, 2).set(ignore_result=False))
+        assert req.ignore_result is False
+
+    def test_ignore_result_default_from_task_false(self):
+        req = self.get_request(self.add.s(2, 2))
+        assert req.ignore_result is False
+
+    def test_ignore_result_default_from_task_true(self):
+        self.add.ignore_result = True
+        try:
+            req = self.get_request(self.add.s(2, 2))
+            assert req.ignore_result is True
+        finally:
+            self.add.ignore_result = False
+
+    def test_ignore_result_request_overrides_task_true(self):
+        self.add.ignore_result = True
+        try:
+            req = self.get_request(self.add.s(2, 2).set(ignore_result=False))
+            assert req.ignore_result is False
+        finally:
+            self.add.ignore_result = False
 
     def test_task_wrapper_repr(self):
         assert repr(self.xRequest())
@@ -417,6 +487,35 @@ class test_Request(RequestCase):
         self.mytask.store_errors_even_if_ignored = True
         job = self.xRequest()
         assert job.store_errors
+
+    def test_store_errors_default(self):
+        self.mytask.ignore_result = False
+        job = self.xRequest()
+        assert job.store_errors
+
+    def test_store_errors_task_ignore_result(self):
+        self.mytask.ignore_result = True
+        job = self.xRequest()
+        assert not job.store_errors
+
+    def test_store_errors_request_overrides_task_ignore_result(self):
+        self.mytask.ignore_result = True
+        msg = self.task_message_from_sig(self.app, self.mytask.s())
+        headers = msg.headers.copy()
+        headers['ignore_result'] = False
+        job = self.get_request(
+            self.mytask.s(),
+            headers=headers,
+        )
+        assert job.store_errors
+
+    def test_ignore_result_from_request_none(self):
+        self.mytask.ignore_result = True
+        msg = self.task_message_from_sig(self.app, self.mytask.s())
+        headers = msg.headers.copy()
+        headers['ignore_result'] = None
+        job = self.get_request(self.mytask.s(), headers=headers)
+        assert job._ignore_result is True
 
     def test_send_event(self):
         job = self.xRequest()
@@ -538,9 +637,42 @@ class test_Request(RequestCase):
         pool.terminate_job.assert_not_called()
         assert job._terminate_on_ack is None
 
+    def test_cancel__emit_retry_true(self):
+        pool = Mock()
+        signum = signal.SIGTERM
+        job = self.get_request(self.mytask.s(1, f='x'))
+        job._apply_result = Mock(name='_apply_result')
+        job.task.backend.mark_as_retry = Mock(name='mark_as_retry')
+        job.task.on_retry = Mock(name='on_retry')
+        with self.assert_signal_called(
+                task_retry, sender=job.task, request=job._context,
+                einfo=None):
+            job.time_start = monotonic()
+            job.worker_pid = 314
+            job.cancel(pool, signal='TERM', emit_retry=True)
+            pool.terminate_job.assert_called_with(job.worker_pid, signum)
+            job.task.backend.mark_as_retry.assert_called_once()
+            job.task.on_retry.assert_called_once()
+            assert job._already_cancelled is True
+
+    def test_cancel__emit_retry_false(self):
+        pool = Mock()
+        signum = signal.SIGTERM
+        job = self.get_request(self.mytask.s(1, f='x'))
+        job._apply_result = Mock(name='_apply_result')
+        job.task.backend.mark_as_retry = Mock(name='mark_as_retry')
+        job.task.on_retry = Mock(name='on_retry')
+        job.time_start = monotonic()
+        job.worker_pid = 314
+        job.cancel(pool, signal='TERM', emit_retry=False)
+        pool.terminate_job.assert_called_with(job.worker_pid, signum)
+        job.task.backend.mark_as_retry.assert_not_called()
+        job.task.on_retry.assert_not_called()
+        assert job._already_cancelled is True
+
     def test_revoked_expires_expired(self):
         job = self.get_request(self.mytask.s(1, f='x').set(
-            expires=datetime.utcnow() - timedelta(days=1)
+            expires=datetime.now(timezone.utc) - timedelta(days=1)
         ))
         with self.assert_signal_called(
                 task_revoked, sender=job.task, request=job._context,
@@ -552,7 +684,7 @@ class test_Request(RequestCase):
 
     def test_revoked_expires_not_expired(self):
         job = self.xRequest(
-            expires=datetime.utcnow() + timedelta(days=1),
+            expires=datetime.now(timezone.utc) + timedelta(days=1),
         )
         job.revoked()
         assert job.id not in revoked
@@ -561,7 +693,7 @@ class test_Request(RequestCase):
     def test_revoked_expires_ignore_result(self):
         self.mytask.ignore_result = True
         job = self.xRequest(
-            expires=datetime.utcnow() - timedelta(days=1),
+            expires=datetime.now(timezone.utc) - timedelta(days=1),
         )
         job.revoked()
         assert job.id in revoked
@@ -578,6 +710,33 @@ class test_Request(RequestCase):
                 task_revoked, sender=job.task, request=job._context,
                 terminated=False, expired=False, signum=None):
             revoked.add(job.id)
+            assert job.revoked()
+            assert job._already_revoked
+            assert job.acknowledged
+
+    @pytest.mark.parametrize(
+        "header_to_revoke",
+        [
+            {'header_A': 'value_1'},
+            {'header_B': ['value_2', 'value_3']},
+            {'header_C': ('value_2', 'value_3')},
+            {'header_D': {'value_2', 'value_3'}},
+            {'header_E': [1, '2', 3.0]},
+        ],
+    )
+    def test_revoked_by_stamped_headers(self, header_to_revoke):
+        revoked_stamps.clear()
+        job = self.xRequest()
+        stamps = header_to_revoke
+        stamped_headers = list(header_to_revoke.keys())
+        job._message.headers['stamps'] = stamps
+        job._message.headers['stamped_headers'] = stamped_headers
+        job._request_dict['stamps'] = stamps
+        job._request_dict['stamped_headers'] = stamped_headers
+        with self.assert_signal_called(
+                task_revoked, sender=job.task, request=job._context,
+                terminated=False, expired=False, signum=None):
+            revoked_stamps.update(stamps)
             assert job.revoked()
             assert job._already_revoked
             assert job.acknowledged
@@ -740,6 +899,8 @@ class test_Request(RequestCase):
         job._on_reject = Mock()
         self.mytask.acks_late = True
         self.mytask.acks_on_failure_or_timeout = False
+        self.mytask.acks_on_failure = False
+        self.mytask.acks_on_timeout = False
         try:
             raise KeyError('foo')
         except KeyError:
@@ -755,6 +916,8 @@ class test_Request(RequestCase):
         job.time_start = 1
         self.mytask.acks_late = True
         self.mytask.acks_on_failure_or_timeout = True
+        self.mytask.acks_on_failure = True
+        self.mytask.acks_on_timeout = True
         try:
             raise KeyError('foo')
         except KeyError:
@@ -768,6 +931,8 @@ class test_Request(RequestCase):
         job.time_start = 1
         self.mytask.acks_late = True
         self.mytask.acks_on_failure_or_timeout = False
+        self.mytask.acks_on_failure = False
+        self.mytask.acks_on_timeout = False
         try:
             raise KeyError('foo')
         except KeyError:
@@ -783,12 +948,130 @@ class test_Request(RequestCase):
         job = self.xRequest()
         job.time_start = 1
         self.mytask.acks_late = True
+        self.mytask.acks_on_failure = True
+        self.mytask.acks_on_timeout = True
         try:
             raise KeyError('foo')
         except KeyError:
             exc_info = ExceptionInfo()
             job.on_failure(exc_info)
         assert job.acknowledged is True
+
+    def test_on_failure_acks_on_failure_true_independent_of_timeout(self):
+        """acks_on_failure=True should ack on regular failure regardless of acks_on_timeout."""
+        job = self.xRequest()
+        job.time_start = 1
+        self.mytask.acks_late = True
+        self.mytask.acks_on_failure = True
+        self.mytask.acks_on_timeout = False
+        try:
+            raise KeyError('foo')
+        except KeyError:
+            exc_info = ExceptionInfo()
+            job.on_failure(exc_info)
+        assert job.acknowledged is True
+
+    def test_on_failure_acks_on_failure_false_rejects(self):
+        """acks_on_failure=False should reject (not requeue) on regular failure."""
+        job = self.xRequest()
+        job.time_start = 1
+        job._on_reject = Mock()
+        self.mytask.acks_late = True
+        self.mytask.acks_on_failure = False
+        self.mytask.acks_on_timeout = True
+        try:
+            raise KeyError('foo')
+        except KeyError:
+            exc_info = ExceptionInfo()
+            job.on_failure(exc_info)
+        assert job.acknowledged is True
+        job._on_reject.assert_called_with(req_logger, job.connection_errors,
+                                          False)
+
+    def test_on_failure_timelimit_uses_acks_on_timeout_not_failure(self):
+        """TimeLimitExceeded in on_failure should use acks_on_timeout, not acks_on_failure."""
+        try:
+            raise TimeLimitExceeded()
+        except TimeLimitExceeded:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.acks_late = True
+        req.task.acks_on_failure = True
+        req.task.acks_on_timeout = False
+        req.delivery_info['redelivered'] = False
+        req.task.backend = Mock()
+
+        req.on_failure(einfo)
+
+        req.on_reject.assert_called_with(
+            req_logger, req.connection_errors, True)
+
+    def test_on_failure_mixed_acks_on_failure_true_timeout_false(self):
+        """Main use case: ack failures (dead letter) but requeue timeouts."""
+        job = self.xRequest()
+        job.time_start = 1
+        self.mytask.acks_late = True
+        self.mytask.acks_on_failure = True
+        self.mytask.acks_on_timeout = False
+        try:
+            raise KeyError('foo')
+        except KeyError:
+            exc_info = ExceptionInfo()
+            job.on_failure(exc_info)
+        assert job.acknowledged is True
+
+        try:
+            raise TimeLimitExceeded()
+        except TimeLimitExceeded:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.acks_late = True
+        req.task.acks_on_failure = True
+        req.task.acks_on_timeout = False
+        req.delivery_info['redelivered'] = False
+        req.task.backend = Mock()
+
+        req.on_failure(einfo)
+
+        req.on_reject.assert_called_with(
+            req_logger, req.connection_errors, True)
+
+    def test_on_failure_backward_compat_old_combined_flag(self):
+        """When only old combined flag is set, bind() resolves new flags from it."""
+        # Simulate what bind() does: old flag True -> both new flags become True
+        self.mytask.acks_late = True
+        self.mytask.acks_on_failure_or_timeout = True
+        self.mytask.acks_on_failure = True  # as bind() would set
+        self.mytask.acks_on_timeout = True  # as bind() would set
+
+        # Regular failure should be acked
+        job = self.xRequest()
+        job.time_start = 1
+        try:
+            raise KeyError('foo')
+        except KeyError:
+            exc_info = ExceptionInfo()
+            job.on_failure(exc_info)
+        assert job.acknowledged is True
+
+        # Simulate old flag False -> both new flags become False
+        self.mytask.acks_on_failure_or_timeout = False
+        self.mytask.acks_on_failure = False  # as bind() would set
+        self.mytask.acks_on_timeout = False  # as bind() would set
+
+        job = self.xRequest()
+        job.time_start = 1
+        job._on_reject = Mock()
+        try:
+            raise KeyError('foo')
+        except KeyError:
+            exc_info = ExceptionInfo()
+            job.on_failure(exc_info)
+        assert job.acknowledged is True
+        job._on_reject.assert_called_with(req_logger, job.connection_errors,
+                                          False)
 
     def test_on_failure_task_cancelled(self):
         job = self.xRequest()
@@ -806,11 +1089,31 @@ class test_Request(RequestCase):
         job.on_failure(exc_info)
         assert not job.eventer.send.called
 
+    def test_on_failure_should_terminate(self):
+        from celery.worker import state
+        original_should_terminate = state.should_terminate
+        state.should_terminate = True
+        job = self.xRequest()
+        job.send_event = Mock(name='send_event')
+        job.task.backend = Mock(name='backend')
+
+        try:
+            try:
+                raise KeyError('foo')
+            except KeyError:
+                exc_info = ExceptionInfo()
+                job.on_failure(exc_info)
+
+            job.send_event.assert_not_called()
+            job.task.backend.mark_as_failure.assert_not_called()
+        finally:
+            state.should_terminate = original_should_terminate
+
     def test_from_message_invalid_kwargs(self):
         m = self.TaskMessage(self.mytask.name, args=(), kwargs='foo')
         req = Request(m, app=self.app)
         with pytest.raises(InvalidTaskError):
-            raise req.execute().exception
+            raise req.execute().exception.exc
 
     def test_on_hard_timeout_acks_late(self, patching):
         error = patching('celery.worker.request.error')
@@ -834,8 +1137,10 @@ class test_Request(RequestCase):
 
         job = self.xRequest()
         job.acknowledge = Mock(name='ack')
+        job.reject = Mock(name='reject')
         job.task.acks_late = True
         job.task.acks_on_failure_or_timeout = True
+        job.task.acks_on_timeout = True
         job.on_timeout(soft=False, timeout=1337)
         assert 'Hard time limit' in error.call_args[0][0]
         assert self.mytask.backend.get_status(job.id) == states.FAILURE
@@ -843,19 +1148,54 @@ class test_Request(RequestCase):
 
         job = self.xRequest()
         job.acknowledge = Mock(name='ack')
+        job.reject = Mock(name='reject')
         job.task.acks_late = True
         job.task.acks_on_failure_or_timeout = False
+        job.task.acks_on_timeout = False
         job.on_timeout(soft=False, timeout=1337)
         assert 'Hard time limit' in error.call_args[0][0]
         assert self.mytask.backend.get_status(job.id) == states.FAILURE
         job.acknowledge.assert_not_called()
+        job.reject.assert_called_with(requeue=True)
 
         job = self.xRequest()
         job.acknowledge = Mock(name='ack')
+        job.reject = Mock(name='reject')
         job.task.acks_late = False
         job.task.acks_on_failure_or_timeout = True
+        job.task.acks_on_timeout = True
         job.on_timeout(soft=False, timeout=1335)
         job.acknowledge.assert_not_called()
+
+    def test_on_hard_timeout_acks_on_timeout_true(self, patching):
+        """on_timeout with acks_on_timeout=True should acknowledge regardless of acks_on_failure."""
+        error = patching('celery.worker.request.error')
+
+        job = self.xRequest()
+        job.acknowledge = Mock(name='ack')
+        job.reject = Mock(name='reject')
+        job.task.acks_late = True
+        job.task.acks_on_timeout = True
+        job.task.acks_on_failure = False
+        job.on_timeout(soft=False, timeout=1337)
+        assert 'Hard time limit' in error.call_args[0][0]
+        job.acknowledge.assert_called_with()
+        job.reject.assert_not_called()
+
+    def test_on_hard_timeout_acks_on_timeout_false_requeues(self, patching):
+        """on_timeout with acks_on_timeout=False should reject with requeue."""
+        error = patching('celery.worker.request.error')
+
+        job = self.xRequest()
+        job.acknowledge = Mock(name='ack')
+        job.reject = Mock(name='reject')
+        job.task.acks_late = True
+        job.task.acks_on_timeout = False
+        job.task.acks_on_failure = True
+        job.on_timeout(soft=False, timeout=1337)
+        assert 'Hard time limit' in error.call_args[0][0]
+        job.acknowledge.assert_not_called()
+        job.reject.assert_called_with(requeue=True)
 
     def test_on_soft_timeout(self, patching):
         warn = patching('celery.worker.request.warn')
@@ -873,7 +1213,120 @@ class test_Request(RequestCase):
         job.on_timeout(soft=True, timeout=1336)
         assert self.mytask.backend.get_status(job.id) == states.PENDING
 
-    def test_fast_trace_task(self):
+    def test_on_timeout_should_terminate(self, patching):
+        from celery.worker import state
+        warn = patching('celery.worker.request.warn')
+        error = patching('celery.worker.request.error')
+
+        original_should_terminate = state.should_terminate
+        try:
+            state.should_terminate = True
+            job = self.xRequest()
+            job.on_timeout(None, None)
+            warn.assert_not_called()
+            error.assert_not_called()
+        finally:
+            state.should_terminate = original_should_terminate
+
+    def test_on_hard_timeout_calls_task_on_failure(self, patching):
+        """Hard timeout must invoke task.on_failure so user hooks fire."""
+        patching('celery.worker.request.error')
+
+        job = self.xRequest()
+        job.task.on_failure = Mock(name='on_failure')
+        job.on_timeout(soft=False, timeout=1337)
+
+        job.task.on_failure.assert_called_once()
+        call_args = job.task.on_failure.call_args[0]
+        exc, task_id = call_args[0], call_args[1]
+        assert isinstance(exc, TimeLimitExceeded)
+        assert task_id == job.id
+
+    def test_on_hard_timeout_sends_task_failure_signal(self, patching):
+        """Hard timeout must send the task_failure signal."""
+        patching('celery.worker.request.error')
+
+        handler = Mock(name='signal_handler')
+        task_failure.connect(handler)
+        try:
+            job = self.xRequest()
+            job.on_timeout(soft=False, timeout=1337)
+        finally:
+            task_failure.disconnect(handler)
+
+        handler.assert_called_once()
+        kwargs = handler.call_args[1]
+        assert isinstance(kwargs['exception'], TimeLimitExceeded)
+        assert kwargs['task_id'] == job.id
+
+    def test_on_hard_timeout_sends_task_failed_event(self, patching):
+        """Hard timeout must emit a task-failed monitoring event."""
+        patching('celery.worker.request.error')
+
+        job = self.xRequest()
+        job.send_event = Mock(name='send_event')
+        job.on_timeout(soft=False, timeout=1337)
+
+        job.send_event.assert_called_once_with(
+            'task-failed',
+            exception=ANY,
+            traceback=ANY,
+        )
+
+    def test_on_hard_timeout_calls_after_return(self, patching):
+        """Hard timeout must invoke task.after_return when overridden."""
+        patching('celery.worker.request.error')
+
+        after_return_mock = Mock(name='after_return')
+
+        class TaskWithAfterReturn(self.app.Task):
+            name = 'test.task_with_after_return'
+
+            def run(self):
+                pass
+
+            def after_return(self, status, retval, task_id, args, kwargs, einfo):
+                after_return_mock(status, retval, task_id, args, kwargs, einfo)
+
+        task_instance = TaskWithAfterReturn()
+        self.app.tasks.register(task_instance)
+
+        job = self.xRequest(name=TaskWithAfterReturn.name)
+        job.on_timeout(soft=False, timeout=1337)
+
+        after_return_mock.assert_called_once()
+        call_args = after_return_mock.call_args[0]
+        assert call_args[0] == 'FAILURE'
+        assert isinstance(call_args[1], TimeLimitExceeded)
+        assert call_args[2] == job.id
+
+    def test_on_hard_timeout_clears_synthetic_traceback(self, patching):
+        """exc.__traceback__ must be None after on_timeout returns (memory leak fix #8882).
+
+        The synthetic traceback created to build ExceptionInfo captures the
+        on_timeout frame, which holds self (the Request object) and all task
+        state.  If not cleared this prevents timely garbage-collection under
+        frequent hard timeouts.
+        """
+        patching('celery.worker.request.error')
+
+        captured = {}
+        original_mark = self.mytask.backend.mark_as_failure
+
+        def capture_exc(task_id, exc, **kw):
+            captured['exc'] = exc
+            return original_mark(task_id, exc, **kw)
+
+        with patch.object(self.mytask.backend, 'mark_as_failure', capture_exc):
+            job = self.xRequest()
+            job.on_timeout(soft=False, timeout=1337)
+
+        assert 'exc' in captured, "mark_as_failure should have been called"
+        assert captured['exc'].__traceback__ is None, (
+            "exc.__traceback__ must be cleared after on_timeout to prevent "
+            "the on_timeout frame (and its locals including self/Request) from "
+            "being retained by the traceback reference cycle"
+        )
         assert self.app.use_fast_trace_task is False
         setup_worker_optimizations(self.app)
         assert self.app.use_fast_trace_task is True
@@ -1176,11 +1629,11 @@ class test_Request(RequestCase):
 
 class test_create_request_class(RequestCase):
 
-    def setup(self):
+    def setup_method(self):
         self.task = Mock(name='task')
         self.pool = Mock(name='pool')
         self.eventer = Mock(name='eventer')
-        super().setup()
+        super().setup_method()
 
     def create_request_cls(self, **kwargs):
         return create_request_cls(

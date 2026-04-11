@@ -8,7 +8,7 @@ from celery.exceptions import SecurityError
 from celery.security.certificate import Certificate, CertStore, FSCertStore
 from t.unit import conftest
 
-from . import CERT1, CERT2, KEY1
+from . import CERT1, CERT2, CERT_ECDSA, KEY1
 from .case import SecurityCase
 
 
@@ -29,6 +29,8 @@ class test_Certificate(SecurityCase):
             Certificate(CERT1[:20] + CERT1[21:])
         with pytest.raises(SecurityError):
             Certificate(KEY1)
+        with pytest.raises(SecurityError):
+            Certificate(CERT_ECDSA)
 
     @pytest.mark.skip('TODO: cert expired')
     def test_has_expired(self):
@@ -38,8 +40,8 @@ class test_Certificate(SecurityCase):
         x = Certificate(CERT1)
 
         x._cert = Mock(name='cert')
-        time_after = datetime.datetime.utcnow() + datetime.timedelta(days=-1)
-        x._cert.not_valid_after = time_after
+        time_after = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=-1)
+        x._cert.not_valid_after_utc = time_after
 
         assert x.has_expired() is True
 
@@ -47,8 +49,8 @@ class test_Certificate(SecurityCase):
         x = Certificate(CERT1)
 
         x._cert = Mock(name='cert')
-        time_after = datetime.datetime.utcnow() + datetime.timedelta(days=1)
-        x._cert.not_valid_after = time_after
+        time_after = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)
+        x._cert.not_valid_after_utc = time_after
 
         assert x.has_expired() is False
 

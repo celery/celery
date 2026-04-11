@@ -14,6 +14,7 @@ This code deals with three major challenges:
 """
 import errno
 import gc
+import inspect
 import os
 import select
 import time
@@ -26,7 +27,7 @@ from time import sleep
 from weakref import WeakValueDictionary, ref
 
 from billiard import pool as _pool
-from billiard.compat import buf_t, isblocking, setblocking
+from billiard.compat import isblocking, setblocking
 from billiard.pool import ACK, NACK, RUN, TERMINATE, WorkersJoined
 from billiard.queues import _SimpleQueue
 from kombu.asynchronous import ERR, WRITE
@@ -35,6 +36,7 @@ from kombu.utils.eventio import SELECT_BAD_FD
 from kombu.utils.functional import fxrange
 from vine import promise
 
+from celery.signals import worker_before_create_process
 from celery.utils.functional import noop
 from celery.utils.log import get_logger
 from celery.worker import state as worker_state
@@ -46,7 +48,7 @@ try:
     from _billiard import read as __read__
     readcanbuf = True
 
-except ImportError:  # pragma: no cover
+except ImportError:
 
     def __read__(fd, buf, size, read=os.read):
         chunk = read(fd, size)
@@ -89,8 +91,7 @@ Ack = namedtuple('Ack', ('id', 'fd', 'payload'))
 
 def gen_not_started(gen):
     """Return true if generator is not started."""
-    # gi_frame is None when generator stopped.
-    return gen.gi_frame and gen.gi_frame.f_lasti == -1
+    return inspect.getgeneratorstate(gen) == "GEN_CREATED"
 
 
 def _get_job_writer(job):
@@ -102,26 +103,35 @@ def _get_job_writer(job):
         return writer()  # is a weakref
 
 
+def _ensure_integral_fd(fd):
+    return fd if isinstance(fd, Integral) else fd.fileno()
+
+
 if hasattr(select, 'poll'):
     def _select_imp(readers=None, writers=None, err=None, timeout=0,
                     poll=select.poll, POLLIN=select.POLLIN,
                     POLLOUT=select.POLLOUT, POLLERR=select.POLLERR):
         poller = poll()
         register = poller.register
+        fd_to_mask = {}
 
         if readers:
-            [register(fd, POLLIN) for fd in readers]
+            for fd in map(_ensure_integral_fd, readers):
+                fd_to_mask[fd] = fd_to_mask.get(fd, 0) | POLLIN
         if writers:
-            [register(fd, POLLOUT) for fd in writers]
+            for fd in map(_ensure_integral_fd, writers):
+                fd_to_mask[fd] = fd_to_mask.get(fd, 0) | POLLOUT
         if err:
-            [register(fd, POLLERR) for fd in err]
+            for fd in map(_ensure_integral_fd, err):
+                fd_to_mask[fd] = fd_to_mask.get(fd, 0) | POLLERR
+
+        for fd, event_mask in fd_to_mask.items():
+            register(fd, event_mask)
 
         R, W = set(), set()
         timeout = 0 if timeout and timeout < 0 else round(timeout * 1e3)
         events = poller.poll(timeout)
         for fd, event in events:
-            if not isinstance(fd, Integral):
-                fd = fd.fileno()
             if event & POLLIN:
                 R.add(fd)
             if event & POLLOUT:
@@ -193,7 +203,7 @@ def iterate_file_descriptors_safely(fds_iter, source_data,
     or possibly other reasons, so safely manage our lists of FDs.
     :param fds_iter: the file descriptors to iterate and apply hub_method
     :param source_data: data source to remove FD if it renders OSError
-    :param hub_method: the method to call with with each fd and kwargs
+    :param hub_method: the method to call with each fd and kwargs
     :*args to pass through to the hub_method;
     with a special syntax string '*fd*' represents a substitution
     for the current fd object in the iteration (for some callers).
@@ -381,6 +391,7 @@ class ResultHandler(_pool.ResultHandler):
             setblocking(reader, 1)
         except OSError:
             return remove(fd)
+        result = None
         try:
             if reader.poll(0):
                 task = reader.recv()
@@ -388,7 +399,7 @@ class ResultHandler(_pool.ResultHandler):
                 task = None
                 sleep(0.5)
         except (OSError, EOFError):
-            return remove(fd)
+            result = remove(fd)
         else:
             if task:
                 on_state_change(task)
@@ -396,7 +407,8 @@ class ResultHandler(_pool.ResultHandler):
             try:
                 setblocking(reader, 0)
             except OSError:
-                return remove(fd)
+                result = remove(fd)
+        return result
 
 
 class AsynPool(_pool.Pool):
@@ -404,6 +416,9 @@ class AsynPool(_pool.Pool):
 
     ResultHandler = ResultHandler
     Worker = Worker
+
+    #: Set by :meth:`register_with_event_loop` after running the first time.
+    _registered_with_event_loop = False
 
     def WorkerProcess(self, worker):
         worker = super().WorkerProcess(worker)
@@ -457,7 +472,7 @@ class AsynPool(_pool.Pool):
 
         self.write_stats = Counter()
 
-        super().__init__(processes, *args, **kwargs)
+        super().__init__(processes, *args, synack=synack, **kwargs)
 
         for proc in self._pool:
             # create initial mappings, these will be updated
@@ -473,6 +488,7 @@ class AsynPool(_pool.Pool):
         )
 
     def _create_worker_process(self, i):
+        worker_before_create_process.send(sender=self)
         gc.collect()  # Issue #2927
         return super()._create_worker_process(i)
 
@@ -497,10 +513,11 @@ class AsynPool(_pool.Pool):
             self._event_process_exit, hub, proc)
 
     def _untrack_child_process(self, proc, hub):
-        if proc._sentinel_poll is not None:
-            fd, proc._sentinel_poll = proc._sentinel_poll, None
-            hub.remove(fd)
-            os.close(fd)
+        sentinel_poll = getattr(proc, '_sentinel_poll', None)
+        if sentinel_poll is not None:
+            proc._sentinel_poll = None
+            hub.remove(sentinel_poll)
+            os.close(sentinel_poll)
 
     def register_with_event_loop(self, hub):
         """Register the async pool with the current event loop."""
@@ -523,7 +540,11 @@ class AsynPool(_pool.Pool):
         for handler, interval in self.timers.items():
             hub.call_repeatedly(interval, handler)
 
-        hub.on_tick.add(self.on_poll_start)
+        # Add on_poll_start to the event loop only once to prevent duplication
+        # when the Consumer restarts due to a connection error.
+        if not self._registered_with_event_loop:
+            hub.on_tick.add(self.on_poll_start)
+            self._registered_with_event_loop = True
 
     def _create_timelimit_handlers(self, hub):
         """Create handlers used to implement time limits."""
@@ -763,7 +784,7 @@ class AsynPool(_pool.Pool):
                     None, WRITE | ERR, consolidate=True)
             else:
                 iterate_file_descriptors_safely(
-                    inactive, all_inqueues, hub_remove)
+                    inactive, all_inqueues, hub.remove_writer)
         self.on_poll_start = on_poll_start
 
         def on_inqueue_close(fd, proc):
@@ -809,7 +830,7 @@ class AsynPool(_pool.Pool):
                     # worker is already busy with another task
                     continue
                 if ready_fd not in all_inqueues:
-                    hub_remove(ready_fd)
+                    hub.remove_writer(ready_fd)
                     continue
                 try:
                     job = pop_message()
@@ -820,7 +841,7 @@ class AsynPool(_pool.Pool):
                     # this may create a spinloop where the event loop
                     # always wakes up.
                     for inqfd in diff(active_writes):
-                        hub_remove(inqfd)
+                        hub.remove_writer(inqfd)
                     break
 
                 else:
@@ -861,7 +882,7 @@ class AsynPool(_pool.Pool):
             header = pack('>I', body_size)
             # index 1,0 is the job ID.
             job = get_job(tup[1][0])
-            job._payload = buf_t(header), buf_t(body), body_size
+            job._payload = memoryview(header), memoryview(body), body_size
             put_message(job)
         self._quick_put = send_job
 
@@ -918,7 +939,7 @@ class AsynPool(_pool.Pool):
                     else:
                         errors = 0
             finally:
-                hub_remove(fd)
+                hub.remove_writer(fd)
                 write_stats[proc.index] += 1
                 # message written, so this fd is now available
                 active_writes.discard(fd)
@@ -979,7 +1000,8 @@ class AsynPool(_pool.Pool):
         if self._state == TERMINATE:
             return
         # cancel all tasks that haven't been accepted so that NACK is sent
-        # if synack is enabled.
+        # if synack is enabled, otherwise discard them from the cache
+        # since they will be redelivered by the broker.
         for job in tuple(self._cache.values()):
             if not job._accepted:
                 if self.synack:
@@ -1001,6 +1023,9 @@ class AsynPool(_pool.Pool):
             if self._state == RUN:
                 # flush outgoing buffers
                 intervals = fxrange(0.01, 0.1, 0.01, repeatlast=True)
+
+                # TODO: Rewrite this as a dictionary comprehension once we drop support for Python 3.7
+                #       This dict comprehension requires the walrus operator which is only available in 3.8.
                 owned_by = {}
                 for job in self._cache.values():
                     writer = _get_job_writer(job)
@@ -1027,11 +1052,27 @@ class AsynPool(_pool.Pool):
                             try:
                                 job = owned_by[gen]
                             except KeyError:
-                                pass
+                                # Generator not in owned_by — not a _write_job
+                                # (e.g. a _write_ack coroutine added by send_ack()).
+                                # These *MUST* complete or the worker process will
+                                # hang waiting for the ack.  Advance it one step;
+                                # the generator raises StopIteration/OSError when
+                                # done or when the peer process has already died.
+                                try:
+                                    next(gen)
+                                except (StopIteration, OSError, EOFError):
+                                    self._active_writers.discard(gen)
                             else:
                                 job_proc = job._write_to
                                 if job_proc._is_alive():
+                                    # _flush_writer calls
+                                    # _active_writers.discard(gen) in its finally.
                                     self._flush_writer(job_proc, gen)
+                                else:
+                                    # Process is dead, job will never
+                                    # complete - discard from cache.
+                                    job.discard()
+                                    self._active_writers.discard(gen)
                     # workers may have exited in the meantime.
                     self.maintain_pool()
                     sleep(next(intervals))  # don't busyloop

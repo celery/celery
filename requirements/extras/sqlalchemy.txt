@@ -1,1 +1,1 @@
-sqlalchemy
+kombu[sqlalchemy]

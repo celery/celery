@@ -3,7 +3,7 @@ import os
 import pytest
 
 try:
-    from sphinx.application import Sphinx  # noqa: F401
+    from sphinx.application import Sphinx  # noqa
     from sphinx_testing import TestApp
     sphinx_installed = True
 except ImportError:
@@ -28,3 +28,6 @@ def test_sphinx():
         'This task is in a different module!'
         not in contents
     )
+    # Verify :task: cross-reference role resolves to a link
+    assert 'foo.bar' in contents
+    assert 'Cross-reference test' in contents

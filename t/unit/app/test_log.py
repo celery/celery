@@ -2,15 +2,14 @@ import logging
 import sys
 from collections import defaultdict
 from io import StringIO
-from tempfile import mktemp
+from tempfile import mkstemp
 from unittest.mock import Mock, patch
 
 import pytest
 
 from celery import signals, uuid
 from celery.app.log import TaskFormatter
-from celery.utils.log import (ColorFormatter, LoggingProxy, get_logger,
-                              get_task_logger, in_sighandler)
+from celery.utils.log import ColorFormatter, LoggingProxy, get_logger, get_task_logger, in_sighandler
 from celery.utils.log import logger as base_logger
 from celery.utils.log import logger_isa, task_logger
 from t.unit import conftest
@@ -151,7 +150,7 @@ class test_default_logger:
 
         return logging.root
 
-    def setup(self):
+    def setup_method(self):
         self.get_logger = lambda n=None: get_logger(n) if n else logging.root
         signals.setup_logging.receivers[:] = []
         self.app.log.already_setup = False
@@ -211,7 +210,7 @@ class test_default_logger:
 
     @patch('os.fstat')
     def test_setup_logger_no_handlers_file(self, *args):
-        tempfile = mktemp(suffix='unittest', prefix='celery')
+        _, tempfile = mkstemp(suffix='unittest', prefix='celery')
         with patch('builtins.open') as osopen:
             with conftest.restore_logging_context_manager():
                 files = defaultdict(StringIO)
@@ -313,7 +312,7 @@ class test_default_logger:
 
 class test_task_logger(test_default_logger):
 
-    def setup(self):
+    def setup_method(self):
         logger = self.logger = get_logger('celery.task')
         logger.handlers = []
         logging.root.manager.loggerDict.pop(logger.name, None)
@@ -327,7 +326,7 @@ class test_task_logger(test_default_logger):
         from celery._state import _task_stack
         _task_stack.push(test_task)
 
-    def teardown(self):
+    def teardown_method(self):
         from celery._state import _task_stack
         _task_stack.pop()
 

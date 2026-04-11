@@ -3,7 +3,7 @@
 import curses
 import sys
 import threading
-from datetime import datetime
+from datetime import datetime, timezone
 from itertools import count
 from math import ceil
 from textwrap import wrap
@@ -273,8 +273,6 @@ class CursesMonitor:  # pragma: no cover
                         nexty = next(y)
                         if nexty >= my - 1:
                             subline = ' ' * 4 + '[...]'
-                        elif nexty >= my:
-                            break
                         self.win.addstr(
                             nexty, 3,
                             abbr(' ' * 4 + subline, self.screen_width - 4),
@@ -324,8 +322,8 @@ class CursesMonitor:  # pragma: no cover
         attr = curses.A_NORMAL
         if task.uuid == self.selected_task:
             attr = curses.A_STANDOUT
-        timestamp = datetime.utcfromtimestamp(
-            task.timestamp or time(),
+        timestamp = datetime.fromtimestamp(
+            task.timestamp or time(), tz=timezone.utc,
         )
         timef = timestamp.strftime('%H:%M:%S')
         hostname = task.worker.hostname if task.worker else '*NONE*'

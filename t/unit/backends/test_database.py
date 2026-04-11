@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from pickle import dumps, loads
 from unittest.mock import Mock, patch
@@ -10,12 +11,12 @@ from celery.exceptions import ImproperlyConfigured
 
 pytest.importorskip('sqlalchemy')
 
-from celery.backends.database import (DatabaseBackend, retry, session,  # noqa
-                                      session_cleanup)
+from celery.backends.database import DatabaseBackend, session, session_cleanup  # noqa
 from celery.backends.database.models import Task, TaskSet  # noqa
-from celery.backends.database.session import (  # noqa
-    PREPARE_MODELS_MAX_RETRIES, ResultModelBase, SessionManager)
+from celery.backends.database.session import PREPARE_MODELS_MAX_RETRIES, ResultModelBase, SessionManager  # noqa
 from t import skip  # noqa
+
+DB_PATH = "test.db"
 
 
 class SomeClass:
@@ -45,36 +46,340 @@ class test_session_cleanup:
 
 
 @skip.if_pypy
+class test_ModelsIdFieldTypeVariations:
+
+    def test_for_mssql_dialect(self):
+        """Test that ID columns use BigInteger for MSSQL and Integer for other dialects."""
+        from sqlalchemy import BigInteger, Integer
+        from sqlalchemy.dialects import mssql, mysql, oracle, postgresql, sqlite
+
+        models = [Task, TaskSet]
+        id_columns = [m.__table__.columns['id'] for m in models]
+
+        for dialect in [mssql, postgresql, mysql, sqlite, oracle]:
+            for id_column in id_columns:
+                compiled_type = id_column.type.dialect_impl(dialect.dialect())
+                if dialect == mssql:
+                    assert isinstance(compiled_type, BigInteger)
+                else:
+                    assert isinstance(compiled_type, Integer)
+
+
+@skip.if_pypy
+class test_DateDoneIndex:
+    """Test that date_done columns have index=True on Task and TaskSet models."""
+
+    def test_task_date_done_has_index(self):
+        col = Task.__table__.columns['date_done']
+        assert col.index is True, "Task.date_done should have index=True"
+
+    def test_taskset_date_done_has_index(self):
+        col = TaskSet.__table__.columns['date_done']
+        assert col.index is True, "TaskSet.date_done should have index=True"
+
+
+class test_DateDoneColumnDefaults:
+    """Test that date_done column defaults are callables, not fixed values.
+
+    The default and onupdate values must be callables (lambdas) so that
+    datetime.now() is evaluated per-row at INSERT/UPDATE time, not once
+    at module import time.
+    """
+
+    def test_task_date_done_default_is_callable(self):
+        """Task.date_done default should be a callable."""
+        col = Task.__table__.columns['date_done']
+        assert col.default is not None, \
+            "Task.date_done should have a default"
+        assert callable(col.default.arg), \
+            "Task.date_done default should be a callable, not a fixed datetime"
+
+    def test_task_date_done_onupdate_is_callable(self):
+        """Task.date_done onupdate should be a callable (lambda)."""
+        col = Task.__table__.columns['date_done']
+        assert col.onupdate is not None, \
+            "Task.date_done should have an onupdate"
+        assert callable(col.onupdate.arg), \
+            "Task.date_done onupdate should be a callable, not a fixed datetime"
+
+    def test_taskset_date_done_default_is_callable(self):
+        """TaskSet.date_done default should be a callable."""
+        col = TaskSet.__table__.columns['date_done']
+        assert col.default is not None, \
+            "TaskSet.date_done should have a default"
+        assert callable(col.default.arg), \
+            "TaskSet.date_done default should be a callable, not a fixed datetime"
+
+
+@skip.if_pypy
 class test_DatabaseBackend:
 
-    def setup(self):
-        self.uri = 'sqlite:///test.db'
+    @pytest.fixture(autouse=True)
+    def remmove_db(self):
+        yield
+        if os.path.exists(DB_PATH):
+            os.remove(DB_PATH)
+
+    def setup_method(self):
+        self.uri = 'sqlite:///' + DB_PATH
         self.app.conf.result_serializer = 'pickle'
 
-    def test_retry_helper(self):
+    def test_store_result_retries_on_database_error(self):
+        """Test that _store_result retries when database errors occur."""
         from celery.backends.database import DatabaseError
 
-        calls = [0]
+        self.app.conf.result_backend_always_retry = True
+        self.app.conf.result_backend_max_retries = 3
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb._sleep = Mock()
 
-        @retry
-        def raises():
-            calls[0] += 1
-            raise DatabaseError(1, 2, 3)
+        original_store = tb._store_result
+        call_count = [0]
 
-        with pytest.raises(DatabaseError):
-            raises(max_retries=5)
-        assert calls[0] == 5
+        def failing_store(*args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] < 3:
+                raise DatabaseError("connection lost", "SELECT 1", [], Exception())
+            return original_store(*args, **kwargs)
+
+        tb._store_result = failing_store
+
+        tb.store_result('task_id_1', {'result': 42}, states.SUCCESS)
+        assert call_count[0] == 3
+        assert tb._sleep.call_count == 2
+
+    def test_get_task_meta_retries_on_database_error(self):
+        """Test that _get_task_meta_for retries when database errors occur."""
+        from celery.backends.database import DatabaseError
+
+        self.app.conf.result_backend_always_retry = True
+        self.app.conf.result_backend_max_retries = 2
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb._sleep = Mock()
+
+        tb.store_result('task_id_2', {'result': 'test'}, states.SUCCESS)
+
+        original_get = tb._get_task_meta_for
+        call_count = [0]
+
+        def failing_get(*args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                raise DatabaseError("temporary failure", None, None)
+            return original_get(*args, **kwargs)
+
+        tb._get_task_meta_for = failing_get
+
+        meta = tb.get_task_meta('task_id_2')
+        assert meta['status'] == states.SUCCESS
+        assert call_count[0] == 2
+        assert tb._sleep.call_count == 1
+
+    def test_save_group_retries_on_database_error(self):
+        """Test that _save_group retries when database errors occur."""
+        from celery.backends.database import DatabaseError
+
+        self.app.conf.result_backend_always_retry = True
+        self.app.conf.result_backend_max_retries = 2
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb._sleep = Mock()
+
+        original_save_group = tb._save_group
+        call_count = [0]
+
+        def failing_save_group(*args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                raise DatabaseError("connection error", None, None)
+            return original_save_group(*args, **kwargs)
+
+        tb._save_group = failing_save_group
+
+        tb.save_group('group_id_1', {'result': ['task1', 'task2']})
+        assert call_count[0] == 2
+        assert tb._sleep.call_count == 1
+
+    def test_forget_retries_on_database_error(self):
+        """Test that _forget retries when database errors occur."""
+        from celery.backends.database import DatabaseError
+
+        self.app.conf.result_backend_always_retry = True
+        self.app.conf.result_backend_max_retries = 2
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb._sleep = Mock()
+
+        tb.store_result('task_id_3', {'result': 'to_forget'}, states.SUCCESS)
+
+        original_forget = tb._forget
+        call_count = [0]
+
+        def failing_forget(*args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                raise DatabaseError("temporary error", None, None)
+            return original_forget(*args, **kwargs)
+
+        tb._forget = failing_forget
+
+        tb.forget('task_id_3')
+        assert call_count[0] == 2
+        assert tb._sleep.call_count == 1
+
+    def test_retries_respect_max_retries_config(self):
+        """Test that retries stop after max_retries is reached."""
+        from celery.backends.database import DatabaseError
+        from celery.exceptions import BackendStoreError
+
+        self.app.conf.result_backend_always_retry = True
+        self.app.conf.result_backend_max_retries = 2
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb._sleep = Mock()
+
+        call_count = [0]
+
+        def always_failing_store(*args, **kwargs):
+            call_count[0] += 1
+            raise DatabaseError("persistent failure", None, None)
+
+        tb._store_result = always_failing_store
+
+        with pytest.raises(BackendStoreError):
+            tb.store_result('task_id_4', {'result': 42}, states.SUCCESS)
+
+        assert call_count[0] == 3
+        assert tb._sleep.call_count == 2
+
+    def test_retries_call_on_backend_retryable_error_hook(self):
+        """Test that on_backend_retryable_error is called during retries."""
+        from celery.backends.database import DatabaseError
+
+        self.app.conf.result_backend_always_retry = True
+        self.app.conf.result_backend_max_retries = 2
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb._sleep = Mock()
+        tb.session_manager.invalidate = Mock()
+
+        original_store = tb._store_result
+        call_count = [0]
+
+        def failing_store(*args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                raise DatabaseError("connection lost", "SELECT 1", [], Exception())
+            return original_store(*args, **kwargs)
+
+        tb._store_result = failing_store
+
+        tb.store_result('task_id_5', {'result': 42}, states.SUCCESS)
+
+        tb.session_manager.invalidate.assert_called_once_with(tb.url)
+        assert tb._sleep.call_count == 1
+
+    def test_non_retryable_exceptions_propagate_immediately(self):
+        """Test that non-retryable exceptions are not retried and propagate directly."""
+        self.app.conf.result_backend_always_retry = True
+        self.app.conf.result_backend_max_retries = 5
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb._sleep = Mock()
+
+        call_count = [0]
+
+        def failing_store(*args, **kwargs):
+            call_count[0] += 1
+            raise ValueError("not a database error")
+
+        tb._store_result = failing_store
+
+        with pytest.raises(ValueError, match="not a database error"):
+            tb.store_result('task_id_6', {'result': 42}, states.SUCCESS)
+
+        assert call_count[0] == 1
+        assert tb._sleep.call_count == 0
+
+    def test_without_fallback_exc_reaching_max_retries(self):
+        """
+        Test that _ensure_retryable raises the original exception
+        when max retries are reached and no fallback_exc is provided.
+        """
+        self.app.conf.result_backend_always_retry, prev = True, self.app.conf.result_backend_always_retry
+        self.app.conf.result_backend_max_retries, prev_max_retries = 0, self.app.conf.result_backend_max_retries
+
+        expected_exc = Exception("operation failed")
+        try:
+            tb = DatabaseBackend(self.uri, app=self.app)
+            tb.exception_safe_to_retry = lambda exc: True
+            tb._sleep = Mock()
+            tb._forget = Mock()
+            tb._forget.side_effect = expected_exc
+            try:
+                tb.forget('dummy_task_id')
+                assert False, "Should have raised the original exception"
+            except Exception as exc:
+                assert exc == expected_exc
+                assert tb._sleep.call_count == 0
+        finally:
+            self.app.conf.result_backend_always_retry = prev
+            self.app.conf.result_backend_max_retries = prev_max_retries
 
     def test_missing_dburi_raises_ImproperlyConfigured(self):
         self.app.conf.database_url = None
         with pytest.raises(ImproperlyConfigured):
             DatabaseBackend(app=self.app)
 
+    def test_engine_options_include_pool_health_defaults(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.engine_options["pool_pre_ping"] is True
+        assert tb.engine_options["pool_recycle"] == 3600
+
+    def test_engine_options_explicit_values_override_defaults(self):
+        self.app.conf.database_engine_options = {"pool_pre_ping": False}
+        tb = DatabaseBackend(
+            self.uri,
+            app=self.app,
+            engine_options={"pool_recycle": 15},
+        )
+        assert tb.engine_options["pool_pre_ping"] is False
+        assert tb.engine_options["pool_recycle"] == 15
+
+    def test_exception_safe_to_retry(self):
+        from celery.backends.database import DatabaseError, InvalidRequestError, StaleDataError
+
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.exception_safe_to_retry(DatabaseError("", "", Exception("db error")))
+        assert tb.exception_safe_to_retry(InvalidRequestError())
+        assert tb.exception_safe_to_retry(StaleDataError())
+        assert not tb.exception_safe_to_retry(RuntimeError("not retryable"))
+
+    def test_exception_safe_to_retry_with_interface_error(self):
+        from celery.backends.database import InterfaceError
+
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.exception_safe_to_retry(InterfaceError("", None, Exception("connection lost")))
+
+    def test_on_backend_retryable_error_invalidates_session(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb.session_manager.invalidate = Mock()
+
+        tb.on_backend_retryable_error(RuntimeError("retryable"))
+        tb.session_manager.invalidate.assert_called_once_with(tb.url)
+
+    def test_on_backend_retryable_error_called_with_exception(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb.session_manager.invalidate = Mock()
+        mock_exc = RuntimeError("connection lost")
+
+        tb.on_backend_retryable_error(mock_exc)
+
+        tb.session_manager.invalidate.assert_called_once_with(tb.url)
+
     def test_table_schema_config(self):
         self.app.conf.database_table_schemas = {
             'task': 'foo',
             'group': 'bar',
         }
+        # disable table creation because schema foo and bar do not exist
+        # and aren't created if they don't exist.
+        self.app.conf.database_create_tables_at_setup = False
         tb = DatabaseBackend(self.uri, app=self.app)
         assert tb.task_cls.__table__.schema == 'foo'
         assert tb.task_cls.__table__.c.id.default.schema == 'foo'
@@ -90,6 +395,14 @@ class test_DatabaseBackend:
         assert tb.task_cls.__table__.name == 'foo'
         assert tb.taskset_cls.__table__.name == 'bar'
 
+    def test_table_creation_at_setup_config(self):
+        from sqlalchemy import inspect
+        self.app.conf.database_create_tables_at_setup = True
+        tb = DatabaseBackend(self.uri, app=self.app)
+        engine = tb.session_manager.get_engine(tb.url)
+        inspect(engine).has_table("celery_taskmeta")
+        inspect(engine).has_table("celery_tasksetmeta")
+
     def test_missing_task_id_is_PENDING(self):
         tb = DatabaseBackend(self.uri, app=self.app)
         assert tb.get_state('xxx-does-not-exist') == states.PENDING
@@ -101,6 +414,23 @@ class test_DatabaseBackend:
         assert meta['task_id'] == 'xxx-does-not-exist-at-all'
         assert meta['result'] is None
         assert meta['traceback'] is None
+
+    def test_task_result_exists_for_missing_task(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.task_result_exists('xxx-does-not-exist') is False
+
+    def test_task_result_exists_after_mark_as_done(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        assert tb.task_result_exists(tid) is False
+        tb.mark_as_done(tid, 42)
+        assert tb.task_result_exists(tid) is True
+
+    def test_task_result_exists_after_mark_as_failure(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        tb.mark_as_failure(tid, RuntimeError('fail'), traceback='tb')
+        assert tb.task_result_exists(tid) is True
 
     def test_mark_as_done(self):
         tb = DatabaseBackend(self.uri, app=self.app)
@@ -221,8 +551,8 @@ class test_DatabaseBackend:
 
 @skip.if_pypy
 class test_DatabaseBackend_result_extended():
-    def setup(self):
-        self.uri = 'sqlite:///test.db'
+    def setup_method(self):
+        self.uri = 'sqlite:///' + DB_PATH
         self.app.conf.result_serializer = 'pickle'
         self.app.conf.result_extended = True
 
@@ -373,6 +703,34 @@ class test_SessionManager:
         engine2 = s.get_engine('dburi', foo=1)
         assert engine2 is engine
 
+    def test_invalidate_disposes_cached_engine(self):
+        s = SessionManager()
+        engine = Mock()
+        s._engines['dburi'] = engine
+        s._sessions['dburi'] = Mock()
+
+        s.invalidate('dburi')
+
+        assert 'dburi' not in s._engines
+        assert 'dburi' not in s._sessions
+        engine.dispose.assert_called_once_with()
+
+    def test_invalidate_nonexistent_dburi_is_noop(self):
+        s = SessionManager()
+        s.invalidate('nonexistent-dburi')
+        assert 'nonexistent-dburi' not in s._engines
+        assert 'nonexistent-dburi' not in s._sessions
+
+    def test_invalidate_only_engine_cached(self):
+        s = SessionManager()
+        engine = Mock()
+        s._engines['dburi'] = engine
+
+        s.invalidate('dburi')
+
+        assert 'dburi' not in s._engines
+        engine.dispose.assert_called_once_with()
+
     @patch('celery.backends.database.session.sessionmaker')
     def test_create_session_forked(self, sessionmaker):
         s = SessionManager()
@@ -410,7 +768,12 @@ class test_SessionManager:
         from sqlalchemy.dialects.sqlite import dialect
         from sqlalchemy.exc import DatabaseError
 
-        sqlite = dialect.dbapi()
+        if hasattr(dialect, 'dbapi'):
+            # Method name in SQLAlchemy < 2.0
+            sqlite = dialect.dbapi()
+        else:
+            # Newer method name in SQLAlchemy 2.0
+            sqlite = dialect.import_dbapi()
         manager = SessionManager()
         engine = manager.get_engine('dburi')
 
@@ -424,3 +787,154 @@ class test_SessionManager:
             manager.prepare_models(engine)
 
         assert mock_create_all.call_count == PREPARE_MODELS_MAX_RETRIES + 1
+
+    @patch('celery.backends.database.session.create_engine')
+    def test_get_engine_filters_nullpool_unsupported_kwargs(self, mock_create_engine):
+        """
+        Test that QueuePool-specific kwargs (like pool_size and max_overflow)
+        are filtered out when creating an engine with NullPool.
+        """
+        from celery.backends.database.session import NullPool
+
+        s = SessionManager()
+        s.forked = False  # Ensure we're in the non-forked code path
+
+        s.get_engine('dburi', echo_pool=True, pool_size=10, max_overflow=5)
+
+        mock_create_engine.assert_called_once_with(
+            'dburi',
+            poolclass=NullPool,
+        )
+
+
+@skip.if_pypy
+class test_EngineCallback:
+
+    @pytest.fixture(autouse=True)
+    def remove_db(self):
+        yield
+        if os.path.exists(DB_PATH):
+            os.remove(DB_PATH)
+
+    def setup_method(self):
+        self.uri = 'sqlite:///' + DB_PATH
+
+    def test_no_callback_default_behavior(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.session_manager.engine_callback is None
+
+    def test_non_callable_callback_raises(self):
+        self.app.conf.database_engine_callback = 42
+        with pytest.raises(ImproperlyConfigured):
+            DatabaseBackend(self.uri, app=self.app)
+
+    def test_callback_from_config(self):
+        callback = Mock()
+        self.app.conf.database_engine_callback = callback
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.session_manager.engine_callback is callback
+        callback.assert_called_once()
+        engine = callback.call_args[0][0]
+        assert hasattr(engine, 'execute') or hasattr(engine, 'connect')
+
+    def test_callback_from_constructor_kwarg(self):
+        callback = Mock()
+        tb = DatabaseBackend(self.uri, app=self.app, engine_callback=callback)
+        assert tb.session_manager.engine_callback is callback
+        callback.assert_called_once()
+
+    def test_constructor_kwarg_overrides_config(self):
+        config_callback = Mock()
+        kwarg_callback = Mock()
+        self.app.conf.database_engine_callback = config_callback
+        tb = DatabaseBackend(
+            self.uri, app=self.app, engine_callback=kwarg_callback)
+        assert tb.session_manager.engine_callback is kwarg_callback
+        kwarg_callback.assert_called_once()
+        config_callback.assert_not_called()
+
+    def test_callback_from_dotted_path(self):
+        self.app.conf.database_engine_callback = (
+            'unittest.mock:Mock'
+        )
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.session_manager.engine_callback is not None
+        assert callable(tb.session_manager.engine_callback)
+
+    @patch('celery.backends.database.session.create_engine')
+    def test_callback_called_in_forked_mode(self, create_engine):
+        callback = Mock()
+        s = SessionManager(engine_callback=callback)
+        s._after_fork()
+        s.get_engine('dburi')
+        callback.assert_called_once_with(create_engine.return_value)
+
+    @patch('celery.backends.database.session.create_engine')
+    def test_callback_called_in_non_forked_mode(self, create_engine):
+        callback = Mock()
+        s = SessionManager(engine_callback=callback)
+        s.get_engine('dburi')
+        callback.assert_called_once_with(create_engine.return_value)
+
+    @patch('celery.backends.database.session.create_engine')
+    def test_callback_reapplied_after_invalidate(self, create_engine):
+        callback = Mock()
+        s = SessionManager(engine_callback=callback)
+        s._after_fork()
+
+        s.get_engine('dburi')
+        assert callback.call_count == 1
+
+        s.invalidate('dburi')
+
+        s.get_engine('dburi')
+        assert callback.call_count == 2
+
+    @patch('celery.backends.database.session.create_engine')
+    def test_cached_engine_skips_callback(self, create_engine):
+        callback = Mock()
+        s = SessionManager(engine_callback=callback)
+        s._after_fork()
+
+        s.get_engine('dburi')
+        s.get_engine('dburi')
+        callback.assert_called_once()
+
+    def test_callback_fires_before_create_tables(self):
+        call_order = []
+
+        def track_callback(engine):
+            call_order.append('callback')
+
+        original_create_all = ResultModelBase.metadata.create_all
+
+        def track_create_all(bind, **kwargs):
+            call_order.append('create_all')
+            return original_create_all(bind, **kwargs)
+
+        with patch.object(
+            ResultModelBase.metadata, 'create_all', side_effect=track_create_all
+        ):
+            DatabaseBackend(
+                self.uri, app=self.app, engine_callback=track_callback)
+
+        assert call_order == ['callback', 'create_all']
+
+    def test_do_connect_event_integration(self):
+        """Integration test: engine_callback registers a do_connect event
+        that modifies connection params on every new connection."""
+        connect_calls = []
+
+        def register_do_connect(engine):
+            from sqlalchemy import event
+
+            @event.listens_for(engine, 'do_connect')
+            def on_connect(dialect, conn_rec, cargs, cparams):
+                connect_calls.append(cparams.copy())
+
+        tb = DatabaseBackend(
+            self.uri, app=self.app, engine_callback=register_do_connect)
+
+        tid = 'test-task-id'
+        tb.mark_as_done(tid, 42)
+        assert len(connect_calls) >= 1

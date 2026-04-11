@@ -1,10 +1,10 @@
 from contextlib import contextmanager
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from celery.fixups.django import (DjangoFixup, DjangoWorkerFixup,
-                                  FixupWarning, _maybe_close_fd, fixup)
+from celery.concurrency.thread import TaskPool as ThreadTaskPool
+from celery.fixups.django import DjangoFixup, DjangoWorkerFixup, FixupWarning, _maybe_close_fd, fixup
 from t.unit import conftest
 
 
@@ -12,11 +12,14 @@ class FixupCase:
     Fixup = None
 
     @contextmanager
-    def fixup_context(self, app):
+    def fixup_context(self, app, **kwargs):
         with patch('celery.fixups.django.DjangoWorkerFixup.validate_models'):
             with patch('celery.fixups.django.symbol_by_name') as symbyname:
                 with patch('celery.fixups.django.import_module') as impmod:
-                    f = self.Fixup(app)
+                    worker = Mock()
+                    worker.pool_cls = Mock(__module__='celery.concurrency.prefork')
+                    f = self.Fixup(app, **kwargs)
+                    f.worker = worker
                     yield f, impmod, symbyname
 
 
@@ -88,7 +91,12 @@ class test_DjangoFixup(FixupCase):
         with self.fixup_context(self.app) as (f, importmod, sym):
             assert f
 
-    def test_install(self, patching):
+    @pytest.mark.patched_module(
+        'django',
+        'django.db',
+        'django.db.transaction',
+    )
+    def test_install(self, patching, module):
         self.app.loader = Mock()
         self.cw = patching('os.getcwd')
         self.p = patching('sys.path')
@@ -98,7 +106,43 @@ class test_DjangoFixup(FixupCase):
             f.install()
             self.sigs.worker_init.connect.assert_called_with(f.on_worker_init)
             assert self.app.loader.now == f.now
+
+            # Specialized DjangoTask class is used
+            assert self.app.task_cls == 'celery.contrib.django.task:DjangoTask'
+            from celery.contrib.django.task import DjangoTask
+            assert issubclass(f.app.Task, DjangoTask)
+            assert hasattr(f.app.Task, 'delay_on_commit')
+            assert hasattr(f.app.Task, 'apply_async_on_commit')
+
             self.p.insert.assert_called_with(0, '/opt/vandelay')
+
+    def test_install_custom_user_task(self, patching):
+        patching('celery.fixups.django.signals')
+
+        self.app.task_cls = 'myapp.celery.tasks:Task'
+        self.app._custom_task_cls_used = True
+
+        with self.fixup_context(self.app) as (f, _, _):
+            f.install()
+            # Specialized DjangoTask class is NOT used,
+            # The one from the user's class is
+            assert self.app.task_cls == 'myapp.celery.tasks:Task'
+
+    def test_install_custom_user_task_as_class_attribute(self, patching):
+        patching('celery.fixups.django.signals')
+
+        from celery.app import Celery
+
+        class MyCeleryApp(Celery):
+            task_cls = 'myapp.celery.tasks:Task'
+
+        app = MyCeleryApp('mytestapp')
+
+        with self.fixup_context(app) as (f, _, _):
+            f.install()
+            # Specialized DjangoTask class is NOT used,
+            # The one from the user's class is
+            assert app.task_cls == 'myapp.celery.tasks:Task'
 
     def test_now(self):
         with self.fixup_context(self.app) as (f, _, _):
@@ -110,10 +154,23 @@ class test_DjangoFixup(FixupCase):
     def test_on_worker_init(self):
         with self.fixup_context(self.app) as (f, _, _):
             with patch('celery.fixups.django.DjangoWorkerFixup') as DWF:
-                f.on_worker_init()
+                mock_worker = Mock(name="worker")
+                f.on_worker_init(sender=mock_worker)
+                assert DWF.return_value.worker == mock_worker
+
                 DWF.assert_called_with(f.app)
                 DWF.return_value.install.assert_called_with()
                 assert f._worker_fixup is DWF.return_value
+
+    def test_on_worker_init_warns_without_sender(self):
+        with self.fixup_context(self.app) as (f, _, _):
+            with patch("celery.fixups.django.DjangoWorkerFixup"):
+                with pytest.warns(FixupWarning, match="called without a sender"):
+                    f.on_worker_init(sender=None)
+
+
+class InterfaceError(Exception):
+    pass
 
 
 class test_DjangoWorkerFixup(FixupCase):
@@ -132,7 +189,6 @@ class test_DjangoWorkerFixup(FixupCase):
                 sigs.beat_embedded_init.connect.assert_called_with(
                     f.close_database,
                 )
-                sigs.worker_ready.connect.assert_called_with(f.on_worker_ready)
                 sigs.task_prerun.connect.assert_called_with(f.on_task_prerun)
                 sigs.task_postrun.connect.assert_called_with(f.on_task_postrun)
                 sigs.worker_process_init.connect.assert_called_with(
@@ -141,18 +197,19 @@ class test_DjangoWorkerFixup(FixupCase):
 
     def test_on_worker_process_init(self, patching):
         with self.fixup_context(self.app) as (f, _, _):
-            with patch('celery.fixups.django._maybe_close_fd') as mcf:
+            with patch('celery.fixups.django._maybe_close_fd', side_effect=InterfaceError) as mcf:
                 _all = f._db.connections.all = Mock()
                 conns = _all.return_value = [
-                    Mock(), Mock(),
+                    Mock(), MagicMock(),
                 ]
                 conns[0].connection = None
                 with patch.object(f, 'close_cache'):
                     with patch.object(f, '_close_database'):
+                        f.interface_errors = (InterfaceError, )
                         f.on_worker_process_init()
                         mcf.assert_called_with(conns[1].connection)
                         f.close_cache.assert_called_with()
-                        f._close_database.assert_called_with(force=True)
+                        f._close_database.assert_called_with()
 
                         f.validate_models = Mock(name='validate_models')
                         patching.setenv('FORKED_BY_MULTIPROCESSING', '1')
@@ -218,52 +275,143 @@ class test_DjangoWorkerFixup(FixupCase):
             f.interface_errors = ()
 
             f._db.connections = Mock()  # ConnectionHandler
-            f._db.connections.all.side_effect = lambda: conns
-
-            f._close_database(force=True)
-            conns[0].close.assert_called_with()
-            conns[0].close_if_unusable_or_obsolete.assert_not_called()
-            conns[1].close.assert_called_with()
-            conns[1].close_if_unusable_or_obsolete.assert_not_called()
-            conns[2].close.assert_called_with()
-            conns[2].close_if_unusable_or_obsolete.assert_not_called()
-
-            for conn in conns:
-                conn.reset_mock()
+            f._db.connections.all.side_effect = lambda initialized_only: conns
 
             f._close_database()
-            conns[0].close.assert_not_called()
-            conns[0].close_if_unusable_or_obsolete.assert_called_with()
-            conns[1].close.assert_not_called()
-            conns[1].close_if_unusable_or_obsolete.assert_called_with()
-            conns[2].close.assert_not_called()
-            conns[2].close_if_unusable_or_obsolete.assert_called_with()
+            conns[0].close.assert_called_with()
+            conns[1].close.assert_called_with()
+            conns[2].close.assert_called_with()
 
             conns[1].close.side_effect = KeyError(
                 'omg')
-            f._close_database()
-            with pytest.raises(KeyError):
-                f._close_database(force=True)
-
-            conns[1].close.side_effect = None
-            conns[1].close_if_unusable_or_obsolete.side_effect = KeyError(
-                'omg')
-            f._close_database(force=True)
             with pytest.raises(KeyError):
                 f._close_database()
+
+    def test__close_database_django_pre_41(self):
+        """Test that Django < 4.1 (without initialized_only parameter) is handled."""
+        with self.fixup_context(self.app) as (f, _, _):
+            conns = [Mock(), Mock()]
+            f.DatabaseError = KeyError
+            f.interface_errors = ()
+
+            # Mock Django < 4.1 behavior: connections.all() doesn't accept initialized_only
+            f._db.connections = Mock()
+
+            def all_without_initialized_only(**kwargs):
+                if 'initialized_only' in kwargs:
+                    raise TypeError("all() got an unexpected keyword argument 'initialized_only'")
+                return conns
+
+            f._db.connections.all = Mock(side_effect=all_without_initialized_only)
+
+            # Should fall back to calling all() without initialized_only
+            f._close_database()
+
+            # Verify it was called twice: first with initialized_only (raises), then without
+            assert f._db.connections.all.call_count == 2
+            # First call with initialized_only=True
+            f._db.connections.all.assert_any_call(initialized_only=True)
+            # Second call without arguments (fallback)
+            f._db.connections.all.assert_any_call()
+
+            # Verify connections were closed
+            conns[0].close.assert_called_with()
+            conns[1].close.assert_called_with()
+
+    def test_close_database_always_closes_connections(self):
+        with self.fixup_context(self.app) as (f, _, _):
+            conn = Mock()
+            f._db.connections.all = Mock(return_value=[conn])
+            f.close_database()
+            conn.close.assert_called_once_with()
+            # close_if_unusable_or_obsolete is not safe to call in all conditions, so avoid using
+            # it to optimize connection handling.
+            conn.close_if_unusable_or_obsolete.assert_not_called()
+
+    def test_close_database_skip_conn_pool(self):
+        class Connection:
+            """Mock connection without `close_pool` method."""
+            alias = 'default'
+
+            def close(self):
+                pass
+
+        with self.fixup_context(self.app) as (f, _, _):
+            conn = Mock(spec=Connection)
+            f._db.connections.all = Mock(return_value=[conn])
+            f.close_database()
+            assert not hasattr(conn, "close_pool")
+            conn.close.assert_called_once_with()
+
+    def test_close_database_suppresses_close_pool_keyerror(self):
+        with self.fixup_context(self.app) as (f, _, _):
+            conn = Mock()
+            conn.close_pool = Mock(side_effect=KeyError("pool already closed"))
+            f._db.connections.all = Mock(return_value=[conn])
+            f.close_database()  # should not raise
+            conn.close.assert_called_once_with()
+            conn.close_pool.assert_called_once_with()
+
+    def test_close_database_conn_pool_based_on_settings(self):
+        class DJSettings:
+            DATABASES = {}
+
+        with self.fixup_context(self.app) as (f, _, _):
+            conn = Mock()
+            conn.alias = "default"
+            conn.close_pool = Mock()
+            f._db.connections.all = Mock(return_value=[conn])
+            f._settings = DJSettings
+
+            f._settings.DATABASES["default"] = {"OPTIONS": {}}
+            f.close_database()
+            conn.close.assert_called_once_with()
+            conn.close_pool.assert_not_called()
+
+            conn.reset_mock()
+            f._settings.DATABASES["default"] = {"OPTIONS": {"pool": True}}
+            f.close_database()
+            conn.close.assert_called_once_with()
+            conn.close_pool.assert_called_once_with()
+
+            conn.reset_mock()
+            f._settings.DATABASES["default"] = {"OPTIONS": {"pool": False}}
+            f.close_database()
+            conn.close.assert_called_once_with()
+            conn.close_pool.assert_not_called()
+
+    def test_close_database_conn_pool_thread_pool(self):
+        class DJSettings:
+            DATABASES = {}
+
+        with self.fixup_context(self.app) as (f, _, _):
+            conn = Mock()
+            conn.alias = "default"
+            conn.close_pool = Mock()
+            f._db.connections.all = Mock(return_value=[conn])
+            f._settings = DJSettings
+
+            f._settings.DATABASES["default"] = {"OPTIONS": {"pool": True}}
+            f.close_database()
+            conn.close.assert_called_once_with()
+            conn.close_pool.assert_called_once_with()
+
+            conn.reset_mock()
+            f.worker.pool_cls = ThreadTaskPool
+            assert "prefork" not in ThreadTaskPool.__module__
+            f.close_database()
+            conn.close.assert_called_once_with()
+            conn.close_pool.assert_not_called()
+
+    def test_close_cache_raises_error(self):
+        with self.fixup_context(self.app) as (f, _, _):
+            f._cache.close_caches.side_effect = AttributeError
+            f.close_cache()
 
     def test_close_cache(self):
         with self.fixup_context(self.app) as (f, _, _):
             f.close_cache()
             f._cache.close_caches.assert_called_with()
-
-    def test_on_worker_ready(self):
-        with self.fixup_context(self.app) as (f, _, _):
-            f._settings.DEBUG = False
-            f.on_worker_ready()
-            with pytest.warns(UserWarning):
-                f._settings.DEBUG = True
-                f.on_worker_ready()
 
     @pytest.mark.patched_module('django', 'django.db', 'django.core',
                                 'django.core.cache', 'django.conf',
@@ -272,9 +420,19 @@ class test_DjangoWorkerFixup(FixupCase):
         f = self.Fixup(self.app)
         f.django_setup = Mock(name='django.setup')
         from django.core.checks import run_checks
+
         f.validate_models()
         f.django_setup.assert_called_with()
         run_checks.assert_called_with()
+
+        # test --skip-checks flag
+        f.django_setup.reset_mock()
+        run_checks.reset_mock()
+
+        patching.setenv('CELERY_SKIP_CHECKS', 'true')
+        f.validate_models()
+        f.django_setup.assert_called_with()
+        run_checks.assert_not_called()
 
     def test_django_setup(self, patching):
         patching('celery.fixups.django.symbol_by_name')
@@ -283,3 +441,55 @@ class test_DjangoWorkerFixup(FixupCase):
         f = self.Fixup(self.app)
         f.django_setup()
         django.setup.assert_called_with()
+
+    def test__is_prefork(self):
+        with self.fixup_context(self.app) as (f, _, _):
+            f.worker.pool_cls = Mock(__module__='celery.concurrency.prefork')
+            assert f._is_prefork()
+
+            f.worker.pool_cls = "prefork"
+            assert f._is_prefork()
+
+            f.worker.pool_cls = Mock(__module__='celery.concurrency.thread')
+            assert not f._is_prefork()
+
+            f.worker = None
+            assert not f._is_prefork()
+
+    def test_no_recursive_worker_instantiation(self, patching):
+        """Regression test: DjangoWorkerFixup must not create a WorkController in __init__.
+
+        Historically, DjangoWorkerFixup.__init__ instantiated a WorkController when
+        called with worker=None, which could cause recursive instantiation when
+        invoked from worker lifecycle signals.
+
+        This test verifies the fixed behavior:
+        - DjangoWorkerFixup(app, worker=None) must not create a WorkController
+        - It should instead leave self.worker unset and rely on on_worker_init
+          to attach the actual worker instance later
+        """
+        from celery.worker import WorkController
+
+        patching('celery.fixups.django.symbol_by_name')
+        patching('celery.fixups.django.import_module')
+        patching.modules('django', 'django.db', 'django.core.checks')
+
+        # Track WorkController instantiations
+        instantiation_count = {'count': 0}
+        original_init = WorkController.__init__
+
+        def tracking_init(self_worker, *args, **kwargs):
+            instantiation_count['count'] += 1
+            return original_init(self_worker, *args, **kwargs)
+
+        with patch.object(WorkController, '__init__', tracking_init):
+            # Creating DjangoWorkerFixup without a worker argument
+            # should NOT create a WorkController instance
+            DjangoWorkerFixup(self.app)
+
+        # EXPECTED: 0 WorkController instances created
+        assert instantiation_count['count'] == 0, (
+            f"DjangoWorkerFixup(app) should NOT create a WorkController, "
+            f"but {instantiation_count['count']} instance(s) were created. "
+            f"This is the root cause of the recursion bug."
+        )

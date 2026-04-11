@@ -22,7 +22,7 @@ class test_Timer:
 
 class test_Hub:
 
-    def setup(self):
+    def setup_method(self):
         self.w = Mock(name='w')
         self.hub = Hub(self.w)
         self.w.hub = Mock(name='w.hub')
@@ -87,5 +87,19 @@ class test_Beat:
     def test_create__green(self):
         w = Mock(name='w')
         w.pool_cls.__module__ = 'foo_gevent'
+        with pytest.raises(ImproperlyConfigured):
+            Beat(w).create(w)
+
+    def test_create__green_string_pool_cls(self):
+        """Test Beat.create raises ImproperlyConfigured when pool_cls is a string like 'gevent'."""
+        w = Mock(name='w')
+        w.pool_cls = 'gevent'  # pool_cls can be a string instead of a class
+        with pytest.raises(ImproperlyConfigured):
+            Beat(w).create(w)
+
+    def test_create__green_string_pool_cls_eventlet(self):
+        """Test Beat.create raises ImproperlyConfigured when pool_cls is 'eventlet'."""
+        w = Mock(name='w')
+        w.pool_cls = 'eventlet'
         with pytest.raises(ImproperlyConfigured):
             Beat(w).create(w)

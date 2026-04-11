@@ -26,9 +26,10 @@ Our Project
 
 Project layout::
 
-    proj/__init__.py
-        /celery.py
-        /tasks.py
+    src/
+        proj/__init__.py
+            /celery.py
+            /tasks.py
 
 :file:`proj/celery.py`
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -70,7 +71,8 @@ you simply import this instance.
 Starting the worker
 -------------------
 
-The :program:`celery` program can be used to start the worker (you need to run the worker in the directory above proj):
+The :program:`celery` program can be used to start the worker (you need to run the worker in the directory above
+`proj`, according to the example project layout the directory is `src`):
 
 .. code-block:: console
 
@@ -127,7 +129,7 @@ and prioritization, all described in the :ref:`Routing Guide
 <guide-routing>`.
 
 You can get a complete list of command-line arguments
-by passing in the :option:`--help <celery --help>` flag:
+by passing in the :option:`!--help` flag:
 
 .. code-block:: console
 

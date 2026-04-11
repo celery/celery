@@ -1,19 +1,20 @@
 """Redis result store backend."""
 import time
-from contextlib import contextmanager
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 from urllib.parse import unquote
 
+from kombu.utils import symbol_by_name
 from kombu.utils.functional import retry_over_time
 from kombu.utils.objects import cached_property
 from kombu.utils.url import _parse_url, maybe_sanitize_url
+from redis import CredentialProvider
 
 from celery import states
 from celery._state import task_join_will_block
+from celery.backends.base import _create_chord_error_with_cause
 from celery.canvas import maybe_signature
-from celery.exceptions import (BackendStoreError, ChordError,
-                               ImproperlyConfigured)
+from celery.exceptions import BackendStoreError, ChordError, ImproperlyConfigured
 from celery.result import GroupResult, allow_join_result
 from celery.utils.functional import _regen, dictfilter
 from celery.utils.log import get_logger
@@ -25,7 +26,7 @@ from .base import BaseKeyValueStoreBackend
 try:
     import redis.connection
     from kombu.transport.redis import get_redis_error_classes
-except ImportError:  # pragma: no cover
+except ImportError:
     redis = None
     get_redis_error_classes = None
 
@@ -70,11 +71,6 @@ CERT_REQUIRED, CERT_OPTIONAL, or CERT_NONE
 
 E_LOST = 'Connection to Redis lost: Retry (%s/%s) %s.'
 
-E_RETRY_LIMIT_EXCEEDED = """
-Retry limit exceeded while trying to reconnect to the Celery redis result \
-store backend. The Celery application must be restarted.
-"""
-
 logger = get_logger(__name__)
 
 
@@ -103,26 +99,26 @@ class ResultConsumer(BaseResultConsumer):
         self.backend.client.connection_pool.reset()
         # task state might have changed when the connection was down so we
         # retrieve meta for all subscribed tasks before going into pubsub mode
-        metas = self.backend.client.mget(self.subscribed_to)
-        metas = [meta for meta in metas if meta]
-        for meta in metas:
-            self.on_state_change(self._decode_result(meta), None)
+        if self.subscribed_to:
+            metas = self.backend.client.mget(self.subscribed_to)
+            metas = [meta for meta in metas if meta]
+            for meta in metas:
+                self.on_state_change(self._decode_result(meta), None)
         self._pubsub = self.backend.client.pubsub(
             ignore_subscribe_messages=True,
         )
+        # subscribed_to maybe empty after on_state_change
         if self.subscribed_to:
             self._pubsub.subscribe(*self.subscribed_to)
+        else:
+            self._pubsub.connection = self._pubsub.connection_pool.get_connection()
+            # even if there is nothing to subscribe, we should not lose the callback after connecting.
+            # The on_connect callback will re-subscribe to any channels we previously subscribed to.
+            self._pubsub.connection.register_connect_callback(self._pubsub.on_connect)
 
-    @contextmanager
-    def reconnect_on_error(self):
-        try:
-            yield
-        except self._connection_errors:
-            try:
-                self._ensure(self._reconnect_pubsub, ())
-            except self._connection_errors:
-                logger.critical(E_RETRY_LIMIT_EXCEEDED)
-                raise
+    def _reconnect(self):
+        """Re-establish the Redis pub/sub connection with retry."""
+        self._ensure(self._reconnect_pubsub, ())
 
     def _maybe_cancel_ready_task(self, meta):
         if meta['status'] in states.READY_STATES:
@@ -221,6 +217,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         retry_on_timeout = _get('redis_retry_on_timeout')
         socket_keepalive = _get('redis_socket_keepalive')
         health_check_interval = _get('redis_backend_health_check_interval')
+        credential_provider = _get('redis_backend_credential_provider')
 
         self.connparams = {
             'host': _get('redis_host') or 'localhost',
@@ -232,6 +229,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             'retry_on_timeout': retry_on_timeout or False,
             'socket_connect_timeout':
                 socket_connect_timeout and float(socket_connect_timeout),
+            'client_name': _get('redis_client_name'),
         }
 
         username = _get('redis_username')
@@ -244,6 +242,23 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             # TODO: Include this in connparams' definition once we drop
             #       support for py-redis<3.4.0.
             self.connparams['username'] = username
+
+        if credential_provider:
+            # if credential provider passed as string or query param
+            if isinstance(credential_provider, str):
+                credential_provider_cls = symbol_by_name(credential_provider)
+                credential_provider = credential_provider_cls()
+
+            if not isinstance(credential_provider, CredentialProvider):
+                raise ValueError(
+                    "Credential provider is not an instance of a redis.CredentialProvider or a subclass"
+                )
+
+            self.connparams['credential_provider'] = credential_provider
+
+            # drop username and password if credential provider is configured
+            self.connparams.pop("username", None)
+            self.connparams.pop("password", None)
 
         if health_check_interval:
             self.connparams["health_check_interval"] = health_check_interval
@@ -288,9 +303,54 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
         self.url = url
 
+        # Add driver identification for redis-py
+        self._add_driver_info()
+
         self.connection_errors, self.channel_errors = (
             get_redis_error_classes() if get_redis_error_classes
             else ((), ()))
+        transport_options = self.app.conf.get(
+            'result_backend_transport_options', {})
+        additional = transport_options.get(
+            'additional_connection_errors', ())
+        if additional is None:
+            additional = ()
+        elif isinstance(additional, (str, type)):
+            additional = (additional,)
+        else:
+            try:
+                iter(additional)
+            except TypeError:
+                additional = (additional,)
+        if additional:
+            extra = []
+            for cls in additional:
+                try:
+                    resolved = (
+                        symbol_by_name(cls)
+                        if isinstance(cls, str) else cls
+                    )
+                except (ImportError, AttributeError) as exc:
+                    logger.warning(
+                        'Ignoring unresolvable'
+                        ' additional_connection_errors'
+                        ' entry %r: %r', cls, exc,
+                    )
+                    continue
+                if (isinstance(resolved, type)
+                        and issubclass(resolved, Exception)):
+                    extra.append(resolved)
+                else:
+                    logger.warning(
+                        'Ignoring invalid additional_connection_errors'
+                        ' entry %r (resolved: %r): expected an'
+                        ' exception class or dotted path to one.',
+                        cls, resolved,
+                    )
+            if extra:
+                self.connection_errors = (
+                    self.connection_errors + tuple(extra)
+                )
         self.result_consumer = self.ResultConsumer(
             self, self.app, self.accept,
             self._pending_results, self._pending_messages,
@@ -341,6 +401,23 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         db = db.strip('/') if isinstance(db, str) else db
         connparams['db'] = int(db)
 
+        # credential provider as query string
+        credential_provider = query.pop("credential_provider", None)
+        if credential_provider:
+            if isinstance(credential_provider, str):
+                credential_provider_cls = symbol_by_name(credential_provider)
+                credential_provider = credential_provider_cls()
+
+            if not isinstance(credential_provider, CredentialProvider):
+                raise ValueError(
+                    "Credential provider is not an instance of a redis.CredentialProvider or a subclass"
+                )
+
+            connparams['credential_provider'] = credential_provider
+            # drop username and password if credential provider is configured
+            connparams.pop("username", None)
+            connparams.pop("password", None)
+
         for key, value in query.items():
             if key in redis.connection.URL_QUERY_ARGUMENT_PARSERS:
                 query[key] = redis.connection.URL_QUERY_ARGUMENT_PARSERS[key](
@@ -350,6 +427,36 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         # Query parameters override other parameters
         connparams.update(query)
         return connparams
+
+    def _add_driver_info(self):
+        """Add driver identification to connection parameters.
+
+        Uses DriverInfo class if available, or falls back to
+        lib_name/lib_version for older versions.
+        """
+        from celery import __version__
+
+        # Try to use DriverInfo class
+        try:
+            from redis import DriverInfo
+            driver_info = DriverInfo().add_upstream_driver('celery', __version__)
+            self.connparams['driver_info'] = driver_info
+        except (ImportError, AttributeError):
+            # Fallback: use lib_name/lib_version
+            # Format: lib_name='redis-py(celery_v{version})'
+            self.connparams['lib_name'] = f'redis-py(celery_v{__version__})'
+            # lib_version should be the redis client version
+            try:
+                import redis
+                redis_version = redis.__version__
+            except (ImportError, AttributeError):
+                redis_version = 'unknown'
+            self.connparams['lib_version'] = redis_version
+
+    def exception_safe_to_retry(self, exc):
+        if isinstance(exc, self.connection_errors):
+            return True
+        return False
 
     @cached_property
     def retry_policy(self):
@@ -423,7 +530,10 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         if state in EXCEPTION_STATES:
             retval = self.exception_to_python(retval)
         if state in PROPAGATE_STATES:
-            raise ChordError(f'Dependency {tid} raised {retval!r}')
+            chord_error = _create_chord_error_with_cause(
+                message=f'Dependency {tid} raised {retval!r}', original_exc=retval
+            )
+            raise chord_error
         return retval
 
     def set_chord_size(self, group_id, chord_size):
@@ -485,7 +595,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                 callback = maybe_signature(request.chord, app=app)
                 total = int(chord_size_bytes) + totaldiff
                 if readycount == total:
-                    header_result = GroupResult.restore(gid)
+                    header_result = GroupResult.restore(gid, app=app)
                     if header_result is not None:
                         # If we manage to restore a `GroupResult`, then it must
                         # have been complex and saved by `apply_chord()` earlier.
@@ -568,8 +678,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     def __reduce__(self, args=(), kwargs=None):
         kwargs = {} if not kwargs else kwargs
         return super().__reduce__(
-            (self.url,), {'expires': self.expires},
-        )
+            args, dict(kwargs, expires=self.expires, url=self.url))
 
 
 if getattr(redis, "sentinel", None):
@@ -629,8 +738,8 @@ class SentinelBackend(RedisBackend):
         for param in ("host", "port", "db", "password"):
             connparams.pop(param)
 
-        # Adding db/password in connparams to connect to the correct instance
-        for param in ("db", "password"):
+        # Adding db/password/username in connparams to connect to the correct instance
+        for param in ("db", "password", "username"):
             if connparams['hosts'] and param in connparams['hosts'][0]:
                 connparams[param] = connparams['hosts'][0].get(param)
         return connparams
@@ -655,7 +764,12 @@ class SentinelBackend(RedisBackend):
 
         master_name = self._transport_options.get("master_name", None)
 
+        credentials = {
+            k: params[k] for k in ("username", "password") if k in params
+        }
+
         return sentinel_instance.master_for(
             service_name=master_name,
             redis_class=self._get_client(),
+            **credentials,
         ).connection_pool

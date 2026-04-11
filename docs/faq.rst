@@ -99,10 +99,6 @@ that these improvements will be merged back into Python one day.
 It's also used for compatibility with older Python versions
 that don't come with the multiprocessing module.
 
-- :pypi:`pytz`
-
-The pytz module provides timezone definitions and related tools.
-
 kombu
 ~~~~~
 
@@ -220,7 +216,7 @@ You can do that by adding the following to your :file:`my.cnf`::
     [mysqld]
     transaction-isolation = READ-COMMITTED
 
-For more information about InnoDB`s transaction model see `MySQL - The InnoDB
+For more information about InnoDB’s transaction model see `MySQL - The InnoDB
 Transaction Model and Locking`_ in the MySQL user manual.
 
 (Thanks to Honza Kral and Anton Tsigularov for this solution)
@@ -792,6 +788,11 @@ to describe the task prefetching *limit*.  There's no actual prefetching involve
 Disabling the prefetch limits is possible, but that means the worker will
 consume as many tasks as it can, as fast as possible.
 
+You can use the :option:`--disable-prefetch <celery worker --disable-prefetch>`
+flag (or set :setting:`worker_disable_prefetch` to ``True``) so that a worker
+only fetches a task when one of its processes is free. This feature is currently
+only supported when using Redis as the broker.
+
 A discussion on prefetch limits, and configuration settings for a worker
 that only reserves one task at a time is found here:
 :ref:`optimizing-prefetch-limit`.
@@ -878,9 +879,10 @@ Can I schedule tasks to execute at a specific time?
 ---------------------------------------------------
 
 **Answer**: Yes. You can use the `eta` argument of :meth:`Task.apply_async`.
+Note that using distant `eta` times is not recommended, and in such case
+:ref:`periodic tasks<guide-beat>` should be preferred.
 
-See also :ref:`guide-beat`.
-
+See :ref:`calling-eta` for more details.
 
 .. _faq-safe-worker-shutdown:
 

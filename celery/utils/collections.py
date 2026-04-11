@@ -2,12 +2,11 @@
 import time
 from collections import OrderedDict as _OrderedDict
 from collections import deque
-from collections.abc import (Callable, Mapping, MutableMapping, MutableSet,
-                             Sequence)
+from collections.abc import Callable, Mapping, MutableMapping, MutableSet, Sequence
 from heapq import heapify, heappop, heappush
 from itertools import chain, count
 from queue import Empty
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, Iterable, List  # noqa
 
 from .functional import first, uniq
 from .text import match_case
@@ -114,8 +113,7 @@ class AttributeDictMixin:
             raise AttributeError(
                 f'{type(self).__name__!r} object has no attribute {k!r}')
 
-    def __setattr__(self, key, value):
-        # type: (str, Any) -> None
+    def __setattr__(self, key: str, value) -> None:
         """`d[key] = value -> d.key = value`."""
         self[key] = value
 
@@ -208,7 +206,7 @@ class ChainMap(MutableMapping):
     changes = None
     defaults = None
     maps = None
-    _observers = []
+    _observers = ()
 
     def __init__(self, *maps, **kwargs):
         # type: (*Mapping, **Any) -> None
@@ -218,6 +216,7 @@ class ChainMap(MutableMapping):
             maps=maps,
             changes=maps[0],
             defaults=maps[1:],
+            _observers=[],
         )
 
     def add_defaults(self, d):
@@ -596,8 +595,7 @@ class LimitedSet:
                     break  # oldest item hasn't expired yet
                 self.pop()
 
-    def pop(self, default=None):
-        # type: (Any) -> Any
+    def pop(self, default: Any = None) -> Any:
         """Remove and return the oldest item, or :const:`None` when empty."""
         while self._heap:
             _, item = heappop(self._heap)
@@ -628,10 +626,6 @@ class LimitedSet:
     def __eq__(self, other):
         # type: (Any) -> bool
         return self._data == other._data
-
-    def __ne__(self, other):
-        # type: (Any) -> bool
-        return not self.__eq__(other)
 
     def __repr__(self):
         # type: () -> str
@@ -676,20 +670,17 @@ class Evictable:
 
     Empty = Empty
 
-    def evict(self):
-        # type: () -> None
+    def evict(self) -> None:
         """Force evict until maxsize is enforced."""
         self._evict(range=count)
 
-    def _evict(self, limit=100, range=range):
-        # type: (int) -> None
+    def _evict(self, limit: int = 100, range=range) -> None:
         try:
             [self._evict1() for _ in range(limit)]
         except IndexError:
             pass
 
-    def _evict1(self):
-        # type: () -> None
+    def _evict1(self) -> None:
         if self._evictcount <= self.maxsize:
             raise IndexError()
         try:
@@ -751,8 +742,7 @@ class Messagebuffer(Evictable):
         # type: () -> int
         return self._len()
 
-    def __contains__(self, item):
-        # type: () -> bool
+    def __contains__(self, item) -> bool:
         return item in self.data
 
     def __reversed__(self):

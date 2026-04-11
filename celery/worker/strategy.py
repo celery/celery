@@ -2,7 +2,6 @@
 import logging
 
 from kombu.asynchronous.timer import to_timestamp
-from kombu.utils.encoding import safe_repr
 
 from celery import signals
 from celery.app import trace as _app_trace
@@ -110,7 +109,6 @@ def default(task, app, consumer,
     hostname = consumer.hostname
     connection_errors = consumer.connection_errors
     _does_info = logger.isEnabledFor(logging.INFO)
-
     # task event related
     # (optimized to avoid calling request.send_event)
     eventer = consumer.event_dispatcher
@@ -126,7 +124,8 @@ def default(task, app, consumer,
     limit_task = consumer._limit_task
     limit_post_eta = consumer._limit_post_eta
     Request = symbol_by_name(task.Request)
-    Req = create_request_cls(Request, task, consumer.pool, hostname, eventer, app=app)
+    Req = create_request_cls(Request, task, consumer.pool, hostname, eventer,
+                             app=app)
 
     revoked_tasks = consumer.controller.state.revoked
 
@@ -155,8 +154,9 @@ def default(task, app, consumer,
             context = {
                 'id': req.id,
                 'name': req.name,
-                'args': safe_repr(req.args),
-                'kwargs': safe_repr(req.kwargs),
+                'args': req.argsrepr,
+                'kwargs': req.kwargsrepr,
+                'eta': req.eta,
             }
             info(_app_trace.LOG_RECEIVED, context, extra={'data': context})
         if (req.expires or req.id in revoked_tasks) and req.revoked():
@@ -194,6 +194,7 @@ def default(task, app, consumer,
             consumer.qos.increment_eventually()
             return call_at(eta, limit_post_eta, (req, bucket, 1),
                            priority=6)
+
         if eta:
             consumer.qos.increment_eventually()
             call_at(eta, apply_eta_task, (req,), priority=6)

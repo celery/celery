@@ -7,7 +7,6 @@ Modified to match the behavior of ``dateutil.parser``:
 
     - raise :exc:`ValueError` instead of ``ParseError``
     - return naive :class:`~datetime.datetime` by default
-    - uses :class:`pytz.FixedOffset`
 
 This is the original License:
 
@@ -33,9 +32,9 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 import re
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
-from pytz import FixedOffset
+from celery.utils.deprecated import warn
 
 __all__ = ('parse_iso8601',)
 
@@ -51,15 +50,16 @@ TIMEZONE_REGEX = re.compile(
 )
 
 
-def parse_iso8601(datestring):
+def parse_iso8601(datestring: str) -> datetime:
     """Parse and convert ISO-8601 string to datetime."""
+    warn("parse_iso8601", "v5.3", "v6", "datetime.datetime.fromisoformat or dateutil.parser.isoparse")
     m = ISO8601_REGEX.match(datestring)
     if not m:
         raise ValueError('unable to parse date string %r' % datestring)
     groups = m.groupdict()
     tz = groups['timezone']
     if tz == 'Z':
-        tz = FixedOffset(0)
+        tz = timezone(timedelta(0))
     elif tz:
         m = TIMEZONE_REGEX.match(tz)
         prefix, hours, minutes = m.groups()
@@ -67,7 +67,7 @@ def parse_iso8601(datestring):
         if prefix == '-':
             hours = -hours
             minutes = -minutes
-        tz = FixedOffset(minutes + hours * 60)
+        tz = timezone(timedelta(minutes=minutes, hours=hours))
     return datetime(
         int(groups['year']), int(groups['month']),
         int(groups['day']), int(groups['hour'] or 0),

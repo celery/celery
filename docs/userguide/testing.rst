@@ -4,6 +4,23 @@
  Testing with Celery
 ================================================================
 
+Testing with Celery is divided into two parts:
+
+    * Unit & Integration: Using ``celery.contrib.pytest``.
+    * Smoke / Production: Using :pypi:`pytest-celery <pytest-celery>` >= 1.0.0
+
+Installing the pytest-celery plugin will install the ``celery.contrib.pytest`` infrastructure as well,
+alongside the pytest plugin infrastructure. The difference is how you use it.
+
+.. warning::
+
+     Both APIs are NOT compatible with each other. The pytest-celery plugin is Docker based
+     and the ``celery.contrib.pytest`` is mock based.
+
+To use the ``celery.contrib.pytest`` infrastructure, follow the instructions below.
+
+The pytest-celery plugin has its `own documentation <https://pytest-celery.readthedocs.io/>`_.
+
 Tasks and unit tests
 ====================
 
@@ -47,7 +64,7 @@ Say we had a task like this:
             raise self.retry(exc=exc)
 
 
-``Note``: A task being `bound <http://docs.celeryproject.org/en/latest/userguide/tasks.html#bound-tasks>`_ means the first
+``Note``: A task being `bound <https://docs.celeryq.dev/en/latest/userguide/tasks.html#bound-tasks>`_ means the first
 argument to the task will always be the task instance (self). which means you do get a self argument as the
 first argument and can use the Task class methods and attributes.
 
@@ -104,10 +121,9 @@ use in your integration (or unit) test suites.
 Enabling
 --------
 
-Celery initially ships the plugin in a disabled state, to enable it you can either:
+Celery initially ships the plugin in a disabled state. To enable it, you can either:
 
     * ``pip install celery[pytest]``
-    * ``pip install pytest-celery``
     * or add an environment variable ``PYTEST_PLUGINS=celery.contrib.pytest``
     * or add ``pytest_plugins = ("celery.contrib.pytest", )`` to your root conftest.py
 
@@ -160,7 +176,8 @@ Example:
         @celery_app.task
         def mul(x, y):
             return x * y
-
+        
+        celery_worker.reload()
         assert mul.delay(4, 4).get(timeout=10) == 16
 
 ``celery_worker`` - Embed live worker.
@@ -346,7 +363,7 @@ Example:
 
     # Do this in your tests.
     def test_add_task(celery_session_worker):
-        assert add.delay(2, 2) == 4
+        assert add.delay(2, 2).get() == 4
 
 .. warning::
 

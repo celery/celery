@@ -5,12 +5,12 @@ globals().update(conf.build_config(
     project='Celery',
     version_dev='6.0',
     version_stable='5.0',
-    canonical_url='http://docs.celeryproject.org',
+    canonical_url='https://docs.celeryq.dev',
     webdomain='celeryproject.org',
     github_project='celery/celery',
     author='Ask Solem & contributors',
     author_name='Ask Solem',
-    copyright='2009-2021',
+    copyright='2009-2023',
     publisher='Celery Project',
     html_logo='images/celery_512.png',
     html_favicon='images/favicon.ico',
@@ -45,7 +45,8 @@ globals().update(conf.build_config(
         r'^http://localhost'
     ],
     autodoc_mock_imports=[
-        'riak'
+        'riak',
+        'django',
     ]
 ))
 

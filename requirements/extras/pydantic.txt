@@ -1,0 +1,2 @@
+pydantic>=2.4 ; python_version < "3.14"
+pydantic>=2.12.0a1 ; python_version >= "3.14"

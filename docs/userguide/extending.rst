@@ -220,21 +220,6 @@ Attributes
         class WorkerStep(bootsteps.StartStopStep):
             requires = ('celery.worker.autoscaler:Autoscaler',)
 
-.. _extending-worker-autoreloader:
-
-.. attribute:: autoreloader
-
-    :class:`~celery.worker.autoreloder.Autoreloader` used to automatically
-    reload use code when the file-system changes.
-
-    This is only defined if the ``autoreload`` argument is enabled.
-    Your worker bootstep must require the `Autoreloader` bootstep to use this;
-
-    .. code-block:: python
-
-        class WorkerStep(bootsteps.StartStopStep):
-            requires = ('celery.worker.autoreloader:Autoreloader',)
-
 Example worker bootstep
 -----------------------
 
@@ -829,7 +814,7 @@ New commands can be added to the :program:`celery` umbrella command by using
 
 
 Entry-points is special meta-data that can be added to your packages ``setup.py`` program,
-and then after installation, read from the system using the :mod:`pkg_resources` module.
+and then after installation, read from the system using the :mod:`importlib` module.
 
 Celery recognizes ``celery.commands`` entry-points to install additional
 sub-commands, where the value of the entry-point must point to a valid click

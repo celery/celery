@@ -10,7 +10,7 @@ from celery.utils.functional import pass1
 
 class BuiltinsCase:
 
-    def setup(self):
+    def setup_method(self):
         @self.app.task(shared=False)
         def xsum(x):
             return sum(x)
@@ -34,7 +34,7 @@ class test_backend_cleanup(BuiltinsCase):
 
 class test_accumulate(BuiltinsCase):
 
-    def setup(self):
+    def setup_method(self):
         self.accumulate = self.app.tasks['celery.accumulate']
 
     def test_with_index(self):
@@ -89,7 +89,7 @@ class test_chunks(BuiltinsCase):
 
 class test_group(BuiltinsCase):
 
-    def setup(self):
+    def setup_method(self):
         self.maybe_signature = self.patching('celery.canvas.maybe_signature')
         self.maybe_signature.side_effect = pass1
         self.app.producer_or_acquire = Mock()
@@ -98,7 +98,7 @@ class test_group(BuiltinsCase):
         )
         self.app.conf.task_always_eager = True
         self.task = builtins.add_group_task(self.app)
-        super().setup()
+        super().setup_method()
 
     def test_apply_async_eager(self):
         self.task.apply = Mock(name='apply')
@@ -132,8 +132,8 @@ class test_group(BuiltinsCase):
 
 class test_chain(BuiltinsCase):
 
-    def setup(self):
-        super().setup()
+    def setup_method(self):
+        super().setup_method()
         self.task = builtins.add_chain_task(self.app)
 
     def test_not_implemented(self):
@@ -143,9 +143,9 @@ class test_chain(BuiltinsCase):
 
 class test_chord(BuiltinsCase):
 
-    def setup(self):
+    def setup_method(self):
         self.task = builtins.add_chord_task(self.app)
-        super().setup()
+        super().setup_method()
 
     def test_apply_async(self):
         x = chord([self.add.s(i, i) for i in range(10)], body=self.xsum.s())

@@ -11,7 +11,7 @@ class MockWindow:
 
 class test_CursesDisplay:
 
-    def setup(self):
+    def setup_method(self):
         from celery.events import cursesmon
         self.monitor = cursesmon.CursesMonitor(object(), app=self.app)
         self.win = MockWindow()

@@ -48,6 +48,7 @@ help:
 	@echo "  apicheck   to verify that all modules are present in autodoc"
 	@echo "  configcheck to verify that all modules are present in autodoc"
 	@echo "  spelling   to perform a spell check"
+	@echo "  changelog  to generate a changelog from GitHub auto-generated release notes"
 
 .PHONY: clean
 clean:
@@ -238,3 +239,14 @@ pseudoxml:
 .PHONY: livehtml
 livehtml:
 	sphinx-autobuild -b html --host 0.0.0.0 --port 7000 --watch $(APP) -c . $(SOURCEDIR) $(BUILDDIR)/html
+
+.PHONY: changelog
+changelog:
+	@echo "Usage Instructions:"
+	@echo "1. Generate release notes using GitHub: https://github.com/celery/celery/releases/new"
+	@echo "   - Copy everything that's generated to your clipboard."
+	@echo "   - pre-commit lines will be removed automatically."
+	@echo "2. Run 'make -C docs changelog' from the root dir, to manually process the changes and output the formatted text."
+	@echo ""
+	@echo "Processing changelog from clipboard..."
+	python ./changelog_formatter.py --clipboard

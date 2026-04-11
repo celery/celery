@@ -1,14 +1,12 @@
 import collections
+import sys
 
 import pytest
-import pytest_subtests  # noqa: F401
 from kombu.utils.functional import lazy
 
-from celery.utils.functional import (DummyContext, first, firstmethod,
-                                     fun_accepts_kwargs, fun_takes_argument,
-                                     head_from_fun, lookahead, maybe_list,
-                                     mlazy, padlist, regen, seq_concat_item,
-                                     seq_concat_seq)
+from celery.utils.functional import (DummyContext, first, firstmethod, fun_accepts_kwargs, fun_takes_argument,
+                                     head_from_fun, is_numeric_value, lookahead, maybe_list, mlazy, padlist, regen,
+                                     seq_concat_item, seq_concat_seq)
 
 
 def test_DummyContext():
@@ -197,7 +195,7 @@ class test_regen:
         # The following checks are for the known "misbehaviour"
         assert getattr(g, "_regen__done") is False
         # If the `regen()` instance doesn't think it's done then it'll dupe the
-        # elements from the underlying iterator if it can be re-used
+        # elements from the underlying iterator if it can be reused
         iter_g = iter(g)
         for e in original_list * 2:
             assert next(iter_g) == e
@@ -371,6 +369,21 @@ class test_head_from_fun:
 
         g(b=3)
 
+    @pytest.mark.skipif(sys.version_info < (3, 14), reason="PEP 649 deferred annotations require Python 3.14+")
+    def test_type_checking_annotation(self):
+        # Regression test for https://github.com/celery/celery/discussions/10099
+        # On Python 3.14+, annotations are deferred (PEP 649). Functions with
+        # annotations referencing TYPE_CHECKING-only types must not raise NameError.
+        local = {}
+        exec('def f(args: Sequence[str], x: int = 0): return args', {}, local)
+        f = local['f']
+
+        g = head_from_fun(f)
+        with pytest.raises(TypeError):
+            g()
+        g(1)
+        g(1, 2)
+
 
 class test_fun_takes_argument:
 
@@ -473,3 +486,39 @@ class test_fun_accepts_kwargs:
     ])
     def test_rejects(self, fun):
         assert not fun_accepts_kwargs(fun)
+
+    @pytest.mark.skipif(sys.version_info < (3, 14), reason="PEP 649 deferred annotations require Python 3.14+")
+    def test_type_checking_annotation(self):
+        # Regression test for https://github.com/celery/celery/discussions/10099
+        # On Python 3.14+, annotations are deferred (PEP 649). Calling
+        # fun_accepts_kwargs on a function whose annotations reference
+        # TYPE_CHECKING-only types must not raise NameError.
+        #
+        # This reproduces the failure seen with on_after_finalize.connect:
+        #   def setup_periodic_tasks(sender: Celery, **kwargs: object) -> None: ...
+        # where 'Celery' is only imported under TYPE_CHECKING.
+        local = {}
+        exec('def f(sender: Celery, **kwargs: object) -> None: pass', {}, local)
+        f = local['f']
+        assert fun_accepts_kwargs(f) is True
+
+        exec('def g(sender: Celery) -> None: pass', {}, local)
+        g = local['g']
+        assert fun_accepts_kwargs(g) is False
+
+
+@pytest.mark.parametrize('value,expected', [
+    (5, True),
+    (5.0, True),
+    (0, True),
+    (0.0, True),
+    (True, False),
+    ('value', False),
+    ('5', False),
+    ('5.0', False),
+    (None, False),
+])
+def test_is_numeric_value(value, expected):
+    res = is_numeric_value(value)
+    assert type(res) is type(expected)
+    assert res == expected

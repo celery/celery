@@ -27,8 +27,6 @@ In the consumer:
 
 .. code-block:: python
 
-    from __future__ import absolute_import
-
     from celery.contrib.abortable import AbortableTask
     from celery.utils.log import get_task_logger
 
@@ -55,8 +53,6 @@ In the consumer:
 In the producer:
 
 .. code-block:: python
-
-    from __future__ import absolute_import
 
     import time
 

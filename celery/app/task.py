@@ -1,7 +1,8 @@
 """Task implementation: request context and the task base class."""
 import sys
+import types
 
-from billiard.einfo import ExceptionInfo
+from billiard.einfo import ExceptionInfo, ExceptionWithTraceback
 from kombu import serialization
 from kombu.exceptions import OperationalError
 from kombu.utils.uuid import uuid
@@ -9,8 +10,7 @@ from kombu.utils.uuid import uuid
 from celery import current_app, states
 from celery._state import _task_stack
 from celery.canvas import _chain, group, signature
-from celery.exceptions import (Ignore, ImproperlyConfigured,
-                               MaxRetriesExceededError, Reject, Retry)
+from celery.exceptions import Ignore, ImproperlyConfigured, MaxRetriesExceededError, Reject, Retry
 from celery.local import class_property
 from celery.result import EagerResult, denied_join_result
 from celery.utils import abstract
@@ -25,6 +25,9 @@ from .utils import appstr
 
 __all__ = ('Context', 'Task')
 
+# Sentinel used by Context.update() to detect whether 'timelimit' was changed.
+_UNSET = object()
+
 #: extracts attributes related to publishing a message from an object.
 extract_exec_options = mattrgetter(
     'queue', 'routing_key', 'exchange', 'priority', 'expires',
@@ -36,6 +39,17 @@ extract_exec_options = mattrgetter(
 R_BOUND_TASK = '<class {0.__name__} of {app}{flags}>'
 R_UNBOUND_TASK = '<unbound {0.__name__}{flags}>'
 R_INSTANCE = '<@task: {0.name} of {app}{flags}>'
+
+# Filtered headers relating to dead-lettering in RabbitMQ.
+X_DEATH_HEADERS = {
+    'x-death',
+    'x-first-death-exchange',
+    'x-first-death-queue',
+    'x-first-death-reason',
+    'x-last-death-exchange',
+    'x-last-death-queue',
+    'x-last-death-reason',
+}
 
 #: Here for backwards compatibility as tasks no longer use a custom meta-class.
 TaskType = type
@@ -93,13 +107,46 @@ class Context:
     shadow = None
     taskset = None   # compat alias to group
     timelimit = None
+    time_limit = None
+    soft_time_limit = None
     utc = None
+    stamped_headers = None
+    stamps = None
 
     def __init__(self, *args, **kwargs):
         self.update(*args, **kwargs)
+        if self.headers is None:
+            self.headers = self._get_custom_headers(*args, **kwargs)
+
+    def _get_custom_headers(self, *args, **kwargs):
+        headers = {}
+        headers.update(*args, **kwargs)
+        celery_keys = {*Context.__dict__.keys(), 'lang', 'task', 'argsrepr', 'kwargsrepr', 'compression'}
+        for key in celery_keys:
+            headers.pop(key, None)
+        if not headers:
+            return None
+        return headers
 
     def update(self, *args, **kwargs):
-        return self.__dict__.update(*args, **kwargs)
+        # O(1) detection: snapshot the current timelimit identity before the
+        # update, then compare after.  Any input form that dict.update()
+        # accepts (Mapping, iterable of pairs, kwargs) will change the stored
+        # object if 'timelimit' was present, so an `is not` identity check is
+        # sufficient — no need to pre-scan the arguments.
+        old_timelimit = self.__dict__.get('timelimit', _UNSET)
+
+        self.__dict__.update(*args, **kwargs)
+
+        new_timelimit = self.__dict__.get('timelimit', _UNSET)
+        if new_timelimit is not old_timelimit:
+            if isinstance(new_timelimit, (list, tuple)) and len(new_timelimit) >= 2:
+                self.time_limit, self.soft_time_limit = new_timelimit[0], new_timelimit[1]
+            else:
+                # Explicitly clear any previously set values when timelimit is
+                # provided but is None or otherwise invalid.
+                self.time_limit = None
+                self.soft_time_limit = None
 
     def clear(self):
         return self.__dict__.clear()
@@ -110,9 +157,17 @@ class Context:
     def __repr__(self):
         return f'<Context: {vars(self)!r}>'
 
+    def _filter_x_death_headers(self, headers):
+        """Filter out X-Death headers to prevent RabbitMQ cycle detection."""
+        headers = headers.copy() if headers else {}
+        for x_death_header in X_DEATH_HEADERS:
+            headers.pop(x_death_header, None)
+
+        return headers
+
     def as_execution_options(self):
         limit_hard, limit_soft = self.timelimit or (None, None)
-        return {
+        execution_options = {
             'task_id': self.id,
             'root_id': self.root_id,
             'parent_id': self.parent_id,
@@ -126,12 +181,18 @@ class Context:
             'expires': self.expires,
             'soft_time_limit': limit_soft,
             'time_limit': limit_hard,
-            'headers': self.headers,
+            'headers': self._filter_x_death_headers(self.headers),
             'retries': self.retries,
             'reply_to': self.reply_to,
             'replaced_task_nesting': self.replaced_task_nesting,
             'origin': self.origin,
         }
+        if hasattr(self, 'stamps') and hasattr(self, 'stamped_headers'):
+            if self.stamps is not None and self.stamped_headers is not None:
+                execution_options['stamped_headers'] = self.stamped_headers
+                for k, v in self.stamps.items():
+                    execution_options[k] = v
+        return execution_options
 
     @property
     def children(self):
@@ -239,7 +300,7 @@ class Task:
     track_started = None
 
     #: When enabled messages for this task will be acknowledged **after**
-    #: the task has been executed, and not *just before* (the
+    #: the task has been executed, and not *right before* (the
     #: default behavior).
     #:
     #: Please note that this means the task may be executed twice if the
@@ -258,7 +319,32 @@ class Task:
     #:
     #: The application default can be overridden with the
     #: :setting:`task_acks_on_failure_or_timeout` setting.
+    #:
+    #: .. deprecated:: 6.0
+    #:     Use :attr:`acks_on_failure` and :attr:`acks_on_timeout` instead.
     acks_on_failure_or_timeout = None
+
+    #: When enabled messages for this task will be acknowledged on failure.
+    #: Falls back to :attr:`acks_on_failure_or_timeout` if :const:`None`.
+    #:
+    #: Configuring this setting only applies to tasks that are
+    #: acknowledged **after** they have been executed and only if
+    #: :setting:`task_acks_late` is enabled.
+    #:
+    #: The application default can be overridden with the
+    #: :setting:`task_acks_on_failure` setting.
+    acks_on_failure = None
+
+    #: When enabled messages for this task will be acknowledged on timeout.
+    #: Falls back to :attr:`acks_on_failure_or_timeout` if :const:`None`.
+    #:
+    #: Configuring this setting only applies to tasks that are
+    #: acknowledged **after** they have been executed and only if
+    #: :setting:`task_acks_late` is enabled.
+    #:
+    #: The application default can be overridden with the
+    #: :setting:`task_acks_on_timeout` setting.
+    acks_on_timeout = None
 
     #: Even if :attr:`acks_late` is enabled, the worker will
     #: acknowledge tasks when the worker process executing them abruptly
@@ -283,7 +369,11 @@ class Task:
     #: Default task expiry time.
     expires = None
 
-    #: Default task priority.
+    #: Default task priority. A number between 0 and 9, where the
+    #: interpretation depends on the broker: with RabbitMQ, higher numbers
+    #: denote higher priority; with Redis, priority 0 is the highest. See
+    #: :ref:`routing-options-rabbitmq-priorities` and
+    #: :ref:`redis-message-priorities`.
     priority = None
 
     #: Max length of result representation used in logs and events.
@@ -307,9 +397,13 @@ class Task:
         ('serializer', 'task_serializer'),
         ('rate_limit', 'task_default_rate_limit'),
         ('priority', 'task_default_priority'),
+        ('time_limit', 'task_time_limit'),
+        ('soft_time_limit', 'task_soft_time_limit'),
         ('track_started', 'task_track_started'),
         ('acks_late', 'task_acks_late'),
         ('acks_on_failure_or_timeout', 'task_acks_on_failure_or_timeout'),
+        ('acks_on_failure', 'task_acks_on_failure'),
+        ('acks_on_timeout', 'task_acks_on_timeout'),
         ('reject_on_worker_lost', 'task_reject_on_worker_lost'),
         ('ignore_result', 'task_ignore_result'),
         ('store_eager_result', 'task_store_eager_result'),
@@ -334,6 +428,19 @@ class Task:
         for attr_name, config_name in cls.from_config:
             if getattr(cls, attr_name, None) is None:
                 setattr(cls, attr_name, conf[config_name])
+
+        if cls.acks_on_failure is None:
+            cls.acks_on_failure = (
+                cls.acks_on_failure_or_timeout
+                if cls.acks_on_failure_or_timeout is not None
+                else True
+            )
+        if cls.acks_on_timeout is None:
+            cls.acks_on_timeout = (
+                cls.acks_on_failure_or_timeout
+                if cls.acks_on_failure_or_timeout is not None
+                else True
+            )
 
         # decorate with annotations from config.
         if not was_bound:
@@ -394,6 +501,8 @@ class Task:
             self.pop_request()
             _task_stack.pop()
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
     def __reduce__(self):
         # - tasks are pickled into the name of the task only, and the receiver
         # - simply grabs it from the local registry.
@@ -447,7 +556,7 @@ class Task:
             shadow (str): Override task name used in logs/monitoring.
                 Default is retrieved from :meth:`shadow_name`.
 
-            connection (kombu.Connection): Re-use existing broker connection
+            connection (kombu.Connection): Reuse existing broker connection
                 instead of acquiring one from the connection pool.
 
             retry (bool): If enabled sending of the task message will be
@@ -479,7 +588,12 @@ class Task:
                 only used to specify custom routing keys to topic exchanges.
 
             priority (int): The task priority, a number between 0 and 9.
-                Defaults to the :attr:`priority` attribute.
+                The interpretation is broker-specific: with RabbitMQ, higher
+                numbers denote higher priority; with Redis, priority ``0`` is
+                the highest priority. See
+                :ref:`routing-options-rabbitmq-priorities` and
+                :ref:`redis-message-priorities`. Defaults to the
+                :attr:`priority` attribute.
 
             serializer (str): Serialization method to use.
                 Can be `pickle`, `json`, `yaml`, `msgpack` or any custom
@@ -516,6 +630,15 @@ class Task:
             publisher (kombu.Producer): Deprecated alias to ``producer``.
 
             headers (Dict): Message headers to be included in the message.
+                The headers can be used as an overlay for custom labeling
+                using the :ref:`canvas-stamping` feature.
+
+            task_id (str): Optional argument to override the default task id.
+                By default, Celery generates a unique id (UUID4) for every task
+                submission. You can instead provide your own string identifier.
+                If supplied, this value will be used as the task’s id instead
+                of generating one automatically. Be careful to avoid collisions
+                when overriding task ids.
 
         Returns:
             celery.result.AsyncResult: Promise of future evaluation.
@@ -524,6 +647,8 @@ class Task:
             TypeError: If not enough arguments are passed, or too many
                 arguments are passed.  Note that signature checks may
                 be disabled by specifying ``@task(typing=False)``.
+            ValueError: If soft_time_limit and time_limit both are set
+                but soft_time_limit is greater than time_limit
             kombu.exceptions.OperationalError: If a connection to the
                transport cannot be made, or if the connection is lost.
 
@@ -531,6 +656,9 @@ class Task:
             Also supports all keyword arguments supported by
             :meth:`kombu.Producer.publish`.
         """
+        if self.soft_time_limit and self.time_limit and self.soft_time_limit > self.time_limit:
+            raise ValueError('soft_time_limit must be less than or equal to time_limit')
+
         if self.typing:
             try:
                 check_arguments = self.__header__
@@ -605,7 +733,7 @@ class Task:
         request = self.request if request is None else request
         args = request.args if args is None else args
         kwargs = request.kwargs if kwargs is None else kwargs
-        options = request.as_execution_options()
+        options = {**request.as_execution_options(), **extra_options}
         delivery_info = request.delivery_info or {}
         priority = delivery_info.get('priority')
         if priority is not None:
@@ -640,7 +768,7 @@ class Task:
             ...         twitter.post_status_update(message)
             ...     except twitter.FailWhale as exc:
             ...         # Retry in 5 minutes.
-            ...         self.retry(countdown=60 * 5, exc=exc)
+            ...         raise self.retry(countdown=60 * 5, exc=exc)
 
         Note:
             Although the task will never return above as `retry` raises an
@@ -764,11 +892,22 @@ class Task:
         if throw is None:
             throw = app.conf.task_eager_propagates
 
+        parent_task = _task_stack.top
+        if parent_task and parent_task.request:
+            parent_id = parent_task.request.id
+            root_id = parent_task.request.root_id or task_id
+        else:
+            parent_id = None
+            root_id = task_id
+
         # Make sure we get the task instance, not class.
         task = app._tasks[self.name]
 
         request = {
             'id': task_id,
+            'task': self.name,
+            'parent_id': parent_id,
+            'root_id': root_id,
             'retries': retries,
             'is_eager': True,
             'logfile': logfile,
@@ -777,14 +916,24 @@ class Task:
             'callbacks': maybe_list(link),
             'errbacks': maybe_list(link_error),
             'headers': headers,
+            'timelimit': (
+                None if self.time_limit is None and self.soft_time_limit is None
+                else [self.time_limit, self.soft_time_limit]
+            ),
             'ignore_result': options.get('ignore_result', False),
             'delivery_info': {
                 'is_eager': True,
                 'exchange': options.get('exchange'),
                 'routing_key': options.get('routing_key'),
                 'priority': options.get('priority'),
-            },
+            }
         }
+        if 'stamped_headers' in options:
+            request['stamped_headers'] = maybe_list(options['stamped_headers'])
+            request['stamps'] = {
+                header: maybe_list(options.get(header, [])) for header in request['stamped_headers']
+            }
+
         tb = None
         tracer = build_tracer(
             task.name, task, eager=True,
@@ -794,10 +943,12 @@ class Task:
         retval = ret.retval
         if isinstance(retval, ExceptionInfo):
             retval, tb = retval.exception, retval.traceback
+            if isinstance(retval, ExceptionWithTraceback):
+                retval = retval.exc
         if isinstance(retval, Retry) and retval.sig is not None:
             return retval.sig.apply(retries=retries + 1)
         state = states.SUCCESS if ret.info is None else ret.info.state
-        return EagerResult(task_id, retval, state, traceback=tb)
+        return EagerResult(task_id, retval, state, traceback=tb, name=self.name)
 
     def AsyncResult(self, task_id, **kwargs):
         """Get AsyncResult instance for the specified task.
@@ -885,6 +1036,7 @@ class Task:
 
         Arguments:
             sig (Signature): signature to replace with.
+            visitor (StampingVisitor): Visitor API object.
 
         Raises:
             ~@Ignore: This is always raised when called in asynchronous context.
@@ -926,17 +1078,21 @@ class Task:
             root_id=self.request.root_id,
             replaced_task_nesting=replaced_task_nesting
         )
+
+        # If the replaced task is a chain, we want to set all of the chain tasks
+        # with the same replaced_task_nesting value to mark their replacement nesting level
+        if isinstance(sig, _chain):
+            for chain_task in maybe_list(sig.tasks) or []:
+                chain_task.set(replaced_task_nesting=replaced_task_nesting)
+
         # If the task being replaced is part of a chain, we need to re-create
         # it with the replacement signature - these subsequent tasks will
         # retain their original task IDs as well
         for t in reversed(self.request.chain or []):
-            sig |= signature(t, app=self.app)
-        # Finally, either apply or delay the new signature!
-        if self.request.is_eager:
-            return sig.apply().get()
-        else:
-            sig.delay()
-            raise Ignore('Replaced by new task')
+            chain_task = signature(t, app=self.app)
+            chain_task.set(replaced_task_nesting=replaced_task_nesting)
+            sig |= chain_task
+        return self.on_replace(sig)
 
     def add_to_chord(self, sig, lazy=False):
         """Add signature to the chord the current task is a member of.
@@ -1052,13 +1208,31 @@ class Task:
             None: The return value of this handler is ignored.
         """
 
+    def on_replace(self, sig):
+        """Handler called when the task is replaced.
+
+        Must return super().on_replace(sig) when overriding to ensure the task replacement
+        is properly handled.
+
+        .. versionadded:: 5.3
+
+        Arguments:
+            sig (Signature): signature to replace with.
+        """
+        # Finally, either apply or delay the new signature!
+        if self.request.is_eager:
+            return sig.apply().get()
+        else:
+            sig.delay()
+            raise Ignore('Replaced by new task')
+
     def add_trail(self, result):
         if self.trail:
             self.request.children.append(result)
         return result
 
     def push_request(self, *args, **kwargs):
-        self.request_stack.push(Context(*args, **kwargs))
+        self.request_stack.push(Context(*args, **{**self.request.__dict__, **kwargs}))
 
     def pop_request(self):
         self.request_stack.pop()
@@ -1085,7 +1259,7 @@ class Task:
         return self._exec_options
 
     @property
-    def backend(self):
+    def backend(self):  # noqa: F811
         backend = self._backend
         if backend is None:
             return self.app.backend

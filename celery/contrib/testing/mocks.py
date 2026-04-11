@@ -1,11 +1,11 @@
 """Useful mocks for unit testing."""
 import numbers
 from datetime import datetime, timedelta
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping, Sequence  # noqa
 from unittest.mock import Mock
 
-from celery import Celery
-from celery.canvas import Signature
+from celery import Celery  # noqa
+from celery.canvas import Signature  # noqa
 
 
 def TaskMessage(

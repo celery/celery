@@ -10,7 +10,7 @@ import time
 from collections import namedtuple
 from warnings import warn
 
-from billiard.einfo import ExceptionInfo
+from billiard.einfo import ExceptionInfo, ExceptionWithTraceback
 from kombu.exceptions import EncodeError
 from kombu.serialization import loads as loads_message
 from kombu.serialization import prepare_accept_content
@@ -20,16 +20,13 @@ from celery import current_app, group, signals, states
 from celery._state import _task_stack
 from celery.app.task import Context
 from celery.app.task import Task as BaseTask
-from celery.exceptions import (BackendGetMetaError, Ignore, InvalidTaskError,
-                               Reject, Retry)
+from celery.exceptions import BackendGetMetaError, Ignore, InvalidTaskError, Reject, Retry
 from celery.result import AsyncResult
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.objects import mro_lookup
 from celery.utils.saferepr import saferepr
-from celery.utils.serialization import (get_pickleable_etype,
-                                        get_pickleable_exception,
-                                        get_pickled_exception)
+from celery.utils.serialization import get_pickleable_etype, get_pickleable_exception, get_pickled_exception
 
 # ## ---
 # This is the heart of the worker, the inner loop so to speak.
@@ -157,6 +154,28 @@ def get_task_name(request, default):
     return getattr(request, 'shadow', None) or default
 
 
+def get_actual_ignore_result(task, req):
+    """Return the effective ignore_result, with request overriding task.
+
+    If req provides an explicit ignore_result, that value is used;
+    otherwise task.ignore_result is returned.
+    """
+    if req is None:
+        return task.ignore_result
+
+    actual = getattr(req, 'ignore_result', None)
+
+    # Context defines `ignore_result = False` at class level (see Context
+    # in celery/app/task.py). getattr() above would return the class default
+    # (False) even when the request never set it explicitly, making it
+    # impossible to distinguish "override=False" from "not set". We check
+    # __dict__ to detect only instance-level (i.e., explicitly set) values.
+    if isinstance(req, Context) and 'ignore_result' not in req.__dict__:
+        actual = None
+
+    return actual if actual is not None else task.ignore_result
+
+
 class TraceInfo:
     """Information about task execution."""
 
@@ -168,7 +187,9 @@ class TraceInfo:
 
     def handle_error_state(self, task, req,
                            eager=False, call_errbacks=True):
-        if task.ignore_result:
+        ignore_result = get_actual_ignore_result(task, req)
+
+        if ignore_result:
             store_errors = task.store_errors_even_if_ignored
         elif eager and task.store_eager_result:
             store_errors = True
@@ -193,6 +214,7 @@ class TraceInfo:
         # the exception raised is the Retry semi-predicate,
         # and it's exc' attribute is the original exception raised (if any).
         type_, _, tb = sys.exc_info()
+        einfo = None
         try:
             reason = self.retval
             einfo = ExceptionInfo((type_, reason, tb))
@@ -208,19 +230,32 @@ class TraceInfo:
                 'name': get_task_name(req, task.name),
                 'exc': str(reason),
             })
+            # MEMORY LEAK FIX: Clear traceback frames to prevent memory retention (Issue #8882)
+            traceback_clear(einfo.exception)
             return einfo
         finally:
-            del tb
+            # MEMORY LEAK FIX: Clean up direct traceback reference to prevent
+            # retention of frame objects and their local variables (Issue #8882)
+            if tb is not None:
+                del tb
 
     def handle_failure(self, task, req, store_errors=True, call_errbacks=True):
         """Handle exception."""
-        _, _, tb = sys.exc_info()
+        orig_exc = self.retval
+        tb_ref = None
+
         try:
-            exc = self.retval
+            exc = get_pickleable_exception(orig_exc)
+            if exc.__traceback__ is None:
+                # `get_pickleable_exception` may have created a new exception without
+                # a traceback.
+                _, _, tb_ref = sys.exc_info()
+                exc.__traceback__ = tb_ref
+
+            exc_type = get_pickleable_etype(type(orig_exc))
+
             # make sure we only send pickleable exceptions back to parent.
-            einfo = ExceptionInfo()
-            einfo.exception = get_pickleable_exception(einfo.exception)
-            einfo.type = get_pickleable_etype(einfo.type)
+            einfo = ExceptionInfo(exc_info=(exc_type, exc, exc.__traceback__))
 
             task.backend.mark_as_failure(
                 req.id, exc, einfo.traceback,
@@ -232,21 +267,30 @@ class TraceInfo:
             signals.task_failure.send(sender=task, task_id=req.id,
                                       exception=exc, args=req.args,
                                       kwargs=req.kwargs,
-                                      traceback=tb,
+                                      traceback=exc.__traceback__,
                                       einfo=einfo)
             self._log_error(task, req, einfo)
+            # MEMORY LEAK FIX: Clear traceback frames to prevent memory retention (Issue #8882)
+            traceback_clear(exc)
+            # Note: We return einfo, so we can't clean it up here
+            # The calling function is responsible for cleanup
             return einfo
         finally:
-            del tb
+            # MEMORY LEAK FIX: Clean up any direct traceback references we may have created
+            # to prevent retention of frame objects and their local variables (Issue #8882)
+            if tb_ref is not None:
+                del tb_ref
 
     def _log_error(self, task, req, einfo):
         eobj = einfo.exception = get_pickled_exception(einfo.exception)
+        if isinstance(eobj, ExceptionWithTraceback):
+            eobj = einfo.exception = eobj.exc
         exception, traceback, exc_info, sargs, skwargs = (
             safe_repr(eobj),
             safe_str(einfo.traceback),
             einfo.exc_info,
-            safe_repr(req.args),
-            safe_repr(req.kwargs),
+            req.get('argsrepr') or safe_repr(req.args),
+            req.get('kwargsrepr') or safe_repr(req.kwargs),
         )
         policy = get_log_policy(task, einfo, eobj)
 
@@ -268,6 +312,12 @@ class TraceInfo:
 
 
 def traceback_clear(exc=None):
+    """Clear traceback frames to prevent memory leaks.
+
+    MEMORY LEAK FIX: This function helps break reference cycles between
+    traceback objects and frame objects that can prevent garbage collection.
+    Clearing frames releases local variables that may be holding large objects.
+    """
     # Cleared Tb, but einfo still has a reference to Traceback.
     # exc cleans up the Traceback at the last moment that can be revealed.
     tb = None
@@ -281,8 +331,10 @@ def traceback_clear(exc=None):
 
     while tb is not None:
         try:
+            # MEMORY LEAK FIX: tb.tb_frame.clear() clears ALL frame data including
+            # local variables, which is more efficient than accessing f_locals separately.
+            # Removed redundant tb.tb_frame.f_locals access that was creating unnecessary references.
             tb.tb_frame.clear()
-            tb.tb_frame.f_locals
         except RuntimeError:
             # Ignore the exception raised if the frame is still executing.
             pass
@@ -325,16 +377,6 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     fun = task if task_has_custom(task, '__call__') else task.run
 
     loader = loader or app.loader
-    ignore_result = task.ignore_result
-    track_started = task.track_started
-    track_started = not eager and (task.track_started and not ignore_result)
-
-    # #6476
-    if eager and not ignore_result and task.store_eager_result:
-        publish_result = True
-    else:
-        publish_result = not eager and not ignore_result
-
     deduplicate_successful_tasks = ((app.conf.task_acks_late or task.acks_late)
                                     and app.conf.worker_deduplicate_successful_tasks
                                     and app.backend.persistent)
@@ -372,7 +414,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     from celery import canvas
     signature = canvas.maybe_signature  # maybe_ does not clone if already
 
-    def on_error(request, exc, uuid, state=FAILURE, call_errbacks=True):
+    def on_error(request, exc, state=FAILURE, call_errbacks=True):
         if propagate:
             raise
         I = Info(state, exc)
@@ -380,6 +422,55 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
             task, request, eager=eager, call_errbacks=call_errbacks,
         )
         return I, R, I.state, I.retval
+
+    def _dispatch_callbacks_and_chain(
+        retval, callbacks, chain, parent_id, root_id, priority,
+    ):
+        """Dispatch callbacks and chain for a completed task.
+
+        Dispatches link callbacks and then the next chain step.
+        Does NOT fire task lifecycle signals (on_success, task_postrun)
+        or call mark_as_done — callers handle those separately.
+
+        Note: dispatch is not atomic.  If callbacks succeed but the
+        chain step fails (or vice-versa), a Reject + redeliver may
+        re-dispatch the already-sent callbacks.  This is acceptable
+        under Celery's at-least-once delivery model.
+        """
+        if callbacks:
+            if len(callbacks) > 1:
+                sigs, groups = [], []
+                for sig in callbacks:
+                    sig = signature(sig, app=app)
+                    if isinstance(sig, group):
+                        groups.append(sig)
+                    else:
+                        sigs.append(sig)
+                for group_ in groups:
+                    group_.apply_async(
+                        (retval,),
+                        parent_id=parent_id, root_id=root_id,
+                        priority=priority,
+                    )
+                if sigs:
+                    group(sigs, app=app).apply_async(
+                        (retval,),
+                        parent_id=parent_id, root_id=root_id,
+                        priority=priority,
+                    )
+            else:
+                signature(callbacks[0], app=app).apply_async(
+                    (retval,),
+                    parent_id=parent_id, root_id=root_id,
+                    priority=priority,
+                )
+        if chain:
+            _chsig = signature(chain[-1], app=app)
+            _chsig.apply_async(
+                (retval,), chain=chain[:-1],
+                parent_id=parent_id, root_id=root_id,
+                priority=priority,
+            )
 
     def trace_task(uuid, args, kwargs, request=None):
         # R      - is the possibly prepared return value.
@@ -406,6 +497,14 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
             task_request = Context(request or {}, args=args,
                                    called_directly=False, kwargs=kwargs)
 
+            ignore_result = get_actual_ignore_result(task, task_request)
+            track_started = not eager and (task.track_started and not ignore_result)
+            # #6476
+            if eager and not ignore_result and task.store_eager_result:
+                publish_result = True
+            else:
+                publish_result = not eager and not ignore_result
+
             redelivered = (task_request.delivery_info
                            and task_request.delivery_info.get('redelivered', False))
             if deduplicate_successful_tasks and redelivered:
@@ -424,6 +523,41 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             'name': get_task_name(task_request, name),
                             'description': 'Task already completed successfully.'
                         })
+                        _root_id = task_request.root_id or uuid
+                        _priority = task_request.delivery_info.get('priority') if \
+                            inherit_parent_priority else None
+                        try:
+                            _meta = r._get_task_meta()
+                            stored_retval = _meta.get('result')
+                            # Children are populated by mark_as_done on the
+                            # original execution.  If present, callbacks were
+                            # already dispatched — skip to avoid duplicates.
+                            # Requires the backend to persist extended result
+                            # metadata (result_extended=True).
+                            _children = _meta.get('children')
+                            _callbacks = task_request.callbacks
+                            _chain = task_request.chain
+                            if (_callbacks or _chain) and not _children:
+                                _dispatch_callbacks_and_chain(
+                                    stored_retval, _callbacks, _chain,
+                                    parent_id=uuid, root_id=_root_id,
+                                    priority=_priority,
+                                )
+                            successful_requests.add(task_request.id)
+                        except MemoryError:
+                            raise
+                        except Exception as exc:
+                            # Permanent failures (malformed signature, etc.)
+                            # will requeue indefinitely.  Broker-level
+                            # dead-letter / max-delivery-count policies are
+                            # the intended circuit-breaker.
+                            logger.error(
+                                'Failed to dispatch chain/callbacks for '
+                                'deduplicated task %s',
+                                task_request.id,
+                                exc_info=True,
+                            )
+                            raise Reject(exc, requeue=True)
                         return trace_ok_t(R, I, T, Rstr)
 
             push_task(task)
@@ -454,18 +588,22 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     I, R = Info(REJECTED, exc), ExceptionInfo(internal=True)
                     state, retval = I.state, I.retval
                     I.handle_reject(task, task_request)
+                    # MEMORY LEAK FIX: Clear traceback frames to prevent memory retention (Issue #8882)
                     traceback_clear(exc)
                 except Ignore as exc:
                     I, R = Info(IGNORED, exc), ExceptionInfo(internal=True)
                     state, retval = I.state, I.retval
                     I.handle_ignore(task, task_request)
+                    # MEMORY LEAK FIX: Clear traceback frames to prevent memory retention (Issue #8882)
                     traceback_clear(exc)
                 except Retry as exc:
                     I, R, state, retval = on_error(
-                        task_request, exc, uuid, RETRY, call_errbacks=False)
+                        task_request, exc, RETRY, call_errbacks=False)
+                    # MEMORY LEAK FIX: Clear traceback frames to prevent memory retention (Issue #8882)
                     traceback_clear(exc)
                 except Exception as exc:
-                    I, R, state, retval = on_error(task_request, exc, uuid)
+                    I, R, state, retval = on_error(task_request, exc)
+                    # MEMORY LEAK FIX: Clear traceback frames to prevent memory retention (Issue #8882)
                     traceback_clear(exc)
                 except BaseException:
                     raise
@@ -478,48 +616,19 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         # separately, so need to call them separately
                         # so that the trail's not added multiple times :(
                         # (Issue #1936)
-                        callbacks = task.request.callbacks
-                        if callbacks:
-                            if len(task.request.callbacks) > 1:
-                                sigs, groups = [], []
-                                for sig in callbacks:
-                                    sig = signature(sig, app=app)
-                                    if isinstance(sig, group):
-                                        groups.append(sig)
-                                    else:
-                                        sigs.append(sig)
-                                for group_ in groups:
-                                    group_.apply_async(
-                                        (retval,),
-                                        parent_id=uuid, root_id=root_id,
-                                        priority=task_priority
-                                    )
-                                if sigs:
-                                    group(sigs, app=app).apply_async(
-                                        (retval,),
-                                        parent_id=uuid, root_id=root_id,
-                                        priority=task_priority
-                                    )
-                            else:
-                                signature(callbacks[0], app=app).apply_async(
-                                    (retval,), parent_id=uuid, root_id=root_id,
-                                    priority=task_priority
-                                )
-
-                        # execute first task in chain
-                        chain = task_request.chain
-                        if chain:
-                            _chsig = signature(chain.pop(), app=app)
-                            _chsig.apply_async(
-                                (retval,), chain=chain,
-                                parent_id=uuid, root_id=root_id,
-                                priority=task_priority
-                            )
+                        _dispatch_callbacks_and_chain(
+                            retval, task.request.callbacks,
+                            task_request.chain,
+                            parent_id=uuid, root_id=root_id,
+                            priority=task_priority,
+                        )
                         task.backend.mark_as_done(
                             uuid, retval, task_request, publish_result,
                         )
                     except EncodeError as exc:
-                        I, R, state, retval = on_error(task_request, exc, uuid)
+                        I, R, state, retval = on_error(task_request, exc)
+                        # MEMORY LEAK FIX: Clear traceback frames to prevent memory retention (Issue #8882)
+                        traceback_clear(exc)
                     else:
                         Rstr = saferepr(R, resultrepr_maxsize)
                         T = monotonic() - time_start
@@ -533,8 +642,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                 'name': get_task_name(task_request, name),
                                 'return_value': Rstr,
                                 'runtime': T,
-                                'args': safe_repr(args),
-                                'kwargs': safe_repr(kwargs),
+                                'args': task_request.get('argsrepr') or safe_repr(args),
+                                'kwargs': task_request.get('kwargsrepr') or safe_repr(kwargs),
                             })
 
                 # -* POST *-
@@ -563,13 +672,15 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                          exc_info=True)
         except MemoryError:
             raise
+        except Reject:
+            raise
         except Exception as exc:
             _signal_internal_error(task, uuid, args, kwargs, request, exc)
             if eager:
                 raise
             R = report_internal_error(task, exc)
             if task_request is not None:
-                I, _, _, _ = on_error(task_request, exc, uuid)
+                I, _, _, _ = on_error(task_request, exc)
         return trace_ok_t(R, I, T, Rstr)
 
     return trace_task
@@ -582,6 +693,8 @@ def trace_task(task, uuid, args, kwargs, request=None, **opts):
         if task.__trace__ is None:
             task.__trace__ = build_tracer(task.name, task, **opts)
         return task.__trace__(uuid, args, kwargs, request)
+    except Reject:
+        raise
     except Exception as exc:
         _signal_internal_error(task, uuid, args, kwargs, request, exc)
         return trace_ok_t(report_internal_error(task, exc), TraceInfo(FAILURE, exc), 0.0, None)
@@ -589,6 +702,8 @@ def trace_task(task, uuid, args, kwargs, request=None, **opts):
 
 def _signal_internal_error(task, uuid, args, kwargs, request, exc):
     """Send a special `internal_error` signal to the app for outside body errors."""
+    tb = None
+    einfo = None
     try:
         _, _, tb = sys.exc_info()
         einfo = ExceptionInfo()
@@ -605,7 +720,16 @@ def _signal_internal_error(task, uuid, args, kwargs, request, exc):
             einfo=einfo,
         )
     finally:
-        del tb
+        # MEMORY LEAK FIX: Clean up local references to prevent memory leaks (Issue #8882)
+        # Both 'tb' and 'einfo' can hold references to frame objects and their local variables.
+        # Explicitly clearing these prevents reference cycles that block garbage collection.
+        if tb is not None:
+            del tb
+        if einfo is not None:
+            # Clear traceback frames to ensure consistent cleanup
+            traceback_clear(einfo.exception)
+            # Break potential reference cycles by deleting the einfo object
+            del einfo
 
 
 def trace_task_ret(name, uuid, request, body, content_type,
