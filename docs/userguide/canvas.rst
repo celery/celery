@@ -92,7 +92,6 @@ or even serialized and sent across the wire.
 
         >>> add.apply_async((2, 2), countdown=1)
         >>> add.signature((2, 2), countdown=1).apply_async()
-        >>> add.signature((2,), countdown=1).apply_async((2,))
 
     ``delay`` is our beloved shortcut to ``apply_async`` taking star-arguments.
     It works seamlessly with signatures:
@@ -103,9 +102,16 @@ or even serialized and sent across the wire.
         >>> add.signature(args, kwargs, **options).delay()
 
         >>> add.delay(2, 2)
-        >>> add.signature().delay(2, 2)
         >>> add.signature((2, 2)).delay()
-        >>> add.signature((2,)).delay(2)
+
+    You can't pass ``options`` directly to a ``delay`` call. If you need options, you can
+    specify them during signature creation or use ``set`` on an already created signature
+    and then call ``delay``:
+
+    .. code-block:: pycon
+
+        >>> add.signature((2, 2), countdown=1).delay()
+        >>> add.signature((2, 2)).set(countdown=1).delay()
 
 - You can't define options with :meth:`~@Task.s`, but a chaining
   ``set`` call takes care of that:
