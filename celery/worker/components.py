@@ -139,7 +139,7 @@ class Pool(bootsteps.StartStopStep):
         semaphore = None
         max_restarts = None
         if w.app.conf.worker_pool in GREEN_POOLS:  # pragma: no cover
-            warnings.warn(UserWarning(W_POOL_SETTING))
+            warnings.warn(UserWarning(W_POOL_SETTING), stacklevel=2)
         threaded = not w.use_eventloop or IS_WINDOWS
         procs = w.min_concurrency
         w.process_task = w._process_task

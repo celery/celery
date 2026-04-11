@@ -158,7 +158,6 @@ def load_extension_classes(namespace):
         try:
             cls = symbol_by_name(class_name)
         except (ImportError, SyntaxError) as exc:
-            warnings.warn(
-                f'Cannot load {namespace} extension {class_name!r}: {exc!r}')
+            warnings.warn(f'Cannot load {namespace} extension {class_name!r}: {exc!r}', stacklevel=2)
         else:
             yield name, cls
