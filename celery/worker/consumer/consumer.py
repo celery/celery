@@ -14,6 +14,7 @@ from time import sleep
 from billiard.common import restart_state
 from billiard.exceptions import RestartFreqExceeded
 from kombu.asynchronous.semaphore import DummyLock
+from kombu.common import ignore_errors
 from kombu.exceptions import ContentDisallowed, DecodeError
 from kombu.utils.compat import _detect_environment
 from kombu.utils.encoding import safe_repr
@@ -60,6 +61,11 @@ consumer: Cannot connect to %s: %s.
 CONNECTION_FAILOVER = """\
 Will retry using next failover.\
 """
+
+#: Timeout (seconds) passed to ``connection.collect()`` when cleaning up
+#: a broken broker connection.  Prevents the cleanup path from blocking
+#: indefinitely on a dead socket (see :issue:`9705`).
+COLLECT_SOCKET_TIMEOUT = 5.0
 
 UNKNOWN_FORMAT = """\
 Received and deleted unknown message.  Wrong destination?!?
@@ -383,9 +389,23 @@ class Consumer:
     def on_connection_error_after_connected(self, exc):
         warn(CONNECTION_RETRY, exc_info=True)
         try:
-            self.connection.collect()
+            # Pass an explicit socket_timeout so that cleanup I/O on a
+            # broken connection (e.g. _brpop_read during Channel.close)
+            # cannot block indefinitely.  The default of None would set
+            # the global socket timeout to blocking-forever, which can
+            # cause the worker to hang here and never reach the reconnect.
+            self.connection.collect(socket_timeout=COLLECT_SOCKET_TIMEOUT)
         except Exception:  # pylint: disable=broad-except
             pass
+
+        # Close the broken connection so the old socket is released
+        # before blueprint.restart() begins the reconnect cycle.
+        # We close here rather than in Connection.stop() because stop()
+        # also runs during graceful shutdown where the connection must
+        # stay open for in-flight task acks.
+        connection, self.connection = self.connection, None
+        if connection:
+            ignore_errors(connection, connection.close)
 
         if self.app.conf.worker_cancel_long_running_tasks_on_connection_loss:
             for request in tuple(active_requests):

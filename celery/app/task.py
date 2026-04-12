@@ -369,7 +369,11 @@ class Task:
     #: Default task expiry time.
     expires = None
 
-    #: Default task priority.
+    #: Default task priority. A number between 0 and 9, where the
+    #: interpretation depends on the broker: with RabbitMQ, higher numbers
+    #: denote higher priority; with Redis, priority 0 is the highest. See
+    #: :ref:`routing-options-rabbitmq-priorities` and
+    #: :ref:`redis-message-priorities`.
     priority = None
 
     #: Max length of result representation used in logs and events.
@@ -584,7 +588,12 @@ class Task:
                 only used to specify custom routing keys to topic exchanges.
 
             priority (int): The task priority, a number between 0 and 9.
-                Defaults to the :attr:`priority` attribute.
+                The interpretation is broker-specific: with RabbitMQ, higher
+                numbers denote higher priority; with Redis, priority ``0`` is
+                the highest priority. See
+                :ref:`routing-options-rabbitmq-priorities` and
+                :ref:`redis-message-priorities`. Defaults to the
+                :attr:`priority` attribute.
 
             serializer (str): Serialization method to use.
                 Can be `pickle`, `json`, `yaml`, `msgpack` or any custom

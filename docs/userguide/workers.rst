@@ -132,6 +132,12 @@ and will call :func:`WorkController.stop() <celery.worker.worker.WorkController.
     As of version 5.6, when the prefork pool is in use, heartbeats are now maintained during warm shutdown and tasks are
     able to complete before the worker terminates.
 
+.. versionchanged:: 5.7
+    When using the thread pool (``--pool threads``), pending futures are now cancelled during warm shutdown
+    using ``cancel_futures=True``. Previously, the thread pool would wait for all submitted tasks to complete,
+    including those that had not yet started executing. This change ensures that only currently running tasks
+    are allowed to finish, while queued tasks are cancelled immediately for a faster and cleaner shutdown.
+
 .. _worker-cold-shutdown:
 
 Cold Shutdown

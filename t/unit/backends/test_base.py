@@ -910,6 +910,36 @@ class test_BaseBackend_dict:
         # Verify self was used as fallback backend
         backend.fail_from_current_stack.assert_called_once()
 
+    def test_chord_error_from_stack_generates_id_when_callback_id_is_none(self):
+        """chord_error_from_stack must not crash when callback.id is None.
+
+        Regression test for https://github.com/celery/celery/issues/4834
+        When a chord body is a chain without an explicit task_id, the
+        error handler must generate an ID so the error result can be
+        stored and errback handlers can fire.
+        """
+        backend = self.b
+
+        callback = MagicMock(name='callback')
+        callback.id = None
+        callback.options = {'task_id': None, 'link_error': []}
+        callback.keys.return_value = []
+        callback.task = 'nonexistent.task'
+
+        backend._call_task_errbacks = Mock()
+        backend.fail_from_current_stack = Mock()
+
+        backend.chord_error_from_stack(callback, exc=ValueError('test'))
+
+        # fail_from_current_stack must be called with a non-None ID
+        call_args = backend.fail_from_current_stack.call_args
+        actual_id = call_args[0][0]
+        assert actual_id is not None, (
+            "chord_error_from_stack must generate an ID when callback.id is None"
+        )
+        # The generated ID must also be stored on the callback
+        assert callback.options['task_id'] is not None
+
     def _create_mock_frozen_group(self, group_id="group-id", task_ids=None, task_names=None):
         """Helper to create mock frozen group with results."""
         if task_ids is None:
