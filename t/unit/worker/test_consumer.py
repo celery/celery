@@ -838,6 +838,63 @@ class test_Consumer_PerformPendingOperations(ConsumerTestCase):
             assert len(c._pending_operations) == 0
 
 
+class test_Consumer_CallSoon(ConsumerTestCase):
+
+    def test_call_soon_executes_immediately_without_hub(self):
+        """With no hub (synloop / gevent), the callback must run at once
+        instead of being deferred to _pending_operations."""
+        c = self.get_consumer(no_hub=True)
+        callback = Mock()
+
+        c.call_soon(callback)
+
+        callback.assert_called_once()
+        assert len(c._pending_operations) == 0
+
+    def test_call_soon_delegates_to_hub_when_present(self):
+        """When a hub exists (asynloop), call_soon must go through the hub."""
+        c = self.get_consumer(no_hub=False)
+        callback = Mock()
+
+        c.call_soon(callback)
+
+        c.hub.call_soon.assert_called_once()
+        callback.assert_not_called()
+
+    def test_call_soon_returns_ppartial(self):
+        """call_soon must return the wrapped ppartial regardless of hub."""
+        c = self.get_consumer(no_hub=True)
+        callback = Mock()
+
+        result = c.call_soon(callback, 1, key='val')
+
+        assert result is not None
+        callback.assert_called_once_with(1, key='val')
+
+    def test_call_soon_logs_callback_exception(self):
+        """Exceptions raised by the callback must be logged, not propagated."""
+        c = self.get_consumer(no_hub=True)
+        callback = Mock(side_effect=RuntimeError('boom'))
+
+        with patch('celery.worker.consumer.consumer.logger.exception') as mock_logger:
+            result = c.call_soon(callback)
+
+        callback.assert_called_once()
+        mock_logger.assert_called_once()
+        assert result is not None
+
+    def test_call_soon_does_not_append_to_pending_ops(self):
+        """Without hub, nothing should be deferred to _pending_operations."""
+        c = self.get_consumer(no_hub=True)
+        c._pending_operations = []
+        callback = Mock()
+
+        c.call_soon(callback)
+        c.call_soon(Mock())
+
+        assert len(c._pending_operations) == 0
+
+
 class test_Heart:
 
     def test_start(self):
