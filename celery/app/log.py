@@ -102,7 +102,7 @@ class Logging:
 
         for _, response in receivers:
             if isinstance(response, Exception):
-                raise response
+                raise response.with_traceback(response.__traceback__)
 
         if not receivers:
             root = logging.getLogger()
