@@ -252,7 +252,10 @@ class Consumer:
         p = ppartial(p, *args, **kwargs)
         if self.hub:
             return self.hub.call_soon(p)
-        self._pending_operations.append(p)
+        try:
+            p()
+        except Exception as exc:
+            logger.exception('call_soon immediate exec failed: %r', exc)
         return p
 
     def perform_pending_operations(self):
