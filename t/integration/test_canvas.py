@@ -206,6 +206,69 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT / 10) == [4, 5]
 
+    def test_group_as_last_member(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = group(
+            delayed_sum.s((1, 2, 3)),
+            chain(
+                add.s(0, 1),
+                group(
+                    add.s(1),
+                    add.s(2),
+                )
+            ),
+        )
+        res = c()
+        assert res.get(timeout=TIMEOUT / 10) == [6, [2, 3]]
+
+    def test_group_as_last_member_of_nested_chain(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = chain(
+            group(
+                delayed_sum.s((1, 2, 3)),
+                chain(
+                    add.s(0, 1),
+                    group(
+                        add.s(1),
+                        add.s(2),
+                    ),
+                ),
+            ),
+            identity.s()
+        )
+        res = c()
+        assert res.get(timeout=TIMEOUT / 10) == [6, [2, 3]]
+
+    def test_chord_as_last_member_of_nested_chain(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = chord(
+            [
+                delayed_sum.s((1, 2, 3)),
+                chain(
+                    add.s(0, 1),
+                    group(
+                        add.s(1),
+                        add.s(2),
+                    ),
+                )
+            ],
+            identity.s()
+        )
+        res = c()
+        assert res.get(timeout=TIMEOUT / 10) == [6, [2, 3]]
+
     def test_chain_of_chain_with_a_single_task(self, manager):
         sig = signature('any_taskname', queue='any_q')
         chain([chain(sig)]).apply_async()
@@ -532,8 +595,7 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [8, 8]
 
-    @pytest.mark.xfail(raises=TimeoutError, reason="Task is timeout")
-    def test_nested_chain_group_lone(self, manager):  # Fails with Redis 5.x
+    def test_nested_chain_group_lone(self, manager):
         """
         Test that a lone group in a chain completes.
         """

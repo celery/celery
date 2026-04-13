@@ -963,7 +963,7 @@ class _chain(Signature):
             other = maybe_unroll_group(other)
             if not isinstance(other, group):
                 return self.__or__(other)
-            # chain | group() -> chain
+            # chain | group() -> chord
             tasks = self.unchain_tasks()
             if not tasks:
                 # If the chain is empty, return the group
@@ -971,10 +971,13 @@ class _chain(Signature):
             if isinstance(tasks[-1], chord):
                 # CHAIN [last item is chord] | GROUP -> chain with chord body.
                 tasks[-1].body = tasks[-1].body | other
-                return type(self)(tasks, app=self.app)
+                return type(self)(tasks, app=self._app)
             # use type(self) for _chain subclasses
+            other_chord = chord(
+                other, body=Signature('celery.identity', app=self._app),
+                app=self._app)
             return type(self)(seq_concat_item(
-                tasks, other), app=self._app)
+                tasks, other_chord), app=self._app)
         elif isinstance(other, _chain):
             # chain | chain -> chain
             return reduce(operator.or_, other.unchain_tasks(), self)
