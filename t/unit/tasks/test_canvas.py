@@ -1218,7 +1218,6 @@ class test_group(CanvasCase):
         # the header of the `child_chord`, just before we apply the last task.
         mock_set_chord_size.assert_called_once_with(ANY, gchild_count)
 
-    @pytest.mark.xfail(reason="TODO I've no idea what this is testing")
     def test_apply_contains_chords_containing_chain(self):
         ggchild_count = 42
         ggchild_sig = self.add.si(0, 0)
@@ -1251,6 +1250,7 @@ class test_group(CanvasCase):
         # behaviour of an `IndexError` isn't particularly helpful to a user.
         group_sig.apply_async()
 
+    @pytest.mark.xfail(reason="TODO I've no idea what this is testing")
     def test_apply_contains_chords_containing_chain_with_empty_tail(self):
         ggchild_count = 42
         ggchild_sig = self.add.si(0, 0)
