@@ -102,6 +102,13 @@ class Logging:
 
         for _, response in receivers:
             if isinstance(response, Exception):
+                # logging setup failed in a signal handler; reset setup flag
+                # so that callers can retry, and re-raise with the original
+                # traceback preserved by Signal.send (on exc.__traceback__).
+                Logging._setup = False
+                tb = getattr(response, "__traceback__", None)
+                if tb is not None:
+                    raise response.with_traceback(tb)
                 raise response.with_traceback(response.__traceback__)
 
         if not receivers:
