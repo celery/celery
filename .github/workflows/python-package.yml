@@ -72,7 +72,7 @@ jobs:
       run: |
         tox --verbose --verbose
 
-    - uses: codecov/codecov-action@v5
+    - uses: codecov/codecov-action@v6
       with:
         flags: unittests # optional
         fail_ci_if_error: true # optional (default = false)
@@ -81,8 +81,9 @@ jobs:
 
     - name: Upload test results to Codecov
       if: ${{ !cancelled() }}
-      uses: codecov/test-results-action@v1
+      uses: codecov/codecov-actions@v6
       with:
+        report_type: test_results
         token: ${{ secrets.CODECOV_TOKEN }}
 
   Integration-tests:
