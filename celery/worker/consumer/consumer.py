@@ -689,7 +689,6 @@ class Consumer:
         on_unknown_task = self.on_unknown_task
         on_invalid_task = self.on_invalid_task
         callbacks = self.on_task_message
-        call_soon = self.call_soon
         call_soon_ack = self.call_soon_ack
 
         def on_task_received(message):

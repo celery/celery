@@ -862,8 +862,8 @@ class test_Consumer_CallSoonAck(ConsumerTestCase):
         c.hub.call_soon.assert_called_once()
         callback.assert_not_called()
 
-    def test_call_soon_ack_returns_ppartial(self):
-        """call_soon_ack must return the wrapped ppartial regardless of hub."""
+    def test_call_soon_ack_returns_ppartial_without_hub(self):
+        """Without hub, call_soon_ack must return the wrapped ppartial."""
         c = self.get_consumer(no_hub=True)
         callback = Mock()
 
