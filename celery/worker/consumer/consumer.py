@@ -252,10 +252,31 @@ class Consumer:
         p = ppartial(p, *args, **kwargs)
         if self.hub:
             return self.hub.call_soon(p)
+        self._pending_operations.append(p)
+        return p
+
+    def call_soon_ack(self, p, *args, **kwargs):
+        """Execute ack/reject callback immediately, bypassing _pending_operations.
+
+        In synloop (gevent/eventlet) workers, the standard call_soon defers
+        callbacks to _pending_operations, which are only drained at the top
+        of the next synloop iteration — after drain_events() returns.  With
+        acks_late and prefetch_multiplier=1 this means the broker cannot
+        deliver the next message until an unrelated AMQP frame arrives,
+        adding 50-400 ms of latency between every pair of tasks.
+
+        This method is intentionally scoped to ack/reject callbacks, which
+        only write an AMQP basic.ack/basic.reject frame to the broker socket.
+        Other call_soon users (e.g. remote-control commands from gPidbox)
+        continue to use deferred execution to preserve greenlet-safety.
+        """
+        p = ppartial(p, *args, **kwargs)
+        if self.hub:
+            return self.hub.call_soon(p)
         try:
             p()
         except Exception as exc:
-            logger.exception('call_soon immediate exec failed: %r', exc)
+            logger.exception('call_soon_ack immediate exec failed: %r', exc)
         return p
 
     def perform_pending_operations(self):
@@ -669,6 +690,7 @@ class Consumer:
         on_invalid_task = self.on_invalid_task
         callbacks = self.on_task_message
         call_soon = self.call_soon
+        call_soon_ack = self.call_soon_ack
 
         def on_task_received(message):
             # payload will only be set for v1 protocol, since v2
@@ -694,12 +716,12 @@ class Consumer:
             else:
                 try:
                     ack_log_error_promise = promise(
-                        call_soon,
+                        call_soon_ack,
                         (message.ack_log_error,),
                         on_error=self._restore_prefetch_count_after_connection_restart,
                     )
                     reject_log_error_promise = promise(
-                        call_soon,
+                        call_soon_ack,
                         (message.reject_log_error,),
                         on_error=self._restore_prefetch_count_after_connection_restart,
                     )
