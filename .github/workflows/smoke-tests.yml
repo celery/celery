@@ -13,6 +13,9 @@ on:
         type: string
         default: '["3.10", "3.11", "3.12", "3.13", "3.14", "3.14t"]'
 
+permissions:
+  contents: read
+
 jobs:
   testing-with:
     runs-on: blacksmith-4vcpu-ubuntu-2404
@@ -48,7 +51,7 @@ jobs:
         run: python -m pip install --upgrade pip tox tox-gh-actions
 
       - name: Run tox for "${{ matrix.python-version }}-smoke-${{ inputs.module_name }}"
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 20
           max_attempts: 5

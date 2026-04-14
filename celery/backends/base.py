@@ -317,6 +317,13 @@ class Backend:
         # Handle group callbacks specially to prevent hanging body tasks
         if isinstance(callback, group):
             return self._handle_group_chord_error(group_callback=callback, backend=backend, exc=exc)
+
+        # Generate an ID if missing so the error can be stored.
+        callback_id = callback.id
+        if not callback_id:
+            from kombu.utils.uuid import uuid
+            callback_id = callback.options['task_id'] = uuid()
+
         # We have to make a fake request since either the callback failed or
         # we're pretending it did since we don't have information about the
         # chord part(s) which failed. This request is constructed as a best
@@ -330,9 +337,9 @@ class Backend:
         try:
             self._call_task_errbacks(fake_request, exc, None)
         except Exception as eb_exc:  # pylint: disable=broad-except
-            return backend.fail_from_current_stack(callback.id, exc=eb_exc)
+            return backend.fail_from_current_stack(callback_id, exc=eb_exc)
         else:
-            return backend.fail_from_current_stack(callback.id, exc=exc)
+            return backend.fail_from_current_stack(callback_id, exc=exc)
 
     def _handle_group_chord_error(self, group_callback, backend, exc=None):
         """Handle chord errors when the callback is a group.
@@ -609,6 +616,44 @@ class Backend:
     def _sleep(self, amount):
         time.sleep(amount)
 
+    def _ensure_retryable(self, func, *args, fallback_exc=None, fallback_msg=None, **kwargs):
+        """Helper to execute a function with the backend's retry policy."""
+        retries = 0
+        while True:
+            try:
+                return func(*args, **kwargs)
+            except Exception as exc:
+                if self.always_retry and self.exception_safe_to_retry(exc):
+                    if retries < self.max_retries:
+                        retries += 1
+                        logger.warning(
+                            'Failed operation %s. Retrying %s more times.',
+                            getattr(func, '__name__', repr(func)), self.max_retries - retries,
+                            exc_info=True)
+                        try:
+                            self.on_backend_retryable_error(exc)
+                        except Exception:
+                            logger.exception(
+                                "on_backend_retryable_error hook failed; continuing retry loop",
+                            )
+
+                        # get_exponential_backoff_interval computes integers
+                        # and time.sleep accept floats for sub second sleep
+                        sleep_amount = get_exponential_backoff_interval(
+                            self.base_sleep_between_retries_ms, retries,
+                            self.max_sleep_between_retries_ms, True) / 1000
+                        self._sleep(sleep_amount)
+                    else:
+                        if fallback_exc:
+                            exc_kwargs = {}
+                            for key in ("task_id", "state"):
+                                if key in kwargs:
+                                    exc_kwargs[key] = kwargs[key]
+                            raise_with_context(fallback_exc(fallback_msg, **exc_kwargs))
+                        raise
+                else:
+                    raise
+
     def store_result(self, task_id, result, state,
                      traceback=None, request=None, **kwargs):
         """Update task state and result.
@@ -618,34 +663,22 @@ class Backend:
         """
         result = self.encode_result(result, state)
 
-        retries = 0
+        kwargs.update({'task_id': task_id, 'state': state})
 
-        while True:
-            try:
-                self._store_result(task_id, result, state, traceback,
-                                   request=request, **kwargs)
-                return result
-            except Exception as exc:
-                if self.always_retry and self.exception_safe_to_retry(exc):
-                    if retries < self.max_retries:
-                        retries += 1
-
-                        # get_exponential_backoff_interval computes integers
-                        # and time.sleep accept floats for sub second sleep
-                        sleep_amount = get_exponential_backoff_interval(
-                            self.base_sleep_between_retries_ms, retries,
-                            self.max_sleep_between_retries_ms, True) / 1000
-                        self._sleep(sleep_amount)
-                    else:
-                        raise_with_context(
-                            BackendStoreError("failed to store result on the backend", task_id=task_id, state=state),
-                        )
-                else:
-                    raise
+        self._ensure_retryable(
+            self._store_result,
+            fallback_exc=BackendStoreError,
+            fallback_msg="failed to store result on the backend",
+            result=result,
+            traceback=traceback,
+            request=request,
+            **kwargs
+        )
+        return result
 
     def forget(self, task_id):
         self._cache.pop(task_id, None)
-        self._forget(task_id)
+        self._ensure_retryable(self._forget, task_id=task_id)
 
     def _forget(self, task_id):
         raise NotImplementedError('backend does not implement forget.')
@@ -689,6 +722,10 @@ class Backend:
         """
         return False
 
+    def on_backend_retryable_error(self, exc):
+        """Hook called before retrying a recoverable backend exception."""
+        return None
+
     def get_task_meta(self, task_id, cache=True):
         """Get task meta from backend.
 
@@ -701,28 +738,13 @@ class Backend:
                 return self._cache[task_id]
             except KeyError:
                 pass
-        retries = 0
-        while True:
-            try:
-                meta = self._get_task_meta_for(task_id)
-                break
-            except Exception as exc:
-                if self.always_retry and self.exception_safe_to_retry(exc):
-                    if retries < self.max_retries:
-                        retries += 1
 
-                        # get_exponential_backoff_interval computes integers
-                        # and time.sleep accept floats for sub second sleep
-                        sleep_amount = get_exponential_backoff_interval(
-                            self.base_sleep_between_retries_ms, retries,
-                            self.max_sleep_between_retries_ms, True) / 1000
-                        self._sleep(sleep_amount)
-                    else:
-                        raise_with_context(
-                            BackendGetMetaError("failed to get meta", task_id=task_id),
-                        )
-                else:
-                    raise
+        meta = self._ensure_retryable(
+            self._get_task_meta_for,
+            fallback_exc=BackendGetMetaError,
+            fallback_msg="failed to get meta",
+            task_id=task_id
+        )
 
         if cache and meta.get('status') == states.SUCCESS:
             self._cache[task_id] = meta
@@ -731,6 +753,17 @@ class Backend:
     def reload_task_result(self, task_id):
         """Reload task result, even if it has been previously fetched."""
         self._cache[task_id] = self.get_task_meta(task_id, cache=False)
+
+    def task_result_exists(self, task_id):
+        """Check if a result exists in the backend for the given task ID.
+
+        .. versionadded:: 5.7.0
+
+        Returns:
+            bool: :const:`True` if the backend has a result for the task,
+                :const:`False` otherwise.
+        """
+        return self._get_task_meta_for(task_id)["status"] != states.PENDING
 
     def reload_group_result(self, group_id):
         """Reload group result, even if it has been previously fetched."""
@@ -744,7 +777,7 @@ class Backend:
             except KeyError:
                 pass
 
-        meta = self._restore_group(group_id)
+        meta = self._ensure_retryable(self._restore_group, group_id=group_id)
         if cache and meta is not None:
             self._cache[group_id] = meta
         return meta
@@ -757,11 +790,15 @@ class Backend:
 
     def save_group(self, group_id, result):
         """Store the result of an executed group."""
-        return self._save_group(group_id, result)
+        return self._ensure_retryable(
+            self._save_group,
+            group_id=group_id,
+            result=result
+        )
 
     def delete_group(self, group_id):
         self._cache.pop(group_id, None)
-        return self._delete_group(group_id)
+        return self._ensure_retryable(self._delete_group, group_id=group_id)
 
     def cleanup(self):
         """Backend cleanup."""
@@ -1097,6 +1134,22 @@ class BaseKeyValueStoreBackend(Backend):
         if not meta:
             return {'status': states.PENDING, 'result': None}
         return self.decode_result(meta)
+
+    def task_result_exists(self, task_id):
+        """Check if a result exists in the backend for the given task ID.
+
+        This overrides the base implementation to directly check for
+        the existence of the key in the store, which is more accurate
+        than checking the status since tasks stored with PENDING status
+        would still be detected.
+
+        .. versionadded:: 5.7.0
+
+        Returns:
+            bool: :const:`True` if the backend has a result for the task,
+                :const:`False` otherwise.
+        """
+        return bool(self.get(self.get_key_for_task(task_id)))
 
     def _restore_group(self, group_id):
         """Get task meta-data for a task by id."""

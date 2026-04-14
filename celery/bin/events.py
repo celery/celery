@@ -4,7 +4,8 @@ from functools import partial
 
 import click
 
-from celery.bin.base import LOG_LEVEL, CeleryDaemonCommand, CeleryOption, handle_preload_options
+from celery.bin.base import (LOG_LEVEL, CeleryDaemonCommand, CeleryOption, handle_preload_options,
+                             handle_remote_command_error)
 from celery.platforms import detached, set_process_title, strargv
 
 
@@ -82,13 +83,16 @@ def _run_evtop(app):
 def events(ctx, dump, camera, detach, frequency, maxrate, loglevel, **kwargs):
     """Event-stream utilities."""
     app = ctx.obj.app
-    if dump:
-        return _run_evdump(app)
+    try:
+        if dump:
+            return _run_evdump(app)
 
-    if camera:
-        return _run_evcam(camera, app=app, freq=frequency, maxrate=maxrate,
-                          loglevel=loglevel,
-                          detach=detach,
-                          **kwargs)
+        if camera:
+            return _run_evcam(camera, app=app, freq=frequency, maxrate=maxrate,
+                              loglevel=loglevel,
+                              detach=detach,
+                              **kwargs)
 
-    return _run_evtop(app)
+        return _run_evtop(app)
+    except Exception as exc:
+        handle_remote_command_error('events', exc)

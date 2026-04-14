@@ -128,10 +128,6 @@ class test_ConfigurationView:
         self.view.clear()
         assert len(self.view) == 2
 
-    def test_isa_mapping(self):
-        from collections.abc import Mapping
-        assert issubclass(ConfigurationView, Mapping)
-
     def test_isa_mutable_mapping(self):
         from collections.abc import MutableMapping
         assert issubclass(ConfigurationView, MutableMapping)
