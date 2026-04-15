@@ -49,7 +49,7 @@ jobs:
       - name: Install apt packages
         run: |
           sudo apt-get update
-          sudo apt-get install -f libcurl4-openssl-dev libgnutls28-dev httping expect libmemcached-dev
+          sudo apt-get install -y --no-install-recommends libcurl4-openssl-dev libgnutls28-dev httping expect libmemcached-dev
 
       - uses: actions/checkout@v6
       - name: Set up Python ${{ matrix.python-version }}
