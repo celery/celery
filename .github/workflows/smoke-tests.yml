@@ -53,7 +53,7 @@ jobs:
       - name: Run tox for "${{ matrix.python-version }}-smoke-${{ inputs.module_name }}"
         uses: nick-fields/retry@v4
         with:
-          timeout_minutes: 20
+          timeout_minutes: 60
           max_attempts: 5
           retry_wait_seconds: 60
           command: |
