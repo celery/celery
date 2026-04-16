@@ -97,6 +97,7 @@ jobs:
         module: [
           'test_backend.py',
           'test_canvas.py',
+          'test_connection_recovery.py',
           'test_database_backend.py',
           'test_inspect.py',
           'test_loader.py',
