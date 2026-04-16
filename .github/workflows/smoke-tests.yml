@@ -32,15 +32,16 @@ jobs:
 
       - name: Install apt packages
         run: |
-          sudo apt update
-          sudo apt-get install -y procps  # Install procps to enable sysctl
+          echo 'Acquire::ForceIPv4 "true";' | sudo tee /etc/apt/apt.conf.d/99force-ipv4
+          sudo apt-get update
+          sudo apt-get install -f procps  # Install procps to enable sysctl
           sudo sysctl -w vm.overcommit_memory=1
 
       - uses: actions/checkout@v6
       - name: Setup Docker Builder
         uses: useblacksmith/setup-docker-builder@v1
       - name: Set up Python ${{ matrix.python-version }}
-        uses: useblacksmith/setup-python@v6
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
           allow-prereleases: true
@@ -53,8 +54,8 @@ jobs:
       - name: Run tox for "${{ matrix.python-version }}-smoke-${{ inputs.module_name }}"
         uses: nick-fields/retry@v4
         with:
-          timeout_minutes: 20
-          max_attempts: 5
+          timeout_minutes: 60
+          max_attempts: 3
           retry_wait_seconds: 60
           command: |
             tox --verbose --verbose -e "${{ matrix.python-version }}-smoke" -- -k ${{ inputs.module_name }} -n auto
