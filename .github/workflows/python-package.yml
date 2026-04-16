@@ -53,7 +53,10 @@ jobs:
     - name: Install apt packages
       if: startsWith(matrix.os, 'blacksmith-4vcpu-ubuntu')
       run: |
-        sudo apt-get update && sudo apt-get install -f -y --no-install-recommends libcurl4-openssl-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
+        echo 'Acquire::ForceIPv4 "true";' | sudo tee /etc/apt/apt.conf.d/99force-ipv4
+        sudo apt-get update
+        sudo apt-get install -f libcurl4-openssl-dev libev-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
+
     - uses: actions/checkout@v6
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v6
@@ -72,7 +75,7 @@ jobs:
       run: |
         tox --verbose --verbose
 
-    - uses: codecov/codecov-action@v5
+    - uses: codecov/codecov-action@v6
       with:
         flags: unittests # optional
         fail_ci_if_error: true # optional (default = false)
@@ -81,8 +84,9 @@ jobs:
 
     - name: Upload test results to Codecov
       if: ${{ !cancelled() }}
-      uses: codecov/test-results-action@v1
+      uses: codecov/codecov-action@v6
       with:
+        report_type: test_results
         token: ${{ secrets.CODECOV_TOKEN }}
 
   Integration-tests:
