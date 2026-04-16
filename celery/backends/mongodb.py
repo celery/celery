@@ -20,6 +20,7 @@ if pymongo:
         from bson.binary import Binary
     except ImportError:
         from pymongo.binary import Binary
+    from pymongo import uri_parser
     from pymongo.errors import InvalidDocument
 else:                                       # pragma: no cover
     Binary = None
@@ -73,7 +74,7 @@ class MongoBackend(BaseBackend):
         if self.url:
             self.url = self._ensure_mongodb_uri_compliance(self.url)
 
-            uri_data = pymongo.uri_parser.parse_uri(self.url)
+            uri_data = uri_parser.parse_uri(self.url)
             # build the hosts list to create a mongo connection
             hostslist = [
                 f'{x[0]}:{x[1]}' for x in uri_data['nodelist']
@@ -222,6 +223,13 @@ class MongoBackend(BaseBackend):
                 'children': obj['children'],
             })
         return {'status': states.PENDING, 'result': None}
+
+    def task_result_exists(self, task_id):
+        """Check if a result exists in MongoDB for the given task ID.
+
+        .. versionadded:: 5.7.0
+        """
+        return bool(self.collection.find_one({"_id": task_id}))
 
     def _save_group(self, group_id, result):
         """Save the group result."""

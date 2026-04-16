@@ -82,14 +82,6 @@ or even serialized and sent across the wire.
         >>> add.s(2, 2)()
         4
 
-    ``delay`` is our beloved shortcut to ``apply_async`` taking star-arguments:
-
-    .. code-block:: pycon
-
-        >>> result = add.delay(2, 2)
-        >>> result.get()
-        4
-
     ``apply_async`` takes the same arguments as the
     :meth:`Task.apply_async <@Task.apply_async>` method:
 
@@ -100,6 +92,26 @@ or even serialized and sent across the wire.
 
         >>> add.apply_async((2, 2), countdown=1)
         >>> add.signature((2, 2), countdown=1).apply_async()
+
+    ``delay`` is our beloved shortcut to ``apply_async`` taking star-arguments.
+    It works seamlessly with signatures:
+
+    .. code-block:: pycon
+
+        >>> add.delay(*args, **kwargs)
+        >>> add.signature(args, kwargs, **options).delay()
+
+        >>> add.delay(2, 2)
+        >>> add.signature((2, 2)).delay()
+
+    You can't pass ``options`` directly to a ``delay`` call. If you need options, you can
+    specify them during signature creation or use ``set`` on an already created signature
+    and then call ``delay``:
+
+    .. code-block:: pycon
+
+        >>> add.signature((2, 2), countdown=1).delay()
+        >>> add.signature((2, 2)).set(countdown=1).delay()
 
 - You can't define options with :meth:`~@Task.s`, but a chaining
   ``set`` call takes care of that:
@@ -136,6 +148,24 @@ creates partials:
         >>> partial = add.s(2)          # incomplete signature
         >>> partial.delay(4)            # 4 + 2
         >>> partial.apply_async((4,))  # same
+
+    .. note::
+
+        Additional args passed to ``delay``/``apply_async`` are **prepended**
+        to the signature args. Since ``add`` is commutative, the ordering may
+        not be obvious. A non-commutative task like
+        ``subtract(x, y) -> x - y`` makes this clear:
+
+        .. code-block:: python
+
+            @app.task
+            def subtract(x, y):
+                return x - y
+
+            partial = subtract.s(10)    # incomplete: second arg only
+            partial.delay(30)           # -> subtract(30, 10) = 20
+        Here ``delay(30)`` prepends ``30`` as the first argument, resulting
+        in ``subtract(30, 10)`` — not ``subtract(10, 30)``.
 
 - Any keyword arguments added will be merged with the kwargs in the signature,
   with the new keyword arguments taking precedence:
@@ -199,7 +229,7 @@ so it's not possible to call the signature with partial args/kwargs.
         >>> ~sig
 
         >>> # is the same as
-        >>> sig.delay().get()
+        >>> sig.apply_async().get()
 
 
 .. _canvas-callbacks:
@@ -244,7 +274,7 @@ arguments:
     >>> add.apply_async((2, 2), link=add.s(8))
 
 As expected this will first launch one task calculating :math:`2 + 2`, then
-another task calculating :math:`8 + 4`.
+another task calculating :math:`4 + 8`.
 
 The Primitives
 ==============
@@ -466,6 +496,13 @@ Here're some examples:
         >>> res.parent.get()
         8
 
+
+.. warning::
+
+    With more complex workflows, the default JSON serializer has been observed to
+    drastically inflate message sizes due to recursive references, leading to
+    resource issues. The *pickle* serializer is not vulnerable to this and may
+    therefore be preferable in such cases.
 
 .. _canvas-chain:
 

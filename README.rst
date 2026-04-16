@@ -2,7 +2,7 @@
 
 |build-status| |coverage| |license| |wheel| |semgrep| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 5.5.2 (immunity)
+:Version: 5.6.2 (recovery)
 :Web: https://docs.celeryq.dev/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -37,11 +37,25 @@ Sponsors
 Blacksmith
 ----------
 
-.. image:: ./docs/images/blacksmith-logo-white-on-black.svg
+.. image:: https://github.com/celery/celery/blob/main/docs/images/blacksmith-logo-white-on-black.svg
    :alt: Blacksmith logo
    :width: 240px
+   :target: https://blacksmith.sh/
 
 `Official Announcement <https://www.linkedin.com/pulse/celery-now-powered-blacksmith-tomer-nosrati-ew68e/?trackingId=DWHH49WqS2iOW8Jf5N1kEg%3D%3D>`_
+
+CloudAMQP
+---------
+
+.. image:: https://github.com/celery/celery/blob/main/docs/images/cloudamqp-logo-lightbg.svg
+   :alt: CloudAMQP logo
+   :width: 240px
+   :target: https://www.cloudamqp.com/
+
+`CloudAMQP <https://www.cloudamqp.com/>`_ is an industry leading RabbitMQ as a service provider.
+If you need highly available message queues, a perfect choice would be to use CloudAMQP.
+With 24,000+ running instances, CloudAMQP is the leading hosting provider of RabbitMQ,
+with customers all over the world.
 
 Upstash
 -------
@@ -49,6 +63,7 @@ Upstash
 .. image:: https://upstash.com/logo/upstash-dark-bg.svg
    :alt: Upstash logo
    :width: 200px
+   :target: https://upstash.com/?code=celery
 
 `Upstash <http://upstash.com/?code=celery>`_ offers a serverless Redis database service,
 providing a seamless solution for Celery users looking to leverage
@@ -62,6 +77,7 @@ Dragonfly
 .. image:: https://github.com/celery/celery/raw/main/docs/images/dragonfly.svg
    :alt: Dragonfly logo
    :width: 150px
+   :target: https://www.dragonflydb.io/
 
 `Dragonfly <https://www.dragonflydb.io/>`_ is a drop-in Redis replacement that cuts costs and boosts performance.
 Designed to fully utilize the power of modern cloud hardware and deliver on the data demands of modern applications,
@@ -104,17 +120,19 @@ in such a way that the client enqueues an URL to be requested by a worker.
 What do I need?
 ===============
 
-Celery version 5.5.x runs on:
+Celery version 5.6.x runs on:
 
-- Python (3.8, 3.9, 3.10, 3.11, 3.12, 3.13)
+- Python (3.9, 3.10, 3.11, 3.12, 3.13)
 - PyPy3.9+ (v7.3.12+)
 
-
-This is the version of celery which will support Python 3.8 or newer.
+This is the last version of Celery which will support Python 3.9.
+Celery v5.7.x will work on Python 3.10 or newer versions.
 
 If you're running an older version of Python, you need to be running
 an older version of Celery:
 
+
+- Python 3.8: Celery 5.5 or earlier.
 - Python 3.7: Celery 5.2 or earlier.
 - Python 3.6: Celery 5.1 or earlier.
 - Python 2.7: Celery 4.x series.
@@ -138,7 +156,7 @@ Get Started
 ===========
 
 If this is the first time you're trying to use Celery, or you're
-new to Celery v5.5.x coming from previous versions then you should read our
+new to Celery v5.6.x coming from previous versions then you should read our
 getting started tutorials:
 
 - `First steps with Celery`_
@@ -519,11 +537,6 @@ documentation.
 
 .. _`Contributing to Celery`:
     https://docs.celeryq.dev/en/stable/contributing.html
-
-|oc-contributors|
-
-.. |oc-contributors| image:: https://opencollective.com/celery/contributors.svg?width=890&button=false
-    :target: https://github.com/celery/celery/graphs/contributors
 
 Backers
 -------

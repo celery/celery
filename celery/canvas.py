@@ -7,6 +7,7 @@
 
 import itertools
 import operator
+import types
 import warnings
 from abc import ABCMeta, abstractmethod
 from collections import deque
@@ -810,6 +811,8 @@ class Signature(dict):
         args, kwargs, _ = self._merge(args, kwargs, {}, force=True)
         return reprcall(self['task'], args, kwargs)
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
     def __deepcopy__(self, memo):
         memo[id(self)] = self
         return dict(self)  # TODO: Potential bug of being a shallow copy
@@ -989,13 +992,13 @@ class _chain(Signature):
                     sig.tasks[-2].body = sig.tasks[-2].body | sig.tasks[-1]
                     sig.tasks = sig.tasks[:-1]
                 return sig
-            elif self.tasks and isinstance(self.tasks[-1], chord):
-                # CHAIN [last item is chord] -> chain with chord body.
+            elif self.tasks and isinstance(self.tasks[-1], chord) and not isinstance(other, chord):
+                # CHAIN [last item is chord] | TASK -> chain with chord body.
                 sig = self.clone()
                 sig.tasks[-1].body = sig.tasks[-1].body | other
                 return sig
             else:
-                # chain | task -> chain
+                # chain | task/chord -> chain
                 # use type(self) for _chain subclasses
                 return type(self)(seq_concat_item(
                     self.unchain_tasks(), other), app=self._app)
@@ -1257,6 +1260,9 @@ class _chain(Signature):
             if link_error:
                 for errback in maybe_list(link_error):
                     task.link_error(errback)
+                    # Propagate to chord body for chord_error_from_stack.
+                    if isinstance(task, chord) and task.body:
+                        task.body.link_error(errback)
 
             tasks.append(task)
             results.append(res)
@@ -1274,7 +1280,8 @@ class _chain(Signature):
                 while node.parent:
                     node = node.parent
                 prev_res = node
-        self.id = last_task_id
+        # Use the last task's actual ID, not the input parameter.
+        self.id = results[0].id if results else last_task_id
         return tasks, results
 
     def apply(self, args=None, kwargs=None, **options):
@@ -1741,7 +1748,7 @@ class group(Signature):
 
     def _apply_tasks(self, tasks, producer=None, app=None, p=None,
                      add_to_parent=None, chord=None,
-                     args=None, kwargs=None, **options):
+                     args=None, kwargs=None, group_index=None, **options):
         """Run all the tasks in the group.
 
         This is used by :meth:`apply_async` to run all the tasks in the group
@@ -2234,7 +2241,8 @@ class _chord(Signature):
             options.pop('task_id', None)
             body.options.update(options)
 
-        bodyres = body.freeze(task_id, root_id=root_id)
+        body_task_id = task_id or uuid()
+        bodyres = body.freeze(body_task_id, group_id=group_id, root_id=root_id)
 
         # Chains should not be passed to the header tasks. See #3771
         options.pop('chain', None)

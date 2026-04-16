@@ -182,6 +182,15 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               help_group="Worker Options",
               help="Set custom prefetch multiplier value "
                    "for this worker instance.")
+@click.option('--disable-prefetch',
+              is_flag=True,
+              default=None,
+              callback=lambda ctx, _,
+              value: ctx.obj.app.conf.worker_disable_prefetch if value is None else value,
+              cls=CeleryOption,
+              help_group="Worker Options",
+              help="Disable broker prefetching. The worker will only fetch a task when a process slot is available. "
+                   "Only supported with Redis brokers.")
 @click.option('-c',
               '--concurrency',
               type=int,
@@ -314,6 +323,8 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
     """
     try:
         app = ctx.obj.app
+        if 'disable_prefetch' in kwargs and kwargs['disable_prefetch'] is not None:
+            app.conf.worker_disable_prefetch = kwargs.pop('disable_prefetch')
         if ctx.args:
             try:
                 app.config_from_cmdline(ctx.args, namespace='worker')

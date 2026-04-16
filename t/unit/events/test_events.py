@@ -5,6 +5,7 @@ import pytest
 
 from celery.events import Event
 from celery.events.receiver import CLIENT_CLOCK_SKEW
+from celery.exceptions import ImproperlyConfigured
 
 
 class MockProducer:
@@ -326,6 +327,39 @@ class test_EventReceiver:
         finally:
             channel.close()
             connection.close()
+
+    def test_event_queue_exclusive(self):
+        self.app.conf.update(
+            event_queue_exclusive=True,
+            event_queue_durable=False
+        )
+
+        ev_recv = self.app.events.Receiver(Mock(name='connection'))
+        q = ev_recv.queue
+
+        assert q.exclusive is True
+        assert q.durable is False
+        assert q.auto_delete is True
+
+    def test_event_queue_durable_and_validation(self):
+        self.app.conf.update(
+            event_queue_exclusive=False,
+            event_queue_durable=True
+        )
+        ev_recv = self.app.events.Receiver(Mock(name='connection'))
+        q = ev_recv.queue
+
+        assert q.durable is True
+        assert q.exclusive is False
+        assert q.auto_delete is False
+
+        self.app.conf.update(
+            event_queue_exclusive=True,
+            event_queue_durable=True
+        )
+
+        with pytest.raises(ImproperlyConfigured):
+            self.app.events.Receiver(Mock(name='connection'))
 
 
 def test_State(app):

@@ -4,7 +4,6 @@ from collections.abc import Iterable
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
-import pytest_subtests  # noqa
 
 from celery._state import _task_stack
 from celery.canvas import (Signature, _chain, _maybe_group, _merge_dictionaries, chain, chord, chunks, group,
@@ -593,6 +592,40 @@ class test_chain(CanvasCase):
         ), "Chord followed by a group should be upgraded to a single chord with chained body."
         assert len(c.tasks) == 6
 
+    def test_chain_of_chords_stays_flat(self):
+        c = chain(
+            chord([signature('h1'), signature('h2')], signature('b1'), app=self.app),
+            chord([signature('h3'), signature('h4')], signature('b2'), app=self.app),
+            chord([signature('h5'), signature('h6')], signature('b3'), app=self.app),
+        )
+        assert isinstance(c, _chain)
+        assert len(c.tasks) == 3
+        for task in c.tasks:
+            assert isinstance(task, chord)
+        assert not isinstance(c.tasks[0].body, _chain)
+        assert not isinstance(c.tasks[1].body, _chain)
+        assert not isinstance(c.tasks[2].body, _chain)
+
+    def test_chain_of_chords_serialized_size_constant(self):
+        chords = [
+            chord([signature(f'h{i}_{j}') for j in range(3)],
+                  signature(f'b{i}'), app=self.app)
+            for i in range(6)
+        ]
+        c = chain(*chords)
+        assert isinstance(c, _chain)
+        sizes = [len(json.dumps(task.__json__())) for task in c.tasks]
+        assert max(sizes) == min(sizes), (
+            f"Chord sizes not constant across chain: {sizes}"
+        )
+
+    def test_chord_or_task_still_nests(self):
+        c = chord([signature('h1')], signature('b1'), app=self.app)
+        t = signature('t1')
+        result = chain(c) | t
+        assert isinstance(result, _chain)
+        assert isinstance(result.tasks[0].body, _chain)
+
     def test_apply_options(self):
 
         class static(Signature):
@@ -826,6 +859,106 @@ class test_chain(CanvasCase):
         assert len(final_task.tasks) == 1 and isinstance(final_task.tasks[0], chord)
         assert isinstance(final_task.tasks[0].body, chord)
         assert final_task.tasks[0].body.body == chain1
+
+    def test_chain_body_gets_id_when_used_as_chord_body(self):
+        """Chain used as chord body must have a non-None ID after freeze.
+
+        Regression test for https://github.com/celery/celery/issues/4834
+        When chain(chain(group(...), task), task) is frozen, the chord
+        body is a chain. Previously, the chain's ID stayed None because
+        prepare_steps set self.id = last_task_id (the input parameter,
+        None) instead of the last task's actual UUID.
+        """
+        # Build chord with a chain body: group becomes chord,
+        # the two following tasks become the body chain.
+        g = group(self.add.si(1, 1), self.add.si(2, 2))
+        body_chain = chord(g, self.add.s(10), app=self.app)
+        canvas = chain(body_chain, self.add.s(20), app=self.app)
+        canvas.freeze()
+
+        # Find the chord
+        chords = [t for t in canvas.tasks if isinstance(t, chord)]
+        assert chords, "Expected a chord in the frozen chain"
+        chord_task = chords[0]
+
+        # The chord body (a chain) must have a non-None ID
+        assert chord_task.body.id is not None, (
+            "Chord body chain must have an ID after freeze"
+        )
+
+    def test_chain_body_id_propagated_to_header_tasks(self):
+        """Header tasks must carry the chord body's ID in request.chord.
+
+        Regression test for https://github.com/celery/celery/issues/4834
+        The header tasks store a reference to the chord body. After
+        freeze, this reference must have a valid task_id so that
+        chord_error_from_stack can store the error result.
+        """
+        g = group(self.add.si(1, 1), self.add.si(2, 2))
+        body_chain = chord(g, self.add.s(10), app=self.app)
+        canvas = chain(body_chain, self.add.s(20), app=self.app)
+        canvas.freeze()
+
+        chords = [t for t in canvas.tasks if isinstance(t, chord)]
+        chord_task = chords[0]
+
+        # Every header task's chord option must have the body's ID
+        body_id = chord_task.body.id
+        for header_task in chord_task.tasks.tasks:
+            header_chord = header_task.options.get('chord')
+            assert header_chord is not None, "Header task must have chord option"
+            assert header_chord.id == body_id, (
+                f"Header chord ID {header_chord.id} != body ID {body_id}"
+            )
+
+    def test_chain_errbacks_propagated_to_chord_body(self):
+        """Errbacks on a chain must propagate to the chord body.
+
+        Regression test for https://github.com/celery/celery/issues/4834
+        chord_error_from_stack reads errbacks from the chord body
+        (request.chord), not from the chord task. Without propagation,
+        link_error handlers set on a chain containing a chord never fire.
+        """
+        @self.app.task(shared=False)
+        def on_error(*args):
+            pass
+
+        g = group(self.add.si(1, 1), self.add.si(2, 2))
+        body_chord = chord(g, self.add.s(10), app=self.app)
+        c = chain(body_chord, self.add.s(20), app=self.app)
+
+        # Simulate what apply_async does: pass link_error to prepare_steps
+        errback = on_error.s()
+        c.prepare_steps(
+            c.args, c.kwargs, c.tasks, app=self.app,
+            link_error=[errback], clone=False,
+        )
+
+        # The chord body must have the errback
+        chords = [t for t in c.tasks if isinstance(t, chord)]
+        assert chords
+        body_errbacks = chords[0].body.options.get('link_error', [])
+        assert len(body_errbacks) >= 1, (
+            "Errback must be propagated to chord body"
+        )
+
+    def test_chain_id_matches_result_after_freeze(self):
+        """Chain.id must equal the returned result ID after freeze.
+
+        After freeze(), a chain's ID should reflect the last task's
+        result (since that is what the chain's result represents).
+        """
+        c = self.add.s(1, 1) | self.add.s(2) | self.add.s(3)
+        result = c.freeze()
+        assert c.id is not None
+        assert c.id == result.id
+
+    def test_chain_id_with_explicit_id_preserved(self):
+        """Chain.freeze(explicit_id) must set chain.id to that value."""
+        c = self.add.s(1, 1) | self.add.s(2)
+        result = c.freeze('my-explicit-id')
+        assert c.id == 'my-explicit-id'
+        assert result.id == 'my-explicit-id'
 
 
 class test_group(CanvasCase):
@@ -1242,6 +1375,12 @@ class test_group(CanvasCase):
             assert task.args[1] == 0
             assert isinstance(result, AsyncResult)
             assert group_id is not None
+
+    def test_task_replace_with_group_preserves_group_order(self):
+        self.app.conf.task_always_eager = True
+        sig = self.replace_with_group.s(1, 2)
+        res = self.helper_test_get_delay(sig.delay())
+        assert res == [3, 2]
 
 
 class test_chord(CanvasCase):
@@ -1781,7 +1920,103 @@ class test_chord(CanvasCase):
         assert errback == err
         for header_task in c.tasks:
             assert header_task.options['link_error'] == [err.clone(immutable=True)]
-        assert c.body.options['link_error'] == [err]
+        assert c.body.options["link_error"] == [err]
+
+    def test_chord_run_ensures_body_has_valid_task_id(self):
+        """Test that chord.run() ensures body always gets a valid task ID.
+
+        This is the unit test for the fix to issue #9773. The chord body should always
+        be frozen with a valid task ID to prevent "task_id must not be empty" errors.
+        """
+        # Create a chord with header group and body chain
+        header = group([self.add.s(1, 1), self.add.s(2, 2)])
+        body = chain(self.add.s(10, 10), self.add.s(20, 20))
+        test_chord = chord(header, body)
+
+        # Set up specific IDs for testing
+        chord_task_id = "test-chord-id"
+        group_task_id = "test-group-id"
+        header.options["task_id"] = group_task_id
+
+        # Use patch to spy on body.freeze method
+        with patch.object(body, "freeze", wraps=body.freeze) as mock_freeze:
+            test_chord.run(header, body, (), task_id=chord_task_id)
+
+            # Assert that body.freeze was called with the provided task_id and group_id
+            mock_freeze.assert_called_once_with(
+                chord_task_id, group_id=group_task_id, root_id=None
+            )
+
+    def test_chord_run_generates_task_id_when_none_provided(self):
+        """Test that chord.run() generates a task_id when none is provided."""
+        # Create a chord with header group and body chain (no task_id set)
+        header = group([self.add.s(1, 1), self.add.s(2, 2)])
+        body = chain(self.add.s(10, 10), self.add.s(20, 20))
+        test_chord = chord(header, body)
+
+        # Set group ID
+        group_id = "test-group-id"
+        header.options["task_id"] = group_id
+
+        # Use patch to spy on body.freeze method
+        with patch.object(body, "freeze", wraps=body.freeze) as mock_freeze:
+            test_chord.run(header, body, (), task_id=None)
+
+            # Assert that body.freeze was called with a generated UUID and group_id
+            mock_freeze.assert_called_once()
+            args, kwargs = mock_freeze.call_args
+            body_task_id = args[0] if args else kwargs.get("_id")
+            passed_group_id = kwargs.get("group_id")
+
+            # Body should get a unique task ID (not None, not group_id)
+            assert body_task_id is not None
+            assert body_task_id != group_id  # Should be different from group_id
+            assert passed_group_id == group_id  # But should know its group
+
+    def test_chord_run_body_freeze_prevents_task_id_empty_error(self):
+        """Test that proper body.freeze() call prevents 'task_id must not be empty' error.
+
+        This test ensures that when chord body is frozen with a valid task ID,
+        subsequent error handling won't encounter the "task_id must not be empty" error.
+        """
+        # Create chord components
+        header = group([self.add.s(1, 1), self.add.s(2, 2)])
+        body = chain(self.add.s(10, 10), self.add.s(20, 20))
+        test_chord = chord(header, body)
+
+        # Set a group task ID
+        group_id = "test-group-12345"
+        header.options["task_id"] = group_id
+
+        # Run the chord with external task ID
+        external_task_id = "external-task-id"
+        result = test_chord.run(header, body, (), task_id=external_task_id)
+
+        # Verify the frozen result has the external task ID, not group_id
+        assert result.id == external_task_id
+        assert body.id is not None
+        assert result.parent is not None
+
+        # Body should know its group but have its own ID
+        assert body.options.get('group_id') == group_id or body.id != group_id
+
+    def test_chord_run_body_freeze_with_no_external_task_id(self):
+        """Test chord body gets unique ID when no external task_id provided."""
+        header = group([self.add.s(1, 1), self.add.s(2, 2)])
+        body = chain(self.add.s(10, 10), self.add.s(20, 20))
+        test_chord = chord(header, body)
+
+        group_id = "test-group-12345"
+        header.options["task_id"] = group_id
+
+        # Run chord without external task ID
+        result = test_chord.run(header, body, (), task_id=None)
+
+        # Body should get unique ID, different from group_id
+        assert result.id is not None
+        assert result.id != group_id
+        assert body.id is not None
+        assert body.id != group_id
 
 
 class test_maybe_signature(CanvasCase):

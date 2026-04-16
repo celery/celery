@@ -65,6 +65,33 @@ def unpickle_backend(cls, args, kwargs):
     return cls(*args, app=current_app._get_current_object(), **kwargs)
 
 
+def _create_chord_error_with_cause(message, original_exc=None) -> ChordError:
+    """Create a ChordError preserving the original exception as __cause__.
+
+    This helper reduces code duplication across the codebase when creating
+    ChordError instances that need to preserve the original exception.
+    """
+    chord_error = ChordError(message)
+    if isinstance(original_exc, Exception):
+        chord_error.__cause__ = original_exc
+    return chord_error
+
+
+def _create_fake_task_request(task_id, errbacks=None, task_name='unknown', **extra) -> Context:
+    """Create a fake task request context for error callbacks.
+
+    This helper reduces code duplication when creating fake request contexts
+    for error callback handling.
+    """
+    return Context({
+        "id": task_id,
+        "errbacks": errbacks or [],
+        "delivery_info": dict(),
+        "task": task_name,
+        **extra
+    })
+
+
 class _nulldict(dict):
     def ignore(self, *a, **kw):
         pass
@@ -281,27 +308,106 @@ class Backend:
 
     def chord_error_from_stack(self, callback, exc=None):
         app = self.app
+
         try:
             backend = app._tasks[callback.task].backend
         except KeyError:
             backend = self
+
+        # Handle group callbacks specially to prevent hanging body tasks
+        if isinstance(callback, group):
+            return self._handle_group_chord_error(group_callback=callback, backend=backend, exc=exc)
+
+        # Generate an ID if missing so the error can be stored.
+        callback_id = callback.id
+        if not callback_id:
+            from kombu.utils.uuid import uuid
+            callback_id = callback.options['task_id'] = uuid()
+
         # We have to make a fake request since either the callback failed or
         # we're pretending it did since we don't have information about the
         # chord part(s) which failed. This request is constructed as a best
         # effort for new style errbacks and may be slightly misleading about
         # what really went wrong, but at least we call them!
-        fake_request = Context({
-            "id": callback.options.get("task_id"),
-            "errbacks": callback.options.get("link_error", []),
-            "delivery_info": dict(),
+        fake_request = _create_fake_task_request(
+            task_id=callback.options.get("task_id"),
+            errbacks=callback.options.get("link_error", []),
             **callback
-        })
+        )
         try:
             self._call_task_errbacks(fake_request, exc, None)
         except Exception as eb_exc:  # pylint: disable=broad-except
-            return backend.fail_from_current_stack(callback.id, exc=eb_exc)
+            return backend.fail_from_current_stack(callback_id, exc=eb_exc)
         else:
-            return backend.fail_from_current_stack(callback.id, exc=exc)
+            return backend.fail_from_current_stack(callback_id, exc=exc)
+
+    def _handle_group_chord_error(self, group_callback, backend, exc=None):
+        """Handle chord errors when the callback is a group.
+
+        When a chord header fails and the body is a group, we need to:
+        1. Revoke all pending tasks in the group body
+        2. Mark them as failed with the chord error
+        3. Call error callbacks for each task
+
+        This prevents the group body tasks from hanging indefinitely (#8786)
+        """
+
+        # Extract original exception from ChordError if available
+        if isinstance(exc, ChordError) and hasattr(exc, '__cause__') and exc.__cause__:
+            original_exc = exc.__cause__
+        else:
+            original_exc = exc
+
+        try:
+            # Freeze the group to get the actual GroupResult with task IDs
+            frozen_group = group_callback.freeze()
+
+            if isinstance(frozen_group, GroupResult):
+                # revoke all tasks in the group to prevent execution
+                frozen_group.revoke()
+
+                # Handle each task in the group individually
+                for result in frozen_group.results:
+                    try:
+                        # Create fake request for error callbacks
+                        fake_request = _create_fake_task_request(
+                            task_id=result.id,
+                            errbacks=group_callback.options.get("link_error", []),
+                            task_name=getattr(result, 'task', 'unknown')
+                        )
+
+                        # Call error callbacks for this task with original exception
+                        try:
+                            backend._call_task_errbacks(fake_request, original_exc, None)
+                        except Exception:  # pylint: disable=broad-except
+                            # continue on exception to be sure to iter to all the group tasks
+                            pass
+
+                        # Mark the individual task as failed with original exception
+                        backend.fail_from_current_stack(result.id, exc=original_exc)
+
+                    except Exception as task_exc:  # pylint: disable=broad-except
+                        # Log error but continue with other tasks
+                        logger.exception(
+                            'Failed to handle chord error for task %s: %r',
+                            getattr(result, 'id', 'unknown'), task_exc
+                        )
+
+                # Also mark the group itself as failed if it has an ID
+                frozen_group_id = getattr(frozen_group, 'id', None)
+                if frozen_group_id:
+                    backend.mark_as_failure(frozen_group_id, original_exc)
+
+            return None
+
+        except Exception as cleanup_exc:  # pylint: disable=broad-except
+            # Log the error and fall back to single task handling
+            logger.exception(
+                'Failed to handle group chord error, falling back to single task handling: %r',
+                cleanup_exc
+            )
+            # Fallback to original error handling
+            return backend.fail_from_current_stack(group_callback.id, exc=exc)
 
     def fail_from_current_stack(self, task_id, exc=None):
         type_, real_exc, tb = sys.exc_info()
@@ -510,6 +616,44 @@ class Backend:
     def _sleep(self, amount):
         time.sleep(amount)
 
+    def _ensure_retryable(self, func, *args, fallback_exc=None, fallback_msg=None, **kwargs):
+        """Helper to execute a function with the backend's retry policy."""
+        retries = 0
+        while True:
+            try:
+                return func(*args, **kwargs)
+            except Exception as exc:
+                if self.always_retry and self.exception_safe_to_retry(exc):
+                    if retries < self.max_retries:
+                        retries += 1
+                        logger.warning(
+                            'Failed operation %s. Retrying %s more times.',
+                            getattr(func, '__name__', repr(func)), self.max_retries - retries,
+                            exc_info=True)
+                        try:
+                            self.on_backend_retryable_error(exc)
+                        except Exception:
+                            logger.exception(
+                                "on_backend_retryable_error hook failed; continuing retry loop",
+                            )
+
+                        # get_exponential_backoff_interval computes integers
+                        # and time.sleep accept floats for sub second sleep
+                        sleep_amount = get_exponential_backoff_interval(
+                            self.base_sleep_between_retries_ms, retries,
+                            self.max_sleep_between_retries_ms, True) / 1000
+                        self._sleep(sleep_amount)
+                    else:
+                        if fallback_exc:
+                            exc_kwargs = {}
+                            for key in ("task_id", "state"):
+                                if key in kwargs:
+                                    exc_kwargs[key] = kwargs[key]
+                            raise_with_context(fallback_exc(fallback_msg, **exc_kwargs))
+                        raise
+                else:
+                    raise
+
     def store_result(self, task_id, result, state,
                      traceback=None, request=None, **kwargs):
         """Update task state and result.
@@ -519,34 +663,22 @@ class Backend:
         """
         result = self.encode_result(result, state)
 
-        retries = 0
+        kwargs.update({'task_id': task_id, 'state': state})
 
-        while True:
-            try:
-                self._store_result(task_id, result, state, traceback,
-                                   request=request, **kwargs)
-                return result
-            except Exception as exc:
-                if self.always_retry and self.exception_safe_to_retry(exc):
-                    if retries < self.max_retries:
-                        retries += 1
-
-                        # get_exponential_backoff_interval computes integers
-                        # and time.sleep accept floats for sub second sleep
-                        sleep_amount = get_exponential_backoff_interval(
-                            self.base_sleep_between_retries_ms, retries,
-                            self.max_sleep_between_retries_ms, True) / 1000
-                        self._sleep(sleep_amount)
-                    else:
-                        raise_with_context(
-                            BackendStoreError("failed to store result on the backend", task_id=task_id, state=state),
-                        )
-                else:
-                    raise
+        self._ensure_retryable(
+            self._store_result,
+            fallback_exc=BackendStoreError,
+            fallback_msg="failed to store result on the backend",
+            result=result,
+            traceback=traceback,
+            request=request,
+            **kwargs
+        )
+        return result
 
     def forget(self, task_id):
         self._cache.pop(task_id, None)
-        self._forget(task_id)
+        self._ensure_retryable(self._forget, task_id=task_id)
 
     def _forget(self, task_id):
         raise NotImplementedError('backend does not implement forget.')
@@ -590,6 +722,10 @@ class Backend:
         """
         return False
 
+    def on_backend_retryable_error(self, exc):
+        """Hook called before retrying a recoverable backend exception."""
+        return None
+
     def get_task_meta(self, task_id, cache=True):
         """Get task meta from backend.
 
@@ -602,28 +738,13 @@ class Backend:
                 return self._cache[task_id]
             except KeyError:
                 pass
-        retries = 0
-        while True:
-            try:
-                meta = self._get_task_meta_for(task_id)
-                break
-            except Exception as exc:
-                if self.always_retry and self.exception_safe_to_retry(exc):
-                    if retries < self.max_retries:
-                        retries += 1
 
-                        # get_exponential_backoff_interval computes integers
-                        # and time.sleep accept floats for sub second sleep
-                        sleep_amount = get_exponential_backoff_interval(
-                            self.base_sleep_between_retries_ms, retries,
-                            self.max_sleep_between_retries_ms, True) / 1000
-                        self._sleep(sleep_amount)
-                    else:
-                        raise_with_context(
-                            BackendGetMetaError("failed to get meta", task_id=task_id),
-                        )
-                else:
-                    raise
+        meta = self._ensure_retryable(
+            self._get_task_meta_for,
+            fallback_exc=BackendGetMetaError,
+            fallback_msg="failed to get meta",
+            task_id=task_id
+        )
 
         if cache and meta.get('status') == states.SUCCESS:
             self._cache[task_id] = meta
@@ -632,6 +753,17 @@ class Backend:
     def reload_task_result(self, task_id):
         """Reload task result, even if it has been previously fetched."""
         self._cache[task_id] = self.get_task_meta(task_id, cache=False)
+
+    def task_result_exists(self, task_id):
+        """Check if a result exists in the backend for the given task ID.
+
+        .. versionadded:: 5.7.0
+
+        Returns:
+            bool: :const:`True` if the backend has a result for the task,
+                :const:`False` otherwise.
+        """
+        return self._get_task_meta_for(task_id)["status"] != states.PENDING
 
     def reload_group_result(self, group_id):
         """Reload group result, even if it has been previously fetched."""
@@ -645,7 +777,7 @@ class Backend:
             except KeyError:
                 pass
 
-        meta = self._restore_group(group_id)
+        meta = self._ensure_retryable(self._restore_group, group_id=group_id)
         if cache and meta is not None:
             self._cache[group_id] = meta
         return meta
@@ -658,11 +790,15 @@ class Backend:
 
     def save_group(self, group_id, result):
         """Store the result of an executed group."""
-        return self._save_group(group_id, result)
+        return self._ensure_retryable(
+            self._save_group,
+            group_id=group_id,
+            result=result
+        )
 
     def delete_group(self, group_id):
         self._cache.pop(group_id, None)
-        return self._delete_group(group_id)
+        return self._ensure_retryable(self._delete_group, group_id=group_id)
 
     def cleanup(self):
         """Backend cleanup."""
@@ -999,6 +1135,22 @@ class BaseKeyValueStoreBackend(Backend):
             return {'status': states.PENDING, 'result': None}
         return self.decode_result(meta)
 
+    def task_result_exists(self, task_id):
+        """Check if a result exists in the backend for the given task ID.
+
+        This overrides the base implementation to directly check for
+        the existence of the key in the store, which is more accurate
+        than checking the status since tasks stored with PENDING status
+        would still be detected.
+
+        .. versionadded:: 5.7.0
+
+        Returns:
+            bool: :const:`True` if the backend has a result for the task,
+                :const:`False` otherwise.
+        """
+        return bool(self.get(self.get_key_for_task(task_id)))
+
     def _restore_group(self, group_id):
         """Get task meta-data for a task by id."""
         meta = self.get(self.get_key_for_group(group_id))
@@ -1068,18 +1220,18 @@ class BaseKeyValueStoreBackend(Backend):
                     )
                 except StopIteration:
                     reason = repr(exc)
-
                 logger.exception('Chord %r raised: %r', gid, reason)
-                self.chord_error_from_stack(callback, ChordError(reason))
+                chord_error = _create_chord_error_with_cause(message=reason, original_exc=exc)
+                self.chord_error_from_stack(callback=callback, exc=chord_error)
             else:
                 try:
                     callback.delay(ret)
                 except Exception as exc:  # pylint: disable=broad-except
                     logger.exception('Chord %r raised: %r', gid, exc)
-                    self.chord_error_from_stack(
-                        callback,
-                        ChordError(f'Callback error: {exc!r}'),
+                    chord_error = _create_chord_error_with_cause(
+                        message=f'Callback error: {exc!r}', original_exc=exc
                     )
+                    self.chord_error_from_stack(callback=callback, exc=chord_error)
             finally:
                 deps.delete()
                 self.delete(key)

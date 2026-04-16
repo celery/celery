@@ -1,6 +1,6 @@
 """Google Cloud Storage result store backend for Celery."""
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from os import getpid
 from threading import RLock
 
@@ -8,6 +8,7 @@ from kombu.utils.encoding import bytes_to_str
 from kombu.utils.functional import dictfilter
 from kombu.utils.url import url_to_parts
 
+from celery.backends.base import _create_chord_error_with_cause
 from celery.canvas import maybe_signature
 from celery.exceptions import ChordError, ImproperlyConfigured
 from celery.result import GroupResult, allow_join_result
@@ -94,7 +95,7 @@ class GCSBackendBase(KeyValueStoreBackend):
         key = bytes_to_str(key)
         blob = self._get_blob(key)
         if self.ttl:
-            blob.custom_time = datetime.utcnow() + timedelta(seconds=self.ttl)
+            blob.custom_time = datetime.now(timezone.utc) + timedelta(seconds=self.ttl)
         blob.upload_from_string(value, retry=self._retry_policy)
 
     def delete(self, key):
@@ -293,7 +294,8 @@ class GCSBackend(GCSBackendBase):
                     reason = repr(exc)
 
                 logger.exception('Chord %r raised: %r', gid, reason)
-                self.chord_error_from_stack(callback, ChordError(reason))
+                chord_error = _create_chord_error_with_cause(message=reason, original_exc=exc)
+                self.chord_error_from_stack(callback, chord_error)
             else:
                 try:
                     callback.delay(ret)
@@ -342,7 +344,7 @@ class GCSBackend(GCSBackendBase):
         Firestore ttl data is typically deleted within 24 hours after its
         expiration date.
         """
-        val_expires = datetime.utcnow() + timedelta(seconds=expires)
+        val_expires = datetime.now(timezone.utc) + timedelta(seconds=expires)
         doc = self._firestore_document(key)
         doc.set({self._field_expires: val_expires}, merge=True)
 

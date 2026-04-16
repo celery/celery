@@ -74,7 +74,7 @@ We should always be open to collaboration. Your work should be done
 transparently and patches from Celery should be given back to the community
 when they're made, not just when the distribution releases. If you wish
 to work on new code for existing upstream projects, at least keep those
-projects informed of your ideas and progress. It many not be possible to
+projects informed of your ideas and progress. It may not be possible to
 get consensus from upstream, or even from your colleagues about the correct
 implementation for an idea, so don't feel obliged to have that agreement
 before you begin, but at least keep the outside world informed of your work,
@@ -1509,4 +1509,3 @@ following:
 .. _`bundles`: https://docs.celeryq.dev/en/latest/getting-started/introduction.html#bundles
 
 .. _`report an issue`: https://docs.celeryq.dev/en/latest/contributing.html#reporting-bugs
-

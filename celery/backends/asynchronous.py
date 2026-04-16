@@ -1,8 +1,11 @@
 """Async I/O backend support utilities."""
+
+import logging
 import socket
 import threading
 import time
 from collections import deque
+from contextlib import contextmanager
 from queue import Empty
 from time import sleep
 from weakref import WeakKeyDictionary
@@ -11,12 +14,43 @@ from kombu.utils.compat import detect_environment
 
 from celery import states
 from celery.exceptions import TimeoutError
+from celery.utils.log import get_logger
 from celery.utils.threads import THREAD_TIMEOUT_MAX
+
+E_CELERY_RESTART_REQUIRED = "Celery must be restarted because a shutdown signal was detected."
+
+E_RETRY_LIMIT_EXCEEDED = """
+Retry limit exceeded while trying to reconnect to the Celery result store
+backend. The Celery application must be restarted.
+"""
+
+logger = get_logger(__name__)
 
 __all__ = (
     'AsyncBackendMixin', 'BaseResultConsumer', 'Drainer',
     'register_drainer',
 )
+
+
+class EventletAdaptedEvent:
+    """
+    An adapted eventlet event, designed to match the API of `threading.Event` and
+    `gevent.event.Event`.
+    """
+
+    def __init__(self):
+        import eventlet
+        self.evt = eventlet.Event()
+
+    def is_set(self):
+        return self.evt.ready()
+
+    def set(self):
+        return self.evt.send()
+
+    def wait(self, timeout=None):
+        return self.evt.wait(timeout)
+
 
 drainers = {}
 
@@ -54,6 +88,18 @@ class Drainer:
                 yield self.wait_for(p, wait, timeout=interval)
             except socket.timeout:
                 pass
+            except OSError:
+                # Recoverable connection error (e.g. broker restart).
+                # drain_events handles reconnection internally; if an
+                # OSError still leaks through, we log, sleep for one
+                # interval, and continue rather than spinning hot.
+                logging.warning(
+                    'Drainer: connection error during drain_events, '
+                    'will retry on next loop iteration.',
+                    exc_info=True,
+                )
+                time.sleep(interval)
+
             if on_interval:
                 on_interval()
             if p.ready:  # got event on the wanted channel.
@@ -62,52 +108,91 @@ class Drainer:
     def wait_for(self, p, wait, timeout=None):
         wait(timeout=timeout)
 
+    def _event(self):
+        return threading.Event()
+
 
 class greenletDrainer(Drainer):
     spawn = None
+    _exc = None
     _g = None
     _drain_complete_event = None    # event, sended (and recreated) after every drain_events iteration
 
-    def _create_drain_complete_event(self):
-        """create new self._drain_complete_event object"""
-        pass
-
     def _send_drain_complete_event(self):
-        """raise self._drain_complete_event for wakeup .wait_for"""
-        pass
+        self._drain_complete_event.set()
+        self._drain_complete_event = self._event()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._started = threading.Event()
-        self._stopped = threading.Event()
-        self._shutdown = threading.Event()
-        self._create_drain_complete_event()
+
+        self._started = self._event()
+        self._stopped = self._event()
+        self._shutdown = self._event()
+        self._drain_complete_event = self._event()
 
     def run(self):
         self._started.set()
-        while not self._stopped.is_set():
+
+        try:
+            while not self._stopped.is_set():
+                try:
+                    self.result_consumer.drain_events(timeout=1)
+                    self._send_drain_complete_event()
+                except socket.timeout:
+                    pass
+                except OSError:
+                    # Recoverable connection errors (e.g. broker restart)
+                    # are handled inside drain_events via reconnection.
+                    # If something still leaks through, we log, back off
+                    # briefly, and retry instead of spinning hot.
+                    logging.warning(
+                        'Drainer: connection error during drain_events, '
+                        'will retry on next loop iteration.',
+                        exc_info=True,
+                    )
+                    time.sleep(1)
+        except Exception as e:
+            self._exc = e
+            raise
+        finally:
+            self._send_drain_complete_event()
             try:
-                self.result_consumer.drain_events(timeout=1)
-                self._send_drain_complete_event()
-                self._create_drain_complete_event()
-            except socket.timeout:
-                pass
-        self._shutdown.set()
+                self._shutdown.set()
+            except RuntimeError as e:
+                logging.error(f"Failed to set shutdown event: {e}")
 
     def start(self):
+        self._ensure_not_shut_down()
+
         if not self._started.is_set():
             self._g = self.spawn(self.run)
             self._started.wait()
 
     def stop(self):
         self._stopped.set()
-        self._send_drain_complete_event()
         self._shutdown.wait(THREAD_TIMEOUT_MAX)
 
     def wait_for(self, p, wait, timeout=None):
         self.start()
         if not p.ready:
             self._drain_complete_event.wait(timeout=timeout)
+
+            self._ensure_not_shut_down()
+
+    def _ensure_not_shut_down(self):
+        """Currently used to ensure the drainer has not run to completion.
+
+        Raises if the shutdown event has been signaled (either due to an exception
+        or stop() being called).
+
+        The _shutdown event acts as synchronization to ensure _exc is properly
+        set before it is read from, avoiding need for locks.
+        """
+        if self._shutdown.is_set():
+            if self._exc is not None:
+                raise self._exc
+            else:
+                raise Exception(E_CELERY_RESTART_REQUIRED)
 
 
 @register_drainer('eventlet')
@@ -119,12 +204,8 @@ class eventletDrainer(greenletDrainer):
         sleep(0)
         return g
 
-    def _create_drain_complete_event(self):
-        from eventlet.event import Event
-        self._drain_complete_event = Event()
-
-    def _send_drain_complete_event(self):
-        self._drain_complete_event.send()
+    def _event(self):
+        return EventletAdaptedEvent()
 
 
 @register_drainer('gevent')
@@ -136,13 +217,9 @@ class geventDrainer(greenletDrainer):
         gevent.sleep(0)
         return g
 
-    def _create_drain_complete_event(self):
+    def _event(self):
         from gevent.event import Event
-        self._drain_complete_event = Event()
-
-    def _send_drain_complete_event(self):
-        self._drain_complete_event.set()
-        self._create_drain_complete_event()
+        return Event()
 
 
 class AsyncBackendMixin:
@@ -239,6 +316,11 @@ class AsyncBackendMixin:
 class BaseResultConsumer:
     """Manager responsible for consuming result messages."""
 
+    #: Tuple of transport-layer exceptions that signal a lost connection.
+    #: Subclasses should override this with the appropriate exception types
+    #: so that :meth:`reconnect_on_error` can catch and recover from them.
+    _connection_errors = ()
+
     def __init__(self, backend, app, accept,
                  pending_results, pending_messages):
         self.backend = backend
@@ -252,6 +334,34 @@ class BaseResultConsumer:
 
     def start(self, initial_task_id, **kwargs):
         raise NotImplementedError()
+
+    @contextmanager
+    def reconnect_on_error(self):
+        """Context manager that catches connection errors and reconnects.
+
+        Wraps a block of code so that any :attr:`_connection_errors` raised
+        inside it trigger a call to :meth:`_reconnect`.  If reconnection
+        itself raises a connection error the consumer is considered
+        unrecoverable and a :exc:`RuntimeError` is raised to signal that
+        the Celery application must be restarted.
+        """
+        try:
+            yield
+        except self._connection_errors:
+            try:
+                self._reconnect()
+            except self._connection_errors as exc:
+                logger.critical(E_RETRY_LIMIT_EXCEEDED)
+                raise RuntimeError(E_RETRY_LIMIT_EXCEEDED) from exc
+
+    def _reconnect(self):
+        """Re-establish the backend connection.
+
+        Subclasses must override this method to perform the transport-specific
+        reconnection logic that should be executed when a connection error is
+        caught by :meth:`reconnect_on_error`.
+        """
+        pass
 
     def stop(self):
         pass
