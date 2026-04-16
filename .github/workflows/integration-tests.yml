@@ -48,6 +48,7 @@ jobs:
     steps:
       - name: Install apt packages
         run: |
+          echo 'Acquire::ForceIPv4 "true";' | sudo tee /etc/apt/apt.conf.d/99force-ipv4
           sudo apt-get update
           sudo apt-get install -f -y --no-install-recommends libcurl4-openssl-dev libgnutls28-dev httping expect libmemcached-dev
 
