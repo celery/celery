@@ -34,7 +34,7 @@ jobs:
         run: |
           echo 'Acquire::ForceIPv4 "true";' | sudo tee /etc/apt/apt.conf.d/99force-ipv4
           sudo apt-get update
-          sudo apt-get install -f -y --no-install-recommends procps  # Install procps to enable sysctl
+          sudo apt-get install -f procps  # Install procps to enable sysctl
           sudo sysctl -w vm.overcommit_memory=1
 
       - uses: actions/checkout@v6
