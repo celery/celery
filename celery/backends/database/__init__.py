@@ -1,6 +1,7 @@
 """SQLAlchemy result store backend."""
 import logging
 from contextlib import contextmanager
+from typing import Dict, List, Literal, Optional
 
 from celery import states
 from celery.backends.base import BaseBackend
@@ -8,6 +9,7 @@ from celery.exceptions import ImproperlyConfigured
 from celery.utils.imports import symbol_by_name
 from celery.utils.time import maybe_timedelta
 
+from .extensions import SchemaExtension
 from .models import Task, TaskExtended, TaskSet
 from .session import SessionManager
 
@@ -52,7 +54,26 @@ class DatabaseBackend(BaseBackend):
     task_cls = Task
     taskset_cls = TaskSet
 
-    def __init__(self, dburi=None, engine_options=None, url=None, **kwargs):
+    def __init__(self,
+                 dburi=None,
+                 engine_options=None,
+                 url=None,
+                 *,
+                 schema_extensions: Optional[Dict[Literal['task', 'group'], List[SchemaExtension]]] = None,
+                 **kwargs):
+        """
+        Initialize the DatabaseBackend.
+
+        :param dburi: Database URI.
+        :param engine_options: SQLAlchemy engine options.
+        :param url: Alternative way to specify the database URL.
+        :param schema_extensions: Optional dictionary of schema extensions for 'task' and 'group'.
+        :param kwargs: Additional keyword arguments.
+
+        .. versionadded:: 5.7.0
+            The ``schema_extensions`` keyword-only parameter was added to allow configuring
+            additional schema extensions for task and group result tables.
+        """
         # The `url` argument was added later and is used by
         # the app to set backend by url (celery.app.backends.by_url)
         super().__init__(expires_type=maybe_timedelta,
@@ -83,12 +104,15 @@ class DatabaseBackend(BaseBackend):
 
         schemas = conf.database_table_schemas or {}
         tablenames = conf.database_table_names or {}
+        schema_extensions = schema_extensions or conf.get('database_schema_extensions', {})
         self.task_cls.configure(
             schema=schemas.get('task'),
-            name=tablenames.get('task'))
+            name=tablenames.get('task'),
+            extensions=schema_extensions.get('task', ()))
         self.taskset_cls.configure(
             schema=schemas.get('group'),
-            name=tablenames.get('group'))
+            name=tablenames.get('group'),
+            extensions=schema_extensions.get('group', ()))
 
         if not self.url:
             raise ImproperlyConfigured(
