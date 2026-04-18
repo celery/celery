@@ -67,6 +67,28 @@ def self_termination_system_exit():
     sys.exit(1)
 
 
+@shared_task(bind=True, default_retry_delay=3, max_retries=1)
+def countdown_task_with_retry(self):
+    """Task that fails once then succeeds. For cycle detection tests."""
+    if self.request.retries < 1:
+        raise self.retry(exc=Exception("Simulated failure"))
+    return self.request.retries
+
+
+@shared_task(bind=True, max_retries=2)
+def non_eta_task_with_retries(self):
+    """Task that fails twice then succeeds. For cycle detection tests."""
+    if self.request.retries < 2:
+        raise self.retry(exc=Exception("Simulated failure"), countdown=3)
+    return self.request.retries
+
+
+@shared_task
+def summarize_results(results):
+    """Sum a list of results. For chord callback tests."""
+    return sum(results)
+
+
 @shared_task(time_limit=2)
 def self_termination_delay_timeout():
     """Delays the execution to simulate a task timeout."""

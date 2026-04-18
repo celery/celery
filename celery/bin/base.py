@@ -8,9 +8,12 @@ from typing import Any
 
 import click
 from click import Context, ParamType
+from kombu.exceptions import OperationalError
 from kombu.utils.objects import cached_property
 
 from celery._state import get_current_app
+from celery.exceptions import CeleryCommandException
+from celery.platforms import EX_UNAVAILABLE
 from celery.signals import user_preload_options
 from celery.utils import text
 from celery.utils.log import mlevel
@@ -115,6 +118,26 @@ class CLIContext:
         self.echo(f'{dirstr} {title}')
         if body and show_body:
             self.echo(body)
+
+
+def handle_remote_command_error(command: str, exc: Exception) -> None:
+    if isinstance(exc, click.ClickException):
+        raise
+
+    if isinstance(exc, OperationalError):
+        raise CeleryCommandException(
+            message=(
+                'Could not connect to the message broker. '
+                'Please make sure your broker (e.g., RabbitMQ or Redis) is running and '
+                f'the connection settings are correct. Reason: {exc}'
+            ),
+            exit_code=EX_UNAVAILABLE,
+        ) from exc
+
+    raise CeleryCommandException(
+        message=f'Unable to run the `{command}` command. Reason: {exc}',
+        exit_code=EX_UNAVAILABLE,
+    ) from exc
 
 
 def handle_preload_options(f):

@@ -8,7 +8,7 @@ from celery import Celery
 def test_run_worker():
     with pytest.raises(subprocess.CalledProcessError) as exc_info:
         subprocess.check_output(
-            ["celery", "--config", "t.integration.test_worker_config", "worker"],
+            ["celery", "--config", "t.integration.worker_config", "worker"],
             stderr=subprocess.STDOUT)
 
     called_process_error = exc_info.value
@@ -30,7 +30,7 @@ def test_django_fixup_direct_worker(caplog, monkeypatch):
     caplog.set_level(logging.DEBUG)
 
     # Configure Django settings
-    monkeypatch.setenv('DJANGO_SETTINGS_MODULE', 't.integration.test_django_settings')
+    monkeypatch.setenv('DJANGO_SETTINGS_MODULE', 't.integration.django_settings')
     django.setup()
 
     # Create Celery app with Django integration

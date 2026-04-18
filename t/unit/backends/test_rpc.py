@@ -20,6 +20,155 @@ class test_RPCResultConsumer:
         # drain_events shouldn't crash when called before start
         consumer.drain_events(0.001)
 
+    def test_drain_events_reconnects_on_connection_error(self):
+        consumer = self.get_consumer()
+        # Simulate a started consumer with a live connection.
+        mock_conn = Mock(name='connection')
+        mock_conn.connection_errors = (OSError,)
+        mock_conn.channel_errors = ()
+        mock_conn.drain_events.side_effect = OSError(
+            'Server unexpectedly closed connection'
+        )
+        consumer._connection = mock_conn
+        consumer._connection_errors = mock_conn.connection_errors + mock_conn.channel_errors
+
+        mock_consumer = Mock(name='consumer')
+        mock_consumer.queues = [Mock(name='queue1')]
+        consumer._consumer = mock_consumer
+
+        # Patch app.connection() to return a fresh mock connection
+        # and Consumer to return a mock consumer.
+        new_conn = Mock(name='new_connection')
+        new_conn.connection_errors = (OSError,)
+        new_conn.channel_errors = ()
+        new_kombu_consumer = Mock(name='new_kombu_consumer')
+        consumer.app = Mock()
+        consumer.app.connection.return_value = new_conn
+        consumer.Consumer = Mock(return_value=new_kombu_consumer)
+
+        # drain_events should NOT raise; it should reconnect instead.
+        consumer.drain_events(timeout=1)
+
+        # Old connection should be closed.
+        mock_conn.close.assert_called_once()
+        # New connection should be established.
+        consumer.app.connection.assert_called_once()
+        assert consumer._connection is new_conn
+        # New consumer should be consuming.
+        assert consumer._consumer is new_kombu_consumer
+        new_kombu_consumer.consume.assert_called_once()
+
+    def test_drain_events_reconnect_preserves_queues(self):
+        consumer = self.get_consumer()
+        mock_conn = Mock(name='connection')
+        mock_conn.connection_errors = (ConnectionError,)
+        mock_conn.channel_errors = ()
+        mock_conn.drain_events.side_effect = ConnectionError('reset')
+        consumer._connection = mock_conn
+        consumer._connection_errors = mock_conn.connection_errors + mock_conn.channel_errors
+
+        queue1, queue2 = Mock(name='q1'), Mock(name='q2')
+        mock_consumer = Mock(name='consumer')
+        mock_consumer.queues = [queue1, queue2]
+        consumer._consumer = mock_consumer
+
+        new_conn = Mock(name='new_connection')
+        new_conn.connection_errors = (ConnectionError,)
+        new_conn.channel_errors = ()
+        consumer.app = Mock()
+        consumer.app.connection.return_value = new_conn
+        consumer.Consumer = Mock(return_value=Mock(name='new_kombu_consumer'))
+
+        consumer.drain_events(timeout=1)
+
+        # The new Consumer should have been created with both old queues.
+        new_consumer_call = consumer.Consumer.call_args
+        assert list(new_consumer_call[0][1]) == [queue1, queue2]
+
+    def test_drain_events_no_reconnect_on_other_errors(self):
+        consumer = self.get_consumer()
+        mock_conn = Mock(name='connection')
+        mock_conn.connection_errors = (OSError,)
+        mock_conn.channel_errors = ()
+        mock_conn.drain_events.side_effect = RuntimeError('unexpected')
+        consumer._connection = mock_conn
+        consumer._connection_errors = mock_conn.connection_errors + mock_conn.channel_errors
+
+        with pytest.raises(RuntimeError, match='unexpected'):
+            consumer.drain_events(timeout=1)
+
+    def test_reconnect_handles_close_failures_gracefully(self):
+        consumer = self.get_consumer()
+        mock_conn = Mock(name='connection')
+        mock_conn.close.side_effect = OSError('already closed')
+        consumer._connection = mock_conn
+
+        mock_consumer = Mock(name='consumer')
+        mock_consumer.cancel.side_effect = OSError('channel gone')
+        mock_consumer.queues = [Mock(name='queue1')]
+        consumer._consumer = mock_consumer
+
+        new_conn = Mock(name='new_connection')
+        new_conn.connection_errors = (OSError,)
+        new_conn.channel_errors = ()
+        new_kombu_consumer = Mock(name='new_kombu_consumer')
+        consumer.app = Mock()
+        consumer.app.connection.return_value = new_conn
+        consumer.Consumer = Mock(return_value=new_kombu_consumer)
+
+        # _reconnect should NOT raise even if cancel/close fail
+        consumer._reconnect()
+
+        assert consumer._connection is new_conn
+        new_kombu_consumer.consume.assert_called_once()
+
+    def test_drain_events_channel_error_triggers_reconnect(self):
+        consumer = self.get_consumer()
+        mock_conn = Mock(name='connection')
+        mock_conn.connection_errors = ()
+        mock_conn.channel_errors = (KeyError,)
+        mock_conn.drain_events.side_effect = KeyError('channel closed')
+        consumer._connection = mock_conn
+        consumer._connection_errors = mock_conn.connection_errors + mock_conn.channel_errors
+
+        mock_consumer = Mock(name='consumer')
+        mock_consumer.queues = []
+        consumer._consumer = mock_consumer
+
+        new_conn = Mock(name='new_connection')
+        new_conn.connection_errors = ()
+        new_conn.channel_errors = (KeyError,)
+        consumer.app = Mock()
+        consumer.app.connection.return_value = new_conn
+        consumer.Consumer = Mock(return_value=Mock(name='new_kombu_consumer'))
+
+        consumer.drain_events(timeout=1)
+
+        assert consumer._connection is new_conn
+
+    def test_drain_events_raises_runtime_when_reconnect_also_fails(self):
+        consumer = self.get_consumer()
+
+        class FakeConnError(Exception):
+            pass
+
+        mock_conn = Mock(name='connection')
+        mock_conn.connection_errors = (FakeConnError,)
+        mock_conn.channel_errors = ()
+        mock_conn.drain_events.side_effect = FakeConnError('dropped')
+        consumer._connection = mock_conn
+        consumer._connection_errors = mock_conn.connection_errors + mock_conn.channel_errors
+
+        mock_consumer = Mock(name='consumer')
+        mock_consumer.queues = []
+        consumer._consumer = mock_consumer
+
+        consumer.app = Mock()
+        consumer.app.connection.side_effect = FakeConnError('still down')
+
+        with pytest.raises(RuntimeError, match='Retry limit exceeded'):
+            consumer.drain_events(timeout=1)
+
 
 class test_RPCBackend:
 

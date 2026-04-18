@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
@@ -141,7 +141,7 @@ class test_GCSBackend:
             'testvalue', retry=backend._retry_policy
         )
         if gcs_ttl:
-            assert mock_blob.custom_time >= datetime.utcnow()
+            assert mock_blob.custom_time >= datetime.now(timezone.utc)
 
     @patch.object(GCSBackend, '_get_blob')
     @patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled')
@@ -441,7 +441,7 @@ class test_GCSBackend:
         expires = 86400
         mock_document = MagicMock()
         mock_firestore_document.return_value = mock_document
-        expected_expiry = datetime.utcnow() + timedelta(seconds=expires)
+        expected_expiry = datetime.now(timezone.utc) + timedelta(seconds=expires)
 
         backend = GCSBackend(app=self.app)
         backend._expire_chord_key(key, expires)

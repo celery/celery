@@ -1,6 +1,6 @@
 """Google Cloud Storage result store backend for Celery."""
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from os import getpid
 from threading import RLock
 
@@ -95,7 +95,7 @@ class GCSBackendBase(KeyValueStoreBackend):
         key = bytes_to_str(key)
         blob = self._get_blob(key)
         if self.ttl:
-            blob.custom_time = datetime.utcnow() + timedelta(seconds=self.ttl)
+            blob.custom_time = datetime.now(timezone.utc) + timedelta(seconds=self.ttl)
         blob.upload_from_string(value, retry=self._retry_policy)
 
     def delete(self, key):
@@ -344,7 +344,7 @@ class GCSBackend(GCSBackendBase):
         Firestore ttl data is typically deleted within 24 hours after its
         expiration date.
         """
-        val_expires = datetime.utcnow() + timedelta(seconds=expires)
+        val_expires = datetime.now(timezone.utc) + timedelta(seconds=expires)
         doc = self._firestore_document(key)
         doc.set({self._field_expires: val_expires}, merge=True)
 

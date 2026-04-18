@@ -82,14 +82,6 @@ or even serialized and sent across the wire.
         >>> add.s(2, 2)()
         4
 
-    ``delay`` is our beloved shortcut to ``apply_async`` taking star-arguments:
-
-    .. code-block:: pycon
-
-        >>> result = add.delay(2, 2)
-        >>> result.get()
-        4
-
     ``apply_async`` takes the same arguments as the
     :meth:`Task.apply_async <@Task.apply_async>` method:
 
@@ -100,6 +92,26 @@ or even serialized and sent across the wire.
 
         >>> add.apply_async((2, 2), countdown=1)
         >>> add.signature((2, 2), countdown=1).apply_async()
+
+    ``delay`` is our beloved shortcut to ``apply_async`` taking star-arguments.
+    It works seamlessly with signatures:
+
+    .. code-block:: pycon
+
+        >>> add.delay(*args, **kwargs)
+        >>> add.signature(args, kwargs, **options).delay()
+
+        >>> add.delay(2, 2)
+        >>> add.signature((2, 2)).delay()
+
+    You can't pass ``options`` directly to a ``delay`` call. If you need options, you can
+    specify them during signature creation or use ``set`` on an already created signature
+    and then call ``delay``:
+
+    .. code-block:: pycon
+
+        >>> add.signature((2, 2), countdown=1).delay()
+        >>> add.signature((2, 2)).set(countdown=1).delay()
 
 - You can't define options with :meth:`~@Task.s`, but a chaining
   ``set`` call takes care of that:
@@ -217,7 +229,7 @@ so it's not possible to call the signature with partial args/kwargs.
         >>> ~sig
 
         >>> # is the same as
-        >>> sig.delay().get()
+        >>> sig.apply_async().get()
 
 
 .. _canvas-callbacks:

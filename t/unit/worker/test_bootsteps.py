@@ -122,6 +122,8 @@ class test_ConsumerStep:
     def test_start_stop_shutdown(self):
         consumer = Mock()
         self.connection = Mock()
+        self.connection.connection_errors = ()
+        self.connection.channel_errors = ()
 
         class Step(bootsteps.ConsumerStep):
 
@@ -141,6 +143,8 @@ class test_ConsumerStep:
 
     def test_start_no_consumers(self):
         self.connection = Mock()
+        self.connection.connection_errors = ()
+        self.connection.channel_errors = ()
 
         class Step(bootsteps.ConsumerStep):
 

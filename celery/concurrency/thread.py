@@ -39,7 +39,7 @@ class TaskPool(BasePool):
         self.executor = ThreadPoolExecutor(max_workers=self.limit)
 
     def on_stop(self) -> None:
-        self.executor.shutdown()
+        self.executor.shutdown(cancel_futures=True)
         super().on_stop()
 
     def on_apply(

@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from celery import states
 from celery.backends.base import BaseBackend
 from celery.exceptions import ImproperlyConfigured
+from celery.utils.imports import symbol_by_name
 from celery.utils.time import maybe_timedelta
 
 from .models import Task, TaskExtended, TaskSet
@@ -94,7 +95,16 @@ class DatabaseBackend(BaseBackend):
                 'Missing connection string! Do you have the'
                 ' database_url setting set to a real value?')
 
-        self.session_manager = SessionManager()
+        engine_callback = kwargs.get(
+            'engine_callback', conf.database_engine_callback)
+        if isinstance(engine_callback, str):
+            engine_callback = symbol_by_name(engine_callback)
+        if engine_callback is not None and not callable(engine_callback):
+            raise ImproperlyConfigured(
+                'database_engine_callback must be callable, got {!r}'.format(
+                    engine_callback))
+        self.session_manager = SessionManager(
+            engine_callback=engine_callback)
 
         create_tables_at_setup = conf.database_create_tables_at_setup
         if create_tables_at_setup is True:
@@ -173,6 +183,17 @@ class DatabaseBackend(BaseBackend):
             if data.get('kwargs', None) is not None:
                 data['kwargs'] = self.decode(data['kwargs'])
             return self.meta_from_decoded(data)
+
+    def task_result_exists(self, task_id):
+        """Check if a result exists in the database for the given task ID.
+
+        .. versionadded:: 5.7.0
+        """
+        session = self.ResultSession()
+        with session_cleanup(session):
+            return session.query(self.task_cls).filter(
+                self.task_cls.task_id == task_id
+            ).first() is not None
 
     def _save_group(self, group_id, result):
         """Store the result of an executed group."""

@@ -5,6 +5,7 @@ import socket
 import threading
 import time
 from collections import deque
+from contextlib import contextmanager
 from queue import Empty
 from time import sleep
 from weakref import WeakKeyDictionary
@@ -13,9 +14,17 @@ from kombu.utils.compat import detect_environment
 
 from celery import states
 from celery.exceptions import TimeoutError
+from celery.utils.log import get_logger
 from celery.utils.threads import THREAD_TIMEOUT_MAX
 
 E_CELERY_RESTART_REQUIRED = "Celery must be restarted because a shutdown signal was detected."
+
+E_RETRY_LIMIT_EXCEEDED = """
+Retry limit exceeded while trying to reconnect to the Celery result store
+backend. The Celery application must be restarted.
+"""
+
+logger = get_logger(__name__)
 
 __all__ = (
     'AsyncBackendMixin', 'BaseResultConsumer', 'Drainer',
@@ -79,6 +88,18 @@ class Drainer:
                 yield self.wait_for(p, wait, timeout=interval)
             except socket.timeout:
                 pass
+            except OSError:
+                # Recoverable connection error (e.g. broker restart).
+                # drain_events handles reconnection internally; if an
+                # OSError still leaks through, we log, sleep for one
+                # interval, and continue rather than spinning hot.
+                logging.warning(
+                    'Drainer: connection error during drain_events, '
+                    'will retry on next loop iteration.',
+                    exc_info=True,
+                )
+                time.sleep(interval)
+
             if on_interval:
                 on_interval()
             if p.ready:  # got event on the wanted channel.
@@ -119,6 +140,17 @@ class greenletDrainer(Drainer):
                     self._send_drain_complete_event()
                 except socket.timeout:
                     pass
+                except OSError:
+                    # Recoverable connection errors (e.g. broker restart)
+                    # are handled inside drain_events via reconnection.
+                    # If something still leaks through, we log, back off
+                    # briefly, and retry instead of spinning hot.
+                    logging.warning(
+                        'Drainer: connection error during drain_events, '
+                        'will retry on next loop iteration.',
+                        exc_info=True,
+                    )
+                    time.sleep(1)
         except Exception as e:
             self._exc = e
             raise
@@ -284,6 +316,11 @@ class AsyncBackendMixin:
 class BaseResultConsumer:
     """Manager responsible for consuming result messages."""
 
+    #: Tuple of transport-layer exceptions that signal a lost connection.
+    #: Subclasses should override this with the appropriate exception types
+    #: so that :meth:`reconnect_on_error` can catch and recover from them.
+    _connection_errors = ()
+
     def __init__(self, backend, app, accept,
                  pending_results, pending_messages):
         self.backend = backend
@@ -297,6 +334,34 @@ class BaseResultConsumer:
 
     def start(self, initial_task_id, **kwargs):
         raise NotImplementedError()
+
+    @contextmanager
+    def reconnect_on_error(self):
+        """Context manager that catches connection errors and reconnects.
+
+        Wraps a block of code so that any :attr:`_connection_errors` raised
+        inside it trigger a call to :meth:`_reconnect`.  If reconnection
+        itself raises a connection error the consumer is considered
+        unrecoverable and a :exc:`RuntimeError` is raised to signal that
+        the Celery application must be restarted.
+        """
+        try:
+            yield
+        except self._connection_errors:
+            try:
+                self._reconnect()
+            except self._connection_errors as exc:
+                logger.critical(E_RETRY_LIMIT_EXCEEDED)
+                raise RuntimeError(E_RETRY_LIMIT_EXCEEDED) from exc
+
+    def _reconnect(self):
+        """Re-establish the backend connection.
+
+        Subclasses must override this method to perform the transport-specific
+        reconnection logic that should be executed when a connection error is
+        caught by :meth:`reconnect_on_error`.
+        """
+        pass
 
     def stop(self):
         pass

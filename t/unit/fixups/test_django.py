@@ -415,11 +415,10 @@ class test_DjangoWorkerFixup(FixupCase):
 
     @pytest.mark.patched_module('django', 'django.db', 'django.core',
                                 'django.core.cache', 'django.conf',
-                                'django.db.utils')
+                                'django.core.checks', 'django.db.utils')
     def test_validate_models(self, patching, module):
         f = self.Fixup(self.app)
         f.django_setup = Mock(name='django.setup')
-        patching.modules('django.core.checks')
         from django.core.checks import run_checks
 
         f.validate_models()

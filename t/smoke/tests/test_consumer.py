@@ -145,3 +145,33 @@ class test_consumer:
             .get(timeout=RESULT_TIMEOUT)
             == [None] * count
         )
+
+    def test_worker_does_not_hang_on_broker_connection_loss(
+        self,
+        celery_setup: CeleryTestSetup,
+    ):
+        """Verify the worker reconnects without hanging after broker dies.
+
+        Regression test for GH-9705: collect() on a dead connection could
+        block indefinitely.  The fix passes an explicit socket_timeout to
+        collect() and closes the broken connection in the error handler
+        before blueprint.restart() begins the reconnect cycle.
+        """
+        queue = celery_setup.worker.worker_queue
+
+        # 1. Verify the worker is healthy.
+        assert noop.s().apply_async(queue=queue).get(timeout=RESULT_TIMEOUT) is None
+
+        # 2. Kill the broker to trigger on_connection_error_after_connected.
+        celery_setup.broker.kill()
+        celery_setup.worker.wait_for_log(
+            "Connection to broker lost",
+            timeout=RESULT_TIMEOUT,
+        )
+
+        # 3. Restart the broker immediately. Before the fix the worker
+        #    would hang in collect() and never reach the reconnect step.
+        celery_setup.broker.restart()
+
+        # 4. Confirm the worker reconnects and can process tasks.
+        assert noop.s().apply_async(queue=queue).get(timeout=RESULT_TIMEOUT) is None
