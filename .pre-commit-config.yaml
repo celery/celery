@@ -39,7 +39,17 @@ repos:
       - id: isort
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.20.0
+    rev: v1.20.1
     hooks:
     -   id: mypy
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: check-ci-test-matrices
+        name: check-ci-test-matrices
+        language: python
+        additional_dependencies: ['PyYaml==6.0.3']
+        entry: scripts/check-ci-test-matrices
+        files: '^(scripts/check-ci-test-matrices|t/(integration|smoke/tests)/(.*/)?test_[^/]*\.py|\.github/workflows/python-package\.yml)$'
         pass_filenames: false
