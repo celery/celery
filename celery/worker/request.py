@@ -10,13 +10,13 @@ from time import monotonic, time
 from weakref import ref
 
 from billiard.common import TERM_SIGNAME
-from billiard.einfo import ExceptionWithTraceback
+from billiard.einfo import ExceptionInfo, ExceptionWithTraceback
 from kombu.utils.encoding import safe_repr, safe_str
 from kombu.utils.objects import cached_property
 
-from celery import current_app, signals
+from celery import current_app, signals, states
 from celery.app.task import Context
-from celery.app.trace import fast_trace_task, trace_task, trace_task_ret
+from celery.app.trace import fast_trace_task, task_has_custom, trace_task, trace_task_ret, traceback_clear
 from celery.concurrency.base import BasePool
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError, Terminated,
                                TimeLimitExceeded, WorkerLostError)
@@ -125,7 +125,10 @@ class Request:
         self._eventer = eventer
         self._connection_errors = connection_errors or ()
         self._task = task or self._app.tasks[self._type]
-        self._ignore_result = self._request_dict.get('ignore_result', False)
+        ignore_result = self._request_dict.get('ignore_result', None)
+        if ignore_result is None:
+            ignore_result = self._task.ignore_result
+        self._ignore_result = ignore_result
 
         # timezone means the message is timezone-aware, and the only timezone
         # supported at this point is UTC.
@@ -287,7 +290,7 @@ class Request:
 
     @property
     def store_errors(self):
-        return (not self.task.ignore_result or
+        return (not self._ignore_result or
                 self.task.store_errors_even_if_ignored)
 
     @property
@@ -541,8 +544,54 @@ class Request:
                     store_result=self.store_errors,
                 )
 
-            if self.task.acks_late and self.task.acks_on_failure_or_timeout:
-                self.acknowledge()
+                # Invoke the same failure hooks that a normal task failure
+                # triggers so that on_failure callbacks, errbacks, and
+                # the task_failure signal all fire for hard timeouts.
+                einfo = None
+                try:
+                    try:
+                        raise exc
+                    except TimeLimitExceeded:
+                        einfo = ExceptionInfo()
+
+                    self.task.on_failure(exc, self.id, self.args, self.kwargs, einfo)
+
+                    if task_has_custom(self.task, 'after_return'):
+                        self.task.after_return(
+                            states.FAILURE, exc, self.id, self.args, self.kwargs, None,
+                        )
+
+                    signals.task_failure.send(
+                        sender=self.task,
+                        task_id=self.id,
+                        exception=exc,
+                        args=self.args,
+                        kwargs=self.kwargs,
+                        traceback=exc.__traceback__,
+                        einfo=einfo,
+                    )
+
+                    self.send_event(
+                        'task-failed',
+                        exception=safe_repr(get_pickled_exception(einfo.exception)),
+                        traceback=einfo.traceback,
+                    )
+                    # MEMORY LEAK FIX: clear frame locals retained by the
+                    # synthetic traceback (same pattern as trace.py #8882).
+                    traceback_clear(exc)
+                finally:
+                    # Break the remaining exc → traceback → frame reference
+                    # cycle so the on_timeout frame (and the Request/self it
+                    # contains) can be garbage-collected promptly.
+                    if einfo is not None:
+                        del einfo
+                    exc.__traceback__ = None
+
+            if self.task.acks_late:
+                if self.task.acks_on_timeout:
+                    self.acknowledge()
+                else:
+                    self.reject(requeue=True)
 
     def on_success(self, failed__retval__runtime, **kwargs):
         """Handler called if the task was successfully processed."""
@@ -608,16 +657,17 @@ class Request:
         requeue = False
         is_worker_lost = isinstance(exc, WorkerLostError)
         if self.task.acks_late:
+            is_timeout = isinstance(exc, TimeLimitExceeded)
+            ack_flag = self.task.acks_on_timeout if is_timeout else self.task.acks_on_failure
             reject = (
                 (self.task.reject_on_worker_lost and is_worker_lost)
-                or (isinstance(exc, TimeLimitExceeded) and not self.task.acks_on_failure_or_timeout)
+                or (is_timeout and not ack_flag)
             )
-            ack = self.task.acks_on_failure_or_timeout
             if reject:
                 requeue = True
                 self.reject(requeue=requeue)
                 send_failed_event = False
-            elif ack:
+            elif ack_flag:
                 self.acknowledge()
             else:
                 # supporting the behaviour where a task failed and

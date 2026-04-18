@@ -12,10 +12,14 @@ on:
   workflow_dispatch:
 
 name: Semgrep
+
+permissions:
+  contents: read
+
 jobs:
   semgrep:
     name: Scan
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     env:
       SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
     container:

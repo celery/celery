@@ -52,9 +52,46 @@ have been moved into a new  ``task_`` prefix.
     Celery will still be able to read old configuration files until Celery 6.0.
     Afterwards, support for the old configuration files will be removed.
     We provide the ``celery upgrade`` command that should handle
-    plenty of cases (including :ref:`Django <latentcall-django-admonition>`).
+    plenty of cases (including :ref:`Django settings with a namespace <conf-django-namespace>`).
 
     Please migrate to the new configuration scheme as soon as possible.
+
+
+.. _conf-django-namespace:
+
+Django settings with a namespace
+--------------------------------
+
+The configuration names documented here use the new lowercase style, such as
+``broker_url`` and ``task_always_eager``.
+
+If you're configuring Celery from Django settings with a namespace:
+
+.. code-block:: python
+
+    app.config_from_object('django.conf:settings', namespace='CELERY')
+
+then those same settings must be written in uppercase and prefixed with
+``CELERY_`` in ``settings.py``:
+
+.. code-block:: python
+
+    CELERY_BROKER_URL = 'redis://localhost:6379/0'
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_WORKER_CONCURRENCY = 4
+
+Using the ``CELERY_`` namespace is recommended in Django projects because it
+keeps Celery settings separate from Django settings and settings used by other
+apps.
+
+If you're migrating an older Django project to the new setting names, the
+``celery upgrade`` command can update the names for you:
+
+.. code-block:: console
+
+    $ celery upgrade settings proj/settings.py --django
+
+For a complete Django example, see :ref:`django-first-steps`.
 
 
 ========================================== ==============================================
@@ -80,6 +117,7 @@ have been moved into a new  ``task_`` prefix.
 ``BROKER_HEARTBEAT``                       :setting:`broker_heartbeat`
 ``BROKER_LOGIN_METHOD``                    :setting:`broker_login_method`
 ``BROKER_NATIVE_DELAYED_DELIVERY_QUEUE_TYPE`` :setting:`broker_native_delayed_delivery_queue_type`
+``BROKER_POOL_ACQUIRE_TIMEOUT``            :setting:`broker_pool_acquire_timeout`
 ``BROKER_POOL_LIMIT``                      :setting:`broker_pool_limit`
 ``BROKER_USE_SSL``                         :setting:`broker_use_ssl`
 ``CELERY_CACHE_BACKEND``                   :setting:`cache_backend`
@@ -616,10 +654,45 @@ has been executed, not *right before* (the default behavior).
 ``task_acks_on_failure_or_timeout``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. deprecated:: 6.0
+    Use :setting:`task_acks_on_failure` and :setting:`task_acks_on_timeout` instead.
+
 Default: Enabled
 
 When enabled messages for all tasks will be acknowledged even if they
 fail or time out.
+
+Configuring this setting only applies to tasks that are
+acknowledged **after** they have been executed and only if
+:setting:`task_acks_late` is enabled.
+
+.. setting:: task_acks_on_failure
+
+``task_acks_on_failure``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: :const:`None` (falls back to :setting:`task_acks_on_failure_or_timeout`)
+
+When enabled messages for tasks that fail will be acknowledged.
+When disabled failed task messages will be rejected without requeue.
+
+Configuring this setting only applies to tasks that are
+acknowledged **after** they have been executed and only if
+:setting:`task_acks_late` is enabled.
+
+.. setting:: task_acks_on_timeout
+
+``task_acks_on_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: :const:`None` (falls back to :setting:`task_acks_on_failure_or_timeout`)
+
+When enabled, messages for tasks that time out will be acknowledged.
+When disabled, timed-out task messages will be rejected and requeued.
 
 Configuring this setting only applies to tasks that are
 acknowledged **after** they have been executed and only if
@@ -774,8 +847,17 @@ Can be one of the following:
 
 Default: :const:`False`
 
-If enable, backend will try to retry on the event of recoverable exceptions instead of propagating the exception.
-It will use an exponential backoff sleep time between 2 retries.
+.. versionchanged:: 5.7
+
+    The :class:`~celery.backends.database.DatabaseBackend` overrides this
+    setting to :const:`True` by default to preserve backward compatibility
+    with the automatic retry behavior that was previously provided by an
+    internal ``@retry`` decorator. Other backends continue to default to
+    :const:`False`.
+
+If enabled, the backend will try to retry on the event of recoverable
+exceptions instead of propagating the exception.
+It will use an exponential backoff sleep time between retries.
 
 
 .. setting:: result_backend_max_sleep_between_retries_ms
@@ -805,7 +887,14 @@ This specifies the base amount of sleep time between two backend operation retry
 
 Default: Inf
 
-This is the maximum of retries in case of recoverable exceptions.
+.. versionchanged:: 5.7
+
+    The :class:`~celery.backends.database.DatabaseBackend` overrides this
+    setting to ``3`` by default to preserve backward compatibility with the
+    behavior previously provided by an internal ``@retry`` decorator.
+    Other backends continue to default to :const:`Inf` (unlimited retries).
+
+This is the maximum number of retries in case of recoverable exceptions.
 
 
 .. setting:: result_backend_thread_safe
@@ -958,6 +1047,34 @@ Example:
 Database backend settings
 -------------------------
 
+.. note::
+
+    **Retry configuration for the Database backend**
+
+    As of Celery 5.7, :class:`~celery.backends.database.DatabaseBackend`
+    uses the unified retry mechanism provided by
+    :class:`~celery.backends.base.BaseBackend` for all backend operations
+    (``store_result``, ``get_task_meta``, ``save_group``, ``delete_group``,
+    ``get_group_meta``, and ``forget``).  The database backend preserves
+    backward-compatible defaults:
+
+    * :setting:`result_backend_always_retry` defaults to :const:`True`
+    * :setting:`result_backend_max_retries` defaults to ``3``
+
+    These defaults can be overridden via the standard configuration settings.
+    For example, to disable automatic retries:
+
+    .. code-block:: python
+
+        result_backend_always_retry = False
+
+    Or to increase the retry limit:
+
+    .. code-block:: python
+
+        result_backend_always_retry = True
+        result_backend_max_retries = 10
+
 Database URL Examples
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -995,6 +1112,38 @@ strings (this is the part of the URI that comes after the ``db+`` prefix).
 .. _`Connection String`:
     http://www.sqlalchemy.org/docs/core/engines.html#database-urls
 
+.. note::
+
+    If you are upgrading from Celery 5.6 or earlier, the ``date_done`` column
+    in ``celery_taskmeta`` and ``celery_tasksetmeta`` tables does not have a
+    database index. The built-in periodic task ``celery.backend_cleanup``
+    queries on ``date_done`` to delete expired task results, so adding an
+    index significantly improves cleanup performance on large tables.
+
+    Since SQLAlchemy's ``create_all()`` will not alter existing tables, you
+    will need to update your database schema. If you are using Alembic for
+    schema migrations, you can generate an empty revision and apply the
+    following operations:
+
+    .. code-block:: python
+
+        from alembic import op
+
+        def upgrade():
+            op.create_index('ix_celery_taskmeta_date_done', 'celery_taskmeta', ['date_done'])
+            op.create_index('ix_celery_tasksetmeta_date_done', 'celery_tasksetmeta', ['date_done'])
+
+        def downgrade():
+            op.drop_index('ix_celery_tasksetmeta_date_done', table_name='celery_tasksetmeta')
+            op.drop_index('ix_celery_taskmeta_date_done', table_name='celery_taskmeta')
+
+    Otherwise, you can add the indexes manually using SQL:
+
+    .. code-block:: sql
+
+        CREATE INDEX ix_celery_taskmeta_date_done ON celery_taskmeta (date_done);
+        CREATE INDEX ix_celery_tasksetmeta_date_done ON celery_tasksetmeta (date_done);
+
 .. setting:: database_create_tables_at_setup
 
 ``database_create_tables_at_setup``
@@ -1017,13 +1166,23 @@ Default: True by default.
 ``database_engine_options``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Default: ``{}`` (empty mapping).
+Default: ``{'pool_pre_ping': True, 'pool_recycle': 3600}``
+
+.. versionchanged:: 5.7
+
+    The default was changed from ``{}`` to include ``pool_pre_ping=True``
+    and ``pool_recycle=3600`` for improved connection health handling.
+    This helps prevent stale connection errors such as
+    ``(OperationalError) (2006, 'MySQL server has gone away')``.
 
 To specify additional SQLAlchemy database engine options you can use
 the :setting:`database_engine_options` setting::
 
     # echo enables verbose logging from SQLAlchemy.
     app.conf.database_engine_options = {'echo': True}
+
+    # To disable the default pool health options:
+    app.conf.database_engine_options = {'pool_pre_ping': False, 'pool_recycle': None}
 
 .. setting:: database_short_lived_sessions
 
@@ -1076,6 +1235,42 @@ you to customize the table names:
         'task': 'myapp_taskmeta',
         'group': 'myapp_groupmeta',
     }
+
+.. setting:: database_engine_callback
+
+``database_engine_callback``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: :const:`None`.
+
+An optional callable (or dotted import path to one) that receives the
+SQLAlchemy engine immediately after it's created. Use this to register
+event listeners or apply any engine-level customization.
+
+This is useful for deployments that need per-connection authentication,
+such as injecting JWT tokens or using IAM-based auth via a ``do_connect``
+listener.
+
+Example configuration:
+
+.. code-block:: python
+
+    from sqlalchemy import event
+
+    def register_do_connect(engine):
+        @event.listens_for(engine, 'do_connect')
+        def on_connect(dialect, conn_rec, cargs, cparams):
+            cparams['password'] = get_auth_token()
+
+    app.conf.database_engine_callback = register_do_connect
+
+Can also be set as a dotted import path:
+
+.. code-block:: python
+
+    app.conf.database_engine_callback = 'myapp.db:register_do_connect'
 
 .. _conf-rpc-result-backend:
 
@@ -2598,7 +2793,10 @@ See :ref:`routing-options-rabbitmq-priorities`.
 
 Default: :const:`None`.
 
-See :ref:`routing-options-rabbitmq-priorities`.
+The interpretation of the priority value is broker-specific. With RabbitMQ,
+higher numbers denote higher priority; with Redis, priority ``0`` is the
+highest priority. See :ref:`routing-options-rabbitmq-priorities` and
+:ref:`redis-message-priorities`.
 
 .. setting:: task_inherit_parent_priority
 
@@ -3005,6 +3203,26 @@ contention can arise and you should consider increasing the limit.
 If set to :const:`None` or 0 the connection pool will be disabled and
 connections will be established and closed for every use.
 
+.. setting:: broker_pool_acquire_timeout
+
+``broker_pool_acquire_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: :const:`None` (block indefinitely).
+
+The maximum number of seconds Celery will wait when high-level sending APIs
+such as :meth:`~celery.app.base.Celery.send_task` or
+:meth:`~celery.app.task.Task.apply_async` acquire a connection or producer
+from the broker pool. When all :setting:`broker_pool_limit` connections are in
+use, such calls will block up to this many seconds before raising
+:exc:`~celery.exceptions.OperationalError`.
+
+Set this to a positive number (e.g. ``120``) to prevent these calls from
+blocking indefinitely under high concurrency. When :const:`None`, the
+previous behavior of blocking without a timeout is preserved.
+
 .. setting:: broker_connection_timeout
 
 ``broker_connection_timeout``
@@ -3271,8 +3489,18 @@ memory, potentially causing out-of-memory issues.
 
 .. note::
 
-    Tasks with ETA/countdown aren't affected by prefetch limits.
+    Tasks with ETA/countdown are fetched into memory and scheduled on an internal
+    timer, so they are not constrained by the per-process prefetch window derived
+    from :setting:`worker_prefetch_multiplier` in the same way as immediately
+    executed tasks. This is why ``--prefetch-multiplier=1`` can appear to have no
+    effect when many ETA/countdown tasks are present.
 
+    :setting:`worker_eta_task_limit` configures the maximum number of ETA/countdown
+    tasks a worker will hold in memory and also sets an overall cap on
+    unacknowledged messages via kombu's QoS ``max_prefetch``. If the prefetch count
+    implied by :setting:`worker_prefetch_multiplier` would exceed this cap, the
+    worker will stop consuming new messages until previously received tasks have
+    been acknowledged.
 .. setting:: worker_disable_prefetch
 
 ``worker_disable_prefetch``
