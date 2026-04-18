@@ -3039,6 +3039,8 @@ information.
 
     For example:
 
+    .. code-block:: python
+
         # Before encoding (decoded form):
         broker_url = 'amqp://user@example.com:p@ssword@localhost'
 
