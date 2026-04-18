@@ -8,6 +8,7 @@ import pytest
 
 from celery.contrib.pytest import celery_app, celery_session_worker
 from celery.contrib.testing.manager import Manager
+from celery.exceptions import TimeoutError
 from t.integration.tasks import get_redis_connection
 
 # we have to import the pytest plugin fixtures here,
@@ -20,9 +21,25 @@ logger = logging.getLogger(__name__)
 TEST_BROKER = os.environ.get('TEST_BROKER', 'pyamqp://')
 TEST_BACKEND = os.environ.get('TEST_BACKEND', 'redis://')
 
+RETRYABLE_EXCEPTIONS = (OSError, ConnectionError, TimeoutError)
+
+
+def is_retryable_exception(exc):
+    return isinstance(exc, RETRYABLE_EXCEPTIONS)
+
+
+_flaky = pytest.mark.flaky(reruns=5, reruns_delay=1, cause=is_retryable_exception)
+_timeout = pytest.mark.timeout(timeout=300)
+
+
+def flaky(fn):
+    return _timeout(_flaky(fn))
+
+
 __all__ = (
     'celery_app',
     'celery_session_worker',
+    'flaky',
     'get_active_redis_channels',
 )
 

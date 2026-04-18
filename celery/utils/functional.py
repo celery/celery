@@ -1,5 +1,6 @@
 """Functional-style utilities."""
 import inspect
+import sys
 from collections import UserList
 from functools import partial
 from itertools import islice, tee, zip_longest
@@ -311,6 +312,45 @@ def _argsfromspec(spec, replace_defaults=True):
     ]))
 
 
+if sys.version_info >= (3, 14):
+    import annotationlib as _annotationlib
+
+    def _getfullargspec(fun):
+        # In Python 3.14+, inspect.getfullargspec evaluates annotations by default
+        # (PEP 649), raising NameError for TYPE_CHECKING-only types. We don't need
+        # annotations here, so use Format.STRING to avoid evaluation.
+        # For bound methods, use __func__ so that 'self' is included in args,
+        # matching the behaviour of getfullargspec on older Python versions.
+        target = getattr(fun, '__func__', fun)
+        sig = inspect.signature(target, annotation_format=_annotationlib.Format.STRING)
+        args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults = [], None, None, [], [], {}
+        for name, param in sig.parameters.items():
+            kind = param.kind
+            if kind in (param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD):
+                args.append(name)
+                if param.default is not param.empty:
+                    defaults.append(param.default)
+            elif kind == param.VAR_POSITIONAL:
+                varargs = name
+            elif kind == param.KEYWORD_ONLY:
+                kwonlyargs.append(name)
+                if param.default is not param.empty:
+                    kwonlydefaults[name] = param.default
+            elif kind == param.VAR_KEYWORD:
+                varkw = name
+        return inspect.FullArgSpec(
+            args=args,
+            varargs=varargs,
+            varkw=varkw,
+            defaults=tuple(defaults) or None,
+            kwonlyargs=kwonlyargs,
+            kwonlydefaults=kwonlydefaults or None,
+            annotations={},
+        )
+else:
+    _getfullargspec = inspect.getfullargspec
+
+
 def head_from_fun(fun: Callable[..., Any], bound: bool = False) -> str:
     """Generate signature function from actual function."""
     # we could use inspect.Signature here, but that implementation
@@ -329,7 +369,7 @@ def head_from_fun(fun: Callable[..., Any], bound: bool = False) -> str:
         name = fun.__name__
     definition = FUNHEAD_TEMPLATE.format(
         fun_name=name,
-        fun_args=_argsfromspec(inspect.getfullargspec(fun)),
+        fun_args=_argsfromspec(_getfullargspec(fun)),
         fun_value=1,
     )
     logger.debug(definition)
@@ -359,6 +399,12 @@ def fun_takes_argument(name, fun, position=None):
 
 def fun_accepts_kwargs(fun):
     """Return true if function accepts arbitrary keyword arguments."""
+    # inspect.signature evaluates annotations in Python 3.14+ (PEP 649),
+    # which raises NameError for types only imported under TYPE_CHECKING.
+    # Check co_flags directly to avoid touching annotations entirely.
+    code = getattr(fun, '__code__', None)
+    if code is not None:
+        return bool(code.co_flags & inspect.CO_VARKEYWORDS)
     return any(
         p for p in inspect.signature(fun).parameters.values()
         if p.kind == p.VAR_KEYWORD
