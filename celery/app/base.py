@@ -454,9 +454,14 @@ class Celery:
     def _validate_broker_url(self, url):
         if not url:
             return
+
+        urls = url.split(';') if isinstance(url, str) else url
+
         try:
-            parse_url(url)
-        except ValueError as e:
+            for broker_url in urls:
+                if broker_url:
+                    parse_url(broker_url)
+        except (TypeError, ValueError) as e:
             raise ImproperlyConfigured(
                 f"Invalid broker URL: {url}, {e}.\n\n"
                 "Special characters in userinfo must be percent-encoded.\n"
