@@ -292,13 +292,13 @@ class test_App:
     def test_broker_url_validation_with_special_characters(self):
         """Test that broker URLs with unencoded special characters raise helpful errors."""
         # Test invalid URL with unencoded brackets (looks like IPv6)
-        with pytest.raises(ImproperlyConfigured, match='Invalid broker URL'):
+        with pytest.raises(ImproperlyConfigured) as excinfo:
             with self.Celery(broker='pyamqp://user[name:password@localhost//'):
                 pass
 
-        with pytest.raises(ImproperlyConfigured, match='percent-encoded'):
-            with self.Celery(broker='pyamqp://user[name:password@localhost//'):
-                pass
+        error_message = str(excinfo.value)
+        assert 'Invalid broker URL' in error_message
+        assert 'percent-encoded' in error_message
 
     def test_broker_url_validation_with_encoded_characters(self):
         """Test that properly encoded broker URLs are accepted."""
