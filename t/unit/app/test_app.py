@@ -1343,6 +1343,7 @@ class test_App:
         def test_task():
             pass
 
+        self.app.finalize()
         self.app.conf.task_serializer = 'msgpack'
 
         connection = Mock(name='connection')
@@ -1367,6 +1368,8 @@ class test_App:
         @self.app.task(name='test_task_with_serializer2', serializer='json')
         def test_task():
             pass
+
+        self.app.finalize()
 
         connection = Mock(name='connection')
         router = Mock(name='router')
@@ -1405,6 +1408,8 @@ class test_App:
         def test_task():
             pass
 
+        self.app.finalize()
+
         connection = Mock(name='connection')
         router = Mock(name='router')
         router.route.side_effect = lambda opts, *a, **kw: opts
@@ -1431,6 +1436,8 @@ class test_App:
         @self.app.task(name='test_task_tl_override', time_limit=300, soft_time_limit=120)
         def test_task():
             pass
+
+        self.app.finalize()
 
         connection = Mock(name='connection')
         router = Mock(name='router')
@@ -1461,6 +1468,8 @@ class test_App:
         def test_task():
             pass
 
+        self.app.finalize()
+
         connection = Mock(name='connection')
         router = Mock(name='router')
         router.route.side_effect = lambda opts, *a, **kw: opts
@@ -1489,8 +1498,8 @@ class test_App:
         def test_task():
             pass
 
-        # Replace the registry with one that has no .get() but supports __getitem__
-        real_registry = self.app.tasks
+        self.app.finalize()
+        real_registry = self.app._tasks
 
         class DictLikeRegistry:
             def __getitem__(self, key):
@@ -1505,10 +1514,13 @@ class test_App:
         self.app.amqp = Mock(name='amqp')
         self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
 
-        with patch.object(type(self.app), 'tasks',
-                          new_callable=lambda: property(lambda self: DictLikeRegistry())):
+        original_tasks = self.app._tasks
+        self.app._tasks = DictLikeRegistry()
+        try:
             self.app.send_task('test_task_no_get', (1,),
                                connection=connection, router=router)
+        finally:
+            self.app._tasks = original_tasks
 
         call_kwargs = self.app.amqp.send_task_message.call_args
         assert call_kwargs[1].get('serializer') == 'json', \
@@ -1531,26 +1543,30 @@ class test_App:
         self.app.amqp = Mock(name='amqp')
         self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
 
-        with patch.object(type(self.app), 'tasks',
-                          new_callable=lambda: property(lambda self: DictLikeRegistry())):
+        original_tasks = self.app._tasks
+        self.app._tasks = DictLikeRegistry()
+        try:
             # Should not raise — gracefully handles missing task
             self.app.send_task('nonexistent_task', (1,),
                                connection=connection, router=router)
+        finally:
+            self.app._tasks = original_tasks
 
         self.app.amqp.send_task_message.assert_called_once()
 
     @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
-    def test_send_task_get_exec_options_typeerror(self, detect_quorum_queues):
-        """send_task should handle TypeError from _get_exec_options gracefully."""
+    def test_send_task_skips_unbound_get_exec_options(self, detect_quorum_queues):
+        """send_task should skip _get_exec_options when it is not a bound method."""
 
-        @self.app.task(name='test_task_typeerror_exec')
+        @self.app.task(name='test_task_unbound_exec')
         def test_task():
             pass
 
-        # Replace _get_exec_options with a function that raises TypeError
-        # (simulates an unbound method accessed on a class)
-        task_instance = self.app.tasks['test_task_typeerror_exec']
-        task_instance._get_exec_options = Mock(side_effect=TypeError("unbound"))
+        # Replace _get_exec_options with a plain function (not a bound method)
+        # to simulate accessing it on a class rather than an instance.
+        task_instance = self.app.tasks['test_task_unbound_exec']
+        plain_func = Mock()
+        task_instance._get_exec_options = plain_func
 
         connection = Mock(name='connection')
         router = Mock(name='router')
@@ -1558,10 +1574,10 @@ class test_App:
         self.app.amqp = Mock(name='amqp')
         self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
 
-        # Should not raise — TypeError should be caught and ignored
-        self.app.send_task('test_task_typeerror_exec', (1,),
+        self.app.send_task('test_task_unbound_exec', (1,),
                            connection=connection, router=router)
 
+        plain_func.assert_not_called()
         self.app.amqp.send_task_message.assert_called_once()
 
     def test_send_task_sent_event(self):

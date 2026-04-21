@@ -894,13 +894,9 @@ class Celery:
             resolved_from_registry = task_type is not None
         if resolved_from_registry and hasattr(task_type, '_get_exec_options'):
             get_exec_options = task_type._get_exec_options
-            try:
+            if inspect.ismethod(get_exec_options):
                 task_exec_options = get_exec_options()
-            except TypeError:
-                # If _get_exec_options is an unbound function (e.g., accessed
-                # on a Task class rather than an instance), calling it without
-                # a self argument will raise TypeError. In that case, fall
-                # back to the previous behavior and ignore exec options.
+            else:
                 task_exec_options = None
             if task_exec_options:
                 # Only merge non-None values so we don't override
