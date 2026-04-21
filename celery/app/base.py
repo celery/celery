@@ -875,9 +875,14 @@ class Celery:
         # skip this when task_type was already provided (e.g. from
         # Task.apply_async) because apply_async already merged exec
         # options — doing it again would override explicit caller values.
+        #
+        # Use the underlying registry directly here so send_task() does not
+        # auto-finalize the app (or raise when autofinalize=False) merely to
+        # check whether a locally registered task exists. Remote/unregistered
+        # task names should still be sendable without finalizing the app.
         resolved_from_registry = False
         if task_type is None:
-            registry = self.tasks
+            registry = self._tasks
             get = getattr(registry, 'get', None)
             if callable(get):
                 task_type = get(name)
