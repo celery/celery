@@ -281,7 +281,7 @@ class Consumer:
             return self.hub.call_soon(p)
         try:
             p()
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             logger.exception('call_soon_ack immediate exec failed: %r', exc)
         return p
 
