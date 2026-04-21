@@ -216,6 +216,12 @@ class Consumer:
         self.initial_prefetch_count = initial_prefetch_count
         self.prefetch_multiplier = prefetch_multiplier
         self._maximum_prefetch_restored = True
+        # Effective QoS mode, recorded by the Tasks bootstep once the
+        # connection is established. ``None`` means "unknown" and preserves
+        # legacy behavior; ``False`` indicates per-consumer QoS (e.g. quorum
+        # queues) where ``basic.qos`` updates do not propagate to already
+        # running consumers. See ``on_connection_error_after_connected``.
+        self.qos_global = None
 
         # this contains a tokenbucket for each task type by name, used for
         # rate limits, or None if rate limits are disabled for that task.
@@ -417,19 +423,45 @@ class Consumer:
             warnings.warn(CANCEL_TASKS_BY_DEFAULT, CPendingDeprecationWarning)
 
         if self.app.conf.worker_enable_prefetch_count_reduction:
-            self.initial_prefetch_count = max(
-                self.prefetch_multiplier,
-                self.max_prefetch_count - len(tuple(active_requests)) * self.prefetch_multiplier
-            )
-
-            self._maximum_prefetch_restored = self.initial_prefetch_count == self.max_prefetch_count
-            if not self._maximum_prefetch_restored:
+            # Per-consumer QoS mode (quorum queues, apply_global=False) does
+            # not propagate ``basic.qos`` updates to already-running consumers
+            # so the gradual restoration step in
+            # ``_restore_prefetch_count_after_connection_restart`` is a no-op
+            # and the worker would stay stuck at the reduced count after one
+            # reconnect. Skip the reduction entirely in that mode. See #9512.
+            if self.qos_global is False:
+                # Also clear any reduced state left over from an earlier
+                # reconnect that took the legacy path (e.g. before
+                # ``Tasks.start()`` had a chance to record ``qos_global``).
+                # Without this reset the new consumer would be created with
+                # the stale reduced prefetch count.
+                self.initial_prefetch_count = self.max_prefetch_count
+                self._maximum_prefetch_restored = True
                 logger.info(
-                    f"Temporarily reducing the prefetch count to {self.initial_prefetch_count} to avoid "
-                    f"over-fetching since {len(tuple(active_requests))} tasks are currently being processed.\n"
-                    f"The prefetch count will be gradually restored to {self.max_prefetch_count} as the tasks "
-                    "complete processing."
+                    "Skipping prefetch count reduction after connection "
+                    "restart because per-consumer QoS (apply_global=False) "
+                    "is in effect and broker-side prefetch updates would "
+                    "not reach the running consumer."
                 )
+            else:
+                # Snapshot the active request count once so the reduction
+                # math and the log message agree, and to avoid the O(n)
+                # ``tuple(active_requests)`` allocation that was being
+                # used purely to call ``len()`` on a WeakSet.
+                active_count = len(active_requests)
+                self.initial_prefetch_count = max(
+                    self.prefetch_multiplier,
+                    self.max_prefetch_count - active_count * self.prefetch_multiplier
+                )
+
+                self._maximum_prefetch_restored = self.initial_prefetch_count == self.max_prefetch_count
+                if not self._maximum_prefetch_restored:
+                    logger.info(
+                        f"Temporarily reducing the prefetch count to {self.initial_prefetch_count} to avoid "
+                        f"over-fetching since {active_count} tasks are currently being processed.\n"
+                        f"The prefetch count will be gradually restored to {self.max_prefetch_count} as the tasks "
+                        "complete processing."
+                    )
 
     def register_with_event_loop(self, hub):
         self.blueprint.send_all(
