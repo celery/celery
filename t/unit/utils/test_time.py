@@ -133,7 +133,6 @@ def test_remaining():
     eastern_tz = ZoneInfo("US/Eastern")
     tokyo_tz = ZoneInfo("Asia/Tokyo")
     eastern_tz_pytz = pytz.timezone("US/Eastern")
-    tokyo_tz_pytz = pytz.timezone("Asia/Tokyo")
 
     # Case 1: `start` in UTC and `now` in other timezone
     start = datetime.now(ZoneInfo("UTC"))
