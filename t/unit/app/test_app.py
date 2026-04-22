@@ -1461,6 +1461,38 @@ class test_App:
             "Explicit soft_time_limit should override task-level soft_time_limit"
 
     @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_explicit_none_clears_task_defaults(self, detect_quorum_queues):
+        """Explicit None for time_limit/soft_time_limit/expires should clear task-level defaults."""
+
+        @self.app.task(name='test_task_none_clear', time_limit=300, soft_time_limit=120, expires=600)
+        def test_task():
+            pass
+
+        self.app.finalize()
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        self.app.send_task('test_task_none_clear', (1,),
+                           connection=connection, router=router,
+                           time_limit=None, soft_time_limit=None, expires=None)
+
+        call_args = self.app.amqp.create_task_message.call_args
+        args, kwargs = call_args
+        bound = inspect.signature(AMQP.as_task_v2).bind(
+            None, *args, **kwargs
+        )
+        assert bound.arguments['time_limit'] is None, \
+            "Explicit None should clear task-level time_limit"
+        assert bound.arguments['soft_time_limit'] is None, \
+            "Explicit None should clear task-level soft_time_limit"
+        assert bound.arguments['expires'] is None, \
+            "Explicit None should clear task-level expires"
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
     def test_send_task_explicit_expires_pops_from_options(self, detect_quorum_queues):
         """When expires is passed explicitly, it should be popped from merged options."""
 

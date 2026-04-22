@@ -57,6 +57,8 @@ if typing.TYPE_CHECKING:  # pragma: no cover  # codecov does not capture this
 
 __all__ = ('Celery',)
 
+_OMITTED = object()
+
 logger = get_logger(__name__)
 
 if sys.version_info >= (3, 14):
@@ -843,11 +845,11 @@ class Celery:
 
     def send_task(self, name, args=None, kwargs=None, countdown=None,
                   eta=None, task_id=None, producer=None, connection=None,
-                  router=None, result_cls=None, expires=None,
+                  router=None, result_cls=None, expires=_OMITTED,
                   publisher=None, link=None, link_error=None,
                   add_to_parent=True, group_id=None, group_index=None,
                   retries=0, chord=None,
-                  reply_to=None, time_limit=None, soft_time_limit=None,
+                  reply_to=None, time_limit=_OMITTED, soft_time_limit=_OMITTED,
                   root_id=None, parent_id=None, route_name=None,
                   shadow=None, chain=None, task_type=None, replaced_task_nesting=0, **options):
         """Send task by name.
@@ -909,17 +911,18 @@ class Celery:
         # Some execution options (time_limit, soft_time_limit, expires)
         # are also passed as explicit arguments to create_task_message.
         # Pop them from options to avoid "got multiple values for argument"
-        # errors; use the task-level value as fallback when the caller
-        # did not provide an explicit value.
-        if time_limit is None:
+        # errors; use the task-level value as fallback only when the caller
+        # omitted the explicit argument.  An explicit ``None`` clears
+        # any task-level default merged into ``options``.
+        if time_limit is _OMITTED:
             time_limit = options.pop('time_limit', None)
         else:
             options.pop('time_limit', None)
-        if soft_time_limit is None:
+        if soft_time_limit is _OMITTED:
             soft_time_limit = options.pop('soft_time_limit', None)
         else:
             options.pop('soft_time_limit', None)
-        if expires is None:
+        if expires is _OMITTED:
             expires = options.pop('expires', None)
         else:
             options.pop('expires', None)
