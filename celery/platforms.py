@@ -311,14 +311,21 @@ def fd_by_path(paths):
             return False
 
     # On Linux, use /proc to get the actual open file descriptors efficiently.
-    # On other systems (macOS, BSD, etc.), fall back to iterating up to a capped limit.
-    # This prevents extremely long iteration in containers where fdmax can be ~1 billion.
+    # On other systems (macOS, BSD, etc.), prefer directory-based enumeration
+    # (e.g., /dev/fd) when available, and only fall back to iterating a capped
+    # numeric range as a last resort. This prevents extremely long iteration in
+    # containers where fdmax can be ~1 billion while still avoiding truncation
+    # on platforms that expose an fd directory.
     # See: https://github.com/celery/celery/issues/9886
     try:
         fds = [int(fd) for fd in os.listdir(f'/proc/{os.getpid()}/fd')]
     except (OSError, FileNotFoundError):
-        # /proc not available (non-Linux) or permission denied
-        fds = range(min(get_fdmax(2048), _FDMAX_FALLBACK_LIMIT))
+        # /proc not available (non-Linux) or permission denied; try /dev/fd
+        try:
+            fds = [int(fd) for fd in os.listdir('/dev/fd')]
+        except (OSError, FileNotFoundError):
+            # /dev/fd also not available; fall back to a capped numeric range
+            fds = range(min(get_fdmax(2048), _FDMAX_FALLBACK_LIMIT))
 
     return [_fd for _fd in fds if fd_in_stats(_fd)]
 
