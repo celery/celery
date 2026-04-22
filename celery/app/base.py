@@ -873,6 +873,15 @@ class Celery:
         options = router.route(
             options, route_name or name, args, kwargs, task_type)
 
+        # Apply task-level defaults for options not explicitly provided
+        try:
+            task = self.tasks[name]
+        except KeyError:
+            pass
+        else:
+            for key, value in task._get_exec_options().items():
+                options.setdefault(key, value)
+
         if eta or countdown:
             driver_type = self.producer_pool.connections.connection.transport.driver_type
             if detect_quorum_queues(self, driver_type)[0]:
