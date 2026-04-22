@@ -111,6 +111,8 @@ class test_Consumer(ConsumerCase):
         c.task_consumer = Mock(name='.task_consumer')
         c.qos = QoS(c.task_consumer.qos, 10)
         c.connection = Mock(name='.connection')
+        c.connection.connection_errors = ()
+        c.connection.channel_errors = ()
         c.controller = c.app.WorkController()
         c.heart = Mock(name='.heart')
         c.controller.consumer = c
@@ -249,6 +251,8 @@ class test_Consumer(ConsumerCase):
         c.task_consumer = Mock()
         c.event_dispatcher = mock_event_dispatcher()
         c.connection = Mock(name='.connection')
+        c.connection.connection_errors = ()
+        c.connection.channel_errors = ()
         c.connection.get_heartbeat_interval.return_value = 0
         c.connection.drain_events.side_effect = WorkerShutdown()
 

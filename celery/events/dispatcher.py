@@ -141,6 +141,8 @@ class EventDispatcher:
 
     def _publish(self, event, producer, routing_key, retry=False,
                  retry_policy=None, utcoffset=utcoffset):
+        if producer is None:
+            return
         exchange = self.exchange
         try:
             producer.publish(
