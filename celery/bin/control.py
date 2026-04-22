@@ -5,7 +5,8 @@ from typing import Literal
 import click
 from kombu.utils.json import dumps
 
-from celery.bin.base import COMMA_SEPARATED_LIST, CeleryCommand, CeleryOption, handle_preload_options
+from celery.bin.base import (COMMA_SEPARATED_LIST, CeleryCommand, CeleryOption, handle_preload_options,
+                             handle_remote_command_error)
 from celery.exceptions import CeleryCommandException
 from celery.platforms import EX_UNAVAILABLE
 from celery.utils import text
@@ -128,9 +129,12 @@ def _get_commands_of_type(type_: _RemoteControlType) -> dict:
 def status(ctx, timeout, destination, json, **kwargs):
     """Show list of workers that are online."""
     callback = None if json else partial(_say_remote_command_reply, ctx)
-    replies = ctx.obj.app.control.inspect(timeout=timeout,
-                                          destination=destination,
-                                          callback=callback).ping()
+    try:
+        replies = ctx.obj.app.control.inspect(timeout=timeout,
+                                              destination=destination,
+                                              callback=callback).ping()
+    except Exception as exc:
+        handle_remote_command_error('status', exc)
 
     if not replies:
         raise CeleryCommandException(
@@ -183,7 +187,10 @@ def inspect(ctx, command, timeout, destination, json, **kwargs):
     inspect = ctx.obj.app.control.inspect(timeout=timeout,
                                           destination=destination,
                                           callback=callback)
-    replies = inspect._request(command, **arguments)
+    try:
+        replies = inspect._request(command, **arguments)
+    except Exception as exc:
+        handle_remote_command_error(f'inspect {command}', exc)
 
     if not replies:
         raise CeleryCommandException(
@@ -236,11 +243,14 @@ def control(ctx, command, timeout, destination, json):
                                          show_reply=True)
     args = ctx.args
     arguments = _compile_arguments(command, args)
-    replies = ctx.obj.app.control.broadcast(command, timeout=timeout,
-                                            destination=destination,
-                                            callback=callback,
-                                            reply=True,
-                                            arguments=arguments)
+    try:
+        replies = ctx.obj.app.control.broadcast(command, timeout=timeout,
+                                                destination=destination,
+                                                callback=callback,
+                                                reply=True,
+                                                arguments=arguments)
+    except Exception as exc:
+        handle_remote_command_error(f'control {command}', exc)
 
     if not replies:
         raise CeleryCommandException(
