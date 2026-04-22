@@ -1,5 +1,6 @@
 """Task implementation: request context and the task base class."""
 import sys
+import types
 
 from billiard.einfo import ExceptionInfo, ExceptionWithTraceback
 from kombu import serialization
@@ -24,6 +25,9 @@ from .utils import appstr
 
 __all__ = ('Context', 'Task')
 
+# Sentinel used by Context.update() to detect whether 'timelimit' was changed.
+_UNSET = object()
+
 #: extracts attributes related to publishing a message from an object.
 extract_exec_options = mattrgetter(
     'queue', 'routing_key', 'exchange', 'priority', 'expires',
@@ -35,6 +39,17 @@ extract_exec_options = mattrgetter(
 R_BOUND_TASK = '<class {0.__name__} of {app}{flags}>'
 R_UNBOUND_TASK = '<unbound {0.__name__}{flags}>'
 R_INSTANCE = '<@task: {0.name} of {app}{flags}>'
+
+# Filtered headers relating to dead-lettering in RabbitMQ.
+X_DEATH_HEADERS = {
+    'x-death',
+    'x-first-death-exchange',
+    'x-first-death-queue',
+    'x-first-death-reason',
+    'x-last-death-exchange',
+    'x-last-death-queue',
+    'x-last-death-reason',
+}
 
 #: Here for backwards compatibility as tasks no longer use a custom meta-class.
 TaskType = type
@@ -92,6 +107,8 @@ class Context:
     shadow = None
     taskset = None   # compat alias to group
     timelimit = None
+    time_limit = None
+    soft_time_limit = None
     utc = None
     stamped_headers = None
     stamps = None
@@ -112,7 +129,24 @@ class Context:
         return headers
 
     def update(self, *args, **kwargs):
-        return self.__dict__.update(*args, **kwargs)
+        # O(1) detection: snapshot the current timelimit identity before the
+        # update, then compare after.  Any input form that dict.update()
+        # accepts (Mapping, iterable of pairs, kwargs) will change the stored
+        # object if 'timelimit' was present, so an `is not` identity check is
+        # sufficient — no need to pre-scan the arguments.
+        old_timelimit = self.__dict__.get('timelimit', _UNSET)
+
+        self.__dict__.update(*args, **kwargs)
+
+        new_timelimit = self.__dict__.get('timelimit', _UNSET)
+        if new_timelimit is not old_timelimit:
+            if isinstance(new_timelimit, (list, tuple)) and len(new_timelimit) >= 2:
+                self.time_limit, self.soft_time_limit = new_timelimit[0], new_timelimit[1]
+            else:
+                # Explicitly clear any previously set values when timelimit is
+                # provided but is None or otherwise invalid.
+                self.time_limit = None
+                self.soft_time_limit = None
 
     def clear(self):
         return self.__dict__.clear()
@@ -122,6 +156,14 @@ class Context:
 
     def __repr__(self):
         return f'<Context: {vars(self)!r}>'
+
+    def _filter_x_death_headers(self, headers):
+        """Filter out X-Death headers to prevent RabbitMQ cycle detection."""
+        headers = headers.copy() if headers else {}
+        for x_death_header in X_DEATH_HEADERS:
+            headers.pop(x_death_header, None)
+
+        return headers
 
     def as_execution_options(self):
         limit_hard, limit_soft = self.timelimit or (None, None)
@@ -139,7 +181,7 @@ class Context:
             'expires': self.expires,
             'soft_time_limit': limit_soft,
             'time_limit': limit_hard,
-            'headers': self.headers,
+            'headers': self._filter_x_death_headers(self.headers),
             'retries': self.retries,
             'reply_to': self.reply_to,
             'replaced_task_nesting': self.replaced_task_nesting,
@@ -277,7 +319,32 @@ class Task:
     #:
     #: The application default can be overridden with the
     #: :setting:`task_acks_on_failure_or_timeout` setting.
+    #:
+    #: .. deprecated:: 6.0
+    #:     Use :attr:`acks_on_failure` and :attr:`acks_on_timeout` instead.
     acks_on_failure_or_timeout = None
+
+    #: When enabled messages for this task will be acknowledged on failure.
+    #: Falls back to :attr:`acks_on_failure_or_timeout` if :const:`None`.
+    #:
+    #: Configuring this setting only applies to tasks that are
+    #: acknowledged **after** they have been executed and only if
+    #: :setting:`task_acks_late` is enabled.
+    #:
+    #: The application default can be overridden with the
+    #: :setting:`task_acks_on_failure` setting.
+    acks_on_failure = None
+
+    #: When enabled messages for this task will be acknowledged on timeout.
+    #: Falls back to :attr:`acks_on_failure_or_timeout` if :const:`None`.
+    #:
+    #: Configuring this setting only applies to tasks that are
+    #: acknowledged **after** they have been executed and only if
+    #: :setting:`task_acks_late` is enabled.
+    #:
+    #: The application default can be overridden with the
+    #: :setting:`task_acks_on_timeout` setting.
+    acks_on_timeout = None
 
     #: Even if :attr:`acks_late` is enabled, the worker will
     #: acknowledge tasks when the worker process executing them abruptly
@@ -302,7 +369,11 @@ class Task:
     #: Default task expiry time.
     expires = None
 
-    #: Default task priority.
+    #: Default task priority. A number between 0 and 9, where the
+    #: interpretation depends on the broker: with RabbitMQ, higher numbers
+    #: denote higher priority; with Redis, priority 0 is the highest. See
+    #: :ref:`routing-options-rabbitmq-priorities` and
+    #: :ref:`redis-message-priorities`.
     priority = None
 
     #: Max length of result representation used in logs and events.
@@ -326,9 +397,13 @@ class Task:
         ('serializer', 'task_serializer'),
         ('rate_limit', 'task_default_rate_limit'),
         ('priority', 'task_default_priority'),
+        ('time_limit', 'task_time_limit'),
+        ('soft_time_limit', 'task_soft_time_limit'),
         ('track_started', 'task_track_started'),
         ('acks_late', 'task_acks_late'),
         ('acks_on_failure_or_timeout', 'task_acks_on_failure_or_timeout'),
+        ('acks_on_failure', 'task_acks_on_failure'),
+        ('acks_on_timeout', 'task_acks_on_timeout'),
         ('reject_on_worker_lost', 'task_reject_on_worker_lost'),
         ('ignore_result', 'task_ignore_result'),
         ('store_eager_result', 'task_store_eager_result'),
@@ -353,6 +428,19 @@ class Task:
         for attr_name, config_name in cls.from_config:
             if getattr(cls, attr_name, None) is None:
                 setattr(cls, attr_name, conf[config_name])
+
+        if cls.acks_on_failure is None:
+            cls.acks_on_failure = (
+                cls.acks_on_failure_or_timeout
+                if cls.acks_on_failure_or_timeout is not None
+                else True
+            )
+        if cls.acks_on_timeout is None:
+            cls.acks_on_timeout = (
+                cls.acks_on_failure_or_timeout
+                if cls.acks_on_failure_or_timeout is not None
+                else True
+            )
 
         # decorate with annotations from config.
         if not was_bound:
@@ -412,6 +500,8 @@ class Task:
         finally:
             self.pop_request()
             _task_stack.pop()
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
     def __reduce__(self):
         # - tasks are pickled into the name of the task only, and the receiver
@@ -498,7 +588,12 @@ class Task:
                 only used to specify custom routing keys to topic exchanges.
 
             priority (int): The task priority, a number between 0 and 9.
-                Defaults to the :attr:`priority` attribute.
+                The interpretation is broker-specific: with RabbitMQ, higher
+                numbers denote higher priority; with Redis, priority ``0`` is
+                the highest priority. See
+                :ref:`routing-options-rabbitmq-priorities` and
+                :ref:`redis-message-priorities`. Defaults to the
+                :attr:`priority` attribute.
 
             serializer (str): Serialization method to use.
                 Can be `pickle`, `json`, `yaml`, `msgpack` or any custom
@@ -537,6 +632,13 @@ class Task:
             headers (Dict): Message headers to be included in the message.
                 The headers can be used as an overlay for custom labeling
                 using the :ref:`canvas-stamping` feature.
+
+            task_id (str): Optional argument to override the default task id.
+                By default, Celery generates a unique id (UUID4) for every task
+                submission. You can instead provide your own string identifier.
+                If supplied, this value will be used as the task’s id instead
+                of generating one automatically. Be careful to avoid collisions
+                when overriding task ids.
 
         Returns:
             celery.result.AsyncResult: Promise of future evaluation.
@@ -814,6 +916,10 @@ class Task:
             'callbacks': maybe_list(link),
             'errbacks': maybe_list(link_error),
             'headers': headers,
+            'timelimit': (
+                None if self.time_limit is None and self.soft_time_limit is None
+                else [self.time_limit, self.soft_time_limit]
+            ),
             'ignore_result': options.get('ignore_result', False),
             'delivery_info': {
                 'is_eager': True,

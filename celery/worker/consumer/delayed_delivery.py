@@ -3,12 +3,18 @@
 This module provides the DelayedDelivery bootstep which handles setup and configuration
 of native delayed delivery functionality when using quorum queues.
 """
+import sys
 from typing import Iterator, List, Optional, Set, Union, ValuesView
+
+if sys.version_info < (3, 11):  # pragma: no cover
+    # Backport of PEP 654 for Python versions < 3.11
+    from exceptiongroup import ExceptionGroup
 
 from kombu import Connection, Queue
 from kombu.transport.native_delayed_delivery import (bind_queue_to_native_delayed_delivery_exchange,
                                                      declare_native_delayed_delivery_exchanges_and_queues)
 from kombu.utils.functional import retry_over_time
+from kombu.utils.url import maybe_sanitize_url
 
 from celery import Celery, bootsteps
 from celery.utils.log import get_logger
@@ -23,7 +29,7 @@ logger = get_logger(__name__)
 # Default retry settings
 RETRY_INTERVAL = 1.0  # seconds between retries
 MAX_RETRIES = 3      # maximum number of retries
-
+RETRIED_EXCEPTIONS = (ConnectionRefusedError, OSError)
 
 # Valid queue types for delayed delivery
 VALID_QUEUE_TYPES = {'classic', 'quorum'}
@@ -84,7 +90,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
                 retry_over_time(
                     self._setup_delayed_delivery,
                     args=(c, broker_url),
-                    catch=(ConnectionRefusedError, OSError),
+                    catch=RETRIED_EXCEPTIONS,
                     errback=self._on_retry,
                     interval_start=RETRY_INTERVAL,
                     max_retries=MAX_RETRIES,
@@ -92,7 +98,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
             except Exception as e:
                 logger.warning(
                     "Failed to setup delayed delivery for %r: %s",
-                    broker_url, str(e)
+                    maybe_sanitize_url(broker_url), str(e)
                 )
                 setup_errors.append((broker_url, e))
 
@@ -118,7 +124,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
             queue_type = c.app.conf.broker_native_delayed_delivery_queue_type
             logger.debug(
                 "Setting up delayed delivery for broker %r with queue type %r",
-                broker_url, queue_type
+                maybe_sanitize_url(broker_url), queue_type
             )
 
             try:
@@ -129,7 +135,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
             except Exception as e:
                 logger.warning(
                     "Failed to declare exchanges and queues for %r: %s",
-                    broker_url, str(e)
+                    maybe_sanitize_url(broker_url), str(e)
                 )
                 raise
 
@@ -138,7 +144,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
             except Exception as e:
                 logger.warning(
                     "Failed to bind queues for %r: %s",
-                    broker_url, str(e)
+                    maybe_sanitize_url(broker_url), str(e)
                 )
                 raise
 
@@ -157,6 +163,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
             logger.warning("No queues found to bind for delayed delivery")
             return
 
+        exceptions: list[Exception] = []
         for queue in queues:
             try:
                 logger.debug("Binding queue %r to delayed delivery exchange", queue.name)
@@ -166,7 +173,27 @@ class DelayedDelivery(bootsteps.StartStopStep):
                     "Failed to bind queue %r: %s",
                     queue.name, str(e)
                 )
-                raise
+
+                # We must re-raise on retried exceptions to ensure they are
+                # caught with the outer retry_over_time mechanism.
+                #
+                # This could be removed if one of:
+                # * The minimum python version for Celery and Kombu is
+                #   increased to 3.11. Kombu updated to use the `except*`
+                #   clause to catch specific exceptions from an ExceptionGroup.
+                # * Kombu's retry_over_time utility is updated to use the
+                #   catch utility from agronholm's exceptiongroup backport.
+                if isinstance(e, RETRIED_EXCEPTIONS):
+                    raise
+
+                exceptions.append(e)
+
+        if exceptions:
+            raise ExceptionGroup(
+                ("One or more failures occurred while binding queues to "
+                 "delayed delivery exchanges"),
+                exceptions,
+            )
 
     def _on_retry(self, exc: Exception, interval_range: Iterator[float], intervals_count: int) -> float:
         """Callback for retry attempts.

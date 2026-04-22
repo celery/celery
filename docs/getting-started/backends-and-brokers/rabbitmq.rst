@@ -223,7 +223,7 @@ To migrate from classic mirrored queues to quorum queues, please refer to Rabbit
 Limitations
 -----------
 
-Disabling global QoS means that the the per-channel QoS is now static.
+Disabling global QoS means that the per-channel QoS is now static.
 This means that some Celery features won't work when using Quorum Queues.
 
 Autoscaling relies on increasing and decreasing the prefetch count whenever a new process is instantiated

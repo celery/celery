@@ -5,6 +5,7 @@ import pytest
 
 from celery.events import Event
 from celery.events.receiver import CLIENT_CLOCK_SKEW
+from celery.exceptions import ImproperlyConfigured
 
 
 class MockProducer:
@@ -129,6 +130,20 @@ class test_EventDispatcher:
     def test_flush_no_groups_no_errors(self):
         eventer = self.app.events.Dispatcher(Mock())
         eventer.flush(errors=False, groups=False)
+
+    def test_send_skipped_after_close_when_producer_is_none(self):
+        # Regression for #10273. After close() during a broker reconnect
+        # the dispatcher's producer is cleared but ``enabled`` stays True,
+        # so stale heartbeat timers still call send(). That must be a
+        # no-op, not an AttributeError buffered into _outbound_buffer.
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = self.app.events.Dispatcher(connection, enabled=False,
+                                             buffer_while_offline=True)
+        eventer.enabled = True
+        eventer.producer = None
+        eventer.send('worker-heartbeat')
+        assert len(eventer._outbound_buffer) == 0
 
     def test_enter_exit(self):
         with self.app.connection_for_write() as conn:
@@ -326,6 +341,39 @@ class test_EventReceiver:
         finally:
             channel.close()
             connection.close()
+
+    def test_event_queue_exclusive(self):
+        self.app.conf.update(
+            event_queue_exclusive=True,
+            event_queue_durable=False
+        )
+
+        ev_recv = self.app.events.Receiver(Mock(name='connection'))
+        q = ev_recv.queue
+
+        assert q.exclusive is True
+        assert q.durable is False
+        assert q.auto_delete is True
+
+    def test_event_queue_durable_and_validation(self):
+        self.app.conf.update(
+            event_queue_exclusive=False,
+            event_queue_durable=True
+        )
+        ev_recv = self.app.events.Receiver(Mock(name='connection'))
+        q = ev_recv.queue
+
+        assert q.durable is True
+        assert q.exclusive is False
+        assert q.auto_delete is False
+
+        self.app.conf.update(
+            event_queue_exclusive=True,
+            event_queue_durable=True
+        )
+
+        with pytest.raises(ImproperlyConfigured):
+            self.app.events.Receiver(Mock(name='connection'))
 
 
 def test_State(app):

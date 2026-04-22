@@ -168,6 +168,48 @@ setting::
         }
     }
 
+.. warning::
+
+    **Important:** When using ``predefined_queues``, do NOT use URL-encoded 
+    credentials (``safequote``) for the ``access_key_id`` and ``secret_access_key`` 
+    values. URL encoding should only be applied to credentials in the broker URL.
+    
+    Using URL-encoded credentials in ``predefined_queues`` will cause signature 
+    mismatch errors like: "The request signature we calculated does not match 
+    the signature you provided."
+
+**Correct example combining broker URL and predefined queues:**
+
+.. code-block:: python
+
+    import os
+    from kombu.utils.url import safequote
+    from celery import Celery
+    
+    # Raw credentials from environment
+    AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+    
+    # URL-encode ONLY for broker URL
+    aws_access_key_encoded = safequote(AWS_ACCESS_KEY_ID)
+    aws_secret_key_encoded = safequote(AWS_SECRET_ACCESS_KEY)
+    
+    # Use encoded credentials in broker URL
+    broker_url = f"sqs://{aws_access_key_encoded}:{aws_secret_key_encoded}@"
+    
+    celery_app = Celery("tasks", broker=broker_url)
+    celery_app.conf.broker_transport_options = {
+        "region": "us-east-1",
+        "predefined_queues": {
+            "my-queue": {
+                "url": "https://sqs.us-east-1.amazonaws.com/123456/my-queue",
+                # Use RAW credentials here (NOT encoded)
+                "access_key_id": AWS_ACCESS_KEY_ID,
+                "secret_access_key": AWS_SECRET_ACCESS_KEY,
+            },
+        },
+    }
+
 When using this option, the visibility timeout should be set in the SQS queue
 (in AWS) rather than via the :ref:`visibility timeout <sqs-visibility-timeout>`
 option.

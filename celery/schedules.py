@@ -764,7 +764,7 @@ class solar(BaseSchedule):
         'sunset': '-0:34',
         'dusk_civil': '-6',
         'dusk_nautical': '-12',
-        'dusk_astronomical': '18',
+        'dusk_astronomical': '-18',
     }
     _methods = {
         'dawn_astronomical': 'next_rising',

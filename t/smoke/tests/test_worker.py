@@ -142,6 +142,41 @@ class test_worker_shutdown(SuiteOperations):
 
         assert_container_exited(worker)
 
+    class test_heartbeat_during_shutdown(SuiteOperations):
+        """Heartbeat maintenance during prefork shutdown with long-running tasks.
+
+        With broker_heartbeat=2, AMQP closes the connection after ~4 seconds
+        (2 missed heartbeats). Tasks running 10 seconds must not lose the
+        broker connection during graceful shutdown.
+
+        See https://github.com/celery/celery/pull/9986
+        """
+
+        @pytest.fixture
+        def default_worker_app(self, default_worker_app: Celery) -> Celery:
+            app = default_worker_app
+            app.conf.broker_heartbeat = 2
+            app.conf.task_acks_late = True
+            return app
+
+        def test_shutdown_with_long_running_tasks(self, celery_setup: CeleryTestSetup):
+            queue = celery_setup.worker.worker_queue
+            worker = celery_setup.worker
+
+            results = []
+            for _ in range(3):
+                sig = long_running_task.si(10, verbose=True).set(queue=queue)
+                results.append(sig.delay())
+
+            worker.assert_log_exists("Starting long running task")
+            self.kill_worker(worker, WorkerKill.Method.SIGTERM)
+            worker.assert_log_exists("worker: Warm shutdown (MainProcess)")
+
+            assert_container_exited(worker)
+            for res in results:
+                assert res.get(RESULT_TIMEOUT)
+                assert res.state == 'SUCCESS'
+
     class test_REMAP_SIGTERM(SuiteOperations):
         @pytest.fixture
         def default_worker_env(self, default_worker_env: dict) -> dict:
@@ -214,6 +249,68 @@ class test_worker_shutdown(SuiteOperations):
             self.kill_worker(worker, WorkerKill.Method.SIGQUIT)
 
             assert_container_exited(worker)
+
+        def test_task_completes_during_soft_shutdown(self, celery_setup: CeleryTestSetup):
+            app = celery_setup.app
+            queue = celery_setup.worker.worker_queue
+            worker = celery_setup.worker
+
+            task_duration = app.conf.worker_soft_shutdown_timeout // 2
+            sig = long_running_task.si(task_duration, verbose=True).set(queue=queue)
+            res = sig.delay()
+
+            worker.assert_log_exists("Starting long running task")
+            self.kill_worker(worker, WorkerKill.Method.SIGQUIT)
+            worker.assert_log_exists(
+                f"Initiating Soft Shutdown, terminating in {app.conf.worker_soft_shutdown_timeout} seconds"
+            )
+            worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
+
+            assert_container_exited(worker)
+            assert res.get(RESULT_TIMEOUT)
+            assert res.state == 'SUCCESS'
+
+        class test_time_limit(SuiteOperations):
+            @pytest.fixture
+            def default_worker_app(self, default_worker_app: Celery) -> Celery:
+                app = default_worker_app
+                app.conf.worker_soft_shutdown_timeout = 16
+                app.conf.task_time_limit = 15
+                app.conf.task_soft_time_limit = 10
+                return app
+
+            def test_task_completes_during_soft_shutdown_with_time_limit(self, celery_setup: CeleryTestSetup):
+                app = celery_setup.app
+                queue = celery_setup.worker.worker_queue
+                worker = celery_setup.worker
+
+                task_duration = 8
+                sig = long_running_task.si(task_duration, verbose=True).set(queue=queue)
+                res = sig.delay()
+
+                worker.assert_log_exists("Starting long running task")
+                self.kill_worker(worker, WorkerKill.Method.SIGQUIT)
+
+                worker.assert_log_exists(
+                    f"Initiating Soft Shutdown, terminating in {app.conf.worker_soft_shutdown_timeout} seconds"
+                )
+
+                worker.assert_log_exists("Finished long running task")
+                worker.assert_log_exists(f"long_running_task[{res.id}] succeeded")
+
+                worker.assert_log_does_not_exist(
+                    f"Task handler raised error: TimeLimitExceeded({app.conf.task_time_limit})",
+                    timeout=RESULT_TIMEOUT,
+                )
+                worker.assert_log_does_not_exist(
+                    f"Hard time limit ({app.conf.task_time_limit}s) exceeded for {long_running_task.name}[{res.id}]",
+                    timeout=RESULT_TIMEOUT,
+                )
+                worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
+
+                assert_container_exited(worker)
+                assert res.get(RESULT_TIMEOUT)
+                assert res.state == 'SUCCESS'
 
         class test_REMAP_SIGTERM(SuiteOperations):
             @pytest.fixture
