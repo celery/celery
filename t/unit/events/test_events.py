@@ -131,6 +131,20 @@ class test_EventDispatcher:
         eventer = self.app.events.Dispatcher(Mock())
         eventer.flush(errors=False, groups=False)
 
+    def test_send_skipped_after_close_when_producer_is_none(self):
+        # Regression for #10273. After close() during a broker reconnect
+        # the dispatcher's producer is cleared but ``enabled`` stays True,
+        # so stale heartbeat timers still call send(). That must be a
+        # no-op, not an AttributeError buffered into _outbound_buffer.
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = self.app.events.Dispatcher(connection, enabled=False,
+                                             buffer_while_offline=True)
+        eventer.enabled = True
+        eventer.producer = None
+        eventer.send('worker-heartbeat')
+        assert len(eventer._outbound_buffer) == 0
+
     def test_enter_exit(self):
         with self.app.connection_for_write() as conn:
             d = self.app.events.Dispatcher(conn)
