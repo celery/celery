@@ -52,9 +52,46 @@ have been moved into a new  ``task_`` prefix.
     Celery will still be able to read old configuration files until Celery 6.0.
     Afterwards, support for the old configuration files will be removed.
     We provide the ``celery upgrade`` command that should handle
-    plenty of cases (including :ref:`Django <latentcall-django-admonition>`).
+    plenty of cases (including :ref:`Django settings with a namespace <conf-django-namespace>`).
 
     Please migrate to the new configuration scheme as soon as possible.
+
+
+.. _conf-django-namespace:
+
+Django settings with a namespace
+--------------------------------
+
+The configuration names documented here use the new lowercase style, such as
+``broker_url`` and ``task_always_eager``.
+
+If you're configuring Celery from Django settings with a namespace:
+
+.. code-block:: python
+
+    app.config_from_object('django.conf:settings', namespace='CELERY')
+
+then those same settings must be written in uppercase and prefixed with
+``CELERY_`` in ``settings.py``:
+
+.. code-block:: python
+
+    CELERY_BROKER_URL = 'redis://localhost:6379/0'
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_WORKER_CONCURRENCY = 4
+
+Using the ``CELERY_`` namespace is recommended in Django projects because it
+keeps Celery settings separate from Django settings and settings used by other
+apps.
+
+If you're migrating an older Django project to the new setting names, the
+``celery upgrade`` command can update the names for you:
+
+.. code-block:: console
+
+    $ celery upgrade settings proj/settings.py --django
+
+For a complete Django example, see :ref:`django-first-steps`.
 
 
 ========================================== ==============================================
@@ -80,6 +117,7 @@ have been moved into a new  ``task_`` prefix.
 ``BROKER_HEARTBEAT``                       :setting:`broker_heartbeat`
 ``BROKER_LOGIN_METHOD``                    :setting:`broker_login_method`
 ``BROKER_NATIVE_DELAYED_DELIVERY_QUEUE_TYPE`` :setting:`broker_native_delayed_delivery_queue_type`
+``BROKER_POOL_ACQUIRE_TIMEOUT``            :setting:`broker_pool_acquire_timeout`
 ``BROKER_POOL_LIMIT``                      :setting:`broker_pool_limit`
 ``BROKER_USE_SSL``                         :setting:`broker_use_ssl`
 ``CELERY_CACHE_BACKEND``                   :setting:`cache_backend`
@@ -1197,6 +1235,42 @@ you to customize the table names:
         'task': 'myapp_taskmeta',
         'group': 'myapp_groupmeta',
     }
+
+.. setting:: database_engine_callback
+
+``database_engine_callback``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: :const:`None`.
+
+An optional callable (or dotted import path to one) that receives the
+SQLAlchemy engine immediately after it's created. Use this to register
+event listeners or apply any engine-level customization.
+
+This is useful for deployments that need per-connection authentication,
+such as injecting JWT tokens or using IAM-based auth via a ``do_connect``
+listener.
+
+Example configuration:
+
+.. code-block:: python
+
+    from sqlalchemy import event
+
+    def register_do_connect(engine):
+        @event.listens_for(engine, 'do_connect')
+        def on_connect(dialect, conn_rec, cargs, cparams):
+            cparams['password'] = get_auth_token()
+
+    app.conf.database_engine_callback = register_do_connect
+
+Can also be set as a dotted import path:
+
+.. code-block:: python
+
+    app.conf.database_engine_callback = 'myapp.db:register_do_connect'
 
 .. _conf-rpc-result-backend:
 
@@ -2719,7 +2793,10 @@ See :ref:`routing-options-rabbitmq-priorities`.
 
 Default: :const:`None`.
 
-See :ref:`routing-options-rabbitmq-priorities`.
+The interpretation of the priority value is broker-specific. With RabbitMQ,
+higher numbers denote higher priority; with Redis, priority ``0`` is the
+highest priority. See :ref:`routing-options-rabbitmq-priorities` and
+:ref:`redis-message-priorities`.
 
 .. setting:: task_inherit_parent_priority
 
@@ -3114,6 +3191,26 @@ contention can arise and you should consider increasing the limit.
 
 If set to :const:`None` or 0 the connection pool will be disabled and
 connections will be established and closed for every use.
+
+.. setting:: broker_pool_acquire_timeout
+
+``broker_pool_acquire_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: :const:`None` (block indefinitely).
+
+The maximum number of seconds Celery will wait when high-level sending APIs
+such as :meth:`~celery.app.base.Celery.send_task` or
+:meth:`~celery.app.task.Task.apply_async` acquire a connection or producer
+from the broker pool. When all :setting:`broker_pool_limit` connections are in
+use, such calls will block up to this many seconds before raising
+:exc:`~celery.exceptions.OperationalError`.
+
+Set this to a positive number (e.g. ``120``) to prevent these calls from
+blocking indefinitely under high concurrency. When :const:`None`, the
+previous behavior of blocking without a timeout is preserved.
 
 .. setting:: broker_connection_timeout
 

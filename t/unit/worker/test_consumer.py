@@ -14,7 +14,8 @@ from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.utils.collections import LimitedSet
 from celery.utils.quorum_queues import detect_quorum_queues
 from celery.worker.consumer.agent import Agent
-from celery.worker.consumer.consumer import CANCEL_TASKS_BY_DEFAULT, CLOSE, TERMINATE, Consumer
+from celery.worker.consumer.consumer import (CANCEL_TASKS_BY_DEFAULT, CLOSE, COLLECT_SOCKET_TIMEOUT, TERMINATE,
+                                             Consumer)
 from celery.worker.consumer.gossip import Gossip
 from celery.worker.consumer.heart import Heart
 from celery.worker.consumer.mingle import Mingle
@@ -135,6 +136,109 @@ class test_Consumer(ConsumerTestCase):
 
         with subtests.test("maximum prefetch is reached"):
             assert c._maximum_prefetch_restored is expected_maximum
+
+    @pytest.mark.parametrize(
+        'qos_global,expected_initial,expected_maximum,expected_log_substring',
+        [
+            # qos_global=False (per-consumer QoS, e.g. quorum queues):
+            # reduction must be skipped because basic.qos updates do not
+            # propagate to the already-running consumer. See #9512.
+            (False, 2, True, "Skipping prefetch count reduction"),
+            # qos_global=True (classic channel-wide QoS): legacy reduction
+            # still runs because basic.qos updates propagate normally.
+            (True, 1, False, "Temporarily reducing the prefetch count"),
+            # qos_global=None (default; Tasks bootstep has not yet recorded
+            # a value): legacy reduction must still run. Guards against a
+            # future regression where someone tightens the ``is False``
+            # check to ``not qos_global``, which would silently skip
+            # reduction in the unknown-state case too.
+            (None, 1, False, "Temporarily reducing the prefetch count"),
+        ],
+        ids=['qos_global_false', 'qos_global_true', 'qos_global_default_none'],
+    )
+    @patch('celery.worker.consumer.consumer.active_requests', new_callable=set)
+    def test_prefetch_count_reduction_respects_qos_global(
+            self, active_requests_mock, qos_global, expected_initial,
+            expected_maximum, expected_log_substring, caplog, subtests):
+        """Regression coverage for celery/celery#9512.
+
+        ``on_connection_error_after_connected`` must skip the prefetch
+        reduction iff ``qos_global is False``, and emit a log explaining
+        the skip. The legacy reduction path must remain unchanged for
+        ``qos_global=True`` and the unknown default ``None``.
+        """
+        self.app.conf.worker_enable_prefetch_count_reduction = True
+
+        # Two active in-flight requests at the moment of connection loss.
+        reqs = {Mock() for _ in range(2)}
+        active_requests_mock.update(reqs)
+
+        c = self.get_consumer()
+        c.qos = Mock()
+        c.blueprint = Mock()
+        if qos_global is None:
+            # Verify the __init__ default; do not overwrite.
+            assert c.qos_global is None
+        else:
+            # Simulate Tasks bootstep having recorded the QoS mode.
+            c.qos_global = qos_global
+
+        def bp_start(*_, **__):
+            if c.restart_count > 1:
+                c.blueprint.state = CLOSE
+            else:
+                raise ConnectionError
+
+        c.blueprint.start.side_effect = bp_start
+
+        with caplog.at_level(logging.INFO, logger='celery.worker.consumer.consumer'):
+            c.start()
+
+        # max_prefetch_count = pool.num_processes * prefetch_multiplier = 2 * 1 = 2
+        with subtests.test(f"initial_prefetch_count == {expected_initial}"):
+            assert c.initial_prefetch_count == expected_initial
+
+        with subtests.test(f"_maximum_prefetch_restored is {expected_maximum}"):
+            assert c._maximum_prefetch_restored is expected_maximum
+
+        with subtests.test(f"log contains '{expected_log_substring}'"):
+            assert any(
+                expected_log_substring in record.getMessage()
+                for record in caplog.records
+            ), (
+                f"expected a log record matching {expected_log_substring!r}, "
+                f"got: {[r.getMessage() for r in caplog.records]}"
+            )
+
+    @patch('celery.worker.consumer.consumer.active_requests', new_callable=set)
+    def test_on_connection_error_skip_resets_prior_reduced_state(
+            self, active_requests_mock):
+        """Skip path must clear state left over by an earlier legacy reduction.
+
+        Edge case raised in PR review: if a previous reconnect took the
+        legacy reduction path (because ``qos_global`` was ``None`` or
+        ``True`` at that time), ``initial_prefetch_count`` may already be
+        below ``max_prefetch_count``. When a subsequent reconnect takes
+        the new per-consumer-QoS skip path, the stale reduced value must
+        be reset; otherwise the new consumer would be created at the old
+        reduced prefetch count even though we claimed to "skip" reduction.
+        """
+        self.app.conf.worker_enable_prefetch_count_reduction = True
+        active_requests_mock.update({Mock() for _ in range(2)})
+
+        c = self.get_consumer()
+        c.qos = Mock()
+        c.qos_global = False
+
+        # Simulate state left over from a prior legacy reduction cycle.
+        c.initial_prefetch_count = 1
+        c._maximum_prefetch_restored = False
+
+        c.on_connection_error_after_connected(ConnectionError('simulated'))
+
+        # max_prefetch_count = pool.num_processes * prefetch_multiplier = 2 * 1 = 2
+        assert c.initial_prefetch_count == c.max_prefetch_count
+        assert c._maximum_prefetch_restored is True
 
     def test_restore_prefetch_count_after_connection_restart_negative(self):
         self.app.conf.worker_enable_prefetch_count_reduction = False
@@ -366,11 +470,27 @@ class test_Consumer(ConsumerTestCase):
 
     def test_collects_at_restart(self):
         c = self.get_consumer()
-        c.connection.collect.side_effect = MemoryError()
+        old_conn = c.connection
+        old_conn.collect.side_effect = MemoryError()
         c.blueprint.start.side_effect = socket.error()
         c.blueprint.restart.side_effect = self._closer(c)
         c.start()
-        c.connection.collect.assert_called_with()
+        old_conn.collect.assert_called_with(socket_timeout=COLLECT_SOCKET_TIMEOUT)
+        # The broken connection is closed and cleared by the error handler
+        old_conn.close.assert_called_once()
+        assert c.connection is None
+
+    def test_collects_with_socket_timeout_on_connection_error(self):
+        # collect() must always be called with an explicit socket_timeout to
+        # prevent the cleanup path from blocking indefinitely on a dead socket.
+        c = self.get_consumer()
+        old_conn = c.connection
+        c.on_connection_error_after_connected(Mock())
+        old_conn.collect.assert_called_once_with(socket_timeout=COLLECT_SOCKET_TIMEOUT)
+        # The broken connection must be closed and cleared so that
+        # blueprint.restart() starts fresh.
+        old_conn.close.assert_called_once()
+        assert c.connection is None
 
     def test_register_with_event_loop(self):
         c = self.get_consumer()
@@ -938,6 +1058,32 @@ class test_Tasks:
         assert record.levelname == "INFO"
         assert record.msg == "Global QoS is disabled. Prefetch count in now static."
 
+    def test_start_records_qos_global_on_consumer_quorum(self):
+        """Tasks.start() must store the effective qos_global on the consumer.
+
+        Regression test for celery/celery#9512: the connection-error path
+        in Consumer.on_connection_error_after_connected needs to know the
+        QoS mode to decide whether prefetch reduction is safe.
+        """
+        c = self.c
+        c.connection.transport.driver_type = 'amqp'
+        c.app.amqp.queues = {"celery": Mock(queue_arguments={"x-queue-type": "quorum"})}
+        tasks = Tasks(c)
+
+        tasks.start(c)
+
+        assert c.qos_global is False
+
+    def test_start_records_qos_global_on_consumer_classic(self):
+        """Classic queues keep the legacy channel-wide QoS mode."""
+        c = self.c
+        c.app.amqp.queues = {"celery": Mock(queue_arguments=None)}
+        tasks = Tasks(c)
+
+        tasks.start(c)
+
+        assert c.qos_global is True
+
     def test_qos_with_worker_eta_task_limit(self):
         """Test QoS is instantiated with worker_eta_task_limit as max_prefetch."""
         c = self.c
@@ -1070,6 +1216,94 @@ def _amqp_connection():
     connection.return_value = ContextMock(name='connection')
     connection.return_value.transport.driver_type = 'amqp'
     return connection
+
+
+class test_ConnectionStep:
+    """Tests for the Connection bootstep (celery.worker.consumer.connection)."""
+
+    def _get_step_and_consumer(self):
+        from celery.worker.consumer.connection import Connection
+        c = Mock(name='consumer')
+        c.connect.return_value = Mock(name='kombu_conn')
+        c.connect.return_value.as_uri.return_value = 'redis://localhost/0'
+        step = Connection.__new__(Connection)
+        step.obj = None  # mirrors StartStopStep default
+        return step, c
+
+    # ------------------------------------------------------------------
+    # shutdown() - closes the connection for final cleanup
+    # ------------------------------------------------------------------
+
+    def test_shutdown_closes_connection(self):
+        """shutdown() closes c.connection and sets it to None."""
+        step, c = self._get_step_and_consumer()
+        conn = Mock(name='conn')
+        c.connection = conn
+
+        step.shutdown(c)
+
+        conn.close.assert_called_once()
+        assert c.connection is None
+
+    def test_shutdown_is_safe_when_connection_is_none(self):
+        """shutdown() does not crash when c.connection is already None."""
+        step, c = self._get_step_and_consumer()
+        c.connection = None
+
+        step.shutdown(c)  # must not raise
+
+    # ------------------------------------------------------------------
+    # close_connection() - used by error handler and shutdown
+    # ------------------------------------------------------------------
+
+    def test_close_connection_closes_and_clears(self):
+        """close_connection() closes c.connection and sets it to None."""
+        step, c = self._get_step_and_consumer()
+        conn = Mock(name='conn')
+        c.connection = conn
+
+        step.close_connection(c)
+
+        conn.close.assert_called_once()
+        assert c.connection is None
+
+    def test_close_connection_ignores_close_errors(self):
+        """close_connection() swallows exceptions from connection.close()."""
+        step, c = self._get_step_and_consumer()
+        conn = Mock(name='conn')
+        conn.connection_errors = (OSError,)
+        conn.channel_errors = ()
+        conn.close.side_effect = OSError('socket already closed')
+        c.connection = conn
+
+        step.close_connection(c)  # must not raise
+
+        assert c.connection is None
+
+    def test_close_connection_is_safe_when_none(self):
+        """close_connection() does not crash when c.connection is None."""
+        step, c = self._get_step_and_consumer()
+        c.connection = None
+
+        step.close_connection(c)  # must not raise
+
+    # ------------------------------------------------------------------
+    # start() - sanity check that the connection is stored on c
+    # ------------------------------------------------------------------
+
+    def test_start_stores_connection_on_consumer(self):
+        """start() calls c.connect() and stores the result on c.connection."""
+        from celery.worker.consumer.connection import Connection
+        c = Mock(name='consumer')
+        step = Connection(c)
+
+        fake_conn = Mock(name='kombu_conn')
+        fake_conn.as_uri.return_value = 'redis://localhost/0'
+        c.connect.return_value = fake_conn
+
+        step.start(c)
+
+        assert c.connection is fake_conn
 
 
 class test_Gossip:

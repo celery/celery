@@ -546,3 +546,21 @@ def reject_then_succeed(self):
 @shared_task(soft_time_limit=2, time_limit=1)
 def soft_time_limit_must_exceed_time_limit():
     pass
+
+
+@shared_task(bind=True)
+def return_request_time_limits(self):
+    """Return time_limit and soft_time_limit from the task request context."""
+    return {
+        'time_limit': self.request.time_limit,
+        'soft_time_limit': self.request.soft_time_limit,
+    }
+
+
+@shared_task(bind=True, time_limit=60, soft_time_limit=45)
+def task_with_declared_time_limits(self):
+    """Task with explicitly declared time limits — verifies request fields are set."""
+    return {
+        'time_limit': self.request.time_limit,
+        'soft_time_limit': self.request.soft_time_limit,
+    }

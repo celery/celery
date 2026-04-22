@@ -21,4 +21,4 @@ def custom_inspect_cmd(state, x):
 
 
 app = Celery(set_as_current=False)
-app.config_from_object('t.integration.test_worker_config')
+app.config_from_object('t.integration.worker_config')

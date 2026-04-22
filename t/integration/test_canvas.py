@@ -3269,6 +3269,47 @@ class test_chord:
         error_found = check_for_logs(caplog=caplog, message="ValueError: task_id must not be empty")
         assert not error_found, "The 'task_id must not be empty' error was found in the logs"
 
+    @flaky
+    def test_chord_error_in_nested_chain_does_not_crash(self, manager, caplog):
+        """Chord error with chain body must not raise internal TypeError.
+
+        Regression test for https://github.com/celery/celery/issues/4834
+        chain(chain(group(ok, failing), task), task) crashed with
+        TypeError in chord_error_from_stack because the chain body
+        had id=None.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = chain(
+            chain(
+                group(add.si(1, 1), fail.si()),
+                identity.s(),
+            ),
+            identity.s(),
+        )
+        result = c.apply_async()
+
+        try:
+            result.get(timeout=TIMEOUT)
+        except Exception as exc:
+            assert not isinstance(exc, TypeError), (
+                f"Internal TypeError raised: {exc}"
+            )
+            assert "task_id must not be empty" not in str(exc), (
+                f"Internal ValueError raised: {exc}"
+            )
+
+        error_found = check_for_logs(
+            caplog=caplog,
+            message="task_id must not be empty",
+        )
+        assert not error_found, (
+            "chord_error_from_stack crashed with 'task_id must not be empty'"
+        )
+
 
 class test_signature_serialization:
     """
