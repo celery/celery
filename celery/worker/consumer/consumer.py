@@ -14,6 +14,7 @@ from time import sleep
 from billiard.common import restart_state
 from billiard.exceptions import RestartFreqExceeded
 from kombu.asynchronous.semaphore import DummyLock
+from kombu.common import ignore_errors
 from kombu.exceptions import ContentDisallowed, DecodeError
 from kombu.utils.compat import _detect_environment
 from kombu.utils.encoding import safe_repr
@@ -60,6 +61,11 @@ consumer: Cannot connect to %s: %s.
 CONNECTION_FAILOVER = """\
 Will retry using next failover.\
 """
+
+#: Timeout (seconds) passed to ``connection.collect()`` when cleaning up
+#: a broken broker connection.  Prevents the cleanup path from blocking
+#: indefinitely on a dead socket (see :issue:`9705`).
+COLLECT_SOCKET_TIMEOUT = 5.0
 
 UNKNOWN_FORMAT = """\
 Received and deleted unknown message.  Wrong destination?!?
@@ -210,6 +216,12 @@ class Consumer:
         self.initial_prefetch_count = initial_prefetch_count
         self.prefetch_multiplier = prefetch_multiplier
         self._maximum_prefetch_restored = True
+        # Effective QoS mode, recorded by the Tasks bootstep once the
+        # connection is established. ``None`` means "unknown" and preserves
+        # legacy behavior; ``False`` indicates per-consumer QoS (e.g. quorum
+        # queues) where ``basic.qos`` updates do not propagate to already
+        # running consumers. See ``on_connection_error_after_connected``.
+        self.qos_global = None
 
         # this contains a tokenbucket for each task type by name, used for
         # rate limits, or None if rate limits are disabled for that task.
@@ -383,9 +395,23 @@ class Consumer:
     def on_connection_error_after_connected(self, exc):
         warn(CONNECTION_RETRY, exc_info=True)
         try:
-            self.connection.collect()
+            # Pass an explicit socket_timeout so that cleanup I/O on a
+            # broken connection (e.g. _brpop_read during Channel.close)
+            # cannot block indefinitely.  The default of None would set
+            # the global socket timeout to blocking-forever, which can
+            # cause the worker to hang here and never reach the reconnect.
+            self.connection.collect(socket_timeout=COLLECT_SOCKET_TIMEOUT)
         except Exception:  # pylint: disable=broad-except
             pass
+
+        # Close the broken connection so the old socket is released
+        # before blueprint.restart() begins the reconnect cycle.
+        # We close here rather than in Connection.stop() because stop()
+        # also runs during graceful shutdown where the connection must
+        # stay open for in-flight task acks.
+        connection, self.connection = self.connection, None
+        if connection:
+            ignore_errors(connection, connection.close)
 
         if self.app.conf.worker_cancel_long_running_tasks_on_connection_loss:
             for request in tuple(active_requests):
@@ -397,19 +423,45 @@ class Consumer:
             warnings.warn(CANCEL_TASKS_BY_DEFAULT, CPendingDeprecationWarning)
 
         if self.app.conf.worker_enable_prefetch_count_reduction:
-            self.initial_prefetch_count = max(
-                self.prefetch_multiplier,
-                self.max_prefetch_count - len(tuple(active_requests)) * self.prefetch_multiplier
-            )
-
-            self._maximum_prefetch_restored = self.initial_prefetch_count == self.max_prefetch_count
-            if not self._maximum_prefetch_restored:
+            # Per-consumer QoS mode (quorum queues, apply_global=False) does
+            # not propagate ``basic.qos`` updates to already-running consumers
+            # so the gradual restoration step in
+            # ``_restore_prefetch_count_after_connection_restart`` is a no-op
+            # and the worker would stay stuck at the reduced count after one
+            # reconnect. Skip the reduction entirely in that mode. See #9512.
+            if self.qos_global is False:
+                # Also clear any reduced state left over from an earlier
+                # reconnect that took the legacy path (e.g. before
+                # ``Tasks.start()`` had a chance to record ``qos_global``).
+                # Without this reset the new consumer would be created with
+                # the stale reduced prefetch count.
+                self.initial_prefetch_count = self.max_prefetch_count
+                self._maximum_prefetch_restored = True
                 logger.info(
-                    f"Temporarily reducing the prefetch count to {self.initial_prefetch_count} to avoid "
-                    f"over-fetching since {len(tuple(active_requests))} tasks are currently being processed.\n"
-                    f"The prefetch count will be gradually restored to {self.max_prefetch_count} as the tasks "
-                    "complete processing."
+                    "Skipping prefetch count reduction after connection "
+                    "restart because per-consumer QoS (apply_global=False) "
+                    "is in effect and broker-side prefetch updates would "
+                    "not reach the running consumer."
                 )
+            else:
+                # Snapshot the active request count once so the reduction
+                # math and the log message agree, and to avoid the O(n)
+                # ``tuple(active_requests)`` allocation that was being
+                # used purely to call ``len()`` on a WeakSet.
+                active_count = len(active_requests)
+                self.initial_prefetch_count = max(
+                    self.prefetch_multiplier,
+                    self.max_prefetch_count - active_count * self.prefetch_multiplier
+                )
+
+                self._maximum_prefetch_restored = self.initial_prefetch_count == self.max_prefetch_count
+                if not self._maximum_prefetch_restored:
+                    logger.info(
+                        f"Temporarily reducing the prefetch count to {self.initial_prefetch_count} to avoid "
+                        f"over-fetching since {active_count} tasks are currently being processed.\n"
+                        f"The prefetch count will be gradually restored to {self.max_prefetch_count} as the tasks "
+                        "complete processing."
+                    )
 
     def register_with_event_loop(self, hub):
         self.blueprint.send_all(

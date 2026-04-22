@@ -239,6 +239,12 @@ Provides arguments:
     Detailed exception information, including traceback
     (a :class:`billiard.einfo.ExceptionInfo` object).
 
+.. note::
+
+    Only the ``request`` argument is guaranteed to be provided in all cases.
+    The ``reason`` and ``einfo`` arguments may be ``None`` or not provided
+    in certain scenarios, such as when a task is cancelled and retried.
+    Signal handlers should not assume these arguments are always present.
 
 .. signal:: task_success
 
