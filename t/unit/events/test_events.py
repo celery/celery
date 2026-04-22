@@ -131,6 +131,17 @@ class test_EventDispatcher:
         eventer = self.app.events.Dispatcher(Mock())
         eventer.flush(errors=False, groups=False)
 
+    def test_publish_skipped_when_producer_is_none(self):
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = self.app.events.Dispatcher(connection, enabled=False,
+                                             buffer_while_offline=True)
+        eventer.producer = None
+        eventer._publish(
+            {'type': 'worker-heartbeat'}, None, 'worker.heartbeat',
+        )
+        assert len(eventer._outbound_buffer) == 0
+
     def test_enter_exit(self):
         with self.app.connection_for_write() as conn:
             d = self.app.events.Dispatcher(conn)
