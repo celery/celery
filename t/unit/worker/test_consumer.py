@@ -267,7 +267,7 @@ class test_Consumer(ConsumerTestCase):
         sig = self.add.s(2, 2)
         message = self.task_message_from_sig(self.app, sig)
 
-        def raise_exception():
+        def raise_exception(*args, **kwargs):
             raise KeyError('Foo')
 
         def strategy(_, __, ack_log_error_promise, ___, ____):
