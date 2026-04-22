@@ -232,6 +232,13 @@ class AsyncResult(ResultBase):
                 `timeout` seconds.
             Exception: If the remote call raised an exception then that
                 exception will be re-raised in the caller process.
+
+        Returns:
+            Any: The task's return value on success. If the task failed and
+                ``propagate`` is false, the raised exception instance is
+                returned instead of being re-raised. If the task is configured
+                with ``ignore_result=True``, ``None`` is returned without
+                waiting.
         """
         if self.ignored:
             return
@@ -340,6 +347,24 @@ class AsyncResult(ResultBase):
             else:
                 if is_incomplete_stream:
                     raise IncompleteStream()
+
+    def exists(self):
+        """Return :const:`True` if a result exists in the backend for this task.
+
+        This can be used to distinguish between a task that is truly
+        pending (waiting for execution) and a task ID that has never
+        been submitted or whose result has been forgotten/expired.
+
+        Without this method, both cases return ``PENDING`` as the state,
+        making them indistinguishable.
+
+        .. versionadded:: 5.7.0
+
+        Returns:
+            bool: :const:`True` if the backend has a result stored for
+                this task ID, :const:`False` otherwise.
+        """
+        return self.backend.task_result_exists(self.id)
 
     def ready(self):
         """Return :const:`True` if the task has executed.
@@ -760,6 +785,17 @@ class ResultSet(ResultBase):
             celery.exceptions.TimeoutError: if ``timeout`` isn't
                 :const:`None` and the operation takes longer than ``timeout``
                 seconds.
+
+        Returns:
+            list: A list of task return values in the same order as the
+                results in this set. If ``callback`` is provided, the
+                callback handles each value and no aggregated results are
+                returned (``join()`` returns an empty list; note that
+                :meth:`join_native`, which :meth:`get` may delegate to,
+                returns ``None`` in that case). If any task failed and
+                ``propagate`` is false, the corresponding position in the
+                list contains the exception instance instead of a return
+                value.
         """
         if disable_sync_subtasks:
             assert_will_not_block()
