@@ -62,8 +62,6 @@ TIME_UNITS = (
 
 ZERO = timedelta(0)
 
-_local_timezone = None
-
 
 class LocalTimezone(tzinfo):
     """Local time implementation. Provided in _Zone to the app when `enable_utc` is disabled.

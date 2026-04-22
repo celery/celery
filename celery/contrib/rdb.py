@@ -85,7 +85,6 @@ class Rdb(Pdb):
     """Remote debugger."""
 
     me = 'Remote Debugger'
-    _prev_outs = None
     _sock = None
 
     def __init__(self, host=CELERY_RDB_HOST, port=CELERY_RDB_PORT,
