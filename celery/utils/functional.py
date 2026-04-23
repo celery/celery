@@ -321,8 +321,18 @@ if sys.version_info >= (3, 14):
         # annotations here, so use Format.STRING to avoid evaluation.
         # For bound methods, use __func__ so that 'self' is included in args,
         # matching the behaviour of getfullargspec on older Python versions.
+        # Pass follow_wrapped=False to match inspect.getfullargspec's behaviour
+        # of introspecting the callable itself rather than following __wrapped__;
+        # this matters for tasks defined via functools.wraps over a variadic
+        # wrapper (e.g. dependency-injection decorators) where the wrapper's
+        # signature -- not the inner function's -- is what should be validated
+        # against caller-supplied args.
         target = getattr(fun, '__func__', fun)
-        sig = inspect.signature(target, annotation_format=_annotationlib.Format.STRING)
+        sig = inspect.signature(
+            target,
+            follow_wrapped=False,
+            annotation_format=_annotationlib.Format.STRING,
+        )
         args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults = [], None, None, [], [], {}
         for name, param in sig.parameters.items():
             kind = param.kind
