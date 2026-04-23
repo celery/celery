@@ -57,6 +57,8 @@ if typing.TYPE_CHECKING:  # pragma: no cover  # codecov does not capture this
 
 __all__ = ('Celery',)
 
+_OMITTED = object()
+
 logger = get_logger(__name__)
 
 if sys.version_info >= (3, 14):
@@ -843,11 +845,11 @@ class Celery:
 
     def send_task(self, name, args=None, kwargs=None, countdown=None,
                   eta=None, task_id=None, producer=None, connection=None,
-                  router=None, result_cls=None, expires=None,
+                  router=None, result_cls=None, expires=_OMITTED,
                   publisher=None, link=None, link_error=None,
                   add_to_parent=True, group_id=None, group_index=None,
                   retries=0, chord=None,
-                  reply_to=None, time_limit=None, soft_time_limit=None,
+                  reply_to=None, time_limit=_OMITTED, soft_time_limit=_OMITTED,
                   root_id=None, parent_id=None, route_name=None,
                   shadow=None, chain=None, task_type=None, replaced_task_nesting=0, **options):
         """Send task by name.
@@ -868,6 +870,62 @@ class Celery:
             warnings.warn(AlwaysEagerIgnored(
                 'task_always_eager has no effect on send_task',
             ), stacklevel=2)
+
+        # If the caller did not supply a task_type (i.e. a plain
+        # send_task("name", ...) call), look it up in the local registry
+        # and apply its execution options as defaults.  We intentionally
+        # skip this when task_type was already provided (e.g. from
+        # Task.apply_async) because apply_async already merged exec
+        # options — doing it again would override explicit caller values.
+        #
+        # Use the underlying registry directly here so send_task() does not
+        # auto-finalize the app (or raise when autofinalize=False) merely to
+        # check whether a locally registered task exists. Remote/unregistered
+        # task names should still be sendable without finalizing the app.
+        resolved_from_registry = False
+        if task_type is None:
+            registry = self._tasks
+            get = getattr(registry, 'get', None)
+            if callable(get):
+                task_type = get(name)
+            else:
+                try:
+                    task_type = registry[name]
+                except KeyError:
+                    task_type = None
+            resolved_from_registry = task_type is not None
+        if resolved_from_registry and hasattr(task_type, '_get_exec_options'):
+            get_exec_options = task_type._get_exec_options
+            if inspect.ismethod(get_exec_options):
+                task_exec_options = get_exec_options()
+            else:
+                task_exec_options = None
+            if task_exec_options:
+                # Only merge non-None values so we don't override
+                # defaults with None.
+                filtered_opts = {k: v for k, v in task_exec_options.items()
+                                 if v is not None}
+                if filtered_opts:
+                    options = dict(filtered_opts, **options)
+
+        # Some execution options (time_limit, soft_time_limit, expires)
+        # are also passed as explicit arguments to create_task_message.
+        # Pop them from options to avoid "got multiple values for argument"
+        # errors; use the task-level value as fallback only when the caller
+        # omitted the explicit argument.  An explicit ``None`` clears
+        # any task-level default merged into ``options``.
+        if time_limit is _OMITTED:
+            time_limit = options.pop('time_limit', None)
+        else:
+            options.pop('time_limit', None)
+        if soft_time_limit is _OMITTED:
+            soft_time_limit = options.pop('soft_time_limit', None)
+        else:
+            options.pop('soft_time_limit', None)
+        if expires is _OMITTED:
+            expires = options.pop('expires', None)
+        else:
+            options.pop('expires', None)
 
         ignore_result = options.pop('ignore_result', False)
         options = router.route(
