@@ -145,6 +145,51 @@ class test_EventDispatcher:
         eventer.send('worker-heartbeat')
         assert len(eventer._outbound_buffer) == 0
 
+    def test_buffered_entries_do_not_retain_exception(self):
+        # Follow-up for #10273. The buffer used to hold
+        # (event, routing_key, exc); the retained exception kept its
+        # traceback and ~6 frames alive per failed publish, leaking
+        # hundreds of MiB in long-lived workers. flush() already
+        # discards the exception, so the entry is now 2-tuple only.
+        producer = MockProducer()
+        producer.connection = self.app.connection_for_write()
+        producer.raise_on_publish = True
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = self.app.events.Dispatcher(connection, enabled=False,
+                                             buffer_while_offline=True)
+        eventer.producer = producer
+        eventer.enabled = True
+        eventer.send('task-received', uuid=1)
+        assert len(eventer._outbound_buffer) == 1
+        entry = eventer._outbound_buffer[0]
+        assert len(entry) == 2
+        event, routing_key = entry
+        assert routing_key == 'task.received'
+        assert event['type'] == 'task-received'
+
+    def test_flush_replays_buffered_entries_after_tuple_shape_change(self):
+        # flush() must still successfully replay events buffered during
+        # an outage once the producer is restored. Guards the unpack
+        # change in flush() against regressions.
+        producer = MockProducer()
+        producer.connection = self.app.connection_for_write()
+        producer.raise_on_publish = True
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = self.app.events.Dispatcher(connection, enabled=False,
+                                             buffer_while_offline=True)
+        eventer.producer = producer
+        eventer.enabled = True
+        for name in ('Event 1', 'Event 2', 'Event 3'):
+            eventer.send(name)
+        assert len(eventer._outbound_buffer) == 3
+        producer.raise_on_publish = False
+        eventer.flush()
+        for name in ('Event 1', 'Event 2', 'Event 3'):
+            assert producer.has_event(name)
+        assert len(eventer._outbound_buffer) == 0
+
     def test_enter_exit(self):
         with self.app.connection_for_write() as conn:
             d = self.app.events.Dispatcher(conn)
