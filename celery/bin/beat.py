@@ -42,10 +42,16 @@ from celery.platforms import detached, maybe_drop_privileges
               type=LOG_LEVEL,
               help_group="Beat Options",
               help="Logging level.")
+@click.option('-j',
+              '--json',
+              cls=CeleryOption,
+              is_flag=True,
+              help_group="Beat Options",
+              help="Output startup info as JSON instead of human-readable format.")
 @click.pass_context
 @handle_preload_options
 def beat(ctx, detach=False, logfile=None, pidfile=None, uid=None,
-         gid=None, umask=None, workdir=None, **kwargs):
+         gid=None, umask=None, workdir=None, json=False, **kwargs):
     """Start the beat periodic task scheduler."""
     app = ctx.obj.app
 
@@ -63,7 +69,7 @@ def beat(ctx, detach=False, logfile=None, pidfile=None, uid=None,
 
     beat = partial(app.Beat,
                    logfile=logfile, pidfile=pidfile,
-                   quiet=ctx.obj.quiet, **kwargs)
+                   quiet=ctx.obj.quiet, json_output=json, **kwargs)
 
     if detach:
         with detached(logfile, pidfile, uid, gid, umask, workdir):
