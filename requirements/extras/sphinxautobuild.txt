@@ -1,1 +1,1 @@
-sphinx-autobuild!=2024.9.3,>=2024.10.3
+sphinx-autobuild>=2024.10.3
