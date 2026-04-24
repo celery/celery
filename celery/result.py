@@ -635,7 +635,18 @@ class ResultSet(ResultBase):
 
     def update(self, results):
         """Extend from iterable of results."""
-        self.results.extend(r for r in results if r not in self.results)
+        # De-duplicate by task id (or value) while keeping the key set
+        # in sync as we append, so intra-batch duplicates and string ids
+        # are handled consistently.
+        existing_ids = set()
+        for r in self.results:
+            key = getattr(r, 'id', r)
+            existing_ids.add(key)
+        for r in results:
+            key = getattr(r, 'id', r)
+            if key not in existing_ids:
+                self.results.append(r)
+                existing_ids.add(key)
 
     def clear(self):
         """Remove all results from this set."""
@@ -977,7 +988,6 @@ class GroupResult(ResultSet):
 
     def __bool__(self):
         return bool(self.id or self.results)
-    __nonzero__ = __bool__  # Included for Py2 backwards compatibility
 
     def __eq__(self, other):
         if isinstance(other, GroupResult):

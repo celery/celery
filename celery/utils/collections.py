@@ -288,7 +288,6 @@ class ChainMap(MutableMapping):
     def __bool__(self):
         # type: () -> bool
         return any(self.maps)
-    __nonzero__ = __bool__  # Py2
 
     def setdefault(self, key, default=None):
         # type: (Any, Any) -> None
@@ -653,7 +652,6 @@ class LimitedSet:
     def __bool__(self):
         # type: () -> bool
         return bool(self._data)
-    __nonzero__ = __bool__  # Py2
 
     @property
     def _heap_overload(self):
