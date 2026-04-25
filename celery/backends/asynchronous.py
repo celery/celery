@@ -347,6 +347,11 @@ class BaseResultConsumer:
         """
         try:
             yield
+        except socket.timeout:
+            # socket.timeout (builtin TimeoutError) from drain_events(timeout=N)
+            # is normal polling behavior, not a connection error.
+            # Let it bubble up to be caught by the Drainer.
+            raise
         except self._connection_errors:
             try:
                 self._reconnect()
