@@ -261,6 +261,24 @@ class test_Signature(CanvasCase):
         x.set(immutable=False)
         assert not x.immutable
 
+    def test_clone_copies_scalar_options_dict(self):
+        sig = self.add.s(2, 2).set(priority=3)
+        clone = sig.clone()
+
+        clone.options['priority'] = 7
+
+        assert sig.options['priority'] == 3
+        assert clone.options['priority'] == 7
+
+    def test_clone_deepcopies_mutable_options(self):
+        sig = self.add.s(2, 2).set(headers={'nested': []})
+        clone = sig.clone()
+
+        clone.options['headers']['nested'].append(1)
+
+        assert sig.options['headers']['nested'] == []
+        assert clone.options['headers']['nested'] == [1]
+
     def test_election(self):
         x = self.add.s(2, 2)
         x.freeze('foo')

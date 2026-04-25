@@ -39,6 +39,19 @@ __all__ = (
     'group', 'chord', 'signature', 'maybe_signature',
 )
 
+_FAST_PATH_IMMUTABLE_TYPES = (str, bytes, int, float, bool, type(None))
+
+
+def _clone_options(options):
+    """Clone execution options with a fast path for immutable scalar values."""
+    if not options:
+        return {}
+    # Fast path: immutable scalar values only, shallow copy is sufficient.
+    if all(isinstance(value, _FAST_PATH_IMMUTABLE_TYPES)
+           for value in options.values()):
+        return options.copy()
+    return deepcopy(options)
+
 
 def maybe_unroll_group(group):
     """Unroll group with only one member.
@@ -461,7 +474,7 @@ class Signature(dict):
         signature = Signature.from_dict({'task': self.task,
                                          'args': tuple(args),
                                          'kwargs': kwargs,
-                                         'options': deepcopy(opts),
+                                         'options': _clone_options(opts),
                                          'subtask_type': self.subtask_type,
                                          'immutable': self.immutable},
                                         app=self._app)
