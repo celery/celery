@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import time
+from pathlib import Path
 
 import pytest
 
@@ -22,6 +23,7 @@ TEST_BROKER = os.environ.get('TEST_BROKER', 'pyamqp://')
 TEST_BACKEND = os.environ.get('TEST_BACKEND', 'redis://')
 
 RETRYABLE_EXCEPTIONS = (OSError, ConnectionError, TimeoutError)
+_INTEGRATION_DIR = Path(__file__).resolve().parent
 
 
 def is_retryable_exception(exc):
@@ -44,6 +46,31 @@ __all__ = (
 )
 
 
+def pytest_collection_modifyitems(config, items):
+    """Guard: integration tests must not call start_worker().
+
+    Integration tests share a session-scoped worker from conftest.py.
+    Tests that need their own worker belong in t/smoke/tests/.
+    """
+    checked = set()
+    for item in items:
+        if item.path in checked:
+            continue
+        checked.add(item.path)
+        if not item.path.is_relative_to(_INTEGRATION_DIR):
+            continue
+        if not item.path.name.startswith('test_'):
+            continue
+        content = item.path.read_text('utf-8')
+        if re.search(r'\bstart_worker\(', content):
+            pytest.exit(
+                f"\n{item.path.name} calls start_worker().\n"
+                f"Integration tests use the session-scoped worker from conftest.py.\n"
+                f"Tests requiring custom workers belong in t/smoke/tests/.\n",
+                returncode=1,
+            )
+
+
 def get_active_redis_channels():
     return get_redis_connection().execute_command('PUBSUB CHANNELS')
 
@@ -62,6 +89,7 @@ def celery_config(request):
     config = {
         'broker_url': TEST_BROKER,
         'result_backend': TEST_BACKEND,
+        'task_create_missing_queues': False,
         'result_extended': True,
         'cassandra_servers': ['localhost'],
         'cassandra_keyspace': 'tests',
@@ -121,3 +149,21 @@ def ZZZZ_set_app_current(app):
 def celery_class_tasks():
     from t.integration.tasks import ClassBasedAutoRetryTask
     return [ClassBasedAutoRetryTask]
+
+
+@pytest.fixture(autouse=True, scope='module')
+def _assert_no_queue_pollution(celery_session_app):
+    """Integration tests must not register new queues.
+
+    The session worker consumes from the default queue only.
+    task_create_missing_queues=False prevents accidental creation,
+    and this fixture verifies the invariant holds.
+    """
+    before = set(celery_session_app.amqp.queues)
+    yield
+    leaked = set(celery_session_app.amqp.queues) - before
+    if leaked:
+        pytest.fail(
+            f"Module registered unexpected queues: {sorted(leaked)}\n"
+            f"Either clean up in teardown, or move to t/smoke/tests/."
+        )
