@@ -151,7 +151,7 @@ NAMESPACES = Namespace(
     control=Namespace(
         queue_ttl=Option(300.0, type='float'),
         queue_expires=Option(10.0, type='float'),
-        queue_exclusive=Option(True, type='bool'),
+        queue_exclusive=Option(False, type='bool'),
         queue_durable=Option(False, type='bool'),
         exchange=Option('celery', type='string'),
     ),
@@ -182,7 +182,7 @@ NAMESPACES = Namespace(
         queue_expires=Option(60.0, type='float'),
         queue_ttl=Option(5.0, type='float'),
         queue_prefix=Option('celeryev'),
-        queue_exclusive=Option(True, type='bool'),
+        queue_exclusive=Option(False, type='bool'),
         queue_durable=Option(False, type='bool'),
         serializer=Option('json'),
         exchange=Option('celeryev', type='string'),

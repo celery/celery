@@ -390,7 +390,7 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
     def binding(self):
         return self.Queue(
             self.oid, self.exchange, self.oid,
-            durable=True,
+            durable=False,
             auto_delete=True,
             expires=self.expires,
         )
