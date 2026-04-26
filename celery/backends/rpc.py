@@ -392,6 +392,7 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
             self.oid, self.exchange, self.oid,
             durable=False,
             auto_delete=True,
+            exclusive=True,
             expires=self.expires,
         )
 
