@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import time
+from pathlib import Path
 
 import pytest
 
@@ -22,6 +23,7 @@ TEST_BROKER = os.environ.get('TEST_BROKER', 'pyamqp://')
 TEST_BACKEND = os.environ.get('TEST_BACKEND', 'redis://')
 
 RETRYABLE_EXCEPTIONS = (OSError, ConnectionError, TimeoutError)
+_INTEGRATION_DIR = Path(__file__).resolve().parent
 
 
 def is_retryable_exception(exc):
@@ -50,14 +52,12 @@ def pytest_collection_modifyitems(config, items):
     Integration tests share a session-scoped worker from conftest.py.
     Tests that need their own worker belong in t/smoke/tests/.
     """
-    integration_dir = str(config.rootdir / 't' / 'integration')
     checked = set()
     for item in items:
-        path = str(item.path)
-        if path in checked:
+        if item.path in checked:
             continue
-        checked.add(path)
-        if not path.startswith(integration_dir):
+        checked.add(item.path)
+        if not item.path.is_relative_to(_INTEGRATION_DIR):
             continue
         if not item.path.name.startswith('test_'):
             continue
