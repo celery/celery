@@ -50,16 +50,19 @@ def pytest_collection_modifyitems(config, items):
     Integration tests share a session-scoped worker from conftest.py.
     Tests that need their own worker belong in t/smoke/tests/.
     """
+    integration_dir = str(config.rootdir / 't' / 'integration')
     checked = set()
     for item in items:
         path = str(item.path)
         if path in checked:
             continue
         checked.add(path)
+        if not path.startswith(integration_dir):
+            continue
         if not item.path.name.startswith('test_'):
             continue
         content = item.path.read_text('utf-8')
-        if 'start_worker(' in content:
+        if re.search(r'\bstart_worker\(', content):
             pytest.exit(
                 f"\n{item.path.name} calls start_worker().\n"
                 f"Integration tests use the session-scoped worker from conftest.py.\n"
