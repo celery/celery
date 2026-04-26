@@ -242,7 +242,7 @@ class test_RPCBackend:
         assert queue.name == self.b.oid
         assert queue.exchange == self.b.exchange
         assert queue.routing_key == self.b.oid
-        assert not queue.durable
+        assert queue.durable
         assert queue.auto_delete
 
     def test_create_binding(self):
