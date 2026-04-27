@@ -53,7 +53,7 @@ task_postrun = Signal(
 )
 task_success = Signal(
     name='task_success',
-    providing_args={'result'},
+    providing_args={'result', 'runtime'},
 )
 task_retry = Signal(
     name='task_retry',

@@ -260,6 +260,9 @@ Provides arguments
 * ``result``
     Return value of the task.
 
+* ``runtime``
+    Time in seconds it took to execute the task.
+
 .. signal:: task_failure
 
 ``task_failure``
