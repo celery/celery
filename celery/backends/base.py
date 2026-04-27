@@ -185,6 +185,19 @@ class Backend:
         if request and request.chord:
             self.on_chord_part_return(request, state, result)
 
+    def _should_store_propagated_chain_result(self, store_result, state, chain_elem_ctx):
+        return (
+            store_result
+            and state in states.PROPAGATE_STATES
+            and chain_elem_ctx.task_id is not None
+        )
+
+    def _should_apply_errback_group_locally(self, request):
+        return (
+            self.app.conf.task_always_eager
+            or request.delivery_info.get('is_eager', False)
+        )
+
     def mark_as_failure(self, task_id, exc,
                         traceback=None, request=None,
                         store_result=True, call_errbacks=True,
@@ -225,9 +238,8 @@ class Backend:
                 # complex, we assume it must have been uplifted to a chord by
                 # the canvas code and therefore the condition below will ensure
                 # that we mark something as being complete as avoid stalling.
-                if (
-                    store_result and state in states.PROPAGATE_STATES and
-                    chain_elem_ctx.task_id is not None
+                if self._should_store_propagated_chain_result(
+                    store_result, state, chain_elem_ctx
                 ):
                     self.store_result(
                         chain_elem_ctx.task_id, exc, state,
@@ -278,7 +290,7 @@ class Backend:
             task_id = request.id
             root_id = request.root_id or task_id
             g = group(old_signature, app=self.app)
-            if self.app.conf.task_always_eager or request.delivery_info.get('is_eager', False):
+            if self._should_apply_errback_group_locally(request):
                 g.apply(
                     (task_id,), parent_id=task_id, root_id=root_id
                 )
