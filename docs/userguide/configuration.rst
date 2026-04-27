@@ -3797,9 +3797,15 @@ If enabled, the event receiver's queue will be marked as *durable*, meaning it w
 :transports supported: ``amqp``
 .. versionadded:: 5.6
 
-Default: ``False``
+Default: ``True``
 
 If enabled, the event queue will be *exclusive* to the current connection and automatically deleted when the connection closes.
+
+.. versionchanged:: 5.7
+
+   The default was changed from ``False`` to ``True`` for compatibility with RabbitMQ 4.3.0,
+   which no longer permits transient non-exclusive queues by default.
+   See `RabbitMQ Deprecated Features List <https://www.rabbitmq.com/release-information/deprecated-features-list>`_.
 
 .. warning::
 
@@ -3977,10 +3983,16 @@ If set to ``True``, the control exchange and queue will be durable — they will
 ``control_queue_exclusive``
 ---------------------------
 
-- **Default:** ``False``
+- **Default:** ``True``
 - **Type:** ``bool``
 
-If set to ``True``, the control queue will be exclusive to a single connection. This is generally not recommended in distributed environments.
+If set to ``True``, the control queue will be exclusive to a single connection.
+
+.. versionchanged:: 5.7
+
+   The default was changed from ``False`` to ``True`` for compatibility with RabbitMQ 4.3.0,
+   which no longer permits transient non-exclusive queues by default.
+   See `RabbitMQ Deprecated Features List <https://www.rabbitmq.com/release-information/deprecated-features-list>`_.
 
 .. warning::
 
