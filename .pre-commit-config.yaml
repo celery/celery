@@ -34,12 +34,12 @@ repos:
       - id: mixed-line-ending
 
   - repo: https://github.com/pycqa/isort
-    rev: 8.0.1
+    rev: 9.0.0a3
     hooks:
       - id: isort
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.20.1
+    rev: v1.20.2
     hooks:
     -   id: mypy
         pass_filenames: false
