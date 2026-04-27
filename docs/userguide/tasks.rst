@@ -1037,9 +1037,9 @@ General
 .. warning::
 
     A rate-limited task still counts against the worker's prefetch count
-    while it waits to run. Once all of a worker's prefetched tasks are rate-limited
-    tasks, the worker stops fetching new messages from the broker entirely,
-    including messages for tasks that have no rate limit of their own.
+    while it waits to run. Once all of a worker's prefetched slots are occupied
+    by rate-limited tasks, the worker stops fetching new messages from the broker
+    entirely, including messages for tasks that have no rate limit of their own.
 
     For example, consider a worker that handles two tasks, ``A`` and ``B``,
     where ``A`` is rate limited and ``B`` is not. A burst of ``A`` messages
