@@ -585,7 +585,7 @@ class ResultSet(ResultBase):
 
     _app = None
 
-    #: List of results in in the set.
+    #: List of results in the set.
     results = None
 
     def __init__(self, results, app=None, ready_barrier=None, **kwargs):
@@ -800,7 +800,6 @@ class ResultSet(ResultBase):
         if disable_sync_subtasks:
             assert_will_not_block()
         time_start = time.monotonic()
-        remaining = None
 
         if on_message is not None:
             raise ImproperlyConfigured(
@@ -1056,10 +1055,19 @@ class EagerResult(AsyncResult):
         return True
 
     def get(self, timeout=None, propagate=True,
-            disable_sync_subtasks=True, **kwargs):
-        if disable_sync_subtasks:
-            assert_will_not_block()
+            disable_sync_subtasks=True,
+            **kwargs):
+        """Return the result of an eagerly executed task.
 
+        Arguments:
+            timeout: No effect. This method never waits.
+            propagate (bool): Re-raise exception if the task failed.
+            disable_sync_subtasks (bool): Accepted for API compatibility
+                with :meth:`AsyncResult.get`; no effect for eager results.
+
+        Raises:
+            Exception: If the task raised an exception and `propagate` is True.
+        """
         if self.successful():
             return self.result
         elif self.state in states.PROPAGATE_STATES:
