@@ -135,9 +135,8 @@ class Worker(WorkController):
             sender=self.hostname, instance=self, conf=app.conf,
         )
 
-        if self.purge:
-            self.purge_messages()
-
+        # Purge is deferred to Consumer's Connection step so it runs after
+        # broker connection is established (with retry). See #10102.
         if not self.quiet:
             self.emit_banner()
 
@@ -191,9 +190,19 @@ class Worker(WorkController):
 
     def purge_messages(self):
         with self.app.connection_for_write() as connection:
-            count = self.app.control.purge(connection=connection)
-            if count:  # pragma: no cover
-                print(f"purge: Erased {count} {pluralize(count, 'message')} from the queue.\n", flush=True)
+            self._do_purge(connection)
+
+    def purge_messages_with_connection(self, connection):
+        """Purge queue using an already-established connection (e.g. from Consumer).
+
+        Used when --purge is passed so purge runs after broker connection retry.
+        """
+        self._do_purge(connection)
+
+    def _do_purge(self, connection):
+        count = self.app.control.purge(connection=connection)
+        if count:  # pragma: no cover
+            print(f"purge: Erased {count} {pluralize(count, 'message')} from the queue.\n", flush=True)
 
     def tasklist(self, include_builtins=True, sep='\n', int_='celery.'):
         return sep.join(
