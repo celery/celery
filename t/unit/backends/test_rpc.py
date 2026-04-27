@@ -86,7 +86,7 @@ class test_RPCResultConsumer:
         new_consumer_call = consumer.Consumer.call_args
         assert list(new_consumer_call[0][1]) == [queue1, queue2]
 
-    def test_drain_events_timeout_swallowed(self):
+    def test_drain_events_timeout_does_not_trigger_reconnect(self):
         """socket.timeout from drain_events should NOT trigger reconnection."""
         consumer = self.get_consumer()
         mock_conn = Mock(name='connection')
