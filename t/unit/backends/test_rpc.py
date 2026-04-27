@@ -1,3 +1,4 @@
+import socket
 import uuid
 from unittest.mock import Mock, patch
 
@@ -84,6 +85,30 @@ class test_RPCResultConsumer:
         # The new Consumer should have been created with both old queues.
         new_consumer_call = consumer.Consumer.call_args
         assert list(new_consumer_call[0][1]) == [queue1, queue2]
+
+    def test_drain_events_timeout_swallowed(self):
+        """socket.timeout from drain_events should NOT trigger reconnection."""
+        consumer = self.get_consumer()
+        mock_conn = Mock(name='connection')
+        mock_conn.connection_errors = (OSError,)
+        mock_conn.channel_errors = ()
+        # Simulate a normal polling timeout (no messages within timeout period)
+        mock_conn.drain_events.side_effect = socket.timeout()
+        consumer._connection = mock_conn
+        consumer._connection_errors = mock_conn.connection_errors + mock_conn.channel_errors
+
+        mock_consumer = Mock(name='consumer')
+        mock_consumer.queues = [Mock(name='queue1')]
+        consumer._consumer = mock_consumer
+
+        # drain_events should raise socket.timeout, NOT trigger reconnection.
+        # socket.timeout should bubble up so the Drainer can catch it.
+        with pytest.raises(socket.timeout):
+            consumer.drain_events(timeout=1)
+
+        # Verify that NO reconnection occurred:
+        # - Connection should NOT be closed
+        mock_conn.close.assert_not_called()
 
     def test_drain_events_no_reconnect_on_other_errors(self):
         consumer = self.get_consumer()
