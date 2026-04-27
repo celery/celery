@@ -154,6 +154,11 @@ def replace_with_empty_chain(self, *_):
 
 
 @shared_task(bind=True)
+def replace_with_chain_which_contains_a_group(self):
+    return self.replace(chain(add.s(1, 2), group(add.s(1), add.s(1))))
+
+
+@shared_task(bind=True)
 def add_to_all(self, nums, val):
     """Add the given value to all supplied numbers."""
     subtasks = [add.s(num, val) for num in nums]
