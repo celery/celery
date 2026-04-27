@@ -597,6 +597,34 @@ class test_BaseBackend_dict:
         b.mark_as_failure('id', exc, request=request)
         mock_group.assert_called_once_with(request.errbacks, app=self.app)
 
+    def test_new_style_errback_exception_does_not_halt_chain(self):
+        """Test that a new-style errback raising an exception is caught
+        and does not prevent subsequent errbacks from being called."""
+        b = BaseBackend(app=self.app)
+        b._store_result = Mock()
+
+        @self.app.task(shared=False, bind=True)
+        def failing_errback(self, request, exc, traceback):
+            raise RuntimeError('errback failed')
+
+        @self.app.task(shared=False)
+        def ok_errback(arg1):
+            ok_errback.called = True
+
+        ok_errback.called = False
+
+        request = Mock(name='request')
+        request.delivery_info = {'is_eager': True}
+        request.errbacks = [
+            failing_errback.subtask(immutable=True),
+            ok_errback.subtask(args=[1], immutable=True),
+        ]
+        exc = KeyError()
+        # Should not raise — the RuntimeError from failing_errback is caught
+        b.mark_as_failure('id', exc, request=request)
+        # The old-style errback (ok_errback) should still have been dispatched
+        assert ok_errback.called
+
     def test_mark_as_failure__chord(self):
         b = BaseBackend(app=self.app)
         b._store_result = Mock()
