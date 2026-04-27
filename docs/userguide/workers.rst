@@ -159,6 +159,28 @@ and will call :func:`WorkController.terminate() <celery.worker.worker.WorkContro
 If the warm shutdown already started, the transition to cold shutdown will run a signal handler ``on_cold_shutdown``
 to cancel all currently executing tasks from the MainProcess and potentially trigger the :ref:`worker-soft-shutdown`.
 
+.. warning::
+
+    Cold shutdown terminates running tasks by raising a :exc:`SystemExit` exception from inside
+    a signal handler (via :mod:`billiard`). This can interrupt Python execution at any bytecode
+    boundary. There is no mechanism for a running task to detect that a warm shutdown is in
+    progress; tasks simply run to completion or are interrupted.
+
+    Any code that assumes Python-level atomicity may leave application state inconsistent. For
+    example, some database drivers (like psycopg3) implement their commit protocol entirely in
+    Python bytecode; when Celery's signal handler interrupts such a process, the Python
+    exception-handling path has no way to distinguish a failed commit from a successful one
+    interrupted during cleanup. See `issue #10271`_ for a full analysis.
+
+    Prefer :ref:`worker-warm-shutdown` to allow tasks to complete cleanly. If cold shutdown is
+    unavoidable, avoid constructs such as Django's ``on_commit`` which rely on guarantees that
+    signal-handler exceptions violate. Consider the transactional outbox pattern for hard
+    atomicity between a commit and task dispatch, or add precondition checks in downstream tasks
+    to avoid acting on inconsistent state.
+
+.. _issue #10271: https://github.com/celery/celery/issues/10271
+
+
 .. _worker-soft-shutdown:
 
 Soft Shutdown
@@ -185,6 +207,12 @@ The soft shutdown will be skipped if there are no tasks running. To force the so
     during the cold shutdown. When using ETA tasks, it is recommended to enable the soft shutdown on idle.
     Experiment which :setting:`worker_soft_shutdown_timeout` value works best for your setup to reduce the risk
     of task loss to a minimum.
+
+.. note::
+
+    When the soft shutdown timeout expires, the worker initiates a cold shutdown, which carries the same
+    signal-safety implications as a direct cold shutdown. See the :ref:`worker-cold-shutdown` warning for
+    details and mitigations.
 
 For example, when setting ``worker_soft_shutdown_timeout=3``, the worker will allow 3 seconds for all currently
 executing tasks to finish before it terminates. If the time limit is reached, the worker will initiate a cold shutdown
