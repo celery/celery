@@ -246,6 +246,13 @@ class test_ControlPanel:
         panel.handle('heartbeat')
         assert ('worker-heartbeat',) in event_dispatcher.send.call_args
 
+    def test_heartbeat_no_dispatcher(self):
+        consumer = Consumer(self.app)
+        consumer.event_dispatcher = None
+        panel = self.create_panel(consumer=consumer)
+        # Should not raise AttributeError when dispatcher is None (#9489).
+        panel.handle('heartbeat')
+
     def test_time_limit(self):
         panel = self.create_panel(consumer=Mock())
         r = panel.handle('time_limit', arguments={
