@@ -163,7 +163,7 @@ to cancel all currently executing tasks from the MainProcess and potentially tri
 
     Cold shutdown terminates running tasks by raising a :exc:`SystemExit` exception from inside
     a signal handler (via :mod:`billiard`). This can interrupt Python execution at any bytecode
-    boundary. There is no mechanism for a running task to detect that a warm shutdown is in
+    boundary. There is no mechanism for a running task to detect that shutdown is in
     progress; tasks simply run to completion or are interrupted.
 
     Any code that assumes Python-level atomicity may leave application state inconsistent. For
