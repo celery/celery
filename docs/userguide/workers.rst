@@ -161,22 +161,23 @@ to cancel all currently executing tasks from the MainProcess and potentially tri
 
 .. warning::
 
-    Cold shutdown terminates running tasks by raising a :exc:`SystemExit` exception from inside
-    a signal handler (via :mod:`billiard`). This can interrupt Python execution at any bytecode
-    boundary. There is no mechanism for a running task to detect that shutdown is in
-    progress; tasks simply run to completion or are interrupted.
+    Cold shutdown forcibly terminates running tasks. The exact mechanism depends on the worker
+    pool. In the prefork pool, termination is performed by raising a :exc:`SystemExit` exception
+    from inside a signal handler (via :mod:`billiard`), which can interrupt Python execution at
+    any bytecode boundary. In all pools, tasks may either run to completion or be interrupted,
+    depending on timing and the pool implementation.
 
     Any code that assumes Python-level atomicity may leave application state inconsistent. For
     example, some database drivers (like psycopg3) implement their commit protocol entirely in
-    Python bytecode; when Celery's signal handler interrupts such a process, the Python
-    exception-handling path has no way to distinguish a failed commit from a successful one
-    interrupted during cleanup. See `issue #10271`_ for a full analysis.
+    Python bytecode; in the prefork pool, when Celery's signal handler interrupts such a process,
+    the Python exception-handling path has no way to distinguish a failed commit from a
+    successful one interrupted during cleanup. See `issue #10271`_ for a full analysis.
 
     Prefer :ref:`worker-warm-shutdown` to allow tasks to complete cleanly. If cold shutdown is
     unavoidable, avoid constructs such as Django's ``on_commit`` which rely on guarantees that
-    signal-handler exceptions violate. Consider the transactional outbox pattern for hard
-    atomicity between a commit and task dispatch, or add precondition checks in downstream tasks
-    to avoid acting on inconsistent state.
+    forced termination can violate. Consider the transactional outbox pattern for hard atomicity
+    between a commit and task dispatch, or add precondition checks in downstream tasks to avoid
+    acting on inconsistent state.
 
 .. _issue #10271: https://github.com/celery/celery/issues/10271
 
