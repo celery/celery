@@ -345,6 +345,8 @@ def election(state, id, topic, action=None, **kwargs):
 def enable_events(state):
     """Tell worker(s) to send task-related events."""
     dispatcher = state.consumer.event_dispatcher
+    if dispatcher is None:
+        return nok('event dispatcher unavailable')
     if dispatcher.groups and 'task' not in dispatcher.groups:
         dispatcher.groups.add('task')
         logger.info('Events of group {task} enabled by remote.')
@@ -356,6 +358,8 @@ def enable_events(state):
 def disable_events(state):
     """Tell worker(s) to stop sending task-related events."""
     dispatcher = state.consumer.event_dispatcher
+    if dispatcher is None:
+        return nok('event dispatcher unavailable')
     if 'task' in dispatcher.groups:
         dispatcher.groups.discard('task')
         logger.info('Events of group {task} disabled by remote.')

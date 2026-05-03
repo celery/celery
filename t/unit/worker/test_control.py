@@ -163,6 +163,20 @@ class test_ControlPanel:
         assert 'task' not in evd.groups
         assert 'already disabled' in panel.handle('disable_events')['ok']
 
+    def test_enable_events_no_dispatcher(self):
+        consumer = Consumer(self.app)
+        consumer.event_dispatcher = None
+        panel = self.create_panel(consumer=consumer)
+        # Should not raise AttributeError when dispatcher is None (#9489).
+        assert 'unavailable' in panel.handle('enable_events')['error']
+
+    def test_disable_events_no_dispatcher(self):
+        consumer = Consumer(self.app)
+        consumer.event_dispatcher = None
+        panel = self.create_panel(consumer=consumer)
+        # Should not raise AttributeError when dispatcher is None (#9489).
+        assert 'unavailable' in panel.handle('disable_events')['error']
+
     def test_clock(self):
         consumer = Consumer(self.app)
         panel = self.create_panel(consumer=consumer)
