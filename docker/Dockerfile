@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y build-essential \
     lsb-release \
     git \
     libmemcached-dev \
+    libev-dev \
     make \
     liblzma-dev \
     libreadline-dev \

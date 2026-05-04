@@ -10,13 +10,13 @@ from time import monotonic, time
 from weakref import ref
 
 from billiard.common import TERM_SIGNAME
-from billiard.einfo import ExceptionWithTraceback
+from billiard.einfo import ExceptionInfo, ExceptionWithTraceback
 from kombu.utils.encoding import safe_repr, safe_str
 from kombu.utils.objects import cached_property
 
-from celery import current_app, signals
+from celery import current_app, signals, states
 from celery.app.task import Context
-from celery.app.trace import fast_trace_task, trace_task, trace_task_ret
+from celery.app.trace import fast_trace_task, task_has_custom, trace_task, trace_task_ret, traceback_clear
 from celery.concurrency.base import BasePool
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError, Terminated,
                                TimeLimitExceeded, WorkerLostError)
@@ -543,6 +543,49 @@ class Request:
                     self.id, exc, request=self._context,
                     store_result=self.store_errors,
                 )
+
+                # Invoke the same failure hooks that a normal task failure
+                # triggers so that on_failure callbacks, errbacks, and
+                # the task_failure signal all fire for hard timeouts.
+                einfo = None
+                try:
+                    try:
+                        raise exc
+                    except TimeLimitExceeded:
+                        einfo = ExceptionInfo()
+
+                    self.task.on_failure(exc, self.id, self.args, self.kwargs, einfo)
+
+                    if task_has_custom(self.task, 'after_return'):
+                        self.task.after_return(
+                            states.FAILURE, exc, self.id, self.args, self.kwargs, None,
+                        )
+
+                    signals.task_failure.send(
+                        sender=self.task,
+                        task_id=self.id,
+                        exception=exc,
+                        args=self.args,
+                        kwargs=self.kwargs,
+                        traceback=exc.__traceback__,
+                        einfo=einfo,
+                    )
+
+                    self.send_event(
+                        'task-failed',
+                        exception=safe_repr(get_pickled_exception(einfo.exception)),
+                        traceback=einfo.traceback,
+                    )
+                    # MEMORY LEAK FIX: clear frame locals retained by the
+                    # synthetic traceback (same pattern as trace.py #8882).
+                    traceback_clear(exc)
+                finally:
+                    # Break the remaining exc → traceback → frame reference
+                    # cycle so the on_timeout frame (and the Request/self it
+                    # contains) can be garbage-collected promptly.
+                    if einfo is not None:
+                        del einfo
+                    exc.__traceback__ = None
 
             if self.task.acks_late:
                 if self.task.acks_on_timeout:
