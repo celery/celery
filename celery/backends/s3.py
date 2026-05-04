@@ -32,7 +32,7 @@ class S3Backend(KeyValueStoreBackend):
         super().__init__(**kwargs)
 
         if not boto3 or not botocore:
-            raise ImproperlyConfigured('You must install boto3'
+            raise ImproperlyConfigured('You must install boto3 '
                                        'to use s3 backend')
         conf = self.app.conf
 

@@ -460,6 +460,18 @@ The default queue is named `celery`. To get all available queues, invoke:
     hosts), but this won't affect the monitoring events used by for example
     Flower as Redis pub/sub commands are global rather than database based.
 
+.. _monitoring-prometheus:
+
+Prometheus
+=========
+
+While Prometheus monitoring is not a native part of Celery,
+you can easily monitor your Celery workers using Prometheus via Flower.
+Flower also provides pre-made Grafana dashboards to easily graph the amount
+of tasks, workers and other instrumental statistics.
+
+To set up Prometheus, refer to the Flower documentation: https://flower.readthedocs.io/en/latest/prometheus-integration.html
+
 .. _monitoring-munin:
 
 Munin
@@ -827,7 +839,7 @@ Advanced users can configure the behavior of this mailbox by customizing how it 
 The following parameters are now supported by `Mailbox`:
 
 - ``durable`` (default: ``False``): If set to ``True``, the control exchanges will survive broker restarts.
-- ``exclusive`` (default: ``False``): If set to ``True``, the exchanges will be usable by only one connection.
+- ``exclusive`` (default: ``True``): If set to ``True``, the exchanges will be usable by only one connection.
 
 .. warning::
 

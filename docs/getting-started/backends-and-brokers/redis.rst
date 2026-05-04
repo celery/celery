@@ -143,6 +143,29 @@ To configure the connection timeouts for the Redis result backend, use the ``ret
 
 See :func:`~kombu.utils.functional.retry_over_time` for the possible retry policy options.
 
+.. _redis-result-backend-additional-connection-errors:
+
+Additional connection errors
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 5.7
+
+Some Redis proxies or cloud providers may raise custom exceptions that Celery
+does not recognize as connection errors. To have these retried automatically,
+use the ``additional_connection_errors`` key under
+:setting:`result_backend_transport_options`:
+
+
+.. code-block:: python
+
+    app.conf.result_backend_transport_options = {
+        'additional_connection_errors': (
+            'my_redis_proxy.CustomConnectionError',
+        ),
+    }
+
+Both dotted import strings and exception classes are supported.
+
 .. _redis-serverless:
 
 Serverless
@@ -268,7 +291,7 @@ Group result ordering
 
 Versions of Celery up to and including 4.4.6 used an unsorted list to store
 result objects for groups in the Redis backend. This can cause those results to
-be be returned in a different order to their associated tasks in the original
+be returned in a different order to their associated tasks in the original
 group instantiation. Celery 4.4.7 introduced an opt-in behaviour which fixes
 this issue and ensures that group results are returned in the same order the
 tasks were defined, matching the behaviour of other backends. In Celery 5.0

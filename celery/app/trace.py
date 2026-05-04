@@ -154,6 +154,28 @@ def get_task_name(request, default):
     return getattr(request, 'shadow', None) or default
 
 
+def get_actual_ignore_result(task, req):
+    """Return the effective ignore_result, with request overriding task.
+
+    If req provides an explicit ignore_result, that value is used;
+    otherwise task.ignore_result is returned.
+    """
+    if req is None:
+        return task.ignore_result
+
+    actual = getattr(req, 'ignore_result', None)
+
+    # Context defines `ignore_result = False` at class level (see Context
+    # in celery/app/task.py). getattr() above would return the class default
+    # (False) even when the request never set it explicitly, making it
+    # impossible to distinguish "override=False" from "not set". We check
+    # __dict__ to detect only instance-level (i.e., explicitly set) values.
+    if isinstance(req, Context) and 'ignore_result' not in req.__dict__:
+        actual = None
+
+    return actual if actual is not None else task.ignore_result
+
+
 class TraceInfo:
     """Information about task execution."""
 
@@ -165,7 +187,9 @@ class TraceInfo:
 
     def handle_error_state(self, task, req,
                            eager=False, call_errbacks=True):
-        if task.ignore_result:
+        ignore_result = get_actual_ignore_result(task, req)
+
+        if ignore_result:
             store_errors = task.store_errors_even_if_ignored
         elif eager and task.store_eager_result:
             store_errors = True
@@ -353,16 +377,6 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     fun = task if task_has_custom(task, '__call__') else task.run
 
     loader = loader or app.loader
-    ignore_result = task.ignore_result
-    track_started = task.track_started
-    track_started = not eager and (task.track_started and not ignore_result)
-
-    # #6476
-    if eager and not ignore_result and task.store_eager_result:
-        publish_result = True
-    else:
-        publish_result = not eager and not ignore_result
-
     deduplicate_successful_tasks = ((app.conf.task_acks_late or task.acks_late)
                                     and app.conf.worker_deduplicate_successful_tasks
                                     and app.backend.persistent)
@@ -409,6 +423,55 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         )
         return I, R, I.state, I.retval
 
+    def _dispatch_callbacks_and_chain(
+        retval, callbacks, chain, parent_id, root_id, priority,
+    ):
+        """Dispatch callbacks and chain for a completed task.
+
+        Dispatches link callbacks and then the next chain step.
+        Does NOT fire task lifecycle signals (on_success, task_postrun)
+        or call mark_as_done — callers handle those separately.
+
+        Note: dispatch is not atomic.  If callbacks succeed but the
+        chain step fails (or vice-versa), a Reject + redeliver may
+        re-dispatch the already-sent callbacks.  This is acceptable
+        under Celery's at-least-once delivery model.
+        """
+        if callbacks:
+            if len(callbacks) > 1:
+                sigs, groups = [], []
+                for sig in callbacks:
+                    sig = signature(sig, app=app)
+                    if isinstance(sig, group):
+                        groups.append(sig)
+                    else:
+                        sigs.append(sig)
+                for group_ in groups:
+                    group_.apply_async(
+                        (retval,),
+                        parent_id=parent_id, root_id=root_id,
+                        priority=priority,
+                    )
+                if sigs:
+                    group(sigs, app=app).apply_async(
+                        (retval,),
+                        parent_id=parent_id, root_id=root_id,
+                        priority=priority,
+                    )
+            else:
+                signature(callbacks[0], app=app).apply_async(
+                    (retval,),
+                    parent_id=parent_id, root_id=root_id,
+                    priority=priority,
+                )
+        if chain:
+            _chsig = signature(chain[-1], app=app)
+            _chsig.apply_async(
+                (retval,), chain=chain[:-1],
+                parent_id=parent_id, root_id=root_id,
+                priority=priority,
+            )
+
     def trace_task(uuid, args, kwargs, request=None):
         # R      - is the possibly prepared return value.
         # I      - is the Info object.
@@ -434,6 +497,14 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
             task_request = Context(request or {}, args=args,
                                    called_directly=False, kwargs=kwargs)
 
+            ignore_result = get_actual_ignore_result(task, task_request)
+            track_started = not eager and (task.track_started and not ignore_result)
+            # #6476
+            if eager and not ignore_result and task.store_eager_result:
+                publish_result = True
+            else:
+                publish_result = not eager and not ignore_result
+
             redelivered = (task_request.delivery_info
                            and task_request.delivery_info.get('redelivered', False))
             if deduplicate_successful_tasks and redelivered:
@@ -452,6 +523,41 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             'name': get_task_name(task_request, name),
                             'description': 'Task already completed successfully.'
                         })
+                        _root_id = task_request.root_id or uuid
+                        _priority = task_request.delivery_info.get('priority') if \
+                            inherit_parent_priority else None
+                        try:
+                            _meta = r._get_task_meta()
+                            stored_retval = _meta.get('result')
+                            # Children are populated by mark_as_done on the
+                            # original execution.  If present, callbacks were
+                            # already dispatched — skip to avoid duplicates.
+                            # Requires the backend to persist extended result
+                            # metadata (result_extended=True).
+                            _children = _meta.get('children')
+                            _callbacks = task_request.callbacks
+                            _chain = task_request.chain
+                            if (_callbacks or _chain) and not _children:
+                                _dispatch_callbacks_and_chain(
+                                    stored_retval, _callbacks, _chain,
+                                    parent_id=uuid, root_id=_root_id,
+                                    priority=_priority,
+                                )
+                            successful_requests.add(task_request.id)
+                        except MemoryError:
+                            raise
+                        except Exception as exc:
+                            # Permanent failures (malformed signature, etc.)
+                            # will requeue indefinitely.  Broker-level
+                            # dead-letter / max-delivery-count policies are
+                            # the intended circuit-breaker.
+                            logger.error(
+                                'Failed to dispatch chain/callbacks for '
+                                'deduplicated task %s',
+                                task_request.id,
+                                exc_info=True,
+                            )
+                            raise Reject(exc, requeue=True)
                         return trace_ok_t(R, I, T, Rstr)
 
             push_task(task)
@@ -510,43 +616,12 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         # separately, so need to call them separately
                         # so that the trail's not added multiple times :(
                         # (Issue #1936)
-                        callbacks = task.request.callbacks
-                        if callbacks:
-                            if len(task.request.callbacks) > 1:
-                                sigs, groups = [], []
-                                for sig in callbacks:
-                                    sig = signature(sig, app=app)
-                                    if isinstance(sig, group):
-                                        groups.append(sig)
-                                    else:
-                                        sigs.append(sig)
-                                for group_ in groups:
-                                    group_.apply_async(
-                                        (retval,),
-                                        parent_id=uuid, root_id=root_id,
-                                        priority=task_priority
-                                    )
-                                if sigs:
-                                    group(sigs, app=app).apply_async(
-                                        (retval,),
-                                        parent_id=uuid, root_id=root_id,
-                                        priority=task_priority
-                                    )
-                            else:
-                                signature(callbacks[0], app=app).apply_async(
-                                    (retval,), parent_id=uuid, root_id=root_id,
-                                    priority=task_priority
-                                )
-
-                        # execute first task in chain
-                        chain = task_request.chain
-                        if chain:
-                            _chsig = signature(chain.pop(), app=app)
-                            _chsig.apply_async(
-                                (retval,), chain=chain,
-                                parent_id=uuid, root_id=root_id,
-                                priority=task_priority
-                            )
+                        _dispatch_callbacks_and_chain(
+                            retval, task.request.callbacks,
+                            task_request.chain,
+                            parent_id=uuid, root_id=root_id,
+                            priority=task_priority,
+                        )
                         task.backend.mark_as_done(
                             uuid, retval, task_request, publish_result,
                         )
@@ -597,6 +672,8 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                          exc_info=True)
         except MemoryError:
             raise
+        except Reject:
+            raise
         except Exception as exc:
             _signal_internal_error(task, uuid, args, kwargs, request, exc)
             if eager:
@@ -616,6 +693,8 @@ def trace_task(task, uuid, args, kwargs, request=None, **opts):
         if task.__trace__ is None:
             task.__trace__ = build_tracer(task.name, task, **opts)
         return task.__trace__(uuid, args, kwargs, request)
+    except Reject:
+        raise
     except Exception as exc:
         _signal_internal_error(task, uuid, args, kwargs, request, exc)
         return trace_ok_t(report_internal_error(task, exc), TraceInfo(FAILURE, exc), 0.0, None)

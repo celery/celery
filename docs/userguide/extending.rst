@@ -220,21 +220,6 @@ Attributes
         class WorkerStep(bootsteps.StartStopStep):
             requires = ('celery.worker.autoscaler:Autoscaler',)
 
-.. _extending-worker-autoreloader:
-
-.. attribute:: autoreloader
-
-    :class:`~celery.worker.autoreloder.Autoreloader` used to automatically
-    reload use code when the file-system changes.
-
-    This is only defined if the ``autoreload`` argument is enabled.
-    Your worker bootstep must require the `Autoreloader` bootstep to use this;
-
-    .. code-block:: python
-
-        class WorkerStep(bootsteps.StartStopStep):
-            requires = ('celery.worker.autoreloader:Autoreloader',)
-
 Example worker bootstep
 -----------------------
 

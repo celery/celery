@@ -424,6 +424,37 @@ class test_task_retries(TasksCase):
         sig = self.retry_task.signature_from_request()
         assert sig.options['headers']['custom'] == 10.1
 
+    def test_signature_from_request__filters_x_death_headers(self):
+        """
+        Test that X-Death headers are filtered out during retries to prevent
+        RabbitMQ cycle detection.
+        """
+
+        self.retry_task.push_request()
+        self.retry_task.request.headers = {
+            'custom': 10.1,
+            'x-death': [{'count': 1, 'queue': 'celery_delayed_0'}],
+            'x-first-death-exchange': 'celery_delayed_0',
+            'x-first-death-queue': 'celery_delayed_0',
+            'x-first-death-reason': 'expired',
+            'x-last-death-exchange': 'celery_delayed_0',
+            'x-last-death-queue': 'celery_delayed_0',
+            'x-last-death-reason': 'expired',
+        }
+        sig = self.retry_task.signature_from_request()
+
+        # Custom headers should be preserved
+        assert sig.options['headers']['custom'] == 10.1
+
+        # X-Death related headers should be filtered out
+        assert 'x-death' not in sig.options['headers']
+        assert 'x-first-death-exchange' not in sig.options['headers']
+        assert 'x-first-death-queue' not in sig.options['headers']
+        assert 'x-first-death-reason' not in sig.options['headers']
+        assert 'x-last-death-exchange' not in sig.options['headers']
+        assert 'x-last-death-queue' not in sig.options['headers']
+        assert 'x-last-death-reason' not in sig.options['headers']
+
     def test_signature_from_request__delivery_info(self):
         self.retry_task.push_request()
         self.retry_task.request.delivery_info = {
@@ -1245,6 +1276,60 @@ class test_tasks(TasksCase):
         finally:
             self.mytask.pop_request()
 
+    def test_context_timelimit_unpacked_into_time_limit_fields(self):
+        """Context.update() must unpack timelimit tuple into time_limit/soft_time_limit."""
+        self.mytask.push_request()
+        try:
+            self.mytask.request.update({'timelimit': [30, 20]})
+            assert self.mytask.request.time_limit == 30
+            assert self.mytask.request.soft_time_limit == 20
+        finally:
+            self.mytask.pop_request()
+
+    def test_context_timelimit_none_leaves_fields_none(self):
+        """When timelimit is None, time_limit and soft_time_limit must remain None."""
+        self.mytask.push_request()
+        try:
+            self.mytask.request.update({'timelimit': None})
+            assert self.mytask.request.time_limit is None
+            assert self.mytask.request.soft_time_limit is None
+        finally:
+            self.mytask.pop_request()
+
+    def test_context_timelimit_tuple_format_also_unpacked(self):
+        """timelimit as a tuple (not just list) must also be unpacked."""
+        self.mytask.push_request()
+        try:
+            self.mytask.request.update({'timelimit': (30, 20)})
+            assert self.mytask.request.time_limit == 30
+            assert self.mytask.request.soft_time_limit == 20
+        finally:
+            self.mytask.pop_request()
+
+    def test_task_inherits_time_limit_from_app_config(self):
+        """Task.bind() must copy task_time_limit and task_soft_time_limit from app config."""
+        self.app.conf.task_time_limit = 60
+        self.app.conf.task_soft_time_limit = 50
+
+        @self.app.task(shared=False)
+        def timed_task():
+            pass
+
+        assert timed_task.time_limit == 60
+        assert timed_task.soft_time_limit == 50
+
+    def test_explicit_task_time_limit_not_overwritten_by_app_config(self):
+        """Explicitly set task.time_limit must not be overwritten by app config."""
+        self.app.conf.task_time_limit = 60
+        self.app.conf.task_soft_time_limit = 50
+
+        @self.app.task(shared=False, time_limit=10, soft_time_limit=5)
+        def timed_task():
+            pass
+
+        assert timed_task.time_limit == 10
+        assert timed_task.soft_time_limit == 5
+
     def test_annotate(self):
         with patch('celery.app.task.resolve_all_annotations') as anno:
             anno.return_value = [{'FOO': 'BAR'}]
@@ -1426,6 +1511,36 @@ class test_tasks(TasksCase):
 
 
 class test_apply_task(TasksCase):
+
+    def test_apply_with_app_conf_time_limit_sets_request_fields(self):
+        """End-to-end: app.conf time limits must be accessible via task.request during execution."""
+        self.app.conf.task_time_limit = 30
+        self.app.conf.task_soft_time_limit = 20
+        captured = {}
+
+        @self.app.task(bind=True, shared=False)
+        def check_request(self):
+            captured['time_limit'] = self.request.time_limit
+            captured['soft_time_limit'] = self.request.soft_time_limit
+
+        check_request.apply()
+        assert captured['time_limit'] == 30
+        assert captured['soft_time_limit'] == 20
+
+    def test_apply_without_time_limit_keeps_timelimit_none(self):
+        """When no time limits are configured, timelimit in request must remain None."""
+        captured = {}
+
+        @self.app.task(bind=True, shared=False)
+        def check_request(self):
+            captured['timelimit'] = self.request.timelimit
+            captured['time_limit'] = self.request.time_limit
+            captured['soft_time_limit'] = self.request.soft_time_limit
+
+        check_request.apply()
+        assert captured['timelimit'] is None
+        assert captured['time_limit'] is None
+        assert captured['soft_time_limit'] is None
 
     def test_apply_throw(self):
         with pytest.raises(KeyError):

@@ -1,7 +1,7 @@
 import collections
+import sys
 
 import pytest
-import pytest_subtests  # noqa
 from kombu.utils.functional import lazy
 
 from celery.utils.functional import (DummyContext, first, firstmethod, fun_accepts_kwargs, fun_takes_argument,
@@ -369,6 +369,46 @@ class test_head_from_fun:
 
         g(b=3)
 
+    @pytest.mark.skipif(sys.version_info < (3, 14), reason="PEP 649 deferred annotations require Python 3.14+")
+    def test_type_checking_annotation(self):
+        # Regression test for https://github.com/celery/celery/discussions/10099
+        # On Python 3.14+, annotations are deferred (PEP 649). Functions with
+        # annotations referencing TYPE_CHECKING-only types must not raise NameError.
+        local = {}
+        exec('def f(args: Sequence[str], x: int = 0): return args', {}, local)
+        f = local['f']
+
+        g = head_from_fun(f)
+        with pytest.raises(TypeError):
+            g()
+        g(1)
+        g(1, 2)
+
+    def test_wraps_variadic_wrapper(self):
+        # Regression test: head_from_fun should introspect the callable it was
+        # handed, not the original function referenced via __wrapped__. This
+        # matters for tasks defined via functools.wraps over a variadic wrapper
+        # (a common pattern for DI decorators that inject extra kwargs at call
+        # time). inspect.getfullargspec ignores __wrapped__; inspect.signature
+        # follows it by default, so the Python 3.14 _getfullargspec shim must
+        # pass follow_wrapped=False to preserve the documented behaviour.
+        from functools import wraps
+
+        def inner(x, y, app, sa_session, kwarg=1):
+            pass
+
+        @wraps(inner)
+        def wrapper(*args, **kwds):
+            pass
+
+        g = head_from_fun(wrapper)
+        # The wrapper accepts anything; head_from_fun should see its signature,
+        # not inner's (which would require app/sa_session as positional args).
+        g()
+        g(1)
+        g(1, 2, 3)
+        g(anything=1, at=2, all=3)
+
 
 class test_fun_takes_argument:
 
@@ -471,6 +511,25 @@ class test_fun_accepts_kwargs:
     ])
     def test_rejects(self, fun):
         assert not fun_accepts_kwargs(fun)
+
+    @pytest.mark.skipif(sys.version_info < (3, 14), reason="PEP 649 deferred annotations require Python 3.14+")
+    def test_type_checking_annotation(self):
+        # Regression test for https://github.com/celery/celery/discussions/10099
+        # On Python 3.14+, annotations are deferred (PEP 649). Calling
+        # fun_accepts_kwargs on a function whose annotations reference
+        # TYPE_CHECKING-only types must not raise NameError.
+        #
+        # This reproduces the failure seen with on_after_finalize.connect:
+        #   def setup_periodic_tasks(sender: Celery, **kwargs: object) -> None: ...
+        # where 'Celery' is only imported under TYPE_CHECKING.
+        local = {}
+        exec('def f(sender: Celery, **kwargs: object) -> None: pass', {}, local)
+        f = local['f']
+        assert fun_accepts_kwargs(f) is True
+
+        exec('def g(sender: Celery) -> None: pass', {}, local)
+        g = local['g']
+        assert fun_accepts_kwargs(g) is False
 
 
 @pytest.mark.parametrize('value,expected', [
