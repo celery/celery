@@ -277,7 +277,9 @@ class test_AMQP(test_AMQP_Base):
         )
         kwargs = prod.publish.call_args[1]
         assert kwargs['routing_key'] == 'foo'
-        assert kwargs['exchange'] == ''
+        # When a custom default_exchange is configured, the queue's
+        # exchange should be used instead of the anonymous exchange (#9940).
+        assert kwargs['exchange'] == 'foo'
 
     def test_send_task_message__broadcast_without_exchange(self):
         from kombu.common import Broadcast
@@ -300,8 +302,10 @@ class test_AMQP(test_AMQP_Base):
         )
         prod.publish.assert_called()
         pub = prod.publish.call_args[1]
-        assert pub['routing_key'] == 'bar'
-        assert pub['exchange'] == ''
+        # When a custom default_exchange is configured, explicitly-set
+        # exchanges should be respected, not overridden to anon-exchange (#9940).
+        assert pub['exchange'] == 'xyz'
+        assert pub['routing_key'] is None
 
     def test_send_event_exchange_direct_with_routing_key(self):
         prod = Mock(name='prod')
@@ -311,8 +315,10 @@ class test_AMQP(test_AMQP_Base):
         )
         prod.publish.assert_called()
         pub = prod.publish.call_args[1]
-        assert pub['routing_key'] == 'bar'
-        assert pub['exchange'] == ''
+        # When a custom default_exchange is configured, the explicitly-set
+        # routing_key should be respected and the queue's exchange used (#9940).
+        assert pub['routing_key'] == 'xyb'
+        assert pub['exchange'] == 'bar'
 
     def test_send_event_exchange_string(self):
         evd = Mock(name='evd')

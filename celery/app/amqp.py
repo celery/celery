@@ -535,7 +535,11 @@ class AMQP:
                     exchange_type = 'direct'
 
             # convert to anon-exchange, when exchange not set and direct ex.
-            if (not exchange or not routing_key) and exchange_type == 'direct':
+            # Only use the anonymous exchange when no custom default_exchange
+            # is configured (fixes #9940).
+            if ((not exchange or not routing_key)
+                    and exchange_type == 'direct'
+                    and not default_exchange.name):
                 exchange, routing_key = '', qname
             elif exchange is None:
                 # not topic exchange, and exchange not undefined
