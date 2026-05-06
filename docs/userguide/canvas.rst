@@ -1017,11 +1017,10 @@ an errback to the chord callback:
     ...      tsum.s().on_error(on_chord_error.s())).delay()
 
 Celery supports two errback calling styles for chord errors. An unbound
-errback whose header accepts more than one argument receives
-``request``, ``exc``, and ``traceback`` as shown above. An errback that
-accepts a single argument, and a bound errback declared with
-``@app.task(bind=True)``, is dispatched as a task and receives the id of
-the failed chord callback instead.
+errback that accepts ``(request, exc, traceback)`` receives those three
+arguments as shown above. An errback that accepts a single argument, and
+a bound errback declared with ``@app.task(bind=True)``, is dispatched as
+a task and receives the id of the failed chord callback instead.
 
 Chords may have callback and errback signatures linked to them, which addresses
 some of the issues with linking signatures to groups.
