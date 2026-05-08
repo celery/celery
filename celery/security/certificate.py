@@ -105,7 +105,7 @@ class FSCertStore(CertStore):
         if os.path.isdir(path):
             path = os.path.join(path, '*')
         for p in glob.glob(path):
-            with open(p) as f:
+            with open(p, encoding="utf-8") as f:
                 cert = Certificate(f.read())
                 if cert.has_expired():
                     raise SecurityError(
