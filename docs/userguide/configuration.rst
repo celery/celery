@@ -52,9 +52,46 @@ have been moved into a new  ``task_`` prefix.
     Celery will still be able to read old configuration files until Celery 6.0.
     Afterwards, support for the old configuration files will be removed.
     We provide the ``celery upgrade`` command that should handle
-    plenty of cases (including :ref:`Django <latentcall-django-admonition>`).
+    plenty of cases (including :ref:`Django settings with a namespace <conf-django-namespace>`).
 
     Please migrate to the new configuration scheme as soon as possible.
+
+
+.. _conf-django-namespace:
+
+Django settings with a namespace
+--------------------------------
+
+The configuration names documented here use the new lowercase style, such as
+``broker_url`` and ``task_always_eager``.
+
+If you're configuring Celery from Django settings with a namespace:
+
+.. code-block:: python
+
+    app.config_from_object('django.conf:settings', namespace='CELERY')
+
+then those same settings must be written in uppercase and prefixed with
+``CELERY_`` in ``settings.py``:
+
+.. code-block:: python
+
+    CELERY_BROKER_URL = 'redis://localhost:6379/0'
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_WORKER_CONCURRENCY = 4
+
+Using the ``CELERY_`` namespace is recommended in Django projects because it
+keeps Celery settings separate from Django settings and settings used by other
+apps.
+
+If you're migrating an older Django project to the new setting names, the
+``celery upgrade`` command can update the names for you:
+
+.. code-block:: console
+
+    $ celery upgrade settings proj/settings.py --django
+
+For a complete Django example, see :ref:`django-first-steps`.
 
 
 ========================================== ==============================================
@@ -3760,9 +3797,15 @@ If enabled, the event receiver's queue will be marked as *durable*, meaning it w
 :transports supported: ``amqp``
 .. versionadded:: 5.6
 
-Default: ``False``
+Default: ``True``
 
 If enabled, the event queue will be *exclusive* to the current connection and automatically deleted when the connection closes.
+
+.. versionchanged:: 5.7
+
+   The default was changed from ``False`` to ``True`` for compatibility with RabbitMQ 4.3.0,
+   which no longer permits transient non-exclusive queues by default.
+   See `RabbitMQ Deprecated Features List <https://www.rabbitmq.com/release-information/deprecated-features-list>`_.
 
 .. warning::
 
@@ -3940,10 +3983,16 @@ If set to ``True``, the control exchange and queue will be durable — they will
 ``control_queue_exclusive``
 ---------------------------
 
-- **Default:** ``False``
+- **Default:** ``True``
 - **Type:** ``bool``
 
-If set to ``True``, the control queue will be exclusive to a single connection. This is generally not recommended in distributed environments.
+If set to ``True``, the control queue will be exclusive to a single connection.
+
+.. versionchanged:: 5.7
+
+   The default was changed from ``False`` to ``True`` for compatibility with RabbitMQ 4.3.0,
+   which no longer permits transient non-exclusive queues by default.
+   See `RabbitMQ Deprecated Features List <https://www.rabbitmq.com/release-information/deprecated-features-list>`_.
 
 .. warning::
 
