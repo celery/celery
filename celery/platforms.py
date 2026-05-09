@@ -163,7 +163,7 @@ class Pidfile:
     def read_pid(self):
         """Read and return the current pid."""
         with ignore_errno('ENOENT'):
-            with open(self.path) as fh:
+            with open(self.path, encoding="utf-8") as fh:
                 line = fh.readline()
                 if line.strip() == line:  # must contain '\n'
                     raise ValueError(
@@ -229,7 +229,7 @@ class Pidfile:
         finally:
             pidfile.close()
 
-        rfh = open(self.path)
+        rfh = open(self.path, encoding="utf-8")
         try:
             if rfh.read() != content:
                 raise LockFailed(
