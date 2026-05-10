@@ -82,14 +82,6 @@ or even serialized and sent across the wire.
         >>> add.s(2, 2)()
         4
 
-    ``delay`` is our beloved shortcut to ``apply_async`` taking star-arguments:
-
-    .. code-block:: pycon
-
-        >>> result = add.delay(2, 2)
-        >>> result.get()
-        4
-
     ``apply_async`` takes the same arguments as the
     :meth:`Task.apply_async <@Task.apply_async>` method:
 
@@ -100,6 +92,26 @@ or even serialized and sent across the wire.
 
         >>> add.apply_async((2, 2), countdown=1)
         >>> add.signature((2, 2), countdown=1).apply_async()
+
+    ``delay`` is our beloved shortcut to ``apply_async`` taking star-arguments.
+    It works seamlessly with signatures:
+
+    .. code-block:: pycon
+
+        >>> add.delay(*args, **kwargs)
+        >>> add.signature(args, kwargs, **options).delay()
+
+        >>> add.delay(2, 2)
+        >>> add.signature((2, 2)).delay()
+
+    You can't pass ``options`` directly to a ``delay`` call. If you need options, you can
+    specify them during signature creation or use ``set`` on an already created signature
+    and then call ``delay``:
+
+    .. code-block:: pycon
+
+        >>> add.signature((2, 2), countdown=1).delay()
+        >>> add.signature((2, 2)).set(countdown=1).delay()
 
 - You can't define options with :meth:`~@Task.s`, but a chaining
   ``set`` call takes care of that:
@@ -152,6 +164,7 @@ creates partials:
 
             partial = subtract.s(10)    # incomplete: second arg only
             partial.delay(30)           # -> subtract(30, 10) = 20
+
         Here ``delay(30)`` prepends ``30`` as the first argument, resulting
         in ``subtract(30, 10)`` — not ``subtract(10, 30)``.
 
@@ -217,7 +230,7 @@ so it's not possible to call the signature with partial args/kwargs.
         >>> ~sig
 
         >>> # is the same as
-        >>> sig.delay().get()
+        >>> sig.apply_async().get()
 
 
 .. _canvas-callbacks:
@@ -1003,13 +1016,20 @@ an errback to the chord callback:
     >>> c = (group(add.s(i, i) for i in range(10)) |
     ...      tsum.s().on_error(on_chord_error.s())).delay()
 
+Celery supports two errback calling styles for chord errors. An unbound
+errback that accepts ``(request, exc, traceback)`` receives those three
+arguments as shown above. An errback that accepts a single argument, and
+a bound errback declared with ``@app.task(bind=True)``, is dispatched as
+a task and receives the id of the failed chord callback instead.
+
 Chords may have callback and errback signatures linked to them, which addresses
 some of the issues with linking signatures to groups.
 Doing so will link the provided signature to the chord's body which can be
 expected to gracefully invoke callbacks just once upon completion of the body,
 or errbacks just once if any task in the chord header or body fails.
 
-This behavior can be manipulated to allow error handling of the chord header using the :ref:`task_allow_error_cb_on_chord_header <task_allow_error_cb_on_chord_header>` flag.
+This behavior can be manipulated to allow error handling of the chord header
+using the :setting:`task_allow_error_cb_on_chord_header` flag.
 Enabling this flag will cause the chord header to invoke the errback for the body (default behavior) *and* any task in the chord's header that fails.
 
 .. _chord-important-notes:

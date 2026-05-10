@@ -321,6 +321,34 @@ class test_RedisResultConsumer:
         consumer._pubsub.subscribe.assert_called_once()
         consumer._pubsub.connection.register_connect_callback.assert_not_called()
 
+    def test__reconnect_pubsub_redis_py_below_5_3_compat(self):
+        """Regression test for celery#10294.
+
+        On redis-py < 5.3.0, ConnectionPool.get_connection requires
+        ``command_name`` as a positional argument. _reconnect_pubsub must
+        remain compatible with that older signature when no tasks are
+        subscribed.
+        """
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.subscribed_to = set()
+
+        def legacy_get_connection(command_name, *args, **kwargs):
+            return Mock(name='legacy-connection')
+
+        # Replace the auto-mocked get_connection with one that mirrors the
+        # redis-py < 5.3.0 signature: command_name is required.
+        consumer._pubsub = Mock(name='pubsub')
+        consumer._pubsub.connection_pool = Mock(name='connection_pool')
+        consumer._pubsub.connection_pool.get_connection.side_effect = (
+            legacy_get_connection
+        )
+        consumer.backend.client = Mock(name='client')
+        consumer.backend.client.pubsub.return_value = consumer._pubsub
+
+        # Must not raise TypeError about a missing 'command_name' argument.
+        consumer._reconnect_pubsub()
+
 
 class basetest_RedisBackend:
     def get_backend(self):
@@ -809,6 +837,83 @@ class test_RedisBackend(basetest_RedisBackend):
         assert not b.exception_safe_to_retry(exceptions.RedisError("redis error"))
         assert b.exception_safe_to_retry(exceptions.ConnectionError("service unavailable"))
         assert b.exception_safe_to_retry(exceptions.TimeoutError("timeout"))
+
+    def test_additional_connection_errors(self):
+        self.app.conf.result_backend_transport_options = dict(
+            additional_connection_errors=(ConnectionError,),
+        )
+        b = self.Backend(app=self.app)
+        assert ConnectionError in b.connection_errors
+        assert b.exception_safe_to_retry(ConnectionError("custom"))
+
+    def test_additional_connection_errors_string(self):
+        self.app.conf.result_backend_transport_options = dict(
+            additional_connection_errors=(
+                't.unit.backends.test_redis.ConnectionError',
+            ),
+        )
+        b = self.Backend(app=self.app)
+        assert ConnectionError in b.connection_errors
+        assert b.exception_safe_to_retry(ConnectionError("custom"))
+
+    def test_additional_connection_errors_passed_to_result_consumer(self):
+        self.app.conf.result_backend_transport_options = dict(
+            additional_connection_errors=(ConnectionError,),
+        )
+        b = self.Backend(app=self.app)
+        assert ConnectionError in b.result_consumer._connection_errors
+
+    def test_additional_connection_errors_empty(self):
+        self.app.conf.result_backend_transport_options = dict(
+            additional_connection_errors=(),
+        )
+        b = self.Backend(app=self.app)
+        assert ConnectionError not in b.connection_errors
+
+    def test_additional_connection_errors_not_set(self):
+        self.app.conf.result_backend_transport_options = {}
+        b = self.Backend(app=self.app)
+        assert ConnectionError not in b.connection_errors
+
+    def test_additional_connection_errors_scalar_class(self):
+        self.app.conf.result_backend_transport_options = dict(
+            additional_connection_errors=ConnectionError,
+        )
+        b = self.Backend(app=self.app)
+        assert ConnectionError in b.connection_errors
+
+    def test_additional_connection_errors_scalar_string(self):
+        self.app.conf.result_backend_transport_options = dict(
+            additional_connection_errors=(
+                't.unit.backends.test_redis.ConnectionError'
+            ),
+        )
+        b = self.Backend(app=self.app)
+        assert ConnectionError in b.connection_errors
+
+    def test_additional_connection_errors_non_exception_ignored(self):
+        self.app.conf.result_backend_transport_options = dict(
+            additional_connection_errors=(ConnectionError, int),
+        )
+        b = self.Backend(app=self.app)
+        assert ConnectionError in b.connection_errors
+        assert int not in b.connection_errors
+
+    def test_additional_connection_errors_non_type_ignored(self):
+        self.app.conf.result_backend_transport_options = dict(
+            additional_connection_errors=(ConnectionError, 42),
+        )
+        b = self.Backend(app=self.app)
+        assert ConnectionError in b.connection_errors
+
+    def test_additional_connection_errors_bad_import_ignored(self):
+        self.app.conf.result_backend_transport_options = dict(
+            additional_connection_errors=(
+                ConnectionError, 'no.such.module.Error',
+            ),
+        )
+        b = self.Backend(app=self.app)
+        assert ConnectionError in b.connection_errors
 
     def test_incr(self):
         self.b.client = Mock(name='client')

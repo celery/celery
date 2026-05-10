@@ -111,7 +111,18 @@ class ResultConsumer(BaseResultConsumer):
         if self.subscribed_to:
             self._pubsub.subscribe(*self.subscribed_to)
         else:
-            self._pubsub.connection = self._pubsub.connection_pool.get_connection()
+            # redis-py < 5.3.0 requires ``command_name`` as a positional
+            # argument to ``ConnectionPool.get_connection``. The argument was
+            # made optional (and ignored) in 5.3.0+, so passing it stays
+            # compatible across both ranges (#10294).
+            try:
+                self._pubsub.connection = (
+                    self._pubsub.connection_pool.get_connection()
+                )
+            except TypeError:
+                self._pubsub.connection = (
+                    self._pubsub.connection_pool.get_connection('pubsub')
+                )
             # even if there is nothing to subscribe, we should not lose the callback after connecting.
             # The on_connect callback will re-subscribe to any channels we previously subscribed to.
             self._pubsub.connection.register_connect_callback(self._pubsub.on_connect)
@@ -309,6 +320,48 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         self.connection_errors, self.channel_errors = (
             get_redis_error_classes() if get_redis_error_classes
             else ((), ()))
+        transport_options = self.app.conf.get(
+            'result_backend_transport_options', {})
+        additional = transport_options.get(
+            'additional_connection_errors', ())
+        if additional is None:
+            additional = ()
+        elif isinstance(additional, (str, type)):
+            additional = (additional,)
+        else:
+            try:
+                iter(additional)
+            except TypeError:
+                additional = (additional,)
+        if additional:
+            extra = []
+            for cls in additional:
+                try:
+                    resolved = (
+                        symbol_by_name(cls)
+                        if isinstance(cls, str) else cls
+                    )
+                except (ImportError, AttributeError) as exc:
+                    logger.warning(
+                        'Ignoring unresolvable'
+                        ' additional_connection_errors'
+                        ' entry %r: %r', cls, exc,
+                    )
+                    continue
+                if (isinstance(resolved, type)
+                        and issubclass(resolved, Exception)):
+                    extra.append(resolved)
+                else:
+                    logger.warning(
+                        'Ignoring invalid additional_connection_errors'
+                        ' entry %r (resolved: %r): expected an'
+                        ' exception class or dotted path to one.',
+                        cls, resolved,
+                    )
+            if extra:
+                self.connection_errors = (
+                    self.connection_errors + tuple(extra)
+                )
         self.result_consumer = self.ResultConsumer(
             self, self.app, self.accept,
             self._pending_results, self._pending_messages,

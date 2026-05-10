@@ -860,6 +860,106 @@ class test_chain(CanvasCase):
         assert isinstance(final_task.tasks[0].body, chord)
         assert final_task.tasks[0].body.body == chain1
 
+    def test_chain_body_gets_id_when_used_as_chord_body(self):
+        """Chain used as chord body must have a non-None ID after freeze.
+
+        Regression test for https://github.com/celery/celery/issues/4834
+        When chain(chain(group(...), task), task) is frozen, the chord
+        body is a chain. Previously, the chain's ID stayed None because
+        prepare_steps set self.id = last_task_id (the input parameter,
+        None) instead of the last task's actual UUID.
+        """
+        # Build chord with a chain body: group becomes chord,
+        # the two following tasks become the body chain.
+        g = group(self.add.si(1, 1), self.add.si(2, 2))
+        body_chain = chord(g, self.add.s(10), app=self.app)
+        canvas = chain(body_chain, self.add.s(20), app=self.app)
+        canvas.freeze()
+
+        # Find the chord
+        chords = [t for t in canvas.tasks if isinstance(t, chord)]
+        assert chords, "Expected a chord in the frozen chain"
+        chord_task = chords[0]
+
+        # The chord body (a chain) must have a non-None ID
+        assert chord_task.body.id is not None, (
+            "Chord body chain must have an ID after freeze"
+        )
+
+    def test_chain_body_id_propagated_to_header_tasks(self):
+        """Header tasks must carry the chord body's ID in request.chord.
+
+        Regression test for https://github.com/celery/celery/issues/4834
+        The header tasks store a reference to the chord body. After
+        freeze, this reference must have a valid task_id so that
+        chord_error_from_stack can store the error result.
+        """
+        g = group(self.add.si(1, 1), self.add.si(2, 2))
+        body_chain = chord(g, self.add.s(10), app=self.app)
+        canvas = chain(body_chain, self.add.s(20), app=self.app)
+        canvas.freeze()
+
+        chords = [t for t in canvas.tasks if isinstance(t, chord)]
+        chord_task = chords[0]
+
+        # Every header task's chord option must have the body's ID
+        body_id = chord_task.body.id
+        for header_task in chord_task.tasks.tasks:
+            header_chord = header_task.options.get('chord')
+            assert header_chord is not None, "Header task must have chord option"
+            assert header_chord.id == body_id, (
+                f"Header chord ID {header_chord.id} != body ID {body_id}"
+            )
+
+    def test_chain_errbacks_propagated_to_chord_body(self):
+        """Errbacks on a chain must propagate to the chord body.
+
+        Regression test for https://github.com/celery/celery/issues/4834
+        chord_error_from_stack reads errbacks from the chord body
+        (request.chord), not from the chord task. Without propagation,
+        link_error handlers set on a chain containing a chord never fire.
+        """
+        @self.app.task(shared=False)
+        def on_error(*args):
+            pass
+
+        g = group(self.add.si(1, 1), self.add.si(2, 2))
+        body_chord = chord(g, self.add.s(10), app=self.app)
+        c = chain(body_chord, self.add.s(20), app=self.app)
+
+        # Simulate what apply_async does: pass link_error to prepare_steps
+        errback = on_error.s()
+        c.prepare_steps(
+            c.args, c.kwargs, c.tasks, app=self.app,
+            link_error=[errback], clone=False,
+        )
+
+        # The chord body must have the errback
+        chords = [t for t in c.tasks if isinstance(t, chord)]
+        assert chords
+        body_errbacks = chords[0].body.options.get('link_error', [])
+        assert len(body_errbacks) >= 1, (
+            "Errback must be propagated to chord body"
+        )
+
+    def test_chain_id_matches_result_after_freeze(self):
+        """Chain.id must equal the returned result ID after freeze.
+
+        After freeze(), a chain's ID should reflect the last task's
+        result (since that is what the chain's result represents).
+        """
+        c = self.add.s(1, 1) | self.add.s(2) | self.add.s(3)
+        result = c.freeze()
+        assert c.id is not None
+        assert c.id == result.id
+
+    def test_chain_id_with_explicit_id_preserved(self):
+        """Chain.freeze(explicit_id) must set chain.id to that value."""
+        c = self.add.s(1, 1) | self.add.s(2)
+        result = c.freeze('my-explicit-id')
+        assert c.id == 'my-explicit-id'
+        assert result.id == 'my-explicit-id'
+
 
 class test_group(CanvasCase):
     def test_repr(self):

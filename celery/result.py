@@ -232,6 +232,13 @@ class AsyncResult(ResultBase):
                 `timeout` seconds.
             Exception: If the remote call raised an exception then that
                 exception will be re-raised in the caller process.
+
+        Returns:
+            Any: The task's return value on success. If the task failed and
+                ``propagate`` is false, the raised exception instance is
+                returned instead of being re-raised. If the task is configured
+                with ``ignore_result=True``, ``None`` is returned without
+                waiting.
         """
         if self.ignored:
             return
@@ -778,6 +785,17 @@ class ResultSet(ResultBase):
             celery.exceptions.TimeoutError: if ``timeout`` isn't
                 :const:`None` and the operation takes longer than ``timeout``
                 seconds.
+
+        Returns:
+            list: A list of task return values in the same order as the
+                results in this set. If ``callback`` is provided, the
+                callback handles each value and no aggregated results are
+                returned (``join()`` returns an empty list; note that
+                :meth:`join_native`, which :meth:`get` may delegate to,
+                returns ``None`` in that case). If any task failed and
+                ``propagate`` is false, the corresponding position in the
+                list contains the exception instance instead of a return
+                value.
         """
         if disable_sync_subtasks:
             assert_will_not_block()

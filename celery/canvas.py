@@ -1260,6 +1260,9 @@ class _chain(Signature):
             if link_error:
                 for errback in maybe_list(link_error):
                     task.link_error(errback)
+                    # Propagate to chord body for chord_error_from_stack.
+                    if isinstance(task, chord) and task.body:
+                        task.body.link_error(errback)
 
             tasks.append(task)
             results.append(res)
@@ -1277,7 +1280,8 @@ class _chain(Signature):
                 while node.parent:
                     node = node.parent
                 prev_res = node
-        self.id = last_task_id
+        # Use the last task's actual ID, not the input parameter.
+        self.id = results[0].id if results else last_task_id
         return tasks, results
 
     def apply(self, args=None, kwargs=None, **options):
@@ -2308,7 +2312,8 @@ class _chord(Signature):
                 "Please test the new behavior by setting task_allow_error_cb_on_chord_header to True "
                 "and report any concerns you might have in our issue tracker before we make a final decision "
                 "regarding how errbacks should behave when used with chords.",
-                CPendingDeprecationWarning
+                CPendingDeprecationWarning,
+                stacklevel=2,
             )
 
         # Edge case for nested chords in the header
