@@ -709,7 +709,8 @@ class Backend:
             warnings.warn(
                 "Results are not stored in backend and should not be retrieved when "
                 "task_always_eager is enabled, unless task_store_eager_result is enabled.",
-                RuntimeWarning
+                RuntimeWarning,
+                stacklevel=2,
             )
 
     def exception_safe_to_retry(self, exc):

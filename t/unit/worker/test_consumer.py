@@ -267,14 +267,14 @@ class test_Consumer(ConsumerTestCase):
         sig = self.add.s(2, 2)
         message = self.task_message_from_sig(self.app, sig)
 
-        def raise_exception():
+        def raise_exception(*args, **kwargs):
             raise KeyError('Foo')
 
         def strategy(_, __, ack_log_error_promise, ___, ____):
             ack_log_error_promise()
 
         c.strategies[sig.task] = strategy
-        c.call_soon = raise_exception
+        c.call_soon_ack = raise_exception
         on_task_received = c.create_task_handler()
         on_task_received(message)
 
@@ -939,6 +939,64 @@ class test_Consumer_PerformPendingOperations(ConsumerTestCase):
 
             # Ensure all pending operations are cleared
             assert len(c._pending_operations) == 0
+
+
+class test_Consumer_CallSoonAck(ConsumerTestCase):
+
+    def test_call_soon_ack_executes_immediately_without_hub(self):
+        """With no hub (synloop / gevent), ack/reject callbacks must run
+        immediately to avoid the 50-400ms inter-task latency caused by
+        deferred ACK."""
+        c = self.get_consumer(no_hub=True)
+        callback = Mock()
+
+        c.call_soon_ack(callback)
+
+        callback.assert_called_once()
+        assert len(c._pending_operations) == 0
+
+    def test_call_soon_ack_delegates_to_hub_when_present(self):
+        """When a hub exists (asynloop), call_soon_ack goes through the hub."""
+        c = self.get_consumer(no_hub=False)
+        callback = Mock()
+
+        c.call_soon_ack(callback)
+
+        c.hub.call_soon.assert_called_once()
+        callback.assert_not_called()
+
+    def test_call_soon_ack_returns_ppartial_without_hub(self):
+        """Without hub, call_soon_ack must return the wrapped ppartial."""
+        c = self.get_consumer(no_hub=True)
+        callback = Mock()
+
+        result = c.call_soon_ack(callback, 1, key='val')
+
+        assert result is not None
+        callback.assert_called_once_with(1, key='val')
+
+    def test_call_soon_ack_logs_callback_exception(self):
+        """Exceptions raised by the callback must be logged, not propagated."""
+        c = self.get_consumer(no_hub=True)
+        callback = Mock(side_effect=RuntimeError('boom'))
+
+        with patch('celery.worker.consumer.consumer.logger.exception') as mock_logger:
+            result = c.call_soon_ack(callback)
+
+        callback.assert_called_once()
+        mock_logger.assert_called_once()
+        assert result is not None
+
+    def test_call_soon_ack_does_not_append_to_pending_ops(self):
+        """Ack/reject callbacks must not be deferred to _pending_operations."""
+        c = self.get_consumer(no_hub=True)
+        c._pending_operations = []
+        callback = Mock()
+
+        c.call_soon_ack(callback)
+        c.call_soon_ack(Mock())
+
+        assert len(c._pending_operations) == 0
 
 
 class test_Heart:

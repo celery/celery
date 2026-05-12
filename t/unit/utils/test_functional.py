@@ -384,6 +384,31 @@ class test_head_from_fun:
         g(1)
         g(1, 2)
 
+    def test_wraps_variadic_wrapper(self):
+        # Regression test: head_from_fun should introspect the callable it was
+        # handed, not the original function referenced via __wrapped__. This
+        # matters for tasks defined via functools.wraps over a variadic wrapper
+        # (a common pattern for DI decorators that inject extra kwargs at call
+        # time). inspect.getfullargspec ignores __wrapped__; inspect.signature
+        # follows it by default, so the Python 3.14 _getfullargspec shim must
+        # pass follow_wrapped=False to preserve the documented behaviour.
+        from functools import wraps
+
+        def inner(x, y, app, sa_session, kwarg=1):
+            pass
+
+        @wraps(inner)
+        def wrapper(*args, **kwds):
+            pass
+
+        g = head_from_fun(wrapper)
+        # The wrapper accepts anything; head_from_fun should see its signature,
+        # not inner's (which would require app/sa_session as positional args).
+        g()
+        g(1)
+        g(1, 2, 3)
+        g(anything=1, at=2, all=3)
+
 
 class test_fun_takes_argument:
 
