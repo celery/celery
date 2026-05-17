@@ -447,6 +447,48 @@ class test_Scheduler:
                       schedule=mocked_schedule(False, None))
         assert scheduler.tick() == scheduler.max_interval
 
+    def test_tick_dispatches_missed_cron_within_deadline_non_uniform(self):
+        # Non-uniform crontab (:00, :45). Most recent feasible run
+        # (10:00) is 20 min before now=10:20, within the 30-min
+        # deadline, so the missed task should dispatch.
+        self.app.conf.beat_cron_starting_deadline = 1800
+        now = datetime(2022, 12, 5, 10, 20)
+        last_run = datetime(2022, 12, 5, 8, 45)
+        cron = crontab(minute='0,45', nowfun=lambda: now, app=self.app)
+        scheduler = mScheduler(app=self.app)
+        scheduler.add(name='within_deadline', task='t.fake.task',
+                      schedule=cron, last_run_at=last_run)
+        scheduler.tick()
+        assert [s['name'] for s in scheduler.sent] == ['t.fake.task']
+
+    def test_tick_skips_missed_cron_outside_deadline_non_uniform(self):
+        # Non-uniform crontab (:00, :45). Most recent feasible run
+        # (10:00) is 35 min before now=10:35, past the 30-min
+        # deadline, so the missed task should not dispatch.
+        self.app.conf.beat_cron_starting_deadline = 1800
+        now = datetime(2022, 12, 5, 10, 35)
+        last_run = datetime(2022, 12, 5, 8, 45)
+        cron = crontab(minute='0,45', nowfun=lambda: now, app=self.app)
+        scheduler = mScheduler(app=self.app)
+        scheduler.add(name='outside_deadline', task='t.fake.task',
+                      schedule=cron, last_run_at=last_run)
+        scheduler.tick()
+        assert scheduler.sent == []
+
+    def test_tick_dispatches_missed_cron_on_deadline_boundary_non_uniform(self):
+        # Non-uniform crontab (:00, :45). Most recent feasible run
+        # (10:00) is exactly 30 min before now=10:30, matching the
+        # 30-min deadline, so the missed task should still dispatch.
+        self.app.conf.beat_cron_starting_deadline = 1800
+        now = datetime(2022, 12, 5, 10, 30)
+        last_run = datetime(2022, 12, 5, 8, 45)
+        cron = crontab(minute='0,45', nowfun=lambda: now, app=self.app)
+        scheduler = mScheduler(app=self.app)
+        scheduler.add(name='on_deadline_boundary', task='t.fake.task',
+                      schedule=cron, last_run_at=last_run)
+        scheduler.tick()
+        assert [s['name'] for s in scheduler.sent] == ['t.fake.task']
+
     def test_interface(self):
         scheduler = mScheduler(app=self.app)
         scheduler.sync()
