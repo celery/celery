@@ -664,8 +664,7 @@ class crontab(BaseSchedule):
             # If no feasible run date falls in [now - deadline_secs, now],
             # the most recent missed run is too stale to catch up.
             now = self.maybe_make_aware(self.now())
-            since = now - timedelta(seconds=deadline_secs)
-            deadline_since = since - timedelta(microseconds=1)
+            deadline_since = now - timedelta(seconds=deadline_secs, microseconds=1)
             if self.remaining_estimate(deadline_since).total_seconds() > 0:
                 has_passed_deadline = True
                 due = False
