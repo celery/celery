@@ -393,9 +393,10 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                           'ssl_cert_reqs']
 
         if scheme == 'redis':
-            # If connparams or query string contain ssl params, raise error
-            if (any(key in connparams for key in ssl_param_keys) or
-                    any(key in query for key in ssl_param_keys)):
+            # Only reject ssl params embedded in the URL query string.
+            # ssl params already in connparams may come from redis_backend_use_ssl
+            # (a valid configuration) and must not trigger this error (#10312).
+            if any(key in query for key in ssl_param_keys):
                 raise ValueError(E_REDIS_SSL_PARAMS_AND_SCHEME_MISMATCH)
 
         if scheme == 'rediss':

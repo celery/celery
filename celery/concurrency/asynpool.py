@@ -222,7 +222,7 @@ def iterate_file_descriptors_safely(fds_iter, source_data,
         hub_args, hub_kwargs = _meta_fd_argument_maker(), kwargs
         try:  # Call the hub method
             hub_method(fd, *hub_args, **hub_kwargs)
-        except (OSError, FileNotFoundError):
+        except (OSError, FileNotFoundError, AttributeError):
             logger.warning(
                 "Encountered OSError when accessing fd %s ",
                 fd, exc_info=True)
