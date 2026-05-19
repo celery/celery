@@ -450,6 +450,26 @@ class test_Signature(CanvasCase):
         assert options['parent_id'] == parent_id
         assert options['group_index'] == group_index
 
+    def test_freeze_uses_custom_task_id_generator(self):
+        mock_gen = Mock(return_value="custom-sig-id")
+        self.app.conf.task_id_generator = mock_gen
+        try:
+            result = self.add.s(2, 2).freeze()
+            assert result.id == "custom-sig-id"
+            mock_gen.assert_called_once()
+        finally:
+            self.app.conf.task_id_generator = None
+
+    def test_freeze_respects_explicit_task_id_over_generator(self):
+        mock_gen = Mock(return_value="should-not-be-used")
+        self.app.conf.task_id_generator = mock_gen
+        try:
+            result = self.add.s(2, 2).freeze(_id="explicit-id")
+            assert result.id == "explicit-id"
+            mock_gen.assert_not_called()
+        finally:
+            self.app.conf.task_id_generator = None
+
 
 class test_xmap_xstarmap(CanvasCase):
 
@@ -2090,6 +2110,17 @@ class test_chain(CanvasCase):
         # real task of the spliced inner chain carries the partial args.
         assert inner.tasks[1].args == (5, 10)
 
+    def test_freeze_uses_custom_task_id_generator(self):
+        generated = iter(["chain-id", "task-id-1", "task-id-2"])
+        self.app.conf.task_id_generator = lambda: next(generated)
+        try:
+            c = chain(self.add.s(2, 2), self.mul.s(4), app=self.app)
+            c.freeze()
+            task_ids = [t.options["task_id"] for t in c.tasks]
+            assert len(set(task_ids)) == len(task_ids)
+        finally:
+            self.app.conf.task_id_generator = None
+
 
 class test_group(CanvasCase):
     def test_repr(self):
@@ -2678,6 +2709,18 @@ class test_chord_header_links(CanvasCase):
 
         assert pending.body is None
         assert json.dumps(pending) == before
+
+    def test_freeze_uses_custom_task_id_generator(self):
+        generated = iter(["group-id", "task-id-1", "task-id-2"])
+        self.app.conf.task_id_generator = lambda: next(generated)
+        try:
+            g = group([self.add.s(2, 2), self.add.s(4, 4)], app=self.app)
+            result = g.freeze()
+            assert result.id == "group-id"
+            subtask_ids = {t.options["task_id"] for t in g.tasks}
+            assert subtask_ids == {"task-id-1", "task-id-2"}
+        finally:
+            self.app.conf.task_id_generator = None
 
 
 class test_chord(CanvasCase):
@@ -3786,6 +3829,18 @@ class test_chord(CanvasCase):
         assert first.options['link_error'] == last.options['link_error'] == [errback]
         assert last.options['link'] == [callback]
         assert json.dumps(body) == written
+
+    def test_freeze_uses_custom_task_id_generator(self):
+        mock_gen = Mock(side_effect=["header-gid", "task-id-1", "task-id-2", "body-task-id"])
+        self.app.conf.task_id_generator = mock_gen
+        try:
+            c = chord([self.add.s(2, 2), self.add.s(4, 4)], body=self.add.s(0), app=self.app)
+            c.freeze()
+            body_id = c.kwargs["body"].options.get("task_id")
+            assert body_id == "body-task-id"
+            assert mock_gen.call_count == 4
+        finally:
+            self.app.conf.task_id_generator = None
 
 
 class test_maybe_signature(CanvasCase):
