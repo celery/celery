@@ -594,6 +594,31 @@ class test_RedisBackend(basetest_RedisBackend):
         from redis.connection import SSLConnection
         assert x.connparams['connection_class'] is SSLConnection
 
+    def test_backend_ssl_with_redis_scheme(self):
+        pytest.importorskip('redis')
+
+        self.app.conf.redis_backend_use_ssl = {
+            'ssl_cert_reqs': ssl.CERT_REQUIRED,
+            'ssl_ca_certs': '/path/to/ca.crt',
+            'ssl_certfile': '/path/to/client.crt',
+            'ssl_keyfile': '/path/to/client.key',
+        }
+        x = self.Backend(
+            'redis://:bosco@vandelay.com:123//1', app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert x.connparams['password'] == 'bosco'
+        assert x.connparams['ssl_cert_reqs'] == ssl.CERT_REQUIRED
+        assert x.connparams['ssl_ca_certs'] == '/path/to/ca.crt'
+        assert x.connparams['ssl_certfile'] == '/path/to/client.crt'
+        assert x.connparams['ssl_keyfile'] == '/path/to/client.key'
+
+        from redis.connection import SSLConnection
+        assert x.connparams['connection_class'] is SSLConnection
+
     def test_backend_health_check_interval_ssl(self):
         pytest.importorskip('redis')
 
@@ -782,6 +807,15 @@ class test_RedisBackend(basetest_RedisBackend):
         with pytest.raises(ValueError):
             self.Backend(
                 uri,
+                app=self.app,
+            )
+
+    def test_backend_ssl_url_redis_scheme_invalid(self):
+        pytest.importorskip('redis')
+
+        with pytest.raises(ValueError):
+            self.Backend(
+                'redis://:bosco@vandelay.com:123//1?ssl_cert_reqs=required',
                 app=self.app,
             )
 
