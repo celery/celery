@@ -366,6 +366,23 @@ class test_AsynPool:
         # Then: all items were removed from the managed data source
         assert fd_iter == {}, "Expected all items removed from managed dict"
 
+    def test_iterate_file_descriptors_safely_handles_attribute_error(self):
+        # Given: fd objects whose underlying socket has been set to None
+        # after a connection loss (hub_method raises AttributeError on .fileno())
+        fd_iter = [1, 2, 3]
+
+        def _fake_hub(*args, **kwargs):
+            raise AttributeError("'NoneType' object has no attribute 'fileno'")
+
+        # When: iterating — must not propagate AttributeError as Unrecoverable
+        iterate_file_descriptors_safely(
+            fd_iter, fd_iter, _fake_hub,
+            "arg1", kw1="kw1",
+        )
+
+        # Then: stale fds are cleaned up, not raised
+        assert fd_iter == [], "Expected stale None-socket fds removed from managed list"
+
     def _get_hub(self):
         hub = Hub()
         hub.readers = {}
