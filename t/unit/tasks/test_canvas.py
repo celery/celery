@@ -467,6 +467,18 @@ class test_chain(CanvasCase):
         c = g1 | g2
         assert isinstance(c, chord)
 
+    def test_empty_groups_are_skipped_in_chain(self):
+        c = chain(
+            group([self.add.s(2, 2), self.add.s(4, 4)], app=self.app),
+            group(app=self.app),
+            group(app=self.app),
+        )
+
+        assert isinstance(c, group)
+        result = c.apply_async()
+        assert isinstance(result, GroupResult)
+        assert len(result.results) == 2
+
     def test_prepare_steps_set_last_task_id_to_chain(self):
         last_task = self.add.s(2).set(task_id='42')
         c = self.add.s(4) | last_task

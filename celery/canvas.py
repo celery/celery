@@ -1589,6 +1589,8 @@ class group(Signature):
         return self.apply_async(partial_args, **options)
 
     def __or__(self, other):
+        if isinstance(other, group) and not other.tasks:
+            return self
         # group() | task -> chord
         return chord(self, body=other, app=self._app)
 
