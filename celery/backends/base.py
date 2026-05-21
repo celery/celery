@@ -240,9 +240,9 @@ class Backend:
                 if 'chord' in chain_elem_ctx.options:
                     self.on_chord_part_return(chain_elem_ctx, state, exc)
                 # A chord step completes only when its body does, so the
-                # result later steps and any enclosing chord wait on is the
-                # chord body, not the chord's own id. Descend into it so the
-                # failure reaches that result (see issue #9674).
+                # result that later steps and any enclosing chord wait on is
+                # the chord body, not the chord's own id. Descend into it so
+                # the failure reaches that result (see issue #9674).
                 if getattr(chain_elem_ctx, 'subtask_type', None) == 'chord':
                     chord_body = (chain_elem_ctx.kwargs or {}).get('body')
                     if chord_body is not None:
