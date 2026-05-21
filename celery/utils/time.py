@@ -348,11 +348,25 @@ def _is_ambiguous(dt: datetime, tz: tzinfo) -> bool:
     return _can_detect_ambiguous(tz) and dateutil_tz.datetime_ambiguous(dt)
 
 
+def _is_imaginary(dt: datetime, tz: tzinfo) -> bool:
+    """Return True if ``dt`` does not exist in ``tz`` due to a DST transition."""
+
+    if not _can_detect_ambiguous(tz):
+        return False
+
+    try:
+        return not dateutil_tz.datetime_exists(dt)
+    except ValueError:
+        return False
+
+
 def make_aware(dt: datetime, tz: tzinfo) -> datetime:
     """Set timezone for a :class:`~datetime.datetime` object."""
 
     dt = dt.replace(tzinfo=tz)
-    if _is_ambiguous(dt, tz):
+    if _is_imaginary(dt, tz):
+        dt = dateutil_tz.resolve_imaginary(dt)
+    elif _is_ambiguous(dt, tz):
         dt = min(dt.replace(fold=0), dt.replace(fold=1))
     return dt
 

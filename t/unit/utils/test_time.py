@@ -244,6 +244,13 @@ class test_make_aware:
         wtz = make_aware(datetime.now(_timezone.utc), tz)
         assert wtz.tzinfo == tz
 
+    def test_tz_when_zoneinfo_and_time_does_not_exist(self):
+        tz = ZoneInfo('US/Eastern')
+        wtz = make_aware(datetime(2024, 3, 10, 2, 30), tz)
+
+        assert wtz == datetime(2024, 3, 10, 3, 30, tzinfo=tz)
+        assert wtz.utcoffset().total_seconds() == -4 * 60 * 60
+
     def test_maybe_make_aware(self):
         aware = datetime.now(_timezone.utc).replace(tzinfo=timezone.utc)
         assert maybe_make_aware(aware)
