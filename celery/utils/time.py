@@ -355,7 +355,7 @@ def _is_imaginary(dt: datetime, tz: tzinfo) -> bool:
         return False
 
     try:
-        return not dateutil_tz.datetime_exists(dt)
+        return not dateutil_tz.datetime_exists(dt, tz)
     except ValueError:
         return False
 
@@ -364,10 +364,11 @@ def make_aware(dt: datetime, tz: tzinfo) -> datetime:
     """Set timezone for a :class:`~datetime.datetime` object."""
 
     dt = dt.replace(tzinfo=tz)
-    if _is_imaginary(dt, tz):
-        dt = dateutil_tz.resolve_imaginary(dt)
-    elif _is_ambiguous(dt, tz):
-        dt = min(dt.replace(fold=0), dt.replace(fold=1))
+    if _is_ambiguous(dt, tz):
+        if _is_imaginary(dt, tz):
+            dt = dateutil_tz.resolve_imaginary(dt)
+        else:
+            dt = min(dt.replace(fold=0), dt.replace(fold=1))
     return dt
 
 
