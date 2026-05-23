@@ -479,6 +479,14 @@ class test_chain(CanvasCase):
         assert isinstance(result, GroupResult)
         assert len(result.results) == 2
 
+    def test_generator_backed_empty_group_is_not_skipped_when_chained(self):
+        def tasks():
+            yield from ()
+
+        c = group([self.add.s(2, 2)], app=self.app) | group(tasks(), app=self.app)
+
+        assert isinstance(c, chord)
+
     def test_prepare_steps_set_last_task_id_to_chain(self):
         last_task = self.add.s(2).set(task_id='42')
         c = self.add.s(4) | last_task
