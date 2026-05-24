@@ -224,7 +224,7 @@ def iterate_file_descriptors_safely(fds_iter, source_data,
             hub_method(fd, *hub_args, **hub_kwargs)
         except (OSError, FileNotFoundError, AttributeError):
             logger.warning(
-                "Encountered OSError when accessing fd %s ",
+                "Encountered error when accessing fd %s",
                 fd, exc_info=True)
             stale_fds.append(fd)  # take note of stale fd
     # Remove now defunct fds from the managed list
