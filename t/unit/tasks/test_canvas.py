@@ -1482,6 +1482,23 @@ class test_chord(CanvasCase):
         x = chord([], self.add.s(4, 4))
         assert x.app is self.add.app
 
+    def test_freeze_empty_group_body_returns_result(self):
+        """An empty group body still exists and should be frozen.
+
+        This is a defensive check for chains that may upgrade a group into a
+        chord whose body is an empty group.
+        """
+        x = chord(
+            group(self.add.s(2, 2), app=self.app),
+            group(app=self.app),
+            app=self.app,
+        )
+
+        result = x.freeze()
+
+        assert isinstance(result, GroupResult)
+        assert result.parent is not None
+
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_app_fallback_to_current(self):
         from celery._state import current_app
