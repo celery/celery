@@ -232,12 +232,13 @@ class ResultConsumer(BaseResultConsumer):
                 for tid in deferred:
                     try:
                         self._cancel_for(tid)
+                    except RuntimeError:
+                        raise
                     except Exception:
                         logger.exception(
                             'Failed to cancel deferred pub/sub '
                             'subscription for task %s', tid,
                         )
-            finally:
                 self._reentry.depth = 0
 
 
