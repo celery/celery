@@ -105,13 +105,15 @@ def task_accepted(request,
                   _all_total_count=None,
                   add_request=requests.__setitem__,
                   add_active_request=active_requests.add,
-                  add_to_total_count=total_count.update):
+                  add_to_total_count=total_count.__setitem__,
+                  get_total_count=total_count.get):
     """Update global state when a task has been accepted."""
     if not _all_total_count:
         _all_total_count = all_total_count
     add_request(request.id, request)
     add_active_request(request)
-    add_to_total_count({request.name: 1})
+    task_name = request.name
+    add_to_total_count(task_name, get_total_count(task_name, 0) + 1)
     all_total_count[0] += 1
 
 
