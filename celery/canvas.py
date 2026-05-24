@@ -1192,7 +1192,6 @@ class _chain(Signature):
                 task = maybe_unroll_group(task)
                 if (
                     isinstance(task, group) and
-                    not isinstance(task.tasks, _regen) and
                     isinstance(task.tasks, (list, tuple)) and
                     not task.tasks and
                     (steps or prev_task)
