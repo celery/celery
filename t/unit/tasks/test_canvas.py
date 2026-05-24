@@ -508,10 +508,10 @@ class test_chain(CanvasCase):
             app=self.app,
         )
 
-        tasks, results = c.prepare_steps((), {}, c.tasks)
+        prepared_tasks, results = c.prepare_steps((), {}, c.tasks)
 
-        assert len(tasks) == 1
-        assert tasks[0].task == self.add.name
+        assert len(prepared_tasks) == 1
+        assert prepared_tasks[0].task == self.add.name
         assert isinstance(results[0], AsyncResult)
 
     def test_prepare_steps_set_last_task_id_to_chain(self):
