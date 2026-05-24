@@ -479,6 +479,17 @@ class test_chain(CanvasCase):
         assert isinstance(result, GroupResult)
         assert len(result.results) == 2
 
+    def test_empty_group_body_is_skipped_when_chain_upgrades_to_chord(self):
+        c = self.add.s(1, 1) | group(
+            [self.add.s(2, 2), self.add.s(3, 3)],
+            app=self.app,
+        ) | group(app=self.app)
+
+        result = c.apply_async()
+
+        assert isinstance(result, GroupResult)
+        assert len(result.results) == 2
+
     def test_generator_backed_empty_group_is_not_skipped_when_chained(self):
         def tasks():
             yield from ()

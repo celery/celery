@@ -1190,6 +1190,14 @@ class _chain(Signature):
                 # when groups are nested, they are unrolled - all tasks within
                 # groups should be called in parallel
                 task = maybe_unroll_group(task)
+                if (
+                    isinstance(task, group) and
+                    not isinstance(task.tasks, _regen) and
+                    isinstance(task.tasks, (list, tuple)) and
+                    not task.tasks and
+                    (steps or prev_task)
+                ):
+                    continue
 
             # first task gets partial args from chain
             if clone:
