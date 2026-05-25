@@ -1,7 +1,8 @@
 """Tests for celery.bin.base — specifically the plugin loading utilities."""
+from unittest.mock import MagicMock
+
 import click
 import pytest
-from unittest.mock import MagicMock
 
 from celery.bin.base import BrokenCommand, with_plugins
 
