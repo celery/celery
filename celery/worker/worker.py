@@ -30,6 +30,7 @@ from celery.utils.imports import reload_from_cwd
 from celery.utils.log import mlevel
 from celery.utils.log import worker_logger as logger
 from celery.utils.nodenames import default_nodename, worker_direct
+from celery.utils.sysinfo import effective_cpu_count, is_auto_concurrency
 from celery.utils.text import str_to_list
 from celery.utils.threads import default_socket_timeout
 
@@ -105,8 +106,55 @@ class WorkController:
         self.setup_queues(queues, exclude_queues)
         self.setup_includes(str_to_list(include))
 
+        # ``worker_concurrency`` uses ``type='any'`` so the ``"auto"`` sentinel
+        # is preserved through config load. Coerce any other string form
+        # (env vars, direct ``app.conf.worker_concurrency = "4"``) back to int
+        # here; invalid strings fall through to the cpu_count default below.
+        if (isinstance(self.concurrency, str)
+                and not is_auto_concurrency(self.concurrency)):
+            try:
+                self.concurrency = int(self.concurrency)
+            except ValueError:
+                logger.warning(
+                    "worker_concurrency=%r is not a valid integer or "
+                    "'auto'; falling back to os.cpu_count().",
+                    self.concurrency,
+                )
+                self.concurrency = None
+
         # Set default concurrency
-        if not self.concurrency:
+        if is_auto_concurrency(self.concurrency):
+            # Cap to cgroup CFS quota only for CPU-bound pools. Greenlet pools
+            # (gevent, eventlet) and the thread pool scale by IO concurrency,
+            # not CPU, so ``auto`` is a no-op for them and falls back to
+            # ``os.cpu_count()``. Resolve ``self.pool_cls`` first so the check
+            # works for alias names, dotted import paths, and class objects.
+            resolved_pool = (
+                _concurrency.get_implementation(self.pool_cls)
+                if isinstance(self.pool_cls, str) else self.pool_cls
+            )
+            pool_module = getattr(resolved_pool, '__module__', '').rsplit(
+                '.', 1)[-1]
+            is_cpu_bound = pool_module in ('prefork', 'solo')
+            self.concurrency = effective_cpu_count(
+                use_cgroup_quota=is_cpu_bound,
+            )
+            host_cpus = os.cpu_count() or 2
+            if is_cpu_bound:
+                logger.info(
+                    "worker_concurrency='auto' resolved to %d "
+                    "(pool=%s, host cpu_count=%d).",
+                    self.concurrency, pool_module, host_cpus,
+                )
+            else:
+                logger.info(
+                    "worker_concurrency='auto' is a no-op for non-CPU-bound "
+                    "pools; using os.cpu_count()=%d for pool=%s. For IO-bound "
+                    "workloads set --concurrency=<N> explicitly (typical "
+                    "values: 100-1000 for gevent/eventlet).",
+                    self.concurrency, pool_module,
+                )
+        elif not self.concurrency:
             try:
                 self.concurrency = cpu_count()
             except NotImplementedError:
