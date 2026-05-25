@@ -233,12 +233,16 @@ class ResultConsumer(BaseResultConsumer):
                     try:
                         self._cancel_for(tid)
                     except RuntimeError:
+                        # Unrecoverable backend state -- propagate so the
+                        # caller can restart Celery. ``finally`` below
+                        # still resets the depth counter.
                         raise
                     except Exception:
                         logger.exception(
                             'Failed to cancel deferred pub/sub '
                             'subscription for task %s', tid,
                         )
+            finally:
                 self._reentry.depth = 0
 
 
