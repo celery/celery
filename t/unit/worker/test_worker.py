@@ -7,7 +7,7 @@ from functools import partial
 from queue import Empty
 from queue import Queue as FastQueue
 from threading import Event
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from amqp import ChannelError
@@ -28,6 +28,7 @@ from celery.platforms import EX_FAILURE
 from celery.utils.nodenames import worker_direct
 from celery.utils.serialization import pickle
 from celery.utils.timer2 import Timer
+from celery.utils.warning import W_EVENTLET_MONKEY_PATCHED_WITH_WRONG_POOL, W_GEVENT_MONKEY_PATCHED_WITH_WRONG_POOL
 from celery.worker import autoscale, components, consumer, state
 from celery.worker import worker as worker_module
 from celery.worker.consumer import Consumer
@@ -1269,3 +1270,88 @@ class test_WorkerApp:
             assert "\ntest message\n" == captured.err
         finally:
             os.write = original_write
+
+
+class test_on_start_monkey_patch_warnings:
+    """Tests for monkey patch warnings in Worker.on_start()."""
+
+    @patch('celery.apps.worker.logger')
+    @patch('celery.apps.worker.is_gevent_monkey_patched')
+    @patch('celery.apps.worker.is_eventlet_monkey_patched')
+    def test_warns_when_gevent_patched_with_prefork_pool(
+        self, mock_eventlet_detect, mock_gevent_detect, mock_logger, app
+    ):
+        """Test on_start logs warning when gevent is patched but pool is not gevent."""
+        mock_gevent_detect.return_value = True
+        mock_eventlet_detect.return_value = False
+
+        worker = app.Worker(pool='prefork', quiet=True)
+        with patch.object(worker, 'install_platform_tweaks'):
+            with patch.object(worker, 'set_process_status'):
+                with patch.dict(sys.modules, {'gevent': MagicMock()}):
+                    worker.on_start()
+
+        mock_logger.warning.assert_called()
+        warning_messages = [call[0][0] for call in mock_logger.warning.call_args_list if call[0]]
+        assert any(W_GEVENT_MONKEY_PATCHED_WITH_WRONG_POOL in msg for msg in warning_messages)
+
+    @patch('celery.apps.worker.logger')
+    @patch('celery.apps.worker.is_gevent_monkey_patched')
+    @patch('celery.apps.worker.is_eventlet_monkey_patched')
+    def test_warns_when_eventlet_patched_with_prefork_pool(
+        self, mock_eventlet_detect, mock_gevent_detect, mock_logger, app
+    ):
+        """Test on_start logs warning when eventlet is patched but pool is not eventlet."""
+        mock_gevent_detect.return_value = False
+        mock_eventlet_detect.return_value = True
+
+        worker = app.Worker(pool='prefork', quiet=True)
+        with patch.object(worker, 'install_platform_tweaks'):
+            with patch.object(worker, 'set_process_status'):
+                with patch.dict(sys.modules, {'eventlet': MagicMock()}):
+                    worker.on_start()
+
+        mock_logger.warning.assert_called()
+        warning_messages = [call[0][0] for call in mock_logger.warning.call_args_list if call[0]]
+        assert any(W_EVENTLET_MONKEY_PATCHED_WITH_WRONG_POOL in msg for msg in warning_messages)
+
+    @patch('celery.apps.worker.logger')
+    @patch('celery.apps.worker.is_gevent_monkey_patched')
+    @patch('celery.apps.worker.is_eventlet_monkey_patched')
+    def test_no_warning_when_gevent_pool_with_gevent_patch(
+        self, mock_eventlet_detect, mock_gevent_detect, mock_logger, app
+    ):
+        """Test on_start does not warn when gevent pool is used with gevent patching."""
+        mock_gevent_detect.return_value = True
+        mock_eventlet_detect.return_value = False
+
+        worker = app.Worker(pool='gevent', quiet=True)
+        with patch.object(worker, 'install_platform_tweaks'):
+            with patch.object(worker, 'set_process_status'):
+                worker.on_start()
+
+        # Verify no warning was logged for gevent mismatch
+        for call in mock_logger.warning.call_args_list:
+            if call[0]:
+                assert W_GEVENT_MONKEY_PATCHED_WITH_WRONG_POOL not in call[0][0]
+
+    @patch('celery.apps.worker.logger')
+    @patch('celery.apps.worker.is_gevent_monkey_patched')
+    @patch('celery.apps.worker.is_eventlet_monkey_patched')
+    def test_no_warning_when_no_monkey_patching(
+        self, mock_eventlet_detect, mock_gevent_detect, mock_logger, app
+    ):
+        """Test on_start does not warn when no monkey patching is detected."""
+        mock_gevent_detect.return_value = False
+        mock_eventlet_detect.return_value = False
+
+        worker = app.Worker(pool='prefork', quiet=True)
+        with patch.object(worker, 'install_platform_tweaks'):
+            with patch.object(worker, 'set_process_status'):
+                worker.on_start()
+
+        # Verify no warning was logged for monkey patch mismatch
+        for call in mock_logger.warning.call_args_list:
+            if call[0]:
+                assert W_GEVENT_MONKEY_PATCHED_WITH_WRONG_POOL not in call[0][0]
+                assert W_EVENTLET_MONKEY_PATCHED_WITH_WRONG_POOL not in call[0][0]
