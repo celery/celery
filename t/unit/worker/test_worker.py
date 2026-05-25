@@ -865,6 +865,8 @@ class test_WorkController(ConsumerCase):
 
     @patch('celery.worker.worker.effective_cpu_count')
     def test_concurrency_auto_gevent_no_cap(self, mock_effective):
+        # gevent is an optional extra; skip if not installed in this env.
+        pytest.importorskip('gevent')
         mock_effective.return_value = 8
         worker = self.app.WorkController(
             concurrency='auto', pool_cls='gevent', loglevel=0,
@@ -874,6 +876,8 @@ class test_WorkController(ConsumerCase):
 
     @patch('celery.worker.worker.effective_cpu_count')
     def test_concurrency_auto_eventlet_no_cap(self, mock_effective):
+        # eventlet is an optional extra; skip if not installed in this env.
+        pytest.importorskip('eventlet')
         mock_effective.return_value = 8
         worker = self.app.WorkController(
             concurrency='auto', pool_cls='eventlet', loglevel=0,
