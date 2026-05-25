@@ -89,55 +89,51 @@ jobs:
         report_type: test_results
         token: ${{ secrets.CODECOV_TOKEN }}
 
+  Discover-test-modules:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    outputs:
+      integration: ${{ steps.scan.outputs.integration }}
+      smoke: ${{ steps.scan.outputs.smoke }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout: |
+            t/integration
+            t/smoke/tests
+      - id: scan
+        run: |
+          nested=$(find t/integration -mindepth 2 -name 'test_*.py')
+          if [ -n "$nested" ]; then
+            echo "::error::Integration test files must live at t/integration/ root, not in subdirectories: $nested"
+            exit 1
+          fi
+          integration=$(find t/integration -maxdepth 1 -name 'test_*.py' -printf '%f\n' | sort | jq -R -s -c 'split("\n") | map(select(. != ""))')
+
+          smoke_raw=$(find t/smoke/tests -name 'test_*.py' -printf '%f\n' | sort)
+          dupes=$(echo "$smoke_raw" | uniq -d)
+          if [ -n "$dupes" ]; then
+            echo "::error::Duplicate smoke test filenames across subdirectories: $dupes"
+            exit 1
+          fi
+          smoke=$(echo "$smoke_raw" | jq -R -s -c 'split("\n") | map(select(. != ""))')
+
+          echo "integration=$integration" >> $GITHUB_OUTPUT
+          echo "smoke=$smoke" >> $GITHUB_OUTPUT
+
   Integration-tests:
-    needs: [Unit]
-    if: needs.Unit.result == 'success'
+    needs: [Unit, Discover-test-modules]
     strategy:
       matrix:
-        module: [
-          'test_backend.py',
-          'test_canvas.py',
-          'test_connection_recovery.py',
-          'test_database_backend.py',
-          'test_inspect.py',
-          'test_loader.py',
-          'test_mem_leak_in_exception_handling.py',
-          'test_security.py',
-          'test_serialization.py',
-          'test_tasks.py',
-          'test_worker.py'
-        ]
+        module: ${{ fromJson(needs.Discover-test-modules.outputs.integration) }}
     uses: ./.github/workflows/integration-tests.yml
     with:
       module_name: ${{ matrix.module }}
 
   Smoke-tests:
-    needs: [Unit]
-    if: needs.Unit.result == 'success'
+    needs: [Unit, Discover-test-modules]
     strategy:
       matrix:
-        module: [
-          'test_broker_failover.py',
-          'test_worker_failover.py',
-          'test_native_delayed_delivery.py',
-          'test_quorum_queues.py',
-          'test_cycle_detection.py',
-          'test_native_delayed_delivery_binding.py',
-          'test_chord_unlock_routing.py',
-          'test_default_queue_type.py',
-          'test_qos.py',
-          'test_hybrid_cluster.py',
-          'test_revoke.py',
-          'test_visitor.py',
-          'test_canvas.py',
-          'test_consumer.py',
-          'test_dedup_chain_dispatch.py',
-          'test_control.py',
-          'test_signals.py',
-          'test_tasks.py',
-          'test_thread_safe.py',
-          'test_worker.py'
-        ]
+        module: ${{ fromJson(needs.Discover-test-modules.outputs.smoke) }}
     uses: ./.github/workflows/smoke-tests.yml
     with:
       module_name: ${{ matrix.module }}
