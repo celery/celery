@@ -8,7 +8,7 @@ from importlib.metadata import entry_points
 import click
 import click.exceptions
 from click_didyoumean import DYMGroup
-from click_plugins import with_plugins
+from celery.bin.base import BrokenCommand, with_plugins
 
 from celery import VERSION_BANNER
 from celery.app.utils import find_app
