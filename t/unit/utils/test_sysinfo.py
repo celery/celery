@@ -4,13 +4,7 @@ from unittest.mock import mock_open, patch
 
 import pytest
 
-from celery.utils.sysinfo import (
-    AUTO_CONCURRENCY,
-    df,
-    effective_cpu_count,
-    is_auto_concurrency,
-    load_average,
-)
+from celery.utils.sysinfo import AUTO_CONCURRENCY, df, effective_cpu_count, is_auto_concurrency, load_average
 
 try:
     posix = importlib.import_module('posix')
