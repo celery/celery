@@ -117,7 +117,7 @@ class WorkController:
             except ValueError:
                 logger.warning(
                     "worker_concurrency=%r is not a valid integer or "
-                    "'auto'; falling back to os.cpu_count().",
+                    "'auto'; falling back to billiard.cpu_count().",
                     self.concurrency,
                 )
                 self.concurrency = None
