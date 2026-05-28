@@ -1190,6 +1190,13 @@ class _chain(Signature):
                 # when groups are nested, they are unrolled - all tasks within
                 # groups should be called in parallel
                 task = maybe_unroll_group(task)
+                if (
+                    isinstance(task, group) and
+                    isinstance(task.tasks, (list, tuple)) and
+                    not task.tasks and
+                    (steps or prev_task)
+                ):
+                    continue
 
             # first task gets partial args from chain
             if clone:
@@ -1589,6 +1596,13 @@ class group(Signature):
         return self.apply_async(partial_args, **options)
 
     def __or__(self, other):
+        if (
+            isinstance(other, group) and
+            not isinstance(other.tasks, _regen) and
+            isinstance(other.tasks, (list, tuple)) and
+            not other.tasks
+        ):
+            return self
         # group() | task -> chord
         return chord(self, body=other, app=self._app)
 
@@ -2090,7 +2104,7 @@ class _chord(Signature):
         # secondly freeze all tasks in the body: those that should be called after the header
 
         body_result = None
-        if self.body:
+        if self.body is not None:
             body_result = self.body.freeze(
                 _id, root_id=root_id, chord=chord, group_id=group_id,
                 group_index=group_index)
@@ -2312,7 +2326,8 @@ class _chord(Signature):
                 "Please test the new behavior by setting task_allow_error_cb_on_chord_header to True "
                 "and report any concerns you might have in our issue tracker before we make a final decision "
                 "regarding how errbacks should behave when used with chords.",
-                CPendingDeprecationWarning
+                CPendingDeprecationWarning,
+                stacklevel=2,
             )
 
         # Edge case for nested chords in the header
