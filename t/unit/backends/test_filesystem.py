@@ -96,6 +96,11 @@ class test_FilesystemBackend:
         tb = FilesystemBackend(app=self.app, url=self.url, serializer='pickle')
         assert pickle.loads(pickle.dumps(tb))
 
+    def test_rejects_path_traversal(self):
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        with pytest.raises(ValueError, match="path traversal"):
+            tb.get('-/../../etc/passwd')
+
     @pytest.mark.skipif(sys.platform == 'win32', reason='Test can fail on '
                         'Windows/FAT due to low granularity of st_mtime')
     def test_cleanup(self):

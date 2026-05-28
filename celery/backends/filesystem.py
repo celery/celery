@@ -75,7 +75,28 @@ class FilesystemBackend(KeyValueStoreBackend):
             raise ImproperlyConfigured(E_PATH_INVALID)
 
     def _filename(self, key):
-        return self.sep.join((self.path, key))
+        filename = self.sep.join((self.path, key))
+        # Security: prevent path traversal via malicious task_id keys
+        filename_str = (
+            filename.decode(self.encoding)
+            if isinstance(filename, bytes)
+            else filename
+        )
+        path_str = (
+            self.path.decode(self.encoding)
+            if isinstance(self.path, bytes)
+            else self.path
+        )
+        real_filename = os.path.realpath(filename_str)
+        real_path = os.path.realpath(path_str)
+        if not (
+            real_filename.startswith(real_path + os.sep)
+            or real_filename == real_path
+        ):
+            raise ValueError(
+                f"Invalid key {key!r}: path traversal detected"
+            )
+        return filename
 
     def get(self, key):
         try:
