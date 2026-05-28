@@ -23,6 +23,7 @@
     optimizing
     debugging
     concurrency/index
+    workerpool
     signals
     testing
     extending
