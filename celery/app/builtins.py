@@ -131,6 +131,15 @@ def add_chunk_task(app):
 
 
 @connect_on_app_finalize
+def add_identity_task(app):
+    """Task used as identity function for chord body when group is upgraded."""
+    @app.task(name='celery.identity', shared=False, lazy=False)
+    def identity(*args):
+        return args[0]
+    return identity
+
+
+@connect_on_app_finalize
 def add_group_task(app):
     """No longer used, but here for backwards compatibility."""
     from celery.canvas import maybe_signature
