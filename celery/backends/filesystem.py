@@ -77,20 +77,10 @@ class FilesystemBackend(KeyValueStoreBackend):
     def _filename(self, key):
         filename = self.sep.join((self.path, key))
         # Security: prevent path traversal via malicious task_id keys
-        filename_str = (
-            filename.decode(self.encoding)
-            if isinstance(filename, bytes)
-            else filename
-        )
-        path_str = (
-            self.path.decode(self.encoding)
-            if isinstance(self.path, bytes)
-            else self.path
-        )
-        real_filename = os.path.realpath(filename_str)
-        real_path = os.path.realpath(path_str)
+        real_filename = os.path.realpath(filename)
+        real_path = os.path.realpath(self.path)
         if not (
-            real_filename.startswith(real_path + os.sep)
+            real_filename.startswith(real_path + self.sep)
             or real_filename == real_path
         ):
             raise ValueError(
