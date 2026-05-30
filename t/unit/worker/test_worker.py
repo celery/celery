@@ -807,6 +807,145 @@ class test_WorkController(ConsumerCase):
         )
         assert worker.autoscaler
 
+    def test_concurrency_explicit_int_unchanged(self):
+        worker = self.app.WorkController(
+            concurrency=4, pool_cls='prefork', loglevel=0,
+        )
+        assert worker.concurrency == 4
+
+    def test_concurrency_string_int_is_coerced(self):
+        # Env vars and direct ``app.conf.worker_concurrency = "4"`` set
+        # the value as a string; worker.setup_instance must coerce it.
+        worker = self.app.WorkController(
+            concurrency='4', pool_cls='prefork', loglevel=0,
+        )
+        assert worker.concurrency == 4
+
+    def test_concurrency_string_garbage_falls_back_to_cpu_count(self):
+        # Invalid strings are treated as unset and fall through to cpu_count,
+        # with a warning so the operator sees their config was rejected.
+        # self.logger is worker_module.logger, mocked in setup_method.
+        with patch('celery.worker.worker.cpu_count', return_value=7):
+            worker = self.app.WorkController(
+                concurrency='not-a-number',
+                pool_cls='prefork',
+                loglevel=0,
+            )
+        assert worker.concurrency == 7
+        warning_calls = [
+            call for call in self.logger.warning.call_args_list
+            if any('not-a-number' in str(a) for a in call.args)
+        ]
+        assert warning_calls, (
+            f"expected warning mentioning 'not-a-number'; "
+            f"got: {self.logger.warning.call_args_list}"
+        )
+
+    @patch('celery.worker.worker.effective_cpu_count')
+    def test_concurrency_auto_prefork_caps_to_cgroup(
+        self, mock_effective,
+    ):
+        mock_effective.return_value = 2
+        worker = self.app.WorkController(
+            concurrency='auto', pool_cls='prefork', loglevel=0,
+        )
+        mock_effective.assert_called_once_with(use_cgroup_quota=True)
+        assert worker.concurrency == 2
+
+    @patch('celery.worker.worker.effective_cpu_count')
+    def test_concurrency_auto_solo_caps_to_cgroup(self, mock_effective):
+        mock_effective.return_value = 2
+        worker = self.app.WorkController(
+            concurrency='auto', pool_cls='solo', loglevel=0,
+        )
+        mock_effective.assert_called_once_with(use_cgroup_quota=True)
+        # solo.TaskPool overrides limit to 1 in its own __init__,
+        # but the value computed on the controller is the cgroup-derived one.
+        assert worker.concurrency == 2
+
+    @patch('celery.worker.worker.effective_cpu_count')
+    def test_concurrency_auto_gevent_no_cap(self, mock_effective):
+        # gevent is an optional extra; skip if not installed in this env.
+        pytest.importorskip('gevent')
+        mock_effective.return_value = 8
+        worker = self.app.WorkController(
+            concurrency='auto', pool_cls='gevent', loglevel=0,
+        )
+        mock_effective.assert_called_once_with(use_cgroup_quota=False)
+        assert worker.concurrency == 8
+
+    @patch('celery.worker.worker.effective_cpu_count')
+    def test_concurrency_auto_eventlet_no_cap(self, mock_effective):
+        # eventlet is an optional extra; skip if not installed in this env.
+        pytest.importorskip('eventlet')
+        mock_effective.return_value = 8
+        worker = self.app.WorkController(
+            concurrency='auto', pool_cls='eventlet', loglevel=0,
+        )
+        mock_effective.assert_called_once_with(use_cgroup_quota=False)
+        assert worker.concurrency == 8
+
+    @patch('celery.worker.worker.effective_cpu_count')
+    def test_concurrency_auto_threads_no_cap(self, mock_effective):
+        mock_effective.return_value = 8
+        worker = self.app.WorkController(
+            concurrency='auto', pool_cls='threads', loglevel=0,
+        )
+        mock_effective.assert_called_once_with(use_cgroup_quota=False)
+        assert worker.concurrency == 8
+
+    @patch('celery.worker.worker.effective_cpu_count')
+    def test_concurrency_auto_case_insensitive(self, mock_effective):
+        mock_effective.return_value = 2
+        worker = self.app.WorkController(
+            concurrency='AUTO', pool_cls='prefork', loglevel=0,
+        )
+        mock_effective.assert_called_once_with(use_cgroup_quota=True)
+        assert worker.concurrency == 2
+
+    @patch('celery.worker.worker.effective_cpu_count')
+    def test_concurrency_auto_processes_alias_caps_to_cgroup(
+        self, mock_effective,
+    ):
+        # ``processes`` is the legacy alias for prefork; treat as CPU-bound.
+        mock_effective.return_value = 2
+        worker = self.app.WorkController(
+            concurrency='auto', pool_cls='processes', loglevel=0,
+        )
+        mock_effective.assert_called_once_with(use_cgroup_quota=True)
+        assert worker.concurrency == 2
+
+    @patch('celery.worker.worker.effective_cpu_count')
+    def test_concurrency_auto_dotted_import_path_caps_to_cgroup(
+        self, mock_effective,
+    ):
+        # Celery docs use the dotted-path form for custom pool registration:
+        # ``worker_pool = 'celery.concurrency.prefork:TaskPool'``.
+        # The resolved class still belongs to ``celery.concurrency.prefork``,
+        # so ``auto`` must cap to cgroup.
+        mock_effective.return_value = 2
+        worker = self.app.WorkController(
+            concurrency='auto',
+            pool_cls='celery.concurrency.prefork:TaskPool',
+            loglevel=0,
+        )
+        mock_effective.assert_called_once_with(use_cgroup_quota=True)
+        assert worker.concurrency == 2
+
+    @patch('celery.worker.worker.effective_cpu_count')
+    def test_concurrency_auto_class_object_caps_to_cgroup(
+        self, mock_effective,
+    ):
+        # If a caller passes the resolved class directly (instead of a name),
+        # branching must still recognize it as CPU-bound.
+        from celery.concurrency.prefork import TaskPool as PreforkPool
+        mock_effective.return_value = 2
+        worker = self.app.WorkController(
+            concurrency='auto', pool_cls=PreforkPool, loglevel=0,
+        )
+        mock_effective.assert_called_once_with(use_cgroup_quota=True)
+        assert worker.concurrency == 2
+
     @t.skip.if_win32
     @pytest.mark.sleepdeprived_patched_module(autoscale)
     def test_with_autoscaler_file_descriptor_safety(self, sleepdeprived):
