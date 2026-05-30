@@ -80,6 +80,8 @@ class Queues(dict):
         queues = queues or {}
         for name, q in queues.items():
             self.add(q) if isinstance(q, Queue) else self.add_compat(name, **q)
+        # The default set of queues to consume from if no -Q option is set.
+        self._consume_from = {**self}
 
     def __getitem__(self, name):
         try:
