@@ -348,11 +348,33 @@ def _is_ambiguous(dt: datetime, tz: tzinfo) -> bool:
     return _can_detect_ambiguous(tz) and dateutil_tz.datetime_ambiguous(dt)
 
 
+def _is_nonexistent(dt: datetime, tz: tzinfo) -> bool:
+    """Helper function to determine if a datetime falls in a spring-forward DST gap.
+
+    Returns False if the timezone cannot detect ambiguity (mirroring :func:`_is_ambiguous`),
+    or if the datetime exists in the given timezone. Returns True only when the local
+    wall-clock time does not exist (e.g., the hour skipped at the start of daylight
+    saving time).
+    """
+
+    return _can_detect_ambiguous(tz) and not dateutil_tz.datetime_exists(dt)
+
+
 def make_aware(dt: datetime, tz: tzinfo) -> datetime:
     """Set timezone for a :class:`~datetime.datetime` object."""
 
     dt = dt.replace(tzinfo=tz)
-    if _is_ambiguous(dt, tz):
+    # Check the spring-forward gap first: with some tzinfo implementations
+    # (e.g. ZoneInfo + dateutil), a non-existent local time is *also*
+    # reported as ambiguous, so the order of these checks matters.
+    if _is_nonexistent(dt, tz):
+        # Spring-forward gap: this local time does not exist in the target
+        # timezone. Advance to the post-transition instant (fold=1) so the
+        # resulting aware datetime carries the correct post-DST UTC offset.
+        dt = dt.replace(fold=1)
+    elif _is_ambiguous(dt, tz):
+        # Fall-back: two wall-clock instants map to the same local time.
+        # Pick the earlier UTC instant (fold=0, DST still active).
         dt = min(dt.replace(fold=0), dt.replace(fold=1))
     return dt
 
