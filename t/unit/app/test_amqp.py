@@ -95,6 +95,12 @@ class test_Queues:
         q.select_add('baz')
         assert sorted(q._consume_from.keys()) == ['bar', 'baz', 'foo']
 
+    def test_select_add_without_selection_extends_default(self):
+        q = Queues([Queue('default')])
+        q.select_add('worker.dq2')
+        assert q._consume_from is None
+        assert sorted(q.consume_from.keys()) == ['default', 'worker.dq2']
+
     def test_deselect(self):
         q = Queues()
         q.select(['foo', 'bar'])
