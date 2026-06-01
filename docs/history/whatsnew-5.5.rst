@@ -97,6 +97,19 @@ Instead, they must be positioned as an option for the `celery` command like so::
 If you were using our :ref:`daemonizing` guide to deploy Celery in production,
 you should revisit it for updates.
 
+If you use the gevent or eventlet worker pool, select it on the worker
+command line too, for example::
+
+    celery --app path.to.app worker --pool=gevent
+
+Do not rely on calling ``gevent.monkey.patch_all()`` or
+``eventlet.monkey_patch()`` from your application as a substitute for
+``-P gevent``/``--pool=gevent`` or ``-P eventlet``/``--pool=eventlet``.
+The worker needs the pool selection during startup so Celery can apply the
+required patches before worker components are imported. If you launch Celery
+through a wrapper, apply any manual monkey patches before importing Celery and
+still select the matching worker pool with ``-P``/``--pool``.
+
 Step 2: Update your configuration with the new setting names
 ------------------------------------------------------------
 
