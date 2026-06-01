@@ -79,10 +79,15 @@ class FilesystemBackend(KeyValueStoreBackend):
         # Security: prevent path traversal via malicious task_id keys
         real_filename = os.path.realpath(filename)
         real_path = os.path.realpath(self.path)
-        if not (
-            real_filename.startswith(real_path + self.sep)
-            or real_filename == real_path
-        ):
+        norm_filename = os.path.normcase(real_filename)
+        norm_path = os.path.normcase(real_path)
+        try:
+            within_backend_path = (
+                os.path.commonpath([norm_path, norm_filename]) == norm_path
+            )
+        except ValueError:
+            within_backend_path = False
+        if not within_backend_path:
             raise ValueError(
                 f"Invalid key {key!r}: path traversal detected"
             )

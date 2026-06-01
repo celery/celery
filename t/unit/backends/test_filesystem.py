@@ -101,6 +101,13 @@ class test_FilesystemBackend:
         with pytest.raises(ValueError, match="path traversal"):
             tb.get(b'-/../../etc/passwd')
 
+    def test_filename_accepts_children_when_backend_path_is_root(self):
+        tb = object.__new__(FilesystemBackend)
+        tb.path = os.path.abspath(os.sep).encode('ascii')
+        tb.sep = os.sep.encode('ascii')
+
+        assert tb._filename(b'etc') == tb.sep.join((tb.path, b'etc'))
+
     @pytest.mark.skipif(sys.platform == 'win32', reason='Test can fail on '
                         'Windows/FAT due to low granularity of st_mtime')
     def test_cleanup(self):
