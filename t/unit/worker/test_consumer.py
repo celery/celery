@@ -641,23 +641,21 @@ class test_Consumer(ConsumerTestCase):
                     c.ensure_connected(conn)
 
     def test_recreated_task_consumer_does_not_consume_late_added_queue(self):
-        self.app.conf.worker_detect_quorum_queues = False
         default_queue = self.app.conf.task_default_queue
-        consumer = Mock()
-        consumer.app = self.app
-        consumer.initial_prefetch_count = 16
-        consumer.update_strategies = Mock()
-        consumer.on_decode_error = Mock()
 
-        tasks = Tasks(consumer)
-        with self.app.pool.acquire(block=True) as con:
-            consumer.connection = con
-            tasks.start(consumer)
-            assert {q.name for q in consumer.task_consumer.queues} == {default_queue}
+        def _fake_consumer(channel, *, accept=None, queues=None, **kwargs):
+            c = Mock()
+            c.queues = queues
+            return c
 
-            self.app.amqp.queues.add('next')
-            tasks.start(consumer)
-            assert {q.name for q in consumer.task_consumer.queues} == {default_queue}
+        with patch.object(self.app.amqp, 'Consumer', side_effect=_fake_consumer):
+            with self.app.pool.acquire(block=True) as con:
+                task_consumer = self.app.amqp.TaskConsumer(con)
+                assert {q.name for q in task_consumer.queues} == {default_queue}
+
+                self.app.amqp.queues.add('next')
+                task_consumer = self.app.amqp.TaskConsumer(con)
+                assert {q.name for q in task_consumer.queues} == {default_queue}
 
     def test_disable_prefetch_not_enabled(self):
         """Test that disable_prefetch doesn't affect behavior when disabled"""
