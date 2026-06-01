@@ -108,6 +108,18 @@ class test_FilesystemBackend:
 
         assert tb._filename(b'etc') == tb.sep.join((tb.path, b'etc'))
 
+    def test_filename_rejects_commonpath_value_error(self):
+        tb = object.__new__(FilesystemBackend)
+        tb.path = b'/base'
+        tb.sep = b'/'
+
+        with patch.object(
+            filesystem.os.path, 'commonpath',
+            side_effect=ValueError('paths are on different drives'),
+        ):
+            with pytest.raises(ValueError, match="path traversal"):
+                tb._filename(b'task')
+
     @pytest.mark.skipif(sys.platform == 'win32', reason='Test can fail on '
                         'Windows/FAT due to low granularity of st_mtime')
     def test_cleanup(self):
