@@ -110,6 +110,14 @@ class TaskPool(BasePool):
             # and is unavailable on CPython 3 (always warns and silently
             # stays on fork). Use the modern 'spawn' start method instead,
             # which is implemented in pure Python and actually takes effect.
+            #
+            # Each spawned child is a fresh interpreter and therefore must
+            # re-run the worker optimizations (task registry shortcut used by
+            # fast_trace_task, Django model validation, etc.). The rest of
+            # Celery keys this "fresh interpreter" behavior off the
+            # FORKED_BY_MULTIPROCESSING environment variable (historically set
+            # by billiard's execv path), so set it for the spawned children.
+            os.environ['FORKED_BY_MULTIPROCESSING'] = '1'
             set_start_method('spawn', force=True)
         Pool = (self.BlockingPool if self.options.get('threads', True)
                 else self.Pool)
