@@ -244,6 +244,27 @@ class test_make_aware:
         wtz = make_aware(datetime.now(_timezone.utc), tz)
         assert wtz.tzinfo == tz
 
+    def test_spring_forward_gap_advances_to_post_transition(self):
+        # In US/Eastern, on 2024-03-10 clocks jump 2:00 AM -> 3:00 AM,
+        # so 02:30 does not exist. make_aware() must not silently
+        # produce a pre-transition (EST/-05:00) datetime; it should
+        # advance to the post-transition (EDT/-04:00) instant.
+        tz = ZoneInfo('US/Eastern')
+        gap_dt = datetime(2024, 3, 10, 2, 30, 0)
+        result = make_aware(gap_dt, tz)
+        # Expected post-transition offset is -04:00 (EDT)
+        assert result.utcoffset() == timedelta(hours=-4)
+        assert result.fold == 1
+
+    def test_fall_back_ambiguous_picks_earlier_instant(self):
+        # In US/Eastern, on 2024-11-03 clocks fall back 2:00 AM -> 1:00 AM,
+        # so 01:30 occurs twice. make_aware() should pick the earlier
+        # (pre-transition, EDT/-04:00) instant.
+        tz = ZoneInfo('US/Eastern')
+        ambiguous_dt = datetime(2024, 11, 3, 1, 30, 0)
+        result = make_aware(ambiguous_dt, tz)
+        assert result.utcoffset() == timedelta(hours=-4)
+
     def test_maybe_make_aware(self):
         aware = datetime.now(_timezone.utc).replace(tzinfo=timezone.utc)
         assert maybe_make_aware(aware)
@@ -269,8 +290,10 @@ class test_localize:
         tz = tzz()
         assert localize(make_aware(datetime.now(_timezone.utc), tz), tz)
 
+    @patch('dateutil.tz.datetime_exists')
     @patch('dateutil.tz.datetime_ambiguous')
-    def test_when_zoneinfo(self, datetime_ambiguous_mock):
+    def test_when_zoneinfo(self, datetime_ambiguous_mock, datetime_exists_mock):
+        datetime_exists_mock.return_value = True
         datetime_ambiguous_mock.return_value = False
         tz = ZoneInfo("US/Eastern")
         assert localize(make_aware(datetime.now(_timezone.utc), tz), tz)
@@ -279,8 +302,9 @@ class test_localize:
         tz2 = ZoneInfo("US/Eastern")
         assert localize(make_aware(datetime.now(_timezone.utc), tz2), tz2)
 
+    @patch('dateutil.tz.datetime_exists')
     @patch('dateutil.tz.datetime_ambiguous')
-    def test_when_is_ambiguous(self, datetime_ambiguous_mock):
+    def test_when_is_ambiguous(self, datetime_ambiguous_mock, datetime_exists_mock):
         class tzz(tzinfo):
 
             def utcoffset(self, dt):
@@ -289,6 +313,7 @@ class test_localize:
             def is_ambiguous(self, dt):
                 return True
 
+        datetime_exists_mock.return_value = True
         datetime_ambiguous_mock.return_value = False
         tz = tzz()
         assert localize(make_aware(datetime.now(_timezone.utc), tz), tz)
