@@ -12,9 +12,10 @@ else:
     from backports.zoneinfo import ZoneInfo
 
 from celery.utils.iso8601 import parse_iso8601
-from celery.utils.time import (LocalTimezone, delta_resolution, ffwd, get_exponential_backoff_interval,
-                               humanize_seconds, localize, make_aware, maybe_iso8601, maybe_make_aware,
-                               maybe_timedelta, rate, remaining, timezone, utcoffset, _is_nonexistent)
+from celery.utils.time import (LocalTimezone, _is_nonexistent, delta_resolution, ffwd,
+                               get_exponential_backoff_interval, humanize_seconds, localize, make_aware,
+                               maybe_iso8601, maybe_make_aware, maybe_timedelta, rate, remaining, timezone,
+                               utcoffset)
 
 
 class test_LocalTimezone:
