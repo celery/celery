@@ -942,3 +942,23 @@ class test_TaskPool:
         pool = TaskPool(4, app=app)
         pool.on_start()
         assert pool._pool._proc_alive_timeout == 8.0
+
+    @patch('celery.concurrency.prefork.set_start_method')
+    @patch('celery.concurrency.prefork.forking_enable')
+    def test_on_start_fork(self, _forking_enable, _set_start_method):
+        app = Mock(conf=AttributeDict(DEFAULTS))
+        pool = TaskPool(4, app=app, forking_enable=True)
+        pool.BlockingPool = Mock()
+        pool.on_start()
+        _forking_enable.assert_called_once_with(True)
+        _set_start_method.assert_not_called()
+
+    @patch('celery.concurrency.prefork.set_start_method')
+    @patch('celery.concurrency.prefork.forking_enable')
+    def test_on_start_spawn(self, _forking_enable, _set_start_method):
+        app = Mock(conf=AttributeDict(DEFAULTS))
+        pool = TaskPool(4, app=app, forking_enable=False)
+        pool.BlockingPool = Mock()
+        pool.on_start()
+        _set_start_method.assert_called_once_with('spawn', force=True)
+        _forking_enable.assert_not_called()

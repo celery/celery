@@ -6,7 +6,7 @@ import os
 import threading
 import time
 
-from billiard import forking_enable
+from billiard import forking_enable, set_start_method
 from billiard.common import REMAP_SIGTERM, TERM_SIGNAME
 from billiard.pool import CLOSE, RUN
 from billiard.pool import Pool as BlockingPool
@@ -102,7 +102,15 @@ class TaskPool(BasePool):
     write_stats = None
 
     def on_start(self):
-        forking_enable(self.forking_enable)
+        if self.forking_enable:
+            forking_enable(True)
+        else:
+            # billiard's forking_enable(False) maps to the legacy execv
+            # mechanism, which depends on the optional _billiard C extension
+            # and is unavailable on CPython 3 (always warns and silently
+            # stays on fork). Use the modern 'spawn' start method instead,
+            # which is implemented in pure Python and actually takes effect.
+            set_start_method('spawn', force=True)
         Pool = (self.BlockingPool if self.options.get('threads', True)
                 else self.Pool)
         proc_alive_timeout = (
