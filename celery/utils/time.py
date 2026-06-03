@@ -335,6 +335,15 @@ def _can_detect_ambiguous(tz: tzinfo) -> bool:
     return isinstance(tz, ZoneInfo) or hasattr(tz, "is_ambiguous")
 
 
+def _is_nonexistent(dt: datetime, tz: tzinfo) -> bool:
+    """Helper to determine if a datetime falls in a spring-forward DST gap.
+
+    Returns False if the timezone cannot detect non-existent times, or if the
+    datetime exists, otherwise True. Mirrors _is_ambiguous() but uses
+    dateutil.datetime_exists() which returns False for DST gap times.
+    """
+    return _can_detect_ambiguous(tz) and not dateutil_tz.datetime_exists(dt)
+
 def _is_ambiguous(dt: datetime, tz: tzinfo) -> bool:
     """Helper function to determine if a timezone is ambiguous using python's dateutil module.
 
@@ -354,6 +363,10 @@ def make_aware(dt: datetime, tz: tzinfo) -> datetime:
     dt = dt.replace(tzinfo=tz)
     if _is_ambiguous(dt, tz):
         dt = min(dt.replace(fold=0), dt.replace(fold=1))
+    elif _is_nonexistent(dt, tz):
+        # Spring-forward gap: this local time does not exist.
+        # Advance to the post-transition instant by using fold=1.
+        dt = dt.replace(fold=1)
     return dt
 
 

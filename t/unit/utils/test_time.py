@@ -14,7 +14,7 @@ else:
 from celery.utils.iso8601 import parse_iso8601
 from celery.utils.time import (LocalTimezone, delta_resolution, ffwd, get_exponential_backoff_interval,
                                humanize_seconds, localize, make_aware, maybe_iso8601, maybe_make_aware,
-                               maybe_timedelta, rate, remaining, timezone, utcoffset)
+                               maybe_timedelta, rate, remaining, timezone, utcoffset, _is_nonexistent)
 
 
 class test_LocalTimezone:
@@ -256,6 +256,22 @@ class test_make_aware:
         assert maybe_make_aware(eastern).tzinfo is tz
         utcnow = datetime.now()
         assert maybe_make_aware(utcnow, 'UTC').tzinfo is ZoneInfo("UTC")
+
+    def test_spring_forward_dst_gap(self):
+        """make_aware() should advance non-existent times to post-transition."""
+        tz = ZoneInfo("US/Eastern")
+        # March 10, 2024: clocks spring forward at 2:00 AM -> 3:00 AM
+        # 2:30 AM does not exist in US/Eastern on this date
+        non_existent_dt = datetime(2024, 3, 10, 2, 30, 0)
+        result = make_aware(non_existent_dt, tz)
+        # After fix, fold=1 gives EDT offset (-04:00), not EST (-05:00)
+        offset = result.utcoffset()
+        assert offset == timedelta(hours=-4), (
+            f"Expected EDT offset (-04:00) for spring-forward gap, got {offset}"
+        )
+        # UTC equivalent: 2:30 EDT (fold=1) = 06:30 UTC
+        utc_result = result.astimezone(_timezone.utc)
+        assert utc_result.hour == 6, f"Expected UTC hour 6, got {utc_result.hour}"
 
 
 class test_localize:
