@@ -205,12 +205,21 @@ class ResultConsumer(BaseResultConsumer):
             deferred.append(task_id)
             return
         self._reentry.depth = 1
+        exc = None
         try:
             self._cancel_for(task_id)
+        except BaseException as e:
+            exc = e
+            raise
         finally:
             self._reentry.depth = 0
-            self._drain_deferred_cancels()
-
+            if exc is None:
+                self._drain_deferred_cancels()
+            else:
+                try:
+                    self._drain_deferred_cancels()
+                except Exception:
+                    logger.exception('Failed to drain deferred pub/sub cancels')
     def _cancel_for(self, task_id):
         key = self._get_key_for_task(task_id)
         self.subscribed_to.discard(key)
