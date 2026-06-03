@@ -4189,7 +4189,7 @@ If enabled the worker pool can be restarted using the
 ``worker_pool_start_method``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 5.6
+.. versionadded:: 5.7
 
 Default: ``"fork"``.
 
