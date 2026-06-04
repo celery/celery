@@ -366,3 +366,47 @@ class test_Blueprint:
         x = MyBlueprint()
         x.apply(self)
         assert x._find_last() is None
+
+    def test_start_shutdown_check_fires_before_first_step(self):
+        """shutdown_check raising immediately prevents any step from starting."""
+        from celery.exceptions import WorkerShutdown
+
+        def always_abort():
+            raise WorkerShutdown(0)
+
+        parent = Mock()
+        step1 = Mock(name='step1')
+        parent.steps = [step1]
+
+        blueprint = self.Blueprint(shutdown_check=always_abort)
+
+        with pytest.raises(WorkerShutdown):
+            blueprint.start(parent)
+
+        step1.start.assert_not_called()
+
+    def test_start_shutdown_check_aborts_between_steps(self):
+        """shutdown_check fires after step 1, preventing step 2 from starting."""
+        from celery.exceptions import WorkerShutdown
+
+        step1_done = [False]
+
+        def on_step1_start(_parent):
+            step1_done[0] = True
+
+        def shutdown_check():
+            if step1_done[0]:
+                raise WorkerShutdown(0)
+
+        parent = Mock()
+        step1, step2 = Mock(name='step1'), Mock(name='step2')
+        step1.start.side_effect = on_step1_start
+        parent.steps = [step1, step2]
+
+        blueprint = self.Blueprint(shutdown_check=shutdown_check)
+
+        with pytest.raises(WorkerShutdown):
+            blueprint.start(parent)
+
+        step1.start.assert_called_once_with(parent)
+        step2.start.assert_not_called()

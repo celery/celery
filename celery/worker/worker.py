@@ -135,6 +135,7 @@ class WorkController:
             on_start=self.on_start,
             on_close=self.on_close,
             on_stopped=self.on_stopped,
+            shutdown_check=state.maybe_shutdown,
         )
         self.blueprint.apply(self, **kwargs)
 

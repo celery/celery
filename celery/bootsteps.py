@@ -81,6 +81,11 @@ class Blueprint:
         on_close (Callable): Optional callback applied before blueprint close.
         on_stopped (Callable): Optional callback applied after
             blueprint stopped.
+        shutdown_check (Callable): Optional callback invoked before each
+            bootstep starts.  Should raise :exc:`WorkerShutdown` or
+            :exc:`WorkerTerminate` when a shutdown signal was received,
+            so that initialization is aborted early instead of being
+            completed before the signal is honoured.
     """
 
     GraphFormatter = StepFormatter
@@ -97,12 +102,14 @@ class Blueprint:
     }
 
     def __init__(self, steps=None, name=None,
-                 on_start=None, on_close=None, on_stopped=None):
+                 on_start=None, on_close=None, on_stopped=None,
+                 shutdown_check=None):
         self.name = name or self.name or qualname(type(self))
         self.types = set(steps or []) | set(self.default_steps)
         self.on_start = on_start
         self.on_close = on_close
         self.on_stopped = on_stopped
+        self.shutdown_check = shutdown_check
         self.shutdown_complete = Event()
         self.steps = {}
 
@@ -111,6 +118,8 @@ class Blueprint:
         if self.on_start:
             self.on_start()
         for i, step in enumerate(s for s in parent.steps if s is not None):
+            if self.shutdown_check:
+                self.shutdown_check()
             self._debug('Starting %s', step.alias)
             self.started = i + 1
             step.start(parent)
