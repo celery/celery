@@ -251,6 +251,64 @@ class test_RedisResultConsumer:
         parent_method.assert_called_once_with(meta, message)
         cancel_for.assert_not_called()
 
+    @patch('celery.backends.redis.ResultConsumer.cancel_for')
+    @patch('celery.backends.asynchronous.BaseResultConsumer.on_state_change')
+    def test_on_wait_for_pending_does_not_leak_ready_messages(self,
+                                                             parent_on_state_change,
+                                                             cancel_for):
+        """Regression test for celery#8166.
+
+        When ``on_wait_for_pending`` polls the backend synchronously and the
+        task is already in a READY state, ``_iter_meta`` resolves the result
+        and removes it from ``_pending_results``. Calling the full
+        ``on_state_change`` afterwards would buffer the meta in
+        ``_pending_messages`` because the result is no longer tracked.
+        That buffer entry is never consumed, leaking memory.
+        """
+        from celery.utils.collections import BufferMap
+        consumer = self.get_consumer()
+        pending_messages = BufferMap(10)
+        consumer._pending_messages = pending_messages
+
+        # Simulate a result that is already resolved (READY) by the time
+        # on_wait_for_pending iterates over it.
+        class FakeResult:
+            _cache = None
+
+            def _iter_meta(self, **kwargs):
+                return iter([{
+                    'task_id': 'already-done',
+                    'status': states.SUCCESS,
+                    'result': 42,
+                }])
+
+        consumer.on_wait_for_pending(FakeResult())
+
+        # The ready task should be cancelled from pub/sub, but the meta
+        # must NOT be buffered as a "pending message".
+        cancel_for.assert_called_once_with('already-done')
+        parent_on_state_change.assert_not_called()
+        assert pending_messages.total == 0
+
+    @patch('celery.backends.redis.ResultConsumer.cancel_for')
+    @patch('celery.backends.asynchronous.BaseResultConsumer.on_state_change')
+    def test_on_wait_for_pending_buffers_non_ready_messages(self,
+                                                            parent_on_state_change,
+                                                            cancel_for):
+        """Non-ready meta must still go through the normal state change path."""
+        consumer = self.get_consumer()
+        meta = {'task_id': 'not-ready', 'status': states.PENDING}
+
+        class FakeResult:
+            _cache = None
+
+            def _iter_meta(self, **kwargs):
+                return iter([meta])
+
+        consumer.on_wait_for_pending(FakeResult())
+        parent_on_state_change.assert_called_once_with(meta, None)
+        cancel_for.assert_not_called()
+
     def test_drain_events_before_start(self):
         consumer = self.get_consumer()
         # drain_events shouldn't crash when called before start

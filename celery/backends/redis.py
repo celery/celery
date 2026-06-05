@@ -148,7 +148,17 @@ class ResultConsumer(BaseResultConsumer):
     def on_wait_for_pending(self, result, **kwargs):
         for meta in result._iter_meta(**kwargs):
             if meta is not None:
-                self.on_state_change(meta, None)
+                if meta['status'] in states.READY_STATES:
+                    # The result has already been resolved synchronously by
+                    # _iter_meta -> _get_task_meta -> _maybe_set_cache ->
+                    # on_ready -> _on_fulfilled -> remove_pending_result.
+                    # Calling the full on_state_change here would add the
+                    # meta to _pending_messages because the result is no
+                    # longer in _pending_results, leaking memory. We only
+                    # need to cancel the pub/sub subscription for this task.
+                    self._maybe_cancel_ready_task(meta)
+                else:
+                    self.on_state_change(meta, None)
 
     def stop(self):
         if self._pubsub is not None:
