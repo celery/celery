@@ -254,8 +254,8 @@ class test_RedisResultConsumer:
     @patch('celery.backends.redis.ResultConsumer.cancel_for')
     @patch('celery.backends.asynchronous.BaseResultConsumer.on_state_change')
     def test_on_wait_for_pending_does_not_leak_ready_messages(self,
-                                                             parent_on_state_change,
-                                                             cancel_for):
+                                                              parent_on_state_change,
+                                                              cancel_for):
         """Regression test for celery#8166.
 
         When ``on_wait_for_pending`` polls the backend synchronously and the
