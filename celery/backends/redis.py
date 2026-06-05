@@ -189,7 +189,19 @@ class ResultConsumer(BaseResultConsumer):
         finally:
             self._reentry.depth = depth
             if depth == 0:
-                self._drain_deferred_cancels()
+                try:
+                    self._drain_deferred_cancels()
+                except Exception:
+                    # Log for a debug breadcrumb, but re-raise: the only
+                    # exception ``_drain_deferred_cancels`` lets escape is
+                    # ``RuntimeError(E_RETRY_LIMIT_EXCEEDED)``, which means
+                    # the backend is unrecoverable and the operator must
+                    # restart Celery. Swallowing it would hide that signal.
+                    # Any outer exception is still chained via
+                    # ``__context__``.
+                    logger.exception(
+                        'Failed to drain deferred pub/sub cancels')
+                    raise
 
     def cancel_for(self, task_id):
         if getattr(self._reentry, 'depth', 0) > 0:
@@ -205,21 +217,22 @@ class ResultConsumer(BaseResultConsumer):
             deferred.append(task_id)
             return
         self._reentry.depth = 1
-        exc = None
         try:
             self._cancel_for(task_id)
-        except BaseException as e:
-            exc = e
-            raise
         finally:
             self._reentry.depth = 0
-            if exc is None:
+            try:
                 self._drain_deferred_cancels()
-            else:
-                try:
-                    self._drain_deferred_cancels()
-                except Exception:
-                    logger.exception('Failed to drain deferred pub/sub cancels')
+            except Exception:
+                # Log for a debug breadcrumb, but re-raise: the only
+                # exception ``_drain_deferred_cancels`` lets escape is
+                # ``RuntimeError(E_RETRY_LIMIT_EXCEEDED)``, which means the
+                # backend is unrecoverable and the operator must restart
+                # Celery. Swallowing it would hide that signal. Any outer
+                # exception is still chained via ``__context__``.
+                logger.exception('Failed to drain deferred pub/sub cancels')
+                raise
+
     def _cancel_for(self, task_id):
         key = self._get_key_for_task(task_id)
         self.subscribed_to.discard(key)
