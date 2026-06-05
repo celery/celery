@@ -568,6 +568,29 @@ class test_BaseBackend_dict:
         b.mark_as_failure('id', exc, request=request)
         assert self.errback.last_result == 5
 
+    def test_new_style_errback_exception_does_not_halt_others(self):
+        b = BaseBackend(app=self.app)
+        b._store_result = Mock()
+
+        call_order = []
+
+        @self.app.task(shared=False)
+        def bad_errback(request, exc, traceback):
+            call_order.append('bad')
+            raise RuntimeError('errback broke')
+
+        @self.app.task(shared=False)
+        def good_errback(request, exc, traceback):
+            call_order.append('good')
+
+        request = Mock(name='request', id='test-task-id')
+        request.errbacks = [
+            bad_errback.s(),
+            good_errback.s(),
+        ]
+        b.mark_as_failure('test-task-id', KeyError(), request=request)
+        assert call_order == ['bad', 'good']
+
     @patch('celery.backends.base.group')
     def test_class_based_task_can_be_used_as_error_callback(self, mock_group):
         b = BaseBackend(app=self.app)
