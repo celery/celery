@@ -149,14 +149,20 @@ class ResultConsumer(BaseResultConsumer):
         for meta in result._iter_meta(**kwargs):
             if meta is not None:
                 if meta['status'] in states.READY_STATES:
-                    # The result has already been resolved synchronously by
-                    # _iter_meta -> _get_task_meta -> _maybe_set_cache ->
-                    # on_ready -> _on_fulfilled -> remove_pending_result.
+                    # For single AsyncResult, _iter_meta may synchronously
+                    # resolve the result and remove it from _pending_results.
                     # Calling the full on_state_change here would add the
                     # meta to _pending_messages because the result is no
-                    # longer in _pending_results, leaking memory. We only
-                    # need to cancel the pub/sub subscription for this task.
-                    self._maybe_cancel_ready_task(meta)
+                    # longer tracked, leaking memory. We only need to cancel
+                    # the pub/sub subscription for this task.
+                    # For ResultSet/GroupResult native join, _iter_meta yields
+                    # READY metas from backend.get_many() without resolving
+                    # individual AsyncResult objects, so the full state change
+                    # path (including bucket delivery) is still required.
+                    if getattr(result, 'results', None) is None:
+                        self._maybe_cancel_ready_task(meta)
+                    else:
+                        self.on_state_change(meta, None)
                 else:
                     self.on_state_change(meta, None)
 

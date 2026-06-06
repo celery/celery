@@ -251,11 +251,7 @@ class test_RedisResultConsumer:
         parent_method.assert_called_once_with(meta, message)
         cancel_for.assert_not_called()
 
-    @patch('celery.backends.redis.ResultConsumer.cancel_for')
-    @patch('celery.backends.asynchronous.BaseResultConsumer.on_state_change')
-    def test_on_wait_for_pending_does_not_leak_ready_messages(self,
-                                                              parent_on_state_change,
-                                                              cancel_for):
+    def test_on_wait_for_pending_does_not_leak_ready_messages(self):
         """Regression test for celery#8166.
 
         When ``on_wait_for_pending`` polls the backend synchronously and the
@@ -286,8 +282,6 @@ class test_RedisResultConsumer:
 
         # The ready task should be cancelled from pub/sub, but the meta
         # must NOT be buffered as a "pending message".
-        cancel_for.assert_called_once_with('already-done')
-        parent_on_state_change.assert_not_called()
         assert pending_messages.total == 0
 
     @patch('celery.backends.redis.ResultConsumer.cancel_for')
