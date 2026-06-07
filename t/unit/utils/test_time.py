@@ -257,6 +257,59 @@ class test_make_aware:
         utcnow = datetime.now()
         assert maybe_make_aware(utcnow, 'UTC').tzinfo is ZoneInfo("UTC")
 
+    def test_spring_forward_dst_gap(self):
+        """Spring-forward DST: non-existent local times advance with fold=1."""
+        tz = ZoneInfo('US/Eastern')
+        # March 8, 2026: clocks spring forward 2:00 AM → 3:00 AM EST→EDT
+        # 2:30 AM does not exist in US/Eastern on this date
+        dt = datetime(2026, 3, 8, 2, 30)
+        result = make_aware(dt, tz)
+        assert result.fold == 1
+        # Post-transition offset is EDT (UTC-4)
+        assert result.utcoffset() == timedelta(hours=-4)
+        # The UTC instant must be usable for comparison
+        utc = result.astimezone(ZoneInfo('UTC'))
+        assert utc.hour == 6
+        assert utc.minute == 30
+
+    def test_fall_back_dst_ambiguous(self):
+        """Fall-back DST: ambiguous times pick the earlier occurrence."""
+        tz = ZoneInfo('US/Eastern')
+        # Nov 1, 2026: clocks fall back 2:00 AM → 1:00 AM EDT→EST
+        # 1:30 AM occurs twice; we should pick the earlier (EDT, fold=0)
+        dt = datetime(2026, 11, 1, 1, 30)
+        result = make_aware(dt, tz)
+        assert result.fold == 0
+        # Earlier occurrence is EDT (UTC-4)
+        assert result.utcoffset() == timedelta(hours=-4)
+
+    def test_dst_normal_time_unaffected(self):
+        """Normal times outside DST transitions are unaffected."""
+        tz = ZoneInfo('US/Eastern')
+        dt = datetime(2026, 6, 15, 12, 0)
+        result = make_aware(dt, tz)
+        assert result.fold == 0
+        assert result.utcoffset() == timedelta(hours=-4)  # EDT
+
+    def test_dst_utc_timezone_unaffected(self):
+        """UTC timezone has no DST and is unaffected."""
+        dt = datetime(2026, 3, 8, 2, 30)
+        result = make_aware(dt, ZoneInfo('UTC'))
+        assert result.utcoffset() == timedelta(hours=0)
+
+    def test_spring_forward_exact_transition_edge(self):
+        """Exact transition time (2:00 AM) and post-gap time (3:00 AM)."""
+        tz = ZoneInfo('US/Eastern')
+        # 3:00 AM after the gap — should be a valid EDT time
+        dt = datetime(2026, 3, 8, 3, 0)
+        result = make_aware(dt, tz)
+        assert result.utcoffset() == timedelta(hours=-4)
+        # 2:00 AM — exact transition start, may be ambiguous
+        dt2 = datetime(2026, 3, 8, 2, 0)
+        result2 = make_aware(dt2, tz)
+        # The result should be a valid aware datetime regardless
+        assert result2.tzinfo is not None
+
 
 class test_localize:
 

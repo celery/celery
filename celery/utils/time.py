@@ -352,8 +352,16 @@ def make_aware(dt: datetime, tz: tzinfo) -> datetime:
     """Set timezone for a :class:`~datetime.datetime` object."""
 
     dt = dt.replace(tzinfo=tz)
-    if _is_ambiguous(dt, tz):
-        dt = min(dt.replace(fold=0), dt.replace(fold=1))
+    if _can_detect_ambiguous(tz):
+        if not dateutil_tz.datetime_exists(dt):
+            # Spring-forward DST gap: this local time does not exist.
+            # Advance to the post-transition time by using fold=1,
+            # which picks the later UTC instant for non-existent times.
+            dt = dt.replace(fold=1)
+        elif dateutil_tz.datetime_ambiguous(dt):
+            # Fall-back DST: two wall-clock instants map to the same
+            # local time. Pick the earlier UTC instant (fold=0).
+            dt = min(dt.replace(fold=0), dt.replace(fold=1))
     return dt
 
 
