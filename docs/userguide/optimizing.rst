@@ -170,8 +170,8 @@ there are worker processes, with the condition that they are acknowledged
 late (10 unacknowledged tasks executing for :option:`-c 10 <celery worker -c>`)
 
 This condition is required because, with the default early acknowledgment,
-a task is acknowledged as soon as the worker starts executing it. Once that
-happens, the executing task no longer counts as an unacknowledged reserved
+a task is acknowledged just-in-time before being executed. Once that happens,
+the task no longer counts as an unacknowledged reserved
 message, so the broker is allowed to deliver another message up to the
 prefetch limit. With late acknowledgment enabled, executing tasks remain
 unacknowledged until they finish, which means they continue to occupy the
