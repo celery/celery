@@ -89,6 +89,15 @@ class test_quorum_qos_prefetch_reduction_skipped_on_reconnect:
         # applies when reduction is enabled. We must NOT silently rely on
         # the user-discovered workaround of disabling it.
         app.conf.worker_enable_prefetch_count_reduction = True
+        # Terminate in-flight acks_late tasks when the connection drops so
+        # their pool slots are released before the reconnect. Without this
+        # the original long-running tasks keep occupying their pool slots
+        # while the broker also redelivers them (acks_late), so the
+        # original + redelivered copies fill every slot and the
+        # post-restart probe task can never be dispatched. ``active_requests``
+        # is still read before these cancellations round-trip, so the
+        # legacy prefetch reduction on a pre-fix build is unaffected.
+        app.conf.worker_cancel_long_running_tasks_on_connection_loss = True
         return app
 
     # No RedisTestBroker xfail guard is needed: the ``quorum_queues/``
@@ -133,19 +142,23 @@ class test_quorum_qos_prefetch_reduction_skipped_on_reconnect:
         active requests the bug branch is never reached and the test
         would silently pass on a pre-fix build).
 
-        Two in-flight is deliberately less than ``worker_concurrency=4``
-        so that two pool slots remain free for the post-restart noop.
-        After the broker restarts and ``task_acks_late`` causes the two
-        long-running tasks to be redelivered:
+        ``worker_cancel_long_running_tasks_on_connection_loss`` (set in
+        the fixture) terminates the two in-flight tasks when the
+        connection drops, releasing their pool slots before the
+        reconnect. ``active_requests`` is still read before those
+        cancellations round-trip, so the legacy reduction on a pre-fix
+        build still computes max(1, 4-2)=2. After the broker restarts and
+        ``task_acks_late`` causes the two long-running tasks to be
+        redelivered:
 
         - On a pre-fix build the consumer is stranded at the reduced
           prefetch (max(1, 4-2)=2). Both prefetch slots are taken by the
           redelivered long-running tasks, so the noop is never fetched
           and the test times out.
-        - On a post-fix build the consumer keeps its full prefetch of 4.
-          The two redelivered long-running tasks take two prefetch slots
-          and two pool slots; the noop is fetched into a free prefetch
-          slot, dispatched to a free pool process, and completes.
+        - On a post-fix build the consumer keeps its full prefetch of 4,
+          so the noop is fetched. The cancelled originals freed their
+          pool slots, so the redelivered tasks and the noop all find a
+          free pool process and the noop completes.
         """
         queue = celery_setup.worker.worker_queue
         # Confirm the worker is healthy before perturbing it.
