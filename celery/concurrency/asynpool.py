@@ -1080,7 +1080,13 @@ class AsynPool(_pool.Pool):
             self.outbound_buffer.clear()
             self._active_writers.clear()
             self._active_writes.clear()
-            self._busy_workers.clear()
+
+            still_busy = {
+                job._scheduled_for.inqW_fd
+                for job in self._cache.values()
+                if job._accepted and job._scheduled_for is not None
+            }
+            self._busy_workers.intersection_update(still_busy)
 
     def _flush_writer(self, proc, writer):
         fds = {proc.inq._writer}

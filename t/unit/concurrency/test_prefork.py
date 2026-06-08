@@ -735,6 +735,67 @@ class test_AsynPool:
         job.discard.assert_called_once()
         assert gen not in pool._active_writers
 
+    @t.skip.if_pypy
+    def test_flush_preserves_busy_worker_for_accepted_job(self):
+        """flush() must keep a worker marked busy while it runs an accepted job.
+
+        On a broker reconnect Consumer.on_close calls pool.flush(). A worker
+        still executing an accepted (running) task is genuinely busy, so its
+        inqueue write-fd must remain in _busy_workers. Clearing it would
+        desynchronize the fair scheduler from reality and let a new task be
+        written onto the busy worker, blocking it behind the long-running task
+        even while another worker is idle.
+        """
+        pool = asynpool.AsynPool(processes=2, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        # Worker still running an accepted job, dispatched to fd 7.
+        proc = Mock(name='proc')
+        proc.inqW_fd = 7
+        job = Mock(name='job')
+        job._accepted = True
+        job._scheduled_for = proc
+        job._writer.return_value = None
+
+        pool._cache = {1: job}
+        pool._busy_workers = {7}
+        pool._active_writers.clear()
+        pool.outbound_buffer.clear()
+
+        pool.flush()
+
+        # The busy worker must still be marked busy after the flush.
+        assert 7 in pool._busy_workers
+
+    @t.skip.if_pypy
+    def test_flush_releases_busy_worker_for_unaccepted_job(self):
+        """flush() must free a worker whose job was not accepted yet.
+
+        Unaccepted jobs are discarded/redelivered by the broker, so the worker
+        they were tentatively scheduled to is no longer busy and its fd must be
+        dropped from _busy_workers.
+        """
+        pool = asynpool.AsynPool(processes=2, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        proc = Mock(name='proc')
+        proc.inqW_fd = 9
+        job = Mock(name='job')
+        job._accepted = False
+        job._scheduled_for = proc
+        job._writer.return_value = None
+
+        pool._cache = {1: job}
+        pool._busy_workers = {9}
+        pool._active_writers.clear()
+        pool.outbound_buffer.clear()
+
+        pool.flush()
+
+        assert 9 not in pool._busy_workers
+
     def test_process_result(self):
         x = asynpool.ResultHandler(
             Mock(), Mock(), {}, Mock(),
