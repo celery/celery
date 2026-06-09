@@ -92,11 +92,13 @@ class test_quorum_qos_prefetch_reduction_skipped_on_reconnect:
         # Terminate in-flight acks_late tasks when the connection drops so
         # their pool slots are released before the reconnect. Without this
         # the original long-running tasks keep occupying their pool slots
-        # while the broker also redelivers them (acks_late), so the
-        # original + redelivered copies fill every slot and the
-        # post-restart probe task can never be dispatched. ``active_requests``
-        # is still read before these cancellations round-trip, so the
-        # legacy prefetch reduction on a pre-fix build is unaffected.
+        # while the broker also redelivers them (acks_late); the original +
+        # redelivered copies then fill every pool process and the
+        # post-restart probe task in
+        # ``test_worker_resumes_consuming_after_broker_restart`` can never be
+        # dispatched. The #9512 regression itself is asserted by
+        # ``test_skip_log_emitted_after_broker_restart`` through the skip log,
+        # which does not depend on this setting.
         app.conf.worker_cancel_long_running_tasks_on_connection_loss = True
         return app
 
@@ -135,30 +137,31 @@ class test_quorum_qos_prefetch_reduction_skipped_on_reconnect:
         )
 
     def test_worker_resumes_consuming_after_broker_restart(self, celery_setup: CeleryTestSetup):
-        """A task submitted after broker restart still gets processed.
+        """A task submitted after a broker restart still gets processed.
 
-        Two long-running tasks are placed in flight so the connection
-        error path actually enters the reduction code under test (without
-        active requests the bug branch is never reached and the test
-        would silently pass on a pre-fix build).
+        End-to-end liveness check for the reconnect path on quorum-queue
+        per-consumer QoS. Two acks_late long-running tasks are put in
+        flight so that, at the moment the broker dies, two pool processes
+        are genuinely busy and the broker still owns the (unacked)
+        messages.
 
         ``worker_cancel_long_running_tasks_on_connection_loss`` (set in
-        the fixture) terminates the two in-flight tasks when the
-        connection drops, releasing their pool slots before the
-        reconnect. ``active_requests`` is still read before those
-        cancellations round-trip, so the legacy reduction on a pre-fix
-        build still computes max(1, 4-2)=2. After the broker restarts and
-        ``task_acks_late`` causes the two long-running tasks to be
-        redelivered:
+        the fixture) terminates those two in-flight tasks on disconnect,
+        freeing their pool slots. After the restart the messages are
+        redelivered (acks_late); on a post-#9512 build the consumer keeps
+        its full prefetch of 4 (the reduction is skipped under
+        per-consumer QoS), so the redelivered tasks and the trailing noop
+        each find a free pool process and the noop completes within the
+        timeout.
 
-        - On a pre-fix build the consumer is stranded at the reduced
-          prefetch (max(1, 4-2)=2). Both prefetch slots are taken by the
-          redelivered long-running tasks, so the noop is never fetched
-          and the test times out.
-        - On a post-fix build the consumer keeps its full prefetch of 4,
-          so the noop is fetched. The cancelled originals freed their
-          pool slots, so the redelivered tasks and the noop all find a
-          free pool process and the noop completes.
+        Note: this test does not by itself distinguish the #9512 pre/post
+        fix behaviour. Enabling cancellation removes the tasks from
+        ``active_requests`` synchronously (``Request.cancel`` ->
+        ``_announce_cancelled`` -> ``task_ready``), so the legacy
+        reduction would read ``len(active_requests) == 0`` rather than 2.
+        The discriminating #9512 assertion lives in
+        ``test_skip_log_emitted_after_broker_restart``; here we only
+        assert that work resumes flowing after the reconnect.
         """
         queue = celery_setup.worker.worker_queue
         # Confirm the worker is healthy before perturbing it.
@@ -166,12 +169,10 @@ class test_quorum_qos_prefetch_reduction_skipped_on_reconnect:
 
         sig = group(long_running_task.s(420) for _ in range(2))
         sig.apply_async(queue=queue)
-        # Both tasks must be in flight before the broker restart so
-        # ``len(active_requests) == 2`` when the reduction is computed on
-        # a pre-fix build. A single ``wait_for_log`` returns as soon as
-        # the first task starts, which would compute max(1, 4-1)=3 instead
-        # of max(1, 4-2)=2 and leave enough prefetch slots free for the
-        # post-restart noop to succeed even on the buggy path.
+        # Both tasks must actually be running (occupying two pool
+        # processes) before the broker restart, otherwise there are no
+        # busy slots to free and the scenario is not exercised. A single
+        # ``wait_for_log`` would return as soon as the first task starts.
         _wait_for_log_count(celery_setup.worker, "Starting long running task", 2)
 
         celery_setup.broker.restart()
