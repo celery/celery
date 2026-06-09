@@ -755,6 +755,7 @@ class test_AsynPool:
         # is the preferred source of truth for the busy fd.
         proc = Mock(name='proc')
         proc.inqW_fd = 7
+        proc._is_alive.return_value = True
         job = Mock(name='job')
         job._accepted = True
         job._write_to = proc
@@ -785,6 +786,7 @@ class test_AsynPool:
 
         proc = Mock(name='proc')
         proc.inqW_fd = 5
+        proc._is_alive.return_value = True
         job = Mock(name='job')
         job._accepted = True
         job._write_to = None
@@ -844,6 +846,7 @@ class test_AsynPool:
 
         accepted_proc = Mock(name='accepted_proc')
         accepted_proc.inqW_fd = 7
+        accepted_proc._is_alive.return_value = True
         accepted_job = Mock(name='accepted_job')
         accepted_job._accepted = True
         accepted_job._write_to = accepted_proc
@@ -868,6 +871,36 @@ class test_AsynPool:
         assert 7 in pool._busy_workers
         assert 9 not in pool._busy_workers
 
+    @t.skip.if_pypy
+    def test_flush_releases_busy_worker_for_dead_process(self):
+        """flush() must not keep an accepted job's fd if its worker died.
+
+        If the worker executing an accepted job has exited, its inqueue
+        write-fd may be reused by a replacement process. Keeping the fd marked
+        busy would sideline that healthy replacement, so a dead worker's fd is
+        dropped from _busy_workers.
+        """
+        pool = asynpool.AsynPool(processes=2, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        proc = Mock(name='proc')
+        proc.inqW_fd = 3
+        proc._is_alive.return_value = False
+        job = Mock(name='job')
+        job._accepted = True
+        job._write_to = proc
+        job._scheduled_for = proc
+        job._writer.return_value = None
+
+        pool._cache = {1: job}
+        pool._busy_workers = {3}
+        pool._active_writers.clear()
+        pool.outbound_buffer.clear()
+
+        pool.flush()
+
+        assert 3 not in pool._busy_workers
 
     def test_process_result(self):
         x = asynpool.ResultHandler(

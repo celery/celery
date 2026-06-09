@@ -1097,12 +1097,18 @@ class AsynPool(_pool.Pool):
             # worker) instead depends on still_busy including every accepted
             # job's executing fd, which is why we source it from
             # _write_to/_scheduled_for of the running job above.
+            #
+            # The proc._is_alive() guard keeps the set limited to workers that
+            # are actually still executing: a genuinely running accepted job
+            # always has a live worker, while a worker that died (whose fd may
+            # since have been reused by a fresh replacement) must not be
+            # re-counted as busy.
             still_busy = set()
             for job in self._cache.values():
                 if not job._accepted:
                     continue
                 proc = job._write_to or job._scheduled_for
-                if proc is not None:
+                if proc is not None and proc._is_alive():
                     still_busy.add(proc.inqW_fd)
             self._busy_workers.intersection_update(still_busy)
 

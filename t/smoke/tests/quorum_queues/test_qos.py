@@ -92,7 +92,7 @@ class test_quorum_qos_prefetch_reduction_skipped_on_reconnect:
         # Terminate in-flight acks_late tasks when the connection drops so
         # their pool slots are released before the reconnect. Without this
         # the original long-running tasks keep occupying their pool slots
-        # while the broker also redelivers them (acks_late); the original +
+        # while the broker also redelivers them (acks_late); the original and
         # redelivered copies then fill every pool process and the
         # post-restart probe task in
         # ``test_worker_resumes_consuming_after_broker_restart`` can never be
