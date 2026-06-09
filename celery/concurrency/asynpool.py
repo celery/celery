@@ -1081,7 +1081,7 @@ class AsynPool(_pool.Pool):
             self._active_writers.clear()
             self._active_writes.clear()
 
-            # Rebuild _busy_workers from the workers still executing an
+            # Trim _busy_workers down to the workers still executing an
             # accepted (running) job instead of clearing it outright, so the
             # fair scheduler keeps avoiding mid-task workers across a broker
             # reconnect. A worker is marked busy keyed on
@@ -1091,7 +1091,8 @@ class AsynPool(_pool.Pool):
             # _scheduled_for.
             #
             # intersection_update only ever removes fds from _busy_workers,
-            # never adds one, so the rebuild can't fabricate a phantom-busy
+            # never adds one (it filters the existing set rather than
+            # repopulating it), so this trim can't fabricate a phantom-busy
             # entry that would permanently sideline a healthy worker. Avoiding
             # double-booking (writing a second task onto a still-running
             # worker) instead depends on still_busy including every accepted

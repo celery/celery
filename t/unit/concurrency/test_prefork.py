@@ -736,7 +736,8 @@ class test_AsynPool:
         assert gen not in pool._active_writers
 
     @t.skip.if_pypy
-    def test_flush_preserves_busy_worker_for_accepted_job(self):
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_preserves_busy_worker_for_accepted_job(self, _create_worker_process):
         """flush() must keep a worker marked busy while it runs an accepted job.
 
         On a broker reconnect Consumer.on_close calls pool.flush(). A worker
@@ -773,7 +774,8 @@ class test_AsynPool:
         assert 7 in pool._busy_workers
 
     @t.skip.if_pypy
-    def test_flush_preserves_busy_worker_via_scheduled_for_fallback(self):
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_preserves_busy_worker_via_scheduled_for_fallback(self, _create_worker_process):
         """flush() falls back to _scheduled_for when _write_to is unset.
 
         A job can be accepted before its body finished writing, leaving
@@ -803,7 +805,8 @@ class test_AsynPool:
         assert 5 in pool._busy_workers
 
     @t.skip.if_pypy
-    def test_flush_releases_busy_worker_for_unaccepted_job(self):
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_releases_busy_worker_for_unaccepted_job(self, _create_worker_process):
         """flush() must free a worker whose job was not accepted yet.
 
         Unaccepted jobs are discarded/redelivered by the broker, so the worker
@@ -832,7 +835,8 @@ class test_AsynPool:
         assert 9 not in pool._busy_workers
 
     @t.skip.if_pypy
-    def test_flush_preserves_accepted_and_releases_unaccepted_together(self):
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_preserves_accepted_and_releases_unaccepted_together(self, _create_worker_process):
         """flush() must resolve a mixed _busy_workers set in a single call.
 
         When one worker runs an accepted job and another only had an
@@ -872,7 +876,8 @@ class test_AsynPool:
         assert 9 not in pool._busy_workers
 
     @t.skip.if_pypy
-    def test_flush_releases_busy_worker_for_dead_process(self):
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_releases_busy_worker_for_dead_process(self, _create_worker_process):
         """flush() must not keep an accepted job's fd if its worker died.
 
         If the worker executing an accepted job has exited, its inqueue
