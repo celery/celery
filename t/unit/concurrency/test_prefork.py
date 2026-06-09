@@ -750,11 +750,14 @@ class test_AsynPool:
         pool._state = asynpool.RUN
         pool.maintain_pool = Mock(name='maintain_pool')
 
-        # Worker still running an accepted job, dispatched to fd 7.
+        # Worker still running an accepted job, dispatched to fd 7. Once the
+        # body is written job._write_to points at the executing process, so it
+        # is the preferred source of truth for the busy fd.
         proc = Mock(name='proc')
         proc.inqW_fd = 7
         job = Mock(name='job')
         job._accepted = True
+        job._write_to = proc
         job._scheduled_for = proc
         job._writer.return_value = None
 
@@ -767,6 +770,35 @@ class test_AsynPool:
 
         # The busy worker must still be marked busy after the flush.
         assert 7 in pool._busy_workers
+
+    @t.skip.if_pypy
+    def test_flush_preserves_busy_worker_via_scheduled_for_fallback(self):
+        """flush() falls back to _scheduled_for when _write_to is unset.
+
+        A job can be accepted before its body finished writing, leaving
+        _write_to unset while _scheduled_for already identifies the worker the
+        task was dispatched to. The busy fd must still be preserved.
+        """
+        pool = asynpool.AsynPool(processes=2, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        proc = Mock(name='proc')
+        proc.inqW_fd = 5
+        job = Mock(name='job')
+        job._accepted = True
+        job._write_to = None
+        job._scheduled_for = proc
+        job._writer.return_value = None
+
+        pool._cache = {1: job}
+        pool._busy_workers = {5}
+        pool._active_writers.clear()
+        pool.outbound_buffer.clear()
+
+        pool.flush()
+
+        assert 5 in pool._busy_workers
 
     @t.skip.if_pypy
     def test_flush_releases_busy_worker_for_unaccepted_job(self):
@@ -784,6 +816,7 @@ class test_AsynPool:
         proc.inqW_fd = 9
         job = Mock(name='job')
         job._accepted = False
+        job._write_to = proc
         job._scheduled_for = proc
         job._writer.return_value = None
 
@@ -795,6 +828,46 @@ class test_AsynPool:
         pool.flush()
 
         assert 9 not in pool._busy_workers
+
+    @t.skip.if_pypy
+    def test_flush_preserves_accepted_and_releases_unaccepted_together(self):
+        """flush() must resolve a mixed _busy_workers set in a single call.
+
+        When one worker runs an accepted job and another only had an
+        unaccepted job tentatively scheduled to it, the same flush() must keep
+        the accepted worker busy while releasing the unaccepted one, rather
+        than treating the set all-or-nothing.
+        """
+        pool = asynpool.AsynPool(processes=2, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        accepted_proc = Mock(name='accepted_proc')
+        accepted_proc.inqW_fd = 7
+        accepted_job = Mock(name='accepted_job')
+        accepted_job._accepted = True
+        accepted_job._write_to = accepted_proc
+        accepted_job._scheduled_for = accepted_proc
+        accepted_job._writer.return_value = None
+
+        unaccepted_proc = Mock(name='unaccepted_proc')
+        unaccepted_proc.inqW_fd = 9
+        unaccepted_job = Mock(name='unaccepted_job')
+        unaccepted_job._accepted = False
+        unaccepted_job._write_to = unaccepted_proc
+        unaccepted_job._scheduled_for = unaccepted_proc
+        unaccepted_job._writer.return_value = None
+
+        pool._cache = {1: accepted_job, 2: unaccepted_job}
+        pool._busy_workers = {7, 9}
+        pool._active_writers.clear()
+        pool.outbound_buffer.clear()
+
+        pool.flush()
+
+        assert 7 in pool._busy_workers
+        assert 9 not in pool._busy_workers
+
 
     def test_process_result(self):
         x = asynpool.ResultHandler(

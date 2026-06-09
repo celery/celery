@@ -1081,11 +1081,29 @@ class AsynPool(_pool.Pool):
             self._active_writers.clear()
             self._active_writes.clear()
 
-            still_busy = {
-                job._scheduled_for.inqW_fd
-                for job in self._cache.values()
-                if job._accepted and job._scheduled_for is not None
-            }
+            # Rebuild _busy_workers from the workers still executing an
+            # accepted (running) job instead of clearing it outright, so the
+            # fair scheduler keeps avoiding mid-task workers across a broker
+            # reconnect. A worker is marked busy keyed on
+            # job._scheduled_for.inqW_fd at write time; once the body has been
+            # written job._write_to points at the same process, so prefer it
+            # (the process actually executing the job) and fall back to
+            # _scheduled_for.
+            #
+            # intersection_update only ever removes fds from _busy_workers,
+            # never adds one, so the rebuild can't fabricate a phantom-busy
+            # entry that would permanently sideline a healthy worker. Avoiding
+            # double-booking (writing a second task onto a still-running
+            # worker) instead depends on still_busy including every accepted
+            # job's executing fd, which is why we source it from
+            # _write_to/_scheduled_for of the running job above.
+            still_busy = set()
+            for job in self._cache.values():
+                if not job._accepted:
+                    continue
+                proc = job._write_to or job._scheduled_for
+                if proc is not None:
+                    still_busy.add(proc.inqW_fd)
             self._busy_workers.intersection_update(still_busy)
 
     def _flush_writer(self, proc, writer):
