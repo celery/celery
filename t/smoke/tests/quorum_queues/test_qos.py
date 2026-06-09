@@ -89,17 +89,6 @@ class test_quorum_qos_prefetch_reduction_skipped_on_reconnect:
         # applies when reduction is enabled. We must NOT silently rely on
         # the user-discovered workaround of disabling it.
         app.conf.worker_enable_prefetch_count_reduction = True
-        # Terminate in-flight acks_late tasks when the connection drops so
-        # their pool slots are released before the reconnect. Without this
-        # the original long-running tasks keep occupying their pool slots
-        # while the broker also redelivers them (acks_late); the original and
-        # redelivered copies then fill every pool process and the
-        # post-restart probe task in
-        # ``test_worker_resumes_consuming_after_broker_restart`` can never be
-        # dispatched. The #9512 regression itself is asserted by
-        # ``test_skip_log_emitted_after_broker_restart`` through the skip log,
-        # which does not depend on this setting.
-        app.conf.worker_cancel_long_running_tasks_on_connection_loss = True
         return app
 
     # No RedisTestBroker xfail guard is needed: the ``quorum_queues/``
@@ -135,6 +124,39 @@ class test_quorum_qos_prefetch_reduction_skipped_on_reconnect:
         celery_setup.worker.assert_log_does_not_exist(
             "Temporarily reducing the prefetch count"
         )
+
+
+class test_quorum_qos_worker_resumes_after_reconnect:
+    """Liveness regression test for the celery/celery#9512 reconnect path.
+
+    Split from ``test_quorum_qos_prefetch_reduction_skipped_on_reconnect``
+    because it requires
+    ``worker_cancel_long_running_tasks_on_connection_loss`` to free pool
+    slots after the restart. Enabling that setting drains
+    ``active_requests`` on disconnect, which would mask the #9512
+    regression in the skip-log test, so the two scenarios use separate
+    worker apps.
+    """
+
+    @pytest.fixture
+    def default_worker_app(self, default_worker_app: Celery) -> Celery:
+        app = default_worker_app
+        app.conf.worker_prefetch_multiplier = 1
+        app.conf.worker_concurrency = 4
+        app.conf.task_acks_late = True
+        app.conf.worker_enable_prefetch_count_reduction = True
+        # Terminate in-flight acks_late tasks when the connection drops so
+        # their pool slots are released before the reconnect. Without this
+        # the original long-running tasks keep occupying their pool slots
+        # while the broker also redelivers them (acks_late); the original
+        # and redelivered copies then fill every pool process and the
+        # post-restart probe task below can never be dispatched.
+        app.conf.worker_cancel_long_running_tasks_on_connection_loss = True
+        return app
+
+    # No RedisTestBroker xfail guard is needed: the ``quorum_queues/``
+    # conftest forces a RabbitMQ broker, so this test class only ever
+    # runs against amqp where the bug actually manifests.
 
     def test_worker_resumes_consuming_after_broker_restart(self, celery_setup: CeleryTestSetup):
         """A task submitted after a broker restart still gets processed.
