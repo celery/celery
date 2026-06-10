@@ -603,27 +603,27 @@ class test_BaseBackend_dict:
         b = BaseBackend(app=self.app)
         b._store_result = Mock()
 
-        @self.app.task(shared=False, bind=True)
-        def failing_errback(self, request, exc, traceback):
+        errback_calls = []
+
+        @self.app.task(shared=False)
+        def failing_errback(request, exc, traceback):
+            errback_calls.append('failing')
             raise RuntimeError('errback failed')
 
         @self.app.task(shared=False)
-        def ok_errback(arg1):
-            ok_errback.called = True
-
-        ok_errback.called = False
+        def ok_errback(request, exc, traceback):
+            errback_calls.append('ok')
 
         request = Mock(name='request')
-        request.delivery_info = {'is_eager': True}
         request.errbacks = [
-            failing_errback.subtask(immutable=True),
-            ok_errback.subtask(args=[1], immutable=True),
+            failing_errback.subtask(),
+            ok_errback.subtask(),
         ]
         exc = KeyError()
-        # Should not raise — the RuntimeError from failing_errback is caught
+        # Should not raise — the RuntimeError from failing_errback is
+        # caught and logged, and the next new-style errback still runs.
         b.mark_as_failure('id', exc, request=request)
-        # The old-style errback (ok_errback) should still have been dispatched
-        assert ok_errback.called
+        assert errback_calls == ['failing', 'ok']
 
     def test_mark_as_failure__chord(self):
         b = BaseBackend(app=self.app)
