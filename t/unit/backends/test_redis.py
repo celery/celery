@@ -251,6 +251,87 @@ class test_RedisResultConsumer:
         parent_method.assert_called_once_with(meta, message)
         cancel_for.assert_not_called()
 
+    def test_on_wait_for_pending_does_not_leak_ready_messages(self):
+        """Regression test for celery#8166.
+
+        When ``on_wait_for_pending`` polls the backend synchronously and the
+        task is already in a READY state, ``_iter_meta`` resolves the result
+        and removes it from ``_pending_results``. Calling the full
+        ``on_state_change`` afterwards would buffer the meta in
+        ``_pending_messages`` because the result is no longer tracked.
+        That buffer entry is never consumed, leaking memory.
+        """
+        from celery.utils.collections import BufferMap
+        consumer = self.get_consumer()
+        consumer.start('already-done')
+        pending_messages = BufferMap(10)
+        consumer._pending_messages = pending_messages
+
+        # Sanity check: subscribed before polling.
+        assert consumer._pubsub._subscribed_to == {b'celery-task-meta-already-done'}
+
+        # Simulate a result that is already resolved (READY) by the time
+        # on_wait_for_pending iterates over it.
+        class FakeResult:
+            _cache = None
+
+            def _iter_meta(self, **kwargs):
+                return iter([{
+                    'task_id': 'already-done',
+                    'status': states.SUCCESS,
+                    'result': 42,
+                }])
+
+        consumer.on_wait_for_pending(FakeResult())
+
+        # The ready task should be cancelled from pub/sub, but the meta
+        # must NOT be buffered as a "pending message".
+        assert consumer._pubsub._subscribed_to == set()
+        assert pending_messages.total == 0
+
+    def test_on_wait_for_pending_calls_on_state_change_for_non_ready_messages(self):
+        """Non-ready meta must still go through the normal state change path."""
+        from celery.utils.collections import BufferMap
+        consumer = self.get_consumer()
+        pending_messages = BufferMap(10)
+        consumer._pending_messages = pending_messages
+        meta = {'task_id': 'not-ready', 'status': states.PENDING}
+
+        class FakeResult:
+            _cache = None
+
+            def _iter_meta(self, **kwargs):
+                return iter([meta])
+
+        with patch.object(
+            consumer, 'on_state_change', wraps=consumer.on_state_change
+        ) as on_state_change:
+            consumer.on_wait_for_pending(FakeResult())
+            on_state_change.assert_called_once_with(meta, None)
+
+        assert pending_messages.total == 0
+
+    def test_on_wait_for_pending_resultset_uses_full_state_change(self):
+        """ResultSet/GroupResult with READY meta must use on_state_change path."""
+        from celery.utils.collections import BufferMap
+        consumer = self.get_consumer()
+        pending_messages = BufferMap(10)
+        consumer._pending_messages = pending_messages
+        meta = {'task_id': 'group-task', 'status': states.SUCCESS, 'result': 42}
+
+        class FakeResultSet:
+            _cache = None
+            results = ['fake-result-1']
+
+            def _iter_meta(self, **kwargs):
+                return iter([meta])
+
+        with patch.object(
+            consumer, 'on_state_change', wraps=consumer.on_state_change
+        ) as on_state_change:
+            consumer.on_wait_for_pending(FakeResultSet())
+            on_state_change.assert_called_once_with(meta, None)
+
     def test_drain_events_before_start(self):
         consumer = self.get_consumer()
         # drain_events shouldn't crash when called before start

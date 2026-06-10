@@ -190,11 +190,12 @@ class Queues(dict):
         if exclude:
             exclude = maybe_list(exclude)
             if self._consume_from is None:
-                # using all queues
-                return self.select(k for k in self if k not in exclude)
-            # using selection
+                consume_from = self._default_consume_from
+            else:
+                consume_from = self._consume_from
+
             for queue in exclude:
-                self._consume_from.pop(queue, None)
+                consume_from.pop(queue, None)
 
     def new_missing(self, name):
         queue_arguments = None
