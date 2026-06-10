@@ -306,6 +306,27 @@ class test_RedisResultConsumer:
 
         assert pending_messages.total == 0
 
+    def test_on_wait_for_pending_resultset_uses_full_state_change(self):
+        """ResultSet/GroupResult with READY meta must use on_state_change path."""
+        from celery.utils.collections import BufferMap
+        consumer = self.get_consumer()
+        pending_messages = BufferMap(10)
+        consumer._pending_messages = pending_messages
+        meta = {'task_id': 'group-task', 'status': states.SUCCESS, 'result': 42}
+
+        class FakeResultSet:
+            _cache = None
+            results = ['fake-result-1']
+
+            def _iter_meta(self, **kwargs):
+                return iter([meta])
+
+        with patch.object(
+            consumer, 'on_state_change', wraps=consumer.on_state_change
+        ) as on_state_change:
+            consumer.on_wait_for_pending(FakeResultSet())
+            on_state_change.assert_called_once_with(meta, None)
+
     def test_drain_events_before_start(self):
         consumer = self.get_consumer()
         # drain_events shouldn't crash when called before start
