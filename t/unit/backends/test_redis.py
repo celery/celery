@@ -263,8 +263,12 @@ class test_RedisResultConsumer:
         """
         from celery.utils.collections import BufferMap
         consumer = self.get_consumer()
+        consumer.start('already-done')
         pending_messages = BufferMap(10)
         consumer._pending_messages = pending_messages
+
+        # Sanity check: subscribed before polling.
+        assert consumer._pubsub._subscribed_to == {b'celery-task-meta-already-done'}
 
         # Simulate a result that is already resolved (READY) by the time
         # on_wait_for_pending iterates over it.
@@ -282,6 +286,7 @@ class test_RedisResultConsumer:
 
         # The ready task should be cancelled from pub/sub, but the meta
         # must NOT be buffered as a "pending message".
+        assert consumer._pubsub._subscribed_to == set()
         assert pending_messages.total == 0
 
     def test_on_wait_for_pending_calls_on_state_change_for_non_ready_messages(self):
