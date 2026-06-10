@@ -284,7 +284,7 @@ class test_RedisResultConsumer:
         # must NOT be buffered as a "pending message".
         assert pending_messages.total == 0
 
-    def test_on_wait_for_pending_buffers_non_ready_messages(self):
+    def test_on_wait_for_pending_calls_on_state_change_for_non_ready_messages(self):
         """Non-ready meta must still go through the normal state change path."""
         from celery.utils.collections import BufferMap
         consumer = self.get_consumer()
@@ -298,11 +298,12 @@ class test_RedisResultConsumer:
             def _iter_meta(self, **kwargs):
                 return iter([meta])
 
-        consumer.on_wait_for_pending(FakeResult())
-        # For non-ready states, on_state_change is called but the meta
-        # is not buffered because PENDING is not in READY_STATES.
-        # The key assertion is that no exception is raised and the
-        # code path completes normally.
+        with patch.object(
+            consumer, 'on_state_change', wraps=consumer.on_state_change
+        ) as on_state_change:
+            consumer.on_wait_for_pending(FakeResult())
+            on_state_change.assert_called_once_with(meta, None)
+
         assert pending_messages.total == 0
 
     def test_drain_events_before_start(self):
