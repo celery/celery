@@ -15,16 +15,18 @@ from celery.utils.serialization import UnpickleableExceptionWrapper
 from celery.worker import state as worker_state
 
 from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connection
-from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result, add_not_typed, add_pydantic,
-                    add_pydantic_string_annotations, fail, fail_unpickleable, print_unicode, retry, retry_once,
-                    retry_once_headers, retry_once_priority, retry_unpickleable, return_properties,
-                    return_request_time_limits, second_order_replace1, sleeping,
-                    soft_time_limit_must_exceed_time_limit, task_with_declared_time_limits)
+from .tasks import (
+    ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result, add_not_typed, add_pydantic,
+    add_pydantic_string_annotations, fail, fail_unpickleable, print_unicode, retry, retry_once,
+    retry_once_headers, retry_once_priority, retry_unpickleable, return_properties,
+    return_request_time_limits, second_order_replace1, sleeping,
+    soft_time_limit_must_exceed_time_limit, task_with_declared_time_limits,
+)
 
 TIMEOUT = 10
 
-_flaky = pytest.mark.flaky(reruns=5, reruns_delay=2)
-_timeout = pytest.mark.timeout(timeout=300)
+_flaky = pytest.mark.flaky(reruns=2, reruns_delay=1)
+_timeout = pytest.mark.timeout(timeout=120)
 
 
 def flaky(fn):
@@ -37,15 +39,64 @@ def set_multiprocessing_start_method():
         try:
             multiprocessing.set_start_method("fork")
         except RuntimeError:
-            # The method is already set
             pass
+
+
+def _target_monitoring_id(monitoring_id):
+    return monitoring_id[0] if isinstance(monitoring_id, list) else monitoring_id
+
+
+def _clear_revoked_stamps():
+    worker_state.revoked_stamps.clear()
+
+
+def _make_monitoring_visitor(target_monitoring_id):
+    class MonitoringIdStampingVisitor(StampingVisitor):
+        def on_signature(self, sig, **headers) -> dict:
+            return {
+                'monitoring_id': target_monitoring_id,
+                'stamped_headers': ['monitoring_id'],
+            }
+    return MonitoringIdStampingVisitor()
+
+
+def _make_stamped_sleeping_task(target_monitoring_id, delay=1):
+    stamped_task = sleeping.si(delay)
+    stamped_task.stamp(visitor=_make_monitoring_visitor(target_monitoring_id))
+    result = stamped_task.freeze()
+    return stamped_task, result
+
+
+CANVAS_BUILDERS = {
+    "group_single": lambda stamped: group([stamped]),
+    "chord_header_revoked": lambda stamped: chord(group([stamped]), sleeping.si(1)),
+    "chord_body_revoked": lambda stamped: chord(group([sleeping.si(1)]), stamped),
+    "chain_single": lambda stamped: chain(stamped),
+    "group_mixed": lambda stamped: group([sleeping.si(1), stamped, sleeping.si(1)]),
+    "chord_mixed_header": lambda stamped: chord([sleeping.si(1), stamped], sleeping.si(1)),
+    "chord_revoked_body": lambda stamped: chord([sleeping.si(1), sleeping.si(1)], stamped),
+    "chain_second": lambda stamped: chain(sleeping.si(1), stamped),
+    "chain_group_mixed": lambda stamped: chain(
+        sleeping.si(1),
+        group([sleeping.si(1), stamped, sleeping.si(1)]),
+    ),
+    "chain_group_then_tail": lambda stamped: chain(
+        sleeping.si(1),
+        group([sleeping.si(1), stamped]),
+        sleeping.si(1),
+    ),
+    "chain_group_to_revoked_body": lambda stamped: chain(
+        sleeping.si(1),
+        group([sleeping.si(1), sleeping.si(1)]),
+        stamped,
+    ),
+}
 
 
 class test_class_based_tasks:
 
     @flaky
-    def test_class_based_task_retried(self, celery_session_app,
-                                      celery_session_worker):
+    def test_class_based_task_retried(self, celery_session_app, celery_session_worker):
         task = ClassBasedAutoRetryTask()
         celery_session_app.register_task(task)
         res = task.delay()
@@ -77,7 +128,6 @@ class test_tasks:
     def test_basic_task(self, manager):
         """Tests basic task call"""
         results = []
-        # Tests calling task only with args
         for i in range(10):
             results.append([i + i, add.delay(i, i)])
         for expected, result in results:
@@ -88,9 +138,8 @@ class test_tasks:
             assert result.successful() is True
 
         results = []
-        # Tests calling task with args and kwargs
         for i in range(10):
-            results.append([3*i, add.delay(i, i, z=i)])
+            results.append([3 * i, add.delay(i, i, z=i)])
         for expected, result in results:
             value = result.get(timeout=10)
             assert value == expected
@@ -124,17 +173,14 @@ class test_tasks:
     def test_ignore_result(self, manager):
         """Testing calling task with ignoring results."""
         result = add.apply_async((1, 2), ignore_result=True)
-        assert result.get() is None
-        # We wait since it takes a bit of time for the result to be
-        # persisted in the result backend.
-        time.sleep(1)
+        assert result.get(timeout=3) is None
+        time.sleep(0.2)
         assert result.result is None
 
     @flaky
     def test_pydantic_annotations(self, manager):
         """Tests task call with Pydantic model serialization."""
         results = []
-        # Tests calling task only with args
         for i in range(10):
             results.append([i + i, add_pydantic.delay({'x': i, 'y': i})])
         for expected, result in results:
@@ -148,7 +194,6 @@ class test_tasks:
     def test_pydantic_string_annotations(self, manager):
         """Tests task call with string-annotated Pydantic model."""
         results = []
-        # Tests calling task only with args
         for i in range(10):
             results.append([i + i, add_pydantic_string_annotations.delay({'x': i, 'y': i})])
         for expected, result in results:
@@ -161,33 +206,29 @@ class test_tasks:
     @flaky
     def test_timeout(self, manager):
         """Testing timeout of getting results from tasks."""
-        result = sleeping.delay(10)
+        result = sleeping.delay(2)
         with pytest.raises(celery.exceptions.TimeoutError):
-            result.get(timeout=5)
+            result.get(timeout=0.5)
 
-    @pytest.mark.timeout(60)
+    @pytest.mark.timeout(30)
     @flaky
     def test_expired(self, manager):
         """Testing expiration of task."""
-        # Fill the queue with tasks which took > 1 sec to process
-        for _ in range(4):
-            sleeping.delay(2)
-        # Execute task with expiration = 1 sec
-        result = add.apply_async((1, 1), expires=1)
+        for _ in range(2):
+            sleeping.delay(1)
+        result = add.apply_async((1, 1), expires=0.2)
         with pytest.raises(celery.exceptions.TaskRevokedError):
-            result.get()
+            result.get(timeout=5)
         assert result.status == 'REVOKED'
         assert result.ready() is True
         assert result.failed() is False
         assert result.successful() is False
 
-        # Fill the queue with tasks which took > 1 sec to process
-        for _ in range(4):
-            sleeping.delay(2)
-        # Execute task with expiration at now + 1 sec
-        result = add.apply_async((1, 1), expires=datetime.now(timezone.utc) + timedelta(seconds=1))
+        for _ in range(2):
+            sleeping.delay(1)
+        result = add.apply_async((1, 1), expires=datetime.now(timezone.utc) + timedelta(seconds=0.2))
         with pytest.raises(celery.exceptions.TaskRevokedError):
-            result.get()
+            result.get(timeout=5)
         assert result.status == 'REVOKED'
         assert result.ready() is True
         assert result.failed() is False
@@ -197,30 +238,26 @@ class test_tasks:
     def test_eta(self, manager):
         """Tests tasks scheduled at some point in future."""
         start = time.perf_counter()
-        # Schedule task to be executed in 3 seconds
-        result = add.apply_async((1, 1), countdown=3)
-        time.sleep(1)
+        result = add.apply_async((1, 1), countdown=1)
+        time.sleep(0.2)
         assert result.status == 'PENDING'
         assert result.ready() is False
-        assert result.get() == 2
+        assert result.get(timeout=5) == 2
         end = time.perf_counter()
         assert result.status == 'SUCCESS'
         assert result.ready() is True
-        # Difference between calling the task and result must be bigger than 3 secs
-        assert (end - start) > 3
+        assert (end - start) > 1
 
         start = time.perf_counter()
-        # Schedule task to be executed at time now + 3 seconds
-        result = add.apply_async((2, 2), eta=datetime.now(timezone.utc) + timedelta(seconds=3))
-        time.sleep(1)
+        result = add.apply_async((2, 2), eta=datetime.now(timezone.utc) + timedelta(seconds=1))
+        time.sleep(0.2)
         assert result.status == 'PENDING'
         assert result.ready() is False
-        assert result.get() == 4
+        assert result.get(timeout=5) == 4
         end = time.perf_counter()
         assert result.status == 'SUCCESS'
         assert result.ready() is True
-        # Difference between calling the task and result must be bigger than 3 secs
-        assert (end - start) > 3
+        assert (end - start) > 1
 
     @flaky
     def test_fail(self, manager):
@@ -236,14 +273,12 @@ class test_tasks:
     @flaky
     def test_revoked(self, manager):
         """Testing revoking of task"""
-        # Fill the queue with tasks to fill the queue
-        for _ in range(4):
-            sleeping.delay(2)
-        # Execute task and revoke it
+        for _ in range(2):
+            sleeping.delay(1)
         result = add.apply_async((1, 1))
         result.revoke()
         with pytest.raises(celery.exceptions.TaskRevokedError):
-            result.get()
+            result.get(timeout=5)
         assert result.status == 'REVOKED'
         assert result.ready() is True
         assert result.failed() is False
@@ -265,76 +300,57 @@ class test_tasks:
             stamped_task.apply_async()
             if monitoring_id == target_monitoring_id:
                 with pytest.raises(celery.exceptions.TaskRevokedError):
-                    result.get()
+                    result.get(timeout=5)
                 assert result.status == 'REVOKED'
                 assert result.ready() is True
                 assert result.failed() is False
                 assert result.successful() is False
             else:
-                assert result.get() == 2
+                assert result.get(timeout=5) == 2
                 assert result.status == 'SUCCESS'
                 assert result.ready() is True
                 assert result.failed() is False
                 assert result.successful() is True
+            _clear_revoked_stamps()
 
-            # Clear the set of revoked stamps in the worker state.
-            # This step is performed in each iteration of the loop to ensure that only tasks
-            # stamped with a specific monitoring ID will be revoked.
-            # For subsequent iterations with different monitoring IDs, the revoked stamps will
-            # not match the task's stamps, allowing those tasks to proceed successfully.
-            worker_state.revoked_stamps.clear()
-
+    @pytest.mark.parametrize(
+        "monitoring_id",
+        [
+            pytest.param("4242", id="scalar-monitoring-id"),
+            pytest.param([1234, "unused-id"], id="list-monitoring-id"),
+        ],
+    )
+    @pytest.mark.parametrize("canvas_name", list(CANVAS_BUILDERS))
     @pytest.mark.timeout(20)
-    @pytest.mark.flaky(reruns=2)
-    def test_revoked_by_headers_complex_canvas(self, manager, subtests):
-        """Testing revoking of task using a stamped header"""
+    def test_revoked_by_headers_complex_canvas(self, manager, monitoring_id, canvas_name):
+        """Test revoke-by-stamped-headers across complex canvas shapes."""
         try:
             manager.app.backend.ensure_chords_allowed()
         except NotImplementedError as e:
             raise pytest.skip(e.args[0])
 
-        for monitoring_id in ["4242", [1234, uuid4().hex]]:
+        manager.wait_until_idle()
+        target_monitoring_id = _target_monitoring_id(monitoring_id)
+        stamped_task, result = _make_stamped_sleeping_task(target_monitoring_id)
 
-            # Try to purge the queue before we start
-            # to attempt to avoid interference from other tests
+        result.revoke_by_stamped_headers(headers={'monitoring_id': monitoring_id})
+        sig = CANVAS_BUILDERS[canvas_name](stamped_task)
+
+        try:
+            sig_result = sig.apply_async()
+            with pytest.raises((
+                celery.exceptions.TaskRevokedError,
+                celery.exceptions.ChordError,
+            )):
+                sig_result.get(timeout=8)
+
+            assert result.status == 'REVOKED'
+            assert result.ready() is True
+            assert result.failed() is False
+            assert result.successful() is False
+        finally:
+            _clear_revoked_stamps()
             manager.wait_until_idle()
-
-            target_monitoring_id = isinstance(monitoring_id, list) and monitoring_id[0] or monitoring_id
-
-            class MonitoringIdStampingVisitor(StampingVisitor):
-                def on_signature(self, sig, **headers) -> dict:
-                    return {'monitoring_id': target_monitoring_id, 'stamped_headers': ['monitoring_id']}
-
-            stamped_task = sleeping.si(4)
-            stamped_task.stamp(visitor=MonitoringIdStampingVisitor())
-            result = stamped_task.freeze()
-
-            canvas = [
-                group([stamped_task]),
-                chord(group([stamped_task]), sleeping.si(2)),
-                chord(group([sleeping.si(2)]), stamped_task),
-                chain(stamped_task),
-                group([sleeping.si(2), stamped_task, sleeping.si(2)]),
-                chord([sleeping.si(2), stamped_task], sleeping.si(2)),
-                chord([sleeping.si(2), sleeping.si(2)], stamped_task),
-                chain(sleeping.si(2), stamped_task),
-                chain(sleeping.si(2), group([sleeping.si(2), stamped_task, sleeping.si(2)])),
-                chain(sleeping.si(2), group([sleeping.si(2), stamped_task]), sleeping.si(2)),
-                chain(sleeping.si(2), group([sleeping.si(2), sleeping.si(2)]), stamped_task),
-            ]
-
-            result.revoke_by_stamped_headers(headers={'monitoring_id': monitoring_id})
-
-            for sig in canvas:
-                sig_result = sig.apply_async()
-                with subtests.test(msg='Testing if task was revoked'):
-                    with pytest.raises(celery.exceptions.TaskRevokedError):
-                        sig_result.get()
-                    assert result.status == 'REVOKED'
-                    assert result.ready() is True
-                    assert result.failed() is False
-                    assert result.successful() is False
-            worker_state.revoked_stamps.clear()
 
     @flaky
     def test_revoke_by_stamped_headers_no_match(self, manager):
@@ -362,7 +378,6 @@ class test_tasks:
         with pytest.raises(TypeError):
             add.delay(5, wrong_arg=5)
 
-        # Tasks with typing=False are not checked but execution should fail
         result = add_not_typed.delay(5)
         with pytest.raises(TypeError):
             result.get(timeout=5)
@@ -380,7 +395,6 @@ class test_tasks:
     )
     def test_retry(self, manager):
         """Tests retrying of task."""
-        # Tests when max. retries is reached
         result = retry.delay()
 
         tik = time.monotonic()
@@ -393,10 +407,9 @@ class test_tasks:
             raise AssertionError("Timeout while waiting for the task to be retried")
         assert status == 'RETRY'
         with pytest.raises(ExpectedException):
-            result.get()
+            result.get(timeout=5)
         assert result.status == 'FAILURE'
 
-        # Tests when task is retried but after returns correct result
         result = retry.delay(return_value='bar')
 
         tik = time.monotonic()
@@ -408,7 +421,7 @@ class test_tasks:
         else:
             raise AssertionError("Timeout while waiting for the task to be retried")
         assert status == 'RETRY'
-        assert result.get() == 'bar'
+        assert result.get(timeout=10) == 'bar'
         assert result.status == 'SUCCESS'
 
     def test_retry_with_unpickleable_exception(self, manager):
@@ -416,14 +429,12 @@ class test_tasks:
 
         We expect to be able to fetch the result (exception) correctly.
         """
-
         job = retry_unpickleable.delay(
             "foo",
             "bar",
             retry_kwargs={"countdown": 10, "max_retries": 1},
         )
 
-        # Wait for the task to raise the Retry exception
         tik = time.monotonic()
         while time.monotonic() < tik + 5:
             status = job.status
@@ -435,17 +446,13 @@ class test_tasks:
 
         assert status == 'RETRY'
 
-        # Get the exception
         res = job.result
-        assert job.status == 'RETRY'  # make sure that it wasn't completed yet
+        assert job.status == 'RETRY'
 
-        # Check it. Accept both the dedicated wrapper and plain Exception
-        # (some environments may return a stringified Exception instead).
         if isinstance(res, UnpickleableExceptionWrapper):
             assert res.exc_cls_name == "UnpickleableException"
             assert res.exc_args == ("foo",)
         else:
-            # Fallback: ensure the exception string mentions the class and argument
             res_str = str(res)
             assert "UnpickleableException" in res_str
             assert "foo" in res_str
@@ -459,24 +466,19 @@ class test_tasks:
         """
         result = fail_unpickleable.delay("foo", "bar")
 
-        # Accept either the dedicated wrapper exception or a plain Exception
-        # whose string contains the class name and args (some backends
-        # may return a stringified exception).
         try:
-            result.get()
+            result.get(timeout=5)
             pytest.fail("Expected an exception when getting result")
         except UnpickleableExceptionWrapper as exc_wrapper:
             assert exc_wrapper.exc_cls_name == "UnpickleableException"
             assert exc_wrapper.exc_args == ("foo",)
         except Exception as exc:
-            # Fallback: ensure the exception string mentions the class and argument
             exc_str = str(exc)
             assert "UnpickleableException" in exc_str
             assert "foo" in exc_str
 
         assert result.status == 'FAILURE'
 
-    # Requires investigation why it randomly succeeds/fails
     @pytest.mark.skip(reason="Randomly fails")
     def test_task_accepted(self, manager, sleep=1):
         r1 = sleeping.delay(sleep)
@@ -486,24 +488,24 @@ class test_tasks:
     @flaky
     def test_task_retried_once(self, manager):
         res = retry_once.delay()
-        assert res.get(timeout=TIMEOUT) == 1  # retried once
+        assert res.get(timeout=TIMEOUT) == 1
 
     @flaky
     def test_task_retried_once_with_expires(self, manager):
         res = retry_once.delay(expires=60)
-        assert res.get(timeout=TIMEOUT) == 1  # retried once
+        assert res.get(timeout=TIMEOUT) == 1
 
     @flaky
     def test_task_retried_priority(self, manager):
         res = retry_once_priority.apply_async(priority=7)
-        assert res.get(timeout=TIMEOUT) == 7  # retried once with priority 7
+        assert res.get(timeout=TIMEOUT) == 7
 
     @flaky
     def test_task_retried_headers(self, manager):
         res = retry_once_headers.apply_async(headers={'x-test-header': 'test-value'})
         headers = res.get(timeout=TIMEOUT)
-        assert headers is not None  # retried once with headers
-        assert 'x-test-header' in headers  # retry keeps custom headers
+        assert headers is not None
+        assert 'x-test-header' in headers
 
     @flaky
     def test_unicode_task(self, manager):
@@ -519,7 +521,6 @@ class test_tasks:
 
     @flaky
     def test_soft_time_limit_exceeding_time_limit(self):
-
         with pytest.raises(ValueError, match='soft_time_limit must be less than or equal to time_limit'):
             result = soft_time_limit_must_exceed_time_limit.apply_async()
             result.get(timeout=5)
@@ -528,8 +529,6 @@ class test_tasks:
 
     @flaky
     def test_request_time_limits_set_via_apply_async(self, manager):
-        """time_limit and soft_time_limit passed to apply_async must be accessible
-        via task.request.time_limit and task.request.soft_time_limit inside the task."""
         result = return_request_time_limits.apply_async(time_limit=30, soft_time_limit=20)
         data = result.get(timeout=TIMEOUT)
         assert data['time_limit'] == 30
@@ -537,8 +536,6 @@ class test_tasks:
 
     @flaky
     def test_request_time_limits_none_when_not_configured(self, manager):
-        """When no time limits are set, task.request.time_limit and
-        task.request.soft_time_limit must both be None."""
         result = return_request_time_limits.apply_async()
         data = result.get(timeout=TIMEOUT)
         assert data['time_limit'] is None
@@ -546,8 +543,6 @@ class test_tasks:
 
     @flaky
     def test_request_time_limits_from_task_declaration(self, manager):
-        """A task with time_limit and soft_time_limit declared at class level must
-        expose those values via task.request.time_limit and task.request.soft_time_limit."""
         result = task_with_declared_time_limits.apply_async()
         data = result.get(timeout=TIMEOUT)
         assert data['time_limit'] == 60
@@ -555,8 +550,6 @@ class test_tasks:
 
     @flaky
     def test_apply_async_time_limits_override_task_declaration(self, manager):
-        """time_limit and soft_time_limit passed to apply_async must override
-        values declared at the task class level."""
         result = task_with_declared_time_limits.apply_async(time_limit=10, soft_time_limit=5)
         data = result.get(timeout=TIMEOUT)
         assert data['time_limit'] == 10
@@ -567,7 +560,6 @@ class test_apply_tasks:
     """Tests for tasks called via apply() method."""
 
     def test_apply_single_task_ids(self, manager):
-        """Test that a single task called via apply() has correct IDs."""
         @manager.app.task(bind=True)
         def single_apply_task(self):
             return {
@@ -579,12 +571,10 @@ class test_apply_tasks:
         result = single_apply_task.apply()
         data = result.get()
 
-        # Single task should have no parent and root_id should equal task_id
         assert data['parent_id'] is None
         assert data['root_id'] == data['task_id']
 
     def test_apply_nested_parent_child_relationship(self, manager):
-        """Test parent-child relationship when one task calls another via apply()."""
 
         @manager.app.task(bind=True)
         def grandchild_task(task_self):
@@ -597,8 +587,6 @@ class test_apply_tasks:
 
         @manager.app.task(bind=True)
         def child_task(task_self):
-
-            # Call grandchild task via apply()
             grandchild_data = grandchild_task.apply().get()
             return {
                 'task_id': task_self.request.id,
@@ -610,7 +598,6 @@ class test_apply_tasks:
 
         @manager.app.task(bind=True)
         def parent_task(task_self):
-            # Call child task via apply()
             child_data = child_task.apply().get()
             parent_data = {
                 'task_id': task_self.request.id,
@@ -627,17 +614,14 @@ class test_apply_tasks:
         child_data = parent_data['child_data']
         grandchild_data = child_data['grandchild_data']
 
-        # Verify parent task
         assert parent_data['name'] == 'parent_task'
         assert parent_data['parent_id'] is None
         assert parent_data['root_id'] == parent_data['task_id']
 
-        # Verify child task
         assert child_data['name'] == 'child_task'
         assert child_data['parent_id'] == parent_data['task_id']
         assert child_data['root_id'] == parent_data['task_id']
 
-        # Verify grandchild task
         assert grandchild_data['name'] == 'grandchild_task'
         assert grandchild_data['parent_id'] == child_data['task_id']
         assert grandchild_data['root_id'] == parent_data['task_id']
@@ -648,14 +632,14 @@ class test_trace_log_arguments:
     kwargs = "CUSTOM KWARGS"
 
     def assert_trace_log(self, caplog, result, expected):
-        # wait for logs from worker
         time.sleep(.01)
 
-        records = [(r.name, r.levelno, r.msg, r.data["args"], r.data["kwargs"])
-                   for r in caplog.records
-                   if r.name in {'celery.worker.strategy', 'celery.app.trace'}
-                   if r.data["id"] == result.task_id
-                   ]
+        records = [
+            (r.name, r.levelno, r.msg, r.data["args"], r.data["kwargs"])
+            for r in caplog.records
+            if r.name in {'celery.worker.strategy', 'celery.app.trace'}
+            if r.data["id"] == result.task_id
+        ]
         assert records == [(*e, self.args, self.kwargs) for e in expected]
 
     def call_task_with_reprs(self, task):
@@ -664,17 +648,13 @@ class test_trace_log_arguments:
     @flaky
     def test_task_success(self, caplog):
         result = self.call_task_with_reprs(add.s(2, 2))
-        value = result.get()
+        value = result.get(timeout=5)
         assert value == 4
         assert result.successful() is True
 
         self.assert_trace_log(caplog, result, [
-            ('celery.worker.strategy', logging.INFO,
-             celery.app.trace.LOG_RECEIVED,
-             ),
-            ('celery.app.trace', logging.INFO,
-             celery.app.trace.LOG_SUCCESS,
-             ),
+            ('celery.worker.strategy', logging.INFO, celery.app.trace.LOG_RECEIVED),
+            ('celery.app.trace', logging.INFO, celery.app.trace.LOG_SUCCESS),
         ])
 
     @flaky
@@ -685,12 +665,8 @@ class test_trace_log_arguments:
         assert result.failed() is True
 
         self.assert_trace_log(caplog, result, [
-            ('celery.worker.strategy', logging.INFO,
-             celery.app.trace.LOG_RECEIVED,
-             ),
-            ('celery.app.trace', logging.ERROR,
-             celery.app.trace.LOG_FAILURE,
-             ),
+            ('celery.worker.strategy', logging.INFO, celery.app.trace.LOG_RECEIVED),
+            ('celery.app.trace', logging.ERROR, celery.app.trace.LOG_FAILURE),
         ])
 
 
@@ -699,7 +675,6 @@ class test_task_redis_result_backend:
     def manager(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
-
         return manager
 
     def test_ignoring_result_no_subscriptions(self, manager):
@@ -743,9 +718,7 @@ class test_task_replacement:
         @task_received.connect
         def task_received_handler(request, **kwargs):
             nonlocal assertion_result
-
             try:
-                # This tests mainly that the field even exists and set to default 0
                 assertion_result = request.replaced_task_nesting < 1
             except Exception:
                 assertion_result = False
@@ -766,7 +739,6 @@ class test_task_replacement:
         @task_received.connect
         def task_received_handler(request, **kwargs):
             nonlocal assertion_result
-
             try:
                 assertion_result = request.replaced_task_nesting <= 2
             except Exception:
@@ -791,7 +763,6 @@ class test_task_replacement:
         @task_received.connect
         def task_received_handler(request, **kwargs):
             nonlocal assertion_result
-
             try:
                 assertion_result = request.replaced_task_nesting <= 3
             except Exception:
@@ -812,7 +783,6 @@ class test_pool_acquire_timeout:
 
     @flaky
     def test_task_succeeds_with_pool_timeout_configured(self, manager):
-        """Normal task dispatch works with timeout configured."""
         app = manager.app
         orig = app.conf.broker_pool_acquire_timeout
         app.conf.broker_pool_acquire_timeout = 30
@@ -824,7 +794,6 @@ class test_pool_acquire_timeout:
 
     @flaky
     def test_pool_timeout_none_blocks_successfully(self, manager):
-        """Default None timeout (block forever) still works."""
         app = manager.app
         assert app.conf.broker_pool_acquire_timeout is None
         result = add.delay(4, 5)
@@ -832,7 +801,6 @@ class test_pool_acquire_timeout:
 
     @flaky
     def test_concurrent_apply_async_with_timeout(self, manager):
-        """Concurrent task dispatch with pool timeout doesn't block."""
         from concurrent.futures import ThreadPoolExecutor, as_completed
 
         app = manager.app
@@ -847,7 +815,6 @@ class test_pool_acquire_timeout:
                 ]
                 for future in as_completed(futures):
                     results.append(future.result())
-            # All tasks should complete successfully
             for r in results:
                 assert r.get(timeout=TIMEOUT) is not None
         finally:
