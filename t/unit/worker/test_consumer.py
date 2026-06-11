@@ -705,6 +705,7 @@ class test_Consumer(ConsumerTestCase):
         default_queue = self.app.conf.task_default_queue
         consumer = self.get_consumer()
         consumer.task_consumer = Mock()
+        consumer.task_consumer.consuming_from.return_value = False
         assert default_queue in queues.consume_from
 
         consumer.cancel_task_queue(default_queue)
@@ -712,6 +713,8 @@ class test_Consumer(ConsumerTestCase):
 
         consumer.add_task_queue(default_queue)
         assert default_queue in queues.consume_from
+        consumer.task_consumer.add_queue.assert_called_once()
+        consumer.task_consumer.consume.assert_called_once()
 
     def test_disable_prefetch_not_enabled(self):
         """Test that disable_prefetch doesn't affect behavior when disabled"""
