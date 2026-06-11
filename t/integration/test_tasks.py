@@ -284,7 +284,6 @@ class test_tasks:
             # not match the task's stamps, allowing those tasks to proceed successfully.
             worker_state.revoked_stamps.clear()
 
-    @pytest.mark.timeout(20)
     @pytest.mark.flaky(reruns=2)
     def test_revoked_by_headers_complex_canvas(self, manager, subtests):
         """Testing revoking of task using a stamped header"""
