@@ -71,6 +71,12 @@ class WorkController:
     pool = None
     semaphore = None
 
+    #: (level, format, args) for a concurrency-resolution message produced in
+    #: :meth:`setup_instance`, which runs before logging is configured (via
+    #: :meth:`on_init_blueprint`). Emitted in :meth:`on_start` instead, where
+    #: handlers are attached and the message actually reaches the operator.
+    _pending_concurrency_log = None
+
     #: contains the exit code if a :exc:`SystemExit` event is handled.
     exitcode = None
 
@@ -115,10 +121,11 @@ class WorkController:
             try:
                 self.concurrency = int(self.concurrency)
             except ValueError:
-                logger.warning(
+                self._pending_concurrency_log = (
+                    'warning',
                     "worker_concurrency=%r is not a valid integer or "
                     "'auto'; falling back to billiard.cpu_count().",
-                    self.concurrency,
+                    (self.concurrency,),
                 )
                 self.concurrency = None
 
@@ -141,18 +148,20 @@ class WorkController:
             )
             host_cpus = os.cpu_count() or 2
             if is_cpu_bound:
-                logger.info(
+                self._pending_concurrency_log = (
+                    'info',
                     "worker_concurrency='auto' resolved to %d "
                     "(pool=%s, host cpu_count=%d).",
-                    self.concurrency, pool_module, host_cpus,
+                    (self.concurrency, pool_module, host_cpus),
                 )
             else:
-                logger.info(
+                self._pending_concurrency_log = (
+                    'info',
                     "worker_concurrency='auto' is a no-op for non-CPU-bound "
                     "pools; using os.cpu_count()=%d for pool=%s. For IO-bound "
                     "workloads set --concurrency=<N> explicitly (typical "
                     "values: 100-1000 for gevent/eventlet).",
-                    self.concurrency, pool_module,
+                    (self.concurrency, pool_module),
                 )
         elif not self.concurrency:
             try:
@@ -196,6 +205,10 @@ class WorkController:
         pass
 
     def on_start(self):
+        if self._pending_concurrency_log is not None:
+            level, fmt, args = self._pending_concurrency_log
+            getattr(logger, level)(fmt, *args)
+            self._pending_concurrency_log = None
         if self.pidfile:
             self.pidlock = create_pidlock(self.pidfile)
 

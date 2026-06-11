@@ -832,6 +832,9 @@ class test_WorkController(ConsumerCase):
                 loglevel=0,
             )
         assert worker.concurrency == 7
+        # The message is deferred to on_start() because setup_instance()
+        # runs before logging is configured.
+        worker.on_start()
         warning_calls = [
             call for call in self.logger.warning.call_args_list
             if any('not-a-number' in str(a) for a in call.args)
@@ -840,6 +843,27 @@ class test_WorkController(ConsumerCase):
             f"expected warning mentioning 'not-a-number'; "
             f"got: {self.logger.warning.call_args_list}"
         )
+
+    @patch('celery.worker.worker.effective_cpu_count')
+    def test_concurrency_auto_resolution_logged_on_start(
+        self, mock_effective,
+    ):
+        # setup_instance() runs before logging handlers exist, so the
+        # resolution message must be deferred to on_start() or it is
+        # silently dropped in a real worker (caught by the smoke tests).
+        mock_effective.return_value = 2
+        worker = self.app.WorkController(
+            concurrency='auto', pool_cls='prefork', loglevel=0,
+        )
+        assert not self.logger.info.called
+        assert worker._pending_concurrency_log is not None
+        worker.on_start()
+        info_calls = [
+            call for call in self.logger.info.call_args_list
+            if "worker_concurrency='auto' resolved to" in str(call.args)
+        ]
+        assert info_calls
+        assert worker._pending_concurrency_log is None
 
     @patch('celery.worker.worker.effective_cpu_count')
     def test_concurrency_auto_prefork_caps_to_cgroup(
