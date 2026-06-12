@@ -661,27 +661,80 @@ class test_Consumer(ConsumerTestCase):
             active_requests.clear()
             successful_requests.clear()
 
-    @pytest.mark.parametrize("broker_connection_retry", [True, False])
-    @pytest.mark.parametrize("broker_connection_retry_on_startup", [None, False])
-    @pytest.mark.parametrize("first_connection_attempt", [True, False])
-    def test_ensure_connected(self, subtests, broker_connection_retry, broker_connection_retry_on_startup,
-                              first_connection_attempt):
+    def test_ensure_connected_uses_legacy_retry_when_startup_retry_is_undefined(self):
         c = self.get_consumer()
-        c.first_connection_attempt = first_connection_attempt
-        c.app.conf.broker_connection_retry_on_startup = broker_connection_retry_on_startup
-        c.app.conf.broker_connection_retry = broker_connection_retry
+        c.first_connection_attempt = True
+        c.app.conf.broker_connection_retry_on_startup = None
+        c.app.conf.broker_connection_retry = True
+        conn = Mock()
 
-        if broker_connection_retry is False:
-            if broker_connection_retry_on_startup is None:
-                with subtests.test("Deprecation warning when startup is None"):
-                    with pytest.deprecated_call():
-                        c.ensure_connected(Mock())
+        c.ensure_connected(conn)
 
-            with subtests.test("Does not retry when connect throws an error and retry is set to false"):
-                conn = Mock()
-                conn.connect.side_effect = ConnectionError()
-                with pytest.raises(ConnectionError):
-                    c.ensure_connected(conn)
+        conn.ensure_connection.assert_called_once()
+        conn.connect.assert_not_called()
+        assert c.first_connection_attempt is False
+
+    def test_ensure_connected_warns_when_legacy_retry_disables_startup_retry(self):
+        c = self.get_consumer()
+        c.first_connection_attempt = True
+        c.app.conf.broker_connection_retry_on_startup = None
+        c.app.conf.broker_connection_retry = False
+        conn = Mock()
+
+        with pytest.deprecated_call(
+            match="broker_connection_retry configuration setting will no longer determine",
+        ):
+            c.ensure_connected(conn)
+
+        conn.connect.assert_called_once_with()
+        conn.ensure_connection.assert_not_called()
+        assert c.first_connection_attempt is False
+
+    def test_ensure_connected_startup_retry_overrides_legacy_retry(self):
+        c = self.get_consumer()
+        c.first_connection_attempt = True
+        c.app.conf.broker_connection_retry_on_startup = True
+        c.app.conf.broker_connection_retry = False
+        conn = Mock()
+
+        c.ensure_connected(conn)
+
+        conn.ensure_connection.assert_called_once()
+        conn.connect.assert_not_called()
+        assert c.first_connection_attempt is False
+
+    def test_ensure_connected_startup_retry_disabled_only_affects_first_attempt(self):
+        c = self.get_consumer()
+        c.first_connection_attempt = True
+        c.app.conf.broker_connection_retry_on_startup = False
+        c.app.conf.broker_connection_retry = True
+        conn = Mock()
+
+        c.ensure_connected(conn)
+
+        conn.connect.assert_called_once_with()
+        conn.ensure_connection.assert_not_called()
+        assert c.first_connection_attempt is False
+
+        reconnect_conn = Mock()
+        c.ensure_connected(reconnect_conn)
+
+        reconnect_conn.ensure_connection.assert_called_once()
+        reconnect_conn.connect.assert_not_called()
+
+    def test_ensure_connected_uses_legacy_retry_after_startup(self):
+        c = self.get_consumer()
+        c.first_connection_attempt = False
+        c.app.conf.broker_connection_retry_on_startup = True
+        c.app.conf.broker_connection_retry = False
+        conn = Mock()
+        conn.connect.side_effect = ConnectionError()
+
+        with pytest.raises(ConnectionError):
+            c.ensure_connected(conn)
+
+        conn.connect.assert_called_once_with()
+        conn.ensure_connection.assert_not_called()
 
     def test_recreated_task_consumer_does_not_consume_late_added_queue(self):
         default_queue = self.app.conf.task_default_queue
