@@ -3493,7 +3493,9 @@ when one of its processes is available.
 You can also enable this via the :option:`--disable-prefetch <celery worker --disable-prefetch>`
 command line flag.
 
-For more on prefetching, read :ref:`optimizing-prefetch-limit`
+For more on prefetching, including how this setting interacts with late
+acknowledgment when reserving one task at a time, read
+:ref:`optimizing-prefetch-limit`.
 
 .. setting:: worker_eta_task_limit
 
