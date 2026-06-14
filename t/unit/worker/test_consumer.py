@@ -690,6 +690,23 @@ class test_Consumer(ConsumerTestCase):
         conn.ensure_connection.assert_not_called()
         assert c.first_connection_attempt is False
 
+    def test_ensure_connected_raises_when_legacy_retry_disables_startup_retry(self):
+        c = self.get_consumer()
+        c.first_connection_attempt = True
+        c.app.conf.broker_connection_retry_on_startup = None
+        c.app.conf.broker_connection_retry = False
+        conn = Mock()
+        conn.connect.side_effect = ConnectionError()
+
+        with pytest.deprecated_call(
+            match="broker_connection_retry configuration setting will no longer determine",
+        ):
+            with pytest.raises(ConnectionError):
+                c.ensure_connected(conn)
+
+        conn.connect.assert_called_once_with()
+        conn.ensure_connection.assert_not_called()
+
     def test_ensure_connected_startup_retry_overrides_legacy_retry(self):
         c = self.get_consumer()
         c.first_connection_attempt = True
@@ -721,6 +738,20 @@ class test_Consumer(ConsumerTestCase):
 
         reconnect_conn.ensure_connection.assert_called_once()
         reconnect_conn.connect.assert_not_called()
+
+    def test_ensure_connected_raises_when_startup_retry_is_disabled(self):
+        c = self.get_consumer()
+        c.first_connection_attempt = True
+        c.app.conf.broker_connection_retry_on_startup = False
+        c.app.conf.broker_connection_retry = True
+        conn = Mock()
+        conn.connect.side_effect = ConnectionError()
+
+        with pytest.raises(ConnectionError):
+            c.ensure_connected(conn)
+
+        conn.connect.assert_called_once_with()
+        conn.ensure_connection.assert_not_called()
 
     def test_ensure_connected_uses_legacy_retry_after_startup(self):
         c = self.get_consumer()
