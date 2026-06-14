@@ -3338,10 +3338,11 @@ class test_chord:
         )
         result = c.apply_async()
 
-        # Without the fix chord_unlock retries without bound and this raises
-        # TimeoutError; the fix propagates the failure so the chord errors.
+        # Without the fix chord_unlock retries without bound and this raises a
+        # TimeoutError (so keep this timeout small for fast failures); the fix
+        # propagates the failure so the chord errors.
         with pytest.raises((ExpectedException, ChordError)):
-            result.get(timeout=TIMEOUT)
+            result.get(timeout=TIMEOUT / 10)
 
 
 class test_signature_serialization:
