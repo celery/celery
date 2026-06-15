@@ -970,6 +970,55 @@ class test_WorkController(ConsumerCase):
         mock_effective.assert_called_once_with(use_cgroup_quota=True)
         assert worker.concurrency == 2
 
+    @patch('celery.worker.worker.effective_cpu_count')
+    def test_concurrency_auto_cli_overrides_config(self, mock_effective):
+        # The explicit ``concurrency`` arg (CLI ``-c``) wins over
+        # ``worker_concurrency`` in config via ``either``; ``auto`` rides
+        # through that precedence like any other value.
+        mock_effective.return_value = 2
+        self.app.conf.worker_concurrency = 4
+        worker = self.app.WorkController(
+            concurrency='auto', pool_cls='prefork', loglevel=0,
+        )
+        mock_effective.assert_called_once_with(use_cgroup_quota=True)
+        assert worker.concurrency == 2  # auto-resolved, not the config 4
+
+    @patch('celery.worker.worker.effective_cpu_count')
+    def test_concurrency_auto_from_config(self, mock_effective):
+        # ``worker_concurrency = "auto"`` set in config (no CLI override)
+        # resolves the same way.
+        mock_effective.return_value = 2
+        self.app.conf.worker_concurrency = 'auto'
+        worker = self.app.WorkController(pool_cls='prefork', loglevel=0)
+        mock_effective.assert_called_once_with(use_cgroup_quota=True)
+        assert worker.concurrency == 2
+
+    @patch('celery.worker.worker.effective_cpu_count')
+    def test_concurrency_int_cli_overrides_config_auto(self, mock_effective):
+        # The reverse: an explicit integer on the CLI wins over
+        # ``worker_concurrency = "auto"`` in config, and the cgroup read is
+        # never attempted.
+        self.app.conf.worker_concurrency = 'auto'
+        worker = self.app.WorkController(
+            concurrency=8, pool_cls='prefork', loglevel=0,
+        )
+        mock_effective.assert_not_called()
+        assert worker.concurrency == 8
+
+    @patch('celery.worker.worker.effective_cpu_count')
+    def test_concurrency_auto_with_autoscale(self, mock_effective):
+        # ``auto`` resolves without crashing when ``--autoscale`` is also
+        # given; the autoscale bounds take over sizing (max/min), while the
+        # resolved value is what min falls back to when autoscale is absent.
+        mock_effective.return_value = 2
+        worker = self.app.WorkController(
+            concurrency='auto', autoscale=[10, 3], pool_cls='prefork',
+            loglevel=0,
+        )
+        assert worker.concurrency == 2
+        assert worker.max_concurrency == 10
+        assert worker.min_concurrency == 3
+
     @t.skip.if_win32
     @pytest.mark.sleepdeprived_patched_module(autoscale)
     def test_with_autoscaler_file_descriptor_safety(self, sleepdeprived):
