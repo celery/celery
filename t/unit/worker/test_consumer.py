@@ -700,6 +700,22 @@ class test_Consumer(ConsumerTestCase):
                 task_consumer = self.app.amqp.TaskConsumer(con)
                 assert {q.name for q in task_consumer.queues} == {default_queue}
 
+    def test_readd_cancelled_queue_restores_consume_from(self):
+        queues = self.app.amqp.queues
+        default_queue = self.app.conf.task_default_queue
+        consumer = self.get_consumer()
+        consumer.task_consumer = Mock()
+        consumer.task_consumer.consuming_from.return_value = False
+        assert default_queue in queues.consume_from
+
+        consumer.cancel_task_queue(default_queue)
+        assert default_queue not in queues.consume_from
+
+        consumer.add_task_queue(default_queue)
+        assert default_queue in queues.consume_from
+        consumer.task_consumer.add_queue.assert_called_once()
+        consumer.task_consumer.consume.assert_called_once()
+
     def test_disable_prefetch_not_enabled(self):
         """Test that disable_prefetch doesn't affect behavior when disabled"""
         self.app.conf.worker_disable_prefetch = False
