@@ -100,5 +100,3 @@ def test_pidbox_repeated_reset_creates_consumers_but_does_not_cancel():
     # With the fix in place, consumers should be canceled during reset
     # to prevent resource leaks (each reset cancels the previous consumer).
     assert len(canceled) >= 1
-    assert len(canceled) >= 1
-
