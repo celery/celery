@@ -67,6 +67,30 @@ class test_Pidbox:
             eig.assert_called_with(parent, cancel)
             pbox._close_channel.assert_called_with(parent)
 
+    def test_reset_cancels_old_consumer(self):
+        parent = Mock()
+        parent.hostname = 'worker@example.com'
+        parent.controller = Mock(use_eventloop=False)
+        parent.app = Mock()
+        parent.app.control.mailbox.Node = Mock()
+        node = Mock()
+        parent.app.control.mailbox.Node.return_value = node
+        parent.connection = Mock()
+        parent.connection.channel.return_value = Mock()
+        parent.on_decode_error = Mock()
+
+        pbox = Pidbox(parent)
+        old_consumer = Mock()
+        pbox.consumer = old_consumer
+        node.channel = Mock()
+        new_consumer = Mock()
+        node.listen.return_value = new_consumer
+
+        pbox.reset()
+
+        old_consumer.cancel.assert_called_once()
+        assert pbox.consumer is new_consumer
+
 
 class test_Pidbox_green:
 
