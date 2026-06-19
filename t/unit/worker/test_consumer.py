@@ -1271,7 +1271,7 @@ class test_Tasks:
 
         record = caplog.records[0]
         assert record.levelname == "INFO"
-        assert record.msg == "Global QoS is disabled. Prefetch count in now static."
+        assert record.msg == "Global QoS is disabled. Prefetch count is now static."
 
     def test_start_records_qos_global_on_consumer_quorum(self):
         """Tasks.start() must store the effective qos_global on the consumer.
