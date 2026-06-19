@@ -1,7 +1,5 @@
 import types
 
-import pytest
-
 from celery.worker import pidbox
 
 
@@ -101,5 +99,6 @@ def test_pidbox_repeated_reset_creates_consumers_but_does_not_cancel():
     assert len(created) >= 2
     # With the fix in place, consumers should be canceled during reset
     # to prevent resource leaks (each reset cancels the previous consumer).
+    assert len(canceled) >= 1
     assert len(canceled) >= 1
 
