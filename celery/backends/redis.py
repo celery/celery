@@ -133,7 +133,22 @@ class ResultConsumer(BaseResultConsumer):
 
     def _maybe_cancel_ready_task(self, meta):
         if meta['status'] in states.READY_STATES:
-            self.cancel_for(meta['task_id'])
+            task_id = meta['task_id']
+            self.cancel_for(task_id)
+            # After canceling the subscription, clean up any leaked entry in
+            # _pending_messages. on_state_change may have buffered this READY meta
+            # there (if the result was already resolved from _pending_results).
+            # Since the subscription is now canceled and the task is complete,
+            # this entry will never be consumed and would leak memory.
+            # However, we skip REVOKED because the revoked state may still be
+            # needed by waiters (e.g., integration tests for revoke-by-headers).
+            if meta['status'] in (states.SUCCESS, states.FAILURE):
+                pending_messages = self.backend._pending_messages
+                try:
+                    if task_id in pending_messages:
+                        pending_messages.pop(task_id)
+                except (KeyError, self.backend._pending_messages.Empty):
+                    pass
 
     def on_state_change(self, meta, message):
         super().on_state_change(meta, message)
@@ -145,33 +160,10 @@ class ResultConsumer(BaseResultConsumer):
         )
         self._consume_from(initial_task_id)
 
-    def _cleanup_ready_pending_message(self, task_id):
-        """Remove a READY result from _pending_messages if it was leaked there.
-
-        When on_state_change processes a READY meta for a result that has already
-        been resolved and removed from _pending_results, it buffers the meta in
-        _pending_messages (as a safety measure for out-of-order delivery).
-        But if the result is truly done, this entry will never be consumed and
-        leaks memory. We clean it up here since we know the result is complete.
-        """
-        try:
-            # Check if this task_id is in _pending_messages
-            if task_id in self._pending_messages:
-                # Try to take one item - if it's there, it was leaked
-                self._pending_messages.take(task_id)
-        except (KeyError, self._pending_messages.Empty):
-            # Not in buffer or already empty - nothing to clean
-            pass
-
     def on_wait_for_pending(self, result, **kwargs):
         for meta in result._iter_meta(**kwargs):
             if meta is not None:
                 self.on_state_change(meta, None)
-                # After on_state_change, if the result was READY and got buffered
-                # in _pending_messages because it was already resolved, clean it up
-                # immediately to prevent memory leak.
-                if meta['status'] in states.READY_STATES:
-                    self._cleanup_ready_pending_message(meta['task_id'])
 
     def stop(self):
         if self._pubsub is not None:
