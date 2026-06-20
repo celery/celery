@@ -349,6 +349,65 @@ class test_RedisResultConsumer:
         # Must not raise TypeError about a missing 'command_name' argument.
         consumer._reconnect_pubsub()
 
+    def test_on_wait_for_pending_cleans_up_leaked_ready_messages(self):
+        """Regression test for #8166.
+
+        When on_wait_for_pending polls a result that is already READY,
+        on_state_change may buffer the meta in _pending_messages because
+        the result was removed from _pending_results. This leaked entry
+        would never be consumed, causing a memory leak.
+
+        The fix adds cleanup after on_state_change to remove leaked entries
+        immediately.
+        """
+        from celery.utils.collections import BufferMap
+
+        consumer = self.get_consumer()
+        consumer.backend._pending_results = {}, {}
+        consumer.backend._pending_messages = BufferMap(10)
+
+        task_id = 'test-task-1'
+        meta = {
+            'task_id': task_id,
+            'status': states.SUCCESS,
+            'result': 42,
+        }
+        result = Mock()
+        result._iter_meta.return_value = [meta]
+
+        # Manually put the meta into _pending_messages to simulate the leak
+        consumer.backend._pending_messages.put(task_id, meta)
+        assert task_id in consumer.backend._pending_messages
+
+        # Call on_wait_for_pending - should clean up the leaked entry
+        consumer.on_wait_for_pending(result)
+
+        # The leaked entry should be removed
+        assert task_id not in consumer.backend._pending_messages
+
+    def test_on_wait_for_pending_does_not_affect_normal_buffering(self):
+        """Non-READY states should still be buffered normally."""
+        from celery.utils.collections import BufferMap
+
+        consumer = self.get_consumer()
+        consumer.backend._pending_results = {}, {}
+        consumer.backend._pending_messages = BufferMap(10)
+
+        task_id = 'test-task-2'
+        meta = {
+            'task_id': task_id,
+            'status': states.PENDING,
+            'result': None,
+        }
+        result = Mock()
+        result._iter_meta.return_value = [meta]
+
+        # on_state_change for PENDING meta will buffer it
+        consumer.on_wait_for_pending(result)
+
+        # PENDING meta should still be in buffer (not cleaned up)
+        assert task_id in consumer.backend._pending_messages
+
 
 class basetest_RedisBackend:
     def get_backend(self):

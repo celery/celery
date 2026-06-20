@@ -145,10 +145,33 @@ class ResultConsumer(BaseResultConsumer):
         )
         self._consume_from(initial_task_id)
 
+    def _cleanup_ready_pending_message(self, task_id):
+        """Remove a READY result from _pending_messages if it was leaked there.
+
+        When on_state_change processes a READY meta for a result that has already
+        been resolved and removed from _pending_results, it buffers the meta in
+        _pending_messages (as a safety measure for out-of-order delivery).
+        But if the result is truly done, this entry will never be consumed and
+        leaks memory. We clean it up here since we know the result is complete.
+        """
+        try:
+            # Check if this task_id is in _pending_messages
+            if task_id in self._pending_messages:
+                # Try to take one item - if it's there, it was leaked
+                self._pending_messages.take(task_id)
+        except (KeyError, self._pending_messages.Empty):
+            # Not in buffer or already empty - nothing to clean
+            pass
+
     def on_wait_for_pending(self, result, **kwargs):
         for meta in result._iter_meta(**kwargs):
             if meta is not None:
                 self.on_state_change(meta, None)
+                # After on_state_change, if the result was READY and got buffered
+                # in _pending_messages because it was already resolved, clean it up
+                # immediately to prevent memory leak.
+                if meta['status'] in states.READY_STATES:
+                    self._cleanup_ready_pending_message(meta['task_id'])
 
     def stop(self):
         if self._pubsub is not None:
