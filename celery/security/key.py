@@ -6,7 +6,21 @@ from kombu.utils.encoding import ensure_bytes
 
 from .utils import reraise_errors
 
+try:
+    from cryptography.hazmat.primitives.asymmetric import mldsa
+    MLDSA_PRIVATE_KEY_TYPES = (
+        mldsa.MLDSA44PrivateKey,
+        mldsa.MLDSA65PrivateKey,
+        mldsa.MLDSA87PrivateKey,
+    )
+    _HAS_MLDSA = True
+except ImportError:
+    MLDSA_PRIVATE_KEY_TYPES = ()
+    _HAS_MLDSA = False
+
 __all__ = ('PrivateKey',)
+
+_SUPPORTED_KEY_TYPES = (rsa.RSAPrivateKey,) + MLDSA_PRIVATE_KEY_TYPES
 
 
 class PrivateKey:
@@ -21,8 +35,15 @@ class PrivateKey:
                 password=ensure_bytes(password),
                 backend=default_backend())
 
-            if not isinstance(self._key, rsa.RSAPrivateKey):
-                raise ValueError("Non-RSA keys are not supported.")
+            if not isinstance(self._key, _SUPPORTED_KEY_TYPES):
+                raise ValueError(
+                    "Unsupported key type. "
+                    "Only RSA and ML-DSA keys are supported."
+                )
+
+    def _is_mldsa(self):
+        """Return True if the underlying key is an ML-DSA key."""
+        return _HAS_MLDSA and isinstance(self._key, MLDSA_PRIVATE_KEY_TYPES)
 
     def sign(self, data, digest):
         """Sign string containing data."""
