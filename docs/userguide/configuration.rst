@@ -419,6 +419,19 @@ methods that have been registered with :mod:`kombu.serialization.registry`.
 
     :ref:`calling-serializers`.
 
+.. setting:: task_repr_maxlevels
+
+``task_repr_maxlevels``
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: 3.
+
+Maximum nesting depth used when generating ``argsrepr`` and ``kwargsrepr``.
+Deeper containers are shown as ``{...}`` / ``[...]``. Set to ``0`` for no
+limit.
+
 .. setting:: task_publish_retry
 
 ``task_publish_retry``

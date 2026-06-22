@@ -359,9 +359,9 @@ class AMQP:
             expires = expires and expires.isoformat()
 
         if argsrepr is None:
-            argsrepr = saferepr(args, self.argsrepr_maxsize)
+            argsrepr = saferepr(args, self.argsrepr_maxsize, maxlevels=self.app.conf.task_repr_maxlevels)
         if kwargsrepr is None:
-            kwargsrepr = saferepr(kwargs, self.kwargsrepr_maxsize)
+            kwargsrepr = saferepr(kwargs, self.kwargsrepr_maxsize, maxlevels=self.app.conf.task_repr_maxlevels)
 
         if not root_id:  # empty root_id defaults to task_id
             root_id = task_id
