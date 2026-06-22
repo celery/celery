@@ -406,7 +406,7 @@ class test_RedisResultConsumer:
         # REVOKED meta should still be in buffer
         assert task_id in consumer.backend._pending_messages
 
-    def test_on_state_change_does_not_cleanup_failure_messages(self):
+    def test_on_state_change_cleans_up_leaked_failure_messages(self):
         """FAILURE state should be cleaned up like SUCCESS."""
         from celery.utils.collections import BufferMap
 
@@ -455,8 +455,8 @@ class test_RedisResultConsumer:
         # Should still be absent (no crash)
         assert task_id not in consumer.backend._pending_messages
 
-    def test_on_state_change_handles_empty_buffer_exception(self):
-        """If BufferMap.pop raises Empty, the exception should be swallowed."""
+    def test_on_state_change_handles_keyerror_race(self):
+        """If BufferMap.pop raises KeyError, the exception should be swallowed."""
         from celery.utils.collections import BufferMap
 
         consumer = self.get_consumer()
@@ -475,11 +475,11 @@ class test_RedisResultConsumer:
         assert task_id in consumer.backend._pending_messages
 
         # Simulate a race where the entry is removed between the `in` check and pop
-        # by replacing pop with a side effect that raises the Empty exception
+        # by replacing pop with a side effect that raises KeyError
         original_pop = consumer.backend._pending_messages.pop
 
         def race_pop(key):
-            raise consumer.backend._pending_messages.Empty
+            raise KeyError(key)
         consumer.backend._pending_messages.pop = race_pop
 
         try:
@@ -488,7 +488,7 @@ class test_RedisResultConsumer:
         finally:
             consumer.backend._pending_messages.pop = original_pop
 
-        # The race_pop raised Empty, so the entry was never actually removed.
+        # The race_pop raised KeyError, so the entry was never actually removed.
         # The important thing is that on_state_change did not crash.
         assert task_id in consumer.backend._pending_messages
 

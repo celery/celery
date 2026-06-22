@@ -145,10 +145,11 @@ class ResultConsumer(BaseResultConsumer):
             if meta['status'] in (states.SUCCESS, states.FAILURE):
                 pending_messages = self.backend._pending_messages
                 try:
-                    if task_id in pending_messages:
-                        pending_messages.pop(task_id)
-                except (KeyError, self.backend._pending_messages.Empty):
+                    buf = pending_messages.pop(task_id)
+                except KeyError:
                     pass
+                else:
+                    pending_messages.total -= len(buf)
 
     def on_state_change(self, meta, message):
         super().on_state_change(meta, message)
