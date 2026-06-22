@@ -18,6 +18,12 @@ except ImportError:
     MLDSA_PRIVATE_KEY_TYPES = ()
     _HAS_MLDSA = False
 
+# Domain-separation context for ML-DSA signatures.  Binding signatures to
+# this tag prevents cross-protocol replay: a signature produced by Celery
+# cannot be mistaken for a signature generated in a different application
+# context, even when the same ML-DSA key is (mis)used elsewhere.
+_MLDSA_CONTEXT = b"celery-auth-v1"
+
 __all__ = ('PrivateKey',)
 
 _SUPPORTED_KEY_TYPES = (rsa.RSAPrivateKey,) + MLDSA_PRIVATE_KEY_TYPES
@@ -52,7 +58,7 @@ class PrivateKey:
             if self._is_mldsa():
                 # ML-DSA uses a built-in hash internally; no digest
                 # algorithm or padding scheme is required.
-                return self._key.sign(ensure_bytes(data))
+                return self._key.sign(ensure_bytes(data), context=_MLDSA_CONTEXT)
 
             pad = padding.PSS(
                 mgf=padding.MGF1(digest),

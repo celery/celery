@@ -27,6 +27,11 @@ except ImportError:
     MLDSA_PUBLIC_KEY_TYPES = ()
     _HAS_MLDSA = False
 
+# Domain-separation context for ML-DSA signatures.  Must match the value
+# used in key.py so that sign/verify are symmetric.  See key.py for the
+# rationale on why this tag exists.
+_MLDSA_CONTEXT = b"celery-auth-v1"
+
 if TYPE_CHECKING:
     from cryptography.hazmat.primitives.asymmetric.dsa import DSAPublicKey
     from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicKey
@@ -35,6 +40,15 @@ if TYPE_CHECKING:
     from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
     from cryptography.hazmat.primitives.asymmetric.utils import Prehashed
     from cryptography.hazmat.primitives.hashes import HashAlgorithm
+
+    try:
+        from cryptography.hazmat.primitives.asymmetric.mldsa import (
+            MLDSA44PublicKey,
+            MLDSA65PublicKey,
+            MLDSA87PublicKey,
+        )
+    except ImportError:
+        pass
 
 
 __all__ = ('Certificate', 'CertStore', 'FSCertStore')
@@ -70,6 +84,7 @@ class Certificate:
 
     def get_pubkey(self) -> (
         DSAPublicKey | EllipticCurvePublicKey | Ed448PublicKey | Ed25519PublicKey | RSAPublicKey
+        | MLDSA44PublicKey | MLDSA65PublicKey | MLDSA87PublicKey
     ):
         return self._cert.public_key()
 
@@ -92,7 +107,7 @@ class Certificate:
             if self._is_mldsa():
                 # ML-DSA uses a built-in hash internally; no digest
                 # algorithm or padding scheme is required.
-                self.get_pubkey().verify(signature, ensure_bytes(data))
+                self.get_pubkey().verify(signature, ensure_bytes(data), context=_MLDSA_CONTEXT)
                 return
 
             pad = padding.PSS(

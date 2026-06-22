@@ -4,6 +4,7 @@ ML-DSA key generation may not be available on every OpenSSL backend,
 so the tests mock the key objects and exercise the detection and
 signing/verification code-paths added in the security module.
 """
+import datetime
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -110,14 +111,25 @@ class test_mldsa_private_key(SecurityCase):
         data = b"hello post-quantum world"
         digest = get_digest_algorithm("sha256")
         sig = pk.sign(data, digest)
-        # ML-DSA path: key.sign(data) -- no padding, no digest
-        mock_key.sign.assert_called_once_with(data)
+        # ML-DSA path: key.sign(data, context=...) -- no padding, no digest
+        mock_key.sign.assert_called_once_with(data, context=b"celery-auth-v1")
         assert sig == b"mldsa-signature-bytes"
 
     def test_sign_returns_bytes(self):
         pk, _ = self._make_private_key_with_mock()
         result = pk.sign(b"payload", get_digest_algorithm())
         assert isinstance(result, bytes)
+
+    def test_is_mldsa_false_for_rsa_key(self):
+        """_is_mldsa() must return False for an RSA key."""
+        from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
+        mock_rsa = MagicMock(spec=RSAPrivateKey)
+        with patch(
+            "celery.security.key.serialization.load_pem_private_key",
+            return_value=mock_rsa,
+        ):
+            pk = PrivateKey("fake-rsa-pem")
+        assert pk._is_mldsa() is False
 
 
 # ---------------------------------------------------------------------------
@@ -135,8 +147,7 @@ class test_mldsa_certificate(SecurityCase):
         mock_cert.serial_number = 12345
         mock_cert.issuer = [Mock(value="TestCA")]
         mock_cert.not_valid_after_utc = (
-            __import__("datetime").datetime(2099, 1, 1,
-                                           tzinfo=__import__("datetime").timezone.utc)
+            datetime.datetime(2099, 1, 1, tzinfo=datetime.timezone.utc)
         )
 
         with patch(
@@ -156,20 +167,42 @@ class test_mldsa_certificate(SecurityCase):
         signature = b"sig"
         digest = get_digest_algorithm("sha256")
         cert.verify(data, signature, digest)
-        # ML-DSA path: pubkey.verify(signature, data)
-        mock_pubkey.verify.assert_called_once_with(signature, ensure_bytes(data))
+        # ML-DSA path: pubkey.verify(signature, data, context=...)
+        mock_pubkey.verify.assert_called_once_with(
+            signature, ensure_bytes(data), context=b"celery-auth-v1"
+        )
 
     def test_verify_bad_signature_raises(self):
         from cryptography.exceptions import InvalidSignature
         cert, mock_pubkey = self._make_certificate_with_mock()
         mock_pubkey.verify.side_effect = InvalidSignature("bad sig")
-        # The reraise_errors context manager in verify() converts
-        # cryptography exceptions into SecurityError, but the default
-        # error tuple uses the module rather than exception classes.
-        # In practice the outer serializer layer catches this, so we
-        # accept either SecurityError or TypeError here.
+        # BUG: reraise_errors() in celery/security/utils.py defaults
+        # ``errors`` to ``(cryptography.exceptions,)`` -- a *module*,
+        # not an exception class.  ``except <module>`` raises TypeError
+        # instead of catching InvalidSignature and reraising as
+        # SecurityError.  Until that is fixed upstream we must accept
+        # both SecurityError (correct) and TypeError (the current bug).
+        # See: celery/security/utils.py  reraise_errors()
         with pytest.raises((SecurityError, TypeError)):
             cert.verify(b"data", b"bad-sig", get_digest_algorithm())
+
+    def test_is_mldsa_false_for_rsa_cert(self):
+        """_is_mldsa() must return False for an RSA certificate."""
+        from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
+        mock_rsa_pub = MagicMock(spec=RSAPublicKey)
+        mock_cert = MagicMock()
+        mock_cert.public_key.return_value = mock_rsa_pub
+        mock_cert.serial_number = 1
+        mock_cert.issuer = [Mock(value="RSA-CA")]
+        mock_cert.not_valid_after_utc = (
+            datetime.datetime(2099, 1, 1, tzinfo=datetime.timezone.utc)
+        )
+        with patch(
+            "celery.security.certificate.load_pem_x509_certificate",
+            return_value=mock_cert,
+        ):
+            cert = Certificate("fake-rsa-cert")
+        assert cert._is_mldsa() is False
 
     def test_get_id(self):
         cert, _ = self._make_certificate_with_mock()
@@ -202,8 +235,7 @@ class test_mldsa_secure_serializer(SecurityCase):
         mock_x509.serial_number = 99
         mock_x509.issuer = [Mock(value="PQC-CA")]
         mock_x509.not_valid_after_utc = (
-            __import__("datetime").datetime(2099, 1, 1,
-                                           tzinfo=__import__("datetime").timezone.utc)
+            datetime.datetime(2099, 1, 1, tzinfo=datetime.timezone.utc)
         )
 
         with patch(
