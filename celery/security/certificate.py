@@ -24,7 +24,7 @@ try:
     )
     _HAS_MLDSA = True
 except ImportError:
-    MLDSA_PUBLIC_KEY_TYPES = ()
+    MLDSA_PUBLIC_KEY_TYPES: tuple = ()
     _HAS_MLDSA = False
 
 # Domain-separation context for ML-DSA signatures.  Must match the value

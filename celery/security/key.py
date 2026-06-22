@@ -15,13 +15,13 @@ try:
     )
     _HAS_MLDSA = True
 except ImportError:
-    MLDSA_PRIVATE_KEY_TYPES = ()
+    MLDSA_PRIVATE_KEY_TYPES: tuple = ()
     _HAS_MLDSA = False
 
 # Domain-separation context for ML-DSA signatures.  Binding signatures to
 # this tag prevents cross-protocol replay: a signature produced by Celery
 # cannot be mistaken for a signature generated in a different application
-# context, even when the same ML-DSA key is (mis)used elsewhere.
+# context, even when the same ML-DSA key is reused elsewhere.
 _MLDSA_CONTEXT = b"celery-auth-v1"
 
 __all__ = ('PrivateKey',)
