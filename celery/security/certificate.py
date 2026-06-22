@@ -15,6 +15,7 @@ from celery.exceptions import SecurityError
 
 from .utils import reraise_errors
 
+MLDSA_PUBLIC_KEY_TYPES: tuple = ()
 try:
     from cryptography.hazmat.primitives.asymmetric import mldsa
     MLDSA_PUBLIC_KEY_TYPES = (
@@ -24,7 +25,6 @@ try:
     )
     _HAS_MLDSA = True
 except ImportError:
-    MLDSA_PUBLIC_KEY_TYPES: tuple = ()
     _HAS_MLDSA = False
 
 # Domain-separation context for ML-DSA signatures.  Must match the value

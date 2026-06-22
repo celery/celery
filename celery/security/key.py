@@ -6,6 +6,7 @@ from kombu.utils.encoding import ensure_bytes
 
 from .utils import reraise_errors
 
+MLDSA_PRIVATE_KEY_TYPES: tuple = ()
 try:
     from cryptography.hazmat.primitives.asymmetric import mldsa
     MLDSA_PRIVATE_KEY_TYPES = (
@@ -15,7 +16,6 @@ try:
     )
     _HAS_MLDSA = True
 except ImportError:
-    MLDSA_PRIVATE_KEY_TYPES: tuple = ()
     _HAS_MLDSA = False
 
 # Domain-separation context for ML-DSA signatures.  Binding signatures to
