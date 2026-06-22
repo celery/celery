@@ -431,6 +431,67 @@ class test_RedisResultConsumer:
         # The leaked entry should be removed
         assert task_id not in consumer.backend._pending_messages
 
+    def test_on_state_change_skips_cleanup_when_not_in_pending_messages(self):
+        """When the task is not in _pending_messages, cleanup should be a no-op."""
+        from celery.utils.collections import BufferMap
+
+        consumer = self.get_consumer()
+        consumer.backend._pending_results = {}, {}
+        consumer.backend._pending_messages = BufferMap(10)
+
+        task_id = 'test-task-4'
+        meta = {
+            'task_id': task_id,
+            'status': states.SUCCESS,
+            'result': 42,
+        }
+
+        # Do NOT put the meta into _pending_messages
+        assert task_id not in consumer.backend._pending_messages
+
+        # Call on_state_change - should not raise even though entry is missing
+        consumer.on_state_change(meta, None)
+
+        # Should still be absent (no crash)
+        assert task_id not in consumer.backend._pending_messages
+
+    def test_on_state_change_handles_empty_buffer_exception(self):
+        """If BufferMap.pop raises Empty, the exception should be swallowed."""
+        from celery.utils.collections import BufferMap
+
+        consumer = self.get_consumer()
+        consumer.backend._pending_results = {}, {}
+        consumer.backend._pending_messages = BufferMap(10)
+
+        task_id = 'test-task-5'
+        meta = {
+            'task_id': task_id,
+            'status': states.SUCCESS,
+            'result': 42,
+        }
+
+        # Put the meta into _pending_messages
+        consumer.backend._pending_messages.put(task_id, meta)
+        assert task_id in consumer.backend._pending_messages
+
+        # Simulate a race where the entry is removed between the `in` check and pop
+        # by replacing pop with a side effect that raises the Empty exception
+        original_pop = consumer.backend._pending_messages.pop
+
+        def race_pop(key):
+            raise consumer.backend._pending_messages.Empty
+        consumer.backend._pending_messages.pop = race_pop
+
+        try:
+            # Call on_state_change - should not raise despite the race
+            consumer.on_state_change(meta, None)
+        finally:
+            consumer.backend._pending_messages.pop = original_pop
+
+        # The race_pop raised Empty, so the entry was never actually removed.
+        # The important thing is that on_state_change did not crash.
+        assert task_id in consumer.backend._pending_messages
+
 
 class basetest_RedisBackend:
     def get_backend(self):
