@@ -42,11 +42,8 @@ if TYPE_CHECKING:
     from cryptography.hazmat.primitives.hashes import HashAlgorithm
 
     try:
-        from cryptography.hazmat.primitives.asymmetric.mldsa import (
-            MLDSA44PublicKey,
-            MLDSA65PublicKey,
-            MLDSA87PublicKey,
-        )
+        from cryptography.hazmat.primitives.asymmetric.mldsa import (MLDSA44PublicKey, MLDSA65PublicKey,
+                                                                     MLDSA87PublicKey)
     except ImportError:
         pass
 

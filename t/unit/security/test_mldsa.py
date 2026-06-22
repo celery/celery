@@ -11,18 +11,9 @@ import pytest
 from kombu.utils.encoding import ensure_bytes
 
 from celery.exceptions import SecurityError
-from celery.security.certificate import (
-    MLDSA_PUBLIC_KEY_TYPES,
-    Certificate,
-    _HAS_MLDSA,
-    _SUPPORTED_PUBLIC_KEY_TYPES,
-)
-from celery.security.key import (
-    MLDSA_PRIVATE_KEY_TYPES,
-    PrivateKey,
-    _SUPPORTED_KEY_TYPES,
-)
+from celery.security.certificate import _HAS_MLDSA, _SUPPORTED_PUBLIC_KEY_TYPES, MLDSA_PUBLIC_KEY_TYPES, Certificate
 from celery.security.key import _HAS_MLDSA as _KEY_HAS_MLDSA
+from celery.security.key import _SUPPORTED_KEY_TYPES, MLDSA_PRIVATE_KEY_TYPES, PrivateKey
 from celery.security.serialization import SecureSerializer
 from celery.security.utils import get_digest_algorithm
 
