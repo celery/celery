@@ -89,6 +89,12 @@ class Certificate:
         """Verify signature for string containing data."""
         with reraise_errors('Bad signature: {0!r}'):
 
+            if self._is_mldsa():
+                # ML-DSA uses a built-in hash internally; no digest
+                # algorithm or padding scheme is required.
+                self.get_pubkey().verify(signature, ensure_bytes(data))
+                return
+
             pad = padding.PSS(
                 mgf=padding.MGF1(digest),
                 salt_length=padding.PSS.MAX_LENGTH)
