@@ -183,7 +183,7 @@ class test_Consumer(ConsumerCase):
         Events.shutdown(c)
         Heart = find_step(c, consumer.Heart)
         Heart.shutdown(c)
-        event_dispatcher.close.assert_called()
+        event_dispatcher.disable.assert_called()
         heart.stop.assert_called_with()
 
     @patch('celery.worker.consumer.consumer.warn')

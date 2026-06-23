@@ -111,7 +111,18 @@ class ResultConsumer(BaseResultConsumer):
         if self.subscribed_to:
             self._pubsub.subscribe(*self.subscribed_to)
         else:
-            self._pubsub.connection = self._pubsub.connection_pool.get_connection()
+            # redis-py < 5.3.0 requires ``command_name`` as a positional
+            # argument to ``ConnectionPool.get_connection``. The argument was
+            # made optional (and ignored) in 5.3.0+, so passing it stays
+            # compatible across both ranges (#10294).
+            try:
+                self._pubsub.connection = (
+                    self._pubsub.connection_pool.get_connection()
+                )
+            except TypeError:
+                self._pubsub.connection = (
+                    self._pubsub.connection_pool.get_connection('pubsub')
+                )
             # even if there is nothing to subscribe, we should not lose the callback after connecting.
             # The on_connect callback will re-subscribe to any channels we previously subscribed to.
             self._pubsub.connection.register_connect_callback(self._pubsub.on_connect)
@@ -382,9 +393,11 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                           'ssl_cert_reqs']
 
         if scheme == 'redis':
-            # If connparams or query string contain ssl params, raise error
-            if (any(key in connparams for key in ssl_param_keys) or
-                    any(key in query for key in ssl_param_keys)):
+            # If the query string contains SSL params, raise an error. SSL
+            # params configured by redis_backend_use_ssl are already in
+            # defaults/connparams and should be honored, matching the Redis
+            # broker behavior when broker_use_ssl is used with a redis:// URL.
+            if any(key in query for key in ssl_param_keys):
                 raise ValueError(E_REDIS_SSL_PARAMS_AND_SCHEME_MISMATCH)
 
         if scheme == 'rediss':

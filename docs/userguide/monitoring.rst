@@ -839,7 +839,7 @@ Advanced users can configure the behavior of this mailbox by customizing how it 
 The following parameters are now supported by `Mailbox`:
 
 - ``durable`` (default: ``False``): If set to ``True``, the control exchanges will survive broker restarts.
-- ``exclusive`` (default: ``False``): If set to ``True``, the exchanges will be usable by only one connection.
+- ``exclusive`` (default: ``True``): If set to ``True``, the exchanges will be usable by only one connection.
 
 .. warning::
 

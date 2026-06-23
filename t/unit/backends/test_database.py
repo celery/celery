@@ -225,6 +225,80 @@ class test_DatabaseBackend:
         assert call_count[0] == 2
         assert tb._sleep.call_count == 1
 
+    def test_cleanup_retries_on_database_error(self):
+        """Test that cleanup retries when database errors occur."""
+        from celery.backends.database import DatabaseError
+
+        self.app.conf.result_backend_always_retry = True
+        self.app.conf.result_backend_max_retries = 2
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb._sleep = Mock()
+
+        original_cleanup = tb._cleanup
+        call_count = [0]
+
+        def failing_cleanup(*args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                raise DatabaseError("temporary failure", None, None)
+            return original_cleanup(*args, **kwargs)
+
+        tb._cleanup = failing_cleanup
+
+        tb.cleanup()
+        assert call_count[0] == 2
+        assert tb._sleep.call_count == 1
+
+    def test_task_result_exists_retries_on_database_error(self):
+        """Test that task_result_exists retries when database errors occur."""
+        from celery.backends.database import DatabaseError
+
+        self.app.conf.result_backend_always_retry = True
+        self.app.conf.result_backend_max_retries = 2
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb._sleep = Mock()
+
+        tb.store_result('task_id_exists', {'result': 'value'}, states.SUCCESS)
+
+        original = tb._task_result_exists
+        call_count = [0]
+
+        def failing(*args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                raise DatabaseError("temporary failure", None, None)
+            return original(*args, **kwargs)
+
+        tb._task_result_exists = failing
+
+        assert tb.task_result_exists('task_id_exists') is True
+        assert call_count[0] == 2
+        assert tb._sleep.call_count == 1
+
+    def test_create_tables_retries_on_database_error(self):
+        """Test that _create_tables retries when ResultSession() fails."""
+        from celery.backends.database import DatabaseError
+
+        self.app.conf.result_backend_always_retry = True
+        self.app.conf.result_backend_max_retries = 2
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb._sleep = Mock()
+
+        original = tb.ResultSession
+        call_count = [0]
+
+        def failing(*args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                raise DatabaseError("engine init failure", None, None)
+            return original(*args, **kwargs)
+
+        tb.ResultSession = failing
+
+        tb._create_tables()
+        assert call_count[0] == 2
+        assert tb._sleep.call_count == 1
+
     def test_retries_respect_max_retries_config(self):
         """Test that retries stop after max_retries is reached."""
         from celery.backends.database import DatabaseError

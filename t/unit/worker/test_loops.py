@@ -173,8 +173,8 @@ class test_asynloop:
         on_task(msg)
         strategy.assert_called_with(
             msg, None,
-            PromiseEqual(x._consumer.call_soon, msg.ack_log_error),
-            PromiseEqual(x._consumer.call_soon, msg.reject_log_error), [],
+            PromiseEqual(x._consumer.call_soon_ack, msg.ack_log_error),
+            PromiseEqual(x._consumer.call_soon_ack, msg.reject_log_error), [],
         )
 
     def test_on_task_received_executes_on_task_message(self):
@@ -185,8 +185,8 @@ class test_asynloop:
         on_task(msg)
         strategy.assert_called_with(
             msg, None,
-            PromiseEqual(x._consumer.call_soon, msg.ack_log_error),
-            PromiseEqual(x._consumer.call_soon, msg.reject_log_error),
+            PromiseEqual(x._consumer.call_soon_ack, msg.ack_log_error),
+            PromiseEqual(x._consumer.call_soon_ack, msg.reject_log_error),
             cbs,
         )
 

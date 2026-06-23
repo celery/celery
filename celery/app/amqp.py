@@ -80,6 +80,8 @@ class Queues(dict):
         queues = queues or {}
         for name, q in queues.items():
             self.add(q) if isinstance(q, Queue) else self.add_compat(name, **q)
+        # The default set of queues to consume from if no -Q option is set.
+        self._default_consume_from = {**self}
 
     def __getitem__(self, name):
         try:
@@ -163,6 +165,8 @@ class Queues(dict):
         q = self.add(queue, **kwargs)
         if self._consume_from is not None:
             self._consume_from[q.name] = q
+        else:
+            self._default_consume_from[q.name] = q
         return q
 
     def select(self, include):
@@ -186,11 +190,12 @@ class Queues(dict):
         if exclude:
             exclude = maybe_list(exclude)
             if self._consume_from is None:
-                # using all queues
-                return self.select(k for k in self if k not in exclude)
-            # using selection
+                consume_from = self._default_consume_from
+            else:
+                consume_from = self._consume_from
+
             for queue in exclude:
-                self._consume_from.pop(queue, None)
+                consume_from.pop(queue, None)
 
     def new_missing(self, name):
         queue_arguments = None
@@ -213,7 +218,7 @@ class Queues(dict):
     def consume_from(self):
         if self._consume_from is not None:
             return self._consume_from
-        return self
+        return self._default_consume_from
 
 
 class AMQP:

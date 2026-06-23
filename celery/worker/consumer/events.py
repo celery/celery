@@ -60,7 +60,7 @@ class Events(bootsteps.StartStopStep):
             # close custom connection
             if dispatcher.connection:
                 ignore_errors(c, dispatcher.connection.close)
-            ignore_errors(c, dispatcher.close)
+            ignore_errors(c, dispatcher.disable)
             c.event_dispatcher = None
             return dispatcher
 
