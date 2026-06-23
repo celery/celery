@@ -429,8 +429,8 @@ methods that have been registered with :mod:`kombu.serialization.registry`.
 Default: 3.
 
 Maximum nesting depth used when generating ``argsrepr`` and ``kwargsrepr``.
-Deeper containers are shown as ``{...}`` / ``[...]``. Set to ``0`` for no
-limit.
+Deeper containers are shown as ``{...}`` / ``[...]``. Set to ``0`` or
+:const:`None` for no limit.
 
 .. setting:: task_publish_retry
 
