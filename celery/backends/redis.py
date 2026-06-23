@@ -135,36 +135,32 @@ class ResultConsumer(BaseResultConsumer):
         if meta['status'] in states.READY_STATES:
             task_id = meta['task_id']
             self.cancel_for(task_id)
-            # After canceling the subscription, clean up any leaked entry in
-            # _pending_messages. on_state_change may have buffered this READY meta
-            # there (if the result was already resolved from _pending_results).
-            # Since the subscription is now canceled and the task is complete,
-            # this entry will never be consumed and would leak memory.
-            # However, we skip REVOKED because the revoked state may still be
-            # needed by waiters (e.g., integration tests for revoke-by-headers).
-            if meta['status'] in (states.SUCCESS, states.FAILURE):
-                pending_messages = self.backend._pending_messages
-                try:
-                    buf = pending_messages.pop(task_id)
-                except KeyError:
-                    pass
-                else:
-                    pending_messages.total -= len(buf)
 
     def on_state_change(self, meta, message):
         super().on_state_change(meta, message)
         self._maybe_cancel_ready_task(meta)
 
-    def start(self, initial_task_id, **kwargs):
-        self._pubsub = self.backend.client.pubsub(
-            ignore_subscribe_messages=True,
-        )
-        self._consume_from(initial_task_id)
-
-    def on_wait_for_pending(self, result, **kwargs):
+    def on_wait_for_pending(self, result, timeout=None, on_interval=None, **kwargs):
         for meta in result._iter_meta(**kwargs):
             if meta is not None:
                 self.on_state_change(meta, None)
+                # After on_state_change processes a READY meta, clean up any
+                # leaked entry in _pending_messages. on_state_change may have
+                # buffered this READY meta there (if the result was already
+                # resolved from _pending_results). Since the subscription is now
+                # canceled and the task is complete, this entry will never be
+                # consumed and would leak memory. However, we skip REVOKED
+                # because the revoked state may still be needed by waiters
+                # (e.g., integration tests for revoke-by-headers).
+                if meta['status'] in (states.SUCCESS, states.FAILURE):
+                    pending_messages = self.backend._pending_messages
+                    task_id = meta['task_id']
+                    try:
+                        buf = pending_messages.pop(task_id)
+                    except KeyError:
+                        pass
+                    else:
+                        pending_messages.total -= len(buf)
 
     def stop(self):
         if self._pubsub is not None:
