@@ -12,9 +12,10 @@ else:
     from backports.zoneinfo import ZoneInfo
 
 from celery.utils.iso8601 import parse_iso8601
-from celery.utils.time import (LocalTimezone, delta_resolution, ffwd, get_exponential_backoff_interval,
-                               humanize_seconds, localize, make_aware, maybe_iso8601, maybe_make_aware,
-                               maybe_timedelta, rate, remaining, timezone, utcoffset)
+from celery.utils.time import (LocalTimezone, _is_imaginary, delta_resolution, ffwd,
+                               get_exponential_backoff_interval, humanize_seconds, localize, make_aware,
+                               maybe_iso8601, maybe_make_aware, maybe_timedelta, rate, remaining, timezone,
+                               utcoffset)
 
 
 class test_LocalTimezone:
@@ -243,6 +244,25 @@ class test_make_aware:
         tz = ZoneInfo('US/Eastern')
         wtz = make_aware(datetime.now(_timezone.utc), tz)
         assert wtz.tzinfo == tz
+
+    def test_tz_when_zoneinfo_and_time_does_not_exist(self):
+        tz = ZoneInfo('US/Eastern')
+        wtz = make_aware(datetime(2024, 3, 10, 2, 30), tz)
+
+        assert wtz == datetime(2024, 3, 10, 3, 30, tzinfo=tz)
+        assert wtz.utcoffset().total_seconds() == -4 * 60 * 60
+
+    def test_imaginary_detection_ignores_unsupported_timezones(self):
+        assert not _is_imaginary(datetime.now(_timezone.utc), tzinfo())
+
+    @patch('dateutil.tz.datetime_exists')
+    def test_imaginary_detection_handles_dateutil_value_error(self, datetime_exists_mock):
+        datetime_exists_mock.side_effect = ValueError
+        tz = ZoneInfo('US/Eastern')
+        dt = datetime(2024, 3, 10, 2, 30, tzinfo=tz)
+
+        assert not _is_imaginary(dt, tz)
+        datetime_exists_mock.assert_called_once_with(dt, tz)
 
     def test_maybe_make_aware(self):
         aware = datetime.now(_timezone.utc).replace(tzinfo=timezone.utc)
