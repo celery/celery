@@ -140,6 +140,12 @@ class ResultConsumer(BaseResultConsumer):
         super().on_state_change(meta, message)
         self._maybe_cancel_ready_task(meta)
 
+    def start(self, initial_task_id, **kwargs):
+        self._pubsub = self.backend.client.pubsub(
+            ignore_subscribe_messages=True,
+        )
+        self._consume_from(initial_task_id)
+
     def on_wait_for_pending(self, result, timeout=None, on_interval=None, **kwargs):
         for meta in result._iter_meta(**kwargs):
             if meta is not None:
