@@ -54,13 +54,33 @@ def get_memcache_client():
         retry_for = kwargs.pop('retry_for', None)
         do_not_retry_for = kwargs.pop('do_not_retry_for', None)
 
+        # Normalize/validate servers (CacheBackend passes a list, but guard other callers)
+        if servers is None:
+            servers = []
+        elif isinstance(servers, str):
+            servers = [servers]
+        elif (
+            isinstance(servers, tuple)
+            and len(servers) == 2
+            and isinstance(servers[0], str)
+            and isinstance(servers[1], int)
+        ):
+            # Allow passing a single server address as (host, port)
+            servers = [servers]
+        elif not isinstance(servers, (list, tuple)):
+            raise ImproperlyConfigured(
+                f"Memcache servers must be a sequence of server addresses, got {type(servers)}: {servers!r}"
+            )
+
+        # Filter out empty entries (e.g. memcache:// or trailing ';')
+        servers = [s for s in servers if s]
+        if not servers:
+            raise ImproperlyConfigured("No memcache servers provided")
+
         # Use HashClient for multiple servers, base Client for single server
         if len(servers) > 1:
             base_client = HashClient(servers, **kwargs)
         else:
-            # For single server, use base Client with first server
-            if not servers:
-                raise ImproperlyConfigured("No memcache servers provided")
             server = servers[0]
             if isinstance(server, (str, tuple)):
                 base_client = Client(server, **kwargs)
