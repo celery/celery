@@ -155,8 +155,8 @@ class ResultConsumer(BaseResultConsumer):
                 # buffered this READY meta there (if the result was already
                 # resolved from _pending_results). Since the subscription is now
                 # canceled and the task is complete, this entry will never be
-                # consumed and would leak memory. However, we skip REVOKED
-                # because the revoked state may still be needed by waiters
+                # consumed and would leak memory. We only clean up SUCCESS and
+                # FAILURE because REVOKED may still be needed by waiters
                 # (e.g., integration tests for revoke-by-headers).
                 if meta['status'] in (states.SUCCESS, states.FAILURE):
                     pending_messages = self.backend._pending_messages
