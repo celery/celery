@@ -338,6 +338,8 @@ class AMQP:
             raise TypeError('task args must be a list or tuple')
         if not isinstance(kwargs, Mapping):
             raise TypeError('task keyword arguments must be a mapping')
+        if isinstance(countdown, timedelta):
+            countdown = countdown.total_seconds()
         if countdown:  # convert countdown to ETA
             self._verify_seconds(countdown, 'countdown')
             now = now or self.app.now()
@@ -345,13 +347,21 @@ class AMQP:
             eta = maybe_make_aware(
                 now + timedelta(seconds=countdown), tz=timezone,
             )
-        if isinstance(expires, numbers.Real):
+        if isinstance(expires, timedelta):
+            now = now or self.app.now()
+            timezone = timezone or self.app.timezone
+            expires = maybe_make_aware(now + expires, tz=timezone)
+        elif isinstance(expires, numbers.Real):
             self._verify_seconds(expires, 'expires')
             now = now or self.app.now()
             timezone = timezone or self.app.timezone
             expires = maybe_make_aware(
                 now + timedelta(seconds=expires), tz=timezone,
             )
+        if isinstance(time_limit, timedelta):
+            time_limit = time_limit.total_seconds()
+        if isinstance(soft_time_limit, timedelta):
+            soft_time_limit = soft_time_limit.total_seconds()
         if not isinstance(eta, str):
             eta = eta and eta.isoformat()
         # If we retry a task `expires` will already be ISO8601-formatted.
@@ -431,14 +441,23 @@ class AMQP:
             raise TypeError('task args must be a list or tuple')
         if not isinstance(kwargs, Mapping):
             raise TypeError('task keyword arguments must be a mapping')
+        if isinstance(countdown, timedelta):
+            countdown = countdown.total_seconds()
         if countdown:  # convert countdown to ETA
             self._verify_seconds(countdown, 'countdown')
             now = now or self.app.now()
             eta = now + timedelta(seconds=countdown)
-        if isinstance(expires, numbers.Real):
+        if isinstance(expires, timedelta):
+            now = now or self.app.now()
+            expires = now + expires
+        elif isinstance(expires, numbers.Real):
             self._verify_seconds(expires, 'expires')
             now = now or self.app.now()
             expires = now + timedelta(seconds=expires)
+        if isinstance(time_limit, timedelta):
+            time_limit = time_limit.total_seconds()
+        if isinstance(soft_time_limit, timedelta):
+            soft_time_limit = soft_time_limit.total_seconds()
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
 
