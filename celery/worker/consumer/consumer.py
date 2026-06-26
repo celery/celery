@@ -442,7 +442,10 @@ class Consumer:
                 if request.task.acks_late and not request.acknowledged:
                     warn(TERMINATING_TASK_ON_RESTART_AFTER_A_CONNECTION_LOSS,
                          request)
-                    request.cancel(self.pool)
+                    try:
+                        request.cancel(self.pool)
+                    except Exception:  # pylint: disable=broad-except
+                        pass
         else:
             warnings.warn(CANCEL_TASKS_BY_DEFAULT, CPendingDeprecationWarning, stacklevel=2)
 
