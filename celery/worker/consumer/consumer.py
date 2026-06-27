@@ -445,7 +445,7 @@ class Consumer:
                     try:
                         request.cancel(self.pool)
                     except Exception:  # pylint: disable=broad-except
-                        pass
+                        warn("Failed to cancel active request %r after connection loss", request, exc_info=True)
         else:
             warnings.warn(CANCEL_TASKS_BY_DEFAULT, CPendingDeprecationWarning, stacklevel=2)
 

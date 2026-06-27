@@ -629,12 +629,13 @@ class test_Consumer(ConsumerTestCase):
         active_requests.add(mock_request_cancel_raises)
         active_requests.add(mock_request_cancel_succeeds)
 
-        c.on_connection_error_after_connected(Mock())
+        try:
+            c.on_connection_error_after_connected(Mock())
 
-        mock_request_cancel_raises.cancel.assert_called_once_with(c.pool)
-        mock_request_cancel_succeeds.cancel.assert_called_once_with(c.pool)
-
-        active_requests.clear()
+            mock_request_cancel_raises.cancel.assert_called_once_with(c.pool)
+            mock_request_cancel_succeeds.cancel.assert_called_once_with(c.pool)
+        finally:
+            active_requests.clear()
 
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_cancel_active_requests(self):
