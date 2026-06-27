@@ -377,7 +377,10 @@ def head_from_fun(fun: Callable[..., Any], bound: bool = False) -> str:
         # fun is neither a plain function, bound method, nor cython
         # callable. It may be a class instance with a __call__, a
         # class object, a functools.partial, or some other descriptor.
-        name = getattr(fun, '__name__', type(fun).__name__)
+        if isinstance(fun, type):
+            name = fun.__name__
+        else:
+            name = type(fun).__name__
         call_attr = getattr(fun, '__call__', None)
         # Only swap to __call__ when it is a real Python function with
         # a usable __module__. For class instances this lets us read the
