@@ -535,10 +535,11 @@ class Consumer:
         for bucket in self.task_buckets.values():
             if bucket:
                 bucket.clear_pending()
-        for request_id in reserved_requests:
-            if request_id in requests:
-                del requests[request_id]
+        for r in tuple(reserved_requests):
+            if r not in active_requests:
+                requests.pop(r.id, None)
         reserved_requests.clear()
+        reserved_requests.update(tuple(active_requests))
         if self.pool and self.pool.flush:
             self.pool.flush()
 
@@ -633,7 +634,7 @@ class Consumer:
         # create queues when :setting:`task_create_missing_queues` is enabled.
         # (Issue #1079)
         if queue in queues:
-            q = queues[queue]
+            q = queues.select_add(queues[queue])
         else:
             exchange = queue if exchange is None else exchange
             exchange_type = ('direct' if exchange_type is None
