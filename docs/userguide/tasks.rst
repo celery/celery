@@ -1034,6 +1034,22 @@ General
     maximum number of  requests per second), you must restrict to a given
     queue.
 
+.. warning::
+
+    A rate-limited task still counts against the worker's prefetch count
+    while it waits to run. Once all of a worker's prefetched slots are occupied
+    by rate-limited tasks, the worker stops fetching new messages from the broker
+    entirely, including messages for tasks that have no rate limit of their own.
+
+    For example, consider a worker that handles two tasks, ``A`` and ``B``,
+    where ``A`` is rate limited and ``B`` is not. A burst of ``A`` messages
+    can fill the worker's prefetch slots, and ``B`` messages will sit on
+    the broker untouched until those rate-limited ``A`` tasks drain, even
+    though ``B`` has no rate limit of its own.
+
+    To avoid this, rate-limited tasks should be routed to their own
+    dedicated workers (see :ref:`guide-routing`).
+
 .. attribute:: Task.time_limit
 
     The hard time limit, in seconds, for this task.
