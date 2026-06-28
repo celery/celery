@@ -374,12 +374,52 @@ def head_from_fun(fun: Callable[..., Any], bound: bool = False) -> str:
     is_method = inspect.ismethod(fun)
 
     if not is_function and is_callable and not is_method and not is_cython:
-        name, fun = fun.__class__.__name__, fun.__call__
+        # fun is neither a plain function, bound method, nor cython
+        # callable. It may be a class instance with a __call__, a
+        # class object, a functools.partial, or some other descriptor.
+        if isinstance(fun, type):
+            name = fun.__name__
+        else:
+            name = type(fun).__name__
+        call_attr = getattr(fun, '__call__', None)
+        # Only swap to __call__ when it is a real Python function with
+        # a usable __module__. For class instances this lets us read the
+        # bound signature of __call__, but we still need to drop the
+        # leading `self` parameter because the instance is already
+        # bound. For other callables whose __call__ is a C-level
+        # method-wrapper (e.g. functools.partial), __module__ is None,
+        # so we fall back to introspecting `fun` directly, which
+        # inspect.getfullargspec already unwraps correctly.
+        if (
+                call_attr is not None
+                and getattr(call_attr, '__module__', None) is not None
+        ):
+            fun = call_attr
+            spec = _getfullargspec(fun)
+            if spec.args and spec.args[0] == 'self':
+                spec = inspect.FullArgSpec(
+                    args=spec.args[1:],
+                    varargs=spec.varargs,
+                    varkw=spec.varkw,
+                    defaults=spec.defaults,
+                    kwonlyargs=spec.kwonlyargs,
+                    kwonlydefaults=spec.kwonlydefaults,
+                    annotations=spec.annotations,
+                )
+            fun_args = _argsfromspec(spec)
+        else:
+            # Pure class object (call_attr is type.__call__) or a
+            # partial-like object: introspect fun directly. For class
+            # objects, getfullargspec returns an empty spec; for
+            # partials it returns the effective signature with bound
+            # args promoted to keyword-only.
+            fun_args = _argsfromspec(_getfullargspec(fun))
     else:
         name = fun.__name__
+        fun_args = _argsfromspec(_getfullargspec(fun))
     definition = FUNHEAD_TEMPLATE.format(
         fun_name=name,
-        fun_args=_argsfromspec(_getfullargspec(fun)),
+        fun_args=fun_args,
         fun_value=1,
     )
     logger.debug(definition)
