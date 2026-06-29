@@ -776,7 +776,7 @@ class BufferMap(OrderedDict, Evictable):
         # type: (int, Iterable, int) -> None
         super().__init__()
         self.maxsize = maxsize
-        self.bufmaxsize = 1000
+        self.bufmaxsize = bufmaxsize
         if iterable:
             self.update(iterable)
         self.total = sum(len(buf) for buf in self.items())
