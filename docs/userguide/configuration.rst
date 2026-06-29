@@ -117,6 +117,7 @@ For a complete Django example, see :ref:`django-first-steps`.
 ``BROKER_HEARTBEAT``                       :setting:`broker_heartbeat`
 ``BROKER_LOGIN_METHOD``                    :setting:`broker_login_method`
 ``BROKER_NATIVE_DELAYED_DELIVERY_QUEUE_TYPE`` :setting:`broker_native_delayed_delivery_queue_type`
+``BROKER_NATIVE_DELAYED_DELIVERY_QUEUE_PREFIX`` :setting:`broker_native_delayed_delivery_queue_prefix`
 ``BROKER_POOL_ACQUIRE_TIMEOUT``            :setting:`broker_pool_acquire_timeout`
 ``BROKER_POOL_LIMIT``                      :setting:`broker_pool_limit`
 ``BROKER_USE_SSL``                         :setting:`broker_use_ssl`
@@ -3313,6 +3314,28 @@ This setting is used to allow changing the default queue type for the
 native delayed delivery queues. The other viable option is ``"classic"`` which
 is only supported by RabbitMQ and sets the queue type to ``classic`` using the ``x-queue-type``
 queue argument.
+
+.. setting:: broker_native_delayed_delivery_queue_prefix
+
+``broker_native_delayed_delivery_queue_prefix``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+:transports supported: ``pyamqp``
+
+Default: :const:`None`.
+
+Optional prefix applied to the native delayed delivery exchange and
+queue names. When set to a non-empty string, the delayed delivery
+exchange is named ``"{prefix}_celery_delayed_delivery"`` and each
+level queue is named ``"{prefix}_celery_delayed_{level}"``. When unset
+(the default), the original names ``"celery_delayed_delivery"`` and
+``"celery_delayed_{level}"`` are used.
+
+Useful when multiple Celery applications share the same RabbitMQ
+broker and need their delayed delivery infrastructure namespaced to
+avoid collisions.
 
 .. setting:: broker_transport_options
 
