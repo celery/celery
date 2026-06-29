@@ -328,6 +328,22 @@ def build_chain_inside_task(self):
     return result
 
 
+@shared_task()
+def short_running_full_return(*args):
+    return args
+
+
+@shared_task()
+def short_running(*args):
+    return args[-1]
+
+
+@shared_task()
+def long_running(*args):
+    sleep(2)
+    return args[-1]
+
+
 class ExpectedException(Exception):
     """Sentinel exception for tests."""
 

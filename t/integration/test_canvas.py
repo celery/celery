@@ -22,7 +22,7 @@ from .tasks import (ExpectedException, StampOnReplace, add, add_chord_to_chord, 
                     ids, mul, print_unicode, raise_error, redis_count, redis_echo, redis_echo_group_id,
                     replace_with_chain, replace_with_chain_which_raises, replace_with_empty_chain,
                     replace_with_stamped_task, retry_once, return_exception, return_priority, second_order_replace1,
-                    tsum, write_to_file_and_return_int, xsum)
+                    tsum, write_to_file_and_return_int, xsum, short_running_full_return, short_running, long_running)
 
 TIMEOUT = 60
 
@@ -1154,6 +1154,36 @@ class test_chain:
         assert actual.count(b'b') == 1
         redis_connection.delete(redis_key)
 
+    def test_chain_group_chain_sync(self, manager):
+        """
+        Test for issue 8182: 
+        Out of ordering for chain-group-chain-group with
+        last element in last chain a group 
+        """
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        sig = chain(
+            group(
+                long_running.s(1),
+                chain(
+                    short_running.s(-2),
+                    group(
+                        short_running.s(3),
+                        short_running.s(4),
+                    ),
+                ),
+            ),
+            short_running_full_return.s(5),
+        )
+
+        actual = sig.delay().get(timeout=TIMEOUT)
+        
+        assert actual == [[1, [3, 4]], 5]
 
 class test_result_set:
 
