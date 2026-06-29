@@ -134,6 +134,14 @@ def task_has_custom(task, attr):
                       monkey_patched=['celery.app.task'])
 
 
+def _resolve_traceback(exc):
+    if exc is None:
+        return sys.exc_info()[2]
+    if hasattr(exc, '__traceback__'):
+        return exc.__traceback__
+    return sys.exc_info()[2]
+
+
 def get_log_policy(task, einfo, exc):
     if isinstance(exc, Reject):
         return log_policy_reject
@@ -320,14 +328,7 @@ def traceback_clear(exc=None):
     """
     # Cleared Tb, but einfo still has a reference to Traceback.
     # exc cleans up the Traceback at the last moment that can be revealed.
-    tb = None
-    if exc is not None:
-        if hasattr(exc, '__traceback__'):
-            tb = exc.__traceback__
-        else:
-            _, _, tb = sys.exc_info()
-    else:
-        _, _, tb = sys.exc_info()
+    tb = _resolve_traceback(exc)
 
     while tb is not None:
         try:
@@ -339,6 +340,25 @@ def traceback_clear(exc=None):
             # Ignore the exception raised if the frame is still executing.
             pass
         tb = tb.tb_next
+
+
+def _should_publish_result(eager, ignore_result, task):
+    if eager:
+        return not ignore_result and task.store_eager_result
+    return not ignore_result
+
+
+def _should_dispatch_callbacks_or_chain(callbacks, chain, children):
+    return (callbacks or chain) and not children
+
+
+def _should_use_protected_task_run(request, stack):
+    return (
+        request
+        and not request._protected
+        and len(stack) == 1
+        and not request.called_directly
+    )
 
 
 def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
@@ -499,11 +519,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
 
             ignore_result = get_actual_ignore_result(task, task_request)
             track_started = not eager and (task.track_started and not ignore_result)
-            # #6476
-            if eager and not ignore_result and task.store_eager_result:
-                publish_result = True
-            else:
-                publish_result = not eager and not ignore_result
+            publish_result = _should_publish_result(eager, ignore_result, task)
 
             redelivered = (task_request.delivery_info
                            and task_request.delivery_info.get('redelivered', False))
@@ -537,7 +553,9 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             _children = _meta.get('children')
                             _callbacks = task_request.callbacks
                             _chain = task_request.chain
-                            if (_callbacks or _chain) and not _children:
+                            if _should_dispatch_callbacks_or_chain(
+                                _callbacks, _chain, _children
+                            ):
                                 _dispatch_callbacks_and_chain(
                                     stored_retval, _callbacks, _chain,
                                     parent_id=uuid, root_id=_root_id,
@@ -852,8 +870,7 @@ def _install_stack_protection():
         def __protected_call__(self, *args, **kwargs):
             stack = self.request_stack
             req = stack.top
-            if req and not req._protected and \
-                    len(stack) == 1 and not req.called_directly:
+            if _should_use_protected_task_run(req, stack):
                 req._protected = 1
                 return self.run(*args, **kwargs)
             return orig(self, *args, **kwargs)
