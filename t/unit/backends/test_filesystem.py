@@ -96,6 +96,30 @@ class test_FilesystemBackend:
         tb = FilesystemBackend(app=self.app, url=self.url, serializer='pickle')
         assert pickle.loads(pickle.dumps(tb))
 
+    def test_rejects_path_traversal(self):
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        with pytest.raises(ValueError, match="path traversal"):
+            tb.get(b'-/../../etc/passwd')
+
+    def test_filename_accepts_children_when_backend_path_is_root(self):
+        tb = object.__new__(FilesystemBackend)
+        tb.path = os.path.abspath(os.sep).encode('ascii')
+        tb.sep = os.sep.encode('ascii')
+
+        assert tb._filename(b'etc') == tb.sep.join((tb.path, b'etc'))
+
+    def test_filename_rejects_commonpath_value_error(self):
+        tb = object.__new__(FilesystemBackend)
+        tb.path = b'/base'
+        tb.sep = b'/'
+
+        with patch.object(
+            filesystem.os.path, 'commonpath',
+            side_effect=ValueError('paths are on different drives'),
+        ):
+            with pytest.raises(ValueError, match="path traversal"):
+                tb._filename(b'task')
+
     @pytest.mark.skipif(sys.platform == 'win32', reason='Test can fail on '
                         'Windows/FAT due to low granularity of st_mtime')
     def test_cleanup(self):
