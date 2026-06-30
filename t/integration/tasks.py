@@ -543,6 +543,12 @@ def reject_then_succeed(self):
     return 'second-pass'
 
 
+@shared_task
+def reject_without_requeue():
+    """Reject permanently so the worker records a terminal FAILURE."""
+    raise Reject('rejected', requeue=False)
+
+
 @shared_task(soft_time_limit=2, time_limit=1)
 def soft_time_limit_must_exceed_time_limit():
     pass
