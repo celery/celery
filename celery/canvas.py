@@ -1808,7 +1808,8 @@ class group(Signature):
                 chord_size += _chord._descend(sig)
                 if chord_obj is not None and next_task is None:
                     # Per above, sanity check that we only saw one group
-                    app.backend.set_chord_size(group_id, chord_size)
+                    # Issue 8182: Set chord size only once
+                    app.backend.set_chord_size(group_id, chord_size, freeze=True)
                 sig.apply_async(producer=producer, add_to_parent=False,
                                 chord=chord_obj, args=args, kwargs=kwargs,
                                 **options)

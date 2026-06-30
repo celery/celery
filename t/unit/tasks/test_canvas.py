@@ -1262,7 +1262,7 @@ class test_group(CanvasCase):
         assert len(res_obj.children) == len(group_sig.tasks)
         # We must have set the chord size for the group of tasks which makes up
         # the header of the `child_chord`, just before we apply the last task.
-        mock_set_chord_size.assert_called_once_with(ANY, gchild_count)
+        mock_set_chord_size.assert_called_once_with(ANY, gchild_count, freeze=True)
 
     def test_apply_contains_chords_containing_chain(self):
         ggchild_count = 42
@@ -1283,7 +1283,7 @@ class test_group(CanvasCase):
         assert len(res_obj.children) == child_count
         # We must have set the chord sizes based on the number of tail tasks of
         # the encapsulated chains - in this case 1 for each child chord
-        mock_set_chord_size.assert_has_calls((call(ANY, 1),) * child_count)
+        mock_set_chord_size.assert_has_calls((call(ANY, 1, freeze=True),) * child_count)
 
     @pytest.mark.xfail(reason="Invalid canvas setup with bad exception")
     def test_apply_contains_chords_containing_empty_chain(self):
@@ -1319,7 +1319,7 @@ class test_group(CanvasCase):
         # We must have set the chord sizes based on the size of the last
         # non-empty task in the encapsulated chains - in this case `tail_count`
         # for the group preceding the empty one in each grandchild chain
-        mock_set_chord_size.assert_called_once_with(ANY, tail_count)
+        mock_set_chord_size.assert_called_once_with(ANY, tail_count, freeze=True)
 
     def test_apply_contains_chords_containing_group(self):
         ggchild_count = 42
@@ -1341,7 +1341,7 @@ class test_group(CanvasCase):
         # We must have set the chord sizes based on the number of tail tasks of
         # the encapsulated groups - in this case `ggchild_count`
         mock_set_chord_size.assert_has_calls(
-            (call(ANY, ggchild_count),) * child_count,
+            (call(ANY, ggchild_count, freeze=True),) * child_count
         )
 
     @pytest.mark.xfail(reason="Invalid canvas setup but poor behaviour")
@@ -1388,7 +1388,7 @@ class test_group(CanvasCase):
         # child chord. This means we have `child_count` interleaved calls to
         # set chord sizes of 1 and `ggchild_count`.
         mock_set_chord_size.assert_has_calls(
-            (call(ANY, 1), call(ANY, ggchild_count),) * child_count,
+            (call(ANY, 1, freeze=True), call(ANY, ggchild_count,freeze=True),) * child_count
         )
 
     def test_apply_contains_chords_containing_empty_chord(self):
@@ -1408,7 +1408,7 @@ class test_group(CanvasCase):
         assert len(res_obj.children) == child_count
         # We must have set the chord sizes based on the number of tail tasks of
         # the encapsulated chains - in this case 1 for each child chord
-        mock_set_chord_size.assert_has_calls((call(ANY, 1),) * child_count)
+        mock_set_chord_size.assert_has_calls((call(ANY, 1, freeze=True),) * child_count)
 
     def test_group_prepared(self):
         # Using both partial and dict based signatures
