@@ -96,6 +96,7 @@ jobs:
       matrix:
         module: [
           'test_backend.py',
+          'test_beat.py',
           'test_canvas.py',
           'test_connection_recovery.py',
           'test_database_backend.py',
