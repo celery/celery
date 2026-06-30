@@ -647,6 +647,27 @@ class Request:
         elif isinstance(exc, MemoryError):
             raise MemoryError(f'Process got: {exc}')
         elif isinstance(exc, Reject):
+            if not exc.requeue:
+                # A task that rejects its message without requeueing will
+                # never run again, so record a terminal FAILURE result and
+                # fire the task_failure signal instead of leaving the task
+                # stuck in PENDING/STARTED forever (Issue #4222).
+                self.task.backend.mark_as_failure(
+                    self.id, exc, request=self._context,
+                    store_result=self.store_errors,
+                )
+                signals.task_failure.send(
+                    sender=self.task, task_id=self.id, exception=exc,
+                    args=self.args, kwargs=self.kwargs,
+                    traceback=exc_info.traceback, einfo=exc_info,
+                )
+                if send_failed_event:
+                    self.send_event(
+                        'task-failed',
+                        exception=safe_repr(
+                            get_pickled_exception(exc_info.exception)),
+                        traceback=exc_info.traceback,
+                    )
             return self.reject(requeue=exc.requeue)
         elif isinstance(exc, Ignore):
             return self.acknowledge()
