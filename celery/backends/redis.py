@@ -1,4 +1,5 @@
 """Redis result store backend."""
+import threading
 import time
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
@@ -84,6 +85,14 @@ class ResultConsumer(BaseResultConsumer):
         self._ensure = self.backend.ensure
         self._connection_errors = self.backend.connection_errors
         self.subscribed_to = set()
+        # Re-entry guard for pub/sub operations. CPython's cyclic GC can
+        # finalize an ``AsyncResult`` mid-SUBSCRIBE/UNSUBSCRIBE via
+        # ``AsyncResult.__del__`` -> ``backend.remove_pending_result`` ->
+        # :meth:`cancel_for`, which would otherwise re-enter the same
+        # ``PubSub`` connection and deadlock waiting for an interleaved
+        # response. Nested :meth:`cancel_for` calls are queued and drained
+        # once the outer operation returns.
+        self._reentry = threading.local()
 
     def on_after_fork(self):
         try:
@@ -187,18 +196,94 @@ class ResultConsumer(BaseResultConsumer):
         self._consume_from(task_id)
 
     def _consume_from(self, task_id):
-        key = self._get_key_for_task(task_id)
-        if key not in self.subscribed_to:
-            self.subscribed_to.add(key)
-            with self.reconnect_on_error():
-                self._pubsub.subscribe(key)
+        depth = getattr(self._reentry, 'depth', 0)
+        self._reentry.depth = depth + 1
+        try:
+            key = self._get_key_for_task(task_id)
+            if key not in self.subscribed_to:
+                self.subscribed_to.add(key)
+                with self.reconnect_on_error():
+                    self._pubsub.subscribe(key)
+        finally:
+            self._reentry.depth = depth
+            if depth == 0:
+                try:
+                    self._drain_deferred_cancels()
+                except Exception:
+                    # Log for a debug breadcrumb, but re-raise: the only
+                    # exception ``_drain_deferred_cancels`` lets escape is
+                    # ``RuntimeError(E_RETRY_LIMIT_EXCEEDED)``, which means
+                    # the backend is unrecoverable and the operator must
+                    # restart Celery. Swallowing it would hide that signal.
+                    # Any outer exception is still chained via
+                    # ``__context__``.
+                    logger.exception(
+                        'Failed to drain deferred pub/sub cancels')
+                    raise
 
     def cancel_for(self, task_id):
+        if getattr(self._reentry, 'depth', 0) > 0:
+            # Nested invocation -- almost always from ``AsyncResult.__del__``
+            # triggered by cyclic GC while the outer SUBSCRIBE/UNSUBSCRIBE
+            # is still awaiting its response. Re-entering the shared
+            # ``PubSub`` connection here would deadlock the protocol, so
+            # we defer until the outer op returns.
+            deferred = getattr(self._reentry, 'deferred', None)
+            if deferred is None:
+                deferred = []
+                self._reentry.deferred = deferred
+            deferred.append(task_id)
+            return
+        self._reentry.depth = 1
+        try:
+            self._cancel_for(task_id)
+        finally:
+            self._reentry.depth = 0
+            try:
+                self._drain_deferred_cancels()
+            except Exception:
+                # Log for a debug breadcrumb, but re-raise: the only
+                # exception ``_drain_deferred_cancels`` lets escape is
+                # ``RuntimeError(E_RETRY_LIMIT_EXCEEDED)``, which means the
+                # backend is unrecoverable and the operator must restart
+                # Celery. Swallowing it would hide that signal. Any outer
+                # exception is still chained via ``__context__``.
+                logger.exception('Failed to drain deferred pub/sub cancels')
+                raise
+
+    def _cancel_for(self, task_id):
         key = self._get_key_for_task(task_id)
         self.subscribed_to.discard(key)
         if self._pubsub:
             with self.reconnect_on_error():
                 self._pubsub.unsubscribe(key)
+
+    def _drain_deferred_cancels(self):
+        while True:
+            deferred = getattr(self._reentry, 'deferred', None)
+            if not deferred:
+                return
+            self._reentry.deferred = []
+            # Hold ``depth`` at 1 so any further re-entry from finalizers
+            # fired during the drain is also queued rather than executed
+            # against the live connection.
+            self._reentry.depth = 1
+            try:
+                for tid in deferred:
+                    try:
+                        self._cancel_for(tid)
+                    except RuntimeError:
+                        # Unrecoverable backend state -- propagate so the
+                        # caller can restart Celery. ``finally`` below
+                        # still resets the depth counter.
+                        raise
+                    except Exception:
+                        logger.exception(
+                            'Failed to cancel deferred pub/sub '
+                            'subscription for task %s', tid,
+                        )
+            finally:
+                self._reentry.depth = 0
 
 
 class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
