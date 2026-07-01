@@ -5,7 +5,6 @@ import pytest
 from kombu import Queue
 
 from celery import Celery
-from celery.contrib.pytest import celery_worker
 from celery.exceptions import TimeoutError
 from t.integration.tasks import identity
 
