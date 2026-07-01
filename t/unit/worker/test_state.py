@@ -220,3 +220,13 @@ class test_state_configuration():
         assert state.SUCCESSFUL_MAX == 1000
         assert state.REVOKE_EXPIRES == 10800
         assert state.SUCCESSFUL_EXPIRES == 10800
+
+    @patch.dict(os.environ, {'CELERY_WORKER_REVOKES_MAX': 'not_an_int'})
+    def test_invalid_int_env_raises_clear_error(self):
+        with pytest.raises(ValueError, match=r"'CELERY_WORKER_REVOKES_MAX'.*expected integer"):
+            self.import_state()
+
+    @patch.dict(os.environ, {'CELERY_WORKER_REVOKE_EXPIRES': 'not_a_float'})
+    def test_invalid_float_env_raises_clear_error(self):
+        with pytest.raises(ValueError, match=r"'CELERY_WORKER_REVOKE_EXPIRES'.*expected float"):
+            self.import_state()

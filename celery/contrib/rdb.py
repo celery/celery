@@ -56,7 +56,19 @@ __all__ = (
 DEFAULT_PORT = 6899
 
 CELERY_RDB_HOST = os.environ.get('CELERY_RDB_HOST') or '127.0.0.1'
-CELERY_RDB_PORT = int(os.environ.get('CELERY_RDB_PORT') or DEFAULT_PORT)
+def _parse_rdb_port(default):
+    raw = os.environ.get('CELERY_RDB_PORT')
+    if not raw:
+        return default
+    try:
+        return int(raw)
+    except (ValueError, TypeError):
+        raise ValueError(
+            f"Invalid value for 'CELERY_RDB_PORT': expected integer, got {raw!r}"
+        ) from None
+
+
+CELERY_RDB_PORT = _parse_rdb_port(DEFAULT_PORT)
 
 #: Holds the currently active debugger.
 _current = [None]
