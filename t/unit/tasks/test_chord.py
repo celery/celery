@@ -388,4 +388,4 @@ class test_Chord_task(ChordCase):
         group1 = group(self.add.signature((i, i)) for i in range(group_size))
         result = Chord(group1, body)
 
-        self.app.backend.set_chord_size.assert_called_once_with(result.parent.id, group_size)
+        self.app.backend.set_chord_size.assert_called_once_with(result.parent.id, group_size, freeze=True)
