@@ -8,12 +8,11 @@ from importlib.metadata import entry_points
 import click
 import click.exceptions
 from click_didyoumean import DYMGroup
-from click_plugins import with_plugins
 
 from celery import VERSION_BANNER
 from celery.app.utils import find_app
 from celery.bin.amqp import amqp
-from celery.bin.base import CeleryCommand, CeleryOption, CLIContext
+from celery.bin.base import BrokenCommand, CeleryCommand, CeleryOption, CLIContext, with_plugins
 from celery.bin.beat import beat
 from celery.bin.call import call
 from celery.bin.control import control, inspect, status
