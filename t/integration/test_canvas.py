@@ -1156,9 +1156,9 @@ class test_chain:
 
     def test_chain_group_chain_sync(self, manager):
         """
-        Test for issue 8182: 
+        Test for issue 8182:
         Out of ordering for chain-group-chain-group with
-        last element in last chain a group 
+        last element in last chain a group
         """
         if not manager.app.conf.result_backend.startswith("redis"):
             raise pytest.skip("Requires redis result backend.")
