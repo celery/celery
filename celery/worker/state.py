@@ -31,19 +31,43 @@ SOFTWARE_INFO = {
     'sw_sys': platform.system(),
 }
 
+def _get_int_env(name, default):
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    try:
+        return int(raw)
+    except (ValueError, TypeError):
+        raise ValueError(
+            f'Invalid value for {name!r}: expected integer, got {raw!r}'
+        ) from None
+
+
+def _get_float_env(name, default):
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    try:
+        return float(raw)
+    except (ValueError, TypeError):
+        raise ValueError(
+            f'Invalid value for {name!r}: expected float, got {raw!r}'
+        ) from None
+
+
 #: maximum number of revokes to keep in memory.
-REVOKES_MAX = int(os.environ.get('CELERY_WORKER_REVOKES_MAX', 50000))
+REVOKES_MAX = _get_int_env('CELERY_WORKER_REVOKES_MAX', 50000)
 
 #: maximum number of successful tasks to keep in memory.
-SUCCESSFUL_MAX = int(os.environ.get('CELERY_WORKER_SUCCESSFUL_MAX', 1000))
+SUCCESSFUL_MAX = _get_int_env('CELERY_WORKER_SUCCESSFUL_MAX', 1000)
 
 #: how many seconds a revoke will be active before
 #: being expired when the max limit has been exceeded.
-REVOKE_EXPIRES = float(os.environ.get('CELERY_WORKER_REVOKE_EXPIRES', 10800))
+REVOKE_EXPIRES = _get_float_env('CELERY_WORKER_REVOKE_EXPIRES', 10800)
 
 #: how many seconds a successful task will be cached in memory
 #: before being expired when the max limit has been exceeded.
-SUCCESSFUL_EXPIRES = float(os.environ.get('CELERY_WORKER_SUCCESSFUL_EXPIRES', 10800))
+SUCCESSFUL_EXPIRES = _get_float_env('CELERY_WORKER_SUCCESSFUL_EXPIRES', 10800)
 
 #: Mapping of reserved task_id->Request.
 requests = {}
