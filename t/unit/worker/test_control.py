@@ -76,20 +76,52 @@ class test_Pidbox:
         node = Mock()
         parent.app.control.mailbox.Node.return_value = node
         parent.connection = Mock()
-        parent.connection.channel.return_value = Mock()
+        parent.connection.channel.side_effect = [Mock(), Mock()]
+        parent.connection_errors = ()
+        parent.channel_errors = ()
         parent.on_decode_error = Mock()
 
         pbox = Pidbox(parent)
         old_consumer = Mock()
-        pbox.consumer = old_consumer
-        node.channel = Mock()
         new_consumer = Mock()
-        node.listen.return_value = new_consumer
+        node.listen.side_effect = [old_consumer, new_consumer]
 
+        pbox.start(parent)
         pbox.reset()
 
         old_consumer.cancel.assert_called_once()
+        new_consumer.cancel.assert_not_called()
         assert pbox.consumer is new_consumer
+
+    def test_pidbox_repeated_reset_cancels_previous_consumers(self):
+        parent = Mock()
+        parent.hostname = 'worker@example.com'
+        parent.controller = Mock(use_eventloop=False)
+        parent.app = Mock()
+        parent.app.control.mailbox.Node = Mock()
+        node = Mock()
+        node.handle_message.side_effect = RuntimeError('simulated handler error')
+        parent.app.control.mailbox.Node.return_value = node
+        parent.connection = Mock()
+        parent.connection.channel.side_effect = [
+            Mock(name=f'channel-{i}') for i in range(11)
+        ]
+        parent.connection_errors = ()
+        parent.channel_errors = ()
+        parent.on_decode_error = Mock()
+
+        consumers = [Mock(name=f'consumer-{i}') for i in range(11)]
+        node.listen.side_effect = consumers
+        pbox = Pidbox(parent)
+
+        pbox.start(parent)
+        for _ in range(10):
+            pbox.on_message({}, object())
+
+        for previous_consumer in consumers[:-1]:
+            previous_consumer.cancel.assert_called_once()
+        consumers[-1].cancel.assert_not_called()
+        assert pbox.consumer is consumers[-1]
 
 
 class test_Pidbox_green:
