@@ -130,6 +130,7 @@ jobs:
           'test_revoke.py',
           'test_visitor.py',
           'test_canvas.py',
+          'test_concurrency_auto.py',
           'test_consumer.py',
           'test_dedup_chain_dispatch.py',
           'test_control.py',

@@ -331,7 +331,7 @@ NAMESPACES = Namespace(
         ),
         soft_shutdown_timeout=Option(0.0, type='float'),
         enable_soft_shutdown_on_idle=Option(False, type='bool'),
-        concurrency=Option(None, type='int'),
+        concurrency=Option(None, type='any'),
         consumer=Option('celery.worker.consumer:Consumer', type='string'),
         direct=Option(False, type='bool', old={'celery_worker_direct'}),
         disable_rate_limits=Option(
