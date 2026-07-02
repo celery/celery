@@ -262,7 +262,13 @@ class Backend:
                         not isinstance(errback.type.__header__, partial) and
                         arity_greater(errback.type.__header__, 1)
                 ):
-                    errback(request, exc, traceback)
+                    try:
+                        errback(request, exc, traceback)
+                    except Exception:
+                        logger.exception(
+                            'Errback %r raised an exception',
+                            errback.name,
+                        )
                 else:
                     old_signature.append(errback)
             except NotRegistered:
@@ -709,7 +715,8 @@ class Backend:
             warnings.warn(
                 "Results are not stored in backend and should not be retrieved when "
                 "task_always_eager is enabled, unless task_store_eager_result is enabled.",
-                RuntimeWarning
+                RuntimeWarning,
+                stacklevel=2,
             )
 
     def exception_safe_to_retry(self, exc):

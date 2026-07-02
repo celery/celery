@@ -95,11 +95,30 @@ class test_Queues:
         q.select_add('baz')
         assert sorted(q._consume_from.keys()) == ['bar', 'baz', 'foo']
 
+    def test_select_add_without_selection_extends_default(self):
+        q = Queues([Queue('default')])
+        q.select_add('worker.dq2')
+        assert q._consume_from is None
+        assert sorted(q.consume_from.keys()) == ['default', 'worker.dq2']
+
     def test_deselect(self):
         q = Queues()
         q.select(['foo', 'bar'])
         q.deselect('bar')
         assert sorted(q._consume_from.keys()) == ['foo']
+
+    def test_deselect_without_explicit_consume_selection_removes_excluded_queue(self):
+        q = Queues([Queue('foo'), Queue('bar')])
+        q.deselect('bar')
+        assert q._consume_from is None
+        assert sorted(q.consume_from.keys()) == ['foo']
+
+    def test_deselect_without_explicit_consume_selection_keeps_routing_only_queue_unconsumed(self):
+        q = Queues([Queue('foo'), Queue('bar')])
+        q.add('routing_only')
+        q.deselect('bar')
+        assert q._consume_from is None
+        assert sorted(q.consume_from.keys()) == ['foo']
 
     def test_add_default_exchange(self):
         ex = Exchange('fff', 'fanout')
@@ -111,6 +130,17 @@ class test_Queues:
         q = Queues()
         q.add(Queue('foo', alias='barfoo'))
         assert q['barfoo'] is q['foo']
+
+    def test_deselect_by_real_name_removes_queue_selected_by_alias(self):
+        q = Queues()
+        q.add(Queue('foo', alias='barfoo'))
+
+        q.select(['barfoo'])
+        assert list(q._consume_from) == ['foo']
+        assert q._consume_from['foo'] is q['foo']
+
+        q.deselect('foo')
+        assert q._consume_from == {}
 
     @pytest.mark.parametrize('queues_kwargs,qname,q,expected', [
         ({'max_priority': 10},
