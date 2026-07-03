@@ -76,6 +76,7 @@ class Pidbox:
         if self.consumer:
             debug('Canceling broadcast consumer...')
             ignore_errors(c, self.consumer.cancel)
+            self.consumer = None
         self.stop(self.c)
 
 
