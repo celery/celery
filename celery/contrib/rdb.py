@@ -61,7 +61,7 @@ CELERY_RDB_PORT = int(os.environ.get('CELERY_RDB_PORT') or DEFAULT_PORT)
 #: Holds the currently active debugger.
 _current = [None]
 
-_frame = getattr(sys, '_getframe')
+_frame = sys._getframe
 
 NO_AVAILABLE_PORT = """\
 {self.ident}: Couldn't find an available port.
