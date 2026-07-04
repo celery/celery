@@ -126,7 +126,7 @@ Celery version 5.6.x runs on:
 - PyPy3.9+ (v7.3.12+)
 
 This is the last version of Celery which will support Python 3.9.
-Celery v5.7.x will work on Python 3.10 or newer versions.
+Celery v5.7.x will surely work on Python 3.10 or newer versions.
 
 If you're running an older version of Python, you need to be running
 an older version of Celery:
