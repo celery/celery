@@ -126,7 +126,7 @@ Celery version 5.6.x runs on:
 - PyPy3.9+ (v7.3.12+)
 
 This is the last version of Celery which will support Python 3.9.
-Celery v5.7.x will surely work on Python 3.10 or newer versions.
+Celery v5.7.x will work on Python 3.10 or newer versions.
 
 If you're running an older version of Python, you need to be running
 an older version of Celery:
@@ -291,12 +291,18 @@ database connections at ``fork``.
 Documentation
 =============
 
-The `latest documentation`_ is hosted at Read The Docs, containing user guides,
-tutorials, and an API reference.
+The latest documentation is hosted on Read the Docs and includes everything
+you need to get started with Celery:
 
-.. _`latest documentation`: https://docs.celeryq.dev/en/latest/
+- Getting Started
+- User Guide
+- API Reference
 
-.. _celery-installation:
+Documentation:
+https://docs.celeryq.dev/en/latest/
+
+If you're new to Celery, we recommend starting with the "Getting Started"
+guide before exploring the User Guide and API Reference.
 
 Installation
 ============
