@@ -6,18 +6,12 @@ from kombu import Queue
 
 from celery import Celery
 from celery.exceptions import TimeoutError
-from celery.worker.control import control_command
 from t.integration.tasks import identity
 
 from .conftest import flaky
 from .tasks import add
 
 TIMEOUT = 10
-
-
-@control_command(visible=False)
-def pidbox_reset_error(state, **kwargs):
-    raise RuntimeError('pidbox reset integration test')
 
 
 def test_run_worker():
