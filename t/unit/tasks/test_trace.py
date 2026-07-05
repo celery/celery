@@ -418,7 +418,7 @@ class test_trace(TraceCase):
         trace_task_ret(
             self.add.name, 'id1', {}, ((2, 2), {}, {}), None, None, app=self.app,
         )
-        
+
     @patch('celery.app.trace._localized', [])
     def test_fast_trace_task__empty_registry_raises_helpful_error(self):
         with pytest.raises(RuntimeError, match='worker task registry is empty'):
