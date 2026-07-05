@@ -768,7 +768,7 @@ def fast_trace_task(task, uuid, request, body, content_type,
             "`setup_worker_optimizations()` never ran in this "
             "process, which happens when the process was spawned "
             "rather than forked (e.g. the default prefork pool on "
-            "Windows, or `--pool=spawn`). Try `--pool=solo` or "
+            "Windows). Try `--pool=solo` or "
             "`--pool=threads`, or ensure `use_fast_trace_task` is "
             "not enabled for this pool type."
         ) from None
