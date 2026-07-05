@@ -614,6 +614,29 @@ class test_Consumer(ConsumerTestCase):
         with pytest.deprecated_call(match=CANCEL_TASKS_BY_DEFAULT):
             c.on_connection_error_after_connected(Mock())
 
+    def test_cancel_long_running_tasks_on_connection_loss__cancel_error_is_swallowed(self):
+        c = self.get_consumer()
+        c.app.conf.worker_cancel_long_running_tasks_on_connection_loss = True
+
+        mock_request_cancel_raises = Mock()
+        mock_request_cancel_raises.task.acks_late = True
+        mock_request_cancel_raises.acknowledged = False
+        mock_request_cancel_raises.cancel.side_effect = ConnectionResetError('Connection reset by peer')
+        mock_request_cancel_succeeds = Mock()
+        mock_request_cancel_succeeds.task.acks_late = True
+        mock_request_cancel_succeeds.acknowledged = False
+
+        active_requests.add(mock_request_cancel_raises)
+        active_requests.add(mock_request_cancel_succeeds)
+
+        try:
+            c.on_connection_error_after_connected(Mock())
+
+            mock_request_cancel_raises.cancel.assert_called_once_with(c.pool)
+            mock_request_cancel_succeeds.cancel.assert_called_once_with(c.pool)
+        finally:
+            active_requests.clear()
+
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_cancel_active_requests(self):
         c = self.get_consumer()
@@ -699,6 +722,22 @@ class test_Consumer(ConsumerTestCase):
                 self.app.amqp.queues.add('next')
                 task_consumer = self.app.amqp.TaskConsumer(con)
                 assert {q.name for q in task_consumer.queues} == {default_queue}
+
+    def test_readd_cancelled_queue_restores_consume_from(self):
+        queues = self.app.amqp.queues
+        default_queue = self.app.conf.task_default_queue
+        consumer = self.get_consumer()
+        consumer.task_consumer = Mock()
+        consumer.task_consumer.consuming_from.return_value = False
+        assert default_queue in queues.consume_from
+
+        consumer.cancel_task_queue(default_queue)
+        assert default_queue not in queues.consume_from
+
+        consumer.add_task_queue(default_queue)
+        assert default_queue in queues.consume_from
+        consumer.task_consumer.add_queue.assert_called_once()
+        consumer.task_consumer.consume.assert_called_once()
 
     def test_disable_prefetch_not_enabled(self):
         """Test that disable_prefetch doesn't affect behavior when disabled"""

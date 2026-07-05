@@ -176,9 +176,10 @@ class Queues(dict):
             include (Sequence[str], str): Names of queues to consume from.
         """
         if include:
-            self._consume_from = {
-                name: self[name] for name in maybe_list(include)
-            }
+            self._consume_from = {}
+            for name in maybe_list(include):
+                q = self[name]
+                self._consume_from[q.name] = q
 
     def deselect(self, exclude):
         """Deselect queues so that they won't be consumed from.

@@ -131,6 +131,17 @@ class test_Queues:
         q.add(Queue('foo', alias='barfoo'))
         assert q['barfoo'] is q['foo']
 
+    def test_deselect_by_real_name_removes_queue_selected_by_alias(self):
+        q = Queues()
+        q.add(Queue('foo', alias='barfoo'))
+
+        q.select(['barfoo'])
+        assert list(q._consume_from) == ['foo']
+        assert q._consume_from['foo'] is q['foo']
+
+        q.deselect('foo')
+        assert q._consume_from == {}
+
     @pytest.mark.parametrize('queues_kwargs,qname,q,expected', [
         ({'max_priority': 10},
          'foo', 'foo', {'x-max-priority': 10}),
