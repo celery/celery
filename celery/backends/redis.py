@@ -111,7 +111,18 @@ class ResultConsumer(BaseResultConsumer):
         if self.subscribed_to:
             self._pubsub.subscribe(*self.subscribed_to)
         else:
-            self._pubsub.connection = self._pubsub.connection_pool.get_connection()
+            # redis-py < 5.3.0 requires ``command_name`` as a positional
+            # argument to ``ConnectionPool.get_connection``. The argument was
+            # made optional (and ignored) in 5.3.0+, so passing it stays
+            # compatible across both ranges (#10294).
+            try:
+                self._pubsub.connection = (
+                    self._pubsub.connection_pool.get_connection()
+                )
+            except TypeError:
+                self._pubsub.connection = (
+                    self._pubsub.connection_pool.get_connection('pubsub')
+                )
             # even if there is nothing to subscribe, we should not lose the callback after connecting.
             # The on_connect callback will re-subscribe to any channels we previously subscribed to.
             self._pubsub.connection.register_connect_callback(self._pubsub.on_connect)
@@ -122,7 +133,8 @@ class ResultConsumer(BaseResultConsumer):
 
     def _maybe_cancel_ready_task(self, meta):
         if meta['status'] in states.READY_STATES:
-            self.cancel_for(meta['task_id'])
+            task_id = meta['task_id']
+            self.cancel_for(task_id)
 
     def on_state_change(self, meta, message):
         super().on_state_change(meta, message)
@@ -138,6 +150,23 @@ class ResultConsumer(BaseResultConsumer):
         for meta in result._iter_meta(**kwargs):
             if meta is not None:
                 self.on_state_change(meta, None)
+                # After on_state_change processes a READY meta, clean up any
+                # leaked entry in _pending_messages. on_state_change may have
+                # buffered this READY meta there (if the result was already
+                # resolved from _pending_results). Since the subscription is now
+                # canceled and the task is complete, this entry will never be
+                # consumed and would leak memory. We only clean up SUCCESS and
+                # FAILURE because REVOKED may still be needed by waiters
+                # (e.g., integration tests for revoke-by-headers).
+                if meta['status'] in (states.SUCCESS, states.FAILURE):
+                    pending_messages = self.backend._pending_messages
+                    task_id = meta['task_id']
+                    try:
+                        buf = pending_messages.pop(task_id)
+                    except KeyError:
+                        pass
+                    else:
+                        pending_messages.total -= len(buf)
 
     def stop(self):
         if self._pubsub is not None:
@@ -385,9 +414,11 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                           'ssl_cert_reqs']
 
         if scheme == 'redis':
-            # If connparams or query string contain ssl params, raise error
-            if (any(key in connparams for key in ssl_param_keys) or
-                    any(key in query for key in ssl_param_keys)):
+            # If the query string contains SSL params, raise an error. SSL
+            # params configured by redis_backend_use_ssl are already in
+            # defaults/connparams and should be honored, matching the Redis
+            # broker behavior when broker_use_ssl is used with a redis:// URL.
+            if any(key in query for key in ssl_param_keys):
                 raise ValueError(E_REDIS_SSL_PARAMS_AND_SCHEME_MISMATCH)
 
         if scheme == 'rediss':

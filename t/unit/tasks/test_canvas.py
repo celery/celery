@@ -467,6 +467,53 @@ class test_chain(CanvasCase):
         c = g1 | g2
         assert isinstance(c, chord)
 
+    def test_empty_groups_are_skipped_in_chain(self):
+        c = chain(
+            group([self.add.s(2, 2), self.add.s(4, 4)], app=self.app),
+            group(app=self.app),
+            group(app=self.app),
+        )
+
+        assert isinstance(c, group)
+        result = c.apply_async()
+        assert isinstance(result, GroupResult)
+        assert len(result.results) == 2
+
+    def test_empty_group_body_is_skipped_when_chain_upgrades_to_chord(self):
+        c = self.add.s(1, 1) | group(
+            [self.add.s(2, 2), self.add.s(3, 3)],
+            app=self.app,
+        ) | group(app=self.app)
+
+        result = c.apply_async()
+
+        assert isinstance(result, GroupResult)
+        assert len(result.results) == 2
+
+    def test_generator_backed_empty_group_is_not_skipped_when_chained(self):
+        def tasks():
+            yield from ()
+
+        c = group([self.add.s(2, 2)], app=self.app) | group(tasks(), app=self.app)
+
+        assert isinstance(c, chord)
+
+    def test_known_empty_generator_backed_group_is_skipped_in_chain(self):
+        def tasks():
+            yield from ()
+
+        c = _chain(
+            group([self.add.s(2, 2)], app=self.app),
+            group(tasks(), app=self.app),
+            app=self.app,
+        )
+
+        prepared_tasks, results = c.prepare_steps((), {}, c.tasks)
+
+        assert len(prepared_tasks) == 1
+        assert prepared_tasks[0].task == self.add.name
+        assert isinstance(results[0], AsyncResult)
+
     def test_prepare_steps_set_last_task_id_to_chain(self):
         last_task = self.add.s(2).set(task_id='42')
         c = self.add.s(4) | last_task
@@ -1038,7 +1085,7 @@ class test_group(CanvasCase):
         # We expect that all group children will be given the errback to ensure
         # it gets called
         for child_sig in g1.tasks:
-            child_sig.link_error.assert_called_with(sig.clone(immutable=True))
+            child_sig.link_error.assert_called_with(sig.clone())
 
     def test_link_error_with_dict_sig(self):
         g1 = group(Mock(name='t1'), Mock(name='t2'), app=self.app)
@@ -1048,7 +1095,17 @@ class test_group(CanvasCase):
         # We expect that all group children will be given the errback to ensure
         # it gets called
         for child_sig in g1.tasks:
-            child_sig.link_error.assert_called_with(errback.clone(immutable=True))
+            child_sig.link_error.assert_called_with(errback.clone())
+
+    def test_link_error_preserves_mutable_errback(self):
+        g1 = group(self.add.s(2, 2), self.add.s(4, 4), app=self.app)
+        errback = self.add.s()
+
+        linked = g1.link_error(errback)
+
+        assert len(linked) == 2
+        for child_sig in g1.tasks:
+            assert child_sig.options['link_error'][0].immutable is False
 
     def test_apply_empty(self):
         x = group(app=self.app)
@@ -1434,6 +1491,23 @@ class test_chord(CanvasCase):
     def test_app_when_header_is_empty(self):
         x = chord([], self.add.s(4, 4))
         assert x.app is self.add.app
+
+    def test_freeze_empty_group_body_returns_result(self):
+        """An empty group body still exists and should be frozen.
+
+        This is a defensive check for chains that may upgrade a group into a
+        chord whose body is an empty group.
+        """
+        x = chord(
+            group(self.add.s(2, 2), app=self.app),
+            group(app=self.app),
+            app=self.app,
+        )
+
+        result = x.freeze()
+
+        assert isinstance(result, GroupResult)
+        assert result.parent is not None
 
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_app_fallback_to_current(self):
