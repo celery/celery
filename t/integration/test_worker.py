@@ -95,3 +95,17 @@ class test_worker_queue_alias_reconnect:
 
         with pytest.raises(TimeoutError):
             identity.s('Hello').apply_async(queue='real_name').get(timeout=10)
+
+
+class test_explicit_routing_without_default_queue:
+    @pytest.fixture
+    def celery_worker_parameters(self):
+        return {'queues': ('non_default_queue',), 'perform_ping_check': False}
+
+    @pytest.mark.celery(
+        task_create_missing_queues=False,
+        task_queues=[Queue('non_default_queue')],
+    )
+    def test_apply_async_succeeds_with_missing_queue_creation_disabled(self, celery_worker):
+        result = identity.apply_async(('hello',), queue='non_default_queue')
+        assert result.get(timeout=10) == 'hello'
