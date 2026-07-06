@@ -8,6 +8,11 @@ from celery import Celery
 from celery.exceptions import TimeoutError
 from t.integration.tasks import identity
 
+from .conftest import flaky
+from .tasks import add
+
+TIMEOUT = 10
+
 
 def test_run_worker():
     with pytest.raises(subprocess.CalledProcessError) as exc_info:
@@ -95,3 +100,23 @@ class test_worker_queue_alias_reconnect:
 
         with pytest.raises(TimeoutError):
             identity.s('Hello').apply_async(queue='real_name').get(timeout=10)
+
+
+@flaky
+def test_pidbox_reset_after_repeated_control_errors(manager):
+    def assert_ping():
+        ping_result = manager.inspect().ping()
+        assert ping_result
+        assert list(ping_result.values())[0] == {'ok': 'pong'}
+
+    assert_ping()
+
+    for _ in range(5):
+        manager.app.control.broadcast('pidbox_reset_error', reply=False)
+
+    assert_ping()
+
+    result = add.delay(4, 4)
+    assert result.get(timeout=TIMEOUT) == 8
+
+    assert_ping()
