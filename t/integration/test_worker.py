@@ -102,6 +102,22 @@ class test_worker_queue_alias_reconnect:
             identity.s('Hello').apply_async(queue='real_name').get(timeout=10)
 
 
+class test_explicit_routing_without_default_queue:
+    @pytest.fixture
+    def celery_worker_parameters(self):
+        return {'queues': ('non_default_queue',)}
+
+    @flaky
+    @pytest.mark.celery(
+        task_create_missing_queues=False,
+        task_queues=[Queue('non_default_queue')],
+        task_routes={'celery.ping': {'queue': 'non_default_queue'}},
+    )
+    def test_apply_async_succeeds_with_missing_queue_creation_disabled(self, celery_worker):
+        result = add.apply_async((1, 2), queue='non_default_queue')
+        assert result.get(timeout=10) == 3
+
+
 @flaky
 def test_pidbox_reset_after_repeated_control_errors(manager):
     def assert_ping():
@@ -120,19 +136,3 @@ def test_pidbox_reset_after_repeated_control_errors(manager):
     assert result.get(timeout=TIMEOUT) == 8
 
     assert_ping()
-
-
-class test_explicit_routing_without_default_queue:
-    @pytest.fixture
-    def celery_worker_parameters(self):
-        return {'queues': ('non_default_queue',), 'shutdown_timeout': 30}
-
-    @flaky
-    @pytest.mark.celery(
-        task_create_missing_queues=False,
-        task_queues=[Queue('non_default_queue')],
-        task_routes={'celery.ping': {'queue': 'non_default_queue'}},
-    )
-    def test_apply_async_succeeds_with_missing_queue_creation_disabled(self, celery_worker):
-        result = add.apply_async((1, 2), queue='non_default_queue')
-        assert result.get(timeout=10) == 3
