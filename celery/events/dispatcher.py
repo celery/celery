@@ -202,12 +202,10 @@ class EventDispatcher:
         """Flush the outbound buffer."""
         if errors:
             buf = list(self._outbound_buffer)
-            try:
-                with self.mutex:
-                    for event, routing_key in buf:
-                        self._publish(event, self.producer, routing_key)
-            finally:
-                self._outbound_buffer.clear()
+            self._outbound_buffer.clear()
+            with self.mutex:
+                for event, routing_key in buf:
+                    self._publish(event, self.producer, routing_key)
         if groups:
             with self.mutex:
                 for group, events in self._group_buffer.items():
