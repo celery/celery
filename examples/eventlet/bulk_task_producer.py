@@ -1,3 +1,26 @@
+"""Example of bulk task producing with eventlet.
+
+This module shows how to submit many tasks concurrently from a single
+process without opening a new broker connection for every call to
+``apply_async``.
+
+``ProducerPool`` keeps a pool of eventlet greenlets ("producers") that
+share one Celery producer/connection. Callers push
+``(task, args, kwargs, options)`` tuples onto an internal queue via
+:meth:`ProducerPool.apply_async`, and whichever greenlet is free next
+picks up the job and dispatches it. This is useful when you need to
+publish a large, bursty batch of tasks from client code (e.g. a web
+request handler) as fast as possible, since the cost of connecting to
+the broker is paid once for the whole pool rather than once per task.
+
+Usage::
+
+    >>> app = Celery(broker='amqp://')
+    >>> pool = ProducerPool(app, size=20)
+    >>> receipt = pool.apply_async(some_task, (1, 2), {})
+    >>> result = receipt.wait()
+
+"""
 from eventlet import Timeout, monkey_patch, spawn_n
 from eventlet.event import Event
 from eventlet.queue import LightQueue
