@@ -205,7 +205,7 @@ class test_EventDispatcher:
 
         eventer.flush()
         assert len(eventer._outbound_buffer) == 1
-        
+
         producer.raise_on_publish = False
         eventer.flush()
         assert producer.has_event('Event 1')
