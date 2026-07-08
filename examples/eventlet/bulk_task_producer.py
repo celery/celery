@@ -18,7 +18,8 @@ Usage::
     >>> app = Celery(broker='amqp://')
     >>> pool = ProducerPool(app, size=20)
     >>> receipt = pool.apply_async(some_task, (1, 2), {})
-    >>> result = receipt.wait()
+    >>> receipt.wait()  # block until the task has been published
+    >>> result = receipt.result  # the AsyncResult from task.apply_async
 
 """
 from eventlet import Timeout, monkey_patch, spawn_n
