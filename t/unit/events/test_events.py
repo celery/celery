@@ -190,6 +190,27 @@ class test_EventDispatcher:
             assert producer.has_event(name)
         assert len(eventer._outbound_buffer) == 0
 
+    def test_flush_rebuffers_events_when_republish_fails(self):
+        producer = MockProducer()
+        producer.connection = self.app.connection_for_write()
+        producer.raise_on_publish = True
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = self.app.events.Dispatcher(connection, enabled=False,
+                                             buffer_while_offline=True)
+        eventer.producer = producer
+        eventer.enabled = True
+        eventer.send('Event 1')
+        assert len(eventer._outbound_buffer) == 1
+
+        eventer.flush()
+        assert len(eventer._outbound_buffer) == 1
+
+        producer.raise_on_publish = False
+        eventer.flush()
+        assert producer.has_event('Event 1')
+        assert len(eventer._outbound_buffer) == 0
+
     def test_enter_exit(self):
         with self.app.connection_for_write() as conn:
             d = self.app.events.Dispatcher(conn)
