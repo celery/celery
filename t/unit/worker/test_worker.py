@@ -186,6 +186,17 @@ class test_Consumer(ConsumerCase):
         event_dispatcher.disable.assert_called()
         heart.stop.assert_called_with()
 
+    def test_events_start_updates_request_eventers_on_reconnect(self):
+        c = self.NoopConsumer()
+        events = find_step(c, consumer.Events)
+        prev = c.event_dispatcher
+        req = Mock(name='request')
+        req.eventer = prev
+        with patch('celery.worker.consumer.events.reserved_requests', {req}):
+            events.start(c)
+        assert c.event_dispatcher is not prev
+        assert req.eventer is c.event_dispatcher
+
     @patch('celery.worker.consumer.consumer.warn')
     def test_receive_message_unknown(self, warn):
         c = self.LoopConsumer()

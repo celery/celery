@@ -1428,6 +1428,27 @@ class test_group:
             await_redis_echo({errback_msg, }, redis_key=redis_key)
         redis_connection.delete(redis_key)
 
+    @pytest.mark.parametrize("errback_task", [errback_old_style, errback_new_style])
+    def test_mutable_errback_called_by_group(self, errback_task, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        fail_sig = fail.s()
+        fail_sig_id = fail_sig.freeze().id
+        errback = errback_task.s()
+
+        group_sig = group(fail_sig, identity.si(42))
+        group_sig.link_error(errback)
+        redis_connection.delete(fail_sig_id)
+        with subtests.test(msg="Error propagates from group"):
+            res = group_sig.delay()
+            with pytest.raises(ExpectedException):
+                res.get(timeout=TIMEOUT)
+        with subtests.test(msg="Mutable errback is called after group task fails"):
+            await_redis_count(1, redis_key=fail_sig_id)
+        redis_connection.delete(fail_sig_id)
+
     def test_errback_called_by_group_fail_multiple(self, manager, subtests):
         if not manager.app.conf.result_backend.startswith("redis"):
             raise pytest.skip("Requires redis result backend.")
