@@ -635,6 +635,27 @@ class test_BaseBackend_dict:
         b.mark_as_failure('id', exc, request=request)
         b.on_chord_part_return.assert_called_with(request, states.FAILURE, exc)
 
+    def test_mark_as_failure__chained_chord_propagates_to_body(self):
+        b = BaseBackend(app=self.app)
+        b.store_result = Mock()
+        b.on_chord_part_return = Mock()
+
+        inner_chord = chord(
+            group([signature('test.h1'), signature('test.h2')]),
+            signature('test.body', immutable=True),
+            app=self.app,
+        )
+        inner_chord.options['task_id'] = 'inner-chord-id'
+        inner_chord.body.options['task_id'] = 'chord-body-id'
+
+        request = Context()
+        request.chain = [dict(inner_chord)]
+        request.errbacks = []
+        b.mark_as_failure('fail-id', ValueError('boom'), request=request)
+
+        marked = [c.args[0] for c in b.store_result.call_args_list]
+        assert 'chord-body-id' in marked
+
     def test_mark_as_revoked__chord(self):
         b = BaseBackend(app=self.app)
         b._store_result = Mock()
