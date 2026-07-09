@@ -752,6 +752,178 @@ class test_AsynPool:
         job.discard.assert_called_once()
         assert gen not in pool._active_writers
 
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_preserves_busy_worker_for_accepted_job(self, _create_worker_process):
+        """flush() must keep a worker marked busy while it runs an accepted job.
+
+        On a broker reconnect Consumer.on_close calls pool.flush(). A worker
+        still executing an accepted (running) task is genuinely busy, so its
+        inqueue write-fd must remain in _busy_workers. Clearing it would
+        desynchronize the fair scheduler from reality and let a new task be
+        written onto the busy worker, blocking it behind the long-running task
+        even while another worker is idle.
+        """
+        pool = asynpool.AsynPool(processes=2, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        # Worker still running an accepted job, dispatched to fd 7. Once the
+        # body is written job._write_to points at the executing process, so it
+        # is the preferred source of truth for the busy fd.
+        proc = Mock(name='proc')
+        proc.inqW_fd = 7
+        proc._is_alive.return_value = True
+        job = Mock(name='job')
+        job._accepted = True
+        job._write_to = proc
+        job._scheduled_for = proc
+        job._writer.return_value = None
+
+        pool._cache = {1: job}
+        pool._busy_workers = {7}
+        pool._active_writers.clear()
+        pool.outbound_buffer.clear()
+
+        pool.flush()
+
+        # The busy worker must still be marked busy after the flush.
+        assert 7 in pool._busy_workers
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_preserves_busy_worker_via_scheduled_for_fallback(self, _create_worker_process):
+        """flush() falls back to _scheduled_for when _write_to is unset.
+
+        A job can be accepted before its body finished writing, leaving
+        _write_to unset while _scheduled_for already identifies the worker the
+        task was dispatched to. The busy fd must still be preserved.
+        """
+        pool = asynpool.AsynPool(processes=2, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        proc = Mock(name='proc')
+        proc.inqW_fd = 5
+        proc._is_alive.return_value = True
+        job = Mock(name='job')
+        job._accepted = True
+        job._write_to = None
+        job._scheduled_for = proc
+        job._writer.return_value = None
+
+        pool._cache = {1: job}
+        pool._busy_workers = {5}
+        pool._active_writers.clear()
+        pool.outbound_buffer.clear()
+
+        pool.flush()
+
+        assert 5 in pool._busy_workers
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_releases_busy_worker_for_unaccepted_job(self, _create_worker_process):
+        """flush() must free a worker whose job was not accepted yet.
+
+        Unaccepted jobs are discarded/redelivered by the broker, so the worker
+        they were tentatively scheduled to is no longer busy and its fd must be
+        dropped from _busy_workers.
+        """
+        pool = asynpool.AsynPool(processes=2, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        proc = Mock(name='proc')
+        proc.inqW_fd = 9
+        job = Mock(name='job')
+        job._accepted = False
+        job._write_to = proc
+        job._scheduled_for = proc
+        job._writer.return_value = None
+
+        pool._cache = {1: job}
+        pool._busy_workers = {9}
+        pool._active_writers.clear()
+        pool.outbound_buffer.clear()
+
+        pool.flush()
+
+        assert 9 not in pool._busy_workers
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_preserves_accepted_and_releases_unaccepted_together(self, _create_worker_process):
+        """flush() must resolve a mixed _busy_workers set in a single call.
+
+        When one worker runs an accepted job and another only had an
+        unaccepted job tentatively scheduled to it, the same flush() must keep
+        the accepted worker busy while releasing the unaccepted one, rather
+        than treating the set all-or-nothing.
+        """
+        pool = asynpool.AsynPool(processes=2, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        accepted_proc = Mock(name='accepted_proc')
+        accepted_proc.inqW_fd = 7
+        accepted_proc._is_alive.return_value = True
+        accepted_job = Mock(name='accepted_job')
+        accepted_job._accepted = True
+        accepted_job._write_to = accepted_proc
+        accepted_job._scheduled_for = accepted_proc
+        accepted_job._writer.return_value = None
+
+        unaccepted_proc = Mock(name='unaccepted_proc')
+        unaccepted_proc.inqW_fd = 9
+        unaccepted_job = Mock(name='unaccepted_job')
+        unaccepted_job._accepted = False
+        unaccepted_job._write_to = unaccepted_proc
+        unaccepted_job._scheduled_for = unaccepted_proc
+        unaccepted_job._writer.return_value = None
+
+        pool._cache = {1: accepted_job, 2: unaccepted_job}
+        pool._busy_workers = {7, 9}
+        pool._active_writers.clear()
+        pool.outbound_buffer.clear()
+
+        pool.flush()
+
+        assert 7 in pool._busy_workers
+        assert 9 not in pool._busy_workers
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_releases_busy_worker_for_dead_process(self, _create_worker_process):
+        """flush() must not keep an accepted job's fd if its worker died.
+
+        If the worker executing an accepted job has exited, its inqueue
+        write-fd may be reused by a replacement process. Keeping the fd marked
+        busy would sideline that healthy replacement, so a dead worker's fd is
+        dropped from _busy_workers.
+        """
+        pool = asynpool.AsynPool(processes=2, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        proc = Mock(name='proc')
+        proc.inqW_fd = 3
+        proc._is_alive.return_value = False
+        job = Mock(name='job')
+        job._accepted = True
+        job._write_to = proc
+        job._scheduled_for = proc
+        job._writer.return_value = None
+
+        pool._cache = {1: job}
+        pool._busy_workers = {3}
+        pool._active_writers.clear()
+        pool.outbound_buffer.clear()
+
+        pool.flush()
+
+        assert 3 not in pool._busy_workers
+
     def test_process_result(self):
         x = asynpool.ResultHandler(
             Mock(), Mock(), {}, Mock(),

@@ -1080,7 +1080,38 @@ class AsynPool(_pool.Pool):
             self.outbound_buffer.clear()
             self._active_writers.clear()
             self._active_writes.clear()
-            self._busy_workers.clear()
+
+            # Trim _busy_workers down to the workers still executing an
+            # accepted (running) job instead of clearing it outright, so the
+            # fair scheduler keeps avoiding mid-task workers across a broker
+            # reconnect. A worker is marked busy keyed on
+            # job._scheduled_for.inqW_fd at write time; once the body has been
+            # written job._write_to points at the same process, so prefer it
+            # (the process actually executing the job) and fall back to
+            # _scheduled_for.
+            #
+            # intersection_update only ever removes fds from _busy_workers,
+            # never adds one (it filters the existing set rather than
+            # repopulating it), so this trim can't fabricate a phantom-busy
+            # entry that would permanently sideline a healthy worker. Avoiding
+            # double-booking (writing a second task onto a still-running
+            # worker) instead depends on still_busy including every accepted
+            # job's executing fd, which is why we source it from
+            # _write_to/_scheduled_for of the running job above.
+            #
+            # The proc._is_alive() guard keeps the set limited to workers that
+            # are actually still executing: a genuinely running accepted job
+            # always has a live worker, while a worker that died (whose fd may
+            # since have been reused by a fresh replacement) must not be
+            # re-counted as busy.
+            still_busy = set()
+            for job in self._cache.values():
+                if not job._accepted:
+                    continue
+                proc = job._write_to or job._scheduled_for
+                if proc is not None and proc._is_alive():
+                    still_busy.add(proc.inqW_fd)
+            self._busy_workers.intersection_update(still_busy)
 
     def _flush_writer(self, proc, writer):
         fds = {proc.inq._writer}
