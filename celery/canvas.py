@@ -25,7 +25,8 @@ from vine import barrier
 
 from celery._state import current_app
 from celery.exceptions import CPendingDeprecationWarning
-from celery.result import GroupResult, allow_join_result
+from celery.result import GroupResult, allow_join_result, EagerResult
+from celery.states import IGNORED, REJECTED
 from celery.utils import abstract
 from celery.utils.collections import ChainMap
 from celery.utils.functional import _regen
@@ -1299,6 +1300,8 @@ class _chain(Signature):
             res = task.clone(fargs, fkwargs).apply(
                 last and (last.get(),), **dict(self.options, **options))
             res.parent, last, (fargs, fkwargs) = last, res, (None, None)
+            if isinstance(res, EagerResult) and res.state in (IGNORED, REJECTED):
+                break
         return last
 
     @property

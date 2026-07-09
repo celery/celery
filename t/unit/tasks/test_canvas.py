@@ -5,9 +5,11 @@ from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
 
+from celery import states
 from celery._state import _task_stack
 from celery.canvas import (Signature, _chain, _maybe_group, _merge_dictionaries, chain, chord, chunks, group,
                            maybe_signature, maybe_unroll_group, signature, xmap, xstarmap)
+from celery.exceptions import Ignore, Reject
 from celery.result import AsyncResult, EagerResult, GroupResult
 
 SIG = Signature({
@@ -755,6 +757,42 @@ class test_chain(CanvasCase):
         assert res.parent.get() == 16
         assert res.parent.parent.get() == 8
         assert res.parent.parent.parent is None
+
+    def test_apply_stops_chain_when_task_raises_ignore(self):
+        executed = []
+
+        @self.app.task(shared=False)
+        def ignoring():
+            raise Ignore()
+
+        @self.app.task(shared=False)
+        def should_not_run(*args):
+            executed.append(True)
+            return 'ran'
+
+        res = (ignoring.s() | should_not_run.s()).apply()
+
+        assert executed == []
+        assert res.state == states.IGNORED
+        assert res.get() is None
+
+    def test_apply_stops_chain_when_task_raises_reject(self):
+        executed = []
+
+        @self.app.task(shared=False)
+        def rejecting():
+            raise Reject()
+
+        @self.app.task(shared=False)
+        def should_not_run(*args):
+            executed.append(True)
+            return 'ran'
+
+        res = (rejecting.s() | should_not_run.s()).apply()
+
+        assert executed == []
+        assert res.state == states.REJECTED
+        assert res.get() is None
 
     def test_kwargs_apply(self):
         x = chain(self.add.s(), self.add.s(8), self.add.s(10))
