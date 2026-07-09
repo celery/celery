@@ -25,7 +25,7 @@ from vine import barrier
 
 from celery._state import current_app
 from celery.exceptions import CPendingDeprecationWarning
-from celery.result import GroupResult, allow_join_result, EagerResult
+from celery.result import EagerResult, GroupResult, allow_join_result
 from celery.states import IGNORED, REJECTED
 from celery.utils import abstract
 from celery.utils.collections import ChainMap
