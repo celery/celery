@@ -1709,7 +1709,7 @@ class group(Signature):
         # each child task signature, of which there might be none!
         sig = maybe_signature(sig)
 
-        return tuple(child_task.link_error(sig.clone(immutable=True)) for child_task in self.tasks)
+        return tuple(child_task.link_error(sig.clone()) for child_task in self.tasks)
 
     def _prepared(self, tasks, partial_args, group_id, root_id, app,
                   CallableSignature=abstract.CallableSignature,
