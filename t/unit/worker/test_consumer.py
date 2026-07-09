@@ -614,6 +614,29 @@ class test_Consumer(ConsumerTestCase):
         with pytest.deprecated_call(match=CANCEL_TASKS_BY_DEFAULT):
             c.on_connection_error_after_connected(Mock())
 
+    def test_cancel_long_running_tasks_on_connection_loss__cancel_error_is_swallowed(self):
+        c = self.get_consumer()
+        c.app.conf.worker_cancel_long_running_tasks_on_connection_loss = True
+
+        mock_request_cancel_raises = Mock()
+        mock_request_cancel_raises.task.acks_late = True
+        mock_request_cancel_raises.acknowledged = False
+        mock_request_cancel_raises.cancel.side_effect = ConnectionResetError('Connection reset by peer')
+        mock_request_cancel_succeeds = Mock()
+        mock_request_cancel_succeeds.task.acks_late = True
+        mock_request_cancel_succeeds.acknowledged = False
+
+        active_requests.add(mock_request_cancel_raises)
+        active_requests.add(mock_request_cancel_succeeds)
+
+        try:
+            c.on_connection_error_after_connected(Mock())
+
+            mock_request_cancel_raises.cancel.assert_called_once_with(c.pool)
+            mock_request_cancel_succeeds.cancel.assert_called_once_with(c.pool)
+        finally:
+            active_requests.clear()
+
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_cancel_active_requests(self):
         c = self.get_consumer()
