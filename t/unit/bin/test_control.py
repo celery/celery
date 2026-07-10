@@ -255,4 +255,4 @@ def test_control_with_preload_option(isolated_cli_runner: CliRunner):
 
     assert res.exit_code == EX_UNAVAILABLE, (res, res.output)
     assert res.output.strip() == 'Error: No nodes replied within time constraint'
-    
+
