@@ -235,3 +235,24 @@ def test_events_evtop_shows_friendly_error_when_broker_unreachable(cli_runner: C
     assert 'Error: Could not connect to the message broker.' in res.output
     assert 'Reason: connection failed' in res.output
     assert 'Traceback' not in res.output
+
+
+def test_control_with_preload_option(isolated_cli_runner: CliRunner):
+    res = isolated_cli_runner.invoke(
+        celery,
+        [
+            *_GLOBAL_OPTIONS,
+            # --workdir is a preload option handled by handle_preload_options.
+            '--workdir', '.',
+            'control',
+            *_INSPECT_OPTIONS,
+            'custom_control_cmd',
+            '123',
+            '456',
+        ],
+        catch_exceptions=False,
+    )
+
+    assert res.exit_code == EX_UNAVAILABLE, (res, res.output)
+    assert res.output.strip() == 'Error: No nodes replied within time constraint'
+    
