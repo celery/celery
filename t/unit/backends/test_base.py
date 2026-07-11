@@ -2,6 +2,7 @@ import copy
 import re
 from contextlib import contextmanager
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
+from uuid import UUID
 
 import pytest
 from kombu.serialization import prepare_accept_content
@@ -1213,6 +1214,18 @@ class test_KeyValueStoreBackend:
     def test_get_key_for_chord_none_group_id(self):
         with pytest.raises(ValueError):
             self.b.get_key_for_group(None)
+
+    def test_get_key_for_task_uuid_task_id(self):
+        tid = UUID(uuid())
+        assert self.b.get_key_for_task(tid) == self.b.get_key_for_task(str(tid))
+
+    def test_get_key_for_group_uuid_group_id(self):
+        gid = UUID(uuid())
+        assert self.b.get_key_for_group(gid) == self.b.get_key_for_group(str(gid))
+
+    def test_get_key_for_chord_uuid_group_id(self):
+        gid = UUID(uuid())
+        assert self.b.get_key_for_chord(gid) == self.b.get_key_for_chord(str(gid))
 
     def test_strip_prefix(self):
         x = self.b.get_key_for_task('x1b34')
