@@ -927,10 +927,13 @@ class test_chain(CanvasCase):
         t2 = chord([self.add.si(1, 1), self.add.si(1, 1)], t1)
         t2.freeze()  # should not raise
 
-    def test_consecutive_groups_in_chain_preserve_group_results_in_as_tuple(self):
+    @pytest.mark.parametrize('task_protocol', [2, 1])
+    def test_consecutive_groups_in_chain_preserve_group_results_in_as_tuple(self, task_protocol):
         # Regression for #8903: chain(head, mid..., group(G1), group(G2), tail...)
         # must keep GroupResult fan-out in as_tuple(), not collapse to a short
-        # parent spine with no group children.
+        # parent spine with no group children. Run under both task protocols:
+        # protocol 1 enables use_link in prepare_steps().
+        self.app.conf.task_protocol = task_protocol
         n = 3
         worker_tasks = [self.add.si(i, i) for i in range(n)]
         post_tasks = [
