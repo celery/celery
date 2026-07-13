@@ -897,6 +897,56 @@ class test_chain(CanvasCase):
         t2 = chord([self.add.si(1, 1), self.add.si(1, 1)], t1)
         t2.freeze()  # should not raise
 
+    def test_consecutive_groups_in_chain_preserve_group_results_in_as_tuple(self):
+        # Regression for #8903: chain(head, mid..., group(G1), group(G2), tail...)
+        # must serialize GroupResult fan-out in as_tuple(), not collapse to a
+        # short parent spine with no group children.
+        n = 3
+        worker_tasks = [self.add.si(i, i) for i in range(n)]
+        post_tasks = [
+            chain(self.add.si(i, 0), self.add.si(0, i), app=self.app)
+            for i in range(n)
+        ]
+        canvas = chain(
+            self.add.si(0, 0),
+            self.add.si(1, 0),
+            self.add.si(0, 1),
+            group(worker_tasks, app=self.app),
+            group(post_tasks, app=self.app),
+            self.add.si(2, 0),
+            self.add.s(3),
+            task_id='last-task-id',
+            app=self.app,
+        )
+        result = canvas.apply_async()
+        tup = result.as_tuple()
+
+        def group_fanout(tuple_repr):
+            if tuple_repr is None:
+                return 0
+            (res, nodes) = tuple_repr
+            count = len(nodes) if nodes else 0
+            _, parent = res
+            if parent:
+                count += group_fanout(parent)
+            if nodes:
+                for child in nodes:
+                    count += group_fanout(child)
+            return count
+
+        assert group_fanout(tup) >= n * 2
+
+        from celery.result import GroupResult, result_from_tuple
+
+        restored = result_from_tuple(tup, app=self.app)
+        group_results = []
+        node = restored
+        while node is not None:
+            if isinstance(node, GroupResult):
+                group_results.append(len(node.results))
+            node = node.parent
+        assert group_results.count(n) >= 2
+
     def test_upgrade_to_chord_on_chain(self):
         group1 = group(self.add.si(10, 10), self.add.si(10, 10))
         group2 = group(self.xsum.s(), self.xsum.s())

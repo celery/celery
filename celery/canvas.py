@@ -1233,12 +1233,10 @@ class _chain(Signature):
                         task, body=prev_task,
                         root_id=root_id, app=app,
                     )
-                if tasks:
-                    prev_task = tasks[-1]
-                    prev_res = results[-1]
-                else:
-                    prev_task = None
-                    prev_res = None
+                # Do not reassign prev_task/prev_res from tasks[-1] here.
+                # That breaks consecutive group|task upgrades when tasks sit
+                # before and after the groups (#8903 regression). Nested-chord
+                # recursive parents (#8890) are handled in chord.freeze().
 
             if is_last_task:
                 # chain(task_id=id) means task id is set for the last task
