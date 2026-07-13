@@ -80,6 +80,8 @@ class Queues(dict):
         queues = queues or {}
         for name, q in queues.items():
             self.add(q) if isinstance(q, Queue) else self.add_compat(name, **q)
+        # The default set of queues to consume from if no -Q option is set.
+        self._default_consume_from = {**self}
 
     def __getitem__(self, name):
         try:
@@ -163,6 +165,8 @@ class Queues(dict):
         q = self.add(queue, **kwargs)
         if self._consume_from is not None:
             self._consume_from[q.name] = q
+        else:
+            self._default_consume_from[q.name] = q
         return q
 
     def select(self, include):
@@ -172,9 +176,10 @@ class Queues(dict):
             include (Sequence[str], str): Names of queues to consume from.
         """
         if include:
-            self._consume_from = {
-                name: self[name] for name in maybe_list(include)
-            }
+            self._consume_from = {}
+            for name in maybe_list(include):
+                q = self[name]
+                self._consume_from[q.name] = q
 
     def deselect(self, exclude):
         """Deselect queues so that they won't be consumed from.
@@ -186,11 +191,12 @@ class Queues(dict):
         if exclude:
             exclude = maybe_list(exclude)
             if self._consume_from is None:
-                # using all queues
-                return self.select(k for k in self if k not in exclude)
-            # using selection
+                consume_from = self._default_consume_from
+            else:
+                consume_from = self._consume_from
+
             for queue in exclude:
-                self._consume_from.pop(queue, None)
+                consume_from.pop(queue, None)
 
     def new_missing(self, name):
         queue_arguments = None
@@ -213,7 +219,7 @@ class Queues(dict):
     def consume_from(self):
         if self._consume_from is not None:
             return self._consume_from
-        return self
+        return self._default_consume_from
 
 
 class AMQP:
@@ -477,10 +483,10 @@ class AMQP:
         return s
 
     def _create_task_sender(self):
+        amqp = self
         default_retry = self.app.conf.task_publish_retry
         default_policy = self.app.conf.task_publish_retry_policy
         default_delivery_mode = self.app.conf.task_default_delivery_mode
-        default_queue = self.default_queue
         queues = self.queues
         send_before_publish = signals.before_task_publish.send
         before_receivers = signals.before_task_publish.receivers
@@ -514,7 +520,7 @@ class AMQP:
 
             qname = queue
             if queue is None and exchange is None:
-                queue = default_queue
+                queue = amqp.default_queue
             if queue is not None:
                 if isinstance(queue, str):
                     qname, queue = queue, queues[queue]

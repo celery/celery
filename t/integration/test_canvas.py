@@ -10,7 +10,7 @@ import pytest
 from celery import chain, chord, group, signature
 from celery.backends.base import BaseKeyValueStoreBackend
 from celery.canvas import StampingVisitor
-from celery.exceptions import ImproperlyConfigured, TimeoutError
+from celery.exceptions import ChordError, ImproperlyConfigured, TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet
 from celery.signals import before_task_publish, task_received
 
@@ -1427,6 +1427,27 @@ class test_group:
         with subtests.test(msg="Errback is called after group task fails"):
             await_redis_echo({errback_msg, }, redis_key=redis_key)
         redis_connection.delete(redis_key)
+
+    @pytest.mark.parametrize("errback_task", [errback_old_style, errback_new_style])
+    def test_mutable_errback_called_by_group(self, errback_task, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        fail_sig = fail.s()
+        fail_sig_id = fail_sig.freeze().id
+        errback = errback_task.s()
+
+        group_sig = group(fail_sig, identity.si(42))
+        group_sig.link_error(errback)
+        redis_connection.delete(fail_sig_id)
+        with subtests.test(msg="Error propagates from group"):
+            res = group_sig.delay()
+            with pytest.raises(ExpectedException):
+                res.get(timeout=TIMEOUT)
+        with subtests.test(msg="Mutable errback is called after group task fails"):
+            await_redis_count(1, redis_key=fail_sig_id)
+        redis_connection.delete(fail_sig_id)
 
     def test_errback_called_by_group_fail_multiple(self, manager, subtests):
         if not manager.app.conf.result_backend.startswith("redis"):
@@ -3309,6 +3330,40 @@ class test_chord:
         assert not error_found, (
             "chord_error_from_stack crashed with 'task_id must not be empty'"
         )
+
+    @flaky
+    def test_chord_unlock_with_failed_task_in_nested_chain_member(self, manager):
+        """A failed task in a nested chain header member must error the chord.
+
+        Regression test for https://github.com/celery/celery/issues/9674
+        When a chord header member is a chain whose first task fails, the
+        chord waits on the body of the chain's uplifted chord. The failure
+        has to reach that body or chord_unlock retries without bound and
+        the callback never runs.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = chain(
+            group(
+                identity.si(1),
+                chain(
+                    fail.si(),
+                    group(identity.si(2), identity.si(3)),
+                    identity.si(4),
+                ),
+            ),
+            identity.s(),
+        )
+        result = c.apply_async()
+
+        # Without the fix chord_unlock retries without bound and this raises a
+        # TimeoutError (so keep this timeout small for fast failures); the fix
+        # propagates the failure so the chord errors.
+        with pytest.raises((ExpectedException, ChordError)):
+            result.get(timeout=TIMEOUT / 10)
 
 
 class test_signature_serialization:

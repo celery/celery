@@ -597,6 +597,34 @@ class test_BaseBackend_dict:
         b.mark_as_failure('id', exc, request=request)
         mock_group.assert_called_once_with(request.errbacks, app=self.app)
 
+    def test_new_style_errback_exception_does_not_halt_chain(self):
+        """Test that a new-style errback raising an exception is caught
+        and does not prevent subsequent errbacks from being called."""
+        b = BaseBackend(app=self.app)
+        b._store_result = Mock()
+
+        errback_calls = []
+
+        @self.app.task(shared=False)
+        def failing_errback(request, exc, traceback):
+            errback_calls.append('failing')
+            raise RuntimeError('errback failed')
+
+        @self.app.task(shared=False)
+        def ok_errback(request, exc, traceback):
+            errback_calls.append('ok')
+
+        request = Mock(name='request')
+        request.errbacks = [
+            failing_errback.subtask(),
+            ok_errback.subtask(),
+        ]
+        exc = KeyError()
+        # Should not raise — the RuntimeError from failing_errback is
+        # caught and logged, and the next new-style errback still runs.
+        b.mark_as_failure('id', exc, request=request)
+        assert errback_calls == ['failing', 'ok']
+
     def test_mark_as_failure__chord(self):
         b = BaseBackend(app=self.app)
         b._store_result = Mock()
@@ -606,6 +634,27 @@ class test_BaseBackend_dict:
         exc = KeyError()
         b.mark_as_failure('id', exc, request=request)
         b.on_chord_part_return.assert_called_with(request, states.FAILURE, exc)
+
+    def test_mark_as_failure__chained_chord_propagates_to_body(self):
+        b = BaseBackend(app=self.app)
+        b.store_result = Mock()
+        b.on_chord_part_return = Mock()
+
+        inner_chord = chord(
+            group([signature('test.h1'), signature('test.h2')]),
+            signature('test.body', immutable=True),
+            app=self.app,
+        )
+        inner_chord.options['task_id'] = 'inner-chord-id'
+        inner_chord.body.options['task_id'] = 'chord-body-id'
+
+        request = Context()
+        request.chain = [dict(inner_chord)]
+        request.errbacks = []
+        b.mark_as_failure('fail-id', ValueError('boom'), request=request)
+
+        marked = [c.args[0] for c in b.store_result.call_args_list]
+        assert 'chord-body-id' in marked
 
     def test_mark_as_revoked__chord(self):
         b = BaseBackend(app=self.app)
