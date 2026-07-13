@@ -1174,6 +1174,15 @@ class test_result_set:
         assert rs.results[0].failed()
         assert rs.results[1].successful()
 
+    @flaky
+    def test_result_set_built_via_add(self, manager):
+        assert_ping(manager)
+
+        rs = ResultSet([])
+        rs.add(add.delay(1, 1))
+        rs.add(add.delay(2, 2))
+        assert rs.get(timeout=TIMEOUT) == [2, 4]
+
 
 class test_group:
     @flaky
