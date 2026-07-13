@@ -1233,11 +1233,10 @@ class _chain(Signature):
                         task, body=prev_task,
                         root_id=root_id, app=app,
                     )
-                # Do not reassign prev_task/prev_res from tasks[-1] after the
-                # pop above. That breaks consecutive group|task upgrades
-                # (#8903). The chord handler below resets prev_res to the
-                # header GroupResult; nested-chord recursion (#8890) is
-                # covered by test_group_in_center_of_chain.
+                # Do not overwrite prev_res here; it may intentionally be a GroupResult (see #8903).
+                # But we must reset prev_task after the pop so we don't link a chord to its own body
+                # when use_link/task_protocol==1.
+                prev_task = tasks[-1] if tasks else None
 
             if is_last_task:
                 # chain(task_id=id) means task id is set for the last task
