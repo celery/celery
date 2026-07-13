@@ -1233,10 +1233,11 @@ class _chain(Signature):
                         task, body=prev_task,
                         root_id=root_id, app=app,
                     )
-                # Do not reassign prev_task/prev_res from tasks[-1] here.
-                # That breaks consecutive group|task upgrades when tasks sit
-                # before and after the groups (#8903 regression). Nested-chord
-                # recursive parents (#8890) are handled in chord.freeze().
+                # Do not reassign prev_task/prev_res from tasks[-1] after the
+                # pop above. That breaks consecutive group|task upgrades
+                # (#8903). The chord handler below resets prev_res to the
+                # header GroupResult; nested-chord recursion (#8890) is
+                # covered by test_group_in_center_of_chain.
 
             if is_last_task:
                 # chain(task_id=id) means task id is set for the last task
