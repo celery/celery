@@ -67,8 +67,6 @@ if os.environ.get('C_IMPDEBUG'):  # pragma: no cover
         return real_import(name, locals, globals, fromlist, level)
     builtins.__import__ = debug_import
 
-# This is never executed, but lets static analyzers (PyDev, PyCharm,
-# pylint, etc.) know the types of these symbols and what they contain.
 if TYPE_CHECKING:  # pragma: no cover
     from celery._state import current_app, current_task
     from celery.app import shared_task
