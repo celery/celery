@@ -839,8 +839,7 @@ class ResultSet(ResultBase):
         This is currently only supported by the amqp, Redis and cache
         result backends.
         """
-        if self._on_full:
-            self._on_full.finalize()
+        self._on_full.finalize()
         return self.backend.iter_native(
             self,
             timeout=timeout, interval=interval, no_ack=no_ack,
