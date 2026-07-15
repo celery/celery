@@ -11,6 +11,7 @@ import warnings
 from collections import deque, namedtuple
 from datetime import timedelta
 from functools import partial
+from uuid import UUID
 from weakref import WeakValueDictionary
 
 from billiard.einfo import ExceptionInfo
@@ -1038,6 +1039,8 @@ class BaseKeyValueStoreBackend(Backend):
 
     def _get_key_for(self, prefix, id, key=''):
         key_t = self.key_t
+        if isinstance(id, UUID):
+            id = str(id)
 
         return key_t('').join([
             prefix, key_t(id), key_t(key),
