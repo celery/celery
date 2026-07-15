@@ -207,8 +207,8 @@ class test_chain:
         assert res.get(timeout=TIMEOUT / 10) == [4, 5]
 
     def test_chain_of_chain_with_a_single_task(self, manager):
-        sig = signature('any_taskname', queue='any_q')
-        chain([chain(sig)]).apply_async()
+        res = chain([chain(identity.s(42))]).apply_async()
+        assert res.get(timeout=TIMEOUT) == 42
 
     def test_chain_on_error(self, manager):
         from .tasks import ExpectedException
