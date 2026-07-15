@@ -8,7 +8,7 @@ import pytest
 from celery._state import _task_stack
 from celery.canvas import (Signature, _chain, _maybe_group, _merge_dictionaries, chain, chord, chunks, group,
                            maybe_signature, maybe_unroll_group, signature, xmap, xstarmap)
-from celery.result import AsyncResult, EagerResult, GroupResult
+from celery.result import AsyncResult, EagerResult, GroupResult, result_from_tuple
 
 SIG = Signature({
     'task': 'TASK',
@@ -22,6 +22,36 @@ SIG = Signature({
 def return_True(*args, **kwargs):
     # Task run functions can't be closures/lambdas, as they're pickled.
     return True
+
+
+def _group_result_sizes_in_as_tuple(tuple_repr):
+    """Return fan-out sizes for each GroupResult node in an as_tuple() tree."""
+    sizes = []
+
+    def walk(tup):
+        if tup is None:
+            return
+        (res, nodes) = tup
+        if nodes is not None:
+            sizes.append(len(nodes))
+            for child in nodes:
+                walk(child)
+        _, parent = res
+        walk(parent)
+
+    walk(tuple_repr)
+    return sizes
+
+
+def _group_result_sizes_on_spine(result):
+    """Return fan-out sizes for each GroupResult on the parent spine."""
+    sizes = []
+    node = result
+    while node is not None:
+        if isinstance(node, GroupResult):
+            sizes.append(len(node.results))
+        node = node.parent
+    return sizes
 
 
 class test_maybe_unroll_group:
@@ -896,6 +926,39 @@ class test_chain(CanvasCase):
                    self.add.si(1, 1) | self.add.si(1, 1))
         t2 = chord([self.add.si(1, 1), self.add.si(1, 1)], t1)
         t2.freeze()  # should not raise
+
+    @pytest.mark.parametrize('task_protocol', [2, 1])
+    def test_consecutive_groups_in_chain_preserve_group_results_in_as_tuple(self, task_protocol):
+        # Regression for #8903: chain(head, mid..., group(G1), group(G2), tail...)
+        # must keep GroupResult fan-out in as_tuple(), not collapse to a short
+        # parent spine with no group children. Run under both task protocols:
+        # protocol 1 enables use_link in prepare_steps().
+        self.app.conf.task_protocol = task_protocol
+        n = 3
+        worker_tasks = [self.add.si(i, i) for i in range(n)]
+        post_tasks = [
+            chain(self.add.si(i, 0), self.add.si(0, i), app=self.app)
+            for i in range(n)
+        ]
+        canvas = chain(
+            self.add.si(0, 0),
+            self.add.si(1, 0),
+            self.add.si(0, 1),
+            group(worker_tasks, app=self.app),
+            group(post_tasks, app=self.app),
+            self.add.si(2, 0),
+            self.add.s(3),
+            task_id='last-task-id',
+            app=self.app,
+        )
+        tup = canvas.apply_async().as_tuple()
+        restored = result_from_tuple(tup, app=self.app)
+
+        for sizes in (
+            _group_result_sizes_in_as_tuple(tup),
+            _group_result_sizes_on_spine(restored),
+        ):
+            assert sizes.count(n) >= 2, sizes
 
     def test_upgrade_to_chord_on_chain(self):
         group1 = group(self.add.si(10, 10), self.add.si(10, 10))

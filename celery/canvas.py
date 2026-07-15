@@ -1233,12 +1233,10 @@ class _chain(Signature):
                         task, body=prev_task,
                         root_id=root_id, app=app,
                     )
-                if tasks:
-                    prev_task = tasks[-1]
-                    prev_res = results[-1]
-                else:
-                    prev_task = None
-                    prev_res = None
+                # Do not overwrite prev_res here; it may intentionally be a GroupResult (see #8903).
+                # But we must reset prev_task after the pop so we don't link a chord to its own body
+                # when use_link/task_protocol==1.
+                prev_task = tasks[-1] if tasks else None
 
             if is_last_task:
                 # chain(task_id=id) means task id is set for the last task
