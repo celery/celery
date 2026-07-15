@@ -122,7 +122,7 @@ What do I need?
 
 Celery version 5.6.x runs on:
 
-- Python (3.9, 3.10, 3.11, 3.12, 3.13)
+- Python (3.10, 3.11, 3.12, 3.13)
 - PyPy3.9+ (v7.3.12+)
 
 This is the last version of Celery which will support Python 3.9.
