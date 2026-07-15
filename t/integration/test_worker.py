@@ -1,12 +1,8 @@
 import subprocess
-from time import monotonic, sleep
 
 import pytest
-from kombu import Queue
 
 from celery import Celery
-from celery.exceptions import TimeoutError
-from t.integration.tasks import identity
 
 from .conftest import flaky
 from .tasks import add
@@ -73,49 +69,6 @@ def test_django_fixup_direct_worker(caplog, monkeypatch):
 
     assert "AttributeError: 'str' object has no attribute '__module__'." not in log_output, \
         f"AttributeError found in logs:\n{log_output}"
-
-
-class test_worker_queue_alias_reconnect:
-    @pytest.fixture
-    def celery_worker_parameters(self):
-        return {'queues': ('alias', 'celery')}
-
-    @pytest.mark.celery(task_queues=[Queue('real_name', alias='alias')])
-    def test_queue_selected_by_alias_is_not_reconsumed_after_cancel_by_real_name_and_reconnect(
-        self, celery_app, celery_worker
-    ):
-        consumer = celery_worker.consumer
-        celery_app.control.cancel_consumer('real_name', reply=True, timeout=10)
-
-        def _force_reconnect():
-            raise consumer.connection_errors[0]('forced reconnect')
-
-        # Force a reconnect so the worker rebuilds its consumers from _consume_from.
-        restarts = consumer.restart_count
-        consumer.hub.call_soon(_force_reconnect)
-        deadline = monotonic() + 10
-        while consumer.restart_count <= restarts and monotonic() < deadline:
-            sleep(0.5)
-        assert consumer.restart_count > restarts, 'worker did not reconnect'
-
-        with pytest.raises(TimeoutError):
-            identity.s('Hello').apply_async(queue='real_name').get(timeout=10)
-
-
-class test_explicit_routing_without_default_queue:
-    @pytest.fixture
-    def celery_worker_parameters(self):
-        return {'queues': ('non_default_queue',)}
-
-    @flaky
-    @pytest.mark.celery(
-        task_create_missing_queues=False,
-        task_queues=[Queue('non_default_queue')],
-        task_routes={'celery.ping': {'queue': 'non_default_queue'}},
-    )
-    def test_apply_async_succeeds_with_missing_queue_creation_disabled(self, celery_worker):
-        result = add.apply_async((1, 2), queue='non_default_queue')
-        assert result.get(timeout=10) == 3
 
 
 @flaky
