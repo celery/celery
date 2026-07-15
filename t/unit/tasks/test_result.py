@@ -593,6 +593,13 @@ class test_ResultSet:
         x.add(self.app.AsyncResult(2))
         assert len(x) == 2
 
+    def test_iter_native_finalizes_barrier_when_built_via_add(self):
+        x = self.app.ResultSet([])
+        for _ in range(3):
+            x.add(self.app.AsyncResult(uuid()))
+        x.iter_native()
+        assert x._on_full.finalized
+
     @contextmanager
     def dummy_copy(self):
         with patch('celery.result.copy') as copy:
