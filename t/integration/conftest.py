@@ -6,7 +6,7 @@ import time
 
 import pytest
 
-from celery.contrib.pytest import celery_app, celery_session_worker, celery_worker
+from celery.contrib.pytest import celery_app, celery_session_app, celery_session_worker
 from celery.contrib.testing.manager import Manager
 from celery.exceptions import TimeoutError
 from t.integration.tasks import get_redis_connection
@@ -38,11 +38,27 @@ def flaky(fn):
 
 __all__ = (
     'celery_app',
+    'celery_session_app',
     'celery_session_worker',
-    'celery_worker',
     'flaky',
     'get_active_redis_channels',
 )
+
+
+@pytest.fixture
+def celery_worker():
+    """Reject per-test workers: integration tests share one session worker.
+
+    This shadows the function-scoped ``celery_worker`` fixture from
+    ``celery.contrib.pytest``.  The integration suite runs against a single
+    shared session worker (``celery_session_worker``); tests that need a
+    custom worker topology belong in ``t/smoke/tests/``.
+    """
+    pytest.fail(
+        'The integration suite runs against a single shared session worker '
+        '(celery_session_worker); spawning per-test workers is not supported. '
+        'Tests that need a custom worker topology belong in t/smoke/tests/.'
+    )
 
 
 def get_active_redis_channels():
@@ -79,6 +95,7 @@ def celery_config(request):
         config.update(overrides)
     except OSError:
         pass
+    config['task_create_missing_queues'] = False
     return config
 
 
@@ -113,9 +130,18 @@ def manager(app, celery_session_worker):
 
 
 @pytest.fixture(autouse=True)
-def ZZZZ_set_app_current(app):
+def ZZZZ_set_app_current(app, celery_session_app):
     app.set_current()
     app.set_default()
+    yield
+    for app_name, test_app in (('function app', app), ('session app', celery_session_app)):
+        configured = set(test_app.amqp.queues)
+        if configured != {'celery'}:
+            pytest.fail(
+                f'Integration {app_name} must only use the shared celery queue; '
+                f'found {sorted(configured)}. '
+                'Tests that need additional queues belong in t/smoke/tests/.'
+            )
 
 
 @pytest.fixture(scope='session')
