@@ -572,8 +572,13 @@ class crontab(BaseSchedule):
     def remaining_delta(self, last_run_at: datetime, tz: tzinfo | None = None,
                         ffwd: type = ffwd) -> tuple[datetime, Any, datetime]:
         # caching global ffwd
-        last_run_at = self.maybe_make_aware(last_run_at)
-        now = self.maybe_make_aware(self.now())
+        tz = timezone.get_timezone(tz or self.tz)
+        # Normalize both datetimes into the schedule's timezone, so that the
+        # crontab field matching and the next-run arithmetic below operate in
+        # the frame the crontab is defined in. An aware last_run_at may arrive
+        # in a different timezone (e.g. from django-celery-beat).
+        last_run_at = self.maybe_make_aware(last_run_at).astimezone(tz)
+        now = self.maybe_make_aware(self.now()).astimezone(tz)
         dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7
 
         execute_this_date = (

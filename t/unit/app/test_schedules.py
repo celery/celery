@@ -539,6 +539,25 @@ class test_crontab_remaining_estimate:
 
         assert next == datetime(2023, 1, 29, 0, 0, tzinfo=tz)
 
+    def test_aware_last_run_at_in_different_timezone(self):
+        # The crontab fields are defined in the schedule's timezone (the app
+        # timezone, UTC here), but an aware last_run_at may arrive in a
+        # different timezone, e.g. from django-celery-beat.  Both datetimes
+        # must be normalized into the schedule's frame before any field
+        # matching (#9715).
+        vilnius = ZoneInfo("Europe/Vilnius")
+        crontab = self.crontab(minute=40, hour=8)
+
+        # 09:25:08 in Vilnius == 06:25:08 UTC
+        last_run_at = datetime(2025, 5, 20, 9, 25, 8, tzinfo=vilnius)
+        now = datetime(2025, 5, 20, 9, 26, 8, tzinfo=vilnius)
+        crontab.nowfun = lambda: now
+
+        next = now + crontab.remaining_estimate(last_run_at)
+
+        # The next run is at 08:40 UTC on the same day, not a day later.
+        assert next == datetime(2025, 5, 20, 8, 40, tzinfo=ZoneInfo("UTC"))
+
 
 class test_crontab_is_due:
 
