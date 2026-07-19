@@ -434,6 +434,44 @@ location for this file:
 
     To daemonize beat see :ref:`daemonizing`.
 
+.. _beat-health-checks:
+
+Health checks
+-------------
+
+.. versionadded:: 5.7
+
+By default there's no way to check whether a running beat process is
+still healthy. If you enable the
+:setting:`beat_enable_remote_control` setting, beat joins the same
+remote-control exchange the workers use (as a node named
+``celerybeat@hostname``) and answers :program:`celery inspect ping`:
+
+.. code-block:: console
+
+    $ celery -A proj inspect ping --destination celerybeat@${HOSTNAME}
+    ->  celerybeat@example.com: OK
+            pong
+
+The command exits non-zero when beat doesn't reply within the
+timeout, so it can be used directly as a liveness probe, for example
+in Kubernetes:
+
+.. code-block:: yaml
+
+    livenessProbe:
+      exec:
+        command:
+          - /bin/sh
+          - -c
+          - celery -A proj inspect ping -d celerybeat@$(hostname)
+      initialDelaySeconds: 30
+      periodSeconds: 60
+
+The ping reply includes a ``last_tick_ago`` field with the number of
+seconds since beat last woke up to check the schedule, which can be
+used to detect a scheduler that's alive but stuck.
+
 .. _beat-custom-schedulers:
 
 Using custom scheduler classes
