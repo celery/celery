@@ -198,8 +198,11 @@ class Node:
             try:
                 os.kill(pid, sig)
             except OSError as exc:
-                if exc.errno != errno.ESRCH:
+                if exc.errno not in (errno.ESRCH, errno.EPERM):
                     raise
+                # ESRCH: pid is gone. EPERM: the pid was recycled by
+                # the OS and now belongs to another user's process.
+                # Either way, treat it as this node no longer being alive.
                 maybe_call(on_error, self)
                 return False
             return True
