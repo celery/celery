@@ -202,16 +202,21 @@ class EventDispatcher:
         """Flush the outbound buffer."""
         if errors:
             buf = list(self._outbound_buffer)
-            try:
-                with self.mutex:
-                    for event, routing_key in buf:
-                        self._publish(event, self.producer, routing_key)
-            finally:
-                self._outbound_buffer.clear()
+            self._outbound_buffer.clear()
+            with self.mutex:
+                for event, routing_key in buf:
+                    self._publish(event, self.producer, routing_key)
         if groups:
             with self.mutex:
                 for group, events in self._group_buffer.items():
-                    self._publish(events, self.producer, '%s.multi' % group)
+                    if not events:
+                        continue
+                    # Publish a detached copy, then clear: when buffering
+                    # offline _publish re-buffers the object it was handed, so
+                    # clearing the live list first would empty it; when it
+                    # raises instead, skipping the clear keeps the events.
+                    batch = list(events)
+                    self._publish(batch, self.producer, '%s.multi' % group)
                     events[:] = []  # list.clear
 
     def extend_buffer(self, other):

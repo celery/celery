@@ -25,7 +25,8 @@ from vine import barrier
 
 from celery._state import current_app
 from celery.exceptions import CPendingDeprecationWarning
-from celery.result import GroupResult, allow_join_result
+from celery.result import EagerResult, GroupResult, allow_join_result
+from celery.states import IGNORED, REJECTED
 from celery.utils import abstract
 from celery.utils.collections import ChainMap
 from celery.utils.functional import _regen
@@ -1233,12 +1234,10 @@ class _chain(Signature):
                         task, body=prev_task,
                         root_id=root_id, app=app,
                     )
-                if tasks:
-                    prev_task = tasks[-1]
-                    prev_res = results[-1]
-                else:
-                    prev_task = None
-                    prev_res = None
+                # Do not overwrite prev_res here; it may intentionally be a GroupResult (see #8903).
+                # But we must reset prev_task after the pop so we don't link a chord to its own body
+                # when use_link/task_protocol==1.
+                prev_task = tasks[-1] if tasks else None
 
             if is_last_task:
                 # chain(task_id=id) means task id is set for the last task
@@ -1299,6 +1298,8 @@ class _chain(Signature):
             res = task.clone(fargs, fkwargs).apply(
                 last and (last.get(),), **dict(self.options, **options))
             res.parent, last, (fargs, fkwargs) = last, res, (None, None)
+            if isinstance(res, EagerResult) and res.state in (IGNORED, REJECTED):
+                break
         return last
 
     @property
@@ -1709,7 +1710,7 @@ class group(Signature):
         # each child task signature, of which there might be none!
         sig = maybe_signature(sig)
 
-        return tuple(child_task.link_error(sig.clone(immutable=True)) for child_task in self.tasks)
+        return tuple(child_task.link_error(sig.clone()) for child_task in self.tasks)
 
     def _prepared(self, tasks, partial_args, group_id, root_id, app,
                   CallableSignature=abstract.CallableSignature,

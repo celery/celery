@@ -119,7 +119,7 @@ class test_EventDispatcher:
         eventer.send('task-received', uuid=1)
         assert not eventer._group_buffer['task']
         eventer._publish.assert_has_calls([
-            call([], eventer.producer, 'task.multi'),
+            call(buf_received[0], eventer.producer, 'task.multi'),
         ])
         # clear in place
         assert eventer._group_buffer['task'] is prev_buffer
@@ -189,6 +189,81 @@ class test_EventDispatcher:
         for name in ('Event 1', 'Event 2', 'Event 3'):
             assert producer.has_event(name)
         assert len(eventer._outbound_buffer) == 0
+
+    def test_flush_rebuffers_events_when_republish_fails(self):
+        producer = MockProducer()
+        producer.connection = self.app.connection_for_write()
+        producer.raise_on_publish = True
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = self.app.events.Dispatcher(connection, enabled=False,
+                                             buffer_while_offline=True)
+        eventer.producer = producer
+        eventer.enabled = True
+        eventer.send('Event 1')
+        assert len(eventer._outbound_buffer) == 1
+
+        eventer.flush()
+        assert len(eventer._outbound_buffer) == 1
+
+        producer.raise_on_publish = False
+        eventer.flush()
+        assert producer.has_event('Event 1')
+        assert len(eventer._outbound_buffer) == 0
+
+    def test_flush_rebuffers_group_events_when_publish_fails(self):
+        producer = MockProducer()
+        producer.connection = self.app.connection_for_write()
+        producer.raise_on_publish = True
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = self.app.events.Dispatcher(connection, enabled=False,
+                                             buffer_while_offline=True,
+                                             buffer_group={'task'})
+        eventer.producer = producer
+        eventer.enabled = True
+        eventer.send('task-received', uuid=1)
+        assert len(eventer._group_buffer['task']) == 1
+
+        eventer.flush()
+        assert len(eventer._outbound_buffer) == 1
+        batch, routing_key = eventer._outbound_buffer[0]
+        assert routing_key == 'task.multi'
+        assert len(batch) == 1
+
+        producer.raise_on_publish = False
+        eventer.flush()
+        assert len(eventer._outbound_buffer) == 0
+        assert [event['uuid'] for batch in producer.sent for event in batch] == [1]
+
+    def test_flush_keeps_group_events_when_publish_raises(self):
+        # With buffer_while_offline off, _publish re-raises instead of
+        # re-buffering. The live group buffer must only be cleared after a
+        # successful publish, otherwise the events are lost when it raises.
+        producer = MockProducer()
+        producer.connection = self.app.connection_for_write()
+        producer.raise_on_publish = True
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = self.app.events.Dispatcher(connection, enabled=False,
+                                             buffer_while_offline=False,
+                                             buffer_group={'task'})
+        eventer.producer = producer
+        eventer.enabled = True
+        eventer.send('task-received', uuid=1)
+        eventer.send('task-received', uuid=2)
+        assert len(eventer._group_buffer['task']) == 2
+
+        with pytest.raises(KeyError):
+            eventer.flush()
+        # events stay buffered for the next flush instead of being dropped
+        assert len(eventer._group_buffer['task']) == 2
+        assert len(eventer._outbound_buffer) == 0
+
+        producer.raise_on_publish = False
+        eventer.flush()
+        assert [event['uuid'] for batch in producer.sent for event in batch] == [1, 2]
+        assert not eventer._group_buffer['task']
 
     def test_enter_exit(self):
         with self.app.connection_for_write() as conn:

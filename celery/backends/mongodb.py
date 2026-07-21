@@ -191,7 +191,7 @@ class MongoBackend(BaseBackend):
         try:
             self.collection.replace_one({'_id': task_id}, meta, upsert=True)
         except InvalidDocument as exc:
-            raise EncodeError(exc)
+            raise EncodeError(exc) from exc
 
         return result
 

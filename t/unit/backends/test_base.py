@@ -2,6 +2,7 @@ import copy
 import re
 from contextlib import contextmanager
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
+from uuid import UUID
 
 import pytest
 from kombu.serialization import prepare_accept_content
@@ -635,6 +636,27 @@ class test_BaseBackend_dict:
         b.mark_as_failure('id', exc, request=request)
         b.on_chord_part_return.assert_called_with(request, states.FAILURE, exc)
 
+    def test_mark_as_failure__chained_chord_propagates_to_body(self):
+        b = BaseBackend(app=self.app)
+        b.store_result = Mock()
+        b.on_chord_part_return = Mock()
+
+        inner_chord = chord(
+            group([signature('test.h1'), signature('test.h2')]),
+            signature('test.body', immutable=True),
+            app=self.app,
+        )
+        inner_chord.options['task_id'] = 'inner-chord-id'
+        inner_chord.body.options['task_id'] = 'chord-body-id'
+
+        request = Context()
+        request.chain = [dict(inner_chord)]
+        request.errbacks = []
+        b.mark_as_failure('fail-id', ValueError('boom'), request=request)
+
+        marked = [c.args[0] for c in b.store_result.call_args_list]
+        assert 'chord-body-id' in marked
+
     def test_mark_as_revoked__chord(self):
         b = BaseBackend(app=self.app)
         b._store_result = Mock()
@@ -1192,6 +1214,18 @@ class test_KeyValueStoreBackend:
     def test_get_key_for_chord_none_group_id(self):
         with pytest.raises(ValueError):
             self.b.get_key_for_group(None)
+
+    def test_get_key_for_task_uuid_task_id(self):
+        tid = UUID(uuid())
+        assert self.b.get_key_for_task(tid) == self.b.get_key_for_task(str(tid))
+
+    def test_get_key_for_group_uuid_group_id(self):
+        gid = UUID(uuid())
+        assert self.b.get_key_for_group(gid) == self.b.get_key_for_group(str(gid))
+
+    def test_get_key_for_chord_uuid_group_id(self):
+        gid = UUID(uuid())
+        assert self.b.get_key_for_chord(gid) == self.b.get_key_for_chord(str(gid))
 
     def test_strip_prefix(self):
         x = self.b.get_key_for_task('x1b34')

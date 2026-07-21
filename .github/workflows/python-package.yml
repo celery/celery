@@ -10,6 +10,8 @@ on:
         - '**.py'
         - '**.txt'
         - '.github/workflows/python-package.yml'
+        - '.github/workflows/integration-tests.yml'
+        - '.github/workflows/smoke-tests.yml'
         - '**.toml'
         - "tox.ini"
   pull_request:
@@ -19,6 +21,8 @@ on:
         - '**.txt'
         - '**.toml'
         - '.github/workflows/python-package.yml'
+        - '.github/workflows/integration-tests.yml'
+        - '.github/workflows/smoke-tests.yml'
         - "tox.ini"
   workflow_dispatch:
 
@@ -57,7 +61,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -f libcurl4-openssl-dev libev-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
 
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v6
       with:
@@ -89,56 +93,47 @@ jobs:
         report_type: test_results
         token: ${{ secrets.CODECOV_TOKEN }}
 
+  Discover-test-modules:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    outputs:
+      integration: ${{ steps.discover.outputs.integration }}
+      smoke: ${{ steps.discover.outputs.smoke }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            t/integration
+            t/smoke/tests
+      - name: Discover test module paths
+        id: discover
+        run: |
+          integration=$(find t/integration -type f -name 'test_*.py' | sort | jq --raw-input --slurp --compact-output 'split("\n") | map(select(. != ""))')
+          smoke=$(find t/smoke/tests -type f -name 'test_*.py' | sort | jq --raw-input --slurp --compact-output 'split("\n") | map(select(. != ""))')
+
+          if [ "$integration" = "[]" ] || [ "$smoke" = "[]" ]; then
+            echo "::error::Test module discovery found no integration or smoke test modules"
+            exit 1
+          fi
+
+          echo "integration=$integration" >> "$GITHUB_OUTPUT"
+          echo "smoke=$smoke" >> "$GITHUB_OUTPUT"
+
   Integration-tests:
-    needs: [Unit]
+    needs: [Unit, Discover-test-modules]
     if: needs.Unit.result == 'success'
     strategy:
       matrix:
-        module: [
-          'test_backend.py',
-          'test_canvas.py',
-          'test_connection_recovery.py',
-          'test_database_backend.py',
-          'test_inspect.py',
-          'test_loader.py',
-          'test_mem_leak_in_exception_handling.py',
-          'test_security.py',
-          'test_serialization.py',
-          'test_tasks.py',
-          'test_worker.py'
-        ]
+        test_path: ${{ fromJson(needs.Discover-test-modules.outputs.integration) }}
     uses: ./.github/workflows/integration-tests.yml
     with:
-      module_name: ${{ matrix.module }}
+      test_path: ${{ matrix.test_path }}
 
   Smoke-tests:
-    needs: [Unit]
+    needs: [Unit, Discover-test-modules]
     if: needs.Unit.result == 'success'
     strategy:
       matrix:
-        module: [
-          'test_broker_failover.py',
-          'test_worker_failover.py',
-          'test_native_delayed_delivery.py',
-          'test_quorum_queues.py',
-          'test_cycle_detection.py',
-          'test_native_delayed_delivery_binding.py',
-          'test_chord_unlock_routing.py',
-          'test_default_queue_type.py',
-          'test_qos.py',
-          'test_hybrid_cluster.py',
-          'test_revoke.py',
-          'test_visitor.py',
-          'test_canvas.py',
-          'test_concurrency_auto.py',
-          'test_consumer.py',
-          'test_dedup_chain_dispatch.py',
-          'test_control.py',
-          'test_signals.py',
-          'test_tasks.py',
-          'test_thread_safe.py',
-          'test_worker.py'
-        ]
+        test_path: ${{ fromJson(needs.Discover-test-modules.outputs.smoke) }}
     uses: ./.github/workflows/smoke-tests.yml
     with:
-      module_name: ${{ matrix.module }}
+      test_path: ${{ matrix.test_path }}

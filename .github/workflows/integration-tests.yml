@@ -3,8 +3,8 @@ name: Integration Tests
 on:
   workflow_call:
     inputs:
-      module_name:
-        description: 'Name of the test module to run (e.g., test_backend.py)'
+      test_path:
+        description: 'Test path to run (e.g., t/integration/test_backend.py)'
         required: true
         type: string
       python_versions:
@@ -52,7 +52,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -f libcurl4-openssl-dev libev-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
         with:
@@ -64,11 +64,13 @@ jobs:
         run: python -m pip install --upgrade pip 'tox' tox-gh-actions
       - name: >
           Run tox for
-          "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}-${{ inputs.module_name }}"
+          "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}-${{ inputs.test_path }}"
+        env:
+          TEST_PATH: ${{ inputs.test_path }}
         uses: nick-fields/retry@v4
         with:
           timeout_minutes: 60
           max_attempts: 3
           retry_wait_seconds: 0
           command: |
-            tox --verbose --verbose -e "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -- -k ${{ inputs.module_name }} -vv
+            tox --verbose --verbose -e "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -- -vv

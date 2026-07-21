@@ -4,6 +4,11 @@ import pytest
 
 from celery import Celery
 
+from .conftest import flaky
+from .tasks import add
+
+TIMEOUT = 10
+
 
 def test_run_worker():
     with pytest.raises(subprocess.CalledProcessError) as exc_info:
@@ -64,3 +69,23 @@ def test_django_fixup_direct_worker(caplog, monkeypatch):
 
     assert "AttributeError: 'str' object has no attribute '__module__'." not in log_output, \
         f"AttributeError found in logs:\n{log_output}"
+
+
+@flaky
+def test_pidbox_reset_after_repeated_control_errors(manager):
+    def assert_ping():
+        ping_result = manager.inspect().ping()
+        assert ping_result
+        assert list(ping_result.values())[0] == {'ok': 'pong'}
+
+    assert_ping()
+
+    for _ in range(5):
+        manager.app.control.broadcast('pidbox_reset_error', reply=False)
+
+    assert_ping()
+
+    result = add.delay(4, 4)
+    assert result.get(timeout=TIMEOUT) == 8
+
+    assert_ping()
