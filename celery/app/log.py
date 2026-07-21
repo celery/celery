@@ -88,6 +88,14 @@ class Logging:
                                 colorize=None, hostname=None, **kwargs):
         if self.already_setup:
             return
+        if self.app.conf.worker_skip_logging_setup:
+            # The user has taken full responsibility for configuring
+            # logging, so don't touch any handlers, levels or stdouts.
+            # This is equivalent to connecting an empty receiver to the
+            # setup_logging signal (see #1867): returning a true value
+            # here also prevents stdout/stderr redirection in setup().
+            self.already_setup = True
+            return True
         if logfile and hostname:
             logfile = node_format(logfile, hostname)
         Logging._setup = True
