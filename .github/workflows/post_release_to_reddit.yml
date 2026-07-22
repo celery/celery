@@ -1,0 +1,51 @@
+name: Post Release to Reddit
+
+on:
+  release:
+    types: [released]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: bluwy/release-for-reddit-action@v1.2.0
+      id: reddit
+      with:
+        username: ${{ secrets.REDDIT_USERNAME }}
+        password: ${{ secrets.REDDIT_PASSWORD }}
+        app-id: ${{ secrets.REDDIT_APP_ID }}
+        app-secret: ${{ secrets.REDDIT_APP_SECRET }}
+        subreddit: Python
+        title: Celery {{ github.event.release.tag_name }} Released!
+        comment: ${{ github.event.release.body }}
+        # This is the "News" flair.
+        flair-id: 0ad780a0-1c5e-11ea-978c-0ee7bacb2bff
+        notification: false
+    - uses: bluwy/release-for-reddit-action@v1.2.0
+      with:
+        username: ${{ secrets.REDDIT_USERNAME }}
+        password: ${{ secrets.REDDIT_PASSWORD }}
+        app-id: ${{ secrets.REDDIT_APP_ID }}
+        app-secret: ${{ secrets.REDDIT_APP_SECRET }}
+        subreddit: django
+        url: ${{ steps.reddit.outputs.postUrl }}
+        title: Celery {{ github.event.release.tag_name }} Released!
+    - uses: bluwy/release-for-reddit-action@v1.2.0
+      with:
+        username: ${{ secrets.REDDIT_USERNAME }}
+        password: ${{ secrets.REDDIT_PASSWORD }}
+        app-id: ${{ secrets.REDDIT_APP_ID }}
+        app-secret: ${{ secrets.REDDIT_APP_SECRET }}
+        subreddit: flask
+        url: ${{ steps.reddit.outputs.postUrl }}
+        title: Celery {{ github.event.release.tag_name }} Released!
+    - uses: bluwy/release-for-reddit-action@v1.2.0
+      with:
+        username: ${{ secrets.REDDIT_USERNAME }}
+        password: ${{ secrets.REDDIT_PASSWORD }}
+        app-id: ${{ secrets.REDDIT_APP_ID }}
+        app-secret: ${{ secrets.REDDIT_APP_SECRET }}
+        subreddit: FastAPI
+        url: ${{ steps.reddit.outputs.postUrl }}
+        title: Celery {{ github.event.release.tag_name }} Released!
