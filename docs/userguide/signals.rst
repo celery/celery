@@ -728,6 +728,11 @@ Celery won't configure the loggers if this signal is connected,
 so you can use this to completely override the logging configuration
 with your own.
 
+If you don't want Celery to configure logging at all and don't need a
+hook to set up your own, you can enable the
+:setting:`worker_skip_logging_setup` setting instead of connecting an
+empty receiver to this signal.
+
 If you'd like to augment the logging configuration setup by
 Celery then you can use the :signal:`after_setup_logger` and
 :signal:`after_setup_task_logger` signals.
