@@ -4373,6 +4373,43 @@ are past due will always run immediately.
 
     Setting this higher than 3600 (1 hour) is highly discouraged.
 
+.. setting:: beat_enable_remote_control
+
+``beat_enable_remote_control``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: Disabled.
+
+If enabled, :mod:`~celery.bin.beat` joins the same remote-control
+(pidbox) exchange the workers use, as a node named
+``celerybeat@hostname``, and answers :program:`celery inspect ping`.
+This makes it possible to health-check the beat process, for example
+as a Kubernetes liveness probe:
+
+.. code-block:: console
+
+    $ celery -A proj inspect ping --destination celerybeat@${HOSTNAME}
+
+The command exits with a non-zero status when beat doesn't reply
+within the timeout. The ping reply also includes a ``last_tick_ago``
+field: the number of seconds since beat last woke up to check the
+schedule.
+
+Note that when this is enabled, beat will also show up as a node in
+the output of destination-less :program:`celery inspect ping` and
+:program:`celery status`. Beat only implements the ``ping`` command;
+all other remote-control commands are ignored.
+
+Only standalone :program:`celery beat` is affected: a beat scheduler
+embedded in a worker (:option:`-B <celery worker -B>`) never starts a
+remote-control node, since the worker already answers for that
+process.
+
+Availability: RabbitMQ (AMQP) and Redis transports (the same
+transports that support worker remote control).
+
 .. setting:: beat_logfile
 
 ``beat_logfile``
