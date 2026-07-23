@@ -10,9 +10,11 @@ from billiard.exceptions import RestartFreqExceeded
 
 from celery import bootsteps
 from celery.contrib.testing.mocks import ContextMock
+from celery.events.state import HEARTBEAT_DRIFT_MAX
 from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.utils.collections import LimitedSet
 from celery.utils.quorum_queues import detect_quorum_queues
+from celery.utils.time import utcoffset
 from celery.worker.consumer.agent import Agent
 from celery.worker.consumer.consumer import (CANCEL_TASKS_BY_DEFAULT, CLOSE, COLLECT_SOCKET_TIMEOUT, TERMINATE,
                                              Consumer)
@@ -1794,3 +1796,33 @@ class test_Gossip:
         message.headers = {'hostname': g.hostname}
         g.on_message(prepare, message)
         g.clock.forward.assert_called_with()
+
+    def test_worker_event_across_timezones_causes_no_drift_warning(self):
+        c = self.Consumer()
+        c.app = self.app
+        c.app.connection_for_read = _amqp_connection()
+        g = Gossip(c)
+
+        with self.app.connection_for_write() as conn:
+            channel = conn.default_channel
+            consumer = g.get_consumers(channel)[0]
+            consumer.consume()
+
+            dispatcher = self.app.events.Dispatcher(
+                conn, hostname='other@x.com', channel=channel,
+            )
+            # simulate a sender in a timezone 7 hours from the gossip
+            with patch(
+                'celery.events.dispatcher.utcoffset',
+                return_value=utcoffset() + 7
+            ):
+                dispatcher.send('worker-heartbeat', freq=5)
+
+            with patch('celery.events.state._warn_drift') as warn_drift:
+                conn.drain_events(timeout=5)
+
+        worker = g.state.workers['other@x.com']
+        assert worker.utcoffset != utcoffset()
+        drift = abs(int(worker.local_received) - int(worker.timestamp))
+        assert drift <= HEARTBEAT_DRIFT_MAX
+        warn_drift.assert_not_called()
