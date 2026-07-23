@@ -397,14 +397,13 @@ This is an example systemd file:
     Type=forking
     User=celery
     Group=celery
-    EnvironmentFile=/etc/conf.d/celery
+    EnvironmentFile=-/etc/conf.d/celery
     WorkingDirectory=/opt/celery
     ExecStart=/bin/sh -c '${CELERY_BIN} -A $CELERY_APP multi start $CELERYD_NODES \
         --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} \
         --loglevel="${CELERYD_LOG_LEVEL}" $CELERYD_OPTS'
     ExecStop=/bin/sh -c '${CELERY_BIN} multi stopwait $CELERYD_NODES \
-        --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} \
-        --loglevel="${CELERYD_LOG_LEVEL}"'
+        --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE}'
     ExecReload=/bin/sh -c '${CELERY_BIN} -A $CELERY_APP multi restart $CELERYD_NODES \
         --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} \
         --loglevel="${CELERYD_LOG_LEVEL}" $CELERYD_OPTS'
@@ -429,7 +428,7 @@ To configure user, group, :command:`chdir` change settings:
 
 You can also use systemd-tmpfiles in order to create working directories (for logs and pid).
 
-:file: `/etc/tmpfiles.d/celery.conf`
+:file:`/etc/tmpfiles.d/celery.conf`
 
 .. code-block:: bash
 
@@ -464,21 +463,18 @@ This is an example configuration for a Python project:
     # or fully qualified:
     #CELERY_APP="proj.tasks:app"
 
-    # How to call manage.py
-    CELERYD_MULTI="multi"
-
     # Extra command-line arguments to the worker
     CELERYD_OPTS="--time-limit=300 --concurrency=8"
 
     # - %n will be replaced with the first part of the nodename.
     # - %I will be replaced with the current child process index
     #   and is important when using the prefork pool to avoid race conditions.
-    CELERYD_PID_FILE="/var/run/celery/%n.pid"
+    CELERYD_PID_FILE="/run/celery/%n.pid"
     CELERYD_LOG_FILE="/var/log/celery/%n%I.log"
     CELERYD_LOG_LEVEL="INFO"
 
     # you may wish to add these options for Celery Beat
-    CELERYBEAT_PID_FILE="/var/run/celery/beat.pid"
+    CELERYBEAT_PID_FILE="/run/celery/beat.pid"
     CELERYBEAT_LOG_FILE="/var/log/celery/beat.log"
 
 Service file: celerybeat.service
@@ -498,7 +494,7 @@ This is an example systemd file for Celery Beat:
     Type=simple
     User=celery
     Group=celery
-    EnvironmentFile=/etc/conf.d/celery
+    EnvironmentFile=-/etc/conf.d/celery
     WorkingDirectory=/opt/celery
     ExecStart=/bin/sh -c '${CELERY_BIN} -A ${CELERY_APP} beat  \
         --pidfile=${CELERYBEAT_PID_FILE} \
