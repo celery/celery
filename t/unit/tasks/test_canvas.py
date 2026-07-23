@@ -2266,3 +2266,10 @@ class test_merge_dictionaries(CanvasCase):
     def test_none_values(self, d1, d2, expected_result):
         _merge_dictionaries(d1, d2)
         assert d1 == expected_result
+
+    def test_override_from_d2_when_not_aggregating(self):
+        # aggregate_duplicates=False takes duplicate keys from d2 (per the
+        # docstring and the _stamp_headers worked example).
+        d1 = {'foo': 'bar1'}
+        _merge_dictionaries(d1, {'foo': 'bar2'}, aggregate_duplicates=False)
+        assert d1['foo'] == 'bar2'

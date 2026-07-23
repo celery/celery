@@ -103,7 +103,7 @@ def _merge_dictionaries(d1, d2, aggregate_duplicates=True):
                 _merge_dictionaries(d1[key], d2[key])
             else:
                 if isinstance(value, (int, float, str)):
-                    d1[key] = [value] if aggregate_duplicates else value
+                    d1[key] = [value] if aggregate_duplicates else d2[key]
                 if isinstance(d2[key], list) and isinstance(d1[key], list):
                     d1[key].extend(d2[key])
                 elif aggregate_duplicates:
