@@ -368,7 +368,8 @@ class WorkController:
                        max_tasks_per_child=None,
                        prefetch_multiplier=None, disable_rate_limits=None,
                        worker_lost_wait=None,
-                       max_memory_per_child=None, **_kw):
+                       max_memory_per_child=None,
+                       pool_start_method=None, **_kw):
         either = self.app.either
         self.loglevel = loglevel
         self.logfile = logfile
@@ -385,6 +386,13 @@ class WorkController:
         self.autoscaler_cls = either('worker_autoscaler', autoscaler_cls)
         self.pool_putlocks = either('worker_pool_putlocks', pool_putlocks)
         self.pool_restarts = either('worker_pool_restarts', pool_restarts)
+        self.pool_start_method = either(
+            'worker_pool_start_method', pool_start_method,
+        )
+        if self.pool_start_method not in ('fork', 'spawn'):
+            raise ImproperlyConfigured(
+                "worker_pool_start_method must be 'fork' or 'spawn', "
+                f"got {self.pool_start_method!r}.")
         self.statedb = either('worker_state_db', statedb, state_db)
         self.schedule_filename = either(
             'beat_schedule_filename', schedule_filename,
