@@ -56,6 +56,45 @@ def test_fd_by_path():
         test_file.close()
 
 
+@t.skip.if_win32
+def test_fd_by_path_with_large_fdmax():
+    """Test fd_by_path completes quickly even when fdmax is very large (issue #9886)."""
+    test_file = tempfile.NamedTemporaryFile()
+    try:
+        with patch('os.listdir') as mock_listdir:
+            mock_listdir.side_effect = OSError()
+            with patch('celery.platforms.get_fdmax') as mock_fdmax:
+                # Simulate Docker container with very high fd limit
+                mock_fdmax.return_value = 1073741816
+                keep = fd_by_path([test_file.name])
+                assert keep == [test_file.file.fileno()]
+                # Verify we used the capped limit, not the huge fdmax
+                from celery.platforms import _FDMAX_FALLBACK_LIMIT
+                assert mock_fdmax.return_value > _FDMAX_FALLBACK_LIMIT
+    finally:
+        test_file.close()
+
+
+@t.skip.if_win32
+def test_fd_by_path_uses_proc_on_linux():
+    """Test fd_by_path uses /proc/pid/fd when available (Linux)."""
+    test_file = tempfile.NamedTemporaryFile()
+    try:
+        fd_num = test_file.file.fileno()
+        with patch('os.listdir') as mock_listdir:
+            # Simulate /proc/pid/fd returning list of open fds
+            mock_listdir.return_value = ['0', '1', '2', str(fd_num)]
+            with patch('celery.platforms.get_fdmax') as mock_fdmax:
+                mock_fdmax.return_value = 1073741816  # Should not be used
+                keep = fd_by_path([test_file.name])
+                assert keep == [fd_num]
+                # Verify /proc was used (listdir called) and get_fdmax was NOT used
+                mock_listdir.assert_called_once()
+                mock_fdmax.assert_not_called()
+    finally:
+        test_file.close()
+
+
 def test_close_open_fds(patching):
     _close = patching('os.close')
     fdmax = patching('billiard.compat.get_fdmax')
