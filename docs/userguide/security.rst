@@ -195,6 +195,81 @@ with the private key and certificate files located in `/etc/ssl`.
     Also note that the `auth` serializer won't encrypt the contents of
     a message, so if needed this will have to be enabled separately.
 
+.. _message-signing-pqc:
+
+Post-Quantum Cryptography (ML-DSA)
+----------------------------------
+
+.. versionadded:: 5.6
+
+Celery's `auth` serializer supports `ML-DSA`_ (FIPS 204) post-quantum
+digital signatures in addition to RSA. ML-DSA is a lattice-based
+signature scheme standardized by NIST that is believed to be resistant
+to attacks by both classical and quantum computers.
+
+Three security levels are supported:
+
+* **ML-DSA-44** -- NIST security level 2 (roughly comparable to AES-128)
+* **ML-DSA-65** -- NIST security level 3 (roughly comparable to AES-192)
+* **ML-DSA-87** -- NIST security level 5 (roughly comparable to AES-256)
+
+ML-DSA support requires ``cryptography >= 44.0`` built against
+OpenSSL 3.5 or later (or a provider that exposes ML-DSA). No
+configuration change is needed beyond supplying ML-DSA keys and
+certificates -- the serializer detects the key type automatically
+and omits the digest and padding parameters that only apply to RSA.
+
+.. code-block:: python
+
+    app = Celery()
+    app.conf.update(
+        security_key='/etc/ssl/private/worker-mldsa.key',
+        security_certificate='/etc/ssl/certs/worker-mldsa.pem',
+        security_cert_store='/etc/ssl/certs/*.pem',
+        task_serializer='auth',
+        event_serializer='auth',
+        accept_content=['auth'],
+    )
+    app.setup_security()
+
+.. note::
+
+    The ``security_digest`` setting is ignored for ML-DSA keys because
+    ML-DSA uses an internal hash function (SHAKE) that is part of the
+    algorithm itself.
+
+.. _pqc-broker-tls:
+
+Post-Quantum Broker TLS
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+To protect messages in transit against harvest-now-decrypt-later
+attacks, the broker connection itself should also use post-quantum
+key exchange. This is independent of message signing and requires
+broker-side support.
+
+**RabbitMQ** -- Build or install Erlang/OTP linked against OpenSSL 3.5+
+and configure TLS listeners with a post-quantum key-exchange group
+(e.g., ``X25519MLKEM768``). On the Celery side, pass the group via
+:setting:`broker_use_ssl`:
+
+.. code-block:: python
+
+    app.conf.broker_use_ssl = {
+        'keyfile': '/etc/ssl/private/worker.key',
+        'certfile': '/etc/ssl/certs/worker.pem',
+        'ca_certs': '/etc/ssl/certs/ca.pem',
+        'cert_reqs': ssl.CERT_REQUIRED,
+    }
+
+The TLS library negotiates the strongest mutually supported group
+automatically when both sides are running OpenSSL 3.5+.
+
+**Redis** -- Use Redis 7.4+ compiled against OpenSSL 3.5+ with TLS
+enabled. The ``broker_use_ssl`` configuration is the same as above.
+
+.. _`ML-DSA`: https://csrc.nist.gov/pubs/fips/204/final
+
 .. _`X.509`: https://en.wikipedia.org/wiki/X.509
 .. _`Certificate Authority`:
     https://en.wikipedia.org/wiki/Certificate_authority
