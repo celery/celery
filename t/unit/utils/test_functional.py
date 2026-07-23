@@ -409,6 +409,96 @@ class test_head_from_fun:
         g(1, 2, 3)
         g(anything=1, at=2, all=3)
 
+    def test_partial_keyword_bound(self):
+        # functools.partial with a keyword argument bound: partial.__call__
+        # is a C-level method-wrapper without __module__, so head_from_fun
+        # must not introspect partial.__call__ (it has the degenerate
+        # (self, *args, **kwargs) signature). Instead it must introspect
+        # the partial directly, which getfullargspec unwraps into the
+        # effective signature with bound kwargs promoted to keyword-only.
+        from functools import partial
+
+        def add(a, b, c):
+            return a + b + c
+
+        p = partial(add, a=1)
+        g = head_from_fun(p)
+        # b and c are now keyword-only because a was bound.
+        g(b=2, c=3)
+        with pytest.raises(TypeError):
+            # a is keyword-only now; positional must reject
+            g(2, 3)
+
+    def test_partial_positional_bound(self):
+        # functools.partial with a positional argument bound: the remaining
+        # positional args must still work after binding.
+        from functools import partial
+
+        def add(a, b, c):
+            return a + b + c
+
+        p = partial(add, 10)
+        g = head_from_fun(p)
+        g(2, 3)
+        with pytest.raises(TypeError):
+            # b and c are still required
+            g(2)
+
+    def test_callable_class_instance(self):
+        # Class instance with a regular __call__: the __call__ signature
+        # includes `self` as the first positional arg, but the instance is
+        # already bound, so head_from_fun must strip `self` before
+        # generating the validation stub.
+        class MyTask:
+            def __call__(self, foo, bar, baz=10):
+                return (foo, bar, baz)
+
+        inst = MyTask()
+        g = head_from_fun(inst)
+        # Too few args
+        with pytest.raises(TypeError):
+            g(1)
+        g(1, 2)
+        g(1, 2, baz=5)
+        with pytest.raises(TypeError):
+            # too many positional args
+            g(1, 2, 3, 4)
+
+    def test_callable_class_instance_bound(self):
+        # bound=True with a class instance: the stub is partially applied
+        # with an object sentinel, and the rest of __call__'s signature is
+        # still validated correctly.
+        class MyTask:
+            def __call__(self, foo, bar, baz=10):
+                return (foo, bar, baz)
+
+        inst = MyTask()
+        g = head_from_fun(inst, bound=True)
+        # The sentinel replaces self, so foo/bar are the remaining positions.
+        with pytest.raises(TypeError):
+            g()
+        g(1)
+        g(1, 2)
+
+    def test_callable_class_object(self):
+        # A class object passed directly (not an instance): type.__call__
+        # is the C-level method-wrapper without __module__. head_from_fun
+        # must fall back to introspecting the class directly. The resulting
+        # stub will use the class's __call__ args, which is broken for
+        # actual construction (matching pre-existing celery behaviour),
+        # but the important thing is the introspection step must not
+        # crash with AttributeError on a method-wrapper.
+        class MyTask:
+            def __init__(self, foo, bar, baz=10):  # pragma: no cover
+                self.foo = foo
+
+        g = head_from_fun(MyTask)
+        # Must not raise AttributeError on method-wrapper. The exact
+        # validation behaviour for class objects is pre-existing and
+        # not in scope for this fix; only that the function survives
+        # introspection.
+        assert callable(g)
+
 
 class test_fun_takes_argument:
 
