@@ -15,8 +15,28 @@ from celery.exceptions import SecurityError
 from celery.platforms import EX_FAILURE, EX_OK, detached, maybe_drop_privileges
 from celery.utils.log import get_logger
 from celery.utils.nodenames import default_nodename, host_format, node_format
+from celery.utils.sysinfo import AUTO_CONCURRENCY, is_auto_concurrency
 
 logger = get_logger(__name__)
+
+
+def _concurrency_value(ctx, _param, value):
+    """Parse ``--concurrency`` accepting an integer or the ``auto`` sentinel.
+
+    Falls through to ``ctx.obj.app.conf.worker_concurrency`` when the CLI
+    value is empty or zero, matching the existing behavior.
+    """
+    if value is None or value == '':
+        return ctx.obj.app.conf.worker_concurrency
+    if is_auto_concurrency(value):
+        return AUTO_CONCURRENCY
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        raise click.BadParameter(
+            f"must be an integer or 'auto', got {value!r}"
+        )
+    return parsed or ctx.obj.app.conf.worker_concurrency
 
 
 class CeleryBeat(ParamType):
@@ -193,15 +213,16 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
                    "Only supported with Redis brokers.")
 @click.option('-c',
               '--concurrency',
-              type=int,
+              type=str,
               metavar="<concurrency>",
-              callback=lambda ctx, _,
-              value: value or ctx.obj.app.conf.worker_concurrency,
+              callback=_concurrency_value,
               cls=CeleryOption,
               help_group="Pool Options",
-              help="Number of child processes processing the queue.  "
-                   "The default is the number of CPUs available"
-                   " on your system.")
+              help="Number of child processes processing the queue. "
+                   "The default is the number of CPUs available "
+                   "on your system. Use 'auto' to size from the "
+                   "cgroup CPU quota (Linux only; applies to "
+                   "prefork/solo pools).")
 @click.option('-P',
               '--pool',
               default='prefork',

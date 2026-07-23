@@ -1,11 +1,13 @@
 import os
 from unittest.mock import Mock, patch
 
+import click
 import pytest
 from click.testing import CliRunner
 
 from celery.app.log import Logging
 from celery.bin.celery import celery
+from celery.bin.worker import _concurrency_value
 from celery.worker.consumer.tasks import Tasks
 
 
@@ -125,3 +127,46 @@ def test_disable_prefetch_ignored_for_non_redis_brokers(mock_app, mock_consumer)
 
     # Should not modify can_consume method for non-Redis brokers
     assert mock_consumer.task_consumer.channel.qos.can_consume == original_can_consume
+
+
+def _mk_ctx(config_concurrency):
+    """Build a minimal click context for _concurrency_value callback tests."""
+    ctx = Mock()
+    ctx.obj.app.conf.worker_concurrency = config_concurrency
+    return ctx
+
+
+class test_concurrency_value_callback:
+
+    def test_explicit_integer_string_parses(self):
+        assert _concurrency_value(_mk_ctx(None), None, '4') == 4
+
+    def test_auto_sentinel_normalized(self):
+        assert _concurrency_value(_mk_ctx(None), None, 'auto') == 'auto'
+
+    @pytest.mark.parametrize('raw', ['AUTO', 'Auto', ' auto ', '\tauto\n'])
+    def test_auto_sentinel_case_and_whitespace_insensitive(self, raw):
+        assert _concurrency_value(_mk_ctx(None), None, raw) == 'auto'
+
+    def test_empty_string_falls_back_to_config(self):
+        ctx = _mk_ctx(config_concurrency=8)
+        assert _concurrency_value(ctx, None, '') == 8
+
+    def test_none_falls_back_to_config(self):
+        ctx = _mk_ctx(config_concurrency='auto')
+        assert _concurrency_value(ctx, None, None) == 'auto'
+
+    def test_zero_falls_back_to_config(self):
+        # Existing behavior: ``--concurrency=0`` falls through to config,
+        # matching what ``value or fallback`` did with type=int.
+        ctx = _mk_ctx(config_concurrency=4)
+        assert _concurrency_value(ctx, None, '0') == 4
+
+    def test_invalid_string_raises_bad_parameter(self):
+        with pytest.raises(click.BadParameter):
+            _concurrency_value(_mk_ctx(None), None, 'garbage')
+
+    def test_invalid_string_mentions_auto_in_message(self):
+        with pytest.raises(click.BadParameter) as exc_info:
+            _concurrency_value(_mk_ctx(None), None, 'bogus')
+        assert 'auto' in str(exc_info.value).lower()
