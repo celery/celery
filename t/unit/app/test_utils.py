@@ -48,6 +48,17 @@ class test_filter_hidden_settings:
         }
         filter_hidden_settings(conf)
 
+    def test_censors_broker_read_and_write_url(self):
+        conf = {
+            'broker_url': 'amqp://user:pass@broker.example.com:56721',
+            'broker_read_url': 'amqp://user:pass@broker.example.com:56722',
+            'broker_write_url': 'amqp://user:pass@broker.example.com:56723',
+        }
+        censored = filter_hidden_settings(conf)
+        assert 'pass' not in censored['broker_url']
+        assert 'pass' not in censored['broker_read_url']
+        assert 'pass' not in censored['broker_write_url']
+
 
 class test_bugreport:
 
