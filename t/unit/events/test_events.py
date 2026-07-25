@@ -265,6 +265,39 @@ class test_EventDispatcher:
         assert [event['uuid'] for batch in producer.sent for event in batch] == [1, 2]
         assert not eventer._group_buffer['task']
 
+    def test_flush_keeps_group_events_appended_during_publish(self):
+        eventer = self.app.events.Dispatcher(Mock(), enabled=False,
+                                             buffer_group={'task'})
+        buffer = eventer._group_buffer['task']
+        buffer.extend(['first', 'second'])
+        published = []
+
+        def publish_then_append(batch, producer, routing_key):
+            published.extend(batch)
+            buffer.append('during-publish')
+
+        eventer._publish = publish_then_append
+        eventer.flush()
+
+        assert published == ['first', 'second']
+        assert buffer == ['during-publish']
+
+    def test_flush_keeps_events_appended_during_failed_publish(self):
+        eventer = self.app.events.Dispatcher(Mock(), enabled=False,
+                                             buffer_group={'task'})
+        buffer = eventer._group_buffer['task']
+        buffer.extend(['first', 'second'])
+
+        def append_then_raise(batch, producer, routing_key):
+            buffer.append('during-publish')
+            raise KeyError()
+
+        eventer._publish = append_then_raise
+        with pytest.raises(KeyError):
+            eventer.flush()
+
+        assert buffer == ['first', 'second', 'during-publish']
+
     def test_enter_exit(self):
         with self.app.connection_for_write() as conn:
             d = self.app.events.Dispatcher(conn)
