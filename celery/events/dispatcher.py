@@ -211,13 +211,12 @@ class EventDispatcher:
                 for group, events in self._group_buffer.items():
                     if not events:
                         continue
-                    # Publish a detached copy, then clear: when buffering
-                    # offline _publish re-buffers the object it was handed, so
-                    # clearing the live list first would empty it; when it
-                    # raises instead, skipping the clear keeps the events.
+                    # Publish a detached copy, since _publish re-buffers the
+                    # object it was handed when offline. Clear only what was
+                    # published: other threads append during the socket write.
                     batch = list(events)
                     self._publish(batch, self.producer, '%s.multi' % group)
-                    events[:] = []  # list.clear
+                    del events[:len(batch)]
 
     def extend_buffer(self, other):
         """Copy the outbound buffer of another instance."""
