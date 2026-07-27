@@ -1,9 +1,11 @@
 import dbm
 import errno
 import pickle
+import socket
 import sys
 from datetime import datetime, timedelta, timezone
 from pickle import dumps, loads
+from time import sleep
 from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
@@ -893,6 +895,146 @@ class test_Service:
         s.start()
         assert s._is_shutdown.is_set()
 
+    def test_start_starts_and_stops_pidbox_when_enabled(self):
+        self.app.conf.beat_enable_remote_control = True
+        s, sh = self.get_service()
+        s.scheduler.shutdown_service = s
+        with patch('celery.beat.BeatPidbox') as BeatPidbox:
+            s.start()
+        BeatPidbox.assert_called_once_with(s)
+        BeatPidbox.return_value.start.assert_called_once_with()
+        BeatPidbox.return_value.stop.assert_called_once_with()
+
+    def test_start_does_not_start_pidbox_by_default(self):
+        s, sh = self.get_service()
+        s.scheduler.shutdown_service = s
+        with patch('celery.beat.BeatPidbox') as BeatPidbox:
+            s.start()
+        BeatPidbox.assert_not_called()
+
+    def test_remote_control_argument_overrides_setting(self):
+        self.app.conf.beat_enable_remote_control = True
+        s = beat.Service(app=self.app, scheduler_cls=Mock,
+                         remote_control=False)
+        assert s.remote_control is False
+        s2, _ = self.get_service()
+        assert s2.remote_control is True
+
+    def test_start_updates_last_tick(self):
+        s, sh = self.get_service()
+        assert s._last_tick is None
+        s.scheduler.shutdown_service = s
+        s.start()
+        assert s._last_tick is not None
+
+
+class test_BeatPidbox:
+
+    def get_pidbox(self):
+        service = beat.Service(app=self.app, scheduler_cls=Mock)
+        return beat.BeatPidbox(service), service
+
+    def test_enable_remote_control_setting_defaults_to_false(self):
+        assert self.app.conf.beat_enable_remote_control is False
+
+    def test_node_name(self):
+        from socket import gethostname
+        pb, _ = self.get_pidbox()
+        assert pb.node.hostname == f'celerybeat@{gethostname()}'
+
+    def test_ping_handler_replies_pong(self):
+        pb, service = self.get_pidbox()
+        service._last_tick = None
+        reply = pb.node.handlers['ping'](pb.state)
+        assert reply['ok'] == 'pong'
+        assert reply['last_tick_ago'] is None
+
+        with patch('celery.beat.monotonic') as monotonic:
+            monotonic.return_value = 105.0
+            service._last_tick = 100.0
+            reply = pb.node.handlers['ping'](pb.state)
+        assert reply['ok'] == 'pong'
+        assert reply['last_tick_ago'] == 5.0
+
+    def test_on_message_ignores_unknown_method(self):
+        pb, _ = self.get_pidbox()
+        pb.node.handle_message = Mock(name='handle_message')
+        pb.on_message({'method': 'active', 'arguments': {}}, Mock())
+        pb.node.handle_message.assert_not_called()
+
+    def test_on_message_dispatches_known_method(self):
+        pb, _ = self.get_pidbox()
+        pb.node.handle_message = Mock(name='handle_message')
+        body = {'method': 'ping', 'arguments': {}}
+        message = Mock(name='message')
+        pb.on_message(body, message)
+        pb.node.handle_message.assert_called_once_with(body, message)
+
+    def test_on_message_survives_handler_error(self):
+        pb, _ = self.get_pidbox()
+        pb.node.handle_message = Mock(side_effect=KeyError('boom'))
+        pb.on_message({'method': 'ping', 'arguments': {}}, Mock())
+
+    def test_start_stop_thread_lifecycle(self):
+        pb, _ = self.get_pidbox()
+        pb.node.listen = Mock(name='listen')
+        with patch.object(self.app, 'connection_for_read') as cfr:
+            conn = cfr.return_value.__enter__.return_value
+            conn.drain_events.side_effect = socket.timeout
+            pb.start()
+            assert pb.thread.is_alive()
+            assert pb.thread.daemon
+            pb.stop()
+        assert not pb.thread.is_alive()
+
+    def test_stop_before_start_is_a_noop(self):
+        pb, _ = self.get_pidbox()
+        pb.stop()
+        assert pb.thread is None
+
+    def test_loop_exits_on_error_during_shutdown(self):
+        pb, _ = self.get_pidbox()
+
+        def raise_after_shutdown(*args, **kwargs):
+            pb._shutdown.set()
+            raise ConnectionResetError('gone during shutdown')
+
+        with patch.object(self.app, 'connection_for_read',
+                          side_effect=raise_after_shutdown) as cfr:
+            pb._loop()  # must break out instead of retrying
+        assert cfr.call_count == 1
+
+    def test_loop_reconnects_on_connection_error(self):
+        pb, _ = self.get_pidbox()
+        pb.retry_interval = 0.01
+        pb.node.listen = Mock(name='listen')
+
+        conn_bad = MagicMock()
+        conn_bad.__enter__.return_value.drain_events.side_effect = (
+            ConnectionResetError('broker gone'))
+        conn_ok = MagicMock()
+        conn_ok.__enter__.return_value.drain_events.side_effect = (
+            socket.timeout)
+        conns = iter([conn_bad])
+
+        def next_connection(*args, **kwargs):
+            try:
+                return next(conns)
+            except StopIteration:
+                return conn_ok
+
+        with patch.object(self.app, 'connection_for_read',
+                          side_effect=next_connection) as cfr:
+            pb.start()
+            for _ in range(500):
+                if cfr.call_count >= 2:
+                    break
+                sleep(0.01)
+            assert cfr.call_count >= 2
+            assert pb.thread.is_alive()
+            pb.stop()
+        assert not pb.thread.is_alive()
+
 
 class test_EmbeddedService:
 
@@ -932,6 +1074,14 @@ class test_EmbeddedService:
 
         s.stop()
         assert s.service.stopped
+
+    def test_embedded_disables_remote_control(self):
+        self.app.conf.beat_enable_remote_control = True
+        s = beat.EmbeddedService(self.app, thread=True)
+        assert s.service.remote_control is False
+        if beat._Process is not None:
+            p = beat.EmbeddedService(self.app)
+            assert p.service.remote_control is False
 
 
 class test_schedule:
