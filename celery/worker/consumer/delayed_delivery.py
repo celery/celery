@@ -123,15 +123,22 @@ class DelayedDelivery(bootsteps.StartStopStep):
         """
         with c.app.connection_for_write(url=broker_url) as connection:
             queue_type = c.app.conf.broker_native_delayed_delivery_queue_type
+            queue_prefix = c.app.conf.broker_native_delayed_delivery_queue_prefix
             logger.debug(
                 "Setting up delayed delivery for broker %r with queue type %r",
                 maybe_sanitize_url(broker_url), queue_type
             )
+            if queue_prefix is not None:
+                logger.debug(
+                    "Using prefix %r for native delayed delivery queues",
+                    queue_prefix
+                )
 
             try:
                 declare_native_delayed_delivery_exchanges_and_queues(
                     connection,
-                    queue_type
+                    queue_type,
+                    queue_prefix
                 )
             except Exception as e:
                 logger.warning(
@@ -165,12 +172,13 @@ class DelayedDelivery(bootsteps.StartStopStep):
             return
 
         exceptions: list[Exception] = []
+        queue_prefix = app.conf.broker_native_delayed_delivery_queue_prefix
         for queue in queues:
             if isinstance(queue, Broadcast):
                 continue
             try:
                 logger.debug("Binding queue %r to delayed delivery exchange", queue.name)
-                bind_queue_to_native_delayed_delivery_exchange(connection, queue)
+                bind_queue_to_native_delayed_delivery_exchange(connection, queue, queue_prefix)
             except Exception as e:
                 logger.error(
                     "Failed to bind queue %r: %s",
