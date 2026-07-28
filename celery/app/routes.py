@@ -4,12 +4,12 @@ Contains utilities for working with task routers, (:setting:`task_routes`).
 """
 import fnmatch
 import re
-from collections import OrderedDict
+import warnings
 from collections.abc import Mapping
 
 from kombu import Queue
 
-from celery.exceptions import QueueNotFound
+from celery.exceptions import QueueNotFound, CPendingDeprecationWarning
 from celery.utils.collections import lpmerge
 from celery.utils.functional import maybe_evaluate, mlazy
 from celery.utils.imports import symbol_by_name
@@ -22,21 +22,43 @@ except AttributeError:  # pragma: no cover
 
 __all__ = ('MapRoute', 'Router', 'expand_router_string', 'prepare')
 
+GLOB_PATTERNS = ('*', '?', '[', ']', '!')
+
+MAP_ROUTES_MUST_BE_A_DICTIONARY = (
+    "Starting from Celery 5.1 the task_routes configuration must be a dictionary. "
+    "Support for providing a list of router objects will be removed in 6.0."
+)
+
 
 class MapRoute:
     """Creates a router out of a :class:`dict`."""
 
     def __init__(self, map):
-        map = map.items() if isinstance(map, Mapping) else map
+        # map is either a mapping or a an iterable of tuples
+        if isinstance(map, Mapping):
+            map = map.items()
+        else:
+            warnings.warn(
+                CPendingDeprecationWarning(MAP_ROUTES_MUST_BE_A_DICTIONARY))
         self.map = {}
-        self.patterns = OrderedDict()
+        patterns = {}
         for k, v in map:
             if isinstance(k, Pattern):
-                self.patterns[k] = v
-            elif '*' in k:
-                self.patterns[re.compile(fnmatch.translate(k))] = v
+                # This is already a regular expression so we simply store it.
+                patterns[k] = v
+            elif any(glob_pattern in k for glob_pattern in GLOB_PATTERNS):
+                # This is a glob pattern so we
+                # must to translate it into a regular expression.
+                patterns[re.compile(fnmatch.translate(k))] = v
             else:
+                # This is a direct mapping between a task and a routing
+                # so we simply store it.
                 self.map[k] = v
+
+        # We sort by the regex pattern's length since longer regex patterns
+        # are likely to be more specific.
+        self.patterns = tuple(reversed(sorted(patterns.items(),
+                                              key=lambda item: len(item[0].pattern))))
 
     def __call__(self, name, *args, **kwargs):
         try:
@@ -44,12 +66,16 @@ class MapRoute:
         except KeyError:
             pass
         except ValueError:
+            # if self.map[name] is a string we consider it to be the queue's
+            # name.
             return {'queue': self.map[name]}
-        for regex, route in self.patterns.items():
+        for regex, route in self.patterns:
             if regex.match(name):
                 try:
                     return dict(route)
                 except ValueError:
+                    # if route is a string we consider it to be the queue's
+                    # name.
                     return {'queue': route}
 
 
