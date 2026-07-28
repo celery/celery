@@ -539,6 +539,262 @@ class test_crontab_remaining_estimate:
 
         assert next == datetime(2023, 1, 29, 0, 0, tzinfo=tz)
 
+    def test_hourly_crontab_during_dst_fall_back(self):
+        # Test for #10107: hourly crontab skips execution during fall-back
+        # DST transition when the same local hour occurs twice.
+        tzname = "America/Los_Angeles"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = self.crontab(minute=0, hour='*')
+
+        # Fall-back Nov 3, 2024 America/Los_Angeles:
+        #   1:00 AM PDT (UTC-7, fold=0) = 08:00 UTC
+        #   1:00 AM PST (UTC-8, fold=1) = 09:00 UTC
+        last_run_at = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=0)  # 1 AM PDT
+        now = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=1)          # 1 AM PST
+        ct.nowfun = lambda: now
+
+        remaining = ct.remaining_estimate(last_run_at)
+        # One real hour has passed (8 UTC → 9 UTC), task should be due
+        assert remaining.total_seconds() <= 0
+
+    def test_hourly_crontab_during_dst_fall_back_is_due(self):
+        # Same as above but testing via is_due()
+        tzname = "America/Los_Angeles"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = self.crontab(minute=0, hour='*')
+
+        last_run_at = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=0)  # 1 AM PDT
+        now = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=1)          # 1 AM PST
+        ct.nowfun = lambda: now
+
+        is_due, next_time = ct.is_due(last_run_at)
+        assert is_due
+
+    def test_daily_crontab_during_dst_fall_back_not_due(self):
+        # Daily at 1:00 AM should NOT fire twice on the same calendar day
+        # when the hour 1:00 occurs twice during fall-back.
+        tzname = "America/Los_Angeles"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = self.crontab(minute=0, hour=1)
+
+        # Fall-back Nov 3, 2024:
+        #   1:00 AM PDT (UTC-7, fold=0) = 08:00 UTC
+        #   1:00 AM PST (UTC-8, fold=1) = 09:00 UTC
+        last_run_at = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=0)  # 1 AM PDT
+        now = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=1)          # 1 AM PST
+        ct.nowfun = lambda: now
+
+        remaining = ct.remaining_estimate(last_run_at)
+        # Task ran once at 1:00 AM PDT; it should next run the following day,
+        # so it must not be considered due again at 1:00 AM PST.
+        assert remaining.total_seconds() > 0
+
+    def test_daily_crontab_during_dst_fall_back_is_not_due(self):
+        # Same daily scenario as above, but checked via is_due()
+        tzname = "America/Los_Angeles"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = self.crontab(minute=0, hour=1)
+
+        last_run_at = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=0)  # 1 AM PDT
+        now = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=1)          # 1 AM PST
+        ct.nowfun = lambda: now
+
+        is_due, next_time = ct.is_due(last_run_at)
+        assert not is_due
+
+    def test_hourly_crontab_during_dst_spring_forward_is_due(self):
+        # Hourly schedule across the spring-forward gap should still be due.
+        # In America/Los_Angeles on 2024-03-10, clocks jump from 2 AM to 3 AM.
+        tzname = "America/Los_Angeles"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = self.crontab(minute=0, hour='*')
+
+        last_run_at = datetime(2024, 3, 10, 1, 0, tzinfo=tz)
+        now = datetime(2024, 3, 10, 3, 0, tzinfo=tz)
+        ct.nowfun = lambda: now
+
+        is_due, next_time = ct.is_due(last_run_at)
+        assert is_due
+
+    def test_minutely_crontab_during_dst_fall_back_is_due(self):
+        # Minute-level schedule during fall-back should still be due when the
+        # clock repeats the 1 AM hour.
+        tzname = "America/Los_Angeles"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = self.crontab(minute='*', hour='*')
+
+        last_run_at = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=0)
+        now = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=1)
+        ct.nowfun = lambda: now
+
+        is_due, next_time = ct.is_due(last_run_at)
+        assert is_due
+
+    def test_daily_crontab_during_dst_fall_back_europe_london_not_due(self):
+        # Europe/London falls back from 2 AM BST to 1 AM GMT on Oct 27, 2024.
+        # Daily at 1 AM should NOT fire twice.
+        tzname = "Europe/London"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = self.crontab(minute=0, hour=1)
+
+        last_run_at = datetime(2024, 10, 27, 1, 0, tzinfo=tz, fold=0)
+        now = datetime(2024, 10, 27, 1, 0, tzinfo=tz, fold=1)
+        ct.nowfun = lambda: now
+
+        is_due, next_time = ct.is_due(last_run_at)
+        assert not is_due
+
+    def test_hourly_crontab_during_dst_fall_back_europe_london_is_due(self):
+        # Hourly schedule should fire during Europe/London fall-back.
+        # Oct 27, 2024: clocks go back from 2 AM BST to 1 AM GMT.
+        tzname = "Europe/London"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = self.crontab(minute=0, hour='*')
+
+        last_run_at = datetime(2024, 10, 27, 1, 0, tzinfo=tz, fold=0)
+        now = datetime(2024, 10, 27, 1, 0, tzinfo=tz, fold=1)
+        ct.nowfun = lambda: now
+
+        is_due, next_time = ct.is_due(last_run_at)
+        assert is_due
+
+    def test_every_30_min_crontab_during_dst_fall_back_is_due(self):
+        # Sub-hourly (every 30 min) schedule during fall-back should be due
+        # when a full hour of real time has elapsed.
+        tzname = "America/Los_Angeles"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = self.crontab(minute='*/30', hour='*')
+
+        last_run_at = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=0)
+        now = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=1)
+        ct.nowfun = lambda: now
+
+        is_due, next_time = ct.is_due(last_run_at)
+        assert is_due
+
+    def test_hourly_crontab_no_dst_transition_normal_behavior(self):
+        # Regression: hourly schedule in a DST-aware timezone should work
+        # normally when no DST transition is happening.
+        tzname = "America/Los_Angeles"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = self.crontab(minute=0, hour='*')
+
+        last_run_at = datetime(2024, 7, 15, 14, 0, tzinfo=tz)
+        now = datetime(2024, 7, 15, 15, 0, tzinfo=tz)
+        ct.nowfun = lambda: now
+
+        is_due, next_time = ct.is_due(last_run_at)
+        assert is_due
+
+    def test_daily_crontab_at_skipped_spring_forward_hour(self):
+        # Daily task scheduled at 2 AM when 2 AM is skipped during spring
+        # forward (clocks jump from 2 AM to 3 AM).  The task should become
+        # due shortly after the gap.
+        tzname = "America/Los_Angeles"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = self.crontab(minute=0, hour=2)
+
+        last_run_at = datetime(2024, 3, 9, 2, 0, tzinfo=tz)
+        now = datetime(2024, 3, 10, 3, 0, tzinfo=tz)
+        ct.nowfun = lambda: now
+
+        is_due, next_time = ct.is_due(last_run_at)
+        assert is_due
+
+    def test_hourly_crontab_dst_fall_back_stale_last_run_not_triggered(self):
+        # Guard: UTC proximity check.  If last_run_at is from much earlier
+        # (> 2 hours in UTC), the DST fall-back shortcut should NOT apply.
+        # The task should still be due via the normal scheduling path.
+        tzname = "America/Los_Angeles"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = self.crontab(minute=0, hour='*')
+
+        # Last run at 10 PM on Nov 2 (well before fall-back).
+        last_run_at = datetime(2024, 11, 2, 22, 0, tzinfo=tz)
+        # Now is 1 AM PST on Nov 3 (post fall-back, fold=1).
+        now = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=1)
+        ct.nowfun = lambda: now
+
+        is_due, next_time = ct.is_due(last_run_at)
+        # Should be due via normal path (many hours elapsed), not DST shortcut
+        assert is_due
+
+    def test_hourly_crontab_dst_fall_back_mid_hour_not_due(self):
+        # Guard: now_matches check.  Hourly at minute=0, but current time is
+        # 1:30 AM (minute doesn't match).  DST shortcut should not fire.
+        tzname = "America/Los_Angeles"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = self.crontab(minute=0, hour='*')
+
+        last_run_at = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=0)
+        # 1:30 AM PST — minute=30 doesn't match crontab minute=0
+        now = datetime(2024, 11, 3, 1, 30, tzinfo=tz, fold=1)
+        ct.nowfun = lambda: now
+
+        is_due, next_time = ct.is_due(last_run_at)
+        # Not due yet: minute doesn't match the crontab pattern
+        assert not is_due
+
+    def test_hourly_crontab_dst_fall_back_australia(self):
+        # Southern hemisphere: Australia/Sydney falls back on first Sunday
+        # of April.  2024-04-07: clocks go from 3 AM AEDT to 2 AM AEST.
+        # The 2 AM hour occurs twice.
+        tzname = "Australia/Sydney"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = self.crontab(minute=0, hour='*')
+
+        # First 2 AM (AEDT, fold=0) and second 2 AM (AEST, fold=1).
+        last_run_at = datetime(2024, 4, 7, 2, 0, tzinfo=tz, fold=0)
+        now = datetime(2024, 4, 7, 2, 0, tzinfo=tz, fold=1)
+        ct.nowfun = lambda: now
+
+        is_due, next_time = ct.is_due(last_run_at)
+        assert is_due
+
+    def test_weekly_crontab_during_dst_fall_back_not_due(self):
+        # Weekly task (hour=1, day_of_week=Sunday) should NOT fire twice
+        # during fall-back, same as daily — the hour='1' guard blocks it.
+        tzname = "America/Los_Angeles"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        # Nov 3, 2024 is a Sunday
+        ct = self.crontab(minute=0, hour=1, day_of_week=0)  # Sunday
+
+        last_run_at = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=0)
+        now = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=1)
+        ct.nowfun = lambda: now
+
+        is_due, next_time = ct.is_due(last_run_at)
+        assert not is_due
+
+    def test_every_15_min_crontab_during_dst_fall_back_is_due(self):
+        # Every-15-minutes schedule during fall-back should be due.
+        tzname = "America/Los_Angeles"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = self.crontab(minute='*/15', hour='*')
+
+        last_run_at = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=0)
+        now = datetime(2024, 11, 3, 1, 0, tzinfo=tz, fold=1)
+        ct.nowfun = lambda: now
+
+        is_due, next_time = ct.is_due(last_run_at)
+        assert is_due
+
 
 class test_crontab_is_due:
 
