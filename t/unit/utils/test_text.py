@@ -51,8 +51,9 @@ class test_Info:
 
 @pytest.mark.parametrize('s,maxsize,expected', [
     ('ABCDEFGHI', 3, 'ABC...'),
+    ('ABCDEFGHI', 9, 'ABCDEFGHI'),
     ('ABCDEFGHI', 10, 'ABCDEFGHI'),
-
+    ('hello world', 11, 'hello world'),
 ])
 def test_truncate_text(s, maxsize, expected):
     assert truncate(s, maxsize) == expected
