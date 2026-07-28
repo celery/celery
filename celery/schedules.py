@@ -588,7 +588,8 @@ class crontab(BaseSchedule):
             last_run_at.month == now.month and
             last_run_at.year == now.year and
             last_run_at.hour in self.hour and
-            last_run_at.minute < max(self.minute)
+            last_run_at.minute < max(self.minute) and
+            (now - last_run_at).total_seconds() < 3600
         )
 
         if execute_this_hour:
