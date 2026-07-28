@@ -23,6 +23,22 @@ __all__ = ('AMQP', 'Queues', 'task_message')
 #: earliest date supported by time.mktime.
 INT_MIN = -2147483648
 
+#: Celery protocol header keys that must not be polluted by
+#: arbitrary user-supplied header keys.  Custom / integration
+#: headers (e.g. Elastic APM's ``elasticapm``) are routed
+#: through the ``stamped_headers`` / ``stamps`` mechanism
+#: instead of being merged as top-level AMQP field-table entries,
+#: which would otherwise risk wire-level corruption (RFC-like
+#: zero-length field-name) when the resulting dict is serialised
+#: by py-amqp / kombu.
+_PROTOCOL_HEADER_KEYS = frozenset({
+    'lang', 'task', 'id', 'shadow', 'eta', 'expires',
+    'group', 'group_index', 'retries', 'timelimit',
+    'root_id', 'parent_id', 'argsrepr', 'kwargsrepr',
+    'origin', 'ignore_result', 'replaced_task_nesting',
+    'stamped_headers', 'stamps',
+})
+
 #: Human readable queue declaration.
 QUEUE_FORMAT = """
 .> {0.name:<16} exchange={0.exchange.name}({0.exchange.type}) \
@@ -514,7 +530,28 @@ class AMQP:
             retry = default_retry if retry is None else retry
             headers2, properties, body, sent_event = message
             if headers:
-                headers2.update(headers)
+                # Route custom (non-protocol) headers through the
+                # stamping mechanism so they don't end up as
+                # top-level AMQP field-table entries.  Direct
+                # merge risks corrupting the wire format when
+                # integrations (e.g. Elastic APM) inject nested
+                # dict values into the header dict.
+                custom = {k: v for k, v in headers.items()
+                          if k not in _PROTOCOL_HEADER_KEYS}
+                protocol = {k: v for k, v in headers.items()
+                            if k in _PROTOCOL_HEADER_KEYS}
+                headers2.update(protocol)
+                if custom:
+                    stamped = headers2.get('stamped_headers') or []
+                    stamps = headers2.get('stamps') or {}
+                    new_stamped = list(stamped)
+                    new_stamps = dict(stamps)
+                    for key, value in custom.items():
+                        if key not in new_stamped:
+                            new_stamped.append(key)
+                        new_stamps[key] = value
+                    headers2['stamped_headers'] = new_stamped
+                    headers2['stamps'] = new_stamps
             if kwargs:
                 properties.update(kwargs)
 
