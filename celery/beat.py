@@ -660,8 +660,10 @@ class Service:
 
     def stop(self, wait=False):
         info('beat: Shutting down...')
+        signals.beat_shutting_down.send(sender=self)
         self._is_shutdown.set()
         wait and self._is_stopped.wait()  # block until shutdown done.
+        signals.beat_shutdown.send(sender=self)
 
     def get_scheduler(self, lazy=False,
                       extension_namespace='celery.beat_schedulers'):

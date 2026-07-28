@@ -893,6 +893,19 @@ class test_Service:
         s.start()
         assert s._is_shutdown.is_set()
 
+    @patch("celery.signals.beat_shutdown")
+    @patch("celery.signals.beat_shutting_down")
+    @patch("celery.signals.beat_init")
+    def test_lifecycle_signals(self, beat_init: Mock, beat_shutting_down: Mock, beat_shutdown: Mock):
+        s, _ = self.get_service()
+        s.scheduler.shutdown_service = s
+        s.start()
+        beat_init.send.assert_called_with(sender=s)
+        s.stop(wait=False)
+        beat_shutting_down.send.assert_called_with(sender=s)
+        s.stop(wait=True)
+        beat_shutdown.send.assert_called_with(sender=s)
+
 
 class test_EmbeddedService:
 
