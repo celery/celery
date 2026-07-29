@@ -959,7 +959,7 @@ Supports the same options as the :setting:`task_compression` setting.
 Default: ``False``
 
 Enables extended task result attributes (name, args, kwargs, worker,
-retries, queue, delivery_info) to be written to backend.
+retries, queue) to be written to backend.
 
 .. setting:: result_expires
 

@@ -1036,7 +1036,6 @@ class Task:
 
         Arguments:
             sig (Signature): signature to replace with.
-            visitor (StampingVisitor): Visitor API object.
 
         Raises:
             ~@Ignore: This is always raised when called in asynchronous context.
