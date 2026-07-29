@@ -100,6 +100,16 @@ class Logging:
             format=format, colorize=colorize,
         )
 
+        # If all receivers raised exceptions, fall back to the default
+        # logging configuration so the user's logging setup is not
+        # silently broken.  The signal system already logged each
+        # exception at ERROR level, but without working logging the
+        # user may never see those messages.
+        if receivers and all(
+                isinstance(resp, Exception) for _, resp in receivers
+        ):
+            receivers = []
+
         if not receivers:
             root = logging.getLogger()
 
