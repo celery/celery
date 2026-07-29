@@ -852,11 +852,22 @@ class Backend:
             queue = self.app.amqp.router.route(kwargs, body.name)['queue'].name
 
         priority = body.options.get('priority', getattr(body_type, 'priority', 0))
+
+        stamps = body.options.get('stamped_headers', ())
+        routing_options = {}
+        for option in ('exchange', 'exchange_type', 'routing_key', 'headers'):
+            if option in stamps:
+                continue
+            value = body.options.get(option)
+            if value is not None:
+                routing_options[option] = value
+
         self.app.tasks['celery.chord_unlock'].apply_async(
             (header_result.id, body,), kwargs,
             countdown=countdown,
             queue=queue,
             priority=priority,
+            **routing_options,
         )
 
     def ensure_chords_allowed(self):

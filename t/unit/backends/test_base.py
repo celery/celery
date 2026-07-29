@@ -283,6 +283,28 @@ class test_BaseBackend_interface:
             called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
             assert called_kwargs['queue'] == 'test_queue_three'
 
+    def test_chord_unlock_routing_options(self, unlock='celery.chord_unlock'):
+        self.app.tasks[unlock] = Mock()
+        header_result_args = (
+            uuid(),
+            [self.app.AsyncResult(x) for x in range(3)],
+        )
+        body = self.callback.s().set(
+            queue='my_queue',
+            exchange='my_exchange',
+            exchange_type='headers',
+            routing_key='my_routing_key',
+            headers={'my_header': 'my_value'},
+        )
+
+        self.b.apply_chord(header_result_args, body)
+        called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
+        assert called_kwargs['queue'] == 'my_queue'
+        assert called_kwargs['exchange'] == 'my_exchange'
+        assert called_kwargs['exchange_type'] == 'headers'
+        assert called_kwargs['routing_key'] == 'my_routing_key'
+        assert called_kwargs['headers'] == {'my_header': 'my_value'}
+
 
 class test_exception_pickle:
     def test_BaseException(self):
