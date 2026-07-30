@@ -305,6 +305,20 @@ class test_BaseBackend_interface:
         assert called_kwargs['routing_key'] == 'my_routing_key'
         assert called_kwargs['headers'] == {'my_header': 'my_value'}
 
+    def test_chord_unlock_stamped_routing_options(self, unlock='celery.chord_unlock'):
+        self.app.tasks[unlock] = Mock()
+        header_result_args = (
+            uuid(),
+            [self.app.AsyncResult(x) for x in range(3)],
+        )
+        body = self.callback.s().set(queue='my_queue')
+        body.stamp(headers='my_stamp')
+
+        self.b.apply_chord(header_result_args, body)
+        called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
+        assert called_kwargs['queue'] == 'my_queue'
+        assert 'headers' not in called_kwargs
+
 
 class test_exception_pickle:
     def test_BaseException(self):
