@@ -612,8 +612,8 @@ you chain tasks together:
     proj.tasks.add(4, 4) | proj.tasks.mul(8) | proj.tasks.mul(10)
 
 
-Calling the chain will call the tasks in the current process
-and return the result of the last task in the chain:
+Calling the chain sends its tasks to the broker for asynchronous execution
+and returns an ``AsyncResult`` for the last task in the chain:
 
 .. code-block:: pycon
 
