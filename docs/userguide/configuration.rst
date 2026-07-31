@@ -3425,7 +3425,8 @@ but if mostly CPU-bound, try to keep it close to the
 number of CPUs on your machine. If not set, the number of CPUs/cores
 on the host will be used.
 
-The command-line equivalent is the :option:`--concurrency <celery worker --concurrency>` argument.
+The command-line equivalent is the
+:option:`--concurrency <celery worker --concurrency>` argument.
 
 .. setting:: worker_prefetch_multiplier
 
@@ -3446,7 +3447,8 @@ To limit the broker to only deliver one message per process at a time,
 set :setting:`worker_prefetch_multiplier` to 1. Changing that setting to 0
 will allow the worker to keep consuming as many messages as it wants.
 
-The command-line equivalent is the :option:`--prefetch-multiplier <celery worker --prefetch-multiplier>` argument.
+The command-line equivalent is the
+:option:`--prefetch-multiplier <celery worker --prefetch-multiplier>` argument.
 
 If you need to completely disable broker prefetching while still using
 early acknowledgments, enable :setting:`worker_disable_prefetch`.
