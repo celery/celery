@@ -840,11 +840,13 @@ to use both.
 is catch-able with the :keyword:`try` block. The AMQP transaction isn't used
 for these errors: **if the task raises an exception it's still acknowledged!**
 
-The `acks_late` setting would be used when you need the task to be
-executed again if the worker (for some reason) crashes mid-execution.
-It's important to note that the worker isn't known to crash, and if
-it does it's usually an unrecoverable error that requires human
-intervention (bug in the worker, or task code).
+The `acks_late` setting controls when the message is acknowledged; it does not
+call `Task.retry` and is not an automatic retry policy. A task exception still
+results in an acknowledgment, and the worker also acknowledges the message when
+the child process is terminated by `sys.exit()` or a signal. Redelivery can
+instead occur when the worker loses the message before acknowledging it, for
+example after a worker or broker-connection failure. The exact behavior depends
+on the worker pool and message transport.
 
 In an ideal world you could safely retry any task that's failed, but
 this is rarely the case. Imagine the following task:
