@@ -630,7 +630,7 @@ class crontab(BaseSchedule):
                 else:
                     delta = self._delta_to_next(last_run_at,
                                                 next_hour, next_minute)
-        return self.to_local(last_run_at), delta, self.to_local(now)
+        return last_run_at, delta, now
 
     def remaining_estimate(
             self, last_run_at: datetime, ffwd: type = ffwd) -> timedelta:

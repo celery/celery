@@ -558,6 +558,22 @@ class test_crontab_remaining_estimate:
         # The next run is at 08:40 UTC on the same day, not a day later.
         assert next == datetime(2025, 5, 20, 8, 40, tzinfo=ZoneInfo("UTC"))
 
+    def test_aware_last_run_at_in_different_timezone_without_utc(self):
+        # Same as above with enable_utc off, which is a common
+        # django-celery-beat setup.  The returned datetimes must stay in the
+        # frame the delta was computed in (#9715).
+        self.app.conf.enable_utc = False
+        vilnius = ZoneInfo("Europe/Vilnius")
+        crontab = self.crontab(minute=40, hour=8)
+
+        last_run_at = datetime(2025, 5, 20, 9, 25, 8, tzinfo=vilnius)
+        now = datetime(2025, 5, 20, 9, 26, 8, tzinfo=vilnius)
+        crontab.nowfun = lambda: now
+
+        next = now + crontab.remaining_estimate(last_run_at)
+
+        assert next == datetime(2025, 5, 20, 8, 40, tzinfo=ZoneInfo("UTC"))
+
 
 class test_crontab_is_due:
 
