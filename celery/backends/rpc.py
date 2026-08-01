@@ -271,13 +271,10 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
         return result
 
     def _to_result(self, task_id, state, result, traceback, request):
-        return {
-            'task_id': task_id,
-            'status': state,
-            'result': self.encode_result(result, state),
-            'traceback': traceback,
-            'children': self.current_task_children(request),
-        }
+        meta = self._get_result_meta(result=self.encode_result(result, state),
+                                     state=state, traceback=traceback, request=request)
+        meta['task_id'] = task_id
+        return meta
 
     def on_out_of_band_result(self, task_id, message):
         # Callback called when a reply for a task is received,

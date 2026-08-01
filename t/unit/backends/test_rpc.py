@@ -4,8 +4,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from celery import chord, group
+from celery import chord, group, states
 from celery._state import _task_stack
+from celery.app.task import Context
 from celery.backends.rpc import RPCBackend
 
 
@@ -286,3 +287,36 @@ class test_RPCBackend:
         ex = self.b._create_exchange('name')
         assert isinstance(ex, self.b.Exchange)
         assert ex.name == ''
+
+    def test_to_result_extended(self):
+        self.app.conf.result_extended = True
+        request = Context(
+            task='mytask', args=[1, 2], kwargs={'foo': 'bar'},
+            hostname='worker1@example.com', retries=2,
+            delivery_info={'routing_key': 'celery'},
+        )
+        meta = self.b._to_result('task-id', states.SUCCESS, 42, None, request)
+        assert meta['task_id'] == 'task-id'
+        assert meta['status'] == states.SUCCESS
+        assert meta['result'] == 42
+        assert meta['traceback'] is None
+        assert meta['name'] == 'mytask'
+        assert meta['args'] == [1, 2]
+        assert meta['kwargs'] == {'foo': 'bar'}
+        assert meta['worker'] == 'worker1@example.com'
+        assert meta['retries'] == 2
+        assert meta['queue'] == 'celery'
+
+    def test_to_result_not_extended(self):
+        self.app.conf.result_extended = False
+        request = Context(
+            task='mytask', args=[1, 2], kwargs={'foo': 'bar'},
+            delivery_info={'routing_key': 'celery'},
+        )
+        meta = self.b._to_result('task-id', states.SUCCESS, 42, None, request)
+        assert meta['task_id'] == 'task-id'
+        assert meta['status'] == states.SUCCESS
+        assert meta['result'] == 42
+        assert meta['traceback'] is None
+        for key in ('name', 'args', 'kwargs', 'worker', 'retries', 'queue'):
+            assert key not in meta
