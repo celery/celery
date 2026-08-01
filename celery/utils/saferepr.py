@@ -121,7 +121,7 @@ def _fast_saferepr(o, maxlen):
         res = _fast_scalar(o)
         if res is None:
             return None
-    return res if maxlen is None or len(res) < maxlen else None
+    return res if maxlen is None or len(res) <= maxlen else None
 
 
 def saferepr(o, maxlen=None, maxlevels=3, seen=None):
