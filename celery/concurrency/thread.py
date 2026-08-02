@@ -1,12 +1,23 @@
 """Thread execution pool."""
 from __future__ import annotations
 
+import ctypes
+import sys
+import threading
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 from typing import TYPE_CHECKING, Any, Callable
+
+from celery.exceptions import Terminated
+from celery.utils.log import get_logger
+from celery.worker import state as worker_state
 
 from .base import BasePool, apply_target
 
 __all__ = ('TaskPool',)
+
+logger = get_logger(__name__)
+
+IS_PYPY = hasattr(sys, 'pypy_version_info')
 
 if TYPE_CHECKING:
     from typing import TypedDict
@@ -26,6 +37,9 @@ class ApplyResult:
     def wait(self, timeout: float | None = None) -> None:
         wait([self.f], timeout)
 
+    def terminate(self, signal: int | None = None) -> None:
+        self.f.cancel()
+
 
 class TaskPool(BasePool):
     """Thread Task Pool."""
@@ -37,9 +51,35 @@ class TaskPool(BasePool):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.executor = ThreadPoolExecutor(max_workers=self.limit)
+        self._running: set[int] = set()
+
+    def terminate_job(self, pid: int, signal: int | None = None) -> None:
+        """Raise :exc:`~celery.exceptions.Terminated` in the task's thread.
+
+        CPython delivers it once that thread next runs Python bytecode,
+        so a task blocked in a system call keeps running until the call
+        returns.
+        """
+        if pid not in self._running:
+            return
+        if IS_PYPY:  # pragma: no cover
+            logger.warning('cannot terminate task thread %s on PyPy', pid)
+            return
+
+        affected = ctypes.pythonapi.PyThreadState_SetAsyncExc(
+            ctypes.c_ulong(pid), ctypes.py_object(Terminated))
+        if affected > 1:  # pragma: no cover
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(
+                ctypes.c_ulong(pid), None)
+            logger.warning('failed to terminate task thread %s', pid)
+
+    def on_terminate(self) -> None:
+        self.executor.shutdown(wait=False, cancel_futures=True)
 
     def on_stop(self) -> None:
-        self.executor.shutdown(cancel_futures=True)
+        terminating = (worker_state.should_terminate is not None
+                       and worker_state.should_terminate is not False)
+        self.executor.shutdown(wait=not terminating, cancel_futures=True)
         super().on_stop()
 
     def on_apply(
@@ -51,9 +91,16 @@ class TaskPool(BasePool):
         accept_callback: Callable[..., Any] | None = None,
         **_: Any
     ) -> ApplyResult:
-        f = self.executor.submit(apply_target, target, args, kwargs,
-                                 callback, accept_callback)
-        return ApplyResult(f)
+        def run() -> None:
+            tid = threading.get_ident()
+            self._running.add(tid)
+            try:
+                apply_target(target, args, kwargs, callback, accept_callback,
+                             pid=tid)
+            finally:
+                self._running.discard(tid)
+
+        return ApplyResult(self.executor.submit(run))
 
     def _get_info(self) -> PoolInfo:
         info = super()._get_info()

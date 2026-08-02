@@ -428,6 +428,8 @@ class Request:
     def cancel(self, pool, signal=None, emit_retry=True):
         signal = _signals.signum(signal or TERM_SIGNAME)
         if self.time_start:
+            # Set before terminating: on_failure() may run in the pool thread.
+            self._already_cancelled = True
             pool.terminate_job(self.worker_pid, signal)
             self._announce_cancelled(emit_retry=emit_retry)
 
