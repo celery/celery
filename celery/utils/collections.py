@@ -779,7 +779,7 @@ class BufferMap(OrderedDict, Evictable):
         self.bufmaxsize = 1000
         if iterable:
             self.update(iterable)
-        self.total = sum(len(buf) for buf in self.items())
+        self.total = sum(len(buf) for buf in self.values())
 
     def put(self, key, item):
         # type: (Any, Any) -> None
