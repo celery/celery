@@ -493,8 +493,8 @@ class AMQP:
         send_after_publish = signals.after_task_publish.send
         after_receivers = signals.after_task_publish.receivers
 
-        send_task_sent = signals.task_sent.send   # XXX compat
-        sent_receivers = signals.task_sent.receivers
+        send_task_sent = signals.task_sent.send   # XXX compat (remove 6.0)
+        sent_receivers = signals.task_sent.receivers   # XXX compat (remove 6.0)
 
         default_evd = self._event_dispatcher
         default_exchange = self.default_exchange
