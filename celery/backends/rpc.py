@@ -209,6 +209,11 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
         for mapping in self._pending_results:
             mapping.clear()
         self._out_of_band.clear()
+        # the child must not inherit the parent's buffered final
+        # states or cached metas.
+        self._pending_messages.clear()
+        self._pending_messages.total = 0
+        self._cache.clear()
         self.result_consumer._after_fork()
 
     def _create_exchange(self, name, type='direct', delivery_mode=2):
@@ -359,7 +364,7 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
             # pending buffer for late waiters, peek without consuming.
             buf = self._pending_messages.get(task_id)
             if buf:
-                return self.meta_from_decoded(dict(buf.data[-1]))
+                return self.meta_from_decoded(dict(buf[-1]))
             # result probably pending.
             return {'status': states.PENDING, 'result': None}
     poll = get_task_meta  # XXX compat

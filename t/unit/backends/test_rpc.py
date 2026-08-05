@@ -355,16 +355,20 @@ class test_RPCBackend_result_lifecycle:
     def test_final_state_cached_when_cache_enabled(self):
         # the test app sets result_cache_max=-1 (cache disabled),
         # with caching on the final meta is served from the cache.
+        old_cache_max = self.app.conf.result_cache_max
         self.app.conf.result_cache_max = 100
-        b = RPCBackend(app=self.app)
-        message = self.make_message('tid1', states.SUCCESS, 42)
-        with patch.object(b, '_slurp_from_queue',
-                          return_value=iter([message])):
-            b.get_task_meta('tid1')
-        assert b._cache['tid1']['status'] == states.SUCCESS
-        with patch.object(b, '_slurp_from_queue',
-                          return_value=iter([])):
-            assert b.get_task_meta('tid1')['result'] == 42
+        try:
+            b = RPCBackend(app=self.app)
+            message = self.make_message('tid1', states.SUCCESS, 42)
+            with patch.object(b, '_slurp_from_queue',
+                              return_value=iter([message])):
+                b.get_task_meta('tid1')
+            assert b._cache['tid1']['status'] == states.SUCCESS
+            with patch.object(b, '_slurp_from_queue',
+                              return_value=iter([])):
+                assert b.get_task_meta('tid1')['result'] == 42
+        finally:
+            self.app.conf.result_cache_max = old_cache_max
 
     def test_non_final_state_is_requeued(self):
         message = self.make_message('tid1', states.RETRY)
@@ -464,3 +468,28 @@ class test_RPCBackend_result_lifecycle:
             'tid1', states.STARTED)
         self.b._after_fork()
         assert self.b._out_of_band == {}
+
+    def test_forget_clears_pending_messages(self):
+        # forget() must drop the buffered final state too, otherwise a
+        # later poll would still resolve the task as completed.
+        message = self.make_message('tid1', states.SUCCESS, 42)
+        with self.slurp([message]):
+            self.b.get_task_meta('tid1')
+        assert self.b._pending_messages.get('tid1')
+        self.b.forget('tid1')
+        assert self.b._pending_messages.get('tid1') is None
+        assert self.b._pending_messages.total == 0
+        with self.slurp([]):
+            assert self.b.get_task_meta('tid1')['status'] == states.PENDING
+
+    def test_after_fork_clears_pending_messages_and_cache(self):
+        # the forked child must not inherit the parent's buffered
+        # final states or cached metas.
+        message = self.make_message('tid1', states.SUCCESS, 42)
+        with self.slurp([message]):
+            self.b.get_task_meta('tid1')
+        self.b._cache = {'tid1': {'status': states.SUCCESS, 'result': 42}}
+        self.b._after_fork()
+        assert self.b._pending_messages.get('tid1') is None
+        assert self.b._pending_messages.total == 0
+        assert self.b._cache == {}
