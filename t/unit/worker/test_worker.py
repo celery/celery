@@ -737,6 +737,17 @@ class test_WorkController(ConsumerCase):
     def test_on_consumer_ready(self):
         self.worker.on_consumer_ready(Mock())
 
+    def test_pool_start_method_default(self):
+        assert self.worker.pool_start_method == 'fork'
+
+    def test_pool_start_method_spawn(self):
+        worker = self.create_worker(pool_start_method='spawn')
+        assert worker.pool_start_method == 'spawn'
+
+    def test_pool_start_method_invalid(self):
+        with pytest.raises(ImproperlyConfigured):
+            self.create_worker(pool_start_method='forkserver')
+
     def test_setup_queues_worker_direct(self):
         self.app.conf.worker_direct = True
         self.app.amqp.__dict__['queues'] = Mock()

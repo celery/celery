@@ -4186,6 +4186,36 @@ Default: Disabled by default.
 If enabled the worker pool can be restarted using the
 :control:`pool_restart` remote control command.
 
+.. setting:: worker_pool_start_method
+
+``worker_pool_start_method``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: ``"fork"``.
+
+Start method used to create the child processes of the prefork pool. Only
+meaningful for the prefork pool; ignored by the eventlet/gevent/solo pools.
+
+- ``"fork"`` (default): children are created with ``fork()``. This is fast,
+  and shares the parent's already-imported modules and memory copy-on-write,
+  but is **unsafe** when the parent process has started threads or uses
+  C-extensions that are not fork-safe (for example gRPC, ``psycopg`` or
+  CUDA), and can deadlock or corrupt state in the children.
+- ``"spawn"``: each child is started in a fresh Python interpreter. This is
+  safe in the presence of threads and fork-unsafe C-extensions, at the cost
+  of slower start-up, higher memory usage, and the requirement that the app
+  and task arguments are picklable and that your entry point is guarded by
+  ``if __name__ == '__main__':``.
+
+.. warning::
+
+    ``"spawn"`` is **not supported** when the asynchronous prefork pool is
+    used (i.e. when the broker transport drives the event loop, which is the
+    common case for AMQP/Redis). The worker raises
+    :exc:`~celery.exceptions.ImproperlyConfigured` at start-up in that case.
+
 .. setting:: worker_autoscaler
 
 ``worker_autoscaler``
