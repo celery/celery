@@ -658,6 +658,23 @@ class test_task_retries(TasksCase):
         ]
         assert retry_call_countdowns == expected_countdowns
 
+    def test_autoretry_does_not_mutate_retry_kwargs(self):
+        retry_kwargs = {}
+
+        @self.app.task(bind=True, shared=False, autoretry_for=(ZeroDivisionError,),
+                       retry_backoff=True, retry_jitter=False, max_retries=3,
+                       retry_kwargs=retry_kwargs)
+        def task(self_, x, y):
+            return x / y
+
+        with patch.object(task, 'retry', wraps=task.retry) as fake_retry:
+            task.apply((1, 0))
+
+        assert retry_kwargs == {}
+        assert [call_[1]['countdown'] for call_ in fake_retry.call_args_list] == [
+            1, 2, 4, 8
+        ]
+
     @pytest.mark.parametrize(
         'retry_backoff, expected_countdowns',
         [
