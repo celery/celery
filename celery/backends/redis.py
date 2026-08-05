@@ -426,11 +426,31 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         return value
 
     def _check_for_chunked_result(self, value):
-        if isinstance(value, str) and value.startswith(self._CHUNK_TOKEN):
-            chunk_keys = value.split(",")[1:]
+        # Redis commonly returns bytes; support both str and bytes here.
+        original_value = value
+        is_bytes = isinstance(value, bytes)
+        # For detection, always work with a text representation when possible.
+        text_value = bytes_to_str(value) if is_bytes else value
+
+        if isinstance(text_value, str) and text_value.startswith(self._CHUNK_TOKEN):
+            chunk_keys = text_value.split(",")[1:]
             chunk_keys = [str_to_bytes(entry) for entry in chunk_keys]
             chunks = self.mget(chunk_keys)
-            value = "".join(chunk if chunk else "" for chunk in chunks)
+
+            if is_bytes:
+                # Reassemble as bytes, skipping missing chunks.
+                value = b"".join(chunk for chunk in chunks if chunk)
+            else:
+                # Reassemble as text; decode bytes chunks, treat missing as empty.
+                parts = []
+                for chunk in chunks:
+                    if not chunk:
+                        parts.append("")
+                    elif isinstance(chunk, bytes):
+                        parts.append(bytes_to_str(chunk))
+                    else:
+                        parts.append(chunk)
+                value = "".join(parts)
         return value
 
     def mget(self, keys):
