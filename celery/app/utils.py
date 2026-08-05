@@ -126,6 +126,13 @@ class Settings(ConfigurationView):
         )
 
     @property
+    def task_id_generator(self):
+        return self.first(
+            'task_id_generator',
+            'id_generator',
+        )
+
+    @property
     def timezone(self):
         # this way we also support django's time zone.
         return self.first('timezone', 'TIME_ZONE')

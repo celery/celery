@@ -191,6 +191,7 @@ For a complete Django example, see :ref:`django-first-steps`.
 ``CELERY_QUEUES``                          :setting:`task_queues`
 ``CELERY_ROUTES``                          :setting:`task_routes`
 ``CELERY_SEND_SENT_EVENT``                 :setting:`task_send_sent_event`
+``CELERY_TASK_ID_GENERATOR``               :setting:`task_id_generator`
 ``CELERY_TASK_SERIALIZER``                 :setting:`task_serializer`
 ``CELERYD_SOFT_TIME_LIMIT``                :setting:`task_soft_time_limit`
 ``CELERY_TASK_TRACK_STARTED``              :setting:`task_track_started`
@@ -418,6 +419,42 @@ methods that have been registered with :mod:`kombu.serialization.registry`.
 .. seealso::
 
     :ref:`calling-serializers`.
+
+.. setting:: task_id_generator
+
+``task_id_generator``
+~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.5
+
+Default: :func:`kombu.utils.uuid.uuid`.
+
+A callable that returns a unique string to use as a task ID. By default,
+Celery uses UUID4. Use this setting to replace task IDs with a custom
+format such as ULIDs, Snowflake IDs, or prefixed UUIDs.
+
+The callable must take no arguments and return a value that can be
+converted to a string.
+
+.. code-block:: python
+
+    # Using ULID (pip install python-ulid)
+    import ulid
+
+    def ulid_generator():
+        return str(ulid.ULID())
+
+    app.conf.task_id_generator = ulid_generator
+
+If the callable raises an exception, Celery will fall back to the
+default UUID generator.
+
+.. note::
+
+    This setting applies to all task ID assignment points, including
+    :meth:`~celery.app.base.Celery.send_task` and canvas primitives
+    such as :class:`~celery.canvas.group`, :class:`~celery.canvas.chain`,
+    and :class:`~celery.canvas.chord`.
 
 .. setting:: task_publish_retry
 

@@ -117,6 +117,16 @@ def _merge_dictionaries(d1, d2, aggregate_duplicates=True):
             d1[key] = value
 
 
+def _new_task_id(app=None):
+    try:
+        generator = getattr(app.conf, 'task_id_generator', None)
+        if generator:
+            return str(generator())
+    except Exception:
+        pass
+    return uuid()
+
+
 class StampingVisitor(metaclass=ABCMeta):
     """Stamping API.  A class that provides a stamping API possibility for
     canvas primitives. If you want to implement stamping behavior for
@@ -502,7 +512,7 @@ class Signature(dict):
             tid = opts['task_id']
         except KeyError:
             # otherwise, use the _id sent to this function, falling back on a generated UUID
-            tid = opts['task_id'] = _id or uuid()
+            tid = opts['task_id'] = _id or _new_task_id(self.app)
         if root_id:
             opts['root_id'] = root_id
         if parent_id:
@@ -789,7 +799,7 @@ class Signature(dict):
     def election(self):
         type = self.type
         app = type.app
-        tid = self.options.get('task_id') or uuid()
+        tid = self.options.get('task_id') or _new_task_id(self.app)
 
         with app.producer_or_acquire(None) as producer:
             props = type.backend.on_task_call(producer, tid)
@@ -1834,7 +1844,7 @@ class group(Signature):
             if k not in self._IMMUTABLE_OPTIONS or k not in self.options
         }}
         options['group_id'] = group_id = (
-            options.pop('task_id', uuid()))
+            options.pop('task_id') if 'task_id' in options else _new_task_id(self._app or current_app))
         return options, group_id, options.get('root_id')
 
     def _freeze_group_tasks(self, _id=None, group_id=None, chord=None,
@@ -1854,7 +1864,7 @@ class group(Signature):
         try:
             gid = opts['task_id']
         except KeyError:
-            gid = opts['task_id'] = group_id or uuid()
+            gid = opts['task_id'] = group_id or _new_task_id(self.app)
         if group_id:
             opts['group_id'] = group_id
         if chord:
@@ -2163,7 +2173,7 @@ class _chord(Signature):
         body = body.clone(**options)
         app = self._get_app(body)
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
-                 else group(self.tasks, app=app, task_id=self.options.get('task_id', uuid())))
+                 else group(self.tasks, app=app, task_id=self.options.get('task_id', _new_task_id(self.app))))
         if app.conf.task_always_eager:
             with allow_join_result():
                 return self.apply(args, kwargs,
@@ -2249,14 +2259,14 @@ class _chord(Signature):
             AsyncResult: The result of the body (with the result of the header in the parent of the body).
         """
         app = app or self._get_app(body)
-        group_id = header.options.get('task_id') or uuid()
+        group_id = header.options.get('task_id') or _new_task_id(self.app)
         root_id = body.options.get('root_id')
         options = dict(self.options, **options) if options else self.options
         if options:
             options.pop('task_id', None)
             body.options.update(options)
 
-        body_task_id = task_id or uuid()
+        body_task_id = task_id or _new_task_id(self.app)
         bodyres = body.freeze(body_task_id, group_id=group_id, root_id=root_id)
 
         # Chains should not be passed to the header tasks. See #3771
