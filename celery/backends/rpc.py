@@ -259,6 +259,12 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
 
     def forget(self, task_id):
         self._out_of_band.pop(task_id, None)
+        try:
+            buf = self._pending_messages.pop(task_id)
+        except KeyError:
+            pass
+        else:
+            self._pending_messages.total -= len(buf)
         super().forget(task_id)
 
     def _forget(self, task_id):
