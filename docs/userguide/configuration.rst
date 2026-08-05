@@ -3425,6 +3425,19 @@ but if mostly CPU-bound, try to keep it close to the
 number of CPUs on your machine. If not set, the number of CPUs/cores
 on the host will be used.
 
+Accepts an integer or the string ``"auto"``. Setting it to ``"auto"``
+(equivalent to passing ``--concurrency=auto``) enables cgroup-aware
+sizing on Linux: for CPU-bound pools (``prefork``, ``solo``) the value
+is derived from the CFS bandwidth quota
+(``/sys/fs/cgroup/cpu.max`` on cgroup v2, ``cpu.cfs_quota_us`` /
+``cpu.cfs_period_us`` on cgroup v1), preventing oversubscription inside
+Kubernetes pods and Docker containers with CPU limits. For greenlet
+pools (``gevent``, ``eventlet``) and the thread pool, ``"auto"`` is a
+no-op and falls back to ``os.cpu_count()`` — concurrency for those
+pools is bound by memory and file descriptors, not CPU. On non-Linux
+platforms or when no cgroup CPU controller is mounted, ``"auto"``
+silently falls back to ``os.cpu_count()``.
+
 .. setting:: worker_prefetch_multiplier
 
 ``worker_prefetch_multiplier``
