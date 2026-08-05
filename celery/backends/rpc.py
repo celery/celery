@@ -143,6 +143,13 @@ class ResultConsumer(BaseResultConsumer):
         if self._consumer:
             self._consumer.cancel_by_queue(self._create_binding(task_id).name)
 
+    def on_state_change(self, meta, message):
+        super().on_state_change(meta, message)
+        if meta['status'] in states.READY_STATES:
+            # final state delivered by the consumer: any copy buffered
+            # by an earlier poll is stale now.
+            self.backend._out_of_band.pop(meta.get('task_id'), None)
+
 
 class RPCBackend(base.Backend, AsyncBackendMixin):
     """Base class for the RPC result backend."""
@@ -199,7 +206,9 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
 
     def _after_fork(self):
         # clear state for child processes.
-        self._pending_results.clear()
+        for mapping in self._pending_results:
+            mapping.clear()
+        self._out_of_band.clear()
         self.result_consumer._after_fork()
 
     def _create_exchange(self, name, type='direct', delivery_mode=2):
@@ -248,6 +257,15 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
         # but we don't have to cancel since we have one queue per process.
         pass
 
+    def forget(self, task_id):
+        self._out_of_band.pop(task_id, None)
+        super().forget(task_id)
+
+    def _forget(self, task_id):
+        # results are messages on the reply queue,
+        # there is nothing stored server-side to delete.
+        pass
+
     def as_uri(self, include_password=True):
         return 'rpc://'
 
@@ -283,7 +301,15 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
         # buffer: probably it will become pending later.
         if self.result_consumer:
             self.result_consumer.on_out_of_band_result(message)
-        self._out_of_band[task_id] = message
+        if message.payload.get('status') in states.READY_STATES:
+            # final meta is served from the cache,
+            # no need to buffer the message itself.
+            self._set_cache_by_message(task_id, message)
+        else:
+            self._out_of_band[task_id] = message
+        # the payload is buffered/cached in memory now, so complete the
+        # delivery instead of leaving it unacked on the channel.
+        message.ack()
 
     def get_task_meta(self, task_id, backlog_limit=1000):
         buffered = self._out_of_band.pop(task_id, None)
@@ -307,15 +333,29 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
             self.on_out_of_band_result(tid, msg)
 
         if latest:
-            latest.requeue()
-            return self._set_cache_by_message(task_id, latest)
+            meta = self._set_cache_by_message(task_id, latest)
+            if meta['status'] in states.READY_STATES:
+                # final state: resolve any pending waiter from the cache
+                # and ack, requeueing would keep the message circulating
+                # between the queue and _out_of_band forever.
+                self.result_consumer.on_out_of_band_result(latest)
+                latest.ack()
+            else:
+                latest.requeue()
+            return meta
         else:
             # no new state, use previous
             try:
                 return self._cache[task_id]
             except KeyError:
-                # result probably pending.
-                return {'status': states.PENDING, 'result': None}
+                pass
+            # a final state consumed by an earlier poll is kept in the
+            # pending buffer for late waiters, peek without consuming.
+            buf = self._pending_messages.get(task_id)
+            if buf:
+                return self.meta_from_decoded(dict(buf.data[-1]))
+            # result probably pending.
+            return {'status': states.PENDING, 'result': None}
     poll = get_task_meta  # XXX compat
 
     def _set_cache_by_message(self, task_id, message):

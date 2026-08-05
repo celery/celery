@@ -320,3 +320,147 @@ class test_RPCBackend:
         assert meta['traceback'] is None
         for key in ('name', 'args', 'kwargs', 'worker', 'retries', 'queue'):
             assert key not in meta
+
+
+class test_RPCBackend_result_lifecycle:
+    """Result message lifecycle: polling must not leak or recirculate."""
+
+    def setup_method(self):
+        self.b = RPCBackend(app=self.app)
+
+    def make_message(self, task_id, status, result=None):
+        message = Mock(name=f'message-{task_id}')
+        message.payload = {
+            'task_id': task_id,
+            'status': status,
+            'result': result,
+            'traceback': None,
+        }
+        message.properties = {'correlation_id': task_id}
+        return message
+
+    def slurp(self, messages):
+        return patch.object(
+            self.b, '_slurp_from_queue', return_value=iter(messages))
+
+    def test_final_state_is_acked_not_requeued(self):
+        message = self.make_message('tid1', states.SUCCESS, 42)
+        with self.slurp([message]):
+            meta = self.b.get_task_meta('tid1')
+        assert meta['status'] == states.SUCCESS
+        assert meta['result'] == 42
+        message.ack.assert_called_once_with()
+        message.requeue.assert_not_called()
+
+    def test_final_state_cached_when_cache_enabled(self):
+        # the test app sets result_cache_max=-1 (cache disabled),
+        # with caching on the final meta is served from the cache.
+        self.app.conf.result_cache_max = 100
+        b = RPCBackend(app=self.app)
+        message = self.make_message('tid1', states.SUCCESS, 42)
+        with patch.object(b, '_slurp_from_queue',
+                          return_value=iter([message])):
+            b.get_task_meta('tid1')
+        assert b._cache['tid1']['status'] == states.SUCCESS
+        with patch.object(b, '_slurp_from_queue',
+                          return_value=iter([])):
+            assert b.get_task_meta('tid1')['result'] == 42
+
+    def test_non_final_state_is_requeued(self):
+        message = self.make_message('tid1', states.RETRY)
+        with self.slurp([message]):
+            meta = self.b.get_task_meta('tid1')
+        assert meta['status'] == states.RETRY
+        message.requeue.assert_called_once_with()
+        message.ack.assert_not_called()
+
+    def test_final_state_resolves_pending_waiter(self):
+        # a waiter blocked in get() must still resolve when a poll
+        # consumes the final message first.
+        result = self.app.AsyncResult('tid1')
+        self.b._add_pending_result('tid1', result)
+        message = self.make_message('tid1', states.SUCCESS, 42)
+        with self.slurp([message]):
+            self.b.get_task_meta('tid1')
+        message.ack.assert_called_once_with()
+        assert result._cache['status'] == states.SUCCESS
+        assert result._cache['result'] == 42
+
+    def test_final_state_buffered_for_later_waiter(self):
+        # a get() started after the poll resolves from the buffer
+        # instead of hanging on a message that will never arrive.
+        message = self.make_message('tid1', states.SUCCESS, 42)
+        with self.slurp([message]):
+            self.b.get_task_meta('tid1')
+        buffered = self.b._pending_messages.take('tid1')
+        assert buffered['status'] == states.SUCCESS
+
+    def test_repeated_final_polls_do_not_recirculate(self):
+        # regression test for #4830: polling many completed tasks must
+        # leave no messages on the queue and nothing in _out_of_band.
+        messages = [
+            self.make_message(f'tid{i}', states.SUCCESS, i)
+            for i in range(10)
+        ]
+        for i, message in enumerate(messages):
+            with self.slurp([message]):
+                meta = self.b.get_task_meta(f'tid{i}')
+            assert meta['status'] == states.SUCCESS
+            message.ack.assert_called_once_with()
+        assert self.b._out_of_band == {}
+        # later polls are served from the cache, no queue traffic needed.
+        with self.slurp([]):
+            assert self.b.get_task_meta('tid3')['result'] == 3
+
+    def test_out_of_band_final_state_is_cached_and_acked(self):
+        message = self.make_message('other', states.SUCCESS, 7)
+        with self.slurp([message]):
+            meta = self.b.get_task_meta('tid1')
+        assert meta['status'] == states.PENDING
+        message.ack.assert_called_once_with()
+        assert 'other' not in self.b._out_of_band
+        # a later poll for that task still sees the final state,
+        # served from the pending buffer without queue traffic.
+        with self.slurp([]):
+            assert self.b.get_task_meta('other')['result'] == 7
+
+    def test_out_of_band_non_final_state_is_buffered_and_acked(self):
+        message = self.make_message('other', states.STARTED)
+        with self.slurp([message]):
+            self.b.get_task_meta('tid1')
+        message.ack.assert_called_once_with()
+        assert self.b._out_of_band['other'] is message
+        # a later poll for that task uses the buffered copy.
+        with self.slurp([]):
+            meta = self.b.get_task_meta('other')
+        assert meta['status'] == states.STARTED
+        assert 'other' not in self.b._out_of_band
+
+    def test_stale_buffered_state_dropped_on_consumer_final(self):
+        # a stale non-final entry buffered by an earlier poll must not
+        # regress the state once the consumer delivers the final meta.
+        stale = self.make_message('tid1', states.STARTED)
+        self.b._out_of_band['tid1'] = stale
+        final = self.make_message('tid1', states.SUCCESS, 42)
+        self.b.result_consumer.on_state_change(final.payload, final)
+        assert 'tid1' not in self.b._out_of_band
+        assert self.b._pending_messages.take('tid1')['status'] == (
+            states.SUCCESS)
+
+    def test_forget_clears_out_of_band_and_cache(self):
+        message = self.make_message('tid1', states.STARTED)
+        self.b._out_of_band['tid1'] = message
+        self.b._cache['tid1'] = {'status': states.STARTED}
+        self.b.forget('tid1')
+        assert 'tid1' not in self.b._out_of_band
+        assert 'tid1' not in self.b._cache
+
+    def test_forget_does_not_raise(self):
+        # RPCBackend inherited the base _forget which just raises.
+        self.b.forget('tid1')
+
+    def test_after_fork_clears_out_of_band(self):
+        self.b._out_of_band['tid1'] = self.make_message(
+            'tid1', states.STARTED)
+        self.b._after_fork()
+        assert self.b._out_of_band == {}
