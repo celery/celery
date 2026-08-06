@@ -137,9 +137,10 @@ task that adds 16 to the previous result, forming the expression
 
 
 You can also cause a callback to be applied if task raises an exception
-(*errback*). The worker won't actually call the errback as a task, but will
+(*errback*). In most cases the worker won't call the errback as a task, but will
 instead call the errback function directly so that the raw request, exception
-and traceback objects can be passed to it.
+and traceback objects can be passed to it. (See the note below for when the
+errback is instead applied as a task.)
 
 This is an example error callback:
 
@@ -156,6 +157,33 @@ option:
 .. code-block:: python
 
     add.apply_async((2, 2), link_error=error_handler.s())
+
+.. note::
+
+    The direct call above, passing ``(request, exc, traceback)``, is only used when
+    the errback is a registered task that accepts more than one argument. If the
+    errback takes a single argument, or is not registered in the worker that handles
+    the failure, Celery instead applies the errback **as a task**, passing the failed
+    task's id as the only argument.
+
+    The single-argument form is the one to use when the failing task was submitted
+    with :meth:`~@send_task`, since that task is referenced by name and the errback is
+    typically not resolvable for a direct call. Write such an errback to look up the
+    failure by id, using ``allow_join_result`` so the result can be retrieved from
+    inside the task:
+
+    .. code-block:: python
+
+        from celery.result import allow_join_result
+
+        @app.task
+        def on_error(task_id):
+            with allow_join_result():
+                result = app.AsyncResult(task_id)
+                exc = result.get(propagate=False)
+                print('Task {0} raised exception: {1!r}'.format(task_id, exc))
+
+        app.send_task('proj.tasks.add', (2, 2), link_error=on_error.s())
 
 
 In addition, both the ``link`` and ``link_error`` options can be expressed
