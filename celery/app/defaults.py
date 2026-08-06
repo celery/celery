@@ -366,6 +366,7 @@ NAMESPACES = Namespace(
         send_task_events=Option(
             False, type='bool', old={'celery_send_events'},
         ),
+        skip_logging_setup=Option(False, type='bool'),
         state_db=Option(),
         task_log_format=Option(DEFAULT_TASK_LOG_FMT),
         timer=Option(type='string'),

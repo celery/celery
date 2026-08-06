@@ -187,6 +187,51 @@ class test_default_logger:
     def test_setup_logging_subsystem_no_mputil(self, restore_logging, mask_modules):
         self.app.log.setup_logging_subsystem()
 
+    def test_setup_logging_subsystem_skip_logging_setup(
+            self, restore_logging):
+        # No setup_logging receiver is connected, only the setting
+        # is enabled.
+        signals.setup_logging.receivers[:] = []
+        self.app.log.already_setup = False
+        self.app.conf.worker_skip_logging_setup = True
+        root = logging.getLogger()
+        prev_root_handlers = list(root.handlers)
+        prev_root_level = root.level
+        prev_celery_handlers = list(get_logger('celery').handlers)
+        prev_task_handlers = list(get_logger('celery.task').handlers)
+        handled = self.app.log.setup_logging_subsystem(
+            loglevel=logging.DEBUG)
+        # must be truthy so that setup() won't redirect stdouts,
+        # exactly like a connected setup_logging receiver.
+        assert handled
+        assert self.app.log.already_setup
+        assert root.handlers == prev_root_handlers
+        assert root.level == prev_root_level
+        assert get_logger('celery').handlers == prev_celery_handlers
+        assert get_logger('celery.task').handlers == prev_task_handlers
+
+    def test_setup_skip_logging_setup_no_stdout_redirect(
+            self, restore_logging):
+        self.app.log.already_setup = False
+        self.app.conf.worker_skip_logging_setup = True
+        prev_stdout, prev_stderr = sys.stdout, sys.stderr
+        handled = self.app.log.setup(
+            loglevel=logging.INFO, redirect_stdouts=True)
+        assert handled
+        assert sys.stdout is prev_stdout
+        assert sys.stderr is prev_stderr
+
+    def test_setup_logging_subsystem_skip_logging_setup_disabled(
+            self, restore_logging):
+        signals.setup_logging.receivers[:] = []
+        self.app.log.already_setup = False
+        assert not self.app.conf.worker_skip_logging_setup
+        handled = self.app.log.setup_logging_subsystem(
+            loglevel=logging.INFO)
+        # no receivers and setting disabled: logging is configured.
+        assert not handled
+        assert conftest.get_logger_handlers(logging.getLogger())
+
     def test_setup_logger(self, restore_logging):
         logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
                                    root=False, colorize=True)

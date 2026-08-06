@@ -4004,6 +4004,32 @@ If set to ``True``, the control queue will be exclusive to a single connection.
 Logging
 -------
 
+.. setting:: worker_skip_logging_setup
+
+``worker_skip_logging_setup``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: Disabled by default.
+
+If enabled, Celery won't configure logging at all: no handlers are
+added or removed, no logger levels are changed, the root logger is left
+untouched, and `stdout`/`stderr` won't be redirected (the
+:setting:`worker_redirect_stdouts` setting is ignored). Use this when
+your application configures Python logging itself and Celery should
+never interfere with it.
+
+This is equivalent to connecting an empty receiver to the
+:signal:`celery.signals.setup_logging` signal, without having to define
+one. Just like when that signal is connected, the
+:signal:`celery.signals.after_setup_logger` and
+:signal:`celery.signals.after_setup_task_logger` signals won't be sent.
+
+If you only want to keep Celery from removing the handlers already
+configured on the root logger, while still letting it set up its own,
+see :setting:`worker_hijack_root_logger` instead.
+
 .. setting:: worker_hijack_root_logger
 
 ``worker_hijack_root_logger``
@@ -4021,7 +4047,8 @@ can disable this behavior by setting
 .. note::
 
     Logging can also be customized by connecting to the
-    :signal:`celery.signals.setup_logging` signal.
+    :signal:`celery.signals.setup_logging` signal, or disabled entirely
+    with the :setting:`worker_skip_logging_setup` setting.
 
 .. setting:: worker_log_color
 
