@@ -833,6 +833,51 @@ class test_task_retries(TasksCase):
         ]
         assert retry_call_countdowns == expected_countdowns
 
+    def test_autoretry_does_not_mutate_shared_base_class_retry_kwargs(self):
+        """
+        Test that retry_kwargs defined as a class attribute on a shared base Task
+        is not mutated when a task retries. This covers the getattr(task, 'retry_kwargs', {})
+        branch in add_autoretry_behaviour, which is worse than the per-task case since
+        the same dict object is shared across all task classes using that base.
+        """
+        class BaseTaskWithRetry(Task):
+            autoretry_for = (ZeroDivisionError,)
+            retry_backoff = True
+            retry_jitter = False
+            retry_kwargs = {'max_retries': 5}
+            _app = self.app
+
+        @self.app.task(bind=True, base=BaseTaskWithRetry, shared=False)
+        def task_a(self_, x, y):
+            return x / y
+
+        @self.app.task(bind=True, base=BaseTaskWithRetry, shared=False)
+        def task_b(self_, x, y):
+            return x / y
+
+        # Verify that all three share the exact same dict object
+        assert task_a.retry_kwargs is task_b.retry_kwargs is BaseTaskWithRetry.retry_kwargs
+
+        # Run task_a to exhaustion, which would mutate the shared dict if bug exists
+        with patch.object(task_a, 'retry', wraps=task_a.retry) as fake_retry:
+            task_a.apply((1, 0))
+
+        # Base class retry_kwargs should remain unchanged (no 'countdown' key leaked in)
+        assert BaseTaskWithRetry.retry_kwargs == {'max_retries': 5}
+
+        # Verify task_a got correct countdown values
+        assert [call_[1]['countdown'] for call_ in fake_retry.call_args_list] == [
+            1, 2, 4, 8, 16, 32
+        ]
+
+        # Run task_b once and verify it uses its own first-attempt backoff,
+        # not something inherited from task_a's last retry
+        with patch.object(task_b, 'retry', wraps=task_b.retry) as fake_retry_b:
+            task_b.apply((1, 0))
+
+        # First retry should have countdown=1 (first attempt backoff)
+        assert fake_retry_b.call_args_list[0][1]['countdown'] == 1
+
 
 class test_canvas_utils(TasksCase):
 
