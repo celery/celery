@@ -964,6 +964,40 @@ class test_crontab_is_due:
             assert remaining == expected_remaining
             assert not due
 
+    def test_execution_due_if_task_not_run_at_any_feasible_time_within_deadline_on_non_uniform_schedule(self):
+        # Could have feasibly been run on 12/5 9:00, 9:45, or 10:00.
+        # The most recent (10:00) is 20 minutes ago, within a 30-minute
+        # deadline, so the task should still be due.
+        self.app.conf.beat_cron_starting_deadline = 1800
+        cron = self.crontab(minute='0,45')
+        last_run = datetime(2022, 12, 5, 8, 45)
+        now = datetime(2022, 12, 5, 10, 20)
+        expected_next_execution_time = datetime(2022, 12, 5, 10, 45)
+        expected_remaining = (
+            expected_next_execution_time - now).total_seconds()
+
+        # Run the (:00, :45) crontab with the current date
+        with patch_crontab_nowfun(cron, now):
+            due, remaining = cron.is_due(last_run)
+            assert remaining == expected_remaining
+            assert due
+
+    def test_execution_due_if_most_recent_feasible_run_is_exactly_on_deadline_on_non_uniform_schedule(self):
+        # Could have feasibly been run on 12/5 9:00, 9:45, or 10:00.
+        # The most recent (10:00) is exactly 30 minutes ago, matching the
+        # deadline, so it should still be treated as due.
+        self.app.conf.beat_cron_starting_deadline = 1800
+        cron = self.crontab(minute='0,45')
+        last_run = datetime(2022, 12, 5, 8, 45)
+        now = datetime(2022, 12, 5, 10, 30)
+        expected_next_execution_time = datetime(2022, 12, 5, 10, 45)
+        expected_remaining = (expected_next_execution_time - now).total_seconds()
+        # Run the (:00, :45) crontab with the current date
+        with patch_crontab_nowfun(cron, now):
+            due, remaining = cron.is_due(last_run)
+            assert remaining == expected_remaining
+            assert due
+
     def test_execution_not_due_if_last_run_in_future(self):
         # Should not run if the last_run hasn't happened yet.
         last_run = datetime(2022, 12, 6, 7, 30)
