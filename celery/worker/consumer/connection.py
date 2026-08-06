@@ -20,6 +20,10 @@ class Connection(bootsteps.StartStopStep):
     def start(self, c):
         c.connection = c.connect()
         info('Connected to %s', c.connection.as_uri())
+        # Run purge after connection is established so broker_connection_retry
+        # on startup is respected (fixes #10102).
+        if getattr(c.controller, 'purge', False):
+            c.controller.purge_messages_with_connection(c.connection)
 
     def close_connection(self, c):
         """Close and clear c.connection.
