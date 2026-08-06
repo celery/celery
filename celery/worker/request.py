@@ -644,8 +644,6 @@ class Request:
                 self._announce_revoked(
                     'terminated', True, str(exc), False)
             return
-        elif isinstance(exc, MemoryError):
-            raise MemoryError(f'Process got: {exc}')
         elif isinstance(exc, Reject):
             if not exc.requeue:
                 # A task that rejects its message without requeueing will
