@@ -115,7 +115,7 @@ class Beat:
             logger.critical('beat raised exception %s: %r',
                             exc.__class__, exc,
                             exc_info=True)
-            raise
+            sys.exit(1)
 
     def banner(self, service: beat.Service) -> str:
         c = self.colored
