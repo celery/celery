@@ -166,6 +166,36 @@ before the next. If that's a concern you should use a locking
 strategy to ensure only one instance can run at a time (see for example
 :ref:`cookbook-task-serial`).
 
+.. _beat-groups-workflows:
+
+Scheduling groups and other workflows
+-------------------------------------
+
+:command:`beat` schedules a single task by name, so you can't pass a
+:ref:`group <canvas-group>`, chain, or chord signature directly to
+:meth:`~@add_periodic_task` (or a :setting:`beat_schedule` entry) -- an entry only
+stores a task name with its arguments, not a workflow.
+
+To run a workflow periodically, wrap it in a regular task and schedule that task:
+
+.. code-block:: python
+
+    from celery import group
+
+    @app.task
+    def run_add_group():
+        group(add.s(i, i) for i in range(10)).apply_async()
+
+    @app.on_after_configure.connect
+    def setup_periodic_tasks(sender: Celery, **kwargs):
+        sender.add_periodic_task(30.0, run_add_group.s(), name='add group every 30')
+
+The wrapper only *dispatches* the workflow with ``apply_async()`` and returns. Don't
+call ``get()`` on the result inside the task to wait for it to finish: blocking on a
+result from within a task ties up a worker process and is discouraged (see
+:ref:`task-synchronous-subtasks`). The group's tasks run independently on the workers,
+so the initiating task can return immediately.
+
 .. _beat-entry-fields:
 
 Available Fields
