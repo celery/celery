@@ -667,6 +667,12 @@ class Task:
             Also supports all keyword arguments supported by
             :meth:`kombu.Producer.publish`.
         """
+        from datetime import timedelta
+        if isinstance(self.time_limit, timedelta):
+            self.time_limit = self.time_limit.total_seconds()
+        if isinstance(self.soft_time_limit, timedelta):
+            self.soft_time_limit = self.soft_time_limit.total_seconds()
+
         if self.soft_time_limit and self.time_limit and self.soft_time_limit > self.time_limit:
             raise ValueError('soft_time_limit must be less than or equal to time_limit')
 
