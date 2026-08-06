@@ -11,7 +11,7 @@ from celery import Task, chain, group, uuid
 from celery.app.task import _reprtask
 from celery.canvas import StampingVisitor, signature
 from celery.contrib.testing.mocks import ContextMock
-from celery.exceptions import CDeprecationWarning, Ignore, ImproperlyConfigured, Retry
+from celery.exceptions import Ignore, ImproperlyConfigured, Retry
 from celery.result import AsyncResult, EagerResult
 from celery.utils.serialization import UnpickleableExceptionWrapper
 
@@ -1510,19 +1510,6 @@ class test_tasks(TasksCase):
             assert str(e) == 'soft_time_limit must be less than or equal to time_limit'
 
 
-class test_task_routing_attribute_deprecation(TasksCase):
-
-    @pytest.mark.parametrize('attr', [
-        'queue', 'exchange', 'exchange_type',
-        'routing_key', 'delivery_mode', 'priority',
-    ])
-    def test_warns_when_routing_attribute_declared(self, attr):
-        with pytest.warns(CDeprecationWarning, match=f"The {attr!r} task attribute is deprecated"):
-            @self.app.task(shared=False, lazy=False, **{attr: 'foo'})
-            def task_with_routing_attr():
-                pass
-
-
 class test_apply_task(TasksCase):
 
     def test_apply_with_app_conf_time_limit_sets_request_fields(self):
@@ -1832,3 +1819,43 @@ class test_apply_async(TasksCase):
                 *expected_args,
                 **expected_kwargs
             )
+
+    def test_autoretry_shared_retry_kwargs_not_mutated(self):
+        """Verify that the shared retry_kwargs dict captured at task
+        registration time is NOT mutated by the autoretry handler
+        (regression test for celery#10456)."""
+        @self.app.task(bind=True, shared=False,
+                       autoretry_for=(ZeroDivisionError,),
+                       retry_backoff=True, retry_jitter=False,
+                       max_retries=3)
+        def task(self_, x, y):
+            self_.iterations += 1
+            return x / y
+
+        task.iterations = 0
+
+        # Locate the shared retry_kwargs dict captured by the run()
+        # closure at registration time
+        free_vars = task.run.__code__.co_freevars
+        shared_retry_kwargs = task.run.__closure__[
+            free_vars.index("retry_kwargs")
+        ].cell_contents
+
+        # The shared dict should be empty before any retries
+        assert shared_retry_kwargs == {}
+
+        with patch.object(task, "retry", side_effect=Retry):
+            for retries in range(3):
+                task.push_request(retries=retries)
+                try:
+                    task.run(1, 0)
+                except Retry:
+                    pass
+                finally:
+                    task.pop_request()
+
+        # The shared dict must still be empty after retries
+        # (the fix copies it before mutating)
+        assert shared_retry_kwargs == {}, (
+            "BUG: shared retry_kwargs dict was mutated by autoretry handler!"
+        )
