@@ -45,6 +45,10 @@ def add_autoretry_behaviour(task, **options):
             except dont_autoretry_for:
                 raise
             except autoretry_for as exc:
+                # Copy to avoid mutating the shared dict captured at
+                # registration time, which is shared across all
+                # executions of the same task (celery#10456)
+                retry_kwargs = dict(retry_kwargs)
                 if retry_backoff:
                     retry_kwargs['countdown'] = \
                         get_exponential_backoff_interval(
