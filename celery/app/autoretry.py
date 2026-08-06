@@ -45,6 +45,14 @@ def add_autoretry_behaviour(task, **options):
             except dont_autoretry_for:
                 raise
             except autoretry_for as exc:
+                # Work on a per-invocation copy of `retry_kwargs` so the
+                # shared dict captured by this closure (built once at task
+                # registration time) is never mutated. Mutating it in place
+                # would corrupt the backoff/max_retries values seen by other
+                # concurrent executions of the same task (e.g. eventlet/gevent
+                # pools) and permanently leak a `countdown` key into the
+                # task-level `retry_kwargs` dict.
+                retry_kwargs = dict(retry_kwargs)
                 if retry_backoff:
                     retry_kwargs['countdown'] = \
                         get_exponential_backoff_interval(
