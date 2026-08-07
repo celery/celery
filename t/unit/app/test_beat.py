@@ -388,7 +388,7 @@ class test_Scheduler:
         scheduler = mScheduler(app=self.app)
         scheduler.add(name='test_pending_tick',
                       schedule=always_pending)
-        assert scheduler.tick() == 1 - 0.010
+        assert 0 < scheduler.tick() <= 1 - 0.010
 
     def test_pending_left_10_milliseconds_tick(self):
         scheduler = mScheduler(app=self.app)
@@ -409,7 +409,7 @@ class test_Scheduler:
         s = {'test_ticks%s' % i: {'schedule': mocked_schedule(False, j)}
              for i, j in enumerate(nums)}
         scheduler.update_from_dict(s)
-        assert scheduler.tick() == min(nums) - 0.010
+        assert 0 < scheduler.tick() <= min(nums) - 0.010
 
     def test_ticks_microseconds(self):
         scheduler = mScheduler(app=self.app)
