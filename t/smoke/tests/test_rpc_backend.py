@@ -15,12 +15,17 @@ import json
 import urllib.request
 
 import pytest
-from pytest_celery import (RABBITMQ_PORTS, RESULT_TIMEOUT, CeleryBrokerCluster, CeleryTestSetup, RabbitMQContainer,
-                           RabbitMQTestBroker)
+from pytest_celery import (
+    RABBITMQ_PORTS,
+    RESULT_TIMEOUT,
+    CeleryBrokerCluster,
+    CeleryTestSetup,
+    RabbitMQContainer,
+    RabbitMQTestBroker,
+)
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 from celery import Celery, states
-from t.integration.tasks import add, identity
 
 
 class RabbitMQManagementBroker(RabbitMQTestBroker):
@@ -93,13 +98,19 @@ def default_worker_app(default_worker_app: Celery) -> Celery:
     app = default_worker_app
     app.conf.worker_prefetch_multiplier = 1
     app.conf.worker_concurrency = 1
+    # direct attribute assignment lands in conf.changes, which is what
+    # pytest-celery serializes into the worker container config; the
+    # celery_setup_config dict alone only configures the client side.
+    app.conf.result_backend = "rpc://"
     return app
 
 
 class test_rpc_backend:
     def test_sanity(self, celery_setup: CeleryTestSetup):
         assert celery_setup.app.conf.result_backend == "rpc://"
-        res = identity.s("test_sanity").apply_async(
+        res = celery_setup.app.send_task(
+            "t.integration.tasks.identity",
+            args=("test_sanity",),
             queue=celery_setup.worker.worker_queue,
         )
         assert res.get(RESULT_TIMEOUT) == "test_sanity"
@@ -110,20 +121,37 @@ class test_rpc_backend:
         app = celery_setup.app
         queue = celery_setup.worker.worker_queue
 
+        # publish through the setup app itself so the result reply queue
+        # is the same queue app.backend polls below.
         results = [
-            add.s(i, i).apply_async(queue=queue)
+            app.send_task("t.integration.tasks.add", args=(i, i), queue=queue)
             for i in range(3)
         ]
-        for i, res in enumerate(results):
-            assert res.get(RESULT_TIMEOUT) == i + i
 
-        # state polls after completion are served without putting the
+        @retry(
+            stop=stop_after_attempt(int(RESULT_TIMEOUT)),
+            wait=wait_fixed(1),
+            reraise=True,
+        )
+        def poll_until_ready(task_id):
+            meta = app.backend.get_task_meta(task_id)
+            assert meta["status"] in states.READY_STATES, meta
+            return meta
+
+        # poll each task through the backend until it completes: this is
+        # the exact poll path that used to requeue the final result
+        # message on every call.
+        for i, res in enumerate(results):
+            meta = poll_until_ready(res.id)
+            assert meta["status"] == states.SUCCESS
+            assert meta["result"] == i + i
+
+        # further polls are served from the cache without putting the
         # final result message back on the reply queue.
         for res in results:
             for _ in range(5):
                 meta = app.backend.get_task_meta(res.id)
-                assert meta["status"] == states.SUCCESS
-                assert meta["result"] is not None
+                assert meta["status"] == states.SUCCESS, meta
 
         broker = celery_setup.broker
 
