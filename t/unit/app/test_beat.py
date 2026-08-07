@@ -447,6 +447,21 @@ class test_Scheduler:
                       schedule=mocked_schedule(False, None))
         assert scheduler.tick() == scheduler.max_interval
 
+    def test_not_due_top_entry_is_rescheduled_behind_due_entry(self):
+        scheduler = mScheduler(app=self.app)
+        stuck = scheduler.add(name='stuck', task='c.stuck', schedule=mocked_schedule(False, 30))
+        ready = scheduler.add(name='ready', task='c.ready', schedule=always_due)
+        scheduler.old_schedulers = scheduler.schedule
+        scheduler._heap = [
+            event_t(scheduler._when(stuck, 0) - 2, 5, stuck),
+            event_t(scheduler._when(ready, 0) - 1, 5, ready),
+        ]
+        assert scheduler.tick() == 0
+        assert not scheduler.sent
+        assert scheduler._heap[0].entry is ready
+        assert scheduler.tick() == 0
+        assert scheduler.sent[0]['name'] == 'c.ready'
+
     def test_interface(self):
         scheduler = mScheduler(app=self.app)
         scheduler.sync()

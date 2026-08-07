@@ -347,6 +347,10 @@ class Scheduler:
 
         event = H[0]
         entry = event[2]
+        now = self._when(entry, 0)
+        if event[0] > now:
+            return min(event[0] - now, max_interval)
+
         is_due, next_time_to_run = self.is_due(entry)
         if is_due:
             verify = heappop(H)
@@ -360,6 +364,19 @@ class Scheduler:
                 heappush(H, verify)
                 return min(verify[0], max_interval)
         adjusted_next_time_to_run = adjust(next_time_to_run)
+
+        # Heap says this entry should be ready by now, but the entry requests
+        # to retry later.  Reheap it at that retry time, otherwise it just
+        # sits on top and the entries behind it never get their turn.
+        # https://github.com/celery/celery/issues/7649
+        if is_numeric_value(adjusted_next_time_to_run) and adjusted_next_time_to_run > 0:
+            verify = heappop(H)
+            if verify is event:
+                heappush(H, event_t(self._when(entry, next_time_to_run),
+                                    event[1], entry))
+                return 0
+            else:
+                heappush(H, verify)
         return min(adjusted_next_time_to_run if is_numeric_value(adjusted_next_time_to_run) else max_interval,
                    max_interval)
 
