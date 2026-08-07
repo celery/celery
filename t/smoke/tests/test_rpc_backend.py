@@ -15,14 +15,8 @@ import json
 import urllib.request
 
 import pytest
-from pytest_celery import (
-    RABBITMQ_PORTS,
-    RESULT_TIMEOUT,
-    CeleryBrokerCluster,
-    CeleryTestSetup,
-    RabbitMQContainer,
-    RabbitMQTestBroker,
-)
+from pytest_celery import (RABBITMQ_PORTS, RESULT_TIMEOUT, CeleryBrokerCluster, CeleryTestSetup, RabbitMQContainer,
+                           RabbitMQTestBroker)
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 from celery import Celery, states
