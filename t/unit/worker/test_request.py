@@ -287,7 +287,7 @@ class test_Request(RequestCase):
             uuid=req.id, terminated=True, signum='9', expired=False,
         )
 
-    def test_on_failure_propagates_MemoryError(self):
+    def test_on_failure_MemoryError_acknowledges(self):
         einfo = None
         try:
             raise MemoryError()
@@ -295,8 +295,14 @@ class test_Request(RequestCase):
             einfo = ExceptionInfo(internal=True)
         assert einfo is not None
         req = self.get_request(self.add.s(2, 2))
-        with pytest.raises(MemoryError):
-            req.on_failure(einfo)
+        req.task.acks_late = True
+        # MemoryError should be handled normally, not re-raised
+        req.on_failure(einfo)
+        # In Python 3, MemoryError is a subclass of Exception, so the child
+        # process already handled it safely. The parent should acknowledge
+        # the message (with acks_late) and record the failure instead of
+        # re-raising and creating a poison pill.
+        req.on_ack.assert_called_with(req_logger, req.connection_errors)
 
     def test_on_failure_Ignore_acknowledges(self):
         einfo = None
