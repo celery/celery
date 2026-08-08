@@ -645,7 +645,13 @@ class Request:
                     'terminated', True, str(exc), False)
             return
         elif isinstance(exc, MemoryError):
-            raise MemoryError(f'Process got: {exc}')
+            # MemoryError is a subclass of Exception in Python 3, so
+            # billiard catches and swallows the raise.  The real harm
+            # is that the message is never acknowledged, creating a
+            # permanent poison pill that blocks the worker pool.
+            # Let it fall through to the normal failure path so the
+            # message gets acknowledged and the worker continues.
+            pass
         elif isinstance(exc, Reject):
             if not exc.requeue:
                 # A task that rejects its message without requeueing will
