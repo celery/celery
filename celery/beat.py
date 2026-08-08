@@ -377,6 +377,7 @@ class Scheduler:
                 return 0
             else:
                 heappush(H, verify)
+                return min(verify[0], max_interval)
         return min(adjusted_next_time_to_run if is_numeric_value(adjusted_next_time_to_run) else max_interval,
                    max_interval)
 
