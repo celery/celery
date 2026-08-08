@@ -926,8 +926,10 @@ class test_RedisBackend(basetest_RedisBackend):
 
         return_value = self.b.get(key)
 
-        chunk_key = key.replace(self.b.task_keyprefix, b"task-chunk-1")
-        self.b.client.get.assert_called_with(chunk_key)
+        # RedisBackend.get should first fetch the main key, then mget the chunk keys
+        self.b.client.get.assert_called_with(key)
+        chunk_key = key.replace(self.b.task_keyprefix, b"task-chunk-0")
+        self.b.client.mget.assert_called_with([chunk_key])
 
         assert value == return_value
 
