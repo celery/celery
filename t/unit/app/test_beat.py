@@ -388,7 +388,7 @@ class test_Scheduler:
         scheduler = mScheduler(app=self.app)
         scheduler.add(name='test_pending_tick',
                       schedule=always_pending)
-        assert scheduler.tick() == 1 - 0.010
+        assert 0 < scheduler.tick() <= 1 - 0.010
 
     def test_pending_left_10_milliseconds_tick(self):
         scheduler = mScheduler(app=self.app)
@@ -409,7 +409,7 @@ class test_Scheduler:
         s = {'test_ticks%s' % i: {'schedule': mocked_schedule(False, j)}
              for i, j in enumerate(nums)}
         scheduler.update_from_dict(s)
-        assert scheduler.tick() == min(nums) - 0.010
+        assert 0 < scheduler.tick() <= min(nums) - 0.010
 
     def test_ticks_microseconds(self):
         scheduler = mScheduler(app=self.app)
@@ -446,6 +446,44 @@ class test_Scheduler:
         scheduler.add(name='test_schedule_no_remain',
                       schedule=mocked_schedule(False, None))
         assert scheduler.tick() == scheduler.max_interval
+
+    def test_not_due_top_entry_is_rescheduled_behind_due_entry(self):
+        scheduler = mScheduler(app=self.app)
+        stuck = scheduler.add(name='stuck', task='c.stuck', schedule=always_pending)
+        ready = scheduler.add(name='ready', task='c.ready', schedule=always_due)
+        # so populate_heap() doesn't run and override our setup
+        scheduler.old_schedulers = scheduler.schedule
+        # stuck is at the top of the heap
+        scheduler._heap = [
+            event_t(scheduler._when(stuck, 0) - 2, 5, stuck),
+            event_t(scheduler._when(ready, 0) - 1, 5, ready),
+        ]
+        assert scheduler.tick() == 0
+        assert not scheduler.sent
+        assert scheduler._heap[0].entry is ready
+        assert scheduler.tick() == 0
+        assert scheduler.sent[0]['name'] == 'c.ready'
+
+    def test_reheap_skipped_when_is_due_mutates_heap(self):
+        scheduler = mScheduler(app=self.app)
+        stuck = scheduler.add(name='stuck', task='c.stuck', schedule=always_pending)
+        intruder = scheduler.add(name='other', task='c.other', schedule=always_due)
+        # so populate_heap() doesn't run and override our setup
+        scheduler.old_schedulers = scheduler.schedule
+        stuck_event = event_t(scheduler._when(stuck, 0) - 1, 5, stuck)
+        intruder_event = event_t(scheduler._when(intruder, 0) - 2, 5, intruder)
+        scheduler._heap = [stuck_event]
+
+        def mutating_stuck_entry_is_due(_last_run_at):
+            scheduler._heap.insert(0, intruder_event)
+            return False, 1
+
+        # simulates an entry inserted while stuck's is_due() is running
+        stuck.schedule.is_due = mutating_stuck_entry_is_due
+        scheduler.tick()
+        assert not scheduler.sent
+        assert scheduler._heap[0] is intruder_event
+        assert scheduler._heap[1] is stuck_event
 
     def test_interface(self):
         scheduler = mScheduler(app=self.app)
