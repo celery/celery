@@ -1785,6 +1785,41 @@ class test_apply_task(TasksCase):
             assert data['parent_id'] == 'parent-id-123'
             assert data['root_id'] == data['task_id']
 
+    def test_autoretry_shared_retry_kwargs_not_mutated_by_max_retries_override(self):
+        """Verify that task.retry(max_retries=...) setting override_max_retries
+        does not mutate the shared retry_kwargs dict captured at task
+        registration time (regression test for celery#10456)."""
+        @self.app.task(bind=True, shared=False,
+                       autoretry_for=(ZeroDivisionError,),
+                       retry_kwargs={'max_retries': 5},
+                       retry_backoff=False, retry_jitter=False)
+        def task(self_, x, y):
+            self_.iterations += 1
+            return x / y
+        task.iterations = 0
+
+        free_vars = task.run.__code__.co_freevars
+        shared_retry_kwargs = task.run.__closure__[
+            free_vars.index("retry_kwargs")
+        ].cell_contents
+        assert shared_retry_kwargs == {'max_retries': 5}
+
+        task.override_max_retries = 2
+
+        with patch.object(task, "retry", side_effect=Retry):
+            task.push_request(retries=0)
+            try:
+                task.run(1, 0)
+            except Retry:
+                pass
+            finally:
+                task.pop_request()
+
+        assert shared_retry_kwargs == {'max_retries': 5}, (
+            "BUG: override_max_retries leaked into shared retry_kwargs! "
+            f"Got {shared_retry_kwargs}"
+        )
+
 
 class test_apply_async(TasksCase):
     def common_send_task_arguments(self):
