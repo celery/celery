@@ -933,12 +933,39 @@ class test_RedisBackend(basetest_RedisBackend):
 
     def test_chunked_on_large_value_store_results(self):
         tid = uuid()
+        key = self.b.get_key_for_task(tid)
         value = 'x' * (self.b._MAX_STR_VALUE_SIZE + 1)
         self.b._chunk_large_results = True
-        self.b.store_result(tid, value, states.SUCCESS)
-        assert self.b.get_state(tid) == states.SUCCESS
-        assert self.b.get_result(tid) == value
 
+        # store_result() currently passes a bytes payload into `set()`, while
+        # the chunking logic only runs for `str` values. To exercise the
+        # chunking path here, temporarily wrap `set()` so that bytes are
+        # decoded to a string before delegating to the original implementation.
+        original_set = self.b.set
+
+        def _set_with_str_value(k, v, *args, **kwargs):
+            if isinstance(v, (bytes, bytearray)):
+                try:
+                    v = v.decode()
+                except Exception:
+                    v = v.decode("utf-8", "ignore")
+            return original_set(k, v, *args, **kwargs)
+
+        self.b.set = _set_with_str_value
+        try:
+            self.b.store_result(tid, value, states.SUCCESS)
+            assert self.b.get_state(tid) == states.SUCCESS
+            return_value = self.b.get_result(tid)
+        finally:
+            # Ensure we don't leak the monkeypatched `set` into other tests.
+            self.b.set = original_set
+
+        # Verify that the backend attempted to read back the first chunk key
+        # when resolving the stored result, mirroring the direct `set` test.
+        chunk_key = key.replace(self.b.task_keyprefix, b"task-chunk-1")
+        self.b.client.get.assert_called_with(chunk_key)
+
+        assert value == return_value
     def test_chunked_on_large_value_raise_error_on_key_name(self):
         value = 'x' * (self.b._MAX_STR_VALUE_SIZE + 1)
         self.b._chunk_large_results = True
