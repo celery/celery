@@ -489,7 +489,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         value_for_merge = [self._CHUNK_TOKEN]
         for index, start in enumerate(range(0, len(value), chunk_size)):
             chunk = value[start:start + chunk_size]
-            new_key = key.replace(self.task_keyprefix, b"task-chunk-" + str_to_bytes(str(index)))
+            new_key = key + b":chunk-" + str_to_bytes(str(index))
             value_for_merge.append(bytes_to_str(new_key))
             self.ensure(self._set, (new_key, chunk), **retry_policy)
 
