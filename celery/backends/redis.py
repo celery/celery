@@ -481,20 +481,35 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         return self.ensure(self._set, (key, value), **retry_policy)
 
     def _set_chunked_results(self, key, value, **retry_policy):
-        if self.task_keyprefix not in key:
-            raise BackendStoreError("Invalid key: Task Prefix must be in the key to use chunked results")
+        # Normalize key to bytes to ensure bytes operations below are safe.
+        if isinstance(key, str):
+            key_bytes = str_to_bytes(key)
+        elif isinstance(key, (bytes, bytearray)):
+            key_bytes = key
+        else:
+            raise BackendStoreError(
+                f"Invalid key type for Redis backend: {type(key)!r}"
+            )
+
+        if self.task_keyprefix not in key_bytes:
+            raise BackendStoreError(
+                "Invalid key: Task Prefix must be in the key to use chunked results"
+            )
 
         chunk_size = self._MAX_STR_VALUE_SIZE - 1024
+        chunks = [value[i:i + chunk_size] for i in range(0, len(value), chunk_size)]
 
         value_for_merge = [self._CHUNK_TOKEN]
-        for index, start in enumerate(range(0, len(value), chunk_size)):
-            chunk = value[start:start + chunk_size]
-            new_key = key + b":chunk-" + str_to_bytes(str(index))
+        for index, chunk in enumerate(chunks):
+            new_key = key_bytes.replace(
+                self.task_keyprefix,
+                b"task-chunk-" + str_to_bytes(str(index)),
+            )
             value_for_merge.append(bytes_to_str(new_key))
             self.ensure(self._set, (new_key, chunk), **retry_policy)
 
         merged_value = ",".join(value_for_merge)
-        return self.ensure(self._set, (key, merged_value), **retry_policy)
+        return self.ensure(self._set, (key_bytes, merged_value), **retry_policy)
 
     def _set(self, key, value):
         with self.client.pipeline() as pipe:
