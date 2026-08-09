@@ -8,6 +8,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from celery.exceptions import ImproperlyConfigured
 from celery.schedules import ParseException, crontab, crontab_parser, schedule, solar
 
 if sys.version_info >= (3, 9):
@@ -97,6 +98,15 @@ class test_solar:
                 pytest.fail(
                     f"{s.method} was called with 'use_center' which is not a "
                     "valid keyword for the function.")
+
+
+class test_solar_without_ephem:
+
+    def test_raises_improperly_configured_when_ephem_is_missing(
+            self, monkeypatch):
+        monkeypatch.setitem(sys.modules, 'ephem', None)
+        with pytest.raises(ImproperlyConfigured, match=r'celery\[solar\]'):
+            solar('sunrise', 60, 30, app=self.app)
 
 
 class test_schedule:
