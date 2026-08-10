@@ -456,9 +456,13 @@ class test_DatabaseBackend:
         self.app.conf.database_create_tables_at_setup = False
         tb = DatabaseBackend(self.uri, app=self.app)
         assert tb.task_cls.__table__.schema == 'foo'
-        assert tb.task_cls.__table__.c.id.default.schema == 'foo'
+        # The id column uses an Identity default (instead of a Sequence) so
+        # the schema is applied at the table level rather than to a Sequence
+        # default.  Verify the identity column is present and inherits the
+        # table schema.
+        assert tb.task_cls.__table__.c.id.identity is not None
         assert tb.taskset_cls.__table__.schema == 'bar'
-        assert tb.taskset_cls.__table__.c.id.default.schema == 'bar'
+        assert tb.taskset_cls.__table__.c.id.identity is not None
 
     def test_table_name_config(self):
         self.app.conf.database_table_names = {
