@@ -673,7 +673,9 @@ class crontab(BaseSchedule):
             # the most recent missed run is too stale to catch up.
             now = self.maybe_make_aware(self.now())
             # Subtract 1 microsecond so a run exactly at (now - deadline_secs) is counted within the deadline.
-            deadline_since = now - timedelta(seconds=deadline_secs, microseconds=1)
+            deadline_since = (
+                now.astimezone(timezone.utc) - timedelta(seconds=deadline_secs, microseconds=1)
+            ).astimezone(now.tzinfo)
             if self.remaining_estimate(deadline_since).total_seconds() > 0:
                 has_passed_deadline = True
                 due = False
