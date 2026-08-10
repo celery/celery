@@ -239,6 +239,32 @@ class test_AMQP_proto1:
         self.app.amqp.utc = False
         self.app.amqp.as_task_v1(uuid(), 'foo', countdown=30, expires=40)
 
+    def test_countdown_timedelta_to_eta(self):
+        now = to_utc(datetime.now(timezone.utc)).astimezone(self.app.timezone)
+        m = self.app.amqp.as_task_v1(
+            uuid(), 'foo', countdown=timedelta(seconds=10), now=now,
+        )
+        assert m.body['eta'] == (now + timedelta(seconds=10)).isoformat()
+
+    def test_expires_timedelta_to_datetime(self):
+        now = to_utc(datetime.now(timezone.utc)).astimezone(self.app.timezone)
+        m = self.app.amqp.as_task_v1(
+            uuid(), 'foo', expires=timedelta(seconds=30), now=now,
+        )
+        assert m.body['expires'] == (now + timedelta(seconds=30)).isoformat()
+
+    def test_time_limit_timedelta_to_seconds(self):
+        m = self.app.amqp.as_task_v1(
+            uuid(), 'foo', time_limit=timedelta(seconds=60),
+        )
+        assert m.body['timelimit'][0] == 60.0
+
+    def test_soft_time_limit_timedelta_to_seconds(self):
+        m = self.app.amqp.as_task_v1(
+            uuid(), 'foo', soft_time_limit=timedelta(seconds=45),
+        )
+        assert m.body['timelimit'][1] == 45.0
+
 
 class test_AMQP_Base:
     def setup_method(self):
@@ -436,6 +462,33 @@ class test_as_task_v2(test_AMQP_Base):
             uuid(), 'foo', eta=eta,
         )
         assert m.headers['eta'] == eta.isoformat()
+
+    def test_countdown_timedelta_to_eta(self):
+        now = to_utc(datetime.now(timezone.utc)).astimezone(self.app.timezone)
+        m = self.app.amqp.as_task_v2(
+            uuid(), 'foo', countdown=timedelta(seconds=10), now=now,
+        )
+        assert m.headers['eta'] == (now + timedelta(seconds=10)).isoformat()
+
+    def test_expires_timedelta_to_datetime(self):
+        now = to_utc(datetime.now(timezone.utc)).astimezone(self.app.timezone)
+        m = self.app.amqp.as_task_v2(
+            uuid(), 'foo', expires=timedelta(seconds=30), now=now,
+        )
+        assert m.headers['expires'] == (
+            now + timedelta(seconds=30)).isoformat()
+
+    def test_time_limit_timedelta_to_seconds(self):
+        m = self.app.amqp.as_task_v2(
+            uuid(), 'foo', time_limit=timedelta(seconds=60),
+        )
+        assert m.headers['timelimit'][0] == 60.0
+
+    def test_soft_time_limit_timedelta_to_seconds(self):
+        m = self.app.amqp.as_task_v2(
+            uuid(), 'foo', soft_time_limit=timedelta(seconds=45),
+        )
+        assert m.headers['timelimit'][1] == 45.0
 
     def test_compression(self):
         self.app.conf.task_compression = 'gzip'
