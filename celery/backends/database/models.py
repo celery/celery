@@ -30,8 +30,9 @@ class Task(ResultModelBase):
     __tablename__ = 'celery_taskmeta'
     __table_args__ = {'sqlite_autoincrement': True}
 
-    id = sa.Column(DialectSpecificInteger, sa.Sequence('task_id_sequence'),
-                   primary_key=True, autoincrement=True)
+
+    id = sa.Column(DialectSpecificInteger, sa.Identity(cache=20),
+                primary_key=True)
     task_id = sa.Column(sa.String(155), unique=True)
     status = sa.Column(sa.String(50), default=states.PENDING)
     result = sa.Column(PickleType, nullable=True)
