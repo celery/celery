@@ -466,7 +466,7 @@ class test_Scheduler:
 
     def test_reheap_skipped_when_is_due_mutates_heap(self):
         scheduler = mScheduler(app=self.app)
-        stuck = scheduler.add(name='stuck', task='c.stuck', schedule=always_pending)
+        stuck = scheduler.add(name='stuck', task='c.stuck', schedule=mocked_schedule(False, 1))
         intruder = scheduler.add(name='other', task='c.other', schedule=always_due)
         # so populate_heap() doesn't run and override our setup
         scheduler.old_schedulers = scheduler.schedule
