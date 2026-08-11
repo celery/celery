@@ -11,7 +11,7 @@ from celery import Task, chain, group, uuid
 from celery.app.task import _reprtask
 from celery.canvas import StampingVisitor, signature
 from celery.contrib.testing.mocks import ContextMock
-from celery.exceptions import Ignore, ImproperlyConfigured, Retry
+from celery.exceptions import CDeprecationWarning, Ignore, ImproperlyConfigured, Retry
 from celery.result import AsyncResult, EagerResult
 from celery.utils.serialization import UnpickleableExceptionWrapper
 
@@ -1508,6 +1508,19 @@ class test_tasks(TasksCase):
             assert yyy_result.state == 'FAILURE'
         except ValueError as e:
             assert str(e) == 'soft_time_limit must be less than or equal to time_limit'
+
+
+class test_task_routing_attribute_deprecation(TasksCase):
+
+    @pytest.mark.parametrize('attr', [
+        'queue', 'exchange', 'exchange_type',
+        'routing_key', 'delivery_mode', 'priority',
+    ])
+    def test_warns_when_routing_attribute_declared(self, attr):
+        with pytest.warns(CDeprecationWarning, match=f"The {attr!r} task attribute is deprecated"):
+            @self.app.task(shared=False, lazy=False, **{attr: 'foo'})
+            def task_with_routing_attr():
+                pass
 
 
 class test_apply_task(TasksCase):
