@@ -287,7 +287,7 @@ class test_Request(RequestCase):
             uuid=req.id, terminated=True, signum='9', expired=False,
         )
 
-    def test_on_failure_propagates_MemoryError(self):
+    def test_on_failure_handles_MemoryError(self):
         einfo = None
         try:
             raise MemoryError()
@@ -295,8 +295,11 @@ class test_Request(RequestCase):
             einfo = ExceptionInfo(internal=True)
         assert einfo is not None
         req = self.get_request(self.add.s(2, 2))
-        with pytest.raises(MemoryError):
-            req.on_failure(einfo)
+        # MemoryError should be handled as a normal failure, not re-raised.
+        # In Python 2, re-raising was intended to crash the worker pool.
+        # In Python 3, billiard catches MemoryError as Exception and
+        # swallows it, leaving the message unacknowledged (poison pill).
+        req.on_failure(einfo)
 
     def test_on_failure_Ignore_acknowledges(self):
         einfo = None
