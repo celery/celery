@@ -563,6 +563,7 @@ class test_crontab_remaining_estimate:
         # django-celery-beat setup.  The returned datetimes must stay in the
         # frame the delta was computed in (#9715).
         self.app.conf.enable_utc = False
+        self.app.conf.timezone = "UTC"
         vilnius = ZoneInfo("Europe/Vilnius")
         crontab = self.crontab(minute=40, hour=8)
 

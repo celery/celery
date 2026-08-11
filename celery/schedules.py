@@ -569,7 +569,8 @@ class crontab(BaseSchedule):
         # the same form as they are stored by the superclass
         super().__init__(**state)
 
-    def remaining_delta(self, last_run_at: datetime, tz: tzinfo | None = None,
+    def remaining_delta(self, last_run_at: datetime,
+                        tz: str | tzinfo | None = None,
                         ffwd: type = ffwd) -> tuple[datetime, Any, datetime]:
         # caching global ffwd
         tz = timezone.get_timezone(tz or self.tz)
