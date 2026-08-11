@@ -1,4 +1,6 @@
 import os
+import sqlalchemy as sa
+
 from datetime import datetime
 from pickle import dumps, loads
 from unittest.mock import Mock, patch
