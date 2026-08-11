@@ -56,7 +56,8 @@ class Task(ResultModelBase):
     @classmethod
     def configure(cls, schema=None, name=None):
         cls.__table__.schema = schema
-        cls.id.default.schema = schema
+        if isinstance(cls.id.default, sa.Sequence):
+            cls.id.default.schema = schema
         cls.__table__.name = name or cls.__tablename__
 
 
@@ -115,5 +116,6 @@ class TaskSet(ResultModelBase):
     @classmethod
     def configure(cls, schema=None, name=None):
         cls.__table__.schema = schema
-        cls.id.default.schema = schema
+        if isinstance(cls.id.default, sa.Sequence):
+            cls.id.default.schema = schema
         cls.__table__.name = name or cls.__tablename__
