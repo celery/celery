@@ -23,6 +23,14 @@ def reset_state():
     state.total_count.clear()
 
 
+def test_env_numeric_defaults(monkeypatch):
+    monkeypatch.setenv("CELERY_WORKER_REVOKES_MAX", "invalid")
+    monkeypatch.setenv("CELERY_WORKER_REVOKE_EXPIRES", "invalid")
+    assert state._env_int("CELERY_WORKER_REVOKES_MAX", 50000) == 50000
+    assert state._env_float("CELERY_WORKER_REVOKE_EXPIRES", 10800.0) == 10800.0
+
+
+
 class MockShelve(dict):
     filename = None
     in_sync = False
