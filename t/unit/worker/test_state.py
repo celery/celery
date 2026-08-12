@@ -30,7 +30,6 @@ def test_env_numeric_defaults(monkeypatch):
     assert state._env_float("CELERY_WORKER_REVOKE_EXPIRES", 10800.0) == 10800.0
 
 
-
 class MockShelve(dict):
     filename = None
     in_sync = False

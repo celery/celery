@@ -31,6 +31,7 @@ SOFTWARE_INFO = {
     'sw_sys': platform.system(),
 }
 
+
 def _env_int(name: str, default: int) -> int:
     val = os.environ.get(name)
     if val:
