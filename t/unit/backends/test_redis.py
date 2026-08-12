@@ -233,8 +233,22 @@ class test_RedisResultConsumer:
         consumer.on_after_fork()
         parent_method.assert_called_once()
 
+    def test_cancel_for_idempotent(self):
+        """cancel_for should be idempotent to prevent re-entrant PubSub._lock
+        deadlock when AsyncResult.__del__ calls remove_pending_result on an
+        already-fulfilled result (issue #10477)."""
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('some-task')
+        # First call: should unsubscribe
+        consumer.cancel_for('some-task')
+        assert consumer._pubsub.unsubscribe.call_count == 1
+        # Second call: key already removed from subscribed_to, should skip
+        consumer.cancel_for('some-task')
+        assert consumer._pubsub.unsubscribe.call_count == 1
+
     @patch('celery.backends.redis.ResultConsumer.cancel_for')
-    @patch('celery.backends.asynchronous.BaseResultConsumer.on_state_change')
+
     def test_on_state_change(self, parent_method, cancel_for):
         consumer = self.get_consumer()
         meta = {'task_id': 'testing', 'status': states.SUCCESS}
