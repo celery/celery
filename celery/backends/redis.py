@@ -195,6 +195,8 @@ class ResultConsumer(BaseResultConsumer):
 
     def cancel_for(self, task_id):
         key = self._get_key_for_task(task_id)
+        if key not in self.subscribed_to:
+            return
         self.subscribed_to.discard(key)
         if self._pubsub:
             with self.reconnect_on_error():
