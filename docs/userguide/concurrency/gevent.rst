@@ -45,6 +45,17 @@ worker option.
 
     $ celery -A proj worker -P gevent -c 1000
 
+.. note::
+
+    When using the gevent pool, ensure that gevent monkey-patching is performed
+    at the very entrypoint of your application (before importing Celery, task modules, or standard library I/O modules):
+
+    .. code-block:: python
+
+        from gevent import monkey
+        monkey.patch_all()
+
+
 .. _eventlet-examples:
 
 Examples
