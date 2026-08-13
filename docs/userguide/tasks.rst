@@ -348,8 +348,24 @@ The request defines the following attributes:
 :called_directly: This flag is set to true if the task wasn't
                   executed by the worker.
 
-:timelimit: A tuple of the current ``(soft, hard)`` time limits active for
-            this task (if any).
+:timelimit: A 2-item sequence ``(hard, soft)`` of the current time limits
+            active for this task (if any).
+
+:time_limit: The hard time limit (in seconds) active for this task, or :const:`None`
+             if no hard limit is set. This value is unpacked from :attr:`timelimit`
+             and reflects limits configured via :setting:`task_time_limit`,
+             task-level ``time_limit``, or the ``time_limit`` argument passed to
+             :meth:`~@Task.apply_async`.
+
+             .. versionadded:: 5.7
+
+:soft_time_limit: The soft time limit (in seconds) active for this task, or :const:`None`
+                  if no soft limit is set. This value is unpacked from :attr:`timelimit`
+                  and reflects limits configured via :setting:`task_soft_time_limit`,
+                  task-level ``soft_time_limit``, or the ``soft_time_limit`` argument
+                  passed to :meth:`~@Task.apply_async`.
+
+                  .. versionadded:: 5.7
 
 :callbacks: A list of signatures to be called if this task returns successfully.
 
@@ -1018,6 +1034,22 @@ General
     maximum number of  requests per second), you must restrict to a given
     queue.
 
+.. warning::
+
+    A rate-limited task still counts against the worker's prefetch count
+    while it waits to run. Once all of a worker's prefetched slots are occupied
+    by rate-limited tasks, the worker stops fetching new messages from the broker
+    entirely, including messages for tasks that have no rate limit of their own.
+
+    For example, consider a worker that handles two tasks, ``A`` and ``B``,
+    where ``A`` is rate limited and ``B`` is not. A burst of ``A`` messages
+    can fill the worker's prefetch slots, and ``B`` messages will sit on
+    the broker untouched until those rate-limited ``A`` tasks drain, even
+    though ``B`` has no rate limit of its own.
+
+    To avoid this, rate-limited tasks should be routed to their own
+    dedicated workers (see :ref:`guide-routing`).
+
 .. attribute:: Task.time_limit
 
     The hard time limit, in seconds, for this task.
@@ -1027,6 +1059,32 @@ General
 
     The soft time limit for this task.
     When not set the workers default is used.
+
+.. note::
+
+    **Hard vs soft time limit failure semantics**
+
+    When a *soft* time limit fires, a :exc:`~celery.exceptions.SoftTimeLimitExceeded`
+    exception is raised inside the worker child process. If this exception
+    propagates and causes the task attempt to fail,
+    :meth:`~celery.app.task.Task.on_failure`, errbacks, and the
+    :signal:`task_failure` signal are all invoked as for any other task failure.
+    Task code may also catch :exc:`~celery.exceptions.SoftTimeLimitExceeded`
+    and exit normally, in which case these failure hooks are not triggered.
+
+    When a *hard* time limit fires the child process is killed and the
+    timeout is handled in the parent (main worker) process.
+    :meth:`~celery.app.task.Task.on_failure`, errbacks, and the
+    :signal:`task_failure` signal are also invoked from the parent process
+    so that cleanup hooks fire consistently for both limit types.
+
+    .. versionchanged:: 5.7
+
+        Hard time limits now invoke :meth:`~celery.app.task.Task.on_failure`,
+        errbacks, and :signal:`task_failure` in the parent worker process,
+        matching the behavior of soft time limits.
+        Previously only :meth:`~celery.backends.base.BaseBackend.mark_as_failure`
+        was called.
 
 .. attribute:: Task.ignore_result
 
@@ -1041,6 +1099,13 @@ General
 
     If :const:`True`, errors will be stored even if the task is configured
     to ignore results.
+
+    .. versionchanged:: 5.7
+        Previously, if the ``ignore_result`` key was missing from the request
+        message, ``store_errors`` would default to ``True``, ignoring the
+        task's own ``ignore_result`` setting. The worker now correctly
+        falls back to ``Task.ignore_result`` when no per-request override
+        is present.
 
 .. attribute:: Task.serializer
 
@@ -1409,8 +1474,20 @@ messages are redelivered to.
 
 .. _`Dead Letter Exchanges`: http://www.rabbitmq.com/dlx.html
 
+When a task raises :exc:`~@Reject` without re-queuing (``requeue=False``) it
+will never run again, so its result is stored in the :state:`FAILURE` state
+and the :signal:`task_failure` signal is sent, just like any other failed
+task. This means :meth:`AsyncResult.failed() <celery.result.AsyncResult.failed>`
+returns :const:`True` and the rejection reason is available as the result.
+This terminal result is recorded regardless of :attr:`Task.acks_late`; the
+broker-level ``basic_reject`` (and therefore re-queuing) is the part that only
+takes effect when ``acks_late`` is enabled.
+
 Reject can also be used to re-queue messages, but please be very careful
 when using this as it can easily result in an infinite message loop.
+Re-queuing (``requeue=True``) only takes effect when :attr:`Task.acks_late`
+is enabled; the message is then redelivered and executed again, so no terminal
+result is stored for it.
 
 Example using reject when a task causes an out of memory condition:
 
@@ -1596,17 +1673,20 @@ The following diagram shows the exact order of execution:
     │  4. on_success() OR     ← Outcome-specific handler            │
     │     on_retry() OR       │                                     │
     │     on_failure()        │                                     │
-    │  5. after_return()      ← Always runs last                    │
+    │  5. after_return()      ← Runs last on terminal states        │
+    │                       (skipped for RETRY/REJECTED/IGNORED)    │
     └───────────────────────────────────────────────────────────────┘
 
 .. important::
-   
+
    **Key points:**
-   
+
    - All handlers run in the **same worker process** as your task
    - ``before_start`` **blocks** the task - ``run()`` won't start until it completes
    - Result backend is updated **before** ``on_success``/``on_failure`` - other clients can see the task as finished while handlers are still running
-   - ``after_return`` **always** executes, regardless of task outcome
+   - ``after_return`` executes when the task reaches a terminal state.
+     It does not run for ``RETRY``, ``REJECTED``, or ``IGNORED``. If you need
+     a hook that fires on every attempt, use the :signal:`task_postrun` signal.
 
 Available handlers
 ~~~~~~~~~~~~~~~~~~
@@ -1687,8 +1767,13 @@ Available handlers
     Handler called after the task returns.
 
     .. note::
-       Executes **after** ``on_success``/``on_retry``/``on_failure``. This is the
-       final hook in the task lifecycle and **always** runs, regardless of outcome.
+        Executes after the outcome-specific handler when the task reaches a
+        terminal state.
+
+        In practice, this means it runs after ``on_success`` or ``on_failure``.
+        It is not executed for ``RETRY``, ``REJECTED``, or ``IGNORED`` states.
+        If a hook is needed for every attempt, consider using the
+        :signal:`task_postrun` signal.
 
     :param status: Current task state.
     :param retval: Task return value/exception.
@@ -1708,19 +1793,19 @@ Example usage
     from celery import Task
 
     class MyTask(Task):
-        
+
         def before_start(self, task_id, args, kwargs):
             print(f"Task {task_id} starting with args {args}")
             # This blocks - run() won't start until this returns
-            
+
         def on_success(self, retval, task_id, args, kwargs):
             print(f"Task {task_id} succeeded with result: {retval}")
             # Result is already visible to clients at this point
-            
+
         def on_failure(self, exc, task_id, args, kwargs, einfo):
             print(f"Task {task_id} failed: {exc}")
             # Task state is already FAILURE in backend
-            
+
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
             print(f"Task {task_id} finished with status: {status}")
             # Always runs last
@@ -1749,8 +1834,9 @@ strongly recommend to inherit from `celery.worker.request.Request`:class:.
 When using the `pre-forking worker <worker-concurrency>`:ref:, the methods
 `~celery.worker.request.Request.on_timeout`:meth: and
 `~celery.worker.request.Request.on_failure`:meth: are executed in the main
-worker process.  An application may leverage such facility to detect failures
-which are not detected using `celery.app.task.Task.on_failure`:meth:.
+worker process.  An application may leverage this facility to add extra
+observability or side-effects around task failures and timeouts beyond what
+`celery.app.task.Task.on_failure`:meth: provides.
 
 As an example, the following custom request detects and logs hard time
 limits, and other failures.

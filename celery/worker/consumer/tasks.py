@@ -31,6 +31,11 @@ class Tasks(bootsteps.StartStopStep):
         c.update_strategies()
 
         qos_global = self.qos_global(c)
+        # Record effective QoS mode on the consumer so the reconnect path
+        # (Consumer.on_connection_error_after_connected) can decide whether
+        # the prefetch reduction/restoration mechanism is safe. Per-consumer
+        # QoS does not support it. See #9512.
+        c.qos_global = qos_global
 
         # set initial prefetch count
         c.connection.default_channel.basic_qos(

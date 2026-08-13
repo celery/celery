@@ -23,7 +23,7 @@ for mod in (mod for mod in sys.modules if mod.startswith(RACE_MODS)):
     for side in ('thread', 'threading', 'socket'):  # pragma: no cover
         if getattr(mod, side, None):
             import warnings
-            warnings.warn(RuntimeWarning(W_RACE % side))
+            warnings.warn(RuntimeWarning(W_RACE % side), stacklevel=2)
 
 
 def apply_target(target, args=(), kwargs=None, callback=None,

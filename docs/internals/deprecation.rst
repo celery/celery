@@ -7,6 +7,25 @@
 .. contents::
     :local:
 
+.. _deprecations-v6.0:
+
+Removals for version 6.0
+========================
+
+Task attributes
+---------------
+
+The task attributes:
+
+- ``queue``
+- ``exchange``
+- ``exchange_type``
+- ``routing_key``
+- ``delivery_mode``
+- ``priority``
+
+are deprecated and must be set by :setting:`task_routes` instead.
+
 .. _deprecations-v5.0:
 
 Removals for version 5.0
@@ -92,21 +111,6 @@ on the class, but have to instantiate the task first:
 
 
     >>> MyTask().delay()        # WORKS!
-
-
-Task attributes
----------------
-
-The task attributes:
-
-- ``queue``
-- ``exchange``
-- ``exchange_type``
-- ``routing_key``
-- ``delivery_mode``
-- ``priority``
-
-is deprecated and must be set by :setting:`task_routes` instead.
 
 
 Modules to Remove
