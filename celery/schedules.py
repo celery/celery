@@ -581,13 +581,13 @@ class crontab(BaseSchedule):
                         tz: str | tzinfo | None = None,
                         ffwd: type = ffwd) -> tuple[datetime, Any, datetime]:
         # caching global ffwd
-        tz = timezone.get_timezone(tz or self.tz)
+        schedule_tz: tzinfo = timezone.get_timezone(tz or self.tz)
         # Normalize both datetimes into the schedule's timezone, so that the
         # crontab field matching and the next-run arithmetic below operate in
         # the frame the crontab is defined in. An aware last_run_at may arrive
         # in a different timezone (e.g. from django-celery-beat).
-        last_run_at = self.maybe_make_aware(last_run_at).astimezone(tz)
-        now = self.maybe_make_aware(self.now()).astimezone(tz)
+        last_run_at = self.maybe_make_aware(last_run_at).astimezone(schedule_tz)
+        now = self.maybe_make_aware(self.now()).astimezone(schedule_tz)
         dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7
 
         execute_this_date = (
