@@ -378,7 +378,6 @@ class Scheduler:
             heappush(H, verify)
             return min(verify[0], max_interval)
 
-
     def schedules_equal(self, old_schedules, new_schedules):
         if old_schedules is new_schedules is None:
             return True
