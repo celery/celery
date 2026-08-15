@@ -370,14 +370,13 @@ class Scheduler:
         # sits on top and the entries behind it never get their turn.
         # https://github.com/celery/celery/issues/7649
         reschedule_delay = None
-        if is_numeric_value(adjusted_next_time_to_run):
-            if adjusted_next_time_to_run > 0:
+        if is_numeric_value(next_time_to_run):
+            if next_time_to_run > 0:
                 reschedule_delay = next_time_to_run
         else:
             # Fall back to max_interval for non-numeric results (e.g. None),
             # otherwise this entry can stay at the top of the heap indefinitely.
             reschedule_delay = max_interval
-
         if reschedule_delay is not None:
             verify = heappop(H)
             if verify is event:
