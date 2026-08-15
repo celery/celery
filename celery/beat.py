@@ -363,32 +363,21 @@ class Scheduler:
             else:
                 heappush(H, verify)
                 return min(verify[0], max_interval)
-        adjusted_next_time_to_run = adjust(next_time_to_run)
 
         # Heap says this entry should be ready by now, but the entry requests
         # to retry later.  Reheap it at that retry time, otherwise it just
         # sits on top and the entries behind it never get their turn.
         # https://github.com/celery/celery/issues/7649
-        reschedule_delay = None
-        if is_numeric_value(next_time_to_run):
-            if next_time_to_run > 0:
-                reschedule_delay = next_time_to_run
+        reschedule_delay = next_time_to_run if is_numeric_value(next_time_to_run) else max_interval
+        verify = heappop(H)
+        if verify is event:
+            heappush(H, event_t(self._when(entry, reschedule_delay), event[1], entry))
+            # If another entry is now at the top, run it immediately.
+            return 0 if H and H[0][2] is not entry else min(adjust(reschedule_delay), max_interval)
         else:
-            # Fall back to max_interval for non-numeric results (e.g. None),
-            # otherwise this entry can stay at the top of the heap indefinitely.
-            reschedule_delay = max_interval
-        if reschedule_delay is not None:
-            verify = heappop(H)
-            if verify is event:
-                heappush(H, event_t(self._when(entry, reschedule_delay),
-                                    event[1], entry))
-                # If another entry is now at the top, run it immediately.
-                return 0 if H and H[0][2] is not entry else min(reschedule_delay, max_interval)
-            else:
-                heappush(H, verify)
-                return min(verify[0], max_interval)
-        return min(adjusted_next_time_to_run if is_numeric_value(adjusted_next_time_to_run) else max_interval,
-                   max_interval)
+            heappush(H, verify)
+            return min(verify[0], max_interval)
+
 
     def schedules_equal(self, old_schedules, new_schedules):
         if old_schedules is new_schedules is None:

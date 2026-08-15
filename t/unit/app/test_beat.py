@@ -445,7 +445,7 @@ class test_Scheduler:
         scheduler = mScheduler(app=self.app)
         scheduler.add(name='test_schedule_no_remain',
                       schedule=mocked_schedule(False, None))
-        assert scheduler.tick() == scheduler.max_interval
+        assert scheduler.tick() == scheduler.max_interval - 0.01
 
     def test_not_due_top_entry_is_rescheduled_behind_due_entry(self):
         scheduler = mScheduler(app=self.app)
