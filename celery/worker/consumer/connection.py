@@ -1,5 +1,6 @@
 """Consumer Broker Connection Bootstep."""
 from kombu.common import ignore_errors
+from kombu.utils.url import maybe_sanitize_url
 
 from celery import bootsteps
 from celery.utils.log import get_logger
@@ -42,4 +43,8 @@ class Connection(bootsteps.StartStopStep):
         if c.connection:
             params = c.connection.info()
             params.pop('password', None)  # don't send password.
+            # don't leak credentials in failover (alternate) broker URLs.
+            params['alternates'] = [
+                maybe_sanitize_url(url) for url in params.get('alternates', [])
+            ]
         return {'broker': params}

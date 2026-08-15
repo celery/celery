@@ -1545,6 +1545,26 @@ class test_ConnectionStep:
 
         assert c.connection is fake_conn
 
+    def test_info_sanitizes_alternate_broker_credentials(self):
+        """info() masks credentials in failover (alternate) broker URLs."""
+        from kombu import Connection as KombuConnection
+
+        from celery.worker.consumer.connection import Connection
+        step = Connection.__new__(Connection)
+        c = Mock(name='consumer')
+        c.connection = KombuConnection(
+            'redis://:mainpass@127.0.0.1:6379/0;'
+            'redis://:altpass@127.0.0.1:6380/0'
+        )
+
+        broker = step.info(c)['broker']
+
+        assert 'password' not in broker
+        assert len(broker['alternates']) == 2
+        assert all('**' in url for url in broker['alternates'])
+        assert 'mainpass' not in str(broker)
+        assert 'altpass' not in str(broker)
+
 
 class test_Gossip:
 
