@@ -8,7 +8,8 @@ from celery import Celery, signature
 from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded, WorkerLostError
 from t.integration.tasks import add, identity
 from t.smoke.conftest import SuiteOperations, TaskTermination
-from t.smoke.tasks import (replace_with_task, soft_time_limit_lower_than_time_limit,
+from t.smoke.tasks import (noop, replace_with_task, self_termination_delay_timeout,
+                           soft_time_limit_lower_than_time_limit,
                            soft_time_limit_must_exceed_time_limit)
 
 
@@ -144,3 +145,18 @@ class test_time_limit:
         sig = soft_time_limit_must_exceed_time_limit.s()
         with pytest.raises(ValueError, match="soft_time_limit must be less than or equal to time_limit"):
             sig.apply_async(queue=celery_setup.worker.worker_queue)
+
+    def test_hard_timeout_worker_remains_functional(self, celery_setup: CeleryTestSetup):
+        """Verify the worker remains functional after a hard timeout."""
+        timeout_result = self_termination_delay_timeout.apply_async(
+            queue=celery_setup.worker.worker_queue,
+        )
+
+        with pytest.raises(TimeLimitExceeded):
+            timeout_result.get(timeout=RESULT_TIMEOUT)
+
+        result = noop.apply_async(
+            queue=celery_setup.worker.worker_queue,
+        )
+
+        assert result.get(timeout=RESULT_TIMEOUT) is None
