@@ -1527,6 +1527,39 @@ class test_ConnectionStep:
 
         step.close_connection(c)  # must not raise
 
+    def test_info_censors_password_and_alternates(self):
+        """info() removes top-level password and censors failover URLs."""
+        step, c = self._get_step_and_consumer()
+        c.connection = Mock(name='conn')
+        c.connection.info.return_value = {
+            'transport': 'amqp',
+            'password': 'supersecret',
+            'alternates': [
+                'amqp://user:' + 'secret1' + '@host-1:5672//',
+                'amqp://user:' + 'secret2' + '@host-2:5672//',
+            ],
+        }
+
+        stats = step.info(c)
+        broker = stats['broker']
+        assert 'password' not in broker
+        assert 'secret1' not in broker['alternates'][0]
+        assert 'secret2' not in broker['alternates'][1]
+        assert '**' in broker['alternates'][0]
+        assert '**' in broker['alternates'][1]
+
+    def test_info_censors_alternates_string(self):
+        """info() censors alternates when represented as a single URL."""
+        step, c = self._get_step_and_consumer()
+        c.connection = Mock(name='conn')
+        c.connection.info.return_value = {
+            'alternates': 'amqp://user:secret@host:5672//',
+        }
+
+        stats = step.info(c)
+        assert 'secret' not in stats['broker']['alternates']
+        assert '**' in stats['broker']['alternates']
+
     # ------------------------------------------------------------------
     # start() - sanity check that the connection is stored on c
     # ------------------------------------------------------------------
