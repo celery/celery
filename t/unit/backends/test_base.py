@@ -756,6 +756,26 @@ class test_BaseBackend_dict:
         with pytest.raises(TimeoutError):
             b.wait_for(task_id='1', timeout=0)
 
+    def test_wait_for__timeout_zero_does_not_sleep(self):
+        """timeout=0 means do not block, so it must not sleep before giving up."""
+        sleep = self.patching('time.sleep')
+        b = BaseBackend(app=self.app)
+        b._get_task_meta_for = Mock()
+        b._get_task_meta_for.return_value = {'status': states.PENDING}
+        with pytest.raises(TimeoutError):
+            b.wait_for(task_id='1', timeout=0)
+        sleep.assert_not_called()
+
+    def test_wait_for__does_not_sleep_past_the_timeout(self):
+        """A timeout below the poll interval must not be overshot."""
+        sleep = self.patching('time.sleep')
+        b = BaseBackend(app=self.app)
+        b._get_task_meta_for = Mock()
+        b._get_task_meta_for.return_value = {'status': states.PENDING}
+        with pytest.raises(TimeoutError):
+            b.wait_for(task_id='1', timeout=0.1, interval=0.5)
+        assert sum(c.args[0] for c in sleep.call_args_list) == 0.1
+
     def test_get_children(self):
         b = BaseBackend(app=self.app)
         b._get_task_meta_for = Mock()
