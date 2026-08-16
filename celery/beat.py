@@ -678,6 +678,8 @@ class BeatPidbox:
             error('beat pidbox command error: %r', exc, exc_info=True)
 
     def start(self):
+        if self.thread is not None and self.thread.is_alive():
+            return
         self._shutdown.clear()
         self.thread = Thread(
             target=self._loop, name='BeatPidbox', daemon=True)
