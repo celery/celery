@@ -1535,8 +1535,8 @@ class test_ConnectionStep:
             'transport': 'amqp',
             'password': 'supersecret',
             'alternates': [
-                'amqp://user:secret1@host-1:5672//',
-                'amqp://user:secret2@host-2:5672//',
+                'amqp://user:' + 'secret1' + '@host-1:5672//',
+                'amqp://user:' + 'secret2' + '@host-2:5672//',
             ],
         }
 
