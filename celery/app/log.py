@@ -96,7 +96,7 @@ class Logging:
         Logging._setup = True
         loglevel = mlevel(loglevel or self.loglevel)
         format = format or self.format
-        datefmt = datefmt or self.datefmt
+        datefmt = self.datefmt if datefmt is None else datefmt
         colorize = self.supports_color(colorize, logfile)
         reset_multiprocessing_logger()
         receivers = signals.setup_logging.send(
@@ -169,7 +169,7 @@ class Logging:
         """
         loglevel = mlevel(loglevel or self.loglevel)
         format = format or self.task_format
-        datefmt = datefmt or self.task_datefmt
+        datefmt = self.task_datefmt if datefmt is None else datefmt
         colorize = self.supports_color(colorize, logfile)
 
         logger = self.setup_handlers(

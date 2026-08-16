@@ -99,6 +99,13 @@ class test_ColorFormatter:
     def test_datefmt_defaults_to_none(self):
         assert ColorFormatter().datefmt is None
 
+    def test_use_color_is_still_the_second_positional_arg(self):
+        # datefmt is appended last so that ColorFormatter(fmt, False)
+        # keeps meaning "no color" instead of "datefmt=False".
+        x = ColorFormatter('%(message)s', False)
+        assert x.use_color is False
+        assert x.datefmt is None
+
     def test_datefmt(self):
         record = logging.LogRecord(
             'name', logging.INFO, 'path', 1, 'hello world', None, None,
@@ -228,6 +235,15 @@ class test_default_logger:
         log = self.app.log.__class__(self.app)
         assert log.datefmt == '%Y%m%d'
         assert log.task_datefmt == '%H%M%S'
+
+    def test_empty_datefmt_overrides_the_configured_one(self, restore_logging):
+        # '' is a valid datefmt for logging.Formatter, so it must not fall
+        # back to the configured default the way `datefmt or self.datefmt` did.
+        self.app.conf.worker_task_log_datefmt = '%Y%m%d'
+        log = self.app.log.__class__(self.app)
+        with patch.object(log, 'setup_handlers') as setup_handlers:
+            log.setup_task_loggers(datefmt='')
+        assert setup_handlers.call_args.kwargs['datefmt'] == ''
 
     @pytest.mark.masked_modules('billiard.util')
     def test_setup_logging_subsystem_no_mputil(self, restore_logging, mask_modules):

@@ -132,7 +132,7 @@ class ColorFormatter(logging.Formatter):
         'CRITICAL': COLORS['magenta'],
     }
 
-    def __init__(self, fmt=None, datefmt=None, use_color=True):
+    def __init__(self, fmt=None, use_color=True, datefmt=None):
         super().__init__(fmt, datefmt)
         self.use_color = use_color
 
