@@ -8,6 +8,7 @@ from celery import Signature, Task, chain, chord, group, shared_task
 from celery.canvas import signature
 from celery.exceptions import Reject, SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
+from celery.worker.control import control_command
 
 LEGACY_TASKS_DISABLED = True
 try:
@@ -26,6 +27,11 @@ def get_redis_connection():
 
 
 logger = get_task_logger(__name__)
+
+
+@control_command(visible=False)
+def pidbox_reset_error(state, **kwargs):
+    raise RuntimeError('pidbox reset integration test')
 
 
 @shared_task

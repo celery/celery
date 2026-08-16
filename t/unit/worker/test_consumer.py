@@ -10,9 +10,11 @@ from billiard.exceptions import RestartFreqExceeded
 
 from celery import bootsteps
 from celery.contrib.testing.mocks import ContextMock
+from celery.events.state import HEARTBEAT_DRIFT_MAX
 from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.utils.collections import LimitedSet
 from celery.utils.quorum_queues import detect_quorum_queues
+from celery.utils.time import utcoffset
 from celery.worker.consumer.agent import Agent
 from celery.worker.consumer.consumer import (CANCEL_TASKS_BY_DEFAULT, CLOSE, COLLECT_SOCKET_TIMEOUT, TERMINATE,
                                              Consumer)
@@ -1525,6 +1527,39 @@ class test_ConnectionStep:
 
         step.close_connection(c)  # must not raise
 
+    def test_info_censors_password_and_alternates(self):
+        """info() removes top-level password and censors failover URLs."""
+        step, c = self._get_step_and_consumer()
+        c.connection = Mock(name='conn')
+        c.connection.info.return_value = {
+            'transport': 'amqp',
+            'password': 'supersecret',
+            'alternates': [
+                'amqp://user:' + 'secret1' + '@host-1:5672//',
+                'amqp://user:' + 'secret2' + '@host-2:5672//',
+            ],
+        }
+
+        stats = step.info(c)
+        broker = stats['broker']
+        assert 'password' not in broker
+        assert 'secret1' not in broker['alternates'][0]
+        assert 'secret2' not in broker['alternates'][1]
+        assert '**' in broker['alternates'][0]
+        assert '**' in broker['alternates'][1]
+
+    def test_info_censors_alternates_string(self):
+        """info() censors alternates when represented as a single URL."""
+        step, c = self._get_step_and_consumer()
+        c.connection = Mock(name='conn')
+        c.connection.info.return_value = {
+            'alternates': 'amqp://user:secret@host:5672//',
+        }
+
+        stats = step.info(c)
+        assert 'secret' not in stats['broker']['alternates']
+        assert '**' in stats['broker']['alternates']
+
     # ------------------------------------------------------------------
     # start() - sanity check that the connection is stored on c
     # ------------------------------------------------------------------
@@ -1794,3 +1829,33 @@ class test_Gossip:
         message.headers = {'hostname': g.hostname}
         g.on_message(prepare, message)
         g.clock.forward.assert_called_with()
+
+    def test_worker_event_across_timezones_causes_no_drift_warning(self):
+        c = self.Consumer()
+        c.app = self.app
+        c.app.connection_for_read = _amqp_connection()
+        g = Gossip(c)
+
+        with self.app.connection_for_write() as conn:
+            channel = conn.default_channel
+            consumer = g.get_consumers(channel)[0]
+            consumer.consume()
+
+            dispatcher = self.app.events.Dispatcher(
+                conn, hostname='other@x.com', channel=channel,
+            )
+            # simulate a sender in a timezone 7 hours from the gossip
+            with patch(
+                'celery.events.dispatcher.utcoffset',
+                return_value=utcoffset() + 7
+            ):
+                dispatcher.send('worker-heartbeat', freq=5)
+
+            with patch('celery.events.state._warn_drift') as warn_drift:
+                conn.drain_events(timeout=5)
+
+        worker = g.state.workers['other@x.com']
+        assert worker.utcoffset != utcoffset()
+        drift = abs(int(worker.local_received) - int(worker.timestamp))
+        assert drift <= HEARTBEAT_DRIFT_MAX
+        warn_drift.assert_not_called()

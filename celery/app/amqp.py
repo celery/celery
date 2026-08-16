@@ -483,18 +483,18 @@ class AMQP:
         return s
 
     def _create_task_sender(self):
+        amqp = self
         default_retry = self.app.conf.task_publish_retry
         default_policy = self.app.conf.task_publish_retry_policy
         default_delivery_mode = self.app.conf.task_default_delivery_mode
-        default_queue = self.default_queue
         queues = self.queues
         send_before_publish = signals.before_task_publish.send
         before_receivers = signals.before_task_publish.receivers
         send_after_publish = signals.after_task_publish.send
         after_receivers = signals.after_task_publish.receivers
 
-        send_task_sent = signals.task_sent.send   # XXX compat
-        sent_receivers = signals.task_sent.receivers
+        send_task_sent = signals.task_sent.send   # XXX compat (remove 6.0)
+        sent_receivers = signals.task_sent.receivers   # XXX compat (remove 6.0)
 
         default_evd = self._event_dispatcher
         default_exchange = self.default_exchange
@@ -520,7 +520,7 @@ class AMQP:
 
             qname = queue
             if queue is None and exchange is None:
-                queue = default_queue
+                queue = amqp.default_queue
             if queue is not None:
                 if isinstance(queue, str):
                     qname, queue = queue, queues[queue]
