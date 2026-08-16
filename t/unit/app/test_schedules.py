@@ -585,6 +585,26 @@ class test_crontab_remaining_estimate:
 
         assert next == datetime(2025, 5, 20, 8, 40, tzinfo=ZoneInfo("UTC"))
 
+    def test_remaining_delta_finds_hour_slot_before_now(self):
+        crontab = self.crontab(minute=0, hour='1,2')  # every day at 01:00 and 02:00
+        last_run_at = datetime(2022, 12, 5, 1, 0)  # next run is 02:00
+        now = datetime(2022, 12, 6, 0, 10)  # the next day
+        crontab.nowfun = lambda: now
+
+        next = now + crontab.remaining_estimate(last_run_at)
+
+        assert next == datetime(2022, 12, 5, 2, 0)
+
+    def test_remaining_delta_finds_minute_slot_before_now(self):
+        crontab = self.crontab(minute='0,30', hour=1)  # every day at 01:00 and 01:30
+        last_run_at = datetime(2022, 12, 5, 1, 0)  # next run is 01:30
+        now = datetime(2022, 12, 6, 0, 10)  # the next day
+        crontab.nowfun = lambda: now
+
+        next = now + crontab.remaining_estimate(last_run_at)
+
+        assert next == datetime(2022, 12, 5, 1, 30)
+
 
 class test_crontab_is_due:
 
