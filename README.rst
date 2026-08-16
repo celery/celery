@@ -65,7 +65,7 @@ Upstash
    :width: 200px
    :target: https://upstash.com/?code=celery
 
-`Upstash <http://upstash.com/?code=celery>`_ offers a serverless Redis database service,
+`Upstash <https://upstash.com/?code=celery>`_ offers a serverless Redis database service,
 providing a seamless solution for Celery users looking to leverage
 serverless architectures. Upstash's serverless Redis service is designed
 with an eventual consistency model and durable storage, facilitated
@@ -240,12 +240,12 @@ It supports...
         - *zlib*, *bzip2* compression.
         - Cryptographic message signing.
 
-.. _`Eventlet`: http://eventlet.net/
-.. _`gevent`: http://gevent.org/
+.. _`Eventlet`: https://eventlet.net/
+.. _`gevent`: https://gevent.org/
 
 .. _RabbitMQ: https://rabbitmq.com
 .. _Redis: https://redis.io
-.. _SQLAlchemy: http://sqlalchemy.org
+.. _SQLAlchemy: https://sqlalchemy.org
 
 Framework Integration
 =====================
@@ -274,9 +274,9 @@ development easier, and sometimes they add important hooks like closing
 database connections at ``fork``.
 
 .. _`Django`: https://djangoproject.com/
-.. _`Pylons`: http://pylonsproject.org/
+.. _`Pylons`: https://pylonsproject.org/
 .. _`Flask`: https://flask.palletsprojects.com/
-.. _`web2py`: http://web2py.com/
+.. _`web2py`: https://web2py.com/
 .. _`Bottle`: https://bottlepy.org/
 .. _`Pyramid`: https://docs.pylonsproject.org/projects/pyramid/en/latest/
 .. _`pyramid_celery`: https://pypi.org/project/pyramid_celery/
@@ -600,6 +600,6 @@ file in the top distribution directory for the full license text.
     :target: https://pepy.tech/project/celery
 
 .. |deepwiki| image:: https://devin.ai/assets/deepwiki-badge.png
-    :alt: Ask http://DeepWiki.com
+    :alt: Ask https://DeepWiki.com
     :target: https://deepwiki.com/celery/celery
     :width: 125px

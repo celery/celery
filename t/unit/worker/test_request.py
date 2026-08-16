@@ -317,10 +317,80 @@ class test_Request(RequestCase):
             einfo = ExceptionInfo(internal=True)
         assert einfo is not None
         req = self.get_request(self.add.s(2, 2))
+        req.task.backend = Mock()
         req.on_failure(einfo)
         req.on_reject.assert_called_with(
             req_logger, req.connection_errors, False,
         )
+
+    def test_on_failure_Reject_marks_as_failure(self):
+        # Issue #4222: Reject(requeue=False) must store a terminal FAILURE
+        # result (and fire task_failure) instead of leaving the task PENDING.
+        einfo = None
+        try:
+            raise Reject('rejected')
+        except Reject:
+            einfo = ExceptionInfo(internal=True)
+        assert einfo is not None
+        req = self.get_request(self.add.s(2, 2))
+        req.task.backend = Mock()
+        handler = Mock()
+        task_failure.connect(handler, sender=req.task, weak=False)
+        try:
+            req.on_failure(einfo)
+        finally:
+            task_failure.disconnect(handler, sender=req.task)
+        req.task.backend.mark_as_failure.assert_called_once()
+        call = req.task.backend.mark_as_failure.call_args
+        assert call.args[0] == req.id
+        stored_exc = getattr(call.args[1], 'exc', call.args[1])
+        assert isinstance(stored_exc, Reject)
+        assert call.kwargs['request'] is req._context
+        assert call.kwargs['store_result'] == req.store_errors
+        handler.assert_called_once()
+        assert handler.call_args.kwargs['task_id'] == req.id
+        req.on_reject.assert_called_with(
+            req_logger, req.connection_errors, False,
+        )
+        # a task-failed event is emitted so monitors show FAILURE, not STARTED
+        assert any(
+            c.args and c.args[0] == 'task-failed'
+            for c in req.eventer.send.call_args_list
+        )
+
+    def test_on_failure_Reject_respects_send_failed_event(self):
+        # send_failed_event=False must suppress the task-failed event for
+        # Reject(requeue=False) too, while still recording the failure.
+        einfo = None
+        try:
+            raise Reject('rejected')
+        except Reject:
+            einfo = ExceptionInfo(internal=True)
+        assert einfo is not None
+        req = self.get_request(self.add.s(2, 2))
+        req.task.backend = Mock()
+        req.on_failure(einfo, send_failed_event=False)
+        req.task.backend.mark_as_failure.assert_called_once()
+        assert not any(
+            c.args and c.args[0] == 'task-failed'
+            for c in req.eventer.send.call_args_list
+        )
+
+    def test_on_failure_Reject_marks_as_failure_when_already_acked(self):
+        # With the default acks_late=False the message is acknowledged on
+        # receipt, so self.reject() is a no-op; the terminal FAILURE result
+        # must still be recorded (Issue #4222).
+        einfo = None
+        try:
+            raise Reject(requeue=False)
+        except Reject:
+            einfo = ExceptionInfo(internal=True)
+        assert einfo is not None
+        req = self.get_request(self.add.s(2, 2))
+        req.task.backend = Mock()
+        req.acknowledged = True  # simulate the default early ack
+        req.on_failure(einfo)
+        req.task.backend.mark_as_failure.assert_called_once()
 
     def test_on_failure_Reject_rejects_with_requeue(self):
         einfo = None
@@ -330,9 +400,17 @@ class test_Request(RequestCase):
             einfo = ExceptionInfo(internal=True)
         assert einfo is not None
         req = self.get_request(self.add.s(2, 2))
+        req.task.backend = Mock()
         req.on_failure(einfo)
         req.on_reject.assert_called_with(
             req_logger, req.connection_errors, True,
+        )
+        # A requeued message is redelivered and re-executed, so no terminal
+        # result is stored and no task-failed event is emitted.
+        req.task.backend.mark_as_failure.assert_not_called()
+        assert not any(
+            c.args and c.args[0] == 'task-failed'
+            for c in req.eventer.send.call_args_list
         )
 
     def test_on_failure_WorkerLostError_rejects_with_requeue(self):
