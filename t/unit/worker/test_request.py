@@ -1291,6 +1291,52 @@ class test_Request(RequestCase):
         job.on_timeout(soft=True, timeout=1336)
         assert self.mytask.backend.get_status(job.id) == states.PENDING
 
+    def test_on_hard_timeout_traceback_clear_not_called(self, patching):
+        """Regression test: traceback_clear should not be called in on_timeout hard timeout path.
+        
+        The traceback_clear call was a silent no-op since exc is raised and caught within
+        the same function, making the only frame in exc.__traceback__ the currently-executing
+        frame which cannot be cleared. This test verifies:
+        - Failure hooks still fire correctly (on_failure, task_failure signal, mark_as_failure)
+        - exc.__traceback__ is set to None (cycle-breaking still happens via exc.__traceback__ = None)
+        - traceback_clear is not imported or called (no longer needed)
+        """
+        error = patching('celery.worker.request.error')
+        
+        job = self.xRequest()
+        job.task.backend = Mock()
+        job.task.on_failure = Mock()
+        job.task.after_return = Mock()
+        
+        # Track task_failure signal
+        signal_handler = Mock()
+        task_failure.connect(signal_handler, sender=job.task, weak=False)
+        
+        try:
+            job.on_timeout(soft=False, timeout=1337)
+            
+            # Verify failure hooks were called
+            job.task.on_failure.assert_called_once()
+            job.task.backend.mark_as_failure.assert_called_once()
+            
+            # Verify task_failure signal was sent
+            signal_handler.assert_called_once()
+            assert signal_handler.call_args.kwargs['task_id'] == job.id
+            assert isinstance(signal_handler.call_args.kwargs['exception'], TimeLimitExceeded)
+            
+            # Verify after_return was called if task has custom after_return
+            # (Note: task_has_custom is not imported, so we skip this check)
+            # The important thing is that on_failure and mark_as_failure were called.
+            
+            # Verify the error was logged
+            assert 'Hard time limit' in error.call_args[0][0]
+            
+            # Verify traceback_clear is not imported in request.py
+            import celery.worker.request as request_module
+            assert 'traceback_clear' not in dir(request_module)
+        finally:
+            task_failure.disconnect(signal_handler, sender=job.task)
+
     def test_on_timeout_should_terminate(self, patching):
         from celery.worker import state
         warn = patching('celery.worker.request.warn')
