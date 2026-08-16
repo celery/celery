@@ -41,7 +41,7 @@ Apply to: :class:`~celery.result.AsyncResult`,
 
 - ``Result.wait()`` -> ``Result.get()``
 
-- ``Result.task_id()`` -> ``Result.id``
+- ``Result.task_id`` -> ``Result.id``
 
 - ``Result.status`` -> ``Result.state``.
 
