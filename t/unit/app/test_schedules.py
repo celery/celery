@@ -585,7 +585,7 @@ class test_crontab_remaining_estimate:
 
         assert next == datetime(2025, 5, 20, 8, 40, tzinfo=ZoneInfo("UTC"))
 
-    def test_remaining_delta_finds_hour_slot_before_now(self):
+    def test_remaining_estimate_finds_hour_slot_before_now(self):
         crontab = self.crontab(minute=0, hour='1,2')  # every day at 01:00 and 02:00
         last_run_at = datetime(2022, 12, 5, 1, 0)  # next run is 02:00
         now = datetime(2022, 12, 6, 0, 10)  # the next day
