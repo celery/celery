@@ -747,6 +747,15 @@ class test_BaseBackend_dict:
         b._get_task_meta_for.return_value = {'status': states.SUCCESS}
         b.wait_for(task_id='1', timeout=None)
 
+    def test_wait_for__timeout_zero_does_not_wait_forever(self):
+        """A timeout of 0 must time out, not fall back to waiting forever."""
+        self.patching('time.sleep')
+        b = BaseBackend(app=self.app)
+        b._get_task_meta_for = Mock()
+        b._get_task_meta_for.return_value = {'status': states.PENDING}
+        with pytest.raises(TimeoutError):
+            b.wait_for(task_id='1', timeout=0)
+
     def test_get_children(self):
         b = BaseBackend(app=self.app)
         b._get_task_meta_for = Mock()

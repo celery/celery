@@ -941,7 +941,7 @@ class SyncBackendMixin:
             # avoid hammering the CPU checking status.
             time.sleep(interval)
             time_elapsed += interval
-            if timeout and time_elapsed >= timeout:
+            if timeout is not None and time_elapsed >= timeout:
                 raise TimeoutError('The operation timed out.')
 
     def add_pending_result(self, result, weak=False):

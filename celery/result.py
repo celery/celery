@@ -809,7 +809,7 @@ class ResultSet(ResultBase):
         results = []
         for result in self.results:
             remaining = None
-            if timeout:
+            if timeout is not None:
                 remaining = timeout - (time.monotonic() - time_start)
                 if remaining <= 0.0:
                     raise TimeoutError('join operation timed out')

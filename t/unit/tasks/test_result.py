@@ -873,6 +873,14 @@ class test_GroupResult:
             backend.ids = [result.id for result in results]
             assert len(list(ts.iter_native())) == 10
 
+    def test_join_timeout_zero(self):
+        """A timeout of 0 must time out, not fall back to waiting forever."""
+        ar = MockAsyncResultSuccess(uuid(), app=self.app)
+        ar2 = self.app.AsyncResult(uuid())
+        ts = self.app.GroupResult(uuid(), [ar, ar2])
+        with pytest.raises(TimeoutError):
+            ts.join(timeout=0)
+
     def test_join_timeout(self):
         ar = MockAsyncResultSuccess(uuid(), app=self.app)
         ar2 = MockAsyncResultSuccess(uuid(), app=self.app)
