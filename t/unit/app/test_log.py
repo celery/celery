@@ -32,6 +32,20 @@ class test_TaskFormatter:
         assert record.task_name == '???'
         assert record.task_id == '???'
 
+    def test_datefmt(self):
+        record = logging.LogRecord(
+            'name', logging.INFO, 'path', 1, 'hello world', None, None,
+        )
+        x = TaskFormatter(
+            fmt='[%(asctime)s] %(task_name)s %(message)s',
+            datefmt='%Y%m%d-%H%M%S',
+            use_color=False,
+        )
+        assert x.datefmt == '%Y%m%d-%H%M%S'
+        asctime = x.format(record).split(']')[0].lstrip('[')
+        # the default asctime uses "-" and ":" separators plus a "," for msecs
+        assert ':' not in asctime and ',' not in asctime
+
 
 class test_logger_isa:
 
@@ -81,6 +95,20 @@ class test_logger_isa:
 
 
 class test_ColorFormatter:
+
+    def test_datefmt_defaults_to_none(self):
+        assert ColorFormatter().datefmt is None
+
+    def test_datefmt(self):
+        record = logging.LogRecord(
+            'name', logging.INFO, 'path', 1, 'hello world', None, None,
+        )
+        x = ColorFormatter(
+            fmt='[%(asctime)s] %(message)s',
+            datefmt='%H:%M:%S',
+            use_color=False,
+        )
+        assert x.format(record).split(']')[0].count(':') == 2
 
     @patch('celery.utils.log.safe_str')
     @patch('logging.Formatter.formatException')
@@ -182,6 +210,24 @@ class test_default_logger:
     def test_setup_logging_subsystem_colorize(self, restore_logging):
         self.app.log.setup_logging_subsystem(colorize=None)
         self.app.log.setup_logging_subsystem(colorize=True)
+
+    def test_setup_handlers_datefmt(self):
+        logger = logging.getLogger('celery.test_setup_handlers_datefmt')
+        try:
+            self.app.log.setup_handlers(
+                logger, sys.stderr, '%(asctime)s', False,
+                datefmt='%Y%m%d',
+            )
+            assert logger.handlers[0].formatter.datefmt == '%Y%m%d'
+        finally:
+            logger.handlers[:] = []
+
+    def test_worker_log_datefmt_setting(self, restore_logging):
+        self.app.conf.worker_log_datefmt = '%Y%m%d'
+        self.app.conf.worker_task_log_datefmt = '%H%M%S'
+        log = self.app.log.__class__(self.app)
+        assert log.datefmt == '%Y%m%d'
+        assert log.task_datefmt == '%H%M%S'
 
     @pytest.mark.masked_modules('billiard.util')
     def test_setup_logging_subsystem_no_mputil(self, restore_logging, mask_modules):
