@@ -309,6 +309,20 @@ class test_AMQP(test_AMQP_Base):
         assert kwargs['routing_key'] == 'foo'
         assert kwargs['exchange'] == ''
 
+    def test_send_task_message__no_default_queue(self):
+        conf = self.app.conf
+        conf.task_create_missing_queues = False
+        conf.task_queues = {Queue('my_queue')}
+
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event,
+            queue='my_queue', retry=False,
+        )
+        kwargs = prod.publish.call_args[1]
+        assert kwargs['routing_key'] == 'my_queue'
+        assert kwargs['exchange'] == ''
+
     def test_send_task_message__broadcast_without_exchange(self):
         from kombu.common import Broadcast
         evd = Mock(name='evd')
