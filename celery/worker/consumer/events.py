@@ -5,6 +5,7 @@
 from kombu.common import ignore_errors
 
 from celery import bootsteps
+from celery.worker.state import reserved_requests
 
 from .connection import Connection
 
@@ -47,6 +48,8 @@ class Events(bootsteps.StartStopStep):
         if prev:
             dis.extend_buffer(prev)
             dis.flush()
+            for request in tuple(reserved_requests):
+                request.eventer = dis
 
     def stop(self, c):
         pass

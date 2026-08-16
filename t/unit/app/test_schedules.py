@@ -8,6 +8,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from celery.exceptions import ImproperlyConfigured
 from celery.schedules import ParseException, crontab, crontab_parser, schedule, solar
 
 if sys.version_info >= (3, 9):
@@ -97,6 +98,15 @@ class test_solar:
                 pytest.fail(
                     f"{s.method} was called with 'use_center' which is not a "
                     "valid keyword for the function.")
+
+
+class test_solar_without_ephem:
+
+    def test_raises_improperly_configured_when_ephem_is_missing(
+            self, monkeypatch):
+        monkeypatch.setitem(sys.modules, 'ephem', None)
+        with pytest.raises(ImproperlyConfigured, match=r'celery\[solar\]'):
+            solar('sunrise', 60, 30, app=self.app)
 
 
 class test_schedule:
@@ -538,6 +548,42 @@ class test_crontab_remaining_estimate:
         next = now + crontab.remaining_estimate(last_run_at)
 
         assert next == datetime(2023, 1, 29, 0, 0, tzinfo=tz)
+
+    def test_aware_last_run_at_in_different_timezone(self):
+        # The crontab fields are defined in the schedule's timezone (the app
+        # timezone, UTC here), but an aware last_run_at may arrive in a
+        # different timezone, e.g. from django-celery-beat.  Both datetimes
+        # must be normalized into the schedule's frame before any field
+        # matching (#9715).
+        vilnius = ZoneInfo("Europe/Vilnius")
+        crontab = self.crontab(minute=40, hour=8)
+
+        # 09:25:08 in Vilnius == 06:25:08 UTC
+        last_run_at = datetime(2025, 5, 20, 9, 25, 8, tzinfo=vilnius)
+        now = datetime(2025, 5, 20, 9, 26, 8, tzinfo=vilnius)
+        crontab.nowfun = lambda: now
+
+        next = now + crontab.remaining_estimate(last_run_at)
+
+        # The next run is at 08:40 UTC on the same day, not a day later.
+        assert next == datetime(2025, 5, 20, 8, 40, tzinfo=ZoneInfo("UTC"))
+
+    def test_aware_last_run_at_in_different_timezone_without_utc(self):
+        # Same as above with enable_utc off, which is a common
+        # django-celery-beat setup.  The returned datetimes must stay in the
+        # frame the delta was computed in (#9715).
+        self.app.conf.enable_utc = False
+        self.app.conf.timezone = "UTC"
+        vilnius = ZoneInfo("Europe/Vilnius")
+        crontab = self.crontab(minute=40, hour=8)
+
+        last_run_at = datetime(2025, 5, 20, 9, 25, 8, tzinfo=vilnius)
+        now = datetime(2025, 5, 20, 9, 26, 8, tzinfo=vilnius)
+        crontab.nowfun = lambda: now
+
+        next = now + crontab.remaining_estimate(last_run_at)
+
+        assert next == datetime(2025, 5, 20, 8, 40, tzinfo=ZoneInfo("UTC"))
 
 
 class test_crontab_is_due:

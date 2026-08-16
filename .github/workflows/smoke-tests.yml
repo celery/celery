@@ -3,8 +3,8 @@ name: Smoke Tests
 on:
   workflow_call:
     inputs:
-      module_name:
-        description: 'Name of the test module to run (e.g., test_broker_failover.py)'
+      test_path:
+        description: 'Test path to run (e.g., t/smoke/tests/test_broker_failover.py)'
         required: true
         type: string
       python_versions:
@@ -39,9 +39,9 @@ jobs:
 
       - uses: actions/checkout@v7
       - name: Setup Docker Builder
-        uses: useblacksmith/setup-docker-builder@v1
+        uses: useblacksmith/setup-docker-builder@v2.0.1
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
           allow-prereleases: true
@@ -51,11 +51,13 @@ jobs:
       - name: Install tox
         run: python -m pip install --upgrade pip tox tox-gh-actions
 
-      - name: Run tox for "${{ matrix.python-version }}-smoke-${{ inputs.module_name }}"
+      - name: Run tox for "${{ matrix.python-version }}-smoke-${{ inputs.test_path }}"
+        env:
+          TEST_PATH: ${{ inputs.test_path }}
         uses: nick-fields/retry@v4
         with:
           timeout_minutes: 60
           max_attempts: 3
           retry_wait_seconds: 60
           command: |
-            tox --verbose --verbose -e "${{ matrix.python-version }}-smoke" -- -k ${{ inputs.module_name }} -n auto
+            tox --verbose --verbose -e "${{ matrix.python-version }}-smoke" -- -n auto

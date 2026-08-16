@@ -8,9 +8,10 @@
 import sys
 import time
 import warnings
-from collections import namedtuple
+from collections import deque, namedtuple
 from datetime import timedelta
 from functools import partial
+from uuid import UUID
 from weakref import WeakValueDictionary
 
 from billiard.einfo import ExceptionInfo
@@ -207,7 +208,9 @@ class Backend:
                 chain_data = iter(request.chain)
             except (AttributeError, TypeError):
                 chain_data = tuple()
-            for chain_elem in chain_data:
+            chain_elems = deque(chain_data)
+            while chain_elems:
+                chain_elem = chain_elems.popleft()
                 # Reconstruct a `Context` object for the chained task which has
                 # enough information to for backends to work with
                 chain_elem_ctx = Context(chain_elem)
@@ -227,16 +230,24 @@ class Backend:
                 # that we mark something as being complete as avoid stalling.
                 if (
                     store_result and state in states.PROPAGATE_STATES and
-                    chain_elem_ctx.task_id is not None
+                    chain_elem_ctx.id is not None
                 ):
                     self.store_result(
-                        chain_elem_ctx.task_id, exc, state,
+                        chain_elem_ctx.id, exc, state,
                         traceback=traceback, request=chain_elem_ctx,
                     )
                 # If the chain element is a member of a chord, we also need
                 # to call `on_chord_part_return()` as well to avoid stalls.
                 if 'chord' in chain_elem_ctx.options:
                     self.on_chord_part_return(chain_elem_ctx, state, exc)
+                # A chord step completes only when its body does, so the
+                # result that later steps and any enclosing chord wait on is
+                # the chord body, not the chord's own id. Descend into it so
+                # the failure reaches that result (see issue #9674).
+                if getattr(chain_elem_ctx, 'subtask_type', None) == 'chord':
+                    chord_body = (chain_elem_ctx.kwargs or {}).get('body')
+                    if chord_body is not None:
+                        chain_elems.append(chord_body)
             # And finally we'll fire any errbacks
             if call_errbacks and request.errbacks:
                 self._call_task_errbacks(request, exc, traceback)
@@ -1028,6 +1039,8 @@ class BaseKeyValueStoreBackend(Backend):
 
     def _get_key_for(self, prefix, id, key=''):
         key_t = self.key_t
+        if isinstance(id, UUID):
+            id = str(id)
 
         return key_t('').join([
             prefix, key_t(id), key_t(key),
