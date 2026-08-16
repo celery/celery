@@ -9,8 +9,7 @@ from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded, WorkerLo
 from t.integration.tasks import add, identity
 from t.smoke.conftest import SuiteOperations, TaskTermination
 from t.smoke.tasks import (noop, replace_with_task, self_termination_delay_timeout,
-                           soft_time_limit_lower_than_time_limit,
-                           soft_time_limit_must_exceed_time_limit)
+                           soft_time_limit_lower_than_time_limit, soft_time_limit_must_exceed_time_limit)
 
 
 class test_task_termination(SuiteOperations):
