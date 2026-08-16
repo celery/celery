@@ -68,10 +68,12 @@ class TaskPool(BasePool):
 
         affected = ctypes.pythonapi.PyThreadState_SetAsyncExc(
             ctypes.c_ulong(pid), ctypes.py_object(Terminated))
-        if affected > 1:  # pragma: no cover
+        if affected == 0:
+            logger.warning('failed to terminate task thread %s (not found)', pid)
+        elif affected > 1:  # pragma: no cover
             ctypes.pythonapi.PyThreadState_SetAsyncExc(
                 ctypes.c_ulong(pid), None)
-            logger.warning('failed to terminate task thread %s', pid)
+            logger.warning('failed to terminate task thread %s (affected=%s)', pid, affected)
 
     def on_terminate(self) -> None:
         self.executor.shutdown(wait=False, cancel_futures=True)
