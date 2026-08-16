@@ -178,6 +178,11 @@ class ColorFormatter(logging.Formatter):
 class LoggingProxy:
     """Forward file object to :class:`logging.Logger` instance.
 
+    Writes are line buffered: a message is only logged once a trailing
+    newline arrives, on :meth:`flush` or on :meth:`close`. Callers such as
+    :mod:`traceback` write a single line in several pieces, and logging each
+    piece separately turns one line into several log records.
+
     Arguments:
         logger (~logging.Logger): Logger instance to forward to.
         loglevel (int, str): Log level to use when logging messages.
@@ -194,6 +199,9 @@ class LoggingProxy:
         # Note that the logger global is redefined here, be careful changing.
         self.logger = logger
         self.loglevel = mlevel(loglevel or self.logger.level or self.loglevel)
+        # Buffer per instance and per thread, so that stdout and stderr, and
+        # two threads writing at once, cannot interleave into one message.
+        self._local = threading.local()
         self._safewrap_handlers()
 
     def _safewrap_handlers(self):
@@ -214,9 +222,18 @@ class LoggingProxy:
             handler.handleError = WithSafeHandleError().handleError
         return [wrap_handler(h) for h in self.logger.handlers]
 
+    @property
+    def _buffer(self):
+        # type: () -> list
+        try:
+            return self._local.buffer
+        except AttributeError:
+            self._local.buffer = []
+            return self._local.buffer
+
     def write(self, data):
         # type: (AnyStr) -> int
-        """Write message to logging object."""
+        """Buffer message, and log it once the line is complete."""
         if _in_sighandler:
             safe_data = safe_str(data)
             print(safe_data, file=sys.__stderr__)
@@ -225,15 +242,31 @@ class LoggingProxy:
             # Logger is logging back to this file, so stop recursing.
             return 0
         if data and not self.closed:
-            self._thread.recurse_protection = True
-            try:
-                safe_data = safe_str(data).rstrip('\n')
-                if safe_data:
-                    self.logger.log(self.loglevel, safe_data)
-                    return len(safe_data)
-            finally:
-                self._thread.recurse_protection = False
+            safe_data = safe_str(data)
+            self._buffer.append(safe_data)
+            if safe_data.endswith('\n'):
+                self._flush_buffer()
+            return len(safe_data)
         return 0
+
+    def _flush_buffer(self):
+        # type: () -> None
+        if getattr(self._thread, 'recurse_protection', False):
+            # Logger is logging back to this file. Leave the buffer alone so
+            # that a later flush can still log it.
+            return
+        buffer = self._buffer
+        if not buffer:
+            return
+        data = ''.join(buffer).rstrip('\n')
+        del buffer[:]
+        if not data or self.closed:
+            return
+        self._thread.recurse_protection = True
+        try:
+            self.logger.log(self.loglevel, data)
+        finally:
+            self._thread.recurse_protection = False
 
     def writelines(self, sequence):
         # type: (Sequence[str]) -> None
@@ -246,13 +279,15 @@ class LoggingProxy:
             self.write(part)
 
     def flush(self):
-        # This object is not buffered so any :meth:`flush`
-        # requests are ignored.
-        pass
+        # Log whatever has been written so far without waiting for the
+        # trailing newline. The interpreter calls this on sys.stdout and
+        # sys.stderr at shutdown, so a partial line is never lost.
+        self._flush_buffer()
 
     def close(self):
         # when the object is closed, no write requests are
         # forwarded to the logging object anymore.
+        self._flush_buffer()
         self.closed = True
 
     def isatty(self):

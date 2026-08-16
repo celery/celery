@@ -259,14 +259,17 @@ class test_default_logger:
             p.closed = False
             p.write('\n')
             assert sio.getvalue() == ''
+            # writes are line buffered, so an unterminated line waits
             write_res = p.write('foo ')
-            assert sio.getvalue() == 'foo \n'
+            assert sio.getvalue() == ''
             assert write_res == 4
+            p.flush()
+            assert sio.getvalue() == 'foo \n'
             lines = ['baz', 'xuzzy']
             p.writelines(lines)
+            p.flush()
             for line in lines:
                 assert line in sio.getvalue()
-            p.flush()
             p.close()
             assert not p.isatty()
 
@@ -288,9 +291,10 @@ class test_default_logger:
             p.write(b'\n')
             assert str(sio.getvalue()) == ''
             write_res = p.write(b'foo ')
-            assert str(sio.getvalue()) == 'foo \n'
+            assert str(sio.getvalue()) == ''
             assert write_res == 4
             p.flush()
+            assert str(sio.getvalue()) == 'foo \n'
             p.close()
             assert not p.isatty()
 
@@ -308,6 +312,92 @@ class test_default_logger:
             assert p.write('FOOFO') == 0
         finally:
             p._thread.recurse_protection = False
+
+    def test_logging_proxy_joins_partial_writes(self, restore_logging):
+        """A line split over several writes becomes one log record."""
+        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
+                                   root=False)
+        with conftest.wrap_logger(logger) as sio:
+            p = LoggingProxy(logger, loglevel=logging.ERROR)
+            # traceback writes an anchor line in pieces like this
+            for piece in ['    ', 'raise Foo()', '\n', '    ', ' ', '^', '^',
+                          '\n']:
+                p.write(piece)
+            assert sio.getvalue() == '    raise Foo()\n     ^^\n'
+
+    def test_logging_proxy_keeps_embedded_newlines(self, restore_logging):
+        """A write holding several lines stays a single log record."""
+        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
+                                   root=False)
+        with conftest.wrap_logger(logger) as sio:
+            p = LoggingProxy(logger, loglevel=logging.ERROR)
+            p.write('first\nsecond\n')
+            assert sio.getvalue() == 'first\nsecond\n'
+
+    def test_logging_proxy_close_flushes(self, restore_logging):
+        """Closing does not drop a line that has no trailing newline."""
+        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
+                                   root=False)
+        with conftest.wrap_logger(logger) as sio:
+            p = LoggingProxy(logger, loglevel=logging.ERROR)
+            p.write('no newline here')
+            assert sio.getvalue() == ''
+            p.close()
+            assert sio.getvalue() == 'no newline here\n'
+
+    def test_logging_proxy_flush_of_whitespace_logs_nothing(
+            self, restore_logging):
+        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
+                                   root=False)
+        with conftest.wrap_logger(logger) as sio:
+            p = LoggingProxy(logger, loglevel=logging.ERROR)
+            p.write('\n\n')
+            p.flush()
+            p.write('')
+            p.flush()
+            assert sio.getvalue() == ''
+
+    def test_logging_proxy_write_after_close_is_dropped(self, restore_logging):
+        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
+                                   root=False)
+        with conftest.wrap_logger(logger) as sio:
+            p = LoggingProxy(logger, loglevel=logging.ERROR)
+            p.close()
+            p.write('dropped\n')
+            p.flush()
+            assert sio.getvalue() == ''
+
+    def test_logging_proxy_buffer_is_per_instance(self, restore_logging):
+        """stdout and stderr proxies must not share a buffer."""
+        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
+                                   root=False)
+        with conftest.wrap_logger(logger) as sio:
+            out = LoggingProxy(logger, loglevel=logging.ERROR)
+            err = LoggingProxy(logger, loglevel=logging.ERROR)
+            out.write('from-stdout')
+            err.write('from-stderr')
+            out.write('\n')
+            assert sio.getvalue() == 'from-stdout\n'
+            err.write('\n')
+            assert sio.getvalue() == 'from-stdout\nfrom-stderr\n'
+
+    def test_logging_proxy_buffer_is_per_thread(self, restore_logging):
+        from threading import Thread
+        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
+                                   root=False)
+        with conftest.wrap_logger(logger) as sio:
+            p = LoggingProxy(logger, loglevel=logging.ERROR)
+            p.write('main-thread')
+
+            def other():
+                p.write('other-thread\n')
+
+            t = Thread(target=other)
+            t.start()
+            t.join()
+            assert sio.getvalue() == 'other-thread\n'
+            p.write('\n')
+            assert sio.getvalue() == 'other-thread\nmain-thread\n'
 
 
 class test_task_logger(test_default_logger):
