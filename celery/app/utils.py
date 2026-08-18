@@ -39,6 +39,9 @@ HIDDEN_SETTINGS = re.compile(
     re.IGNORECASE,
 )
 
+#: Settings holding a full broker URL, credentials included.
+BROKER_URL_SETTINGS = re.compile('BROKER(_READ|_WRITE)?_URL', re.IGNORECASE)
+
 E_MIX_OLD_INTO_NEW = """
 
 Cannot mix new and old setting keys, please rename the
@@ -332,7 +335,7 @@ def filter_hidden_settings(conf):
         if isinstance(key, str):
             if HIDDEN_SETTINGS.search(key):
                 return mask
-            elif 'broker_url' in key.lower():
+            elif BROKER_URL_SETTINGS.search(key):
                 from kombu import Connection
                 return Connection(value).as_uri(mask=mask)
             elif 'backend' in key.lower():

@@ -48,6 +48,22 @@ class test_filter_hidden_settings:
         }
         filter_hidden_settings(conf)
 
+    def test_censors_every_broker_url_setting(self):
+        """broker_read_url and broker_write_url carry credentials as well"""
+        conf = {
+            'broker_url': 'amqp://user:pw@broker:5672//',
+            'broker_read_url': 'amqp://user:pw@replica:5672//',
+            'broker_write_url': 'amqp://user:pw@primary:5672//',
+        }
+
+        filtered = filter_hidden_settings(conf)
+
+        assert filtered['broker_url'] == 'amqp://user:********@broker:5672//'
+        assert filtered['broker_read_url'] == (
+            'amqp://user:********@replica:5672//')
+        assert filtered['broker_write_url'] == (
+            'amqp://user:********@primary:5672//')
+
 
 class test_bugreport:
 
