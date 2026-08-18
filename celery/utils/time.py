@@ -212,7 +212,7 @@ def delta_resolution(dt: datetime, delta: timedelta) -> datetime:
 
 
 def remaining(
-        start: datetime, ends_in: timedelta, now: Callable | None = None,
+        start: datetime, ends_in: timedelta, now: datetime | None = None,
         relative: bool = False) -> timedelta:
     """Calculate the real remaining time for a start date and a timedelta.
 
@@ -224,7 +224,7 @@ def remaining(
         relative (bool): If enabled the end time will be calculated
             using :func:`delta_resolution` (i.e., rounded to the
             resolution of `ends_in`).
-        now (Callable): Function returning the current time and date.
+        now (~datetime.datetime): Current time and date.
             Defaults to :func:`datetime.now(timezone.utc)`.
 
     Returns:
@@ -348,12 +348,27 @@ def _is_ambiguous(dt: datetime, tz: tzinfo) -> bool:
     return _can_detect_ambiguous(tz) and dateutil_tz.datetime_ambiguous(dt)
 
 
+def _is_imaginary(dt: datetime, tz: tzinfo) -> bool:
+    """Return True if ``dt`` does not exist in ``tz`` due to a DST transition."""
+
+    if not _can_detect_ambiguous(tz):
+        return False
+
+    try:
+        return not dateutil_tz.datetime_exists(dt, tz)
+    except ValueError:
+        return False
+
+
 def make_aware(dt: datetime, tz: tzinfo) -> datetime:
     """Set timezone for a :class:`~datetime.datetime` object."""
 
     dt = dt.replace(tzinfo=tz)
     if _is_ambiguous(dt, tz):
-        dt = min(dt.replace(fold=0), dt.replace(fold=1))
+        if _is_imaginary(dt, tz):
+            dt = dateutil_tz.resolve_imaginary(dt)
+        else:
+            dt = min(dt.replace(fold=0), dt.replace(fold=1))
     return dt
 
 

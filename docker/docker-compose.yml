@@ -25,7 +25,7 @@ services:
       - azurite
 
   rabbit:
-    image: rabbitmq:latest
+    image: rabbitmq:management
 
   redis:
     image: redis:latest

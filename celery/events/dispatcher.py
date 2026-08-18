@@ -141,6 +141,8 @@ class EventDispatcher:
 
     def _publish(self, event, producer, routing_key, retry=False,
                  retry_policy=None, utcoffset=utcoffset):
+        if producer is None:
+            return
         exchange = self.exchange
         try:
             producer.publish(
@@ -154,10 +156,10 @@ class EventDispatcher:
                 headers=self.headers,
                 delivery_mode=self.delivery_mode,
             )
-        except Exception as exc:  # pylint: disable=broad-except
+        except Exception:
             if not self.buffer_while_offline:
                 raise
-            self._outbound_buffer.append((event, routing_key, exc))
+            self._outbound_buffer.append((event, routing_key))
 
     def send(self, type, blind=False, utcoffset=utcoffset, retry=False,
              retry_policy=None, Event=Event, **fields):
@@ -200,17 +202,21 @@ class EventDispatcher:
         """Flush the outbound buffer."""
         if errors:
             buf = list(self._outbound_buffer)
-            try:
-                with self.mutex:
-                    for event, routing_key, _ in buf:
-                        self._publish(event, self.producer, routing_key)
-            finally:
-                self._outbound_buffer.clear()
+            self._outbound_buffer.clear()
+            with self.mutex:
+                for event, routing_key in buf:
+                    self._publish(event, self.producer, routing_key)
         if groups:
             with self.mutex:
                 for group, events in self._group_buffer.items():
-                    self._publish(events, self.producer, '%s.multi' % group)
-                    events[:] = []  # list.clear
+                    if not events:
+                        continue
+                    # Publish a detached copy, since _publish re-buffers the
+                    # object it was handed when offline. Clear only what was
+                    # published: other threads append during the socket write.
+                    batch = list(events)
+                    self._publish(batch, self.producer, '%s.multi' % group)
+                    del events[:len(batch)]
 
     def extend_buffer(self, other):
         """Copy the outbound buffer of another instance."""

@@ -173,7 +173,8 @@ class Sentinel(conftest.MockCallbacks):
         self.min_other_sentinels = min_other_sentinels
         self.connection_kwargs = connection_kwargs
 
-    def master_for(self, service_name, redis_class):
+    def master_for(self, service_name, redis_class, **kwargs):
+        self.master_for_kwargs = kwargs
         return random.choice(self.sentinels)
 
 
@@ -319,6 +320,201 @@ class test_RedisResultConsumer:
         consumer.backend.client.mget.assert_called_once()
         consumer._pubsub.subscribe.assert_called_once()
         consumer._pubsub.connection.register_connect_callback.assert_not_called()
+
+    def test__reconnect_pubsub_redis_py_below_5_3_compat(self):
+        """Regression test for celery#10294.
+
+        On redis-py < 5.3.0, ConnectionPool.get_connection requires
+        ``command_name`` as a positional argument. _reconnect_pubsub must
+        remain compatible with that older signature when no tasks are
+        subscribed.
+        """
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.subscribed_to = set()
+
+        def legacy_get_connection(command_name, *args, **kwargs):
+            return Mock(name='legacy-connection')
+
+        # Replace the auto-mocked get_connection with one that mirrors the
+        # redis-py < 5.3.0 signature: command_name is required.
+        consumer._pubsub = Mock(name='pubsub')
+        consumer._pubsub.connection_pool = Mock(name='connection_pool')
+        consumer._pubsub.connection_pool.get_connection.side_effect = (
+            legacy_get_connection
+        )
+        consumer.backend.client = Mock(name='client')
+        consumer.backend.client.pubsub.return_value = consumer._pubsub
+
+        # Must not raise TypeError about a missing 'command_name' argument.
+        consumer._reconnect_pubsub()
+
+    def test_on_wait_for_pending_cleans_up_leaked_success_messages(self):
+        """Regression test for #8166.
+
+        When on_state_change processes a SUCCESS meta for a result that has
+        already been resolved and removed from _pending_results, it buffers
+        the meta in _pending_messages. on_wait_for_pending should then
+        clean up this leaked entry after canceling the subscription.
+        """
+        from celery.utils.collections import BufferMap
+
+        consumer = self.get_consumer()
+        consumer.backend._pending_results = {}, {}
+        consumer.backend._pending_messages = BufferMap(10)
+
+        task_id = 'test-task-1'
+        meta = {
+            'task_id': task_id,
+            'status': states.SUCCESS,
+            'result': 42,
+        }
+
+        # Manually put the meta into _pending_messages to simulate the leak
+        consumer.backend._pending_messages.put(task_id, meta)
+        assert task_id in consumer.backend._pending_messages
+
+        # Create a mock result object with _iter_meta
+        class MockResult:
+            def _iter_meta(self, **kwargs):
+                return [meta]
+
+        # Call on_wait_for_pending - should trigger cleanup for SUCCESS
+        consumer.on_wait_for_pending(MockResult())
+
+        # The leaked entry should be removed
+        assert task_id not in consumer.backend._pending_messages
+
+    def test_on_wait_for_pending_does_not_cleanup_revoked_messages(self):
+        """REVOKED state should not be cleaned up - it may still be needed by waiters."""
+        from celery.utils.collections import BufferMap
+
+        consumer = self.get_consumer()
+        consumer.backend._pending_results = {}, {}
+        consumer.backend._pending_messages = BufferMap(10)
+
+        task_id = 'test-task-2'
+        meta = {
+            'task_id': task_id,
+            'status': states.REVOKED,
+            'result': None,
+        }
+
+        # Manually put the meta into _pending_messages
+        consumer.backend._pending_messages.put(task_id, meta)
+        assert task_id in consumer.backend._pending_messages
+
+        # Create a mock result object with _iter_meta
+        class MockResult:
+            def _iter_meta(self, **kwargs):
+                return [meta]
+
+        # Call on_wait_for_pending - should NOT clean up REVOKED
+        consumer.on_wait_for_pending(MockResult())
+
+        # REVOKED meta should still be in buffer
+        assert task_id in consumer.backend._pending_messages
+
+    def test_on_wait_for_pending_cleans_up_leaked_failure_messages(self):
+        """FAILURE state should be cleaned up like SUCCESS."""
+        from celery.utils.collections import BufferMap
+
+        consumer = self.get_consumer()
+        consumer.backend._pending_results = {}, {}
+        consumer.backend._pending_messages = BufferMap(10)
+
+        task_id = 'test-task-3'
+        meta = {
+            'task_id': task_id,
+            'status': states.FAILURE,
+            'result': Exception('test'),
+        }
+
+        # Manually put the meta into _pending_messages to simulate the leak
+        consumer.backend._pending_messages.put(task_id, meta)
+        assert task_id in consumer.backend._pending_messages
+
+        # Create a mock result object with _iter_meta
+        class MockResult:
+            def _iter_meta(self, **kwargs):
+                return [meta]
+
+        # Call on_wait_for_pending - should trigger cleanup for FAILURE
+        consumer.on_wait_for_pending(MockResult())
+
+        # The leaked entry should be removed
+        assert task_id not in consumer.backend._pending_messages
+
+    def test_on_wait_for_pending_skips_cleanup_when_not_in_pending_messages(self):
+        """When the task is not in _pending_messages, cleanup should be a no-op."""
+        from celery.utils.collections import BufferMap
+
+        consumer = self.get_consumer()
+        consumer.backend._pending_results = {}, {}
+        consumer.backend._pending_messages = BufferMap(10)
+
+        task_id = 'test-task-4'
+        meta = {
+            'task_id': task_id,
+            'status': states.SUCCESS,
+            'result': 42,
+        }
+
+        # Do NOT put the meta into _pending_messages
+        assert task_id not in consumer.backend._pending_messages
+
+        # Create a mock result object with _iter_meta
+        class MockResult:
+            def _iter_meta(self, **kwargs):
+                return [meta]
+
+        # Call on_wait_for_pending - should not raise even though entry is missing
+        consumer.on_wait_for_pending(MockResult())
+
+        # Should still be absent (no crash)
+        assert task_id not in consumer.backend._pending_messages
+
+    def test_on_wait_for_pending_handles_keyerror_race(self):
+        """If BufferMap.pop raises KeyError, the exception should be swallowed."""
+        from celery.utils.collections import BufferMap
+
+        consumer = self.get_consumer()
+        consumer.backend._pending_results = {}, {}
+        consumer.backend._pending_messages = BufferMap(10)
+
+        task_id = 'test-task-5'
+        meta = {
+            'task_id': task_id,
+            'status': states.SUCCESS,
+            'result': 42,
+        }
+
+        # Put the meta into _pending_messages
+        consumer.backend._pending_messages.put(task_id, meta)
+        assert task_id in consumer.backend._pending_messages
+
+        # Simulate a race where the entry is removed between the `in` check and pop
+        # by replacing pop with a side effect that raises KeyError
+        original_pop = consumer.backend._pending_messages.pop
+
+        def race_pop(key):
+            raise KeyError(key)
+        consumer.backend._pending_messages.pop = race_pop
+
+        # Create a mock result object with _iter_meta
+        class MockResult:
+            def _iter_meta(self, **kwargs):
+                return [meta]
+
+        try:
+            # Call on_wait_for_pending - should not raise despite the race
+            consumer.on_wait_for_pending(MockResult())
+        finally:
+            consumer.backend._pending_messages.pop = original_pop
+
+        # The race_pop raised KeyError, so the entry was never actually removed.
+        # The important thing is that on_wait_for_pending did not crash.
+        assert task_id in consumer.backend._pending_messages
 
 
 class basetest_RedisBackend:
@@ -565,6 +761,31 @@ class test_RedisBackend(basetest_RedisBackend):
         from redis.connection import SSLConnection
         assert x.connparams['connection_class'] is SSLConnection
 
+    def test_backend_ssl_with_redis_scheme(self):
+        pytest.importorskip('redis')
+
+        self.app.conf.redis_backend_use_ssl = {
+            'ssl_cert_reqs': ssl.CERT_REQUIRED,
+            'ssl_ca_certs': '/path/to/ca.crt',
+            'ssl_certfile': '/path/to/client.crt',
+            'ssl_keyfile': '/path/to/client.key',
+        }
+        x = self.Backend(
+            'redis://:bosco@vandelay.com:123//1', app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert x.connparams['password'] == 'bosco'
+        assert x.connparams['ssl_cert_reqs'] == ssl.CERT_REQUIRED
+        assert x.connparams['ssl_ca_certs'] == '/path/to/ca.crt'
+        assert x.connparams['ssl_certfile'] == '/path/to/client.crt'
+        assert x.connparams['ssl_keyfile'] == '/path/to/client.key'
+
+        from redis.connection import SSLConnection
+        assert x.connparams['connection_class'] is SSLConnection
+
     def test_backend_health_check_interval_ssl(self):
         pytest.importorskip('redis')
 
@@ -756,6 +977,15 @@ class test_RedisBackend(basetest_RedisBackend):
                 app=self.app,
             )
 
+    def test_backend_ssl_url_redis_scheme_invalid(self):
+        pytest.importorskip('redis')
+
+        with pytest.raises(ValueError):
+            self.Backend(
+                'redis://:bosco@vandelay.com:123//1?ssl_cert_reqs=required',
+                app=self.app,
+            )
+
     def test_conf_raises_KeyError(self):
         self.app.conf = AttributeDict({
             'result_serializer': 'json',
@@ -808,6 +1038,83 @@ class test_RedisBackend(basetest_RedisBackend):
         assert not b.exception_safe_to_retry(exceptions.RedisError("redis error"))
         assert b.exception_safe_to_retry(exceptions.ConnectionError("service unavailable"))
         assert b.exception_safe_to_retry(exceptions.TimeoutError("timeout"))
+
+    def test_additional_connection_errors(self):
+        self.app.conf.result_backend_transport_options = dict(
+            additional_connection_errors=(ConnectionError,),
+        )
+        b = self.Backend(app=self.app)
+        assert ConnectionError in b.connection_errors
+        assert b.exception_safe_to_retry(ConnectionError("custom"))
+
+    def test_additional_connection_errors_string(self):
+        self.app.conf.result_backend_transport_options = dict(
+            additional_connection_errors=(
+                't.unit.backends.test_redis.ConnectionError',
+            ),
+        )
+        b = self.Backend(app=self.app)
+        assert ConnectionError in b.connection_errors
+        assert b.exception_safe_to_retry(ConnectionError("custom"))
+
+    def test_additional_connection_errors_passed_to_result_consumer(self):
+        self.app.conf.result_backend_transport_options = dict(
+            additional_connection_errors=(ConnectionError,),
+        )
+        b = self.Backend(app=self.app)
+        assert ConnectionError in b.result_consumer._connection_errors
+
+    def test_additional_connection_errors_empty(self):
+        self.app.conf.result_backend_transport_options = dict(
+            additional_connection_errors=(),
+        )
+        b = self.Backend(app=self.app)
+        assert ConnectionError not in b.connection_errors
+
+    def test_additional_connection_errors_not_set(self):
+        self.app.conf.result_backend_transport_options = {}
+        b = self.Backend(app=self.app)
+        assert ConnectionError not in b.connection_errors
+
+    def test_additional_connection_errors_scalar_class(self):
+        self.app.conf.result_backend_transport_options = dict(
+            additional_connection_errors=ConnectionError,
+        )
+        b = self.Backend(app=self.app)
+        assert ConnectionError in b.connection_errors
+
+    def test_additional_connection_errors_scalar_string(self):
+        self.app.conf.result_backend_transport_options = dict(
+            additional_connection_errors=(
+                't.unit.backends.test_redis.ConnectionError'
+            ),
+        )
+        b = self.Backend(app=self.app)
+        assert ConnectionError in b.connection_errors
+
+    def test_additional_connection_errors_non_exception_ignored(self):
+        self.app.conf.result_backend_transport_options = dict(
+            additional_connection_errors=(ConnectionError, int),
+        )
+        b = self.Backend(app=self.app)
+        assert ConnectionError in b.connection_errors
+        assert int not in b.connection_errors
+
+    def test_additional_connection_errors_non_type_ignored(self):
+        self.app.conf.result_backend_transport_options = dict(
+            additional_connection_errors=(ConnectionError, 42),
+        )
+        b = self.Backend(app=self.app)
+        assert ConnectionError in b.connection_errors
+
+    def test_additional_connection_errors_bad_import_ignored(self):
+        self.app.conf.result_backend_transport_options = dict(
+            additional_connection_errors=(
+                ConnectionError, 'no.such.module.Error',
+            ),
+        )
+        b = self.Backend(app=self.app)
+        assert ConnectionError in b.connection_errors
 
     def test_incr(self):
         self.b.client = Mock(name='client')
@@ -915,6 +1222,98 @@ class test_RedisBackend(basetest_RedisBackend):
     def test_set_raises_error_on_large_value(self):
         with pytest.raises(BackendStoreError):
             self.b.set('key', 'x' * (self.b._MAX_STR_VALUE_SIZE + 1))
+
+    def test_driver_info_with_driverinfo_class(self):
+        """Test that DriverInfo is used when available."""
+        from celery import __version__
+
+        # Mock DriverInfo class and instance
+        mock_driver_info_instance = Mock()
+        mock_add_upstream_result = Mock()
+        mock_driver_info_instance.add_upstream_driver.return_value = mock_add_upstream_result
+
+        mock_driver_info_class = Mock(return_value=mock_driver_info_instance)
+
+        with patch('redis.DriverInfo', mock_driver_info_class, create=True):
+            x = self.Backend(app=self.app)
+
+            # Should have driver_info in connparams
+            assert 'driver_info' in x.connparams
+            assert x.connparams['driver_info'] == mock_add_upstream_result
+
+            # Verify DriverInfo() was called and add_upstream_driver was called
+            mock_driver_info_class.assert_called_once_with()
+            mock_driver_info_instance.add_upstream_driver.assert_called_once_with(
+                'celery',
+                __version__
+            )
+
+    def test_driver_info_fallback_to_lib_name(self):
+        """Test fallback to lib_name/lib_version when DriverInfo not available."""
+        from celery import __version__
+
+        # Ensure DriverInfo import fails
+        with patch('redis.DriverInfo', side_effect=ImportError, create=True):
+            # Mock redis.__version__ to test lib_version
+            with patch('redis.__version__', '5.0.8'):
+                x = self.Backend(app=self.app)
+
+                # Should have lib_name/lib_version in connparams
+                assert 'lib_name' in x.connparams
+                assert 'lib_version' in x.connparams
+                # lib_name should follow redis-py convention
+                assert x.connparams['lib_name'] == f'redis-py(celery_v{__version__})'
+                # lib_version should be redis-py version
+                assert x.connparams['lib_version'] == '5.0.8'
+                # Should NOT have driver_info
+                assert 'driver_info' not in x.connparams
+
+    def test_driver_info_fallback_with_attribute_error(self):
+        """Test fallback when DriverInfo raises AttributeError."""
+        from celery import __version__
+
+        # Ensure DriverInfo raises AttributeError
+        with patch('redis.DriverInfo', side_effect=AttributeError, create=True):
+            # Mock redis.__version__ to test lib_version
+            with patch('redis.__version__', '5.0.8'):
+                x = self.Backend(app=self.app)
+
+                # Should have lib_name/lib_version in connparams
+                assert 'lib_name' in x.connparams
+                assert 'lib_version' in x.connparams
+                assert x.connparams['lib_name'] == f'redis-py(celery_v{__version__})'
+                assert x.connparams['lib_version'] == '5.0.8'
+                # Should NOT have driver_info
+                assert 'driver_info' not in x.connparams
+
+    def test_driver_info_fallback_redis_version_unknown(self):
+        """Test fallback when redis.__version__ is not available."""
+        import redis
+
+        from celery import __version__
+
+        # Ensure DriverInfo import fails
+        with patch('redis.DriverInfo', side_effect=ImportError, create=True):
+            # Save original __version__ and delete it temporarily
+            original_version = getattr(redis, '__version__', None)
+            try:
+                if hasattr(redis, '__version__'):
+                    delattr(redis, '__version__')
+
+                x = self.Backend(app=self.app)
+
+                # Should have lib_name/lib_version in connparams
+                assert 'lib_name' in x.connparams
+                assert 'lib_version' in x.connparams
+                assert x.connparams['lib_name'] == f'redis-py(celery_v{__version__})'
+                # lib_version should be 'unknown' when redis.__version__ not available
+                assert x.connparams['lib_version'] == 'unknown'
+                # Should NOT have driver_info
+                assert 'driver_info' not in x.connparams
+            finally:
+                # Restore original __version__
+                if original_version is not None:
+                    redis.__version__ = original_version
 
 
 class test_RedisBackend_chords_simple(basetest_RedisBackend):
@@ -1285,7 +1684,7 @@ class test_RedisBackend_chords_complex(basetest_RedisBackend):
         self.b.client.zrange.assert_not_called()
         self.b.client.lrange.assert_not_called()
         # Confirm that the `GroupResult.restore` mock was called
-        complex_header_result.assert_called_once_with(request.group)
+        complex_header_result.assert_called_once_with(request.group, app=self.b.app)
         # Confirm that the callback was called with the `join()`ed group result
         if supports_native_join:
             expected_join = mock_result_obj.join_native
@@ -1417,3 +1816,56 @@ class test_SentinelBackend:
 
         from celery.backends.redis import SentinelManagedSSLConnection
         assert x.connparams['connection_class'] is SentinelManagedSSLConnection
+
+    def test_url_with_acl_credentials(self):
+        x = self.Backend(
+            'sentinel://myuser:mypass@github.com:123/1;'
+            'sentinel://myuser:mypass@github.com:124/1',
+            app=self.app,
+        )
+        assert x.connparams
+        assert "host" not in x.connparams
+        assert x.connparams['db'] == 1
+        assert "port" not in x.connparams
+        assert x.connparams['password'] == "mypass"
+        assert x.connparams['username'] == "myuser"
+        assert len(x.connparams['hosts']) == 2
+
+        expected_usernames = ["myuser", "myuser"]
+        found_usernames = [cp['username'] for cp in x.connparams['hosts']]
+        assert found_usernames == expected_usernames
+
+    def test_get_pool_with_acl_credentials(self):
+        x = self.Backend(
+            'sentinel://myuser:mypass@github.com:123/1;'
+            'sentinel://myuser:mypass@github.com:124/1',
+            app=self.app,
+        )
+        with patch.object(x, '_get_sentinel_instance') as mock_get_sentinel:
+            mock_sentinel = Mock()
+            mock_sentinel.master_for.return_value = Mock(connection_pool=Mock())
+            mock_get_sentinel.return_value = mock_sentinel
+
+            x._get_pool(**x.connparams)
+
+            mock_sentinel.master_for.assert_called_once()
+            call_kwargs = mock_sentinel.master_for.call_args[1]
+            assert call_kwargs.get('username') == 'myuser'
+            assert call_kwargs.get('password') == 'mypass'
+
+    def test_get_pool_with_password_only(self):
+        x = self.Backend(
+            'sentinel://:mypass@github.com:123/1',
+            app=self.app,
+        )
+        with patch.object(x, '_get_sentinel_instance') as mock_get_sentinel:
+            mock_sentinel = Mock()
+            mock_sentinel.master_for.return_value = Mock(connection_pool=Mock())
+            mock_get_sentinel.return_value = mock_sentinel
+
+            x._get_pool(**x.connparams)
+
+            mock_sentinel.master_for.assert_called_once()
+            call_kwargs = mock_sentinel.master_for.call_args[1]
+            assert 'username' not in call_kwargs
+            assert call_kwargs.get('password') == 'mypass'

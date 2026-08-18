@@ -216,6 +216,13 @@ def _revoke(state, task_ids, terminate=False, signal=None, **kwargs):
     terminated = set()
 
     worker_state.revoked.update(task_ids)
+
+    for task_id in task_ids:
+        try:
+            state.app.backend.mark_as_revoked(task_id, reason='revoked', store_result=True)
+        except Exception as exc:
+            logger.warning('Failed to mark task %s as revoked in backend: %s', task_id, exc)
+
     if terminate:
         signum = _signals.signum(signal or TERM_SIGNAME)
         for request in _find_requests_by_id(task_ids):
@@ -338,6 +345,8 @@ def election(state, id, topic, action=None, **kwargs):
 def enable_events(state):
     """Tell worker(s) to send task-related events."""
     dispatcher = state.consumer.event_dispatcher
+    if dispatcher is None:
+        return nok('event dispatcher unavailable')
     if dispatcher.groups and 'task' not in dispatcher.groups:
         dispatcher.groups.add('task')
         logger.info('Events of group {task} enabled by remote.')
@@ -349,6 +358,8 @@ def enable_events(state):
 def disable_events(state):
     """Tell worker(s) to stop sending task-related events."""
     dispatcher = state.consumer.event_dispatcher
+    if dispatcher is None:
+        return nok('event dispatcher unavailable')
     if 'task' in dispatcher.groups:
         dispatcher.groups.discard('task')
         logger.info('Events of group {task} disabled by remote.')
@@ -361,7 +372,8 @@ def heartbeat(state):
     """Tell worker(s) to send event heartbeat immediately."""
     logger.debug('Heartbeat requested by remote.')
     dispatcher = state.consumer.event_dispatcher
-    dispatcher.send('worker-heartbeat', freq=5, **worker_state.SOFTWARE_INFO)
+    if dispatcher:
+        dispatcher.send('worker-heartbeat', freq=5, **worker_state.SOFTWARE_INFO)
 
 
 # -- Worker
