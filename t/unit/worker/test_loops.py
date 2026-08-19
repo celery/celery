@@ -59,6 +59,7 @@ class X:
         )
         self.consumer.callbacks = []
         self.obj.strategies = {}
+        self.obj.event_dispatcher = None
         self.connection.connection_errors = (socket.error,)
         if transport_driver_type:
             self.connection.transport.driver_type = transport_driver_type
@@ -161,6 +162,27 @@ class test_asynloop:
 
         assert last_call_args[0] == 10 / 2.0
         assert last_call_args[2] == (2.0,)
+
+    def test_setup_dispatcher_heartbeat(self):
+        x = X(self.app, heartbeat=10)
+        x.hub.timer.call_repeatedly = Mock(name='x.hub.call_repeatedly()')
+        x.obj.event_dispatcher = Mock(name='event_dispatcher')
+        x.obj.event_dispatcher.connection.get_heartbeat_interval.return_value = 20
+        x.blueprint.state = CLOSE
+        asynloop(*x.args)
+
+        assert x.hub.timer.call_repeatedly.call_count == 2
+        last_call_args, _ = x.hub.timer.call_repeatedly.call_args
+
+        assert last_call_args[0] == 20 / 2.0
+        assert last_call_args[2] == (2.0,)
+
+    def test_no_dispatcher_skips_dispatcher_heartbeat(self):
+        x = X(self.app, heartbeat=10)
+        x.hub.timer.call_repeatedly = Mock(name='x.hub.call_repeatedly()')
+        x.blueprint.state = CLOSE
+        asynloop(*x.args)
+        assert x.hub.timer.call_repeatedly.call_count == 1
 
     def task_context(self, sig, **kwargs):
         x, on_task = get_task_callback(self.app, **kwargs)
@@ -442,6 +464,22 @@ class test_asynloop:
         with pytest.raises(RuntimeError):
             asynloop(*x.args)
 
+    def test_dispatcher_heartbeat_error(self):
+        x = X(self.app, heartbeat=10)
+        x.obj.event_dispatcher = Mock(name='event_dispatcher')
+        dispatcher_connection = x.obj.event_dispatcher.connection
+        dispatcher_connection.get_heartbeat_interval.return_value = 20
+        dispatcher_connection.heartbeat_check = Mock(
+            side_effect=RuntimeError('Dispatcher heartbeat error')
+        )
+
+        def call_repeatedly(rate, fn, args):
+            fn(*args)
+
+        x.hub.timer.call_repeatedly = call_repeatedly
+        with pytest.raises(RuntimeError):
+            asynloop(*x.args)
+
     def test_no_heartbeat_support(self):
         x = X(self.app)
         x.connection.supports_heartbeats = False
@@ -644,6 +682,43 @@ class test_synloop:
         x.connection.heartbeat_check = Mock(
             name='heartbeat_check', side_effect=heartbeat_check
         )
+        x.obj.timer.call_repeatedly = call_repeatedly
+        with pytest.raises(RuntimeError):
+            synloop(*x.args)
+
+    def test_setup_dispatcher_heartbeat(self):
+        x = X(self.app, heartbeat=10)
+        x.obj.pool.is_green = True
+        x.obj.timer.call_repeatedly = Mock(
+            name='x.obj.timer.call_repeatedly()'
+        )
+        x.obj.event_dispatcher = Mock(name='event_dispatcher')
+        x.obj.event_dispatcher.connection.get_heartbeat_interval.return_value = 20
+
+        def drain_events(timeout):
+            x.blueprint.state = CLOSE
+        x.connection.drain_events.side_effect = drain_events
+        synloop(*x.args)
+
+        assert x.obj.timer.call_repeatedly.call_count == 2
+        last_call_args, _ = x.obj.timer.call_repeatedly.call_args
+        assert last_call_args[0] == 20 / 2.0
+        x.obj.event_dispatcher.connection.drain_events.assert_called_once_with(timeout=0.1)
+
+    def test_dispatcher_heartbeat_error(self):
+        x = X(self.app, heartbeat=10)
+        x.obj.pool.is_green = True
+        x.obj.event_dispatcher = Mock(name='event_dispatcher')
+        dispatcher_connection = x.obj.event_dispatcher.connection
+        dispatcher_connection.get_heartbeat_interval.return_value = 20
+        dispatcher_connection.heartbeat_check = Mock(
+            name='heartbeat_check',
+            side_effect=RuntimeError('Dispatcher heartbeat error')
+        )
+
+        def call_repeatedly(rate, fn, args):
+            fn(*args)
+
         x.obj.timer.call_repeatedly = call_repeatedly
         with pytest.raises(RuntimeError):
             synloop(*x.args)
