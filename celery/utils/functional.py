@@ -243,7 +243,10 @@ class _regen(UserList, list):
         yield from self.__lookahead_consume()
 
     def __getitem__(self, index):
-        if index < 0:
+        if isinstance(index, slice) or index < 0:
+            # A negative index needs the end of the iterator, and so does any
+            # slice that is not bounded from the front. Concretise for both
+            # rather than special casing the few slices that could stay lazy.
             return self.data[index]
         # Consume elements up to the desired index prior to attempting to
         # access it from within `__consumed`

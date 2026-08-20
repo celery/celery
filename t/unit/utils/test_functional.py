@@ -138,6 +138,26 @@ class test_regen:
 
         assert list(iter(g)) == list(range(10))
 
+    def test_gen__slice(self, g):
+        assert g[:3] == [0, 1, 2]
+        assert g[2:5] == [2, 3, 4]
+        assert g[7:] == [7, 8, 9]
+        assert g[::2] == [0, 2, 4, 6, 8]
+        assert g[-3:] == [7, 8, 9]
+        assert g[::-1] == list(reversed(range(10)))
+        assert g[:] == list(range(10))
+        assert g[5:2] == []
+
+        assert list(iter(g)) == list(range(10))
+
+    def test_gen__slice_matches_list(self):
+        source = list(range(10))
+        for index in (slice(3), slice(2, 5), slice(7, None), slice(None, None, 2),
+                      slice(-3, None), slice(None, None, -1), slice(5, 2)):
+            assert regen(iter(source))[index] == source[index]
+            # regen returns lists untouched, so both paths have to agree
+            assert regen(source)[index] == source[index]
+
     def test_nonzero__does_not_consume_more_than_first_item(self):
         def build_generator():
             yield 1
