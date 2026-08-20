@@ -85,6 +85,9 @@ class CassandraBackend(BaseBackend):
 
     supports_autoexpire = True      # autoexpire supported via entry_ttl
 
+    # The result, traceback and children columns are all blobs.
+    supports_result_compression = True
+
     def __init__(self, servers=None, keyspace=None, table=None, entry_ttl=None,
                  port=None, bundle_path=None, **kwargs):
         super().__init__(**kwargs)

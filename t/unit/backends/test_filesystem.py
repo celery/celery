@@ -10,6 +10,7 @@ import pytest
 import t.skip
 from celery import states, uuid
 from celery.backends import filesystem
+from celery.backends.base import COMPRESSED_PAYLOAD_MAGIC
 from celery.backends.filesystem import FilesystemBackend
 from celery.exceptions import ImproperlyConfigured
 
@@ -72,6 +73,38 @@ class test_FilesystemBackend:
         tb = FilesystemBackend(app=self.app, url=self.url)
         tid = uuid()
         tb.mark_as_done(tid, data)
+        assert tb.get_result(tid) == data
+
+    def test_compressed_result_is_written_compressed(self):
+        data = {'foo': 'bar' * 100}
+
+        self.app.conf.result_compression = 'gzip'
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        assert tb.compression == 'gzip'
+        tid = uuid()
+        tb.mark_as_done(tid, data)
+
+        stored = tb.get(tb.get_key_for_task(tid))
+        assert stored.startswith(COMPRESSED_PAYLOAD_MAGIC)
+        assert tb.get_result(tid) == data
+
+    def test_result_written_before_compression_is_still_readable(self):
+        data = {'foo': 'bar'}
+        tid = uuid()
+        FilesystemBackend(app=self.app, url=self.url).mark_as_done(tid, data)
+
+        self.app.conf.result_compression = 'gzip'
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        assert tb.get_result(tid) == data
+
+    def test_compressed_result_is_readable_with_compression_off(self):
+        data = {'foo': 'bar'}
+        tid = uuid()
+        self.app.conf.result_compression = 'gzip'
+        FilesystemBackend(app=self.app, url=self.url).mark_as_done(tid, data)
+
+        self.app.conf.result_compression = None
+        tb = FilesystemBackend(app=self.app, url=self.url)
         assert tb.get_result(tid) == data
 
     def test_get_many(self):

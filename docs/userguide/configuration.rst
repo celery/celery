@@ -951,6 +951,20 @@ Default: No compression.
 Optional compression method used for task results.
 Supports the same options as the :setting:`task_compression` setting.
 
+A compressed result is stored as binary data, so this setting is only
+honoured by backends that can hold a payload of arbitrary bytes and hand it
+back unchanged. Those are the Redis, MongoDB, Cassandra, DynamoDB,
+Google Cloud Storage and file-system backends. On any other backend the
+setting is ignored, a warning is emitted at startup, and results are stored
+uncompressed.
+
+Each compressed result records which method compressed it, so a worker or
+client reads a compressed result correctly whether or not it has this
+setting turned on itself, and results written before the setting was turned
+on stay readable. Older versions of Celery don't know how to read a
+compressed result at all, so when you roll this out, upgrade every worker
+and client first and turn the setting on afterwards.
+
 .. setting:: result_extended
 
 ``result_extended``
