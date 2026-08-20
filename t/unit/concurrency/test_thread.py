@@ -108,25 +108,20 @@ class test_thread_TaskPool:
     def test_terminate_job_interrupts_task(self):
         x = thread.TaskPool(limit=1)
         started = threading.Event()
-        pids, outcome = [], []
+        pids = []
 
         def spinning_task():
             started.set()
             deadline = time.monotonic() + 10.0
-            try:
-                while time.monotonic() < deadline:
-                    pass
-            except Terminated:
-                outcome.append('terminated')
-                raise
+            while time.monotonic() < deadline:
+                pass
 
         try:
             result = x.on_apply(spinning_task, (), {}, noop,
                                 lambda pid, _: pids.append(pid))
             assert started.wait(timeout=5), 'spinning_task did not start'
             x.terminate_job(pids[0], signal=15)
-            result.wait(timeout=5)
-            assert outcome == ['terminated']
+            assert isinstance(result.f.exception(timeout=5), Terminated)
         finally:
             x.executor.shutdown(wait=True)
 
