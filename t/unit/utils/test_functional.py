@@ -138,6 +138,21 @@ class test_regen:
 
         assert list(iter(g)) == list(range(10))
 
+    def test_gen__index_type(self, g):
+        class Index:
+            def __index__(self):
+                return 2
+
+        # anything list accepts, _regen accepts
+        assert g[Index()] == 2
+        assert g[True] == 1
+
+        for bad_index in ('x', None, 1.0):
+            with pytest.raises(TypeError):
+                g[bad_index]
+
+        assert list(iter(g)) == list(range(10))
+
     def test_gen__slice(self, g):
         assert g[:3] == [0, 1, 2]
         assert g[2:5] == [2, 3, 4]
