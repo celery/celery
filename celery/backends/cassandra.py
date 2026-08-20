@@ -1,6 +1,8 @@
 """Apache Cassandra result store backend using the DataStax driver."""
 import threading
 
+from kombu.utils.encoding import ensure_bytes
+
 from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.log import get_logger
@@ -65,7 +67,10 @@ Q_EXPIRES = """
 
 
 def buf_t(x):
-    return bytes(x, 'utf8')
+    # The payload is str for serializers that produce text and bytes for the
+    # binary ones, and always bytes once result_compression is set, so pass
+    # bytes through rather than assuming str.
+    return ensure_bytes(x)
 
 
 class CassandraBackend(BaseBackend):

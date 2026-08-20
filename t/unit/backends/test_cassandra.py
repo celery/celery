@@ -144,6 +144,25 @@ class test_CassandraBackend:
         session.execute = Mock()
         x._store_result('task_id', 'result', states.SUCCESS)
 
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    def test_store_result_compressed(self, module):
+        # encode() returns bytes once result_compression is set, and the
+        # result, traceback and children columns are blobs, so the write path
+        # has to accept bytes as well as str.
+        from celery.backends import cassandra as mod
+        mod.cassandra = Mock()
+
+        self.app.conf.result_compression = 'gzip'
+        x = mod.CassandraBackend(app=self.app)
+        session = x._session = Mock()
+        session.execute = Mock()
+        x._store_result('task_id', 'result', states.SUCCESS)
+
+        params = session.execute.call_args[0][1]
+        # result, traceback and children; index 3 is the date_done timestamp.
+        assert all(isinstance(params[i], bytes) for i in (2, 4, 5))
+        assert x.decode(params[2]) == 'result'
+
     def test_timeouting_cluster(self):
         # Tests behavior when Cluster.connect raises
         # cassandra.OperationTimedOut.
