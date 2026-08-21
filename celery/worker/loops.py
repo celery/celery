@@ -175,11 +175,13 @@ def synloop(obj, connection, consumer, blueprint, hub, qos,
                 raise
         # drain this connection so broker heartbeats are consumed.
         if is_green and obj.amqheartbeat and obj.event_dispatcher:
-            try:
-                _quick_drain(obj.event_dispatcher.connection)
-            except OSError:
-                if blueprint.state == RUN:
-                    raise
+            connection_ = obj.event_dispatcher.connection
+            if connection_ and connection_.supports_heartbeats:
+                try:
+                    _quick_drain(obj.event_dispatcher.connection)
+                except OSError:
+                    if blueprint.state == RUN:
+                        raise
 
     try:
         while blueprint.state == RUN and obj.connection:

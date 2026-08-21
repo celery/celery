@@ -723,6 +723,44 @@ class test_synloop:
         with pytest.raises(RuntimeError):
             synloop(*x.args)
 
+    def test_dispatcher_drain_error_when_running(self):
+        x = X(self.app, heartbeat=10)
+        x.obj.pool.is_green = True
+        x.obj.event_dispatcher = Mock(name='event_dispatcher')
+        x.obj.event_dispatcher.connection.get_heartbeat_interval.return_value = 20
+        x.obj.event_dispatcher.connection.drain_events.side_effect = (
+            socket.error(errno.ECONNRESET, 'reset')
+        )
+        with pytest.raises(socket.error):
+            synloop(*x.args)
+
+    def test_dispatcher_drain_error_ignored_when_closed(self):
+        x = X(self.app, heartbeat=10)
+        x.obj.pool.is_green = True
+        x.obj.event_dispatcher = Mock(name='event_dispatcher')
+        x.obj.event_dispatcher.connection.get_heartbeat_interval.return_value = 20
+        x.obj.event_dispatcher.connection.drain_events.side_effect = (
+            socket.error(errno.ECONNRESET, 'reset')
+        )
+
+        def drain_events(timeout):
+            x.blueprint.state = CLOSE
+        x.connection.drain_events.side_effect = drain_events
+        synloop(*x.args)
+        x.obj.event_dispatcher.connection.drain_events.assert_called_once()
+
+    def test_no_dispatcher_drain_without_heartbeat_support(self):
+        x = X(self.app, heartbeat=10)
+        x.obj.pool.is_green = True
+        x.obj.event_dispatcher = Mock(name='event_dispatcher')
+        x.obj.event_dispatcher.connection.supports_heartbeats = False
+
+        def drain_events(timeout):
+            x.blueprint.state = CLOSE
+        x.connection.drain_events.side_effect = drain_events
+        synloop(*x.args)
+        x.obj.event_dispatcher.connection.drain_events.assert_not_called()
+
     def test_no_heartbeat_support(self):
         x = X(self.app)
         x.connection.supports_heartbeats = False
