@@ -52,6 +52,7 @@ class TaskPool(BasePool):
         super().__init__(*args, **kwargs)
         self.executor = ThreadPoolExecutor(max_workers=self.limit)
         self._running: set[int] = set()
+        self._mutex = threading.Lock()
 
     def terminate_job(self, pid: int, signal: int | None = None) -> None:
         """Raise :exc:`~celery.exceptions.Terminated` in the task's thread.
@@ -60,20 +61,21 @@ class TaskPool(BasePool):
         so a task blocked in a system call keeps running until the call
         returns.
         """
-        if pid not in self._running:
-            return
-        if IS_PYPY:  # pragma: no cover
-            logger.warning('cannot terminate task thread %s on PyPy', pid)
-            return
+        with self._mutex:
+            if pid not in self._running:
+                return
+            if IS_PYPY:  # pragma: no cover
+                logger.warning('cannot terminate task thread %s on PyPy', pid)
+                return
 
-        affected = ctypes.pythonapi.PyThreadState_SetAsyncExc(
-            ctypes.c_ulong(pid), ctypes.py_object(Terminated))
-        if affected == 0:
-            logger.warning('failed to terminate task thread %s (not found)', pid)
-        elif affected > 1:  # pragma: no cover
-            ctypes.pythonapi.PyThreadState_SetAsyncExc(
-                ctypes.c_ulong(pid), None)
-            logger.warning('failed to terminate task thread %s (affected=%s)', pid, affected)
+            affected = ctypes.pythonapi.PyThreadState_SetAsyncExc(
+                ctypes.c_ulong(pid), ctypes.py_object(Terminated))
+            if affected == 0:
+                logger.warning('failed to terminate task thread %s (not found)', pid)
+            elif affected > 1:  # pragma: no cover
+                ctypes.pythonapi.PyThreadState_SetAsyncExc(
+                    ctypes.c_ulong(pid), None)
+                logger.warning('failed to terminate task thread %s (affected=%s)', pid, affected)
 
     def on_terminate(self) -> None:
         self.executor.shutdown(wait=False, cancel_futures=True)
@@ -95,12 +97,14 @@ class TaskPool(BasePool):
     ) -> ApplyResult:
         def run() -> None:
             tid = threading.get_ident()
-            self._running.add(tid)
+            with self._mutex:
+                self._running.add(tid)
             try:
                 apply_target(target, args, kwargs, callback, accept_callback,
                              pid=tid)
             finally:
-                self._running.discard(tid)
+                with self._mutex:
+                    self._running.discard(tid)
 
         return ApplyResult(self.executor.submit(run))
 
