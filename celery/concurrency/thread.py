@@ -61,6 +61,7 @@ class TaskPool(BasePool):
         so a task blocked in a system call keeps running until the call
         returns.
         """
+        # Locked so the thread can't take the next task mid-injection.
         with self._mutex:
             if pid not in self._running:
                 return
