@@ -324,6 +324,52 @@ class test_LimitedSet:
         [s.add('foo') for i in range(1000)]
         assert len(s._heap) < 1150
 
+    def test_stale_heap_entry_cannot_evict_refreshed_item(self):
+        """Test that a stale heap entry cannot evict a refreshed item.
+        
+        Regression test for bug where refreshing an item would leave a stale
+        heap entry that could later incorrectly remove the current entry.
+        Also verifies that the refreshed item eventually expires correctly.
+        """
+        s = LimitedSet(expires=10)
+        
+        # t=1: add item
+        s.add("task-id", now=1.0)
+        assert "task-id" in s
+        
+        # t=6: refresh same item - creates stale heap entry at t=1
+        s.add("task-id", now=6.0)
+        assert "task-id" in s
+        
+        # t=11: purge - old entry expires (t=1 + 10 = 11)
+        # The stale entry should NOT remove the current entry (t=6)
+        s.purge(now=11.0)
+        assert "task-id" in s, "Item should still exist after stale entry expires"
+        
+        # t=16: purge - current entry expires (t=6 + 10 = 16)
+        s.purge(now=16.0)
+        assert "task-id" not in s, "Item should have expired at t=16"
+
+    def test_multiple_refreshes_with_stale_entries(self):
+        """Test handling of multiple stale entries from repeated refreshes."""
+        s = LimitedSet(expires=10)
+        
+        # Multiple refreshes create multiple stale heap entries
+        s.add("task-id", now=1.0)
+        s.add("task-id", now=3.0)
+        s.add("task-id", now=5.0)
+        s.add("task-id", now=7.0)
+        
+        assert "task-id" in s
+        
+        # Purge at t=11 - entries at t=1 and t=3 expire, but current (t=7) should remain
+        s.purge(now=11.0)
+        assert "task-id" in s, "Item should still exist after old entries expire"
+        
+        # Purge at t=17 - current entry (t=7) should now expire
+        s.purge(now=17.0)
+        assert "task-id" not in s, "Item should have expired at t=17"
+
 
 class test_AttributeDict:
 
