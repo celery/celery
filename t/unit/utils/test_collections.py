@@ -428,6 +428,45 @@ class test_LimitedSet:
         s.purge(now=15.0)
         assert "task-id" not in s, "Item should have expired at t=15"
 
+    def test_purge_with_only_stale_entries_in_heap(self):
+        """purge() should not error when the heap only holds stale entries.
+
+        Regression test for the `while/else: break` branch in purge() that
+        handles the case where _data still has an item, but every remaining
+        heap entry is stale (none of them `is` the item's current entry in
+        _data), so no current entry can be found and the heap runs dry.
+        """
+        s = LimitedSet(expires=10)
+
+        s.add("task-id", now=1.0)
+        # Replace the _data entry with a *new* tuple object holding the same
+        # values. This simulates the entry in _data no longer being the same
+        # object as the one sitting in _heap, without emptying _data itself.
+        s._data["task-id"] = (1.0, "task-id")
+
+        # Should not raise: the inner loop drains the heap (its one entry
+        # doesn't match by identity), hits `else: break`, and purge() exits
+        # cleanly without removing the still-present item.
+        s.purge(now=20.0)
+        assert len(s._heap) == 0
+        assert "task-id" in s
+
+    def test_pop_returns_default_when_only_stale_entries_remain(self):
+        """pop() should return default if every heap entry turns out stale.
+
+        Regression test for the final `return default` branch in pop(),
+        reached only when the heap is exhausted without finding any entry
+        that matches the current entry in _data.
+        """
+        s = LimitedSet(expires=10)
+
+        s.add("task-id", now=1.0)
+        # Heap still has the entry, but _data no longer has a matching one.
+        s._data.pop("task-id")
+
+        assert s.pop() is None
+        assert s.pop(default="empty") == "empty"
+
 
 class test_AttributeDict:
 
