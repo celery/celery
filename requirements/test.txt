@@ -7,6 +7,7 @@ pytest-click==1.1.0
 pytest-order==1.4.0
 boto3>=1.43.6
 moto>=4.1.11,<5.2.1
+python-ulid>=1.1.0
 # type checking
 mypy==1.19.1; platform_python_implementation=="CPython"
 pre-commit>=4.0.1; python_version >= '3.9'
