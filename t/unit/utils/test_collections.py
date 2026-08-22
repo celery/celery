@@ -324,6 +324,29 @@ class test_LimitedSet:
         [s.add('foo') for i in range(1000)]
         assert len(s._heap) < 1150
 
+    def test_refresh_does_not_evict_item_until_new_expiry(self):
+        # Refreshing an item leaves a stale heap entry behind (until the
+        # heap is rebuilt).  That stale entry must not cause the current,
+        # refreshed entry to be removed when it later expires on its own.
+        s = LimitedSet(expires=10)
+
+        # Add an item at t=1.
+        s.add('task-id', now=1)
+
+        # Refresh the same item at t=6: the new entry should expire at t=16,
+        # while the old heap entry expires at t=11.
+        s.add('task-id', now=6)
+        assert 'task-id' in s
+
+        # The stale heap entry expires at t=11, but the refreshed entry is
+        # still valid, so the item must survive.
+        s.purge(now=11)
+        assert 'task-id' in s
+
+        # The refreshed entry finally expires at t=16.
+        s.purge(now=16)
+        assert 'task-id' not in s
+
 
 class test_AttributeDict:
 
