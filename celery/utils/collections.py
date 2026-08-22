@@ -603,7 +603,7 @@ class LimitedSet:
                 else:
                     # Heap is empty
                     break
-                
+
                 inserted_time, _ = self._heap[0]
                 if inserted_time + self.expires > now:
                     break  # oldest item hasn't expired yet
