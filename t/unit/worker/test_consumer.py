@@ -18,6 +18,7 @@ from celery.utils.time import utcoffset
 from celery.worker.consumer.agent import Agent
 from celery.worker.consumer.consumer import (CANCEL_TASKS_BY_DEFAULT, CLOSE, COLLECT_SOCKET_TIMEOUT, TERMINATE,
                                              Consumer)
+from celery.worker.consumer.events import Events
 from celery.worker.consumer.gossip import Gossip
 from celery.worker.consumer.heart import Heart
 from celery.worker.consumer.mingle import Mingle
@@ -1216,6 +1217,30 @@ class test_Heart:
             hcls.assert_called_with(c.timer, c.event_dispatcher,
                                     h.heartbeat_interval)
             c.heart.start.assert_called_with()
+
+
+class test_Events:
+
+    def test_start_dispatcher_connection_heartbeat_and_hub(self):
+        c = Mock()
+        Events(c).start(c)
+        c.connection_for_write.assert_called_once_with(heartbeat=c.amqheartbeat)
+        conn = c.connection_for_write.return_value
+        conn.transport.register_with_event_loop.assert_called_once_with(conn.connection, c.hub)
+
+    def test_start_without_hub_does_not_register(self):
+        c = Mock()
+        c.hub = None
+        Events(c).start(c)
+        conn = c.connection_for_write.return_value
+        conn.transport.register_with_event_loop.assert_not_called()
+
+    def test_start_without_heartbeat_does_not_register(self):
+        c = Mock()
+        c.amqheartbeat = 0
+        Events(c).start(c)
+        conn = c.connection_for_write.return_value
+        conn.transport.register_with_event_loop.assert_not_called()
 
 
 class test_Tasks:
