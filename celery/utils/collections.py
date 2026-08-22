@@ -595,7 +595,7 @@ class LimitedSet:
                     entry = self._heap[0]
                     _, item = entry
                     current_entry = self._data.get(item)
-                    if current_entry == entry:
+                    if current_entry is entry:
                         # This is the current entry for this item
                         break
                     # Stale entry, remove it and continue
@@ -617,7 +617,7 @@ class LimitedSet:
             current_entry = self._data.get(item)
             # Only delete from _data if this heap entry is still the current entry
             # Stale heap entries (from item refresh) should be skipped
-            if current_entry == entry:
+            if current_entry is entry:
                 self._data.pop(item)
                 return item
             # If entry is stale, continue to next heap entry

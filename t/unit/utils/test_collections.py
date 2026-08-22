@@ -370,6 +370,64 @@ class test_LimitedSet:
         s.purge(now=17.0)
         assert "task-id" not in s, "Item should have expired at t=17"
 
+    def test_pop_skips_stale_heap_entries(self):
+        """Test that pop() skips stale heap entries and only removes current entries."""
+        s = LimitedSet(expires=10)
+
+        # Add two items
+        s.add("task1", now=1.0)
+        s.add("task2", now=2.0)
+
+        # Refresh task1 to create a stale heap entry at t=1
+        s.add("task1", now=5.0)
+
+        # Heap now contains: (1, "task1") [stale], (2, "task2"), (5, "task1") [current]
+        # Data contains: "task1" -> (5, "task1"), "task2" -> (2, "task2")
+
+        # pop() should skip the stale entry and return task2 (oldest current)
+        popped = s.pop()
+        assert popped == "task2", f"Expected task2, got {popped}"
+        assert "task1" in s, "task1 should still be in set"
+        assert "task2" not in s, "task2 should be removed"
+
+        # pop() again should return task1
+        popped = s.pop()
+        assert popped == "task1", f"Expected task1, got {popped}"
+        assert "task1" not in s, "task1 should be removed"
+
+    def test_refresh_with_same_timestamp(self):
+        """Test that refreshing an item with the same timestamp creates distinct tuple objects.
+
+        Regression test for bug where == comparison would incorrectly treat stale entries
+        as current when timestamps are identical. The invariant must be object identity (is),
+        not value equality (==).
+        """
+        s = LimitedSet(expires=10)
+
+        # Add item with timestamp 5.0
+        s.add("task-id", now=5.0)
+        entry1 = s._data["task-id"]
+        assert len(s._heap) == 1
+
+        # Refresh same item with same timestamp 5.0
+        # This creates a NEW tuple object with the SAME values
+        s.add("task-id", now=5.0)
+        entry2 = s._data["task-id"]
+
+        # Verify they are different objects with equal values
+        assert entry1 == entry2, "Values should be equal"
+        assert entry1 is not entry2, "Objects should be different"
+        assert len(s._heap) == 2, "Heap should contain both entries"
+
+        # purge() should NOT remove the item at t=14.9 (t=5 + 10 = 15)
+        # The stale entry (entry1) should be skipped, current entry (entry2) should remain
+        s.purge(now=14.9)
+        assert "task-id" in s, "Item should still exist at t=14.9 (not yet expired)"
+
+        # At t=15, the item should expire
+        s.purge(now=15.0)
+        assert "task-id" not in s, "Item should have expired at t=15"
+
 
 class test_AttributeDict:
 
