@@ -6,6 +6,7 @@ import pytest
 
 from celery.exceptions import SecurityError
 from celery.security.certificate import Certificate, CertStore, FSCertStore
+from cryptography.hazmat.primitives.hashes import SHA256
 from t.unit import conftest
 
 from . import CERT1, CERT2, CERT_ECDSA, KEY1
@@ -53,6 +54,30 @@ class test_Certificate(SecurityCase):
         x._cert.not_valid_after_utc = time_after
 
         assert x.has_expired() is False
+
+    def test_verify_rejects_expired_certificate(self):
+        """Verify that Certificate.verify() raises SecurityError when
+        the certificate has expired, even if it was valid when loaded."""
+        x = Certificate(CERT1)
+
+        with patch.object(Certificate, 'has_expired', return_value=True):
+            with pytest.raises(SecurityError) as excinfo:
+                x.verify(b"data", b"signature", Mock(name='digest'))
+        assert "Expired certificate" in str(excinfo.value)
+
+    def test_verify_accepts_valid_certificate(self):
+        """Verify that Certificate.verify() does not raise an expiry
+        error when the certificate is still valid."""
+        x = Certificate(CERT1)
+
+        # Patch get_pubkey to avoid actual cryptographic verification
+        pubkey = Mock()
+        pubkey.verify = Mock()
+        x.get_pubkey = Mock(return_value=pubkey)
+
+        with patch.object(Certificate, 'has_expired', return_value=False):
+            x.verify(b"data", b"signature", SHA256())
+        pubkey.verify.assert_called_once()
 
 
 class test_CertStore(SecurityCase):

@@ -1,5 +1,6 @@
 import base64
 import os
+from unittest.mock import patch
 
 import pytest
 from kombu.serialization import registry
@@ -15,6 +16,14 @@ from .case import SecurityCase
 
 
 class test_secureserializer(SecurityCase):
+
+    @pytest.fixture(autouse=True)
+    def _patch_expired(self):
+        # CERT1/CERT2 bundled test certificates are long expired (2013-2014);
+        # these tests exercise the serialization round-trip, not expiry,
+        # so simulate certificates still within their validity window.
+        with patch.object(Certificate, 'has_expired', return_value=False):
+            yield
 
     def _get_s(self, key, cert, certs, serializer="json"):
         store = CertStore()
