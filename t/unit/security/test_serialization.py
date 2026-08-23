@@ -1,5 +1,6 @@
 import base64
 import os
+from unittest.mock import patch
 
 import pytest
 from kombu.serialization import registry
@@ -16,19 +17,18 @@ from .case import SecurityCase
 
 class test_secureserializer(SecurityCase):
 
-    def _get_s(self, key, cert, certs, serializer="json"):
-        def _get_certificate(cert):
-            cert_obj = Certificate(cert)
-            # Test certificates are expired; serialization tests do not exercise
-            # certificate expiration.
-            cert_obj.has_expired = lambda: False
-            return cert_obj
+    @pytest.fixture(autouse=True)
+    def _patch_expired(self):
+        with patch.object(Certificate, 'has_expired', return_value=False):
+            yield
 
+    def _get_s(self, key, cert, certs, serializer="json"):
         store = CertStore()
         for c in certs:
-            store.add_cert(_get_certificate(c))
+            cert_obj = Certificate(c)
+            store.add_cert(cert_obj)
 
-        cert_obj = _get_certificate(cert)
+        cert_obj = Certificate(cert)
 
         return SecureSerializer(
             PrivateKey(key), cert_obj, store, serializer=serializer
