@@ -19,9 +19,17 @@ class test_secureserializer(SecurityCase):
     def _get_s(self, key, cert, certs, serializer="json"):
         store = CertStore()
         for c in certs:
-            store.add_cert(Certificate(c))
+            cert_obj = Certificate(c)
+            # Mock has_expired to return False since test certificates are expired
+            # These tests focus on serialization, not certificate expiration
+            cert_obj.has_expired = lambda: False
+            store.add_cert(cert_obj)
+        cert_obj = Certificate(cert)
+        # Mock has_expired to return False since test certificates are expired
+        # These tests focus on serialization, not certificate expiration
+        cert_obj.has_expired = lambda: False
         return SecureSerializer(
-            PrivateKey(key), Certificate(cert), store, serializer=serializer
+            PrivateKey(key), cert_obj, store, serializer=serializer
         )
 
     @pytest.mark.parametrize(
