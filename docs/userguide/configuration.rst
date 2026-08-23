@@ -4390,12 +4390,28 @@ as a Kubernetes liveness probe:
 
 .. code-block:: console
 
-    $ celery -A proj inspect ping --destination celerybeat@${HOSTNAME}
+    $ celery -A proj inspect ping -t 5 -d celerybeat@$(hostname)
 
 The command exits with a non-zero status when beat doesn't reply
-within the timeout. The ping reply also includes a ``last_tick_ago``
-field: the number of seconds since beat last woke up to check the
-schedule.
+within the timeout. Note that :option:`--timeout <celery inspect
+--timeout>` defaults to one second, which a probe that also has to
+establish a broker connection can easily exceed.
+
+The ping reply also carries a ``last_tick_ago`` field: the number of
+seconds since beat last woke up to check the schedule. The default
+human-readable output prints only ``pong``, so read the field either
+with :option:`--json <celery inspect --json>` or programmatically:
+
+.. code-block:: pycon
+
+    >>> app.control.ping(destination=['celerybeat@example.com'])
+    [{'celerybeat@example.com': {'ok': 'pong', 'last_tick_ago': 3.73}}]
+
+Beat stamps the tick time *after* each scheduler pass returns, so on an
+idle schedule ``last_tick_ago`` grows as high as the scheduler's maximum
+loop interval -- see :setting:`beat_max_loop_interval`, which is five
+minutes for the default scheduler -- before resetting. Any alerting
+threshold has to allow for that.
 
 Note that when this is enabled, beat will also show up as a node in
 the output of destination-less :program:`celery inspect ping` and
