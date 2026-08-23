@@ -5,6 +5,7 @@ from unittest.mock import Mock
 import pytest
 
 from celery import states
+from celery.backends.base import COMPRESSED_PAYLOAD_MAGIC
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.objects import Bunch
 
@@ -14,6 +15,28 @@ CASSANDRA_MODULES = [
     'cassandra.cluster',
     'cassandra.query',
 ]
+
+
+class FakeCassandraTable:
+    """Stand-in for ``Session.execute`` that keeps the rows it is given.
+
+    The real driver hands a blob column back as ``bytes``, so the values a
+    write puts in are the values a read takes out, which is what makes a
+    store-then-retrieve assertion meaningful here.
+    """
+
+    def __init__(self):
+        self.rows = {}
+
+    def __call__(self, statement, parameters=None):
+        if parameters is not None and len(parameters) > 1:
+            task_id, status, result, date_done, traceback, children = \
+                parameters
+            self.rows[task_id] = (
+                status, result, date_done, traceback, children)
+            return Mock(name='write-result')
+        task_id, = parameters
+        return Mock(one=Mock(return_value=self.rows.get(task_id)))
 
 
 class test_CassandraBackend:
@@ -162,6 +185,56 @@ class test_CassandraBackend:
         # result, traceback and children; index 3 is the date_done timestamp.
         assert all(isinstance(params[i], bytes) for i in (2, 4, 5))
         assert x.decode(params[2]) == 'result'
+
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    @pytest.mark.parametrize('serializer', ['json', 'pickle'])
+    def test_store_and_get_result_compressed(self, module, serializer):
+        # Round trip across the backend boundary rather than through encode()
+        # on its own: the row the write path hands the driver is the row the
+        # read path is given back, so anything the backend does to the bytes
+        # on the way in has to survive the way out.
+        from celery.backends import cassandra as mod
+        mod.cassandra = Mock()
+
+        self.app.conf.result_serializer = serializer
+        self.app.conf.accept_content = [serializer]
+        self.app.conf.result_compression = 'gzip'
+        x = mod.CassandraBackend(app=self.app)
+        x._session = Mock()
+        x._session.execute = FakeCassandraTable()
+
+        result = {'value': 'a repetitive value ' * 40}
+        x._store_result('task_id', result, states.SUCCESS)
+
+        stored = x._session.execute.rows['task_id'][1]
+        assert isinstance(stored, bytes)
+        assert stored.startswith(COMPRESSED_PAYLOAD_MAGIC)
+
+        meta = x._get_task_meta_for('task_id')
+        assert meta['status'] == states.SUCCESS
+        assert meta['result'] == result
+
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    def test_get_result_written_before_compression(self, module):
+        # A worker with compression off writes str for a text serializer, and
+        # the reader has to keep taking that once compression is turned on.
+        from celery.backends import cassandra as mod
+        mod.cassandra = Mock()
+
+        table = FakeCassandraTable()
+        writer = mod.CassandraBackend(app=self.app)
+        writer._session = Mock()
+        writer._session.execute = table
+        writer._store_result('task_id', {'foo': 'bar'}, states.SUCCESS)
+        assert isinstance(table.rows['task_id'][1], bytes)
+        assert not table.rows['task_id'][1].startswith(
+            COMPRESSED_PAYLOAD_MAGIC)
+
+        self.app.conf.result_compression = 'gzip'
+        reader = mod.CassandraBackend(app=self.app)
+        reader._session = Mock()
+        reader._session.execute = table
+        assert reader._get_task_meta_for('task_id')['result'] == {'foo': 'bar'}
 
     def test_timeouting_cluster(self):
         # Tests behavior when Cluster.connect raises

@@ -97,6 +97,38 @@ class test_FilesystemBackend:
         tb = FilesystemBackend(app=self.app, url=self.url)
         assert tb.get_result(tid) == data
 
+    def test_compressed_binary_serializer_result_round_trips(self):
+        # pickle's payload is bytes before compression as well as after it,
+        # and the value here has no valid text encoding, so nothing on the
+        # way to disk and back can treat the payload as a string.
+        data = {'value': b'\x00\x01\x02\xff', 'text': 'a value ' * 40}
+        self.app.conf.result_serializer = 'pickle'
+        self.app.conf.accept_content = ['pickle']
+        self.app.conf.result_compression = 'gzip'
+
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        tid = uuid()
+        tb.mark_as_done(tid, data)
+
+        with open(os.path.join(self.directory,
+                               tb.get_key_for_task(tid).decode()), 'rb') as f:
+            on_disk = f.read()
+        assert on_disk.startswith(COMPRESSED_PAYLOAD_MAGIC)
+        assert tb.get_result(tid) == data
+
+    def test_binary_serializer_result_is_not_read_as_compressed(self):
+        # A pickle payload written with compression off must not be mistaken
+        # for a compressed one by a reader that has compression on.
+        data = {'value': b'\x00\x01\x02\xff'}
+        self.app.conf.result_serializer = 'pickle'
+        self.app.conf.accept_content = ['pickle']
+        tid = uuid()
+        FilesystemBackend(app=self.app, url=self.url).mark_as_done(tid, data)
+
+        self.app.conf.result_compression = 'gzip'
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        assert tb.get_result(tid) == data
+
     def test_compressed_result_is_readable_with_compression_off(self):
         data = {'foo': 'bar'}
         tid = uuid()

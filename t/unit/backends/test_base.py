@@ -1615,6 +1615,53 @@ class test_result_compression:
         assert decompress_payload(memoryview(payload)) == b'{"foo": "bar"}'
 
 
+class test_result_compression_binary_serializer:
+    """Compression on top of a serializer that already produces bytes.
+
+    Kombu's ``dumps`` returns bytes for pickle and msgpack, so ``encode``
+    compresses bytes rather than str, and the value stored has no valid text
+    encoding at all. This is the boundary the Cassandra write path broke on.
+    """
+
+    def backend(self, serializer, compression='gzip'):
+        self.app.conf.result_serializer = serializer
+        self.app.conf.accept_content = [serializer]
+        self.app.conf.result_compression = compression
+        return CompressingKVBackend(app=self.app)
+
+    @pytest.mark.parametrize('serializer', ['pickle', 'msgpack'])
+    def test_store_and_get_binary_result(self, serializer):
+        pytest.importorskip(serializer)
+        b = self.backend(serializer)
+        # The premise of this class: the payload is bytes before compression
+        # touches it, not only after.
+        assert isinstance(b._encode({'foo': 'bar'})[2], bytes)
+
+        # The value has no valid text encoding, so anything decoding the
+        # payload to str on the way through raises rather than quietly
+        # changing it.
+        result = {'value': b'\x00\x01\x02\xff', 'text': 'a value ' * 40}
+        b.store_result('binary', result, states.SUCCESS)
+
+        stored = ensure_bytes(b.db[b.get_key_for_task('binary')])
+        assert stored.startswith(COMPRESSED_PAYLOAD_MAGIC)
+        assert b.get_result('binary') == result
+
+    @pytest.mark.parametrize('serializer', ['pickle', 'msgpack'])
+    def test_uncompressed_binary_payload_is_not_read_as_compressed(
+            self, serializer):
+        # The marker starts with NUL, which neither serializer can start its
+        # own output with, so a payload written before compression was turned
+        # on is not mistaken for a compressed one.
+        pytest.importorskip(serializer)
+        plain = self.backend(serializer, compression=None)
+        payload = plain.encode({'value': b'\x00\x01\x02\xff'})
+        assert isinstance(payload, bytes)
+        assert not payload.startswith(COMPRESSED_PAYLOAD_MAGIC)
+        assert self.backend(serializer).decode(payload) == {
+            'value': b'\x00\x01\x02\xff'}
+
+
 class test_KeyValueStoreBackend_interface:
 
     def test_get(self):
