@@ -642,11 +642,14 @@ class BeatPidbox:
     pollute the output of worker-only commands like ``inspect active``.
     """
 
-    #: seconds to wait before reconnecting after a connection error.
+    #: seconds to pause before reconnecting after an established
+    #: connection is lost.  Establishing a connection is governed by
+    #: :setting:`broker_connection_retry` and
+    #: :setting:`broker_connection_max_retries` instead.
     retry_interval = 5.0
 
     #: seconds to wait for the thread to terminate in :meth:`stop`.
-    join_timeout = 10.0
+    join_timeout = 3.0
 
     def __init__(self, service):
         self.service = service
@@ -670,9 +673,11 @@ class BeatPidbox:
         return {'ok': 'pong', 'last_tick_ago': last_tick_ago}
 
     def on_message(self, body, message):
-        if body.get('method') not in self.node.handlers:
-            return
         try:
+            if not isinstance(body, dict):
+                return
+            if body.get('method') not in self.node.handlers:
+                return
             self.node.handle_message(body, message)
         except Exception as exc:  # pylint: disable=broad-except
             error('beat pidbox command error: %r', exc, exc_info=True)
@@ -689,32 +694,66 @@ class BeatPidbox:
         self._shutdown.set()
         if self.thread is not None:
             self.thread.join(timeout=self.join_timeout)
+            if self.thread.is_alive():
+                warning('beat pidbox: consumer thread did not stop '
+                        'within %s seconds.', self.join_timeout)
+            else:
+                self.thread = None
+
+    def _error_handler(self, exc, interval):
+        error('beat pidbox: Connection error: %s. '
+              'Trying again in %s seconds...', exc, interval)
+
+    def _connect(self):
+        # A dedicated connection: broker connections must not be
+        # shared with the scheduler thread.
+        conf = self.app.conf
+        connection = self.app.connection_for_read()
+        try:
+            connection.ensure_connection(
+                self._error_handler,
+                conf.broker_connection_max_retries
+                if conf.broker_connection_retry else 0,
+            )
+        except Exception:
+            # never entered the context manager, so release it here
+            ignore_errors(connection, connection.release)
+            raise
+        return connection
+
+    def _consume_from(self, connection):
+        shutdown = self._shutdown
+        info('beat pidbox: Connected to %s.', connection.as_uri())
+        self.node.channel = connection.channel()
+        consumer = self.node.listen(callback=self.on_message)
+        try:
+            while not shutdown.is_set():
+                try:
+                    connection.drain_events(timeout=1.0)
+                except socket.timeout:
+                    pass
+        finally:
+            ignore_errors(connection, consumer.cancel)
 
     def _loop(self):
         shutdown = self._shutdown
-        while not shutdown.is_set():
-            try:
-                # A dedicated connection: broker connections must not be
-                # shared with the scheduler thread.
-                with self.app.connection_for_read() as connection:
-                    info('beat pidbox: Connected to %s.',
-                         connection.as_uri())
-                    self.node.channel = connection.channel()
-                    consumer = self.node.listen(callback=self.on_message)
-                    try:
-                        while not shutdown.is_set():
-                            try:
-                                connection.drain_events(timeout=1.0)
-                            except socket.timeout:
-                                pass
-                    finally:
-                        ignore_errors(connection, consumer.cancel)
-            except Exception as exc:  # pylint: disable=broad-except
-                if shutdown.is_set():
-                    break
-                error('beat pidbox connection error: %r', exc,
-                      exc_info=True)
-                shutdown.wait(self.retry_interval)
+        try:
+            while not shutdown.is_set():
+                try:
+                    with self._connect() as connection:
+                        self._consume_from(connection)
+                except Exception as exc:  # pylint: disable=broad-except
+                    if shutdown.is_set():
+                        break
+                    error('beat pidbox connection error: %r', exc,
+                          exc_info=True)
+                    if not self.app.conf.broker_connection_retry:
+                        break
+                    shutdown.wait(self.retry_interval)
+        finally:
+            if not shutdown.is_set():
+                warning('beat pidbox: Consumer stopped, beat will no '
+                        'longer answer remote control commands.')
 
 
 class Service:
@@ -741,7 +780,8 @@ class Service:
 
     def __reduce__(self):
         return self.__class__, (self.app, self.max_interval,
-                                self.schedule_filename, self.scheduler_cls)
+                                self.schedule_filename, self.scheduler_cls,
+                                self.remote_control)
 
     def start(self, embedded_process=False):
         info('beat: Starting...')
@@ -770,9 +810,12 @@ class Service:
         except (KeyboardInterrupt, SystemExit):
             self._is_shutdown.set()
         finally:
+            # Persist the schedule before spending time joining the
+            # pidbox thread: a supervisor may follow SIGTERM with
+            # SIGKILL, and the schedule is the state worth keeping.
+            self.sync()
             if self._pidbox is not None:
                 self._pidbox.stop()
-            self.sync()
 
     def sync(self):
         self.scheduler.close()
@@ -851,9 +894,9 @@ def EmbeddedService(app, max_interval=None, **kwargs):
         thread (bool): Run threaded instead of as a separate process.
             Uses :mod:`multiprocessing` by default, if available.
     """
-    # The surrounding worker already has a remote-control node
-    # answering for this process.
-    kwargs['remote_control'] = False
+    # Off by default: the surrounding worker already has a
+    # remote-control node answering for this process.
+    kwargs.setdefault('remote_control', False)
     if kwargs.pop('thread', False) or _Process is None:
         # Need short max interval to be able to stop thread
         # in reasonable time.

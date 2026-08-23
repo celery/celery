@@ -5,6 +5,7 @@ import socket
 import sys
 from datetime import datetime, timedelta, timezone
 from pickle import dumps, loads
+from threading import Event
 from time import sleep
 from unittest.mock import MagicMock, Mock, call, patch
 
@@ -885,6 +886,18 @@ class test_Service:
         s = beat.Service(app=self.app, scheduler_cls=Mock)
         assert loads(dumps(s))
 
+    def test_reduce_preserves_remote_control(self):
+        # EmbeddedService forces remote_control off, and billiard pickles
+        # the service when the embedded beat runs under a spawning start
+        # method.  If __reduce__ drops the flag the child re-reads the
+        # config and silently starts a control node anyway.
+        self.app.conf.beat_enable_remote_control = True
+        s = beat.Service(app=self.app, scheduler_cls=Mock,
+                         remote_control=False)
+        cls, args = s.__reduce__()
+        assert args[-1] is False
+        assert cls(*args).remote_control is False
+
     def test_start(self):
         s, sh = self.get_service()
         schedule = s.scheduler.schedule
@@ -966,6 +979,16 @@ class test_Service:
         assert s._last_tick is not None
 
 
+def _idle_then_timeout(*args, **kwargs):
+    """Stand in for ``drain_events``, blocking instead of spinning.
+
+    Raising :exc:`socket.timeout` immediately turns the consumer loop
+    into a busy-wait that burns a core for the duration of the test.
+    """
+    sleep(0.01)
+    raise socket.timeout()
+
+
 class test_BeatPidbox:
 
     def get_pidbox(self):
@@ -1008,6 +1031,17 @@ class test_BeatPidbox:
         pb.on_message(body, message)
         pb.node.handle_message.assert_called_once_with(body, message)
 
+    def test_on_message_ignores_non_dict_body(self):
+        # A non-dict payload used to raise AttributeError out through
+        # drain_events, where it was mis-logged as a connection error
+        # and cost a channel teardown plus a reconnect.
+        pb, _ = self.get_pidbox()
+        pb.node.handle_message = Mock(name='handle_message')
+        with patch('celery.beat.error') as error:
+            pb.on_message('not a mapping', Mock())
+        pb.node.handle_message.assert_not_called()
+        error.assert_not_called()  # ignored, not logged as a command error
+
     def test_on_message_survives_handler_error(self):
         pb, _ = self.get_pidbox()
         pb.node.handle_message = Mock(side_effect=KeyError('boom'))
@@ -1018,17 +1052,43 @@ class test_BeatPidbox:
         pb.node.listen = Mock(name='listen')
         with patch.object(self.app, 'connection_for_read') as cfr:
             conn = cfr.return_value.__enter__.return_value
-            conn.drain_events.side_effect = socket.timeout
+            conn.drain_events.side_effect = _idle_then_timeout
             pb.start()
             assert pb.thread.is_alive()
             assert pb.thread.daemon
             pb.stop()
-        assert not pb.thread.is_alive()
+        # cleared only because the thread really did terminate
+        assert pb.thread is None
+
+    def test_start_is_idempotent_while_running(self):
+        pb, _ = self.get_pidbox()
+        pb.node.listen = Mock(name='listen')
+        with patch.object(self.app, 'connection_for_read') as cfr:
+            conn = cfr.return_value.__enter__.return_value
+            conn.drain_events.side_effect = _idle_then_timeout
+            pb.start()
+            running = pb.thread
+            pb.start()  # must not spawn a second consumer
+            assert pb.thread is running
+            pb.stop()
+        assert pb.thread is None
 
     def test_stop_before_start_is_a_noop(self):
         pb, _ = self.get_pidbox()
         pb.stop()
         assert pb.thread is None
+
+    def test_stop_warns_and_keeps_thread_that_will_not_die(self):
+        pb, _ = self.get_pidbox()
+        pb.join_timeout = 0.01
+        pb.thread = Mock(name='thread')
+        pb.thread.is_alive.return_value = True
+        with patch('celery.beat.warning') as warning:
+            pb.stop()
+        pb.thread.join.assert_called_once_with(timeout=0.01)
+        warning.assert_called_once()
+        # kept, so the idempotent start() cannot add a second consumer
+        assert pb.thread is not None
 
     def test_loop_exits_on_error_during_shutdown(self):
         pb, _ = self.get_pidbox()
@@ -1052,26 +1112,83 @@ class test_BeatPidbox:
             ConnectionResetError('broker gone'))
         conn_ok = MagicMock()
         conn_ok.__enter__.return_value.drain_events.side_effect = (
-            socket.timeout)
+            _idle_then_timeout)
         conns = iter([conn_bad])
+        reconnected = Event()
 
         def next_connection(*args, **kwargs):
             try:
                 return next(conns)
             except StopIteration:
+                reconnected.set()
                 return conn_ok
 
         with patch.object(self.app, 'connection_for_read',
                           side_effect=next_connection) as cfr:
             pb.start()
-            for _ in range(500):
-                if cfr.call_count >= 2:
-                    break
-                sleep(0.01)
-            assert cfr.call_count >= 2
-            assert pb.thread.is_alive()
+            assert reconnected.wait(timeout=10), 'did not reconnect'
             pb.stop()
-        assert not pb.thread.is_alive()
+        assert cfr.call_count >= 2
+        assert pb.thread is None
+
+    def test_connect_honours_broker_connection_max_retries(self):
+        pb, _ = self.get_pidbox()
+        self.app.conf.broker_connection_max_retries = 7
+        with patch.object(self.app, 'connection_for_read') as cfr:
+            pb._connect()
+        cfr.return_value.ensure_connection.assert_called_once_with(
+            pb._error_handler, 7)
+
+    def test_connect_honours_broker_connection_retry_disabled(self):
+        pb, _ = self.get_pidbox()
+        self.app.conf.broker_connection_retry = False
+        self.app.conf.broker_connection_max_retries = 7
+        with patch.object(self.app, 'connection_for_read') as cfr:
+            pb._connect()
+        cfr.return_value.ensure_connection.assert_called_once_with(
+            pb._error_handler, 0)
+
+    def test_connect_releases_connection_it_could_not_establish(self):
+        pb, _ = self.get_pidbox()
+        with patch.object(self.app, 'connection_for_read') as cfr:
+            cfr.return_value.ensure_connection.side_effect = (
+                ConnectionResetError('gone'))
+            with pytest.raises(ConnectionResetError):
+                pb._connect()
+        cfr.return_value.release.assert_called_once_with()
+
+    def test_error_handler_logs_the_retry(self):
+        pb, _ = self.get_pidbox()
+        with patch('celery.beat.error') as error:
+            pb._error_handler(ConnectionResetError('gone'), 5)
+        error.assert_called_once()
+
+    def test_loop_does_not_retry_when_retry_disabled(self):
+        pb, _ = self.get_pidbox()
+        pb.retry_interval = 0
+        self.app.conf.broker_connection_retry = False
+
+        def fail(*args, **kwargs):
+            # Safety net: if the no-retry guard ever regresses, fail the
+            # assertion below rather than looping here forever.
+            if cfr.call_count > 3:
+                pb._shutdown.set()
+            raise ConnectionResetError('gone')
+
+        with patch.object(self.app, 'connection_for_read',
+                          side_effect=fail) as cfr:
+            with patch('celery.beat.warning') as warning:
+                pb._loop()
+        assert cfr.call_count == 1
+        # the consumer is gone for good, so say so out loud
+        warning.assert_called_once()
+
+    def test_loop_is_quiet_when_stopped_deliberately(self):
+        pb, _ = self.get_pidbox()
+        pb._shutdown.set()
+        with patch('celery.beat.warning') as warning:
+            pb._loop()
+        warning.assert_not_called()
 
 
 class test_EmbeddedService:
@@ -1120,6 +1237,10 @@ class test_EmbeddedService:
         if beat._Process is not None:
             p = beat.EmbeddedService(self.app)
             assert p.service.remote_control is False
+
+    def test_embedded_remote_control_is_an_overridable_default(self):
+        s = beat.EmbeddedService(self.app, thread=True, remote_control=True)
+        assert s.service.remote_control is True
 
 
 class test_schedule:
