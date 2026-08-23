@@ -17,17 +17,19 @@ from .case import SecurityCase
 class test_secureserializer(SecurityCase):
 
     def _get_s(self, key, cert, certs, serializer="json"):
+        def _get_certificate(cert):
+            cert_obj = Certificate(cert)
+            # Test certificates are expired; serialization tests do not exercise
+            # certificate expiration.
+            cert_obj.has_expired = lambda: False
+            return cert_obj
+
         store = CertStore()
         for c in certs:
-            cert_obj = Certificate(c)
-            # Mock has_expired to return False since test certificates are expired
-            # These tests focus on serialization, not certificate expiration
-            cert_obj.has_expired = lambda: False
-            store.add_cert(cert_obj)
-        cert_obj = Certificate(cert)
-        # Mock has_expired to return False since test certificates are expired
-        # These tests focus on serialization, not certificate expiration
-        cert_obj.has_expired = lambda: False
+            store.add_cert(_get_certificate(c))
+
+        cert_obj = _get_certificate(cert)
+
         return SecureSerializer(
             PrivateKey(key), cert_obj, store, serializer=serializer
         )
