@@ -288,6 +288,12 @@ class LoggingProxy:
         # when the object is closed, no write requests are
         # forwarded to the logging object anymore.
         self._flush_buffer()
+        if self._buffer:
+            # A recursive logging path on this thread blocked the flush, and
+            # closing means there will be no later one. Fall back to the real
+            # stderr, as write() does under a signal handler.
+            print(''.join(self._buffer).rstrip('\n'), file=sys.__stderr__)
+            del self._buffer[:]
         self.closed = True
 
     def isatty(self):

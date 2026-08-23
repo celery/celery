@@ -429,6 +429,33 @@ class test_default_logger:
             p.flush()
             assert sio.getvalue() == ''
 
+    def test_logging_proxy_close_under_recursion_falls_back_to_stderr(
+            self, restore_logging, capfd):
+        """A blocked flush on close goes to stderr instead of vanishing.
+
+        ``recurse_protection`` is thread wide, so one proxy logging can block
+        another proxy's close on the same thread. Closing means no later flush
+        will come, so the pending line has to go somewhere.
+        """
+        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
+                                   root=False)
+        with conftest.wrap_logger(logger) as sio:
+            out = LoggingProxy(logger, loglevel=logging.ERROR)
+            err = LoggingProxy(logger, loglevel=logging.ERROR)
+
+            class ClosesOtherProxy(logging.Handler):
+                def emit(self, record):
+                    err.close()
+
+            logger.addHandler(ClosesOtherProxy())
+            err.write('pending, no newline')
+            out.write('trigger\n')
+
+            assert err.closed
+            assert not err._buffer
+            assert sio.getvalue() == 'trigger\n'
+            assert 'pending, no newline' in capfd.readouterr().err
+
     def test_logging_proxy_buffer_is_per_instance(self, restore_logging):
         """stdout and stderr proxies must not share a buffer."""
         logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
