@@ -3,10 +3,10 @@ import os
 from unittest.mock import Mock, patch
 
 import pytest
+from cryptography.hazmat.primitives.hashes import SHA256
 
 from celery.exceptions import SecurityError
 from celery.security.certificate import Certificate, CertStore, FSCertStore
-from cryptography.hazmat.primitives.hashes import SHA256
 from t.unit import conftest
 
 from . import CERT1, CERT2, CERT_ECDSA, KEY1
