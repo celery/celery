@@ -117,4 +117,7 @@ def setup_default_app(app, use_trap=False):
         # a long test run exhausts the open-file limit
         # (https://github.com/celery/celery/issues/6382).
         if app._backend is not None:
+            # Dereference the backend so it is available for gc.
+            app._backend_cache = None
+            app._local.backend = None
             gc.collect()

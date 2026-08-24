@@ -6,6 +6,7 @@ import pytest
 # to install the celery.ping task that the test lib uses
 import celery.contrib.testing.tasks  # noqa
 from celery import Celery
+from celery.contrib.testing.app import TestApp, setup_default_app
 from celery.contrib.testing.worker import TestWorkController, start_worker
 
 
@@ -59,6 +60,25 @@ class test_worker:
             result = self.add.s(1, 2).apply_async()
             val = result.get(timeout=5)
         assert val == 3
+
+
+class test_setup_default_app:
+
+    def test_teardown_collects_when_backend_was_created(self):
+        app = TestApp()
+        with patch('celery.contrib.testing.app.gc.collect') as collect:
+            with setup_default_app(app):
+                app.backend
+        collect.assert_called()
+        assert app._backend_cache is None
+        assert app._local.backend is None
+
+    def test_teardown_skips_collect_when_no_backend_was_created(self):
+        app = TestApp()
+        with patch('celery.contrib.testing.app.gc.collect') as collect:
+            with setup_default_app(app):
+                pass
+        collect.assert_not_called()
 
 
 class test_TestWorkController:
