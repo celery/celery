@@ -271,6 +271,25 @@ class test_RedisResultConsumer:
         consumer.cancel_for('some-task')
         assert consumer._pubsub._subscribed_to == {b'celery-task-meta-initial'}
 
+    def test_cancel_for_never_subscribed_is_noop(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        task_id = uuid()
+        consumer.cancel_for(task_id)
+        consumer._pubsub.unsubscribe.assert_not_called()
+
+    def test_cancel_for_second_call_after_already_cancelled_is_noop(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        task_id = uuid()
+        consumer.consume_from(task_id)
+        consumer.cancel_for(task_id)
+        consumer._pubsub.unsubscribe.reset_mock()
+        # simulates AsyncResult.__del__ firing again after get() already
+        # drove cleanup once — this is the literal deadlock trigger in #10477
+        consumer.cancel_for(task_id)
+        consumer._pubsub.unsubscribe.assert_not_called()
+
     @patch('celery.backends.redis.ResultConsumer.cancel_for')
     @patch('celery.backends.asynchronous.BaseResultConsumer.on_state_change')
     def test_drain_events_connection_error(self, parent_on_state_change, cancel_for):
@@ -348,6 +367,173 @@ class test_RedisResultConsumer:
 
         # Must not raise TypeError about a missing 'command_name' argument.
         consumer._reconnect_pubsub()
+
+    def test_on_wait_for_pending_cleans_up_leaked_success_messages(self):
+        """Regression test for #8166.
+
+        When on_state_change processes a SUCCESS meta for a result that has
+        already been resolved and removed from _pending_results, it buffers
+        the meta in _pending_messages. on_wait_for_pending should then
+        clean up this leaked entry after canceling the subscription.
+        """
+        from celery.utils.collections import BufferMap
+
+        consumer = self.get_consumer()
+        consumer.backend._pending_results = {}, {}
+        consumer.backend._pending_messages = BufferMap(10)
+
+        task_id = 'test-task-1'
+        meta = {
+            'task_id': task_id,
+            'status': states.SUCCESS,
+            'result': 42,
+        }
+
+        # Manually put the meta into _pending_messages to simulate the leak
+        consumer.backend._pending_messages.put(task_id, meta)
+        assert task_id in consumer.backend._pending_messages
+
+        # Create a mock result object with _iter_meta
+        class MockResult:
+            def _iter_meta(self, **kwargs):
+                return [meta]
+
+        # Call on_wait_for_pending - should trigger cleanup for SUCCESS
+        consumer.on_wait_for_pending(MockResult())
+
+        # The leaked entry should be removed
+        assert task_id not in consumer.backend._pending_messages
+
+    def test_on_wait_for_pending_does_not_cleanup_revoked_messages(self):
+        """REVOKED state should not be cleaned up - it may still be needed by waiters."""
+        from celery.utils.collections import BufferMap
+
+        consumer = self.get_consumer()
+        consumer.backend._pending_results = {}, {}
+        consumer.backend._pending_messages = BufferMap(10)
+
+        task_id = 'test-task-2'
+        meta = {
+            'task_id': task_id,
+            'status': states.REVOKED,
+            'result': None,
+        }
+
+        # Manually put the meta into _pending_messages
+        consumer.backend._pending_messages.put(task_id, meta)
+        assert task_id in consumer.backend._pending_messages
+
+        # Create a mock result object with _iter_meta
+        class MockResult:
+            def _iter_meta(self, **kwargs):
+                return [meta]
+
+        # Call on_wait_for_pending - should NOT clean up REVOKED
+        consumer.on_wait_for_pending(MockResult())
+
+        # REVOKED meta should still be in buffer
+        assert task_id in consumer.backend._pending_messages
+
+    def test_on_wait_for_pending_cleans_up_leaked_failure_messages(self):
+        """FAILURE state should be cleaned up like SUCCESS."""
+        from celery.utils.collections import BufferMap
+
+        consumer = self.get_consumer()
+        consumer.backend._pending_results = {}, {}
+        consumer.backend._pending_messages = BufferMap(10)
+
+        task_id = 'test-task-3'
+        meta = {
+            'task_id': task_id,
+            'status': states.FAILURE,
+            'result': Exception('test'),
+        }
+
+        # Manually put the meta into _pending_messages to simulate the leak
+        consumer.backend._pending_messages.put(task_id, meta)
+        assert task_id in consumer.backend._pending_messages
+
+        # Create a mock result object with _iter_meta
+        class MockResult:
+            def _iter_meta(self, **kwargs):
+                return [meta]
+
+        # Call on_wait_for_pending - should trigger cleanup for FAILURE
+        consumer.on_wait_for_pending(MockResult())
+
+        # The leaked entry should be removed
+        assert task_id not in consumer.backend._pending_messages
+
+    def test_on_wait_for_pending_skips_cleanup_when_not_in_pending_messages(self):
+        """When the task is not in _pending_messages, cleanup should be a no-op."""
+        from celery.utils.collections import BufferMap
+
+        consumer = self.get_consumer()
+        consumer.backend._pending_results = {}, {}
+        consumer.backend._pending_messages = BufferMap(10)
+
+        task_id = 'test-task-4'
+        meta = {
+            'task_id': task_id,
+            'status': states.SUCCESS,
+            'result': 42,
+        }
+
+        # Do NOT put the meta into _pending_messages
+        assert task_id not in consumer.backend._pending_messages
+
+        # Create a mock result object with _iter_meta
+        class MockResult:
+            def _iter_meta(self, **kwargs):
+                return [meta]
+
+        # Call on_wait_for_pending - should not raise even though entry is missing
+        consumer.on_wait_for_pending(MockResult())
+
+        # Should still be absent (no crash)
+        assert task_id not in consumer.backend._pending_messages
+
+    def test_on_wait_for_pending_handles_keyerror_race(self):
+        """If BufferMap.pop raises KeyError, the exception should be swallowed."""
+        from celery.utils.collections import BufferMap
+
+        consumer = self.get_consumer()
+        consumer.backend._pending_results = {}, {}
+        consumer.backend._pending_messages = BufferMap(10)
+
+        task_id = 'test-task-5'
+        meta = {
+            'task_id': task_id,
+            'status': states.SUCCESS,
+            'result': 42,
+        }
+
+        # Put the meta into _pending_messages
+        consumer.backend._pending_messages.put(task_id, meta)
+        assert task_id in consumer.backend._pending_messages
+
+        # Simulate a race where the entry is removed between the `in` check and pop
+        # by replacing pop with a side effect that raises KeyError
+        original_pop = consumer.backend._pending_messages.pop
+
+        def race_pop(key):
+            raise KeyError(key)
+        consumer.backend._pending_messages.pop = race_pop
+
+        # Create a mock result object with _iter_meta
+        class MockResult:
+            def _iter_meta(self, **kwargs):
+                return [meta]
+
+        try:
+            # Call on_wait_for_pending - should not raise despite the race
+            consumer.on_wait_for_pending(MockResult())
+        finally:
+            consumer.backend._pending_messages.pop = original_pop
+
+        # The race_pop raised KeyError, so the entry was never actually removed.
+        # The important thing is that on_wait_for_pending did not crash.
+        assert task_id in consumer.backend._pending_messages
 
 
 class basetest_RedisBackend:

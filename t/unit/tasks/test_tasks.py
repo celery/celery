@@ -11,7 +11,7 @@ from celery import Task, chain, group, uuid
 from celery.app.task import _reprtask
 from celery.canvas import StampingVisitor, signature
 from celery.contrib.testing.mocks import ContextMock
-from celery.exceptions import Ignore, ImproperlyConfigured, Retry
+from celery.exceptions import CDeprecationWarning, Ignore, ImproperlyConfigured, Retry
 from celery.result import AsyncResult, EagerResult
 from celery.utils.serialization import UnpickleableExceptionWrapper
 
@@ -833,6 +833,51 @@ class test_task_retries(TasksCase):
         ]
         assert retry_call_countdowns == expected_countdowns
 
+    def test_autoretry_does_not_mutate_shared_base_class_retry_kwargs(self):
+        """
+        Test that retry_kwargs defined as a class attribute on a shared base Task
+        is not mutated when a task retries. This covers the getattr(task, 'retry_kwargs', {})
+        branch in add_autoretry_behaviour, which is worse than the per-task case since
+        the same dict object is shared across all task classes using that base.
+        """
+        class BaseTaskWithRetry(Task):
+            autoretry_for = (ZeroDivisionError,)
+            retry_backoff = True
+            retry_jitter = False
+            retry_kwargs = {'max_retries': 5}
+            _app = self.app
+
+        @self.app.task(bind=True, base=BaseTaskWithRetry, shared=False)
+        def task_a(self_, x, y):
+            return x / y
+
+        @self.app.task(bind=True, base=BaseTaskWithRetry, shared=False)
+        def task_b(self_, x, y):
+            return x / y
+
+        # Verify that all three share the exact same dict object
+        assert task_a.retry_kwargs is task_b.retry_kwargs is BaseTaskWithRetry.retry_kwargs
+
+        # Run task_a to exhaustion, which would mutate the shared dict if bug exists
+        with patch.object(task_a, 'retry', wraps=task_a.retry) as fake_retry:
+            task_a.apply((1, 0))
+
+        # Base class retry_kwargs should remain unchanged (no 'countdown' key leaked in)
+        assert BaseTaskWithRetry.retry_kwargs == {'max_retries': 5}
+
+        # Verify task_a got correct countdown values
+        assert [call_[1]['countdown'] for call_ in fake_retry.call_args_list] == [
+            1, 2, 4, 8, 16, 32
+        ]
+
+        # Run task_b once and verify it uses its own first-attempt backoff,
+        # not something inherited from task_a's last retry
+        with patch.object(task_b, 'retry', wraps=task_b.retry) as fake_retry_b:
+            task_b.apply((1, 0))
+
+        # First retry should have countdown=1 (first attempt backoff)
+        assert fake_retry_b.call_args_list[0][1]['countdown'] == 1
+
 
 class test_canvas_utils(TasksCase):
 
@@ -1510,6 +1555,19 @@ class test_tasks(TasksCase):
             assert str(e) == 'soft_time_limit must be less than or equal to time_limit'
 
 
+class test_task_routing_attribute_deprecation(TasksCase):
+
+    @pytest.mark.parametrize('attr', [
+        'queue', 'exchange', 'exchange_type',
+        'routing_key', 'delivery_mode', 'priority',
+    ])
+    def test_warns_when_routing_attribute_declared(self, attr):
+        with pytest.warns(CDeprecationWarning, match=f"The {attr!r} task attribute is deprecated"):
+            @self.app.task(shared=False, lazy=False, **{attr: 'foo'})
+            def task_with_routing_attr():
+                pass
+
+
 class test_apply_task(TasksCase):
 
     def test_apply_with_app_conf_time_limit_sets_request_fields(self):
@@ -1726,6 +1784,41 @@ class test_apply_task(TasksCase):
             # Should use current task_id as root_id when parent has no root_id
             assert data['parent_id'] == 'parent-id-123'
             assert data['root_id'] == data['task_id']
+
+    def test_autoretry_shared_retry_kwargs_not_mutated_by_max_retries_override(self):
+        """Verify that task.retry(max_retries=...) setting override_max_retries
+        does not mutate the shared retry_kwargs dict captured at task
+        registration time (regression test for celery#10456)."""
+        @self.app.task(bind=True, shared=False,
+                       autoretry_for=(ZeroDivisionError,),
+                       retry_kwargs={'max_retries': 5},
+                       retry_backoff=False, retry_jitter=False)
+        def task(self_, x, y):
+            self_.iterations += 1
+            return x / y
+        task.iterations = 0
+
+        free_vars = task.run.__code__.co_freevars
+        shared_retry_kwargs = task.run.__closure__[
+            free_vars.index("retry_kwargs")
+        ].cell_contents
+        assert shared_retry_kwargs == {'max_retries': 5}
+
+        task.override_max_retries = 2
+
+        with patch.object(task, "retry", side_effect=Retry):
+            task.push_request(retries=0)
+            try:
+                task.run(1, 0)
+            except Retry:
+                pass
+            finally:
+                task.pop_request()
+
+        assert shared_retry_kwargs == {'max_retries': 5}, (
+            "BUG: override_max_retries leaked into shared retry_kwargs! "
+            f"Got {shared_retry_kwargs}"
+        )
 
 
 class test_apply_async(TasksCase):

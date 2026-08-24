@@ -10,12 +10,15 @@ from billiard.exceptions import RestartFreqExceeded
 
 from celery import bootsteps
 from celery.contrib.testing.mocks import ContextMock
+from celery.events.state import HEARTBEAT_DRIFT_MAX
 from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.utils.collections import LimitedSet
 from celery.utils.quorum_queues import detect_quorum_queues
+from celery.utils.time import utcoffset
 from celery.worker.consumer.agent import Agent
 from celery.worker.consumer.consumer import (CANCEL_TASKS_BY_DEFAULT, CLOSE, COLLECT_SOCKET_TIMEOUT, TERMINATE,
                                              Consumer)
+from celery.worker.consumer.events import Events
 from celery.worker.consumer.gossip import Gossip
 from celery.worker.consumer.heart import Heart
 from celery.worker.consumer.mingle import Mingle
@@ -614,6 +617,29 @@ class test_Consumer(ConsumerTestCase):
         with pytest.deprecated_call(match=CANCEL_TASKS_BY_DEFAULT):
             c.on_connection_error_after_connected(Mock())
 
+    def test_cancel_long_running_tasks_on_connection_loss__cancel_error_is_swallowed(self):
+        c = self.get_consumer()
+        c.app.conf.worker_cancel_long_running_tasks_on_connection_loss = True
+
+        mock_request_cancel_raises = Mock()
+        mock_request_cancel_raises.task.acks_late = True
+        mock_request_cancel_raises.acknowledged = False
+        mock_request_cancel_raises.cancel.side_effect = ConnectionResetError('Connection reset by peer')
+        mock_request_cancel_succeeds = Mock()
+        mock_request_cancel_succeeds.task.acks_late = True
+        mock_request_cancel_succeeds.acknowledged = False
+
+        active_requests.add(mock_request_cancel_raises)
+        active_requests.add(mock_request_cancel_succeeds)
+
+        try:
+            c.on_connection_error_after_connected(Mock())
+
+            mock_request_cancel_raises.cancel.assert_called_once_with(c.pool)
+            mock_request_cancel_succeeds.cancel.assert_called_once_with(c.pool)
+        finally:
+            active_requests.clear()
+
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_cancel_active_requests(self):
         c = self.get_consumer()
@@ -1193,6 +1219,30 @@ class test_Heart:
             c.heart.start.assert_called_with()
 
 
+class test_Events:
+
+    def test_start_dispatcher_connection_heartbeat_and_hub(self):
+        c = Mock()
+        Events(c).start(c)
+        c.connection_for_write.assert_called_once_with(heartbeat=c.amqheartbeat)
+        conn = c.connection_for_write.return_value
+        conn.transport.register_with_event_loop.assert_called_once_with(conn.connection, c.hub)
+
+    def test_start_without_hub_does_not_register(self):
+        c = Mock()
+        c.hub = None
+        Events(c).start(c)
+        conn = c.connection_for_write.return_value
+        conn.transport.register_with_event_loop.assert_not_called()
+
+    def test_start_without_heartbeat_does_not_register(self):
+        c = Mock()
+        c.amqheartbeat = 0
+        Events(c).start(c)
+        conn = c.connection_for_write.return_value
+        conn.transport.register_with_event_loop.assert_not_called()
+
+
 class test_Tasks:
 
     def setup_method(self):
@@ -1502,6 +1552,39 @@ class test_ConnectionStep:
 
         step.close_connection(c)  # must not raise
 
+    def test_info_censors_password_and_alternates(self):
+        """info() removes top-level password and censors failover URLs."""
+        step, c = self._get_step_and_consumer()
+        c.connection = Mock(name='conn')
+        c.connection.info.return_value = {
+            'transport': 'amqp',
+            'password': 'supersecret',
+            'alternates': [
+                'amqp://user:' + 'secret1' + '@host-1:5672//',
+                'amqp://user:' + 'secret2' + '@host-2:5672//',
+            ],
+        }
+
+        stats = step.info(c)
+        broker = stats['broker']
+        assert 'password' not in broker
+        assert 'secret1' not in broker['alternates'][0]
+        assert 'secret2' not in broker['alternates'][1]
+        assert '**' in broker['alternates'][0]
+        assert '**' in broker['alternates'][1]
+
+    def test_info_censors_alternates_string(self):
+        """info() censors alternates when represented as a single URL."""
+        step, c = self._get_step_and_consumer()
+        c.connection = Mock(name='conn')
+        c.connection.info.return_value = {
+            'alternates': 'amqp://user:secret@host:5672//',
+        }
+
+        stats = step.info(c)
+        assert 'secret' not in stats['broker']['alternates']
+        assert '**' in stats['broker']['alternates']
+
     # ------------------------------------------------------------------
     # start() - sanity check that the connection is stored on c
     # ------------------------------------------------------------------
@@ -1771,3 +1854,33 @@ class test_Gossip:
         message.headers = {'hostname': g.hostname}
         g.on_message(prepare, message)
         g.clock.forward.assert_called_with()
+
+    def test_worker_event_across_timezones_causes_no_drift_warning(self):
+        c = self.Consumer()
+        c.app = self.app
+        c.app.connection_for_read = _amqp_connection()
+        g = Gossip(c)
+
+        with self.app.connection_for_write() as conn:
+            channel = conn.default_channel
+            consumer = g.get_consumers(channel)[0]
+            consumer.consume()
+
+            dispatcher = self.app.events.Dispatcher(
+                conn, hostname='other@x.com', channel=channel,
+            )
+            # simulate a sender in a timezone 7 hours from the gossip
+            with patch(
+                'celery.events.dispatcher.utcoffset',
+                return_value=utcoffset() + 7
+            ):
+                dispatcher.send('worker-heartbeat', freq=5)
+
+            with patch('celery.events.state._warn_drift') as warn_drift:
+                conn.drain_events(timeout=5)
+
+        worker = g.state.workers['other@x.com']
+        assert worker.utcoffset != utcoffset()
+        drift = abs(int(worker.local_received) - int(worker.timestamp))
+        assert drift <= HEARTBEAT_DRIFT_MAX
+        warn_drift.assert_not_called()
