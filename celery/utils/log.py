@@ -286,7 +286,9 @@ class LoggingProxy:
 
     def close(self):
         # when the object is closed, no write requests are
-        # forwarded to the logging object anymore.
+        # forwarded to the logging object anymore. Only the calling thread's
+        # buffer is flushed, so a partial line another thread is still
+        # writing is dropped, as it is for any file closed while in use.
         self._flush_buffer()
         if self._buffer:
             # A recursive logging path on this thread blocked the flush, and
