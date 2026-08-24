@@ -116,4 +116,5 @@ def setup_default_app(app, use_trap=False):
         # garbage collector releases them, and it runs too rarely to keep up;
         # a long test run exhausts the open-file limit
         # (https://github.com/celery/celery/issues/6382).
-        gc.collect()
+        if app._backend is not None:
+            gc.collect()
