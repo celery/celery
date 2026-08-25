@@ -101,7 +101,7 @@ class LocalTimezone(tzinfo):
     def fromutc(self, dt: datetime) -> datetime:
         # The base tzinfo class no longer implements a DST
         # offset aware .fromutc() in Python 3 (Issue #2306).
-        offset = int(self.utcoffset(dt).seconds / 60.0)
+        offset = int(self.utcoffset(dt).total_seconds() / 60.0)
         try:
             tz = self._offset_cache[offset]
         except KeyError:
