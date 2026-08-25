@@ -45,6 +45,21 @@ class test_LocalTimezone:
 
         assert y.tzname(datetime.now())
 
+    def test_fromutc_negative_offset(self, patching):
+        time = patching('celery.utils.time._time')
+        time.timezone = 18000  # UTC-5, e.g. US Eastern standard time
+        time.daylight = False
+        x = LocalTimezone()
+        x._offset_cache = {}
+        x._isdst = Mock()
+        x._isdst.return_value = False
+
+        dt = datetime(2026, 6, 15, 12, 0)
+        result = x.fromutc(dt)
+
+        assert result.utcoffset() == timedelta(hours=-5)
+        assert result.replace(tzinfo=None) == datetime(2026, 6, 15, 7, 0)
+
 
 class test_iso8601:
 
