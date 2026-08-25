@@ -3,6 +3,7 @@ import os
 import sys
 import warnings
 from contextlib import contextmanager
+from functools import lru_cache
 from importlib import import_module, reload
 from importlib.metadata import entry_points
 
@@ -141,7 +142,15 @@ def gen_task_name(app, name, module_name):
     return '.'.join(p for p in (module_name, name) if p)
 
 
+@lru_cache(maxsize=None)
 def load_extension_class_names(namespace):
+    """Return a dict of extension names to class names for the namespace.
+
+    Scanning installed package metadata for entry points is expensive, and
+    the result cannot change for the lifetime of the process, so it's
+    cached rather than being recomputed on every call (e.g. on every
+    ``apply_async``).
+    """
     if sys.version_info >= (3, 10):
         _entry_points = entry_points(group=namespace)
     else:
@@ -149,12 +158,11 @@ def load_extension_class_names(namespace):
             _entry_points = entry_points().get(namespace, [])
         except AttributeError:
             _entry_points = entry_points().select(group=namespace)
-    for ep in _entry_points:
-        yield ep.name, ep.value
+    return {ep.name: ep.value for ep in _entry_points}
 
 
 def load_extension_classes(namespace):
-    for name, class_name in load_extension_class_names(namespace):
+    for name, class_name in load_extension_class_names(namespace).items():
         try:
             cls = symbol_by_name(class_name)
         except (ImportError, SyntaxError) as exc:
