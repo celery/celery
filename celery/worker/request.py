@@ -16,7 +16,7 @@ from kombu.utils.objects import cached_property
 
 from celery import current_app, signals, states
 from celery.app.task import Context
-from celery.app.trace import fast_trace_task, task_has_custom, trace_task, trace_task_ret, traceback_clear
+from celery.app.trace import fast_trace_task, task_has_custom, trace_task, trace_task_ret
 from celery.concurrency.base import BasePool
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError, Terminated,
                                TimeLimitExceeded, WorkerLostError)
@@ -576,13 +576,23 @@ class Request:
                         exception=safe_repr(get_pickled_exception(einfo.exception)),
                         traceback=einfo.traceback,
                     )
-                    # MEMORY LEAK FIX: clear frame locals retained by the
-                    # synthetic traceback (same pattern as trace.py #8882).
-                    traceback_clear(exc)
                 finally:
-                    # Break the remaining exc → traceback → frame reference
-                    # cycle so the on_timeout frame (and the Request/self it
-                    # contains) can be garbage-collected promptly.
+                    # Break the exc → traceback → frame reference cycle
+                    # (this frame's own `exc` local points at exc, and
+                    # exc.__traceback__ points back at this frame) so the
+                    # on_timeout frame — and the Request/self it holds —
+                    # can be garbage-collected promptly.
+                    #
+                    # Note: a `traceback_clear(exc)` call previously lived
+                    # here too, but it is a guaranteed no-op in this
+                    # location: exc is raised and caught within this same
+                    # function, so the only frame in exc.__traceback__ is
+                    # this currently-executing frame, and CPython's
+                    # frame.clear() always raises "cannot clear an
+                    # executing frame" for a frame still on the call
+                    # stack. That RuntimeError was being silently
+                    # swallowed inside traceback_clear(), so the call
+                    # appeared to succeed while doing nothing.
                     if einfo is not None:
                         del einfo
                     exc.__traceback__ = None
@@ -647,6 +657,27 @@ class Request:
         elif isinstance(exc, MemoryError):
             raise MemoryError(f'Process got: {exc}')
         elif isinstance(exc, Reject):
+            if not exc.requeue:
+                # A task that rejects its message without requeueing will
+                # never run again, so record a terminal FAILURE result and
+                # fire the task_failure signal instead of leaving the task
+                # stuck in PENDING/STARTED forever (Issue #4222).
+                self.task.backend.mark_as_failure(
+                    self.id, exc, request=self._context,
+                    store_result=self.store_errors,
+                )
+                signals.task_failure.send(
+                    sender=self.task, task_id=self.id, exception=exc,
+                    args=self.args, kwargs=self.kwargs,
+                    traceback=exc_info.traceback, einfo=exc_info,
+                )
+                if send_failed_event:
+                    self.send_event(
+                        'task-failed',
+                        exception=safe_repr(
+                            get_pickled_exception(exc_info.exception)),
+                        traceback=exc_info.traceback,
+                    )
             return self.reject(requeue=exc.requeue)
         elif isinstance(exc, Ignore):
             return self.acknowledge()

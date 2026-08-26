@@ -33,6 +33,9 @@ class FilesystemBackend(KeyValueStoreBackend):
         encoding (str): encoding used on the file-system
     """
 
+    # Result files are opened in binary mode in both directions.
+    supports_result_compression = True
+
     def __init__(self, url=None, open=open, unlink=os.unlink, sep=os.sep,
                  encoding=default_encoding, *args, **kwargs):
         super().__init__(*args, **kwargs)
