@@ -90,6 +90,10 @@ setting becomes ``CELERY_BROKER_URL``. This also applies to the
 workers settings, for instance, the :setting:`worker_concurrency`
 setting becomes ``CELERY_WORKER_CONCURRENCY``.
 
+The general mapping between lowercase configuration names and Django's
+``CELERY_``-prefixed settings is documented in
+:ref:`Django settings with a namespace <conf-django-namespace>`.
+
 For example, a Django project's configuration file might include:
 
 .. code-block:: python
@@ -215,6 +219,16 @@ This task class should be used automatically if you've follow the setup steps ab
 However, if your app :ref:`uses a custom task base class <task-custom-classes>`,
 you'll need inherit from :class:`~celery.contrib.django.task.DjangoTask` instead of
 :class:`~celery.app.task.Task` to get this behaviour.
+
+Django Connection pool
+----------------------
+From Django 5.1+ there is built-in support for database connection pooling.
+If you enable it in Django ``DATABASES`` settings Celery will automatically
+handle connection pool closing in worker processes via ``close_pool``
+database backend method as
+`sharing connections across processes is not possible. <https://github.com/psycopg/psycopg/issues/544#issuecomment-1500886864>`_
+
+You can find more about Connection pool at `Django docs. <https://docs.djangoproject.com/en/dev/ref/databases/#connection-pool>`_
 
 Extensions
 ==========

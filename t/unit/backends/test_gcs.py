@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
@@ -141,7 +141,7 @@ class test_GCSBackend:
             'testvalue', retry=backend._retry_policy
         )
         if gcs_ttl:
-            assert mock_blob.custom_time >= datetime.utcnow()
+            assert mock_blob.custom_time >= datetime.now(timezone.utc)
 
     @patch.object(GCSBackend, '_get_blob')
     @patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled')
@@ -441,7 +441,7 @@ class test_GCSBackend:
         expires = 86400
         mock_document = MagicMock()
         mock_firestore_document.return_value = mock_document
-        expected_expiry = datetime.utcnow() + timedelta(seconds=expires)
+        expected_expiry = datetime.now(timezone.utc) + timedelta(seconds=expires)
 
         backend = GCSBackend(app=self.app)
         backend._expire_chord_key(key, expires)
@@ -471,3 +471,119 @@ class test_GCSBackend:
         )
         mock_collection.document.assert_called_once_with('test_key')
         assert result == mock_document
+
+    @patch('celery.backends.gcs.maybe_signature')
+    @patch.object(GCSBackend, 'incr')
+    @patch.object(GCSBackend, '_restore_deps')
+    @patch.object(GCSBackend, '_delete_chord_key')
+    @patch.object(GCSBackend, 'chord_error_from_stack')
+    @patch('celery.backends.gcs.allow_join_result')
+    @patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled')
+    def test_on_chord_part_return_join_exception(
+        self,
+        mock_firestore_ttl,
+        mock_allow_join_result_,
+        mock_chord_error_from_stack,
+        mock_delete_chord_key,
+        mock_restore_deps,
+        mock_incr,
+        mock_maybe_signature,
+    ):
+        """Test on_chord_part_return when join_native raises exception."""
+        request = MagicMock()
+        request.group = 'group_id'
+        request.chord = {'chord_size': 2}
+        state = MagicMock()
+        result = MagicMock()
+
+        mock_firestore_ttl.return_value = True
+        mock_incr.return_value = 2
+
+        # Mock dependencies and callback
+        mock_deps = MagicMock()
+        mock_restore_deps.return_value = mock_deps
+        mock_callback = MagicMock()
+        mock_maybe_signature.return_value = mock_callback
+
+        # Make join_native raise an exception
+        join_exception = ValueError('Join failed')
+        mock_deps.join_native.side_effect = join_exception
+        mock_deps._failed_join_report.return_value = iter([])  # No culprit found
+
+        backend = GCSBackend(app=self.app)
+        backend.on_chord_part_return(request, state, result)
+
+        # Verify chord_error_from_stack was called with the exception
+        mock_chord_error_from_stack.assert_called_once()
+        call_args = mock_chord_error_from_stack.call_args
+        assert call_args[0][0] == mock_callback  # callback argument
+        chord_error_arg = call_args[0][1]  # exc argument
+        assert 'ValueError' in str(chord_error_arg)
+        assert chord_error_arg.__cause__ == join_exception
+
+        # Verify cleanup still happens
+        mock_deps.delete.assert_called_once()
+        mock_delete_chord_key.assert_called_once()
+
+    @patch('celery.backends.gcs.maybe_signature')
+    @patch.object(GCSBackend, 'incr')
+    @patch.object(GCSBackend, '_restore_deps')
+    @patch.object(GCSBackend, '_delete_chord_key')
+    @patch.object(GCSBackend, 'chord_error_from_stack')
+    @patch('celery.backends.gcs.allow_join_result')
+    @patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled')
+    def test_on_chord_part_return_callback_exception(
+        self,
+        mock_firestore_ttl,
+        mock_allow_join_result_,
+        mock_chord_error_from_stack,
+        mock_delete_chord_key,
+        mock_restore_deps,
+        mock_incr,
+        mock_maybe_signature,
+    ):
+        """Test on_chord_part_return when callback.delay raises exception (line 302)."""
+        request = MagicMock()
+        request.group = 'group_id'
+        request.chord = {'chord_size': 2}
+        state = MagicMock()
+        result = MagicMock()
+
+        mock_firestore_ttl.return_value = True
+        mock_incr.return_value = 2
+
+        # Mock dependencies and callback
+        mock_deps = MagicMock()
+        mock_restore_deps.return_value = mock_deps
+        mock_deps.join_native.return_value = ['result1', 'result2']
+
+        mock_callback = MagicMock()
+        mock_maybe_signature.return_value = mock_callback
+
+        # Make callback.delay raise an exception
+        callback_exception = RuntimeError('Callback failed')
+        mock_callback.delay.side_effect = callback_exception
+
+        backend = GCSBackend(app=self.app)
+        backend.on_chord_part_return(request, state, result)
+
+        # Verify join was successful first
+        mock_deps.join_native.assert_called_once_with(
+            timeout=self.app.conf.result_chord_join_timeout,
+            propagate=True,
+        )
+
+        # Verify callback.delay was called and failed
+        mock_callback.delay.assert_called_once_with(['result1', 'result2'])
+
+        # Verify chord_error_from_stack was called with ChordError
+        mock_chord_error_from_stack.assert_called_once()
+        call_args = mock_chord_error_from_stack.call_args
+        assert call_args[0][0] == mock_callback  # callback argument
+        chord_error_arg = call_args[0][1]  # exc argument
+        assert 'Callback error:' in str(chord_error_arg)
+        assert 'RuntimeError' in str(chord_error_arg)
+
+        # Verify cleanup still happens
+        mock_deps.delete.assert_called_once()
+        mock_delete_chord_key.assert_called_once()
