@@ -220,6 +220,8 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
     supports_autoexpire = True
     supports_native_join = True
+    # Results are stored as opaque strings, which Redis keeps byte for byte.
+    supports_result_compression = True
 
     #: Maximal length of string value in Redis.
     #: 512 MB - https://redis.io/topics/data-types
