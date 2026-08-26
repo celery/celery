@@ -61,6 +61,7 @@ class test_LocalTimezone:
         assert result.utcoffset() == timedelta(hours=-4)
         assert result == datetime(2026, 6, 15, 8, 0, tzinfo=result.tzinfo)
 
+
 class test_iso8601:
 
     def test_parse_with_timezone(self):
