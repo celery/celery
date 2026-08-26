@@ -38,7 +38,7 @@ def get_worker_error_messages(name, env):
         [
             "celery",
             "--config",
-            "t.integration.test_serialization_config",
+            "t.integration.serialization_config",
             "worker",
             "-c",
             "2",
