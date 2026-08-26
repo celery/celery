@@ -11,9 +11,11 @@ from kombu.utils.encoding import bytes_to_str, ensure_bytes
 import celery
 from celery import chord, group, signature, states, uuid
 from celery.app.task import Context, Task
-from celery.backends.base import (BaseBackend, DisabledBackend, KeyValueStoreBackend, _create_chord_error_with_cause,
-                                  _create_fake_task_request, _nulldict)
-from celery.exceptions import BackendGetMetaError, BackendStoreError, ChordError, SecurityError, TimeoutError
+from celery.backends.base import (COMPRESSED_PAYLOAD_MAGIC, BaseBackend, DisabledBackend, KeyValueStoreBackend,
+                                  _create_chord_error_with_cause, _create_fake_task_request, _nulldict,
+                                  compress_payload, decompress_payload)
+from celery.exceptions import (BackendGetMetaError, BackendStoreError, ChordError, ImproperlyConfigured,
+                               SecurityError, TimeoutError)
 from celery.result import GroupResult, result_from_tuple
 from celery.utils import serialization
 from celery.utils.functional import pass1
@@ -375,6 +377,10 @@ class KVBackend(KeyValueStoreBackend):
 
     def delete(self, key):
         self.db.pop(key, None)
+
+
+class CompressingKVBackend(KVBackend):
+    supports_result_compression = True
 
 
 class DictBackend(BaseBackend):
@@ -746,6 +752,35 @@ class test_BaseBackend_dict:
 
         b._get_task_meta_for.return_value = {'status': states.SUCCESS}
         b.wait_for(task_id='1', timeout=None)
+
+    def test_wait_for__timeout_zero_does_not_wait_forever(self):
+        """A timeout of 0 must time out, not fall back to waiting forever."""
+        self.patching('time.sleep')
+        b = BaseBackend(app=self.app)
+        b._get_task_meta_for = Mock()
+        b._get_task_meta_for.return_value = {'status': states.PENDING}
+        with pytest.raises(TimeoutError):
+            b.wait_for(task_id='1', timeout=0)
+
+    def test_wait_for__timeout_zero_does_not_sleep(self):
+        """timeout=0 means do not block, so it must not sleep before giving up."""
+        sleep = self.patching('time.sleep')
+        b = BaseBackend(app=self.app)
+        b._get_task_meta_for = Mock()
+        b._get_task_meta_for.return_value = {'status': states.PENDING}
+        with pytest.raises(TimeoutError):
+            b.wait_for(task_id='1', timeout=0)
+        sleep.assert_not_called()
+
+    def test_wait_for__does_not_sleep_past_the_timeout(self):
+        """A timeout below the poll interval must not be overshot."""
+        sleep = self.patching('time.sleep')
+        b = BaseBackend(app=self.app)
+        b._get_task_meta_for = Mock()
+        b._get_task_meta_for.return_value = {'status': states.PENDING}
+        with pytest.raises(TimeoutError):
+            b.wait_for(task_id='1', timeout=0.1, interval=0.5)
+        assert sum(c.args[0] for c in sleep.call_args_list) == 0.1
 
     def test_get_children(self):
         b = BaseBackend(app=self.app)
@@ -1524,6 +1559,136 @@ class test_KeyValueStoreBackend:
         assert self.b.task_result_exists(tid) is True
         self.b.forget(tid)
         assert self.b.task_result_exists(tid) is False
+
+
+class test_result_compression:
+
+    def setup_method(self):
+        self.app.conf.result_serializer = 'json'
+        self.app.conf.accept_content = ['json']
+
+    def backend(self, compression=None, cls=CompressingKVBackend):
+        self.app.conf.result_compression = compression
+        return cls(app=self.app)
+
+    def test_compression_is_off_by_default(self):
+        b = self.backend()
+        assert b.compression is None
+        payload = b.encode({'foo': 'bar'})
+        assert payload == '{"foo": "bar"}'
+        assert b.decode(payload) == {'foo': 'bar'}
+
+    @pytest.mark.parametrize('compression', ['gzip', 'zlib', 'bzip2'])
+    def test_encode_compresses_and_decode_round_trips(self, compression):
+        b = self.backend(compression)
+        assert b.compression == compression
+        payload = b.encode({'foo': 'bar'})
+        assert isinstance(payload, bytes)
+        assert payload.startswith(COMPRESSED_PAYLOAD_MAGIC)
+        assert b.decode(payload) == {'foo': 'bar'}
+
+    def test_compressed_payload_is_smaller(self):
+        data = {'result': ['a repetitive value'] * 200}
+        assert len(self.backend('gzip').encode(data)) < len(
+            self.backend().encode(data))
+
+    def test_decode_reads_an_uncompressed_payload(self):
+        payload = self.backend().encode({'foo': 'bar'})
+        b = self.backend('gzip')
+        assert b.decode(payload) == {'foo': 'bar'}
+        assert b.decode(ensure_bytes(payload)) == {'foo': 'bar'}
+
+    def test_decode_reads_a_compressed_payload_with_compression_off(self):
+        payload = self.backend('gzip').encode({'foo': 'bar'})
+        assert self.backend().decode(payload) == {'foo': 'bar'}
+
+    def test_stores_compressed_and_reads_back_older_results(self):
+        old = self.backend()
+        old.store_result('legacy', {'foo': 'bar'}, states.SUCCESS)
+        # a real backend hands the stored payload back as bytes
+        stored = {key: ensure_bytes(value) for key, value in old.db.items()}
+
+        b = self.backend('gzip')
+        b.db = stored
+        b.store_result('current', {'foo': 'baz'}, states.SUCCESS)
+
+        assert stored[b.get_key_for_task('legacy')].startswith(b'{')
+        assert stored[b.get_key_for_task('current')].startswith(
+            COMPRESSED_PAYLOAD_MAGIC)
+        assert b.get_result('legacy') == {'foo': 'bar'}
+        assert b.get_result('current') == {'foo': 'baz'}
+
+    def test_exception_result_round_trips(self):
+        b = self.backend('gzip')
+        b.store_result('errored', KeyError('boom'), states.FAILURE)
+        assert isinstance(b.get_result('errored'), KeyError)
+
+    def test_ignored_when_the_backend_cannot_store_bytes(self):
+        with pytest.warns(UserWarning,
+                          match='cannot store compressed payloads'):
+            b = self.backend('gzip', cls=KVBackend)
+        assert b.compression is None
+        assert b.encode({'foo': 'bar'}) == '{"foo": "bar"}'
+
+    def test_unknown_compression_method_is_rejected(self):
+        with pytest.raises(ImproperlyConfigured,
+                           match='Unknown compression method'):
+            self.backend('no-such-compression')
+
+    def test_decompress_payload_leaves_other_types_alone(self):
+        assert decompress_payload('{"foo": "bar"}') == '{"foo": "bar"}'
+        assert decompress_payload(42) == 42
+
+    def test_decompress_payload_accepts_a_memoryview(self):
+        payload = compress_payload(b'{"foo": "bar"}', 'gzip')
+        assert decompress_payload(memoryview(payload)) == b'{"foo": "bar"}'
+
+
+class test_result_compression_binary_serializer:
+    """Compression on top of a serializer that already produces bytes.
+
+    Kombu's ``dumps`` returns bytes for pickle and msgpack, so ``encode``
+    compresses bytes rather than str, and the value stored has no valid text
+    encoding at all. This is the boundary the Cassandra write path broke on.
+    """
+
+    def backend(self, serializer, compression='gzip'):
+        self.app.conf.result_serializer = serializer
+        self.app.conf.accept_content = [serializer]
+        self.app.conf.result_compression = compression
+        return CompressingKVBackend(app=self.app)
+
+    @pytest.mark.parametrize('serializer', ['pickle', 'msgpack'])
+    def test_store_and_get_binary_result(self, serializer):
+        pytest.importorskip(serializer)
+        b = self.backend(serializer)
+        # The premise of this class: the payload is bytes before compression
+        # touches it, not only after.
+        assert isinstance(b._encode({'foo': 'bar'})[2], bytes)
+
+        # The value has no valid text encoding, so anything decoding the
+        # payload to str on the way through raises rather than quietly
+        # changing it.
+        result = {'value': b'\x00\x01\x02\xff', 'text': 'a value ' * 40}
+        b.store_result('binary', result, states.SUCCESS)
+
+        stored = ensure_bytes(b.db[b.get_key_for_task('binary')])
+        assert stored.startswith(COMPRESSED_PAYLOAD_MAGIC)
+        assert b.get_result('binary') == result
+
+    @pytest.mark.parametrize('serializer', ['pickle', 'msgpack'])
+    def test_uncompressed_binary_payload_is_not_read_as_compressed(
+            self, serializer):
+        # The marker starts with NUL, which neither serializer can start its
+        # own output with, so a payload written before compression was turned
+        # on is not mistaken for a compressed one.
+        pytest.importorskip(serializer)
+        plain = self.backend(serializer, compression=None)
+        payload = plain.encode({'value': b'\x00\x01\x02\xff'})
+        assert isinstance(payload, bytes)
+        assert not payload.startswith(COMPRESSED_PAYLOAD_MAGIC)
+        assert self.backend(serializer).decode(payload) == {
+            'value': b'\x00\x01\x02\xff'}
 
 
 class test_KeyValueStoreBackend_interface:

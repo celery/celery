@@ -267,7 +267,7 @@ class AsyncResult(ResultBase):
             callback=callback,
             on_message=on_message,
         )
-    wait = get  # deprecated alias to :meth:`get`.
+    wait = get  # deprecated alias to :meth:`get` (remove 6.0).
 
     def _maybe_reraise_parent_error(self):
         for node in reversed(list(self._parents())):
@@ -531,15 +531,15 @@ class AsyncResult(ResultBase):
                 then contains the tasks return value.
         """
         return self._get_task_meta()['status']
-    status = state  # XXX compat
+    status = state  # XXX compat (remove 6.0)
 
     @property
-    def task_id(self):
+    def task_id(self):  # XXX compat (remove 6.0)
         """Compat. alias to :attr:`id`."""
         return self.id
 
     @task_id.setter
-    def task_id(self, id):
+    def task_id(self, id):  # XXX compat (remove 6.0)
         self.id = id
 
     @property
@@ -809,10 +809,10 @@ class ResultSet(ResultBase):
         results = []
         for result in self.results:
             remaining = None
-            if timeout:
-                remaining = timeout - (time.monotonic() - time_start)
-                if remaining <= 0.0:
-                    raise TimeoutError('join operation timed out')
+            if timeout is not None:
+                # A budget of 0, or one already spent, means "do not block":
+                # each result is polled once and raises if it is not ready.
+                remaining = max(timeout - (time.monotonic() - time_start), 0.0)
             value = result.get(
                 timeout=remaining, propagate=propagate,
                 interval=interval, no_ack=no_ack, on_interval=on_interval,
@@ -1068,7 +1068,7 @@ class EagerResult(AsyncResult):
                 raise self.result if isinstance(
                     self.result, Exception) else Exception(self.result)
             return self.result
-    wait = get  # XXX Compat (remove 5.0)
+    wait = get  # XXX Compat (remove 6.0)
 
     def forget(self):
         pass
@@ -1098,7 +1098,7 @@ class EagerResult(AsyncResult):
     def state(self):
         """The tasks state."""
         return self._state
-    status = state
+    status = state  # XXX compat (remove 6.0)
 
     @property
     def traceback(self):
