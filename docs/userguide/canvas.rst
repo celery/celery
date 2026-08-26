@@ -164,6 +164,7 @@ creates partials:
 
             partial = subtract.s(10)    # incomplete: second arg only
             partial.delay(30)           # -> subtract(30, 10) = 20
+
         Here ``delay(30)`` prepends ``30`` as the first argument, resulting
         in ``subtract(30, 10)`` — not ``subtract(10, 30)``.
 
@@ -1015,13 +1016,20 @@ an errback to the chord callback:
     >>> c = (group(add.s(i, i) for i in range(10)) |
     ...      tsum.s().on_error(on_chord_error.s())).delay()
 
+Celery supports two errback calling styles for chord errors. An unbound
+errback that accepts ``(request, exc, traceback)`` receives those three
+arguments as shown above. An errback that accepts a single argument, and
+a bound errback declared with ``@app.task(bind=True)``, is dispatched as
+a task and receives the id of the failed chord callback instead.
+
 Chords may have callback and errback signatures linked to them, which addresses
 some of the issues with linking signatures to groups.
 Doing so will link the provided signature to the chord's body which can be
 expected to gracefully invoke callbacks just once upon completion of the body,
 or errbacks just once if any task in the chord header or body fails.
 
-This behavior can be manipulated to allow error handling of the chord header using the :ref:`task_allow_error_cb_on_chord_header <task_allow_error_cb_on_chord_header>` flag.
+This behavior can be manipulated to allow error handling of the chord header
+using the :setting:`task_allow_error_cb_on_chord_header` flag.
 Enabling this flag will cause the chord header to invoke the errback for the body (default behavior) *and* any task in the chord's header that fails.
 
 .. _chord-important-notes:

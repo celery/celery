@@ -67,6 +67,62 @@ class test_Pidbox:
             eig.assert_called_with(parent, cancel)
             pbox._close_channel.assert_called_with(parent)
 
+    def test_reset_cancels_old_consumer(self):
+        parent = Mock()
+        parent.hostname = 'worker@example.com'
+        parent.controller = Mock(use_eventloop=False)
+        parent.app = Mock()
+        parent.app.control.mailbox.Node = Mock()
+        node = Mock()
+        parent.app.control.mailbox.Node.return_value = node
+        parent.connection = Mock()
+        parent.connection.channel.side_effect = [Mock(), Mock()]
+        parent.connection_errors = ()
+        parent.channel_errors = ()
+        parent.on_decode_error = Mock()
+
+        pbox = Pidbox(parent)
+        old_consumer = Mock()
+        new_consumer = Mock()
+        node.listen.side_effect = [old_consumer, new_consumer]
+
+        pbox.start(parent)
+        pbox.reset()
+
+        old_consumer.cancel.assert_called_once()
+        new_consumer.cancel.assert_not_called()
+        assert pbox.consumer is new_consumer
+
+    def test_pidbox_repeated_reset_cancels_previous_consumers(self):
+        parent = Mock()
+        parent.hostname = 'worker@example.com'
+        parent.controller = Mock(use_eventloop=False)
+        parent.app = Mock()
+        parent.app.control.mailbox.Node = Mock()
+        node = Mock()
+        node.handle_message.side_effect = RuntimeError('simulated handler error')
+        parent.app.control.mailbox.Node.return_value = node
+        parent.connection = Mock()
+        parent.connection.channel.side_effect = [
+            Mock(name=f'channel-{i}') for i in range(11)
+        ]
+        parent.connection_errors = ()
+        parent.channel_errors = ()
+        parent.on_decode_error = Mock()
+
+        consumers = [Mock(name=f'consumer-{i}') for i in range(11)]
+        node.listen.side_effect = consumers
+        pbox = Pidbox(parent)
+
+        pbox.start(parent)
+        for _ in range(10):
+            pbox.on_message({}, object())
+
+        for previous_consumer in consumers[:-1]:
+            previous_consumer.cancel.assert_called_once()
+        consumers[-1].cancel.assert_not_called()
+        assert pbox.consumer is consumers[-1]
+
 
 class test_Pidbox_green:
 
@@ -163,6 +219,20 @@ class test_ControlPanel:
         assert 'task' not in evd.groups
         assert 'already disabled' in panel.handle('disable_events')['ok']
 
+    def test_enable_events_no_dispatcher(self):
+        consumer = Consumer(self.app)
+        consumer.event_dispatcher = None
+        panel = self.create_panel(consumer=consumer)
+        # Should not raise AttributeError when dispatcher is None (#9489).
+        assert 'unavailable' in panel.handle('enable_events')['error']
+
+    def test_disable_events_no_dispatcher(self):
+        consumer = Consumer(self.app)
+        consumer.event_dispatcher = None
+        panel = self.create_panel(consumer=consumer)
+        # Should not raise AttributeError when dispatcher is None (#9489).
+        assert 'unavailable' in panel.handle('disable_events')['error']
+
     def test_clock(self):
         consumer = Consumer(self.app)
         panel = self.create_panel(consumer=consumer)
@@ -245,6 +315,13 @@ class test_ControlPanel:
         event_dispatcher.enabled = True
         panel.handle('heartbeat')
         assert ('worker-heartbeat',) in event_dispatcher.send.call_args
+
+    def test_heartbeat_no_dispatcher(self):
+        consumer = Consumer(self.app)
+        consumer.event_dispatcher = None
+        panel = self.create_panel(consumer=consumer)
+        # Should not raise AttributeError when dispatcher is None (#9489).
+        panel.handle('heartbeat')
 
     def test_time_limit(self):
         panel = self.create_panel(consumer=Mock())
