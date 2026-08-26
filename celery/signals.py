@@ -85,7 +85,7 @@ task_unknown = Signal(
     name='task_unknown',
     providing_args={'message', 'exc', 'name', 'id'},
 )
-#: Deprecated, use after_task_publish instead.
+#: Deprecated, use after_task_publish instead (remove 6.0).
 task_sent = Signal(
     name='task_sent',
     providing_args={

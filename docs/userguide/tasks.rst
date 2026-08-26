@@ -1034,6 +1034,22 @@ General
     maximum number of  requests per second), you must restrict to a given
     queue.
 
+.. warning::
+
+    A rate-limited task still counts against the worker's prefetch count
+    while it waits to run. Once all of a worker's prefetched slots are occupied
+    by rate-limited tasks, the worker stops fetching new messages from the broker
+    entirely, including messages for tasks that have no rate limit of their own.
+
+    For example, consider a worker that handles two tasks, ``A`` and ``B``,
+    where ``A`` is rate limited and ``B`` is not. A burst of ``A`` messages
+    can fill the worker's prefetch slots, and ``B`` messages will sit on
+    the broker untouched until those rate-limited ``A`` tasks drain, even
+    though ``B`` has no rate limit of its own.
+
+    To avoid this, rate-limited tasks should be routed to their own
+    dedicated workers (see :ref:`guide-routing`).
+
 .. attribute:: Task.time_limit
 
     The hard time limit, in seconds, for this task.
@@ -1458,8 +1474,20 @@ messages are redelivered to.
 
 .. _`Dead Letter Exchanges`: http://www.rabbitmq.com/dlx.html
 
+When a task raises :exc:`~@Reject` without re-queuing (``requeue=False``) it
+will never run again, so its result is stored in the :state:`FAILURE` state
+and the :signal:`task_failure` signal is sent, just like any other failed
+task. This means :meth:`AsyncResult.failed() <celery.result.AsyncResult.failed>`
+returns :const:`True` and the rejection reason is available as the result.
+This terminal result is recorded regardless of :attr:`Task.acks_late`; the
+broker-level ``basic_reject`` (and therefore re-queuing) is the part that only
+takes effect when ``acks_late`` is enabled.
+
 Reject can also be used to re-queue messages, but please be very careful
 when using this as it can easily result in an infinite message loop.
+Re-queuing (``requeue=True``) only takes effect when :attr:`Task.acks_late`
+is enabled; the message is then redelivered and executed again, so no terminal
+result is stored for it.
 
 Example using reject when a task causes an out of memory condition:
 
