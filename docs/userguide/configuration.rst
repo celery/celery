@@ -948,6 +948,14 @@ serialization formats.
 
 Default: No compression.
 
+.. versionchanged:: 5.7
+
+    This setting is now applied to stored results. It was accepted but never
+    used before 5.7, so results were always stored uncompressed. Every worker
+    and client that reads results has to be on 5.7 or later before you turn
+    it on. An unknown compression method now raises
+    :exc:`~celery.exceptions.ImproperlyConfigured` instead of being ignored.
+
 Optional compression method used for task results.
 Supports the same options as the :setting:`task_compression` setting.
 
@@ -955,8 +963,8 @@ A compressed result is stored as binary data, so this setting is only
 honoured by backends that can hold a payload of arbitrary bytes and hand it
 back unchanged. Those are the Redis, MongoDB, Cassandra, DynamoDB,
 Google Cloud Storage and file-system backends. On any other backend the
-setting is ignored, a warning is emitted at startup, and results are stored
-uncompressed.
+setting is ignored, a warning is emitted when the backend is created, and
+results are stored uncompressed.
 
 Each compressed result records which method compressed it, so a worker or
 client reads a compressed result correctly whether or not it has this
