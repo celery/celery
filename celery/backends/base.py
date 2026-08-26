@@ -15,6 +15,9 @@ from uuid import UUID
 from weakref import WeakValueDictionary
 
 from billiard.einfo import ExceptionInfo
+from kombu.compression import compress, decompress
+from kombu.compression import encoders as compression_encoders
+from kombu.compression import get_encoder as get_compression_encoder
 from kombu.serialization import dumps, loads, prepare_accept_content
 from kombu.serialization import registry as serializer_registry
 from kombu.utils.encoding import bytes_to_str, ensure_bytes
@@ -38,6 +41,21 @@ __all__ = ('BaseBackend', 'KeyValueStoreBackend', 'DisabledBackend')
 
 EXCEPTION_ABLE_CODECS = frozenset({'pickle'})
 
+#: Marker prepended to compressed result payloads.
+#:
+#: Unlike a task message, a stored result has nowhere to keep the
+#: ``compression`` header that Kombu uses to tell a consumer how a body was
+#: compressed, because backends store the payload as a single opaque value.
+#: The compression type therefore travels in-band, in front of the compressed
+#: body: ``MAGIC + content-type + b'\0' + body``.
+#:
+#: The leading NUL byte cannot start the output of any serializer Celery
+#: ships with (JSON and YAML are text, pickle starts with an opcode, and
+#: msgpack encodes a mapping with a byte in the ``0x80``-``0xdf`` range), so a
+#: payload written before compression was turned on is never mistaken for a
+#: compressed one.
+COMPRESSED_PAYLOAD_MAGIC = b'\x00celery-compressed\x00'
+
 logger = get_logger(__name__)
 
 MESSAGE_BUFFER_MAX = 8192
@@ -59,6 +77,53 @@ as this pattern requires synchronization.
 
 Result backends that supports chords: Redis, Database, Memcached, and more.
 """
+
+E_UNKNOWN_COMPRESSION = """\
+Unknown compression method {0!r} configured in result_compression.
+Available methods are: {1}.
+"""
+
+W_COMPRESSION_UNSUPPORTED = """\
+The {0} result backend cannot store compressed payloads, so the
+result_compression setting is ignored and results are stored uncompressed.
+"""
+
+
+def compress_payload(payload, compression):
+    """Compress an encoded result payload.
+
+    The returned payload describes its own compression method, so
+    :func:`decompress_payload` can undo this without being told which
+    method was used.
+
+    Arguments:
+        payload (AnyStr): An encoded result payload.
+        compression (str): Name of a method in the Kombu compression
+            registry, for example ``'gzip'``.
+    """
+    body, content_type = compress(payload, compression)
+    return b''.join([
+        COMPRESSED_PAYLOAD_MAGIC, content_type.encode('utf-8'), b'\x00', body,
+    ])
+
+
+def decompress_payload(payload):
+    """Decompress a payload written by :func:`compress_payload`.
+
+    Payloads that don't carry the marker are returned as they are, so
+    results stored before compression was enabled are still readable, and
+    payloads that do carry it are decompressed even when the reader has no
+    compression of its own configured.
+    """
+    if isinstance(payload, memoryview):
+        payload = payload.tobytes()
+    if not isinstance(payload, (bytes, bytearray)):
+        return payload
+    if not payload.startswith(COMPRESSED_PAYLOAD_MAGIC):
+        return payload
+    content_type, _, body = payload[
+        len(COMPRESSED_PAYLOAD_MAGIC):].partition(b'\x00')
+    return decompress(body, content_type.decode('utf-8'))
 
 
 def unpickle_backend(cls, args, kwargs):
@@ -129,6 +194,13 @@ class Backend:
     #: Set to true if the backend is persistent by default.
     persistent = True
 
+    #: If true the backend can store a result payload that has been
+    #: compressed, which means storing and returning arbitrary bytes
+    #: unchanged.  Backends that put the payload inside a JSON document, or
+    #: that decode it to text on the way out, can't, and the
+    #: :setting:`result_compression` setting is ignored for them.
+    supports_result_compression = False
+
     retry_policy = {
         'max_retries': 20,
         'interval_start': 0,
@@ -145,6 +217,8 @@ class Backend:
         (self.content_type,
          self.content_encoding,
          self.encoder) = serializer_registry._encoders[self.serializer]
+        self.compression = self.prepare_compression(
+            conf.get('result_compression'))
         cmax = max_cached_results or conf.result_cache_max
         self._cache = _nulldict() if cmax == -1 else LRUCache(limit=cmax)
 
@@ -534,6 +608,8 @@ class Backend:
 
     def encode(self, data):
         _, _, payload = self._encode(data)
+        if self.compression:
+            payload = compress_payload(payload, self.compression)
         return payload
 
     def _encode(self, data):
@@ -551,10 +627,38 @@ class Backend:
         if payload is None:
             return payload
         payload = payload or str(payload)
+        # Driven by the payload itself rather than by ``self.compression`` so
+        # that a result stays readable after the setting is turned off again,
+        # and so that a reader that never had it turned on can still read a
+        # result written by a worker that did.
+        payload = decompress_payload(payload)
         return loads(payload,
                      content_type=self.content_type,
                      content_encoding=self.content_encoding,
                      accept=self.accept)
+
+    def prepare_compression(self, compression):
+        """Return the compression method to encode results with.
+
+        Returns :const:`None` when results should be stored uncompressed,
+        either because nothing was configured or because this backend can't
+        hold a compressed payload.
+        """
+        if not compression:
+            return None
+        if not self.supports_result_compression:
+            warnings.warn(
+                W_COMPRESSION_UNSUPPORTED.format(type(self).__name__),
+                UserWarning,
+            )
+            return None
+        try:
+            get_compression_encoder(compression)
+        except KeyError as e:
+            raise ImproperlyConfigured(E_UNKNOWN_COMPRESSION.format(
+                compression,
+                ', '.join(sorted(compression_encoders())))) from e
+        return compression
 
     def prepare_expires(self, value, type=None):
         if value is None:
@@ -949,11 +1053,15 @@ class SyncBackendMixin:
                 return meta
             if on_interval:
                 on_interval()
-            # avoid hammering the CPU checking status.
-            time.sleep(interval)
-            time_elapsed += interval
-            if timeout and time_elapsed >= timeout:
+            if timeout is not None and time_elapsed >= timeout:
                 raise TimeoutError('The operation timed out.')
+            # avoid hammering the CPU checking status. Never sleep past the
+            # deadline: with the sleep first, timeout=0 blocked for a whole
+            # interval before giving up, and any timeout below interval
+            # overshot to interval.
+            nap = interval if timeout is None else min(interval, timeout - time_elapsed)
+            time.sleep(nap)
+            time_elapsed += nap
 
     def add_pending_result(self, result, weak=False):
         return result
