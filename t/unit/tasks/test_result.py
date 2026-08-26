@@ -593,6 +593,13 @@ class test_ResultSet:
         x.add(self.app.AsyncResult(2))
         assert len(x) == 2
 
+    def test_iter_native_finalizes_barrier_when_built_via_add(self):
+        x = self.app.ResultSet([])
+        for _ in range(3):
+            x.add(self.app.AsyncResult(uuid()))
+        x.iter_native()
+        assert x._on_full.finalized
+
     @contextmanager
     def dummy_copy(self):
         with patch('celery.result.copy') as copy:
@@ -865,6 +872,18 @@ class test_GroupResult:
         with patch('celery.Celery.backend', new=backend):
             backend.ids = [result.id for result in results]
             assert len(list(ts.iter_native())) == 10
+
+    def test_join_timeout_zero(self):
+        """A timeout of 0 must behave as a non-blocking join."""
+        ar = MockAsyncResultSuccess(uuid(), app=self.app, result='r1')
+        ar2 = MockAsyncResultSuccess(uuid(), app=self.app, result='r2')
+        ts_ready = self.app.GroupResult(uuid(), [ar, ar2])
+        assert ts_ready.join(timeout=0) == ['r1', 'r2']
+
+        ar_pending = self.app.AsyncResult(uuid())
+        ts_pending = self.app.GroupResult(uuid(), [ar, ar_pending])
+        with pytest.raises(TimeoutError):
+            ts_pending.join(timeout=0)
 
     def test_join_timeout(self):
         ar = MockAsyncResultSuccess(uuid(), app=self.app)

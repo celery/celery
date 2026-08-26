@@ -15,7 +15,7 @@ from kombu.serialization import pickle, pickle_protocol
 from kombu.utils.objects import cached_property
 
 from celery import __version__
-from celery.exceptions import WorkerShutdown, WorkerTerminate
+from celery.exceptions import ImproperlyConfigured, WorkerShutdown, WorkerTerminate
 from celery.utils.collections import LimitedSet
 
 __all__ = (
@@ -23,6 +23,35 @@ __all__ = (
     'total_count', 'revoked', 'task_reserved', 'maybe_shutdown',
     'task_accepted', 'task_ready', 'Persistent',
 )
+
+
+def _int_env(name: str, default: int) -> int:
+    """Parse an integer environment variable with proper error handling."""
+    value = os.environ.get(name)
+    if value is None:
+        return default
+
+    try:
+        return int(value)
+    except ValueError as exc:
+        raise ImproperlyConfigured(
+            f"Invalid value for {name}: expected int, got {value!r}"
+        ) from exc
+
+
+def _float_env(name: str, default: float) -> float:
+    """Parse a float environment variable with proper error handling."""
+    value = os.environ.get(name)
+    if value is None:
+        return float(default)
+
+    try:
+        return float(value)
+    except ValueError as exc:
+        raise ImproperlyConfigured(
+            f"Invalid value for {name}: expected float, got {value!r}"
+        ) from exc
+
 
 #: Worker software/platform information.
 SOFTWARE_INFO = {
@@ -32,18 +61,18 @@ SOFTWARE_INFO = {
 }
 
 #: maximum number of revokes to keep in memory.
-REVOKES_MAX = int(os.environ.get('CELERY_WORKER_REVOKES_MAX', 50000))
+REVOKES_MAX = _int_env('CELERY_WORKER_REVOKES_MAX', 50000)
 
 #: maximum number of successful tasks to keep in memory.
-SUCCESSFUL_MAX = int(os.environ.get('CELERY_WORKER_SUCCESSFUL_MAX', 1000))
+SUCCESSFUL_MAX = _int_env('CELERY_WORKER_SUCCESSFUL_MAX', 1000)
 
 #: how many seconds a revoke will be active before
 #: being expired when the max limit has been exceeded.
-REVOKE_EXPIRES = float(os.environ.get('CELERY_WORKER_REVOKE_EXPIRES', 10800))
+REVOKE_EXPIRES = _float_env('CELERY_WORKER_REVOKE_EXPIRES', 10800)
 
 #: how many seconds a successful task will be cached in memory
 #: before being expired when the max limit has been exceeded.
-SUCCESSFUL_EXPIRES = float(os.environ.get('CELERY_WORKER_SUCCESSFUL_EXPIRES', 10800))
+SUCCESSFUL_EXPIRES = _float_env('CELERY_WORKER_SUCCESSFUL_EXPIRES', 10800)
 
 #: Mapping of reserved task_id->Request.
 requests = {}

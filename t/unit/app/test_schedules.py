@@ -8,6 +8,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from celery.exceptions import ImproperlyConfigured
 from celery.schedules import ParseException, crontab, crontab_parser, schedule, solar
 
 if sys.version_info >= (3, 9):
@@ -97,6 +98,15 @@ class test_solar:
                 pytest.fail(
                     f"{s.method} was called with 'use_center' which is not a "
                     "valid keyword for the function.")
+
+
+class test_solar_without_ephem:
+
+    def test_raises_improperly_configured_when_ephem_is_missing(
+            self, monkeypatch):
+        monkeypatch.setitem(sys.modules, 'ephem', None)
+        with pytest.raises(ImproperlyConfigured, match=r'celery\[solar\]'):
+            solar('sunrise', 60, 30, app=self.app)
 
 
 class test_schedule:
@@ -539,6 +549,62 @@ class test_crontab_remaining_estimate:
 
         assert next == datetime(2023, 1, 29, 0, 0, tzinfo=tz)
 
+    def test_aware_last_run_at_in_different_timezone(self):
+        # The crontab fields are defined in the schedule's timezone (the app
+        # timezone, UTC here), but an aware last_run_at may arrive in a
+        # different timezone, e.g. from django-celery-beat.  Both datetimes
+        # must be normalized into the schedule's frame before any field
+        # matching (#9715).
+        vilnius = ZoneInfo("Europe/Vilnius")
+        crontab = self.crontab(minute=40, hour=8)
+
+        # 09:25:08 in Vilnius == 06:25:08 UTC
+        last_run_at = datetime(2025, 5, 20, 9, 25, 8, tzinfo=vilnius)
+        now = datetime(2025, 5, 20, 9, 26, 8, tzinfo=vilnius)
+        crontab.nowfun = lambda: now
+
+        next = now + crontab.remaining_estimate(last_run_at)
+
+        # The next run is at 08:40 UTC on the same day, not a day later.
+        assert next == datetime(2025, 5, 20, 8, 40, tzinfo=ZoneInfo("UTC"))
+
+    def test_aware_last_run_at_in_different_timezone_without_utc(self):
+        # Same as above with enable_utc off, which is a common
+        # django-celery-beat setup.  The returned datetimes must stay in the
+        # frame the delta was computed in (#9715).
+        self.app.conf.enable_utc = False
+        self.app.conf.timezone = "UTC"
+        vilnius = ZoneInfo("Europe/Vilnius")
+        crontab = self.crontab(minute=40, hour=8)
+
+        last_run_at = datetime(2025, 5, 20, 9, 25, 8, tzinfo=vilnius)
+        now = datetime(2025, 5, 20, 9, 26, 8, tzinfo=vilnius)
+        crontab.nowfun = lambda: now
+
+        next = now + crontab.remaining_estimate(last_run_at)
+
+        assert next == datetime(2025, 5, 20, 8, 40, tzinfo=ZoneInfo("UTC"))
+
+    def test_remaining_estimate_finds_hour_slot_before_now(self):
+        crontab = self.crontab(minute=0, hour='1,2')  # every day at 01:00 and 02:00
+        last_run_at = datetime(2022, 12, 5, 1, 0)  # next run is 02:00
+        now = datetime(2022, 12, 6, 0, 10)  # the next day
+        crontab.nowfun = lambda: now
+
+        next = now + crontab.remaining_estimate(last_run_at)
+
+        assert next == datetime(2022, 12, 5, 2, 0)
+
+    def test_remaining_estimate_finds_minute_slot_before_now(self):
+        crontab = self.crontab(minute='0,30', hour=1)  # every day at 01:00 and 01:30
+        last_run_at = datetime(2022, 12, 5, 1, 0)  # next run is 01:30
+        now = datetime(2022, 12, 6, 0, 10)  # the next day
+        crontab.nowfun = lambda: now
+
+        next = now + crontab.remaining_estimate(last_run_at)
+
+        assert next == datetime(2022, 12, 5, 1, 30)
+
 
 class test_crontab_is_due:
 
@@ -963,6 +1029,60 @@ class test_crontab_is_due:
             due, remaining = self.daily.is_due(last_run)
             assert remaining == expected_remaining
             assert not due
+
+    def test_execution_due_if_task_not_run_at_any_feasible_time_within_deadline_on_non_uniform_schedule(self):
+        # Could have feasibly been run on 12/5 9:00, 9:45, or 10:00.
+        # The most recent (10:00) is 20 minutes ago, within a 30-minute
+        # deadline, so the task should still be due.
+        self.app.conf.beat_cron_starting_deadline = 1800
+        cron = self.crontab(minute='0,45')
+        last_run = datetime(2022, 12, 5, 8, 45)
+        now = datetime(2022, 12, 5, 10, 20)
+        expected_next_execution_time = datetime(2022, 12, 5, 10, 45)
+        expected_remaining = (expected_next_execution_time - now).total_seconds()
+
+        # Run the (:00, :45) crontab with the current date
+        with patch_crontab_nowfun(cron, now):
+            due, remaining = cron.is_due(last_run)
+            assert remaining == expected_remaining
+            assert due
+
+    def test_execution_due_if_most_recent_feasible_run_is_exactly_on_deadline_on_non_uniform_schedule(self):
+        # Could have feasibly been run on 12/5 9:00, 9:45, or 10:00.
+        # The most recent (10:00) is exactly 30 minutes ago, matching the
+        # deadline, so it should still be treated as due.
+        self.app.conf.beat_cron_starting_deadline = 1800
+        cron = self.crontab(minute='0,45')
+        last_run = datetime(2022, 12, 5, 8, 45)
+        now = datetime(2022, 12, 5, 10, 30)
+        expected_next_execution_time = datetime(2022, 12, 5, 10, 45)
+        expected_remaining = (expected_next_execution_time - now).total_seconds()
+        # Run the (:00, :45) crontab with the current date
+        with patch_crontab_nowfun(cron, now):
+            due, remaining = cron.is_due(last_run)
+            assert remaining == expected_remaining
+            assert due
+
+    def test_execution_due_if_missed_run_within_deadline_spanning_dst_start_on_non_uniform_schedule(self):
+        # Could have feasibly been run on 3/11 6:00 or 3/12 0:00.
+        # The most recent (3/12 0:00) is 7800 seconds ago, within the
+        # 10800-second deadline even though the window spans the
+        # spring-forward transition, so it should still be treated as due.
+        tzname = "America/New_York"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        self.app.conf.beat_cron_starting_deadline = 10800
+        cron = self.crontab(minute=0, hour='0,6')
+        last_run = datetime(2023, 3, 11, 0, 0, tzinfo=tz)
+        now = datetime(2023, 3, 12, 3, 10, tzinfo=tz)
+        expected_next_execution_time = datetime(2023, 3, 12, 6, 0, tzinfo=tz)
+        expected_remaining = (expected_next_execution_time - now).total_seconds()
+
+        # Run the (0:00, 6:00) crontab with the current date
+        with patch_crontab_nowfun(cron, now):
+            due, remaining = cron.is_due(last_run)
+            assert remaining == expected_remaining
+            assert due
 
     def test_execution_not_due_if_last_run_in_future(self):
         # Should not run if the last_run hasn't happened yet.

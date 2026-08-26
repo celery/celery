@@ -167,6 +167,9 @@ class GCSBackend(GCSBackendBase):
     implements_incr = True
     supports_native_join = True
 
+    # Blobs are uploaded from and downloaded to bytes.
+    supports_result_compression = True
+
     # Firestore parameters
     _collection_name = 'celery'
     _field_count = 'chord_count'

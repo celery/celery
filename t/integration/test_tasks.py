@@ -16,10 +16,10 @@ from celery.worker import state as worker_state
 
 from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connection
 from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result, add_not_typed, add_pydantic,
-                    add_pydantic_string_annotations, fail, fail_unpickleable, print_unicode, retry, retry_once,
-                    retry_once_headers, retry_once_priority, retry_unpickleable, return_properties,
-                    return_request_time_limits, second_order_replace1, sleeping,
-                    soft_time_limit_must_exceed_time_limit, task_with_declared_time_limits)
+                    add_pydantic_string_annotations, fail, fail_unpickleable, print_unicode, reject_then_succeed,
+                    reject_without_requeue, retry, retry_once, retry_once_headers, retry_once_priority,
+                    retry_unpickleable, return_properties, return_request_time_limits, second_order_replace1,
+                    sleeping, soft_time_limit_must_exceed_time_limit, task_with_declared_time_limits)
 
 TIMEOUT = 10
 
@@ -129,6 +129,25 @@ class test_tasks:
         # persisted in the result backend.
         time.sleep(1)
         assert result.result is None
+
+    @flaky
+    def test_reject_without_requeue_stores_failure(self, manager):
+        result = reject_without_requeue.delay()
+        with pytest.raises(celery.exceptions.Reject):
+            result.get(timeout=TIMEOUT)
+        assert result.status == 'FAILURE'
+        assert result.ready() is True
+        assert result.failed() is True
+        assert result.successful() is False
+
+    @flaky
+    def test_reject_with_requeue_redelivers_and_succeeds(self, manager):
+        result = reject_then_succeed.delay()
+        assert result.get(timeout=TIMEOUT) == 'second-pass'
+        assert result.status == 'SUCCESS'
+        assert result.ready() is True
+        assert result.failed() is False
+        assert result.successful() is True
 
     @flaky
     def test_pydantic_annotations(self, manager):

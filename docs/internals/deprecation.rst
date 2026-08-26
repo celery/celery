@@ -7,6 +7,44 @@
 .. contents::
     :local:
 
+.. _deprecations-v6.0:
+
+Removals for version 6.0
+========================
+
+Task attributes
+---------------
+
+The task attributes:
+
+- ``queue``
+- ``exchange``
+- ``exchange_type``
+- ``routing_key``
+- ``delivery_mode``
+- ``priority``
+
+are deprecated and must be set by :setting:`task_routes` instead.
+
+Task_sent signal
+----------------
+
+The :signal:`task_sent` signal is deprecated.
+Please use the :signal:`before_task_publish` and :signal:`after_task_publish`
+signals instead.
+
+Result
+------
+
+Apply to: :class:`~celery.result.AsyncResult`,
+:class:`~celery.result.EagerResult`:
+
+- ``Result.wait()`` -> ``Result.get()``
+
+- ``Result.task_id`` -> ``Result.id``
+
+- ``Result.status`` -> ``Result.state``.
+
 .. _deprecations-v5.0:
 
 Removals for version 5.0
@@ -94,21 +132,6 @@ on the class, but have to instantiate the task first:
     >>> MyTask().delay()        # WORKS!
 
 
-Task attributes
----------------
-
-The task attributes:
-
-- ``queue``
-- ``exchange``
-- ``exchange_type``
-- ``routing_key``
-- ``delivery_mode``
-- ``priority``
-
-is deprecated and must be set by :setting:`task_routes` instead.
-
-
 Modules to Remove
 -----------------
 
@@ -177,25 +200,6 @@ Settings
 ``REDIS_PASSWORD``                     :setting:`result_backend`
 =====================================  =====================================
 
-
-Task_sent signal
-----------------
-
-The :signal:`task_sent` signal will be removed in version 4.0.
-Please use the :signal:`before_task_publish` and :signal:`after_task_publish`
-signals instead.
-
-Result
-------
-
-Apply to: :class:`~celery.result.AsyncResult`,
-:class:`~celery.result.EagerResult`:
-
-- ``Result.wait()`` -> ``Result.get()``
-
-- ``Result.task_id()`` -> ``Result.id``
-
-- ``Result.status`` -> ``Result.state``.
 
 .. _deprecations-v3.1:
 

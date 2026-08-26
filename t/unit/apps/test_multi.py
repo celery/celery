@@ -215,6 +215,13 @@ class test_Node:
         kill.assert_called_with(self.node.pid, 9)
 
     @patch('os.kill')
+    def test_send__EPERM(self, kill):
+        kill.side_effect = OSError()
+        kill.side_effect.errno = errno.EPERM
+        assert not self.node.send(9)
+        kill.assert_called_with(self.node.pid, 9)
+
+    @patch('os.kill')
     def test_send__error(self, kill):
         kill.side_effect = OSError()
         kill.side_effect.errno = errno.ENOENT

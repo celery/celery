@@ -5,6 +5,7 @@
 from kombu.common import ignore_errors
 
 from celery import bootsteps
+from celery.worker.state import reserved_requests
 
 from .connection import Connection
 
@@ -34,8 +35,9 @@ class Events(bootsteps.StartStopStep):
     def start(self, c):
         # flush events sent while connection was down.
         prev = self._close(c)
+        conn = c.connection_for_write(heartbeat=c.amqheartbeat)
         dis = c.event_dispatcher = c.app.events.Dispatcher(
-            c.connection_for_write(),
+            conn,
             hostname=c.hostname,
             enabled=self.send_events,
             groups=self.groups,
@@ -44,9 +46,14 @@ class Events(bootsteps.StartStopStep):
             buffer_group=['task'] if c.hub else None,
             on_send_buffered=c.on_send_event_buffered if c.hub else None,
         )
+        # register for reads so broker heartbeats are consumed.
+        if c.hub and c.amqheartbeat and conn.supports_heartbeats:
+            conn.transport.register_with_event_loop(conn.connection, c.hub)
         if prev:
             dis.extend_buffer(prev)
             dis.flush()
+            for request in tuple(reserved_requests):
+                request.eventer = dis
 
     def stop(self, c):
         pass

@@ -13,7 +13,7 @@ from celery.canvas import _chain, group, signature
 from celery.exceptions import Ignore, ImproperlyConfigured, MaxRetriesExceededError, Reject, Retry
 from celery.local import class_property
 from celery.result import EagerResult, denied_join_result
-from celery.utils import abstract
+from celery.utils import abstract, deprecated
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
 from celery.utils.nodenames import gethostname
@@ -421,6 +421,17 @@ class Task:
         cls._app = app
         conf = app.conf
         cls._exec_options = None  # clear option cache
+
+        if not was_bound:
+            for attr in ('queue', 'exchange', 'exchange_type',
+                         'routing_key', 'delivery_mode', 'priority'):
+                if attr in cls.__dict__:
+                    # In Celery 6.0, make these task attributes have no effect
+                    deprecated.warn(
+                        description=f'The {attr!r} task attribute',
+                        removal='6.0',
+                        alternative='Use the task_routes setting instead.',
+                    )
 
         if cls.typing is None:
             cls.typing = app.strict_typing
@@ -1036,7 +1047,6 @@ class Task:
 
         Arguments:
             sig (Signature): signature to replace with.
-            visitor (StampingVisitor): Visitor API object.
 
         Raises:
             ~@Ignore: This is always raised when called in asynchronous context.
