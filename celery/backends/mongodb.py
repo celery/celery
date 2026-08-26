@@ -54,6 +54,9 @@ class MongoBackend(BaseBackend):
 
     supports_autoexpire = False
 
+    # Bytes round-trip through BSON as a binary field.
+    supports_result_compression = True
+
     _connection = None
 
     def __init__(self, app=None, **kwargs):
