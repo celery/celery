@@ -1748,6 +1748,19 @@ class test_create_request_class(RequestCase):
         job.on_success((True, einfo, 1.0))
         job.on_failure.assert_called_with(einfo, return_ok=True)
 
+    def test_on_success__propagates_MemoryError(self):
+        self.task.acks_late = True
+        self.mytask.acks_late = True
+        einfo = None
+        try:
+            raise MemoryError('out of memory')
+        except MemoryError:
+            einfo = ExceptionInfo(internal=True)
+        assert einfo is not None
+
+        with pytest.raises(MemoryError, match='Process got: out of memory'):
+            self.zRequest(id=uuid()).on_success((True, einfo, 1.0))
+
     def test_on_success__acks_late_enabled(self):
         self.task.acks_late = True
         job = self.zRequest(id=uuid())
