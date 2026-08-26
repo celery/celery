@@ -1042,11 +1042,15 @@ class SyncBackendMixin:
                 return meta
             if on_interval:
                 on_interval()
-            # avoid hammering the CPU checking status.
-            time.sleep(interval)
-            time_elapsed += interval
-            if timeout and time_elapsed >= timeout:
+            if timeout is not None and time_elapsed >= timeout:
                 raise TimeoutError('The operation timed out.')
+            # avoid hammering the CPU checking status. Never sleep past the
+            # deadline: with the sleep first, timeout=0 blocked for a whole
+            # interval before giving up, and any timeout below interval
+            # overshot to interval.
+            nap = interval if timeout is None else min(interval, timeout - time_elapsed)
+            time.sleep(nap)
+            time_elapsed += nap
 
     def add_pending_result(self, result, weak=False):
         return result
