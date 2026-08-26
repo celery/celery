@@ -307,6 +307,7 @@ NAMESPACES = Namespace(
         queue_max_priority=Option(None, type='int'),
         reject_on_worker_lost=Option(type='bool'),
         remote_tracebacks=Option(False, type='bool'),
+        repr_maxlevels=Option(3, type='int'),
         routes=Option(type='any'),
         send_sent_event=Option(
             False, type='bool', old={'celery_send_task_sent_event'},
