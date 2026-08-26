@@ -2,6 +2,7 @@ import copy
 import re
 from contextlib import contextmanager
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
+from uuid import UUID
 
 import pytest
 from kombu.serialization import prepare_accept_content
@@ -10,9 +11,12 @@ from kombu.utils.encoding import bytes_to_str, ensure_bytes
 import celery
 from celery import chord, group, signature, states, uuid
 from celery.app.task import Context, Task
-from celery.backends.base import BaseBackend, DisabledBackend, KeyValueStoreBackend, _nulldict
-from celery.exceptions import BackendGetMetaError, BackendStoreError, ChordError, SecurityError, TimeoutError
-from celery.result import result_from_tuple
+from celery.backends.base import (COMPRESSED_PAYLOAD_MAGIC, BaseBackend, DisabledBackend, KeyValueStoreBackend,
+                                  _create_chord_error_with_cause, _create_fake_task_request, _nulldict,
+                                  compress_payload, decompress_payload)
+from celery.exceptions import (BackendGetMetaError, BackendStoreError, ChordError, ImproperlyConfigured,
+                               SecurityError, TimeoutError)
+from celery.result import GroupResult, result_from_tuple
 from celery.utils import serialization
 from celery.utils.functional import pass1
 from celery.utils.serialization import UnpickleableExceptionWrapper
@@ -375,6 +379,10 @@ class KVBackend(KeyValueStoreBackend):
         self.db.pop(key, None)
 
 
+class CompressingKVBackend(KVBackend):
+    supports_result_compression = True
+
+
 class DictBackend(BaseBackend):
 
     def __init__(self, *args, **kwargs):
@@ -425,7 +433,7 @@ class test_BaseBackend_dict:
         b = BaseBackend(self.app)
         b._save_group = Mock()
         b.save_group('foofoo', 'xxx')
-        b._save_group.assert_called_with('foofoo', 'xxx')
+        b._save_group.assert_called_with(group_id='foofoo', result='xxx')
 
     def test_add_to_chord_interface(self):
         b = BaseBackend(self.app)
@@ -492,6 +500,27 @@ class test_BaseBackend_dict:
 
         self.b.serializer = 'pickle'
         assert isinstance(self.b.prepare_value(g), self.app.GroupResult)
+
+    def test_task_result_exists_true(self):
+        b = DictBackend(app=self.app)
+        b._get_task_meta_for = Mock(return_value={
+            'status': states.SUCCESS, 'result': 42,
+        })
+        assert b.task_result_exists('task-exists') is True
+
+    def test_task_result_exists_false(self):
+        b = DictBackend(app=self.app)
+        b._get_task_meta_for = Mock(return_value={
+            'status': states.PENDING, 'result': None,
+        })
+        assert b.task_result_exists('task-missing') is False
+
+    def test_task_result_exists_failure_state(self):
+        b = DictBackend(app=self.app)
+        b._get_task_meta_for = Mock(return_value={
+            'status': states.FAILURE, 'result': None,
+        })
+        assert b.task_result_exists('task-failed') is True
 
     def test_is_cached(self):
         b = BaseBackend(app=self.app, max_cached_results=1)
@@ -575,6 +604,34 @@ class test_BaseBackend_dict:
         b.mark_as_failure('id', exc, request=request)
         mock_group.assert_called_once_with(request.errbacks, app=self.app)
 
+    def test_new_style_errback_exception_does_not_halt_chain(self):
+        """Test that a new-style errback raising an exception is caught
+        and does not prevent subsequent errbacks from being called."""
+        b = BaseBackend(app=self.app)
+        b._store_result = Mock()
+
+        errback_calls = []
+
+        @self.app.task(shared=False)
+        def failing_errback(request, exc, traceback):
+            errback_calls.append('failing')
+            raise RuntimeError('errback failed')
+
+        @self.app.task(shared=False)
+        def ok_errback(request, exc, traceback):
+            errback_calls.append('ok')
+
+        request = Mock(name='request')
+        request.errbacks = [
+            failing_errback.subtask(),
+            ok_errback.subtask(),
+        ]
+        exc = KeyError()
+        # Should not raise — the RuntimeError from failing_errback is
+        # caught and logged, and the next new-style errback still runs.
+        b.mark_as_failure('id', exc, request=request)
+        assert errback_calls == ['failing', 'ok']
+
     def test_mark_as_failure__chord(self):
         b = BaseBackend(app=self.app)
         b._store_result = Mock()
@@ -584,6 +641,27 @@ class test_BaseBackend_dict:
         exc = KeyError()
         b.mark_as_failure('id', exc, request=request)
         b.on_chord_part_return.assert_called_with(request, states.FAILURE, exc)
+
+    def test_mark_as_failure__chained_chord_propagates_to_body(self):
+        b = BaseBackend(app=self.app)
+        b.store_result = Mock()
+        b.on_chord_part_return = Mock()
+
+        inner_chord = chord(
+            group([signature('test.h1'), signature('test.h2')]),
+            signature('test.body', immutable=True),
+            app=self.app,
+        )
+        inner_chord.options['task_id'] = 'inner-chord-id'
+        inner_chord.body.options['task_id'] = 'chord-body-id'
+
+        request = Context()
+        request.chain = [dict(inner_chord)]
+        request.errbacks = []
+        b.mark_as_failure('fail-id', ValueError('boom'), request=request)
+
+        marked = [c.args[0] for c in b.store_result.call_args_list]
+        assert 'chord-body-id' in marked
 
     def test_mark_as_revoked__chord(self):
         b = BaseBackend(app=self.app)
@@ -683,6 +761,395 @@ class test_BaseBackend_dict:
         b._get_task_meta_for.return_value = {'children': 3}
         assert b.get_children('id') == 3
 
+    @pytest.mark.parametrize(
+        "message,original_exc,expected_cause_behavior",
+        [
+            # With exception - should preserve original exception
+            (
+                "Dependency failed",
+                ValueError("original error"),
+                "has_cause",
+            ),
+            # Without exception (None) - should not have __cause__
+            (
+                "Dependency failed",
+                None,
+                "no_cause",
+            ),
+            # With non-exception - should not have __cause__
+            (
+                "Dependency failed",
+                "not an exception",
+                "no_cause",
+            ),
+        ],
+        ids=(
+            "with_exception",
+            "without_exception",
+            "with_non_exception",
+        )
+    )
+    def test_create_chord_error_with_cause(
+        self, message, original_exc, expected_cause_behavior
+    ):
+        """Test _create_chord_error_with_cause with various parameter combinations."""
+        chord_error = _create_chord_error_with_cause(message, original_exc)
+
+        # Verify basic ChordError properties
+        assert isinstance(chord_error, ChordError)
+        assert str(chord_error) == message
+
+        # Verify __cause__ behavior based on test case
+        if expected_cause_behavior == "has_cause":
+            assert chord_error.__cause__ is original_exc
+        elif expected_cause_behavior == "no_cause":
+            assert not hasattr(chord_error, '__cause__') or chord_error.__cause__ is None
+
+    @pytest.mark.parametrize(
+        "task_id,errbacks,task_name,extra_kwargs,expected_attrs",
+        [
+            # Basic parameters test
+            (
+                "test-task-id",
+                ["errback1", "errback2"],
+                "test.task",
+                {},
+                {
+                    "id": "test-task-id",
+                    "errbacks": ["errback1", "errback2"],
+                    "task": "test.task",
+                    "delivery_info": {},
+                },
+            ),
+            # Default parameters test
+            (
+                "test-task-id",
+                None,
+                None,
+                {},
+                {
+                    "id": "test-task-id",
+                    "errbacks": [],
+                    "task": "unknown",
+                    "delivery_info": {},
+                },
+            ),
+            # Extra parameters test
+            (
+                "test-task-id",
+                None,
+                None,
+                {"extra_param": "extra_value"},
+                {
+                    "id": "test-task-id",
+                    "errbacks": [],
+                    "task": "unknown",
+                    "delivery_info": {},
+                    "extra_param": "extra_value",
+                },
+            ),
+        ],
+        ids=(
+            "basic_parameters",
+            "default_parameters",
+            "extra_parameters",
+        )
+    )
+    def test_create_fake_task_request(
+        self, task_id, errbacks, task_name, extra_kwargs, expected_attrs
+    ):
+        """Test _create_fake_task_request with various parameter combinations."""
+        # Build call arguments
+        args = [task_id]
+        if errbacks is not None:
+            args.append(errbacks)
+        if task_name is not None:
+            args.append(task_name)
+
+        fake_request = _create_fake_task_request(*args, **extra_kwargs)
+
+        # Verify all expected attributes
+        for attr_name, expected_value in expected_attrs.items():
+            assert getattr(fake_request, attr_name) == expected_value
+
+    def _create_mock_callback(self, task_name="test.task", spec=None, **options):
+        """Helper to create mock callbacks with common setup."""
+        from collections.abc import Mapping
+
+        # Create a mock that properly implements the
+        # mapping protocol for PyPy env compatibility
+        class MockCallback(Mock, Mapping):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self._mapping_data = {}
+
+            def __getitem__(self, key):
+                return self._mapping_data[key]
+
+            def __iter__(self):
+                return iter(self._mapping_data)
+
+            def __len__(self):
+                return len(self._mapping_data)
+
+            def keys(self):
+                return self._mapping_data.keys()
+
+            def items(self):
+                return self._mapping_data.items()
+
+        callback = MockCallback(spec=spec)
+        callback.task = task_name
+        callback.options = {"link_error": [], **options}
+
+        return callback
+
+    def _setup_task_backend(self, task_name, backend=None):
+        """Helper to set up task with backend in app registry."""
+        if backend is None:
+            backend = Mock()
+            backend.fail_from_current_stack = Mock(return_value="backend_result")
+
+        self.app.tasks[task_name] = Mock()
+        self.app.tasks[task_name].backend = backend
+        return backend
+
+    @pytest.mark.parametrize(
+        "callback_type,task_name,expected_group_handler_called",
+        [
+            ("group", "test.group.task", True),
+            ("regular", "test.task", False),
+        ],
+        ids=["group_callback", "regular_callback"]
+    )
+    def test_chord_error_from_stack_callback_dispatch(self, callback_type, task_name, expected_group_handler_called):
+        """Test chord_error_from_stack dispatches to correct handler based on callback type."""
+        backend = self.b
+
+        # Create callback based on type
+        spec = group if callback_type == "group" else None
+        callback = self._create_mock_callback(task_name, spec=spec)
+
+        # Setup backend resolution
+        mock_backend = self._setup_task_backend(task_name)
+
+        # Mock handlers
+        backend._handle_group_chord_error = Mock(return_value="group_result")
+        backend._call_task_errbacks = Mock()
+
+        exc = ValueError("test exception")
+        result = backend.chord_error_from_stack(callback, exc)
+
+        if expected_group_handler_called:
+            backend._handle_group_chord_error.assert_called_once_with(
+                group_callback=callback, backend=mock_backend, exc=exc
+            )
+            assert result == "group_result"
+        else:
+            mock_backend.fail_from_current_stack.assert_called_once()
+
+    def test_chord_error_from_stack_backend_fallback(self):
+        """Test chord_error_from_stack falls back to self when task not found."""
+        backend = self.b
+
+        callback = self._create_mock_callback("nonexistent.task")
+
+        # Ensure task doesn't exist
+        if "nonexistent.task" in self.app.tasks:
+            del self.app.tasks["nonexistent.task"]
+
+        backend._call_task_errbacks = Mock()
+        backend.fail_from_current_stack = Mock(return_value="self_result")
+
+        _ = backend.chord_error_from_stack(callback, ValueError("test"))
+
+        # Verify self was used as fallback backend
+        backend.fail_from_current_stack.assert_called_once()
+
+    def test_chord_error_from_stack_generates_id_when_callback_id_is_none(self):
+        """chord_error_from_stack must not crash when callback.id is None.
+
+        Regression test for https://github.com/celery/celery/issues/4834
+        When a chord body is a chain without an explicit task_id, the
+        error handler must generate an ID so the error result can be
+        stored and errback handlers can fire.
+        """
+        backend = self.b
+
+        callback = MagicMock(name='callback')
+        callback.id = None
+        callback.options = {'task_id': None, 'link_error': []}
+        callback.keys.return_value = []
+        callback.task = 'nonexistent.task'
+
+        backend._call_task_errbacks = Mock()
+        backend.fail_from_current_stack = Mock()
+
+        backend.chord_error_from_stack(callback, exc=ValueError('test'))
+
+        # fail_from_current_stack must be called with a non-None ID
+        call_args = backend.fail_from_current_stack.call_args
+        actual_id = call_args[0][0]
+        assert actual_id is not None, (
+            "chord_error_from_stack must generate an ID when callback.id is None"
+        )
+        # The generated ID must also be stored on the callback
+        assert callback.options['task_id'] is not None
+
+    def _create_mock_frozen_group(self, group_id="group-id", task_ids=None, task_names=None):
+        """Helper to create mock frozen group with results."""
+        if task_ids is None:
+            task_ids = ["task-id-1"]
+        if task_names is None:
+            task_names = ["test.task"] * len(task_ids)
+
+        results = []
+        for task_id, task_name in zip(task_ids, task_names):
+            result = Mock()
+            result.id = task_id
+            result.task = task_name
+            results.append(result)
+
+        frozen_group = Mock(spec=GroupResult)
+        frozen_group.results = results
+        frozen_group.id = group_id
+        frozen_group.revoke = Mock()
+        return frozen_group
+
+    def _setup_group_chord_error_test(self, exc=None, errbacks=None, task_ids=None):
+        """Common setup for group chord error tests."""
+        if exc is None:
+            exc = ValueError("test error")
+        if errbacks is None:
+            errbacks = []
+        if task_ids is None:
+            task_ids = ["task-id-1"]
+
+        backend = Mock()
+        backend._call_task_errbacks = Mock()
+        backend.fail_from_current_stack = Mock()
+        backend.mark_as_failure = Mock()
+
+        group_callback = Mock(spec=group)
+        group_callback.options = {"link_error": errbacks}
+
+        frozen_group = self._create_mock_frozen_group(task_ids=task_ids)
+        group_callback.freeze.return_value = frozen_group
+
+        return self.b, backend, group_callback, frozen_group, exc
+
+    @pytest.mark.parametrize(
+        "exception_setup,expected_exc_used",
+        [
+            ("with_cause", "original"),
+            ("without_cause", "direct"),
+        ],
+        ids=["extracts_cause", "without_cause"]
+    )
+    def test_handle_group_chord_error_exception_handling(self, exception_setup, expected_exc_used):
+        """Test _handle_group_chord_error handles exceptions with and without __cause__."""
+        # Setup exceptions based on test case
+        if exception_setup == "with_cause":
+            original_exc = ValueError("original error")
+            exc = ChordError("wrapped error")
+            exc.__cause__ = original_exc
+            expected_exc = original_exc
+        else:
+            exc = ValueError("direct error")
+            expected_exc = exc
+
+        b, backend, group_callback, frozen_group, _ = self._setup_group_chord_error_test(exc=exc)
+
+        # Call the method
+        _ = b._handle_group_chord_error(group_callback, backend, exc)
+
+        # Verify correct exception was used
+        backend.fail_from_current_stack.assert_called_with("task-id-1", exc=expected_exc)
+        backend.mark_as_failure.assert_called_with("group-id", expected_exc)
+        frozen_group.revoke.assert_called_once()
+
+    def test_handle_group_chord_error_multiple_tasks(self):
+        """Test _handle_group_chord_error handles multiple tasks in group."""
+        task_ids = ["task-id-1", "task-id-2"]
+        b, backend, group_callback, frozen_group, exc = self._setup_group_chord_error_test(task_ids=task_ids)
+
+        # Call the method
+        b._handle_group_chord_error(group_callback, backend, exc)
+
+        # Verify group revocation and all tasks handled
+        frozen_group.revoke.assert_called_once()
+        assert backend.fail_from_current_stack.call_count == 2
+        backend.fail_from_current_stack.assert_any_call("task-id-1", exc=exc)
+        backend.fail_from_current_stack.assert_any_call("task-id-2", exc=exc)
+
+    def test_handle_group_chord_error_with_errbacks(self):
+        """Test _handle_group_chord_error calls error callbacks for each task."""
+        errbacks = ["errback1", "errback2"]
+        b, backend, group_callback, frozen_group, exc = self._setup_group_chord_error_test(errbacks=errbacks)
+
+        # Call the method
+        b._handle_group_chord_error(group_callback, backend, exc)
+
+        # Verify error callbacks were called
+        backend._call_task_errbacks.assert_called_once()
+        call_args = backend._call_task_errbacks.call_args
+        fake_request = call_args[0][0]
+
+        # Verify fake request was created correctly
+        assert fake_request.id == "task-id-1"
+        assert fake_request.errbacks == errbacks
+        assert fake_request.task == "test.task"
+
+    def test_handle_group_chord_error_cleanup_exception_handling(self):
+        """Test _handle_group_chord_error handles cleanup exceptions gracefully."""
+        b = self.b
+        backend = Mock()
+
+        exc = ValueError("test error")
+
+        # Mock group callback that raises exception during freeze
+        group_callback = Mock(spec=group)
+        group_callback.freeze.side_effect = RuntimeError("freeze failed")
+
+        # Mock fallback behavior
+        backend.fail_from_current_stack = Mock(return_value="fallback_result")
+
+        # Should not raise exception, but return fallback result
+        result = b._handle_group_chord_error(group_callback, backend, exc)
+
+        # Verify fallback was called - the method returns an ExceptionInfo when cleanup fails
+        # and falls back to single task handling
+        assert result is not None  # Method returns ExceptionInfo from fail_from_current_stack
+
+    def test_handle_group_chord__exceptions_paths(self, caplog):
+        """Test _handle_group_chord handles exceptions in various paths."""
+        backend = Mock()
+
+        # Mock group callback
+        group_callback = Mock(spec=group)
+        group_callback.options = {"link_error": []}
+
+        # Mock frozen group with multiple results
+        mock_result1 = Mock()
+        mock_result1.id = "task-id-1"
+        mock_result2 = Mock()
+        mock_result2.id = "task-id-2"
+
+        frozen_group = Mock(spec=GroupResult)
+        frozen_group.results = [mock_result1, mock_result2]
+        frozen_group.revoke = Mock()
+
+        group_callback.freeze.return_value = frozen_group
+
+        # Test exception during fail_from_current_stack
+        backend._call_task_errbacks.side_effect = RuntimeError("fail on _call_task_errbacks")
+
+        backend.fail_from_current_stack.side_effect = RuntimeError("fail on fail_from_current_stack")
+
+        _ = self.b._handle_group_chord_error(group_callback, backend, ValueError("test error"))
+
+        assert "Failed to handle chord error for task" in caplog.text
+
 
 class test_KeyValueStoreBackend:
 
@@ -753,6 +1220,18 @@ class test_KeyValueStoreBackend:
     def test_get_key_for_chord_none_group_id(self):
         with pytest.raises(ValueError):
             self.b.get_key_for_group(None)
+
+    def test_get_key_for_task_uuid_task_id(self):
+        tid = UUID(uuid())
+        assert self.b.get_key_for_task(tid) == self.b.get_key_for_task(str(tid))
+
+    def test_get_key_for_group_uuid_group_id(self):
+        gid = UUID(uuid())
+        assert self.b.get_key_for_group(gid) == self.b.get_key_for_group(str(gid))
+
+    def test_get_key_for_chord_uuid_group_id(self):
+        gid = UUID(uuid())
+        assert self.b.get_key_for_chord(gid) == self.b.get_key_for_chord(str(gid))
 
     def test_strip_prefix(self):
         x = self.b.get_key_for_task('x1b34')
@@ -1027,6 +1506,161 @@ class test_KeyValueStoreBackend:
     def test_restore_missing_group(self):
         assert self.b.restore_group('xxx-nonexistant') is None
 
+    def test_task_result_exists_after_store(self):
+        tid = uuid()
+        self.b.mark_as_done(tid, 'result')
+        assert self.b.task_result_exists(tid) is True
+
+    def test_task_result_exists_missing(self):
+        assert self.b.task_result_exists('xxx-nonexistant') is False
+
+    def test_task_result_exists_after_failure(self):
+        tid = uuid()
+        self.b.mark_as_failure(tid, RuntimeError('failed'), traceback='tb')
+        assert self.b.task_result_exists(tid) is True
+
+    def test_task_result_exists_after_retry(self):
+        tid = uuid()
+        self.b.mark_as_retry(tid, RuntimeError('retry'), traceback='tb')
+        assert self.b.task_result_exists(tid) is True
+
+    def test_task_result_exists_after_forget(self):
+        tid = uuid()
+        self.b.mark_as_done(tid, 'result')
+        assert self.b.task_result_exists(tid) is True
+        self.b.forget(tid)
+        assert self.b.task_result_exists(tid) is False
+
+
+class test_result_compression:
+
+    def setup_method(self):
+        self.app.conf.result_serializer = 'json'
+        self.app.conf.accept_content = ['json']
+
+    def backend(self, compression=None, cls=CompressingKVBackend):
+        self.app.conf.result_compression = compression
+        return cls(app=self.app)
+
+    def test_compression_is_off_by_default(self):
+        b = self.backend()
+        assert b.compression is None
+        payload = b.encode({'foo': 'bar'})
+        assert payload == '{"foo": "bar"}'
+        assert b.decode(payload) == {'foo': 'bar'}
+
+    @pytest.mark.parametrize('compression', ['gzip', 'zlib', 'bzip2'])
+    def test_encode_compresses_and_decode_round_trips(self, compression):
+        b = self.backend(compression)
+        assert b.compression == compression
+        payload = b.encode({'foo': 'bar'})
+        assert isinstance(payload, bytes)
+        assert payload.startswith(COMPRESSED_PAYLOAD_MAGIC)
+        assert b.decode(payload) == {'foo': 'bar'}
+
+    def test_compressed_payload_is_smaller(self):
+        data = {'result': ['a repetitive value'] * 200}
+        assert len(self.backend('gzip').encode(data)) < len(
+            self.backend().encode(data))
+
+    def test_decode_reads_an_uncompressed_payload(self):
+        payload = self.backend().encode({'foo': 'bar'})
+        b = self.backend('gzip')
+        assert b.decode(payload) == {'foo': 'bar'}
+        assert b.decode(ensure_bytes(payload)) == {'foo': 'bar'}
+
+    def test_decode_reads_a_compressed_payload_with_compression_off(self):
+        payload = self.backend('gzip').encode({'foo': 'bar'})
+        assert self.backend().decode(payload) == {'foo': 'bar'}
+
+    def test_stores_compressed_and_reads_back_older_results(self):
+        old = self.backend()
+        old.store_result('legacy', {'foo': 'bar'}, states.SUCCESS)
+        # a real backend hands the stored payload back as bytes
+        stored = {key: ensure_bytes(value) for key, value in old.db.items()}
+
+        b = self.backend('gzip')
+        b.db = stored
+        b.store_result('current', {'foo': 'baz'}, states.SUCCESS)
+
+        assert stored[b.get_key_for_task('legacy')].startswith(b'{')
+        assert stored[b.get_key_for_task('current')].startswith(
+            COMPRESSED_PAYLOAD_MAGIC)
+        assert b.get_result('legacy') == {'foo': 'bar'}
+        assert b.get_result('current') == {'foo': 'baz'}
+
+    def test_exception_result_round_trips(self):
+        b = self.backend('gzip')
+        b.store_result('errored', KeyError('boom'), states.FAILURE)
+        assert isinstance(b.get_result('errored'), KeyError)
+
+    def test_ignored_when_the_backend_cannot_store_bytes(self):
+        with pytest.warns(UserWarning,
+                          match='cannot store compressed payloads'):
+            b = self.backend('gzip', cls=KVBackend)
+        assert b.compression is None
+        assert b.encode({'foo': 'bar'}) == '{"foo": "bar"}'
+
+    def test_unknown_compression_method_is_rejected(self):
+        with pytest.raises(ImproperlyConfigured,
+                           match='Unknown compression method'):
+            self.backend('no-such-compression')
+
+    def test_decompress_payload_leaves_other_types_alone(self):
+        assert decompress_payload('{"foo": "bar"}') == '{"foo": "bar"}'
+        assert decompress_payload(42) == 42
+
+    def test_decompress_payload_accepts_a_memoryview(self):
+        payload = compress_payload(b'{"foo": "bar"}', 'gzip')
+        assert decompress_payload(memoryview(payload)) == b'{"foo": "bar"}'
+
+
+class test_result_compression_binary_serializer:
+    """Compression on top of a serializer that already produces bytes.
+
+    Kombu's ``dumps`` returns bytes for pickle and msgpack, so ``encode``
+    compresses bytes rather than str, and the value stored has no valid text
+    encoding at all. This is the boundary the Cassandra write path broke on.
+    """
+
+    def backend(self, serializer, compression='gzip'):
+        self.app.conf.result_serializer = serializer
+        self.app.conf.accept_content = [serializer]
+        self.app.conf.result_compression = compression
+        return CompressingKVBackend(app=self.app)
+
+    @pytest.mark.parametrize('serializer', ['pickle', 'msgpack'])
+    def test_store_and_get_binary_result(self, serializer):
+        pytest.importorskip(serializer)
+        b = self.backend(serializer)
+        # The premise of this class: the payload is bytes before compression
+        # touches it, not only after.
+        assert isinstance(b._encode({'foo': 'bar'})[2], bytes)
+
+        # The value has no valid text encoding, so anything decoding the
+        # payload to str on the way through raises rather than quietly
+        # changing it.
+        result = {'value': b'\x00\x01\x02\xff', 'text': 'a value ' * 40}
+        b.store_result('binary', result, states.SUCCESS)
+
+        stored = ensure_bytes(b.db[b.get_key_for_task('binary')])
+        assert stored.startswith(COMPRESSED_PAYLOAD_MAGIC)
+        assert b.get_result('binary') == result
+
+    @pytest.mark.parametrize('serializer', ['pickle', 'msgpack'])
+    def test_uncompressed_binary_payload_is_not_read_as_compressed(
+            self, serializer):
+        # The marker starts with NUL, which neither serializer can start its
+        # own output with, so a payload written before compression was turned
+        # on is not mistaken for a compressed one.
+        pytest.importorskip(serializer)
+        plain = self.backend(serializer, compression=None)
+        payload = plain.encode({'value': b'\x00\x01\x02\xff'})
+        assert isinstance(payload, bytes)
+        assert not payload.startswith(COMPRESSED_PAYLOAD_MAGIC)
+        assert self.backend(serializer).decode(payload) == {
+            'value': b'\x00\x01\x02\xff'}
+
 
 class test_KeyValueStoreBackend_interface:
 
@@ -1132,6 +1766,7 @@ class test_backend_retries:
             b = BaseBackend(app=self.app)
             b.exception_safe_to_retry = lambda exc: True
             b._sleep = Mock()
+            b.on_backend_retryable_error = Mock()
             b._get_task_meta_for = Mock()
             b._get_task_meta_for.side_effect = [
                 Exception("failed"),
@@ -1140,6 +1775,7 @@ class test_backend_retries:
             res = b.get_task_meta(sentinel.task_id)
             assert res == {'status': states.SUCCESS, 'result': 42}
             assert b._sleep.call_count == 1
+            b.on_backend_retryable_error.assert_called_once()
         finally:
             self.app.conf.result_backend_always_retry = prev
 
@@ -1194,6 +1830,7 @@ class test_backend_retries:
             b = BaseBackend(app=self.app)
             b.exception_safe_to_retry = lambda exc: True
             b._sleep = Mock()
+            b.on_backend_retryable_error = Mock()
             b._get_task_meta_for = Mock()
             b._get_task_meta_for.return_value = {
                 'status': states.RETRY,
@@ -1223,6 +1860,7 @@ class test_backend_retries:
             b = BaseBackend(app=self.app)
             b.exception_safe_to_retry = lambda exc: True
             b._sleep = Mock()
+            b.on_backend_retryable_error = Mock()
             b._get_task_meta_for = Mock()
             b._get_task_meta_for.return_value = {
                 'status': states.RETRY,
@@ -1240,6 +1878,56 @@ class test_backend_retries:
             res = b.store_result(sentinel.task_id, 42, states.SUCCESS)
             assert res == 42
             assert b._sleep.call_count == 1
+            b.on_backend_retryable_error.assert_called_once()
+        finally:
+            self.app.conf.result_backend_always_retry = prev
+
+    def test_get_with_retries_hook_failure_continues(self):
+        self.app.conf.result_backend_always_retry, prev = True, self.app.conf.result_backend_always_retry
+
+        try:
+            b = BaseBackend(app=self.app)
+            b.exception_safe_to_retry = lambda exc: True
+            b._sleep = Mock()
+            b.on_backend_retryable_error = Mock(side_effect=RuntimeError("hook failed"))
+            b._get_task_meta_for = Mock()
+            b._get_task_meta_for.side_effect = [
+                Exception("failed"),
+                {'status': states.SUCCESS, 'result': 42}
+            ]
+            res = b.get_task_meta(sentinel.task_id)
+            assert res == {'status': states.SUCCESS, 'result': 42}
+            assert b._sleep.call_count == 1
+            b.on_backend_retryable_error.assert_called_once()
+        finally:
+            self.app.conf.result_backend_always_retry = prev
+
+    def test_store_result_with_retries_hook_failure_continues(self):
+        self.app.conf.result_backend_always_retry, prev = True, self.app.conf.result_backend_always_retry
+
+        try:
+            b = BaseBackend(app=self.app)
+            b.exception_safe_to_retry = lambda exc: True
+            b._sleep = Mock()
+            b.on_backend_retryable_error = Mock(side_effect=RuntimeError("hook failed"))
+            b._get_task_meta_for = Mock()
+            b._get_task_meta_for.return_value = {
+                'status': states.RETRY,
+                'result': {
+                    "exc_type": "Exception",
+                    "exc_message": ["failed"],
+                    "exc_module": "builtins",
+                },
+            }
+            b._store_result = Mock()
+            b._store_result.side_effect = [
+                Exception("failed"),
+                42
+            ]
+            res = b.store_result(sentinel.task_id, 42, states.SUCCESS)
+            assert res == 42
+            assert b._sleep.call_count == 1
+            b.on_backend_retryable_error.assert_called_once()
         finally:
             self.app.conf.result_backend_always_retry = prev
 

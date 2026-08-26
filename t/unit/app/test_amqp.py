@@ -95,11 +95,30 @@ class test_Queues:
         q.select_add('baz')
         assert sorted(q._consume_from.keys()) == ['bar', 'baz', 'foo']
 
+    def test_select_add_without_selection_extends_default(self):
+        q = Queues([Queue('default')])
+        q.select_add('worker.dq2')
+        assert q._consume_from is None
+        assert sorted(q.consume_from.keys()) == ['default', 'worker.dq2']
+
     def test_deselect(self):
         q = Queues()
         q.select(['foo', 'bar'])
         q.deselect('bar')
         assert sorted(q._consume_from.keys()) == ['foo']
+
+    def test_deselect_without_explicit_consume_selection_removes_excluded_queue(self):
+        q = Queues([Queue('foo'), Queue('bar')])
+        q.deselect('bar')
+        assert q._consume_from is None
+        assert sorted(q.consume_from.keys()) == ['foo']
+
+    def test_deselect_without_explicit_consume_selection_keeps_routing_only_queue_unconsumed(self):
+        q = Queues([Queue('foo'), Queue('bar')])
+        q.add('routing_only')
+        q.deselect('bar')
+        assert q._consume_from is None
+        assert sorted(q.consume_from.keys()) == ['foo']
 
     def test_add_default_exchange(self):
         ex = Exchange('fff', 'fanout')
@@ -111,6 +130,17 @@ class test_Queues:
         q = Queues()
         q.add(Queue('foo', alias='barfoo'))
         assert q['barfoo'] is q['foo']
+
+    def test_deselect_by_real_name_removes_queue_selected_by_alias(self):
+        q = Queues()
+        q.add(Queue('foo', alias='barfoo'))
+
+        q.select(['barfoo'])
+        assert list(q._consume_from) == ['foo']
+        assert q._consume_from['foo'] is q['foo']
+
+        q.deselect('foo')
+        assert q._consume_from == {}
 
     @pytest.mark.parametrize('queues_kwargs,qname,q,expected', [
         ({'max_priority': 10},
@@ -133,6 +163,15 @@ class test_Queues:
         queues = Queues(**queues_kwargs)
         queues.add(q)
         assert queues[qname].queue_arguments == expected
+
+    def test_missing_queue_quorum(self):
+        queues = Queues(create_missing_queue_type="quorum",
+                        create_missing_queue_exchange_type="topic")
+
+        q = queues.new_missing("spontaneous")
+        assert q.name == "spontaneous"
+        assert q.queue_arguments == {"x-queue-type": "quorum"}
+        assert q.exchange.type == "topic"
 
 
 class test_default_queues:
@@ -270,6 +309,20 @@ class test_AMQP(test_AMQP_Base):
         assert kwargs['routing_key'] == 'foo'
         assert kwargs['exchange'] == ''
 
+    def test_send_task_message__no_default_queue(self):
+        conf = self.app.conf
+        conf.task_create_missing_queues = False
+        conf.task_queues = {Queue('my_queue')}
+
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event,
+            queue='my_queue', retry=False,
+        )
+        kwargs = prod.publish.call_args[1]
+        assert kwargs['routing_key'] == 'my_queue'
+        assert kwargs['exchange'] == ''
+
     def test_send_task_message__broadcast_without_exchange(self):
         from kombu.common import Broadcast
         evd = Mock(name='evd')
@@ -359,6 +412,22 @@ class test_AMQP(test_AMQP_Base):
         self.app.send_task('task.create_pr')
         router = self.app.amqp.router
         assert router != router_was
+
+    def test_create_missing_queue_type_from_conf(self):
+        self.app.conf.task_create_missing_queue_type = "quorum"
+        self.app.conf.task_create_missing_queue_exchange_type = "topic"
+        self.app.amqp.__dict__.pop("queues", None)
+        q = self.app.amqp.queues["auto"]
+        assert q.queue_arguments == {"x-queue-type": "quorum"}
+        assert q.exchange.type == "topic"
+
+    def test_create_missing_queue_type_explicit_param(self):
+        qmap = self.app.amqp.Queues({}, create_missing=True,
+                                    create_missing_queue_type="quorum",
+                                    create_missing_queue_exchange_type="topic")
+        q = qmap["auto"]
+        assert q.queue_arguments == {"x-queue-type": "quorum"}
+        assert q.exchange.type == "topic"
 
 
 class test_as_task_v2(test_AMQP_Base):

@@ -12,6 +12,7 @@ from kombu.utils.objects import cached_property
 from celery import Celery
 
 from . import current_app
+from .exceptions import ImproperlyConfigured
 from .utils.collections import AttributeDict
 from .utils.time import (ffwd, humanize_seconds, localize, maybe_make_aware, maybe_timedelta, remaining, timezone,
                          weekday, yearmonth)
@@ -48,6 +49,13 @@ Argument longitude {lon} is invalid, must be between -180 and 180.\
 
 SOLAR_INVALID_EVENT = """\
 Argument event "{event}" is invalid, must be one of {all_events}.\
+"""
+
+SOLAR_EPHEM_NOT_INSTALLED = """\
+You need to install the ephem library to use solar schedules.
+Please install by:
+
+    $ pip install celery[solar]
 """
 
 
@@ -569,11 +577,17 @@ class crontab(BaseSchedule):
         # the same form as they are stored by the superclass
         super().__init__(**state)
 
-    def remaining_delta(self, last_run_at: datetime, tz: tzinfo | None = None,
+    def remaining_delta(self, last_run_at: datetime,
+                        tz: str | tzinfo | None = None,
                         ffwd: type = ffwd) -> tuple[datetime, Any, datetime]:
         # caching global ffwd
-        last_run_at = self.maybe_make_aware(last_run_at)
-        now = self.maybe_make_aware(self.now())
+        schedule_tz: tzinfo = timezone.get_timezone(tz or self.tz)
+        # Normalize both datetimes into the schedule's timezone, so that the
+        # crontab field matching and the next-run arithmetic below operate in
+        # the frame the crontab is defined in. An aware last_run_at may arrive
+        # in a different timezone (e.g. from django-celery-beat).
+        last_run_at = self.maybe_make_aware(last_run_at).astimezone(schedule_tz)
+        now = self.maybe_make_aware(self.now()).astimezone(schedule_tz)
         dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7
 
         execute_this_date = (
@@ -584,9 +598,6 @@ class crontab(BaseSchedule):
 
         execute_this_hour = (
             execute_this_date and
-            last_run_at.day == now.day and
-            last_run_at.month == now.month and
-            last_run_at.year == now.year and
             last_run_at.hour in self.hour and
             last_run_at.minute < max(self.minute)
         )
@@ -625,7 +636,7 @@ class crontab(BaseSchedule):
                 else:
                     delta = self._delta_to_next(last_run_at,
                                                 next_hour, next_minute)
-        return self.to_local(last_run_at), delta, self.to_local(now)
+        return last_run_at, delta, now
 
     def remaining_estimate(
             self, last_run_at: datetime, ffwd: type = ffwd) -> timedelta:
@@ -764,7 +775,7 @@ class solar(BaseSchedule):
         'sunset': '-0:34',
         'dusk_civil': '-6',
         'dusk_nautical': '-12',
-        'dusk_astronomical': '18',
+        'dusk_astronomical': '-18',
     }
     _methods = {
         'dawn_astronomical': 'next_rising',
@@ -791,7 +802,10 @@ class solar(BaseSchedule):
 
     def __init__(self, event: str, lat: int | float, lon: int | float, **
                  kwargs: Any) -> None:
-        self.ephem = __import__('ephem')
+        try:
+            self.ephem = __import__('ephem')
+        except ImportError as exc:
+            raise ImproperlyConfigured(SOLAR_EPHEM_NOT_INSTALLED) from exc
         self.event = event
         self.lat = lat
         self.lon = lon

@@ -114,16 +114,13 @@ class test_chord:
                     add.si(5, 7).set(queue=queue),
                 )
             ),
-            pytest.param(
-                (
-                    lambda queue: group(
-                        [
-                            add.si(9, 7).set(queue=queue),
-                            add.si(5, 7).set(queue=queue),
-                        ]
-                    )
-                ),
-                marks=pytest.mark.skip(reason="Task times out"),
+            (
+                lambda queue: group(
+                    [
+                        add.si(9, 7).set(queue=queue),
+                        add.si(5, 7).set(queue=queue),
+                    ]
+                )
             ),
             (
                 lambda queue: chord(
@@ -182,3 +179,15 @@ class test_chord:
         # The chord should fail with the expected exception from the failing task
         with pytest.raises(ExpectedException):
             result.get(timeout=RESULT_TIMEOUT)
+
+
+class test_complex_workflow:
+    def test_pending_tasks_released_on_forget(self, celery_setup: CeleryTestSetup):
+        sig = add.si(1, 1) | group(
+            add.s(1) | group(add.si(1, 1), add.si(2, 2)) | add.si(2, 2),
+            add.s(1) | group(add.si(1, 1), add.si(2, 2)) | add.si(2, 2)
+        ) | add.si(1, 1)
+        res = sig.apply_async(queue=celery_setup.worker.worker_queue)
+        assert not all(len(mapping) == 0 for mapping in res.backend._pending_results)
+        res.forget()
+        assert all(len(mapping) == 0 for mapping in res.backend._pending_results)

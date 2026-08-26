@@ -41,7 +41,7 @@ For celeryconfig.py:
             "sasl.password": sasl_password,
             "security.protocol": "SASL_SSL",
             "sasl.mechanism": "SCRAM-SHA-512",
-            "bootstrap_servers": "broker:9094",
+            "bootstrap.servers": "broker:9094",
         }
     })
     
