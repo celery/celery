@@ -12,9 +12,10 @@ else:
     from backports.zoneinfo import ZoneInfo
 
 from celery.utils.iso8601 import parse_iso8601
-from celery.utils.time import (LocalTimezone, delta_resolution, ffwd, get_exponential_backoff_interval,
-                               humanize_seconds, localize, make_aware, maybe_iso8601, maybe_make_aware,
-                               maybe_timedelta, rate, remaining, timezone, utcoffset)
+from celery.utils.time import (LocalTimezone, _is_imaginary, delta_resolution, ffwd,
+                               get_exponential_backoff_interval, humanize_seconds, localize, make_aware,
+                               maybe_iso8601, maybe_make_aware, maybe_timedelta, rate, remaining, timezone,
+                               utcoffset)
 
 
 class test_LocalTimezone:
@@ -43,6 +44,22 @@ class test_LocalTimezone:
         assert not y.dst(datetime.now())
 
         assert y.tzname(datetime.now())
+
+    def test_fromutc_with_negative_offset(self, patching):
+        # Regression test for #10517: negative UTC offsets (western
+        # hemisphere) must not lose their sign when converting from UTC.
+        # `timedelta.seconds` is normalized to [0, 86399] with the sign in
+        # `timedelta.days`, so the old code turned a -04:00 offset into +20:00.
+        time = patching('celery.utils.time._time')
+        time.timezone = 5 * 3600        # UTC-5 standard time (US Eastern)
+        time.daylight = True
+        time.altzone = 4 * 3600         # UTC-4 daylight saving time
+        time.tzname = ('EST', 'EDT')
+        x = LocalTimezone()
+        x._isdst = Mock(return_value=True)   # force DST: -04:00
+        result = x.fromutc(datetime(2026, 6, 15, 12, 0))
+        assert result.utcoffset() == timedelta(hours=-4)
+        assert result == datetime(2026, 6, 15, 8, 0, tzinfo=result.tzinfo)
 
 
 class test_iso8601:
@@ -177,6 +194,41 @@ def test_remaining():
     next_run = now + rem_time
     assert next_run == next_actual_time
 
+    """
+    Case 4: DST check between now and next_run
+    Suppose start (which is last_run_time) and now are in EST while next_run
+    is in EDT, then check that the remaining time returned is the exact real
+    time difference (not wall time).
+    For example, between
+    2019-03-10 01:30:00-05:00 and
+    2019-03-10 03:30:00-04:00
+    There is only 1 hour difference in real time, but 2 on wall time.
+    Python by default uses wall time in arithmetic between datetimes with
+    equal non-UTC timezones.
+    In 2019, DST starts on March 10
+    """
+    start = datetime(
+        day=10, month=3, year=2019, hour=1,
+        minute=30, tzinfo=eastern_tz)  # EST
+
+    now = datetime(
+        day=10, month=3, year=2019, hour=1,
+        minute=30, tzinfo=eastern_tz)  # EST
+    delta = ffwd(hour=3, year=2019, microsecond=0, minute=30,
+                 second=0, day=10, weeks=0, month=3)
+    # `next_actual_time` is the next time to run (derived from delta)
+    next_actual_time = datetime(
+        day=10, month=3, year=2019, hour=3, minute=30, tzinfo=eastern_tz)  # EDT
+    assert start.tzname() == "EST"
+    assert now.tzname() == "EST"
+    assert next_actual_time.tzname() == "EDT"
+    rem_time = remaining(start, delta, now)
+    assert rem_time.total_seconds() == 3600
+    next_run_utc = now.astimezone(ZoneInfo("UTC")) + rem_time
+    next_run_edt = next_run_utc.astimezone(eastern_tz)
+    assert next_run_utc == next_actual_time
+    assert next_run_edt == next_actual_time
+
 
 class test_timezone:
 
@@ -208,6 +260,25 @@ class test_make_aware:
         tz = ZoneInfo('US/Eastern')
         wtz = make_aware(datetime.now(_timezone.utc), tz)
         assert wtz.tzinfo == tz
+
+    def test_tz_when_zoneinfo_and_time_does_not_exist(self):
+        tz = ZoneInfo('US/Eastern')
+        wtz = make_aware(datetime(2024, 3, 10, 2, 30), tz)
+
+        assert wtz == datetime(2024, 3, 10, 3, 30, tzinfo=tz)
+        assert wtz.utcoffset().total_seconds() == -4 * 60 * 60
+
+    def test_imaginary_detection_ignores_unsupported_timezones(self):
+        assert not _is_imaginary(datetime.now(_timezone.utc), tzinfo())
+
+    @patch('dateutil.tz.datetime_exists')
+    def test_imaginary_detection_handles_dateutil_value_error(self, datetime_exists_mock):
+        datetime_exists_mock.side_effect = ValueError
+        tz = ZoneInfo('US/Eastern')
+        dt = datetime(2024, 3, 10, 2, 30, tzinfo=tz)
+
+        assert not _is_imaginary(dt, tz)
+        datetime_exists_mock.assert_called_once_with(dt, tz)
 
     def test_maybe_make_aware(self):
         aware = datetime.now(_timezone.utc).replace(tzinfo=timezone.utc)

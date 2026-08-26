@@ -4,15 +4,15 @@ from __future__ import annotations
 import re
 from bisect import bisect, bisect_left
 from collections import namedtuple
-from collections.abc import Iterable
 from datetime import datetime, timedelta, tzinfo
-from typing import Any, Callable, Mapping, Sequence
+from typing import Any, Callable, Iterable, Mapping, Sequence, Union
 
 from kombu.utils.objects import cached_property
 
 from celery import Celery
 
 from . import current_app
+from .exceptions import ImproperlyConfigured
 from .utils.collections import AttributeDict
 from .utils.time import (ffwd, humanize_seconds, localize, maybe_make_aware, maybe_timedelta, remaining, timezone,
                          weekday, yearmonth)
@@ -51,8 +51,18 @@ SOLAR_INVALID_EVENT = """\
 Argument event "{event}" is invalid, must be one of {all_events}.\
 """
 
+SOLAR_EPHEM_NOT_INSTALLED = """\
+You need to install the ephem library to use solar schedules.
+Please install by:
 
-def cronfield(s: str) -> str:
+    $ pip install celery[solar]
+"""
+
+
+Cronspec = Union[int, str, Iterable[int]]
+
+
+def cronfield(s: Cronspec | None) -> Cronspec:
     return '*' if s is None else s
 
 
@@ -396,8 +406,8 @@ class crontab(BaseSchedule):
     present in ``month_of_year``.
     """
 
-    def __init__(self, minute: str = '*', hour: str = '*', day_of_week: str = '*',
-                 day_of_month: str = '*', month_of_year: str = '*', **kwargs: Any) -> None:
+    def __init__(self, minute: Cronspec = '*', hour: Cronspec = '*', day_of_week: Cronspec = '*',
+                 day_of_month: Cronspec = '*', month_of_year: Cronspec = '*', **kwargs: Any) -> None:
         self._orig_minute = cronfield(minute)
         self._orig_hour = cronfield(hour)
         self._orig_day_of_week = cronfield(day_of_week)
@@ -430,7 +440,7 @@ class crontab(BaseSchedule):
 
     @staticmethod
     def _expand_cronspec(
-            cronspec: int | str | Iterable,
+            cronspec: Cronspec,
             max_: int, min_: int = 0) -> set[Any]:
         """Expand cron specification.
 
@@ -555,7 +565,7 @@ class crontab(BaseSchedule):
     def __repr__(self) -> str:
         return CRON_REPR.format(self)
 
-    def __reduce__(self) -> tuple[type, tuple[str, str, str, str, str], Any]:
+    def __reduce__(self) -> tuple[type, tuple[Cronspec, Cronspec, Cronspec, Cronspec, Cronspec], Any]:
         return (self.__class__, (self._orig_minute,
                                  self._orig_hour,
                                  self._orig_day_of_week,
@@ -567,11 +577,17 @@ class crontab(BaseSchedule):
         # the same form as they are stored by the superclass
         super().__init__(**state)
 
-    def remaining_delta(self, last_run_at: datetime, tz: tzinfo | None = None,
+    def remaining_delta(self, last_run_at: datetime,
+                        tz: str | tzinfo | None = None,
                         ffwd: type = ffwd) -> tuple[datetime, Any, datetime]:
         # caching global ffwd
-        last_run_at = self.maybe_make_aware(last_run_at)
-        now = self.maybe_make_aware(self.now())
+        schedule_tz: tzinfo = timezone.get_timezone(tz or self.tz)
+        # Normalize both datetimes into the schedule's timezone, so that the
+        # crontab field matching and the next-run arithmetic below operate in
+        # the frame the crontab is defined in. An aware last_run_at may arrive
+        # in a different timezone (e.g. from django-celery-beat).
+        last_run_at = self.maybe_make_aware(last_run_at).astimezone(schedule_tz)
+        now = self.maybe_make_aware(self.now()).astimezone(schedule_tz)
         dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7
 
         execute_this_date = (
@@ -582,9 +598,6 @@ class crontab(BaseSchedule):
 
         execute_this_hour = (
             execute_this_date and
-            last_run_at.day == now.day and
-            last_run_at.month == now.month and
-            last_run_at.year == now.year and
             last_run_at.hour in self.hour and
             last_run_at.minute < max(self.minute)
         )
@@ -623,7 +636,7 @@ class crontab(BaseSchedule):
                 else:
                     delta = self._delta_to_next(last_run_at,
                                                 next_hour, next_minute)
-        return self.to_local(last_run_at), delta, self.to_local(now)
+        return last_run_at, delta, now
 
     def remaining_estimate(
             self, last_run_at: datetime, ffwd: type = ffwd) -> timedelta:
@@ -658,26 +671,16 @@ class crontab(BaseSchedule):
 
         deadline_secs = self.app.conf.beat_cron_starting_deadline
         has_passed_deadline = False
-        if deadline_secs is not None:
-            # Make sure we're looking at the latest possible feasible run
-            # date when checking the deadline.
-            last_date_checked = last_run_at
-            last_feasible_rem_secs = rem_secs
-            while rem_secs < 0:
-                last_date_checked = last_date_checked + abs(rem_delta)
-                rem_delta = self.remaining_estimate(last_date_checked)
-                rem_secs = rem_delta.total_seconds()
-                if rem_secs < 0:
-                    last_feasible_rem_secs = rem_secs
-
-            # if rem_secs becomes 0 or positive, second-to-last
-            # last_date_checked must be the last feasible run date.
-            # Check if the last feasible date is within the deadline
-            # for running
-            has_passed_deadline = -last_feasible_rem_secs > deadline_secs
-            if has_passed_deadline:
-                # Should not be due if we've passed the deadline for looking
-                # at past runs
+        if deadline_secs is not None and rem_secs < 0:
+            # If no feasible run date falls in [now - deadline_secs, now],
+            # the most recent missed run is too stale to catch up.
+            now = self.maybe_make_aware(self.now())
+            # Subtract 1 microsecond so a run exactly at (now - deadline_secs) is counted within the deadline.
+            deadline_since = (
+                now.astimezone(timezone.utc) - timedelta(seconds=deadline_secs, microseconds=1)
+            ).astimezone(now.tzinfo)
+            if self.remaining_estimate(deadline_since).total_seconds() > 0:
+                has_passed_deadline = True
                 due = False
 
         if due or has_passed_deadline:
@@ -762,7 +765,7 @@ class solar(BaseSchedule):
         'sunset': '-0:34',
         'dusk_civil': '-6',
         'dusk_nautical': '-12',
-        'dusk_astronomical': '18',
+        'dusk_astronomical': '-18',
     }
     _methods = {
         'dawn_astronomical': 'next_rising',
@@ -789,7 +792,10 @@ class solar(BaseSchedule):
 
     def __init__(self, event: str, lat: int | float, lon: int | float, **
                  kwargs: Any) -> None:
-        self.ephem = __import__('ephem')
+        try:
+            self.ephem = __import__('ephem')
+        except ImportError as exc:
+            raise ImproperlyConfigured(SOLAR_EPHEM_NOT_INSTALLED) from exc
         self.event = event
         self.lat = lat
         self.lon = lon
