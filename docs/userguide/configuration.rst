@@ -155,7 +155,7 @@ For a complete Django example, see :ref:`django-first-steps`.
 ``CELERY_REDIS_BACKEND_CREDENTIAL_PROVIDER`` :setting:`redis_backend_credential_provider`
 ``CELERY_RESULT_BACKEND``                  :setting:`result_backend`
 ``CELERY_MAX_CACHED_RESULTS``              :setting:`result_cache_max`
-``CELERY_MESSAGE_COMPRESSION``             :setting:`result_compression`
+``CELERY_RESULT_COMPRESSION``              :setting:`result_compression`
 ``CELERY_RESULT_EXCHANGE``                 :setting:`result_exchange`
 ``CELERY_RESULT_EXCHANGE_TYPE``            :setting:`result_exchange_type`
 ``CELERY_RESULT_EXPIRES``                  :setting:`result_expires`
@@ -173,7 +173,7 @@ For a complete Django example, see :ref:`django-first-steps`.
 ``CELERY_ACKS_ON_FAILURE_OR_TIMEOUT``      :setting:`task_acks_on_failure_or_timeout`
 ``CELERY_TASK_ALWAYS_EAGER``               :setting:`task_always_eager`
 ``CELERY_ANNOTATIONS``                     :setting:`task_annotations`
-``CELERY_COMPRESSION``                     :setting:`task_compression`
+``CELERY_MESSAGE_COMPRESSION``             :setting:`task_compression`
 ``CELERY_CREATE_MISSING_QUEUES``           :setting:`task_create_missing_queues`
 ``CELERY_CREATE_MISSING_QUEUE_TYPE``       :setting:`task_create_missing_queue_type`
 ``CELERY_CREATE_MISSING_QUEUE_EXCHANGE_TYPE`` :setting:`task_create_missing_queue_exchange_type`
