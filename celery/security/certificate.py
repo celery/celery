@@ -64,8 +64,10 @@ class Certificate:
 
     def verify(self, data: bytes, signature: bytes, digest: HashAlgorithm | Prehashed) -> None:
         """Verify signature for string containing data."""
-        with reraise_errors('Bad signature: {0!r}'):
+        if self.has_expired():
+            raise SecurityError(f'Expired certificate: {self.get_id()!r}')
 
+        with reraise_errors('Bad signature: {0!r}'):
             pad = padding.PSS(
                 mgf=padding.MGF1(digest),
                 salt_length=padding.PSS.MAX_LENGTH)
