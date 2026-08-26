@@ -133,7 +133,8 @@ class ResultConsumer(BaseResultConsumer):
 
     def _maybe_cancel_ready_task(self, meta):
         if meta['status'] in states.READY_STATES:
-            self.cancel_for(meta['task_id'])
+            task_id = meta['task_id']
+            self.cancel_for(task_id)
 
     def on_state_change(self, meta, message):
         super().on_state_change(meta, message)
@@ -149,6 +150,23 @@ class ResultConsumer(BaseResultConsumer):
         for meta in result._iter_meta(**kwargs):
             if meta is not None:
                 self.on_state_change(meta, None)
+                # After on_state_change processes a READY meta, clean up any
+                # leaked entry in _pending_messages. on_state_change may have
+                # buffered this READY meta there (if the result was already
+                # resolved from _pending_results). Since the subscription is now
+                # canceled and the task is complete, this entry will never be
+                # consumed and would leak memory. We only clean up SUCCESS and
+                # FAILURE because REVOKED may still be needed by waiters
+                # (e.g., integration tests for revoke-by-headers).
+                if meta['status'] in (states.SUCCESS, states.FAILURE):
+                    pending_messages = self.backend._pending_messages
+                    task_id = meta['task_id']
+                    try:
+                        buf = pending_messages.pop(task_id)
+                    except KeyError:
+                        pass
+                    else:
+                        pending_messages.total -= len(buf)
 
     def stop(self):
         if self._pubsub is not None:
@@ -177,10 +195,11 @@ class ResultConsumer(BaseResultConsumer):
 
     def cancel_for(self, task_id):
         key = self._get_key_for_task(task_id)
-        self.subscribed_to.discard(key)
-        if self._pubsub:
-            with self.reconnect_on_error():
-                self._pubsub.unsubscribe(key)
+        if key in self.subscribed_to:
+            self.subscribed_to.discard(key)
+            if self._pubsub:
+                with self.reconnect_on_error():
+                    self._pubsub.unsubscribe(key)
 
 
 class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
@@ -201,6 +220,8 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
     supports_autoexpire = True
     supports_native_join = True
+    # Results are stored as opaque strings, which Redis keeps byte for byte.
+    supports_result_compression = True
 
     #: Maximal length of string value in Redis.
     #: 512 MB - https://redis.io/topics/data-types
