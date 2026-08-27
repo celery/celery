@@ -13,7 +13,7 @@ from celery.canvas import _chain, group, signature
 from celery.exceptions import Ignore, ImproperlyConfigured, MaxRetriesExceededError, Reject, Retry
 from celery.local import class_property
 from celery.result import EagerResult, denied_join_result
-from celery.utils import abstract
+from celery.utils import abstract, deprecated
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
 from celery.utils.nodenames import gethostname
@@ -24,6 +24,9 @@ from .registry import _unpickle_task_v2
 from .utils import appstr
 
 __all__ = ('Context', 'Task')
+
+# Sentinel used by Context.update() to detect whether 'timelimit' was changed.
+_UNSET = object()
 
 #: extracts attributes related to publishing a message from an object.
 extract_exec_options = mattrgetter(
@@ -104,6 +107,8 @@ class Context:
     shadow = None
     taskset = None   # compat alias to group
     timelimit = None
+    time_limit = None
+    soft_time_limit = None
     utc = None
     stamped_headers = None
     stamps = None
@@ -124,7 +129,24 @@ class Context:
         return headers
 
     def update(self, *args, **kwargs):
-        return self.__dict__.update(*args, **kwargs)
+        # O(1) detection: snapshot the current timelimit identity before the
+        # update, then compare after.  Any input form that dict.update()
+        # accepts (Mapping, iterable of pairs, kwargs) will change the stored
+        # object if 'timelimit' was present, so an `is not` identity check is
+        # sufficient — no need to pre-scan the arguments.
+        old_timelimit = self.__dict__.get('timelimit', _UNSET)
+
+        self.__dict__.update(*args, **kwargs)
+
+        new_timelimit = self.__dict__.get('timelimit', _UNSET)
+        if new_timelimit is not old_timelimit:
+            if isinstance(new_timelimit, (list, tuple)) and len(new_timelimit) >= 2:
+                self.time_limit, self.soft_time_limit = new_timelimit[0], new_timelimit[1]
+            else:
+                # Explicitly clear any previously set values when timelimit is
+                # provided but is None or otherwise invalid.
+                self.time_limit = None
+                self.soft_time_limit = None
 
     def clear(self):
         return self.__dict__.clear()
@@ -347,7 +369,11 @@ class Task:
     #: Default task expiry time.
     expires = None
 
-    #: Default task priority.
+    #: Default task priority. A number between 0 and 9, where the
+    #: interpretation depends on the broker: with RabbitMQ, higher numbers
+    #: denote higher priority; with Redis, priority 0 is the highest. See
+    #: :ref:`routing-options-rabbitmq-priorities` and
+    #: :ref:`redis-message-priorities`.
     priority = None
 
     #: Max length of result representation used in logs and events.
@@ -371,6 +397,8 @@ class Task:
         ('serializer', 'task_serializer'),
         ('rate_limit', 'task_default_rate_limit'),
         ('priority', 'task_default_priority'),
+        ('time_limit', 'task_time_limit'),
+        ('soft_time_limit', 'task_soft_time_limit'),
         ('track_started', 'task_track_started'),
         ('acks_late', 'task_acks_late'),
         ('acks_on_failure_or_timeout', 'task_acks_on_failure_or_timeout'),
@@ -393,6 +421,17 @@ class Task:
         cls._app = app
         conf = app.conf
         cls._exec_options = None  # clear option cache
+
+        if not was_bound:
+            for attr in ('queue', 'exchange', 'exchange_type',
+                         'routing_key', 'delivery_mode', 'priority'):
+                if attr in cls.__dict__:
+                    # In Celery 6.0, make these task attributes have no effect
+                    deprecated.warn(
+                        description=f'The {attr!r} task attribute',
+                        removal='6.0',
+                        alternative='Use the task_routes setting instead.',
+                    )
 
         if cls.typing is None:
             cls.typing = app.strict_typing
@@ -560,7 +599,12 @@ class Task:
                 only used to specify custom routing keys to topic exchanges.
 
             priority (int): The task priority, a number between 0 and 9.
-                Defaults to the :attr:`priority` attribute.
+                The interpretation is broker-specific: with RabbitMQ, higher
+                numbers denote higher priority; with Redis, priority ``0`` is
+                the highest priority. See
+                :ref:`routing-options-rabbitmq-priorities` and
+                :ref:`redis-message-priorities`. Defaults to the
+                :attr:`priority` attribute.
 
             serializer (str): Serialization method to use.
                 Can be `pickle`, `json`, `yaml`, `msgpack` or any custom
@@ -883,6 +927,10 @@ class Task:
             'callbacks': maybe_list(link),
             'errbacks': maybe_list(link_error),
             'headers': headers,
+            'timelimit': (
+                None if self.time_limit is None and self.soft_time_limit is None
+                else [self.time_limit, self.soft_time_limit]
+            ),
             'ignore_result': options.get('ignore_result', False),
             'delivery_info': {
                 'is_eager': True,
@@ -999,7 +1047,6 @@ class Task:
 
         Arguments:
             sig (Signature): signature to replace with.
-            visitor (StampingVisitor): Visitor API object.
 
         Raises:
             ~@Ignore: This is always raised when called in asynchronous context.

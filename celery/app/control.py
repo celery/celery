@@ -57,7 +57,9 @@ def flatten_reply(reply):
             W_DUPNODE.format(
                 pluralize(len(dupes), 'name'), ', '.join(sorted(dupes)),
             ),
-        ))
+        ),
+            stacklevel=2,
+        )
     return nodes
 
 
