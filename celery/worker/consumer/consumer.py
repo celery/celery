@@ -442,7 +442,10 @@ class Consumer:
                 if request.task.acks_late and not request.acknowledged:
                     warn(TERMINATING_TASK_ON_RESTART_AFTER_A_CONNECTION_LOSS,
                          request)
-                    request.cancel(self.pool)
+                    try:
+                        request.cancel(self.pool)
+                    except Exception:  # pylint: disable=broad-except
+                        warn("Failed to cancel active request %r after connection loss", request, exc_info=True)
         else:
             warnings.warn(CANCEL_TASKS_BY_DEFAULT, CPendingDeprecationWarning, stacklevel=2)
 
@@ -634,7 +637,7 @@ class Consumer:
         # create queues when :setting:`task_create_missing_queues` is enabled.
         # (Issue #1079)
         if queue in queues:
-            q = queues[queue]
+            q = queues.select_add(queues[queue])
         else:
             exchange = queue if exchange is None else exchange
             exchange_type = ('direct' if exchange_type is None
