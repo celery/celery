@@ -349,6 +349,8 @@ class AMQP:
                 now + timedelta(seconds=countdown), tz=timezone,
             )
         if isinstance(expires, timedelta):
+            expires_seconds = expires.total_seconds()
+            self._verify_seconds(expires_seconds, 'expires')
             now = now or self.app.now()
             timezone = timezone or self.app.timezone
             expires = maybe_make_aware(now + expires, tz=timezone)
