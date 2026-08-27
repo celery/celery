@@ -124,6 +124,8 @@ class DelayedDelivery(bootsteps.StartStopStep):
         with c.app.connection_for_write(url=broker_url) as connection:
             queue_type = c.app.conf.broker_native_delayed_delivery_queue_type
             queue_prefix = c.app.conf.broker_native_delayed_delivery_queue_prefix
+            if isinstance(queue_prefix, str):
+                queue_prefix = queue_prefix.strip() or None
             logger.debug(
                 "Setting up delayed delivery for broker %r with queue type %r",
                 maybe_sanitize_url(broker_url), queue_type
