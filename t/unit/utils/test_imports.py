@@ -136,19 +136,21 @@ class test_load_extension_class_names:
         assert isinstance(result, dict)
 
     def test_entry_points_scanned_only_once_per_namespace(self):
-        with patch('celery.utils.imports.entry_points') as ep:
-            ep.return_value = []
-            load_extension_class_names('celery.fake_namespace')
-            load_extension_class_names('celery.fake_namespace')
-            load_extension_class_names('celery.fake_namespace')
-            assert ep.call_count == 1
+        with patch('celery.utils.imports.sys.version_info', (3, 10)):
+            with patch('celery.utils.imports.entry_points') as ep:
+                ep.return_value = []
+                load_extension_class_names('celery.fake_namespace')
+                load_extension_class_names('celery.fake_namespace')
+                load_extension_class_names('celery.fake_namespace')
+                assert ep.call_count == 1
 
     def test_different_namespaces_scanned_separately(self):
-        with patch('celery.utils.imports.entry_points') as ep:
-            ep.return_value = []
-            load_extension_class_names('celery.fake_namespace_a')
-            load_extension_class_names('celery.fake_namespace_b')
-            assert ep.call_count == 2
+        with patch('celery.utils.imports.sys.version_info', (3, 10)):
+            with patch('celery.utils.imports.entry_points') as ep:
+                ep.return_value = []
+                load_extension_class_names('celery.fake_namespace_a')
+                load_extension_class_names('celery.fake_namespace_b')
+                assert ep.call_count == 2
 
     def test_load_extension_classes_uses_cached_names(self):
         ep = Mock(name='foo', value='celery.utils.imports:qualname')
