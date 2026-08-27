@@ -332,7 +332,7 @@ def filter_hidden_settings(conf):
         if isinstance(key, str):
             if HIDDEN_SETTINGS.search(key):
                 return mask
-            elif 'broker_url' in key.lower():
+            elif key.lower() in ('broker_url', 'broker_read_url', 'broker_write_url'):
                 from kombu import Connection
                 return Connection(value).as_uri(mask=mask)
             elif 'backend' in key.lower():
