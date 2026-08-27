@@ -49,6 +49,7 @@ def mock_event_dispatcher():
     evd = Mock(name='event_dispatcher')
     evd.groups = ['worker']
     evd._outbound_buffer = deque()
+    evd.connection.get_heartbeat_interval.return_value = 0
     return evd
 
 

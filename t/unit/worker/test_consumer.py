@@ -10,12 +10,15 @@ from billiard.exceptions import RestartFreqExceeded
 
 from celery import bootsteps
 from celery.contrib.testing.mocks import ContextMock
+from celery.events.state import HEARTBEAT_DRIFT_MAX
 from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.utils.collections import LimitedSet
 from celery.utils.quorum_queues import detect_quorum_queues
+from celery.utils.time import utcoffset
 from celery.worker.consumer.agent import Agent
 from celery.worker.consumer.consumer import (CANCEL_TASKS_BY_DEFAULT, CLOSE, COLLECT_SOCKET_TIMEOUT, TERMINATE,
                                              Consumer)
+from celery.worker.consumer.events import Events
 from celery.worker.consumer.gossip import Gossip
 from celery.worker.consumer.heart import Heart
 from celery.worker.consumer.mingle import Mingle
@@ -684,27 +687,111 @@ class test_Consumer(ConsumerTestCase):
             active_requests.clear()
             successful_requests.clear()
 
-    @pytest.mark.parametrize("broker_connection_retry", [True, False])
-    @pytest.mark.parametrize("broker_connection_retry_on_startup", [None, False])
-    @pytest.mark.parametrize("first_connection_attempt", [True, False])
-    def test_ensure_connected(self, subtests, broker_connection_retry, broker_connection_retry_on_startup,
-                              first_connection_attempt):
+    def test_ensure_connected_uses_legacy_retry_when_startup_retry_is_undefined(self):
         c = self.get_consumer()
-        c.first_connection_attempt = first_connection_attempt
-        c.app.conf.broker_connection_retry_on_startup = broker_connection_retry_on_startup
-        c.app.conf.broker_connection_retry = broker_connection_retry
+        c.first_connection_attempt = True
+        c.app.conf.broker_connection_retry_on_startup = None
+        c.app.conf.broker_connection_retry = True
+        conn = Mock()
 
-        if broker_connection_retry is False:
-            if broker_connection_retry_on_startup is None:
-                with subtests.test("Deprecation warning when startup is None"):
-                    with pytest.deprecated_call():
-                        c.ensure_connected(Mock())
+        c.ensure_connected(conn)
 
-            with subtests.test("Does not retry when connect throws an error and retry is set to false"):
-                conn = Mock()
-                conn.connect.side_effect = ConnectionError()
-                with pytest.raises(ConnectionError):
-                    c.ensure_connected(conn)
+        conn.ensure_connection.assert_called_once()
+        conn.connect.assert_not_called()
+        assert c.first_connection_attempt is False
+
+    def test_ensure_connected_warns_when_legacy_retry_disables_startup_retry(self):
+        c = self.get_consumer()
+        c.first_connection_attempt = True
+        c.app.conf.broker_connection_retry_on_startup = None
+        c.app.conf.broker_connection_retry = False
+        conn = Mock()
+
+        with pytest.deprecated_call(
+            match="broker_connection_retry configuration setting will no longer determine",
+        ):
+            c.ensure_connected(conn)
+
+        conn.connect.assert_called_once_with()
+        conn.ensure_connection.assert_not_called()
+        assert c.first_connection_attempt is False
+
+    def test_ensure_connected_raises_when_legacy_retry_disables_startup_retry(self):
+        c = self.get_consumer()
+        c.first_connection_attempt = True
+        c.app.conf.broker_connection_retry_on_startup = None
+        c.app.conf.broker_connection_retry = False
+        conn = Mock()
+        conn.connect.side_effect = ConnectionError()
+
+        with pytest.deprecated_call(
+            match="broker_connection_retry configuration setting will no longer determine",
+        ):
+            with pytest.raises(ConnectionError):
+                c.ensure_connected(conn)
+
+        conn.connect.assert_called_once_with()
+        conn.ensure_connection.assert_not_called()
+
+    def test_ensure_connected_startup_retry_overrides_legacy_retry(self):
+        c = self.get_consumer()
+        c.first_connection_attempt = True
+        c.app.conf.broker_connection_retry_on_startup = True
+        c.app.conf.broker_connection_retry = False
+        conn = Mock()
+
+        c.ensure_connected(conn)
+
+        conn.ensure_connection.assert_called_once()
+        conn.connect.assert_not_called()
+        assert c.first_connection_attempt is False
+
+    def test_ensure_connected_startup_retry_disabled_only_affects_first_attempt(self):
+        c = self.get_consumer()
+        c.first_connection_attempt = True
+        c.app.conf.broker_connection_retry_on_startup = False
+        c.app.conf.broker_connection_retry = True
+        conn = Mock()
+
+        c.ensure_connected(conn)
+
+        conn.connect.assert_called_once_with()
+        conn.ensure_connection.assert_not_called()
+        assert c.first_connection_attempt is False
+
+        reconnect_conn = Mock()
+        c.ensure_connected(reconnect_conn)
+
+        reconnect_conn.ensure_connection.assert_called_once()
+        reconnect_conn.connect.assert_not_called()
+
+    def test_ensure_connected_raises_when_startup_retry_is_disabled(self):
+        c = self.get_consumer()
+        c.first_connection_attempt = True
+        c.app.conf.broker_connection_retry_on_startup = False
+        c.app.conf.broker_connection_retry = True
+        conn = Mock()
+        conn.connect.side_effect = ConnectionError()
+
+        with pytest.raises(ConnectionError):
+            c.ensure_connected(conn)
+
+        conn.connect.assert_called_once_with()
+        conn.ensure_connection.assert_not_called()
+
+    def test_ensure_connected_uses_legacy_retry_after_startup(self):
+        c = self.get_consumer()
+        c.first_connection_attempt = False
+        c.app.conf.broker_connection_retry_on_startup = True
+        c.app.conf.broker_connection_retry = False
+        conn = Mock()
+        conn.connect.side_effect = ConnectionError()
+
+        with pytest.raises(ConnectionError):
+            c.ensure_connected(conn)
+
+        conn.connect.assert_called_once_with()
+        conn.ensure_connection.assert_not_called()
 
     def test_recreated_task_consumer_does_not_consume_late_added_queue(self):
         default_queue = self.app.conf.task_default_queue
@@ -1216,6 +1303,30 @@ class test_Heart:
             c.heart.start.assert_called_with()
 
 
+class test_Events:
+
+    def test_start_dispatcher_connection_heartbeat_and_hub(self):
+        c = Mock()
+        Events(c).start(c)
+        c.connection_for_write.assert_called_once_with(heartbeat=c.amqheartbeat)
+        conn = c.connection_for_write.return_value
+        conn.transport.register_with_event_loop.assert_called_once_with(conn.connection, c.hub)
+
+    def test_start_without_hub_does_not_register(self):
+        c = Mock()
+        c.hub = None
+        Events(c).start(c)
+        conn = c.connection_for_write.return_value
+        conn.transport.register_with_event_loop.assert_not_called()
+
+    def test_start_without_heartbeat_does_not_register(self):
+        c = Mock()
+        c.amqheartbeat = 0
+        Events(c).start(c)
+        conn = c.connection_for_write.return_value
+        conn.transport.register_with_event_loop.assert_not_called()
+
+
 class test_Tasks:
 
     def setup_method(self):
@@ -1525,6 +1636,39 @@ class test_ConnectionStep:
 
         step.close_connection(c)  # must not raise
 
+    def test_info_censors_password_and_alternates(self):
+        """info() removes top-level password and censors failover URLs."""
+        step, c = self._get_step_and_consumer()
+        c.connection = Mock(name='conn')
+        c.connection.info.return_value = {
+            'transport': 'amqp',
+            'password': 'supersecret',
+            'alternates': [
+                'amqp://user:' + 'secret1' + '@host-1:5672//',
+                'amqp://user:' + 'secret2' + '@host-2:5672//',
+            ],
+        }
+
+        stats = step.info(c)
+        broker = stats['broker']
+        assert 'password' not in broker
+        assert 'secret1' not in broker['alternates'][0]
+        assert 'secret2' not in broker['alternates'][1]
+        assert '**' in broker['alternates'][0]
+        assert '**' in broker['alternates'][1]
+
+    def test_info_censors_alternates_string(self):
+        """info() censors alternates when represented as a single URL."""
+        step, c = self._get_step_and_consumer()
+        c.connection = Mock(name='conn')
+        c.connection.info.return_value = {
+            'alternates': 'amqp://user:secret@host:5672//',
+        }
+
+        stats = step.info(c)
+        assert 'secret' not in stats['broker']['alternates']
+        assert '**' in stats['broker']['alternates']
+
     # ------------------------------------------------------------------
     # start() - sanity check that the connection is stored on c
     # ------------------------------------------------------------------
@@ -1794,3 +1938,33 @@ class test_Gossip:
         message.headers = {'hostname': g.hostname}
         g.on_message(prepare, message)
         g.clock.forward.assert_called_with()
+
+    def test_worker_event_across_timezones_causes_no_drift_warning(self):
+        c = self.Consumer()
+        c.app = self.app
+        c.app.connection_for_read = _amqp_connection()
+        g = Gossip(c)
+
+        with self.app.connection_for_write() as conn:
+            channel = conn.default_channel
+            consumer = g.get_consumers(channel)[0]
+            consumer.consume()
+
+            dispatcher = self.app.events.Dispatcher(
+                conn, hostname='other@x.com', channel=channel,
+            )
+            # simulate a sender in a timezone 7 hours from the gossip
+            with patch(
+                'celery.events.dispatcher.utcoffset',
+                return_value=utcoffset() + 7
+            ):
+                dispatcher.send('worker-heartbeat', freq=5)
+
+            with patch('celery.events.state._warn_drift') as warn_drift:
+                conn.drain_events(timeout=5)
+
+        worker = g.state.workers['other@x.com']
+        assert worker.utcoffset != utcoffset()
+        drift = abs(int(worker.local_received) - int(worker.timestamp))
+        assert drift <= HEARTBEAT_DRIFT_MAX
+        warn_drift.assert_not_called()
