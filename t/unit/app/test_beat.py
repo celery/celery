@@ -485,6 +485,48 @@ class test_Scheduler:
         assert scheduler._heap[0] is intruder_event
         assert scheduler._heap[1] is stuck_event
 
+    def test_tick_dispatches_missed_cron_within_deadline_non_uniform(self):
+        # Non-uniform crontab (:00, :45). Most recent feasible run
+        # (10:00) is 20 min before now=10:20, within the 30-min
+        # deadline, so the missed task should dispatch.
+        self.app.conf.beat_cron_starting_deadline = 1800
+        now = datetime(2022, 12, 5, 10, 20)
+        last_run = datetime(2022, 12, 5, 8, 45)
+        cron = crontab(minute='0,45', nowfun=lambda: now, app=self.app)
+        scheduler = mScheduler(app=self.app)
+        scheduler.add(name='within_deadline', task='t.fake.task',
+                      schedule=cron, last_run_at=last_run)
+        scheduler.tick()
+        assert [s['name'] for s in scheduler.sent] == ['t.fake.task']
+
+    def test_tick_skips_missed_cron_outside_deadline_non_uniform(self):
+        # Non-uniform crontab (:00, :45). Most recent feasible run
+        # (10:00) is 35 min before now=10:35, past the 30-min
+        # deadline, so the missed task should not dispatch.
+        self.app.conf.beat_cron_starting_deadline = 1800
+        now = datetime(2022, 12, 5, 10, 35)
+        last_run = datetime(2022, 12, 5, 8, 45)
+        cron = crontab(minute='0,45', nowfun=lambda: now, app=self.app)
+        scheduler = mScheduler(app=self.app)
+        scheduler.add(name='outside_deadline', task='t.fake.task',
+                      schedule=cron, last_run_at=last_run)
+        scheduler.tick()
+        assert scheduler.sent == []
+
+    def test_tick_dispatches_missed_cron_on_deadline_boundary_non_uniform(self):
+        # Non-uniform crontab (:00, :45). Most recent feasible run
+        # (10:00) is exactly 30 min before now=10:30, matching the
+        # 30-min deadline, so the missed task should still dispatch.
+        self.app.conf.beat_cron_starting_deadline = 1800
+        now = datetime(2022, 12, 5, 10, 30)
+        last_run = datetime(2022, 12, 5, 8, 45)
+        cron = crontab(minute='0,45', nowfun=lambda: now, app=self.app)
+        scheduler = mScheduler(app=self.app)
+        scheduler.add(name='on_deadline_boundary', task='t.fake.task',
+                      schedule=cron, last_run_at=last_run)
+        scheduler.tick()
+        assert [s['name'] for s in scheduler.sent] == ['t.fake.task']
+
     def test_interface(self):
         scheduler = mScheduler(app=self.app)
         scheduler.sync()
@@ -644,6 +686,44 @@ class test_Scheduler:
         a = None
         b = None
         assert scheduler.schedules_equal(a, b)
+
+    def test_apply_async_adds_beat_header(self):
+        scheduler = mScheduler(app=self.app)
+        entry = scheduler.Entry(
+            name='test_task',
+            task='test_task',
+            schedule=schedule(10.0),
+            options={'queue': 'test_queue'},
+            app=self.app
+        )
+
+        result = scheduler.apply_async(entry)
+        assert result.id
+
+        sent_task = scheduler.sent[0]
+        assert 'headers' in sent_task['options']
+        assert sent_task['options']['headers']['celery_beat_task'] is True
+
+    def test_apply_async_preserves_existing_headers(self):
+        scheduler = mScheduler(app=self.app)
+        entry = scheduler.Entry(
+            name='test_task',
+            task='test_task',
+            schedule=schedule(10.0),
+            options={
+                'queue': 'test_queue',
+                'headers': {'existing_header': 'value'}
+            },
+            app=self.app
+        )
+
+        result = scheduler.apply_async(entry)
+        assert result.id
+
+        sent_task = scheduler.sent[0]
+        assert 'headers' in sent_task['options']
+        assert sent_task['options']['headers']['existing_header'] == 'value'
+        assert sent_task['options']['headers']['celery_beat_task'] is True
 
 
 def create_persistent_scheduler(shelv=None):
