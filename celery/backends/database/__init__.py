@@ -122,7 +122,7 @@ class DatabaseBackend(BaseBackend):
 
     def _create_tables(self):
         """Create the task and taskset tables."""
-        self.ResultSession()
+        self._ensure_retryable(self.ResultSession)
 
     def ResultSession(self, session_manager=None):
         if session_manager is None:
@@ -189,6 +189,10 @@ class DatabaseBackend(BaseBackend):
 
         .. versionadded:: 5.7.0
         """
+        return self._ensure_retryable(
+            self._task_result_exists, task_id=task_id)
+
+    def _task_result_exists(self, task_id):
         session = self.ResultSession()
         with session_cleanup(session):
             return session.query(self.task_cls).filter(
@@ -232,6 +236,9 @@ class DatabaseBackend(BaseBackend):
 
     def cleanup(self):
         """Delete expired meta-data."""
+        self._ensure_retryable(self._cleanup)
+
+    def _cleanup(self):
         session = self.ResultSession()
         expires = self.expires
         now = self.app.now()
