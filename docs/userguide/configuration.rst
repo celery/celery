@@ -155,7 +155,7 @@ For a complete Django example, see :ref:`django-first-steps`.
 ``CELERY_REDIS_BACKEND_CREDENTIAL_PROVIDER`` :setting:`redis_backend_credential_provider`
 ``CELERY_RESULT_BACKEND``                  :setting:`result_backend`
 ``CELERY_MAX_CACHED_RESULTS``              :setting:`result_cache_max`
-``CELERY_MESSAGE_COMPRESSION``             :setting:`result_compression`
+``CELERY_RESULT_COMPRESSION``              :setting:`result_compression`
 ``CELERY_RESULT_EXCHANGE``                 :setting:`result_exchange`
 ``CELERY_RESULT_EXCHANGE_TYPE``            :setting:`result_exchange_type`
 ``CELERY_RESULT_EXPIRES``                  :setting:`result_expires`
@@ -173,7 +173,7 @@ For a complete Django example, see :ref:`django-first-steps`.
 ``CELERY_ACKS_ON_FAILURE_OR_TIMEOUT``      :setting:`task_acks_on_failure_or_timeout`
 ``CELERY_TASK_ALWAYS_EAGER``               :setting:`task_always_eager`
 ``CELERY_ANNOTATIONS``                     :setting:`task_annotations`
-``CELERY_COMPRESSION``                     :setting:`task_compression`
+``CELERY_MESSAGE_COMPRESSION``             :setting:`task_compression`
 ``CELERY_CREATE_MISSING_QUEUES``           :setting:`task_create_missing_queues`
 ``CELERY_CREATE_MISSING_QUEUE_TYPE``       :setting:`task_create_missing_queue_type`
 ``CELERY_CREATE_MISSING_QUEUE_EXCHANGE_TYPE`` :setting:`task_create_missing_queue_exchange_type`
@@ -418,6 +418,19 @@ methods that have been registered with :mod:`kombu.serialization.registry`.
 .. seealso::
 
     :ref:`calling-serializers`.
+
+.. setting:: task_repr_maxlevels
+
+``task_repr_maxlevels``
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: 3.
+
+Maximum nesting depth used when generating ``argsrepr`` and ``kwargsrepr``.
+Deeper containers are shown as ``{...}`` / ``[...]``. Set to ``0`` or
+:const:`None` for no limit.
 
 .. setting:: task_publish_retry
 
@@ -948,8 +961,30 @@ serialization formats.
 
 Default: No compression.
 
+.. versionchanged:: 5.7
+
+    This setting is now applied to stored results. It was accepted but never
+    used before 5.7, so results were always stored uncompressed. Every worker
+    and client that reads results has to be on 5.7 or later before you turn
+    it on. An unknown compression method now raises
+    :exc:`~celery.exceptions.ImproperlyConfigured` instead of being ignored.
+
 Optional compression method used for task results.
 Supports the same options as the :setting:`task_compression` setting.
+
+A compressed result is stored as binary data, so this setting is only
+honoured by backends that can hold a payload of arbitrary bytes and hand it
+back unchanged. Those are the Redis, MongoDB, Cassandra, DynamoDB,
+Google Cloud Storage and file-system backends. On any other backend the
+setting is ignored, a warning is emitted when the backend is created, and
+results are stored uncompressed.
+
+Each compressed result records which method compressed it, so a worker or
+client reads a compressed result correctly whether or not it has this
+setting turned on itself, and results written before the setting was turned
+on stay readable. Older versions of Celery don't know how to read a
+compressed result at all, so when you roll this out, upgrade every worker
+and client first and turn the setting on afterwards.
 
 .. setting:: result_extended
 
@@ -4054,6 +4089,21 @@ The format to use for log messages.
 See the Python :mod:`logging` module for more information about log
 formats.
 
+.. setting:: worker_log_datefmt
+
+``worker_log_datefmt``
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: :const:`None`.
+
+The format to use for the ``%(asctime)s`` field of log messages, for example
+``"%Y-%m-%d %H:%M:%S"``. When unset, the :mod:`logging` module default is
+used, which appends milliseconds after a comma.
+
+See :meth:`logging.Formatter.formatTime` for the accepted directives.
+
 .. setting:: worker_task_log_format
 
 ``worker_task_log_format``
@@ -4070,6 +4120,18 @@ The format to use for log messages logged in tasks.
 
 See the Python :mod:`logging` module for more information about log
 formats.
+
+.. setting:: worker_task_log_datefmt
+
+``worker_task_log_datefmt``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: :const:`None`.
+
+The format to use for the ``%(asctime)s`` field of log messages logged in
+tasks. Behaves like :setting:`worker_log_datefmt`.
 
 .. setting:: worker_redirect_stdouts
 
@@ -4372,8 +4434,10 @@ that it's possible to shut down in a timely manner.
 Default: None.
 
 When using cron, the number of seconds :mod:`~celery.bin.beat` can look back
-when deciding whether a cron schedule is due. When set to `None`, cronjobs that
-are past due will always run immediately.
+when deciding whether a cron schedule is due. Only the most recent missed run
+time is considered: if it's within the deadline the task runs immediately,
+otherwise it waits until its next scheduled time. When set to `None`, cronjobs
+that are past due will always run immediately.
 
 .. warning::
 
