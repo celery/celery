@@ -662,7 +662,7 @@ logs:
 
 The ``print`` statements will be redirected to the logging subsystem after
 the worker has been initialized, so the "is starting" lines are time-stamped.
-You may notice that this no longer happens at shutdown, this is because
+You may notice that this no longer happens at shutdown; this is because
 the ``stop`` and ``shutdown`` methods are called inside a *signal handler*,
 and it's not safe to use logging inside such a handler.
 Logging with the Python logging module isn't :term:`reentrant`:
