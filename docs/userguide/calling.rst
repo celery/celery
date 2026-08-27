@@ -161,10 +161,11 @@ option:
 .. note::
 
     The direct call above, passing ``(request, exc, traceback)``, is only used when
-    the errback is a registered task that accepts more than one argument. If the
-    errback takes a single argument, or is not registered in the worker that handles
-    the failure, Celery instead applies the errback **as a task**, passing the failed
-    task's id as the only argument.
+    the errback is a registered ``@app.task`` function task, is not a ``bind=True`` task,
+    and accepts more than one argument. If the errback takes a single argument, is a
+    ``bind=True`` task, or is not registered in the worker that handles the failure,
+    Celery instead applies the errback **as a task**, passing the failed task's id as
+    the only argument.
 
     The single-argument form is the one to use when the failing task was submitted
     with :meth:`~@send_task`, since that task is referenced by name and the errback is
