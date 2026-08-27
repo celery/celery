@@ -180,7 +180,13 @@ To run a workflow periodically, wrap it in a regular task and schedule that task
 
 .. code-block:: python
 
-    from celery import group
+    from celery import Celery, group
+
+    app = Celery()
+
+    @app.task
+    def add(x, y):
+        return x + y
 
     @app.task
     def run_add_group():
