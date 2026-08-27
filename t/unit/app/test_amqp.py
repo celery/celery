@@ -271,6 +271,48 @@ class test_AMQP(test_AMQP_Base):
         with pytest.raises(TypeError):
             self.app.amqp.as_task_v2(uuid(), 'foo', args='abc')
 
+    def test_argsrepr_maxlevels_default(self):
+        msg = self.app.amqp.as_task_v2(
+            uuid(), 'foo', args=[{'a': ['b', {'c': 'd'}]}],
+        )
+        assert msg.headers['argsrepr'] == "[{'a': ['b', {...}]}]"
+
+    def test_argsrepr_maxlevels_configurable(self):
+        self.app.conf.task_repr_maxlevels = 4
+        msg = self.app.amqp.as_task_v2(
+            uuid(), 'foo', args=[{'a': ['b', {'c': 'd'}]}],
+        )
+        assert msg.headers['argsrepr'] == "[{'a': ['b', {'c': 'd'}]}]"
+
+    @pytest.mark.parametrize('maxlevels', [0, None])
+    def test_argsrepr_maxlevels_unlimited(self, maxlevels):
+        self.app.conf.task_repr_maxlevels = maxlevels
+        msg = self.app.amqp.as_task_v2(
+            uuid(), 'foo', args=[{'a': ['b', {'c': 'd'}]}],
+        )
+        assert msg.headers['argsrepr'] == "[{'a': ['b', {'c': 'd'}]}]"
+
+    def test_kwargsrepr_maxlevels_default(self):
+        msg = self.app.amqp.as_task_v2(
+            uuid(), 'foo', kwargs={'x': {'a': ['b', {'c': 'd'}]}},
+        )
+        assert msg.headers['kwargsrepr'] == "{'x': {'a': ['b', {...}]}}"
+
+    def test_kwargsrepr_maxlevels_configurable(self):
+        self.app.conf.task_repr_maxlevels = 4
+        msg = self.app.amqp.as_task_v2(
+            uuid(), 'foo', kwargs={'x': {'a': ['b', {'c': 'd'}]}},
+        )
+        assert msg.headers['kwargsrepr'] == "{'x': {'a': ['b', {'c': 'd'}]}}"
+
+    @pytest.mark.parametrize('maxlevels', [0, None])
+    def test_kwargsrepr_maxlevels_unlimited(self, maxlevels):
+        self.app.conf.task_repr_maxlevels = maxlevels
+        msg = self.app.amqp.as_task_v2(
+            uuid(), 'foo', kwargs={'x': {'a': ['b', {'c': 'd'}]}},
+        )
+        assert msg.headers['kwargsrepr'] == "{'x': {'a': ['b', {'c': 'd'}]}}"
+
     def test_countdown_negative(self):
         with pytest.raises(ValueError):
             self.app.amqp.as_task_v2(uuid(), 'foo', countdown=-1232132323123)
