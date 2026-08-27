@@ -47,8 +47,10 @@ worker option.
 
 .. note::
 
-    When using the gevent pool, ensure that gevent monkey-patching is performed
-    at the very entrypoint of your application (before importing Celery, task modules, or standard library I/O modules):
+    When using the gevent pool via the Celery CLI (``-P gevent``/``--pool=gevent``),
+    Celery applies gevent monkey-patching early during startup.
+    If you need to monkey-patch manually (e.g., when embedding a worker), do it at the very start of the process
+    (before importing task modules or standard library I/O modules):
 
     .. code-block:: python
 
