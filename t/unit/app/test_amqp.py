@@ -131,6 +131,17 @@ class test_Queues:
         q.add(Queue('foo', alias='barfoo'))
         assert q['barfoo'] is q['foo']
 
+    def test_deselect_by_real_name_removes_queue_selected_by_alias(self):
+        q = Queues()
+        q.add(Queue('foo', alias='barfoo'))
+
+        q.select(['barfoo'])
+        assert list(q._consume_from) == ['foo']
+        assert q._consume_from['foo'] is q['foo']
+
+        q.deselect('foo')
+        assert q._consume_from == {}
+
     @pytest.mark.parametrize('queues_kwargs,qname,q,expected', [
         ({'max_priority': 10},
          'foo', 'foo', {'x-max-priority': 10}),
@@ -286,6 +297,48 @@ class test_AMQP(test_AMQP_Base):
         with pytest.raises(TypeError):
             self.app.amqp.as_task_v2(uuid(), 'foo', args='abc')
 
+    def test_argsrepr_maxlevels_default(self):
+        msg = self.app.amqp.as_task_v2(
+            uuid(), 'foo', args=[{'a': ['b', {'c': 'd'}]}],
+        )
+        assert msg.headers['argsrepr'] == "[{'a': ['b', {...}]}]"
+
+    def test_argsrepr_maxlevels_configurable(self):
+        self.app.conf.task_repr_maxlevels = 4
+        msg = self.app.amqp.as_task_v2(
+            uuid(), 'foo', args=[{'a': ['b', {'c': 'd'}]}],
+        )
+        assert msg.headers['argsrepr'] == "[{'a': ['b', {'c': 'd'}]}]"
+
+    @pytest.mark.parametrize('maxlevels', [0, None])
+    def test_argsrepr_maxlevels_unlimited(self, maxlevels):
+        self.app.conf.task_repr_maxlevels = maxlevels
+        msg = self.app.amqp.as_task_v2(
+            uuid(), 'foo', args=[{'a': ['b', {'c': 'd'}]}],
+        )
+        assert msg.headers['argsrepr'] == "[{'a': ['b', {'c': 'd'}]}]"
+
+    def test_kwargsrepr_maxlevels_default(self):
+        msg = self.app.amqp.as_task_v2(
+            uuid(), 'foo', kwargs={'x': {'a': ['b', {'c': 'd'}]}},
+        )
+        assert msg.headers['kwargsrepr'] == "{'x': {'a': ['b', {...}]}}"
+
+    def test_kwargsrepr_maxlevels_configurable(self):
+        self.app.conf.task_repr_maxlevels = 4
+        msg = self.app.amqp.as_task_v2(
+            uuid(), 'foo', kwargs={'x': {'a': ['b', {'c': 'd'}]}},
+        )
+        assert msg.headers['kwargsrepr'] == "{'x': {'a': ['b', {'c': 'd'}]}}"
+
+    @pytest.mark.parametrize('maxlevels', [0, None])
+    def test_kwargsrepr_maxlevels_unlimited(self, maxlevels):
+        self.app.conf.task_repr_maxlevels = maxlevels
+        msg = self.app.amqp.as_task_v2(
+            uuid(), 'foo', kwargs={'x': {'a': ['b', {'c': 'd'}]}},
+        )
+        assert msg.headers['kwargsrepr'] == "{'x': {'a': ['b', {'c': 'd'}]}}"
+
     def test_countdown_negative(self):
         with pytest.raises(ValueError):
             self.app.amqp.as_task_v2(uuid(), 'foo', countdown=-1232132323123)
@@ -322,6 +375,20 @@ class test_AMQP(test_AMQP_Base):
         )
         kwargs = prod.publish.call_args[1]
         assert kwargs['routing_key'] == 'foo'
+        assert kwargs['exchange'] == ''
+
+    def test_send_task_message__no_default_queue(self):
+        conf = self.app.conf
+        conf.task_create_missing_queues = False
+        conf.task_queues = {Queue('my_queue')}
+
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event,
+            queue='my_queue', retry=False,
+        )
+        kwargs = prod.publish.call_args[1]
+        assert kwargs['routing_key'] == 'my_queue'
         assert kwargs['exchange'] == ''
 
     def test_send_task_message__broadcast_without_exchange(self):
