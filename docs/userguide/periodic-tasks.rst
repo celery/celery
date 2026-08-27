@@ -335,7 +335,16 @@ Solar schedules
 
 If you have a task that should be executed according to sunrise,
 sunset, dawn or dusk, you can use the
-:class:`~celery.schedules.solar` schedule type:
+:class:`~celery.schedules.solar` schedule type.
+
+Solar schedules require the :pypi:`ephem` library, so
+to use them you must install Celery with the ``solar`` extra:
+
+.. code-block:: console
+
+    $ pip install celery[solar]
+
+Example:
 
 .. code-block:: python
 
