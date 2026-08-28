@@ -5,7 +5,6 @@ import logging
 import numbers
 import os
 import random
-import sys
 import time as _time
 from calendar import monthrange
 from datetime import date, datetime, timedelta
@@ -23,10 +22,7 @@ from tzlocal import get_localzone
 from .functional import dictfilter
 from .text import pluralize
 
-if sys.version_info >= (3, 9):
-    from zoneinfo import ZoneInfo
-else:
-    from backports.zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo
 
 logger = logging.getLogger(__name__)
 
