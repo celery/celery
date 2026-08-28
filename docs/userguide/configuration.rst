@@ -419,6 +419,19 @@ methods that have been registered with :mod:`kombu.serialization.registry`.
 
     :ref:`calling-serializers`.
 
+.. setting:: task_repr_maxlevels
+
+``task_repr_maxlevels``
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: 3.
+
+Maximum nesting depth used when generating ``argsrepr`` and ``kwargsrepr``.
+Deeper containers are shown as ``{...}`` / ``[...]``. Set to ``0`` or
+:const:`None` for no limit.
+
 .. setting:: task_publish_retry
 
 ``task_publish_retry``
@@ -3447,6 +3460,9 @@ but if mostly CPU-bound, try to keep it close to the
 number of CPUs on your machine. If not set, the number of CPUs/cores
 on the host will be used.
 
+The command-line equivalent is the
+:option:`--concurrency <celery worker --concurrency>` argument.
+
 .. setting:: worker_prefetch_multiplier
 
 ``worker_prefetch_multiplier``
@@ -3465,6 +3481,9 @@ to the workers.
 To limit the broker to only deliver one message per process at a time,
 set :setting:`worker_prefetch_multiplier` to 1. Changing that setting to 0
 will allow the worker to keep consuming as many messages as it wants.
+
+The command-line equivalent is the
+:option:`--prefetch-multiplier <celery worker --prefetch-multiplier>` argument.
 
 If you need to completely disable broker prefetching while still using
 early acknowledgments, enable :setting:`worker_disable_prefetch`.
@@ -4415,8 +4434,10 @@ that it's possible to shut down in a timely manner.
 Default: None.
 
 When using cron, the number of seconds :mod:`~celery.bin.beat` can look back
-when deciding whether a cron schedule is due. When set to `None`, cronjobs that
-are past due will always run immediately.
+when deciding whether a cron schedule is due. Only the most recent missed run
+time is considered: if it's within the deadline the task runs immediately,
+otherwise it waits until its next scheduled time. When set to `None`, cronjobs
+that are past due will always run immediately.
 
 .. warning::
 
