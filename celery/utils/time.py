@@ -12,6 +12,7 @@ from datetime import timezone as datetime_timezone
 from datetime import tzinfo
 from types import ModuleType
 from typing import Any, Callable
+from zoneinfo import ZoneInfo
 
 from dateutil import tz as dateutil_tz
 from dateutil.parser import isoparse
@@ -21,8 +22,6 @@ from tzlocal import get_localzone
 
 from .functional import dictfilter
 from .text import pluralize
-
-from zoneinfo import ZoneInfo
 
 logger = logging.getLogger(__name__)
 
