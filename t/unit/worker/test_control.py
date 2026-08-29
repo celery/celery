@@ -929,17 +929,17 @@ class test_ControlPanel:
     def test_revoke_with_chord_request_triggers_chord_bookkeeping(self):
         """
         Regression test for chord bookkeeping bug.
-        
+
         When a task belongs to a chord and has a locally-known Request,
         _revoke() should pass the Request to mark_as_revoked() so that
         chord bookkeeping (on_chord_part_return) is actually triggered.
-        
+
         This test exercises the real mark_as_revoked implementation rather
         than mocking it entirely, ensuring the chord bookkeeping path works.
         """
         task_id = 'chord-task-123'
         chord_id = 'chord-456'
-        
+
         # Create a real Request with chord metadata
         message = self.TaskMessage(self.mytask.name, task_id)
         # chord is extracted from the embed dict in the payload
@@ -947,39 +947,39 @@ class test_ControlPanel:
         embed['chord'] = chord_id
         message.payload = (args, kwargs, embed)
         request = Request(message, app=self.app)
-        
+
         # Verify the request has chord metadata
         assert request.chord == chord_id, "Request should have chord metadata"
-        
+
         # Add request to worker_state.requests
         worker_state.requests[task_id] = request
-        
+
         try:
             state = self.create_state()
-            
+
             # Spy on on_chord_part_return to verify it's called
             original_on_chord_part_return = self.app.backend.on_chord_part_return
             on_chord_part_return_calls = []
-            
+
             def spy_on_chord_part_return(*args, **kwargs):
                 on_chord_part_return_calls.append((args, kwargs))
                 return original_on_chord_part_return(*args, **kwargs)
-            
+
             self.app.backend.on_chord_part_return = spy_on_chord_part_return
-            
+
             # Call _revoke() - this should trigger chord bookkeeping
             control._revoke(state, [task_id])
-            
+
             # Verify on_chord_part_return was called (chord bookkeeping triggered)
             assert len(on_chord_part_return_calls) == 1, \
                 "on_chord_part_return should be called when a chord task is revoked"
-            
+
             call_args, call_kwargs = on_chord_part_return_calls[0]
             assert call_args[0] == request, \
                 "on_chord_part_return should receive the request"
             assert call_args[1] == 'REVOKED', \
                 "on_chord_part_return should receive the REVOKED state"
-            
+
         finally:
             # Cleanup
             if task_id in worker_state.requests:
