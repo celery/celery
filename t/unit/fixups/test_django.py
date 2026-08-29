@@ -149,7 +149,7 @@ class test_DjangoFixup(FixupCase):
         'django.db',
         'django.db.transaction',
     )
-def test_install_subclassed_app_without_custom_task_cls(self, patching, module):
+    def test_install_subclassed_app_without_custom_task_cls(self, patching, module):
         patching('celery.fixups.django.signals')
 
         from celery.app import Celery
