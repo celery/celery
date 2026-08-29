@@ -957,36 +957,55 @@ class test_ControlPanel:
         try:
             state = self.create_state()
 
-            # Spy on on_chord_part_return to verify it's called
-            original_on_chord_part_return = self.app.backend.on_chord_part_return
-            on_chord_part_return_calls = []
+            # Use patch.object to spy on on_chord_part_return
+            # We use the real backend, not a mock, so mark_as_revoked actually executes
+            with patch.object(
+                self.app.backend,
+                'on_chord_part_return',
+                wraps=self.app.backend.on_chord_part_return
+            ) as mock_on_chord_part_return:
+                # Call _revoke() - this should trigger chord bookkeeping
+                control._revoke(state, [task_id])
 
-            def spy_on_chord_part_return(*args, **kwargs):
-                on_chord_part_return_calls.append((args, kwargs))
-                return original_on_chord_part_return(*args, **kwargs)
-
-            self.app.backend.on_chord_part_return = spy_on_chord_part_return
-
-            # Call _revoke() - this should trigger chord bookkeeping
-            control._revoke(state, [task_id])
-
-            # Verify on_chord_part_return was called (chord bookkeeping triggered)
-            assert len(on_chord_part_return_calls) == 1, \
-                "on_chord_part_return should be called when a chord task is revoked"
-
-            call_args, call_kwargs = on_chord_part_return_calls[0]
-            assert call_args[0] == request, \
-                "on_chord_part_return should receive the request"
-            assert call_args[1] == 'REVOKED', \
-                "on_chord_part_return should receive the REVOKED state"
+                # Verify on_chord_part_return was called (chord bookkeeping triggered)
+                mock_on_chord_part_return.assert_called_once()
+                call_args = mock_on_chord_part_return.call_args
+                assert call_args.args[0] is request, \
+                    "on_chord_part_return should receive the request"
+                assert call_args.args[1] == 'REVOKED', \
+                    "on_chord_part_return should receive the REVOKED state"
 
         finally:
             # Cleanup
             if task_id in worker_state.requests:
                 del worker_state.requests[task_id]
-            # Restore original method
-            if hasattr(self.app.backend, 'on_chord_part_return'):
-                self.app.backend.on_chord_part_return = original_on_chord_part_return
+
+    @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
+    def test_revoke_without_local_request_passes_none(self):
+        """
+        Test that when a task has no locally-known Request,
+        _revoke() passes None to mark_as_revoked() safely.
+
+        This ensures the fix doesn't break the case where a task
+        is revoked but has never been consumed by this worker.
+        """
+        task_id = 'unknown-task-123'
+
+        # Ensure task is NOT in worker_state.requests
+        assert task_id not in worker_state.requests
+
+        state = self.create_state()
+
+        # Call _revoke() - should pass request=None
+        control._revoke(state, [task_id])
+
+        # Verify mark_as_revoked was called with request=None
+        self.app.backend.mark_as_revoked.assert_called_once_with(
+            task_id,
+            reason='revoked',
+            store_result=True,
+            request=None
+        )
 
     def test_revoke_by_stamped_headers_terminates_matching_request(self):
         state = self.create_state()
