@@ -949,6 +949,28 @@ class test_App:
 
         self.assert_config2()
 
+    def test_config_from_object__silent_lazy(self):
+        """`silent` must survive until the configuration is actually read.
+
+        Without `force`, `config_from_object()` only records the source; the
+        import happens later in `_load_config()`. The flag has to be carried
+        across that gap or the documented behaviour only holds for the eager
+        path.
+        """
+        self.app.config_from_object('nonexistent.module', silent=True)
+        assert self.app.conf.get('SOME_CONFIG') is None
+
+    def test_config_from_object__not_silent_lazy(self):
+        """Without `silent`, the import error must still surface."""
+        self.app.config_from_object('nonexistent.module', silent=False)
+        with pytest.raises(ImportError):
+            self.app.conf.get('SOME_CONFIG')
+
+    def test_config_from_object__silent_force(self):
+        """The eager path keeps working, and is not made silent by accident."""
+        self.app.config_from_object('nonexistent.module', silent=True, force=True)
+        assert self.app.conf.get('SOME_CONFIG') is None
+
     def test_config_from_object__compat(self):
 
         class Config:
