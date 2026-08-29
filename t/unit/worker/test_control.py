@@ -624,6 +624,58 @@ class test_ControlPanel:
         finally:
             worker_state.task_ready(request)
 
+    def test_revoke_passes_known_request_to_backend(self):
+        request = Mock()
+        request.id = tid = uuid()
+        state = self.create_state()
+        state.consumer = Mock()
+        worker_state.task_reserved(request)
+        try:
+            with patch.object(state.app.backend, 'mark_as_revoked') as mar:
+                control.revoke(state, tid)
+            mar.assert_called_once_with(
+                tid, reason='revoked', store_result=True, request=request)
+            assert tid in revoked
+        finally:
+            worker_state.task_ready(request)
+            revoked.discard(tid)
+
+    def test_revoke_unknown_task_gets_no_request(self):
+        tid = uuid()
+        state = self.create_state()
+        state.consumer = Mock()
+        try:
+            with patch.object(state.app.backend, 'mark_as_revoked') as mar:
+                control.revoke(state, tid)
+            mar.assert_called_once_with(
+                tid, reason='revoked', store_result=True, request=None)
+        finally:
+            revoked.discard(tid)
+
+    def test_revoke_chord_member_runs_chord_bookkeeping(self):
+        request = Mock(
+            id=uuid(),
+            chord=Mock(),
+            group=None,
+            parent_id=None,
+            children=[],
+            delivery_info={},
+            stamps=None,
+        )
+        tid = request.id
+        state = self.create_state()
+        state.consumer = Mock()
+        worker_state.task_reserved(request)
+        try:
+            with patch.object(
+                    state.app.backend, 'on_chord_part_return') as ocpr:
+                control.revoke(state, tid)
+            ocpr.assert_called_once()
+            assert ocpr.call_args.args[0] is request
+        finally:
+            worker_state.task_ready(request)
+            revoked.discard(tid)
+
     @pytest.mark.parametrize(
         "terminate", [True, False],
     )
@@ -902,8 +954,12 @@ class test_ControlPanel:
 
         assert self.app.backend.mark_as_revoked.call_count == 2
         calls = self.app.backend.mark_as_revoked.call_args_list
-        assert calls[0] == (('task-1',), {'reason': 'revoked', 'store_result': True})
-        assert calls[1] == (('task-2',), {'reason': 'revoked', 'store_result': True})
+        assert calls[0] == (
+            ('task-1',), {'reason': 'revoked', 'store_result': True,
+                          'request': None})
+        assert calls[1] == (
+            ('task-2',), {'reason': 'revoked', 'store_result': True,
+                          'request': None})
 
     @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
     def test_revoke_backend_failure_defensive(self):
@@ -922,7 +978,7 @@ class test_ControlPanel:
             control._revoke(state, ['task-1'], terminate=True)
 
         self.app.backend.mark_as_revoked.assert_called_once_with(
-            'task-1', reason='revoked', store_result=True
+            'task-1', reason='revoked', store_result=True, request=None
         )
 
     def test_revoke_by_stamped_headers_terminates_matching_request(self):

@@ -217,9 +217,16 @@ def _revoke(state, task_ids, terminate=False, signal=None, **kwargs):
 
     worker_state.revoked.update(task_ids)
 
+    # pass locally-known requests so the backend can run chord bookkeeping
+    requests_by_id = {
+        request.id: request for request in _find_requests_by_id(task_ids)
+    }
+
     for task_id in task_ids:
         try:
-            state.app.backend.mark_as_revoked(task_id, reason='revoked', store_result=True)
+            state.app.backend.mark_as_revoked(
+                task_id, reason='revoked', store_result=True,
+                request=requests_by_id.get(task_id))
         except Exception as exc:
             logger.warning('Failed to mark task %s as revoked in backend: %s', task_id, exc)
 
