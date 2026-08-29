@@ -48,7 +48,7 @@ def embed_worker(app,
     Helper embedded worker for testing.
 
     It's based on a :func:`celery.contrib.testing.worker.start_worker`,
-    but doesn't modifies logging settings and additionally shutdown
+    but doesn't modify logging settings and additionally shutdown
     worker pool.
     """
     # prepare application for worker
@@ -115,8 +115,8 @@ class test_backends:
 
     @pytest.mark.celery(
         result_backend=f'{CachedBackendWithTreadTrucking.__module__}.'
-                       f'{CachedBackendWithTreadTrucking.__qualname__}'
-                       f'+memory://')
+        f'{CachedBackendWithTreadTrucking.__qualname__}'
+        f'+memory://')
     def test_backend_thread_safety(self):
         @self.app.task
         def dummy_add_task(x, y):

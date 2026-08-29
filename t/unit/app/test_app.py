@@ -1,16 +1,24 @@
 import gc
+import importlib
+import inspect
 import itertools
 import os
 import ssl
 import sys
+import typing
 import uuid
 from copy import deepcopy
 from datetime import datetime, timedelta
 from datetime import timezone as datetime_timezone
+from logging import LogRecord
 from pickle import dumps, loads
-from unittest.mock import Mock, patch
+from typing import Optional
+from unittest.mock import ANY, DEFAULT, MagicMock, Mock, patch
 
 import pytest
+from kombu import Exchange, Queue
+from kombu.exceptions import LimitExceeded
+from pydantic import BaseModel, ValidationInfo, model_validator
 from vine import promise
 
 from celery import Celery, _state
@@ -18,21 +26,22 @@ from celery import app as _app
 from celery import current_app, shared_task
 from celery.app import base as _appbase
 from celery.app import defaults
+from celery.app.amqp import AMQP
 from celery.backends.base import Backend
 from celery.contrib.testing.mocks import ContextMock
-from celery.exceptions import ImproperlyConfigured
+from celery.exceptions import ImproperlyConfigured, OperationalError
 from celery.loaders.base import unconfigured
 from celery.platforms import pyimplementation
 from celery.utils.collections import DictAttribute
 from celery.utils.objects import Bunch
 from celery.utils.serialization import pickle
-from celery.utils.time import localize, timezone, to_utc
+from celery.utils.time import LocalTimezone, localize, timezone, to_utc
 from t.unit import conftest
 
 if sys.version_info >= (3, 9):
     from zoneinfo import ZoneInfo
 else:
-    from backports.zoneinfo import ZoneInfo  # noqa
+    from backports.zoneinfo import ZoneInfo
 
 THIS_IS_A_KEY = 'this is a value'
 
@@ -505,6 +514,301 @@ class test_App:
                 pass
             check.assert_called_with(foo)
 
+    def test_task_with_pydantic_with_no_args(self):
+        """Test a pydantic task with no arguments or return value."""
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo():
+                check()
+
+            assert foo() is None
+            check.assert_called_once()
+
+    def test_task_with_pydantic_with_arg_and_kwarg(self):
+        """Test a pydantic task with simple (non-pydantic) arg/kwarg and return value."""
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo(arg: int, kwarg: bool = True) -> int:
+                check(arg, kwarg=kwarg)
+                return 1
+
+            assert foo(0) == 1
+            check.assert_called_once_with(0, kwarg=True)
+
+    def test_task_with_pydantic_with_optional_args(self):
+        """Test pydantic task receiving and returning an optional argument."""
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo(arg: Optional[int], kwarg: Optional[bool] = True) -> Optional[int]:
+                check(arg, kwarg=kwarg)
+                if isinstance(arg, int):
+                    return 1
+                return 2
+
+            assert foo(0) == 1
+            check.assert_called_once_with(0, kwarg=True)
+
+            assert foo(None) == 2
+            check.assert_called_with(None, kwarg=True)
+
+    @pytest.mark.skipif(sys.version_info < (3, 9), reason="Notation is only supported in Python 3.9 or newer.")
+    def test_task_with_pydantic_with_dict_args(self):
+        """Test pydantic task receiving and returning a generic dict argument."""
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo(arg: dict[str, str], kwarg: dict[str, str]) -> dict[str, str]:
+                check(arg, kwarg=kwarg)
+                return {'x': 'y'}
+
+            assert foo({'a': 'b'}, kwarg={'c': 'd'}) == {'x': 'y'}
+            check.assert_called_once_with({'a': 'b'}, kwarg={'c': 'd'})
+
+    @pytest.mark.skipif(sys.version_info < (3, 9), reason="Notation is only supported in Python 3.9 or newer.")
+    def test_task_with_pydantic_with_list_args(self):
+        """Test pydantic task receiving and returning a generic dict argument."""
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo(arg: list[str], kwarg: list[str] = True) -> list[str]:
+                check(arg, kwarg=kwarg)
+                return ['x']
+
+            assert foo(['a'], kwarg=['b']) == ['x']
+            check.assert_called_once_with(['a'], kwarg=['b'])
+
+    def test_task_with_pydantic_with_pydantic_arg_and_default_kwarg(self):
+        """Test a pydantic task with pydantic arg/kwarg and return value."""
+
+        class ArgModel(BaseModel):
+            arg_value: int
+
+        class KwargModel(BaseModel):
+            kwarg_value: int
+
+        kwarg_default = KwargModel(kwarg_value=1)
+
+        class ReturnModel(BaseModel):
+            ret_value: int
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo(arg: ArgModel, kwarg: KwargModel = kwarg_default) -> ReturnModel:
+                check(arg, kwarg=kwarg)
+                return ReturnModel(ret_value=2)
+
+            assert foo({'arg_value': 0}) == {'ret_value': 2}
+            check.assert_called_once_with(ArgModel(arg_value=0), kwarg=kwarg_default)
+            check.reset_mock()
+
+            # Explicitly pass kwarg (but as argument)
+            assert foo({'arg_value': 3}, {'kwarg_value': 4}) == {'ret_value': 2}
+            check.assert_called_once_with(ArgModel(arg_value=3), kwarg=KwargModel(kwarg_value=4))
+            check.reset_mock()
+
+            # Explicitly pass all arguments as kwarg
+            assert foo(arg={'arg_value': 5}, kwarg={'kwarg_value': 6}) == {'ret_value': 2}
+            check.assert_called_once_with(ArgModel(arg_value=5), kwarg=KwargModel(kwarg_value=6))
+
+    def test_task_with_pydantic_with_non_strict_validation(self):
+        """Test a pydantic task with where Pydantic has to apply non-strict validation."""
+
+        class Model(BaseModel):
+            value: timedelta
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo(arg: Model) -> Model:
+                check(arg)
+                return Model(value=timedelta(days=arg.value.days * 2))
+
+            assert foo({'value': timedelta(days=1)}) == {'value': 'P2D'}
+            check.assert_called_once_with(Model(value=timedelta(days=1)))
+            check.reset_mock()
+
+            # Pass a serialized value to the task
+            assert foo({'value': 'P3D'}) == {'value': 'P6D'}
+            check.assert_called_once_with(Model(value=timedelta(days=3)))
+
+    def test_task_with_pydantic_with_optional_pydantic_args(self):
+        """Test pydantic task receiving and returning an optional argument."""
+        class ArgModel(BaseModel):
+            arg_value: int
+
+        class KwargModel(BaseModel):
+            kwarg_value: int
+
+        class ReturnModel(BaseModel):
+            ret_value: int
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo(arg: Optional[ArgModel], kwarg: Optional[KwargModel] = None) -> Optional[ReturnModel]:
+                check(arg, kwarg=kwarg)
+                if isinstance(arg, ArgModel):
+                    return ReturnModel(ret_value=1)
+                return None
+
+            assert foo(None) is None
+            check.assert_called_once_with(None, kwarg=None)
+
+            assert foo({'arg_value': 1}, kwarg={'kwarg_value': 2}) == {'ret_value': 1}
+            check.assert_called_with(ArgModel(arg_value=1), kwarg=KwargModel(kwarg_value=2))
+
+    @pytest.mark.skipif(sys.version_info < (3, 9), reason="Notation is only supported in Python 3.9 or newer.")
+    def test_task_with_pydantic_with_generic_return_value(self):
+        """Test pydantic task receiving and returning an optional argument."""
+        class ReturnModel(BaseModel):
+            ret_value: int
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def foo() -> dict[str, str]:
+                check()
+                return ReturnModel(ret_value=1)  # type: ignore  # whole point here is that this doesn't match
+
+            assert foo() == ReturnModel(ret_value=1)
+            check.assert_called_once_with()
+
+    def test_task_with_pydantic_with_task_name_in_context(self):
+        """Test that the task name is passed to as additional context."""
+
+        class ArgModel(BaseModel):
+            value: int
+
+            @model_validator(mode='after')
+            def validate_context(self, info: ValidationInfo):
+                context = info.context
+                assert context
+                assert context.get('celery_task_name') == 't.unit.app.test_app.task'
+                return self
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def task(arg: ArgModel):
+                check(arg)
+                return 1
+
+            assert task({'value': 1}) == 1
+
+    def test_task_with_pydantic_with_strict_validation(self):
+        """Test a pydantic task with/without strict model validation."""
+
+        class ArgModel(BaseModel):
+            value: int
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True, pydantic_strict=True)
+            def strict(arg: ArgModel):
+                check(arg)
+
+            @app.task(pydantic=True, pydantic_strict=False)
+            def loose(arg: ArgModel):
+                check(arg)
+
+            # In Pydantic, passing an "exact int" as float works without strict validation
+            assert loose({'value': 1.0}) is None
+            check.assert_called_once_with(ArgModel(value=1))
+            check.reset_mock()
+
+            # ... but a non-strict value will raise an exception
+            with pytest.raises(ValueError):
+                loose({'value': 1.1})
+            check.assert_not_called()
+
+            # ... with strict validation, even an "exact int" will not work:
+            with pytest.raises(ValueError):
+                strict({'value': 1.0})
+            check.assert_not_called()
+
+    def test_task_with_pydantic_with_extra_context(self):
+        """Test passing additional validation context to the model."""
+
+        class ArgModel(BaseModel):
+            value: int
+
+            @model_validator(mode='after')
+            def validate_context(self, info: ValidationInfo):
+                context = info.context
+                assert context, context
+                assert context.get('foo') == 'bar'
+                return self
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True, pydantic_context={'foo': 'bar'})
+            def task(arg: ArgModel):
+                check(arg.value)
+                return 1
+
+            assert task({'value': 1}) == 1
+            check.assert_called_once_with(1)
+
+    def test_task_with_pydantic_with_dump_kwargs(self):
+        """Test passing keyword arguments to model_dump()."""
+
+        class ArgModel(BaseModel):
+            value: int
+
+        class RetModel(BaseModel):
+            value: datetime
+            unset_value: typing.Optional[int] = 99  # this would be in the output, if exclude_unset weren't True
+
+        with self.Celery() as app:
+            check = Mock()
+
+            @app.task(pydantic=True, pydantic_dump_kwargs={'mode': 'python', 'exclude_unset': True})
+            def task(arg: ArgModel) -> RetModel:
+                check(arg)
+                return RetModel(value=datetime(2024, 5, 14, tzinfo=timezone.utc))
+
+            assert task({'value': 1}) == {'value': datetime(2024, 5, 14, tzinfo=timezone.utc)}
+            check.assert_called_once_with(ArgModel(value=1))
+
+    def test_task_with_pydantic_with_pydantic_not_installed(self):
+        """Test configuring a task with Pydantic when pydantic is not installed."""
+
+        with self.Celery() as app:
+            @app.task(pydantic=True)
+            def task():
+                return
+
+            # mock function will raise ModuleNotFoundError only if pydantic is imported
+            def import_module(name, *args, **kwargs):
+                if name == 'pydantic':
+                    raise ModuleNotFoundError('Module not found.')
+                return DEFAULT
+
+            msg = r'^You need to install pydantic to use pydantic model serialization\.$'
+            with patch(
+                'celery.app.base.importlib.import_module',
+                side_effect=import_module,
+                wraps=importlib.import_module
+            ):
+                with pytest.raises(ImproperlyConfigured, match=msg):
+                    task()
+
     def test_task_sets_main_name_MP_MAIN_FILE(self):
         from celery.utils import imports as _imports
         _imports.MP_MAIN_FILE = __file__
@@ -529,6 +833,26 @@ class test_App:
 
             assert typing.get_type_hints(foo) == {
                 'parameter': int, 'return': type(None)}
+
+    @pytest.mark.skipif(sys.version_info < (3, 14), reason="PEP 649 deferred annotations require Python 3.14+")
+    def test_task_with_type_checking_annotation(self):
+        # Regression test for https://github.com/celery/celery/discussions/10099
+        # On Python 3.14+, annotations are deferred (PEP 649). Registering a task
+        # whose annotations reference TYPE_CHECKING-only types must not raise NameError.
+        local = {}
+        exec(
+            'def foo(args: Sequence[str], x: int = 0): return args',
+            {'app': None},
+            local,
+        )
+        raw_fun = local['foo']
+
+        with self.Celery() as app:
+            task = app.task(raw_fun)
+            result = task.apply(args=(['hello'],))
+            assert result.result == ['hello']
+            # Annotations should be stored as strings, not evaluated
+            assert task.__annotations__['args'] == 'Sequence[str]'
 
     def test_annotate_decorator(self):
         from celery.app.task import Task
@@ -875,13 +1199,39 @@ class test_App:
         sig = self.app.signature('foo', (1, 2))
         assert sig.app is self.app
 
-    def test_timezone__none_set(self):
+    def test_timezone_none_set(self):
         self.app.conf.timezone = None
         self.app.conf.enable_utc = True
         assert self.app.timezone == timezone.utc
         del self.app.timezone
         self.app.conf.enable_utc = False
         assert self.app.timezone == timezone.local
+
+    def test_use_local_timezone(self):
+        self.app.conf.timezone = None
+        self.app.conf.enable_utc = False
+
+        self._clear_timezone_cache()
+        try:
+            assert isinstance(self.app.timezone, ZoneInfo)
+        finally:
+            self._clear_timezone_cache()
+
+    @patch("celery.utils.time.get_localzone")
+    def test_use_local_timezone_failure(self, mock_get_localzone):
+        mock_get_localzone.side_effect = Exception("Failed to get local timezone")
+        self.app.conf.timezone = None
+        self.app.conf.enable_utc = False
+
+        self._clear_timezone_cache()
+        try:
+            assert isinstance(self.app.timezone, LocalTimezone)
+        finally:
+            self._clear_timezone_cache()
+
+    def _clear_timezone_cache(self):
+        del self.app.timezone
+        del timezone.local
 
     def test_uses_utc_timezone(self):
         self.app.conf.timezone = None
@@ -971,7 +1321,8 @@ class test_App:
     def test_bugreport(self):
         assert self.app.bugreport()
 
-    def test_send_task__connection_provided(self):
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task__connection_provided(self, detect_quorum_queues):
         connection = Mock(name='connection')
         router = Mock(name='router')
         router.route.return_value = {}
@@ -983,6 +1334,283 @@ class test_App:
         self.app.amqp.send_task_message.assert_called_with(
             self.app.amqp.Producer(), 'foo',
             self.app.amqp.create_task_message())
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_honours_task_serializer(self, detect_quorum_queues):
+        """send_task should use the registered task's serializer when called by name."""
+
+        @self.app.task(name='test_task_with_serializer', serializer='json')
+        def test_task():
+            pass
+
+        self.app.finalize()
+        self.app.conf.task_serializer = 'msgpack'
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        self.app.send_task('test_task_with_serializer', (1,),
+                           connection=connection, router=router)
+
+        # Verify the serializer from the task definition ('json') was passed
+        # through to send_task_message, not the app default ('msgpack').
+        call_kwargs = self.app.amqp.send_task_message.call_args
+        assert call_kwargs[1].get('serializer') == 'json', \
+            "send_task should use the task's serializer, not the app default"
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_explicit_serializer_overrides_task(self, detect_quorum_queues):
+        """Explicitly passed serializer should override the task's serializer."""
+
+        @self.app.task(name='test_task_with_serializer2', serializer='json')
+        def test_task():
+            pass
+
+        self.app.finalize()
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        self.app.send_task('test_task_with_serializer2', (1,),
+                           connection=connection, router=router,
+                           serializer='pickle')
+
+        call_kwargs = self.app.amqp.send_task_message.call_args
+        assert call_kwargs[1].get('serializer') == 'pickle', \
+            "Explicitly passed serializer should override task's serializer"
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_unregistered_task_uses_defaults(self, detect_quorum_queues):
+        """send_task for unregistered task names should still use app defaults."""
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        self.app.send_task('unregistered_task', (1,),
+                           connection=connection, router=router)
+
+        # Should not raise and should proceed normally without task exec options
+        self.app.amqp.send_task_message.assert_called_once()
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_with_task_time_limit_no_duplicate_kwargs(self, detect_quorum_queues):
+        """send_task should not raise TypeError when the registered task has time_limit set."""
+
+        @self.app.task(name='test_task_with_time_limit', time_limit=300, soft_time_limit=120)
+        def test_task():
+            pass
+
+        self.app.finalize()
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        # This should not raise "got multiple values for argument 'time_limit'"
+        self.app.send_task('test_task_with_time_limit', (1,),
+                           connection=connection, router=router)
+
+        self.app.amqp.create_task_message.assert_called_once()
+        call_args = self.app.amqp.create_task_message.call_args
+        # time_limit and soft_time_limit should be passed as positional args,
+        # not duplicated in **options
+        assert 'time_limit' not in call_args[1], \
+            "time_limit should not appear in kwargs (passed positionally)"
+        assert 'soft_time_limit' not in call_args[1], \
+            "soft_time_limit should not appear in kwargs (passed positionally)"
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_explicit_time_limit_overrides_task(self, detect_quorum_queues):
+        """Explicitly passed time_limit should override the task's time_limit."""
+
+        @self.app.task(name='test_task_tl_override', time_limit=300, soft_time_limit=120)
+        def test_task():
+            pass
+
+        self.app.finalize()
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        # Explicit time_limit=60 should win over task's time_limit=300
+        self.app.send_task('test_task_tl_override', (1,),
+                           connection=connection, router=router,
+                           time_limit=60, soft_time_limit=30)
+
+        call_args = self.app.amqp.create_task_message.call_args
+        args, kwargs = call_args
+        bound = inspect.signature(AMQP.as_task_v2).bind(
+            None, *args, **kwargs
+        )
+        assert bound.arguments['time_limit'] == 60, \
+            "Explicit time_limit should override task-level time_limit"
+        assert bound.arguments['soft_time_limit'] == 30, \
+            "Explicit soft_time_limit should override task-level soft_time_limit"
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_explicit_none_clears_task_defaults(self, detect_quorum_queues):
+        """Explicit None for time_limit/soft_time_limit/expires should clear task-level defaults."""
+
+        @self.app.task(name='test_task_none_clear', time_limit=300, soft_time_limit=120, expires=600)
+        def test_task():
+            pass
+
+        self.app.finalize()
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        self.app.send_task('test_task_none_clear', (1,),
+                           connection=connection, router=router,
+                           time_limit=None, soft_time_limit=None, expires=None)
+
+        call_args = self.app.amqp.create_task_message.call_args
+        args, kwargs = call_args
+        bound = inspect.signature(AMQP.as_task_v2).bind(
+            None, *args, **kwargs
+        )
+        assert bound.arguments['time_limit'] is None, \
+            "Explicit None should clear task-level time_limit"
+        assert bound.arguments['soft_time_limit'] is None, \
+            "Explicit None should clear task-level soft_time_limit"
+        assert bound.arguments['expires'] is None, \
+            "Explicit None should clear task-level expires"
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_explicit_expires_pops_from_options(self, detect_quorum_queues):
+        """When expires is passed explicitly, it should be popped from merged options."""
+
+        @self.app.task(name='test_task_expires', expires=600)
+        def test_task():
+            pass
+
+        self.app.finalize()
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        self.app.send_task('test_task_expires', (1,),
+                           connection=connection, router=router,
+                           expires=120)
+
+        call_args = self.app.amqp.create_task_message.call_args
+        args, kwargs = call_args
+        bound = inspect.signature(AMQP.as_task_v2).bind(
+            None, *args, **kwargs
+        )
+        assert bound.arguments['expires'] == 120, \
+            "Explicit expires should override task-level expires"
+        assert 'expires' not in call_args[1], \
+            "expires should not appear in kwargs (passed positionally)"
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_registry_without_get_method(self, detect_quorum_queues):
+        """send_task should handle registries that lack a .get() method."""
+
+        @self.app.task(name='test_task_no_get', serializer='json')
+        def test_task():
+            pass
+
+        self.app.finalize()
+        real_registry = self.app._tasks
+
+        class DictLikeRegistry:
+            def __getitem__(self, key):
+                return real_registry[key]
+
+            def __contains__(self, key):
+                return key in real_registry
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        original_tasks = self.app._tasks
+        self.app._tasks = DictLikeRegistry()
+        try:
+            self.app.send_task('test_task_no_get', (1,),
+                               connection=connection, router=router)
+        finally:
+            self.app._tasks = original_tasks
+
+        call_kwargs = self.app.amqp.send_task_message.call_args
+        assert call_kwargs[1].get('serializer') == 'json', \
+            "Task serializer should be applied even with registry lacking .get()"
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_registry_without_get_keyerror(self, detect_quorum_queues):
+        """send_task should handle KeyError from registries lacking .get()."""
+
+        class DictLikeRegistry:
+            def __getitem__(self, key):
+                raise KeyError(key)
+
+            def __contains__(self, key):
+                return False
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        original_tasks = self.app._tasks
+        self.app._tasks = DictLikeRegistry()
+        try:
+            # Should not raise — gracefully handles missing task
+            self.app.send_task('nonexistent_task', (1,),
+                               connection=connection, router=router)
+        finally:
+            self.app._tasks = original_tasks
+
+        self.app.amqp.send_task_message.assert_called_once()
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_skips_unbound_get_exec_options(self, detect_quorum_queues):
+        """send_task should skip _get_exec_options when it is not a bound method."""
+
+        @self.app.task(name='test_task_unbound_exec')
+        def test_task():
+            pass
+
+        # Replace _get_exec_options with a plain function (not a bound method)
+        # to simulate accessing it on a class rather than an instance.
+        task_instance = self.app.tasks['test_task_unbound_exec']
+        plain_func = Mock()
+        task_instance._get_exec_options = plain_func
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        self.app.send_task('test_task_unbound_exec', (1,),
+                           connection=connection, router=router)
+
+        plain_func.assert_not_called()
+        self.app.amqp.send_task_message.assert_called_once()
 
     def test_send_task_sent_event(self):
 
@@ -1121,6 +1749,376 @@ class test_App:
                 expires='2023-03-16T17:21:20.663973')
         except TypeError as e:
             pytest.fail(f'raise unexcepted error {e}')
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery_countdown(self, detect_quorum_queues):
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {
+            'queue': Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        }
+
+        self.app.send_task('foo', (1, 2), countdown=30)
+
+        exchange = Exchange(
+            'celery_delayed_27',
+            type='topic',
+        )
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            exchange=exchange,
+            routing_key='0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.1.1.1.0.testcelery'
+        )
+        driver_type_stub = self.app.amqp.producer_pool.connections.connection.transport.driver_type
+        detect_quorum_queues.assert_called_once_with(self.app, driver_type_stub)
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery__no_queue_arg__no_eta(self, detect_quorum_queues):
+        self.app.amqp = MagicMock(name='amqp')
+        options = {
+            'routing_key': 'testcelery',
+            'exchange': 'testcelery',
+            'exchange_type': 'topic',
+        }
+        self.app.amqp.router.route.return_value = options
+
+        self.app.send_task(
+            name='foo',
+            args=(1, 2),
+        )
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            **options,
+        )
+        assert not detect_quorum_queues.called
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery__no_queue_arg__with_countdown(self, detect_quorum_queues):
+        self.app.amqp = MagicMock(name='amqp')
+        options = {
+            'routing_key': 'testcelery',
+            'exchange': 'testcelery',
+            'exchange_type': 'topic',
+        }
+        self.app.amqp.router.route.return_value = options
+
+        self.app.send_task(
+            name='foo',
+            args=(1, 2),
+            countdown=30,
+        )
+        exchange = Exchange(
+            'celery_delayed_27',
+            type='topic',
+        )
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            exchange=exchange,
+            routing_key='0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.1.1.1.0.testcelery',
+            exchange_type="topic",
+        )
+        driver_type_stub = self.app.amqp.producer_pool.connections.connection.transport.driver_type
+        detect_quorum_queues.assert_called_once_with(self.app, driver_type_stub)
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery_eta_datetime(self, detect_quorum_queues):
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {
+            'queue': Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        }
+        self.app.now = Mock(return_value=datetime(2024, 8, 24, tzinfo=datetime_timezone.utc))
+
+        self.app.send_task('foo', (1, 2), eta=datetime(2024, 8, 25))
+
+        exchange = Exchange(
+            'celery_delayed_27',
+            type='topic',
+        )
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            exchange=exchange,
+            routing_key='0.0.0.0.0.0.0.0.0.0.0.1.0.1.0.1.0.0.0.1.1.0.0.0.0.0.0.0.testcelery'
+        )
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery_eta_str(self, detect_quorum_queues):
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {
+            'queue': Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        }
+        self.app.now = Mock(return_value=datetime(2024, 8, 24, tzinfo=datetime_timezone.utc))
+
+        self.app.send_task('foo', (1, 2), eta=datetime(2024, 8, 25).isoformat())
+
+        exchange = Exchange(
+            'celery_delayed_27',
+            type='topic',
+        )
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            exchange=exchange,
+            routing_key='0.0.0.0.0.0.0.0.0.0.0.1.0.1.0.1.0.0.0.1.1.0.0.0.0.0.0.0.testcelery',
+        )
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery_no_eta_or_countdown(self, detect_quorum_queues):
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {'queue': Queue('testcelery', routing_key='testcelery')}
+
+        self.app.send_task('foo', (1, 2), countdown=-10)
+
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            queue=Queue(
+                'testcelery',
+                routing_key='testcelery'
+            )
+        )
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery_countdown_in_the_past(self, detect_quorum_queues):
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {
+            'queue': Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        }
+
+        self.app.send_task('foo', (1, 2))
+
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            queue=Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        )
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery_eta_in_the_past(self, detect_quorum_queues):
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {
+            'queue': Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        }
+        self.app.now = Mock(return_value=datetime(2024, 8, 24, tzinfo=datetime_timezone.utc))
+
+        self.app.send_task('foo', (1, 2), eta=datetime(2024, 8, 23).isoformat())
+
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            queue=Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        )
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery_eta_is_now(self, detect_quorum_queues):
+        """When eta equals now, countdown is 0 (falsy) — no delayed routing."""
+        self.app.amqp = MagicMock(name='amqp')
+        now = datetime(2024, 8, 24, tzinfo=datetime_timezone.utc)
+        self.app.amqp.router.route.return_value = {
+            'queue': Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        }
+        self.app.now = Mock(return_value=now)
+
+        self.app.send_task('foo', (1, 2), eta=now.isoformat())
+
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            queue=Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        )
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery_direct_exchange(self, detect_quorum_queues, caplog):
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {
+            'queue': Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='direct')
+            )
+        }
+
+        self.app.send_task('foo', (1, 2), countdown=10)
+
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            queue=Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='direct')
+            )
+        )
+
+        assert len(caplog.records) == 1
+        record: LogRecord = caplog.records[0]
+        assert record.levelname == "WARNING"
+        assert record.message == (
+            "Direct exchanges are not supported with native delayed delivery.\n"
+            "testcelery is a direct exchange but should be a topic exchange or "
+            "a fanout exchange in order for native delayed delivery to work properly.\n"
+            "If quorum queues are used, this task may block the worker process until the ETA arrives."
+        )
+
+    def test_producer_or_acquire_passes_configured_timeout(self):
+        self.app.conf.broker_pool_acquire_timeout = 30
+        with patch.object(
+            type(self.app), 'producer_pool',
+            new_callable=lambda: property(lambda self: MagicMock())
+        ):
+            ctx = self.app.producer_or_acquire()
+            assert ctx.fb_kwargs == {'timeout': 30}
+
+    def test_producer_or_acquire_passes_timeout_none_through(self):
+        self.app.conf.broker_pool_acquire_timeout = None
+        with patch.object(
+            type(self.app), 'producer_pool',
+            new_callable=lambda: property(lambda self: MagicMock())
+        ):
+            ctx = self.app.producer_or_acquire()
+            assert ctx.fb_kwargs == {'timeout': None}
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_raises_on_pool_exhaustion(self, detect_quorum_queues):
+        self.app.conf.broker_pool_limit = 5
+        self.app.conf.broker_pool_acquire_timeout = 10
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {}
+
+        with patch.object(
+            type(self.app), 'producer_pool', new_callable=lambda: property(lambda self: MagicMock(
+                acquire=MagicMock(side_effect=LimitExceeded(5))
+            ))
+        ):
+            with pytest.raises(OperationalError, match="broker_pool_limit"):
+                self.app.send_task('foo', (1, 2))
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_send_task_skips_driver_type_without_eta_countdown(self, detect_quorum_queues):
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {
+            'routing_key': 'testcelery',
+            'exchange': 'testcelery',
+            'exchange_type': 'topic',
+        }
+
+        self.app.send_task(name='foo', args=(1, 2))
+        assert not detect_quorum_queues.called
+
+    def test_broker_pool_acquire_timeout_default(self):
+        assert self.app.conf.broker_pool_acquire_timeout is None
+
+    def test_acquire_connection_raises_on_pool_exhaustion(self):
+        self.app.conf.broker_pool_limit = 5
+        self.app.conf.broker_pool_acquire_timeout = 10
+        with patch.object(
+            type(self.app), 'pool',
+            new_callable=lambda: property(lambda self: MagicMock(
+                acquire=MagicMock(side_effect=LimitExceeded(5))
+            ))
+        ):
+            with pytest.raises(OperationalError, match="broker_pool_limit"):
+                self.app._acquire_connection(pool=True)
+
+    def test_acquire_connection_without_pool(self):
+        with patch.object(self.app, 'connection_for_write') as mock_conn:
+            result = self.app._acquire_connection(pool=False)
+            mock_conn.assert_called_once()
+            assert result == mock_conn.return_value
+
+    def test_acquire_connection_success_with_pool(self):
+        self.app.conf.broker_pool_acquire_timeout = 30
+        mock_pool = MagicMock()
+        with patch.object(
+            type(self.app), 'pool',
+            new_callable=lambda: property(lambda self: mock_pool)
+        ):
+            result = self.app._acquire_connection(pool=True)
+            mock_pool.acquire.assert_called_once_with(block=True, timeout=30)
+            assert result == mock_pool.acquire.return_value
+
+    def test_acquire_producer_success(self):
+        mock_pool = MagicMock()
+        with patch.object(
+            type(self.app), 'producer_pool',
+            new_callable=lambda: property(lambda self: mock_pool)
+        ):
+            result = self.app._acquire_producer(timeout=30)
+            mock_pool.acquire.assert_called_once_with(block=True, timeout=30)
+            assert result == mock_pool.acquire.return_value
+
+    def test_acquire_producer_raises_on_pool_exhaustion(self):
+        self.app.conf.broker_pool_limit = 5
+        with patch.object(
+            type(self.app), 'producer_pool',
+            new_callable=lambda: property(lambda self: MagicMock(
+                acquire=MagicMock(side_effect=LimitExceeded(5))
+            ))
+        ):
+            with pytest.raises(OperationalError, match="broker producer"):
+                self.app._acquire_producer(timeout=10)
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_with_eta_no_quorum_queues(self, detect_quorum_queues):
+        """When eta is set but quorum queues are not detected, skip native delayed delivery."""
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {
+            'queue': Queue('testcelery', routing_key='testcelery',
+                           exchange=Exchange('testcelery', type='topic'))
+        }
+
+        self.app.send_task('foo', (1, 2), countdown=10)
+        detect_quorum_queues.assert_called_once()
+        # Should still send, just without native delayed delivery routing
+        self.app.amqp.send_task_message.assert_called_once()
 
 
 class test_defaults:

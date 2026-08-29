@@ -4,7 +4,7 @@ import time
 from collections import defaultdict
 from datetime import datetime, timedelta
 from queue import Queue as FastQueue
-from unittest.mock import Mock, call, patch
+from unittest.mock import Mock, PropertyMock, call, patch
 
 import pytest
 from kombu import pidbox
@@ -21,6 +21,8 @@ from celery.worker.request import Request
 from celery.worker.state import REVOKE_EXPIRES, revoked, revoked_stamps
 
 hostname = socket.gethostname()
+
+IS_PYPY = hasattr(sys, 'pypy_version_info')
 
 
 class WorkController:
@@ -64,6 +66,62 @@ class test_Pidbox:
             pbox.shutdown(parent)
             eig.assert_called_with(parent, cancel)
             pbox._close_channel.assert_called_with(parent)
+
+    def test_reset_cancels_old_consumer(self):
+        parent = Mock()
+        parent.hostname = 'worker@example.com'
+        parent.controller = Mock(use_eventloop=False)
+        parent.app = Mock()
+        parent.app.control.mailbox.Node = Mock()
+        node = Mock()
+        parent.app.control.mailbox.Node.return_value = node
+        parent.connection = Mock()
+        parent.connection.channel.side_effect = [Mock(), Mock()]
+        parent.connection_errors = ()
+        parent.channel_errors = ()
+        parent.on_decode_error = Mock()
+
+        pbox = Pidbox(parent)
+        old_consumer = Mock()
+        new_consumer = Mock()
+        node.listen.side_effect = [old_consumer, new_consumer]
+
+        pbox.start(parent)
+        pbox.reset()
+
+        old_consumer.cancel.assert_called_once()
+        new_consumer.cancel.assert_not_called()
+        assert pbox.consumer is new_consumer
+
+    def test_pidbox_repeated_reset_cancels_previous_consumers(self):
+        parent = Mock()
+        parent.hostname = 'worker@example.com'
+        parent.controller = Mock(use_eventloop=False)
+        parent.app = Mock()
+        parent.app.control.mailbox.Node = Mock()
+        node = Mock()
+        node.handle_message.side_effect = RuntimeError('simulated handler error')
+        parent.app.control.mailbox.Node.return_value = node
+        parent.connection = Mock()
+        parent.connection.channel.side_effect = [
+            Mock(name=f'channel-{i}') for i in range(11)
+        ]
+        parent.connection_errors = ()
+        parent.channel_errors = ()
+        parent.on_decode_error = Mock()
+
+        consumers = [Mock(name=f'consumer-{i}') for i in range(11)]
+        node.listen.side_effect = consumers
+        pbox = Pidbox(parent)
+
+        pbox.start(parent)
+        for _ in range(10):
+            pbox.on_message({}, object())
+
+        for previous_consumer in consumers[:-1]:
+            previous_consumer.cancel.assert_called_once()
+        consumers[-1].cancel.assert_not_called()
+        assert pbox.consumer is consumers[-1]
 
 
 class test_Pidbox_green:
@@ -161,6 +219,20 @@ class test_ControlPanel:
         assert 'task' not in evd.groups
         assert 'already disabled' in panel.handle('disable_events')['ok']
 
+    def test_enable_events_no_dispatcher(self):
+        consumer = Consumer(self.app)
+        consumer.event_dispatcher = None
+        panel = self.create_panel(consumer=consumer)
+        # Should not raise AttributeError when dispatcher is None (#9489).
+        assert 'unavailable' in panel.handle('enable_events')['error']
+
+    def test_disable_events_no_dispatcher(self):
+        consumer = Consumer(self.app)
+        consumer.event_dispatcher = None
+        panel = self.create_panel(consumer=consumer)
+        # Should not raise AttributeError when dispatcher is None (#9489).
+        assert 'unavailable' in panel.handle('disable_events')['error']
+
     def test_clock(self):
         consumer = Consumer(self.app)
         panel = self.create_panel(consumer=consumer)
@@ -243,6 +315,13 @@ class test_ControlPanel:
         event_dispatcher.enabled = True
         panel.handle('heartbeat')
         assert ('worker-heartbeat',) in event_dispatcher.send.call_args
+
+    def test_heartbeat_no_dispatcher(self):
+        consumer = Consumer(self.app)
+        consumer.event_dispatcher = None
+        panel = self.create_panel(consumer=consumer)
+        # Should not raise AttributeError when dispatcher is None (#9489).
+        panel.handle('heartbeat')
 
     def test_time_limit(self):
         panel = self.create_panel(consumer=Mock())
@@ -667,8 +746,9 @@ class test_ControlPanel:
     def test_shutdown(self):
         m = {'method': 'shutdown',
              'destination': hostname}
-        with pytest.raises(SystemExit):
+        with pytest.raises(SystemExit) as excinfo:
             self.panel.handle_message(m, None)
+        assert excinfo.value.code == 0
 
     def test_panel_reply(self):
 
@@ -721,6 +801,7 @@ class test_ControlPanel:
         consumer.controller.consumer = None
         panel.handle('pool_restart', {'reloader': _reload})
 
+    @pytest.mark.skipif(IS_PYPY, reason="Patch for sys.modules doesn't work on PyPy correctly")
     @patch('celery.worker.worker.logger.debug')
     def test_pool_restart_import_modules(self, _debug):
         consumer = Consumer(self.app)
@@ -811,3 +892,56 @@ class test_ControlPanel:
             assert ret[req1.id][0] == 'reserved'
         finally:
             worker_state.reserved_requests.clear()
+
+    @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
+    def test_revoke_backend_status_update(self):
+        state = self.create_state()
+        task_ids = ['task-1', 'task-2']
+
+        control._revoke(state, task_ids)
+
+        assert self.app.backend.mark_as_revoked.call_count == 2
+        calls = self.app.backend.mark_as_revoked.call_args_list
+        assert calls[0] == (('task-1',), {'reason': 'revoked', 'store_result': True})
+        assert calls[1] == (('task-2',), {'reason': 'revoked', 'store_result': True})
+
+    @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
+    def test_revoke_backend_failure_defensive(self):
+        self.app.backend.mark_as_revoked.side_effect = Exception("Backend error")
+        state = self.create_state()
+
+        control._revoke(state, ['task-1'])
+
+        assert 'task-1' in worker_state.revoked
+
+    @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
+    def test_revoke_terminate_backend_update(self):
+        state = self.create_state()
+
+        with patch('celery.worker.control._find_requests_by_id', return_value=[]):
+            control._revoke(state, ['task-1'], terminate=True)
+
+        self.app.backend.mark_as_revoked.assert_called_once_with(
+            'task-1', reason='revoked', store_result=True
+        )
+
+    def test_revoke_by_stamped_headers_terminates_matching_request(self):
+        state = self.create_state()
+        state.consumer = Mock()
+
+        request = Mock()
+        request.id = 'task-with-stamp'
+        request.stamps = {'monitoring_id': 'test-123'}
+        request.terminate = Mock()
+
+        worker_state.active_requests.add(request)
+
+        headers = {'monitoring_id': 'test-123'}
+
+        with patch('celery.worker.control._signals.signum', return_value=15):
+            control.revoke_by_stamped_headers(state, headers, terminate=True)
+
+        request.terminate.assert_called_once()
+        assert 'test-123' in worker_state.revoked_stamps.get('monitoring_id', [])
+
+        worker_state.active_requests.clear()

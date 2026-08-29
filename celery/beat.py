@@ -1,6 +1,7 @@
 """The periodic task scheduler."""
 
 import copy
+import dbm
 import errno
 import heapq
 import os
@@ -11,6 +12,7 @@ import traceback
 from calendar import timegm
 from collections import namedtuple
 from functools import total_ordering
+from pickle import UnpicklingError
 from threading import Event, Thread
 
 from billiard import ensure_multiprocessing
@@ -345,6 +347,10 @@ class Scheduler:
 
         event = H[0]
         entry = event[2]
+        now = self._when(entry, 0)
+        if event[0] > now:
+            return min(event[0] - now, max_interval)
+
         is_due, next_time_to_run = self.is_due(entry)
         if is_due:
             verify = heappop(H)
@@ -357,9 +363,20 @@ class Scheduler:
             else:
                 heappush(H, verify)
                 return min(verify[0], max_interval)
-        adjusted_next_time_to_run = adjust(next_time_to_run)
-        return min(adjusted_next_time_to_run if is_numeric_value(adjusted_next_time_to_run) else max_interval,
-                   max_interval)
+
+        # Heap says this entry should be ready by now, but the entry requests
+        # to retry later.  Reheap it at that retry time, otherwise it just
+        # sits on top and the entries behind it never get their turn.
+        # https://github.com/celery/celery/issues/7649
+        reschedule_delay = next_time_to_run if is_numeric_value(next_time_to_run) else max_interval
+        verify = heappop(H)
+        if verify is event:
+            heappush(H, event_t(self._when(entry, reschedule_delay), event[1], entry))
+            # If another entry is now at the top, run it immediately.
+            return 0 if H and H[0][2] is not entry else min(adjust(reschedule_delay), max_interval)
+        else:
+            heappush(H, verify)
+            return min(verify[0], max_interval)
 
     def schedules_equal(self, old_schedules, new_schedules):
         if old_schedules is new_schedules is None:
@@ -398,14 +415,19 @@ class Scheduler:
         try:
             entry_args = _evaluate_entry_args(entry.args)
             entry_kwargs = _evaluate_entry_kwargs(entry.kwargs)
+
+            # Add custom header to identify tasks from Celery Beat
+            options = entry.options.copy()
+            options.setdefault('headers', {})['celery_beat_task'] = True
+
             if task:
                 return task.apply_async(entry_args, entry_kwargs,
                                         producer=producer,
-                                        **entry.options)
+                                        **options)
             else:
                 return self.send_task(entry.task, entry_args, entry_kwargs,
                                       producer=producer,
-                                      **entry.options)
+                                      **options)
         except Exception as exc:  # pylint: disable=broad-except
             reraise(SchedulingError, SchedulingError(
                 "Couldn't apply scheduled task {0.name}: {exc}".format(
@@ -568,11 +590,11 @@ class PersistentScheduler(Scheduler):
         for _ in (1, 2):
             try:
                 self._store['entries']
-            except KeyError:
+            except (KeyError, UnicodeDecodeError, TypeError, UnpicklingError):
                 # new schedule db
                 try:
                     self._store['entries'] = {}
-                except KeyError as exc:
+                except (KeyError, UnicodeDecodeError, TypeError, UnpicklingError) + dbm.error as exc:
                     self._store = self._destroy_open_corrupted_schedule(exc)
                     continue
             else:
@@ -625,8 +647,8 @@ class Service:
         self._is_stopped = Event()
 
     def __reduce__(self):
-        return self.__class__, (self.max_interval, self.schedule_filename,
-                                self.scheduler_cls, self.app)
+        return self.__class__, (self.app, self.max_interval,
+                                self.schedule_filename, self.scheduler_cls)
 
     def start(self, embedded_process=False):
         info('beat: Starting...')

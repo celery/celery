@@ -38,6 +38,13 @@ Where the URL is in the format of:
 all fields after the scheme are optional, and will default to ``localhost``
 on port 6379, using database 0.
 
+If redis credential provider should be used, the URL needs to be in the following format:
+
+.. code-block:: text
+
+    redis://@hostname:port/db_number?credential_provider=mymodule.myfile.myclass
+
+
 If a Unix socket connection should be used, the URL needs to be in the format:
 
 .. code-block:: text
@@ -136,6 +143,29 @@ To configure the connection timeouts for the Redis result backend, use the ``ret
 
 See :func:`~kombu.utils.functional.retry_over_time` for the possible retry policy options.
 
+.. _redis-result-backend-additional-connection-errors:
+
+Additional connection errors
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 5.7
+
+Some Redis proxies or cloud providers may raise custom exceptions that Celery
+does not recognize as connection errors. To have these retried automatically,
+use the ``additional_connection_errors`` key under
+:setting:`result_backend_transport_options`:
+
+
+.. code-block:: python
+
+    app.conf.result_backend_transport_options = {
+        'additional_connection_errors': (
+            'my_redis_proxy.CustomConnectionError',
+        ),
+    }
+
+Both dotted import strings and exception classes are supported.
+
 .. _redis-serverless:
 
 Serverless
@@ -159,6 +189,12 @@ through a multi-tier storage architecture.
 
 Integration with Celery is straightforward as demonstrated
 in an `example provided by Upstash <https://github.com/upstash/examples/tree/main/examples/using-celery>`_.
+
+Dragonfly
+---------
+`Dragonfly <https://www.dragonflydb.io/>`_ is a drop-in Redis replacement that cuts costs and boosts performance.
+Designed to fully utilize the power of modern cloud hardware and deliver on the data demands of modern applications,
+Dragonfly frees developers from the limits of traditional in-memory data stores.
 
 .. _redis-caveats:
 
@@ -188,8 +224,8 @@ a more distant future, database-backed periodic task might be a better choice.
 Periodic tasks won't be affected by the visibility timeout,
 as this is a concept separate from ETA/countdown.
 
-You can increase this timeout by configuring several options
-with the same name:
+You can increase this timeout by configuring all of the following options
+with the same name (required to set all of them):
 
 .. code-block:: python
 
@@ -198,6 +234,33 @@ with the same name:
     app.conf.visibility_timeout = 43200
 
 The value must be an int describing the number of seconds.
+
+Note: If multiple applications are sharing the same Broker, with different settings, the _shortest_ value will be used.
+This include if the value is not set, and the default is sent
+
+Soft Shutdown
+-------------
+
+During :ref:`shutdown <worker-stopping>`, the worker will attempt to re-queue any unacknowledged messages
+with :setting:`task_acks_late` enabled. However, if the worker is terminated forcefully
+(:ref:`cold shutdown <worker-cold-shutdown>`), the worker might not be able to re-queue the tasks on time,
+and they will not be consumed again until the :ref:`redis-visibility_timeout` has passed. This creates a
+problem when the :ref:`redis-visibility_timeout` is very high and a worker needs to shut down just after it has
+received a task. If the task is not re-queued in such case, it will need to wait for the long visibility timeout
+to pass before it can be consumed again, leading to potentially very long delays in tasks execution.
+
+The :ref:`soft shutdown <worker-soft-shutdown>` introduces a time-limited warm shutdown phase just before
+the :ref:`cold shutdown <worker-cold-shutdown>`. This time window significantly increases the chances of
+re-queuing the tasks during shutdown which mitigates the problem of long visibility timeouts.
+
+To enable the :ref:`soft shutdown <worker-soft-shutdown>`, set the :setting:`worker_soft_shutdown_timeout` to a value
+greater than 0. The value must be an float describing the number of seconds. During this time, the worker will
+continue to process the running tasks until the timeout expires, after which the :ref:`cold shutdown <worker-cold-shutdown>`
+will be initiated automatically to terminate the worker gracefully.
+
+If the :ref:`REMAP_SIGTERM <worker-REMAP_SIGTERM>` is configured to SIGQUIT in the environment variables, and
+the :setting:`worker_soft_shutdown_timeout` is set, the worker will initiate the :ref:`soft shutdown <worker-soft-shutdown>`
+when it receives the :sig:`TERM` signal (*and* the :sig:`QUIT` signal).
 
 Key eviction
 ------------
@@ -228,7 +291,7 @@ Group result ordering
 
 Versions of Celery up to and including 4.4.6 used an unsorted list to store
 result objects for groups in the Redis backend. This can cause those results to
-be be returned in a different order to their associated tasks in the original
+be returned in a different order to their associated tasks in the original
 group instantiation. Celery 4.4.7 introduced an opt-in behaviour which fixes
 this issue and ensures that group results are returned in the same order the
 tasks were defined, matching the behaviour of other backends. In Celery 5.0

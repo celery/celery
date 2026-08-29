@@ -55,6 +55,12 @@ Running a task
 
     $ python ./manage.py shell
     >>> from demoapp.tasks import add, mul, xsum
-    >>> res = add.delay(2,3)
+    >>> res = add.delay_on_commit(2, 3)
     >>> res.get()
     5
+
+.. note::
+
+    The ``delay_on_commit`` method is only available when using Django,
+    and was added in Celery 5.4. If you are using an older version of Celery,
+    you can use ``delay`` instead.

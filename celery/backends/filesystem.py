@@ -33,6 +33,9 @@ class FilesystemBackend(KeyValueStoreBackend):
         encoding (str): encoding used on the file-system
     """
 
+    # Result files are opened in binary mode in both directions.
+    supports_result_compression = True
+
     def __init__(self, url=None, open=open, unlink=os.unlink, sep=os.sep,
                  encoding=default_encoding, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -50,7 +53,7 @@ class FilesystemBackend(KeyValueStoreBackend):
         self.open = open
         self.unlink = unlink
 
-        # Lets verify that we've everything setup right
+        # Let's verify that we've everything setup right
         self._do_directory_test(b'.fs-backend-' + uuid().encode(encoding))
 
     def __reduce__(self, args=(), kwargs=None):

@@ -37,7 +37,7 @@ base_logger = logger = _get_logger('celery')
 
 
 def set_in_sighandler(value):
-    """Set flag signifiying that we're inside a signal handler."""
+    """Set flag signifying that we're inside a signal handler."""
     global _in_sighandler
     _in_sighandler = value
 
@@ -132,8 +132,8 @@ class ColorFormatter(logging.Formatter):
         'CRITICAL': COLORS['magenta'],
     }
 
-    def __init__(self, fmt=None, use_color=True):
-        super().__init__(fmt)
+    def __init__(self, fmt=None, use_color=True, datefmt=None):
+        super().__init__(fmt, datefmt)
         self.use_color = use_color
 
     def formatException(self, ei):

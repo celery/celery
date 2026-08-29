@@ -19,6 +19,7 @@ from kombu.transport.memory import Transport
 from kombu.utils.uuid import uuid
 
 import t.skip
+from celery.apps.worker import safe_say
 from celery.bootsteps import CLOSE, RUN, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
 from celery.exceptions import (ImproperlyConfigured, InvalidTaskError, TaskRevokedError, WorkerShutdown,
@@ -48,6 +49,7 @@ def mock_event_dispatcher():
     evd = Mock(name='event_dispatcher')
     evd.groups = ['worker']
     evd._outbound_buffer = deque()
+    evd.connection.get_heartbeat_interval.return_value = 0
     return evd
 
 
@@ -110,6 +112,8 @@ class test_Consumer(ConsumerCase):
         c.task_consumer = Mock(name='.task_consumer')
         c.qos = QoS(c.task_consumer.qos, 10)
         c.connection = Mock(name='.connection')
+        c.connection.connection_errors = ()
+        c.connection.channel_errors = ()
         c.controller = c.app.WorkController()
         c.heart = Mock(name='.heart')
         c.controller.consumer = c
@@ -180,8 +184,19 @@ class test_Consumer(ConsumerCase):
         Events.shutdown(c)
         Heart = find_step(c, consumer.Heart)
         Heart.shutdown(c)
-        event_dispatcher.close.assert_called()
+        event_dispatcher.disable.assert_called()
         heart.stop.assert_called_with()
+
+    def test_events_start_updates_request_eventers_on_reconnect(self):
+        c = self.NoopConsumer()
+        events = find_step(c, consumer.Events)
+        prev = c.event_dispatcher
+        req = Mock(name='request')
+        req.eventer = prev
+        with patch('celery.worker.consumer.events.reserved_requests', {req}):
+            events.start(c)
+        assert c.event_dispatcher is not prev
+        assert req.eventer is c.event_dispatcher
 
     @patch('celery.worker.consumer.consumer.warn')
     def test_receive_message_unknown(self, warn):
@@ -248,6 +263,8 @@ class test_Consumer(ConsumerCase):
         c.task_consumer = Mock()
         c.event_dispatcher = mock_event_dispatcher()
         c.connection = Mock(name='.connection')
+        c.connection.connection_errors = ()
+        c.connection.channel_errors = ()
         c.connection.get_heartbeat_interval.return_value = 0
         c.connection.drain_events.side_effect = WorkerShutdown()
 
@@ -1193,3 +1210,74 @@ class test_WorkController(ConsumerCase):
             assert isinstance(w.semaphore, LaxBoundedSemaphore)
             P = w.pool
             P.start()
+
+    def test_wait_for_soft_shutdown(self):
+        worker = self.worker
+        worker.app.conf.worker_soft_shutdown_timeout = 10
+        request = Mock(name='task', id='1234213')
+        state.task_accepted(request)
+        with patch("celery.worker.worker.sleep") as sleep:
+            worker.wait_for_soft_shutdown()
+            sleep.assert_called_with(worker.app.conf.worker_soft_shutdown_timeout)
+
+    def test_wait_for_soft_shutdown_no_tasks(self):
+        worker = self.worker
+        worker.app.conf.worker_soft_shutdown_timeout = 10
+        worker.app.conf.worker_enable_soft_shutdown_on_idle = True
+        state.active_requests.clear()
+        with patch("celery.worker.worker.sleep") as sleep:
+            worker.wait_for_soft_shutdown()
+            sleep.assert_called_with(worker.app.conf.worker_soft_shutdown_timeout)
+
+    def test_wait_for_soft_shutdown_no_wait(self):
+        worker = self.worker
+        request = Mock(name='task', id='1234213')
+        state.task_accepted(request)
+        with patch("celery.worker.worker.sleep") as sleep:
+            worker.wait_for_soft_shutdown()
+            sleep.assert_not_called()
+
+    def test_wait_for_soft_shutdown_no_wait_no_tasks(self):
+        worker = self.worker
+        worker.app.conf.worker_enable_soft_shutdown_on_idle = True
+        with patch("celery.worker.worker.sleep") as sleep:
+            worker.wait_for_soft_shutdown()
+            sleep.assert_not_called()
+
+
+class test_WorkerApp:
+
+    def test_safe_say_defaults_to_stderr(self, capfd):
+        safe_say("hello")
+        captured = capfd.readouterr()
+        assert "\nhello\n" == captured.err
+        assert "" == captured.out
+
+    def test_safe_say_writes_to_std_out(self, capfd):
+        safe_say("out", sys.stdout)
+        captured = capfd.readouterr()
+        assert "\nout\n" == captured.out
+        assert "" == captured.err
+
+    def test_safe_say_uses_original_os_write(self):
+        from celery import _original_os_write
+        from celery.apps.worker import _original_os_write as worker_os_write
+
+        assert _original_os_write is not None
+        assert callable(_original_os_write)
+        assert worker_os_write is _original_os_write
+        assert _original_os_write.__name__ == 'write'
+
+    def test_safe_say_works_with_patched_os_write(self, capfd):
+        original_write = os.write
+
+        def patched_write(fd, data):
+            raise RuntimeError("do not call blocking functions from the mainloop")
+
+        try:
+            os.write = patched_write
+            safe_say("test message")
+            captured = capfd.readouterr()
+            assert "\ntest message\n" == captured.err
+        finally:
+            os.write = original_write

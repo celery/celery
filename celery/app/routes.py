@@ -20,7 +20,7 @@ except AttributeError:  # pragma: no cover
     # for support Python 3.7
     Pattern = re.Pattern
 
-__all__ = ('MapRoute', 'Router', 'prepare')
+__all__ = ('MapRoute', 'Router', 'expand_router_string', 'prepare')
 
 
 class MapRoute:

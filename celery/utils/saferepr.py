@@ -41,7 +41,7 @@ _quoted = namedtuple('_quoted', ('value',))
 #: Recursion protection.
 _dirty = namedtuple('_dirty', ('objid',))
 
-#: Types that are repsented as chars.
+#: Types that are represented as chars.
 chars_t = (bytes, str)
 
 #: Types that are regarded as safe to call repr on.

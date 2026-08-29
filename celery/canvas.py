@@ -7,6 +7,7 @@
 
 import itertools
 import operator
+import types
 import warnings
 from abc import ABCMeta, abstractmethod
 from collections import deque
@@ -24,7 +25,8 @@ from vine import barrier
 
 from celery._state import current_app
 from celery.exceptions import CPendingDeprecationWarning
-from celery.result import GroupResult, allow_join_result
+from celery.result import EagerResult, GroupResult, allow_join_result
+from celery.states import IGNORED, REJECTED
 from celery.utils import abstract
 from celery.utils.collections import ChainMap
 from celery.utils.functional import _regen
@@ -396,7 +398,7 @@ class Signature(dict):
         else:
             args, kwargs, options = self.args, self.kwargs, self.options
         # pylint: disable=too-many-function-args
-        #   Borks on this, as it's a property
+        #   Works on this, as it's a property
         return _apply(args, kwargs, **options)
 
     def _merge(self, args=None, kwargs=None, options=None, force=False):
@@ -515,7 +517,7 @@ class Signature(dict):
         if group_index is not None:
             opts['group_index'] = group_index
         # pylint: disable=too-many-function-args
-        #   Borks on this, as it's a property.
+        #   Works on this, as it's a property.
         return self.AsyncResult(tid)
 
     _freeze = freeze
@@ -810,6 +812,8 @@ class Signature(dict):
         args, kwargs, _ = self._merge(args, kwargs, {}, force=True)
         return reprcall(self['task'], args, kwargs)
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
     def __deepcopy__(self, memo):
         memo[id(self)] = self
         return dict(self)  # TODO: Potential bug of being a shallow copy
@@ -958,6 +962,8 @@ class _chain(Signature):
         if isinstance(other, group):
             # unroll group with one member
             other = maybe_unroll_group(other)
+            if not isinstance(other, group):
+                return self.__or__(other)
             # chain | group() -> chain
             tasks = self.unchain_tasks()
             if not tasks:
@@ -972,23 +978,28 @@ class _chain(Signature):
                 tasks, other), app=self._app)
         elif isinstance(other, _chain):
             # chain | chain -> chain
-            # use type(self) for _chain subclasses
-            return type(self)(seq_concat_seq(
-                self.unchain_tasks(), other.unchain_tasks()), app=self._app)
+            return reduce(operator.or_, other.unchain_tasks(), self)
         elif isinstance(other, Signature):
             if self.tasks and isinstance(self.tasks[-1], group):
                 # CHAIN [last item is group] | TASK -> chord
                 sig = self.clone()
                 sig.tasks[-1] = chord(
                     sig.tasks[-1], other, app=self._app)
+                # In the scenario where the second-to-last item in a chain is a chord,
+                # it leads to a situation where two consecutive chords are formed.
+                # In such cases, a further upgrade can be considered.
+                # This would involve chaining the body of the second-to-last chord with the last chord."
+                if len(sig.tasks) > 1 and isinstance(sig.tasks[-2], chord):
+                    sig.tasks[-2].body = sig.tasks[-2].body | sig.tasks[-1]
+                    sig.tasks = sig.tasks[:-1]
                 return sig
-            elif self.tasks and isinstance(self.tasks[-1], chord):
-                # CHAIN [last item is chord] -> chain with chord body.
+            elif self.tasks and isinstance(self.tasks[-1], chord) and not isinstance(other, chord):
+                # CHAIN [last item is chord] | TASK -> chain with chord body.
                 sig = self.clone()
                 sig.tasks[-1].body = sig.tasks[-1].body | other
                 return sig
             else:
-                # chain | task -> chain
+                # chain | task/chord -> chain
                 # use type(self) for _chain subclasses
                 return type(self)(seq_concat_item(
                     self.unchain_tasks(), other), app=self._app)
@@ -1180,6 +1191,13 @@ class _chain(Signature):
                 # when groups are nested, they are unrolled - all tasks within
                 # groups should be called in parallel
                 task = maybe_unroll_group(task)
+                if (
+                    isinstance(task, group) and
+                    isinstance(task.tasks, (list, tuple)) and
+                    not task.tasks and
+                    (steps or prev_task)
+                ):
+                    continue
 
             # first task gets partial args from chain
             if clone:
@@ -1216,6 +1234,10 @@ class _chain(Signature):
                         task, body=prev_task,
                         root_id=root_id, app=app,
                     )
+                # Do not overwrite prev_res here; it may intentionally be a GroupResult (see #8903).
+                # But we must reset prev_task after the pop so we don't link a chord to its own body
+                # when use_link/task_protocol==1.
+                prev_task = tasks[-1] if tasks else None
 
             if is_last_task:
                 # chain(task_id=id) means task id is set for the last task
@@ -1244,6 +1266,9 @@ class _chain(Signature):
             if link_error:
                 for errback in maybe_list(link_error):
                     task.link_error(errback)
+                    # Propagate to chord body for chord_error_from_stack.
+                    if isinstance(task, chord) and task.body:
+                        task.body.link_error(errback)
 
             tasks.append(task)
             results.append(res)
@@ -1261,6 +1286,8 @@ class _chain(Signature):
                 while node.parent:
                     node = node.parent
                 prev_res = node
+        # Use the last task's actual ID, not the input parameter.
+        self.id = results[0].id if results else last_task_id
         return tasks, results
 
     def apply(self, args=None, kwargs=None, **options):
@@ -1271,6 +1298,8 @@ class _chain(Signature):
             res = task.clone(fargs, fkwargs).apply(
                 last and (last.get(),), **dict(self.options, **options))
             res.parent, last, (fargs, fkwargs) = last, res, (None, None)
+            if isinstance(res, EagerResult) and res.state in (IGNORED, REJECTED):
+                break
         return last
 
     @property
@@ -1568,6 +1597,13 @@ class group(Signature):
         return self.apply_async(partial_args, **options)
 
     def __or__(self, other):
+        if (
+            isinstance(other, group) and
+            not isinstance(other.tasks, _regen) and
+            isinstance(other.tasks, (list, tuple)) and
+            not other.tasks
+        ):
+            return self
         # group() | task -> chord
         return chord(self, body=other, app=self._app)
 
@@ -1672,7 +1708,9 @@ class group(Signature):
         #
         # We return a concretised tuple of the signatures actually applied to
         # each child task signature, of which there might be none!
-        return tuple(child_task.link_error(sig.clone(immutable=True)) for child_task in self.tasks)
+        sig = maybe_signature(sig)
+
+        return tuple(child_task.link_error(sig.clone()) for child_task in self.tasks)
 
     def _prepared(self, tasks, partial_args, group_id, root_id, app,
                   CallableSignature=abstract.CallableSignature,
@@ -1725,7 +1763,7 @@ class group(Signature):
 
     def _apply_tasks(self, tasks, producer=None, app=None, p=None,
                      add_to_parent=None, chord=None,
-                     args=None, kwargs=None, **options):
+                     args=None, kwargs=None, group_index=None, **options):
         """Run all the tasks in the group.
 
         This is used by :meth:`apply_async` to run all the tasks in the group
@@ -2067,7 +2105,7 @@ class _chord(Signature):
         # secondly freeze all tasks in the body: those that should be called after the header
 
         body_result = None
-        if self.body:
+        if self.body is not None:
             body_result = self.body.freeze(
                 _id, root_id=root_id, chord=chord, group_id=group_id,
                 group_index=group_index)
@@ -2218,7 +2256,8 @@ class _chord(Signature):
             options.pop('task_id', None)
             body.options.update(options)
 
-        bodyres = body.freeze(task_id, root_id=root_id)
+        body_task_id = task_id or uuid()
+        bodyres = body.freeze(body_task_id, group_id=group_id, root_id=root_id)
 
         # Chains should not be passed to the header tasks. See #3771
         options.pop('chain', None)
@@ -2288,8 +2327,16 @@ class _chord(Signature):
                 "Please test the new behavior by setting task_allow_error_cb_on_chord_header to True "
                 "and report any concerns you might have in our issue tracker before we make a final decision "
                 "regarding how errbacks should behave when used with chords.",
-                CPendingDeprecationWarning
+                CPendingDeprecationWarning,
+                stacklevel=2,
             )
+
+        # Edge case for nested chords in the header
+        for task in maybe_list(self.tasks) or []:
+            if isinstance(task, chord):
+                # Let the nested chord do the error linking itself on its
+                # header and body where needed, based on the current configuration
+                task.link_error(errback)
 
         self.body.link_error(errback)
         return errback

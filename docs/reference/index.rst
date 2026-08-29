@@ -37,6 +37,7 @@
     celery.loaders.base
     celery.states
     celery.contrib.abortable
+    celery.contrib.django.task
     celery.contrib.migrate
     celery.contrib.pytest
     celery.contrib.sphinx

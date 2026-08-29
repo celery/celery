@@ -1,14 +1,39 @@
+import os
 from collections.abc import Iterable
 from time import sleep
 
-from celery import Signature, Task, chain, chord, group, shared_task
-from celery.canvas import StampingVisitor, signature
-from celery.exceptions import SoftTimeLimitExceeded
-from celery.utils.log import get_task_logger
+from pydantic import BaseModel
 
-from .conftest import get_redis_connection
+from celery import Signature, Task, chain, chord, group, shared_task
+from celery.canvas import signature
+from celery.exceptions import Reject, SoftTimeLimitExceeded
+from celery.utils.log import get_task_logger
+from celery.worker.control import control_command
+
+LEGACY_TASKS_DISABLED = True
+try:
+    # Imports that are not available in Celery 4
+    from celery.canvas import StampingVisitor
+except ImportError:
+    LEGACY_TASKS_DISABLED = False
+
+
+def get_redis_connection():
+    from redis import StrictRedis
+
+    host = os.environ.get("REDIS_HOST", "localhost")
+    port = os.environ.get("REDIS_PORT", 6379)
+    # Callers issue blocking reads that wait far longer than redis-py's
+    # default socket timeout, which would otherwise abort them early.
+    return StrictRedis(host=host, port=port, socket_timeout=None)
+
 
 logger = get_task_logger(__name__)
+
+
+@control_command(visible=False)
+def pidbox_reset_error(state, **kwargs):
+    raise RuntimeError('pidbox reset integration test')
 
 
 @shared_task
@@ -327,6 +352,7 @@ class ExpectedException(Exception):
 
 class UnpickleableException(Exception):
     """Exception that doesn't survive a pickling roundtrip (dump + load)."""
+
     def __init__(self, foo, bar=None):
         if bar is None:
             # We define bar with a default value in the signature so that
@@ -455,28 +481,100 @@ def errback_new_style(request, exc, tb):
     return request.id
 
 
-class StampOnReplace(StampingVisitor):
-    stamp = {'StampOnReplace': 'This is the replaced task'}
-
-    def on_signature(self, sig, **headers) -> dict:
-        return self.stamp
-
-
-class StampedTaskOnReplace(Task):
-    """Custom task for stamping on replace"""
-
-    def on_replace(self, sig):
-        sig.stamp(StampOnReplace())
-        return super().on_replace(sig)
-
-
 @shared_task
 def replaced_with_me():
     return True
 
 
-@shared_task(bind=True, base=StampedTaskOnReplace)
-def replace_with_stamped_task(self: StampedTaskOnReplace, replace_with=None):
-    if replace_with is None:
-        replace_with = replaced_with_me.s()
-    self.replace(signature(replace_with))
+class AddParameterModel(BaseModel):
+    x: int
+    y: int
+
+
+class AddResultModel(BaseModel):
+    result: int
+
+
+@shared_task(pydantic=True)
+def add_pydantic(data: AddParameterModel) -> AddResultModel:
+    """Add two numbers, but with parameters and results using Pydantic model serialization."""
+    value = data.x + data.y
+    return AddResultModel(result=value)
+
+
+@shared_task(pydantic=True)
+def add_pydantic_string_annotations(data: "AddParameterModel") -> "AddResultModel":
+    """Add two numbers, but with string-annotated Pydantic models (__future__.annotations bug)."""
+    value = data.x + data.y
+    return AddResultModel(result=value)
+
+
+if LEGACY_TASKS_DISABLED:
+    class StampOnReplace(StampingVisitor):
+        stamp = {"StampOnReplace": "This is the replaced task"}
+
+        def on_signature(self, sig, **headers) -> dict:
+            return self.stamp
+
+    class StampedTaskOnReplace(Task):
+        """Custom task for stamping on replace"""
+
+        def on_replace(self, sig):
+            sig.stamp(StampOnReplace())
+            return super().on_replace(sig)
+
+    @shared_task(bind=True, base=StampedTaskOnReplace)
+    def replace_with_stamped_task(self: StampedTaskOnReplace, replace_with=None):
+        if replace_with is None:
+            replace_with = replaced_with_me.s()
+        self.replace(signature(replace_with))
+
+
+@shared_task(bind=True, acks_late=True)
+def store_success_then_reject(self):
+    """First delivery: store SUCCESS manually, then Reject to trigger redelivery.
+    Second delivery: dedup finds SUCCESS, dispatches chain."""
+    from celery.backends.base import states
+    if not self.request.delivery_info.get('redelivered'):
+        self.backend.store_result(self.request.id, 'first-pass', states.SUCCESS)
+        raise Reject(requeue=True)
+    # When dedup is enabled the fast-path intercepts before reaching here,
+    # so 'dedup-pass' is only returned when dedup is disabled.
+    return 'dedup-pass'
+
+
+@shared_task(bind=True, acks_late=True)
+def reject_then_succeed(self):
+    """First delivery: Reject(requeue=True). Second delivery: succeed normally."""
+    if not self.request.delivery_info.get('redelivered'):
+        raise Reject(requeue=True)
+    return 'second-pass'
+
+
+@shared_task
+def reject_without_requeue():
+    """Reject permanently so the worker records a terminal FAILURE."""
+    raise Reject('rejected', requeue=False)
+
+
+@shared_task(soft_time_limit=2, time_limit=1)
+def soft_time_limit_must_exceed_time_limit():
+    pass
+
+
+@shared_task(bind=True)
+def return_request_time_limits(self):
+    """Return time_limit and soft_time_limit from the task request context."""
+    return {
+        'time_limit': self.request.time_limit,
+        'soft_time_limit': self.request.soft_time_limit,
+    }
+
+
+@shared_task(bind=True, time_limit=60, soft_time_limit=45)
+def task_with_declared_time_limits(self):
+    """Task with explicitly declared time limits — verifies request fields are set."""
+    return {
+        'time_limit': self.request.time_limit,
+        'soft_time_limit': self.request.soft_time_limit,
+    }

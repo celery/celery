@@ -1,6 +1,8 @@
 """Apache Cassandra result store backend using the DataStax driver."""
 import threading
 
+from kombu.utils.encoding import ensure_bytes
+
 from celery import states
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.log import get_logger
@@ -65,7 +67,10 @@ Q_EXPIRES = """
 
 
 def buf_t(x):
-    return bytes(x, 'utf8')
+    # The payload is str for serializers that produce text and bytes for the
+    # binary ones, and always bytes once result_compression is set, so pass
+    # bytes through rather than assuming str.
+    return ensure_bytes(x)
 
 
 class CassandraBackend(BaseBackend):
@@ -85,8 +90,11 @@ class CassandraBackend(BaseBackend):
 
     supports_autoexpire = True      # autoexpire supported via entry_ttl
 
+    # The result, traceback and children columns are all blobs.
+    supports_result_compression = True
+
     def __init__(self, servers=None, keyspace=None, table=None, entry_ttl=None,
-                 port=9042, bundle_path=None, **kwargs):
+                 port=None, bundle_path=None, **kwargs):
         super().__init__(**kwargs)
 
         if not cassandra:
@@ -96,7 +104,7 @@ class CassandraBackend(BaseBackend):
         self.servers = servers or conf.get('cassandra_servers', None)
         self.bundle_path = bundle_path or conf.get(
             'cassandra_secure_bundle_path', None)
-        self.port = port or conf.get('cassandra_port', None)
+        self.port = port or conf.get('cassandra_port', None) or 9042
         self.keyspace = keyspace or conf.get('cassandra_keyspace', None)
         self.table = table or conf.get('cassandra_table', None)
         self.cassandra_options = conf.get('cassandra_options', {})

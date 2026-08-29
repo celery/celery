@@ -249,9 +249,9 @@ A switch have been made to zoneinfo for handling timezone data instead of pytz.
 Support for out-of-tree worker pool implementations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Prior to version 5.3, Celery had a fixed notion of the worker pool types it supports.
-Celery v5.3.0 introduces the the possibility of an out-of-tree worker pool implementation.
-This feature ensure that the current worker pool implementations consistently call into
-BasePool._get_info(), and enhance it to report the work pool class in use via the 
+Celery v5.3.0 introduces the possibility of an out-of-tree worker pool implementation.
+This feature ensures that the current worker pool implementations consistently call into
+BasePool._get_info(), and enhances it to report the worker pool class in use via the
 "celery inspect stats" command. For example:
 
 $ celery -A ... inspect stats
@@ -278,6 +278,7 @@ Dispatched in the parent process, just before new child process is created in th
 It can be used to clean up instances that don't behave well when forking.
 
 .. code-block:: python
+
     @signals.worker_before_create_process.connect
     def clean_channels(**kwargs):
         grpc_singleton.clean_channel()
@@ -303,6 +304,7 @@ To configure the global keyprefix for the Redis result backend, use the
 
 
 .. code-block:: python
+
     app.conf.result_backend_transport_options = {
         'global_keyprefix': 'my_prefix_'
     }
@@ -343,7 +345,6 @@ Known Issues
 ------------
 Canvas header stamping has issues in a hybrid Celery 4.x. & Celery 5.3.x 
 environment and is not safe for production use at the moment.
-
 
 
 
