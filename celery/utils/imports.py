@@ -144,12 +144,14 @@ def gen_task_name(app, name, module_name):
 
 @lru_cache(maxsize=None)
 def load_extension_class_names(namespace):
-    """Return a dict of extension names to class names for the namespace.
+    """Return the ``(name, class_name)`` pairs registered for the namespace.
 
     Scanning installed package metadata for entry points is expensive, and
     the result cannot change for the lifetime of the process, so it's
     cached rather than being recomputed on every call (e.g. on every
-    ``apply_async``).
+    ``apply_async``).  An immutable tuple of pairs is returned so callers
+    can't mutate the cached value, and so the return type stays compatible
+    with the generator this used to be.
     """
     if sys.version_info >= (3, 10):
         _entry_points = entry_points(group=namespace)
@@ -158,11 +160,11 @@ def load_extension_class_names(namespace):
             _entry_points = entry_points().get(namespace, [])
         except AttributeError:
             _entry_points = entry_points().select(group=namespace)
-    return {ep.name: ep.value for ep in _entry_points}
+    return tuple((ep.name, ep.value) for ep in _entry_points)
 
 
 def load_extension_classes(namespace):
-    for name, class_name in load_extension_class_names(namespace).items():
+    for name, class_name in load_extension_class_names(namespace):
         try:
             cls = symbol_by_name(class_name)
         except (ImportError, SyntaxError) as exc:

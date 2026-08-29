@@ -131,9 +131,12 @@ class test_load_extension_class_names:
     def teardown_method(self):
         load_extension_class_names.cache_clear()
 
-    def test_result_is_a_dict(self):
-        result = load_extension_class_names('celery.fake_namespace')
-        assert isinstance(result, dict)
+    def test_result_is_a_tuple_of_pairs(self):
+        with patch('celery.utils.imports.sys.version_info', (3, 10)):
+            with patch('celery.utils.imports.entry_points') as ep:
+                ep.return_value = []
+                result = load_extension_class_names('celery.fake_namespace')
+        assert result == ()
 
     def test_entry_points_scanned_only_once_per_namespace(self):
         with patch('celery.utils.imports.sys.version_info', (3, 10)):
@@ -155,7 +158,8 @@ class test_load_extension_class_names:
     def test_load_extension_classes_uses_cached_names(self):
         ep = Mock(name='foo', value='celery.utils.imports:qualname')
         ep.name = 'foo'
-        with patch('celery.utils.imports.entry_points') as entry_points:
-            entry_points.return_value = [ep]
-            result = dict(load_extension_classes('celery.fake_namespace'))
+        with patch('celery.utils.imports.sys.version_info', (3, 10)):
+            with patch('celery.utils.imports.entry_points') as entry_points:
+                entry_points.return_value = [ep]
+                result = dict(load_extension_classes('celery.fake_namespace'))
         assert result == {'foo': qualname}
