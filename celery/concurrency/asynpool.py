@@ -1024,13 +1024,11 @@ class AsynPool(_pool.Pool):
                 # flush outgoing buffers
                 intervals = fxrange(0.01, 0.1, 0.01, repeatlast=True)
 
-                # TODO: Rewrite this as a dictionary comprehension once we drop support for Python 3.7
-                #       This dict comprehension requires the walrus operator which is only available in 3.8.
-                owned_by = {}
-                for job in self._cache.values():
-                    writer = _get_job_writer(job)
-                    if writer is not None:
-                        owned_by[writer] = job
+                owned_by = {
+                    writer: job
+                    for job in self._cache.values()
+                    if (writer := _get_job_writer(job)) is not None
+                }
 
                 while self._active_writers:
                     writers = list(self._active_writers)
