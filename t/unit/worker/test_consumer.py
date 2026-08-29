@@ -10,12 +10,15 @@ from billiard.exceptions import RestartFreqExceeded
 
 from celery import bootsteps
 from celery.contrib.testing.mocks import ContextMock
+from celery.events.state import HEARTBEAT_DRIFT_MAX
 from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.utils.collections import LimitedSet
 from celery.utils.quorum_queues import detect_quorum_queues
+from celery.utils.time import utcoffset
 from celery.worker.consumer.agent import Agent
 from celery.worker.consumer.consumer import (CANCEL_TASKS_BY_DEFAULT, CLOSE, COLLECT_SOCKET_TIMEOUT, TERMINATE,
                                              Consumer)
+from celery.worker.consumer.events import Events
 from celery.worker.consumer.gossip import Gossip
 from celery.worker.consumer.heart import Heart
 from celery.worker.consumer.mingle import Mingle
@@ -509,6 +512,49 @@ class test_Consumer(ConsumerTestCase):
             c.pool = None
             c.on_close()
 
+    def test_on_close_purges_orphan_reservations_from_requests_dict(self):
+        """Regression: ``on_close()`` must remove ``state.requests[id]``
+        entries for Requests that were reserved but never accepted (e.g.
+        ETA tasks queued in ``reserved_requests`` at the moment of a
+        connection loss). PR #7771 attempted this but iterated
+        ``reserved_requests`` (Request objects) and tested membership in
+        ``requests`` (a ``dict[str, Request]``), so ``Request in requests``
+        was always False and nothing was ever deleted.
+        """
+        from celery.worker import state
+        from celery.worker.consumer.consumer import Consumer
+
+        class FakeRequest:
+            def __init__(self, id):
+                self.id = id
+
+        consumer = Mock()
+        consumer.controller = Mock()
+        consumer.controller.semaphore = Mock()
+        consumer.task_buckets = {}
+        consumer.pool = Mock()
+        consumer.pool.flush = Mock()
+
+        state.reset_state()
+        try:
+            # Orphan reservation: present in ``requests`` and
+            # ``reserved_requests`` but never moved to ``active_requests``.
+            orphan = FakeRequest('orphan-1')
+            state.requests[orphan.id] = orphan
+            state.reserved_requests.add(orphan)
+
+            Consumer.on_close(consumer)
+
+            assert orphan.id not in state.requests, (
+                "on_close() did not purge an orphan reserved-but-not-"
+                "accepted Request from state.requests; this is the leak "
+                "PR #7771 tried to fix but its loop variable ('request_id') "
+                "actually held Request objects, so the membership check "
+                "never matched."
+            )
+        finally:
+            state.reset_state()
+
     def test_connect_error_handler(self):
         self.app._connection = _amqp_connection()
         conn = self.app._connection.return_value
@@ -571,6 +617,29 @@ class test_Consumer(ConsumerTestCase):
         with pytest.deprecated_call(match=CANCEL_TASKS_BY_DEFAULT):
             c.on_connection_error_after_connected(Mock())
 
+    def test_cancel_long_running_tasks_on_connection_loss__cancel_error_is_swallowed(self):
+        c = self.get_consumer()
+        c.app.conf.worker_cancel_long_running_tasks_on_connection_loss = True
+
+        mock_request_cancel_raises = Mock()
+        mock_request_cancel_raises.task.acks_late = True
+        mock_request_cancel_raises.acknowledged = False
+        mock_request_cancel_raises.cancel.side_effect = ConnectionResetError('Connection reset by peer')
+        mock_request_cancel_succeeds = Mock()
+        mock_request_cancel_succeeds.task.acks_late = True
+        mock_request_cancel_succeeds.acknowledged = False
+
+        active_requests.add(mock_request_cancel_raises)
+        active_requests.add(mock_request_cancel_succeeds)
+
+        try:
+            c.on_connection_error_after_connected(Mock())
+
+            mock_request_cancel_raises.cancel.assert_called_once_with(c.pool)
+            mock_request_cancel_succeeds.cancel.assert_called_once_with(c.pool)
+        finally:
+            active_requests.clear()
+
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_cancel_active_requests(self):
         c = self.get_consumer()
@@ -618,27 +687,144 @@ class test_Consumer(ConsumerTestCase):
             active_requests.clear()
             successful_requests.clear()
 
-    @pytest.mark.parametrize("broker_connection_retry", [True, False])
-    @pytest.mark.parametrize("broker_connection_retry_on_startup", [None, False])
-    @pytest.mark.parametrize("first_connection_attempt", [True, False])
-    def test_ensure_connected(self, subtests, broker_connection_retry, broker_connection_retry_on_startup,
-                              first_connection_attempt):
+    def test_ensure_connected_uses_legacy_retry_when_startup_retry_is_undefined(self):
         c = self.get_consumer()
-        c.first_connection_attempt = first_connection_attempt
-        c.app.conf.broker_connection_retry_on_startup = broker_connection_retry_on_startup
-        c.app.conf.broker_connection_retry = broker_connection_retry
+        c.first_connection_attempt = True
+        c.app.conf.broker_connection_retry_on_startup = None
+        c.app.conf.broker_connection_retry = True
+        conn = Mock()
 
-        if broker_connection_retry is False:
-            if broker_connection_retry_on_startup is None:
-                with subtests.test("Deprecation warning when startup is None"):
-                    with pytest.deprecated_call():
-                        c.ensure_connected(Mock())
+        c.ensure_connected(conn)
 
-            with subtests.test("Does not retry when connect throws an error and retry is set to false"):
-                conn = Mock()
-                conn.connect.side_effect = ConnectionError()
-                with pytest.raises(ConnectionError):
-                    c.ensure_connected(conn)
+        conn.ensure_connection.assert_called_once()
+        conn.connect.assert_not_called()
+        assert c.first_connection_attempt is False
+
+    def test_ensure_connected_warns_when_legacy_retry_disables_startup_retry(self):
+        c = self.get_consumer()
+        c.first_connection_attempt = True
+        c.app.conf.broker_connection_retry_on_startup = None
+        c.app.conf.broker_connection_retry = False
+        conn = Mock()
+
+        with pytest.deprecated_call(
+            match="broker_connection_retry configuration setting will no longer determine",
+        ):
+            c.ensure_connected(conn)
+
+        conn.connect.assert_called_once_with()
+        conn.ensure_connection.assert_not_called()
+        assert c.first_connection_attempt is False
+
+    def test_ensure_connected_raises_when_legacy_retry_disables_startup_retry(self):
+        c = self.get_consumer()
+        c.first_connection_attempt = True
+        c.app.conf.broker_connection_retry_on_startup = None
+        c.app.conf.broker_connection_retry = False
+        conn = Mock()
+        conn.connect.side_effect = ConnectionError()
+
+        with pytest.deprecated_call(
+            match="broker_connection_retry configuration setting will no longer determine",
+        ):
+            with pytest.raises(ConnectionError):
+                c.ensure_connected(conn)
+
+        conn.connect.assert_called_once_with()
+        conn.ensure_connection.assert_not_called()
+
+    def test_ensure_connected_startup_retry_overrides_legacy_retry(self):
+        c = self.get_consumer()
+        c.first_connection_attempt = True
+        c.app.conf.broker_connection_retry_on_startup = True
+        c.app.conf.broker_connection_retry = False
+        conn = Mock()
+
+        c.ensure_connected(conn)
+
+        conn.ensure_connection.assert_called_once()
+        conn.connect.assert_not_called()
+        assert c.first_connection_attempt is False
+
+    def test_ensure_connected_startup_retry_disabled_only_affects_first_attempt(self):
+        c = self.get_consumer()
+        c.first_connection_attempt = True
+        c.app.conf.broker_connection_retry_on_startup = False
+        c.app.conf.broker_connection_retry = True
+        conn = Mock()
+
+        c.ensure_connected(conn)
+
+        conn.connect.assert_called_once_with()
+        conn.ensure_connection.assert_not_called()
+        assert c.first_connection_attempt is False
+
+        reconnect_conn = Mock()
+        c.ensure_connected(reconnect_conn)
+
+        reconnect_conn.ensure_connection.assert_called_once()
+        reconnect_conn.connect.assert_not_called()
+
+    def test_ensure_connected_raises_when_startup_retry_is_disabled(self):
+        c = self.get_consumer()
+        c.first_connection_attempt = True
+        c.app.conf.broker_connection_retry_on_startup = False
+        c.app.conf.broker_connection_retry = True
+        conn = Mock()
+        conn.connect.side_effect = ConnectionError()
+
+        with pytest.raises(ConnectionError):
+            c.ensure_connected(conn)
+
+        conn.connect.assert_called_once_with()
+        conn.ensure_connection.assert_not_called()
+
+    def test_ensure_connected_uses_legacy_retry_after_startup(self):
+        c = self.get_consumer()
+        c.first_connection_attempt = False
+        c.app.conf.broker_connection_retry_on_startup = True
+        c.app.conf.broker_connection_retry = False
+        conn = Mock()
+        conn.connect.side_effect = ConnectionError()
+
+        with pytest.raises(ConnectionError):
+            c.ensure_connected(conn)
+
+        conn.connect.assert_called_once_with()
+        conn.ensure_connection.assert_not_called()
+
+    def test_recreated_task_consumer_does_not_consume_late_added_queue(self):
+        default_queue = self.app.conf.task_default_queue
+
+        def _fake_consumer(channel, *, accept=None, queues=None, **kwargs):
+            c = Mock()
+            c.queues = queues
+            return c
+
+        with patch.object(self.app.amqp, 'Consumer', side_effect=_fake_consumer):
+            with self.app.pool.acquire(block=True) as con:
+                task_consumer = self.app.amqp.TaskConsumer(con)
+                assert {q.name for q in task_consumer.queues} == {default_queue}
+
+                self.app.amqp.queues.add('next')
+                task_consumer = self.app.amqp.TaskConsumer(con)
+                assert {q.name for q in task_consumer.queues} == {default_queue}
+
+    def test_readd_cancelled_queue_restores_consume_from(self):
+        queues = self.app.amqp.queues
+        default_queue = self.app.conf.task_default_queue
+        consumer = self.get_consumer()
+        consumer.task_consumer = Mock()
+        consumer.task_consumer.consuming_from.return_value = False
+        assert default_queue in queues.consume_from
+
+        consumer.cancel_task_queue(default_queue)
+        assert default_queue not in queues.consume_from
+
+        consumer.add_task_queue(default_queue)
+        assert default_queue in queues.consume_from
+        consumer.task_consumer.add_queue.assert_called_once()
+        consumer.task_consumer.consume.assert_called_once()
 
     def test_disable_prefetch_not_enabled(self):
         """Test that disable_prefetch doesn't affect behavior when disabled"""
@@ -804,6 +990,87 @@ class test_Consumer(ConsumerTestCase):
 
             # Should not be able to consume when at autoscale limit
             assert consumer.task_consumer.channel.qos.can_consume() is False
+
+    def test_disable_prefetch_after_connection_loss_keeps_gate_closed(self):
+        """Regression: ``can_consume`` must still refuse new messages while a
+        task from before a broker reconnect is still running in the pool.
+
+        With ``worker_disable_prefetch`` enabled and concurrency=1, after a
+        channel/connection interruption ``Consumer.on_close()`` clears
+        ``state.reserved_requests``. The disable-prefetch gate then sees an
+        empty set and lets a new message through, even though the pool is
+        still busy with the in-flight task. The gate must remain closed.
+        """
+        from celery.worker import state
+        from celery.worker.consumer.consumer import Consumer
+        from celery.worker.consumer.tasks import Tasks
+
+        self.app.conf.worker_disable_prefetch = True
+
+        # Plain class so it supports weakref (Mock() does not, and WeakSet
+        # would silently reject it).
+        class FakeRequest:
+            def __init__(self, id):
+                self.id = id
+
+        consumer = Mock()
+        consumer.app = self.app
+        consumer.pool = Mock()
+        consumer.pool.num_processes = 1
+        consumer.pool.flush = Mock()
+        consumer.controller = Mock()
+        consumer.controller.max_concurrency = None
+        consumer.controller.semaphore = Mock()
+        consumer.task_buckets = {}
+        consumer.initial_prefetch_count = 1
+        consumer.connection = Mock()
+        consumer.connection.connection_errors = ()
+        consumer.connection.channel_errors = ()
+        consumer.connection.default_channel = Mock()
+        consumer.connection.transport = Mock()
+        consumer.connection.transport.driver_type = 'redis'
+        consumer.update_strategies = Mock()
+        consumer.on_decode_error = Mock()
+
+        consumer.task_consumer = Mock()
+        consumer.task_consumer.channel = Mock()
+        consumer.task_consumer.channel.qos = Mock()
+        consumer.task_consumer.channel.qos.can_consume = Mock(return_value=True)
+        consumer.task_consumer.qos = Mock()
+        consumer.app.amqp = Mock()
+        consumer.app.amqp.TaskConsumer = Mock(return_value=consumer.task_consumer)
+
+        # Install the disable-prefetch gate on the (mocked) channel.
+        Tasks(consumer).start(consumer)
+        can_consume = consumer.task_consumer.channel.qos.can_consume
+
+        state.reset_state()
+        try:
+            # One task running in the pool: by the normal lifecycle
+            # (task_reserved + task_accepted) it lives in BOTH sets.
+            in_flight = FakeRequest('task-1')
+            state.reserved_requests.add(in_flight)
+            state.active_requests.add(in_flight)
+
+            # Pre-condition: gate refuses; concurrency is 1 and slot is taken.
+            assert can_consume() is False
+
+            # Simulate a broker channel/connection interruption.
+            Consumer.on_close(consumer)
+
+            # Pool still has the task running — active_requests is
+            # intentionally not cleared by on_close(). The gate must still
+            # refuse so we don't over-fetch a second message into a
+            # concurrency=1 pool.
+            assert in_flight in state.active_requests
+            assert can_consume() is False, (
+                "After a connection loss, can_consume() returned True while "
+                "a task is still running in the pool. Consumer.on_close() "
+                "cleared reserved_requests, hiding the in-flight task from "
+                "the worker_disable_prefetch gate."
+            )
+        finally:
+            state.reset_state()
 
     def test_disable_prefetch_ignored_for_non_redis_brokers(self):
         """Test that disable_prefetch is ignored for non-Redis brokers."""
@@ -1036,6 +1303,30 @@ class test_Heart:
             c.heart.start.assert_called_with()
 
 
+class test_Events:
+
+    def test_start_dispatcher_connection_heartbeat_and_hub(self):
+        c = Mock()
+        Events(c).start(c)
+        c.connection_for_write.assert_called_once_with(heartbeat=c.amqheartbeat)
+        conn = c.connection_for_write.return_value
+        conn.transport.register_with_event_loop.assert_called_once_with(conn.connection, c.hub)
+
+    def test_start_without_hub_does_not_register(self):
+        c = Mock()
+        c.hub = None
+        Events(c).start(c)
+        conn = c.connection_for_write.return_value
+        conn.transport.register_with_event_loop.assert_not_called()
+
+    def test_start_without_heartbeat_does_not_register(self):
+        c = Mock()
+        c.amqheartbeat = 0
+        Events(c).start(c)
+        conn = c.connection_for_write.return_value
+        conn.transport.register_with_event_loop.assert_not_called()
+
+
 class test_Tasks:
 
     def setup_method(self):
@@ -1114,7 +1405,7 @@ class test_Tasks:
 
         record = caplog.records[0]
         assert record.levelname == "INFO"
-        assert record.msg == "Global QoS is disabled. Prefetch count in now static."
+        assert record.msg == "Global QoS is disabled. Prefetch count is now static."
 
     def test_start_records_qos_global_on_consumer_quorum(self):
         """Tasks.start() must store the effective qos_global on the consumer.
@@ -1344,6 +1635,39 @@ class test_ConnectionStep:
         c.connection = None
 
         step.close_connection(c)  # must not raise
+
+    def test_info_censors_password_and_alternates(self):
+        """info() removes top-level password and censors failover URLs."""
+        step, c = self._get_step_and_consumer()
+        c.connection = Mock(name='conn')
+        c.connection.info.return_value = {
+            'transport': 'amqp',
+            'password': 'supersecret',
+            'alternates': [
+                'amqp://user:' + 'secret1' + '@host-1:5672//',
+                'amqp://user:' + 'secret2' + '@host-2:5672//',
+            ],
+        }
+
+        stats = step.info(c)
+        broker = stats['broker']
+        assert 'password' not in broker
+        assert 'secret1' not in broker['alternates'][0]
+        assert 'secret2' not in broker['alternates'][1]
+        assert '**' in broker['alternates'][0]
+        assert '**' in broker['alternates'][1]
+
+    def test_info_censors_alternates_string(self):
+        """info() censors alternates when represented as a single URL."""
+        step, c = self._get_step_and_consumer()
+        c.connection = Mock(name='conn')
+        c.connection.info.return_value = {
+            'alternates': 'amqp://user:secret@host:5672//',
+        }
+
+        stats = step.info(c)
+        assert 'secret' not in stats['broker']['alternates']
+        assert '**' in stats['broker']['alternates']
 
     # ------------------------------------------------------------------
     # start() - sanity check that the connection is stored on c
@@ -1614,3 +1938,33 @@ class test_Gossip:
         message.headers = {'hostname': g.hostname}
         g.on_message(prepare, message)
         g.clock.forward.assert_called_with()
+
+    def test_worker_event_across_timezones_causes_no_drift_warning(self):
+        c = self.Consumer()
+        c.app = self.app
+        c.app.connection_for_read = _amqp_connection()
+        g = Gossip(c)
+
+        with self.app.connection_for_write() as conn:
+            channel = conn.default_channel
+            consumer = g.get_consumers(channel)[0]
+            consumer.consume()
+
+            dispatcher = self.app.events.Dispatcher(
+                conn, hostname='other@x.com', channel=channel,
+            )
+            # simulate a sender in a timezone 7 hours from the gossip
+            with patch(
+                'celery.events.dispatcher.utcoffset',
+                return_value=utcoffset() + 7
+            ):
+                dispatcher.send('worker-heartbeat', freq=5)
+
+            with patch('celery.events.state._warn_drift') as warn_drift:
+                conn.drain_events(timeout=5)
+
+        worker = g.state.workers['other@x.com']
+        assert worker.utcoffset != utcoffset()
+        drift = abs(int(worker.local_received) - int(worker.timestamp))
+        assert drift <= HEARTBEAT_DRIFT_MAX
+        warn_drift.assert_not_called()
