@@ -1214,6 +1214,9 @@ class BaseKeyValueStoreBackend(Backend):
                     on_message(value)
                 yield bytes_to_str(key), value
             if not ids:
+                # everything asked for has been handed back, so there is
+                # nothing left to time out on. wait_for checks the same way,
+                # returning a ready result before it looks at the deadline.
                 break
             if timeout is not None and time_elapsed >= timeout:
                 raise TimeoutError(f'Operation timed out ({timeout})')

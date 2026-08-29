@@ -1358,6 +1358,45 @@ class test_KeyValueStoreBackend:
             list(self.b.get_many(tasks, timeout=0.1, interval=0.5))
         assert sum(c.args[0] for c in sleep.call_args_list) == 0.1
 
+    def test_get_many__timeout_zero_returns_results_that_are_ready(self):
+        """A timeout of 0 still gets to return work that is already done."""
+        sleep = self.patching('time.sleep')
+        self.b._cache.clear()
+        ids = {uuid(): i for i in range(4)}
+        for id, i in ids.items():
+            self.b.mark_as_done(id, i)
+        # the ids are served by the first mget, not out of the cache, so the
+        # poll loop is entered and the deadline check is reached.
+        self.b._cache.clear()
+
+        got = dict(self.b.get_many(list(ids), timeout=0, interval=0.5))
+
+        assert {id: state['result'] for id, state in got.items()} == ids
+        sleep.assert_not_called()
+
+    def test_get_many__ids_completing_on_the_deadline_is_not_a_timeout(self):
+        """Satisfying the last id as the budget runs out is a success."""
+        sleep = self.patching('time.sleep')
+        self.b._cache.clear()
+        ids = {uuid(): i for i in range(4)}
+        polls = []
+
+        def mget(keys):
+            # nothing is stored until the second poll, which lands exactly
+            # when the one interval of budget has been spent.
+            polls.append(keys)
+            if len(polls) > 1:
+                for id, i in ids.items():
+                    self.b.mark_as_done(id, i)
+            return [self.b.get(k) for k in keys]
+
+        self.b.mget = mget
+
+        got = dict(self.b.get_many(list(ids), timeout=0.5, interval=0.5))
+
+        assert {id: state['result'] for id, state in got.items()} == ids
+        assert sleep.call_args_list == [call(0.5)]
+
     def test_get_many_passes_ready_states(self):
         tasks_length = 10
         ready_states = frozenset({states.SUCCESS})
