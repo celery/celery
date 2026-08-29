@@ -1031,15 +1031,15 @@ class GroupResult(ResultSet):
 
         Note:
             **API Semantics Difference from completed_count()**:
-            
+
             This method counts tasks in READY_STATES (SUCCESS, FAILURE, REVOKED),
             which includes both successful and failed tasks. This is consistent
             with the backend's progress tracking behavior and represents overall
             completion regardless of outcome.
-            
+
             In contrast, :meth:`completed_count` only counts tasks in SUCCESS state,
             representing successful completion only.
-            
+
             Use :meth:`progress` when you need overall completion status (e.g., for
             progress bars or completion tracking), and use :meth:`completed_count`
             when you specifically need to know how many tasks succeeded.

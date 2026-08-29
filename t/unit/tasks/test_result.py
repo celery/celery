@@ -947,12 +947,12 @@ class test_GroupResult:
             # Mock the ready() method
             result.ready = lambda idx=i: idx < 3  # First 3 are ready
             results.append(result)
-        
+
         group_result = self.app.GroupResult('test-group', results)
-        
+
         # Since backend doesn't support native progress, should use fallback
         completed, total = group_result.progress()
-        
+
         assert completed == 3
         assert total == 5
 
@@ -962,22 +962,22 @@ class test_GroupResult:
         mock_backend = _MockBackend()
         mock_backend.supports_group_progress = True
         mock_backend.get_group_progress = lambda gid: (7, 10)
-        
+
         results = [self.app.AsyncResult(uuid()) for _ in range(10)]
         group_result = self.app.GroupResult('test-group', results)
-        
+
         with patch.object(type(group_result), 'backend', PropertyMock(return_value=mock_backend)):
             completed, total = group_result.progress()
-            
+
             assert completed == 7
             assert total == 10
 
     def test_GroupResult_progress_no_results(self):
         """Test GroupResult.progress() with no results."""
         group_result = self.app.GroupResult('empty-group', [])
-        
+
         completed, total = group_result.progress()
-        
+
         assert completed == 0
         assert total is None
 
@@ -986,14 +986,14 @@ class test_GroupResult:
         mock_backend = _MockBackend()
         mock_backend.supports_group_progress = True
         mock_backend.get_group_progress = lambda gid: (None, None)
-        
+
         results = [self.app.AsyncResult(uuid()) for _ in range(3)]
         group_result = self.app.GroupResult('test-group', results)
-        
+
         with patch.object(type(group_result), 'backend', PropertyMock(return_value=mock_backend)):
             # Should fall back to O(N) calculation
             completed, total = group_result.progress()
-            
+
             assert completed == 0  # None are ready by default
             assert total == 3
 

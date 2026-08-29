@@ -576,7 +576,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
     def set_group_progress_size(self, group_id, size):
         """Set the total size of a group for progress tracking.
-        
+
         Uses a Redis hash to store both count and total.
         Key format: <group_id>.p
         Hash fields: 'count' (completed), 'total' (expected)
@@ -591,7 +591,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
     def increment_group_progress(self, group_id):
         """Increment the completed count for a group.
-        
+
         Uses atomic HINCRBY to safely increment the counter.
         """
         pkey = self.get_key_for_group(group_id, '.p')
@@ -599,7 +599,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
     def get_group_progress(self, group_id):
         """Get the progress of a group.
-        
+
         Returns the count and total from the Redis hash.
         """
         pkey = self.get_key_for_group(group_id, '.p')

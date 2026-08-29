@@ -951,7 +951,7 @@ class Backend:
 
     def set_group_progress_size(self, group_id, size):
         """Set the total size of a group for progress tracking.
-        
+
         Arguments:
             group_id (str): The group ID.
             size (int): The total number of tasks in the group.
@@ -960,10 +960,10 @@ class Backend:
 
     def increment_group_progress(self, group_id):
         """Increment the completed count for a group.
-        
+
         Arguments:
             group_id (str): The group ID.
-            
+
         Returns:
             int: The new completed count.
         """
@@ -971,10 +971,10 @@ class Backend:
 
     def get_group_progress(self, group_id):
         """Get the progress of a group.
-        
+
         Arguments:
             group_id (str): The group ID.
-            
+
         Returns:
             tuple: (completed_count, total_count) or (None, None) if not available.
         """

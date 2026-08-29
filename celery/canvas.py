@@ -1632,7 +1632,7 @@ class group(Signature):
         track_progress = options.pop('track_progress', False)
         options, group_id, root_id = self._freeze_gid(options)
         tasks = self._prepared(self.tasks, [], group_id, root_id, app)
-        
+
         # Initialize group progress tracking BEFORE task submission to prevent race
         # where tasks complete before progress state is initialized
         if track_progress and app.backend.supports_group_progress:
@@ -1642,7 +1642,7 @@ class group(Signature):
             app.backend.set_group_progress_size(group_id, group_size)
         else:
             tasks_list = list(tasks)
-        
+
         p = barrier()
         results = list(self._apply_tasks(iter(tasks_list), producer, app, p,
                                          args=args, kwargs=kwargs, **options))
@@ -1669,21 +1669,21 @@ class group(Signature):
         app = self.app
         if not self.tasks:
             return self.freeze()  # empty group returns GroupResult
-        
+
         # Extract track_progress option before task submission to avoid race condition
         track_progress = options.pop('track_progress', False)
         options, group_id, root_id = self._freeze_gid(options)
         tasks = self._prepared(self.tasks, [], group_id, root_id, app)
-        
+
         # Convert generator to list for size determination and task application
         tasks_list = list(tasks)
-        
+
         # Initialize group progress tracking BEFORE task submission to prevent race
         # where tasks complete before progress state is initialized
         if track_progress and app.backend.supports_group_progress:
             group_size = len(tasks_list)
             app.backend.set_group_progress_size(group_id, group_size)
-        
+
         result = app.GroupResult(group_id, [
             sig.apply(args=args, kwargs=kwargs, **options) for sig, _, _ in tasks_list
         ])
