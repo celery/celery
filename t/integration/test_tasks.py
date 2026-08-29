@@ -16,10 +16,10 @@ from celery.worker import state as worker_state
 
 from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connection
 from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result, add_not_typed, add_pydantic,
-                    add_pydantic_string_annotations, fail, fail_unpickleable, print_unicode, retry, retry_once,
-                    retry_once_headers, retry_once_priority, retry_unpickleable, return_properties,
-                    return_request_time_limits, second_order_replace1, sleeping,
-                    soft_time_limit_must_exceed_time_limit, task_with_declared_time_limits)
+                    add_pydantic_string_annotations, fail, fail_unpickleable, print_unicode, reject_then_succeed,
+                    reject_without_requeue, retry, retry_once, retry_once_headers, retry_once_priority,
+                    retry_unpickleable, return_properties, return_request_time_limits, second_order_replace1,
+                    sleeping, soft_time_limit_must_exceed_time_limit, task_with_declared_time_limits)
 
 TIMEOUT = 10
 
@@ -129,6 +129,25 @@ class test_tasks:
         # persisted in the result backend.
         time.sleep(1)
         assert result.result is None
+
+    @flaky
+    def test_reject_without_requeue_stores_failure(self, manager):
+        result = reject_without_requeue.delay()
+        with pytest.raises(celery.exceptions.Reject):
+            result.get(timeout=TIMEOUT)
+        assert result.status == 'FAILURE'
+        assert result.ready() is True
+        assert result.failed() is True
+        assert result.successful() is False
+
+    @flaky
+    def test_reject_with_requeue_redelivers_and_succeeds(self, manager):
+        result = reject_then_succeed.delay()
+        assert result.get(timeout=TIMEOUT) == 'second-pass'
+        assert result.status == 'SUCCESS'
+        assert result.ready() is True
+        assert result.failed() is False
+        assert result.successful() is True
 
     @flaky
     def test_pydantic_annotations(self, manager):
@@ -805,3 +824,50 @@ class test_task_replacement:
         redis_messages = list(redis_connection.lrange("redis-echo", 0, -1))
         expected_messages = [b"In A", b"In B", b"In/Out C", b"Out B", b"Out A"]
         assert redis_messages == expected_messages
+
+
+class test_pool_acquire_timeout:
+    """Integration tests for broker_pool_acquire_timeout setting (#9929)."""
+
+    @flaky
+    def test_task_succeeds_with_pool_timeout_configured(self, manager):
+        """Normal task dispatch works with timeout configured."""
+        app = manager.app
+        orig = app.conf.broker_pool_acquire_timeout
+        app.conf.broker_pool_acquire_timeout = 30
+        try:
+            result = add.delay(1, 2)
+            assert result.get(timeout=TIMEOUT) == 3
+        finally:
+            app.conf.broker_pool_acquire_timeout = orig
+
+    @flaky
+    def test_pool_timeout_none_blocks_successfully(self, manager):
+        """Default None timeout (block forever) still works."""
+        app = manager.app
+        assert app.conf.broker_pool_acquire_timeout is None
+        result = add.delay(4, 5)
+        assert result.get(timeout=TIMEOUT) == 9
+
+    @flaky
+    def test_concurrent_apply_async_with_timeout(self, manager):
+        """Concurrent task dispatch with pool timeout doesn't block."""
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        app = manager.app
+        orig_timeout = app.conf.broker_pool_acquire_timeout
+        app.conf.broker_pool_acquire_timeout = 10
+        try:
+            results = []
+            with ThreadPoolExecutor(max_workers=20) as executor:
+                futures = [
+                    executor.submit(add.delay, i, i)
+                    for i in range(50)
+                ]
+                for future in as_completed(futures):
+                    results.append(future.result())
+            # All tasks should complete successfully
+            for r in results:
+                assert r.get(timeout=TIMEOUT) is not None
+        finally:
+            app.conf.broker_pool_acquire_timeout = orig_timeout

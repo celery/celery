@@ -6,6 +6,7 @@ from typing import Dict, List, Literal, Optional
 from celery import states
 from celery.backends.base import BaseBackend
 from celery.exceptions import ImproperlyConfigured
+from celery.utils.imports import symbol_by_name
 from celery.utils.time import maybe_timedelta
 
 from .extensions import SchemaExtension
@@ -118,7 +119,16 @@ class DatabaseBackend(BaseBackend):
                 'Missing connection string! Do you have the'
                 ' database_url setting set to a real value?')
 
-        self.session_manager = SessionManager()
+        engine_callback = kwargs.get(
+            'engine_callback', conf.database_engine_callback)
+        if isinstance(engine_callback, str):
+            engine_callback = symbol_by_name(engine_callback)
+        if engine_callback is not None and not callable(engine_callback):
+            raise ImproperlyConfigured(
+                'database_engine_callback must be callable, got {!r}'.format(
+                    engine_callback))
+        self.session_manager = SessionManager(
+            engine_callback=engine_callback)
 
         create_tables_at_setup = conf.database_create_tables_at_setup
         if create_tables_at_setup is True:
@@ -136,7 +146,7 @@ class DatabaseBackend(BaseBackend):
 
     def _create_tables(self):
         """Create the task and taskset tables."""
-        self.ResultSession()
+        self._ensure_retryable(self.ResultSession)
 
     def ResultSession(self, session_manager=None):
         if session_manager is None:
@@ -203,6 +213,10 @@ class DatabaseBackend(BaseBackend):
 
         .. versionadded:: 5.7.0
         """
+        return self._ensure_retryable(
+            self._task_result_exists, task_id=task_id)
+
+    def _task_result_exists(self, task_id):
         session = self.ResultSession()
         with session_cleanup(session):
             return session.query(self.task_cls).filter(
@@ -246,6 +260,9 @@ class DatabaseBackend(BaseBackend):
 
     def cleanup(self):
         """Delete expired meta-data."""
+        self._ensure_retryable(self._cleanup)
+
+    def _cleanup(self):
         session = self.ResultSession()
         expires = self.expires
         now = self.app.now()

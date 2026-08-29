@@ -1034,6 +1034,22 @@ General
     maximum number of  requests per second), you must restrict to a given
     queue.
 
+.. warning::
+
+    A rate-limited task still counts against the worker's prefetch count
+    while it waits to run. Once all of a worker's prefetched slots are occupied
+    by rate-limited tasks, the worker stops fetching new messages from the broker
+    entirely, including messages for tasks that have no rate limit of their own.
+
+    For example, consider a worker that handles two tasks, ``A`` and ``B``,
+    where ``A`` is rate limited and ``B`` is not. A burst of ``A`` messages
+    can fill the worker's prefetch slots, and ``B`` messages will sit on
+    the broker untouched until those rate-limited ``A`` tasks drain, even
+    though ``B`` has no rate limit of its own.
+
+    To avoid this, rate-limited tasks should be routed to their own
+    dedicated workers (see :ref:`guide-routing`).
+
 .. attribute:: Task.time_limit
 
     The hard time limit, in seconds, for this task.
@@ -1043,6 +1059,32 @@ General
 
     The soft time limit for this task.
     When not set the workers default is used.
+
+.. note::
+
+    **Hard vs soft time limit failure semantics**
+
+    When a *soft* time limit fires, a :exc:`~celery.exceptions.SoftTimeLimitExceeded`
+    exception is raised inside the worker child process. If this exception
+    propagates and causes the task attempt to fail,
+    :meth:`~celery.app.task.Task.on_failure`, errbacks, and the
+    :signal:`task_failure` signal are all invoked as for any other task failure.
+    Task code may also catch :exc:`~celery.exceptions.SoftTimeLimitExceeded`
+    and exit normally, in which case these failure hooks are not triggered.
+
+    When a *hard* time limit fires the child process is killed and the
+    timeout is handled in the parent (main worker) process.
+    :meth:`~celery.app.task.Task.on_failure`, errbacks, and the
+    :signal:`task_failure` signal are also invoked from the parent process
+    so that cleanup hooks fire consistently for both limit types.
+
+    .. versionchanged:: 5.7
+
+        Hard time limits now invoke :meth:`~celery.app.task.Task.on_failure`,
+        errbacks, and :signal:`task_failure` in the parent worker process,
+        matching the behavior of soft time limits.
+        Previously only :meth:`~celery.backends.base.BaseBackend.mark_as_failure`
+        was called.
 
 .. attribute:: Task.ignore_result
 
@@ -1432,8 +1474,20 @@ messages are redelivered to.
 
 .. _`Dead Letter Exchanges`: http://www.rabbitmq.com/dlx.html
 
+When a task raises :exc:`~@Reject` without re-queuing (``requeue=False``) it
+will never run again, so its result is stored in the :state:`FAILURE` state
+and the :signal:`task_failure` signal is sent, just like any other failed
+task. This means :meth:`AsyncResult.failed() <celery.result.AsyncResult.failed>`
+returns :const:`True` and the rejection reason is available as the result.
+This terminal result is recorded regardless of :attr:`Task.acks_late`; the
+broker-level ``basic_reject`` (and therefore re-queuing) is the part that only
+takes effect when ``acks_late`` is enabled.
+
 Reject can also be used to re-queue messages, but please be very careful
 when using this as it can easily result in an infinite message loop.
+Re-queuing (``requeue=True``) only takes effect when :attr:`Task.acks_late`
+is enabled; the message is then redelivered and executed again, so no terminal
+result is stored for it.
 
 Example using reject when a task causes an out of memory condition:
 
@@ -1780,8 +1834,9 @@ strongly recommend to inherit from `celery.worker.request.Request`:class:.
 When using the `pre-forking worker <worker-concurrency>`:ref:, the methods
 `~celery.worker.request.Request.on_timeout`:meth: and
 `~celery.worker.request.Request.on_failure`:meth: are executed in the main
-worker process.  An application may leverage such facility to detect failures
-which are not detected using `celery.app.task.Task.on_failure`:meth:.
+worker process.  An application may leverage this facility to add extra
+observability or side-effects around task failures and timeouts beyond what
+`celery.app.task.Task.on_failure`:meth: provides.
 
 As an example, the following custom request detects and logs hard time
 limits, and other failures.

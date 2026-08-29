@@ -4,7 +4,7 @@ import signal
 import socket
 from datetime import datetime, timedelta, timezone
 from time import monotonic, time
-from unittest.mock import Mock, patch
+from unittest.mock import ANY, Mock, patch
 
 import pytest
 from billiard.einfo import ExceptionInfo
@@ -317,10 +317,80 @@ class test_Request(RequestCase):
             einfo = ExceptionInfo(internal=True)
         assert einfo is not None
         req = self.get_request(self.add.s(2, 2))
+        req.task.backend = Mock()
         req.on_failure(einfo)
         req.on_reject.assert_called_with(
             req_logger, req.connection_errors, False,
         )
+
+    def test_on_failure_Reject_marks_as_failure(self):
+        # Issue #4222: Reject(requeue=False) must store a terminal FAILURE
+        # result (and fire task_failure) instead of leaving the task PENDING.
+        einfo = None
+        try:
+            raise Reject('rejected')
+        except Reject:
+            einfo = ExceptionInfo(internal=True)
+        assert einfo is not None
+        req = self.get_request(self.add.s(2, 2))
+        req.task.backend = Mock()
+        handler = Mock()
+        task_failure.connect(handler, sender=req.task, weak=False)
+        try:
+            req.on_failure(einfo)
+        finally:
+            task_failure.disconnect(handler, sender=req.task)
+        req.task.backend.mark_as_failure.assert_called_once()
+        call = req.task.backend.mark_as_failure.call_args
+        assert call.args[0] == req.id
+        stored_exc = getattr(call.args[1], 'exc', call.args[1])
+        assert isinstance(stored_exc, Reject)
+        assert call.kwargs['request'] is req._context
+        assert call.kwargs['store_result'] == req.store_errors
+        handler.assert_called_once()
+        assert handler.call_args.kwargs['task_id'] == req.id
+        req.on_reject.assert_called_with(
+            req_logger, req.connection_errors, False,
+        )
+        # a task-failed event is emitted so monitors show FAILURE, not STARTED
+        assert any(
+            c.args and c.args[0] == 'task-failed'
+            for c in req.eventer.send.call_args_list
+        )
+
+    def test_on_failure_Reject_respects_send_failed_event(self):
+        # send_failed_event=False must suppress the task-failed event for
+        # Reject(requeue=False) too, while still recording the failure.
+        einfo = None
+        try:
+            raise Reject('rejected')
+        except Reject:
+            einfo = ExceptionInfo(internal=True)
+        assert einfo is not None
+        req = self.get_request(self.add.s(2, 2))
+        req.task.backend = Mock()
+        req.on_failure(einfo, send_failed_event=False)
+        req.task.backend.mark_as_failure.assert_called_once()
+        assert not any(
+            c.args and c.args[0] == 'task-failed'
+            for c in req.eventer.send.call_args_list
+        )
+
+    def test_on_failure_Reject_marks_as_failure_when_already_acked(self):
+        # With the default acks_late=False the message is acknowledged on
+        # receipt, so self.reject() is a no-op; the terminal FAILURE result
+        # must still be recorded (Issue #4222).
+        einfo = None
+        try:
+            raise Reject(requeue=False)
+        except Reject:
+            einfo = ExceptionInfo(internal=True)
+        assert einfo is not None
+        req = self.get_request(self.add.s(2, 2))
+        req.task.backend = Mock()
+        req.acknowledged = True  # simulate the default early ack
+        req.on_failure(einfo)
+        req.task.backend.mark_as_failure.assert_called_once()
 
     def test_on_failure_Reject_rejects_with_requeue(self):
         einfo = None
@@ -330,9 +400,17 @@ class test_Request(RequestCase):
             einfo = ExceptionInfo(internal=True)
         assert einfo is not None
         req = self.get_request(self.add.s(2, 2))
+        req.task.backend = Mock()
         req.on_failure(einfo)
         req.on_reject.assert_called_with(
             req_logger, req.connection_errors, True,
+        )
+        # A requeued message is redelivered and re-executed, so no terminal
+        # result is stored and no task-failed event is emitted.
+        req.task.backend.mark_as_failure.assert_not_called()
+        assert not any(
+            c.args and c.args[0] == 'task-failed'
+            for c in req.eventer.send.call_args_list
         )
 
     def test_on_failure_WorkerLostError_rejects_with_requeue(self):
@@ -1228,7 +1306,105 @@ class test_Request(RequestCase):
         finally:
             state.should_terminate = original_should_terminate
 
-    def test_fast_trace_task(self):
+    def test_on_hard_timeout_calls_task_on_failure(self, patching):
+        """Hard timeout must invoke task.on_failure so user hooks fire."""
+        patching('celery.worker.request.error')
+
+        job = self.xRequest()
+        job.task.on_failure = Mock(name='on_failure')
+        job.on_timeout(soft=False, timeout=1337)
+
+        job.task.on_failure.assert_called_once()
+        call_args = job.task.on_failure.call_args[0]
+        exc, task_id = call_args[0], call_args[1]
+        assert isinstance(exc, TimeLimitExceeded)
+        assert task_id == job.id
+
+    def test_on_hard_timeout_sends_task_failure_signal(self, patching):
+        """Hard timeout must send the task_failure signal."""
+        patching('celery.worker.request.error')
+
+        handler = Mock(name='signal_handler')
+        task_failure.connect(handler)
+        try:
+            job = self.xRequest()
+            job.on_timeout(soft=False, timeout=1337)
+        finally:
+            task_failure.disconnect(handler)
+
+        handler.assert_called_once()
+        kwargs = handler.call_args[1]
+        assert isinstance(kwargs['exception'], TimeLimitExceeded)
+        assert kwargs['task_id'] == job.id
+
+    def test_on_hard_timeout_sends_task_failed_event(self, patching):
+        """Hard timeout must emit a task-failed monitoring event."""
+        patching('celery.worker.request.error')
+
+        job = self.xRequest()
+        job.send_event = Mock(name='send_event')
+        job.on_timeout(soft=False, timeout=1337)
+
+        job.send_event.assert_called_once_with(
+            'task-failed',
+            exception=ANY,
+            traceback=ANY,
+        )
+
+    def test_on_hard_timeout_calls_after_return(self, patching):
+        """Hard timeout must invoke task.after_return when overridden."""
+        patching('celery.worker.request.error')
+
+        after_return_mock = Mock(name='after_return')
+
+        class TaskWithAfterReturn(self.app.Task):
+            name = 'test.task_with_after_return'
+
+            def run(self):
+                pass
+
+            def after_return(self, status, retval, task_id, args, kwargs, einfo):
+                after_return_mock(status, retval, task_id, args, kwargs, einfo)
+
+        task_instance = TaskWithAfterReturn()
+        self.app.tasks.register(task_instance)
+
+        job = self.xRequest(name=TaskWithAfterReturn.name)
+        job.on_timeout(soft=False, timeout=1337)
+
+        after_return_mock.assert_called_once()
+        call_args = after_return_mock.call_args[0]
+        assert call_args[0] == 'FAILURE'
+        assert isinstance(call_args[1], TimeLimitExceeded)
+        assert call_args[2] == job.id
+
+    def test_on_hard_timeout_clears_synthetic_traceback(self, patching):
+        """exc.__traceback__ must be None after on_timeout returns (memory leak fix #8882).
+
+        The synthetic traceback created to build ExceptionInfo captures the
+        on_timeout frame, which holds self (the Request object) and all task
+        state.  If not cleared this prevents timely garbage-collection under
+        frequent hard timeouts.
+        """
+        patching('celery.worker.request.error')
+
+        captured = {}
+        original_mark = self.mytask.backend.mark_as_failure
+
+        def capture_exc(task_id, exc, **kw):
+            captured['exc'] = exc
+            return original_mark(task_id, exc, **kw)
+
+        with patch.object(self.mytask.backend, 'mark_as_failure', capture_exc):
+            job = self.xRequest()
+            job.on_timeout(soft=False, timeout=1337)
+
+        assert 'exc' in captured, "mark_as_failure should have been called"
+        assert captured['exc'].__traceback__ is None, (
+            "exc.__traceback__ must be cleared after on_timeout to prevent "
+            "the on_timeout frame (and its locals including self/Request) from "
+            "being retained by the traceback reference cycle"
+        )
         assert self.app.use_fast_trace_task is False
         setup_worker_optimizations(self.app)
         assert self.app.use_fast_trace_task is True
@@ -1571,6 +1747,19 @@ class test_create_request_class(RequestCase):
         job.on_failure = Mock(name='on_failure')
         job.on_success((True, einfo, 1.0))
         job.on_failure.assert_called_with(einfo, return_ok=True)
+
+    def test_on_success__propagates_MemoryError(self):
+        self.task.acks_late = True
+        self.mytask.acks_late = True
+        einfo = None
+        try:
+            raise MemoryError('out of memory')
+        except MemoryError:
+            einfo = ExceptionInfo(internal=True)
+        assert einfo is not None
+
+        with pytest.raises(MemoryError, match='Process got: out of memory'):
+            self.zRequest(id=uuid()).on_success((True, einfo, 1.0))
 
     def test_on_success__acks_late_enabled(self):
         self.task.acks_late = True
