@@ -20,8 +20,8 @@ from celery.utils.collections import LimitedSet
 
 __all__ = (
     'SOFTWARE_INFO', 'reserved_requests', 'active_requests',
-    'total_count', 'revoked', 'task_reserved', 'maybe_shutdown',
-    'task_accepted', 'task_ready', 'Persistent',
+    'total_count', 'revoked', 'task_reserved', 'task_scheduled',
+    'maybe_shutdown', 'task_accepted', 'task_ready', 'Persistent',
 )
 
 
@@ -128,6 +128,17 @@ def task_reserved(request,
     """Update global state when a task has been reserved."""
     add_request(request.id, request)
     add_reserved_request(request)
+
+
+def task_scheduled(request, add_request=requests.__setitem__):
+    """Update global state when a task has been scheduled for an ETA/countdown.
+
+    Unlike :func:`task_reserved`, this doesn't add the request to
+    ``reserved_requests``: the request isn't waiting for a worker pool slot
+    yet, it's only registered so that it can be found (e.g. by the
+    ``query_task`` remote control command) before its ETA/countdown elapses.
+    """
+    add_request(request.id, request)
 
 
 def task_accepted(request,

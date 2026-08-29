@@ -250,6 +250,19 @@ class test_default_strategy_proto2:
             assert C.was_scheduled()
             C.consumer.qos.increment_eventually.assert_called_with()
 
+    def test_eta_task_registers_request_in_state(self):
+        # Regression test for #5321: a task with an ETA/countdown must be
+        # discoverable via `state.requests` (e.g. by the `query_task` remote
+        # control command) before its ETA elapses, not only afterwards.
+        with self._context(self.add.s(2, 2).set(countdown=10)) as C:
+            C()
+            req = C.get_request()
+            try:
+                assert state.requests[req.id] is req
+                assert req not in state.reserved_requests
+            finally:
+                state.requests.pop(req.id, None)
+
     def test_eta_task_utc_disabled(self):
         with self._context(self.add.s(2, 2).set(countdown=10), utc=False) as C:
             C()
