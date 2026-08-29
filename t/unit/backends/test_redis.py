@@ -18,9 +18,9 @@ except ImportError:
 from kombu.utils.encoding import ensure_bytes
 
 from celery import signature, states, uuid
+from celery.app.task import Context
 from celery.backends.base import COMPRESSED_PAYLOAD_MAGIC
 from celery.canvas import Signature
-from celery.app.task import Context
 from celery.contrib.testing.mocks import ContextMock
 from celery.exceptions import BackendStoreError, ChordError, ImproperlyConfigured
 from celery.result import AsyncResult, GroupResult

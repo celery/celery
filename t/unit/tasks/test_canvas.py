@@ -2238,7 +2238,7 @@ class test_group_progress_tracking(CanvasCase):
     def test_backend_supports_group_progress_flag(self):
         """Test that backends can declare support for group progress."""
         from celery.backends.redis import RedisBackend
-        
+
         # Redis should support group progress
         assert RedisBackend.supports_group_progress is True
         
@@ -2248,8 +2248,8 @@ class test_group_progress_tracking(CanvasCase):
 
     def test_track_progress_initializes_before_task_submission(self):
         """Test that progress initialization happens before task submission."""
-        from unittest.mock import patch, MagicMock, PropertyMock
-        
+        from unittest.mock import MagicMock, PropertyMock, patch
+
         # Create a group
         g = group([self.add.s(i, i) for i in range(3)])
         
