@@ -902,8 +902,9 @@ class test_ControlPanel:
 
         assert self.app.backend.mark_as_revoked.call_count == 2
         calls = self.app.backend.mark_as_revoked.call_args_list
-        assert calls[0] == (('task-1',), {'reason': 'revoked', 'store_result': True})
-        assert calls[1] == (('task-2',), {'reason': 'revoked', 'store_result': True})
+        # Updated to expect request parameter (None when no local request exists)
+        assert calls[0] == (('task-1',), {'reason': 'revoked', 'store_result': True, 'request': None})
+        assert calls[1] == (('task-2',), {'reason': 'revoked', 'store_result': True, 'request': None})
 
     @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
     def test_revoke_backend_failure_defensive(self):
@@ -922,8 +923,70 @@ class test_ControlPanel:
             control._revoke(state, ['task-1'], terminate=True)
 
         self.app.backend.mark_as_revoked.assert_called_once_with(
-            'task-1', reason='revoked', store_result=True
+            'task-1', reason='revoked', store_result=True, request=None
         )
+
+    def test_revoke_with_chord_request_triggers_chord_bookkeeping(self):
+        """
+        Regression test for chord bookkeeping bug.
+        
+        When a task belongs to a chord and has a locally-known Request,
+        _revoke() should pass the Request to mark_as_revoked() so that
+        chord bookkeeping (on_chord_part_return) is actually triggered.
+        
+        This test exercises the real mark_as_revoked implementation rather
+        than mocking it entirely, ensuring the chord bookkeeping path works.
+        """
+        task_id = 'chord-task-123'
+        chord_id = 'chord-456'
+        
+        # Create a real Request with chord metadata
+        message = self.TaskMessage(self.mytask.name, task_id)
+        # chord is extracted from the embed dict in the payload
+        args, kwargs, embed = message.payload
+        embed['chord'] = chord_id
+        message.payload = (args, kwargs, embed)
+        request = Request(message, app=self.app)
+        
+        # Verify the request has chord metadata
+        assert request.chord == chord_id, "Request should have chord metadata"
+        
+        # Add request to worker_state.requests
+        worker_state.requests[task_id] = request
+        
+        try:
+            state = self.create_state()
+            
+            # Spy on on_chord_part_return to verify it's called
+            original_on_chord_part_return = self.app.backend.on_chord_part_return
+            on_chord_part_return_calls = []
+            
+            def spy_on_chord_part_return(*args, **kwargs):
+                on_chord_part_return_calls.append((args, kwargs))
+                return original_on_chord_part_return(*args, **kwargs)
+            
+            self.app.backend.on_chord_part_return = spy_on_chord_part_return
+            
+            # Call _revoke() - this should trigger chord bookkeeping
+            control._revoke(state, [task_id])
+            
+            # Verify on_chord_part_return was called (chord bookkeeping triggered)
+            assert len(on_chord_part_return_calls) == 1, \
+                "on_chord_part_return should be called when a chord task is revoked"
+            
+            call_args, call_kwargs = on_chord_part_return_calls[0]
+            assert call_args[0] == request, \
+                "on_chord_part_return should receive the request"
+            assert call_args[1] == 'REVOKED', \
+                "on_chord_part_return should receive the REVOKED state"
+            
+        finally:
+            # Cleanup
+            if task_id in worker_state.requests:
+                del worker_state.requests[task_id]
+            # Restore original method
+            if hasattr(self.app.backend, 'on_chord_part_return'):
+                self.app.backend.on_chord_part_return = original_on_chord_part_return
 
     def test_revoke_by_stamped_headers_terminates_matching_request(self):
         state = self.create_state()
