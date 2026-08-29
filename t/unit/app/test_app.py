@@ -971,6 +971,20 @@ class test_App:
         self.app.config_from_object('nonexistent.module', silent=True, force=True)
         assert self.app.conf.get('SOME_CONFIG') is None
 
+    def test_config_from_object__silent_survives_pickle(self):
+        """`silent` must survive pickling of a not-yet-configured app.
+
+        An app pickled after `config_from_object(silent=True)` but before its
+        configuration is first read reaches the child process unconfigured, so
+        the child performs the import itself. If the flag were not carried in
+        `__reduce_keys__()` the child would import without it and raise.
+        """
+        self.app.config_from_object('nonexistent.module', silent=True)
+        assert not self.app.configured
+
+        unpickled = pickle.loads(pickle.dumps(self.app))
+        assert unpickled.conf.get('SOME_CONFIG') is None
+
     def test_config_from_object__compat(self):
 
         class Config:

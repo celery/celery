@@ -345,7 +345,7 @@ class Celery:
                  set_as_current=True, tasks=None, broker=None, include=None,
                  changes=None, config_source=None, fixups=None, task_cls=None,
                  autofinalize=True, namespace=None, strict_typing=True,
-                 **kwargs):
+                 config_source_silent=False, **kwargs):
 
         self._local = threading.local()
         self._backend_cache = None
@@ -375,8 +375,10 @@ class Celery:
         self.configured = False
         self._config_source = config_source
         # `silent` from config_from_object(), remembered so the lazy load in
-        # _load_config() honours it too and not only the eager path below
-        self._config_source_silent = False
+        # _load_config() honours it too and not only the eager path. Carried
+        # through __reduce_keys__ so an app pickled before its configuration
+        # was read does not lose it.
+        self._config_source_silent = config_source_silent
         self._pending_defaults = deque()
         self._pending_periodic_tasks = deque()
 
@@ -1421,6 +1423,7 @@ class Celery:
             'control': self.control_cls,
             'fixups': self.fixups,
             'config_source': self._config_source,
+            'config_source_silent': self._config_source_silent,
             'task_cls': self.task_cls,
             'namespace': self.namespace,
         }
