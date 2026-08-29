@@ -7,10 +7,10 @@ from queue import Queue as FastQueue
 from unittest.mock import Mock, PropertyMock, call, patch
 
 import pytest
-from celery import states
 from kombu import pidbox
 from kombu.utils.uuid import uuid
 
+from celery import states
 from celery.utils.collections import AttributeDict
 from celery.utils.functional import maybe_list
 from celery.utils.timer2 import Timer
