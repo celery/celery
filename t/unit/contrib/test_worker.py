@@ -1,3 +1,4 @@
+import weakref
 from unittest.mock import Mock, patch
 
 import pytest
@@ -79,6 +80,12 @@ class test_setup_default_app:
             with setup_default_app(app):
                 pass
         collect.assert_not_called()
+
+    def test_teardown_releases_the_backend(self):
+        app = TestApp()
+        with setup_default_app(app):
+            backend_ref = weakref.ref(app.backend)
+        assert backend_ref() is None
 
 
 class test_TestWorkController:
