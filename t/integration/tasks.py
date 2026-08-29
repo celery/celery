@@ -23,7 +23,9 @@ def get_redis_connection():
 
     host = os.environ.get("REDIS_HOST", "localhost")
     port = os.environ.get("REDIS_PORT", 6379)
-    return StrictRedis(host=host, port=port)
+    # Callers issue blocking reads that wait far longer than redis-py's
+    # default socket timeout, which would otherwise abort them early.
+    return StrictRedis(host=host, port=port, socket_timeout=None)
 
 
 logger = get_task_logger(__name__)
