@@ -7,6 +7,7 @@ from queue import Queue as FastQueue
 from unittest.mock import Mock, PropertyMock, call, patch
 
 import pytest
+from celery import states
 from kombu import pidbox
 from kombu.utils.uuid import uuid
 
@@ -653,28 +654,27 @@ class test_ControlPanel:
             revoked.discard(tid)
 
     def test_revoke_chord_member_runs_chord_bookkeeping(self):
-        request = Mock(
-            id=uuid(),
-            chord=Mock(),
-            group=None,
-            parent_id=None,
-            children=[],
-            delivery_info={},
-            stamps=None,
-        )
-        tid = request.id
+        task_id = 'chord-task-123'
+        chord_id = 'chord-456'
+        message = self.TaskMessage(self.mytask.name, task_id)
+        args, kwargs, embed = message.payload
+        embed['chord'] = chord_id
+        message.payload = (args, kwargs, embed)
+        request = Request(message, app=self.app)
+        assert request.chord == chord_id
         state = self.create_state()
         state.consumer = Mock()
         worker_state.task_reserved(request)
         try:
             with patch.object(
                     state.app.backend, 'on_chord_part_return') as ocpr:
-                control.revoke(state, tid)
+                control.revoke(state, task_id)
             ocpr.assert_called_once()
             assert ocpr.call_args.args[0] is request
+            assert ocpr.call_args.args[1] == states.REVOKED
         finally:
             worker_state.task_ready(request)
-            revoked.discard(tid)
+            revoked.discard(task_id)
 
     @pytest.mark.parametrize(
         "terminate", [True, False],
