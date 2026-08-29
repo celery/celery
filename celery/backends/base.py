@@ -1213,6 +1213,8 @@ class BaseKeyValueStoreBackend(Backend):
                 if on_message is not None:
                     on_message(value)
                 yield bytes_to_str(key), value
+            if not ids:
+                break
             if timeout is not None and time_elapsed >= timeout:
                 raise TimeoutError(f'Operation timed out ({timeout})')
             if on_interval:
