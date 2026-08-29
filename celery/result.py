@@ -1012,6 +1012,49 @@ class GroupResult(ResultSet):
     def children(self):
         return self.results
 
+    def progress(self):
+        """Get the progress of this group.
+
+        Returns a tuple of (completed_count, total_count) representing
+        the progress of the group. This method provides an efficient O(1)
+        query for backends that support native group progress tracking.
+
+        For backends without native support, or when progress tracking
+        was not enabled, this falls back to an O(N) calculation.
+
+        Returns:
+            tuple: (completed_count, total_count) where:
+                - completed_count: Number of tasks that have reached
+                  a terminal state (SUCCESS, FAILURE, or REVOKED)
+                - total_count: Total number of tasks in the group, or None
+                  if the total cannot be determined
+
+        Note:
+            **API Semantics Difference from completed_count()**:
+            
+            This method counts tasks in READY_STATES (SUCCESS, FAILURE, REVOKED),
+            which includes both successful and failed tasks. This is consistent
+            with the backend's progress tracking behavior and represents overall
+            completion regardless of outcome.
+            
+            In contrast, :meth:`completed_count` only counts tasks in SUCCESS state,
+            representing successful completion only.
+            
+            Use :meth:`progress` when you need overall completion status (e.g., for
+            progress bars or completion tracking), and use :meth:`completed_count`
+            when you specifically need to know how many tasks succeeded.
+        """
+        # Try to get native progress from backend
+        if self.id and self.backend.supports_group_progress:
+            completed, total = self.backend.get_group_progress(self.id)
+            if completed is not None and total is not None:
+                return completed, total
+
+        # Fallback to O(N) calculation
+        completed = sum(1 for result in self.results if result.ready())
+        total = len(self.results) if self.results else None
+        return completed, total
+
     @classmethod
     def restore(cls, id, backend=None, app=None):
         """Restore previously saved group result."""

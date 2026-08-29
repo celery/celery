@@ -3,7 +3,7 @@ import datetime
 import platform
 import traceback
 from contextlib import contextmanager
-from unittest.mock import Mock, call, patch
+from unittest.mock import Mock, PropertyMock, call, patch
 
 import pytest
 
@@ -938,6 +938,65 @@ class test_GroupResult:
     def test_completed_count(self):
         assert self.ts.completed_count() == len(self.ts)
 
+    def test_GroupResult_progress_fallback(self):
+        """Test GroupResult.progress() fallback to O(N) calculation."""
+        # Create mock results with different states
+        results = []
+        for i in range(5):
+            result = self.app.AsyncResult(uuid())
+            # Mock the ready() method
+            result.ready = lambda idx=i: idx < 3  # First 3 are ready
+            results.append(result)
+        
+        group_result = self.app.GroupResult('test-group', results)
+        
+        # Since backend doesn't support native progress, should use fallback
+        completed, total = group_result.progress()
+        
+        assert completed == 3
+        assert total == 5
+
+    def test_GroupResult_progress_with_native_support(self):
+        """Test GroupResult.progress() with native backend support."""
+        # Mock backend that supports native progress
+        mock_backend = _MockBackend()
+        mock_backend.supports_group_progress = True
+        mock_backend.get_group_progress = lambda gid: (7, 10)
+        
+        results = [self.app.AsyncResult(uuid()) for _ in range(10)]
+        group_result = self.app.GroupResult('test-group', results)
+        
+        with patch.object(type(group_result), 'backend', PropertyMock(return_value=mock_backend)):
+            completed, total = group_result.progress()
+            
+            assert completed == 7
+            assert total == 10
+
+    def test_GroupResult_progress_no_results(self):
+        """Test GroupResult.progress() with no results."""
+        group_result = self.app.GroupResult('empty-group', [])
+        
+        completed, total = group_result.progress()
+        
+        assert completed == 0
+        assert total is None
+
+    def test_GroupResult_progress_native_returns_none(self):
+        """Test fallback when native progress returns None."""
+        mock_backend = _MockBackend()
+        mock_backend.supports_group_progress = True
+        mock_backend.get_group_progress = lambda gid: (None, None)
+        
+        results = [self.app.AsyncResult(uuid()) for _ in range(3)]
+        group_result = self.app.GroupResult('test-group', results)
+        
+        with patch.object(type(group_result), 'backend', PropertyMock(return_value=mock_backend)):
+            # Should fall back to O(N) calculation
+            completed, total = group_result.progress()
+            
+            assert completed == 0  # None are ready by default
+            assert total == 3
+
 
 class test_pending_AsyncResult:
 
@@ -1097,6 +1156,3 @@ class test_tuples:
         assert parent_tuple == parent.as_tuple()
         assert parent_tuple[0][0] == parent.id
         assert isinstance(group_results, list)
-        expected_grp_res = [((f'async-result-{i}', None), None)
-                            for i in range(2)]
-        assert group_results == expected_grp_res

@@ -222,6 +222,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     supports_native_join = True
     # Results are stored as opaque strings, which Redis keeps byte for byte.
     supports_result_compression = True
+    supports_group_progress = True
 
     #: Maximal length of string value in Redis.
     #: 512 MB - https://redis.io/topics/data-types
@@ -572,6 +573,42 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
     def set_chord_size(self, group_id, chord_size):
         self.set(self.get_key_for_group(group_id, '.s'), chord_size)
+
+    def set_group_progress_size(self, group_id, size):
+        """Set the total size of a group for progress tracking.
+        
+        Uses a Redis hash to store both count and total.
+        Key format: <group_id>.p
+        Hash fields: 'count' (completed), 'total' (expected)
+        """
+        pkey = self.get_key_for_group(group_id, '.p')
+        with self.client.pipeline() as pipe:
+            pipe.hset(pkey, 'total', size)
+            pipe.hset(pkey, 'count', 0)
+            if self.expires:
+                pipe.expire(pkey, self.expires)
+            pipe.execute()
+
+    def increment_group_progress(self, group_id):
+        """Increment the completed count for a group.
+        
+        Uses atomic HINCRBY to safely increment the counter.
+        """
+        pkey = self.get_key_for_group(group_id, '.p')
+        return self.client.hincrby(pkey, 'count', 1)
+
+    def get_group_progress(self, group_id):
+        """Get the progress of a group.
+        
+        Returns the count and total from the Redis hash.
+        """
+        pkey = self.get_key_for_group(group_id, '.p')
+        data = self.client.hgetall(pkey)
+        if not data:
+            return None, None
+        count = int(data.get(b'count', 0))
+        total = int(data.get(b'total', 0))
+        return count, total
 
     def apply_chord(self, header_result_args, body, **kwargs):
         # If any of the child results of this chord are complex (ie. group

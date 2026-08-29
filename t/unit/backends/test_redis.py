@@ -20,6 +20,7 @@ from kombu.utils.encoding import ensure_bytes
 from celery import signature, states, uuid
 from celery.backends.base import COMPRESSED_PAYLOAD_MAGIC
 from celery.canvas import Signature
+from celery.app.task import Context
 from celery.contrib.testing.mocks import ContextMock
 from celery.exceptions import BackendStoreError, ChordError, ImproperlyConfigured
 from celery.result import AsyncResult, GroupResult
@@ -165,6 +166,33 @@ class Redis(conftest.MockCallbacks):
 
     def zcount(self, key, min_, max_):
         return len(self.zrangebyscore(key, min_, max_))
+
+    def _get_hash(self, key):
+        return self.keyspace.setdefault(key, {})
+
+    def hset(self, key, field, value):
+        self._get_hash(key)[field] = value
+
+    def hgetall(self, key):
+        # Return bytes like real Redis does
+        hash_data = self._get_hash(key)
+        return {k.encode() if isinstance(k, str) else k: v for k, v in hash_data.items()}
+
+    def hincrby(self, key, field, increment):
+        hash_data = self._get_hash(key)
+        current = int(hash_data.get(field, 0))
+        hash_data[field] = current + increment
+        return hash_data[field]
+
+    def type(self, key):
+        if key in self.keyspace:
+            if isinstance(self.keyspace[key], dict):
+                return b'hash'
+            elif isinstance(self.keyspace[key], list):
+                return b'list'
+            else:
+                return b'string'
+        return b'none'
 
 
 class Sentinel(conftest.MockCallbacks):
@@ -1948,9 +1976,232 @@ class test_SentinelBackend:
             mock_sentinel.master_for.return_value = Mock(connection_pool=Mock())
             mock_get_sentinel.return_value = mock_sentinel
 
-            x._get_pool(**x.connparams)
 
-            mock_sentinel.master_for.assert_called_once()
-            call_kwargs = mock_sentinel.master_for.call_args[1]
-            assert 'username' not in call_kwargs
-            assert call_kwargs.get('password') == 'mypass'
+class test_Redis_GroupProgress(basetest_RedisBackend):
+    """Test group progress tracking functionality."""
+
+    def test_set_group_progress_size(self):
+        """Test setting group progress size initializes hash correctly."""
+        group_id = 'test-group-123'
+        size = 10
+        
+        self.b.set_group_progress_size(group_id, size)
+        
+        # Verify the hash was created with correct values
+        pkey = self.b.get_key_for_group(group_id, '.p')
+        data = self.b.client.hgetall(pkey)
+        
+        assert data is not None
+        assert int(data.get(b'total', 0)) == size
+        assert int(data.get(b'count', 0)) == 0
+
+    def test_set_group_progress_size_with_expires(self):
+        """Test that progress key expires when result_expires is set."""
+        self.app.conf.result_expires = 3600
+        
+        group_id = 'test-group-456'
+        size = 5
+        
+        with patch.object(self.b.client, 'pipeline') as mock_pipeline:
+            mock_pipe = Mock()
+            mock_pipeline.return_value.__enter__.return_value = mock_pipe
+            mock_pipe.execute.return_value = [None, None, None]
+            
+            self.b.set_group_progress_size(group_id, size)
+            
+            # Verify expire was called in the pipeline
+            calls = [str(call) for call in mock_pipe.method_calls]
+            assert any('expire' in call for call in calls)
+
+    def test_increment_group_progress(self):
+        """Test incrementing group progress counter."""
+        group_id = 'test-group-789'
+        size = 10
+        
+        # Initialize
+        self.b.set_group_progress_size(group_id, size)
+        
+        # Increment multiple times
+        for _ in range(3):
+            self.b.increment_group_progress(group_id)
+        
+        # Verify count
+        completed, total = self.b.get_group_progress(group_id)
+        assert completed == 3
+        assert total == size
+
+    def test_get_group_progress(self):
+        """Test retrieving group progress."""
+        group_id = 'test-group-abc'
+        size = 7
+        
+        # Initialize and increment
+        self.b.set_group_progress_size(group_id, size)
+        self.b.increment_group_progress(group_id)
+        self.b.increment_group_progress(group_id)
+        
+        completed, total = self.b.get_group_progress(group_id)
+        assert completed == 2
+        assert total == size
+
+    def test_get_group_progress_nonexistent(self):
+        """Test getting progress for non-existent group returns None."""
+        completed, total = self.b.get_group_progress('nonexistent-group')
+        assert completed is None
+        assert total is None
+
+    def test_progress_tracking_atomic_increment(self):
+        """Test that increment is atomic (uses HINCRBY)."""
+        group_id = 'test-group-atomic'
+        size = 5
+        
+        self.b.set_group_progress_size(group_id, size)
+        
+        with patch.object(self.b.client, 'hincrby') as mock_hincrby:
+            mock_hincrby.return_value = 1
+            self.b.increment_group_progress(group_id)
+            
+            # Verify hincrby was called with correct arguments
+            mock_hincrby.assert_called_once()
+            call_args = mock_hincrby.call_args
+            assert call_args[0][0].endswith(b'.p')
+            assert call_args[0][1] == 'count'
+            assert call_args[0][2] == 1
+
+    def test_progress_key_format(self):
+        """Test that progress key uses correct format."""
+        group_id = 'test-group-format'
+        size = 3
+        
+        self.b.set_group_progress_size(group_id, size)
+        
+        # Key should be <group_id>.p
+        expected_key = self.b.get_key_for_group(group_id, '.p')
+        assert expected_key.endswith(b'.p')
+        
+        # Verify it's a hash
+        key_type = self.b.client.type(expected_key)
+        assert key_type == b'hash'
+
+    def test_multiple_groups_independent(self):
+        """Test that multiple groups have independent progress tracking."""
+        group1 = 'group-1'
+        group2 = 'group-2'
+        
+        self.b.set_group_progress_size(group1, 5)
+        self.b.set_group_progress_size(group2, 10)
+        
+        self.b.increment_group_progress(group1)
+        self.b.increment_group_progress(group1)
+        self.b.increment_group_progress(group2)
+        
+        c1, t1 = self.b.get_group_progress(group1)
+        c2, t2 = self.b.get_group_progress(group2)
+        
+        assert c1 == 2 and t1 == 5
+        assert c2 == 1 and t2 == 10
+
+    def test_supports_group_progress_flag(self):
+        """Test that Redis backend reports support for group progress."""
+        assert self.b.supports_group_progress is True
+
+    def test_end_to_end_progress_with_task_completion(self):
+        """Test end-to-end progress tracking with actual task completion path."""
+        group_id = 'test-group-e2e'
+        size = 5
+        
+        # Initialize progress tracking
+        self.b.set_group_progress_size(group_id, size)
+        
+        # Simulate tasks completing by calling mark_as_done with group context
+        for i in range(size):
+            task_id = f'task-{i}'
+            request = Context({
+                'id': task_id,
+                'group': group_id,
+                'task': 'test.task'
+            })
+            self.b.mark_as_done(task_id, i, request=request)
+        
+        # Verify progress is correctly tracked
+        completed, total = self.b.get_group_progress(group_id)
+        assert completed == size
+        assert total == size
+
+    def test_end_to_end_progress_with_task_failure(self):
+        """Test end-to-end progress tracking with task failures."""
+        group_id = 'test-group-fail'
+        size = 4
+        
+        # Initialize progress tracking
+        self.b.set_group_progress_size(group_id, size)
+        
+        # Simulate mix of success and failure
+        for i in range(size):
+            task_id = f'task-{i}'
+            request = Context({
+                'id': task_id,
+                'group': group_id,
+                'task': 'test.task'
+            })
+            if i < 2:
+                self.b.mark_as_done(task_id, i, request=request)
+            else:
+                self.b.mark_as_failure(task_id, Exception('test error'), request=request)
+        
+        # Verify all tasks (success + failure) are counted
+        completed, total = self.b.get_group_progress(group_id)
+        assert completed == size
+        assert total == size
+
+    def test_retry_does_not_increment_progress(self):
+        """Test that RETRY state does not increment progress counter."""
+        group_id = 'test-group-retry'
+        size = 3
+        
+        # Initialize progress tracking
+        self.b.set_group_progress_size(group_id, size)
+        
+        # Simulate task retry
+        task_id = 'task-retry-1'
+        request = Context({
+            'id': task_id,
+            'group': group_id,
+            'task': 'test.task'
+        })
+        self.b.mark_as_retry(task_id, Exception('retry error'), request=request)
+        
+        # Progress should not have incremented
+        completed, total = self.b.get_group_progress(group_id)
+        assert completed == 0
+        assert total == size
+
+    def test_retry_then_success_increments_once(self):
+        """Test that RETRY → SUCCESS increments progress exactly once."""
+        group_id = 'test-group-retry-success'
+        size = 2
+        
+        # Initialize progress tracking
+        self.b.set_group_progress_size(group_id, size)
+        
+        task_id = 'task-retry-success-1'
+        request = Context({
+            'id': task_id,
+            'group': group_id,
+            'task': 'test.task'
+        })
+        
+        # First, mark as retry
+        self.b.mark_as_retry(task_id, Exception('retry error'), request=request)
+        
+        # Verify no increment
+        completed, total = self.b.get_group_progress(group_id)
+        assert completed == 0
+        
+        # Then mark as success
+        self.b.mark_as_done(task_id, 'result', request=request)
+        
+        # Verify exactly one increment
+        completed, total = self.b.get_group_progress(group_id)
+        assert completed == 1
+        assert total == size

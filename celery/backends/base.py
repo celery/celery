@@ -201,6 +201,10 @@ class Backend:
     #: :setting:`result_compression` setting is ignored for them.
     supports_result_compression = False
 
+    #: If true the backend supports native group progress tracking.
+    #: This allows efficient O(1) progress queries for groups.
+    supports_group_progress = False
+
     retry_policy = {
         'max_retries': 20,
         'interval_start': 0,
@@ -259,6 +263,8 @@ class Backend:
             self.store_result(task_id, result, state, request=request)
         if request and request.chord:
             self.on_chord_part_return(request, state, result)
+        if request and request.group and state in self.READY_STATES:
+            self.increment_group_progress(request.group)
 
     def mark_as_failure(self, task_id, exc,
                         traceback=None, request=None,
@@ -272,6 +278,9 @@ class Backend:
             # This task may be part of a chord
             if request.chord:
                 self.on_chord_part_return(request, state, exc)
+            # Increment group progress if task is in a group and reached READY_STATE
+            if request.group and state in self.READY_STATES:
+                self.increment_group_progress(request.group)
             # It might also have chained tasks which need to be propagated to,
             # this is most likely to be exclusive with being a direct part of a
             # chord but we'll handle both cases separately.
@@ -939,6 +948,37 @@ class Backend:
 
     def set_chord_size(self, group_id, chord_size):
         pass
+
+    def set_group_progress_size(self, group_id, size):
+        """Set the total size of a group for progress tracking.
+        
+        Arguments:
+            group_id (str): The group ID.
+            size (int): The total number of tasks in the group.
+        """
+        pass
+
+    def increment_group_progress(self, group_id):
+        """Increment the completed count for a group.
+        
+        Arguments:
+            group_id (str): The group ID.
+            
+        Returns:
+            int: The new completed count.
+        """
+        pass
+
+    def get_group_progress(self, group_id):
+        """Get the progress of a group.
+        
+        Arguments:
+            group_id (str): The group ID.
+            
+        Returns:
+            tuple: (completed_count, total_count) or (None, None) if not available.
+        """
+        return None, None
 
     def fallback_chord_unlock(self, header_result, body, countdown=1,
                               **kwargs):
