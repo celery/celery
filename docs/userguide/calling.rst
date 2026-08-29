@@ -56,6 +56,8 @@ The API defines a standard set of execution options, as well as three methods:
     - ``T.apply_async(expires=now + timedelta(days=2))``
         expires in 2 days, set using :class:`~datetime.datetime`.
 
+    - ``T.apply_async(task_id=f'my_own_task_id')``
+        sets the id of the task to my_own_task_id instead of a uuid that is normally generated
 
 Example
 -------
@@ -135,9 +137,10 @@ task that adds 16 to the previous result, forming the expression
 
 
 You can also cause a callback to be applied if task raises an exception
-(*errback*). The worker won't actually call the errback as a task, but will
+(*errback*). In most cases the worker won't call the errback as a task, but will
 instead call the errback function directly so that the raw request, exception
-and traceback objects can be passed to it.
+and traceback objects can be passed to it. (See the note below for when the
+errback is instead applied as a task.)
 
 This is an example error callback:
 
@@ -154,6 +157,34 @@ option:
 .. code-block:: python
 
     add.apply_async((2, 2), link_error=error_handler.s())
+
+.. note::
+
+    The direct call above, passing ``(request, exc, traceback)``, is only used when
+    the errback is a registered ``@app.task`` function task, is not a ``bind=True`` task,
+    and accepts more than one argument. If the errback takes a single argument, is a
+    ``bind=True`` task, or is not registered in the worker that handles the failure,
+    Celery instead applies the errback **as a task**, passing the failed task's id as
+    the only argument.
+
+    The single-argument form is the one to use when the failing task was submitted
+    with :meth:`~@send_task`, since that task is referenced by name and the errback is
+    typically not resolvable for a direct call. Write such an errback to look up the
+    failure by id, using ``allow_join_result`` so the result can be retrieved from
+    inside the task:
+
+    .. code-block:: python
+
+        from celery.result import allow_join_result
+
+        @app.task
+        def on_error(task_id):
+            with allow_join_result():
+                result = app.AsyncResult(task_id)
+                exc = result.get(propagate=False)
+                print('Task {0} raised exception: {1!r}'.format(task_id, exc))
+
+        app.send_task('proj.tasks.add', (2, 2), link_error=on_error.s())
 
 
 In addition, both the ``link`` and ``link_error`` options can be expressed
@@ -458,6 +489,13 @@ You can handle this error too:
     ... except add.OperationalError as exc:
     ...     logger.exception('Sending task raised: %r', exc)
 
+.. note::
+
+    With RabbitMQ, these errors only indicate the broker is unreachable.
+    Messages can still be silently dropped when the broker hits resource
+    limits. Enable ``confirm_publish`` in :setting:`broker_transport_options`
+    to detect this.
+
 .. _calling-serializers:
 
 Serializers
@@ -516,6 +554,13 @@ json -- JSON is supported in many programming languages, is now
         into JSON and then back into a dictionary, the dictionary may not equal
         the original one. That is, ``loads(dumps(x)) != x`` if x has non-string
         keys.
+
+    .. warning::
+
+        With more complex workflows created using :ref:`guide-canvas`, the JSON
+        serializer has been observed to drastically inflate message sizes due to
+        recursive references, leading to resource issues. The *pickle* serializer
+        is not vulnerable to this and may therefore be preferable in such cases.
 
 pickle -- If you have no desire to support any language other than
     Python, then using the pickle encoding will gain you the support of
@@ -795,6 +840,24 @@ setting or by using the ``ignore_result`` option:
 
 If you'd like to store additional metadata about the task in the result backend
 set the :setting:`result_extended` setting to ``True``.
+
+.. note::
+
+   ``result_extended`` controls what *Celery* includes as extended task metadata,
+   but it does not automatically add scheduler-specific metadata.
+   For example, some integrations (e.g. :pypi:`django-celery-beat` together with
+   :pypi:`django-celery-results`) may record the *periodic task name* in the result
+   backend only when the scheduler provides it as part of the published message.
+
+   When you call tasks manually using ``apply_async``/``delay``, that periodic task
+   context is usually not present unless you add it explicitly (e.g. via message
+   headers/properties in ``apply_async`` options). For example:
+
+   .. code-block:: python
+
+      result = task.apply_async(
+          headers={"periodic_task_name": "task_name"},
+      )
 
 .. seealso::
 

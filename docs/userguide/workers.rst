@@ -108,7 +108,7 @@ Worker Shutdown
 
 We will use the terms *Warm, Soft, Cold, Hard* to describe the different stages of worker shutdown.
 The worker will initiate the shutdown process when it receives the :sig:`TERM` or :sig:`QUIT` signal.
-The :sig:`INT` (Ctrl-C) signal is also handled during the shutdown process and always triggers the 
+The :sig:`INT` (Ctrl-C) signal is also handled during the shutdown process and always triggers the
 next stage of the shutdown process.
 
 .. _worker-warm-shutdown:
@@ -125,6 +125,18 @@ and will call :func:`WorkController.stop() <celery.worker.worker.WorkController.
 
 - Additional :sig:`TERM` signals will be ignored during the warm shutdown process.
 - The next :sig:`INT` signal will trigger the next stage of the shutdown process.
+
+.. versionchanged:: 5.6
+    In previous versions of Celery, when the prefork pool was in use, heartbeats to the broker were not sent during
+    warm shutdown. This caused the broker to terminate the connection, which meant that tasks were not able to complete.
+    As of version 5.6, when the prefork pool is in use, heartbeats are now maintained during warm shutdown and tasks are
+    able to complete before the worker terminates.
+
+.. versionchanged:: 5.7
+    When using the thread pool (``--pool threads``), pending futures are now cancelled during warm shutdown
+    using ``cancel_futures=True``. Previously, the thread pool would wait for all submitted tasks to complete,
+    including those that had not yet started executing. This change ensures that only currently running tasks
+    are allowed to finish, while queued tasks are cancelled immediately for a faster and cleaner shutdown.
 
 .. _worker-cold-shutdown:
 
@@ -146,6 +158,29 @@ and will call :func:`WorkController.terminate() <celery.worker.worker.WorkContro
 
 If the warm shutdown already started, the transition to cold shutdown will run a signal handler ``on_cold_shutdown``
 to cancel all currently executing tasks from the MainProcess and potentially trigger the :ref:`worker-soft-shutdown`.
+
+.. warning::
+
+    Cold shutdown forcibly terminates running tasks. The exact mechanism depends on the worker
+    pool. In the prefork pool, termination is performed by raising a :exc:`SystemExit` exception
+    from inside a signal handler (via :mod:`billiard`), which can interrupt Python execution at
+    any bytecode boundary. In all pools, tasks may either run to completion or be interrupted,
+    depending on timing and the pool implementation.
+
+    Any code that assumes Python-level atomicity may leave application state inconsistent. For
+    example, some database drivers (like psycopg3) implement their commit protocol entirely in
+    Python bytecode; in the prefork pool, when Celery's signal handler interrupts such a process,
+    the Python exception-handling path has no way to distinguish a failed commit from a
+    successful one interrupted during cleanup. See `issue #10271`_ for a full analysis.
+
+    Prefer :ref:`worker-warm-shutdown` to allow tasks to complete cleanly. If cold shutdown is
+    unavoidable, avoid constructs such as Django's ``on_commit`` which rely on guarantees that
+    forced termination can violate. Consider the transactional outbox pattern for hard atomicity
+    between a commit and task dispatch, or add precondition checks in downstream tasks to avoid
+    acting on inconsistent state.
+
+.. _issue #10271: https://github.com/celery/celery/issues/10271
+
 
 .. _worker-soft-shutdown:
 
@@ -173,6 +208,12 @@ The soft shutdown will be skipped if there are no tasks running. To force the so
     during the cold shutdown. When using ETA tasks, it is recommended to enable the soft shutdown on idle.
     Experiment which :setting:`worker_soft_shutdown_timeout` value works best for your setup to reduce the risk
     of task loss to a minimum.
+
+.. note::
+
+    When the soft shutdown timeout expires, the worker initiates a cold shutdown, which carries the same
+    signal-safety implications as a direct cold shutdown. See the :ref:`worker-cold-shutdown` warning for
+    details and mitigations.
 
 For example, when setting ``worker_soft_shutdown_timeout=3``, the worker will allow 3 seconds for all currently
 executing tasks to finish before it terminates. If the time limit is reached, the worker will initiate a cold shutdown
@@ -537,6 +578,14 @@ of any signal defined in the :mod:`signal` module in the Python Standard
 Library.
 
 Terminating a task also revokes it.
+
+.. versionchanged:: 5.6
+
+   When a task is revoked, the result backend is now immediately updated
+   to reflect the ``REVOKED`` status. Previously, the backend was only
+   updated when a worker attempted to process the revoked task, which
+   could leave tasks with ETA/countdown in ``PENDING`` status indefinitely
+   if the worker was shut down before the scheduled time.
 
 **Example**
 
