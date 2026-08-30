@@ -145,7 +145,7 @@ Commands
 
 * **inspect query_task**: Show information about task(s) by id.
 
-    Any worker having a task in this set of ids scheduled/reserved/active
+    Any worker having a task in this set of ids that is scheduled, reserved, or active
     will respond with status and information.
 
     .. code-block:: console
