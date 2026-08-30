@@ -198,13 +198,20 @@ class DatabaseBackend(BaseBackend):
         """
         if payload is None:
             return payload
+        payload = ensure_bytes(payload)
         try:
             return self.decode(payload)
         except Exception:
+            # Legacy rows written before celery/celery#3025 were stored via
+            # SQLAlchemy's PickleType, which uses a binary pickle protocol.
+            if payload[:1] != b'\x80':
+                raise
             logger.warning(
                 'Task result payload could not be decoded using the '
                 'configured result_serializer; falling back to pickle '
-                'for backward compatibility with pre-fix data.')
+                'for backward compatibility with pre-fix data.',
+                exc_info=True,
+            )
             return pickle.loads(payload)
 
     def task_result_exists(self, task_id):
