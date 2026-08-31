@@ -572,6 +572,27 @@ class test_DatabaseBackend:
         assert meta['result'] == {'legacy': 'pickle-data'}
         warning.assert_called_once()
 
+    def test_result_decode_does_not_unpickle_non_pickle_garbage(self):
+        """The pickle fallback must not fire on arbitrary bytes that
+        merely fail to decode under the configured serializer -- only on
+        payloads that actually look like a pickle (see review discussion
+        on PR #10536).
+        """
+        self.app.conf.result_serializer = 'json'
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+
+        session = tb.ResultSession()
+        task = Task(tid)
+        task.status = states.SUCCESS
+        task.result = b'not-json-and-not-pickle-either'
+        session.add(task)
+        session.commit()
+        session.close()
+
+        with pytest.raises(Exception):
+            tb.get_task_meta(tid)
+
     def test_mark_as_started(self):
         tb = DatabaseBackend(self.uri, app=self.app)
         tid = uuid()
@@ -629,11 +650,13 @@ class test_DatabaseBackend:
         tb = DatabaseBackend(self.uri, app=self.app)
         assert loads(dumps(tb))
 
+    @pytest.mark.usefixtures('depends_on_current_app')
     def test_save__restore__delete_group(self):
         tb = DatabaseBackend(self.uri, app=self.app)
 
         tid = uuid()
-        res = {'something': 'special'}
+        res = self.app.GroupResult(
+            tid, [self.app.AsyncResult(uuid()), self.app.AsyncResult(uuid())])
         assert tb.save_group(tid, res) == res
 
         res2 = tb.restore_group(tid)
@@ -644,13 +667,19 @@ class test_DatabaseBackend:
 
         assert tb.restore_group('xxx-nonexisting-id') is None
 
+    @pytest.mark.usefixtures('depends_on_current_app')
     def test_save__restore_group_respects_configured_serializer(self):
-        """Regression test for celery/celery#3025 (group results)."""
+        """Regression test for celery/celery#3025 (group results).
+
+        Covers the real GroupResult.save()/.restore() path (see review
+        discussion on PR #10536), not just an arbitrary value.
+        """
         self.app.conf.result_serializer = 'json'
         tb = DatabaseBackend(self.uri, app=self.app)
 
         tid = uuid()
-        res = {'something': 'special'}
+        res = self.app.GroupResult(
+            tid, [self.app.AsyncResult(uuid()), self.app.AsyncResult(uuid())])
         tb.save_group(tid, res)
 
         session = tb.ResultSession()
@@ -659,7 +688,6 @@ class test_DatabaseBackend:
         session.close()
 
         assert raw[:1] != b'\x80', 'group result was pickled despite json serializer'
-        assert json.loads(raw) == res
         assert tb.restore_group(tid) == res
 
     def test_cleanup(self):

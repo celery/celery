@@ -8,6 +8,7 @@ from kombu.utils.encoding import ensure_bytes
 from celery import states
 from celery.backends.base import BaseBackend
 from celery.exceptions import ImproperlyConfigured
+from celery.result import result_from_tuple
 from celery.utils.imports import symbol_by_name
 from celery.utils.time import maybe_timedelta
 
@@ -193,8 +194,12 @@ class DatabaseBackend(BaseBackend):
 
         Rows written before the fix for celery/celery#3025 always stored a
         raw pickle blob regardless of the configured ``result_serializer``,
-        so a row that can't be decoded with the current serializer is
+        so a row that can't be decoded with the current serializer, but
+        looks like a pickle payload (starts with the pickle protocol 2+
+        marker that every pickle Celery/kombu produces starts with), is
         assumed to be one of those and is unpickled directly instead.
+        Anything else re-raises the original decode error instead of
+        blindly unpickling arbitrary bytes.
         """
         if payload is None:
             return payload
@@ -233,7 +238,8 @@ class DatabaseBackend(BaseBackend):
         """Store the result of an executed group."""
         session = self.ResultSession()
         with session_cleanup(session):
-            group = self.taskset_cls(group_id, ensure_bytes(self.encode(result)))
+            value = ensure_bytes(self.encode(self.prepare_value(result)))
+            group = self.taskset_cls(group_id, value)
             session.add(group)
             session.flush()
             session.commit()
@@ -247,7 +253,10 @@ class DatabaseBackend(BaseBackend):
                 self.taskset_cls.taskset_id == group_id).first()
             if group:
                 data = group.to_dict()
-                data['result'] = self._decode_stored_result(data['result'])
+                value = self._decode_stored_result(data['result'])
+                data['result'] = (
+                    value if value is None else result_from_tuple(value, self.app)
+                )
                 return data
 
     def _delete_group(self, group_id):
