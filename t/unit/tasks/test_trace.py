@@ -419,6 +419,19 @@ class test_trace(TraceCase):
             self.add.name, 'id1', {}, ((2, 2), {}, {}), None, None, app=self.app,
         )
 
+    @patch('celery.app.trace._localized', [])
+    def test_fast_trace_task__empty_registry_raises_helpful_error(self):
+        with pytest.raises(RuntimeError, match='worker task registry is empty'):
+            fast_trace_task(
+                self.add.name,
+                'id1',
+                {},
+                ((2, 2), {}, {}),
+                None,
+                None,
+                app=self.app,
+            )
+
     def test_fast_trace_task__no_content_type(self):
         self.app.tasks[self.add.name].__trace__ = build_tracer(
             self.add.name, self.add, app=self.app,
@@ -1081,6 +1094,53 @@ class test_trace(TraceCase):
         successful_requests.discard(task_id)
         self.app.conf.worker_deduplicate_successful_tasks = False
 
+    def test_ignore_result_priority__request_overrides_task_true(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        add.backend = Mock(name='backend')
+        add.ignore_result = True
+        request = {'ignore_result': False}
+
+        self.trace(add, (2, 2), {}, request=request, eager=False)
+
+        add.backend.mark_as_done.assert_called_with(ANY, 4, ANY, True)
+
+    def test_ignore_result_priority__request_overrides_task_false(self):
+        @self.app.task(shared=False)
+        def add(x, y):
+            return x + y
+
+        add.backend = Mock(name='backend')
+        add.ignore_result = False
+        request = {'ignore_result': True}
+
+        self.trace(add, (2, 2), {}, request=request, eager=False)
+
+        add.backend.mark_as_done.assert_called_with(ANY, 4, ANY, False)
+
+    def test_ignore_result_priority__request_overrides_app_config(self):
+        prev_ignore = self.app.conf.task_ignore_result
+
+        try:
+            self.app.conf.task_ignore_result = True
+
+            @self.app.task(shared=False)
+            def add(x, y):
+                return x + y
+
+            add.backend = Mock(name='backend')
+
+            assert add.ignore_result is True
+
+            request = {'ignore_result': False}
+            self.trace(add, (2, 2), {}, request=request, eager=False)
+
+            add.backend.mark_as_done.assert_called_with(ANY, 4, ANY, True)
+        finally:
+            self.app.conf.task_ignore_result = prev_ignore
+
 
 class test_TraceInfo(TraceCase):
     class TI(TraceInfo):
@@ -1119,6 +1179,35 @@ class test_TraceInfo(TraceCase):
         x.handle_failure.assert_called_with(
             self.add,
             self.add.request,
+            store_errors=True,
+            call_errbacks=True,
+        )
+
+    def test_handle_error_state_missing_request_store_errors_false_while_task_ignore_result_true(self):
+        x = self.TI(states.FAILURE)
+        x.handle_failure = Mock()
+
+        self.add.ignore_result = True
+        self.add.store_errors_even_if_ignored = False
+
+        x.handle_error_state(self.add, None)
+        x.handle_failure.assert_called_once_with(
+            self.add,
+            None,
+            store_errors=False,
+            call_errbacks=True,
+        )
+
+    def test_handle_error_state_missing_request_store_errors_true_while_task_ignore_result_false(self):
+        x = self.TI(states.FAILURE)
+        x.handle_failure = Mock()
+
+        self.add.ignore_result = False
+
+        x.handle_error_state(self.add, None)
+        x.handle_failure.assert_called_once_with(
+            self.add,
+            None,
             store_errors=True,
             call_errbacks=True,
         )

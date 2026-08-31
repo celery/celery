@@ -52,9 +52,46 @@ have been moved into a new  ``task_`` prefix.
     Celery will still be able to read old configuration files until Celery 6.0.
     Afterwards, support for the old configuration files will be removed.
     We provide the ``celery upgrade`` command that should handle
-    plenty of cases (including :ref:`Django <latentcall-django-admonition>`).
+    plenty of cases (including :ref:`Django settings with a namespace <conf-django-namespace>`).
 
     Please migrate to the new configuration scheme as soon as possible.
+
+
+.. _conf-django-namespace:
+
+Django settings with a namespace
+--------------------------------
+
+The configuration names documented here use the new lowercase style, such as
+``broker_url`` and ``task_always_eager``.
+
+If you're configuring Celery from Django settings with a namespace:
+
+.. code-block:: python
+
+    app.config_from_object('django.conf:settings', namespace='CELERY')
+
+then those same settings must be written in uppercase and prefixed with
+``CELERY_`` in ``settings.py``:
+
+.. code-block:: python
+
+    CELERY_BROKER_URL = 'redis://localhost:6379/0'
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_WORKER_CONCURRENCY = 4
+
+Using the ``CELERY_`` namespace is recommended in Django projects because it
+keeps Celery settings separate from Django settings and settings used by other
+apps.
+
+If you're migrating an older Django project to the new setting names, the
+``celery upgrade`` command can update the names for you:
+
+.. code-block:: console
+
+    $ celery upgrade settings proj/settings.py --django
+
+For a complete Django example, see :ref:`django-first-steps`.
 
 
 ========================================== ==============================================
@@ -80,6 +117,7 @@ have been moved into a new  ``task_`` prefix.
 ``BROKER_HEARTBEAT``                       :setting:`broker_heartbeat`
 ``BROKER_LOGIN_METHOD``                    :setting:`broker_login_method`
 ``BROKER_NATIVE_DELAYED_DELIVERY_QUEUE_TYPE`` :setting:`broker_native_delayed_delivery_queue_type`
+``BROKER_POOL_ACQUIRE_TIMEOUT``            :setting:`broker_pool_acquire_timeout`
 ``BROKER_POOL_LIMIT``                      :setting:`broker_pool_limit`
 ``BROKER_USE_SSL``                         :setting:`broker_use_ssl`
 ``CELERY_CACHE_BACKEND``                   :setting:`cache_backend`
@@ -117,7 +155,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_REDIS_BACKEND_CREDENTIAL_PROVIDER`` :setting:`redis_backend_credential_provider`
 ``CELERY_RESULT_BACKEND``                  :setting:`result_backend`
 ``CELERY_MAX_CACHED_RESULTS``              :setting:`result_cache_max`
-``CELERY_MESSAGE_COMPRESSION``             :setting:`result_compression`
+``CELERY_RESULT_COMPRESSION``              :setting:`result_compression`
 ``CELERY_RESULT_EXCHANGE``                 :setting:`result_exchange`
 ``CELERY_RESULT_EXCHANGE_TYPE``            :setting:`result_exchange_type`
 ``CELERY_RESULT_EXPIRES``                  :setting:`result_expires`
@@ -135,7 +173,7 @@ have been moved into a new  ``task_`` prefix.
 ``CELERY_ACKS_ON_FAILURE_OR_TIMEOUT``      :setting:`task_acks_on_failure_or_timeout`
 ``CELERY_TASK_ALWAYS_EAGER``               :setting:`task_always_eager`
 ``CELERY_ANNOTATIONS``                     :setting:`task_annotations`
-``CELERY_COMPRESSION``                     :setting:`task_compression`
+``CELERY_MESSAGE_COMPRESSION``             :setting:`task_compression`
 ``CELERY_CREATE_MISSING_QUEUES``           :setting:`task_create_missing_queues`
 ``CELERY_CREATE_MISSING_QUEUE_TYPE``       :setting:`task_create_missing_queue_type`
 ``CELERY_CREATE_MISSING_QUEUE_EXCHANGE_TYPE`` :setting:`task_create_missing_queue_exchange_type`
@@ -380,6 +418,19 @@ methods that have been registered with :mod:`kombu.serialization.registry`.
 .. seealso::
 
     :ref:`calling-serializers`.
+
+.. setting:: task_repr_maxlevels
+
+``task_repr_maxlevels``
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: 3.
+
+Maximum nesting depth used when generating ``argsrepr`` and ``kwargsrepr``.
+Deeper containers are shown as ``{...}`` / ``[...]``. Set to ``0`` or
+:const:`None` for no limit.
 
 .. setting:: task_publish_retry
 
@@ -910,8 +961,30 @@ serialization formats.
 
 Default: No compression.
 
+.. versionchanged:: 5.7
+
+    This setting is now applied to stored results. It was accepted but never
+    used before 5.7, so results were always stored uncompressed. Every worker
+    and client that reads results has to be on 5.7 or later before you turn
+    it on. An unknown compression method now raises
+    :exc:`~celery.exceptions.ImproperlyConfigured` instead of being ignored.
+
 Optional compression method used for task results.
 Supports the same options as the :setting:`task_compression` setting.
+
+A compressed result is stored as binary data, so this setting is only
+honoured by backends that can hold a payload of arbitrary bytes and hand it
+back unchanged. Those are the Redis, MongoDB, Cassandra, DynamoDB,
+Google Cloud Storage and file-system backends. On any other backend the
+setting is ignored, a warning is emitted when the backend is created, and
+results are stored uncompressed.
+
+Each compressed result records which method compressed it, so a worker or
+client reads a compressed result correctly whether or not it has this
+setting turned on itself, and results written before the setting was turned
+on stay readable. Older versions of Celery don't know how to read a
+compressed result at all, so when you roll this out, upgrade every worker
+and client first and turn the setting on afterwards.
 
 .. setting:: result_extended
 
@@ -921,7 +994,7 @@ Supports the same options as the :setting:`task_compression` setting.
 Default: ``False``
 
 Enables extended task result attributes (name, args, kwargs, worker,
-retries, queue, delivery_info) to be written to backend.
+retries, queue) to be written to backend.
 
 .. setting:: result_expires
 
@@ -1197,6 +1270,42 @@ you to customize the table names:
         'task': 'myapp_taskmeta',
         'group': 'myapp_groupmeta',
     }
+
+.. setting:: database_engine_callback
+
+``database_engine_callback``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: :const:`None`.
+
+An optional callable (or dotted import path to one) that receives the
+SQLAlchemy engine immediately after it's created. Use this to register
+event listeners or apply any engine-level customization.
+
+This is useful for deployments that need per-connection authentication,
+such as injecting JWT tokens or using IAM-based auth via a ``do_connect``
+listener.
+
+Example configuration:
+
+.. code-block:: python
+
+    from sqlalchemy import event
+
+    def register_do_connect(engine):
+        @event.listens_for(engine, 'do_connect')
+        def on_connect(dialect, conn_rec, cargs, cparams):
+            cparams['password'] = get_auth_token()
+
+    app.conf.database_engine_callback = register_do_connect
+
+Can also be set as a dotted import path:
+
+.. code-block:: python
+
+    app.conf.database_engine_callback = 'myapp.db:register_do_connect'
 
 .. _conf-rpc-result-backend:
 
@@ -2719,7 +2828,10 @@ See :ref:`routing-options-rabbitmq-priorities`.
 
 Default: :const:`None`.
 
-See :ref:`routing-options-rabbitmq-priorities`.
+The interpretation of the priority value is broker-specific. With RabbitMQ,
+higher numbers denote higher priority; with Redis, priority ``0`` is the
+highest priority. See :ref:`routing-options-rabbitmq-priorities` and
+:ref:`redis-message-priorities`.
 
 .. setting:: task_inherit_parent_priority
 
@@ -3115,6 +3227,26 @@ contention can arise and you should consider increasing the limit.
 If set to :const:`None` or 0 the connection pool will be disabled and
 connections will be established and closed for every use.
 
+.. setting:: broker_pool_acquire_timeout
+
+``broker_pool_acquire_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: :const:`None` (block indefinitely).
+
+The maximum number of seconds Celery will wait when high-level sending APIs
+such as :meth:`~celery.app.base.Celery.send_task` or
+:meth:`~celery.app.task.Task.apply_async` acquire a connection or producer
+from the broker pool. When all :setting:`broker_pool_limit` connections are in
+use, such calls will block up to this many seconds before raising
+:exc:`~celery.exceptions.OperationalError`.
+
+Set this to a positive number (e.g. ``120``) to prevent these calls from
+blocking indefinitely under high concurrency. When :const:`None`, the
+previous behavior of blocking without a timeout is preserved.
+
 .. setting:: broker_connection_timeout
 
 ``broker_connection_timeout``
@@ -3328,6 +3460,9 @@ but if mostly CPU-bound, try to keep it close to the
 number of CPUs on your machine. If not set, the number of CPUs/cores
 on the host will be used.
 
+The command-line equivalent is the
+:option:`--concurrency <celery worker --concurrency>` argument.
+
 .. setting:: worker_prefetch_multiplier
 
 ``worker_prefetch_multiplier``
@@ -3347,6 +3482,9 @@ To limit the broker to only deliver one message per process at a time,
 set :setting:`worker_prefetch_multiplier` to 1. Changing that setting to 0
 will allow the worker to keep consuming as many messages as it wants.
 
+The command-line equivalent is the
+:option:`--prefetch-multiplier <celery worker --prefetch-multiplier>` argument.
+
 If you need to completely disable broker prefetching while still using
 early acknowledgments, enable :setting:`worker_disable_prefetch`.
 When this option is enabled the worker only fetches a task from the broker
@@ -3359,7 +3497,9 @@ when one of its processes is available.
 You can also enable this via the :option:`--disable-prefetch <celery worker --disable-prefetch>`
 command line flag.
 
-For more on prefetching, read :ref:`optimizing-prefetch-limit`
+For more on prefetching, including how this setting interacts with late
+acknowledgment when reserving one task at a time, read
+:ref:`optimizing-prefetch-limit`.
 
 .. setting:: worker_eta_task_limit
 
@@ -3700,9 +3840,15 @@ If enabled, the event receiver's queue will be marked as *durable*, meaning it w
 :transports supported: ``amqp``
 .. versionadded:: 5.6
 
-Default: ``False``
+Default: ``True``
 
 If enabled, the event queue will be *exclusive* to the current connection and automatically deleted when the connection closes.
+
+.. versionchanged:: 5.7
+
+   The default was changed from ``False`` to ``True`` for compatibility with RabbitMQ 4.3.0,
+   which no longer permits transient non-exclusive queues by default.
+   See `RabbitMQ Deprecated Features List <https://www.rabbitmq.com/release-information/deprecated-features-list>`_.
 
 .. warning::
 
@@ -3880,10 +4026,16 @@ If set to ``True``, the control exchange and queue will be durable — they will
 ``control_queue_exclusive``
 ---------------------------
 
-- **Default:** ``False``
+- **Default:** ``True``
 - **Type:** ``bool``
 
-If set to ``True``, the control queue will be exclusive to a single connection. This is generally not recommended in distributed environments.
+If set to ``True``, the control queue will be exclusive to a single connection.
+
+.. versionchanged:: 5.7
+
+   The default was changed from ``False`` to ``True`` for compatibility with RabbitMQ 4.3.0,
+   which no longer permits transient non-exclusive queues by default.
+   See `RabbitMQ Deprecated Features List <https://www.rabbitmq.com/release-information/deprecated-features-list>`_.
 
 .. warning::
 
@@ -3937,6 +4089,21 @@ The format to use for log messages.
 See the Python :mod:`logging` module for more information about log
 formats.
 
+.. setting:: worker_log_datefmt
+
+``worker_log_datefmt``
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: :const:`None`.
+
+The format to use for the ``%(asctime)s`` field of log messages, for example
+``"%Y-%m-%d %H:%M:%S"``. When unset, the :mod:`logging` module default is
+used, which appends milliseconds after a comma.
+
+See :meth:`logging.Formatter.formatTime` for the accepted directives.
+
 .. setting:: worker_task_log_format
 
 ``worker_task_log_format``
@@ -3953,6 +4120,18 @@ The format to use for log messages logged in tasks.
 
 See the Python :mod:`logging` module for more information about log
 formats.
+
+.. setting:: worker_task_log_datefmt
+
+``worker_task_log_datefmt``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: :const:`None`.
+
+The format to use for the ``%(asctime)s`` field of log messages logged in
+tasks. Behaves like :setting:`worker_log_datefmt`.
 
 .. setting:: worker_redirect_stdouts
 
@@ -4255,8 +4434,10 @@ that it's possible to shut down in a timely manner.
 Default: None.
 
 When using cron, the number of seconds :mod:`~celery.bin.beat` can look back
-when deciding whether a cron schedule is due. When set to `None`, cronjobs that
-are past due will always run immediately.
+when deciding whether a cron schedule is due. Only the most recent missed run
+time is considered: if it's within the deadline the task runs immediately,
+otherwise it waits until its next scheduled time. When set to `None`, cronjobs
+that are past due will always run immediately.
 
 .. warning::
 

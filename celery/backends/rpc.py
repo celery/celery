@@ -4,7 +4,6 @@ RPC-style result backend, using reply-to and one queue per client.
 """
 import logging
 import time
-from contextlib import contextmanager
 
 import kombu
 from kombu.common import maybe_declare
@@ -53,6 +52,10 @@ class ResultConsumer(BaseResultConsumer):
     def start(self, initial_task_id, no_ack=True, **kwargs):
         self._no_ack = no_ack
         self._connection = self.app.connection()
+        self._connection_errors = (
+            self._connection.connection_errors
+            + self._connection.channel_errors
+        )
         initial_queue = self._create_binding(initial_task_id)
         self._consumer = self.Consumer(
             self._connection.default_channel, [initial_queue],
@@ -60,22 +63,9 @@ class ResultConsumer(BaseResultConsumer):
             accept=self.accept)
         self._consumer.consume()
 
-    @contextmanager
-    def _handle_connection_errors(self):
-        """Context manager that catches broker connection/channel errors and reconnects."""
-        try:
-            yield
-        except (self._connection.connection_errors
-                + self._connection.channel_errors) as exc:
-            logger.warning(
-                'RPC result consumer: connection lost (%s), '
-                'attempting to reconnect...', exc,
-            )
-            self._reconnect()
-
     def drain_events(self, timeout=None):
         if self._connection:
-            with self._handle_connection_errors():
+            with self.reconnect_on_error():
                 return self._connection.drain_events(timeout=timeout)
         elif timeout:
             time.sleep(timeout)
@@ -86,6 +76,10 @@ class ResultConsumer(BaseResultConsumer):
         Re-subscribes to every queue that the old consumer was listening on
         so that pending results can still be drained.
         """
+        logger.warning(
+            'RPC result consumer: connection lost, attempting to reconnect...',
+            exc_info=True,
+        )
         old_queues = []
         if self._consumer is not None:
             old_queues = list(self._consumer.queues)
@@ -111,6 +105,10 @@ class ResultConsumer(BaseResultConsumer):
 
         # Establish a fresh connection and consumer.
         self._connection = self.app.connection()
+        self._connection_errors = (
+            self._connection.connection_errors
+            + self._connection.channel_errors
+        )
         self._consumer = self.Consumer(
             self._connection.default_channel,
             old_queues,
@@ -144,6 +142,13 @@ class ResultConsumer(BaseResultConsumer):
     def cancel_for(self, task_id):
         if self._consumer:
             self._consumer.cancel_by_queue(self._create_binding(task_id).name)
+
+    def on_state_change(self, meta, message):
+        super().on_state_change(meta, message)
+        if meta['status'] in states.READY_STATES:
+            # final state delivered by the consumer: any copy buffered
+            # by an earlier poll is stale now.
+            self.backend._out_of_band.pop(meta.get('task_id'), None)
 
 
 class RPCBackend(base.Backend, AsyncBackendMixin):
@@ -201,7 +206,14 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
 
     def _after_fork(self):
         # clear state for child processes.
-        self._pending_results.clear()
+        for mapping in self._pending_results:
+            mapping.clear()
+        self._out_of_band.clear()
+        # the child must not inherit the parent's buffered final
+        # states or cached metas.
+        self._pending_messages.clear()
+        self._pending_messages.total = 0
+        self._cache.clear()
         self.result_consumer._after_fork()
 
     def _create_exchange(self, name, type='direct', delivery_mode=2):
@@ -250,6 +262,21 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
         # but we don't have to cancel since we have one queue per process.
         pass
 
+    def forget(self, task_id):
+        self._out_of_band.pop(task_id, None)
+        try:
+            buf = self._pending_messages.pop(task_id)
+        except KeyError:
+            pass
+        else:
+            self._pending_messages.total -= len(buf)
+        super().forget(task_id)
+
+    def _forget(self, task_id):
+        # results are messages on the reply queue,
+        # there is nothing stored server-side to delete.
+        pass
+
     def as_uri(self, include_password=True):
         return 'rpc://'
 
@@ -273,13 +300,10 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
         return result
 
     def _to_result(self, task_id, state, result, traceback, request):
-        return {
-            'task_id': task_id,
-            'status': state,
-            'result': self.encode_result(result, state),
-            'traceback': traceback,
-            'children': self.current_task_children(request),
-        }
+        meta = self._get_result_meta(result=self.encode_result(result, state),
+                                     state=state, traceback=traceback, request=request)
+        meta['task_id'] = task_id
+        return meta
 
     def on_out_of_band_result(self, task_id, message):
         # Callback called when a reply for a task is received,
@@ -288,7 +312,15 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
         # buffer: probably it will become pending later.
         if self.result_consumer:
             self.result_consumer.on_out_of_band_result(message)
-        self._out_of_band[task_id] = message
+        if message.payload.get('status') in states.READY_STATES:
+            # final meta is served from the cache,
+            # no need to buffer the message itself.
+            self._set_cache_by_message(task_id, message)
+        else:
+            self._out_of_band[task_id] = message
+        # the payload is buffered/cached in memory now, so complete the
+        # delivery instead of leaving it unacked on the channel.
+        message.ack()
 
     def get_task_meta(self, task_id, backlog_limit=1000):
         buffered = self._out_of_band.pop(task_id, None)
@@ -312,15 +344,29 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
             self.on_out_of_band_result(tid, msg)
 
         if latest:
-            latest.requeue()
-            return self._set_cache_by_message(task_id, latest)
+            meta = self._set_cache_by_message(task_id, latest)
+            if meta['status'] in states.READY_STATES:
+                # final state: resolve any pending waiter from the cache
+                # and ack, requeueing would keep the message circulating
+                # between the queue and _out_of_band forever.
+                self.result_consumer.on_out_of_band_result(latest)
+                latest.ack()
+            else:
+                latest.requeue()
+            return meta
         else:
             # no new state, use previous
             try:
                 return self._cache[task_id]
             except KeyError:
-                # result probably pending.
-                return {'status': states.PENDING, 'result': None}
+                pass
+            # a final state consumed by an earlier poll is kept in the
+            # pending buffer for late waiters, peek without consuming.
+            buf = self._pending_messages.get(task_id)
+            if buf:
+                return self.meta_from_decoded(dict(buf[-1]))
+            # result probably pending.
+            return {'status': states.PENDING, 'result': None}
     poll = get_task_meta  # XXX compat
 
     def _set_cache_by_message(self, task_id, message):
@@ -392,7 +438,7 @@ class RPCBackend(base.Backend, AsyncBackendMixin):
     def binding(self):
         return self.Queue(
             self.oid, self.exchange, self.oid,
-            durable=False,
+            durable=True,
             auto_delete=True,
             expires=self.expires,
         )

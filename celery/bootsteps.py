@@ -246,7 +246,7 @@ class Blueprint:
         try:
             return G.topsort()
         except KeyError as exc:
-            raise KeyError('unknown bootstep: %s' % exc)
+            raise KeyError('unknown bootstep: %s' % exc) from exc
 
     def claim_steps(self):
         return dict(self.load_step(step) for step in self.types)
@@ -303,7 +303,7 @@ class Step(metaclass=StepType):
     #: Set this to true if the step is enabled based on some condition.
     conditional = False
 
-    #: List of other steps that that must be started before this step.
+    #: List of other steps that must be started before this step.
     #: Note that all dependencies must be in the same blueprint.
     requires = ()
 

@@ -808,7 +808,7 @@ def check_privileges(accept_content):
         gid_entry = grp.getgrgid(gid)
         egid_entry = grp.getgrgid(egid)
     except KeyError:
-        warnings.warn(SecurityWarning(ASSUMING_ROOT))
+        warnings.warn(SecurityWarning(ASSUMING_ROOT), stacklevel=2)
         _warn_or_raise_security_error(egid, euid, gid, uid,
                                       pickle_or_serialize)
         return
@@ -840,4 +840,6 @@ def _warn_or_raise_security_error(egid, euid, gid, uid, pickle_or_serialize):
 
     warnings.warn(SecurityWarning(ROOT_DISCOURAGED.format(
         uid=uid, euid=euid, gid=gid, egid=egid,
-    )))
+    )),
+        stacklevel=2,
+    )
