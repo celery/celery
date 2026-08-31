@@ -1433,7 +1433,7 @@ class Celery:
         return (self.main, self._conf.changes if self.configured else {},
                 self.loader_cls, self.backend_cls, self.amqp_cls,
                 self.events_cls, self.log_cls, self.control_cls,
-                False, self._config_source)
+                False, self._config_source, self._config_source_silent)
 
     @cached_property
     def Worker(self):
