@@ -28,3 +28,6 @@ def test_sphinx():
         'This task is in a different module!'
         not in contents
     )
+    # Verify :task: cross-reference role resolves to a link
+    assert 'foo.bar' in contents
+    assert 'Cross-reference test' in contents

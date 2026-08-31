@@ -106,6 +106,13 @@ Glossary
         :setting:`worker_prefetch_multiplier` setting, which is multiplied
         by the number of pool slots (threads/processes/greenthreads).
 
+        .. note::
+            If you are using eta or countdown tasks, the :setting:`worker_prefetch_multiplier`
+            still determines the base prefetch count. The :setting:`worker_eta_task_limit`
+            setting, when enabled, instead caps the total number of unacknowledged
+            messages the worker will hold (including eta/countdown tasks). See
+            :setting:`worker_eta_task_limit`.
+
     `prefetch count`
         Maximum number of unacknowledged messages a consumer can hold and if
         exceeded the transport shouldn't deliver any more messages to that
