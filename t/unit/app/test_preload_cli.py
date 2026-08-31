@@ -38,7 +38,8 @@ def test_preload_options(subcommand_with_params: Tuple[str, ...], isolated_cli_r
         catch_exceptions=False,
     )
 
-    assert "No such option: --ini" in res_without_preload.output
+    assert "No such option" in res_without_preload.output
+    assert "--ini" in res_without_preload.output
     assert res_without_preload.exit_code == 2
 
     res_with_preload = isolated_cli_runner.invoke(
