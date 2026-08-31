@@ -8,6 +8,7 @@ Parts of this module is Copyright by Werkzeug Team.
 
 import operator
 import sys
+import types
 from functools import reduce
 from importlib import import_module
 from types import ModuleType
@@ -429,6 +430,8 @@ class class_property:
         self.__doc__ = info.__doc__
         self.__name__ = info.__name__
         self.__module__ = info.__module__
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
     def __get__(self, obj, type=None):
         if obj and type is None:
