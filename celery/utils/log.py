@@ -233,12 +233,30 @@ class LoggingProxy:
                 if "\n" not in text:
                     self._thread.buffer = buffer + text
                     return orig_len
+                # Combine any buffered partial line with the new text.
                 text = buffer + text
                 self._thread.buffer = ""
-                log_message = text.rstrip("\n")
-                if log_message:
-                    self.logger.log(self.loglevel, log_message)
 
+                # Split into lines, keeping newline characters so we can
+                # distinguish complete lines from a final partial line.
+                lines = text.splitlines(keepends=True)
+
+                # Log all complete lines except possibly the last.
+                for line in lines[:-1]:
+                    log_message = line.rstrip("\n")
+                    if log_message:
+                        self.logger.log(self.loglevel, log_message)
+
+                # Handle the final line separately: it may be complete or partial.
+                last_line = lines[-1]
+                if last_line.endswith("\n"):
+                    log_message = last_line.rstrip("\n")
+                    if log_message:
+                        self.logger.log(self.loglevel, log_message)
+                    self._thread.buffer = ""
+                else:
+                    # Incomplete line: keep it in the buffer for the next write/flush.
+                    self._thread.buffer = last_line
                 return orig_len
             finally:
                 self._thread.recurse_protection = False
