@@ -54,7 +54,6 @@ def add_unlock_chord_task(app):
             interval = self.default_retry_delay
 
         # check if the task group is ready, and if so apply the callback.
-        callback = maybe_signature(callback, app)
         deps = GroupResult(
             group_id,
             [result_from_tuple(r, app=app) for r in result],
