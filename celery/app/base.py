@@ -602,7 +602,8 @@ class Celery:
         if not self.finalized and not self.autofinalize:
             raise RuntimeError('Contract breach: app not finalized')
         name = name or self.gen_task_name(fun.__name__, fun.__module__)
-        base = (base or self.Task,) if not isinstance(base, tuple) else base
+        base = base or self.Task
+        base = base if isinstance(base, tuple) else (base,)
 
         if name not in self._tasks:
             if pydantic is True:
