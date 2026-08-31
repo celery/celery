@@ -472,7 +472,7 @@ class AsynPool(_pool.Pool):
 
         self.write_stats = Counter()
 
-        super().__init__(processes, *args, **kwargs)
+        super().__init__(processes, *args, synack=synack, **kwargs)
 
         for proc in self._pool:
             # create initial mappings, these will be updated
@@ -513,10 +513,11 @@ class AsynPool(_pool.Pool):
             self._event_process_exit, hub, proc)
 
     def _untrack_child_process(self, proc, hub):
-        if proc._sentinel_poll is not None:
-            fd, proc._sentinel_poll = proc._sentinel_poll, None
-            hub.remove(fd)
-            os.close(fd)
+        sentinel_poll = getattr(proc, '_sentinel_poll', None)
+        if sentinel_poll is not None:
+            proc._sentinel_poll = None
+            hub.remove(sentinel_poll)
+            os.close(sentinel_poll)
 
     def register_with_event_loop(self, hub):
         """Register the async pool with the current event loop."""
@@ -999,11 +1000,14 @@ class AsynPool(_pool.Pool):
         if self._state == TERMINATE:
             return
         # cancel all tasks that haven't been accepted so that NACK is sent
-        # if synack is enabled.
-        if self.synack:
-            for job in self._cache.values():
-                if not job._accepted:
+        # if synack is enabled, otherwise discard them from the cache
+        # since they will be redelivered by the broker.
+        for job in tuple(self._cache.values()):
+            if not job._accepted:
+                if self.synack:
                     job._cancel()
+                else:
+                    job.discard()
 
         # clear the outgoing buffer as the tasks will be redelivered by
         # the broker anyway.
@@ -1028,36 +1032,47 @@ class AsynPool(_pool.Pool):
                     if writer is not None:
                         owned_by[writer] = job
 
-                if not self._active_writers:
-                    self._cache.clear()
-                else:
-                    while self._active_writers:
-                        writers = list(self._active_writers)
-                        for gen in writers:
-                            if (gen.__name__ == '_write_job' and
-                                    gen_not_started(gen)):
-                                # hasn't started writing the job so can
-                                # discard the task, but we must also remove
-                                # it from the Pool._cache.
-                                try:
-                                    job = owned_by[gen]
-                                except KeyError:
-                                    pass
-                                else:
-                                    # removes from Pool._cache
-                                    job.discard()
-                                self._active_writers.discard(gen)
+                while self._active_writers:
+                    writers = list(self._active_writers)
+                    for gen in writers:
+                        if (gen.__name__ == '_write_job' and
+                                gen_not_started(gen)):
+                            # hasn't started writing the job so can
+                            # discard the task, but we must also remove
+                            # it from the Pool._cache.
+                            try:
+                                job = owned_by[gen]
+                            except KeyError:
+                                pass
                             else:
+                                # removes from Pool._cache
+                                job.discard()
+                            self._active_writers.discard(gen)
+                        else:
+                            try:
+                                job = owned_by[gen]
+                            except KeyError:
+                                # Generator not in owned_by — not a _write_job
+                                # (e.g. a _write_ack coroutine added by send_ack()).
+                                # These *MUST* complete or the worker process will
+                                # hang waiting for the ack.  Advance it one step;
+                                # the generator raises StopIteration/OSError when
+                                # done or when the peer process has already died.
                                 try:
-                                    job = owned_by[gen]
-                                except KeyError:
-                                    pass
+                                    next(gen)
+                                except (StopIteration, OSError, EOFError):
+                                    self._active_writers.discard(gen)
+                            else:
+                                job_proc = job._write_to
+                                if job_proc._is_alive():
+                                    # _flush_writer calls
+                                    # _active_writers.discard(gen) in its finally.
+                                    self._flush_writer(job_proc, gen)
                                 else:
-                                    job_proc = job._write_to
-                                    if job_proc._is_alive():
-                                        self._flush_writer(job_proc, gen)
-
+                                    # Process is dead, job will never
+                                    # complete - discard from cache.
                                     job.discard()
+                                    self._active_writers.discard(gen)
                     # workers may have exited in the meantime.
                     self.maintain_pool()
                     sleep(next(intervals))  # don't busyloop
@@ -1065,7 +1080,38 @@ class AsynPool(_pool.Pool):
             self.outbound_buffer.clear()
             self._active_writers.clear()
             self._active_writes.clear()
-            self._busy_workers.clear()
+
+            # Trim _busy_workers down to the workers still executing an
+            # accepted (running) job instead of clearing it outright, so the
+            # fair scheduler keeps avoiding mid-task workers across a broker
+            # reconnect. A worker is marked busy keyed on
+            # job._scheduled_for.inqW_fd at write time; once the body has been
+            # written job._write_to points at the same process, so prefer it
+            # (the process actually executing the job) and fall back to
+            # _scheduled_for.
+            #
+            # intersection_update only ever removes fds from _busy_workers,
+            # never adds one (it filters the existing set rather than
+            # repopulating it), so this trim can't fabricate a phantom-busy
+            # entry that would permanently sideline a healthy worker. Avoiding
+            # double-booking (writing a second task onto a still-running
+            # worker) instead depends on still_busy including every accepted
+            # job's executing fd, which is why we source it from
+            # _write_to/_scheduled_for of the running job above.
+            #
+            # The proc._is_alive() guard keeps the set limited to workers that
+            # are actually still executing: a genuinely running accepted job
+            # always has a live worker, while a worker that died (whose fd may
+            # since have been reused by a fresh replacement) must not be
+            # re-counted as busy.
+            still_busy = set()
+            for job in self._cache.values():
+                if not job._accepted:
+                    continue
+                proc = job._write_to or job._scheduled_for
+                if proc is not None and proc._is_alive():
+                    still_busy.add(proc.inqW_fd)
+            self._busy_workers.intersection_update(still_busy)
 
     def _flush_writer(self, proc, writer):
         fds = {proc.inq._writer}

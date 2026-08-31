@@ -6,8 +6,9 @@ from pydantic import BaseModel
 
 from celery import Signature, Task, chain, chord, group, shared_task
 from celery.canvas import signature
-from celery.exceptions import SoftTimeLimitExceeded
+from celery.exceptions import Reject, SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
+from celery.worker.control import control_command
 
 LEGACY_TASKS_DISABLED = True
 try:
@@ -22,10 +23,17 @@ def get_redis_connection():
 
     host = os.environ.get("REDIS_HOST", "localhost")
     port = os.environ.get("REDIS_PORT", 6379)
-    return StrictRedis(host=host, port=port)
+    # Callers issue blocking reads that wait far longer than redis-py's
+    # default socket timeout, which would otherwise abort them early.
+    return StrictRedis(host=host, port=port, socket_timeout=None)
 
 
 logger = get_task_logger(__name__)
+
+
+@control_command(visible=False)
+def pidbox_reset_error(state, **kwargs):
+    raise RuntimeError('pidbox reset integration test')
 
 
 @shared_task
@@ -522,6 +530,51 @@ if LEGACY_TASKS_DISABLED:
         self.replace(signature(replace_with))
 
 
+@shared_task(bind=True, acks_late=True)
+def store_success_then_reject(self):
+    """First delivery: store SUCCESS manually, then Reject to trigger redelivery.
+    Second delivery: dedup finds SUCCESS, dispatches chain."""
+    from celery.backends.base import states
+    if not self.request.delivery_info.get('redelivered'):
+        self.backend.store_result(self.request.id, 'first-pass', states.SUCCESS)
+        raise Reject(requeue=True)
+    # When dedup is enabled the fast-path intercepts before reaching here,
+    # so 'dedup-pass' is only returned when dedup is disabled.
+    return 'dedup-pass'
+
+
+@shared_task(bind=True, acks_late=True)
+def reject_then_succeed(self):
+    """First delivery: Reject(requeue=True). Second delivery: succeed normally."""
+    if not self.request.delivery_info.get('redelivered'):
+        raise Reject(requeue=True)
+    return 'second-pass'
+
+
+@shared_task
+def reject_without_requeue():
+    """Reject permanently so the worker records a terminal FAILURE."""
+    raise Reject('rejected', requeue=False)
+
+
 @shared_task(soft_time_limit=2, time_limit=1)
 def soft_time_limit_must_exceed_time_limit():
     pass
+
+
+@shared_task(bind=True)
+def return_request_time_limits(self):
+    """Return time_limit and soft_time_limit from the task request context."""
+    return {
+        'time_limit': self.request.time_limit,
+        'soft_time_limit': self.request.soft_time_limit,
+    }
+
+
+@shared_task(bind=True, time_limit=60, soft_time_limit=45)
+def task_with_declared_time_limits(self):
+    """Task with explicitly declared time limits — verifies request fields are set."""
+    return {
+        'time_limit': self.request.time_limit,
+        'soft_time_limit': self.request.soft_time_limit,
+    }

@@ -1,6 +1,5 @@
 """Redis result store backend."""
 import time
-from contextlib import contextmanager
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 from urllib.parse import unquote
@@ -72,11 +71,6 @@ CERT_REQUIRED, CERT_OPTIONAL, or CERT_NONE
 
 E_LOST = 'Connection to Redis lost: Retry (%s/%s) %s.'
 
-E_RETRY_LIMIT_EXCEEDED = """
-Retry limit exceeded while trying to reconnect to the Celery redis result \
-store backend. The Celery application must be restarted.
-"""
-
 logger = get_logger(__name__)
 
 
@@ -117,27 +111,30 @@ class ResultConsumer(BaseResultConsumer):
         if self.subscribed_to:
             self._pubsub.subscribe(*self.subscribed_to)
         else:
-            self._pubsub.connection = self._pubsub.connection_pool.get_connection(
-                'pubsub', self._pubsub.shard_hint
-            )
+            # redis-py < 5.3.0 requires ``command_name`` as a positional
+            # argument to ``ConnectionPool.get_connection``. The argument was
+            # made optional (and ignored) in 5.3.0+, so passing it stays
+            # compatible across both ranges (#10294).
+            try:
+                self._pubsub.connection = (
+                    self._pubsub.connection_pool.get_connection()
+                )
+            except TypeError:
+                self._pubsub.connection = (
+                    self._pubsub.connection_pool.get_connection('pubsub')
+                )
             # even if there is nothing to subscribe, we should not lose the callback after connecting.
             # The on_connect callback will re-subscribe to any channels we previously subscribed to.
             self._pubsub.connection.register_connect_callback(self._pubsub.on_connect)
 
-    @contextmanager
-    def reconnect_on_error(self):
-        try:
-            yield
-        except self._connection_errors:
-            try:
-                self._ensure(self._reconnect_pubsub, ())
-            except self._connection_errors as e:
-                logger.critical(E_RETRY_LIMIT_EXCEEDED)
-                raise RuntimeError(E_RETRY_LIMIT_EXCEEDED) from e
+    def _reconnect(self):
+        """Re-establish the Redis pub/sub connection with retry."""
+        self._ensure(self._reconnect_pubsub, ())
 
     def _maybe_cancel_ready_task(self, meta):
         if meta['status'] in states.READY_STATES:
-            self.cancel_for(meta['task_id'])
+            task_id = meta['task_id']
+            self.cancel_for(task_id)
 
     def on_state_change(self, meta, message):
         super().on_state_change(meta, message)
@@ -153,6 +150,23 @@ class ResultConsumer(BaseResultConsumer):
         for meta in result._iter_meta(**kwargs):
             if meta is not None:
                 self.on_state_change(meta, None)
+                # After on_state_change processes a READY meta, clean up any
+                # leaked entry in _pending_messages. on_state_change may have
+                # buffered this READY meta there (if the result was already
+                # resolved from _pending_results). Since the subscription is now
+                # canceled and the task is complete, this entry will never be
+                # consumed and would leak memory. We only clean up SUCCESS and
+                # FAILURE because REVOKED may still be needed by waiters
+                # (e.g., integration tests for revoke-by-headers).
+                if meta['status'] in (states.SUCCESS, states.FAILURE):
+                    pending_messages = self.backend._pending_messages
+                    task_id = meta['task_id']
+                    try:
+                        buf = pending_messages.pop(task_id)
+                    except KeyError:
+                        pass
+                    else:
+                        pending_messages.total -= len(buf)
 
     def stop(self):
         if self._pubsub is not None:
@@ -181,10 +195,11 @@ class ResultConsumer(BaseResultConsumer):
 
     def cancel_for(self, task_id):
         key = self._get_key_for_task(task_id)
-        self.subscribed_to.discard(key)
-        if self._pubsub:
-            with self.reconnect_on_error():
-                self._pubsub.unsubscribe(key)
+        if key in self.subscribed_to:
+            self.subscribed_to.discard(key)
+            if self._pubsub:
+                with self.reconnect_on_error():
+                    self._pubsub.unsubscribe(key)
 
 
 class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
@@ -205,6 +220,8 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
     supports_autoexpire = True
     supports_native_join = True
+    # Results are stored as opaque strings, which Redis keeps byte for byte.
+    supports_result_compression = True
 
     #: Maximal length of string value in Redis.
     #: 512 MB - https://redis.io/topics/data-types
@@ -318,9 +335,54 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
         self.url = url
 
+        # Add driver identification for redis-py
+        self._add_driver_info()
+
         self.connection_errors, self.channel_errors = (
             get_redis_error_classes() if get_redis_error_classes
             else ((), ()))
+        transport_options = self.app.conf.get(
+            'result_backend_transport_options', {})
+        additional = transport_options.get(
+            'additional_connection_errors', ())
+        if additional is None:
+            additional = ()
+        elif isinstance(additional, (str, type)):
+            additional = (additional,)
+        else:
+            try:
+                iter(additional)
+            except TypeError:
+                additional = (additional,)
+        if additional:
+            extra = []
+            for cls in additional:
+                try:
+                    resolved = (
+                        symbol_by_name(cls)
+                        if isinstance(cls, str) else cls
+                    )
+                except (ImportError, AttributeError) as exc:
+                    logger.warning(
+                        'Ignoring unresolvable'
+                        ' additional_connection_errors'
+                        ' entry %r: %r', cls, exc,
+                    )
+                    continue
+                if (isinstance(resolved, type)
+                        and issubclass(resolved, Exception)):
+                    extra.append(resolved)
+                else:
+                    logger.warning(
+                        'Ignoring invalid additional_connection_errors'
+                        ' entry %r (resolved: %r): expected an'
+                        ' exception class or dotted path to one.',
+                        cls, resolved,
+                    )
+            if extra:
+                self.connection_errors = (
+                    self.connection_errors + tuple(extra)
+                )
         self.result_consumer = self.ResultConsumer(
             self, self.app, self.accept,
             self._pending_results, self._pending_messages,
@@ -352,9 +414,11 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                           'ssl_cert_reqs']
 
         if scheme == 'redis':
-            # If connparams or query string contain ssl params, raise error
-            if (any(key in connparams for key in ssl_param_keys) or
-                    any(key in query for key in ssl_param_keys)):
+            # If the query string contains SSL params, raise an error. SSL
+            # params configured by redis_backend_use_ssl are already in
+            # defaults/connparams and should be honored, matching the Redis
+            # broker behavior when broker_use_ssl is used with a redis:// URL.
+            if any(key in query for key in ssl_param_keys):
                 raise ValueError(E_REDIS_SSL_PARAMS_AND_SCHEME_MISMATCH)
 
         if scheme == 'rediss':
@@ -397,6 +461,31 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         # Query parameters override other parameters
         connparams.update(query)
         return connparams
+
+    def _add_driver_info(self):
+        """Add driver identification to connection parameters.
+
+        Uses DriverInfo class if available, or falls back to
+        lib_name/lib_version for older versions.
+        """
+        from celery import __version__
+
+        # Try to use DriverInfo class
+        try:
+            from redis import DriverInfo
+            driver_info = DriverInfo().add_upstream_driver('celery', __version__)
+            self.connparams['driver_info'] = driver_info
+        except (ImportError, AttributeError):
+            # Fallback: use lib_name/lib_version
+            # Format: lib_name='redis-py(celery_v{version})'
+            self.connparams['lib_name'] = f'redis-py(celery_v{__version__})'
+            # lib_version should be the redis client version
+            try:
+                import redis
+                redis_version = redis.__version__
+            except (ImportError, AttributeError):
+                redis_version = 'unknown'
+            self.connparams['lib_version'] = redis_version
 
     def exception_safe_to_retry(self, exc):
         if isinstance(exc, self.connection_errors):
