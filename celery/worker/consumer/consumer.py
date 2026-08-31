@@ -32,8 +32,8 @@ from celery.utils.objects import Bunch
 from celery.utils.text import truncate
 from celery.utils.time import humanize_seconds, rate
 from celery.worker import loops
-from celery.worker.state import (active_requests, maybe_shutdown, requests, reserved_requests, successful_requests,
-                                 task_reserved)
+from celery.worker.state import (active_requests, maybe_shutdown, requests, reserved_requests, scheduled_requests,
+                                 successful_requests, task_reserved)
 
 __all__ = ('Consumer', 'Evloop', 'dump_body')
 
@@ -543,6 +543,14 @@ class Consumer:
                 requests.pop(r.id, None)
         reserved_requests.clear()
         reserved_requests.update(tuple(active_requests))
+        # Scheduled (ETA/countdown) requests never became reserved, so they
+        # aren't covered by the cleanup above. Their timer callbacks are
+        # cleared separately (see loops.py), and on reconnect the broker may
+        # redeliver these tasks to another worker, so drop our copies here
+        # to avoid leaking stale entries in `requests`.
+        for r in tuple(scheduled_requests):
+            requests.pop(r.id, None)
+        scheduled_requests.clear()
         if self.pool and self.pool.flush:
             self.pool.flush()
 

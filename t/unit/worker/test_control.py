@@ -909,10 +909,11 @@ class test_ControlPanel:
         try:
             ret = panel.handle('query_task', {'ids': {req1.id}})
             assert req1.id in ret
-            assert ret[req1.id][0] == 'ready'
+            assert ret[req1.id][0] == 'scheduled'
             assert req1 not in worker_state.reserved_requests
         finally:
             worker_state.requests.pop(req1.id, None)
+            worker_state.scheduled_requests.discard(req1)
 
     @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
     def test_revoke_backend_status_update(self):

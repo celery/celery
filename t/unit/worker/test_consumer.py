@@ -555,6 +555,43 @@ class test_Consumer(ConsumerTestCase):
         finally:
             state.reset_state()
 
+    def test_on_close_purges_scheduled_requests_from_requests_dict(self):
+        """Regression: ``on_close()`` must also remove ``state.requests[id]``
+        entries for Requests scheduled for an ETA/countdown. Unlike reserved
+        requests, scheduled ones never end up in ``reserved_requests``
+        (see ``task_scheduled``), so without dedicated handling they were
+        never purged and leaked in ``state.requests`` indefinitely after a
+        connection loss.
+        """
+        from celery.worker import state
+        from celery.worker.consumer.consumer import Consumer
+
+        class FakeRequest:
+            def __init__(self, id):
+                self.id = id
+
+        consumer = Mock()
+        consumer.controller = Mock()
+        consumer.controller.semaphore = Mock()
+        consumer.task_buckets = {}
+        consumer.pool = Mock()
+        consumer.pool.flush = Mock()
+
+        state.reset_state()
+        try:
+            scheduled = FakeRequest('scheduled-1')
+            state.task_scheduled(scheduled)
+
+            Consumer.on_close(consumer)
+
+            assert scheduled.id not in state.requests, (
+                "on_close() did not purge a scheduled (ETA/countdown) "
+                "Request from state.requests."
+            )
+            assert scheduled not in state.scheduled_requests
+        finally:
+            state.reset_state()
+
     def test_connect_error_handler(self):
         self.app._connection = _amqp_connection()
         conn = self.app._connection.return_value

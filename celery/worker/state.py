@@ -20,8 +20,9 @@ from celery.utils.collections import LimitedSet
 
 __all__ = (
     'SOFTWARE_INFO', 'reserved_requests', 'active_requests',
-    'total_count', 'revoked', 'task_reserved', 'task_scheduled',
-    'maybe_shutdown', 'task_accepted', 'task_ready', 'Persistent',
+    'scheduled_requests', 'total_count', 'revoked', 'task_reserved',
+    'task_scheduled', 'maybe_shutdown', 'task_accepted', 'task_ready',
+    'Persistent',
 )
 
 
@@ -83,6 +84,10 @@ reserved_requests = weakref.WeakSet()
 #: set of currently active :class:`~celery.worker.request.Request`'s.
 active_requests = weakref.WeakSet()
 
+#: set of :class:`~celery.worker.request.Request`'s scheduled for an
+#: ETA/countdown that hasn't elapsed yet.
+scheduled_requests = weakref.WeakSet()
+
 #: A limited set of successful :class:`~celery.worker.request.Request`'s.
 successful_requests = LimitedSet(maxlen=SUCCESSFUL_MAX,
                                  expires=SUCCESSFUL_EXPIRES)
@@ -107,6 +112,7 @@ def reset_state():
     requests.clear()
     reserved_requests.clear()
     active_requests.clear()
+    scheduled_requests.clear()
     successful_requests.clear()
     total_count.clear()
     all_total_count[:] = [0]
@@ -124,13 +130,17 @@ def maybe_shutdown():
 
 def task_reserved(request,
                   add_request=requests.__setitem__,
-                  add_reserved_request=reserved_requests.add):
+                  add_reserved_request=reserved_requests.add,
+                  discard_scheduled_request=scheduled_requests.discard):
     """Update global state when a task has been reserved."""
     add_request(request.id, request)
     add_reserved_request(request)
+    discard_scheduled_request(request)
 
 
-def task_scheduled(request, add_request=requests.__setitem__):
+def task_scheduled(request,
+                   add_request=requests.__setitem__,
+                   add_scheduled_request=scheduled_requests.add):
     """Update global state when a task has been scheduled for an ETA/countdown.
 
     Unlike :func:`task_reserved`, this doesn't add the request to
@@ -139,6 +149,7 @@ def task_scheduled(request, add_request=requests.__setitem__):
     ``query_task`` remote control command) before its ETA/countdown elapses.
     """
     add_request(request.id, request)
+    add_scheduled_request(request)
 
 
 def task_accepted(request,
@@ -159,7 +170,8 @@ def task_ready(request,
                successful=False,
                remove_request=requests.pop,
                discard_active_request=active_requests.discard,
-               discard_reserved_request=reserved_requests.discard):
+               discard_reserved_request=reserved_requests.discard,
+               discard_scheduled_request=scheduled_requests.discard):
     """Update global state when a task is ready."""
     if successful:
         successful_requests.add(request.id)
@@ -167,6 +179,7 @@ def task_ready(request,
     remove_request(request.id, None)
     discard_active_request(request)
     discard_reserved_request(request)
+    discard_scheduled_request(request)
 
 
 C_BENCH = os.environ.get('C_BENCH') or os.environ.get('CELERY_BENCH')
