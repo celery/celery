@@ -702,6 +702,83 @@ class test_ControlPanel:
         # on_chord_part_return through mark_as_revoked.
         assert int(backend.client.get(counter_key)) == 1
 
+    def test_revoke_skips_active_request_without_terminate(self):
+        request = Mock()
+        request.id = tid = uuid()
+        state = self.create_state()
+        state.consumer = Mock()
+        worker_state.task_reserved(request)
+        worker_state.active_requests.add(request)
+        try:
+            with patch.object(state.app.backend, 'mark_as_revoked') as mar:
+                control.revoke(state, tid)
+            mar.assert_called_once_with(
+                tid, reason='revoked', store_result=True, request=None)
+            # The task keeps running, so the backend must not be told that
+            # the chord member was revoked: it will report its own result.
+            assert '_revoked_in_backend' not in request.__dict__
+        finally:
+            worker_state.task_ready(request)
+            worker_state.active_requests.discard(request)
+            revoked.discard(tid)
+
+    def test_revoke_passes_active_request_with_terminate(self):
+        request = Mock()
+        request.id = tid = uuid()
+        state = self.create_state()
+        state.consumer = Mock()
+        worker_state.task_reserved(request)
+        worker_state.active_requests.add(request)
+        try:
+            with patch.object(state.app.backend, 'mark_as_revoked') as mar:
+                control._revoke(state, [tid], terminate=True)
+            mar.assert_called_once_with(
+                tid, reason='revoked', store_result=True, request=request)
+            assert request._revoked_in_backend is True
+        finally:
+            worker_state.task_ready(request)
+            worker_state.active_requests.discard(request)
+            revoked.discard(tid)
+
+    def test_revoke_repeated_does_not_repeat_chord_bookkeeping(self):
+        backend = self.app.backend
+        assert backend.implements_incr
+        task_id = 'chord-task-repeat'
+        group_id = 'chord-group-repeat'
+        message = self.TaskMessage(self.mytask.name, task_id, group=group_id)
+        args, kwargs, embed = message.payload
+        embed['chord'] = {
+            'task': self.mytask.name,
+            'args': [],
+            'kwargs': {},
+            'options': {},
+        }
+        message.payload = (args, kwargs, embed)
+        request = Request(message, app=self.app)
+        GroupResult(
+            id=group_id,
+            results=[AsyncResult('chord-member-1', app=self.app),
+                     AsyncResult('chord-member-2', app=self.app)],
+        ).save(backend=backend)
+        counter_key = backend.get_key_for_chord(group_id)
+        backend.client.set(counter_key, 0)
+
+        state = self.create_state()
+        state.consumer = Mock()
+        worker_state.task_reserved(request)
+        try:
+            control._revoke(state, [task_id])
+            control._revoke(state, [task_id])
+        finally:
+            worker_state.task_ready(request)
+            revoked.discard(task_id)
+
+        # The second control command must not count the member again.
+        assert int(backend.client.get(counter_key)) == 1
+        # The member is still flagged for the discard path so the announce
+        # does not repeat the bookkeeping either.
+        assert request._revoked_in_backend is True
+
     @pytest.mark.parametrize(
         "terminate", [True, False],
     )
