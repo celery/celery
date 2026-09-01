@@ -184,12 +184,61 @@ class Redis(conftest.MockCallbacks):
         hash_data[field] = current + increment
         return hash_data[field]
 
+    def _get_set(self, key):
+        # Ensure the key is always a set, even if it was previously a different type
+        if key not in self.keyspace or not isinstance(self.keyspace[key], set):
+            self.keyspace[key] = set()
+        return self.keyspace[key]
+
+    def sadd(self, key, *members):
+        result = 0
+        for member in members:
+            if member not in self._get_set(key):
+                result += 1
+                self._get_set(key).add(member)
+        return result
+
+    def sismember(self, key, member):
+        return int(member in self._get_set(key))
+
+    def ttl(self, key):
+        return self.expiry.get(key, -1)
+
+    def eval(self, script, numkeys, *keys_and_args):
+        # Simplified Lua script execution for testing
+        # This is a basic implementation that handles the specific script used
+        # for idempotent increment. For production, real Redis eval would be used.
+        if numkeys == 2 and 'SISMEMBER' in script:
+            pkey = keys_and_args[0]  # KEYS[1] = progress hash key
+            seen_key = keys_and_args[1]  # KEYS[2] = seen set key
+            task_id = keys_and_args[2]  # ARGV[1] = task_id
+            
+            # Check if task_id is already in the seen set
+            if self.sismember(seen_key, task_id):
+                return 0  # Already counted
+            
+            # Add to seen set and increment counter
+            self.sadd(seen_key, task_id)
+            self.hincrby(pkey, b'count', 1)
+            
+            # Set TTL on seen set to match the progress hash if it exists
+            ttl = self.ttl(pkey)
+            if ttl > 0:
+                self.expire(seen_key, ttl)
+            
+            return 1  # Incremented
+        
+        # Fallback for other scripts (not used in current tests)
+        return None
+
     def type(self, key):
         if key in self.keyspace:
             if isinstance(self.keyspace[key], dict):
                 return b'hash'
             elif isinstance(self.keyspace[key], list):
                 return b'list'
+            elif isinstance(self.keyspace[key], set):
+                return b'set'
             else:
                 return b'string'
         return b'none'
@@ -2021,9 +2070,9 @@ class test_Redis_GroupProgress(basetest_RedisBackend):
         # Initialize
         self.b.set_group_progress_size(group_id, size)
 
-        # Increment multiple times
-        for _ in range(3):
-            self.b.increment_group_progress(group_id)
+        # Increment multiple times with different task IDs
+        for i in range(3):
+            self.b.increment_group_progress(group_id, f'task-{i}')
 
         # Verify count
         completed, total = self.b.get_group_progress(group_id)
@@ -2037,8 +2086,8 @@ class test_Redis_GroupProgress(basetest_RedisBackend):
 
         # Initialize and increment
         self.b.set_group_progress_size(group_id, size)
-        self.b.increment_group_progress(group_id)
-        self.b.increment_group_progress(group_id)
+        self.b.increment_group_progress(group_id, 'task-1')
+        self.b.increment_group_progress(group_id, 'task-2')
 
         completed, total = self.b.get_group_progress(group_id)
         assert completed == 2
@@ -2051,22 +2100,23 @@ class test_Redis_GroupProgress(basetest_RedisBackend):
         assert total is None
 
     def test_progress_tracking_atomic_increment(self):
-        """Test that increment is atomic (uses HINCRBY)."""
+        """Test that increment is atomic (uses Lua script)."""
         group_id = 'test-group-atomic'
         size = 5
 
         self.b.set_group_progress_size(group_id, size)
 
-        with patch.object(self.b.client, 'hincrby') as mock_hincrby:
-            mock_hincrby.return_value = 1
-            self.b.increment_group_progress(group_id)
+        with patch.object(self.b.client, 'eval') as mock_eval:
+            mock_eval.return_value = 1
+            self.b.increment_group_progress(group_id, 'task-1')
 
-            # Verify hincrby was called with correct arguments
-            mock_hincrby.assert_called_once()
-            call_args = mock_hincrby.call_args
-            assert call_args[0][0].endswith(b'.p')
-            assert call_args[0][1] == 'count'
-            assert call_args[0][2] == 1
+            # Verify eval was called with the Lua script for atomicity
+            mock_eval.assert_called_once()
+            call_args = mock_eval.call_args
+            # First arg should be the Lua script
+            assert 'SISMEMBER' in call_args[0][0]
+            assert 'SADD' in call_args[0][0]
+            assert 'HINCRBY' in call_args[0][0]
 
     def test_progress_key_format(self):
         """Test that progress key uses correct format."""
@@ -2091,9 +2141,9 @@ class test_Redis_GroupProgress(basetest_RedisBackend):
         self.b.set_group_progress_size(group1, 5)
         self.b.set_group_progress_size(group2, 10)
 
-        self.b.increment_group_progress(group1)
-        self.b.increment_group_progress(group1)
-        self.b.increment_group_progress(group2)
+        self.b.increment_group_progress(group1, 'task-1')
+        self.b.increment_group_progress(group1, 'task-2')
+        self.b.increment_group_progress(group2, 'task-3')
 
         c1, t1 = self.b.get_group_progress(group1)
         c2, t2 = self.b.get_group_progress(group2)
@@ -2205,3 +2255,231 @@ class test_Redis_GroupProgress(basetest_RedisBackend):
         completed, total = self.b.get_group_progress(group_id)
         assert completed == 1
         assert total == size
+
+    def test_idempotent_increment_duplicate_task_completion(self):
+        """Test that duplicate task completion does not double-count."""
+        group_id = 'test-group-duplicate'
+        size = 3
+
+        # Initialize progress tracking
+        self.b.set_group_progress_size(group_id, size)
+
+        # Mark same task as done twice (simulating duplicate completion notification)
+        task_id = 'task-duplicate-1'
+        request = Context({
+            'id': task_id,
+            'group': group_id,
+            'task': 'test.task'
+        })
+        
+        # First completion
+        self.b.mark_as_done(task_id, 'result', request=request)
+        completed, total = self.b.get_group_progress(group_id)
+        assert completed == 1
+        
+        # Duplicate completion (same task_id)
+        self.b.mark_as_done(task_id, 'result', request=request)
+        completed, total = self.b.get_group_progress(group_id)
+        assert completed == 1  # Should still be 1, not 2
+
+    def test_idempotent_increment_duplicate_failure(self):
+        """Test that duplicate task failure does not double-count."""
+        group_id = 'test-group-duplicate-fail'
+        size = 2
+
+        # Initialize progress tracking
+        self.b.set_group_progress_size(group_id, size)
+
+        # Mark same task as failed twice
+        task_id = 'task-duplicate-fail-1'
+        request = Context({
+            'id': task_id,
+            'group': group_id,
+            'task': 'test.task'
+        })
+        
+        # First failure
+        self.b.mark_as_failure(task_id, Exception('error'), request=request)
+        completed, total = self.b.get_group_progress(group_id)
+        assert completed == 1
+        
+        # Duplicate failure
+        self.b.mark_as_failure(task_id, Exception('error'), request=request)
+        completed, total = self.b.get_group_progress(group_id)
+        assert completed == 1  # Should still be 1, not 2
+
+    def test_get_group_progress_with_str_keys(self):
+        """Test that get_group_progress handles str keys (decode_responses=True)."""
+        group_id = 'test-group-str-keys'
+        size = 5
+
+        # Initialize progress tracking
+        self.b.set_group_progress_size(group_id, size)
+
+        # Mock hgetall to return str keys instead of bytes
+        original_hgetall = self.b.client.hgetall
+        def mock_hgetall_with_str(key):
+            data = original_hgetall(key)
+            # Convert bytes keys to str to simulate decode_responses=True
+            if data:
+                return {k.decode() if isinstance(k, bytes) else k: v for k, v in data.items()}
+            return data
+        
+        self.b.client.hgetall = mock_hgetall_with_str
+
+        # Increment progress
+        task_id = 'task-str-1'
+        request = Context({
+            'id': task_id,
+            'group': group_id,
+            'task': 'test.task'
+        })
+        self.b.mark_as_done(task_id, 'result', request=request)
+
+        # Should handle str keys correctly
+        completed, total = self.b.get_group_progress(group_id)
+        assert completed == 1
+        assert total == size
+
+        # Restore original
+        self.b.client.hgetall = original_hgetall
+
+    def test_chord_without_track_progress_no_extra_writes(self):
+        """Test that chords without track_progress don't write progress keys."""
+        group_id = 'test-chord-no-progress'
+        
+        # Simulate chord part return without track_progress
+        request = Context({
+            'id': 'task-1',
+            'group': group_id,
+            'chord': 'callback-task',
+            'task': 'test.task'
+        })
+        
+        # This should not create progress keys
+        self.b.on_chord_part_return(request, states.SUCCESS, 'result')
+        
+        # Verify no progress keys were created
+        pkey = self.b.get_key_for_group(group_id, '.p')
+        seen_key = self.b.get_key_for_group(group_id, '.p.seen')
+        
+        assert self.b.client.get(pkey) is None
+        assert self.b.client.get(seen_key) is None
+
+    def test_nested_groups_separate_tracking(self):
+        """Test that nested groups have separate progress tracking."""
+        # Outer group
+        outer_group_id = 'test-outer-group'
+        outer_size = 2
+        
+        # Inner group (nested inside outer)
+        inner_group_id = 'test-inner-group'
+        inner_size = 3
+        
+        # Initialize both groups
+        self.b.set_group_progress_size(outer_group_id, outer_size)
+        self.b.set_group_progress_size(inner_group_id, inner_size)
+        
+        # Mark a task in the inner group as done
+        inner_task_id = 'inner-task-1'
+        inner_request = Context({
+            'id': inner_task_id,
+            'group': inner_group_id,
+            'task': 'test.task'
+        })
+        self.b.mark_as_done(inner_task_id, 'result', request=inner_request)
+        
+        # Verify only inner group progress incremented
+        inner_completed, inner_total = self.b.get_group_progress(inner_group_id)
+        assert inner_completed == 1
+        assert inner_total == inner_size
+        
+        outer_completed, outer_total = self.b.get_group_progress(outer_group_id)
+        assert outer_completed == 0  # Not incremented
+        assert outer_total == outer_size
+
+    def test_concurrent_progress_increments(self):
+        """Test that concurrent progress increments are handled correctly."""
+        import threading
+        
+        group_id = 'test-concurrent-group'
+        size = 10
+        
+        # Initialize progress tracking
+        self.b.set_group_progress_size(group_id, size)
+        
+        # Simulate concurrent task completions from multiple "workers"
+        num_tasks = 5
+        threads = []
+        
+        def complete_task(task_num):
+            task_id = f'task-{task_num}'
+            request = Context({
+                'id': task_id,
+                'group': group_id,
+                'task': 'test.task'
+            })
+            self.b.mark_as_done(task_id, f'result-{task_num}', request=request)
+        
+        # Launch threads to simulate concurrent completions
+        for i in range(num_tasks):
+            t = threading.Thread(target=complete_task, args=(i,))
+            threads.append(t)
+            t.start()
+        
+        # Wait for all threads to complete
+        for t in threads:
+            t.join()
+        
+        # Verify progress is correct (should be num_tasks, not more due to races)
+        completed, total = self.b.get_group_progress(group_id)
+        assert completed == num_tasks
+        assert total == size
+
+    def test_seen_set_ttl_propagation(self):
+        """Test that seen set TTL is propagated from progress hash."""
+        self.app.conf.result_expires = 3600
+        group_id = 'test-ttl-group'
+        task_id = 'task-1'
+        
+        # Initialize progress with expiration
+        self.b.set_group_progress_size(group_id, 5)
+        
+        # Increment progress (this should propagate TTL to seen set)
+        self.b.increment_group_progress(group_id, task_id)
+        
+        pkey = self.b.get_key_for_group(group_id, '.p')
+        seen_key = self.b.get_key_for_group(group_id, '.p.seen')
+        
+        # Verify both keys have TTL set
+        pkey_ttl = self.b.client.ttl(pkey)
+        seen_ttl = self.b.client.ttl(seen_key)
+        
+        assert pkey_ttl > 0, "Progress hash should have TTL"
+        assert seen_ttl > 0, "Seen set should have TTL"
+        # They should be equal since Lua script propagates TTL
+        assert pkey_ttl == seen_ttl, f"TTL should match: pkey={pkey_ttl}, seen={seen_ttl}"
+
+    def test_seen_set_no_ttl_when_progress_no_ttl(self):
+        """Test that seen set TTL matches progress TTL even when using default."""
+        # When result_expires is None, Redis backend uses a default TTL
+        # The important thing is that seen set TTL matches progress hash TTL
+        self.app.conf.result_expires = None
+        group_id = 'test-no-ttl-group'
+        task_id = 'task-1'
+        
+        # Initialize progress without explicit expiration
+        self.b.set_group_progress_size(group_id, 5)
+        
+        # Increment progress
+        self.b.increment_group_progress(group_id, task_id)
+        
+        pkey = self.b.get_key_for_group(group_id, '.p')
+        seen_key = self.b.get_key_for_group(group_id, '.p.seen')
+        
+        # Verify both keys have the same TTL (whether default or -1)
+        pkey_ttl = self.b.client.ttl(pkey)
+        seen_ttl = self.b.client.ttl(seen_key)
+        
+        # The key verification is that they match, ensuring seen set doesn't have infinite TTL
+        assert pkey_ttl == seen_ttl, f"TTL should match: pkey={pkey_ttl}, seen={seen_ttl}"

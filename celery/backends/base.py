@@ -263,8 +263,8 @@ class Backend:
             self.store_result(task_id, result, state, request=request)
         if request and request.chord:
             self.on_chord_part_return(request, state, result)
-        if request and request.group and state in self.READY_STATES:
-            self.increment_group_progress(request.group)
+        if request and getattr(request, 'group', None) and state in self.READY_STATES:
+            self.increment_group_progress(request.group, task_id)
 
     def mark_as_failure(self, task_id, exc,
                         traceback=None, request=None,
@@ -279,8 +279,8 @@ class Backend:
             if request.chord:
                 self.on_chord_part_return(request, state, exc)
             # Increment group progress if task is in a group and reached READY_STATE
-            if request.group and state in self.READY_STATES:
-                self.increment_group_progress(request.group)
+            if getattr(request, 'group', None) and state in self.READY_STATES:
+                self.increment_group_progress(request.group, task_id)
             # It might also have chained tasks which need to be propagated to,
             # this is most likely to be exclusive with being a direct part of a
             # chord but we'll handle both cases separately.
@@ -958,14 +958,13 @@ class Backend:
         """
         pass
 
-    def increment_group_progress(self, group_id):
+    def increment_group_progress(self, group_id, task_id):
         """Increment the completed count for a group.
 
         Arguments:
             group_id (str): The group ID.
+            task_id (str): The task ID to check for idempotency.
 
-        Returns:
-            int: The new completed count.
         """
         pass
 

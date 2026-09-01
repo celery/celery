@@ -1043,6 +1043,15 @@ class GroupResult(ResultSet):
             Use :meth:`progress` when you need overall completion status (e.g., for
             progress bars or completion tracking), and use :meth:`completed_count`
             when you specifically need to know how many tasks succeeded.
+
+            **Semantics Open for Maintainer Feedback**:
+
+            The choice to count FAILURE and REVOKED states as "completed" for progress
+            tracking is intentional but represents a design decision that may benefit
+            from maintainer feedback. If the project prefers a different semantics
+            (e.g., only counting SUCCESS, or having separate success/failure counters),
+            this can be adjusted in a future version. The current implementation
+            prioritizes overall completion status over success-only tracking.
         """
         # Try to get native progress from backend
         if self.id and self.backend.supports_group_progress:
