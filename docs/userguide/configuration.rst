@@ -954,6 +954,12 @@ Result serialization format.
 See :ref:`calling-serializers` for information about supported
 serialization formats.
 
+.. versionchanged:: 5.7
+
+    The database backend now honors this setting; see the note under
+    :ref:`conf-database-result-backend` for details on what changes for
+    existing deployments.
+
 .. setting:: result_compression
 
 ``result_compression``
@@ -1109,6 +1115,24 @@ Database backend settings
 
         result_backend_always_retry = True
         result_backend_max_retries = 10
+
+.. note::
+
+    **Database backend now honors** :setting:`result_serializer`
+
+    Prior to Celery 5.7, the database backend always stored the ``result``
+    column of the ``celery_taskmeta`` and ``celery_tasksetmeta`` tables as a
+    Python pickle, regardless of the configured :setting:`result_serializer`
+    (see `celery/celery#3025 <https://github.com/celery/celery/issues/3025>`_).
+    As of 5.7, the column holds the bytes produced by whatever serializer you
+    configure, exactly like every other result backend.
+
+    No schema change or migration is required: the column type on the
+    database side is unchanged, only what gets written into it. Rows written
+    by an earlier Celery version are always a pickle blob no matter what
+    :setting:`result_serializer` says, and are still read back correctly
+    after upgrading — the backend detects and unpickles them automatically.
+    Only newly written results use the configured serializer.
 
 Database URL Examples
 ~~~~~~~~~~~~~~~~~~~~~
