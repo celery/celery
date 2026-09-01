@@ -376,6 +376,23 @@ class test_Scheduler:
                       kwargs={'foo': 'bar'})
         assert scheduler.tick() == 0
 
+    def test_due_tick_returns_delay_when_heap_top_changed(self):
+        scheduler = mScheduler(app=self.app)
+        first = scheduler.add(name='first', task='c.first', schedule=always_due)
+        second = scheduler.add(name='second', task='c.second', schedule=always_due)
+        # so populate_heap() doesn't run and override our setup
+        scheduler.old_schedulers = scheduler.schedule
+        scheduler._heap = [event_t(scheduler._when(first, 0) - 1, 5, first)]
+
+        def mutating_first_entry_is_due(_last_run_at):
+            scheduler._heap.insert(0, event_t(scheduler._when(second, 0) - 2, 5, second))
+            return True, 1
+
+        # simulates an entry inserted while first's is_due() is running
+        first.schedule.is_due = mutating_first_entry_is_due
+        assert scheduler.tick() < 0
+        assert not scheduler.sent
+
     @patch('celery.beat.error')
     def test_due_tick_SchedulingError(self, error):
         scheduler = mSchedulerSchedulingError(app=self.app)
@@ -480,7 +497,7 @@ class test_Scheduler:
 
         # simulates an entry inserted while stuck's is_due() is running
         stuck.schedule.is_due = mutating_stuck_entry_is_due
-        scheduler.tick()
+        assert scheduler.tick() < 0
         assert not scheduler.sent
         assert scheduler._heap[0] is intruder_event
         assert scheduler._heap[1] is stuck_event
