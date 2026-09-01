@@ -419,6 +419,19 @@ methods that have been registered with :mod:`kombu.serialization.registry`.
 
     :ref:`calling-serializers`.
 
+.. setting:: task_repr_maxlevels
+
+``task_repr_maxlevels``
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: 3.
+
+Maximum nesting depth used when generating ``argsrepr`` and ``kwargsrepr``.
+Deeper containers are shown as ``{...}`` / ``[...]``. Set to ``0`` or
+:const:`None` for no limit.
+
 .. setting:: task_publish_retry
 
 ``task_publish_retry``
@@ -941,6 +954,12 @@ Result serialization format.
 See :ref:`calling-serializers` for information about supported
 serialization formats.
 
+.. versionchanged:: 5.7
+
+    The database backend now honors this setting; see the note under
+    :ref:`conf-database-result-backend` for details on what changes for
+    existing deployments.
+
 .. setting:: result_compression
 
 ``result_compression``
@@ -1096,6 +1115,24 @@ Database backend settings
 
         result_backend_always_retry = True
         result_backend_max_retries = 10
+
+.. note::
+
+    **Database backend now honors** :setting:`result_serializer`
+
+    Prior to Celery 5.7, the database backend always stored the ``result``
+    column of the ``celery_taskmeta`` and ``celery_tasksetmeta`` tables as a
+    Python pickle, regardless of the configured :setting:`result_serializer`
+    (see `celery/celery#3025 <https://github.com/celery/celery/issues/3025>`_).
+    As of 5.7, the column holds the bytes produced by whatever serializer you
+    configure, exactly like every other result backend.
+
+    No schema change or migration is required: the column type on the
+    database side is unchanged, only what gets written into it. Rows written
+    by an earlier Celery version are always a pickle blob no matter what
+    :setting:`result_serializer` says, and are still read back correctly
+    after upgrading — the backend detects and unpickles them automatically.
+    Only newly written results use the configured serializer.
 
 Database URL Examples
 ~~~~~~~~~~~~~~~~~~~~~
@@ -3447,6 +3484,9 @@ but if mostly CPU-bound, try to keep it close to the
 number of CPUs on your machine. If not set, the number of CPUs/cores
 on the host will be used.
 
+The command-line equivalent is the
+:option:`--concurrency <celery worker --concurrency>` argument.
+
 .. setting:: worker_prefetch_multiplier
 
 ``worker_prefetch_multiplier``
@@ -3465,6 +3505,9 @@ to the workers.
 To limit the broker to only deliver one message per process at a time,
 set :setting:`worker_prefetch_multiplier` to 1. Changing that setting to 0
 will allow the worker to keep consuming as many messages as it wants.
+
+The command-line equivalent is the
+:option:`--prefetch-multiplier <celery worker --prefetch-multiplier>` argument.
 
 If you need to completely disable broker prefetching while still using
 early acknowledgments, enable :setting:`worker_disable_prefetch`.
@@ -4415,8 +4458,10 @@ that it's possible to shut down in a timely manner.
 Default: None.
 
 When using cron, the number of seconds :mod:`~celery.bin.beat` can look back
-when deciding whether a cron schedule is due. When set to `None`, cronjobs that
-are past due will always run immediately.
+when deciding whether a cron schedule is due. Only the most recent missed run
+time is considered: if it's within the deadline the task runs immediately,
+otherwise it waits until its next scheduled time. When set to `None`, cronjobs
+that are past due will always run immediately.
 
 .. warning::
 
