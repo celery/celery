@@ -228,7 +228,7 @@ class LoggingProxy:
             self._thread.recurse_protection = True
             try:
                 text = safe_str(data)
-                orig_len = len(text)
+                orig_len = len(data)
                 buffer = getattr(self._thread, "buffer", "")
                 if "\n" not in text:
                     self._thread.buffer = buffer + text
