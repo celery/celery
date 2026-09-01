@@ -362,7 +362,7 @@ class Scheduler:
                 return 0
             else:
                 heappush(H, verify)
-                return min(verify[0] - now, max_interval)
+                return min(verify[0] - self._when(verify[2], 0), max_interval)
 
         # Heap says this entry should be ready by now, but the entry requests
         # to retry later.  Reheap it at that retry time, otherwise it just
