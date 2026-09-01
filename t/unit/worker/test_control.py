@@ -11,6 +11,7 @@ from kombu import pidbox
 from kombu.utils.uuid import uuid
 
 from celery import states
+from celery.result import AsyncResult, GroupResult
 from celery.utils.collections import AttributeDict
 from celery.utils.functional import maybe_list
 from celery.utils.timer2 import Timer
@@ -654,27 +655,52 @@ class test_ControlPanel:
             revoked.discard(tid)
 
     def test_revoke_chord_member_runs_chord_bookkeeping(self):
+        # Exercise the real mark_as_revoked / on_chord_part_return path on a
+        # real backend so the chord bookkeeping is actually performed, not
+        # just observed through a mock.
+        backend = self.app.backend
+        assert backend.implements_incr
         task_id = 'chord-task-123'
-        chord_id = 'chord-456'
-        message = self.TaskMessage(self.mytask.name, task_id)
+        group_id = 'chord-group-456'
+        message = self.TaskMessage(self.mytask.name, task_id, group=group_id)
         args, kwargs, embed = message.payload
-        embed['chord'] = chord_id
+        embed['chord'] = {
+            'task': self.mytask.name,
+            'args': [],
+            'kwargs': {},
+            'options': {},
+        }
         message.payload = (args, kwargs, embed)
         request = Request(message, app=self.app)
-        assert request.chord == chord_id
+        assert request.group == group_id
+
+        # Store the chord group with more members than have returned, so the
+        # counter increments but the callback is not applied yet. The chord
+        # counter key is initialized by the chord setup in production
+        # (_apply_chord_incr), so mirror that here.
+        GroupResult(
+            id=group_id,
+            results=[AsyncResult('chord-member-1', app=self.app),
+                     AsyncResult('chord-member-2', app=self.app)],
+        ).save(backend=backend)
+        counter_key = backend.get_key_for_chord(group_id)
+        backend.client.set(counter_key, 0)
+
         state = self.create_state()
         state.consumer = Mock()
         worker_state.task_reserved(request)
         try:
-            with patch.object(
-                    state.app.backend, 'on_chord_part_return') as ocpr:
-                control.revoke(state, task_id)
-            ocpr.assert_called_once()
-            assert ocpr.call_args.args[0] is request
-            assert ocpr.call_args.args[1] == states.REVOKED
+            control.revoke(state, task_id)
         finally:
             worker_state.task_ready(request)
             revoked.discard(task_id)
+
+        # The revoked state must have been stored in the real backend.
+        assert backend.get_task_meta(task_id)['status'] == states.REVOKED
+        # The chord counter for this group must have been incremented, which
+        # only happens when the locally-known request reaches
+        # on_chord_part_return through mark_as_revoked.
+        assert int(backend.client.get(counter_key)) == 1
 
     @pytest.mark.parametrize(
         "terminate", [True, False],
