@@ -9,6 +9,22 @@ from t.integration.tasks import add
 from t.smoke.tasks import long_running_task, summarize_results
 
 
+class test_control:
+    def test_sanity(self, celery_setup: CeleryTestSetup):
+        responses = celery_setup.app.control.ping()
+        assert all(
+            response["ok"] == "pong"
+            for replies in responses
+            for response in replies.values()
+        )
+
+    def test_shutdown_exit_with_zero(self, celery_setup: CeleryTestSetup):
+        celery_setup.app.control.shutdown(destination=[celery_setup.worker.hostname()])
+        while celery_setup.worker.container.status != "exited":
+            celery_setup.worker.container.reload()
+        assert celery_setup.worker.container.attrs["State"]["ExitCode"] == 0
+
+
 class test_revoke_chord_member:
     @pytest.fixture
     def default_worker_app(self, default_worker_app: Celery) -> Celery:
