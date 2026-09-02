@@ -573,14 +573,12 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     def set_chord_size(self, group_id, chord_size,freeze=False):
         key = self.get_key_for_group(group_id, '.s')
         if freeze:
-            with self.client.pipeline() as pipe:
-                pipe.get(key)
-                res = pipe.execute()
-                
-                # Issue 8182 patch:
-                # Only set chord size if not already set
-                if res is None or res[0] is None:
-                    self.set(key, chord_size)
+            res = self.ensure(self.get, (key,))
+
+            # Issue 8182 patch:
+            # Only set chord size if not already set
+            if res is None:
+                self.set(key, chord_size)
         else:
             self.set(key, chord_size)
             
