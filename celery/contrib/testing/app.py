@@ -120,4 +120,4 @@ def setup_default_app(app, use_trap=False):
             # Dereference the backend so it is available for gc.
             app._backend_cache = None
             app._local.backend = None
-        gc.collect()
+            gc.collect()
