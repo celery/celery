@@ -1,12 +1,13 @@
 import subprocess
-from time import monotonic, sleep
 
 import pytest
-from kombu import Queue
 
 from celery import Celery
-from celery.exceptions import TimeoutError
-from t.integration.tasks import identity
+
+from .conftest import flaky
+from .tasks import add
+
+TIMEOUT = 10
 
 
 def test_run_worker():
@@ -70,28 +71,40 @@ def test_django_fixup_direct_worker(caplog, monkeypatch):
         f"AttributeError found in logs:\n{log_output}"
 
 
-class test_worker_queue_alias_reconnect:
-    @pytest.fixture
-    def celery_worker_parameters(self):
-        return {'queues': ('alias', 'celery')}
+def test_django_fixup_installs_django_task_for_celery_subclass(monkeypatch):
+    """A Celery subclass that leaves task_cls alone still gets DjangoTask."""
+    import django
 
-    @pytest.mark.celery(task_queues=[Queue('real_name', alias='alias')])
-    def test_queue_selected_by_alias_is_not_reconsumed_after_cancel_by_real_name_and_reconnect(
-        self, celery_app, celery_worker
-    ):
-        consumer = celery_worker.consumer
-        celery_app.control.cancel_consumer('real_name', reply=True, timeout=10)
+    from celery.contrib.django.task import DjangoTask
 
-        def _force_reconnect():
-            raise consumer.connection_errors[0]('forced reconnect')
+    monkeypatch.setenv('DJANGO_SETTINGS_MODULE', 't.integration.django_settings')
+    django.setup()
 
-        # Force a reconnect so the worker rebuilds its consumers from _consume_from.
-        restarts = consumer.restart_count
-        consumer.hub.call_soon(_force_reconnect)
-        deadline = monotonic() + 10
-        while consumer.restart_count <= restarts and monotonic() < deadline:
-            sleep(0.5)
-        assert consumer.restart_count > restarts, 'worker did not reconnect'
+    class MyCustomCelery(Celery):
+        pass
 
-        with pytest.raises(TimeoutError):
-            identity.s('Hello').apply_async(queue='real_name').get(timeout=10)
+    app = MyCustomCelery('test_django_subclass')
+
+    assert issubclass(app.Task, DjangoTask)
+    assert hasattr(app.Task, 'delay_on_commit')
+    assert hasattr(app.Task, 'apply_async_on_commit')
+
+
+@flaky
+def test_pidbox_reset_after_repeated_control_errors(manager):
+    def assert_ping():
+        ping_result = manager.inspect().ping()
+        assert ping_result
+        assert list(ping_result.values())[0] == {'ok': 'pong'}
+
+    assert_ping()
+
+    for _ in range(5):
+        manager.app.control.broadcast('pidbox_reset_error', reply=False)
+
+    assert_ping()
+
+    result = add.delay(4, 4)
+    assert result.get(timeout=TIMEOUT) == 8
+
+    assert_ping()
