@@ -253,10 +253,11 @@ class ResultConsumer(BaseResultConsumer):
 
     def _cancel_for(self, task_id):
         key = self._get_key_for_task(task_id)
-        self.subscribed_to.discard(key)
-        if self._pubsub:
-            with self.reconnect_on_error():
-                self._pubsub.unsubscribe(key)
+        if key in self.subscribed_to:
+            self.subscribed_to.discard(key)
+            if self._pubsub:
+                with self.reconnect_on_error():
+                    self._pubsub.unsubscribe(key)
 
     def _drain_deferred_cancels(self):
         while True:
@@ -304,6 +305,8 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
     supports_autoexpire = True
     supports_native_join = True
+    # Results are stored as opaque strings, which Redis keeps byte for byte.
+    supports_result_compression = True
 
     #: Maximal length of string value in Redis.
     #: 512 MB - https://redis.io/topics/data-types
