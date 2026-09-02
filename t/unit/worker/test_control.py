@@ -1073,6 +1073,28 @@ class test_ControlPanel:
 
         assert 'task-1' in worker_state.revoked
 
+    def test_revoke_backend_failure_leaves_request_unflagged(self):
+        # When the control command cannot store the REVOKED state, the
+        # request must not be flagged as already accounted for. The announce
+        # that runs when the worker later discards the request then retries
+        # the bookkeeping instead of skipping it, so a transient backend
+        # error does not lose the chord member.
+        request = Mock()
+        request.id = tid = uuid()
+        state = self.create_state()
+        state.consumer = Mock()
+        worker_state.task_reserved(request)
+        try:
+            with patch.object(
+                state.app.backend, 'mark_as_revoked',
+                side_effect=Exception('Backend error')):
+                control.revoke(state, tid)
+            assert '_revoked_in_backend' not in request.__dict__
+            assert tid in revoked
+        finally:
+            worker_state.task_ready(request)
+            revoked.discard(tid)
+
     @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
     def test_revoke_terminate_backend_update(self):
         state = self.create_state()
