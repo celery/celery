@@ -53,7 +53,7 @@ class PrivateKey:
 
     def sign(self, data, digest):
         """Sign string containing data."""
-        with reraise_errors('Unable to sign data: {0!r}'):
+        with reraise_errors('Unable to sign data: {0!r}', (Exception,)):
 
             if self._is_mldsa():
                 # ML-DSA uses a built-in hash internally; no digest
