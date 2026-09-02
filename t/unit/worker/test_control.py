@@ -1087,7 +1087,8 @@ class test_ControlPanel:
         try:
             with patch.object(
                 state.app.backend, 'mark_as_revoked',
-                side_effect=Exception('Backend error')):
+                side_effect=Exception('Backend error')
+            ):
                 control.revoke(state, tid)
             assert '_revoked_in_backend' not in request.__dict__
             assert tid in revoked
