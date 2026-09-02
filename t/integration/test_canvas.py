@@ -1183,6 +1183,39 @@ class test_result_set:
         rs.add(add.delay(2, 2))
         assert rs.get(timeout=TIMEOUT) == [2, 4]
 
+    @flaky
+    def test_join_native_timeout_zero_gives_up_on_pending_results(self, manager):
+        """timeout=0 means poll once, not poll until the results show up."""
+        if not isinstance(manager.app.backend, BaseKeyValueStoreBackend):
+            raise pytest.skip('get_many is the key/value backend poll loop')
+
+        # ids nothing will ever write a result for, so the only way out of
+        # the loop is the deadline. The interval is far longer than the
+        # bound below, so sleeping even one of them fails the test.
+        rs = ResultSet([AsyncResult(str(uuid.uuid4())) for _ in range(3)])
+
+        start = monotonic()
+        with pytest.raises(TimeoutError):
+            rs.join_native(timeout=0, interval=30)
+        assert monotonic() - start < 30
+
+    @flaky
+    def test_join_native_timeout_zero_returns_results_that_are_ready(self, manager):
+        """timeout=0 still collects results the backend can hand over."""
+        if not isinstance(manager.app.backend, BaseKeyValueStoreBackend):
+            raise pytest.skip('get_many is the key/value backend poll loop')
+
+        assert_ping(manager)
+
+        rs = ResultSet([add.delay(1, 1), add.delay(2, 2), add.delay(3, 3)])
+        assert rs.join_native(timeout=TIMEOUT) == [2, 4, 6]
+
+        # answered from the cache the poll loop is never entered, and the
+        # poll loop is what has to hand the results back before it looks at
+        # the deadline.
+        rs.backend._cache.clear()
+        assert rs.join_native(timeout=0, interval=30) == [2, 4, 6]
+
 
 class test_group:
     @flaky
