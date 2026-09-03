@@ -177,7 +177,7 @@ docker-build:
 
 .PHONY: docker-lint
 docker-lint:
-	@docker compose -f docker/docker-compose.yml run --rm -w /home/developer/celery celery312 tox -e lint
+	@docker compose -f docker/docker-compose.yml run --rm -w /home/developer/celery celery313 tox -e lint
 
 .PHONY: docker-unit-tests
 docker-unit-tests:
