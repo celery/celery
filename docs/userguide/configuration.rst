@@ -3517,6 +3517,8 @@ when one of its processes is available.
 .. note::
 
     This feature is currently only supported when using Redis as the broker.
+    For RabbitMQ, use the late acknowledgment configuration described in
+    :ref:`optimizing-prefetch-limit`; it requires idempotent tasks.
 
 You can also enable this via the :option:`--disable-prefetch <celery worker --disable-prefetch>`
 command line flag.

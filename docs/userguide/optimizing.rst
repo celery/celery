@@ -197,6 +197,10 @@ workers. This can also be set from the command line using
 :option:`--disable-prefetch <celery worker --disable-prefetch>`. This feature
 is currently only supported when using Redis as the broker.
 
+Celery does not support an early-acknowledgment equivalent of
+:setting:`worker_disable_prefetch` for RabbitMQ. The late acknowledgment
+configuration above is the alternative and requires idempotent tasks.
+
 Memory Usage
 ------------
 
