@@ -592,6 +592,40 @@ class test_Consumer(ConsumerTestCase):
         finally:
             state.reset_state()
 
+    def test_on_close_cancels_pending_timer_entry_for_scheduled_requests(self):
+        """Regression: on_close() must cancel the ETA/countdown timer entry
+        for scheduled requests, not just drop the bookkeeping. Otherwise,
+        on transports whose event loop doesn't clear the timer on error
+        (e.g. synloop, unlike asynloop's hub.reset()/hub.timer.clear()),
+        the stale callback can still fire after on_close(), re-adding the
+        request via task_reserved() and triggering a stale delivery.
+        """
+        from celery.worker import state
+        from celery.worker.consumer.consumer import Consumer
+
+        class FakeRequest:
+            def __init__(self, id):
+                self.id = id
+                self._eta_timer_entry = Mock()
+
+        consumer = Mock()
+        consumer.controller = Mock()
+        consumer.controller.semaphore = Mock()
+        consumer.task_buckets = {}
+        consumer.pool = Mock()
+        consumer.pool.flush = Mock()
+
+        state.reset_state()
+        try:
+            scheduled = FakeRequest('scheduled-1')
+            state.task_scheduled(scheduled)
+
+            Consumer.on_close(consumer)
+
+            scheduled._eta_timer_entry.cancel.assert_called_once()
+        finally:
+            state.reset_state()
+
     def test_connect_error_handler(self):
         self.app._connection = _amqp_connection()
         conn = self.app._connection.return_value

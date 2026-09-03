@@ -544,11 +544,16 @@ class Consumer:
         reserved_requests.clear()
         reserved_requests.update(tuple(active_requests))
         # Scheduled (ETA/countdown) requests never became reserved, so they
-        # aren't covered by the cleanup above. Their timer callbacks are
-        # cleared separately (see loops.py), and on reconnect the broker may
-        # redeliver these tasks to another worker, so drop our copies here
-        # to avoid leaking stale entries in `requests`.
+        # aren't covered by the cleanup above. Cancel their pending timer
+        # entries so the callback can't fire after we've torn down this
+        # connection (the synloop error path doesn't clear the timer the
+        # way asynloop's hub.reset()/hub.timer.clear() does), then drop our
+        # copies since the broker may redeliver these tasks to another
+        # worker on reconnect.
         for r in tuple(scheduled_requests):
+            entry = getattr(r, '_eta_timer_entry', None)
+            if entry is not None:
+                entry.cancel()
             requests.pop(r.id, None)
         scheduled_requests.clear()
         if self.pool and self.pool.flush:

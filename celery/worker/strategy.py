@@ -193,13 +193,15 @@ def default(task, app, consumer,
         if eta and bucket:
             consumer.qos.increment_eventually()
             task_scheduled(req)
-            return call_at(eta, limit_post_eta, (req, bucket, 1),
-                           priority=6)
+            req._eta_timer_entry = call_at(
+                eta, limit_post_eta, (req, bucket, 1), priority=6)
+            return
 
         if eta:
             consumer.qos.increment_eventually()
             task_scheduled(req)
-            call_at(eta, apply_eta_task, (req,), priority=6)
+            req._eta_timer_entry = call_at(
+                eta, apply_eta_task, (req,), priority=6)
             return task_message_handler
         if bucket:
             return limit_task(req, bucket, 1)

@@ -17,12 +17,7 @@ from celery.worker import state
 @pytest.fixture
 def reset_state():
     yield
-    state.active_requests.clear()
-    state.reserved_requests.clear()
-    state.scheduled_requests.clear()
-    state.revoked.clear()
-    state.revoked_stamps.clear()
-    state.total_count.clear()
+    state.reset_state()
 
 
 class MockShelve(dict):
