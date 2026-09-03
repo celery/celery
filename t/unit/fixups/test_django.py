@@ -578,18 +578,18 @@ class test_DjangoWorkerFixup(FixupCase):
             conn1 = Mock()
             conn1.alias = "default"
             conn1.close_pool = Mock()
-            
+
             conn2 = Mock()
             conn2.alias = "replica"
             conn2.close_pool = Mock()
-            
+
             f._db.connections.all = Mock(return_value=[conn1, conn2])
             f._settings = DJSettings
 
             # Only default has pool enabled
             f._settings.DATABASES["default"] = {"OPTIONS": {"pool": True}}
             f._settings.DATABASES["replica"] = {"OPTIONS": {}}
-            
+
             f.on_worker_process_shutdown()
             conn1.close_pool.assert_called_once_with()
             conn2.close_pool.assert_not_called()
@@ -631,7 +631,7 @@ class test_DjangoWorkerFixup(FixupCase):
             f.db_reuse_max = 10
 
             f._settings.DATABASES["default"] = {"OPTIONS": {"pool": True}}
-            
+
             # Simulate multiple calls that trigger _close_database via reuse threshold
             f._db_recycles = 20  # This will trigger _close_database
             f.close_database()
@@ -640,7 +640,7 @@ class test_DjangoWorkerFixup(FixupCase):
 
     def test_multi_task_lifecycle_pool_persistence(self):
         """Test that pool remains alive across multiple task cleanup cycles.
-        
+
         This is the key regression test for the bug:
         - Task 1 cleanup: conn.close() called, close_pool NOT called
         - Task 2 cleanup: conn.close() called, close_pool NOT called

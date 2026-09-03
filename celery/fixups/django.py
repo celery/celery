@@ -187,7 +187,7 @@ class DjangoWorkerFixup:
 
     def on_worker_process_shutdown(self, **kwargs: Any) -> None:
         """Close database connection pools when worker process shuts down.
-        
+
         This is called when a worker process exits. Django's connection
         pooling requires pools to be closed in the process that created them,
         as connections cannot be shared across fork boundaries. This handler
@@ -195,7 +195,7 @@ class DjangoWorkerFixup:
         pool that must be cleaned up before the process exits.
         """
         is_prefork = self._is_prefork()
-        
+
         try:
             connections = self._db.connections.all(initialized_only=True)
         except TypeError:
