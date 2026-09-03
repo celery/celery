@@ -158,6 +158,7 @@ class DjangoWorkerFixup:
         signals.task_prerun.connect(self.on_task_prerun)
         signals.task_postrun.connect(self.on_task_postrun)
         signals.worker_process_init.connect(self.on_worker_process_init)
+        signals.worker_process_shutdown.connect(self.on_worker_process_shutdown)
         self.close_database()
         self.close_cache()
         return self
@@ -183,6 +184,29 @@ class DjangoWorkerFixup:
         # use the _ version to avoid DB_REUSE preventing the conn.close() call
         self._close_database()
         self.close_cache()
+
+    def on_worker_process_shutdown(self, **kwargs: Any) -> None:
+        """Close database connection pools when worker process shuts down.
+        
+        This is called when a worker process exits. Django's connection
+        pooling requires pools to be closed in the process that created them,
+        as connections cannot be shared across fork boundaries. This handler
+        only closes pools in prefork mode where each child process has its own
+        pool that must be cleaned up before the process exits.
+        """
+        is_prefork = self._is_prefork()
+        
+        try:
+            connections = self._db.connections.all(initialized_only=True)
+        except TypeError:
+            # Support Django < 4.1
+            connections = self._db.connections.all()
+
+        for conn in connections:
+            pool_enabled = self._settings.DATABASES.get(conn.alias, {}).get("OPTIONS", {}).get("pool")
+            if pool_enabled and is_prefork and hasattr(conn, "close_pool"):
+                with contextlib.suppress(KeyError):
+                    conn.close_pool()
 
     def _maybe_close_db_fd(self, c: "BaseDatabaseWrapper") -> None:
         try:
@@ -223,15 +247,9 @@ class DjangoWorkerFixup:
             # Support Django < 4.1
             connections = self._db.connections.all()
 
-        is_prefork = self._is_prefork()
-
         for conn in connections:
             try:
                 conn.close()
-                pool_enabled = self._settings.DATABASES.get(conn.alias, {}).get("OPTIONS", {}).get("pool")
-                if pool_enabled and is_prefork and hasattr(conn, "close_pool"):
-                    with contextlib.suppress(KeyError):
-                        conn.close_pool()
             except self.interface_errors:
                 pass
             except self.DatabaseError as exc:
