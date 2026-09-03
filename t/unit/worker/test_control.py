@@ -629,15 +629,37 @@ class test_ControlPanel:
     def test_revoke_passes_known_request_to_backend(self):
         request = Mock()
         request.id = tid = uuid()
+        request.task.backend = state_backend = Mock()
+        state = self.create_state()
+        state.consumer = Mock()
+        worker_state.task_reserved(request)
+        try:
+            control.revoke(state, tid)
+            state_backend.mark_as_revoked.assert_called_once_with(
+                tid, reason='revoked', store_result=True, request=request)
+            assert tid in revoked
+        finally:
+            worker_state.task_ready(request)
+            revoked.discard(tid)
+
+    def test_revoke_uses_task_backend_for_known_request(self):
+        # Tasks may override their backend. The revoke bookkeeping must go
+        # through the request's own backend so a chord tracked by a custom
+        # task backend is accounted for in the right place.
+        request = Mock()
+        request.id = tid = uuid()
+        task_backend = Mock()
+        request.task.backend = task_backend
         state = self.create_state()
         state.consumer = Mock()
         worker_state.task_reserved(request)
         try:
             with patch.object(state.app.backend, 'mark_as_revoked') as mar:
                 control.revoke(state, tid)
-            mar.assert_called_once_with(
+            task_backend.mark_as_revoked.assert_called_once_with(
                 tid, reason='revoked', store_result=True, request=request)
-            assert tid in revoked
+            mar.assert_not_called()
+            assert request._revoked_in_backend is True
         finally:
             worker_state.task_ready(request)
             revoked.discard(tid)
@@ -725,14 +747,14 @@ class test_ControlPanel:
     def test_revoke_passes_active_request_with_terminate(self):
         request = Mock()
         request.id = tid = uuid()
+        request.task.backend = state_backend = Mock()
         state = self.create_state()
         state.consumer = Mock()
         worker_state.task_reserved(request)
         worker_state.active_requests.add(request)
         try:
-            with patch.object(state.app.backend, 'mark_as_revoked') as mar:
-                control._revoke(state, [tid], terminate=True)
-            mar.assert_called_once_with(
+            control._revoke(state, [tid], terminate=True)
+            state_backend.mark_as_revoked.assert_called_once_with(
                 tid, reason='revoked', store_result=True, request=request)
             assert request._revoked_in_backend is True
         finally:
@@ -1081,15 +1103,14 @@ class test_ControlPanel:
         # error does not lose the chord member.
         request = Mock()
         request.id = tid = uuid()
+        failing_backend = Mock()
+        failing_backend.mark_as_revoked.side_effect = Exception('Backend error')
+        request.task.backend = failing_backend
         state = self.create_state()
         state.consumer = Mock()
         worker_state.task_reserved(request)
         try:
-            with patch.object(
-                state.app.backend, 'mark_as_revoked',
-                side_effect=Exception('Backend error')
-            ):
-                control.revoke(state, tid)
+            control.revoke(state, tid)
             assert '_revoked_in_backend' not in request.__dict__
             assert tid in revoked
         finally:

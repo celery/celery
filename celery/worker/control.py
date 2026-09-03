@@ -235,8 +235,13 @@ def _revoke(state, task_ids, terminate=False, signal=None, **kwargs):
 
     for task_id in task_ids:
         request = requests_by_id.get(task_id)
+        # A task may override its backend. Route the revoke bookkeeping
+        # through the request's own backend so a chord tracked by a custom
+        # task backend is accounted for in the right place. Tasks unknown
+        # to this worker fall back to the app backend.
+        backend = request.task.backend if request is not None else state.app.backend
         try:
-            state.app.backend.mark_as_revoked(
+            backend.mark_as_revoked(
                 task_id, reason='revoked', store_result=True,
                 request=request)
         except Exception as exc:
