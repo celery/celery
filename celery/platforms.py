@@ -48,15 +48,13 @@ __all__ = (
 # exitcodes
 EX_OK = getattr(os, 'EX_OK', 0)
 EX_FAILURE = 1
-
-# Maximum file descriptors to iterate when /proc is unavailable.
-# Prevents excessive iteration in containers where fdmax can be ~1 billion.
-# See: https://github.com/celery/celery/issues/9886
-_FDMAX_FALLBACK_LIMIT = 8192
-
 EX_UNAVAILABLE = getattr(os, 'EX_UNAVAILABLE', 69)
 EX_USAGE = getattr(os, 'EX_USAGE', 64)
 EX_CANTCREAT = getattr(os, 'EX_CANTCREAT', 73)
+
+# Upper bound for the numeric fd scan in :func:`fd_by_path` when no fd
+# directory is available (fdmax can be ~1e9 in containers, issue #9886).
+_FDMAX_FALLBACK_LIMIT = 8192
 
 SYSTEM = _platform.system()
 IS_macOS = SYSTEM == 'Darwin'
@@ -310,24 +308,32 @@ def fd_by_path(paths):
         except OSError:
             return False
 
-    # On Linux, use /proc to get the actual open file descriptors efficiently.
-    # On other systems (macOS, BSD, etc.), prefer directory-based enumeration
-    # (e.g., /dev/fd) when available, and only fall back to iterating a capped
-    # numeric range as a last resort. This prevents extremely long iteration in
-    # containers where fdmax can be ~1 billion while still avoiding truncation
-    # on platforms that expose an fd directory.
-    # See: https://github.com/celery/celery/issues/9886
-    try:
-        fds = [int(fd) for fd in os.listdir(f'/proc/{os.getpid()}/fd')]
-    except (OSError, FileNotFoundError):
-        # /proc not available (non-Linux) or permission denied; try /dev/fd
-        try:
-            fds = [int(fd) for fd in os.listdir('/dev/fd')]
-        except (OSError, FileNotFoundError):
-            # /dev/fd also not available; fall back to a capped numeric range
-            fds = range(min(get_fdmax(2048), _FDMAX_FALLBACK_LIMIT))
+    return [_fd for _fd in _candidate_fds() if fd_in_stats(_fd)]
 
-    return [_fd for _fd in fds if fd_in_stats(_fd)]
+
+def _listdir_fds(path):
+    try:
+        names = os.listdir(path)
+    except OSError:
+        return None
+    return {int(name) for name in names if name.isdigit()}
+
+
+def _candidate_fds():
+    # /proc/self/fd is authoritative and is resolved by the kernel for the
+    # calling process, so it stays correct inside a PID namespace whose /proc
+    # was not remounted (/proc/<os.getpid()>/fd is not).
+    fds = _listdir_fds('/proc/self/fd')
+    if fds is not None:
+        return sorted(fds)
+    # Elsewhere /dev/fd may be complete (macOS, illumos) or partial (FreeBSD
+    # devfs without fdescfs lists only 0-2; OpenBSD/NetBSD ship static nodes),
+    # so merge it with a bounded numeric scan.  Descriptors above the bound
+    # are only found when the fd directory lists them; an unbounded scan is
+    # not an option because fdmax can be ~1e9 in containers (issue #9886).
+    fds = _listdir_fds('/dev/fd') or set()
+    fds.update(range(min(get_fdmax(2048), _FDMAX_FALLBACK_LIMIT)))
+    return sorted(fds)
 
 
 class DaemonContext:
