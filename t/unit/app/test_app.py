@@ -63,6 +63,19 @@ class ObjectConfig2:
     UNDERSTAND_ME = True
 
 
+class CustomReduceApp(Celery):
+    """App that defines its own ``__reduce_args__()``.
+
+    Defining it is what makes ``Celery.__reduce__()`` route through the
+    deprecated ``__reduce_v1__()`` path, so this is how that path is reached.
+    Declared at module level because a class defined inside a test cannot be
+    pickled.
+    """
+
+    def __reduce_args__(self):
+        return super().__reduce_args__()
+
+
 class test_module:
 
     def test_default_app(self):
@@ -948,6 +961,80 @@ class test_App:
         assert self.app.loader._conf
 
         self.assert_config2()
+
+    def test_config_from_object__silent_lazy(self):
+        """`silent` must survive until the configuration is actually read.
+
+        Without `force`, `config_from_object()` only records the source; the
+        import happens later in `_load_config()`. The flag has to be carried
+        across that gap or the documented behaviour only holds for the eager
+        path.
+        """
+        self.app.config_from_object('nonexistent.module', silent=True)
+        assert self.app.conf.get('SOME_CONFIG') is None
+
+    def test_config_from_object__not_silent_lazy(self):
+        """Without `silent`, the import error must still surface."""
+        self.app.config_from_object('nonexistent.module', silent=False)
+        with pytest.raises(ImportError):
+            self.app.conf.get('SOME_CONFIG')
+
+    def test_config_from_object__silent_force(self):
+        """The eager path keeps working, and is not made silent by accident."""
+        self.app.config_from_object('nonexistent.module', silent=True, force=True)
+        assert self.app.conf.get('SOME_CONFIG') is None
+
+    def test_config_from_object__silent_survives_v1_pickle(self):
+        """The flag must survive the deprecated v1 reduction too.
+
+        `Celery.__reduce__()` still routes through `__reduce_v1__()` for any
+        subclass that defines its own `__reduce_args__()`, so carrying the flag
+        only in `__reduce_keys__()` would leave that path broken.
+        """
+        app = CustomReduceApp('silent-v1', set_as_current=False)
+        assert app._using_v1_reduce
+        app.config_from_object('nonexistent.module', silent=True)
+
+        unpickled = pickle.loads(pickle.dumps(app))
+        assert unpickled.conf.get('SOME_CONFIG') is None
+
+    def test_config_from_object__not_silent_survives_v1_pickle(self):
+        """Control: the v1 path must not silence anything by itself."""
+        app = CustomReduceApp('loud-v1', set_as_current=False)
+        app.config_from_object('nonexistent.module', silent=False)
+
+        unpickled = pickle.loads(pickle.dumps(app))
+        with pytest.raises(ImportError):
+            unpickled.conf.get('SOME_CONFIG')
+
+    def test_app_pickler_accepts_legacy_arg_count(self):
+        """An older v1 payload, without the trailing flag, must still load.
+
+        `config_source_silent` is appended after `config_source`, which is
+        itself optional, so a ten argument payload written by an older Celery
+        keeps working and simply defaults the flag off.
+        """
+        from celery.app.utils import AppPickler
+
+        kwargs = AppPickler().build_standard_kwargs(
+            'main', {}, None, None, None, None, None, None, False, 'src',
+        )
+        assert kwargs['config_source'] == 'src'
+        assert kwargs['config_source_silent'] is False
+
+    def test_config_from_object__silent_survives_pickle(self):
+        """`silent` must survive pickling of a not-yet-configured app.
+
+        An app pickled after `config_from_object(silent=True)` but before its
+        configuration is first read reaches the child process unconfigured, so
+        the child performs the import itself. If the flag were not carried in
+        `__reduce_keys__()` the child would import without it and raise.
+        """
+        self.app.config_from_object('nonexistent.module', silent=True)
+        assert not self.app.configured
+
+        unpickled = pickle.loads(pickle.dumps(self.app))
+        assert unpickled.conf.get('SOME_CONFIG') is None
 
     def test_config_from_object__compat(self):
 

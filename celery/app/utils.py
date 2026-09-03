@@ -303,11 +303,12 @@ class AppPickler:
 
     def build_standard_kwargs(self, main, changes, loader, backend, amqp,
                               events, log, control, accept_magic_kwargs,
-                              config_source=None):
+                              config_source=None, config_source_silent=False):
         return {'main': main, 'loader': loader, 'backend': backend,
                 'amqp': amqp, 'changes': changes, 'events': events,
                 'log': log, 'control': control, 'set_as_current': False,
-                'config_source': config_source}
+                'config_source': config_source,
+                'config_source_silent': config_source_silent}
 
     def construct(self, cls, **kwargs):
         return cls(**kwargs)
