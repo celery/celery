@@ -28,6 +28,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libmemcached-dev \
     libssl-dev \
     pkg-config \
+    zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY docker/scripts/create-linux-user.sh /usr/local/bin/create-linux-user
