@@ -40,8 +40,8 @@ def add_unlock_chord_task(app):
     Will joins chord by creating a task chain polling the header
     for completion.
     """
+    from celery.backends.base import _create_chord_error_with_cause
     from celery.canvas import maybe_signature
-    from celery.exceptions import ChordError
     from celery.result import allow_join_result, result_from_tuple
 
     @app.task(name='celery.chord_unlock', max_retries=None, shared=False,
@@ -54,7 +54,6 @@ def add_unlock_chord_task(app):
             interval = self.default_retry_delay
 
         # check if the task group is ready, and if so apply the callback.
-        callback = maybe_signature(callback, app)
         deps = GroupResult(
             group_id,
             [result_from_tuple(r, app=app) for r in result],
@@ -86,16 +85,15 @@ def add_unlock_chord_task(app):
             except StopIteration:
                 reason = repr(exc)
             logger.exception('Chord %r raised: %r', group_id, exc)
-            app.backend.chord_error_from_stack(callback, ChordError(reason))
+            chord_error = _create_chord_error_with_cause(message=reason, original_exc=exc)
+            app.backend.chord_error_from_stack(callback=callback, exc=chord_error)
         else:
             try:
                 callback.delay(ret)
             except Exception as exc:  # pylint: disable=broad-except
                 logger.exception('Chord %r raised: %r', group_id, exc)
-                app.backend.chord_error_from_stack(
-                    callback,
-                    exc=ChordError(f'Callback error: {exc!r}'),
-                )
+                chord_error = _create_chord_error_with_cause(message=f'Callback error: {exc!r}', original_exc=exc)
+                app.backend.chord_error_from_stack(callback=callback, exc=chord_error)
     return unlock_chord
 
 

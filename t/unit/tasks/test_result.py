@@ -390,6 +390,30 @@ class test_AsyncResult:
 
         assert not self.app.AsyncResult(uuid()).ready()
 
+    def test_exists(self):
+        """Test that exists() returns True for stored results and False for unknown IDs."""
+        # Tasks with stored results should exist (SUCCESS, FAILURE, RETRY)
+        assert self.app.AsyncResult(self.task1["id"]).exists()
+        assert self.app.AsyncResult(self.task2["id"]).exists()
+        assert self.app.AsyncResult(self.task3["id"]).exists()
+
+        # RETRY state should also exist
+        assert self.app.AsyncResult(self.task4["id"]).exists()
+
+        # A random/unknown task ID should not exist
+        assert not self.app.AsyncResult(uuid()).exists()
+
+        # Multiple unknown IDs should all return False
+        assert not self.app.AsyncResult(uuid()).exists()
+        assert not self.app.AsyncResult("totally-fake-id").exists()
+
+    def test_exists_returns_bool(self):
+        """Test that exists() returns a proper boolean type."""
+        result_exists = self.app.AsyncResult(self.task1["id"]).exists()
+        result_missing = self.app.AsyncResult(uuid()).exists()
+        assert isinstance(result_exists, bool)
+        assert isinstance(result_missing, bool)
+
     @pytest.mark.skipif(
         platform.python_implementation() == "PyPy",
         reason="Mocking here doesn't play well with PyPy",
@@ -448,6 +472,20 @@ class test_AsyncResult:
 
         result = Backend(app=self.app)._get_result_meta(None, states.SUCCESS, None, None)
         assert result.get('date_done') == date
+
+    def test_forget_remove_pending_result(self):
+        with patch('celery.result.AsyncResult.backend') as backend:
+            result = self.app.AsyncResult(self.task1['id'])
+            result.backend = backend
+            result_clone = copy.copy(result)
+            result.forget()
+            backend.remove_pending_result.assert_called_once_with(
+                result_clone
+            )
+
+        result = self.app.AsyncResult(self.task1['id'])
+        result.backend = None
+        del result
 
 
 class test_ResultSet:
@@ -554,6 +592,13 @@ class test_ResultSet:
         assert len(x) == 2
         x.add(self.app.AsyncResult(2))
         assert len(x) == 2
+
+    def test_iter_native_finalizes_barrier_when_built_via_add(self):
+        x = self.app.ResultSet([])
+        for _ in range(3):
+            x.add(self.app.AsyncResult(uuid()))
+        x.iter_native()
+        assert x._on_full.finalized
 
     @contextmanager
     def dummy_copy(self):
@@ -827,6 +872,18 @@ class test_GroupResult:
         with patch('celery.Celery.backend', new=backend):
             backend.ids = [result.id for result in results]
             assert len(list(ts.iter_native())) == 10
+
+    def test_join_timeout_zero(self):
+        """A timeout of 0 must behave as a non-blocking join."""
+        ar = MockAsyncResultSuccess(uuid(), app=self.app, result='r1')
+        ar2 = MockAsyncResultSuccess(uuid(), app=self.app, result='r2')
+        ts_ready = self.app.GroupResult(uuid(), [ar, ar2])
+        assert ts_ready.join(timeout=0) == ['r1', 'r2']
+
+        ar_pending = self.app.AsyncResult(uuid())
+        ts_pending = self.app.GroupResult(uuid(), [ar, ar_pending])
+        with pytest.raises(TimeoutError):
+            ts_pending.join(timeout=0)
 
     def test_join_timeout(self):
         ar = MockAsyncResultSuccess(uuid(), app=self.app)

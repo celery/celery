@@ -5,6 +5,7 @@ import inspect
 import os
 import sys
 import threading
+import types
 import typing
 import warnings
 from collections import UserDict, defaultdict, deque
@@ -17,6 +18,7 @@ from dateutil.parser import isoparse
 from kombu import Exchange, pools
 from kombu.clocks import LamportClock
 from kombu.common import oid_from
+from kombu.exceptions import LimitExceeded
 from kombu.transport.native_delayed_delivery import calculate_routing_key
 from kombu.utils.compat import register_after_fork
 from kombu.utils.objects import cached_property
@@ -26,7 +28,7 @@ from vine import starpromise
 from celery import platforms, signals
 from celery._state import (_announce_app_finalized, _deregister_app, _register_app, _set_current_app, _task_stack,
                            connect_on_app_finalize, get_current_app, get_current_worker_task, set_default_app)
-from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured
+from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured, OperationalError
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.utils import abstract
@@ -55,7 +57,27 @@ if typing.TYPE_CHECKING:  # pragma: no cover  # codecov does not capture this
 
 __all__ = ('Celery',)
 
+_OMITTED = object()
+
 logger = get_logger(__name__)
+
+if sys.version_info >= (3, 14):
+    import annotationlib
+
+    def _get_annotations(fun):
+        # In Python 3.14+, annotations are deferred by default (PEP 649).
+        # Accessing fun.__annotations__ (or inspect.get_annotations without a
+        # format) evaluates them and may raise NameError for types only
+        # available under TYPE_CHECKING. To preserve previous behavior, first
+        # try to return evaluated annotations; if that fails with NameError,
+        # fall back to returning stringified annotations instead.
+        try:
+            return inspect.get_annotations(fun)
+        except NameError:
+            return inspect.get_annotations(fun, format=annotationlib.Format.STRING)
+else:
+    def _get_annotations(fun):
+        return fun.__annotations__
 
 BUILTIN_FIXUPS = {
     'celery.fixups.django:fixup',
@@ -124,14 +146,27 @@ def pydantic_wrapper(
         dump_kwargs = {}
     dump_kwargs.setdefault('mode', 'json')
 
+    # If a file uses `from __future__ import annotations`, all annotations will
+    # be strings. `typing.get_type_hints()` can turn these back into real
+    # types, but can also sometimes fail due to circular imports. Try that
+    # first, and fall back to annotations from `inspect.signature()`.
     task_signature = inspect.signature(task_fun)
+
+    try:
+        type_hints = typing.get_type_hints(task_fun)
+    except (NameError, AttributeError, TypeError):
+        # Fall back to raw annotations from inspect if get_type_hints fails
+        type_hints = None
 
     @functools.wraps(task_fun)
     def wrapper(*task_args, **task_kwargs):
         # Validate task parameters if type hinted as BaseModel
         bound_args = task_signature.bind(*task_args, **task_kwargs)
         for arg_name, arg_value in bound_args.arguments.items():
-            arg_annotation = task_signature.parameters[arg_name].annotation
+            if type_hints and arg_name in type_hints:
+                arg_annotation = type_hints[arg_name]
+            else:
+                arg_annotation = task_signature.parameters[arg_name].annotation
 
             optional_arg = get_optional_arg(arg_annotation)
             if optional_arg is not None and arg_value is not None:
@@ -149,7 +184,11 @@ def pydantic_wrapper(
 
         # Dump Pydantic model if the returned value is an instance of pydantic.BaseModel *and* its
         # class matches the typehint
-        return_annotation = task_signature.return_annotation
+        if type_hints and 'return' in type_hints:
+            return_annotation = type_hints['return']
+        else:
+            return_annotation = task_signature.return_annotation
+
         optional_return_annotation = get_optional_arg(return_annotation)
         if optional_return_annotation is not None:
             return_annotation = optional_return_annotation
@@ -291,7 +330,11 @@ class Celery:
     #: Signal sent after app has prepared the configuration.
     on_after_configure = None
 
-    #: Signal sent after app has been finalized.
+    #: Signal sent after the app has been finalized (i.e., all pending
+    #: task decorators have been evaluated, built-in tasks loaded, and
+    #: every currently registered task has been bound to the app).  This is
+    #: the earliest point at which the task registry is initialized/stable
+    #: and safe to inspect for tasks currently registered with this app.
     on_after_finalize = None
 
     #: Signal sent by every new process after fork.
@@ -302,7 +345,7 @@ class Celery:
                  set_as_current=True, tasks=None, broker=None, include=None,
                  changes=None, config_source=None, fixups=None, task_cls=None,
                  autofinalize=True, namespace=None, strict_typing=True,
-                 **kwargs):
+                 config_source_silent=False, **kwargs):
 
         self._local = threading.local()
         self._backend_cache = None
@@ -317,8 +360,8 @@ class Celery:
         self._custom_task_cls_used = (
             # Custom task class provided as argument
             bool(task_cls)
-            # subclass of Celery with a task_cls attribute
-            or self.__class__ is not Celery and hasattr(self.__class__, 'task_cls')
+            # Custom task class set as a class attribute
+            or bool(app_has_custom(self, 'task_cls'))
         )
         self.task_cls = task_cls or self.task_cls
         self.set_as_current = set_as_current
@@ -331,6 +374,11 @@ class Celery:
 
         self.configured = False
         self._config_source = config_source
+        # `silent` from config_from_object(), remembered so the lazy load in
+        # _load_config() honours it too and not only the eager path. Carried
+        # through __reduce_keys__ so an app pickled before its configuration
+        # was read does not lose it.
+        self._config_source_silent = config_source_silent
         self._pending_defaults = deque()
         self._pending_periodic_tasks = deque()
 
@@ -573,7 +621,7 @@ class Celery:
                 '_decorated': True,
                 '__doc__': fun.__doc__,
                 '__module__': fun.__module__,
-                '__annotations__': fun.__annotations__,
+                '__annotations__': _get_annotations(fun),
                 '__header__': self.type_checker(fun, bound=bind),
                 '__wrapped__': run}, **options))()
             # for some reason __qualname__ cannot be set in type()
@@ -675,6 +723,7 @@ class Celery:
                 By default the configuration will be read only when required.
         """
         self._config_source = obj
+        self._config_source_silent = silent
         self.namespace = namespace or self.namespace
         if force or self.configured:
             self._conf = None
@@ -802,11 +851,11 @@ class Celery:
 
     def send_task(self, name, args=None, kwargs=None, countdown=None,
                   eta=None, task_id=None, producer=None, connection=None,
-                  router=None, result_cls=None, expires=None,
+                  router=None, result_cls=None, expires=_OMITTED,
                   publisher=None, link=None, link_error=None,
                   add_to_parent=True, group_id=None, group_index=None,
                   retries=0, chord=None,
-                  reply_to=None, time_limit=None, soft_time_limit=None,
+                  reply_to=None, time_limit=_OMITTED, soft_time_limit=_OMITTED,
                   root_id=None, parent_id=None, route_name=None,
                   shadow=None, chain=None, task_type=None, replaced_task_nesting=0, **options):
         """Send task by name.
@@ -828,35 +877,99 @@ class Celery:
                 'task_always_eager has no effect on send_task',
             ), stacklevel=2)
 
+        # If the caller did not supply a task_type (i.e. a plain
+        # send_task("name", ...) call), look it up in the local registry
+        # and apply its execution options as defaults.  We intentionally
+        # skip this when task_type was already provided (e.g. from
+        # Task.apply_async) because apply_async already merged exec
+        # options — doing it again would override explicit caller values.
+        #
+        # Use the underlying registry directly here so send_task() does not
+        # auto-finalize the app (or raise when autofinalize=False) merely to
+        # check whether a locally registered task exists. Remote/unregistered
+        # task names should still be sendable without finalizing the app.
+        resolved_from_registry = False
+        if task_type is None:
+            registry = self._tasks
+            get = getattr(registry, 'get', None)
+            if callable(get):
+                task_type = get(name)
+            else:
+                try:
+                    task_type = registry[name]
+                except KeyError:
+                    task_type = None
+            resolved_from_registry = task_type is not None
+        if resolved_from_registry and hasattr(task_type, '_get_exec_options'):
+            get_exec_options = task_type._get_exec_options
+            if inspect.ismethod(get_exec_options):
+                task_exec_options = get_exec_options()
+            else:
+                task_exec_options = None
+            if task_exec_options:
+                # Only merge non-None values so we don't override
+                # defaults with None.
+                filtered_opts = {k: v for k, v in task_exec_options.items()
+                                 if v is not None}
+                if filtered_opts:
+                    options = dict(filtered_opts, **options)
+
+        # Some execution options (time_limit, soft_time_limit, expires)
+        # are also passed as explicit arguments to create_task_message.
+        # Pop them from options to avoid "got multiple values for argument"
+        # errors; use the task-level value as fallback only when the caller
+        # omitted the explicit argument.  An explicit ``None`` clears
+        # any task-level default merged into ``options``.
+        if time_limit is _OMITTED:
+            time_limit = options.pop('time_limit', None)
+        else:
+            options.pop('time_limit', None)
+        if soft_time_limit is _OMITTED:
+            soft_time_limit = options.pop('soft_time_limit', None)
+        else:
+            options.pop('soft_time_limit', None)
+        if expires is _OMITTED:
+            expires = options.pop('expires', None)
+        else:
+            options.pop('expires', None)
+
         ignore_result = options.pop('ignore_result', False)
         options = router.route(
             options, route_name or name, args, kwargs, task_type)
 
-        driver_type = self.producer_pool.connections.connection.transport.driver_type
-        is_native_delayed_delivery = detect_quorum_queues(self, driver_type)[0]
-        if is_native_delayed_delivery and options['queue'].exchange.type != 'direct':
-            if eta:
-                if isinstance(eta, str):
-                    eta = isoparse(eta)
-                countdown = (maybe_make_aware(eta) - self.now()).total_seconds()
+        if eta or countdown:
+            driver_type = self.producer_pool.connections.connection.transport.driver_type
+            if detect_quorum_queues(self, driver_type)[0]:
 
-            if countdown:
-                if countdown > 0:
-                    routing_key = calculate_routing_key(int(countdown), options["queue"].routing_key)
-                    exchange = Exchange(
-                        'celery_delayed_27',
-                        type='topic',
+                queue = options.get("queue")
+                exchange_type = queue.exchange.type if queue else options["exchange_type"]
+                routing_key = queue.routing_key if queue else options["routing_key"]
+                exchange_name = queue.exchange.name if queue else options["exchange"]
+
+                if exchange_type != 'direct':
+                    if eta:
+                        if isinstance(eta, str):
+                            eta = isoparse(eta)
+                        countdown = (maybe_make_aware(eta) - self.now()).total_seconds()
+
+                    if countdown:
+                        if countdown > 0:
+                            routing_key = calculate_routing_key(int(countdown), routing_key)
+                            exchange = Exchange(
+                                'celery_delayed_27',
+                                type='topic',
+                            )
+                            options.pop("queue", None)
+                            options['routing_key'] = routing_key
+                            options['exchange'] = exchange
+
+                else:
+                    logger.warning(
+                        'Direct exchanges are not supported with native delayed delivery.\n'
+                        f'{exchange_name} is a direct exchange but should be a topic exchange or '
+                        'a fanout exchange in order for native delayed delivery to work properly.\n'
+                        'If quorum queues are used, this task may block the worker process until the ETA arrives.'
                     )
-                    del options['queue']
-                    options['routing_key'] = routing_key
-                    options['exchange'] = exchange
-        elif is_native_delayed_delivery and options['queue'].exchange.type == 'direct':
-            logger.warning(
-                'Direct exchanges are not supported with native delayed delivery.\n'
-                f'{options["queue"].exchange.name} is a direct exchange but should be a topic exchange or '
-                'a fanout exchange in order for native delayed delivery to work properly.\n'
-                'If quorum queues are used, this task may block the worker process until the ETA arrives.'
-            )
 
         if expires is not None:
             if isinstance(expires, datetime):
@@ -1024,7 +1137,18 @@ class Celery:
     def _acquire_connection(self, pool=True):
         """Helper for :meth:`connection_or_acquire`."""
         if pool:
-            return self.pool.acquire(block=True)
+            timeout = self.conf.broker_pool_acquire_timeout
+            try:
+                return self.pool.acquire(block=True, timeout=timeout)
+            except LimitExceeded as exc:
+                pool_limit = self.conf.broker_pool_limit
+                raise OperationalError(
+                    f"Timed out waiting for a broker connection after "
+                    f"{timeout}s. All {pool_limit} connections are in use. "
+                    f"Consider increasing broker_pool_limit (currently "
+                    f"{pool_limit}) or broker_pool_acquire_timeout "
+                    f"(currently {timeout}s)."
+                ) from exc
         return self.connection_for_write()
 
     def connection_or_acquire(self, connection=None, pool=True, *_, **__):
@@ -1041,6 +1165,20 @@ class Celery:
 
     default_connection = connection_or_acquire  # XXX compat
 
+    def _acquire_producer(self, timeout=None):
+        """Helper for :meth:`producer_or_acquire`."""
+        try:
+            return self.producer_pool.acquire(block=True, timeout=timeout)
+        except LimitExceeded as exc:
+            pool_limit = self.conf.broker_pool_limit
+            raise OperationalError(
+                f"Timed out waiting for a broker producer after "
+                f"{timeout}s. All {pool_limit} producer slots are in use. "
+                f"Consider increasing broker_pool_limit (currently "
+                f"{pool_limit}) or broker_pool_acquire_timeout "
+                f"(currently {timeout}s)."
+            ) from exc
+
     def producer_or_acquire(self, producer=None):
         """Context used to acquire a producer from the pool.
 
@@ -1051,8 +1189,9 @@ class Celery:
             producer (kombu.Producer): If not provided, a producer
                 will be acquired from the producer pool.
         """
+        timeout = self.conf.broker_pool_acquire_timeout
         return FallbackContext(
-            producer, self.producer_pool.acquire, block=True,
+            producer, self._acquire_producer, timeout=timeout,
         )
 
     default_producer = producer_or_acquire  # XXX compat
@@ -1118,7 +1257,8 @@ class Celery:
             # used to be a method pre 4.0
             self.on_configure()
         if self._config_source:
-            self.loader.config_from_object(self._config_source)
+            self.loader.config_from_object(
+                self._config_source, silent=self._config_source_silent)
         self.configured = True
         settings = detect_settings(
             self.prepare_config(self.loader.conf), self._preconf,
@@ -1241,6 +1381,8 @@ class Celery:
 
         return type(name or Class.__name__, (Class,), attrs)
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
     def _rgetattr(self, path):
         return attrgetter(path)(self)
 
@@ -1281,6 +1423,7 @@ class Celery:
             'control': self.control_cls,
             'fixups': self.fixups,
             'config_source': self._config_source,
+            'config_source_silent': self._config_source_silent,
             'task_cls': self.task_cls,
             'namespace': self.namespace,
         }
@@ -1290,7 +1433,7 @@ class Celery:
         return (self.main, self._conf.changes if self.configured else {},
                 self.loader_cls, self.backend_cls, self.amqp_cls,
                 self.events_cls, self.log_cls, self.control_cls,
-                False, self._config_source)
+                False, self._config_source, self._config_source_silent)
 
     @cached_property
     def Worker(self):

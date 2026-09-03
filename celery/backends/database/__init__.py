@@ -1,19 +1,22 @@
 """SQLAlchemy result store backend."""
 import logging
+import pickle
 from contextlib import contextmanager
 
-from vine.utils import wraps
+from kombu.utils.encoding import ensure_bytes
 
 from celery import states
 from celery.backends.base import BaseBackend
 from celery.exceptions import ImproperlyConfigured
+from celery.result import result_from_tuple
+from celery.utils.imports import symbol_by_name
 from celery.utils.time import maybe_timedelta
 
 from .models import Task, TaskExtended, TaskSet
 from .session import SessionManager
 
 try:
-    from sqlalchemy.exc import DatabaseError, InvalidRequestError
+    from sqlalchemy.exc import DatabaseError, InterfaceError, InvalidRequestError
     from sqlalchemy.orm.exc import StaleDataError
 except ImportError:
     raise ImproperlyConfigured(
@@ -23,6 +26,13 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 __all__ = ('DatabaseBackend',)
+
+RETRYABLE_DB_ERRORS = (
+    DatabaseError,
+    InterfaceError,
+    InvalidRequestError,
+    StaleDataError,
+)
 
 
 @contextmanager
@@ -34,26 +44,6 @@ def session_cleanup(session):
         raise
     finally:
         session.close()
-
-
-def retry(fun):
-
-    @wraps(fun)
-    def _inner(*args, **kwargs):
-        max_retries = kwargs.pop('max_retries', 3)
-
-        for retries in range(max_retries):
-            try:
-                return fun(*args, **kwargs)
-            except (DatabaseError, InvalidRequestError, StaleDataError):
-                logger.warning(
-                    'Failed operation %s.  Retrying %s more times.',
-                    fun.__name__, max_retries - retries - 1,
-                    exc_info=True)
-                if retries + 1 >= max_retries:
-                    raise
-
-    return _inner
 
 
 class DatabaseBackend(BaseBackend):
@@ -73,13 +63,24 @@ class DatabaseBackend(BaseBackend):
                          url=url, **kwargs)
         conf = self.app.conf
 
+        # Override retry defaults to preserve backward compatibility.
+        # Previously, DatabaseBackend used a custom @retry decorator that always
+        # retried with max_retries=3. We maintain this behavior by default.
+        self.always_retry = conf.get('result_backend_always_retry', True)
+        self.max_retries = conf.get('result_backend_max_retries', 3)
+
         if self.extended_result:
             self.task_cls = TaskExtended
 
         self.url = url or dburi or conf.database_url
+
+        # Merge engine options: defaults from config <- constructor overrides
+        # The defaults (pool_pre_ping=True, pool_recycle=3600) are defined in
+        # celery/app/defaults.py under database_engine_options
         self.engine_options = dict(
-            engine_options or {},
-            **conf.database_engine_options or {})
+            conf.database_engine_options or {},
+            **(engine_options or {})
+        )
         self.short_lived_sessions = kwargs.get(
             'short_lived_sessions',
             conf.database_short_lived_sessions)
@@ -98,7 +99,16 @@ class DatabaseBackend(BaseBackend):
                 'Missing connection string! Do you have the'
                 ' database_url setting set to a real value?')
 
-        self.session_manager = SessionManager()
+        engine_callback = kwargs.get(
+            'engine_callback', conf.database_engine_callback)
+        if isinstance(engine_callback, str):
+            engine_callback = symbol_by_name(engine_callback)
+        if engine_callback is not None and not callable(engine_callback):
+            raise ImproperlyConfigured(
+                'database_engine_callback must be callable, got {!r}'.format(
+                    engine_callback))
+        self.session_manager = SessionManager(
+            engine_callback=engine_callback)
 
         create_tables_at_setup = conf.database_create_tables_at_setup
         if create_tables_at_setup is True:
@@ -108,9 +118,15 @@ class DatabaseBackend(BaseBackend):
     def extended_result(self):
         return self.app.conf.find_value_for_key('extended', 'result')
 
+    def exception_safe_to_retry(self, exc):
+        return isinstance(exc, RETRYABLE_DB_ERRORS)
+
+    def on_backend_retryable_error(self, exc):
+        self.session_manager.invalidate(self.url)
+
     def _create_tables(self):
         """Create the task and taskset tables."""
-        self.ResultSession()
+        self._ensure_retryable(self.ResultSession)
 
     def ResultSession(self, session_manager=None):
         if session_manager is None:
@@ -120,7 +136,6 @@ class DatabaseBackend(BaseBackend):
             short_lived_sessions=self.short_lived_sessions,
             **self.engine_options)
 
-    @retry
     def _store_result(self, task_id, result, state, traceback=None,
                       request=None, **kwargs):
         """Store return value and state of an executed task."""
@@ -140,7 +155,7 @@ class DatabaseBackend(BaseBackend):
     def _update_result(self, task, result, state, traceback=None,
                        request=None):
 
-        meta = self._get_result_meta(result=result, state=state,
+        meta = self._get_result_meta(result=ensure_bytes(self.encode(result)), state=state,
                                      traceback=traceback, request=request,
                                      format_date=False, encode=True)
 
@@ -156,7 +171,6 @@ class DatabaseBackend(BaseBackend):
             value = meta.get(column)
             setattr(task, column, value)
 
-    @retry
     def _get_task_meta_for(self, task_id):
         """Get task meta-data for a task by id."""
         session = self.ResultSession()
@@ -168,24 +182,69 @@ class DatabaseBackend(BaseBackend):
                 task.status = states.PENDING
                 task.result = None
             data = task.to_dict()
+            data['result'] = self._decode_stored_result(data['result'])
             if data.get('args', None) is not None:
                 data['args'] = self.decode(data['args'])
             if data.get('kwargs', None) is not None:
                 data['kwargs'] = self.decode(data['kwargs'])
             return self.meta_from_decoded(data)
 
-    @retry
+    def _decode_stored_result(self, payload):
+        """Decode a value stored in the ``result`` column.
+
+        Rows written before the fix for celery/celery#3025 always stored a
+        raw pickle blob regardless of the configured ``result_serializer``,
+        so a row that can't be decoded with the current serializer, but
+        looks like a pickle payload (starts with the pickle protocol 2+
+        marker that every pickle Celery/kombu produces starts with), is
+        assumed to be one of those and is unpickled directly instead.
+        Anything else re-raises the original decode error instead of
+        blindly unpickling arbitrary bytes.
+        """
+        if payload is None:
+            return payload
+        payload = ensure_bytes(payload)
+        try:
+            return self.decode(payload)
+        except Exception:
+            # Legacy rows written before celery/celery#3025 were stored via
+            # SQLAlchemy's PickleType, which uses a binary pickle protocol.
+            if payload[:1] != b'\x80':
+                raise
+            logger.warning(
+                'Task result payload could not be decoded using the '
+                'configured result_serializer; falling back to pickle '
+                'for backward compatibility with pre-fix data.',
+                exc_info=True,
+            )
+            return pickle.loads(payload)
+
+    def task_result_exists(self, task_id):
+        """Check if a result exists in the database for the given task ID.
+
+        .. versionadded:: 5.7.0
+        """
+        return self._ensure_retryable(
+            self._task_result_exists, task_id=task_id)
+
+    def _task_result_exists(self, task_id):
+        session = self.ResultSession()
+        with session_cleanup(session):
+            return session.query(self.task_cls).filter(
+                self.task_cls.task_id == task_id
+            ).first() is not None
+
     def _save_group(self, group_id, result):
         """Store the result of an executed group."""
         session = self.ResultSession()
         with session_cleanup(session):
-            group = self.taskset_cls(group_id, result)
+            value = ensure_bytes(self.encode(self.prepare_value(result)))
+            group = self.taskset_cls(group_id, value)
             session.add(group)
             session.flush()
             session.commit()
             return result
 
-    @retry
     def _restore_group(self, group_id):
         """Get meta-data for group by id."""
         session = self.ResultSession()
@@ -193,9 +252,13 @@ class DatabaseBackend(BaseBackend):
             group = session.query(self.taskset_cls).filter(
                 self.taskset_cls.taskset_id == group_id).first()
             if group:
-                return group.to_dict()
+                data = group.to_dict()
+                value = self._decode_stored_result(data['result'])
+                data['result'] = (
+                    value if value is None else result_from_tuple(value, self.app)
+                )
+                return data
 
-    @retry
     def _delete_group(self, group_id):
         """Delete meta-data for group by id."""
         session = self.ResultSession()
@@ -205,7 +268,6 @@ class DatabaseBackend(BaseBackend):
             session.flush()
             session.commit()
 
-    @retry
     def _forget(self, task_id):
         """Forget about result."""
         session = self.ResultSession()
@@ -215,6 +277,9 @@ class DatabaseBackend(BaseBackend):
 
     def cleanup(self):
         """Delete expired meta-data."""
+        self._ensure_retryable(self._cleanup)
+
+    def _cleanup(self):
         session = self.ResultSession()
         expires = self.expires
         now = self.app.now()

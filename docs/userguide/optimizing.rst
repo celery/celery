@@ -169,6 +169,14 @@ possible with a catch. You can have a worker only reserve as many tasks as
 there are worker processes, with the condition that they are acknowledged
 late (10 unacknowledged tasks executing for :option:`-c 10 <celery worker -c>`)
 
+This condition is required because, with the default early acknowledgment,
+a task is acknowledged just-in-time before being executed. Once that happens,
+the task no longer counts as an unacknowledged reserved
+message, so the broker is allowed to deliver another message up to the
+prefetch limit. With late acknowledgment enabled, executing tasks remain
+unacknowledged until they finish, which means they continue to occupy the
+worker's prefetch slots and prevent extra tasks from being reserved.
+
 For that, you need to enable  :term:`late acknowledgment`. Using this option over the
 default behavior means a task that's already started executing will be
 retried in the event of a power failure or the worker instance being killed
@@ -181,9 +189,13 @@ You can enable this behavior by using the following configuration options:
     task_acks_late = True
     worker_prefetch_multiplier = 1
 
-If you want to disable "prefetching of tasks" without using ack_late (because
-your tasks are not idempotent) that's impossible right now and you can join the
-discussion here https://github.com/celery/celery/discussions/7106
+If your tasks cannot be acknowledged late you can disable broker
+prefetching by enabling :setting:`worker_disable_prefetch`. With this
+setting the worker fetches a new task only when an execution slot is
+free, preventing tasks from waiting behind long running ones on busy
+workers. This can also be set from the command line using
+:option:`--disable-prefetch <celery worker --disable-prefetch>`. This feature
+is currently only supported when using Redis as the broker.
 
 Memory Usage
 ------------

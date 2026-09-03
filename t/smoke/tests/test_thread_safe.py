@@ -56,7 +56,6 @@ class test_thread_safety:
 
         @after_task_publish.connect
         def after_task_publish_handler(*args, **kwargs):
-            nonlocal signal_was_called
             signal_was_called(True)
 
         def thread_worker():
