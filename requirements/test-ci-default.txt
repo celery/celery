@@ -6,7 +6,7 @@
 -r extras/tblib.txt
 -r extras/slmq.txt
 -r extras/msgpack.txt
--r extras/memcache.txt
+# -r extras/memcache.txt
 -r extras/eventlet.txt
 -r extras/gevent.txt
 -r extras/thread.txt
