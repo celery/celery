@@ -1,4 +1,5 @@
 """Django-specific customization."""
+import atexit
 import contextlib
 import os
 import sys
@@ -158,7 +159,6 @@ class DjangoWorkerFixup:
         signals.task_prerun.connect(self.on_task_prerun)
         signals.task_postrun.connect(self.on_task_postrun)
         signals.worker_process_init.connect(self.on_worker_process_init)
-        signals.worker_process_shutdown.connect(self.on_worker_process_shutdown)
         self.close_database()
         self.close_cache()
         return self
@@ -185,14 +185,18 @@ class DjangoWorkerFixup:
         self._close_database()
         self.close_cache()
 
-    def on_worker_process_shutdown(self, **kwargs: Any) -> None:
-        """Close database connection pools when worker process shuts down.
+        # Register atexit handler to close connection pools when this child process exits.
+        # This runs in the child process (on_worker_process_init is called in each child),
+        # ensuring pools are closed in the process that created them.
+        atexit.register(self._close_pools_on_child_exit)
 
-        This is called when a worker process exits. Django's connection
-        pooling requires pools to be closed in the process that created them,
-        as connections cannot be shared across fork boundaries. This handler
-        only closes pools in prefork mode where each child process has its own
-        pool that must be cleaned up before the process exits.
+    def _close_pools_on_child_exit(self) -> None:
+        """Close database connection pools when child process exits.
+
+        This is registered as an atexit handler in on_worker_process_init,
+        so it runs in the child process that owns the connection pools.
+        Django's connection pooling requires pools to be closed in the process
+        that created them, as connections cannot be shared across fork boundaries.
         """
         is_prefork = self._is_prefork()
 

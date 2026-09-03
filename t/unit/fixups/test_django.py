@@ -238,9 +238,8 @@ class test_DjangoWorkerFixup(FixupCase):
                 sigs.worker_process_init.connect.assert_called_with(
                     f.on_worker_process_init,
                 )
-                sigs.worker_process_shutdown.connect.assert_called_with(
-                    f.on_worker_process_shutdown,
-                )
+                # worker_process_shutdown is no longer connected; pool cleanup
+                # is handled via atexit registered in on_worker_process_init
 
     def test_on_worker_process_init(self, patching):
         with self.fixup_context(self.app) as (f, _, _):
@@ -486,6 +485,34 @@ class test_DjangoWorkerFixup(FixupCase):
         f.django_setup()
         django.setup.assert_called_with()
 
+    def test_on_worker_process_init_registers_atexit_handler(self, patching):
+        """Test that on_worker_process_init registers atexit handler for pool cleanup."""
+        import atexit
+
+        patching('celery.fixups.django.symbol_by_name')
+        patching('celery.fixups.django.import_module')
+        patching.modules('django', 'django.db', 'django.core.cache')
+
+        f = self.Fixup(self.app)
+        f._db.connections.all = Mock(return_value=[])
+
+        # Track atexit registrations
+        original_register = atexit.register
+        registered_handlers = []
+
+        def tracking_register(func, *args, **kwargs):
+            registered_handlers.append(func)
+            return original_register(func, *args, **kwargs)
+
+        with patch.object(atexit, 'register', side_effect=tracking_register):
+            f.on_worker_process_init()
+
+        # Verify that _close_pools_on_child_exit was registered
+        assert any(
+            handler.__name__ == '_close_pools_on_child_exit'
+            for handler in registered_handlers
+        ), "on_worker_process_init should register _close_pools_on_child_exit as atexit handler"
+
     def test__is_prefork(self):
         with self.fixup_context(self.app) as (f, _, _):
             f.worker.pool_cls = Mock(__module__='celery.concurrency.prefork')
@@ -500,8 +527,8 @@ class test_DjangoWorkerFixup(FixupCase):
             f.worker = None
             assert not f._is_prefork()
 
-    def test_on_worker_process_shutdown_closes_pool_prefork(self):
-        """Test that on_worker_process_shutdown closes pool in prefork mode when enabled."""
+    def test_close_pools_on_child_exit_closes_pool_in_prefork(self):
+        """Test that _close_pools_on_child_exit closes pool in prefork mode when enabled."""
         class DJSettings:
             DATABASES = {}
 
@@ -514,11 +541,11 @@ class test_DjangoWorkerFixup(FixupCase):
 
             # Pool enabled in prefork mode - close_pool should be called
             f._settings.DATABASES["default"] = {"OPTIONS": {"pool": True}}
-            f.on_worker_process_shutdown()
+            f._close_pools_on_child_exit()
             conn.close_pool.assert_called_once_with()
 
-    def test_on_worker_process_shutdown_no_pool_when_disabled(self):
-        """Test that on_worker_process_shutdown does not close pool when disabled."""
+    def test_close_pools_on_child_exit_no_pool_when_disabled(self):
+        """Test that _close_pools_on_child_exit does not close pool when disabled."""
         class DJSettings:
             DATABASES = {}
 
@@ -531,11 +558,11 @@ class test_DjangoWorkerFixup(FixupCase):
 
             # Pool disabled - close_pool should not be called
             f._settings.DATABASES["default"] = {"OPTIONS": {}}
-            f.on_worker_process_shutdown()
+            f._close_pools_on_child_exit()
             conn.close_pool.assert_not_called()
 
-    def test_on_worker_process_shutdown_no_pool_in_thread_mode(self):
-        """Test that on_worker_process_shutdown does not close pool in non-prefork mode."""
+    def test_close_pools_on_child_exit_no_pool_in_thread_mode(self):
+        """Test that _close_pools_on_child_exit does not close pool in non-prefork mode."""
         class DJSettings:
             DATABASES = {}
 
@@ -550,11 +577,11 @@ class test_DjangoWorkerFixup(FixupCase):
             f._settings.DATABASES["default"] = {"OPTIONS": {"pool": True}}
             f.worker.pool_cls = ThreadTaskPool
             assert "prefork" not in ThreadTaskPool.__module__
-            f.on_worker_process_shutdown()
+            f._close_pools_on_child_exit()
             conn.close_pool.assert_not_called()
 
-    def test_on_worker_process_shutdown_suppresses_keyerror(self):
-        """Test that on_worker_process_shutdown suppresses KeyError from close_pool."""
+    def test_close_pools_on_child_exit_suppresses_keyerror(self):
+        """Test that _close_pools_on_child_exit suppresses KeyError from close_pool."""
         class DJSettings:
             DATABASES = {}
 
@@ -566,11 +593,11 @@ class test_DjangoWorkerFixup(FixupCase):
             f._settings = DJSettings
 
             f._settings.DATABASES["default"] = {"OPTIONS": {"pool": True}}
-            f.on_worker_process_shutdown()  # should not raise
+            f._close_pools_on_child_exit()  # should not raise
             conn.close_pool.assert_called_once_with()
 
-    def test_on_worker_process_shutdown_multiple_connections(self):
-        """Test that on_worker_process_shutdown handles multiple database connections."""
+    def test_close_pools_on_child_exit_multiple_connections(self):
+        """Test that _close_pools_on_child_exit handles multiple database connections."""
         class DJSettings:
             DATABASES = {}
 
@@ -590,12 +617,12 @@ class test_DjangoWorkerFixup(FixupCase):
             f._settings.DATABASES["default"] = {"OPTIONS": {"pool": True}}
             f._settings.DATABASES["replica"] = {"OPTIONS": {}}
 
-            f.on_worker_process_shutdown()
+            f._close_pools_on_child_exit()
             conn1.close_pool.assert_called_once_with()
             conn2.close_pool.assert_not_called()
 
-    def test_on_worker_process_shutdown_django_pre_41(self):
-        """Test that on_worker_process_shutdown handles Django < 4.1."""
+    def test_close_pools_on_child_exit_django_pre_41(self):
+        """Test that _close_pools_on_child_exit handles Django < 4.1."""
         class DJSettings:
             DATABASES = {}
 
@@ -614,7 +641,7 @@ class test_DjangoWorkerFixup(FixupCase):
             f._db.connections.all = Mock(side_effect=all_without_initialized_only)
             f._settings.DATABASES["default"] = {"OPTIONS": {"pool": True}}
 
-            f.on_worker_process_shutdown()
+            f._close_pools_on_child_exit()
             conn.close_pool.assert_called_once_with()
 
     def test_close_database_with_db_reuse_max_does_not_close_pool(self):
@@ -674,9 +701,9 @@ class test_DjangoWorkerFixup(FixupCase):
             conn.close.assert_called_once_with()
             conn.close_pool.assert_not_called()
 
-            # Process shutdown (via worker_process_shutdown)
+            # Process shutdown (via atexit handler in child)
             conn.reset_mock()
-            f.on_worker_process_shutdown()
+            f._close_pools_on_child_exit()
             conn.close.assert_not_called()  # close() not called in shutdown
             conn.close_pool.assert_called_once_with()  # Only now is pool closed
 
