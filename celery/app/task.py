@@ -1,6 +1,7 @@
 """Task implementation: request context and the task base class."""
 import sys
 import types
+from datetime import timedelta
 
 from billiard.einfo import ExceptionInfo, ExceptionWithTraceback
 from kombu import serialization
@@ -667,8 +668,17 @@ class Task:
             Also supports all keyword arguments supported by
             :meth:`kombu.Producer.publish`.
         """
-        if self.soft_time_limit and self.time_limit and self.soft_time_limit > self.time_limit:
-            raise ValueError('soft_time_limit must be less than or equal to time_limit')
+        if self.soft_time_limit and self.time_limit:
+            soft_time_limit_s = (
+                self.soft_time_limit.total_seconds()
+                if isinstance(self.soft_time_limit, timedelta) else self.soft_time_limit
+            )
+            time_limit_s = (
+                self.time_limit.total_seconds()
+                if isinstance(self.time_limit, timedelta) else self.time_limit
+            )
+            if soft_time_limit_s > time_limit_s:
+                raise ValueError('soft_time_limit must be less than or equal to time_limit')
 
         if self.typing:
             try:
