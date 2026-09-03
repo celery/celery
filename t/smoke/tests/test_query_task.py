@@ -33,7 +33,8 @@ class test_query_task:
 
     def test_query_task_finds_task_scheduled_with_countdown(self, celery_setup: CeleryTestSetup):
         hostname = celery_setup.worker.hostname()
-        result = add.s(2, 2).apply_async(countdown=10)
+        result = add.s(2, 2).apply_async(
+            countdown=10, queue=celery_setup.worker.worker_queue)
         task_id = result.id
         # A single destination makes kombu wait only for that one reply
         # instead of the full default timeout, so this stays fast.
