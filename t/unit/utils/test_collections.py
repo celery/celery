@@ -460,7 +460,7 @@ class test_ChainMap:
         callback.assert_called_once_with(x=1)
 
     def test_pop_applies_key_t(self):
-        cm = ChainMap(key_t=str.upper)
+        cm = ChainMap(key_t=lambda key: key + '!')
         cm['foo'] = 1
         assert cm.pop('foo') == 1
         assert 'foo' not in cm
