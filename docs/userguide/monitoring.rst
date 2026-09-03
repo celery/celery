@@ -148,6 +148,10 @@ Commands
     Any worker having a task in this set of ids that is scheduled, reserved, or active
     will respond with status and information.
 
+    .. versionadded:: 5.7
+        Scheduled tasks (with an ETA/countdown that hasn't elapsed yet) are
+        now included; previously only reserved/active tasks were found.
+
     .. code-block:: console
 
         $ celery -A proj inspect query_task e9f6c8f0-fec9-4ae8-a8c6-cf8c8451d4f8
