@@ -215,7 +215,45 @@ def _revoke(state, task_ids, terminate=False, signal=None, **kwargs):
     size = len(task_ids)
     terminated = set()
 
+    # Repeating the control command must not repeat the chord bookkeeping
+    # for members that were already accounted for.
+    unrevoked_ids = {
+        task_id for task_id in task_ids if task_id not in worker_state.revoked
+    }
     worker_state.revoked.update(task_ids)
+
+    # pass locally-known requests so the backend can run chord bookkeeping.
+    # A revoke without terminate does not stop tasks that are already
+    # executing, so active requests are excluded here: they will report
+    # their real result when they finish. With terminate=True the active
+    # requests are being stopped, so passing them is safe.
+    requests_by_id = {
+        request.id: request
+        for request in _find_requests_by_id(unrevoked_ids)
+        if terminate or request not in worker_state.active_requests
+    }
+
+    for task_id in task_ids:
+        request = requests_by_id.get(task_id)
+        # A task may override its backend. Route the revoke bookkeeping
+        # through the request's own backend so a chord tracked by a custom
+        # task backend is accounted for in the right place. Tasks unknown
+        # to this worker fall back to the app backend.
+        backend = request.task.backend if request is not None else state.app.backend
+        try:
+            backend.mark_as_revoked(
+                task_id, reason='revoked', store_result=True,
+                request=request)
+        except Exception as exc:
+            logger.warning('Failed to mark task %s as revoked in backend: %s', task_id, exc)
+        else:
+            if request is not None:
+                # The backend has stored the member result and updated the
+                # chord bookkeeping. Flag the request so the announce that
+                # runs when the worker later discards it does not report the
+                # chord member a second time.
+                request._revoked_in_backend = True
+
     if terminate:
         signum = _signals.signum(signal or TERM_SIGNAME)
         for request in _find_requests_by_id(task_ids):
@@ -338,6 +376,8 @@ def election(state, id, topic, action=None, **kwargs):
 def enable_events(state):
     """Tell worker(s) to send task-related events."""
     dispatcher = state.consumer.event_dispatcher
+    if dispatcher is None:
+        return nok('event dispatcher unavailable')
     if dispatcher.groups and 'task' not in dispatcher.groups:
         dispatcher.groups.add('task')
         logger.info('Events of group {task} enabled by remote.')
@@ -349,6 +389,8 @@ def enable_events(state):
 def disable_events(state):
     """Tell worker(s) to stop sending task-related events."""
     dispatcher = state.consumer.event_dispatcher
+    if dispatcher is None:
+        return nok('event dispatcher unavailable')
     if 'task' in dispatcher.groups:
         dispatcher.groups.discard('task')
         logger.info('Events of group {task} disabled by remote.')
@@ -361,7 +403,8 @@ def heartbeat(state):
     """Tell worker(s) to send event heartbeat immediately."""
     logger.debug('Heartbeat requested by remote.')
     dispatcher = state.consumer.event_dispatcher
-    dispatcher.send('worker-heartbeat', freq=5, **worker_state.SOFTWARE_INFO)
+    if dispatcher:
+        dispatcher.send('worker-heartbeat', freq=5, **worker_state.SOFTWARE_INFO)
 
 
 # -- Worker

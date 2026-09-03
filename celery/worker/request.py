@@ -10,13 +10,13 @@ from time import monotonic, time
 from weakref import ref
 
 from billiard.common import TERM_SIGNAME
-from billiard.einfo import ExceptionWithTraceback
+from billiard.einfo import ExceptionInfo, ExceptionWithTraceback
 from kombu.utils.encoding import safe_repr, safe_str
 from kombu.utils.objects import cached_property
 
-from celery import current_app, signals
+from celery import current_app, signals, states
 from celery.app.task import Context
-from celery.app.trace import fast_trace_task, trace_task, trace_task_ret
+from celery.app.trace import fast_trace_task, task_has_custom, trace_task, trace_task_ret
 from celery.concurrency.base import BasePool
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError, Terminated,
                                TimeLimitExceeded, WorkerLostError)
@@ -73,6 +73,7 @@ class Request:
     time_limits = (None, None)
     _already_revoked = False
     _already_cancelled = False
+    _revoked_in_backend = False
     _terminate_on_ack = None
     _apply_result = None
     _tzlocal = None
@@ -125,7 +126,10 @@ class Request:
         self._eventer = eventer
         self._connection_errors = connection_errors or ()
         self._task = task or self._app.tasks[self._type]
-        self._ignore_result = self._request_dict.get('ignore_result', False)
+        ignore_result = self._request_dict.get('ignore_result', None)
+        if ignore_result is None:
+            ignore_result = self._task.ignore_result
+        self._ignore_result = ignore_result
 
         # timezone means the message is timezone-aware, and the only timezone
         # supported at this point is UTC.
@@ -287,7 +291,7 @@ class Request:
 
     @property
     def store_errors(self):
-        return (not self.task.ignore_result or
+        return (not self._ignore_result or
                 self.task.store_errors_even_if_ignored)
 
     @property
@@ -422,38 +426,44 @@ class Request:
             if obj is not None:
                 obj.terminate(signal)
 
-    def cancel(self, pool, signal=None):
+    def cancel(self, pool, signal=None, emit_retry=True):
         signal = _signals.signum(signal or TERM_SIGNAME)
         if self.time_start:
             pool.terminate_job(self.worker_pid, signal)
-            self._announce_cancelled()
+            self._announce_cancelled(emit_retry=emit_retry)
 
         if self._apply_result is not None:
             obj = self._apply_result()  # is a weakref
             if obj is not None:
                 obj.terminate(signal)
 
-    def _announce_cancelled(self):
+    def _announce_cancelled(self, emit_retry=True):
         task_ready(self)
         self.send_event('task-cancelled')
-        reason = 'cancelled by Celery'
-        exc = Retry(message=reason)
-        self.task.backend.mark_as_retry(self.id,
-                                        exc,
-                                        request=self._context)
 
-        self.task.on_retry(exc, self.id, self.args, self.kwargs, None)
+        if emit_retry:
+            reason = 'cancelled by Celery'
+            exc = Retry(message=reason)
+            self.task.backend.mark_as_retry(self.id,
+                                            exc,
+                                            request=self._context)
+
+            self.task.on_retry(exc, self.id, self.args, self.kwargs, None)
+
         self._already_cancelled = True
-        send_retry(self.task, request=self._context, einfo=None)
+
+        if emit_retry:
+            send_retry(self.task, request=self._context, einfo=None)
 
     def _announce_revoked(self, reason, terminated, signum, expired):
         task_ready(self)
         self.send_event('task-revoked',
                         terminated=terminated, signum=signum, expired=expired)
-        self.task.backend.mark_as_revoked(
-            self.id, reason, request=self._context,
-            store_result=self.store_errors,
-        )
+        if not self._revoked_in_backend:
+            self.task.backend.mark_as_revoked(
+                self.id, reason, request=self._context,
+                store_result=self.store_errors,
+            )
         self.acknowledge()
         self._already_revoked = True
         send_revoked(self.task, request=self._context,
@@ -525,17 +535,75 @@ class Request:
                  timeout, self.name, self.id)
         else:
             task_ready(self)
-            error('Hard time limit (%ss) exceeded for %s[%s]',
-                  timeout, self.name, self.id)
-            exc = TimeLimitExceeded(timeout)
+            # This is a special case where the task timeout handling is done during
+            # the cold shutdown process.
+            if not state.should_terminate:
+                error('Hard time limit (%ss) exceeded for %s[%s]', timeout, self.name, self.id)
+                exc = TimeLimitExceeded(timeout)
 
-            self.task.backend.mark_as_failure(
-                self.id, exc, request=self._context,
-                store_result=self.store_errors,
-            )
+                self.task.backend.mark_as_failure(
+                    self.id, exc, request=self._context,
+                    store_result=self.store_errors,
+                )
 
-            if self.task.acks_late and self.task.acks_on_failure_or_timeout:
-                self.acknowledge()
+                # Invoke the same failure hooks that a normal task failure
+                # triggers so that on_failure callbacks, errbacks, and
+                # the task_failure signal all fire for hard timeouts.
+                einfo = None
+                try:
+                    try:
+                        raise exc
+                    except TimeLimitExceeded:
+                        einfo = ExceptionInfo()
+
+                    self.task.on_failure(exc, self.id, self.args, self.kwargs, einfo)
+
+                    if task_has_custom(self.task, 'after_return'):
+                        self.task.after_return(
+                            states.FAILURE, exc, self.id, self.args, self.kwargs, None,
+                        )
+
+                    signals.task_failure.send(
+                        sender=self.task,
+                        task_id=self.id,
+                        exception=exc,
+                        args=self.args,
+                        kwargs=self.kwargs,
+                        traceback=exc.__traceback__,
+                        einfo=einfo,
+                    )
+
+                    self.send_event(
+                        'task-failed',
+                        exception=safe_repr(get_pickled_exception(einfo.exception)),
+                        traceback=einfo.traceback,
+                    )
+                finally:
+                    # Break the exc → traceback → frame reference cycle
+                    # (this frame's own `exc` local points at exc, and
+                    # exc.__traceback__ points back at this frame) so the
+                    # on_timeout frame — and the Request/self it holds —
+                    # can be garbage-collected promptly.
+                    #
+                    # Note: a `traceback_clear(exc)` call previously lived
+                    # here too, but it is a guaranteed no-op in this
+                    # location: exc is raised and caught within this same
+                    # function, so the only frame in exc.__traceback__ is
+                    # this currently-executing frame, and CPython's
+                    # frame.clear() always raises "cannot clear an
+                    # executing frame" for a frame still on the call
+                    # stack. That RuntimeError was being silently
+                    # swallowed inside traceback_clear(), so the call
+                    # appeared to succeed while doing nothing.
+                    if einfo is not None:
+                        del einfo
+                    exc.__traceback__ = None
+
+            if self.task.acks_late:
+                if self.task.acks_on_timeout:
+                    self.acknowledge()
+                else:
+                    self.reject(requeue=True)
 
     def on_success(self, failed__retval__runtime, **kwargs):
         """Handler called if the task was successfully processed."""
@@ -591,6 +659,27 @@ class Request:
         elif isinstance(exc, MemoryError):
             raise MemoryError(f'Process got: {exc}')
         elif isinstance(exc, Reject):
+            if not exc.requeue:
+                # A task that rejects its message without requeueing will
+                # never run again, so record a terminal FAILURE result and
+                # fire the task_failure signal instead of leaving the task
+                # stuck in PENDING/STARTED forever (Issue #4222).
+                self.task.backend.mark_as_failure(
+                    self.id, exc, request=self._context,
+                    store_result=self.store_errors,
+                )
+                signals.task_failure.send(
+                    sender=self.task, task_id=self.id, exception=exc,
+                    args=self.args, kwargs=self.kwargs,
+                    traceback=exc_info.traceback, einfo=exc_info,
+                )
+                if send_failed_event:
+                    self.send_event(
+                        'task-failed',
+                        exception=safe_repr(
+                            get_pickled_exception(exc_info.exception)),
+                        traceback=exc_info.traceback,
+                    )
             return self.reject(requeue=exc.requeue)
         elif isinstance(exc, Ignore):
             return self.acknowledge()
@@ -601,21 +690,28 @@ class Request:
         requeue = False
         is_worker_lost = isinstance(exc, WorkerLostError)
         if self.task.acks_late:
+            is_timeout = isinstance(exc, TimeLimitExceeded)
+            ack_flag = self.task.acks_on_timeout if is_timeout else self.task.acks_on_failure
             reject = (
                 (self.task.reject_on_worker_lost and is_worker_lost)
-                or (isinstance(exc, TimeLimitExceeded) and not self.task.acks_on_failure_or_timeout)
+                or (is_timeout and not ack_flag)
             )
-            ack = self.task.acks_on_failure_or_timeout
             if reject:
                 requeue = True
                 self.reject(requeue=requeue)
                 send_failed_event = False
-            elif ack:
+            elif ack_flag:
                 self.acknowledge()
             else:
                 # supporting the behaviour where a task failed and
                 # need to be removed from prefetched local queue
                 self.reject(requeue=False)
+
+        # This is a special case where the task failure handling is done during
+        # the cold shutdown process.
+        if state.should_terminate:
+            return_ok = True
+            send_failed_event = False
 
         # This is a special case where the process would not have had time
         # to write the result.

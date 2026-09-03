@@ -31,6 +31,11 @@ class Tasks(bootsteps.StartStopStep):
         c.update_strategies()
 
         qos_global = self.qos_global(c)
+        # Record effective QoS mode on the consumer so the reconnect path
+        # (Consumer.on_connection_error_after_connected) can decide whether
+        # the prefetch reduction/restoration mechanism is safe. Per-consumer
+        # QoS does not support it. See #9512.
+        c.qos_global = qos_global
 
         # set initial prefetch count
         c.connection.default_channel.basic_qos(
@@ -52,6 +57,16 @@ class Tasks(bootsteps.StartStopStep):
         )
 
         if c.app.conf.worker_disable_prefetch:
+            # Only apply disable-prefetch for Redis brokers
+            is_redis_broker = c.connection.transport.driver_type == 'redis'
+            if not is_redis_broker:
+                logger.warning(
+                    f"worker_disable_prefetch is only supported for Redis brokers. "
+                    f"Current broker transport: {c.connection.transport.driver_type}. "
+                    f"Ignoring disable_prefetch setting."
+                )
+                return
+
             from types import MethodType
 
             from celery.worker import state
@@ -104,6 +119,6 @@ class Tasks(bootsteps.StartStopStep):
 
             if using_quorum_queues:
                 qos_global = False
-                logger.info("Global QoS is disabled. Prefetch count in now static.")
+                logger.info("Global QoS is disabled. Prefetch count is now static.")
 
         return qos_global

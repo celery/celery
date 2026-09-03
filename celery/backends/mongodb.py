@@ -20,6 +20,7 @@ if pymongo:
         from bson.binary import Binary
     except ImportError:
         from pymongo.binary import Binary
+    from pymongo import uri_parser
     from pymongo.errors import InvalidDocument
 else:                                       # pragma: no cover
     Binary = None
@@ -53,6 +54,9 @@ class MongoBackend(BaseBackend):
 
     supports_autoexpire = False
 
+    # Bytes round-trip through BSON as a binary field.
+    supports_result_compression = True
+
     _connection = None
 
     def __init__(self, app=None, **kwargs):
@@ -73,7 +77,7 @@ class MongoBackend(BaseBackend):
         if self.url:
             self.url = self._ensure_mongodb_uri_compliance(self.url)
 
-            uri_data = pymongo.uri_parser.parse_uri(self.url)
+            uri_data = uri_parser.parse_uri(self.url)
             # build the hosts list to create a mongo connection
             hostslist = [
                 f'{x[0]}:{x[1]}' for x in uri_data['nodelist']
@@ -190,7 +194,7 @@ class MongoBackend(BaseBackend):
         try:
             self.collection.replace_one({'_id': task_id}, meta, upsert=True)
         except InvalidDocument as exc:
-            raise EncodeError(exc)
+            raise EncodeError(exc) from exc
 
         return result
 
@@ -199,15 +203,20 @@ class MongoBackend(BaseBackend):
         obj = self.collection.find_one({'_id': task_id})
         if obj:
             if self.app.conf.find_value_for_key('extended', 'result'):
+                # The request-derived fields are only written by
+                # ``_get_result_meta`` when a request is available, so a
+                # document stored without one (for example by
+                # ``AbortableAsyncResult.abort``) does not carry them.
+                # Default them to None instead of raising KeyError.
                 return self.meta_from_decoded({
-                    'name': obj['name'],
-                    'args': obj['args'],
+                    'name': obj.get('name'),
+                    'args': obj.get('args'),
                     'task_id': obj['_id'],
-                    'queue': obj['queue'],
-                    'kwargs': obj['kwargs'],
+                    'queue': obj.get('queue'),
+                    'kwargs': obj.get('kwargs'),
                     'status': obj['status'],
-                    'worker': obj['worker'],
-                    'retries': obj['retries'],
+                    'worker': obj.get('worker'),
+                    'retries': obj.get('retries'),
                     'children': obj['children'],
                     'date_done': obj['date_done'],
                     'traceback': obj['traceback'],
@@ -222,6 +231,13 @@ class MongoBackend(BaseBackend):
                 'children': obj['children'],
             })
         return {'status': states.PENDING, 'result': None}
+
+    def task_result_exists(self, task_id):
+        """Check if a result exists in MongoDB for the given task ID.
+
+        .. versionadded:: 5.7.0
+        """
+        return bool(self.collection.find_one({"_id": task_id}))
 
     def _save_group(self, group_id, result):
         """Save the group result."""
