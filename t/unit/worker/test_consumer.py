@@ -636,6 +636,39 @@ class test_Consumer(ConsumerTestCase):
         finally:
             state.reset_state()
 
+    def test_on_close_logs_and_continues_if_timer_cancel_raises(self):
+        """A failing cancellation (e.g. a stray GreenletExit) must not
+        abort on_close() before it finishes clearing state and dropping
+        the rest of the scheduled requests.
+        """
+        from celery.worker import state
+        from celery.worker.consumer.consumer import Consumer
+
+        class FakeRequest:
+            def __init__(self, id):
+                self.id = id
+                self._eta_timer_entry = Mock()
+
+        consumer = Mock()
+        consumer.controller = Mock()
+        consumer.controller.semaphore = Mock()
+        consumer.task_buckets = {}
+        consumer.pool = Mock()
+        consumer.pool.flush = Mock()
+        consumer.timer.cancel.side_effect = RuntimeError('boom')
+
+        state.reset_state()
+        try:
+            scheduled = FakeRequest('scheduled-1')
+            state.task_scheduled(scheduled)
+
+            Consumer.on_close(consumer)
+
+            assert scheduled.id not in state.requests
+            assert scheduled not in state.scheduled_requests
+        finally:
+            state.reset_state()
+
     def test_connect_error_handler(self):
         self.app._connection = _amqp_connection()
         conn = self.app._connection.return_value
