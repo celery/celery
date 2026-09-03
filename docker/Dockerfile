@@ -15,7 +15,8 @@ ARG CELERY_USER=developer
 
 RUN : "${CELERY_USER:?CELERY_USER build argument needs to be set and non-empty.}"
 
-ENV HOME=/home/${CELERY_USER}
+ENV HOME=/home/${CELERY_USER} \
+    PATH="/home/${CELERY_USER}/.local/bin:${PATH}"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
