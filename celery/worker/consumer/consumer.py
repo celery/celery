@@ -545,15 +545,21 @@ class Consumer:
         reserved_requests.update(tuple(active_requests))
         # Scheduled (ETA/countdown) requests never became reserved, so they
         # aren't covered by the cleanup above. Cancel their pending timer
-        # entries so the callback can't fire after we've torn down this
-        # connection (the synloop error path doesn't clear the timer the
-        # way asynloop's hub.reset()/hub.timer.clear() does), then drop our
-        # copies since the broker may redeliver these tasks to another
+        # entries (through self.timer.cancel(), not entry.cancel()
+        # directly, since e.g. the Eventlet timer relies on that to catch
+        # GreenletExit) so the callback can't fire after we've torn down
+        # this connection (the synloop error path doesn't clear the timer
+        # the way asynloop's hub.reset()/hub.timer.clear() does), then drop
+        # our copies since the broker may redeliver these tasks to another
         # worker on reconnect.
         for r in tuple(scheduled_requests):
             entry = getattr(r, '_eta_timer_entry', None)
-            if entry is not None:
-                entry.cancel()
+            if entry is not None and self.timer is not None:
+                try:
+                    self.timer.cancel(entry)
+                except Exception as exc:  # pylint: disable=broad-except
+                    logger.exception(
+                        'Error cancelling ETA timer entry: %r', exc)
             requests.pop(r.id, None)
         scheduled_requests.clear()
         if self.pool and self.pool.flush:

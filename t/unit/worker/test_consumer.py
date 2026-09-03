@@ -599,6 +599,14 @@ class test_Consumer(ConsumerTestCase):
         (e.g. synloop, unlike asynloop's hub.reset()/hub.timer.clear()),
         the stale callback can still fire after on_close(), re-adding the
         request via task_reserved() and triggering a stale delivery.
+
+        Cancellation must go through ``self.timer.cancel(entry)`` rather
+        than calling ``entry.cancel()`` directly: the Eventlet timer's
+        entries are greenlets, and ``Timer.cancel()`` is what catches the
+        ``GreenletExit`` that cancelling one can raise (see
+        ``celery.concurrency.eventlet.Timer.cancel``). Calling
+        ``entry.cancel()`` directly could let that exception escape and
+        abort ``on_close()`` before it finishes clearing state.
         """
         from celery.worker import state
         from celery.worker.consumer.consumer import Consumer
@@ -622,7 +630,9 @@ class test_Consumer(ConsumerTestCase):
 
             Consumer.on_close(consumer)
 
-            scheduled._eta_timer_entry.cancel.assert_called_once()
+            consumer.timer.cancel.assert_called_once_with(
+                scheduled._eta_timer_entry)
+            scheduled._eta_timer_entry.cancel.assert_not_called()
         finally:
             state.reset_state()
 
