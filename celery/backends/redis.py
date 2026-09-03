@@ -554,7 +554,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         """
         # Delete base group key (inherited behavior)
         super()._delete_group(group_id)
-        
+
         # Delete progress tracking keys
         pkey = self.get_key_for_group(group_id, '.p')
         seen_key = self.get_key_for_group(group_id, '.p.seen')
@@ -636,38 +636,47 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
         Returns:
             int: 1 if the counter was incremented (new task), 0 if the task
-                 was already seen (duplicate).
+                 was already seen (duplicate) or if the group was never
+                 initialized for progress tracking.
         """
         pkey = self.get_key_for_group(group_id, '.p')
         seen_key = self.get_key_for_group(group_id, '.p.seen')
-        
+
         # Lua script for atomic idempotent increment
         # KEYS[1] = progress hash key (.p)
         # KEYS[2] = seen set key (.p.seen)
         # ARGV[1] = task_id to check/add
         # Returns: 1 if incremented (new task), 0 if already seen (duplicate)
+        #          or if group was never initialized
         lua_script = """
+        local pkey = KEYS[1]
         local seen_key = KEYS[2]
         local task_id = ARGV[1]
-        
+
+       -- Check if the group was initialized for progress tracking
+        -- (i.e., has a 'total' field set by set_group_progress_size)
+        if redis.call('HEXISTS', pkey, 'total') == 0 then
+            return 0  -- Group not initialized, do nothing
+        end
+
         -- Check if task_id is already in the seen set
         if redis.call('SISMEMBER', seen_key, task_id) == 1 then
             return 0  -- Already counted, no increment
         end
-        
+
         -- Add to seen set and increment counter
         redis.call('SADD', seen_key, task_id)
-        redis.call('HINCRBY', KEYS[1], 'count', 1)
-        
+        redis.call('HINCRBY', pkey, 'count', 1)
+
         -- Set TTL on seen set to match the progress hash if it exists
-        local ttl = redis.call('TTL', KEYS[1])
+        local ttl = redis.call('TTL', pkey)
         if ttl > 0 then
             redis.call('EXPIRE', seen_key, ttl)
         end
-        
+
         return 1  -- Incremented
         """
-        
+
         return self.client.eval(lua_script, 2, pkey, seen_key, task_id)
 
     def get_group_progress(self, group_id):
@@ -675,16 +684,26 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
         Returns the count and total from the Redis hash.
         Handles both bytes and str keys depending on Redis client configuration.
+
+        Returns (None, None) if the group was never initialized for progress
+        tracking (i.e., no 'total' field exists), even if the hash happens to
+        exist with other fields. This is defensive against old buggy keys that
+        may have been created before the initialization check was added.
         """
         pkey = self.get_key_for_group(group_id, '.p')
         data = self.client.hgetall(pkey)
         if not data:
             return None, None
-        
+
         # Handle both bytes and str keys (decode_responses=True vs False)
         # Try bytes first, fall back to str if not found
+        total = data.get(b'total', data.get('total', None))
+        if total is None:
+            # Group was never initialized for progress tracking
+            return None, None
+
         count = int(data.get(b'count', data.get('count', 0)))
-        total = int(data.get(b'total', data.get('total', 0)))
+        total = int(total)
         return count, total
 
     def apply_chord(self, header_result_args, body, **kwargs):
