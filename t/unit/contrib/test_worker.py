@@ -1,4 +1,5 @@
 import time
+import weakref
 from unittest.mock import Mock, patch
 
 import pytest
@@ -7,6 +8,7 @@ import pytest
 # to install the celery.ping task that the test lib uses
 import celery.contrib.testing.tasks  # noqa
 from celery import Celery
+from celery.contrib.testing.app import TestApp, setup_default_app
 from celery.contrib.testing.worker import TestWorkController, start_worker
 
 
@@ -126,6 +128,30 @@ class test_query_task_eta_smoke:
             )
 
             assert result.get(timeout=10) == 4
+
+class test_setup_default_app:
+
+    def test_teardown_collects_when_backend_was_created(self):
+        app = TestApp()
+        with patch('celery.contrib.testing.app.gc.collect') as collect:
+            with setup_default_app(app):
+                app.backend
+        collect.assert_called()
+        assert app._backend_cache is None
+        assert app._local.backend is None
+
+    def test_teardown_skips_collect_when_no_backend_was_created(self):
+        app = TestApp()
+        with patch('celery.contrib.testing.app.gc.collect') as collect:
+            with setup_default_app(app):
+                pass
+        collect.assert_not_called()
+
+    def test_teardown_releases_the_backend(self):
+        app = TestApp()
+        with setup_default_app(app):
+            backend_ref = weakref.ref(app.backend)
+        assert backend_ref() is None
 
 
 class test_TestWorkController:
