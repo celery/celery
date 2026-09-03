@@ -9,8 +9,7 @@ import types
 import typing
 import warnings
 from collections import UserDict, defaultdict, deque
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 from datetime import timezone as datetime_timezone
 from operator import attrgetter
 
