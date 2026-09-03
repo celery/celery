@@ -1,3 +1,4 @@
+import time
 from unittest.mock import Mock, patch
 
 import pytest
@@ -59,6 +60,72 @@ class test_worker:
             result = self.add.s(1, 2).apply_async()
             val = result.get(timeout=5)
         assert val == 3
+
+
+class test_query_task_eta_smoke:
+    """Smoke test for #5321, driven against a real embedded worker over
+    the ``memory://`` transport (as opposed to
+    ``t/unit/worker/test_query_task_integration.py``, which drives the
+    strategy/state/control internals directly without a broker or a
+    running worker).
+
+    Mirrors the reproduction script posted on the issue: schedule a task
+    with a countdown, then confirm ``inspect().query_task()`` finds it
+    while it's still waiting on its ETA -- not only once it starts
+    running, as it did before the fix.
+    """
+
+    def setup_method(self):
+        self.app = Celery('celerytest_5321', backend='cache+memory://', broker='memory://')
+
+        @self.app.task
+        def add(x, y):
+            return x + y
+
+        self.add = add
+
+        self.app.config_from_object({
+            'worker_hijack_root_logger': False,
+        })
+        self.app.log.loglevel = 0
+
+    def _wait_until(self, predicate, timeout=10, interval=0.1):
+        deadline = time.monotonic() + timeout
+        result = predicate()
+        while not result and time.monotonic() < deadline:
+            time.sleep(interval)
+            result = predicate()
+        return result
+
+    def test_query_task_finds_task_scheduled_with_countdown(self):
+        with start_worker(app=self.app, loglevel=0) as w:
+            result = self.add.apply_async((2, 2), countdown=5)
+            task_id = result.id
+            inspect = self.app.control.inspect([w.hostname])
+
+            queried = {}
+
+            def has_task():
+                nonlocal queried
+                queried = inspect.query_task(task_id) or {}
+                return task_id in queried.get(w.hostname, {})
+
+            assert self._wait_until(has_task), (
+                "query_task() never found the task while it was "
+                "waiting on its countdown"
+            )
+            state, _info = queried[w.hostname][task_id]
+            assert state == 'scheduled'
+
+            # sanity check: it was also visible via inspect().scheduled(),
+            # exactly as described in the issue.
+            scheduled = inspect.scheduled() or {}
+            assert any(
+                entry.get('request', {}).get('id') == task_id
+                for entry in scheduled.get(w.hostname, [])
+            )
+
+            assert result.get(timeout=10) == 4
 
 
 class test_TestWorkController:
