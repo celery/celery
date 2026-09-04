@@ -608,13 +608,14 @@ class Celery:
             raise RuntimeError('Contract breach: app not finalized')
         name = name or self.gen_task_name(fun.__name__, fun.__module__)
         base = base or self.Task
+        base = base if isinstance(base, tuple) else (base,)
 
         if name not in self._tasks:
             if pydantic is True:
                 fun = pydantic_wrapper(self, fun, name, pydantic_strict, pydantic_context, pydantic_dump_kwargs)
 
             run = fun if bind else staticmethod(fun)
-            task = type(fun.__name__, (base,), dict({
+            task = type(fun.__name__, base, dict({
                 'app': self,
                 'name': name,
                 'run': run,
