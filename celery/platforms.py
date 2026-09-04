@@ -52,13 +52,18 @@ EX_UNAVAILABLE = getattr(os, 'EX_UNAVAILABLE', 69)
 EX_USAGE = getattr(os, 'EX_USAGE', 64)
 EX_CANTCREAT = getattr(os, 'EX_CANTCREAT', 73)
 
-# Upper bound for the numeric fd scan in :func:`fd_by_path` when no fd
-# directory is available (fdmax can be ~1e9 in containers, issue #9886).
-_FDMAX_FALLBACK_LIMIT = 8192
-
 SYSTEM = _platform.system()
 IS_macOS = SYSTEM == 'Darwin'
 IS_WINDOWS = SYSTEM == 'Windows'
+
+# Directory listing the descriptors open in the calling process.  Mirrors
+# CPython's FD_DIR (Modules/_posixsubprocess.c): /dev/fd is a real file
+# descriptor file system on macOS, Cygwin and DragonFly, and on FreeBSD only
+# when fdescfs is mounted; /proc/self/fd is used everywhere else.
+if IS_macOS or SYSTEM in {'DragonFly', 'FreeBSD'} or SYSTEM.startswith('CYGWIN'):
+    _FD_DIR = '/dev/fd'
+else:
+    _FD_DIR = '/proc/self/fd'
 
 DAEMON_WORKDIR = '/'
 
@@ -308,32 +313,38 @@ def fd_by_path(paths):
         except OSError:
             return False
 
-    return [_fd for _fd in _candidate_fds() if fd_in_stats(_fd)]
+    fds = _open_fds()
+    if fds is None:
+        # No fd directory on this platform.  Scan the numeric range, as
+        # before: fdmax is only unreasonably large (~1e9) in containers, and
+        # those run Linux, where /proc/self/fd is listed above (issue #9886).
+        fds = range(get_fdmax(2048))
+    return [_fd for _fd in fds if fd_in_stats(_fd)]
 
 
-def _listdir_fds(path):
+def _dev_fd_is_fdescfs():
+    # devfs alone creates only /dev/fd/0-2, while fdescfs creates entries for
+    # every descriptor the process has open.  Same check as CPython's
+    # _is_fdescfs_mounted_on_dev_fd().
     try:
-        names = os.listdir(path)
+        return os.stat('/dev').st_dev != os.stat(_FD_DIR).st_dev
+    except OSError:
+        return False
+
+
+def _open_fds():
+    """List the descriptors open in this process, or :const:`None`.
+
+    :const:`None` means this platform has no directory listing them, and the
+    caller has to scan a numeric range instead.
+    """
+    if SYSTEM in {'DragonFly', 'FreeBSD'} and not _dev_fd_is_fdescfs():
+        return None
+    try:
+        names = os.listdir(_FD_DIR)
     except OSError:
         return None
-    return {int(name) for name in names if name.isdigit()}
-
-
-def _candidate_fds():
-    # /proc/self/fd is authoritative and is resolved by the kernel for the
-    # calling process, so it stays correct inside a PID namespace whose /proc
-    # was not remounted (/proc/<os.getpid()>/fd is not).
-    fds = _listdir_fds('/proc/self/fd')
-    if fds is not None:
-        return sorted(fds)
-    # Elsewhere /dev/fd may be complete (macOS, illumos) or partial (FreeBSD
-    # devfs without fdescfs lists only 0-2; OpenBSD/NetBSD ship static nodes),
-    # so merge it with a bounded numeric scan.  Descriptors above the bound
-    # are only found when the fd directory lists them; an unbounded scan is
-    # not an option because fdmax can be ~1e9 in containers (issue #9886).
-    fds = _listdir_fds('/dev/fd') or set()
-    fds.update(range(min(get_fdmax(2048), _FDMAX_FALLBACK_LIMIT)))
-    return sorted(fds)
+    return sorted(int(name) for name in names if name.isdigit())
 
 
 class DaemonContext:
