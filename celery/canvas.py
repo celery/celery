@@ -458,7 +458,7 @@ class Signature(dict):
         if args or kwargs or opts:
             args, kwargs, opts = self._merge(args, kwargs, opts)
         else:
-            args, kwargs, opts = self.args, self.kwargs, self.options
+            args, kwargs, opts = self.args, deepcopy(self.kwargs), self.options
         signature = Signature.from_dict({'task': self.task,
                                          'args': tuple(args),
                                          'kwargs': kwargs,
