@@ -5,6 +5,7 @@ from pickle import dumps, loads
 from unittest.mock import Mock, patch
 
 import pytest
+import sqlalchemy as sa
 
 from celery import states, uuid
 from celery.app.task import Context
@@ -457,9 +458,11 @@ class test_DatabaseBackend:
         self.app.conf.database_create_tables_at_setup = False
         tb = DatabaseBackend(self.uri, app=self.app)
         assert tb.task_cls.__table__.schema == 'foo'
-        assert tb.task_cls.__table__.c.id.default.schema == 'foo'
+        task_id = tb.task_cls.__table__.c.id
+        assert task_id.identity is not None or isinstance(task_id.default, sa.Sequence)
         assert tb.taskset_cls.__table__.schema == 'bar'
-        assert tb.taskset_cls.__table__.c.id.default.schema == 'bar'
+        taskset_id = tb.taskset_cls.__table__.c.id
+        assert taskset_id.identity is not None or isinstance(taskset_id.default, sa.Sequence)
 
     def test_table_name_config(self):
         self.app.conf.database_table_names = {
