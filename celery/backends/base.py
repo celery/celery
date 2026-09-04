@@ -966,6 +966,16 @@ class Backend:
             if value is not None:
                 routing_options[option] = value
 
+        if 'exchange_type' not in routing_options:
+            try:
+                queue_obj = self.app.amqp.queues[queue] if isinstance(queue, str) else queue
+                routing_options['exchange_type'] = queue_obj.exchange.type
+            except (AttributeError, KeyError):
+                pass
+        if 'exchange_type' in routing_options:
+            # unlock_chord needs this for retries.
+            kwargs['_chord_unlock_exchange_type'] = routing_options['exchange_type']
+
         self.app.tasks['celery.chord_unlock'].apply_async(
             (header_result.id, body,), kwargs,
             countdown=countdown,

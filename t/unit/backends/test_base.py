@@ -300,7 +300,8 @@ class test_BaseBackend_interface:
         )
 
         self.b.apply_chord(header_result_args, body)
-        called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
+        called_args, called_kwargs = self.app.tasks[unlock].apply_async.call_args
+        assert called_args[1]['_chord_unlock_exchange_type'] == 'headers'
         assert called_kwargs['queue'] == 'my_queue'
         assert called_kwargs['exchange'] == 'my_exchange'
         assert called_kwargs['exchange_type'] == 'headers'
