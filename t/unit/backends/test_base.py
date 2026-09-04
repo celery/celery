@@ -308,6 +308,35 @@ class test_BaseBackend_interface:
         assert called_kwargs['routing_key'] == 'my_routing_key'
         assert called_kwargs['headers'] == {'my_header': 'my_value'}
 
+    def test_chord_unlock_with_unknown_queue(self, unlock='celery.chord_unlock'):
+        self.app.tasks[unlock] = Mock()
+        self.app.amqp.queues.create_missing = False
+        header_result_args = (
+            uuid(),
+            [self.app.AsyncResult(x) for x in range(3)],
+        )
+        body = self.callback.s().set(queue='missing_queue')
+
+        self.b.apply_chord(header_result_args, body)
+        called_args, called_kwargs = self.app.tasks[unlock].apply_async.call_args
+        assert '_chord_unlock_exchange_type' not in called_args[1]
+        assert 'exchange_type' not in called_kwargs
+
+    def test_chord_unlock_with_queue_without_exchange(self, unlock='celery.chord_unlock'):
+        self.app.tasks[unlock] = Mock()
+        header_result_args = (
+            uuid(),
+            [self.app.AsyncResult(x) for x in range(3)],
+        )
+        queue = Mock(spec=[])
+        body = self.callback.s().set(queue=queue)
+
+        self.b.apply_chord(header_result_args, body)
+        called_args, called_kwargs = self.app.tasks[unlock].apply_async.call_args
+        assert called_kwargs['queue'] is queue
+        assert '_chord_unlock_exchange_type' not in called_args[1]
+        assert 'exchange_type' not in called_kwargs
+
     def test_chord_unlock_stamped_routing_options(self, unlock='celery.chord_unlock'):
         self.app.tasks[unlock] = Mock()
         header_result_args = (
