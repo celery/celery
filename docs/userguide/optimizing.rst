@@ -228,6 +228,42 @@ only be able to process a maximum of 60 tasks per minute (assuming the task ran
 instantly). A similar issue can occur when your tasks always exceed
 :setting:`worker_max_memory_per_child`.
 
+.. _optimizing-pool-start-method:
+
+Pool start method (fork vs spawn)
+---------------------------------
+
+By default the prefork pool creates its child processes with ``fork()``
+(:setting:`worker_pool_start_method` set to ``"fork"``). Forking is fast and
+lets children share the parent's already-imported modules and memory through
+copy-on-write, which is why it is the default and the right choice for most
+deployments.
+
+Forking is, however, **unsafe when the parent process has started threads or
+relies on C-extensions that are not fork-safe**. Common offenders are gRPC
+(used by some Google Cloud client libraries), ``psycopg`` and CUDA. After a
+``fork()`` only the forking thread survives in the child, while locks held by
+other threads remain locked forever, which typically shows up as children that
+hang, deadlock, or crash with corrupted internal state -- especially after a
+hard :setting:`task_time_limit` kill replaces a child.
+
+If you hit these problems, set :setting:`worker_pool_start_method` to
+``"spawn"`` so each child starts in a fresh interpreter::
+
+    worker_pool_start_method = "spawn"
+
+The trade-offs of ``"spawn"`` are slower start-up, higher memory usage (no
+copy-on-write sharing), and the requirement that your app and task arguments
+are picklable and that your worker entry point is guarded by
+``if __name__ == '__main__':``.
+
+.. note::
+
+    ``"spawn"`` only works with the synchronous prefork pool. When the broker
+    transport drives the event loop (the asynchronous prefork pool, used by
+    AMQP/Redis), the worker refuses to start with
+    :setting:`worker_pool_start_method` set to ``"spawn"``.
+
 
 .. rubric:: Footnotes
 
