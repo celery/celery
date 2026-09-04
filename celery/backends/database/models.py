@@ -5,6 +5,7 @@ import sqlalchemy as sa
 
 from celery import states
 
+from .extensions import _warn_if_protected
 from .session import ResultModelBase
 
 __all__ = ('Task', 'TaskExtended', 'TaskSet')
@@ -54,10 +55,18 @@ class Task(ResultModelBase):
         return '<Task {0.task_id} state: {0.status}>'.format(self)
 
     @classmethod
-    def configure(cls, schema=None, name=None):
+    def configure(cls, schema=None, name=None, extensions=None):
         cls.__table__.schema = schema
         cls.id.default.schema = schema
         cls.__table__.name = name or cls.__tablename__
+
+        if extensions:
+            original_types = {
+                c.name: c.type for c in cls.__table__.columns
+            }
+            for ext in extensions:
+                ext.extend(cls.__table__, cls.__table__.metadata)
+            _warn_if_protected(cls.__table__, original_types)
 
 
 class TaskExtended(Task):
@@ -114,7 +123,15 @@ class TaskSet(ResultModelBase):
         return f'<TaskSet: {self.taskset_id}>'
 
     @classmethod
-    def configure(cls, schema=None, name=None):
+    def configure(cls, schema=None, name=None, extensions=None):
         cls.__table__.schema = schema
         cls.id.default.schema = schema
         cls.__table__.name = name or cls.__tablename__
+
+        if extensions:
+            original_types = {
+                c.name: c.type for c in cls.__table__.columns
+            }
+            for ext in extensions:
+                ext.extend(cls.__table__, cls.__table__.metadata)
+            _warn_if_protected(cls.__table__, original_types)
