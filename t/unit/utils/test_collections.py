@@ -433,6 +433,14 @@ class test_BufferMap:
         b.extend(1, list(range(20)))
         self.assert_size_and_first(b, 20, 0)
 
+    def test_total_from_iterable(self):
+        # total must count the buffered items, not the number of keys
+        b = BufferMap(100, iterable={
+            'a': Messagebuffer(100, [1, 2]),
+            'b': Messagebuffer(100, [3, 4, 5]),
+        })
+        assert b.total == 5
+
     def test_pop_empty_with_default(self):
         b = BufferMap(10)
         sentinel = object()
