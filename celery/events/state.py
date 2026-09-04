@@ -462,7 +462,7 @@ class State:
             self.tasks.update(in_progress)
         else:
             self.tasks.clear()
-        self._taskheap[:] = []
+        self._taskheap.clear()
 
     def _clear(self, ready=True):
         self.workers.clear()
