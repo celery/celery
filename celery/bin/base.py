@@ -320,6 +320,49 @@ class LogLevel(click.Choice):
         value = super().convert(value, param, ctx)
         return mlevel(value)
 
+class BrokenCommand(click.Command):
+    """Placeholder for a CLI plugin that could not be loaded.
+
+    Rather than crash the CLI when a broken plugin is loaded, this class provides a help message informing the user that the plugin is broken
+    and they should contact the author.
+    """
+
+    def __init__(self, name):
+        click.Command.__init__(self, name)
+        import os
+        import traceback
+        util_name = os.path.basename(__import__('sys').argv and __import__('sys').argv[0] or __file__)
+        self.help = (
+            "\nWarning: entry point could not be loaded. Contact "
+            "its author for help.\n\n\b\n" + traceback.format_exc()
+        )
+        self.short_help = (
+            "\u2020 Warning: could not load plugin. See `%s %s --help`."
+            % (util_name, self.name)
+        )
+
+    def invoke(self, ctx):
+        click.echo(self.help, color=ctx.color)
+        ctx.exit(1)
+
+    def parse_args(self, ctx, args):
+        return args
+
+
+def with_plugins(plugins):
+    """Decorator to register entry-point plugins on a :class:`click.Group`.
+
+    Replaces the unmaintained ``click-plugins`` package.
+    """
+    def decorator(group):
+        for ep in plugins or ():
+            try:
+                group.add_command(ep.load())
+            except Exception:
+                group.add_command(BrokenCommand(ep.name))
+        return group
+    return decorator
+
 
 JSON_ARRAY = JsonArray()
 JSON_OBJECT = JsonObject()
