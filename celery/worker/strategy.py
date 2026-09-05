@@ -12,7 +12,7 @@ from celery.utils.saferepr import saferepr
 from celery.utils.time import timezone
 
 from .request import create_request_cls
-from .state import task_reserved
+from .state import task_reserved, task_scheduled
 
 __all__ = ('default',)
 
@@ -192,12 +192,16 @@ def default(task, app, consumer,
 
         if eta and bucket:
             consumer.qos.increment_eventually()
-            return call_at(eta, limit_post_eta, (req, bucket, 1),
-                           priority=6)
+            task_scheduled(req)
+            req._eta_timer_entry = call_at(
+                eta, limit_post_eta, (req, bucket, 1), priority=6)
+            return
 
         if eta:
             consumer.qos.increment_eventually()
-            call_at(eta, apply_eta_task, (req,), priority=6)
+            task_scheduled(req)
+            req._eta_timer_entry = call_at(
+                eta, apply_eta_task, (req,), priority=6)
             return task_message_handler
         if bucket:
             return limit_task(req, bucket, 1)

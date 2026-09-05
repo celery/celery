@@ -1070,6 +1070,28 @@ class test_ControlPanel:
         finally:
             worker_state.reserved_requests.clear()
 
+    def test_query_task_scheduled(self):
+        # Regression test for #5321: a task with an ETA/countdown that
+        # hasn't fired yet must still be found by `query_task`.
+        consumer = Consumer(self.app)
+        consumer.controller = _WC(app=self.app)
+        consumer.controller.consumer = consumer
+        panel = self.create_panel(consumer=consumer)
+        panel.app = self.app
+        req1 = Request(
+            self.TaskMessage(self.mytask.name, args=(2, 2)),
+            app=self.app,
+        )
+        worker_state.task_scheduled(req1)
+        try:
+            ret = panel.handle('query_task', {'ids': {req1.id}})
+            assert req1.id in ret
+            assert ret[req1.id][0] == 'scheduled'
+            assert req1 not in worker_state.reserved_requests
+        finally:
+            worker_state.requests.pop(req1.id, None)
+            worker_state.scheduled_requests.discard(req1)
+
     @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
     def test_revoke_backend_status_update(self):
         state = self.create_state()

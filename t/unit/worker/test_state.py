@@ -17,10 +17,7 @@ from celery.worker import state
 @pytest.fixture
 def reset_state():
     yield
-    state.active_requests.clear()
-    state.revoked.clear()
-    state.revoked_stamps.clear()
-    state.total_count.clear()
+    state.reset_state()
 
 
 class MockShelve(dict):
@@ -191,6 +188,37 @@ class test_state:
         for request in requests:
             state.task_ready(request)
         assert len(state.active_requests) == 0
+
+    def test_scheduled(self):
+        request = SimpleReq('foo')
+        state.task_scheduled(request)
+        assert request in state.scheduled_requests
+        assert request not in state.reserved_requests
+        assert state.requests[request.id] is request
+
+    def test_reserved_discards_scheduled(self):
+        request = SimpleReq('foo')
+        state.task_scheduled(request)
+        assert request in state.scheduled_requests
+
+        state.task_reserved(request)
+        assert request not in state.scheduled_requests
+        assert request in state.reserved_requests
+
+    def test_ready_discards_scheduled(self):
+        request = SimpleReq('foo')
+        state.task_scheduled(request)
+        assert request in state.scheduled_requests
+
+        state.task_ready(request)
+        assert request not in state.scheduled_requests
+        assert request.id not in state.requests
+
+    def test_reset_state_clears_scheduled(self):
+        state.task_scheduled(SimpleReq('foo'))
+        assert len(state.scheduled_requests) == 1
+        state.reset_state()
+        assert len(state.scheduled_requests) == 0
 
 
 class test_state_configuration():

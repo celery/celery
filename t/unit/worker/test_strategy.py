@@ -64,6 +64,12 @@ class test_default_strategy_proto2:
 
         self.add = add
 
+    def teardown_method(self):
+        # ETA/countdown strategies register requests in the real global
+        # `state.requests`/`state.scheduled_requests`, so clear them here to
+        # avoid leaking strongly-referenced requests into later tests.
+        state.reset_state()
+
     def get_message_class(self):
         return self.TaskMessage
 
@@ -249,6 +255,16 @@ class test_default_strategy_proto2:
             C()
             assert C.was_scheduled()
             C.consumer.qos.increment_eventually.assert_called_with()
+
+    def test_eta_task_registers_request_in_state(self):
+        # Regression test for #5321: a task with an ETA/countdown must be
+        # discoverable via `state.requests` (e.g. by the `query_task` remote
+        # control command) before its ETA elapses, not only afterwards.
+        with self._context(self.add.s(2, 2).set(countdown=10)) as C:
+            C()
+            req = C.get_request()
+            assert state.requests[req.id] is req
+            assert req not in state.reserved_requests
 
     def test_eta_task_utc_disabled(self):
         with self._context(self.add.s(2, 2).set(countdown=10), utc=False) as C:
