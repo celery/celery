@@ -72,6 +72,14 @@ class test_ConfigurationView:
         sp = object()
         assert self.view.get('nonexisting', sp) is sp
 
+    def test_missing_key_with_prefix(self):
+        view = ConfigurationView({}, prefix='celery')
+        with pytest.raises(KeyError) as exc_info:
+            view['nonexisting']
+        assert exc_info.value.args[0] == (
+            "Key not found: 'nonexisting' (with prefix: 'celery_nonexisting')"
+        )
+
     def test_update(self):
         changes = dict(self.view.changes)
         self.view.update(a=1, b=2, c=3)
@@ -458,3 +466,21 @@ class test_ChainMap:
         callback.assert_not_called()
         a.update(x=1)
         callback.assert_called_once_with(x=1)
+
+    def test_pop_applies_key_t(self):
+        cm = ChainMap(key_t=lambda key: key + '!')
+        cm['foo'] = 1
+        assert cm.pop('foo') == 1
+        assert 'foo' not in cm
+
+    def test_get_applies_key_t_once(self):
+        cm = ChainMap(key_t=lambda key: key + '!')
+        cm['foo'] = 1
+        assert cm.get('foo') == 1
+
+    def test_setdefault_applies_key_t_once(self):
+        cm = ChainMap(key_t=lambda key: key + '!')
+        cm.setdefault('foo', 1)
+        assert cm.changes == {'foo!': 1}
+        cm.setdefault('foo', 2)
+        assert cm.changes == {'foo!': 1}

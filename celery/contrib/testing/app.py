@@ -1,4 +1,5 @@
 """Create Celery app instances used for testing."""
+import gc
 import weakref
 from contextlib import contextmanager
 from copy import deepcopy
@@ -110,3 +111,13 @@ def setup_default_app(app, use_trap=False):
             app.close()
         _state._on_app_finalizers = prev_finalizers
         _state._apps = prev_apps
+        # The function-scoped fixtures (celery_app/celery_worker) build a new
+        # app for every test and never close its backend connections; only the
+        # garbage collector releases them, and it runs too rarely to keep up;
+        # a long test run exhausts the open-file limit
+        # (https://github.com/celery/celery/issues/6382).
+        if app._backend is not None:
+            # Dereference the backend so it is available for gc.
+            app._backend_cache = None
+            app._local.backend = None
+            gc.collect()
