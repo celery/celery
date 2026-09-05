@@ -82,6 +82,32 @@ class test_unlock_chord_task(ChordCase):
             # didn't retry
             assert not retry.call_count
 
+    def test_unlock_ready_with_serialized_callback(self):
+
+        @self.app.task(shared=False)
+        def callback(*args, **kwargs):
+            pass
+
+        class AlwaysReady(TSR):
+            is_ready = True
+            value = [2, 4]
+
+        applied = []
+
+        def record_apply_async(args, kwargs, **options):
+            applied.append(args)
+
+        callback.apply_async = record_apply_async
+
+        unlock_chord = self.app.tasks['celery.chord_unlock']
+        unlock_chord(
+            'group_id', dict(callback.s()),
+            result=[],
+            GroupResult=AlwaysReady,
+        )
+
+        assert applied == [([2, 4],)]
+
     def test_deps_ready_fails(self):
         GroupResult = Mock(name='GroupResult')
         GroupResult.return_value.ready.side_effect = KeyError('foo')
@@ -176,6 +202,21 @@ class test_unlock_chord_task(ChordCase):
             cb.type.apply_async.assert_not_called()
             # did retry
             retry.assert_called_with(countdown=10, max_retries=30)
+
+    def test_when_not_ready_preserves_exchange_type(self):
+        class NeverReady(TSR):
+            is_ready = False
+
+        with self._chord_context(
+            NeverReady, interval=10,
+            max_retries=30, _chord_unlock_exchange_type='headers',
+        ) as (cb, retry, _):
+            cb.type.apply_async.assert_not_called()
+            retry.assert_called_with(
+                countdown=10,
+                max_retries=30,
+                exchange_type='headers',
+            )
 
     def test_when_not_ready_with_configured_chord_retry_interval(self):
         class NeverReady(TSR):
