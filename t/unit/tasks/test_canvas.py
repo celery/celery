@@ -2221,6 +2221,63 @@ class test_merge_dictionaries(CanvasCase):
             'set': {'a', 'b'}
         }
 
+
+class test_group_progress_tracking(CanvasCase):
+    """Test group progress tracking functionality in canvas."""
+
+    def test_track_progress_option_parsing(self):
+        """Test that track_progress option is properly handled in options."""
+        g = group([self.add.s(i, i) for i in range(5)])
+
+        # Verify track_progress can be set in options
+        g.apply_async(track_progress=True)
+
+        # The option should be in the signature options
+        # This is a basic sanity check that the option is accepted
+
+    def test_backend_supports_group_progress_flag(self):
+        """Test that backends can declare support for group progress."""
+        from celery.backends.redis import RedisBackend
+
+        # Redis should support group progress
+        assert RedisBackend.supports_group_progress is True
+
+        # Base backend should not
+        from celery.backends.base import BaseBackend
+        assert BaseBackend.supports_group_progress is False
+
+    def test_track_progress_initializes_before_task_submission(self):
+        """Test that progress initialization happens before task submission."""
+        from unittest.mock import MagicMock, PropertyMock, patch
+
+        # Create a group
+        g = group([self.add.s(i, i) for i in range(3)])
+
+        # Track the order of calls
+        call_order = []
+
+        original_set_size = self.app.backend.set_group_progress_size
+        original_apply_async = MagicMock(side_effect=lambda *a, **k: self.app.AsyncResult('test-id'))
+
+        def mock_set_size(group_id, size):
+            call_order.append('set_size')
+            return original_set_size(group_id, size)
+
+        def mock_apply_async(*args, **kwargs):
+            call_order.append('apply_async')
+            return original_apply_async(*args, **kwargs)
+
+        # Mock backend to support group progress
+        with patch.object(type(self.app.backend), 'supports_group_progress', PropertyMock(return_value=True)):
+            with patch.object(self.app.backend, 'set_group_progress_size', side_effect=mock_set_size):
+                with patch.object(self.app, 'send_task', side_effect=mock_apply_async):
+                    g.apply_async(track_progress=True)
+
+        # Verify set_group_progress_size was called before any task submission
+        assert call_order == ['set_size', 'apply_async', 'apply_async', 'apply_async']
+
+
+class test_merge_dictionaries_parametrized(CanvasCase):
     @pytest.mark.parametrize('d1,d2,expected_result', [
         (
             {'None': None},

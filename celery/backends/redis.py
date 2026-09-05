@@ -222,6 +222,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     supports_native_join = True
     # Results are stored as opaque strings, which Redis keeps byte for byte.
     supports_result_compression = True
+    supports_group_progress = True
 
     #: Maximal length of string value in Redis.
     #: 512 MB - https://redis.io/topics/data-types
@@ -545,6 +546,23 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         super().forget(task_id)
         self.result_consumer.cancel_for(task_id)
 
+    def _delete_group(self, group_id):
+        """Delete group metadata including progress tracking keys.
+
+        Deletes the base group key as well as progress tracking keys (.p and .p.seen)
+        if they exist. This ensures cleanup when GroupResult.delete() is called.
+        """
+        # Delete base group key (inherited behavior)
+        super()._delete_group(group_id)
+
+        # Delete progress tracking keys
+        pkey = self.get_key_for_group(group_id, '.p')
+        seen_key = self.get_key_for_group(group_id, '.p.seen')
+        with self.client.pipeline() as pipe:
+            pipe.delete(pkey)
+            pipe.delete(seen_key)
+            pipe.execute()
+
     def delete(self, key):
         self.client.delete(key)
 
@@ -572,6 +590,121 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
     def set_chord_size(self, group_id, chord_size):
         self.set(self.get_key_for_group(group_id, '.s'), chord_size)
+
+    def set_group_progress_size(self, group_id, size):
+        """Set the total size of a group for progress tracking.
+
+        Uses a Redis hash to store both count and total.
+        Key format: <group_id>.p
+        Hash fields: 'count' (completed), 'total' (expected)
+
+        Note:
+            TTL is only set if result_expires is configured (self.expires is set).
+            This is consistent with existing chord key behavior (.s, .j, .t keys).
+            If result_expires is not configured, the progress keys will not expire
+            and will persist until manually deleted or Redis evicts them.
+        """
+        pkey = self.get_key_for_group(group_id, '.p')
+        seen_key = self.get_key_for_group(group_id, '.p.seen')
+        with self.client.pipeline() as pipe:
+            pipe.hset(pkey, 'total', size)
+            pipe.hset(pkey, 'count', 0)
+            pipe.delete(seen_key)  # Clear any existing seen set
+            if self.expires:
+                pipe.expire(pkey, self.expires)
+                pipe.expire(seen_key, self.expires)
+            pipe.execute()
+
+    def increment_group_progress(self, group_id, task_id):
+        """Increment the completed count for a group.
+
+        Uses a Redis set to track seen task IDs and only increments the counter
+        for new task IDs, making this operation idempotent. This prevents
+        double-counting if the same task completion is reported multiple times
+        (e.g., due to task redelivery after worker crash).
+
+        Uses a Lua script for atomicity to ensure the check-and-increment
+        operation is atomic even under concurrent updates.
+
+        Key format:
+            <group_id>.p - Hash with 'count' and 'total' fields
+            <group_id>.p.seen - Set of task IDs already counted
+
+        Arguments:
+            group_id (str): The group ID.
+            task_id (str): The task ID to check/add to the seen set.
+
+        Returns:
+            int: 1 if the counter was incremented (new task), 0 if the task
+                 was already seen (duplicate) or if the group was never
+                 initialized for progress tracking.
+        """
+        pkey = self.get_key_for_group(group_id, '.p')
+        seen_key = self.get_key_for_group(group_id, '.p.seen')
+
+        # Lua script for atomic idempotent increment
+        # KEYS[1] = progress hash key (.p)
+        # KEYS[2] = seen set key (.p.seen)
+        # ARGV[1] = task_id to check/add
+        # Returns: 1 if incremented (new task), 0 if already seen (duplicate)
+        #          or if group was never initialized
+        lua_script = """
+        local pkey = KEYS[1]
+        local seen_key = KEYS[2]
+        local task_id = ARGV[1]
+
+       -- Check if the group was initialized for progress tracking
+        -- (i.e., has a 'total' field set by set_group_progress_size)
+        if redis.call('HEXISTS', pkey, 'total') == 0 then
+            return 0  -- Group not initialized, do nothing
+        end
+
+        -- Check if task_id is already in the seen set
+        if redis.call('SISMEMBER', seen_key, task_id) == 1 then
+            return 0  -- Already counted, no increment
+        end
+
+        -- Add to seen set and increment counter
+        redis.call('SADD', seen_key, task_id)
+        redis.call('HINCRBY', pkey, 'count', 1)
+
+        -- Set TTL on seen set to match the progress hash if it exists
+        local ttl = redis.call('TTL', pkey)
+        if ttl > 0 then
+            redis.call('EXPIRE', seen_key, ttl)
+        end
+
+        return 1  -- Incremented
+        """
+
+        return self.client.eval(lua_script, 2, pkey, seen_key, task_id)
+
+    def get_group_progress(self, group_id):
+        """Get the progress of a group.
+
+        Returns the count and total from the Redis hash.
+        Handles both bytes and str keys depending on Redis client configuration.
+
+        Returns (None, None) if the group was never initialized for progress
+        tracking (i.e., no 'total' field exists), even if the hash happens to
+        exist with other fields. This is defensive against old buggy keys that
+        may have been created before the initialization check was added.
+        """
+        pkey = self.get_key_for_group(group_id, '.p')
+        data = self.client.hgetall(pkey)
+        if not data:
+            return None, None
+
+        # Handle both bytes and str keys (decode_responses=True vs False)
+        # Try bytes first, fall back to str if not found
+        total = data.get(b'total', data.get('total', None))
+        if total is None:
+            # Group was never initialized for progress tracking
+            return None, None
+
+        count = int(data.get(b'count', data.get('count', 0)))
+        total = int(total)
+        return count, total
 
     def apply_chord(self, header_result_args, body, **kwargs):
         # If any of the child results of this chord are complex (ie. group
