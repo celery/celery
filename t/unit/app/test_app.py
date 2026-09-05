@@ -1837,6 +1837,14 @@ class test_App:
         except TypeError as e:
             pytest.fail(f'raise unexcepted error {e}')
 
+    def test_send_task_expire_as_timedelta(self):
+        try:
+            self.app.send_task(
+                'foo', (1, 2),
+                expires=timedelta(minutes=5))
+        except TypeError as e:
+            pytest.fail(f'raise unexcepted error {e}')
+
     @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
     def test_native_delayed_delivery_countdown(self, detect_quorum_queues):
         self.app.amqp = MagicMock(name='amqp')
@@ -1863,6 +1871,32 @@ class test_App:
         )
         driver_type_stub = self.app.amqp.producer_pool.connections.connection.transport.driver_type
         detect_quorum_queues.assert_called_once_with(self.app, driver_type_stub)
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
+    def test_native_delayed_delivery_countdown_timedelta(self, detect_quorum_queues):
+        """A timedelta countdown must reach the same routing outcome as an equal int countdown."""
+        self.app.amqp = MagicMock(name='amqp')
+        self.app.amqp.router.route.return_value = {
+            'queue': Queue(
+                'testcelery',
+                routing_key='testcelery',
+                exchange=Exchange('testcelery', type='topic')
+            )
+        }
+
+        self.app.send_task('foo', (1, 2), countdown=timedelta(seconds=30))
+
+        exchange = Exchange(
+            'celery_delayed_27',
+            type='topic',
+        )
+        self.app.amqp.send_task_message.assert_called_once_with(
+            ANY,
+            ANY,
+            ANY,
+            exchange=exchange,
+            routing_key='0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.1.1.1.0.testcelery'
+        )
 
     @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
     def test_native_delayed_delivery__no_queue_arg__no_eta(self, detect_quorum_queues):

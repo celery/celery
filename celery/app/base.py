@@ -9,7 +9,7 @@ import types
 import typing
 import warnings
 from collections import UserDict, defaultdict, deque
-from datetime import datetime
+from datetime import datetime, timedelta
 from datetime import timezone as datetime_timezone
 from operator import attrgetter
 
@@ -953,8 +953,12 @@ class Celery:
                         countdown = (maybe_make_aware(eta) - self.now()).total_seconds()
 
                     if countdown:
-                        if countdown > 0:
-                            routing_key = calculate_routing_key(int(countdown), routing_key)
+                        countdown_s = (
+                            countdown.total_seconds()
+                            if isinstance(countdown, timedelta) else countdown
+                        )
+                        if countdown_s > 0:
+                            routing_key = calculate_routing_key(int(countdown_s), routing_key)
                             exchange = Exchange(
                                 'celery_delayed_27',
                                 type='topic',
@@ -978,6 +982,8 @@ class Celery:
             elif isinstance(expires, str):
                 expires_s = (maybe_make_aware(
                     isoparse(expires)) - self.now()).total_seconds()
+            elif isinstance(expires, timedelta):
+                expires_s = expires.total_seconds()
             else:
                 expires_s = expires
 
