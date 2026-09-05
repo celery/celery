@@ -162,6 +162,8 @@ with platforms.DaemonContext(workdir='/'):
 @t.skip.if_win32
 def test_detach_does_not_scan_a_container_sized_fdmax(tmp_path):
     """Detaching completes promptly even when fdmax is ~1e9 (issue #9886)."""
+    if platforms._open_fds() is None:
+        pytest.skip('open file-descriptor directory required')
     done = tmp_path / 'detached'
     root = os.path.dirname(os.path.dirname(os.path.abspath(platforms.__file__)))
     script = _DETACH_SCRIPT.format(root=root, done=str(done))
