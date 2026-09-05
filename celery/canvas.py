@@ -457,8 +457,9 @@ class Signature(dict):
         # need to deepcopy options so origins links etc. is not modified.
         if args or kwargs or opts:
             args, kwargs, opts = self._merge(args, kwargs, opts)
+            kwargs = deepcopy(kwargs)
         else:
-            args, kwargs, opts = self.args, self.kwargs, self.options
+            args, kwargs, opts = self.args, deepcopy(self.kwargs), self.options
         signature = Signature.from_dict({'task': self.task,
                                          'args': tuple(args),
                                          'kwargs': kwargs,
