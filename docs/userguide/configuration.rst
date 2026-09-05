@@ -4467,6 +4467,59 @@ that are past due will always run immediately.
 
     Setting this higher than 3600 (1 hour) is highly discouraged.
 
+.. setting:: beat_enable_remote_control
+
+``beat_enable_remote_control``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: Disabled.
+
+If enabled, :mod:`~celery.bin.beat` joins the same remote-control
+(pidbox) exchange the workers use, as a node named
+``celerybeat@hostname``, and answers :program:`celery inspect ping`.
+This makes it possible to health-check the beat process, for example
+as a Kubernetes liveness probe:
+
+.. code-block:: console
+
+    $ celery -A proj inspect ping -t 5 -d celerybeat@$(hostname)
+
+The command exits with a non-zero status when beat doesn't reply
+within the timeout. Note that :option:`--timeout <celery inspect
+--timeout>` defaults to one second, which a probe that also has to
+establish a broker connection can easily exceed.
+
+The ping reply also carries a ``last_tick_ago`` field: the number of
+seconds since beat last woke up to check the schedule. The default
+human-readable output prints only ``pong``, so read the field either
+with :option:`--json <celery inspect --json>` or programmatically:
+
+.. code-block:: pycon
+
+    >>> app.control.ping(destination=['celerybeat@example.com'])
+    [{'celerybeat@example.com': {'ok': 'pong', 'last_tick_ago': 3.73}}]
+
+Beat stamps the tick time *after* each scheduler pass returns, so on an
+idle schedule ``last_tick_ago`` grows as high as the scheduler's maximum
+loop interval -- see :setting:`beat_max_loop_interval`, which is five
+minutes for the default scheduler -- before resetting. Any alerting
+threshold has to allow for that.
+
+Note that when this is enabled, beat will also show up as a node in
+the output of destination-less :program:`celery inspect ping` and
+:program:`celery status`. Beat only implements the ``ping`` command;
+all other remote-control commands are ignored.
+
+Only standalone :program:`celery beat` is affected: a beat scheduler
+embedded in a worker (:option:`-B <celery worker -B>`) never starts a
+remote-control node, since the worker already answers for that
+process.
+
+Availability: RabbitMQ (AMQP) and Redis transports (the same
+transports that support worker remote control).
+
 .. setting:: beat_logfile
 
 ``beat_logfile``
