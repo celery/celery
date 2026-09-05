@@ -188,7 +188,9 @@ class DjangoWorkerFixup:
         # Register atexit handler to close connection pools when this child process exits.
         # This runs in the child process (on_worker_process_init is called in each child),
         # ensuring pools are closed in the process that created them.
-        atexit.register(self._close_pools_on_child_exit)
+        if not getattr(self, "_pools_atexit_registered", False):
+            atexit.register(self._close_pools_on_child_exit)
+            self._pools_atexit_registered = True
 
     def _close_pools_on_child_exit(self) -> None:
         """Close database connection pools when child process exits.
