@@ -203,6 +203,21 @@ class test_unlock_chord_task(ChordCase):
             # did retry
             retry.assert_called_with(countdown=10, max_retries=30)
 
+    def test_when_not_ready_preserves_exchange_type(self):
+        class NeverReady(TSR):
+            is_ready = False
+
+        with self._chord_context(
+            NeverReady, interval=10,
+            max_retries=30, _chord_unlock_exchange_type='headers',
+        ) as (cb, retry, _):
+            cb.type.apply_async.assert_not_called()
+            retry.assert_called_with(
+                countdown=10,
+                max_retries=30,
+                exchange_type='headers',
+            )
+
     def test_when_not_ready_with_configured_chord_retry_interval(self):
         class NeverReady(TSR):
             is_ready = False
