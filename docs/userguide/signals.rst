@@ -260,6 +260,9 @@ Provides arguments
 * ``result``
     Return value of the task.
 
+* ``runtime``
+    Time in seconds from when tracing started until task execution, callbacks, and result-backend handling completed.
+
 .. signal:: task_failure
 
 ``task_failure``
