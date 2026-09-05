@@ -332,6 +332,149 @@ class test_LimitedSet:
         [s.add('foo') for i in range(1000)]
         assert len(s._heap) < 1150
 
+    def test_stale_heap_entry_cannot_evict_refreshed_item(self):
+        """Test that a stale heap entry cannot evict a refreshed item.
+
+        Regression test for bug where refreshing an item would leave a stale
+        heap entry that could later incorrectly remove the current entry.
+        Also verifies that the refreshed item eventually expires correctly.
+        """
+        s = LimitedSet(expires=10)
+
+        # t=1: add item
+        s.add("task-id", now=1.0)
+        assert "task-id" in s
+
+        # t=6: refresh same item - creates stale heap entry at t=1
+        s.add("task-id", now=6.0)
+        assert "task-id" in s
+
+        # t=11: purge - old entry expires (t=1 + 10 = 11)
+        # The stale entry should NOT remove the current entry (t=6)
+        s.purge(now=11.0)
+        assert "task-id" in s, "Item should still exist after stale entry expires"
+
+        # t=16: purge - current entry expires (t=6 + 10 = 16)
+        s.purge(now=16.0)
+        assert "task-id" not in s, "Item should have expired at t=16"
+
+    def test_multiple_refreshes_with_stale_entries(self):
+        """Test handling of multiple stale entries from repeated refreshes."""
+        s = LimitedSet(expires=10)
+
+        # Multiple refreshes create multiple stale heap entries
+        s.add("task-id", now=1.0)
+        s.add("task-id", now=3.0)
+        s.add("task-id", now=5.0)
+        s.add("task-id", now=7.0)
+
+        assert "task-id" in s
+
+        # Purge at t=11 - entries at t=1 and t=3 expire, but current (t=7) should remain
+        s.purge(now=11.0)
+        assert "task-id" in s, "Item should still exist after old entries expire"
+
+        # Purge at t=17 - current entry (t=7) should now expire
+        s.purge(now=17.0)
+        assert "task-id" not in s, "Item should have expired at t=17"
+
+    def test_pop_skips_stale_heap_entries(self):
+        """Test that pop() skips stale heap entries and only removes current entries."""
+        s = LimitedSet(expires=10)
+
+        # Add two items
+        s.add("task1", now=1.0)
+        s.add("task2", now=2.0)
+
+        # Refresh task1 to create a stale heap entry at t=1
+        s.add("task1", now=5.0)
+
+        # Heap now contains: (1, "task1") [stale], (2, "task2"), (5, "task1") [current]
+        # Data contains: "task1" -> (5, "task1"), "task2" -> (2, "task2")
+
+        # pop() should skip the stale entry and return task2 (oldest current)
+        popped = s.pop()
+        assert popped == "task2", f"Expected task2, got {popped}"
+        assert "task1" in s, "task1 should still be in set"
+        assert "task2" not in s, "task2 should be removed"
+
+        # pop() again should return task1
+        popped = s.pop()
+        assert popped == "task1", f"Expected task1, got {popped}"
+        assert "task1" not in s, "task1 should be removed"
+
+    def test_refresh_with_same_timestamp(self):
+        """Test that refreshing an item with the same timestamp creates distinct tuple objects.
+
+        Regression test for bug where == comparison would incorrectly treat stale entries
+        as current when timestamps are identical. The invariant must be object identity (is),
+        not value equality (==).
+        """
+        s = LimitedSet(expires=10)
+
+        # Add item with timestamp 5.0
+        s.add("task-id", now=5.0)
+        entry1 = s._data["task-id"]
+        assert len(s._heap) == 1
+
+        # Refresh same item with same timestamp 5.0
+        # This creates a NEW tuple object with the SAME values
+        s.add("task-id", now=5.0)
+        entry2 = s._data["task-id"]
+
+        # Verify they are different objects with equal values
+        assert entry1 == entry2, "Values should be equal"
+        assert entry1 is not entry2, "Objects should be different"
+        assert len(s._heap) == 2, "Heap should contain both entries"
+
+        # purge() should NOT remove the item at t=14.9 (t=5 + 10 = 15)
+        # The stale entry (entry1) should be skipped, current entry (entry2) should remain
+        s.purge(now=14.9)
+        assert "task-id" in s, "Item should still exist at t=14.9 (not yet expired)"
+
+        # At t=15, the item should expire
+        s.purge(now=15.0)
+        assert "task-id" not in s, "Item should have expired at t=15"
+
+    def test_purge_with_only_stale_entries_in_heap(self):
+        """purge() should not error when the heap only holds stale entries.
+
+        Regression test for the `while/else: break` branch in purge() that
+        handles the case where _data still has an item, but every remaining
+        heap entry is stale (none of them `is` the item's current entry in
+        _data), so no current entry can be found and the heap runs dry.
+        """
+        s = LimitedSet(expires=10)
+
+        s.add("task-id", now=1.0)
+        # Replace the _data entry with a *new* tuple object holding the same
+        # values. This simulates the entry in _data no longer being the same
+        # object as the one sitting in _heap, without emptying _data itself.
+        s._data["task-id"] = (1.0, "task-id")
+
+        # Should not raise: the inner loop drains the heap (its one entry
+        # doesn't match by identity), hits `else: break`, and purge() exits
+        # cleanly without removing the still-present item.
+        s.purge(now=20.0)
+        assert len(s._heap) == 0
+        assert "task-id" in s
+
+    def test_pop_returns_default_when_only_stale_entries_remain(self):
+        """pop() should return default if every heap entry turns out stale.
+
+        Regression test for the final `return default` branch in pop(),
+        reached only when the heap is exhausted without finding any entry
+        that matches the current entry in _data.
+        """
+        s = LimitedSet(expires=10)
+
+        s.add("task-id", now=1.0)
+        # Heap still has the entry, but _data no longer has a matching one.
+        s._data.pop("task-id")
+
+        assert s.pop() is None
+        assert s.pop(default="empty") == "empty"
+
 
 class test_AttributeDict:
 
