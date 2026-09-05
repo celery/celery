@@ -2,8 +2,10 @@ import errno
 import os
 import re
 import signal
+import subprocess
 import sys
 import tempfile
+import time
 from unittest.mock import Mock, call, patch
 
 import pytest
@@ -54,6 +56,122 @@ def test_fd_by_path():
             assert not fd_by_path([test_file.name])
     finally:
         test_file.close()
+
+
+@t.skip.if_win32
+def test_fd_by_path_uses_fd_dir():
+    """The fd directory is listed instead of scanning a numeric range."""
+    test_file = tempfile.NamedTemporaryFile()
+    try:
+        fd_num = test_file.file.fileno()
+        with patch('os.listdir', return_value=['0', '1', '2', str(fd_num)]) as listdir, \
+                patch('celery.platforms.get_fdmax') as get_fdmax_mock:
+            keep = fd_by_path([test_file.name])
+        assert keep == [fd_num]
+        listdir.assert_called_once_with(platforms._FD_DIR)
+        get_fdmax_mock.assert_not_called()
+    finally:
+        test_file.close()
+
+
+@t.skip.if_win32
+@pytest.mark.skipif(resource is None, reason='resource module required')
+def test_fd_by_path_scan_covers_high_numbered_descriptor():
+    """Without an fd directory the scan must cover every open descriptor.
+
+    A bounded scan would silently drop the match and ``DaemonContext.open()``
+    would then close a descriptor it meant to keep.
+    """
+    target = 9000
+    soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+    if hard != resource.RLIM_INFINITY and hard <= target:
+        pytest.skip('RLIMIT_NOFILE hard limit is below the probed descriptor')
+    resource.setrlimit(resource.RLIMIT_NOFILE, (target + 1, hard))
+    test_file = tempfile.NamedTemporaryFile()
+    try:
+        os.dup2(test_file.file.fileno(), target)
+        with patch('os.listdir', side_effect=OSError()):
+            keep = fd_by_path([test_file.name])
+        assert target in keep
+    finally:
+        try:
+            os.close(target)
+        except OSError:
+            pass
+        test_file.close()
+        resource.setrlimit(resource.RLIMIT_NOFILE, (soft, hard))
+
+
+@t.skip.if_win32
+@pytest.mark.skipif(resource is None, reason='resource module required')
+def test_fd_by_path_returns_high_numbered_descriptor():
+    """Matches are returned regardless of how high the descriptor is (#9886)."""
+    target = 9000
+    soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+    if hard != resource.RLIM_INFINITY and hard <= target:
+        pytest.skip('RLIMIT_NOFILE hard limit is below the probed descriptor')
+    resource.setrlimit(resource.RLIMIT_NOFILE, (max(soft, target + 1), hard))
+    test_file = tempfile.NamedTemporaryFile()
+    try:
+        os.dup2(test_file.file.fileno(), target)
+        assert target in fd_by_path([test_file.name])
+    finally:
+        try:
+            os.close(target)
+        except OSError:
+            pass
+        test_file.close()
+        resource.setrlimit(resource.RLIMIT_NOFILE, (soft, hard))
+
+
+def test_dev_fd_is_fdescfs():
+    with patch('os.stat', side_effect=[Mock(st_dev=1), Mock(st_dev=2)]):
+        assert platforms._dev_fd_is_fdescfs()
+    with patch('os.stat', side_effect=[Mock(st_dev=1), Mock(st_dev=1)]):
+        assert not platforms._dev_fd_is_fdescfs()
+    with patch('os.stat', side_effect=OSError()):
+        assert not platforms._dev_fd_is_fdescfs()
+
+
+def test_open_fds_ignores_dev_fd_without_fdescfs():
+    """FreeBSD devfs alone only creates fd/0-2, so it must not be trusted."""
+    with patch('celery.platforms.SYSTEM', 'FreeBSD'), \
+            patch('celery.platforms._dev_fd_is_fdescfs', return_value=False), \
+            patch('os.listdir') as listdir:
+        assert platforms._open_fds() is None
+        listdir.assert_not_called()
+
+
+_DETACH_SCRIPT = """
+import sys
+sys.path.insert(0, {root!r})
+from celery import platforms
+
+# The RLIMIT_NOFILE a container can report (issue #9886).
+platforms.get_fdmax = lambda default=None: 1073741816
+# Closing the range is the kernel's job (close_range(2)); what is under test
+# is that fd_by_path() does not walk it in Python.
+platforms.close_open_fds = lambda keep=None: None
+
+with platforms.DaemonContext(workdir='/'):
+    with open({done!r}, 'w') as fh:
+        fh.write('ok')
+"""
+
+
+@t.skip.if_win32
+def test_detach_does_not_scan_a_container_sized_fdmax(tmp_path):
+    """Detaching completes promptly even when fdmax is ~1e9 (issue #9886)."""
+    if platforms._open_fds() is None:
+        pytest.skip('open file-descriptor directory required')
+    done = tmp_path / 'detached'
+    root = os.path.dirname(os.path.dirname(os.path.abspath(platforms.__file__)))
+    script = _DETACH_SCRIPT.format(root=root, done=str(done))
+    subprocess.run([sys.executable, '-c', script], check=True, timeout=30)
+    deadline = time.monotonic() + 15
+    while time.monotonic() < deadline and not done.exists():
+        time.sleep(0.05)
+    assert done.exists(), 'detached process did not reach the context body'
 
 
 def test_close_open_fds(patching):

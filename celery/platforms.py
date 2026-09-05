@@ -56,6 +56,15 @@ SYSTEM = _platform.system()
 IS_macOS = SYSTEM == 'Darwin'
 IS_WINDOWS = SYSTEM == 'Windows'
 
+# Directory listing the descriptors open in the calling process.  Mirrors
+# CPython's FD_DIR (Modules/_posixsubprocess.c): /dev/fd is a real file
+# descriptor file system on macOS, Cygwin and DragonFly, and on FreeBSD only
+# when fdescfs is mounted; /proc/self/fd is used everywhere else.
+if IS_macOS or SYSTEM in {'DragonFly', 'FreeBSD'} or SYSTEM.startswith('CYGWIN'):
+    _FD_DIR = '/dev/fd'
+else:
+    _FD_DIR = '/proc/self/fd'
+
 DAEMON_WORKDIR = '/'
 
 PIDFILE_FLAGS = os.O_CREAT | os.O_EXCL | os.O_WRONLY
@@ -304,7 +313,38 @@ def fd_by_path(paths):
         except OSError:
             return False
 
-    return [_fd for _fd in range(get_fdmax(2048)) if fd_in_stats(_fd)]
+    fds = _open_fds()
+    if fds is None:
+        # No fd directory on this platform.  Scan the numeric range, as
+        # before: fdmax is only unreasonably large (~1e9) in containers, and
+        # those run Linux, where /proc/self/fd is listed above (issue #9886).
+        fds = range(get_fdmax(2048))
+    return [_fd for _fd in fds if fd_in_stats(_fd)]
+
+
+def _dev_fd_is_fdescfs():
+    # devfs alone creates only /dev/fd/0-2, while fdescfs creates entries for
+    # every descriptor the process has open.  Same check as CPython's
+    # _is_fdescfs_mounted_on_dev_fd().
+    try:
+        return os.stat('/dev').st_dev != os.stat(_FD_DIR).st_dev
+    except OSError:
+        return False
+
+
+def _open_fds():
+    """List the descriptors open in this process, or :const:`None`.
+
+    :const:`None` means this platform has no directory listing them, and the
+    caller has to scan a numeric range instead.
+    """
+    if SYSTEM in {'DragonFly', 'FreeBSD'} and not _dev_fd_is_fdescfs():
+        return None
+    try:
+        names = os.listdir(_FD_DIR)
+    except OSError:
+        return None
+    return sorted(int(name) for name in names if name.isdigit())
 
 
 class DaemonContext:
