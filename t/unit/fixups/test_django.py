@@ -238,6 +238,8 @@ class test_DjangoWorkerFixup(FixupCase):
                 sigs.worker_process_init.connect.assert_called_with(
                     f.on_worker_process_init,
                 )
+                # worker_process_shutdown is no longer connected; pool cleanup
+                # is handled via atexit registered in on_worker_process_init
 
     def test_on_worker_process_init(self, patching):
         with self.fixup_context(self.app) as (f, _, _):
@@ -373,6 +375,7 @@ class test_DjangoWorkerFixup(FixupCase):
             conn.close_if_unusable_or_obsolete.assert_not_called()
 
     def test_close_database_skip_conn_pool(self):
+        """Test that close_database does not call close_pool even if method exists."""
         class Connection:
             """Mock connection without `close_pool` method."""
             alias = 'default'
@@ -387,16 +390,8 @@ class test_DjangoWorkerFixup(FixupCase):
             assert not hasattr(conn, "close_pool")
             conn.close.assert_called_once_with()
 
-    def test_close_database_suppresses_close_pool_keyerror(self):
-        with self.fixup_context(self.app) as (f, _, _):
-            conn = Mock()
-            conn.close_pool = Mock(side_effect=KeyError("pool already closed"))
-            f._db.connections.all = Mock(return_value=[conn])
-            f.close_database()  # should not raise
-            conn.close.assert_called_once_with()
-            conn.close_pool.assert_called_once_with()
-
-    def test_close_database_conn_pool_based_on_settings(self):
+    def test_close_database_does_not_close_pool(self):
+        """Test that close_database does not call close_pool even when pooling is enabled."""
         class DJSettings:
             DATABASES = {}
 
@@ -407,24 +402,28 @@ class test_DjangoWorkerFixup(FixupCase):
             f._db.connections.all = Mock(return_value=[conn])
             f._settings = DJSettings
 
+            # Pool disabled - close_pool should not be called
             f._settings.DATABASES["default"] = {"OPTIONS": {}}
             f.close_database()
             conn.close.assert_called_once_with()
             conn.close_pool.assert_not_called()
 
             conn.reset_mock()
+            # Pool enabled - close_pool should STILL not be called during normal cleanup
             f._settings.DATABASES["default"] = {"OPTIONS": {"pool": True}}
             f.close_database()
             conn.close.assert_called_once_with()
-            conn.close_pool.assert_called_once_with()
+            conn.close_pool.assert_not_called()
 
             conn.reset_mock()
+            # Pool explicitly disabled
             f._settings.DATABASES["default"] = {"OPTIONS": {"pool": False}}
             f.close_database()
             conn.close.assert_called_once_with()
             conn.close_pool.assert_not_called()
 
     def test_close_database_conn_pool_thread_pool(self):
+        """Test that close_database does not call close_pool regardless of pool type."""
         class DJSettings:
             DATABASES = {}
 
@@ -438,7 +437,7 @@ class test_DjangoWorkerFixup(FixupCase):
             f._settings.DATABASES["default"] = {"OPTIONS": {"pool": True}}
             f.close_database()
             conn.close.assert_called_once_with()
-            conn.close_pool.assert_called_once_with()
+            conn.close_pool.assert_not_called()
 
             conn.reset_mock()
             f.worker.pool_cls = ThreadTaskPool
@@ -486,6 +485,34 @@ class test_DjangoWorkerFixup(FixupCase):
         f.django_setup()
         django.setup.assert_called_with()
 
+    def test_on_worker_process_init_registers_atexit_handler(self, patching):
+        """Test that on_worker_process_init registers atexit handler for pool cleanup."""
+        import atexit
+
+        patching('celery.fixups.django.symbol_by_name')
+        patching('celery.fixups.django.import_module')
+        patching.modules('django', 'django.db', 'django.core.cache')
+
+        f = self.Fixup(self.app)
+        f._db.connections.all = Mock(return_value=[])
+
+        # Track atexit registrations
+        original_register = atexit.register
+        registered_handlers = []
+
+        def tracking_register(func, *args, **kwargs):
+            registered_handlers.append(func)
+            return original_register(func, *args, **kwargs)
+
+        with patch.object(atexit, 'register', side_effect=tracking_register):
+            f.on_worker_process_init()
+
+        # Verify that _close_pools_on_child_exit was registered
+        assert any(
+            handler.__name__ == '_close_pools_on_child_exit'
+            for handler in registered_handlers
+        ), "on_worker_process_init should register _close_pools_on_child_exit as atexit handler"
+
     def test__is_prefork(self):
         with self.fixup_context(self.app) as (f, _, _):
             f.worker.pool_cls = Mock(__module__='celery.concurrency.prefork')
@@ -499,6 +526,186 @@ class test_DjangoWorkerFixup(FixupCase):
 
             f.worker = None
             assert not f._is_prefork()
+
+    def test_close_pools_on_child_exit_closes_pool_in_prefork(self):
+        """Test that _close_pools_on_child_exit closes pool in prefork mode when enabled."""
+        class DJSettings:
+            DATABASES = {}
+
+        with self.fixup_context(self.app) as (f, _, _):
+            conn = Mock()
+            conn.alias = "default"
+            conn.close_pool = Mock()
+            f._db.connections.all = Mock(return_value=[conn])
+            f._settings = DJSettings
+
+            # Pool enabled in prefork mode - close_pool should be called
+            f._settings.DATABASES["default"] = {"OPTIONS": {"pool": True}}
+            f._close_pools_on_child_exit()
+            conn.close_pool.assert_called_once_with()
+
+    def test_close_pools_on_child_exit_no_pool_when_disabled(self):
+        """Test that _close_pools_on_child_exit does not close pool when disabled."""
+        class DJSettings:
+            DATABASES = {}
+
+        with self.fixup_context(self.app) as (f, _, _):
+            conn = Mock()
+            conn.alias = "default"
+            conn.close_pool = Mock()
+            f._db.connections.all = Mock(return_value=[conn])
+            f._settings = DJSettings
+
+            # Pool disabled - close_pool should not be called
+            f._settings.DATABASES["default"] = {"OPTIONS": {}}
+            f._close_pools_on_child_exit()
+            conn.close_pool.assert_not_called()
+
+    def test_close_pools_on_child_exit_no_pool_in_thread_mode(self):
+        """Test that _close_pools_on_child_exit does not close pool in non-prefork mode."""
+        class DJSettings:
+            DATABASES = {}
+
+        with self.fixup_context(self.app) as (f, _, _):
+            conn = Mock()
+            conn.alias = "default"
+            conn.close_pool = Mock()
+            f._db.connections.all = Mock(return_value=[conn])
+            f._settings = DJSettings
+
+            # Pool enabled but in thread mode - close_pool should not be called
+            f._settings.DATABASES["default"] = {"OPTIONS": {"pool": True}}
+            f.worker.pool_cls = ThreadTaskPool
+            assert "prefork" not in ThreadTaskPool.__module__
+            f._close_pools_on_child_exit()
+            conn.close_pool.assert_not_called()
+
+    def test_close_pools_on_child_exit_suppresses_keyerror(self):
+        """Test that _close_pools_on_child_exit suppresses KeyError from close_pool."""
+        class DJSettings:
+            DATABASES = {}
+
+        with self.fixup_context(self.app) as (f, _, _):
+            conn = Mock()
+            conn.alias = "default"
+            conn.close_pool = Mock(side_effect=KeyError("pool already closed"))
+            f._db.connections.all = Mock(return_value=[conn])
+            f._settings = DJSettings
+
+            f._settings.DATABASES["default"] = {"OPTIONS": {"pool": True}}
+            f._close_pools_on_child_exit()  # should not raise
+            conn.close_pool.assert_called_once_with()
+
+    def test_close_pools_on_child_exit_multiple_connections(self):
+        """Test that _close_pools_on_child_exit handles multiple database connections."""
+        class DJSettings:
+            DATABASES = {}
+
+        with self.fixup_context(self.app) as (f, _, _):
+            conn1 = Mock()
+            conn1.alias = "default"
+            conn1.close_pool = Mock()
+
+            conn2 = Mock()
+            conn2.alias = "replica"
+            conn2.close_pool = Mock()
+
+            f._db.connections.all = Mock(return_value=[conn1, conn2])
+            f._settings = DJSettings
+
+            # Only default has pool enabled
+            f._settings.DATABASES["default"] = {"OPTIONS": {"pool": True}}
+            f._settings.DATABASES["replica"] = {"OPTIONS": {}}
+
+            f._close_pools_on_child_exit()
+            conn1.close_pool.assert_called_once_with()
+            conn2.close_pool.assert_not_called()
+
+    def test_close_pools_on_child_exit_django_pre_41(self):
+        """Test that _close_pools_on_child_exit handles Django < 4.1."""
+        class DJSettings:
+            DATABASES = {}
+
+        with self.fixup_context(self.app) as (f, _, _):
+            conn = Mock()
+            conn.alias = "default"
+            conn.close_pool = Mock()
+            f._settings = DJSettings
+
+            # Mock Django < 4.1 behavior: connections.all() doesn't accept initialized_only
+            def all_without_initialized_only(**kwargs):
+                if 'initialized_only' in kwargs:
+                    raise TypeError("all() got an unexpected keyword argument 'initialized_only'")
+                return [conn]
+
+            f._db.connections.all = Mock(side_effect=all_without_initialized_only)
+            f._settings.DATABASES["default"] = {"OPTIONS": {"pool": True}}
+
+            f._close_pools_on_child_exit()
+            conn.close_pool.assert_called_once_with()
+
+    def test_close_database_with_db_reuse_max_does_not_close_pool(self):
+        """Test that close_database with CELERY_DB_REUSE_MAX does not close pool."""
+        class DJSettings:
+            DATABASES = {}
+
+        with self.fixup_context(self.app) as (f, _, _):
+            conn = Mock()
+            conn.alias = "default"
+            conn.close_pool = Mock()
+            f._db.connections.all = Mock(return_value=[conn])
+            f._settings = DJSettings
+            f.db_reuse_max = 10
+
+            f._settings.DATABASES["default"] = {"OPTIONS": {"pool": True}}
+
+            # Simulate multiple calls that trigger _close_database via reuse threshold
+            f._db_recycles = 20  # This will trigger _close_database
+            f.close_database()
+            conn.close.assert_called_once_with()
+            conn.close_pool.assert_not_called()
+
+    def test_multi_task_lifecycle_pool_persistence(self):
+        """Test that pool remains alive across multiple task cleanup cycles.
+
+        This is the key regression test for the bug:
+        - Task 1 cleanup: conn.close() called, close_pool NOT called
+        - Task 2 cleanup: conn.close() called, close_pool NOT called
+        - Process shutdown: close_pool called
+        """
+        class DJSettings:
+            DATABASES = {}
+
+        with self.fixup_context(self.app) as (f, _, _):
+            conn = Mock()
+            conn.alias = "default"
+            conn.close_pool = Mock()
+            f._db.connections.all = Mock(return_value=[conn])
+            f._settings = DJSettings
+            f._settings.DATABASES["default"] = {"OPTIONS": {"pool": True}}
+
+            # Task 1 cleanup (via task_postrun -> close_database)
+            f.close_database()
+            conn.close.assert_called_once_with()
+            conn.close_pool.assert_not_called()
+
+            # Task 2 cleanup (via task_postrun -> close_database)
+            conn.reset_mock()
+            f.close_database()
+            conn.close.assert_called_once_with()
+            conn.close_pool.assert_not_called()
+
+            # Task 3 cleanup (via task_postrun -> close_database)
+            conn.reset_mock()
+            f.close_database()
+            conn.close.assert_called_once_with()
+            conn.close_pool.assert_not_called()
+
+            # Process shutdown (via atexit handler in child)
+            conn.reset_mock()
+            f._close_pools_on_child_exit()
+            conn.close.assert_not_called()  # close() not called in shutdown
+            conn.close_pool.assert_called_once_with()  # Only now is pool closed
 
     def test_no_recursive_worker_instantiation(self, patching):
         """Regression test: DjangoWorkerFixup must not create a WorkController in __init__.
