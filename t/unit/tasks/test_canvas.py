@@ -213,6 +213,14 @@ class test_Signature(CanvasCase):
         clone.kwargs['extra']['shared'] = False
         assert original.kwargs['extra']['shared'] is True
 
+    def test_clone_copies_kwargs_with_overrides(self):
+        original = self.add.s(1, 2, extra={'shared': True})
+
+        clone = original.clone(args=(3,))
+        clone.kwargs['extra']['shared'] = False
+
+        assert original.kwargs['extra']['shared'] is True
+
     def test_set(self):
         assert Signature('TASK', x=1).set(task_id='2').options == {
             'x': 1, 'task_id': '2',
