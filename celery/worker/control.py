@@ -215,13 +215,44 @@ def _revoke(state, task_ids, terminate=False, signal=None, **kwargs):
     size = len(task_ids)
     terminated = set()
 
+    # Repeating the control command must not repeat the chord bookkeeping
+    # for members that were already accounted for.
+    unrevoked_ids = {
+        task_id for task_id in task_ids if task_id not in worker_state.revoked
+    }
     worker_state.revoked.update(task_ids)
 
+    # pass locally-known requests so the backend can run chord bookkeeping.
+    # A revoke without terminate does not stop tasks that are already
+    # executing, so active requests are excluded here: they will report
+    # their real result when they finish. With terminate=True the active
+    # requests are being stopped, so passing them is safe.
+    requests_by_id = {
+        request.id: request
+        for request in _find_requests_by_id(unrevoked_ids)
+        if terminate or request not in worker_state.active_requests
+    }
+
     for task_id in task_ids:
+        request = requests_by_id.get(task_id)
+        # A task may override its backend. Route the revoke bookkeeping
+        # through the request's own backend so a chord tracked by a custom
+        # task backend is accounted for in the right place. Tasks unknown
+        # to this worker fall back to the app backend.
+        backend = request.task.backend if request is not None else state.app.backend
         try:
-            state.app.backend.mark_as_revoked(task_id, reason='revoked', store_result=True)
+            backend.mark_as_revoked(
+                task_id, reason='revoked', store_result=True,
+                request=request)
         except Exception as exc:
             logger.warning('Failed to mark task %s as revoked in backend: %s', task_id, exc)
+        else:
+            if request is not None:
+                # The backend has stored the member result and updated the
+                # chord bookkeeping. Flag the request so the announce that
+                # runs when the worker later discards it does not report the
+                # chord member a second time.
+                request._revoked_in_backend = True
 
     if terminate:
         signum = _signals.signum(signal or TERM_SIGNAME)
