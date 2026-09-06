@@ -11,7 +11,7 @@ import types
 import warnings
 from abc import ABCMeta, abstractmethod
 from collections import deque
-from collections.abc import MutableSequence
+from collections.abc import Mapping, MutableSequence
 from copy import deepcopy
 from functools import partial as _partial
 from functools import reduce
@@ -77,25 +77,54 @@ def _deepcopy_kwargs(kwargs):
     memo = {}
     seen = set()
 
+    def clone_signature(value):
+        value_id = id(value)
+        if value_id in memo:
+            return memo[value_id]
+
+        clone = type(value).__new__(type(value))
+        memo[value_id] = clone
+        dict.__init__(clone)
+        collect(value)
+        for key, nested_value in value.items():
+            dict.__setitem__(clone, deepcopy(key, memo), deepcopy(nested_value, memo))
+        clone._app = value._app
+        if '_type' in value.__dict__:
+            clone._type = value._type
+        return clone
+
+    def clone_item(value):
+        collect(value)
+        return deepcopy(value, memo)
+
+    def clone_regen(value):
+        return _regen(clone_item(item) for item in value)
+
     def collect(value):
         if isinstance(value, _regen):
-            memo[id(value)] = value
-        elif isinstance(value, Signature):
-            memo[id(value)] = value.clone()
-        elif isinstance(value, dict):
-            value_id = id(value)
-            if value_id in seen:
-                return
-            seen.add(value_id)
+            memo.setdefault(id(value), clone_regen(value))
+            return
+
+        if isinstance(value, Signature):
+            clone_signature(value)
+            return
+
+        value_id = id(value)
+        if value_id in seen:
+            return
+        seen.add(value_id)
+        if isinstance(value, Mapping):
             for nested_value in value.values():
                 collect(nested_value)
-        elif isinstance(value, (list, tuple, set, frozenset)):
-            value_id = id(value)
-            if value_id in seen:
-                return
-            seen.add(value_id)
+        elif isinstance(value, (list, tuple, set, frozenset, deque)):
             for nested_value in value:
                 collect(nested_value)
+        elif hasattr(value, '__dict__'):
+            collect(vars(value))
+        elif hasattr(value, '__slots__'):
+            for slot in value.__slots__:
+                if hasattr(value, slot):
+                    collect(getattr(value, slot))
 
     for value in kwargs.values():
         collect(value)

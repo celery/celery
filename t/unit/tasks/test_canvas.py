@@ -1,5 +1,6 @@
 import json
 import math
+from collections import deque
 from collections.abc import Iterable
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
@@ -232,18 +233,40 @@ class test_Signature(CanvasCase):
         assert clone.kwargs['payload'] is not original.kwargs['payload']
         assert clone.kwargs['payload']['self'] is clone.kwargs['payload']
 
+    def test_clone_preserves_signatures_in_unsupported_containers(self):
+        child = self.add.s(1, 2)
+        original = self.add.s(payload=deque([child]))
+
+        clone = original.clone()
+
+        assert isinstance(clone.kwargs['payload'], deque)
+        assert clone.kwargs['payload'][0] is not child
+        assert isinstance(clone.kwargs['payload'][0], Signature)
+
+    def test_clone_preserves_signature_cycles(self):
+        original = self.add.s()
+        original.kwargs['self'] = original
+
+        clone = original.clone()
+
+        assert isinstance(clone.kwargs['self'], Signature)
+        assert clone.kwargs['self'] is not original
+
     def test_clone_preserves_lazy_group_generator(self):
         consumed = []
+        source = self.add.s(1, 2)
 
         def task_generator():
             consumed.append(True)
-            yield self.add.s(1, 2)
+            yield source
 
         original = group(task_generator())
         clone = original.clone()
 
         assert consumed == []
-        assert len(list(clone.tasks)) == 1
+        cloned_tasks = list(clone.tasks)
+        assert len(cloned_tasks) == 1
+        assert cloned_tasks[0] is not source
         assert consumed == [True]
 
     def test_set(self):
