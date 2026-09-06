@@ -221,6 +221,17 @@ class test_Signature(CanvasCase):
 
         assert original.kwargs['extra']['shared'] is True
 
+    def test_clone_handles_cyclic_kwargs(self):
+        payload = {}
+        payload['self'] = payload
+        original = self.add.s(payload=payload)
+
+        clone = original.clone()
+
+        assert clone.kwargs is not original.kwargs
+        assert clone.kwargs['payload'] is not original.kwargs['payload']
+        assert clone.kwargs['payload']['self'] is clone.kwargs['payload']
+
     def test_clone_preserves_lazy_group_generator(self):
         consumed = []
 
