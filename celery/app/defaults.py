@@ -430,7 +430,11 @@ def find_deprecated_settings(source):  # pragma: no cover
 
 @memoize(maxsize=None)
 def find(name, namespace='celery'):
-    """Find setting by name."""
+    """Find setting by name.
+
+    Returns:
+        Tuple: of ``(namespace, key, type)``.
+    """
     # - Try specified name-space first.
     namespace = namespace.lower()
     try:
