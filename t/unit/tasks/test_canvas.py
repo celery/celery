@@ -221,6 +221,20 @@ class test_Signature(CanvasCase):
 
         assert original.kwargs['extra']['shared'] is True
 
+    def test_clone_preserves_lazy_group_generator(self):
+        consumed = []
+
+        def task_generator():
+            consumed.append(True)
+            yield self.add.s(1, 2)
+
+        original = group(task_generator())
+        clone = original.clone()
+
+        assert consumed == []
+        assert len(list(clone.tasks)) == 1
+        assert consumed == [True]
+
     def test_set(self):
         assert Signature('TASK', x=1).set(task_id='2').options == {
             'x': 1, 'task_id': '2',

@@ -72,6 +72,16 @@ def _stamp_regen_task(task, visitor, append_stamps, **headers):
     return task
 
 
+def _deepcopy_kwargs(kwargs):
+    """Copy signature kwargs without exhausting lazy group inputs."""
+    memo = {
+        id(value): value
+        for value in kwargs.values()
+        if isinstance(value, _regen)
+    }
+    return deepcopy(kwargs, memo)
+
+
 def _merge_dictionaries(d1, d2, aggregate_duplicates=True):
     """Merge two dictionaries recursively into the first one.
 
@@ -457,9 +467,9 @@ class Signature(dict):
         # need to deepcopy options so origins links etc. is not modified.
         if args or kwargs or opts:
             args, kwargs, opts = self._merge(args, kwargs, opts)
-            kwargs = deepcopy(kwargs)
+            kwargs = _deepcopy_kwargs(kwargs)
         else:
-            args, kwargs, opts = self.args, deepcopy(self.kwargs), self.options
+            args, kwargs, opts = self.args, _deepcopy_kwargs(self.kwargs), self.options
         signature = Signature.from_dict({'task': self.task,
                                          'args': tuple(args),
                                          'kwargs': kwargs,
