@@ -148,6 +148,16 @@ class test_crontab_parser:
             nowfun=utcnow)
         assert c == loads(dumps(c))
 
+    def test_crontab_reduce_preserves_state_across_multiple_round_trips(self):
+        import functools
+
+        c = self.crontab(nowfun=functools.partial(utcnow))
+
+        for _ in range(5):
+            c = loads(dumps(c))
+
+        assert isinstance(c.nowfun, functools.partial)
+        assert c.nowfun.func is utcnow
     def test_range_steps_not_enough(self):
         with pytest.raises(crontab_parser.ParseException):
             crontab_parser(24)._range_steps([1])
