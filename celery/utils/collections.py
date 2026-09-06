@@ -397,7 +397,7 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
         except KeyError:
             if len(keys) > 1:
                 raise KeyError(
-                    'Key not found: {0!r} (with prefix: {0!r})'.format(*keys))
+                    'Key not found: {1!r} (with prefix: {0!r})'.format(*keys))
             raise
 
     def __setitem__(self, key, value):
