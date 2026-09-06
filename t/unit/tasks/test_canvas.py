@@ -416,6 +416,15 @@ class test_Signature(CanvasCase):
 
 class test_xmap_xstarmap(CanvasCase):
 
+    @pytest.mark.parametrize("attr", ("map", "starmap"))
+    def test_clone_preserves_task_signature(self, attr):
+        original = getattr(self.add, attr)([1, 2])
+        clone = original.clone()
+
+        assert isinstance(clone.kwargs["task"], Signature)
+        assert clone.kwargs["task"] is not original.kwargs["task"]
+        assert repr(clone)
+
     def test_apply(self):
         for type, attr in [(xmap, 'map'), (xstarmap, 'starmap')]:
             args = [(i, i) for i in range(10)]
@@ -433,6 +442,13 @@ class test_xmap_xstarmap(CanvasCase):
 
 
 class test_chunks(CanvasCase):
+
+    def test_clone_preserves_task_signature(self):
+        original = self.add.chunks(range(4), 2)
+        clone = original.clone()
+
+        assert isinstance(clone.kwargs["task"], Signature)
+        assert clone.kwargs["task"] is not original.kwargs["task"]
 
     def test_chunks_preserves_state(self):
         x = self.add.chunks(range(100), 10)

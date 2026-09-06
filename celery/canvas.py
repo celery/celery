@@ -74,11 +74,22 @@ def _stamp_regen_task(task, visitor, append_stamps, **headers):
 
 def _deepcopy_kwargs(kwargs):
     """Copy signature kwargs without exhausting lazy group inputs."""
-    memo = {
-        id(value): value
-        for value in kwargs.values()
-        if isinstance(value, _regen)
-    }
+    memo = {}
+
+    def collect(value):
+        if isinstance(value, _regen):
+            memo[id(value)] = value
+        elif isinstance(value, Signature):
+            memo[id(value)] = value.clone()
+        elif isinstance(value, dict):
+            for nested_value in value.values():
+                collect(nested_value)
+        elif isinstance(value, (list, tuple, set, frozenset)):
+            for nested_value in value:
+                collect(nested_value)
+
+    for value in kwargs.values():
+        collect(value)
     return deepcopy(kwargs, memo)
 
 
