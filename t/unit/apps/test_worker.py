@@ -58,7 +58,7 @@ class test_Worker_purge:
         # Apps that never set the newer setting keep the old one's behaviour.
         worker = self._worker(
             broker_connection_retry_on_startup=None,
-            broker_connection_retry=False,
+            broker_connection_retry=True,
         )
         connection = Mock(name='connection')
 
@@ -68,5 +68,5 @@ class test_Worker_purge:
             with patch.object(self.app.control, 'purge', return_value=0):
                 worker.purge_messages()
 
-        connection.connect.assert_called_once_with()
-        connection.ensure_connection.assert_not_called()
+        connection.ensure_connection.assert_called_once()
+        connection.connect.assert_not_called()
