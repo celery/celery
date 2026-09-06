@@ -201,8 +201,12 @@ Bindings are sets
 The routing table of each exchange is a Redis **set** named
 ``_kombu.binding.<exchange name>``, for example ``_kombu.binding.celery``.
 Its members record which queues are bound to the exchange with which
-routing key. If this key disappears, the worker raises the
-``InconsistencyError`` described in :ref:`redis-caveats` below.
+routing key. If this key disappears, for example because Redis evicted it
+(see :ref:`redis-caveats` below), messages published to that exchange have
+no queue to route to: Kombu delivers them to the queue named by the
+``deadletter_queue`` transport option if one is configured, and otherwise
+discards them silently. The set is re-created the next time a worker or a
+publisher declares the queue.
 
 Unacknowledged messages are kept in a hash
 ------------------------------------------
@@ -214,8 +218,9 @@ time it was received is recorded in the ``unacked_index`` **sorted set**.
 Acknowledging the task deletes both entries. A periodic sweep, guarded by
 the ``unacked_mutex`` key, pushes any entry older than the
 :ref:`redis-visibility_timeout` back onto its queue list so another worker
-can pick it up. These keys are shared by every worker using the same
-database.
+can pick it up. These keys are shared by every worker that uses the same
+database *and* the same ``global_keyprefix`` (see below); the prefix is
+applied to them like to every other broker key.
 
 Broadcasts use Pub/Sub
 ----------------------
@@ -244,9 +249,11 @@ every key the broker uses with the ``global_keyprefix`` transport option:
 The Redis result backend stores results under separate ``celery-task-meta-*``
 keys and has its own prefix option, see :ref:`redis-result-backend-global-keyprefix`.
 
-Do not run ``FLUSHDB`` or ``FLUSHALL`` against the broker database while
-Celery is running: it deletes queued tasks, unacknowledged tasks and the
-bindings in one go.
+Do not run ``FLUSHDB`` against the broker database, or ``FLUSHALL`` against
+the server, unless you intend to throw away all broker state. Both delete
+queued tasks, unacknowledged tasks and the bindings in one go, whether or not
+Celery is running at the time, and ``FLUSHALL`` also clears every other
+database on the server.
 
 Persistence
 -----------
