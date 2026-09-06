@@ -403,8 +403,9 @@ def flatten(d, root='', keyfilter=_flatten_keys):
                 yield from keyfilter(ns, key, opt)
 
 
+_OPTIONS = dict(flatten(NAMESPACES))
 DEFAULTS = {
-    key: opt.default for key, opt in flatten(NAMESPACES)
+    key: opt.default for key, opt in _OPTIONS.items()
 }
 __compat = list(flatten(NAMESPACES, keyfilter=_to_compat))
 _OLD_DEFAULTS = {old_key: opt.default for old_key, _, opt in __compat}
@@ -429,7 +430,11 @@ def find_deprecated_settings(source):  # pragma: no cover
 
 @memoize(maxsize=None)
 def find(name, namespace='celery'):
-    """Find setting by name."""
+    """Find setting by name.
+
+    Returns:
+        Tuple: of ``(namespace, key, type)``.
+    """
     # - Try specified name-space first.
     namespace = namespace.lower()
     try:
@@ -447,4 +452,4 @@ def find(name, namespace='celery'):
                 except KeyError:
                     pass
     # - See if name is a qualname last.
-    return searchresult(None, name.lower(), DEFAULTS[name.lower()])
+    return searchresult(None, name.lower(), _OPTIONS[name.lower()])
