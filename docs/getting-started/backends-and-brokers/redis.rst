@@ -184,7 +184,7 @@ Queues are lists
 ----------------
 
 Each queue is a Redis **list** whose key is the queue name, for example
-``celery`` for the default queue. Publishing a task is an ``RPUSH`` onto
+``celery`` for the default queue. Publishing a task is an ``LPUSH`` onto
 that list and workers consume with a blocking ``BRPOP`` across all the
 queues they listen to, so messages are delivered in FIFO order per queue.
 Pub/Sub is *not* used for regular task messages.
