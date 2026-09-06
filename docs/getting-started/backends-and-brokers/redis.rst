@@ -185,9 +185,9 @@ number as described below.
 Queues are lists
 ----------------
 
-Each queue is a Redis **list** whose key is the queue name, for example
-``celery`` for the default queue. Publishing a task is an ``LPUSH`` onto
-that list and workers consume with a blocking ``BRPOP`` across all the
+Each queue is a Redis **list** whose key is the queue name (optionally prefixed
+by ``global_keyprefix``), for example ``celery`` for the default queue. Publishing a task
+is an ``LPUSH`` onto that list and workers consume with a blocking ``BRPOP`` across all the
 queues they listen to, so messages are delivered in FIFO order per queue.
 Pub/Sub is *not* used for regular task messages.
 
@@ -199,9 +199,9 @@ Bindings are sets
 -----------------
 
 The routing table of each exchange is a Redis **set** named
-``_kombu.binding.<exchange name>``, for example ``_kombu.binding.celery``.
-Its members record which queues are bound to the exchange with which
-routing key. If this key disappears, for example because Redis evicted it
+``_kombu.binding.<exchange name>`` (optionally prefixed by ``global_keyprefix``),
+for example ``_kombu.binding.celery``. Its members record which queues are
+bound to the exchange with which routing key.
 (see :ref:`redis-caveats` below), messages published to that exchange have
 no queue to route to: Kombu delivers them to the queue named by the
 ``deadletter_queue`` transport option if one is configured, and otherwise
