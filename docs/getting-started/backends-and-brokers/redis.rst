@@ -177,8 +177,10 @@ structures. Knowing which keys are involved helps when sharing a Redis
 server with other applications, when deciding how to configure persistence,
 and when debugging.
 
-Everything below lives in the logical database selected by the
+All keys below live in the logical database selected by the
 ``db_number`` part of the :setting:`broker_url` (database ``0`` by default).
+Pub/Sub channels are server-wide; Kombu prefixes their names with this database
+number as described below.
 
 Queues are lists
 ----------------
