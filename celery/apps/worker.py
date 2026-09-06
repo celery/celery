@@ -205,7 +205,7 @@ class Worker(WorkController):
 
         if not retry:
             connection.connect()
-            return
+            return connection
 
         def _error_handler(exc, interval):
             logger.error(
@@ -213,13 +213,13 @@ class Worker(WorkController):
                 exc, humanize_seconds(interval, 'in', ' '),
             )
 
-        connection.ensure_connection(
+        return connection.ensure_connection(
             _error_handler, self.app.conf.broker_connection_max_retries,
         )
 
     def purge_messages(self):
         with self.app.connection_for_write() as connection:
-            self._ensure_connected(connection)
+            connection = self._ensure_connected(connection)
             count = self.app.control.purge(connection=connection)
             if count:  # pragma: no cover
                 print(f"purge: Erased {count} {pluralize(count, 'message')} from the queue.\n", flush=True)

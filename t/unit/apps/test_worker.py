@@ -1,5 +1,7 @@
 from unittest.mock import Mock, patch
 
+import pytest
+
 from celery.apps.worker import Worker
 
 
@@ -10,6 +12,10 @@ class test_Worker_purge:
     exists, so the retry handling in :mod:`celery.worker.consumer` never sees
     it.  See https://github.com/celery/celery/issues/10102.
     """
+
+    @pytest.fixture(autouse=True)
+    def _setup_app(self, app):
+        self.app = app
 
     def _worker(self, **conf):
         self.app.conf.update(conf)
