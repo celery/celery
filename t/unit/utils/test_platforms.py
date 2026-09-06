@@ -143,17 +143,21 @@ def test_open_fds_ignores_dev_fd_without_fdescfs():
 
 
 _DETACH_SCRIPT = """
+import signal
 import sys
 sys.path.insert(0, {root!r})
+import billiard.compat
 from celery import platforms
 
-# The RLIMIT_NOFILE a container can report (issue #9886).
+# The RLIMIT_NOFILE a container can report (issue #9886).  Both scans that
+# used to walk it in Python are patched so any leftover walk stalls the test.
 platforms.get_fdmax = lambda default=None: 1073741816
-# Closing the range is the kernel's job (close_range(2)); what is under test
-# is that fd_by_path() does not walk it in Python.
-platforms.close_open_fds = lambda keep=None: None
+billiard.compat.get_fdmax = lambda default=None: 1073741816
 
-with platforms.DaemonContext(workdir='/'):
+# after_chdir runs in the detached grandchild right before the fd scans; the
+# alarm kills it if a scan regresses, so a failing run cannot leave an orphan
+# spinning for the parent's timeout has no reach past the double fork.
+with platforms.DaemonContext(workdir='/', after_chdir=lambda: signal.alarm(20)):
     with open({done!r}, 'w') as fh:
         fh.write('ok')
 """
@@ -163,7 +167,7 @@ with platforms.DaemonContext(workdir='/'):
 def test_detach_does_not_scan_a_container_sized_fdmax(tmp_path):
     """Detaching completes promptly even when fdmax is ~1e9 (issue #9886)."""
     if platforms._open_fds() is None:
-        pytest.skip('open file-descriptor directory required')
+        pytest.skip('no fd directory here: the fallback scan would orphan the child')
     done = tmp_path / 'detached'
     root = os.path.dirname(os.path.dirname(os.path.abspath(platforms.__file__)))
     script = _DETACH_SCRIPT.format(root=root, done=str(done))
@@ -174,17 +178,45 @@ def test_detach_does_not_scan_a_container_sized_fdmax(tmp_path):
     assert done.exists(), 'detached process did not reach the context body'
 
 
-def test_close_open_fds(patching):
-    _close = patching('os.close')
-    fdmax = patching('billiard.compat.get_fdmax')
-    with patch('os.closerange', create=True) as closerange:
-        fdmax.return_value = 3
+def test_close_open_fds_closes_only_listed_descriptors():
+    with patch('celery.platforms._open_fds', return_value=[0, 1, 2, 7, 9]), \
+            patch('os.close') as close_mock:
+        close_open_fds([1, 2])
+    assert close_mock.call_args_list == [call(0), call(7), call(9)]
+
+
+def test_close_open_fds_accepts_file_objects():
+    fh = Mock(name='fh')
+    fh.fileno.return_value = 3
+    with patch('celery.platforms._open_fds', return_value=[3, 4]), \
+            patch('os.close') as close_mock:
+        close_open_fds([fh])
+    close_mock.assert_called_once_with(4)
+
+
+def test_close_open_fds_ignores_ebadf():
+    exc = OSError()
+    exc.errno = errno.EBADF
+    with patch('celery.platforms._open_fds', return_value=[5]), \
+            patch('os.close', side_effect=exc) as close_mock:
         close_open_fds()
-        if not closerange.called:
-            _close.assert_has_calls([call(2), call(1), call(0)])
-            _close.side_effect = OSError()
-            _close.side_effect.errno = errno.EBADF
+    close_mock.assert_called_once_with(5)
+
+
+def test_close_open_fds_reraises_other_errors():
+    exc = OSError()
+    exc.errno = errno.EIO
+    with patch('celery.platforms._open_fds', return_value=[5]), \
+            patch('os.close', side_effect=exc), \
+            pytest.raises(OSError):
         close_open_fds()
+
+
+def test_close_open_fds_falls_back_without_fd_dir():
+    with patch('celery.platforms._open_fds', return_value=None), \
+            patch('celery.platforms._billiard_close_open_fds') as fallback:
+        close_open_fds([1])
+    fallback.assert_called_once_with([1])
 
 
 class test_ignore_errno:

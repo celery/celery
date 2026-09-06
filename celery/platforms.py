@@ -15,7 +15,8 @@ import sys
 import warnings
 from contextlib import contextmanager
 
-from billiard.compat import close_open_fds, get_fdmax
+from billiard.compat import close_open_fds as _billiard_close_open_fds
+from billiard.compat import get_fdmax
 from billiard.util import set_pdeathsig as _set_pdeathsig
 # fileno used to be in this module
 from kombu.utils.compat import maybe_fileno
@@ -56,11 +57,10 @@ SYSTEM = _platform.system()
 IS_macOS = SYSTEM == 'Darwin'
 IS_WINDOWS = SYSTEM == 'Windows'
 
-# Directory listing the descriptors open in the calling process.  Mirrors
-# CPython's FD_DIR (Modules/_posixsubprocess.c): /dev/fd is a real file
-# descriptor file system on macOS, Cygwin and DragonFly, and on FreeBSD only
-# when fdescfs is mounted; /proc/self/fd is used everywhere else.
-if IS_macOS or SYSTEM in {'DragonFly', 'FreeBSD'} or SYSTEM.startswith('CYGWIN'):
+# Directory listing the descriptors open in the calling process.  Follows
+# CPython's FD_DIR (Modules/_posixsubprocess.c): /dev/fd on macOS, and on
+# FreeBSD and DragonFly when fdescfs is mounted; /proc/self/fd everywhere else.
+if IS_macOS or SYSTEM in {'DragonFly', 'FreeBSD'}:
     _FD_DIR = '/dev/fd'
 else:
     _FD_DIR = '/proc/self/fd'
@@ -345,6 +345,30 @@ def _open_fds():
     except OSError:
         return None
     return sorted(int(name) for name in names if name.isdigit())
+
+
+def close_open_fds(keep=None):
+    """Close every open descriptor except those in *keep*.
+
+    Only the descriptors listed by the fd directory are touched, so the cost
+    does not grow with ``RLIMIT_NOFILE`` (issue #9886).  billiard's
+    implementation is still used as the fallback where no fd directory exists.
+    """
+    fds = _open_fds()
+    if fds is None:
+        # billiard walks range(get_fdmax()) in Python, which is what stalls
+        # in containers; only reachable without an fd directory.
+        _billiard_close_open_fds(keep)
+        return
+    keep = {fd for fd in map(maybe_fileno, keep or []) if fd is not None}
+    for fd in fds:
+        if fd in keep:
+            continue
+        try:
+            os.close(fd)
+        except OSError as exc:
+            if exc.errno != errno.EBADF:
+                raise
 
 
 class DaemonContext:
