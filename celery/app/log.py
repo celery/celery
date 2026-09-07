@@ -106,7 +106,7 @@ class Logging:
         for _, response in receivers:
             if isinstance(response, Exception):
                 Logging._setup = False
-                raise response
+                raise response.with_traceback(response.__traceback__)
 
         if not receivers:
             root = logging.getLogger()

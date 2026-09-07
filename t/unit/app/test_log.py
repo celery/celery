@@ -213,6 +213,10 @@ class test_default_logger:
             self.app.log.setup_logging_subsystem()
         assert not self.app.log.already_setup
 
+        signals.setup_logging.disconnect(raise_error)
+        self.app.log.setup_logging_subsystem()
+        assert self.app.log.already_setup
+
     def test_setup_logging_subsystem_misc2(self, restore_logging):
         self.app.conf.worker_hijack_root_logger = True
         self.app.log.setup_logging_subsystem()
