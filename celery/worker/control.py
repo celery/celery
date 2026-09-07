@@ -223,7 +223,6 @@ def _revoke(state, task_ids, terminate=False, signal=None, **kwargs):
     requests_by_id = {
         request.id: request
         for request in _find_requests_by_id(task_ids)
-        if terminate or request not in worker_state.active_requests
     }
 
     for task_id in task_ids:
