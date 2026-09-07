@@ -158,6 +158,7 @@ class test_crontab_parser:
 
         assert isinstance(c.nowfun, functools.partial)
         assert c.nowfun.func is utcnow
+
     def test_range_steps_not_enough(self):
         with pytest.raises(crontab_parser.ParseException):
             crontab_parser(24)._range_steps([1])
