@@ -1198,3 +1198,29 @@ class test_crontab_is_due:
 
         with patch_crontab_nowfun(crontab, now):
             assert crontab.is_due(last_run_at) == (False, 60)
+
+    def test_hourly_scheduling_is_due_during_dst_start(self):
+        tz = ZoneInfo("Europe/Paris")
+        self.app.timezone = tz
+        crontab = self.crontab(minute=0)
+        # Paris DST start 2024-03-31T03:00:00+02:00 minus 1 hour
+        # -> 2024-03-31T01:00:00+01:00
+        last_run_at = (datetime(2024, 3, 31, 1, 0, tzinfo=ZoneInfo("UTC")) + timedelta(hours=-1)).astimezone(tz)
+        # Paris DST start 2024-03-31T03:00:00+02:00
+        now = datetime(2024, 3, 31, 1, 0, tzinfo=ZoneInfo("UTC")).astimezone(tz)
+        with patch_crontab_nowfun(crontab, now):
+            assert crontab.is_due(last_run_at) == (True, 3600)
+
+    def test_hourly_scheduling_is_due_during_dst_end(self):
+        # https://github.com/celery/celery/issues/10107 regression test
+        tz = ZoneInfo("Europe/Paris")
+        self.app.timezone = tz
+        crontab = self.crontab(minute=0)
+        # Paris DST end 2024-10-27T02:00:00+01:00 minus one hour
+        # -> 2024-10-27T02:00:00+01:00
+        last_run_at = (datetime(2024, 10, 27, 1, 0, tzinfo=ZoneInfo("UTC")) + timedelta(hours=-1)).astimezone(tz)
+        # Paris DST end 2024-10-27T02:00:00+01:00
+        now = datetime(2024, 10, 27, 1, 0, tzinfo=ZoneInfo("UTC")).astimezone(tz)
+
+        with patch_crontab_nowfun(crontab, now):
+            assert crontab.is_due(last_run_at) == (True, 3600)
