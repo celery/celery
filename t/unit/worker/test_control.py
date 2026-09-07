@@ -626,9 +626,7 @@ class test_ControlPanel:
             worker_state.task_ready(request)
 
     def test_repeated_revoke_uses_task_backend_for_known_request(self):
-        # Tasks may override their backend. Store the immediate REVOKED state
-        # through the request's own backend without passing request context;
-        # chord bookkeeping remains deferred to the normal request path.
+        # Tasks may override their backend.
         request = Mock()
         request.id = tid = uuid()
         task_backend = Mock()
@@ -685,7 +683,7 @@ class test_ControlPanel:
             worker_state.task_ready(request)
             revoked.discard(task_id)
 
-    def test_revoke_uses_task_backend_for_active_request_without_terminate(self):
+    def test_revoke_skips_active_request_without_terminate(self):
         request = Mock()
         request.id = tid = uuid()
         task_backend = Mock()
@@ -697,7 +695,7 @@ class test_ControlPanel:
         try:
             with patch.object(state.app.backend, 'mark_as_revoked') as mar:
                 control.revoke(state, tid)
-            task_backend.mark_as_revoked.assert_called_once_with(tid, reason='revoked', store_result=True)
+            task_backend.mark_as_revoked.assert_not_called()
             mar.assert_not_called()
             request.terminate.assert_not_called()
         finally:
@@ -705,7 +703,7 @@ class test_ControlPanel:
             worker_state.active_requests.discard(request)
             revoked.discard(tid)
 
-    def test_revoke_uses_task_backend_for_active_request_with_terminate(self):
+    def test_revoke_skips_active_request_with_terminate(self):
         request = Mock()
         request.id = tid = uuid()
         request.task.backend = state_backend = Mock()
@@ -714,9 +712,10 @@ class test_ControlPanel:
         worker_state.task_reserved(request)
         worker_state.active_requests.add(request)
         try:
-            control._revoke(state, [tid], terminate=True)
-            state_backend.mark_as_revoked.assert_called_once_with(
-                tid, reason='revoked', store_result=True)
+            with patch.object(state.app.backend, 'mark_as_revoked') as mar:
+                control._revoke(state, [tid], terminate=True)
+            state_backend.mark_as_revoked.assert_not_called()
+            mar.assert_not_called()
             assert request.terminate.call_count == 1
         finally:
             worker_state.task_ready(request)
