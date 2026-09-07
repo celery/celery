@@ -1499,7 +1499,7 @@ class test_group(CanvasCase):
         # child chord. This means we have `child_count` interleaved calls to
         # set chord sizes of 1 and `ggchild_count`.
         mock_set_chord_size.assert_has_calls(
-            (call(ANY, 1, freeze=True), call(ANY, ggchild_count,freeze=True),) * child_count
+            (call(ANY, 1, freeze=True), call(ANY, ggchild_count, freeze=True),) * child_count
         )
 
     def test_apply_contains_chords_containing_empty_chord(self):
