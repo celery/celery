@@ -103,6 +103,10 @@ class Logging:
             sender=None, loglevel=loglevel, logfile=logfile,
             format=format, colorize=colorize,
         )
+        for _, response in receivers:
+            if isinstance(response, Exception):
+                Logging._setup = False
+                raise response
 
         if not receivers:
             root = logging.getLogger()
