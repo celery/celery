@@ -26,6 +26,7 @@ from celery.utils.debug import cry
 from celery.utils.imports import qualname
 from celery.utils.log import get_logger, in_sighandler, set_in_sighandler
 from celery.utils.text import pluralize
+from celery.utils.time import humanize_seconds
 from celery.worker import WorkController
 
 __all__ = ('Worker',)
@@ -189,8 +190,36 @@ class Worker(WorkController):
             redirect_stdouts=False, colorize=colorize, hostname=self.hostname,
         )
 
+    def _ensure_connected(self, connection):
+        """Connect to the broker, retrying if the app is configured to.
+
+        The connection is lazy, so without this the first thing to touch it
+        raises straight away. ``--purge`` runs from :meth:`on_start`, which
+        makes ``broker_connection_retry_on_startup`` the setting that decides
+        whether to retry, falling back to ``broker_connection_retry`` for apps
+        that predate it.
+        """
+        retry = self.app.conf.broker_connection_retry_on_startup
+        if retry is None:
+            retry = self.app.conf.broker_connection_retry
+
+        if not retry:
+            connection.connect()
+            return connection
+
+        def _error_handler(exc, interval):
+            logger.error(
+                'purge: Connection error: %s. Trying again %s...',
+                exc, humanize_seconds(interval, 'in', ' '),
+            )
+
+        return connection.ensure_connection(
+            _error_handler, self.app.conf.broker_connection_max_retries,
+        )
+
     def purge_messages(self):
         with self.app.connection_for_write() as connection:
+            connection = self._ensure_connected(connection)
             count = self.app.control.purge(connection=connection)
             if count:  # pragma: no cover
                 print(f"purge: Erased {count} {pluralize(count, 'message')} from the queue.\n", flush=True)
