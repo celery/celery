@@ -85,8 +85,8 @@ def _deepcopy_kwargs(kwargs):
         clone = type(value).__new__(type(value))
         memo[value_id] = clone
         dict.__init__(clone)
-        collect(value)
         for key, nested_value in value.items():
+            collect(nested_value)
             dict.__setitem__(clone, deepcopy(key, memo), deepcopy(nested_value, memo))
         clone._app = value._app
         if '_type' in value.__dict__:
