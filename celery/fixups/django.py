@@ -182,7 +182,8 @@ class DjangoWorkerFixup:
                 self._maybe_close_db_fd(c)
 
         # use the _ version to avoid DB_REUSE preventing the conn.close() call
-        self._close_database()
+        # Close inherited pools immediately after fork to preserve #9953 behavior
+        self._close_database(close_pool=True)
         self.close_cache()
 
         # Register atexit handler to close connection pools when this child process exits.
@@ -200,8 +201,6 @@ class DjangoWorkerFixup:
         Django's connection pooling requires pools to be closed in the process
         that created them, as connections cannot be shared across fork boundaries.
         """
-        is_prefork = self._is_prefork()
-
         try:
             connections = self._db.connections.all(initialized_only=True)
         except TypeError:
@@ -209,10 +208,7 @@ class DjangoWorkerFixup:
             connections = self._db.connections.all()
 
         for conn in connections:
-            pool_enabled = self._settings.DATABASES.get(conn.alias, {}).get("OPTIONS", {}).get("pool")
-            if pool_enabled and is_prefork and hasattr(conn, "close_pool"):
-                with contextlib.suppress(KeyError):
-                    conn.close_pool()
+            self._close_pool(conn)
 
     def _maybe_close_db_fd(self, c: "BaseDatabaseWrapper") -> None:
         try:
@@ -246,7 +242,37 @@ class DjangoWorkerFixup:
         pool = self.worker.pool_cls if isinstance(self.worker.pool_cls, str) else self.worker.pool_cls.__module__
         return "prefork" in pool
 
-    def _close_database(self) -> None:
+    def _close_pool(self, conn: "BaseDatabaseWrapper") -> None:
+        """Close the connection pool for a given database connection.
+
+        This is used in two contexts:
+        1. Immediately after fork (on_worker_process_init) to close inherited pools
+        2. At child process exit (atexit handler) for final cleanup
+
+        Pool closing is only done for:
+        - Prefork workers (not gevent/eventlet/thread)
+        - Connections with pooling enabled in Django settings
+        - Connections that have a close_pool method
+        """
+        pool_enabled = (
+            self._settings.DATABASES
+            .get(conn.alias, {})
+            .get("OPTIONS", {})
+            .get("pool")
+        )
+
+        if pool_enabled and self._is_prefork() and hasattr(conn, "close_pool"):
+            with contextlib.suppress(KeyError):
+                conn.close_pool()
+
+    def _close_database(self, close_pool: bool = False) -> None:
+        """Close database connections.
+
+        Args:
+            close_pool: If True, also close connection pools. This should only be
+                       used immediately after fork to close inherited pools.
+                       Regular per-task cleanup should not close pools.
+        """
         try:
             connections = self._db.connections.all(initialized_only=True)
         except TypeError:
@@ -256,6 +282,8 @@ class DjangoWorkerFixup:
         for conn in connections:
             try:
                 conn.close()
+                if close_pool:
+                    self._close_pool(conn)
             except self.interface_errors:
                 pass
             except self.DatabaseError as exc:
