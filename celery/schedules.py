@@ -576,6 +576,7 @@ class crontab(BaseSchedule):
         # Calling super's init because the kwargs aren't necessarily passed in
         # the same form as they are stored by the superclass
         super().__init__(**state)
+        self._orig_kwargs = dict(state)
 
     def remaining_delta(self, last_run_at: datetime,
                         tz: str | tzinfo | None = None,

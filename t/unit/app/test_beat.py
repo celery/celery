@@ -502,6 +502,30 @@ class test_Scheduler:
         assert scheduler._heap[0] is intruder_event
         assert scheduler._heap[1] is stuck_event
 
+    @pytest.mark.parametrize('is_due', [True, False])
+    def test_tick_uses_fresh_time_when_heap_top_changes(self, is_due):
+        clock = [datetime(2026, 1, 1, tzinfo=timezone.utc)]
+
+        def nowfun():
+            return clock[0]
+
+        scheduler = mScheduler(app=self.app)
+        first = scheduler.add(name='first', task='c.first', schedule=schedule(1, nowfun=nowfun))
+        second = scheduler.add(name='second', task='c.second', schedule=schedule(1, nowfun=nowfun))
+        # so populate_heap() doesn't run and override our setup
+        scheduler.old_schedulers = scheduler.schedule
+        scheduler._heap = [event_t(scheduler._when(first, 0) - 1, 5, first)]
+
+        def replace_heap_top(_last_run_at):
+            # Make a delay calculated from the stale time exceed max_interval.
+            clock[0] += timedelta(seconds=scheduler.max_interval + 1)
+            scheduler._heap[0] = event_t(scheduler._when(second, 1), 5, second)
+            return is_due, 1
+
+        first.schedule.is_due = replace_heap_top
+        assert scheduler.tick() == pytest.approx(scheduler.adjust(1))
+        assert scheduler._heap[0].entry is second
+
     def test_tick_dispatches_missed_cron_within_deadline_non_uniform(self):
         # Non-uniform crontab (:00, :45). Most recent feasible run
         # (10:00) is 20 min before now=10:20, within the 30-min
