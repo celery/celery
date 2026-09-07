@@ -1,6 +1,7 @@
 from collections.abc import Mapping, MutableMapping
 from unittest.mock import Mock
 
+from celery.app.defaults import Option
 from celery.app.utils import Settings, bugreport, filter_hidden_settings
 
 
@@ -16,6 +17,11 @@ class test_Settings:
 
     def test_find(self):
         assert self.app.conf.find_option('always_eager')
+
+    def test_find_option_by_qualified_name(self):
+        result = self.app.conf.find_option('task_always_eager')
+        assert isinstance(result.type, Option)
+        assert result.type.default is False
 
     def test_get_by_parts(self):
         self.app.conf.task_do_this_and_that = 303
