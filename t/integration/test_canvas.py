@@ -1387,7 +1387,6 @@ class test_group:
             [42, 42, *((42,) * gchild_count), 1337]
         ]
 
-    @pytest.mark.xfail(raises=TimeoutError, reason="#6734")
     def test_nested_group_chord_body_chain(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -1397,19 +1396,16 @@ class test_group:
         child_chord = chord(identity.si(42), chain((identity.s(),)))
         group_sig = group((child_chord,))
         res = group_sig.delay()
-        # The result can be expected to timeout since it seems like its
-        # underlying promise might not be getting fulfilled (ref #6734). Pick a
-        # short timeout since we don't want to block for ages and this is a
-        # fairly simple signature which should run pretty quickly.
+        # #6734: the GroupResult's promise here used to never be fulfilled even
+        # though the child tasks resolved, so `res.get()` timed out. Root cause
+        # was `Signature.clone()` aliasing `.kwargs`: freezing the outer group
+        # cloned the chord via `_chord.clone()`, which reassigns
+        # `signature.kwargs['body']` -- into a dict shared with the original,
+        # so the group's result wiring tracked a stale body signature. Fixed by
+        # the clone de-aliasing in this PR.
         expected_result = [[42]]
-        with pytest.raises(TimeoutError) as expected_excinfo:
-            res.get(timeout=TIMEOUT / 10)
-        # Get the child `AsyncResult` manually so that we don't have to wait
-        # again for the `GroupResult`
         assert res.children[0].get(timeout=TIMEOUT) == expected_result[0]
         assert res.get(timeout=TIMEOUT) == expected_result
-        # Re-raise the expected exception so this test will XFAIL
-        raise expected_excinfo.value
 
     def test_callback_called_by_group(self, manager, subtests):
         if not manager.app.conf.result_backend.startswith("redis"):
