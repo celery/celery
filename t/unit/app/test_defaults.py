@@ -40,7 +40,7 @@ class test_defaults:
         find = self.defaults.find
 
         assert find('default_queue')[2].default == 'celery'
-        assert find('task_default_exchange')[2] is None
+        assert find('task_default_exchange')[2].default is None
 
     @property
     def defaults(self):
