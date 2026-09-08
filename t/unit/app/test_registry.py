@@ -1,7 +1,7 @@
 import pytest
 
 from celery.app.registry import _unpickle_task, _unpickle_task_v2
-from celery.exceptions import InvalidTaskError
+from celery.exceptions import AlreadyRegistered, InvalidTaskError
 
 
 def returns():
@@ -75,3 +75,26 @@ class test_TaskRegistry:
     def test_compat(self):
         assert self.app.tasks.regular()
         assert self.app.tasks.periodic()
+
+    def test_register_rejects_different_task_with_same_name(self):
+        class First(self.app.Task):
+            name = 'duplicate'
+
+            def run(self):
+                return 'first'
+
+        class Second(self.app.Task):
+            name = 'duplicate'
+
+            def run(self):
+                return 'second'
+
+        first = First()
+        second = Second()
+        r = self.app._tasks
+        r.register(first)
+
+        with pytest.raises(AlreadyRegistered, match='different task'):
+            r.register(second)
+
+        assert r['duplicate'] is first

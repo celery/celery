@@ -29,7 +29,7 @@ from celery.app import defaults
 from celery.app.amqp import AMQP
 from celery.backends.base import Backend
 from celery.contrib.testing.mocks import ContextMock
-from celery.exceptions import ImproperlyConfigured, OperationalError
+from celery.exceptions import AlreadyRegistered, ImproperlyConfigured, OperationalError
 from celery.loaders.base import unconfigured
 from celery.platforms import pyimplementation
 from celery.utils.collections import DictAttribute
@@ -61,6 +61,18 @@ class ObjectConfig2:
     CALL_ME_BACK = 123456789
     WANT_ME_TO = False
     UNDERSTAND_ME = True
+
+
+class FirstTask:
+    @staticmethod
+    def handle():
+        return 'first'
+
+
+class SecondTask:
+    @staticmethod
+    def handle():
+        return 'second'
 
 
 class CustomReduceApp(Celery):
@@ -180,6 +192,41 @@ class test_App:
             fun.__module__ = '__main__'
             task = app.task(fun)
             assert task.name == app.main + '.fun'
+
+    def test_task_names_include_qualified_owner(self):
+        with self.Celery('foozibari') as app:
+            first = app.task(FirstTask.handle)
+            second = app.task(SecondTask.handle)
+
+            assert first.name.endswith('.FirstTask.handle')
+            assert second.name.endswith('.SecondTask.handle')
+            assert first.name != second.name
+
+    def test_task_registration_rejects_different_callable_with_same_name(self):
+        with self.Celery('foozibari') as app:
+            def make_task(value):
+                @app.task
+                def duplicate():
+                    return value
+                return duplicate
+
+            first = make_task(1)
+            assert first.name
+            second = make_task(2)
+
+            with pytest.raises(AlreadyRegistered, match='different callable'):
+                second.name
+
+    def test_task_registration_allows_same_callable(self):
+        with self.Celery('foozibari') as app:
+            def task_body():
+                return 1
+
+            first = app.task(task_body)
+            second = app.task(task_body)
+
+            assert first.name == second.name
+            assert first._get_current_object() is second._get_current_object()
 
     def test_task_too_many_args(self):
         with pytest.raises(TypeError):

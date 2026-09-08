@@ -4,7 +4,7 @@ from importlib import import_module
 
 from celery._state import get_current_app
 from celery.app.autoretry import add_autoretry_behaviour
-from celery.exceptions import InvalidTaskError, NotRegistered
+from celery.exceptions import AlreadyRegistered, InvalidTaskError, NotRegistered
 
 __all__ = ('TaskRegistry',)
 
@@ -13,6 +13,7 @@ class TaskRegistry(dict):
     """Map of registered tasks."""
 
     NotRegistered = NotRegistered
+    AlreadyRegistered = AlreadyRegistered
 
     def __missing__(self, key):
         raise self.NotRegistered(key)
@@ -28,6 +29,9 @@ class TaskRegistry(dict):
                 'Task class {!r} must specify .name attribute'.format(
                     type(task).__name__))
         task = inspect.isclass(task) and task() or task
+        if task.name in self and self[task.name] is not task:
+            raise self.AlreadyRegistered(
+                f'Task {task.name!r} is already registered with a different task.')
         add_autoretry_behaviour(task)
         self[task.name] = task
 

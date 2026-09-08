@@ -52,21 +52,24 @@ def shared_task(*args, **kwargs):
             # Set as shared task so that unfinalized apps,
             # and future apps will register a copy of this task.
             _state.connect_on_app_finalize(
-                lambda app: app._task_from_fun(fun, **options)
+                lambda app: app._task_from_fun(fun, _shared=True, **options)
             )
 
             # Force all finalized apps to take this task as well.
             for app in _state._get_active_apps():
                 if app.finalized:
                     with app._finalize_mutex:
-                        app._task_from_fun(fun, **options)
+                        app._task_from_fun(fun, _shared=True, **options)
 
             # Return a proxy that always gets the task from the current
             # apps task registry.
             def task_by_cons():
                 app = _state.get_current_app()
+                task_name = getattr(fun, '__qualname__', fun.__name__)
+                if '<locals>' in task_name:
+                    task_name = fun.__name__
                 return app.tasks[
-                    name or app.gen_task_name(fun.__name__, fun.__module__)
+                    name or app.gen_task_name(task_name, fun.__module__)
                 ]
             return Proxy(task_by_cons)
         return __inner

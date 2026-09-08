@@ -28,7 +28,7 @@ from vine import starpromise
 from celery import platforms, signals
 from celery._state import (_announce_app_finalized, _deregister_app, _register_app, _set_current_app, _task_stack,
                            connect_on_app_finalize, get_current_app, get_current_worker_task, set_default_app)
-from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured, OperationalError
+from celery.exceptions import AlreadyRegistered, AlwaysEagerIgnored, ImproperlyConfigured, OperationalError
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.utils import abstract
@@ -602,11 +602,18 @@ class Celery:
         pydantic_strict: bool = False,
         pydantic_context: typing.Optional[typing.Dict[str, typing.Any]] = None,
         pydantic_dump_kwargs: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        _shared: bool = False,
         **options,
     ):
         if not self.finalized and not self.autofinalize:
             raise RuntimeError('Contract breach: app not finalized')
-        name = name or self.gen_task_name(fun.__name__, fun.__module__)
+        original_fun = fun
+        task_name = getattr(fun, '__qualname__', fun.__name__)
+        # Local functions do not have a stable qualified name across imports.
+        # Keep their historical task names and detect collisions below.
+        if '<locals>' in task_name:
+            task_name = fun.__name__
+        name = name or self.gen_task_name(task_name, fun.__module__)
         base = base or self.Task
 
         if name not in self._tasks:
@@ -623,7 +630,8 @@ class Celery:
                 '__module__': fun.__module__,
                 '__annotations__': _get_annotations(fun),
                 '__header__': self.type_checker(fun, bound=bind),
-                '__wrapped__': run}, **options))()
+                '__wrapped__': run,
+                '_task_fun': staticmethod(original_fun)}, **options))()
             # for some reason __qualname__ cannot be set in type()
             # so we have to set it here.
             try:
@@ -635,6 +643,11 @@ class Celery:
             add_autoretry_behaviour(task, **options)
         else:
             task = self._tasks[name]
+            if (not _shared and getattr(task, '_app', None) is self
+                    and getattr(task, '_task_fun', None) is not original_fun):
+                raise AlreadyRegistered(
+                    f'Task {name!r} is already registered with a different callable. '
+                    'Use a unique task name.')
         return task
 
     def register_task(self, task, **options):
@@ -650,6 +663,9 @@ class Celery:
             task_cls = type(task)
             task.name = self.gen_task_name(
                 task_cls.__name__, task_cls.__module__)
+        if task.name in self._tasks and self._tasks[task.name] is not task:
+            raise AlreadyRegistered(
+                f'Task {task.name!r} is already registered with a different task.')
         add_autoretry_behaviour(task, **options)
         self.tasks[task.name] = task
         task._app = self
