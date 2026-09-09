@@ -1924,3 +1924,31 @@ class test_crontab_is_due:
         now = datetime(2017, 3, 26, 1, 0, tzinfo=timezone.utc).astimezone(tz)
         crontab.nowfun = lambda: now
         assert crontab.remaining_estimate(last_run_at) == timedelta(minutes=10)
+
+    def test_end_of_day_after_dst_start(self):
+        tzname = "Europe/Paris"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        crontab = self.crontab(hour=23, minute=59)
+
+        # start of the day
+        last_run_at = datetime(2017, 3, 26, 0, 0, tzinfo=tz)
+        now = datetime(2017, 3, 26, 0, 0, tzinfo=tz)
+        crontab.nowfun = lambda: now
+
+        # 23h minus 1 minute
+        assert crontab.remaining_estimate(last_run_at).total_seconds() == 23 * 60 * 60 - 60
+
+    def test_end_of_day_after_dst_end(self):
+        tzname = "Europe/Paris"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        crontab = self.crontab(hour=23, minute=59)
+
+        # start of the day
+        last_run_at = datetime(2017, 10, 29, 0, 0, tzinfo=tz)
+        now = datetime(2017, 10, 29, 0, 0, tzinfo=tz)
+        crontab.nowfun = lambda: now
+
+        # 25h minus 1 minute
+        assert crontab.remaining_estimate(last_run_at).total_seconds() == 25 * 60 * 60 - 60
