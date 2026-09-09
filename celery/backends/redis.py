@@ -572,7 +572,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
     def set_chord_size(self, group_id, chord_size):
         self.set(self.get_key_for_group(group_id, '.s'), chord_size)
-            
+        
     def apply_chord(self, header_result_args, body, **kwargs):
         # If any of the child results of this chord are complex (ie. group
         # results themselves), we need to save `header_result` to ensure that
