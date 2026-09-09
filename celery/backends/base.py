@@ -937,13 +937,7 @@ class Backend:
     def on_chord_part_return(self, request, state, result, **kwargs):
         pass
 
-    def set_chord_size(self, group_id, chord_size, freeze=False):
-        """
-        Sets the chord size for a group_id.
-
-        For freeze=True the set chord_size can not be overwritten anymore afterwards.
-        (c.f., issue #8182)
-        """
+    def set_chord_size(self, group_id, chord_size):
         pass
 
     def fallback_chord_unlock(self, header_result, body, countdown=1,
