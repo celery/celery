@@ -685,7 +685,9 @@ class Celery:
             task_cls = type(task)
             task.name = self.gen_task_name(
                 task_cls.__name__, task_cls.__module__)
-        if task.name in self._tasks and self._tasks[task.name] is not task:
+        existing_task = self._tasks.get(task.name)
+        if (existing_task is not None and existing_task is not task
+                and type(existing_task) is not type(task)):
             raise AlreadyRegistered(
                 f'Task {task.name!r} is already registered with a different task.')
         add_autoretry_behaviour(task, **options)

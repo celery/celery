@@ -98,3 +98,18 @@ class test_TaskRegistry:
             r.register(second)
 
         assert r['duplicate'] is first
+
+    def test_register_allows_same_task_class_with_same_name(self):
+        class SameTask(self.app.Task):
+            name = 'same_task_class'
+
+            def run(self):
+                return 'same'
+
+        first = SameTask()
+        second = SameTask()
+        r = self.app._tasks
+        r.register(first)
+        r.register(second)
+
+        assert r[SameTask.name] is second

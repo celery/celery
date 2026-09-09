@@ -228,6 +228,20 @@ class test_App:
             assert first.name == second.name
             assert first._get_current_object() is second._get_current_object()
 
+    def test_register_task_allows_same_task_class(self):
+        with self.Celery('foozibari') as app:
+            class TaskClass(app.Task):
+                name = 'same_task_class'
+
+                def run(self):
+                    return 1
+
+            first = app.register_task(TaskClass())
+            second = app.register_task(TaskClass())
+
+            assert first is not second
+            assert app.tasks[TaskClass.name] is second
+
     def test_task_too_many_args(self):
         with pytest.raises(TypeError):
             self.app.task(Mock(name='fun'), True)
