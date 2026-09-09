@@ -8,6 +8,7 @@ import pytest
 from billiard.einfo import ExceptionInfo
 
 import t.skip
+from celery.app.utils import _new_key_to_old, _old_key_to_new
 from celery.utils.collections import (AttributeDict, BufferMap, ChainMap, ConfigurationView, DictAttribute,
                                       LimitedSet, Messagebuffer)
 from celery.utils.objects import Bunch
@@ -89,6 +90,22 @@ class test_ConfigurationView:
         assert 'changed_key' in self.view
         assert 'default_key' in self.view
         assert 'new' not in self.view
+
+    def test_contains_with_keys(self):
+        view = ConfigurationView(
+            {'task_always_eager': 1},
+            keys=(_old_key_to_new, _new_key_to_old),
+        )
+
+        assert view['CELERY_ALWAYS_EAGER'] == 1
+        assert 'CELERY_ALWAYS_EAGER' in view
+
+    def test_contains_applies_key_t(self):
+        view = ConfigurationView({'FOO': 1})
+        view.__dict__['key_t'] = str.upper
+
+        assert view['foo'] == 1
+        assert 'foo' in view
 
     def test_repr(self):
         assert 'changed_key' in repr(self.view)
