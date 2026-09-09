@@ -233,6 +233,8 @@ instantly). A similar issue can occur when your tasks always exceed
 Pool start method (fork vs spawn)
 ---------------------------------
 
+.. versionadded:: 5.7
+
 By default the prefork pool creates its child processes with ``fork()``
 (:setting:`worker_pool_start_method` set to ``"fork"``). Forking is fast and
 lets children share the parent's already-imported modules and memory through
