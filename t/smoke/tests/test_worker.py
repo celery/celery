@@ -8,9 +8,10 @@ from pytest_docker_tools.wrappers.container import wait_for_callable
 import celery
 from celery import Celery
 from celery.canvas import chain, group
+from celery.exceptions import TimeLimitExceeded
 from t.integration.tasks import add, identity
 from t.smoke.conftest import SuiteOperations, WorkerKill, WorkerRestart
-from t.smoke.tasks import long_running_task
+from t.smoke.tasks import long_running_task, soft_time_limit_must_exceed_time_limit
 from t.smoke.workers import alias as alias_worker_app
 from t.smoke.workers.dev import SmokeWorkerContainer
 
@@ -28,6 +29,27 @@ def assert_container_exited(worker: CeleryTestWorker, attempts: int = RESULT_TIM
 
     worker.container.reload()
     assert worker.container.status == "exited"
+
+
+class test_pool_start_method_spawn:
+    @pytest.fixture
+    def default_worker_app(self, default_worker_app: Celery) -> Celery:
+        app = default_worker_app
+        app.conf.worker_pool_start_method = "spawn"
+        return app
+
+    def test_tasks_run_in_spawned_children(self, celery_setup: CeleryTestSetup):
+        queue = celery_setup.worker.worker_queue
+        sig = long_running_task.si(1, verbose=True).set(queue=queue)
+        assert sig.delay().get(RESULT_TIMEOUT) is True
+        celery_setup.worker.assert_log_exists("SpawnPoolWorker-")
+
+    def test_child_is_replaced_after_hard_time_limit(self, celery_setup: CeleryTestSetup):
+        queue = celery_setup.worker.worker_queue
+        with pytest.raises(TimeLimitExceeded):
+            soft_time_limit_must_exceed_time_limit.si().set(queue=queue).delay().get(RESULT_TIMEOUT)
+        sig = long_running_task.si(1, verbose=True).set(queue=queue)
+        assert sig.delay().get(RESULT_TIMEOUT) is True
 
 
 @pytest.mark.parametrize("method", list(WorkerRestart.Method))
