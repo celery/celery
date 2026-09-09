@@ -141,6 +141,14 @@ class Pool(bootsteps.StartStopStep):
         if w.app.conf.worker_pool in GREEN_POOLS:  # pragma: no cover
             warnings.warn(UserWarning(W_POOL_SETTING), stacklevel=2)
         threaded = not w.use_eventloop or IS_WINDOWS
+        # The async pool (AsynPool) cannot start its children with the
+        # 'spawn' start method, so reject the combination as early as
+        # possible instead of failing later with an opaque error.
+        if not threaded and w.pool_start_method == 'spawn':
+            raise ImproperlyConfigured(
+                "worker_pool_start_method='spawn' is not supported when the "
+                "asynchronous prefork pool is used (broker transport with an "
+                "event loop). Use worker_pool_start_method='fork' instead.")
         procs = w.min_concurrency
         w.process_task = w._process_task
         if not threaded:
@@ -163,7 +171,7 @@ class Pool(bootsteps.StartStopStep):
             threads=threaded,
             max_restarts=max_restarts,
             allow_restart=allow_restart,
-            forking_enable=True,
+            forking_enable=w.pool_start_method == 'fork',
             semaphore=semaphore,
             sched_strategy=self.optimization,
             app=w.app,
