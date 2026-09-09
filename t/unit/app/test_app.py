@@ -242,6 +242,20 @@ class test_App:
             assert first is not second
             assert app.tasks[TaskClass.name] is second
 
+    def test_shared_task_finalizer_does_not_collide_with_pending_task(self):
+        finalizers = set(_state._on_app_finalizers)
+        try:
+            for _ in range(2):
+                with self.Celery('foozibari') as app:
+                    @app.task
+                    def repeated_task():
+                        return 1
+
+                    app.finalize()
+                    assert repeated_task.name in app.tasks
+        finally:
+            _state._on_app_finalizers = finalizers
+
     def test_task_too_many_args(self):
         with pytest.raises(TypeError):
             self.app.task(Mock(name='fun'), True)

@@ -569,7 +569,7 @@ class Celery:
             def _create_task_cls(fun):
                 if shared:
                     def cons(app):
-                        return app._task_from_fun(fun, **opts)
+                        return app._task_from_fun(fun, _shared=True, **opts)
 
                     cons.__name__ = fun.__name__
                     connect_on_app_finalize(cons)
@@ -710,11 +710,12 @@ class Celery:
                 if auto and not self.autofinalize:
                     raise RuntimeError('Contract breach: app not finalized')
                 self.finalized = True
-                _announce_app_finalized(self)
 
                 pending = self._pending
                 while pending:
                     maybe_evaluate(pending.popleft())
+
+                _announce_app_finalized(self)
 
                 for task in self._tasks.values():
                     task.bind(self)
