@@ -550,9 +550,9 @@ class crontab(BaseSchedule):
             """
             original_day = d.day
             d = d.replace(minute=0)
-            # we should never try more than 25 hours for a complete day
-            # (24h + 1 potential duplicated hour during dst time shift)
-            for _ in range(25 - d.hour):
+            # we should never try more than 24 hours for a complete day
+            # (23h til last hour + 1 potential duplicated hour during dst time end)
+            for _ in range(24 - d.hour):
                 d = _move_forward(d, timedelta(hours=1))
                 # resolve time that do not exist in current timezone
                 # and move to next possible time
