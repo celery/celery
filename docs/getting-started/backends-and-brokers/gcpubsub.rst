@@ -110,6 +110,23 @@ using the :setting:`broker_transport_options` setting::
 
     broker_transport_options = {'queue_name_prefix': 'kombu-'}
 
+.. _gcpubsub-pool-start-method:
+
+Pool start method
+-----------------
+
+The Pub/Sub driver uses gRPC, which starts background C threads that are
+**not fork-safe**. With the default ``fork`` start method a child process can
+inherit corrupted gRPC/TLS state -- for example after a hard
+:setting:`task_time_limit` kill, the replacement child may hang. It is
+therefore recommended to start the prefork pool children with the ``spawn``
+method so each child gets a clean interpreter::
+
+    worker_pool_start_method = "spawn"
+
+See :setting:`worker_pool_start_method` and
+:ref:`optimizing-pool-start-method` for the trade-offs.
+
 .. _gcpubsub-results-configuration:
 
 Results
