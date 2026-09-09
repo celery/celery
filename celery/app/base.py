@@ -84,6 +84,13 @@ BUILTIN_FIXUPS = {
 }
 USING_EXECV = os.environ.get('FORKED_BY_MULTIPROCESSING')
 
+
+def _using_execv():
+    # Also checked at call time: a spawned pool child only sets the
+    # variable from process_initializer(), after this module was imported.
+    return USING_EXECV or os.environ.get('FORKED_BY_MULTIPROCESSING')
+
+
 ERR_ENVVAR_NOT_SET = """
 The environment variable {0!r} is not set,
 and as such the configuration could not be loaded.
@@ -547,7 +554,7 @@ class Celery:
             not access any attributes on the returned object until the
             application is fully set up (finalized).
         """
-        if USING_EXECV and opts.get('lazy', True):
+        if _using_execv() and opts.get('lazy', True):
             # When using execv the task in the original module will point to a
             # different app, so doing things like 'add.request' will point to
             # a different task instance.  This makes sure it will always use
