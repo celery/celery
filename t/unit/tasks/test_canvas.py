@@ -1495,7 +1495,7 @@ class test_group(CanvasCase):
         # We must have set the chord sizes based on the number of tail tasks of
         # the encapsulated groups - in this case `ggchild_count`
         mock_set_chord_size.assert_has_calls(
-            (call(ANY, ggchild_count),) * child_count
+            (call(ANY, ggchild_count),) * child_count,
         )
 
     @pytest.mark.xfail(reason="Invalid canvas setup but poor behaviour")
@@ -1542,7 +1542,7 @@ class test_group(CanvasCase):
         # child chord. This means we have `child_count` interleaved calls to
         # set chord sizes of 1 and `ggchild_count`.
         mock_set_chord_size.assert_has_calls(
-            (call(ANY, 1), call(ANY, ggchild_count),) * child_count
+            (call(ANY, 1), call(ANY, ggchild_count),) * child_count,
         )
 
     def test_apply_contains_chords_containing_empty_chord(self):
