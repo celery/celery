@@ -1818,8 +1818,8 @@ class group(Signature):
                 # that when we get to the final one, we can correctly set the
                 # size in the backend and the chord can be sensible completed.
                 chord_size += _chord._descend(sig)
-                if isinstance(chord_obj, Signature) and next_task is None:      
-                    # Issue 8182: 
+                if isinstance(chord_obj, Signature) and next_task is None:
+                    # Issue 8182:
                     # Set chord size not in ForkedWorker via isinstance check
                     app.backend.set_chord_size(group_id, chord_size)
                 sig.apply_async(producer=producer, add_to_parent=False,
