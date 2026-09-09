@@ -277,7 +277,7 @@ def detect_settings(conf, preconf=None, ignore_keys=None, prefix=None,
         )))
 
     preconf = {info.convert.get(k, k): v for k, v in preconf.items()}
-    defaults = dict(deepcopy(info.defaults), **preconf)
+    defaults = deepcopy(info.defaults)
     return Settings(
         preconf, [conf, defaults],
         (_old_key_to_new, _new_key_to_old),
