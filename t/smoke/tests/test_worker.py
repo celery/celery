@@ -11,7 +11,7 @@ from celery.canvas import chain, group
 from celery.exceptions import TimeLimitExceeded
 from t.integration.tasks import add, identity
 from t.smoke.conftest import SuiteOperations, WorkerKill, WorkerRestart
-from t.smoke.tasks import long_running_task, soft_time_limit_must_exceed_time_limit
+from t.smoke.tasks import long_running_task
 from t.smoke.workers import alias as alias_worker_app
 from t.smoke.workers.dev import SmokeWorkerContainer
 
@@ -46,8 +46,9 @@ class test_pool_start_method_spawn:
 
     def test_child_is_replaced_after_hard_time_limit(self, celery_setup: CeleryTestSetup):
         queue = celery_setup.worker.worker_queue
+        sig = long_running_task.si(30, verbose=True).set(queue=queue, time_limit=3)
         with pytest.raises(TimeLimitExceeded):
-            soft_time_limit_must_exceed_time_limit.si().set(queue=queue).delay().get(RESULT_TIMEOUT)
+            sig.delay().get(RESULT_TIMEOUT)
         sig = long_running_task.si(1, verbose=True).set(queue=queue)
         assert sig.delay().get(RESULT_TIMEOUT) is True
 
