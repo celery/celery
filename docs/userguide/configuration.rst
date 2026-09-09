@@ -4299,14 +4299,9 @@ meaningful for the prefork pool; ignored by the eventlet/gevent/solo pools.
   safe in the presence of threads and fork-unsafe C-extensions, at the cost
   of slower start-up, higher memory usage, and the requirement that the app
   and task arguments are picklable and that your entry point is guarded by
-  ``if __name__ == '__main__':``.
-
-.. warning::
-
-    ``"spawn"`` is **not supported** when the asynchronous prefork pool is
-    used (i.e. when the broker transport drives the event loop, which is the
-    common case for AMQP/Redis). The worker raises
-    :exc:`~celery.exceptions.ImproperlyConfigured` at start-up in that case.
+  ``if __name__ == '__main__':``. A replacement child has to finish importing
+  your application within :setting:`worker_proc_alive_timeout`, so raise that
+  setting for applications that take longer to import.
 
 .. setting:: worker_autoscaler
 
