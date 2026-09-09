@@ -1185,6 +1185,39 @@ class test_chain:
         
         assert actual == [[1, [3, 4]], 5]
 
+    def test_chain_group_chain_to_chord_sync(self, manager):
+        """
+        Test for issue 8182:
+        Out of ordering for chain-group-chain-group with
+        last element in last chain not a group
+        -> chord conversion
+        """
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        sig = chain(
+            group(
+                long_running.s(1),
+                chain(
+                    short_running.s(-2),
+                    group(
+                        short_running.s(3),
+                        short_running.s(4),
+                    ),
+                    short_running.s(-3),
+                ),
+            ),
+            short_running_full_return.s(5),
+        )
+
+        actual = sig.delay().get(timeout=TIMEOUT)
+        
+        assert actual == [[1, -3], 5]
+
 class test_result_set:
 
     @flaky
