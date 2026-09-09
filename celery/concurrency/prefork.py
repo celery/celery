@@ -6,7 +6,7 @@ import os
 import threading
 import time
 
-from billiard import forking_enable, set_start_method
+from billiard import forking_enable, get_start_method, set_start_method
 from billiard.common import REMAP_SIGTERM, TERM_SIGNAME
 from billiard.pool import CLOSE, RUN
 from billiard.pool import Pool as BlockingPool
@@ -50,6 +50,13 @@ def process_initializer(app, hostname):
     platforms.signals.reset(*WORKER_SIGRESET)
     platforms.signals.ignore(*WORKER_SIGIGNORE)
     platforms.set_mp_process_title('celeryd', hostname=hostname)
+    if get_start_method() != 'fork':
+        # billiard started this child as a fresh interpreter on its own
+        # (for example the macOS default since billiard 4.3), so announce
+        # it the same way the parent does for worker_pool_start_method
+        # 'spawn' -- before init_worker() imports the task modules, which
+        # must bind their tasks to the current app (see celery.app.base).
+        os.environ['FORKED_BY_MULTIPROCESSING'] = '1'
     # This is for Windows and other platforms not supporting
     # fork().  Note that init_worker makes sure it's only
     # run once per process.
@@ -65,7 +72,7 @@ def process_initializer(app, hostname):
                   str(os.environ.get('CELERY_LOG_REDIRECT_LEVEL')),
                   hostname=hostname)
     if os.environ.get('FORKED_BY_MULTIPROCESSING'):
-        # pool did execv after fork
+        # the child is a fresh interpreter (spawn, forkserver or execv)
         trace.setup_worker_optimizations(app, hostname)
     else:
         app.set_current()
