@@ -615,15 +615,37 @@ class Celery:
         if not self.finalized and not self.autofinalize:
             raise RuntimeError('Contract breach: app not finalized')
         original_fun = fun
+        name_provided = name is not None
         task_name = getattr(fun, '__qualname__', fun.__name__)
-        # Local functions do not have a stable qualified name across imports.
-        # Keep their historical task names and detect collisions below.
-        if '<locals>' in task_name:
-            task_name = fun.__name__
-        name = name or self.gen_task_name(task_name, fun.__module__)
+        # Keep the historical name for local functions unless it collides with
+        # another callable. In that case, use the qualified name when it can
+        # disambiguate the callables; identical qualified names still fail
+        # loudly instead of silently reusing the first task.
+        default_task_name = fun.__name__ if '<locals>' in task_name else task_name
+        name = name or self.gen_task_name(default_task_name, fun.__module__)
         base = base or self.Task
 
-        if name not in self._tasks:
+        task = self._tasks.get(name)
+        if task is not None:
+            if (not _shared and getattr(task, '_app', None) is self
+                    and getattr(task, '_task_fun', None) is not original_fun):
+                if not name_provided:
+                    existing_fun = getattr(task, '_task_fun', None)
+                    existing_task_name = getattr(
+                        existing_fun, '__qualname__',
+                        getattr(existing_fun, '__name__', None),
+                    )
+                    qualified_name = self.gen_task_name(task_name, fun.__module__)
+                    if (task_name != existing_task_name
+                            and qualified_name not in self._tasks):
+                        name = qualified_name
+                        task = None
+                if task is not None:
+                    raise AlreadyRegistered(
+                        f'Task {name!r} is already registered with a different callable. '
+                        'Use a unique task name.')
+
+        if task is None:
             if pydantic is True:
                 fun = pydantic_wrapper(self, fun, name, pydantic_strict, pydantic_context, pydantic_dump_kwargs)
 
@@ -648,13 +670,6 @@ class Celery:
             self._tasks[task.name] = task
             task.bind(self)  # connects task to this app
             add_autoretry_behaviour(task, **options)
-        else:
-            task = self._tasks[name]
-            if (not _shared and getattr(task, '_app', None) is self
-                    and getattr(task, '_task_fun', None) is not original_fun):
-                raise AlreadyRegistered(
-                    f'Task {name!r} is already registered with a different callable. '
-                    'Use a unique task name.')
         return task
 
     def register_task(self, task, **options):
