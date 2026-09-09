@@ -459,6 +459,17 @@ class Signature(dict):
             args, kwargs, opts = self._merge(args, kwargs, opts)
         else:
             args, kwargs, opts = self.args, self.kwargs, self.options
+        # ``kwargs`` may still be ``self.kwargs`` by reference here: the
+        # no-override branch above, ``_merge`` returning ``self.kwargs``
+        # unchanged when no kwargs override is given, and its immutable
+        # short-circuit all pass it straight through.  Give the clone its
+        # own mapping so mutating ``clone.kwargs`` cannot corrupt the
+        # original (and sibling clones) -- #10560.  A shallow ``dict`` copy,
+        # not ``deepcopy``: canvas primitives keep live objects in kwargs
+        # (``chunks``/``xmap``/``xstarmap`` hold a task Signature and a lazy
+        # iterator) that must not be copied or consumed.
+        if kwargs is self.kwargs:
+            kwargs = dict(kwargs)
         signature = Signature.from_dict({'task': self.task,
                                          'args': tuple(args),
                                          'kwargs': kwargs,

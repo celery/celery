@@ -201,6 +201,30 @@ class test_default_logger:
     def test_setup_logging_subsystem_misc(self, restore_logging):
         self.app.log.setup_logging_subsystem(loglevel=None)
 
+    def test_setup_logging_subsystem_propagates_receiver_error(self, restore_logging):
+        from celery.app.log import Logging
+
+        self.app.log.already_setup = False
+        signals.setup_logging.receivers[:] = []
+        Logging._setup = False
+        signals.setup_logging.sender_receivers_cache.clear()
+
+        @signals.setup_logging.connect(weak=False)
+        def raise_error(**kwargs):
+            raise ValueError("logging setup failed")
+
+        try:
+            with pytest.raises(ValueError, match="logging setup failed"):
+                self.app.log.setup_logging_subsystem()
+            assert not self.app.log.already_setup
+
+            signals.setup_logging.disconnect(raise_error)
+            self.app.log.setup_logging_subsystem()
+            assert Logging._setup
+        finally:
+            signals.setup_logging.disconnect(raise_error)
+            Logging._setup = False
+
     def test_setup_logging_subsystem_misc2(self, restore_logging):
         self.app.conf.worker_hijack_root_logger = True
         self.app.log.setup_logging_subsystem()
