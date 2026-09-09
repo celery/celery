@@ -233,6 +233,8 @@ instantly). A similar issue can occur when your tasks always exceed
 Pool start method (fork vs spawn)
 ---------------------------------
 
+.. versionadded:: 5.7
+
 By default the prefork pool creates its child processes with ``fork()``
 (:setting:`worker_pool_start_method` set to ``"fork"``). Forking is fast and
 lets children share the parent's already-imported modules and memory through
@@ -256,13 +258,6 @@ The trade-offs of ``"spawn"`` are slower start-up, higher memory usage (no
 copy-on-write sharing), and the requirement that your app and task arguments
 are picklable and that your worker entry point is guarded by
 ``if __name__ == '__main__':``.
-
-.. note::
-
-    ``"spawn"`` only works with the synchronous prefork pool. When the broker
-    transport drives the event loop (the asynchronous prefork pool, used by
-    AMQP/Redis), the worker refuses to start with
-    :setting:`worker_pool_start_method` set to ``"spawn"``.
 
 
 .. rubric:: Footnotes
