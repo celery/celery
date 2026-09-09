@@ -243,9 +243,7 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               help="Start method used to create prefork pool child "
                    "processes. 'fork' (default) is faster and shares memory "
                    "copy-on-write but is unsafe with threads/C-extensions; "
-                   "'spawn' starts each child in a fresh interpreter. "
-                   "'spawn' is not supported with the asynchronous prefork "
-                   "pool.")
+                   "'spawn' starts each child in a fresh interpreter.")
 @click.option('--max-memory-per-child',
               type=int,
               cls=CeleryOption,
