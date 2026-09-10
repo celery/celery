@@ -698,6 +698,20 @@ class test_crontab_remaining_estimate_with_timezone:
 
         assert ct.remaining_estimate(last_run_at).total_seconds() == 60
 
+    def test_fixed_hour_scheduling_on_dst_start_new_hour(self):
+        """DST start makes midnight become 1h and the cron is scheduled at 01:00"""
+        tz = ZoneInfo("America/Santiago")
+        self.app.timezone = tz
+        ct = crontab(minute=0, hour=1, app=self.app)
+
+        now = (self.santiago_dst_start - timedelta(hours=1)).astimezone(tz)
+        ct.nowfun = lambda: now
+        assert ct.remaining_estimate(now).total_seconds() == 60 * 60
+
+        now = (self.santiago_dst_start).astimezone(tz)
+        ct.nowfun = lambda: now
+        assert ct.remaining_estimate(now).total_seconds() == 24 * 60 * 60
+
     @pytest.mark.parametrize(
         "tzname",
         [
