@@ -1040,6 +1040,12 @@ General
     maximum number of  requests per second), you must restrict to a given
     queue.
 
+    If a task is called with ``countdown`` or ``eta``, the ETA takes
+    precedence: the task will not start before its ETA, and the rate
+    limit is enforced afterwards, once the ETA has passed. In other
+    words, the task starts at the later of the two: its ETA, or the
+    next slot allowed by the rate limit.
+
 .. warning::
 
     A rate-limited task still counts against the worker's prefetch count
