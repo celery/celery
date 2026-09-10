@@ -642,37 +642,26 @@ class test_crontab_remaining_estimate:
 
 class test_crontab_remaining_estimate_with_timezone:
     # dst dates are setup in UTC so we can safely add timedelta for tests parametrization
-
-    # 2024-03-10T03:00:00-07:00 -> 2024-03-10T10:00:00+00:00
-    los_angeles_dst_start = datetime(2024, 3, 10, 10, 0, tzinfo=ZoneInfo("UTC"))
-
-    # 2024-11-03T01:00:00-08:00 -> 2024-11-03T09:00:00+00:00
-    los_angeles_dst_end = datetime(2024, 11, 3, 9, 0, tzinfo=ZoneInfo("UTC"))
-
-    # 2024-03-31T03:00:00+02:00 -> 2024-03-31T01:00:00+00:00
-    paris_dst_start = datetime(2024, 3, 31, 1, 0, tzinfo=ZoneInfo("UTC"))
-
-    # 2024-10-27T02:00:00+01:00 -> 2024-10-27T01:00:00+00:00
-    paris_dst_end = datetime(2024, 10, 27, 1, 0, tzinfo=ZoneInfo("UTC"))
-
-    # 2026-09-06T01:00:00-03:00 -> 2026-09-06T04:00:00+00:00
-    santiago_dst_start = datetime(2026, 9, 6, 4, 0, tzinfo=ZoneInfo("UTC"))
-
-    # 2026-04-04T23:00:00-04:00 -> 2026-09-05T03:00:00+00:00
-    santiago_dst_end = datetime(2026, 4, 5, 3, 0, tzinfo=ZoneInfo("UTC"))
-
     DST_CHANGE = {
         "America/Los_Angeles": {
-            "start": los_angeles_dst_start,
-            "end": los_angeles_dst_end,
+            "start": datetime(2024, 3, 10, 10, 0, tzinfo=ZoneInfo("UTC")),
+            "end": datetime(2024, 11, 3, 9, 0, tzinfo=ZoneInfo("UTC")),
         },
         "Europe/Paris": {
-            "start": paris_dst_start,
-            "end": paris_dst_end,
+            "start": datetime(2024, 3, 31, 1, 0, tzinfo=ZoneInfo("UTC")),
+            "end": datetime(2024, 10, 27, 1, 0, tzinfo=ZoneInfo("UTC")),
         },
         "America/Santiago": {
-            "start": santiago_dst_start,
-            "end": santiago_dst_end,
+            "start": datetime(2026, 9, 6, 4, 0, tzinfo=ZoneInfo("UTC")),
+            "end": datetime(2026, 4, 5, 3, 0, tzinfo=ZoneInfo("UTC")),
+        },
+        "Australia/Lord_Howe": {
+            "start": datetime(2026, 10, 3, 15, 30, tzinfo=ZoneInfo("UTC")),
+            "end": datetime(2026, 4, 4, 15, 00, tzinfo=ZoneInfo("UTC")),
+        },
+        "Pacific/Chatham": {
+            "start": datetime(2026, 9, 26, 14, 00, tzinfo=ZoneInfo("UTC")),
+            "end": datetime(2026, 4, 4, 14, 00, tzinfo=ZoneInfo("UTC")),
         }
     }
 
@@ -700,15 +689,16 @@ class test_crontab_remaining_estimate_with_timezone:
 
     def test_fixed_hour_scheduling_on_dst_start_new_hour(self):
         """DST start makes midnight become 1h and the cron is scheduled at 01:00"""
+        santiago_dst_start = self.DST_CHANGE["America/Santiago"]["start"]
         tz = ZoneInfo("America/Santiago")
         self.app.timezone = tz
         ct = crontab(minute=0, hour=1, app=self.app)
 
-        now = (self.santiago_dst_start - timedelta(hours=1)).astimezone(tz)
+        now = (santiago_dst_start - timedelta(hours=1)).astimezone(tz)
         ct.nowfun = lambda: now
         assert ct.remaining_estimate(now).total_seconds() == 60 * 60
 
-        now = (self.santiago_dst_start).astimezone(tz)
+        now = (santiago_dst_start).astimezone(tz)
         ct.nowfun = lambda: now
         assert ct.remaining_estimate(now).total_seconds() == 24 * 60 * 60
 
@@ -773,9 +763,9 @@ class test_crontab_remaining_estimate_with_timezone:
             ({"minute": "*/30"}, "start", timedelta(), timedelta(minutes=30), 0),
             ({"minute": "*/30"}, "end", timedelta(), timedelta(minutes=30), 0),
         ],
-        ids=lambda x: f"{crontab(**x)}" if isinstance(x, dict) else x
+        ids=lambda x: f"{x!r}" if isinstance(x, (dict, timedelta)) else x
     )
-    def test_crontab_with_timezone_remaining_seconds_from_now(
+    def test_crontab_tz_with_1_hour_dstoffset_at_round_hour_remaining_seconds_from_now(
         self, cron, tzname, dst_start_or_end, last_run_delta, now_run_delta, expected_sec
     ):
         """now != last_run, this simulates the computation of the remaining_seconds from now until next_run."""
@@ -869,7 +859,191 @@ class test_crontab_remaining_estimate_with_timezone:
         ],
         ids=lambda x: f"{x}" if isinstance(x, dict) else x
     )
-    def test_crontab_with_timezone_remaining_seconds(
+    def test_crontab_tz_with_1_hour_dstoffset_remaining_seconds(
+        self, cron, tzname, dst_start_or_end, delta_to_dst_change, expected_sec
+    ):
+        """now == last_run, this simulates the computation of the remaining_seconds until next_run."""
+        tz = ZoneInfo(tzname)
+        self.app.timezone = tz
+        dst_change_for_tz_in_utc = self.DST_CHANGE[tzname][dst_start_or_end]
+
+        if isinstance(delta_to_dst_change, relativedelta):
+            # apply the relativedelta manually to the datetime in the final timezone to simplify setup
+            # should only be used if the delta is big enough to not finish in the dst change zone
+            if delta_to_dst_change.days is not None:
+                last_run = (dst_change_for_tz_in_utc + relativedelta(days=delta_to_dst_change.days)).astimezone(tz)
+            else:
+                last_run = dst_change_for_tz_in_utc.astimezone(tz)
+            if delta_to_dst_change.hour is not None:
+                last_run = last_run.replace(hour=delta_to_dst_change.hour)
+            if delta_to_dst_change.minute is not None:
+                last_run = last_run.replace(minute=delta_to_dst_change.minute)
+        else:
+            # apply timedelta to the utc version of date so we can move around the dst change time safely
+            last_run = (dst_change_for_tz_in_utc + delta_to_dst_change).astimezone(tz)
+        now = last_run
+
+        ct = crontab(**cron, app=self.app)
+        ct.nowfun = lambda: now
+
+        assert ct.remaining_estimate(last_run).total_seconds() == expected_sec
+
+    @pytest.mark.parametrize(
+        "tzname",
+        [
+            "Australia/Lord_Howe",  # Lord Howe Island has 30 minutes DST offset
+        ]
+    )
+    @pytest.mark.parametrize(
+        ("cron", "dst_start_or_end", "delta_to_dst_change", "expected_sec"),
+        [
+            # scheduled every minute, 1 minute before DST change
+            ({}, "start", timedelta(minutes=-1), 60),
+            ({}, "end", timedelta(minutes=-1), 60),
+
+            # scheduled every minute, at DST change
+            ({}, "start", timedelta(), 60),
+            ({}, "end", timedelta(), 60),
+
+            # scheduled every hour at minute 0, one hour before DST change
+            ({"minute": 0}, "start", timedelta(hours=-1), 3600 + 1800),
+            ({"minute": 0}, "end", timedelta(hours=-1), 3600 + 1800),
+
+            # scheduled every hour at minute 0, at DST change
+            ({"minute": 0}, "start", timedelta(), 1800),
+            ({"minute": 0}, "end", timedelta(), 1800),
+
+            # scheduled every hour at minute 30, 30 minutes before DST change
+            ({"minute": 30}, "start", timedelta(minutes=-30), 1800),
+            ({"minute": 30}, "end", timedelta(minutes=-30), 1800),
+
+            # scheduled every hour at minute 30, 1 minutes before DST change
+            ({"minute": 30}, "start", timedelta(minutes=-1), 60),
+            ({"minute": 30}, "end", timedelta(minutes=-1), 60),
+
+            # scheduled every hour at minute 30, at DST change
+            ({"minute": 30}, "start", timedelta(), 3600),
+            ({"minute": 30}, "end", timedelta(), 3600),
+
+            # scheduled every hour at minute 30, 30 minutes after DST change
+            ({"minute": 30}, "start", timedelta(minutes=30), 1800),
+            ({"minute": 30}, "end", timedelta(minutes=30), 1800),
+
+            # scheduled every 15 minutes, last run 15 minutes before DST change
+            ({"minute": "*/15"}, "start", timedelta(minutes=-15), 15 * 60),
+            ({"minute": "*/15"}, "end", timedelta(minutes=-15), 15 * 60),
+
+            # scheduled every 15 minutes, at DST change
+            ({"minute": "*/15"}, "start", timedelta(), 15 * 60),
+            ({"minute": "*/15"}, "end", timedelta(), 15 * 60),
+
+            # scheduled every day at noon, last run the day before DST change
+            # there is 30 minutes less until next_run
+            ({"hour": 12, "minute": 0}, "start", relativedelta(days=-1, hour=12, minute=0), 24 * 60 * 60 - 30 * 60),
+            # there is 30 minutes more until next_run
+            ({"hour": 12, "minute": 0}, "end", relativedelta(days=-1, hour=12, minute=0), 24 * 60 * 60 + 30 * 60),
+
+            # scheduled every day at midnight, last run the day before DST change
+            # there is 30 minutes less until next_run
+            ({"hour": 0, "minute": 0}, "start", relativedelta(hour=0, minute=0), 24 * 60 * 60 - 30 * 60),
+            # there is 30 minutes more until next_run
+            ({"hour": 0, "minute": 0}, "end", relativedelta(hour=0, minute=0), 24 * 60 * 60 + 30 * 60),
+        ],
+        ids=lambda x: f"{x!r}" if isinstance(x, (dict, timedelta, relativedelta)) else x
+    )
+    def test_crontab_tz_with_half_hour_dstoffset_remaining_seconds(
+        self, cron, tzname, dst_start_or_end, delta_to_dst_change, expected_sec
+    ):
+        """now == last_run, this simulates the computation of the remaining_seconds until next_run."""
+        tz = ZoneInfo(tzname)
+        self.app.timezone = tz
+        dst_change_for_tz_in_utc = self.DST_CHANGE[tzname][dst_start_or_end]
+
+        if isinstance(delta_to_dst_change, relativedelta):
+            # apply the relativedelta manually to the datetime in the final timezone to simplify setup
+            # should only be used if the delta is big enough to not finish in the dst change zone
+            if delta_to_dst_change.days is not None:
+                last_run = (dst_change_for_tz_in_utc + relativedelta(days=delta_to_dst_change.days)).astimezone(tz)
+            else:
+                last_run = dst_change_for_tz_in_utc.astimezone(tz)
+            if delta_to_dst_change.hour is not None:
+                last_run = last_run.replace(hour=delta_to_dst_change.hour)
+            if delta_to_dst_change.minute is not None:
+                last_run = last_run.replace(minute=delta_to_dst_change.minute)
+        else:
+            # apply timedelta to the utc version of date so we can move around the dst change time safely
+            last_run = (dst_change_for_tz_in_utc + delta_to_dst_change).astimezone(tz)
+        now = last_run
+
+        ct = crontab(**cron, app=self.app)
+        ct.nowfun = lambda: now
+
+        assert ct.remaining_estimate(last_run).total_seconds() == expected_sec
+
+    @pytest.mark.parametrize(
+        "tzname",
+        [
+            "Pacific/Chatham",  # Lord Howe Island has 30 minutes DST offset
+        ]
+    )
+    @pytest.mark.parametrize(
+        ("cron", "dst_start_or_end", "delta_to_dst_change", "expected_sec"),
+        [
+            # scheduled every minute, 1 minute before DST change
+            ({}, "start", timedelta(minutes=-1), 60),
+            ({}, "end", timedelta(minutes=-1), 60),
+
+            # scheduled every minute, at DST change
+            ({}, "start", timedelta(), 60),
+            ({}, "end", timedelta(), 60),
+
+            # scheduled every hour at minute 0, one hour before DST change
+            ({"minute": 0}, "start", timedelta(hours=-1), 900),
+            ({"minute": 0}, "end", timedelta(hours=-1), 900),
+
+            # scheduled every hour at minute 0, at DST change
+            ({"minute": 0}, "start", timedelta(), 900),
+            ({"minute": 0}, "end", timedelta(), 900),
+
+            # scheduled every hour at minute 30, 30 minutes before DST change
+            ({"minute": 30}, "start", timedelta(minutes=-30), 15 * 60),
+            ({"minute": 30}, "end", timedelta(minutes=-30), 15 * 60),
+
+            # scheduled every hour at minute 30, 1 minutes before DST change
+            ({"minute": 30}, "start", timedelta(minutes=-1), 45 * 60 + 60),
+            ({"minute": 30}, "end", timedelta(minutes=-1), 45 * 60 + 60),
+
+            # scheduled every hour at minute 30, at DST change
+            ({"minute": 30}, "start", timedelta(), 45 * 60),
+            ({"minute": 30}, "end", timedelta(), 45 * 60),
+
+            # scheduled every hour at minute 30, 30 minutes after DST change
+            ({"minute": 30}, "start", timedelta(minutes=30), 15 * 60),
+            ({"minute": 30}, "end", timedelta(minutes=30), 15 * 60),
+
+            # scheduled every 15 minutes, last run 15 minutes before DST change
+            ({"minute": "*/15"}, "start", timedelta(minutes=-15), 15 * 60),
+            ({"minute": "*/15"}, "end", timedelta(minutes=-15), 15 * 60),
+
+            # scheduled every 15 minutes, at DST change
+            ({"minute": "*/15"}, "start", timedelta(), 15 * 60),
+            ({"minute": "*/15"}, "end", timedelta(), 15 * 60),
+
+            # scheduled every day at noon, last run the day before DST change
+            # there is 30 minutes less until next_run
+            ({"hour": 12, "minute": 0}, "start", relativedelta(days=-1, hour=12, minute=0), 23 * 60 * 60),
+            # there is 30 minutes more until next_run
+            ({"hour": 12, "minute": 0}, "end", relativedelta(days=-1, hour=12, minute=0), 25 * 60 * 60),
+
+            # scheduled every day at midnight, last run the day before DST change
+            # there is 30 minutes less until next_run
+            ({"hour": 0, "minute": 0}, "start", relativedelta(hour=0, minute=0), 23 * 60 * 60),
+            # there is 30 minutes more until next_run
+            ({"hour": 0, "minute": 0}, "end", relativedelta(hour=0, minute=0), 25 * 60 * 60),
+        ],
+        ids=lambda x: f"{x!r}" if isinstance(x, (dict, timedelta, relativedelta)) else x
+    )
+    def test_crontab_tz_with_dst_applied_at_non_round_hour_remaining_seconds(
         self, cron, tzname, dst_start_or_end, delta_to_dst_change, expected_sec
     ):
         """now == last_run, this simulates the computation of the remaining_seconds until next_run."""
@@ -900,13 +1074,14 @@ class test_crontab_remaining_estimate_with_timezone:
 
     def test_imaginary_hour(self):
         """verify crontab is skipped when the hour does not exists due to DST end."""
+        paris_dst_start = self.DST_CHANGE["Europe/Paris"]["start"]
         tz = ZoneInfo("Europe/Paris")
         self.app.timezone = tz
         # last run the previous day
-        last_run = self.paris_dst_start.astimezone(tz) + relativedelta(days=-1, hour=2)
+        last_run = paris_dst_start.astimezone(tz) + relativedelta(days=-1, hour=2)
 
         # now just 1 minute before dst change
-        now = (self.paris_dst_start + timedelta(minutes=-1)).astimezone(tz)
+        now = (paris_dst_start + timedelta(minutes=-1)).astimezone(tz)
 
         # every day at 2
         ct = crontab(minute=0, hour=2, app=self.app)
@@ -920,7 +1095,7 @@ class test_crontab_remaining_estimate_with_timezone:
         )
 
         # now at dst change
-        now = self.paris_dst_start.astimezone(tz)
+        now = paris_dst_start.astimezone(tz)
         ct.nowfun = lambda: now
 
         # it is now 3, expected next run is one day
@@ -928,13 +1103,14 @@ class test_crontab_remaining_estimate_with_timezone:
 
     def test_duplicated_hour(self):
         """verify crontab is due twice when the hour is duplicated due to DST end."""
+        paris_dst_end = self.DST_CHANGE["Europe/Paris"]["end"]
         tz = ZoneInfo("Europe/Paris")
         self.app.timezone = tz
         # last run the previous day
-        last_run = self.paris_dst_end.astimezone(tz) + relativedelta(days=-1, hour=2)
+        last_run = paris_dst_end.astimezone(tz) + relativedelta(days=-1, hour=2)
 
         # now just 1 hour before dst change
-        now = (self.paris_dst_end + timedelta(hours=-1)).astimezone(tz)
+        now = (paris_dst_end + timedelta(hours=-1)).astimezone(tz)
         # every day at 2
         ct = crontab(minute=0, hour=2, app=self.app)
         ct.nowfun = lambda: now
@@ -944,7 +1120,7 @@ class test_crontab_remaining_estimate_with_timezone:
 
         last_run = now
         # now at dst change, it is still 2 o'clock, due time should be 0
-        now = self.paris_dst_end.astimezone(tz)
+        now = paris_dst_end.astimezone(tz)
 
         ct.nowfun = lambda: now
 
