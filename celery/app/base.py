@@ -569,7 +569,7 @@ class Celery:
             def _create_task_cls(fun):
                 if shared:
                     def cons(app):
-                        return app._task_from_fun(fun, _shared=True, **opts)
+                        return app._task_from_fun(fun, **opts)
 
                     cons.__name__ = fun.__name__
                     connect_on_app_finalize(cons)
@@ -609,41 +609,21 @@ class Celery:
         pydantic_strict: bool = False,
         pydantic_context: typing.Optional[typing.Dict[str, typing.Any]] = None,
         pydantic_dump_kwargs: typing.Optional[typing.Dict[str, typing.Any]] = None,
-        _shared: bool = False,
         **options,
     ):
         if not self.finalized and not self.autofinalize:
             raise RuntimeError('Contract breach: app not finalized')
         original_fun = fun
-        name_provided = name is not None
         task_name = getattr(fun, '__qualname__', fun.__name__)
-        # Keep the historical name for local functions unless it collides with
-        # another callable. In that case, use the qualified name when it can
-        # disambiguate the callables; identical qualified names still fail
-        # loudly instead of silently reusing the first task.
-        default_task_name = fun.__name__ if '<locals>' in task_name else task_name
-        name = name or self.gen_task_name(default_task_name, fun.__module__)
+        name = name or self.gen_task_name(task_name, fun.__module__)
         base = base or self.Task
 
         task = self._tasks.get(name)
-        if task is not None:
-            if (not _shared and getattr(task, '_app', None) is self
-                    and getattr(task, '_task_fun', None) is not original_fun):
-                if not name_provided:
-                    existing_fun = getattr(task, '_task_fun', None)
-                    existing_task_name = getattr(
-                        existing_fun, '__qualname__',
-                        getattr(existing_fun, '__name__', None),
-                    )
-                    qualified_name = self.gen_task_name(task_name, fun.__module__)
-                    if (task_name != existing_task_name
-                            and qualified_name not in self._tasks):
-                        name = qualified_name
-                        task = None
-                if task is not None:
-                    raise AlreadyRegistered(
-                        f'Task {name!r} is already registered with a different callable. '
-                        'Use a unique task name.')
+        if (task is not None and getattr(task, '_app', None) is self
+                and getattr(task, '_task_fun', None) is not original_fun):
+            raise AlreadyRegistered(
+                f'Task {name!r} is already registered with a different callable. '
+                'Use a unique task name.')
 
         if task is None:
             if pydantic is True:

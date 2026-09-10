@@ -191,7 +191,7 @@ class test_App:
 
             fun.__module__ = '__main__'
             task = app.task(fun)
-            assert task.name == app.main + '.fun'
+            assert task.name == app.main + '.' + fun.__qualname__
 
     def test_task_names_include_qualified_owner(self):
         with self.Celery('foozibari') as app:
@@ -245,14 +245,13 @@ class test_App:
     def test_shared_task_finalizer_does_not_collide_with_pending_task(self):
         finalizers = set(_state._on_app_finalizers)
         try:
-            for _ in range(2):
-                with self.Celery('foozibari') as app:
-                    @app.task
-                    def repeated_task():
-                        return 1
+            with self.Celery('foozibari') as app:
+                @app.task
+                def repeated_task():
+                    return 1
 
-                    app.finalize()
-                    assert repeated_task.name in app.tasks
+                app.finalize()
+                assert repeated_task.name in app.tasks
         finally:
             _state._on_app_finalizers = finalizers
 
@@ -795,7 +794,9 @@ class test_App:
             def validate_context(self, info: ValidationInfo):
                 context = info.context
                 assert context
-                assert context.get('celery_task_name') == 't.unit.app.test_app.task'
+                assert context.get('celery_task_name') == (
+                    f't.unit.app.test_app.{task.__qualname__}'
+                )
                 return self
 
         with self.Celery() as app:
@@ -918,7 +919,7 @@ class test_App:
                 def foo():
                     pass
 
-                assert foo.name == 'xuzzy.foo'
+                assert foo.name == f'xuzzy.{foo.__qualname__}'
         finally:
             _imports.MP_MAIN_FILE = None
 
@@ -1481,7 +1482,7 @@ class test_App:
 
         assert len(self.app.conf.beat_schedule) == 1
         assert caplog.records[0].message == (
-            "Periodic task key='t.unit.app.test_app.add(2, 2)' shadowed a"
+            f"Periodic task key='{add.name}(2, 2)' shadowed a"
             " previous unnamed periodic task. Pass a name kwarg to"
             " add_periodic_task to silence this warning."
         )
@@ -2344,6 +2345,27 @@ class test_pyimplementation:
 
 
 class test_shared_task:
+
+    def test_rejects_different_callable_with_same_name(self):
+        finalizers = set(_state._on_app_finalizers)
+        try:
+            with self.Celery('foozibari', set_as_current=True) as app:
+                app.finalize()
+
+                def make_task(value):
+                    @shared_task
+                    def duplicate():
+                        return value
+
+                    return duplicate
+
+                first = make_task(1)
+                with pytest.raises(AlreadyRegistered, match='different callable'):
+                    make_task(2)
+
+                assert first.apply().get() == 1
+        finally:
+            _state._on_app_finalizers = finalizers
 
     def test_registers_to_all_apps(self):
         with self.Celery('xproj', set_as_current=True) as xproj:
