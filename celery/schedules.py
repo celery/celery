@@ -521,11 +521,10 @@ class crontab(BaseSchedule):
             """
             sorted_month_of_year = sorted(self.month_of_year)
             sorted_day_of_month = sorted(self.day_of_month)
-            # we cannot have more than 8 years between 2 leap years
-            # which should be the biggest possible gap between 2 runs
-            # (this is technically false if a day_of_week constraint is added to a
-            # crontab specifying month=2 day=29...)
-            for y in range(start.year, start.year + 8):
+
+            # 50 years search should above possible time between 2 leap days
+            # with day of week specified in the crontab
+            for y in range(start.year, start.year + 50):
                 for m in [
                     _m for _m in sorted_month_of_year
                     if y != start.year or _m >= start.month

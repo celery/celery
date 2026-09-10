@@ -507,6 +507,13 @@ class test_crontab_remaining_estimate:
         )
         assert next == datetime(2016, 2, 29, 14, 30)
 
+    def test_far_away_leapday(self):
+        next = self.next_occurrence(
+            self.crontab(day_of_month=29, month_of_year=2, day_of_week=2, minute=0, hour=0),
+            datetime(2084, 2, 29, 0, 1),
+        )
+        assert next == datetime(2124, 2, 29, 0, 0)
+
     def test_day_after_dst_end(self):
         # Test for #1604 issue with region configuration using DST
         tzname = "Europe/Paris"
