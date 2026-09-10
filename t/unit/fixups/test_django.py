@@ -144,6 +144,50 @@ class test_DjangoFixup(FixupCase):
             # The one from the user's class is
             assert app.task_cls == 'myapp.celery.tasks:Task'
 
+    @pytest.mark.patched_module(
+        'django',
+        'django.db',
+        'django.db.transaction',
+    )
+    def test_install_subclassed_app_without_custom_task_cls(self, patching, module):
+        patching('celery.fixups.django.signals')
+
+        from celery.app import Celery
+
+        class MyCeleryApp(Celery):
+            pass
+
+        app = MyCeleryApp('mytestapp')
+
+        with self.fixup_context(app) as (f, _, _):
+            f.install()
+            # Subclassing alone is not a custom task class,
+            # so the specialized DjangoTask is still used
+            assert app.task_cls == 'celery.contrib.django.task:DjangoTask'
+            from celery.contrib.django.task import DjangoTask
+            assert issubclass(app.Task, DjangoTask)
+            assert hasattr(app.Task, 'delay_on_commit')
+            assert hasattr(app.Task, 'apply_async_on_commit')
+
+    def test_install_custom_user_task_inherited_from_base_app(self, patching):
+        patching('celery.fixups.django.signals')
+
+        from celery.app import Celery
+
+        class BaseCeleryApp(Celery):
+            task_cls = 'myapp.celery.tasks:Task'
+
+        class MyCeleryApp(BaseCeleryApp):
+            pass
+
+        app = MyCeleryApp('mytestapp')
+
+        with self.fixup_context(app) as (f, _, _):
+            f.install()
+            # Specialized DjangoTask class is NOT used,
+            # The one inherited from the user's base class is
+            assert app.task_cls == 'myapp.celery.tasks:Task'
+
     def test_now(self):
         with self.fixup_context(self.app) as (f, _, _):
             assert f.now(utc=True)
