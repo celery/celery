@@ -136,13 +136,18 @@ class TaskPool(base.BasePool):
 
     def grow(self, n=1):
         limit = self.limit + n
-        self._pool.resize(limit)
         self.limit = limit
+        self._pool.size = limit
+        # GreenPool.resize adjusts the semaphore counter directly without
+        # notifying greenthreads already blocked in GreenPool.spawn.
+        for _ in range(n):
+            self._pool.sem.release()
 
     def shrink(self, n=1):
         limit = self.limit - n
-        self._pool.resize(limit)
+        self._pool.sem.counter -= n
         self.limit = limit
+        self._pool.size = limit
 
     def terminate_job(self, pid, signal=None):
         if pid in self._pool_map.keys():

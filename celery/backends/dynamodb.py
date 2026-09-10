@@ -55,6 +55,9 @@ class DynamoDBBackend(KeyValueStoreBackend):
     # DynamoDB supports Time to Live as an auto-expiry mechanism.
     supports_autoexpire = True
 
+    # The result attribute is stored as a DynamoDB binary attribute.
+    supports_result_compression = True
+
     _key_field = DynamoDBAttribute(name='id', data_type='S')
     # Each record has either a value field or count field
     _value_field = DynamoDBAttribute(name='result', data_type='B')

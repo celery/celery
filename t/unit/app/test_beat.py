@@ -376,6 +376,23 @@ class test_Scheduler:
                       kwargs={'foo': 'bar'})
         assert scheduler.tick() == 0
 
+    def test_due_tick_returns_delay_when_heap_top_changed(self):
+        scheduler = mScheduler(app=self.app)
+        first = scheduler.add(name='first', task='c.first', schedule=always_due)
+        second = scheduler.add(name='second', task='c.second', schedule=always_due)
+        # so populate_heap() doesn't run and override our setup
+        scheduler.old_schedulers = scheduler.schedule
+        scheduler._heap = [event_t(scheduler._when(first, 0) - 1, 5, first)]
+
+        def mutating_first_entry_is_due(_last_run_at):
+            scheduler._heap.insert(0, event_t(scheduler._when(second, 0) - 2, 5, second))
+            return True, 1
+
+        # simulates an entry inserted while first's is_due() is running
+        first.schedule.is_due = mutating_first_entry_is_due
+        assert scheduler.tick() < 0
+        assert not scheduler.sent
+
     @patch('celery.beat.error')
     def test_due_tick_SchedulingError(self, error):
         scheduler = mSchedulerSchedulingError(app=self.app)
@@ -480,10 +497,76 @@ class test_Scheduler:
 
         # simulates an entry inserted while stuck's is_due() is running
         stuck.schedule.is_due = mutating_stuck_entry_is_due
-        scheduler.tick()
+        assert scheduler.tick() < 0
         assert not scheduler.sent
         assert scheduler._heap[0] is intruder_event
         assert scheduler._heap[1] is stuck_event
+
+    @pytest.mark.parametrize('is_due', [True, False])
+    def test_tick_uses_fresh_time_when_heap_top_changes(self, is_due):
+        clock = [datetime(2026, 1, 1, tzinfo=timezone.utc)]
+
+        def nowfun():
+            return clock[0]
+
+        scheduler = mScheduler(app=self.app)
+        first = scheduler.add(name='first', task='c.first', schedule=schedule(1, nowfun=nowfun))
+        second = scheduler.add(name='second', task='c.second', schedule=schedule(1, nowfun=nowfun))
+        # so populate_heap() doesn't run and override our setup
+        scheduler.old_schedulers = scheduler.schedule
+        scheduler._heap = [event_t(scheduler._when(first, 0) - 1, 5, first)]
+
+        def replace_heap_top(_last_run_at):
+            # Make a delay calculated from the stale time exceed max_interval.
+            clock[0] += timedelta(seconds=scheduler.max_interval + 1)
+            scheduler._heap[0] = event_t(scheduler._when(second, 1), 5, second)
+            return is_due, 1
+
+        first.schedule.is_due = replace_heap_top
+        assert scheduler.tick() == pytest.approx(scheduler.adjust(1))
+        assert scheduler._heap[0].entry is second
+
+    def test_tick_dispatches_missed_cron_within_deadline_non_uniform(self):
+        # Non-uniform crontab (:00, :45). Most recent feasible run
+        # (10:00) is 20 min before now=10:20, within the 30-min
+        # deadline, so the missed task should dispatch.
+        self.app.conf.beat_cron_starting_deadline = 1800
+        now = datetime(2022, 12, 5, 10, 20)
+        last_run = datetime(2022, 12, 5, 8, 45)
+        cron = crontab(minute='0,45', nowfun=lambda: now, app=self.app)
+        scheduler = mScheduler(app=self.app)
+        scheduler.add(name='within_deadline', task='t.fake.task',
+                      schedule=cron, last_run_at=last_run)
+        scheduler.tick()
+        assert [s['name'] for s in scheduler.sent] == ['t.fake.task']
+
+    def test_tick_skips_missed_cron_outside_deadline_non_uniform(self):
+        # Non-uniform crontab (:00, :45). Most recent feasible run
+        # (10:00) is 35 min before now=10:35, past the 30-min
+        # deadline, so the missed task should not dispatch.
+        self.app.conf.beat_cron_starting_deadline = 1800
+        now = datetime(2022, 12, 5, 10, 35)
+        last_run = datetime(2022, 12, 5, 8, 45)
+        cron = crontab(minute='0,45', nowfun=lambda: now, app=self.app)
+        scheduler = mScheduler(app=self.app)
+        scheduler.add(name='outside_deadline', task='t.fake.task',
+                      schedule=cron, last_run_at=last_run)
+        scheduler.tick()
+        assert scheduler.sent == []
+
+    def test_tick_dispatches_missed_cron_on_deadline_boundary_non_uniform(self):
+        # Non-uniform crontab (:00, :45). Most recent feasible run
+        # (10:00) is exactly 30 min before now=10:30, matching the
+        # 30-min deadline, so the missed task should still dispatch.
+        self.app.conf.beat_cron_starting_deadline = 1800
+        now = datetime(2022, 12, 5, 10, 30)
+        last_run = datetime(2022, 12, 5, 8, 45)
+        cron = crontab(minute='0,45', nowfun=lambda: now, app=self.app)
+        scheduler = mScheduler(app=self.app)
+        scheduler.add(name='on_deadline_boundary', task='t.fake.task',
+                      schedule=cron, last_run_at=last_run)
+        scheduler.tick()
+        assert [s['name'] for s in scheduler.sent] == ['t.fake.task']
 
     def test_interface(self):
         scheduler = mScheduler(app=self.app)
@@ -644,6 +727,44 @@ class test_Scheduler:
         a = None
         b = None
         assert scheduler.schedules_equal(a, b)
+
+    def test_apply_async_adds_beat_header(self):
+        scheduler = mScheduler(app=self.app)
+        entry = scheduler.Entry(
+            name='test_task',
+            task='test_task',
+            schedule=schedule(10.0),
+            options={'queue': 'test_queue'},
+            app=self.app
+        )
+
+        result = scheduler.apply_async(entry)
+        assert result.id
+
+        sent_task = scheduler.sent[0]
+        assert 'headers' in sent_task['options']
+        assert sent_task['options']['headers']['celery_beat_task'] is True
+
+    def test_apply_async_preserves_existing_headers(self):
+        scheduler = mScheduler(app=self.app)
+        entry = scheduler.Entry(
+            name='test_task',
+            task='test_task',
+            schedule=schedule(10.0),
+            options={
+                'queue': 'test_queue',
+                'headers': {'existing_header': 'value'}
+            },
+            app=self.app
+        )
+
+        result = scheduler.apply_async(entry)
+        assert result.id
+
+        sent_task = scheduler.sent[0]
+        assert 'headers' in sent_task['options']
+        assert sent_task['options']['headers']['existing_header'] == 'value'
+        assert sent_task['options']['headers']['celery_beat_task'] is True
 
 
 def create_persistent_scheduler(shelv=None):

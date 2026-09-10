@@ -362,7 +362,7 @@ class Scheduler:
                 return 0
             else:
                 heappush(H, verify)
-                return min(verify[0], max_interval)
+                return min(verify[0] - self._when(verify[2], 0), max_interval)
 
         # Heap says this entry should be ready by now, but the entry requests
         # to retry later.  Reheap it at that retry time, otherwise it just
@@ -376,7 +376,7 @@ class Scheduler:
             return 0 if H and H[0][2] is not entry else min(adjust(reschedule_delay), max_interval)
         else:
             heappush(H, verify)
-            return min(verify[0], max_interval)
+            return min(verify[0] - self._when(verify[2], 0), max_interval)
 
     def schedules_equal(self, old_schedules, new_schedules):
         if old_schedules is new_schedules is None:
@@ -415,14 +415,19 @@ class Scheduler:
         try:
             entry_args = _evaluate_entry_args(entry.args)
             entry_kwargs = _evaluate_entry_kwargs(entry.kwargs)
+
+            # Add custom header to identify tasks from Celery Beat
+            options = entry.options.copy()
+            options.setdefault('headers', {})['celery_beat_task'] = True
+
             if task:
                 return task.apply_async(entry_args, entry_kwargs,
                                         producer=producer,
-                                        **entry.options)
+                                        **options)
             else:
                 return self.send_task(entry.task, entry_args, entry_kwargs,
                                       producer=producer,
-                                      **entry.options)
+                                      **options)
         except Exception as exc:  # pylint: disable=broad-except
             reraise(SchedulingError, SchedulingError(
                 "Couldn't apply scheduled task {0.name}: {exc}".format(

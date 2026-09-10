@@ -1,5 +1,6 @@
 """Functional-style utilities."""
 import inspect
+import operator
 import sys
 from collections import UserList
 from functools import partial
@@ -243,6 +244,14 @@ class _regen(UserList, list):
         yield from self.__lookahead_consume()
 
     def __getitem__(self, index):
+        if isinstance(index, slice):
+            # A slice that is not bounded from the front needs the end of the
+            # iterator, so concretise rather than special casing the few that
+            # could stay lazy.
+            return self.data[index]
+        # Accept anything list accepts, and reject the rest with the same error
+        # rather than whatever the comparison below would raise.
+        index = operator.index(index)
         if index < 0:
             return self.data[index]
         # Consume elements up to the desired index prior to attempting to

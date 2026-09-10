@@ -10,6 +10,7 @@ import pytest
 from kombu import pidbox
 from kombu.utils.uuid import uuid
 
+from celery import states
 from celery.utils.collections import AttributeDict
 from celery.utils.functional import maybe_list
 from celery.utils.timer2 import Timer
@@ -623,6 +624,103 @@ class test_ControlPanel:
             assert 'tasks unknown' in r['ok']
         finally:
             worker_state.task_ready(request)
+
+    def test_repeated_revoke_uses_task_backend_for_known_request(self):
+        # Tasks may override their backend.
+        request = Mock()
+        request.id = tid = uuid()
+        task_backend = Mock()
+        request.task.backend = task_backend
+        state = self.create_state()
+        state.consumer = Mock()
+        worker_state.task_reserved(request)
+        try:
+            with patch.object(state.app.backend, 'mark_as_revoked') as mar:
+                control.revoke(state, tid)
+                control.revoke(state, tid)
+            assert task_backend.mark_as_revoked.call_count == 2
+            task_backend.mark_as_revoked.assert_called_with(tid, reason='revoked', store_result=True)
+            mar.assert_not_called()
+        finally:
+            worker_state.task_ready(request)
+            revoked.discard(tid)
+
+    @pytest.mark.parametrize('revoke_count', [1, 2])
+    def test_revoke_chord_member_is_counted_once_on_discard(self, revoke_count):
+        backend = self.app.backend
+        task_id, group_id = uuid(), uuid()
+        body = self.mytask.s()
+        message = self.TaskMessage(self.mytask.name, task_id, group=group_id)
+        message.payload[2]['chord'] = body
+        request = Request(message, app=self.app)
+
+        # Keep other members pending so duplicate counts remain observable
+        # without completing the chord and deleting its counter.
+        results = [self.app.AsyncResult(task_id),
+                   self.app.AsyncResult(uuid()), self.app.AsyncResult(uuid())]
+        backend.apply_chord((group_id, results), body)
+        counter_key = backend.get_key_for_chord(group_id)
+        state = self.create_state()
+        worker_state.task_reserved(request)
+        try:
+            for _ in range(revoke_count):
+                control.revoke(state, task_id)
+                assert backend.get_task_meta(task_id)['status'] == states.REVOKED
+                # Control revokes store the state but leave chord bookkeeping
+                # to the request's discard/announce path, even when repeated.
+                assert int(backend.get(counter_key)) == 0
+
+            assert request.revoked()
+            assert request.acknowledged
+            assert int(backend.get(counter_key)) == 1
+
+            # Neither another control revoke nor another discard check may
+            # count the same chord member again.
+            control.revoke(state, task_id)
+            assert request.revoked()
+            assert int(backend.get(counter_key)) == 1
+        finally:
+            worker_state.task_ready(request)
+            revoked.discard(task_id)
+
+    def test_revoke_skips_active_request_without_terminate(self):
+        request = Mock()
+        request.id = tid = uuid()
+        task_backend = Mock()
+        request.task.backend = task_backend
+        state = self.create_state()
+        state.consumer = Mock()
+        worker_state.task_reserved(request)
+        worker_state.active_requests.add(request)
+        try:
+            with patch.object(state.app.backend, 'mark_as_revoked') as mar:
+                control.revoke(state, tid)
+            task_backend.mark_as_revoked.assert_not_called()
+            mar.assert_not_called()
+            request.terminate.assert_not_called()
+        finally:
+            worker_state.task_ready(request)
+            worker_state.active_requests.discard(request)
+            revoked.discard(tid)
+
+    def test_revoke_skips_active_request_with_terminate(self):
+        request = Mock()
+        request.id = tid = uuid()
+        request.task.backend = state_backend = Mock()
+        state = self.create_state()
+        state.consumer = Mock()
+        worker_state.task_reserved(request)
+        worker_state.active_requests.add(request)
+        try:
+            with patch.object(state.app.backend, 'mark_as_revoked') as mar:
+                control._revoke(state, [tid], terminate=True)
+            state_backend.mark_as_revoked.assert_not_called()
+            mar.assert_not_called()
+            assert request.terminate.call_count == 1
+        finally:
+            worker_state.task_ready(request)
+            worker_state.active_requests.discard(request)
+            revoked.discard(tid)
 
     @pytest.mark.parametrize(
         "terminate", [True, False],

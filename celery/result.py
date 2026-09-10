@@ -585,7 +585,7 @@ class ResultSet(ResultBase):
 
     _app = None
 
-    #: List of results in in the set.
+    #: List of results in the set.
     results = None
 
     def __init__(self, results, app=None, ready_barrier=None, **kwargs):
@@ -809,10 +809,10 @@ class ResultSet(ResultBase):
         results = []
         for result in self.results:
             remaining = None
-            if timeout:
-                remaining = timeout - (time.monotonic() - time_start)
-                if remaining <= 0.0:
-                    raise TimeoutError('join operation timed out')
+            if timeout is not None:
+                # A budget of 0, or one already spent, means "do not block":
+                # each result is polled once and raises if it is not ready.
+                remaining = max(timeout - (time.monotonic() - time_start), 0.0)
             value = result.get(
                 timeout=remaining, propagate=propagate,
                 interval=interval, no_ack=no_ack, on_interval=on_interval,

@@ -8,7 +8,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from celery import uuid
-from celery.exceptions import WorkerShutdown, WorkerTerminate
+from celery.exceptions import ImproperlyConfigured, WorkerShutdown, WorkerTerminate
 from celery.platforms import EX_OK
 from celery.utils.collections import LimitedSet
 from celery.worker import state
@@ -220,3 +220,49 @@ class test_state_configuration():
         assert state.SUCCESSFUL_MAX == 1000
         assert state.REVOKE_EXPIRES == 10800
         assert state.SUCCESSFUL_EXPIRES == 10800
+
+    def test_default_float_type_preserved(self):
+        """Ensure float defaults remain float type, not int."""
+        state = self.import_state()
+        assert isinstance(state.REVOKE_EXPIRES, float)
+        assert isinstance(state.SUCCESSFUL_EXPIRES, float)
+
+    @patch.dict(os.environ, {
+        'CELERY_WORKER_REVOKES_MAX': 'abc',
+    })
+    def test_malformed_revokes_max_raises_improperly_configured(self):
+        with pytest.raises(ImproperlyConfigured) as exc_info:
+            self.import_state()
+        assert 'CELERY_WORKER_REVOKES_MAX' in str(exc_info.value)
+        assert 'expected int' in str(exc_info.value)
+        assert 'abc' in str(exc_info.value)
+
+    @patch.dict(os.environ, {
+        'CELERY_WORKER_SUCCESSFUL_MAX': 'not_a_number',
+    })
+    def test_malformed_successful_max_raises_improperly_configured(self):
+        with pytest.raises(ImproperlyConfigured) as exc_info:
+            self.import_state()
+        assert 'CELERY_WORKER_SUCCESSFUL_MAX' in str(exc_info.value)
+        assert 'expected int' in str(exc_info.value)
+        assert 'not_a_number' in str(exc_info.value)
+
+    @patch.dict(os.environ, {
+        'CELERY_WORKER_REVOKE_EXPIRES': 'invalid_float',
+    })
+    def test_malformed_revoke_expires_raises_improperly_configured(self):
+        with pytest.raises(ImproperlyConfigured) as exc_info:
+            self.import_state()
+        assert 'CELERY_WORKER_REVOKE_EXPIRES' in str(exc_info.value)
+        assert 'expected float' in str(exc_info.value)
+        assert 'invalid_float' in str(exc_info.value)
+
+    @patch.dict(os.environ, {
+        'CELERY_WORKER_SUCCESSFUL_EXPIRES': 'xyz',
+    })
+    def test_malformed_successful_expires_raises_improperly_configured(self):
+        with pytest.raises(ImproperlyConfigured) as exc_info:
+            self.import_state()
+        assert 'CELERY_WORKER_SUCCESSFUL_EXPIRES' in str(exc_info.value)
+        assert 'expected float' in str(exc_info.value)
+        assert 'xyz' in str(exc_info.value)

@@ -126,12 +126,18 @@ class TaskPool(base.BasePool):
         return greenlet
 
     def grow(self, n=1):
-        self._pool._semaphore.counter += n
-        self._pool.size += n
+        self.limit += n
+        self._pool.size = self.limit
+        # Pool.spawn blocks on the semaphore when the pool is full.
+        # Release slots so autoscale wakes any task submissions waiting
+        # for capacity instead of waiting for a running greenlet to finish.
+        for _ in range(n):
+            self._pool._semaphore.release()
 
     def shrink(self, n=1):
         self._pool._semaphore.counter -= n
-        self._pool.size -= n
+        self.limit -= n
+        self._pool.size = self.limit
 
     def terminate_job(self, pid, signal=None):
         import gevent
@@ -142,7 +148,7 @@ class TaskPool(base.BasePool):
 
     @property
     def num_processes(self):
-        return len(self._pool)
+        return self.limit
 
     @staticmethod
     def _make_killable_target(target):
