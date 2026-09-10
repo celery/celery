@@ -551,18 +551,16 @@ class crontab(BaseSchedule):
             We use a simple loop over the hours here to correctly handle DST changes.
             """
             original_day = d.day
-            d = d.replace(minute=0)
             # we should never try more than 24 hours for a complete day
             # (23h til last hour + 1 potential duplicated hour during dst time end)
             for _ in range(24 - d.hour):
-                d = _move_forward(d, timedelta(hours=1))
+                d = _move_forward(d, timedelta(minutes=60 - d.minute))
                 # resolve time that do not exist in current timezone
-                # and move to next possible time
-                d = resolve_imaginary(d)
+                # d = resolve_imaginary(d)
                 # check if this can make us change the day and get out if it does
                 if original_day != d.day:
                     return
-                if d.hour in self.hour:
+                if d.hour in self.hour and any(True for m in self.minute if m >= d.minute):
                     yield d
 
         def _has_run_hours_after(d: datetime) -> bool:
@@ -603,7 +601,10 @@ class crontab(BaseSchedule):
 
         # first we do a quick check on current day
         if _may_run_today:
-            _may_run_this_hour = candidate.hour in self.hour and any(m for m in self.minute if m > candidate.minute)
+            _may_run_this_hour = (
+                candidate.hour in self.hour
+                and any(True for m in self.minute if m > candidate.minute)
+            )
             if _may_run_this_hour:
                 # if there are slots later this hour, we can safely add one minute with worrying about hour change.
                 # the search for a correct minute will happen right after
