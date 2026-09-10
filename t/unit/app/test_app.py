@@ -2365,6 +2365,35 @@ class test_shared_task:
         finally:
             _state._on_app_finalizers = finalizers
 
+    def test_resolves_shared_task_after_name_disambiguation(self):
+        finalizers = set(_state._on_app_finalizers)
+        try:
+            with self.Celery('foozibari', set_as_current=True) as app:
+                app.finalize()
+
+                def make_first():
+                    @shared_task
+                    def duplicate():
+                        return 1
+
+                    return duplicate
+
+                def make_second():
+                    @shared_task
+                    def duplicate():
+                        return 2
+
+                    return duplicate
+
+                first = make_first()
+                second = make_second()
+
+                assert first.name != second.name
+                assert first.apply().get() == 1
+                assert second.apply().get() == 2
+        finally:
+            _state._on_app_finalizers = finalizers
+
     def test_registers_to_all_apps(self):
         with self.Celery('xproj', set_as_current=True) as xproj:
             xproj.finalize()
