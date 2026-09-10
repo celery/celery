@@ -541,7 +541,9 @@ class crontab(BaseSchedule):
                             continue
                         # check if we have constraint on day of week
                         if not _crontab_has_day_of_week or new_date.isoweekday() % 7 in self.day_of_week:
-                            yield new_date
+                            # at dst start for timezone that trigger the change at midnight,
+                            # we could be generating a non existent date
+                            yield resolve_imaginary(new_date)
 
         def _generate_run_hours_after(d: datetime) -> Generator[datetime]:
             """yields candidate hours for task execution.
