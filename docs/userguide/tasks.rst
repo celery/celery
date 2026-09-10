@@ -191,8 +191,8 @@ Every task must have a unique name.
 
 If no explicit name is provided the task decorator will generate one for you,
 and this name will be based on 1) the module the task is defined in, and 2)
-the qualified name of the task function. For functions defined as methods, the
-qualified name includes the owning class as well.
+the name of the task function. For functions defined as methods, the qualified
+name includes the owning class as well.
 
 If two different callables still produce the same generated name, Celery raises
 :exc:`~celery.exceptions.AlreadyRegistered` instead of silently selecting one

@@ -66,6 +66,8 @@ def shared_task(*args, **kwargs):
             def task_by_cons():
                 app = _state.get_current_app()
                 task_name = getattr(fun, '__qualname__', fun.__name__)
+                if '<locals>' in task_name:
+                    task_name = fun.__name__
                 return app.tasks[
                     name or app.gen_task_name(task_name, fun.__module__)
                 ]

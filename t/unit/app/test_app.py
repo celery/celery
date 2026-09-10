@@ -191,7 +191,7 @@ class test_App:
 
             fun.__module__ = '__main__'
             task = app.task(fun)
-            assert task.name == app.main + '.' + fun.__qualname__
+            assert task.name == app.main + '.fun'
 
     def test_task_names_include_qualified_owner(self):
         with self.Celery('foozibari') as app:
@@ -794,9 +794,7 @@ class test_App:
             def validate_context(self, info: ValidationInfo):
                 context = info.context
                 assert context
-                assert context.get('celery_task_name') == (
-                    f't.unit.app.test_app.{task.__qualname__}'
-                )
+                assert context.get('celery_task_name') == 't.unit.app.test_app.task'
                 return self
 
         with self.Celery() as app:
@@ -919,7 +917,7 @@ class test_App:
                 def foo():
                     pass
 
-                assert foo.name == f'xuzzy.{foo.__qualname__}'
+                assert foo.name == 'xuzzy.foo'
         finally:
             _imports.MP_MAIN_FILE = None
 
