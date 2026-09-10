@@ -8,11 +8,8 @@ Index
 
 * :file:`requirements/default.txt`
 
-    Default requirements for Python 2.7+.
+    Default requirements for Python 3.8+.
 
-* :file:`requirements/jython.txt`
-
-    Extra requirements needed to run on Jython 2.5
 
 * :file:`requirements/security.txt`
 
@@ -29,7 +26,7 @@ Index
 
 * :file:`requirements/test-ci-default.txt`
 
-    Extra test requirements required for Python 2.7 by the CI suite (Tox).
+    Extra test requirements required for Python 3.8 by the CI suite (Tox).
 
 * :file:`requirements/test-integration.txt`
 

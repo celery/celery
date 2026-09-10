@@ -13,7 +13,7 @@ from kombu.utils.encoding import bytes_to_str, safe_repr, str_to_bytes
 try:
     import cPickle as pickle
 except ImportError:
-    import pickle  # noqa
+    import pickle
 
 __all__ = (
     'UnpickleableExceptionWrapper', 'subclass_exception',
@@ -30,7 +30,7 @@ STRTOBOOL_DEFAULT_TABLE = {'false': False, 'no': False, '0': False,
                            'on': True, 'off': False}
 
 
-def subclass_exception(name, parent, module):  # noqa
+def subclass_exception(name, parent, module):
     """Create new exception class."""
     return type(name, (parent,), {'__module__': module})
 
@@ -128,13 +128,15 @@ class UnpickleableExceptionWrapper(Exception):
     exc_args = None
 
     def __init__(self, exc_module, exc_cls_name, exc_args, text=None):
-        safe_exc_args = ensure_serializable(exc_args, pickle.dumps)
+        safe_exc_args = ensure_serializable(
+            exc_args, lambda v: pickle.loads(pickle.dumps(v))
+        )
         self.exc_module = exc_module
         self.exc_cls_name = exc_cls_name
         self.exc_args = safe_exc_args
         self.text = text
-        Exception.__init__(self, exc_module, exc_cls_name, safe_exc_args,
-                           text)
+        super().__init__(exc_module, exc_cls_name, safe_exc_args,
+                         text)
 
     def restore(self):
         return create_exception_cls(self.exc_cls_name,
@@ -145,10 +147,15 @@ class UnpickleableExceptionWrapper(Exception):
 
     @classmethod
     def from_exception(cls, exc):
-        return cls(exc.__class__.__module__,
-                   exc.__class__.__name__,
-                   getattr(exc, 'args', []),
-                   safe_repr(exc))
+        res = cls(
+            exc.__class__.__module__,
+            exc.__class__.__name__,
+            getattr(exc, 'args', []),
+            safe_repr(exc)
+        )
+        if hasattr(exc, "__traceback__"):
+            res = res.with_traceback(exc.__traceback__)
+        return res
 
 
 def get_pickleable_exception(exc):

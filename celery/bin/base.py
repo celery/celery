@@ -1,14 +1,19 @@
 """Click customizations for Celery."""
 import json
+import numbers
 from collections import OrderedDict
 from functools import update_wrapper
 from pprint import pformat
+from typing import Any
 
 import click
-from click import ParamType
+from click import Context, ParamType
+from kombu.exceptions import OperationalError
 from kombu.utils.objects import cached_property
 
 from celery._state import get_current_app
+from celery.exceptions import CeleryCommandException
+from celery.platforms import EX_UNAVAILABLE
 from celery.signals import user_preload_options
 from celery.utils import text
 from celery.utils.log import mlevel
@@ -115,7 +120,28 @@ class CLIContext:
             self.echo(body)
 
 
+def handle_remote_command_error(command: str, exc: Exception) -> None:
+    if isinstance(exc, click.ClickException):
+        raise
+
+    if isinstance(exc, OperationalError):
+        raise CeleryCommandException(
+            message=(
+                'Could not connect to the message broker. '
+                'Please make sure your broker (e.g., RabbitMQ or Redis) is running and '
+                f'the connection settings are correct. Reason: {exc}'
+            ),
+            exit_code=EX_UNAVAILABLE,
+        ) from exc
+
+    raise CeleryCommandException(
+        message=f'Unable to run the `{command}` command. Reason: {exc}',
+        exit_code=EX_UNAVAILABLE,
+    ) from exc
+
+
 def handle_preload_options(f):
+    """Extract preload options and return a wrapped callable."""
     def caller(ctx, *args, **kwargs):
         app = ctx.obj.app
 
@@ -137,10 +163,10 @@ def handle_preload_options(f):
 class CeleryOption(click.Option):
     """Customized option for Celery."""
 
-    def get_default(self, ctx):
+    def get_default(self, ctx, *args, **kwargs):
         if self.default_value_from_context:
             self.default = ctx.obj[self.default_value_from_context]
-        return super().get_default(ctx)
+        return super().get_default(ctx, *args, **kwargs)
 
     def __init__(self, *args, **kwargs):
         """Initialize a Celery option."""
@@ -168,19 +194,37 @@ class CeleryCommand(click.Command):
                 formatter.write_dl(opts_group)
 
 
+class DaemonOption(CeleryOption):
+    """Common daemonization option"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(args,
+                         help_group=kwargs.pop("help_group", "Daemonization Options"),
+                         callback=kwargs.pop("callback", self.daemon_setting),
+                         **kwargs)
+
+    def daemon_setting(self, ctx: Context, opt: CeleryOption, value: Any) -> Any:
+        """
+        Try to fetch daemonization option from applications settings.
+        Use the daemon command name as prefix (eg. `worker` -> `worker_pidfile`)
+        """
+        return value or getattr(ctx.obj.app.conf, f"{ctx.command.name}_{self.name}", None)
+
+
 class CeleryDaemonCommand(CeleryCommand):
     """Daemon commands."""
 
     def __init__(self, *args, **kwargs):
         """Initialize a Celery command with common daemon options."""
         super().__init__(*args, **kwargs)
-        self.params.append(CeleryOption(('-f', '--logfile'), help_group="Daemonization Options"))
-        self.params.append(CeleryOption(('--pidfile',), help_group="Daemonization Options"))
-        self.params.append(CeleryOption(('--uid',), help_group="Daemonization Options"))
-        self.params.append(CeleryOption(('--uid',), help_group="Daemonization Options"))
-        self.params.append(CeleryOption(('--gid',), help_group="Daemonization Options"))
-        self.params.append(CeleryOption(('--umask',), help_group="Daemonization Options"))
-        self.params.append(CeleryOption(('--executable',), help_group="Daemonization Options"))
+        self.params.extend((
+            DaemonOption("--logfile", "-f", help="Log destination; defaults to stderr"),
+            DaemonOption("--pidfile", help="PID file path; defaults to no PID file"),
+            DaemonOption("--uid", help="Drops privileges to this user ID"),
+            DaemonOption("--gid", help="Drops privileges to this group ID"),
+            DaemonOption("--umask", help="Create files and directories with this umask"),
+            DaemonOption("--executable", help="Override path to the Python executable"),
+        ))
 
 
 class CommaSeparatedList(ParamType):
@@ -192,16 +236,44 @@ class CommaSeparatedList(ParamType):
         return text.str_to_list(value)
 
 
-class Json(ParamType):
-    """JSON formatted argument."""
+class JsonArray(ParamType):
+    """JSON formatted array argument."""
 
-    name = "json"
+    name = "json array"
 
     def convert(self, value, param, ctx):
+        if isinstance(value, list):
+            return value
+
         try:
-            return json.loads(value)
+            v = json.loads(value)
         except ValueError as e:
             self.fail(str(e))
+
+        if not isinstance(v, list):
+            self.fail(f"{value} was not an array")
+
+        return v
+
+
+class JsonObject(ParamType):
+    """JSON formatted object argument."""
+
+    name = "json object"
+
+    def convert(self, value, param, ctx):
+        if isinstance(value, dict):
+            return value
+
+        try:
+            v = json.loads(value)
+        except ValueError as e:
+            self.fail(str(e))
+
+        if not isinstance(v, dict):
+            self.fail(f"{value} was not an object")
+
+        return v
 
 
 class ISO8601DateTime(ParamType):
@@ -241,12 +313,16 @@ class LogLevel(click.Choice):
         super().__init__(('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL', 'FATAL'))
 
     def convert(self, value, param, ctx):
+        if isinstance(value, numbers.Integral):
+            return value
+
         value = value.upper()
         value = super().convert(value, param, ctx)
         return mlevel(value)
 
 
-JSON = Json()
+JSON_ARRAY = JsonArray()
+JSON_OBJECT = JsonObject()
 ISO8601 = ISO8601DateTime()
 ISO8601_OR_FLOAT = ISO8601DateTimeOrFloat()
 LOG_LEVEL = LogLevel()

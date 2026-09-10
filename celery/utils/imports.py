@@ -1,10 +1,11 @@
 """Utilities related to importing modules and symbols by name."""
-import importlib
 import os
 import sys
 import warnings
 from contextlib import contextmanager
-from importlib import reload
+from functools import lru_cache
+from importlib import import_module, reload
+from importlib.metadata import entry_points
 
 from kombu.utils.imports import symbol_by_name
 
@@ -47,8 +48,13 @@ def instantiate(name, *args, **kwargs):
 @contextmanager
 def cwd_in_path():
     """Context adding the current working directory to sys.path."""
-    cwd = os.getcwd()
-    if cwd in sys.path:
+    try:
+        cwd = os.getcwd()
+    except FileNotFoundError:
+        cwd = None
+    if not cwd:
+        yield
+    elif cwd in sys.path:
         yield
     else:
         sys.path.insert(0, cwd)
@@ -64,7 +70,7 @@ def cwd_in_path():
 def find_module(module, path=None, imp=None):
     """Version of :func:`imp.find_module` supporting dots."""
     if imp is None:
-        imp = importlib.import_module
+        imp = import_module
     with cwd_in_path():
         try:
             return imp(module)
@@ -95,7 +101,7 @@ def import_from_cwd(module, imp=None, package=None):
     precedence over modules located in `sys.path`.
     """
     if imp is None:
-        imp = importlib.import_module
+        imp = import_module
     with cwd_in_path():
         return imp(module, package=package)
 
@@ -136,14 +142,25 @@ def gen_task_name(app, name, module_name):
     return '.'.join(p for p in (module_name, name) if p)
 
 
+@lru_cache(maxsize=None)
 def load_extension_class_names(namespace):
-    try:
-        from pkg_resources import iter_entry_points
-    except ImportError:  # pragma: no cover
-        return
+    """Return the ``(name, class_name)`` pairs registered for the namespace.
 
-    for ep in iter_entry_points(namespace):
-        yield ep.name, ':'.join([ep.module_name, ep.attrs[0]])
+    Scanning installed package metadata for entry points is expensive, and
+    the result cannot change for the lifetime of the process, so it's
+    cached rather than being recomputed on every call (e.g. on every
+    ``apply_async``).  An immutable tuple of pairs is returned so callers
+    can't mutate the cached value, and so the return type stays compatible
+    with the generator this used to be.
+    """
+    if sys.version_info >= (3, 10):
+        _entry_points = entry_points(group=namespace)
+    else:
+        try:
+            _entry_points = entry_points().get(namespace, [])
+        except AttributeError:
+            _entry_points = entry_points().select(group=namespace)
+    return tuple((ep.name, ep.value) for ep in _entry_points)
 
 
 def load_extension_classes(namespace):
@@ -151,7 +168,6 @@ def load_extension_classes(namespace):
         try:
             cls = symbol_by_name(class_name)
         except (ImportError, SyntaxError) as exc:
-            warnings.warn(
-                f'Cannot load {namespace} extension {class_name!r}: {exc!r}')
+            warnings.warn(f'Cannot load {namespace} extension {class_name!r}: {exc!r}', stacklevel=2)
         else:
             yield name, cls

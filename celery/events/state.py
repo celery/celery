@@ -22,6 +22,7 @@ from decimal import Decimal
 from itertools import islice
 from operator import itemgetter
 from time import time
+from typing import Mapping, Optional  # noqa
 from weakref import WeakSet, ref
 
 from kombu.clocks import timetuple
@@ -50,10 +51,10 @@ HEARTBEAT_EXPIRE_WINDOW = 200
 #: before we alert that clocks may be unsynchronized.
 HEARTBEAT_DRIFT_MAX = 16
 
-DRIFT_WARNING = """\
-Substantial drift from %s may mean clocks are out of sync.  Current drift is
-%s seconds.  [orig: %s recv: %s]
-"""
+DRIFT_WARNING = (
+    "Substantial drift from %s may mean clocks are out of sync.  Current drift is "
+    "%s seconds.  [orig: %s recv: %s]"
+)
 
 logger = get_logger(__name__)
 warn = logger.warning
@@ -99,7 +100,7 @@ class CallableDefaultdict(defaultdict):
         return self.fun(*args, **kwargs)
 
 
-Callable.register(CallableDefaultdict)  # noqa: E305
+Callable.register(CallableDefaultdict)
 
 
 @memoize(maxsize=1000, keyfun=lambda a, _: a[0])
@@ -135,11 +136,6 @@ def with_unique_field(attr):
                 return getattr(this, attr) == getattr(other, attr)
             return NotImplemented
         cls.__eq__ = __eq__
-
-        def __ne__(this, other):
-            res = this.__eq__(other)
-            return True if res is NotImplemented else not res
-        cls.__ne__ = __ne__
 
         def __hash__(this):
             return hash(getattr(this, attr))
@@ -426,18 +422,16 @@ class State:
         self._mutex = threading.Lock()
         self.handlers = {}
         self._seen_types = set()
-        self._tasks_to_resolve = {}
+        self._tasks_to_resolve = LRUCache(max_tasks_in_memory)
         self.rebuild_taskheap()
 
-        # type: Mapping[TaskName, WeakSet[Task]]
         self.tasks_by_type = CallableDefaultdict(
-            self._tasks_by_type, WeakSet)
+            self._tasks_by_type, WeakSet)  # type: Mapping[str, WeakSet[Task]]
         self.tasks_by_type.update(
             _deserialize_Task_WeakSet_Mapping(tasks_by_type, self.tasks))
 
-        # type: Mapping[Hostname, WeakSet[Task]]
         self.tasks_by_worker = CallableDefaultdict(
-            self._tasks_by_worker, WeakSet)
+            self._tasks_by_worker, WeakSet)  # type: Mapping[str, WeakSet[Task]]
         self.tasks_by_worker.update(
             _deserialize_Task_WeakSet_Mapping(tasks_by_worker, self.tasks))
 
@@ -458,7 +452,7 @@ class State:
         with self._mutex:
             return self._clear_tasks(ready)
 
-    def _clear_tasks(self, ready=True):
+    def _clear_tasks(self, ready: bool = True):
         if ready:
             in_progress = {
                 uuid: task for uuid, task in self.itertasks()
@@ -476,7 +470,7 @@ class State:
         self.event_count = 0
         self.task_count = 0
 
-    def clear(self, ready=True):
+    def clear(self, ready: bool = True):
         with self._mutex:
             return self._clear(ready)
 
@@ -517,7 +511,7 @@ class State:
         return self._event(dict(fields, type='-'.join(['worker', type_])))[0]
 
     def _create_dispatcher(self):
-        # noqa: C901
+
         # pylint: disable=too-many-statements
         # This code is highly optimized, but not for reusability.
         get_handler = self.handlers.__getitem__
@@ -653,13 +647,13 @@ class State:
         ]
         heap.sort()
 
-    def itertasks(self, limit=None):
+    def itertasks(self, limit: Optional[int] = None):
         for index, row in enumerate(self.tasks.items()):
             yield row
             if limit and index + 1 >= limit:
                 break
 
-    def tasks_by_time(self, limit=None, reverse=True):
+    def tasks_by_time(self, limit=None, reverse: bool = True):
         """Generator yielding tasks ordered by time.
 
         Yields:

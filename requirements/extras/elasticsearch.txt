@@ -1,1 +1,2 @@
-elasticsearch
+elasticsearch<=9.5.0
+elastic-transport<=9.2.1

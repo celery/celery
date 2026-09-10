@@ -3,25 +3,23 @@
 Getting Help
 ============
 
-.. _mailing-list:
+.. warning::
 
-Mailing list
-------------
+    Our `Google Groups account <https://groups.google.com/group/celery-users/>`_ has been
+    `compromised <https://github.com/celery/celery/discussions/9525>`_.
 
-For discussions about the usage, development, and future of Celery,
-please join the `celery-users`_ mailing list.
+.. _social-media:
 
-.. _`celery-users`: https://groups.google.com/group/celery-users/
+Social Media
+============
 
-.. _irc-channel:
+Follow us on social media:
 
-IRC
----
+- `X <https://x.com/celeryorg>`_
+- `LinkedIn <https://linkedin.com/company/celeryorg>`_
 
-Come chat with us on IRC. The **#celery** channel is located at the `Freenode`_
-network.
-
-.. _`Freenode`: https://freenode.net
+These accounts will (mostly) mirror each other, but we encourage you to
+follow us on all platforms to ensure you don't miss any important updates.
 
 .. _bug-tracker:
 
@@ -30,13 +28,6 @@ Bug tracker
 
 If you have any suggestions, bug reports, or annoyances please report them
 to our issue tracker at https://github.com/celery/celery/issues/
-
-.. _wiki:
-
-Wiki
-====
-
-https://github.com/celery/celery/wiki
 
 .. _contributing-short:
 
@@ -53,7 +44,7 @@ Be sure to also read the `Contributing to Celery`_ section in the
 documentation.
 
 .. _`Contributing to Celery`:
-    http://docs.celeryproject.org/en/master/contributing.html
+    https://docs.celeryq.dev/en/main/contributing.html
 
 .. _license:
 

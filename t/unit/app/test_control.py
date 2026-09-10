@@ -4,7 +4,7 @@ import pytest
 
 from celery import uuid
 from celery.app import control
-from celery.exceptions import DuplicateNodenameWarning
+from celery.exceptions import DuplicateNodenameWarning, ImproperlyConfigured
 from celery.utils.collections import LimitedSet
 
 
@@ -52,7 +52,7 @@ class test_flatten_reply:
 
 class test_inspect:
 
-    def setup(self):
+    def setup_method(self):
         self.app.control.broadcast = Mock(name='broadcast')
         self.app.control.broadcast.return_value = {}
         self.inspect = self.app.control.inspect()
@@ -95,7 +95,11 @@ class test_inspect:
 
     def test_active(self):
         self.inspect.active()
-        self.assert_broadcast_called('active')
+        self.assert_broadcast_called('active', safe=None)
+
+    def test_active_safe(self):
+        self.inspect.active(safe=True)
+        self.assert_broadcast_called('active', safe=True)
 
     def test_clock(self):
         self.inspect.clock()
@@ -203,7 +207,7 @@ class test_inspect:
 
 class test_Control_broadcast:
 
-    def setup(self):
+    def setup_method(self):
         self.app.control.mailbox = Mock(name='mailbox')
 
     def test_broadcast(self):
@@ -227,7 +231,7 @@ class test_Control_broadcast:
 
 class test_Control:
 
-    def setup(self):
+    def setup_method(self):
         self.app.control.broadcast = Mock(name='broadcast')
         self.app.control.broadcast.return_value = {}
 
@@ -240,6 +244,12 @@ class test_Control:
                                         _options=None, **args):
         self.app.control.broadcast.assert_called_with(
             name, destination=destination, arguments=args, **_options or {})
+
+    def test_serializer(self):
+        self.app.conf['task_serializer'] = 'test'
+        self.app.conf['accept_content'] = ['test']
+        assert control.Control(self.app).mailbox.serializer == 'test'
+        assert control.Control(self.app).mailbox.accept == ['test']
 
     def test_purge(self):
         self.app.amqp.TaskConsumer = Mock(name='TaskConsumer')
@@ -281,6 +291,7 @@ class test_Control:
             self.mytask.name, soft=10, hard=20,
             destination='a@q.com', limit=99,
         )
+
         self.assert_control_called_with_args(
             'time_limit',
             destination='a@q.com',
@@ -414,6 +425,16 @@ class test_Control:
             terminate=False,
         )
 
+    def test_revoke_by_stamped_headers(self):
+        self.app.control.revoke_by_stamped_headers({'foo': 'bar'})
+        self.assert_control_called_with_args(
+            'revoke_by_stamped_headers',
+            destination=None,
+            headers={'foo': 'bar'},
+            signal=control.TERM_SIGNAME,
+            terminate=False,
+        )
+
     def test_revoke__with_options(self):
         self.app.control.revoke(
             'foozbaaz',
@@ -426,6 +447,23 @@ class test_Control:
             'revoke',
             destination='a@q.com',
             task_id='foozbaaz',
+            signal='KILL',
+            terminate=True,
+            _options={'limit': 404},
+        )
+
+    def test_revoke_by_stamped_headers__with_options(self):
+        self.app.control.revoke_by_stamped_headers(
+            {'foo': 'bar'},
+            destination='a@q.com',
+            terminate=True,
+            signal='KILL',
+            limit=404,
+        )
+        self.assert_control_called_with_args(
+            'revoke_by_stamped_headers',
+            destination='a@q.com',
+            headers={'foo': 'bar'},
             signal='KILL',
             terminate=True,
             _options={'limit': 404},
@@ -489,6 +527,14 @@ class test_Control:
             connection=None, reply=False, signal=None,
             terminate=False, timeout=None)
 
+    def test_revoke_by_stamped_headers_from_result(self):
+        self.app.control.revoke_by_stamped_headers = Mock(name='revoke_by_stamped_headers')
+        self.app.AsyncResult('foozbazzbar').revoke_by_stamped_headers({'foo': 'bar'})
+        self.app.control.revoke_by_stamped_headers.assert_called_with(
+            {'foo': 'bar'},
+            connection=None, reply=False, signal=None,
+            terminate=False, timeout=None)
+
     def test_revoke_from_resultset(self):
         self.app.control.revoke = Mock(name='revoke')
         uuids = [uuid() for _ in range(10)]
@@ -519,3 +565,18 @@ class test_Control:
         self.app.conf.control_exchange = 'test_exchange'
         c = control.Control(self.app)
         assert c.mailbox.namespace == 'test_exchange'
+
+    def test_control_mailbox_queue_options(self):
+        self.app.conf.control_queue_durable = True
+        self.app.conf.control_queue_exclusive = False
+
+        c = control.Control(self.app)
+        assert c.mailbox.queue_durable is True
+        assert c.mailbox.queue_exclusive is False
+
+    def test_control_mailbox_invalid_combination(self):
+        self.app.conf.control_queue_durable = True
+        self.app.conf.control_queue_exclusive = True
+
+        with pytest.raises(ImproperlyConfigured):
+            control.Control(self.app)

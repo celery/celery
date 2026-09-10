@@ -15,8 +15,7 @@ from celery.utils.collections import ConfigurationView
 from celery.utils.imports import import_from_cwd, qualname, symbol_by_name
 from celery.utils.text import pretty
 
-from .defaults import (_OLD_DEFAULTS, _OLD_SETTING_KEYS, _TO_NEW_KEY,
-                       _TO_OLD_KEY, DEFAULTS, SETTING_KEYS, find)
+from .defaults import _OLD_DEFAULTS, _OLD_SETTING_KEYS, _TO_NEW_KEY, _TO_OLD_KEY, DEFAULTS, SETTING_KEYS, find
 
 __all__ = (
     'Settings', 'appstr', 'bugreport',
@@ -36,7 +35,7 @@ settings -> transport:{transport} results:{results}
 """
 
 HIDDEN_SETTINGS = re.compile(
-    'API|TOKEN|KEY|SECRET|PASS|PROFANITIES_LIST|SIGNATURE|DATABASE',
+    'API|TOKEN|KEY|SECRET|PASS|PROFANITIES_LIST|SIGNATURE|DATABASE|BEAT_DBURI',
     re.IGNORECASE,
 )
 
@@ -129,7 +128,7 @@ class Settings(ConfigurationView):
     @property
     def timezone(self):
         # this way we also support django's time zone.
-        return self.first('timezone', 'time_zone')
+        return self.first('timezone', 'TIME_ZONE')
 
     def without_defaults(self):
         """Return the current configuration, but without defaults."""
@@ -278,7 +277,7 @@ def detect_settings(conf, preconf=None, ignore_keys=None, prefix=None,
         )))
 
     preconf = {info.convert.get(k, k): v for k, v in preconf.items()}
-    defaults = dict(deepcopy(info.defaults), **preconf)
+    defaults = deepcopy(info.defaults)
     return Settings(
         preconf, [conf, defaults],
         (_old_key_to_new, _new_key_to_old),
@@ -304,11 +303,12 @@ class AppPickler:
 
     def build_standard_kwargs(self, main, changes, loader, backend, amqp,
                               events, log, control, accept_magic_kwargs,
-                              config_source=None):
+                              config_source=None, config_source_silent=False):
         return {'main': main, 'loader': loader, 'backend': backend,
                 'amqp': amqp, 'changes': changes, 'events': events,
                 'log': log, 'control': control, 'set_as_current': False,
-                'config_source': config_source}
+                'config_source': config_source,
+                'config_source_silent': config_source_silent}
 
     def construct(self, cls, **kwargs):
         return cls(**kwargs)
@@ -333,7 +333,7 @@ def filter_hidden_settings(conf):
         if isinstance(key, str):
             if HIDDEN_SETTINGS.search(key):
                 return mask
-            elif 'broker_url' in key.lower():
+            elif key.lower() in ('broker_url', 'broker_read_url', 'broker_write_url'):
                 from kombu import Connection
                 return Connection(value).as_uri(mask=mask)
             elif 'backend' in key.lower():
@@ -394,7 +394,8 @@ def find_app(app, symbol_by_name=symbol_by_name, imp=import_from_cwd):
             try:
                 found = sym.celery
                 if isinstance(found, ModuleType):
-                    raise AttributeError("attribute 'celery' is the celery module not the instance of celery")
+                    raise AttributeError(
+                        "attribute 'celery' is the celery module not the instance of celery")
             except AttributeError:
                 if getattr(sym, '__path__', None):
                     try:

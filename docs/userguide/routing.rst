@@ -225,6 +225,13 @@ RabbitMQ Message Priorities
 
 .. versionadded:: 4.0
 
+With RabbitMQ, **higher priority numbers denote higher priority**: a task
+with ``priority=9`` will generally be delivered ahead of a task with
+``priority=0``. This matches RabbitMQ's native ``x-max-priority``
+semantics and is the opposite of how Redis handles priorities (see
+:ref:`redis-message-priorities`); it describes broker ordering rather than
+a strict guarantee about worker processing order.
+
 Queues can be configured to support priorities by setting the
 ``x-max-priority`` argument:
 
@@ -251,12 +258,16 @@ A default priority for all tasks can also be specified using the
 
     app.conf.task_default_priority = 5
 
-.. _amqp-primer:
-
+.. _redis-message-priorities:
 
 Redis Message Priorities
 ------------------------
 :supported transports: Redis
+
+With Redis, **priority 0 is the highest priority** and priority 9 is the
+lowest. This is the reverse of RabbitMQ (see
+:ref:`routing-options-rabbitmq-priorities`) and is a consequence of how the
+priority queues are implemented on top of Redis lists.
 
 While the Celery Redis transport does honor the priority field, Redis itself has
 no notion of priorities. Please read this note before attempting to implement
@@ -274,27 +285,41 @@ To start scheduling tasks based on priorities you need to configure queue_order_
 The priority support is implemented by creating n lists for each queue.
 This means that even though there are 10 (0-9) priority levels, these are
 consolidated into 4 levels by default to save resources. This means that a
-queue named celery will really be split into 4 queues:
+queue named celery will really be split into 4 queues.
+
+The highest priority queue will be named celery, and the other queues will
+have a separator (by default `\x06\x16`) and their priority number appended to
+the queue name.
 
 .. code-block:: python
 
-    ['celery0', 'celery3', 'celery6', 'celery9']
+    ['celery', 'celery\x06\x163', 'celery\x06\x166', 'celery\x06\x169']
 
 
-If you want more priority levels you can set the priority_steps transport option:
+If you want more priority levels or a different separator you can set the
+priority_steps and sep transport options:
 
 .. code-block:: python
 
     app.conf.broker_transport_options = {
         'priority_steps': list(range(10)),
+        'sep': ':',
         'queue_order_strategy': 'priority',
     }
 
+The config above will give you these queue names:
+
+.. code-block:: python
+
+    ['celery', 'celery:1', 'celery:2', 'celery:3', 'celery:4', 'celery:5', 'celery:6', 'celery:7', 'celery:8', 'celery:9']
+
 
 That said, note that this will never be as good as priorities implemented at the
-server level, and may be approximate at best. But it may still be good enough
-for your application.
+broker server level, and may be approximate at best. But it may still be good
+enough for your application.
 
+
+.. _amqp-primer:
 
 AMQP Primer
 ===========
@@ -624,7 +649,7 @@ Specifying task destination
 The destination for a task is decided by the following (in order):
 
 1. The routing arguments to :func:`Task.apply_async`.
-2. Routing related attributes defined on the :class:`~celery.task.base.Task`
+2. Routing related attributes defined on the :class:`~celery.app.task.Task`
    itself.
 3. The :ref:`routers` defined in :setting:`task_routes`.
 
@@ -746,8 +771,9 @@ default priority.
     responsiveness of your system without the costs of disabling prefetching
     entirely.
 
-    Note that priorities values are sorted in reverse when
-    using the redis broker: 0 being highest priority.
+    The priority number is interpreted differently depending on the broker:
+    see :ref:`routing-options-rabbitmq-priorities` and
+    :ref:`redis-message-priorities`.
 
 
 Broadcast

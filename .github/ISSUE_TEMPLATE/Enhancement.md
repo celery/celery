@@ -1,8 +1,12 @@
 ---
 name: Enhancement
 about: Do you want to improve an existing feature?
-labels: "Issue Type: Enhancement"
+title: ''
+labels: 'Issue Type: Enhancement'
+assignees: ''
+
 ---
+
 <!--
 Please fill this template entirely and do not erase parts of it.
 We reserve the right to close without a response
@@ -17,9 +21,9 @@ To check an item on the list replace [ ] with [x].
   for similar or identical enhancement to an existing feature.
 - [ ] I have checked the [pull requests list](https://github.com/celery/celery/pulls?q=is%3Apr+label%3A%22Issue+Type%3A+Enhancement%22+-label%3A%22Category%3A+Documentation%22)
   for existing proposed enhancements.
-- [ ] I have checked the [commit log](https://github.com/celery/celery/commits/master)
-  to find out if the if the same enhancement was already implemented in the
-  master branch.
+- [ ] I have checked the [commit log](https://github.com/celery/celery/commits/main)
+  to find out if the same enhancement was already implemented in the
+  main branch.
 - [ ] I have included all related issues and possible duplicate issues in this issue
       (If there are none, check this box anyway).
 

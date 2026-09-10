@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timezone
 from unittest.mock import Mock, call, patch, sentinel
 
 import pytest
@@ -11,6 +11,13 @@ try:
     from elasticsearch import exceptions
 except ImportError:
     exceptions = None
+
+try:
+    from elastic_transport import ApiResponseMeta, HttpHeaders, NodeConfig
+except ImportError:
+    ApiResponseMeta = None
+    HttpHeaders = None
+    NodeConfig = None
 
 from celery.app import backends
 from celery.backends import elasticsearch as module
@@ -31,7 +38,7 @@ pytest.importorskip('elasticsearch')
 
 class test_ElasticsearchBackend:
 
-    def setup(self):
+    def setup_method(self):
         self.backend = ElasticsearchBackend(app=self.app)
 
     def test_init_no_elasticsearch(self):
@@ -53,9 +60,25 @@ class test_ElasticsearchBackend:
 
         assert dict_result == sentinel.result
         x._server.get.assert_called_once_with(
-            doc_type=x.doc_type,
             id=sentinel.task_id,
             index=x.index,
+        )
+
+    def test_get_with_doctype(self):
+        x = ElasticsearchBackend(app=self.app)
+        x._server = Mock()
+        x._server.get = Mock()
+        # expected result
+        x.doc_type = "_doc"
+        r = {'found': True, '_source': {'result': sentinel.result}}
+        x._server.get.return_value = r
+        dict_result = x.get(sentinel.task_id)
+
+        assert dict_result == sentinel.result
+        x._server.get.assert_called_once_with(
+            id=sentinel.task_id,
+            index=x.index,
+            doc_type=x.doc_type,
         )
 
     def test_get_none(self):
@@ -67,7 +90,6 @@ class test_ElasticsearchBackend:
 
         assert none_result is None
         x._server.get.assert_called_once_with(
-            doc_type=x.doc_type,
             id=sentinel.task_id,
             index=x.index,
         )
@@ -76,7 +98,9 @@ class test_ElasticsearchBackend:
         x = ElasticsearchBackend(app=self.app)
         x._server = Mock()
         x._server.get.side_effect = [
-            exceptions.NotFoundError(404, '{"_index":"celery","_type":"_doc","_id":"toto","found":false}',
+            exceptions.NotFoundError('{"_index":"celery","_type":"_doc","_id":"toto","found":false}',
+                                     ApiResponseMeta(404, "HTTP/1.1", HttpHeaders(), 0,
+                                                     NodeConfig("https", "localhost", 9200)),
                                      {'_index': 'celery', '_type': '_doc', '_id': 'toto', 'found': False})
         ]
 
@@ -101,9 +125,21 @@ class test_ElasticsearchBackend:
 
         assert x.delete(sentinel.task_id) is None
         x._server.delete.assert_called_once_with(
-            doc_type=x.doc_type,
             id=sentinel.task_id,
             index=x.index,
+        )
+
+    def test_delete_with_doctype(self):
+        x = ElasticsearchBackend(app=self.app)
+        x._server = Mock()
+        x._server.delete = Mock()
+        x._server.delete.return_value = sentinel.result
+        x.doc_type = "_doc"
+        assert x.delete(sentinel.task_id) is None
+        x._server.delete.assert_called_once_with(
+            id=sentinel.task_id,
+            index=x.index,
+            doc_type=x.doc_type,
         )
 
     def test_backend_by_url(self, url='elasticsearch://localhost:9200/index'):
@@ -114,13 +150,15 @@ class test_ElasticsearchBackend:
 
     @patch('celery.backends.elasticsearch.datetime')
     def test_index_conflict(self, datetime_mock):
-        expected_dt = datetime.datetime(2020, 6, 1, 18, 43, 24, 123456, None)
-        datetime_mock.utcnow.return_value = expected_dt
+        expected_dt = datetime(2020, 6, 1, 18, 43, 24, 123456, timezone.utc)
+        datetime_mock.now.return_value = expected_dt
 
         x = ElasticsearchBackend(app=self.app)
         x._server = Mock()
         x._server.index.side_effect = [
-            exceptions.ConflictError(409, "concurrent update", {})
+            exceptions.ConflictError("concurrent update",
+                                     ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0,
+                                                     NodeConfig("https", "localhost", 9200)), None)
         ]
 
         x._server.get.return_value = {
@@ -140,27 +178,69 @@ class test_ElasticsearchBackend:
         x._server.index.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
+            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'},
+            params={'op_type': 'create'},
+        )
+        x._server.update.assert_called_once_with(
+            id=sentinel.task_id,
+            index=x.index,
+            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'}},
+            params={'if_seq_no': 2, 'if_primary_term': 1}
+        )
+
+    @patch('celery.backends.elasticsearch.datetime')
+    def test_index_conflict_with_doctype(self, datetime_mock):
+        expected_dt = datetime(2020, 6, 1, 18, 43, 24, 123456, timezone.utc)
+        datetime_mock.now.return_value = expected_dt
+
+        x = ElasticsearchBackend(app=self.app)
+        x._server = Mock()
+        x._server.index.side_effect = [
+            exceptions.ConflictError("concurrent update",
+                                     ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0,
+                                                     NodeConfig("https", "localhost", 9200)), None)
+        ]
+        x.doc_type = "_doc"
+        x._server.get.return_value = {
+            'found': True,
+            '_source': {"result": _RESULT_RETRY},
+            '_seq_no': 2,
+            '_primary_term': 1,
+        }
+
+        x._server.update.return_value = {
+            'result': 'updated'
+        }
+
+        x._set_with_state(sentinel.task_id, sentinel.result, sentinel.state)
+
+        assert x._server.get.call_count == 1
+        x._server.index.assert_called_once_with(
+            id=sentinel.task_id,
+            index=x.index,
             doc_type=x.doc_type,
-            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'},
+            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'},
             params={'op_type': 'create'},
         )
         x._server.update.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
             doc_type=x.doc_type,
-            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'}},
+            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'}},
             params={'if_seq_no': 2, 'if_primary_term': 1}
         )
 
     @patch('celery.backends.elasticsearch.datetime')
     def test_index_conflict_without_state(self, datetime_mock):
-        expected_dt = datetime.datetime(2020, 6, 1, 18, 43, 24, 123456, None)
-        datetime_mock.utcnow.return_value = expected_dt
+        expected_dt = datetime(2020, 6, 1, 18, 43, 24, 123456, timezone.utc)
+        datetime_mock.now.return_value = expected_dt
 
         x = ElasticsearchBackend(app=self.app)
         x._server = Mock()
         x._server.index.side_effect = [
-            exceptions.ConflictError(409, "concurrent update", {})
+            exceptions.ConflictError("concurrent update",
+                                     ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0,
+                                                     NodeConfig("https", "localhost", 9200)), None)
         ]
 
         x._server.get.return_value = {
@@ -180,15 +260,13 @@ class test_ElasticsearchBackend:
         x._server.index.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
-            doc_type=x.doc_type,
-            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'},
+            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'},
             params={'op_type': 'create'},
         )
         x._server.update.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
-            doc_type=x.doc_type,
-            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'}},
+            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'}},
             params={'if_seq_no': 2, 'if_primary_term': 1}
         )
 
@@ -199,13 +277,15 @@ class test_ElasticsearchBackend:
         so it cannot protect overriding a ready state by any other state.
         As a result, server.update will be called no matter what.
         """
-        expected_dt = datetime.datetime(2020, 6, 1, 18, 43, 24, 123456, None)
-        datetime_mock.utcnow.return_value = expected_dt
+        expected_dt = datetime(2020, 6, 1, 18, 43, 24, 123456, timezone.utc)
+        datetime_mock.now.return_value = expected_dt
 
         x = ElasticsearchBackend(app=self.app)
         x._server = Mock()
         x._server.index.side_effect = [
-            exceptions.ConflictError(409, "concurrent update", {})
+            exceptions.ConflictError("concurrent update",
+                                     ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0,
+                                                     NodeConfig("https", "localhost", 9200)), None)
         ]
 
         x._server.get.return_value = {
@@ -225,27 +305,27 @@ class test_ElasticsearchBackend:
         x._server.index.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
-            doc_type=x.doc_type,
-            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'},
+            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'},
             params={'op_type': 'create'},
         )
         x._server.update.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
-            doc_type=x.doc_type,
-            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'}},
+            body={'doc': {'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'}},
             params={'if_seq_no': 2, 'if_primary_term': 1}
         )
 
     @patch('celery.backends.elasticsearch.datetime')
     def test_index_conflict_with_existing_success(self, datetime_mock):
-        expected_dt = datetime.datetime(2020, 6, 1, 18, 43, 24, 123456, None)
-        datetime_mock.utcnow.return_value = expected_dt
+        expected_dt = datetime(2020, 6, 1, 18, 43, 24, 123456, timezone.utc)
+        datetime_mock.now.return_value = expected_dt
 
         x = ElasticsearchBackend(app=self.app)
         x._server = Mock()
         x._server.index.side_effect = [
-            exceptions.ConflictError(409, "concurrent update", {})
+            exceptions.ConflictError("concurrent update",
+                                     ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0,
+                                                     NodeConfig("https", "localhost", 9200)), None)
         ]
 
         x._server.get.return_value = {
@@ -267,21 +347,22 @@ class test_ElasticsearchBackend:
         x._server.index.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
-            doc_type=x.doc_type,
-            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'},
+            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'},
             params={'op_type': 'create'},
         )
         x._server.update.assert_not_called()
 
     @patch('celery.backends.elasticsearch.datetime')
     def test_index_conflict_with_existing_ready_state(self, datetime_mock):
-        expected_dt = datetime.datetime(2020, 6, 1, 18, 43, 24, 123456, None)
-        datetime_mock.utcnow.return_value = expected_dt
+        expected_dt = datetime(2020, 6, 1, 18, 43, 24, 123456, timezone.utc)
+        datetime_mock.now.return_value = expected_dt
 
         x = ElasticsearchBackend(app=self.app)
         x._server = Mock()
         x._server.index.side_effect = [
-            exceptions.ConflictError(409, "concurrent update", {})
+            exceptions.ConflictError("concurrent update",
+                                     ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0,
+                                                     NodeConfig("https", "localhost", 9200)), None)
         ]
 
         x._server.get.return_value = {
@@ -301,20 +382,19 @@ class test_ElasticsearchBackend:
         x._server.index.assert_called_once_with(
             id=sentinel.task_id,
             index=x.index,
-            doc_type=x.doc_type,
-            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-3] + 'Z'},
+            body={'result': sentinel.result, '@timestamp': expected_dt.isoformat()[:-9] + 'Z'},
             params={'op_type': 'create'},
         )
         x._server.update.assert_not_called()
 
     @patch('celery.backends.elasticsearch.datetime')
-    @patch('celery.backends.base.datetime')
+    @patch('celery.app.base.datetime')
     def test_backend_concurrent_update(self, base_datetime_mock, es_datetime_mock):
-        expected_dt = datetime.datetime(2020, 6, 1, 18, 43, 24, 123456, None)
-        es_datetime_mock.utcnow.return_value = expected_dt
+        expected_dt = datetime(2020, 6, 1, 18, 43, 24, 123456, timezone.utc)
+        es_datetime_mock.now.return_value = expected_dt
 
-        expected_done_dt = datetime.datetime(2020, 6, 1, 18, 45, 34, 654321, None)
-        base_datetime_mock.utcnow.return_value = expected_done_dt
+        expected_done_dt = datetime(2020, 6, 1, 18, 45, 34, 654321, timezone.utc)
+        base_datetime_mock.now.return_value = expected_done_dt
 
         self.app.conf.result_backend_always_retry, prev = True, self.app.conf.result_backend_always_retry
         x_server_get_side_effect = [
@@ -354,7 +434,10 @@ class test_ElasticsearchBackend:
             sleep_mock = Mock()
             x._sleep = sleep_mock
             x._server = Mock()
-            x._server.index.side_effect = exceptions.ConflictError(409, "concurrent update", {})
+            x._server.index.side_effect = exceptions.ConflictError(
+                "concurrent update",
+                ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0, NodeConfig("https", "localhost", 9200)),
+                None)
             x._server.get.side_effect = x_server_get_side_effect
             x._server.update.side_effect = [
                 {'result': 'noop'},
@@ -370,20 +453,18 @@ class test_ElasticsearchBackend:
                 call(
                     id=encoded_task_id,
                     index=x.index,
-                    doc_type=x.doc_type,
                     body={
                         'result': expected_result,
-                        '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                        '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                     },
                     params={'op_type': 'create'}
                 ),
                 call(
                     id=encoded_task_id,
                     index=x.index,
-                    doc_type=x.doc_type,
                     body={
                         'result': expected_result,
-                        '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                        '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                     },
                     params={'op_type': 'create'}
                 ),
@@ -392,11 +473,10 @@ class test_ElasticsearchBackend:
                 call(
                     id=encoded_task_id,
                     index=x.index,
-                    doc_type=x.doc_type,
                     body={
                         'doc': {
                             'result': expected_result,
-                            '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                            '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                         }
                     },
                     params={'if_seq_no': 2, 'if_primary_term': 1}
@@ -404,11 +484,10 @@ class test_ElasticsearchBackend:
                 call(
                     id=encoded_task_id,
                     index=x.index,
-                    doc_type=x.doc_type,
                     body={
                         'doc': {
                             'result': expected_result,
-                            '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                            '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                         }
                     },
                     params={'if_seq_no': 3, 'if_primary_term': 1}
@@ -420,13 +499,13 @@ class test_ElasticsearchBackend:
             self.app.conf.result_backend_always_retry = prev
 
     @patch('celery.backends.elasticsearch.datetime')
-    @patch('celery.backends.base.datetime')
+    @patch('celery.app.base.datetime')
     def test_backend_index_conflicting_document_removed(self, base_datetime_mock, es_datetime_mock):
-        expected_dt = datetime.datetime(2020, 6, 1, 18, 43, 24, 123456, None)
-        es_datetime_mock.utcnow.return_value = expected_dt
+        expected_dt = datetime(2020, 6, 1, 18, 43, 24, 123456, timezone.utc)
+        es_datetime_mock.now.return_value = expected_dt
 
-        expected_done_dt = datetime.datetime(2020, 6, 1, 18, 45, 34, 654321, None)
-        base_datetime_mock.utcnow.return_value = expected_done_dt
+        expected_done_dt = datetime(2020, 6, 1, 18, 45, 34, 654321, timezone.utc)
+        base_datetime_mock.now.return_value = expected_done_dt
 
         self.app.conf.result_backend_always_retry, prev = True, self.app.conf.result_backend_always_retry
         try:
@@ -440,7 +519,9 @@ class test_ElasticsearchBackend:
             x._sleep = sleep_mock
             x._server = Mock()
             x._server.index.side_effect = [
-                exceptions.ConflictError(409, "concurrent update", {}),
+                exceptions.ConflictError("concurrent update",
+                                         ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0,
+                                                         NodeConfig("https", "localhost", 9200)), None),
                 {'result': 'created'}
             ]
 
@@ -451,10 +532,10 @@ class test_ElasticsearchBackend:
                     '_seq_no': 2,
                     '_primary_term': 1,
                 },
-                exceptions.NotFoundError(404,
-                                         '{"_index":"celery","_type":"_doc","_id":"toto","found":false}',
-                                         {'_index': 'celery', '_type': '_doc',
-                                          '_id': 'toto', 'found': False}),
+                exceptions.NotFoundError('{"_index":"celery","_type":"_doc","_id":"toto","found":false}',
+                                         ApiResponseMeta(404, "HTTP/1.1", HttpHeaders(), 0,
+                                                         NodeConfig("https", "localhost", 9200)),
+                                         {'_index': 'celery', '_type': '_doc', '_id': 'toto', 'found': False}),
             ]
 
             result_meta = x._get_result_meta(result, states.SUCCESS, None, None)
@@ -467,20 +548,18 @@ class test_ElasticsearchBackend:
                 call(
                     id=encoded_task_id,
                     index=x.index,
-                    doc_type=x.doc_type,
                     body={
                         'result': expected_result,
-                        '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                        '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                     },
                     params={'op_type': 'create'}
                 ),
                 call(
                     id=encoded_task_id,
                     index=x.index,
-                    doc_type=x.doc_type,
                     body={
                         'result': expected_result,
-                        '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                        '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                     },
                     params={'op_type': 'create'}
                 ),
@@ -491,13 +570,13 @@ class test_ElasticsearchBackend:
             self.app.conf.result_backend_always_retry = prev
 
     @patch('celery.backends.elasticsearch.datetime')
-    @patch('celery.backends.base.datetime')
+    @patch('celery.app.base.datetime')
     def test_backend_index_conflicting_document_removed_not_throwing(self, base_datetime_mock, es_datetime_mock):
-        expected_dt = datetime.datetime(2020, 6, 1, 18, 43, 24, 123456, None)
-        es_datetime_mock.utcnow.return_value = expected_dt
+        expected_dt = datetime(2020, 6, 1, 18, 43, 24, 123456, timezone.utc)
+        es_datetime_mock.now.return_value = expected_dt
 
-        expected_done_dt = datetime.datetime(2020, 6, 1, 18, 45, 34, 654321, None)
-        base_datetime_mock.utcnow.return_value = expected_done_dt
+        expected_done_dt = datetime(2020, 6, 1, 18, 45, 34, 654321, timezone.utc)
+        base_datetime_mock.now.return_value = expected_done_dt
 
         self.app.conf.result_backend_always_retry, prev = True, self.app.conf.result_backend_always_retry
         try:
@@ -511,7 +590,9 @@ class test_ElasticsearchBackend:
             x._sleep = sleep_mock
             x._server = Mock()
             x._server.index.side_effect = [
-                exceptions.ConflictError(409, "concurrent update", {}),
+                exceptions.ConflictError("concurrent update",
+                                         ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0,
+                                                         NodeConfig("https", "localhost", 9200)), None),
                 {'result': 'created'}
             ]
 
@@ -535,20 +616,18 @@ class test_ElasticsearchBackend:
                 call(
                     id=encoded_task_id,
                     index=x.index,
-                    doc_type=x.doc_type,
                     body={
                         'result': expected_result,
-                        '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                        '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                     },
                     params={'op_type': 'create'}
                 ),
                 call(
                     id=encoded_task_id,
                     index=x.index,
-                    doc_type=x.doc_type,
                     body={
                         'result': expected_result,
-                        '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                        '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                     },
                     params={'op_type': 'create'}
                 ),
@@ -559,13 +638,13 @@ class test_ElasticsearchBackend:
             self.app.conf.result_backend_always_retry = prev
 
     @patch('celery.backends.elasticsearch.datetime')
-    @patch('celery.backends.base.datetime')
+    @patch('celery.app.base.datetime')
     def test_backend_index_corrupted_conflicting_document(self, base_datetime_mock, es_datetime_mock):
-        expected_dt = datetime.datetime(2020, 6, 1, 18, 43, 24, 123456, None)
-        es_datetime_mock.utcnow.return_value = expected_dt
+        expected_dt = datetime(2020, 6, 1, 18, 43, 24, 123456, timezone.utc)
+        es_datetime_mock.now.return_value = expected_dt
 
-        expected_done_dt = datetime.datetime(2020, 6, 1, 18, 45, 34, 654321, None)
-        base_datetime_mock.utcnow.return_value = expected_done_dt
+        expected_done_dt = datetime(2020, 6, 1, 18, 45, 34, 654321, timezone.utc)
+        base_datetime_mock.now.return_value = expected_done_dt
 
         # self.app.conf.result_backend_always_retry, prev = True, self.app.conf.result_backend_always_retry
         # try:
@@ -579,7 +658,9 @@ class test_ElasticsearchBackend:
         x._sleep = sleep_mock
         x._server = Mock()
         x._server.index.side_effect = [
-            exceptions.ConflictError(409, "concurrent update", {})
+            exceptions.ConflictError("concurrent update",
+                                     ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0,
+                                                     NodeConfig("https", "localhost", 9200)), None)
         ]
 
         x._server.update.side_effect = [
@@ -602,21 +683,19 @@ class test_ElasticsearchBackend:
         x._server.index.assert_called_once_with(
             id=encoded_task_id,
             index=x.index,
-            doc_type=x.doc_type,
             body={
                 'result': expected_result,
-                '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
             },
             params={'op_type': 'create'}
         )
         x._server.update.assert_called_once_with(
             id=encoded_task_id,
             index=x.index,
-            doc_type=x.doc_type,
             body={
                 'doc': {
                     'result': expected_result,
-                    '@timestamp': expected_dt.isoformat()[:-3] + 'Z'
+                    '@timestamp': expected_dt.isoformat()[:-9] + 'Z'
                 }
             },
             params={'if_primary_term': 1, 'if_seq_no': 2}
@@ -629,7 +708,7 @@ class test_ElasticsearchBackend:
             x = app.backend
 
             assert x.index == 'index'
-            assert x.doc_type == 'doc_type'
+            assert x.doc_type == "doc_type"
             assert x.scheme == 'http'
             assert x.host == 'localhost'
             assert x.port == 9200
@@ -640,7 +719,7 @@ class test_ElasticsearchBackend:
             x = app.backend
 
             assert x.index == 'celery'
-            assert x.doc_type == 'backend'
+            assert x.doc_type is None
             assert x.scheme == 'http'
             assert x.host == 'localhost'
             assert x.port == 9200
@@ -657,11 +736,10 @@ class test_ElasticsearchBackend:
 
             x._get_server()
             mock_es_client.assert_called_once_with(
-                'localhost:9200',
+                'https://localhost:9200',
                 http_auth=('fake_user', 'fake_pass'),
                 max_retries=x.es_max_retries,
                 retry_on_timeout=x.es_retry_on_timeout,
-                scheme='https',
                 timeout=x.es_timeout,
             )
 
@@ -672,17 +750,15 @@ class test_ElasticsearchBackend:
             x = app.backend
             x._get_server()
             mock_es_client.assert_called_once_with(
-                'localhost:9200',
+                'http://localhost:9200',
                 http_auth=None,
                 max_retries=x.es_max_retries,
                 retry_on_timeout=x.es_retry_on_timeout,
-                scheme='http',
                 timeout=x.es_timeout,
             )
 
     def test_index(self):
         x = ElasticsearchBackend(app=self.app)
-        x.doc_type = 'test-doc-type'
         x._server = Mock()
         x._server.index = Mock()
         expected_result = {
@@ -699,8 +775,32 @@ class test_ElasticsearchBackend:
         )
         x._server.index.assert_called_once_with(
             id=str(sentinel.task_id),
-            doc_type=x.doc_type,
             index=x.index,
+            body=body,
+            params={'op_type': 'create'},
+            kwarg1='test1'
+        )
+
+    def test_index_with_doctype(self):
+        x = ElasticsearchBackend(app=self.app)
+        x._server = Mock()
+        x._server.index = Mock()
+        expected_result = {
+            '_id': sentinel.task_id,
+            '_source': {'result': sentinel.result}
+        }
+        x._server.index.return_value = expected_result
+        x.doc_type = "_doc"
+        body = {"field1": "value1"}
+        x._index(
+            id=str(sentinel.task_id).encode(),
+            body=body,
+            kwarg1='test1'
+        )
+        x._server.index.assert_called_once_with(
+            id=str(sentinel.task_id),
+            index=x.index,
+            doc_type=x.doc_type,
             body=body,
             params={'op_type': 'create'},
             kwarg1='test1'
@@ -708,7 +808,6 @@ class test_ElasticsearchBackend:
 
     def test_index_bytes_key(self):
         x = ElasticsearchBackend(app=self.app)
-        x.doc_type = 'test-doc-type'
         x._server = Mock()
         x._server.index = Mock()
         expected_result = {
@@ -725,7 +824,6 @@ class test_ElasticsearchBackend:
         )
         x._server.index.assert_called_once_with(
             id=str(sentinel.task_id),
-            doc_type=x.doc_type,
             index=x.index,
             body={"field1": "value1"},
             params={'op_type': 'create'},
@@ -854,15 +952,21 @@ class test_ElasticsearchBackend:
         ]
         assert x.mget([sentinel.task_id1, sentinel.task_id2]) == [sentinel.result1, sentinel.result2]
         x._server.get.assert_has_calls([
-            call(index=x.index, doc_type=x.doc_type, id=sentinel.task_id1),
-            call(index=x.index, doc_type=x.doc_type, id=sentinel.task_id2),
+            call(index=x.index, id=sentinel.task_id1),
+            call(index=x.index, id=sentinel.task_id2),
         ])
 
     def test_exception_safe_to_retry(self):
         x = ElasticsearchBackend(app=self.app)
         assert not x.exception_safe_to_retry(Exception("failed"))
         assert not x.exception_safe_to_retry(BaseException("failed"))
-        assert x.exception_safe_to_retry(exceptions.ConflictError(409, "concurrent update", {}))
-        assert x.exception_safe_to_retry(exceptions.ConnectionError(503, "service unavailable", {}))
-        assert x.exception_safe_to_retry(exceptions.TransportError(429, "too many requests", {}))
-        assert not x.exception_safe_to_retry(exceptions.NotFoundError(404, "not found", {}))
+        assert x.exception_safe_to_retry(
+            exceptions.ConflictError("concurrent update",
+                                     ApiResponseMeta(409, "HTTP/1.1", HttpHeaders(), 0,
+                                                     NodeConfig("https", "localhost", 9200)), None))
+        assert x.exception_safe_to_retry(exceptions.ConnectionError("service unavailable"))
+        assert x.exception_safe_to_retry(exceptions.TransportError("too many requests"))
+        assert not x.exception_safe_to_retry(
+            exceptions.NotFoundError("not found",
+                                     ApiResponseMeta(404, "HTTP/1.1", HttpHeaders(), 0,
+                                                     NodeConfig("https", "localhost", 9200)), None))

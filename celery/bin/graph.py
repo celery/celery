@@ -4,7 +4,7 @@ from operator import itemgetter
 
 import click
 
-from celery.bin.base import CeleryCommand, handle_preload_options
+from celery.bin.base import CeleryCommand, handle_preload_options, handle_remote_command_error
 from celery.utils.graph import DependencyGraph, GraphFormatter
 
 
@@ -74,7 +74,7 @@ def workers(ctx):
         def __init__(self, label, **kwargs):
             self.real_label = label
             super().__init__(
-                label='thr-{}'.format(next(tids)),
+                label=f'thr-{next(tids)}',
                 pos=0,
             )
 
@@ -141,7 +141,7 @@ def workers(ctx):
         size = len(l)
         abbr = max and size > max
         if 'enumerate' in args:
-            l = ['{}{}'.format(name, subscript(i + 1))
+            l = [f'{name}{subscript(i + 1)}'
                  for i, obj in enumerate(l)]
         if abbr:
             l = l[0:max - 1] + [l[size - 1]]
@@ -154,7 +154,10 @@ def workers(ctx):
         workers = args['nodes']
         threads = args.get('threads') or []
     except KeyError:
-        replies = app.control.inspect().stats() or {}
+        try:
+            replies = app.control.inspect().stats() or {}
+        except Exception as exc:
+            handle_remote_command_error('graph workers', exc)
         workers, threads = [], []
         for worker, reply in replies.items():
             workers.append(worker)
@@ -171,8 +174,11 @@ def workers(ctx):
             list(range(int(threads))), 'P', Tmax,
         )
 
-    broker = Broker(args.get(
-        'broker', app.connection_for_read().as_uri()))
+    try:
+        broker_uri = args.get('broker', app.connection_for_read().as_uri())
+    except Exception as exc:
+        handle_remote_command_error('graph workers', exc)
+    broker = Broker(broker_uri)
     backend = Backend(backend) if backend else None
     deps = DependencyGraph(formatter=Formatter())
     deps.add_arc(broker)

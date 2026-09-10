@@ -220,21 +220,6 @@ Attributes
         class WorkerStep(bootsteps.StartStopStep):
             requires = ('celery.worker.autoscaler:Autoscaler',)
 
-.. _extending-worker-autoreloader:
-
-.. attribute:: autoreloader
-
-    :class:`~celery.worker.autoreloder.Autoreloader` used to automatically
-    reload use code when the file-system changes.
-
-    This is only defined if the ``autoreload`` argument is enabled.
-    Your worker bootstep must require the `Autoreloader` bootstep to use this;
-
-    .. code-block:: python
-
-        class WorkerStep(bootsteps.StartStopStep):
-            requires = ('celery.worker.autoreloader:Autoreloader',)
-
 Example worker bootstep
 -----------------------
 
@@ -300,6 +285,32 @@ Another example could use the timer to wake up at regular intervals:
             for req in worker.active_requests:
                 if req.time_start and time() - req.time_start > self.timeout:
                     raise SystemExit()
+
+Customizing Task Handling Logs
+------------------------------
+
+The Celery worker emits messages to the Python logging subsystem for various
+events throughout the lifecycle of a task.
+These messages can be customized by overriding the ``LOG_<TYPE>`` format
+strings which are defined in :file:`celery/app/trace.py`.
+For example:
+
+.. code-block:: python
+
+    import celery.app.trace
+
+    celery.app.trace.LOG_SUCCESS = "This is a custom message"
+
+The various format strings are all provided with the task name and ID for
+``%`` formatting, and some of them receive extra fields like the return value
+or the exception which caused a task to fail.
+These fields can be used in custom format strings like so:
+
+.. code-block:: python
+
+    import celery.app.trace
+
+    celery.app.trace.LOG_REJECTED = "%(name)r is cursed and I won't run it: %(exc)s"
 
 .. _extending-consumer_blueprint:
 
@@ -651,13 +662,13 @@ logs:
 
 The ``print`` statements will be redirected to the logging subsystem after
 the worker has been initialized, so the "is starting" lines are time-stamped.
-You may notice that this does no longer happen at shutdown, this is because
+You may notice that this no longer happens at shutdown; this is because
 the ``stop`` and ``shutdown`` methods are called inside a *signal handler*,
 and it's not safe to use logging inside such a handler.
 Logging with the Python logging module isn't :term:`reentrant`:
 meaning you cannot interrupt the function then
 call it again later. It's important that the ``stop`` and ``shutdown`` methods
-you write is also :term:`reentrant`.
+you write are also :term:`reentrant`.
 
 Starting the worker with :option:`--loglevel=debug <celery worker --loglevel>`
 will show us more information about the boot process:
@@ -803,7 +814,7 @@ New commands can be added to the :program:`celery` umbrella command by using
 
 
 Entry-points is special meta-data that can be added to your packages ``setup.py`` program,
-and then after installation, read from the system using the :mod:`pkg_resources` module.
+and then after installation, read from the system using the :mod:`importlib` module.
 
 Celery recognizes ``celery.commands`` entry-points to install additional
 sub-commands, where the value of the entry-point must point to a valid click
@@ -847,6 +858,16 @@ as the following:
     @click.option('--debug', is_flag=True)
     def flower(port, debug):
         print('Running our command')
+
+.. note::
+
+    Discovering entry-points requires scanning the metadata of every
+    installed package, which can be slow in environments with many
+    dependencies. Celery caches the result of this scan for the lifetime
+    of the process, so installing or removing a package that provides
+    entry-points (for the ``celery.commands``, ``celery.result_backends``,
+    or ``celery.beat_schedulers`` namespaces) only takes effect after the
+    process restarts.
 
 
 Worker API

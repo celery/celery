@@ -1,6 +1,7 @@
 """File-system result store backend."""
 import locale
 import os
+from datetime import datetime
 
 from kombu.utils.encoding import ensure_bytes
 
@@ -32,6 +33,9 @@ class FilesystemBackend(KeyValueStoreBackend):
         encoding (str): encoding used on the file-system
     """
 
+    # Result files are opened in binary mode in both directions.
+    supports_result_compression = True
+
     def __init__(self, url=None, open=open, unlink=os.unlink, sep=os.sep,
                  encoding=default_encoding, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -49,13 +53,12 @@ class FilesystemBackend(KeyValueStoreBackend):
         self.open = open
         self.unlink = unlink
 
-        # Lets verify that we've everything setup right
+        # Let's verify that we've everything setup right
         self._do_directory_test(b'.fs-backend-' + uuid().encode(encoding))
 
-    def __reduce__(self, args=(), kwargs={}):
-        kwargs.update(
-            dict(url=self.url))
-        return super().__reduce__(args, kwargs)
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
+        return super().__reduce__(args, {**kwargs, 'url': self.url})
 
     def _find_path(self, url):
         if not url:
@@ -94,3 +97,19 @@ class FilesystemBackend(KeyValueStoreBackend):
 
     def delete(self, key):
         self.unlink(self._filename(key))
+
+    def cleanup(self):
+        """Delete expired meta-data."""
+        if not self.expires:
+            return
+        epoch = datetime(1970, 1, 1, tzinfo=self.app.timezone)
+        now_ts = (self.app.now() - epoch).total_seconds()
+        cutoff_ts = now_ts - self.expires
+        for filename in os.listdir(self.path):
+            for prefix in (self.task_keyprefix, self.group_keyprefix,
+                           self.chord_keyprefix):
+                if filename.startswith(prefix):
+                    path = os.path.join(self.path, filename)
+                    if os.stat(path).st_mtime < cutoff_ts:
+                        self.unlink(path)
+                    break

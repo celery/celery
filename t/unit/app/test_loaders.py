@@ -4,7 +4,6 @@ import warnings
 from unittest.mock import Mock, patch
 
 import pytest
-from case import mock
 
 from celery import loaders
 from celery.exceptions import NotConfigured
@@ -36,7 +35,7 @@ class test_LoaderBase:
                       'password': 'qwerty',
                       'timeout': 3}
 
-    def setup(self):
+    def setup_method(self):
         self.loader = DummyLoader(app=self.app)
 
     def test_handlers_pass(self):
@@ -69,9 +68,12 @@ class test_LoaderBase:
         m.assert_called_with()
 
     def test_config_from_object_module(self):
-        self.loader.import_from_cwd = Mock()
+        self.loader.import_from_cwd = Mock(return_value={
+            "override_backends": {"db": "custom.backend.module"},
+        })
         self.loader.config_from_object('module_name')
         self.loader.import_from_cwd.assert_called_with('module_name')
+        assert self.loader.override_backends == {"db": "custom.backend.module"}
 
     def test_conf_property(self):
         assert self.loader.conf['foo'] == 'bar'
@@ -117,8 +119,8 @@ class test_DefaultLoader:
             l.read_configuration(fail_silently=False)
 
     @patch('celery.loaders.base.find_module')
-    @mock.environ('CELERY_CONFIG_MODULE', 'celeryconfig.py')
-    def test_read_configuration_py_in_name(self, find_module):
+    @pytest.mark.patched_environ('CELERY_CONFIG_MODULE', 'celeryconfig.py')
+    def test_read_configuration_py_in_name(self, find_module, environ):
         find_module.side_effect = NotAPackage()
         l = default.Loader(app=self.app)
         with pytest.raises(NotAPackage):
@@ -210,7 +212,7 @@ class test_DefaultLoader:
 
 class test_AppLoader:
 
-    def setup(self):
+    def setup_method(self):
         self.loader = AppLoader(app=self.app)
 
     def test_on_worker_init(self):
@@ -232,19 +234,74 @@ class test_autodiscovery:
             base.autodiscover_tasks(['foo'])
             frm.assert_called()
 
-    def test_find_related_module(self):
+    # Happy - get something back
+    def test_find_related_module__when_existent_package_alone(self):
         with patch('importlib.import_module') as imp:
             imp.return_value = Mock()
             imp.return_value.__path__ = 'foo'
-            assert base.find_related_module('bar', 'tasks').__path__ == 'foo'
-            imp.assert_any_call('bar')
-            imp.assert_any_call('bar.tasks')
+            assert base.find_related_module('foo', None).__path__ == 'foo'
+            imp.assert_called_once_with('foo')
 
-            imp.reset_mock()
-            assert base.find_related_module('bar', None).__path__ == 'foo'
-            imp.assert_called_once_with('bar')
+    def test_find_related_module__when_existent_package_and_related_name(self):
+        with patch('importlib.import_module') as imp:
+            first_import = Mock()
+            first_import.__path__ = 'foo'
+            second_import = Mock()
+            second_import.__path__ = 'foo/tasks'
+            imp.side_effect = [first_import, second_import]
+            assert base.find_related_module('foo', 'tasks').__path__ == 'foo/tasks'
+            imp.assert_any_call('foo')
+            imp.assert_any_call('foo.tasks')
 
-            imp.side_effect = ImportError()
-            with pytest.raises(ImportError):
-                base.find_related_module('bar', 'tasks')
-            assert base.find_related_module('bar.foo', 'tasks') is None
+    def test_find_related_module__when_existent_package_parent_and_related_name(self):
+        with patch('importlib.import_module') as imp:
+            first_import = ModuleNotFoundError(name='foo.BarApp')  # Ref issue #2248
+            second_import = Mock()
+            second_import.__path__ = 'foo/tasks'
+            imp.side_effect = [first_import, second_import]
+            assert base.find_related_module('foo.BarApp', 'tasks').__path__ == 'foo/tasks'
+            imp.assert_any_call('foo.BarApp')
+            imp.assert_any_call('foo.tasks')
+
+    # Sad - nothing returned
+    def test_find_related_module__when_package_exists_but_related_name_does_not(self):
+        with patch('importlib.import_module') as imp:
+            first_import = Mock()
+            first_import.__path__ = 'foo'
+            second_import = ModuleNotFoundError(name='foo.tasks')
+            imp.side_effect = [first_import, second_import]
+            assert base.find_related_module('foo', 'tasks') is None
+            imp.assert_any_call('foo')
+            imp.assert_any_call('foo.tasks')
+
+    def test_find_related_module__when_existent_package_parent_but_no_related_name(self):
+        with patch('importlib.import_module') as imp:
+            first_import = ModuleNotFoundError(name='foo.bar')
+            second_import = ModuleNotFoundError(name='foo.tasks')
+            imp.side_effect = [first_import, second_import]
+            assert base.find_related_module('foo.bar', 'tasks') is None
+            imp.assert_any_call('foo.bar')
+            imp.assert_any_call('foo.tasks')
+
+    # Sad - errors
+    def test_find_related_module__when_no_package_parent(self):
+        with patch('importlib.import_module') as imp:
+            non_existent_import = ModuleNotFoundError(name='foo')
+            imp.side_effect = non_existent_import
+            with pytest.raises(ModuleNotFoundError) as exc:
+                base.find_related_module('foo', 'tasks')
+
+            assert exc.value.name == 'foo'
+            imp.assert_called_once_with('foo')
+
+    def test_find_related_module__when_nested_import_missing(self):
+        expected_error = 'dummy import error - e.g. missing nested package'
+        with patch('importlib.import_module') as imp:
+            first_import = Mock()
+            first_import.__path__ = 'foo'
+            second_import = ModuleNotFoundError(expected_error)
+            imp.side_effect = [first_import, second_import]
+            with pytest.raises(ModuleNotFoundError) as exc:
+                base.find_related_module('foo', 'tasks')
+
+            assert exc.value.msg == expected_error

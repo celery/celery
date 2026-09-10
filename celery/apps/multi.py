@@ -13,8 +13,7 @@ from kombu.utils.encoding import from_utf8
 from kombu.utils.objects import cached_property
 
 from celery.platforms import IS_WINDOWS, Pidfile, signal_name
-from celery.utils.nodenames import (gethostname, host_format, node_format,
-                                    nodesplit)
+from celery.utils.nodenames import gethostname, host_format, node_format, nodesplit
 from celery.utils.saferepr import saferepr
 
 __all__ = ('Cluster', 'Node')
@@ -199,8 +198,11 @@ class Node:
             try:
                 os.kill(pid, sig)
             except OSError as exc:
-                if exc.errno != errno.ESRCH:
+                if exc.errno not in (errno.ESRCH, errno.EPERM):
                     raise
+                # ESRCH: pid is gone. EPERM: the pid was recycled by
+                # the OS and now belongs to another user's process.
+                # Either way, treat it as this node no longer being alive.
                 maybe_call(on_error, self)
                 return False
             return True
@@ -242,7 +244,7 @@ class Node:
         raise KeyError(alt[0])
 
     def __repr__(self):
-        return '<{name}: {0.name}>'.format(self, name=type(self).__name__)
+        return f'<{type(self).__name__}: {self.name}>'
 
     @cached_property
     def pidfile(self):

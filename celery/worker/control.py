@@ -1,12 +1,13 @@
 """Worker remote control command implementations."""
 import io
 import tempfile
-from collections import UserDict, namedtuple
+from collections import UserDict, defaultdict, namedtuple
 
 from billiard.common import TERM_SIGNAME
 from kombu.utils.encoding import safe_repr
 
 from celery.exceptions import WorkerShutdown
+from celery.platforms import EX_OK
 from celery.platforms import signals as _signals
 from celery.utils.functional import maybe_list
 from celery.utils.log import get_logger
@@ -146,10 +147,88 @@ def revoke(state, task_id, terminate=False, signal=None, **kwargs):
     #     Outside of this scope that is a function.
     # supports list argument since 3.1
     task_ids, task_id = set(maybe_list(task_id) or []), None
+    task_ids = _revoke(state, task_ids, terminate, signal, **kwargs)
+    if isinstance(task_ids, dict) and 'ok' in task_ids:
+        return task_ids
+    return ok(f'tasks {task_ids} flagged as revoked')
+
+
+@control_command(
+    variadic='headers',
+    signature='[key1=value1 [key2=value2 [... [keyN=valueN]]]]',
+)
+def revoke_by_stamped_headers(state, headers, terminate=False, signal=None, **kwargs):
+    """Revoke task by header (or list of headers).
+
+    Keyword Arguments:
+        headers(dictionary): Dictionary that contains stamping scheme name as keys and stamps as values.
+                             If headers is a list, it will be converted to a dictionary.
+        terminate (bool): Also terminate the process if the task is active.
+        signal (str): Name of signal to use for terminate (e.g., ``KILL``).
+    Sample headers input:
+        {'mtask_id': [id1, id2, id3]}
+    """
+    # pylint: disable=redefined-outer-name
+    # XXX Note that this redefines `terminate`:
+    #     Outside of this scope that is a function.
+    # supports list argument since 3.1
+    signum = _signals.signum(signal or TERM_SIGNAME)
+
+    if isinstance(headers, list):
+        headers = {h.split('=')[0]: h.split('=')[1] for h in headers}
+
+    for header, stamps in headers.items():
+        updated_stamps = maybe_list(worker_state.revoked_stamps.get(header) or []) + list(maybe_list(stamps))
+        worker_state.revoked_stamps[header] = updated_stamps
+
+    if not terminate:
+        return ok(f'headers {headers} flagged as revoked, but not terminated')
+
+    active_requests = list(worker_state.active_requests)
+
+    terminated_scheme_to_stamps_mapping = defaultdict(set)
+
+    # Terminate all running tasks of matching headers
+    # Go through all active requests, and check if one of the
+    # requests has a stamped header that matches the given headers to revoke
+
+    for req in active_requests:
+        # Check stamps exist
+        if hasattr(req, "stamps") and req.stamps:
+            # if so, check if any stamps match a revoked stamp
+            for expected_header_key, expected_header_value in headers.items():
+                if expected_header_key in req.stamps:
+                    expected_header_value = maybe_list(expected_header_value)
+                    actual_header = maybe_list(req.stamps[expected_header_key])
+                    matching_stamps_for_request = set(actual_header) & set(expected_header_value)
+                    # Check any possible match regardless if the stamps are a sequence or not
+                    if matching_stamps_for_request:
+                        terminated_scheme_to_stamps_mapping[expected_header_key].update(matching_stamps_for_request)
+                        req.terminate(state.consumer.pool, signal=signum)
+
+    if not terminated_scheme_to_stamps_mapping:
+        return ok(f'headers {headers} were not terminated')
+    return ok(f'headers {terminated_scheme_to_stamps_mapping} revoked')
+
+
+def _revoke(state, task_ids, terminate=False, signal=None, **kwargs):
     size = len(task_ids)
     terminated = set()
 
     worker_state.revoked.update(task_ids)
+    requests_by_id = {request.id: request for request in _find_requests_by_id(task_ids)}
+
+    for task_id in task_ids:
+        request = requests_by_id.get(task_id)
+        if request and request in worker_state.active_requests:
+            continue
+        # Tasks may override their backend.
+        backend = request.task.backend if request else state.app.backend
+        try:
+            backend.mark_as_revoked(task_id, reason='revoked', store_result=True)
+        except Exception as exc:
+            logger.warning('Failed to mark task %s as revoked in backend: %s', task_id, exc)
+
     if terminate:
         signum = _signals.signum(signal or TERM_SIGNAME)
         for request in _find_requests_by_id(task_ids):
@@ -166,7 +245,7 @@ def revoke(state, task_id, terminate=False, signal=None, **kwargs):
 
     idstr = ', '.join(task_ids)
     logger.info('Tasks flagged as revoked: %s', idstr)
-    return ok(f'tasks {idstr} flagged as revoked')
+    return task_ids
 
 
 @control_command(
@@ -187,7 +266,7 @@ def rate_limit(state, task_name, rate_limit, **kwargs):
     """Tell worker(s) to modify the rate limit for a task by type.
 
     See Also:
-        :attr:`celery.task.base.Task.rate_limit`.
+        :attr:`celery.app.task.Task.rate_limit`.
 
     Arguments:
         task_name (str): Type of task to set rate limit for.
@@ -272,6 +351,8 @@ def election(state, id, topic, action=None, **kwargs):
 def enable_events(state):
     """Tell worker(s) to send task-related events."""
     dispatcher = state.consumer.event_dispatcher
+    if dispatcher is None:
+        return nok('event dispatcher unavailable')
     if dispatcher.groups and 'task' not in dispatcher.groups:
         dispatcher.groups.add('task')
         logger.info('Events of group {task} enabled by remote.')
@@ -283,6 +364,8 @@ def enable_events(state):
 def disable_events(state):
     """Tell worker(s) to stop sending task-related events."""
     dispatcher = state.consumer.event_dispatcher
+    if dispatcher is None:
+        return nok('event dispatcher unavailable')
     if 'task' in dispatcher.groups:
         dispatcher.groups.discard('task')
         logger.info('Events of group {task} disabled by remote.')
@@ -295,7 +378,8 @@ def heartbeat(state):
     """Tell worker(s) to send event heartbeat immediately."""
     logger.debug('Heartbeat requested by remote.')
     dispatcher = state.consumer.event_dispatcher
-    dispatcher.send('worker-heartbeat', freq=5, **worker_state.SOFTWARE_INFO)
+    if dispatcher:
+        dispatcher.send('worker-heartbeat', freq=5, **worker_state.SOFTWARE_INFO)
 
 
 # -- Worker
@@ -310,6 +394,8 @@ def hello(state, from_node, revoked=None, **kwargs):
         logger.info('sync with %s', from_node)
         if revoked:
             worker_state.revoked.update(revoked)
+        # Do not send expired items to the other worker.
+        worker_state.revoked.purge()
         return {
             'revoked': worker_state.revoked._data,
             'clock': state.app.clock.forward(),
@@ -362,9 +448,9 @@ def reserved(state, **kwargs):
 
 
 @inspect_command(alias='dump_active')
-def active(state, **kwargs):
+def active(state, safe=False, **kwargs):
     """List of tasks currently being executed."""
-    return [request.info()
+    return [request.info(safe=safe)
             for request in state.tset(worker_state.active_requests)]
 
 
@@ -513,7 +599,7 @@ def autoscale(state, max=None, min=None):
 def shutdown(state, msg='Got shutdown from remote', **kwargs):
     """Shutdown worker(s)."""
     logger.warning(msg)
-    raise WorkerShutdown(msg)
+    raise WorkerShutdown(EX_OK)
 
 
 # -- Queues

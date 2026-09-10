@@ -26,6 +26,10 @@ class AMQPContext:
         self.channel = None
         self.reconnect()
 
+    @property
+    def app(self):
+        return self.cli_context.app
+
     def respond(self, retval):
         if isinstance(retval, str):
             self.cli_context.echo(retval)
@@ -305,4 +309,4 @@ def basic_ack(amqp_context, delivery_tag):
             amqp_context.echo_ok()
 
 
-repl = register_repl(amqp)
+register_repl(amqp)

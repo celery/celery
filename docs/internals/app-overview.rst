@@ -100,18 +100,7 @@ Deprecated
 Aliases (Pending deprecation)
 =============================
 
-* ``celery.task.base``
-    * ``.Task`` -> {``app.Task`` / :class:`celery.app.task.Task`}
-
-* ``celery.task.sets``
-    * ``.TaskSet`` -> {``app.TaskSet``}
-
-* ``celery.decorators`` / ``celery.task``
-    * ``.task`` -> {``app.task``}
-
 * ``celery.execute``
-    * ``.apply_async`` -> {``task.apply_async``}
-    * ``.apply`` -> {``task.apply``}
     * ``.send_task`` -> {``app.send_task``}
     * ``.delay_task`` -> *no alternative*
 
@@ -145,14 +134,6 @@ Aliases (Pending deprecation)
         >>> conf.always_eager
 
     * ``.get_queues`` -> {``app.amqp.get_queues``}
-
-* ``celery.task.control``
-    * ``.broadcast`` -> {``app.control.broadcast``}
-    * ``.rate_limit`` -> {``app.control.rate_limit``}
-    * ``.ping`` -> {``app.control.ping``}
-    * ``.revoke`` -> {``app.control.revoke``}
-    * ``.discard_all`` -> {``app.control.discard_all``}
-    * ``.inspect`` -> {``app.control.inspect``}
 
 * ``celery.utils.info``
     * ``.humanize_seconds`` -> ``celery.utils.time.humanize_seconds``

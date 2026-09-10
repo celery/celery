@@ -4,11 +4,16 @@ import time
 from kombu.utils.compat import register_after_fork
 from sqlalchemy import create_engine
 from sqlalchemy.exc import DatabaseError
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 
 from celery.utils.time import get_exponential_backoff_interval
+
+try:
+    from sqlalchemy.orm import declarative_base
+except ImportError:
+    # TODO: Remove this once we drop support for SQLAlchemy < 1.4.
+    from sqlalchemy.ext.declarative import declarative_base
 
 ResultModelBase = declarative_base()
 
@@ -24,11 +29,12 @@ def _after_fork_cleanup_session(session):
 class SessionManager:
     """Manage SQLAlchemy sessions."""
 
-    def __init__(self):
+    def __init__(self, engine_callback=None):
         self._engines = {}
         self._sessions = {}
         self.forked = False
         self.prepared = False
+        self.engine_callback = engine_callback
         if register_after_fork is not None:
             register_after_fork(self, _after_fork_cleanup_session)
 
@@ -40,12 +46,21 @@ class SessionManager:
             try:
                 return self._engines[dburi]
             except KeyError:
-                engine = self._engines[dburi] = create_engine(dburi, **kwargs)
+                engine = create_engine(dburi, **kwargs)
+                if self.engine_callback is not None:
+                    self.engine_callback(engine)
+                self._engines[dburi] = engine
                 return engine
         else:
-            kwargs = {k: v for k, v in kwargs.items() if
-                      not k.startswith('pool')}
-            return create_engine(dburi, poolclass=NullPool, **kwargs)
+            unsupported_nullpool_kwargs = {'max_overflow', 'echo_pool'}
+            kwargs = {
+                k: v for k, v in kwargs.items()
+                if not k.startswith('pool') and k not in unsupported_nullpool_kwargs
+            }
+            engine = create_engine(dburi, poolclass=NullPool, **kwargs)
+            if self.engine_callback is not None:
+                self.engine_callback(engine)
+            return engine
 
     def create_session(self, dburi, short_lived_sessions=False, **kwargs):
         engine = self.get_engine(dburi, **kwargs)
@@ -54,6 +69,13 @@ class SessionManager:
                 self._sessions[dburi] = sessionmaker(bind=engine)
             return engine, self._sessions[dburi]
         return engine, sessionmaker(bind=engine)
+
+    def invalidate(self, dburi):
+        """Dispose cached engine/session state for a database URI."""
+        self._sessions.pop(dburi, None)
+        engine = self._engines.pop(dburi, None)
+        if engine is not None:
+            engine.dispose()
 
     def prepare_models(self, engine):
         if not self.prepared:

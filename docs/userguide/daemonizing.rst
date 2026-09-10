@@ -14,9 +14,9 @@ You can check if your Linux distribution uses systemd by typing:
 
 .. code-block:: console
 
-  $ systemd --version
-  systemd 237
-  +PAM +AUDIT +SELINUX +IMA +APPARMOR +SMACK +SYSVINIT +UTMP +LIBCRYPTSETUP +GCRYPT +GNUTLS +ACL +XZ +LZ4 +SECCOMP +BLKID +ELFUTILS +KMOD -IDN2 +IDN -PCRE2 default-hierarchy=hybrid
+    $ systemctl --version
+    systemd 249 (v249.9-1.fc35)
+    +PAM +AUDIT +SELINUX -APPARMOR +IMA +SMACK +SECCOMP +GCRYPT +GNUTLS +OPENSSL +ACL +BLKID +CURL +ELFUTILS +FIDO2 +IDN2 -IDN +IPTC +KMOD +LIBCRYPTSETUP +LIBFDISK +PCRE2 +PWQUALITY +P11KIT +QRENCODE +BZIP2 +LZ4 +XZ +ZLIB +ZSTD +XKBCOMMON +UTMP +SYSVINIT default-hierarchy=unified
 
 If you have output similar to the above, please refer to
 :ref:`our systemd documentation <daemon-systemd-generic>` for guidance.
@@ -41,7 +41,7 @@ This directory contains generic bash init-scripts for the
 these should run on Linux, FreeBSD, OpenBSD, and other Unix-like platforms.
 
 .. _`extra/generic-init.d/`:
-    https://github.com/celery/celery/tree/master/extra/generic-init.d/
+    https://github.com/celery/celery/tree/main/extra/generic-init.d/
 
 .. _generic-initd-celeryd:
 
@@ -362,7 +362,7 @@ Commonly such errors are caused by insufficient permissions
 to read from, or write to a file, and also by syntax errors
 in configuration modules, user modules, third-party libraries,
 or even from Celery itself (if you've found a bug you
-should :ref:`report it <reporting-bugs>`).
+should :ref:`report it <bug-tracker>`).
 
 
 .. _daemon-systemd-generic:
@@ -373,7 +373,7 @@ Usage ``systemd``
 * `extra/systemd/`_
 
 .. _`extra/systemd/`:
-    https://github.com/celery/celery/tree/master/extra/systemd/
+    https://github.com/celery/celery/tree/main/extra/systemd/
 
 .. _generic-systemd-celery:
 
@@ -397,13 +397,13 @@ This is an example systemd file:
     Type=forking
     User=celery
     Group=celery
-    EnvironmentFile=/etc/conf.d/celery
+    EnvironmentFile=-/etc/conf.d/celery
     WorkingDirectory=/opt/celery
     ExecStart=/bin/sh -c '${CELERY_BIN} -A $CELERY_APP multi start $CELERYD_NODES \
         --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} \
         --loglevel="${CELERYD_LOG_LEVEL}" $CELERYD_OPTS'
     ExecStop=/bin/sh -c '${CELERY_BIN} multi stopwait $CELERYD_NODES \
-        --pidfile=${CELERYD_PID_FILE} --loglevel="${CELERYD_LOG_LEVEL}"'
+        --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE}'
     ExecReload=/bin/sh -c '${CELERY_BIN} -A $CELERY_APP multi restart $CELERYD_NODES \
         --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} \
         --loglevel="${CELERYD_LOG_LEVEL}" $CELERYD_OPTS'
@@ -428,11 +428,11 @@ To configure user, group, :command:`chdir` change settings:
 
 You can also use systemd-tmpfiles in order to create working directories (for logs and pid).
 
-:file: `/etc/tmpfiles.d/celery.conf`
+:file:`/etc/tmpfiles.d/celery.conf`
 
 .. code-block:: bash
 
-  d /var/run/celery 0755 celery celery -
+  d /run/celery 0755 celery celery -
   d /var/log/celery 0755 celery celery -
 
 
@@ -463,21 +463,18 @@ This is an example configuration for a Python project:
     # or fully qualified:
     #CELERY_APP="proj.tasks:app"
 
-    # How to call manage.py
-    CELERYD_MULTI="multi"
-
     # Extra command-line arguments to the worker
     CELERYD_OPTS="--time-limit=300 --concurrency=8"
 
     # - %n will be replaced with the first part of the nodename.
     # - %I will be replaced with the current child process index
     #   and is important when using the prefork pool to avoid race conditions.
-    CELERYD_PID_FILE="/var/run/celery/%n.pid"
+    CELERYD_PID_FILE="/run/celery/%n.pid"
     CELERYD_LOG_FILE="/var/log/celery/%n%I.log"
     CELERYD_LOG_LEVEL="INFO"
 
     # you may wish to add these options for Celery Beat
-    CELERYBEAT_PID_FILE="/var/run/celery/beat.pid"
+    CELERYBEAT_PID_FILE="/run/celery/beat.pid"
     CELERYBEAT_LOG_FILE="/var/log/celery/beat.log"
 
 Service file: celerybeat.service
@@ -497,7 +494,7 @@ This is an example systemd file for Celery Beat:
     Type=simple
     User=celery
     Group=celery
-    EnvironmentFile=/etc/conf.d/celery
+    EnvironmentFile=-/etc/conf.d/celery
     WorkingDirectory=/opt/celery
     ExecStart=/bin/sh -c '${CELERY_BIN} -A ${CELERY_APP} beat  \
         --pidfile=${CELERYBEAT_PID_FILE} \
@@ -540,7 +537,7 @@ or production environment (inadvertently) as root.
 * `extra/supervisord/`_
 
 .. _`extra/supervisord/`:
-    https://github.com/celery/celery/tree/master/extra/supervisord/
+    https://github.com/celery/celery/tree/main/extra/supervisord/
 
 .. _daemon-launchd:
 
@@ -550,4 +547,4 @@ or production environment (inadvertently) as root.
 * `extra/macOS`_
 
 .. _`extra/macOS`:
-    https://github.com/celery/celery/tree/master/extra/macOS/
+    https://github.com/celery/celery/tree/main/extra/macOS/

@@ -1,24 +1,29 @@
 import socket
 import sys
+import time
 from collections import defaultdict
 from datetime import datetime, timedelta
 from queue import Queue as FastQueue
-from unittest.mock import Mock, call, patch
+from unittest.mock import Mock, PropertyMock, call, patch
 
 import pytest
 from kombu import pidbox
 from kombu.utils.uuid import uuid
 
+from celery import states
 from celery.utils.collections import AttributeDict
+from celery.utils.functional import maybe_list
 from celery.utils.timer2 import Timer
-from celery.worker import WorkController as _WC  # noqa
+from celery.worker import WorkController as _WC
 from celery.worker import consumer, control
 from celery.worker import state as worker_state
 from celery.worker.pidbox import Pidbox, gPidbox
 from celery.worker.request import Request
-from celery.worker.state import revoked
+from celery.worker.state import REVOKE_EXPIRES, revoked, revoked_stamps
 
 hostname = socket.gethostname()
+
+IS_PYPY = hasattr(sys, 'pypy_version_info')
 
 
 class WorkController:
@@ -62,6 +67,62 @@ class test_Pidbox:
             pbox.shutdown(parent)
             eig.assert_called_with(parent, cancel)
             pbox._close_channel.assert_called_with(parent)
+
+    def test_reset_cancels_old_consumer(self):
+        parent = Mock()
+        parent.hostname = 'worker@example.com'
+        parent.controller = Mock(use_eventloop=False)
+        parent.app = Mock()
+        parent.app.control.mailbox.Node = Mock()
+        node = Mock()
+        parent.app.control.mailbox.Node.return_value = node
+        parent.connection = Mock()
+        parent.connection.channel.side_effect = [Mock(), Mock()]
+        parent.connection_errors = ()
+        parent.channel_errors = ()
+        parent.on_decode_error = Mock()
+
+        pbox = Pidbox(parent)
+        old_consumer = Mock()
+        new_consumer = Mock()
+        node.listen.side_effect = [old_consumer, new_consumer]
+
+        pbox.start(parent)
+        pbox.reset()
+
+        old_consumer.cancel.assert_called_once()
+        new_consumer.cancel.assert_not_called()
+        assert pbox.consumer is new_consumer
+
+    def test_pidbox_repeated_reset_cancels_previous_consumers(self):
+        parent = Mock()
+        parent.hostname = 'worker@example.com'
+        parent.controller = Mock(use_eventloop=False)
+        parent.app = Mock()
+        parent.app.control.mailbox.Node = Mock()
+        node = Mock()
+        node.handle_message.side_effect = RuntimeError('simulated handler error')
+        parent.app.control.mailbox.Node.return_value = node
+        parent.connection = Mock()
+        parent.connection.channel.side_effect = [
+            Mock(name=f'channel-{i}') for i in range(11)
+        ]
+        parent.connection_errors = ()
+        parent.channel_errors = ()
+        parent.on_decode_error = Mock()
+
+        consumers = [Mock(name=f'consumer-{i}') for i in range(11)]
+        node.listen.side_effect = consumers
+        pbox = Pidbox(parent)
+
+        pbox.start(parent)
+        for _ in range(10):
+            pbox.on_message({}, object())
+
+        for previous_consumer in consumers[:-1]:
+            previous_consumer.cancel.assert_called_once()
+        consumers[-1].cancel.assert_not_called()
+        assert pbox.consumer is consumers[-1]
 
 
 class test_Pidbox_green:
@@ -115,7 +176,7 @@ class test_Pidbox_green:
 
 class test_ControlPanel:
 
-    def setup(self):
+    def setup_method(self):
         self.panel = self.create_panel(consumer=Consumer(self.app))
 
         @self.app.task(name='c.unittest.mytask', rate_limit=200, shared=False)
@@ -159,6 +220,20 @@ class test_ControlPanel:
         assert 'task' not in evd.groups
         assert 'already disabled' in panel.handle('disable_events')['ok']
 
+    def test_enable_events_no_dispatcher(self):
+        consumer = Consumer(self.app)
+        consumer.event_dispatcher = None
+        panel = self.create_panel(consumer=consumer)
+        # Should not raise AttributeError when dispatcher is None (#9489).
+        assert 'unavailable' in panel.handle('enable_events')['error']
+
+    def test_disable_events_no_dispatcher(self):
+        consumer = Consumer(self.app)
+        consumer.event_dispatcher = None
+        panel = self.create_panel(consumer=consumer)
+        # Should not raise AttributeError when dispatcher is None (#9489).
+        assert 'unavailable' in panel.handle('disable_events')['error']
+
     def test_clock(self):
         consumer = Consumer(self.app)
         panel = self.create_panel(consumer=consumer)
@@ -191,6 +266,22 @@ class test_ControlPanel:
             assert x['clock'] == 315  # incremented
         finally:
             worker_state.revoked.discard('revoked1')
+
+    def test_hello_does_not_send_expired_revoked_items(self):
+        consumer = Consumer(self.app)
+        panel = self.create_panel(consumer=consumer)
+        panel.state.app.clock.value = 313
+        panel.state.hostname = 'elaine@vandelay.com'
+        # Add an expired revoked item to the revoked set.
+        worker_state.revoked.add(
+            'expired_in_past',
+            now=time.monotonic() - REVOKE_EXPIRES - 1
+        )
+        x = panel.handle('hello', {
+            'from_node': 'george@vandelay.com',
+            'revoked': {'1234', '4567', '891'}
+        })
+        assert 'expired_in_past' not in x['revoked']
 
     def test_conf(self):
         consumer = Consumer(self.app)
@@ -225,6 +316,13 @@ class test_ControlPanel:
         event_dispatcher.enabled = True
         panel.handle('heartbeat')
         assert ('worker-heartbeat',) in event_dispatcher.send.call_args
+
+    def test_heartbeat_no_dispatcher(self):
+        consumer = Consumer(self.app)
+        consumer.event_dispatcher = None
+        panel = self.create_panel(consumer=consumer)
+        # Should not raise AttributeError when dispatcher is None (#9489).
+        panel.handle('heartbeat')
 
     def test_time_limit(self):
         panel = self.create_panel(consumer=Mock())
@@ -295,6 +393,20 @@ class test_ControlPanel:
         worker_state.active_requests.add(r)
         try:
             assert self.panel.handle('dump_active')
+        finally:
+            worker_state.active_requests.discard(r)
+
+    def test_active_safe(self):
+        kwargsrepr = '<anything>'
+        r = Request(
+            self.TaskMessage(self.mytask.name, id='do re mi',
+                             kwargsrepr=kwargsrepr),
+            app=self.app,
+        )
+        worker_state.active_requests.add(r)
+        try:
+            active_resp = self.panel.handle('dump_active', {'safe': True})
+            assert active_resp[0]['kwargs'] == kwargsrepr
         finally:
             worker_state.active_requests.discard(r)
 
@@ -513,6 +625,201 @@ class test_ControlPanel:
         finally:
             worker_state.task_ready(request)
 
+    def test_repeated_revoke_uses_task_backend_for_known_request(self):
+        # Tasks may override their backend.
+        request = Mock()
+        request.id = tid = uuid()
+        task_backend = Mock()
+        request.task.backend = task_backend
+        state = self.create_state()
+        state.consumer = Mock()
+        worker_state.task_reserved(request)
+        try:
+            with patch.object(state.app.backend, 'mark_as_revoked') as mar:
+                control.revoke(state, tid)
+                control.revoke(state, tid)
+            assert task_backend.mark_as_revoked.call_count == 2
+            task_backend.mark_as_revoked.assert_called_with(tid, reason='revoked', store_result=True)
+            mar.assert_not_called()
+        finally:
+            worker_state.task_ready(request)
+            revoked.discard(tid)
+
+    @pytest.mark.parametrize('revoke_count', [1, 2])
+    def test_revoke_chord_member_is_counted_once_on_discard(self, revoke_count):
+        backend = self.app.backend
+        task_id, group_id = uuid(), uuid()
+        body = self.mytask.s()
+        message = self.TaskMessage(self.mytask.name, task_id, group=group_id)
+        message.payload[2]['chord'] = body
+        request = Request(message, app=self.app)
+
+        # Keep other members pending so duplicate counts remain observable
+        # without completing the chord and deleting its counter.
+        results = [self.app.AsyncResult(task_id),
+                   self.app.AsyncResult(uuid()), self.app.AsyncResult(uuid())]
+        backend.apply_chord((group_id, results), body)
+        counter_key = backend.get_key_for_chord(group_id)
+        state = self.create_state()
+        worker_state.task_reserved(request)
+        try:
+            for _ in range(revoke_count):
+                control.revoke(state, task_id)
+                assert backend.get_task_meta(task_id)['status'] == states.REVOKED
+                # Control revokes store the state but leave chord bookkeeping
+                # to the request's discard/announce path, even when repeated.
+                assert int(backend.get(counter_key)) == 0
+
+            assert request.revoked()
+            assert request.acknowledged
+            assert int(backend.get(counter_key)) == 1
+
+            # Neither another control revoke nor another discard check may
+            # count the same chord member again.
+            control.revoke(state, task_id)
+            assert request.revoked()
+            assert int(backend.get(counter_key)) == 1
+        finally:
+            worker_state.task_ready(request)
+            revoked.discard(task_id)
+
+    def test_revoke_skips_active_request_without_terminate(self):
+        request = Mock()
+        request.id = tid = uuid()
+        task_backend = Mock()
+        request.task.backend = task_backend
+        state = self.create_state()
+        state.consumer = Mock()
+        worker_state.task_reserved(request)
+        worker_state.active_requests.add(request)
+        try:
+            with patch.object(state.app.backend, 'mark_as_revoked') as mar:
+                control.revoke(state, tid)
+            task_backend.mark_as_revoked.assert_not_called()
+            mar.assert_not_called()
+            request.terminate.assert_not_called()
+        finally:
+            worker_state.task_ready(request)
+            worker_state.active_requests.discard(request)
+            revoked.discard(tid)
+
+    def test_revoke_skips_active_request_with_terminate(self):
+        request = Mock()
+        request.id = tid = uuid()
+        request.task.backend = state_backend = Mock()
+        state = self.create_state()
+        state.consumer = Mock()
+        worker_state.task_reserved(request)
+        worker_state.active_requests.add(request)
+        try:
+            with patch.object(state.app.backend, 'mark_as_revoked') as mar:
+                control._revoke(state, [tid], terminate=True)
+            state_backend.mark_as_revoked.assert_not_called()
+            mar.assert_not_called()
+            assert request.terminate.call_count == 1
+        finally:
+            worker_state.task_ready(request)
+            worker_state.active_requests.discard(request)
+            revoked.discard(tid)
+
+    @pytest.mark.parametrize(
+        "terminate", [True, False],
+    )
+    def test_revoke_by_stamped_headers_terminate(self, terminate):
+        request = Mock()
+        request.id = uuid()
+        request.options = stamped_header = {'stamp': 'foo'}
+        request.options['stamped_headers'] = ['stamp']
+        state = self.create_state()
+        state.consumer = Mock()
+        worker_state.task_reserved(request)
+        try:
+            worker_state.revoked_stamps.clear()
+            assert stamped_header.keys() != revoked_stamps.keys()
+            control.revoke_by_stamped_headers(state, stamped_header, terminate=terminate)
+            assert stamped_header.keys() == revoked_stamps.keys()
+            for key in stamped_header.keys():
+                assert maybe_list(stamped_header[key]) == revoked_stamps[key]
+        finally:
+            worker_state.task_ready(request)
+
+    @pytest.mark.parametrize(
+        "header_to_revoke",
+        [
+            {'header_A': 'value_1'},
+            {'header_B': ['value_2', 'value_3']},
+            {'header_C': ('value_2', 'value_3')},
+            {'header_D': {'value_2', 'value_3'}},
+            {'header_E': [1, '2', 3.0]},
+        ],
+    )
+    def test_revoke_by_stamped_headers(self, header_to_revoke):
+        ids = []
+
+        # Create at least more than one request with the same stamped header
+        for _ in range(2):
+            headers = {
+                "id": uuid(),
+                "task": self.mytask.name,
+                "stamped_headers": header_to_revoke.keys(),
+                "stamps": header_to_revoke,
+            }
+            ids.append(headers["id"])
+            message = self.TaskMessage(
+                self.mytask.name,
+                "do re mi",
+            )
+            message.headers.update(headers)
+            request = Request(
+                message,
+                app=self.app,
+            )
+
+            # Add the request to the active_requests so the request is found
+            # when the revoke_by_stamped_headers is called
+            worker_state.active_requests.add(request)
+            worker_state.task_reserved(request)
+
+        state = self.create_state()
+        state.consumer = Mock()
+        # Revoke by header
+        revoked_stamps.clear()
+        r = control.revoke_by_stamped_headers(state, header_to_revoke, terminate=True)
+        # Check all of the requests were revoked by a single header
+        for header, stamp in header_to_revoke.items():
+            assert header in r['ok']
+            for s in maybe_list(stamp):
+                assert str(s) in r['ok']
+        assert header_to_revoke.keys() == revoked_stamps.keys()
+        for key in header_to_revoke.keys():
+            assert list(maybe_list(header_to_revoke[key])) == revoked_stamps[key]
+        revoked_stamps.clear()
+
+    def test_revoke_return_value_terminate_true(self):
+        header_to_revoke = {'foo': 'bar'}
+        headers = {
+            "id": uuid(),
+            "task": self.mytask.name,
+            "stamped_headers": header_to_revoke.keys(),
+            "stamps": header_to_revoke,
+        }
+        message = self.TaskMessage(
+            self.mytask.name,
+            "do re mi",
+        )
+        message.headers.update(headers)
+        request = Request(
+            message,
+            app=self.app,
+        )
+        worker_state.active_requests.add(request)
+        worker_state.task_reserved(request)
+        state = self.create_state()
+        state.consumer = Mock()
+        r_headers = control.revoke_by_stamped_headers(state, header_to_revoke, terminate=True)
+        # revoke & revoke_by_stamped_headers are not aligned anymore in their return values
+        assert "{'foo': {'bar'}}" in r_headers["ok"]
+
     def test_autoscale(self):
         self.panel.state.consumer = Mock()
         self.panel.state.consumer.controller = Mock()
@@ -537,8 +844,9 @@ class test_ControlPanel:
     def test_shutdown(self):
         m = {'method': 'shutdown',
              'destination': hostname}
-        with pytest.raises(SystemExit):
+        with pytest.raises(SystemExit) as excinfo:
             self.panel.handle_message(m, None)
+        assert excinfo.value.code == 0
 
     def test_panel_reply(self):
 
@@ -591,6 +899,7 @@ class test_ControlPanel:
         consumer.controller.consumer = None
         panel.handle('pool_restart', {'reloader': _reload})
 
+    @pytest.mark.skipif(IS_PYPY, reason="Patch for sys.modules doesn't work on PyPy correctly")
     @patch('celery.worker.worker.logger.debug')
     def test_pool_restart_import_modules(self, _debug):
         consumer = Consumer(self.app)
@@ -681,3 +990,56 @@ class test_ControlPanel:
             assert ret[req1.id][0] == 'reserved'
         finally:
             worker_state.reserved_requests.clear()
+
+    @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
+    def test_revoke_backend_status_update(self):
+        state = self.create_state()
+        task_ids = ['task-1', 'task-2']
+
+        control._revoke(state, task_ids)
+
+        assert self.app.backend.mark_as_revoked.call_count == 2
+        calls = self.app.backend.mark_as_revoked.call_args_list
+        assert calls[0] == (('task-1',), {'reason': 'revoked', 'store_result': True})
+        assert calls[1] == (('task-2',), {'reason': 'revoked', 'store_result': True})
+
+    @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
+    def test_revoke_backend_failure_defensive(self):
+        self.app.backend.mark_as_revoked.side_effect = Exception("Backend error")
+        state = self.create_state()
+
+        control._revoke(state, ['task-1'])
+
+        assert 'task-1' in worker_state.revoked
+
+    @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
+    def test_revoke_terminate_backend_update(self):
+        state = self.create_state()
+
+        with patch('celery.worker.control._find_requests_by_id', return_value=[]):
+            control._revoke(state, ['task-1'], terminate=True)
+
+        self.app.backend.mark_as_revoked.assert_called_once_with(
+            'task-1', reason='revoked', store_result=True
+        )
+
+    def test_revoke_by_stamped_headers_terminates_matching_request(self):
+        state = self.create_state()
+        state.consumer = Mock()
+
+        request = Mock()
+        request.id = 'task-with-stamp'
+        request.stamps = {'monitoring_id': 'test-123'}
+        request.terminate = Mock()
+
+        worker_state.active_requests.add(request)
+
+        headers = {'monitoring_id': 'test-123'}
+
+        with patch('celery.worker.control._signals.signum', return_value=15):
+            control.revoke_by_stamped_headers(state, headers, terminate=True)
+
+        request.terminate.assert_called_once()
+        assert 'test-123' in worker_state.revoked_stamps.get('monitoring_id', [])
+
+        worker_state.active_requests.clear()

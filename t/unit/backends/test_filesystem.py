@@ -1,12 +1,16 @@
 import os
 import pickle
+import sys
 import tempfile
+import time
+from unittest.mock import patch
 
 import pytest
 
 import t.skip
 from celery import states, uuid
 from celery.backends import filesystem
+from celery.backends.base import COMPRESSED_PAYLOAD_MAGIC
 from celery.backends.filesystem import FilesystemBackend
 from celery.exceptions import ImproperlyConfigured
 
@@ -14,7 +18,7 @@ from celery.exceptions import ImproperlyConfigured
 @t.skip.if_win32
 class test_FilesystemBackend:
 
-    def setup(self):
+    def setup_method(self):
         self.directory = tempfile.mkdtemp()
         self.url = 'file://' + self.directory
         self.path = self.directory.encode('ascii')
@@ -71,6 +75,70 @@ class test_FilesystemBackend:
         tb.mark_as_done(tid, data)
         assert tb.get_result(tid) == data
 
+    def test_compressed_result_is_written_compressed(self):
+        data = {'foo': 'bar' * 100}
+
+        self.app.conf.result_compression = 'gzip'
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        assert tb.compression == 'gzip'
+        tid = uuid()
+        tb.mark_as_done(tid, data)
+
+        stored = tb.get(tb.get_key_for_task(tid))
+        assert stored.startswith(COMPRESSED_PAYLOAD_MAGIC)
+        assert tb.get_result(tid) == data
+
+    def test_result_written_before_compression_is_still_readable(self):
+        data = {'foo': 'bar'}
+        tid = uuid()
+        FilesystemBackend(app=self.app, url=self.url).mark_as_done(tid, data)
+
+        self.app.conf.result_compression = 'gzip'
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        assert tb.get_result(tid) == data
+
+    def test_compressed_binary_serializer_result_round_trips(self):
+        # pickle's payload is bytes before compression as well as after it,
+        # and the value here has no valid text encoding, so nothing on the
+        # way to disk and back can treat the payload as a string.
+        data = {'value': b'\x00\x01\x02\xff', 'text': 'a value ' * 40}
+        self.app.conf.result_serializer = 'pickle'
+        self.app.conf.accept_content = ['pickle']
+        self.app.conf.result_compression = 'gzip'
+
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        tid = uuid()
+        tb.mark_as_done(tid, data)
+
+        with open(os.path.join(self.directory,
+                               tb.get_key_for_task(tid).decode()), 'rb') as f:
+            on_disk = f.read()
+        assert on_disk.startswith(COMPRESSED_PAYLOAD_MAGIC)
+        assert tb.get_result(tid) == data
+
+    def test_binary_serializer_result_is_not_read_as_compressed(self):
+        # A pickle payload written with compression off must not be mistaken
+        # for a compressed one by a reader that has compression on.
+        data = {'value': b'\x00\x01\x02\xff'}
+        self.app.conf.result_serializer = 'pickle'
+        self.app.conf.accept_content = ['pickle']
+        tid = uuid()
+        FilesystemBackend(app=self.app, url=self.url).mark_as_done(tid, data)
+
+        self.app.conf.result_compression = 'gzip'
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        assert tb.get_result(tid) == data
+
+    def test_compressed_result_is_readable_with_compression_off(self):
+        data = {'foo': 'bar'}
+        tid = uuid()
+        self.app.conf.result_compression = 'gzip'
+        FilesystemBackend(app=self.app, url=self.url).mark_as_done(tid, data)
+
+        self.app.conf.result_compression = None
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        assert tb.get_result(tid) == data
+
     def test_get_many(self):
         data = {uuid(): 'foo', uuid(): 'bar', uuid(): 'baz'}
 
@@ -92,3 +160,36 @@ class test_FilesystemBackend:
     def test_pickleable(self):
         tb = FilesystemBackend(app=self.app, url=self.url, serializer='pickle')
         assert pickle.loads(pickle.dumps(tb))
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason='Test can fail on '
+                        'Windows/FAT due to low granularity of st_mtime')
+    def test_cleanup(self):
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        yesterday_task_ids = [uuid() for i in range(10)]
+        today_task_ids = [uuid() for i in range(10)]
+        for tid in yesterday_task_ids:
+            tb.mark_as_done(tid, 42)
+        day_length = 0.2
+        time.sleep(day_length)  # let FS mark some difference in mtimes
+        for tid in today_task_ids:
+            tb.mark_as_done(tid, 42)
+        with patch.object(tb, 'expires', 0):
+            tb.cleanup()
+        # test that zero expiration time prevents any cleanup
+        filenames = set(os.listdir(tb.path))
+        assert all(
+            tb.get_key_for_task(tid) in filenames
+            for tid in yesterday_task_ids + today_task_ids
+        )
+        # test that non-zero expiration time enables cleanup by file mtime
+        with patch.object(tb, 'expires', day_length):
+            tb.cleanup()
+        filenames = set(os.listdir(tb.path))
+        assert not any(
+            tb.get_key_for_task(tid) in filenames
+            for tid in yesterday_task_ids
+        )
+        assert all(
+            tb.get_key_for_task(tid) in filenames
+            for tid in today_task_ids
+        )

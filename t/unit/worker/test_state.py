@@ -1,11 +1,14 @@
+import os
 import pickle
+import sys
+from importlib import import_module
 from time import time
 from unittest.mock import Mock, patch
 
 import pytest
 
 from celery import uuid
-from celery.exceptions import WorkerShutdown, WorkerTerminate
+from celery.exceptions import ImproperlyConfigured, WorkerShutdown, WorkerTerminate
 from celery.platforms import EX_OK
 from celery.utils.collections import LimitedSet
 from celery.worker import state
@@ -16,6 +19,7 @@ def reset_state():
     yield
     state.active_requests.clear()
     state.revoked.clear()
+    state.revoked_stamps.clear()
     state.total_count.clear()
 
 
@@ -41,7 +45,7 @@ class MyPersistent(state.Persistent):
 
 class test_maybe_shutdown:
 
-    def teardown(self):
+    def teardown_method(self):
         state.should_stop = None
         state.should_terminate = None
 
@@ -187,3 +191,78 @@ class test_state:
         for request in requests:
             state.task_ready(request)
         assert len(state.active_requests) == 0
+
+
+class test_state_configuration():
+
+    @staticmethod
+    def import_state():
+        with patch.dict(sys.modules):
+            del sys.modules['celery.worker.state']
+            return import_module('celery.worker.state')
+
+    @patch.dict(os.environ, {
+        'CELERY_WORKER_REVOKES_MAX': '50001',
+        'CELERY_WORKER_SUCCESSFUL_MAX': '1001',
+        'CELERY_WORKER_REVOKE_EXPIRES': '10801',
+        'CELERY_WORKER_SUCCESSFUL_EXPIRES': '10801',
+    })
+    def test_custom_configuration(self):
+        state = self.import_state()
+        assert state.REVOKES_MAX == 50001
+        assert state.SUCCESSFUL_MAX == 1001
+        assert state.REVOKE_EXPIRES == 10801
+        assert state.SUCCESSFUL_EXPIRES == 10801
+
+    def test_default_configuration(self):
+        state = self.import_state()
+        assert state.REVOKES_MAX == 50000
+        assert state.SUCCESSFUL_MAX == 1000
+        assert state.REVOKE_EXPIRES == 10800
+        assert state.SUCCESSFUL_EXPIRES == 10800
+
+    def test_default_float_type_preserved(self):
+        """Ensure float defaults remain float type, not int."""
+        state = self.import_state()
+        assert isinstance(state.REVOKE_EXPIRES, float)
+        assert isinstance(state.SUCCESSFUL_EXPIRES, float)
+
+    @patch.dict(os.environ, {
+        'CELERY_WORKER_REVOKES_MAX': 'abc',
+    })
+    def test_malformed_revokes_max_raises_improperly_configured(self):
+        with pytest.raises(ImproperlyConfigured) as exc_info:
+            self.import_state()
+        assert 'CELERY_WORKER_REVOKES_MAX' in str(exc_info.value)
+        assert 'expected int' in str(exc_info.value)
+        assert 'abc' in str(exc_info.value)
+
+    @patch.dict(os.environ, {
+        'CELERY_WORKER_SUCCESSFUL_MAX': 'not_a_number',
+    })
+    def test_malformed_successful_max_raises_improperly_configured(self):
+        with pytest.raises(ImproperlyConfigured) as exc_info:
+            self.import_state()
+        assert 'CELERY_WORKER_SUCCESSFUL_MAX' in str(exc_info.value)
+        assert 'expected int' in str(exc_info.value)
+        assert 'not_a_number' in str(exc_info.value)
+
+    @patch.dict(os.environ, {
+        'CELERY_WORKER_REVOKE_EXPIRES': 'invalid_float',
+    })
+    def test_malformed_revoke_expires_raises_improperly_configured(self):
+        with pytest.raises(ImproperlyConfigured) as exc_info:
+            self.import_state()
+        assert 'CELERY_WORKER_REVOKE_EXPIRES' in str(exc_info.value)
+        assert 'expected float' in str(exc_info.value)
+        assert 'invalid_float' in str(exc_info.value)
+
+    @patch.dict(os.environ, {
+        'CELERY_WORKER_SUCCESSFUL_EXPIRES': 'xyz',
+    })
+    def test_malformed_successful_expires_raises_improperly_configured(self):
+        with pytest.raises(ImproperlyConfigured) as exc_info:
+            self.import_state()
+        assert 'CELERY_WORKER_SUCCESSFUL_EXPIRES' in str(exc_info.value)
+        assert 'expected float' in str(exc_info.value)
+        assert 'xyz' in str(exc_info.value)

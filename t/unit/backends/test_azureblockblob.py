@@ -10,10 +10,11 @@ from celery.exceptions import ImproperlyConfigured
 MODULE_TO_MOCK = "celery.backends.azureblockblob"
 
 pytest.importorskip('azure.storage.blob')
+pytest.importorskip('azure.core.exceptions')
 
 
 class test_AzureBlockBlobBackend:
-    def setup(self):
+    def setup_method(self):
         self.url = (
             "azureblockblob://"
             "DefaultEndpointsProtocol=protocol;"
@@ -24,6 +25,10 @@ class test_AzureBlockBlobBackend:
         self.backend = AzureBlockBlobBackend(
             app=self.app,
             url=self.url)
+
+    @pytest.fixture(params=['', 'my_folder/'])
+    def base_path(self, request):
+        return request.param
 
     def test_missing_third_party_sdk(self):
         azurestorage = azureblockblob.azurestorage
@@ -56,12 +61,83 @@ class test_AzureBlockBlobBackend:
         assert backend._blob_service_client is not None
         assert mock_blob_service_client_instance.create_container.call_count == 1
 
+    @patch(MODULE_TO_MOCK + ".AzureStorageQueuesTransport")
+    @patch(MODULE_TO_MOCK + ".BlobServiceClient")
+    def test_create_client__default_azure_credentials(self, mock_blob_service_client, mock_kombu_transport):
+        credential_mock = Mock()
+        mock_blob_service_client.return_value = Mock()
+        mock_kombu_transport.parse_uri.return_value = (credential_mock, "dummy_account_url")
+        url = "azureblockblob://DefaultAzureCredential@dummy_account_url"
+        backend = AzureBlockBlobBackend(app=self.app, url=url)
+        assert backend._blob_service_client is not None
+        mock_kombu_transport.parse_uri.assert_called_once_with(url.replace("azureblockblob://", ""))
+        mock_blob_service_client.assert_called_once_with(
+            account_url="dummy_account_url",
+            credential=credential_mock,
+            connection_timeout=backend._connection_timeout,
+            read_timeout=backend._read_timeout,
+        )
+
+    @patch(MODULE_TO_MOCK + ".AzureStorageQueuesTransport")
+    @patch(MODULE_TO_MOCK + ".BlobServiceClient")
+    def test_create_client__managed_identity_azure_credentials(self, mock_blob_service_client, mock_kombu_transport):
+        credential_mock = Mock()
+        mock_blob_service_client.return_value = Mock()
+        mock_kombu_transport.parse_uri.return_value = (credential_mock, "dummy_account_url")
+        url = "azureblockblob://ManagedIdentityCredential@dummy_account_url"
+        backend = AzureBlockBlobBackend(app=self.app, url=url)
+        assert backend._blob_service_client is not None
+        mock_kombu_transport.parse_uri.assert_called_once_with(url.replace("azureblockblob://", ""))
+        mock_blob_service_client.assert_called_once_with(
+            account_url="dummy_account_url",
+            credential=credential_mock,
+            connection_timeout=backend._connection_timeout,
+            read_timeout=backend._read_timeout,
+        )
+
+    @patch(MODULE_TO_MOCK + ".BlobServiceClient")
+    def test_configure_client(self, mock_blob_service_factory):
+
+        connection_timeout = 3
+        read_timeout = 11
+        self.app.conf.update(
+            {
+                'azureblockblob_connection_timeout': connection_timeout,
+                'azureblockblob_read_timeout': read_timeout,
+            }
+        )
+
+        mock_blob_service_client_instance = Mock()
+        mock_blob_service_factory.from_connection_string.return_value = (
+            mock_blob_service_client_instance
+        )
+
+        base_url = "azureblockblob://"
+        connection_string = "connection_string"
+        backend = AzureBlockBlobBackend(
+            app=self.app, url=f'{base_url}{connection_string}'
+        )
+
+        client = backend._blob_service_client
+        assert client is mock_blob_service_client_instance
+
+        (
+            mock_blob_service_factory
+            .from_connection_string
+            .assert_called_once_with(
+                connection_string,
+                connection_timeout=connection_timeout,
+                read_timeout=read_timeout
+            )
+        )
+
     @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._blob_service_client")
-    def test_get(self, mock_client):
+    def test_get(self, mock_client, base_path):
+        self.backend.base_path = base_path
         self.backend.get(b"mykey")
 
         mock_client.get_blob_client \
-            .assert_called_once_with(blob="mykey", container="celery")
+            .assert_called_once_with(blob=base_path + "mykey", container="celery")
 
         mock_client.get_blob_client.return_value \
             .download_blob.return_value \
@@ -77,31 +153,76 @@ class test_AzureBlockBlobBackend:
         assert self.backend.get(b"mykey") is None
 
     @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._blob_service_client")
-    def test_set(self, mock_client):
+    def test_set(self, mock_client, base_path):
+        self.backend.base_path = base_path
         self.backend._set_with_state(b"mykey", "myvalue", states.SUCCESS)
 
         mock_client.get_blob_client.assert_called_once_with(
-            container="celery", blob="mykey")
+            container="celery", blob=base_path + "mykey")
 
         mock_client.get_blob_client.return_value \
             .upload_blob.assert_called_once_with("myvalue", overwrite=True)
 
     @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._blob_service_client")
-    def test_mget(self, mock_client):
+    def test_mget(self, mock_client, base_path):
         keys = [b"mykey1", b"mykey2"]
 
+        self.backend.base_path = base_path
         self.backend.mget(keys)
 
         mock_client.get_blob_client.assert_has_calls(
-            [call(blob=key.decode(), container='celery') for key in keys],
+            [call(blob=base_path + key.decode(), container='celery') for key in keys],
             any_order=True,)
 
     @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._blob_service_client")
-    def test_delete(self, mock_client):
+    def test_delete(self, mock_client, base_path):
+        self.backend.base_path = base_path
         self.backend.delete(b"mykey")
 
         mock_client.get_blob_client.assert_called_once_with(
-            container="celery", blob="mykey")
+            container="celery", blob=base_path + "mykey")
 
         mock_client.get_blob_client.return_value \
             .delete_blob.assert_called_once()
+
+    def test_base_path_conf(self, base_path):
+        self.app.conf.azureblockblob_base_path = base_path
+        backend = AzureBlockBlobBackend(
+            app=self.app,
+            url=self.url
+        )
+        assert backend.base_path == base_path
+
+    def test_base_path_conf_default(self):
+        backend = AzureBlockBlobBackend(
+            app=self.app,
+            url=self.url
+        )
+        assert backend.base_path == ''
+
+
+class test_as_uri:
+    def setup_method(self):
+        self.url = (
+            "azureblockblob://"
+            "DefaultEndpointsProtocol=protocol;"
+            "AccountName=name;"
+            "AccountKey=account_key;"
+            "EndpointSuffix=suffix"
+        )
+        self.backend = AzureBlockBlobBackend(
+            app=self.app,
+            url=self.url
+        )
+
+    def test_as_uri_include_password(self):
+        assert self.backend.as_uri(include_password=True) == self.url
+
+    def test_as_uri_exclude_password(self):
+        assert self.backend.as_uri(include_password=False) == (
+            "azureblockblob://"
+            "DefaultEndpointsProtocol=protocol;"
+            "AccountName=name;"
+            "AccountKey=**;"
+            "EndpointSuffix=suffix"
+        )

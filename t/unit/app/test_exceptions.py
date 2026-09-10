@@ -1,5 +1,5 @@
 import pickle
-from datetime import datetime
+from datetime import datetime, timezone
 
 from celery.exceptions import Reject, Retry
 
@@ -7,12 +7,15 @@ from celery.exceptions import Reject, Retry
 class test_Retry:
 
     def test_when_datetime(self):
-        x = Retry('foo', KeyError(), when=datetime.utcnow())
+        x = Retry('foo', KeyError(), when=datetime.now(timezone.utc))
         assert x.humanize()
 
     def test_pickleable(self):
-        x = Retry('foo', KeyError(), when=datetime.utcnow())
-        assert pickle.loads(pickle.dumps(x))
+        x = Retry('foo', KeyError(), when=datetime.now(timezone.utc))
+        y = pickle.loads(pickle.dumps(x))
+        assert x.message == y.message
+        assert repr(x.exc) == repr(y.exc)
+        assert x.when == y.when
 
 
 class test_Reject:

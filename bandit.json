@@ -1,17 +1,17 @@
 {
   "errors": [],
-  "generated_at": "2020-08-06T14:09:58Z",
+  "generated_at": "2021-11-08T00:55:15Z",
   "metrics": {
     "_totals": {
-      "CONFIDENCE.HIGH": 38.0,
+      "CONFIDENCE.HIGH": 40.0,
       "CONFIDENCE.LOW": 0.0,
       "CONFIDENCE.MEDIUM": 2.0,
       "CONFIDENCE.UNDEFINED": 0.0,
       "SEVERITY.HIGH": 0.0,
-      "SEVERITY.LOW": 38.0,
+      "SEVERITY.LOW": 40.0,
       "SEVERITY.MEDIUM": 2.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 29309,
+      "loc": 29546,
       "nosec": 0
     },
     "celery/__init__.py": {
@@ -23,7 +23,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 129,
+      "loc": 126,
       "nosec": 0
     },
     "celery/__main__.py": {
@@ -35,7 +35,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 9,
+      "loc": 12,
       "nosec": 0
     },
     "celery/_state.py": {
@@ -71,7 +71,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 528,
+      "loc": 503,
       "nosec": 0
     },
     "celery/app/annotations.py": {
@@ -95,7 +95,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 43,
+      "loc": 50,
       "nosec": 0
     },
     "celery/app/backends.py": {
@@ -119,7 +119,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 964,
+      "loc": 1028,
       "nosec": 0
     },
     "celery/app/builtins.py": {
@@ -143,7 +143,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 383,
+      "loc": 607,
       "nosec": 0
     },
     "celery/app/defaults.py": {
@@ -155,7 +155,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 365,
+      "loc": 361,
       "nosec": 0
     },
     "celery/app/events.py": {
@@ -179,7 +179,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 197,
+      "loc": 198,
       "nosec": 0
     },
     "celery/app/registry.py": {
@@ -203,7 +203,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 110,
+      "loc": 107,
       "nosec": 0
     },
     "celery/app/task.py": {
@@ -215,7 +215,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 740,
+      "loc": 779,
       "nosec": 0
     },
     "celery/app/trace.py": {
@@ -227,7 +227,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 535,
+      "loc": 560,
       "nosec": 0
     },
     "celery/app/utils.py": {
@@ -239,7 +239,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 300,
+      "loc": 315,
       "nosec": 0
     },
     "celery/apps/__init__.py": {
@@ -275,7 +275,7 @@
       "SEVERITY.LOW": 2.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 409,
+      "loc": 426,
       "nosec": 0
     },
     "celery/apps/worker.py": {
@@ -287,7 +287,7 @@
       "SEVERITY.LOW": 1.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 291,
+      "loc": 304,
       "nosec": 0
     },
     "celery/backends/__init__.py": {
@@ -299,19 +299,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 17,
-      "nosec": 0
-    },
-    "celery/backends/amqp.py": {
-      "CONFIDENCE.HIGH": 0.0,
-      "CONFIDENCE.LOW": 0.0,
-      "CONFIDENCE.MEDIUM": 0.0,
-      "CONFIDENCE.UNDEFINED": 0.0,
-      "SEVERITY.HIGH": 0.0,
-      "SEVERITY.LOW": 0.0,
-      "SEVERITY.MEDIUM": 0.0,
-      "SEVERITY.UNDEFINED": 0.0,
-      "loc": 265,
+      "loc": 1,
       "nosec": 0
     },
     "celery/backends/arangodb.py": {
@@ -323,7 +311,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 199,
+      "loc": 201,
       "nosec": 0
     },
     "celery/backends/asynchronous.py": {
@@ -347,7 +335,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 107,
+      "loc": 126,
       "nosec": 0
     },
     "celery/backends/base.py": {
@@ -359,7 +347,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 773,
+      "loc": 809,
       "nosec": 0
     },
     "celery/backends/cache.py": {
@@ -371,7 +359,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 117,
+      "loc": 118,
       "nosec": 0
     },
     "celery/backends/cassandra.py": {
@@ -383,7 +371,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 178,
+      "loc": 174,
       "nosec": 0
     },
     "celery/backends/consul.py": {
@@ -395,7 +383,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 74,
+      "loc": 79,
       "nosec": 0
     },
     "celery/backends/cosmosdbsql.py": {
@@ -419,7 +407,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 85,
+      "loc": 79,
       "nosec": 0
     },
     "celery/backends/couchdb.py": {
@@ -431,7 +419,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 76,
+      "loc": 77,
       "nosec": 0
     },
     "celery/backends/database/__init__.py": {
@@ -467,7 +455,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 47,
+      "loc": 68,
       "nosec": 0
     },
     "celery/backends/dynamodb.py": {
@@ -503,7 +491,7 @@
       "SEVERITY.LOW": 1.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 76,
+      "loc": 89,
       "nosec": 0
     },
     "celery/backends/mongodb.py": {
@@ -515,7 +503,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 241,
+      "loc": 243,
       "nosec": 0
     },
     "celery/backends/redis.py": {
@@ -527,19 +515,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 448,
-      "nosec": 0
-    },
-    "celery/backends/riak.py": {
-      "CONFIDENCE.HIGH": 0.0,
-      "CONFIDENCE.LOW": 0.0,
-      "CONFIDENCE.MEDIUM": 0.0,
-      "CONFIDENCE.UNDEFINED": 0.0,
-      "SEVERITY.HIGH": 0.0,
-      "SEVERITY.LOW": 0.0,
-      "SEVERITY.MEDIUM": 0.0,
-      "SEVERITY.UNDEFINED": 0.0,
-      "loc": 105,
+      "loc": 499,
       "nosec": 0
     },
     "celery/backends/rpc.py": {
@@ -563,19 +539,19 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 65,
+      "loc": 66,
       "nosec": 0
     },
     "celery/beat.py": {
-      "CONFIDENCE.HIGH": 0.0,
+      "CONFIDENCE.HIGH": 1.0,
       "CONFIDENCE.LOW": 0.0,
       "CONFIDENCE.MEDIUM": 0.0,
       "CONFIDENCE.UNDEFINED": 0.0,
       "SEVERITY.HIGH": 0.0,
-      "SEVERITY.LOW": 0.0,
+      "SEVERITY.LOW": 1.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 553,
+      "loc": 567,
       "nosec": 0
     },
     "celery/bin/__init__.py": {
@@ -599,7 +575,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 268,
+      "loc": 274,
       "nosec": 0
     },
     "celery/bin/base.py": {
@@ -611,7 +587,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 180,
+      "loc": 219,
       "nosec": 0
     },
     "celery/bin/beat.py": {
@@ -623,7 +599,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 58,
+      "loc": 63,
       "nosec": 0
     },
     "celery/bin/call.py": {
@@ -635,7 +611,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 66,
+      "loc": 69,
       "nosec": 0
     },
     "celery/bin/celery.py": {
@@ -647,7 +623,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 127,
+      "loc": 176,
       "nosec": 0
     },
     "celery/bin/control.py": {
@@ -659,7 +635,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 164,
+      "loc": 181,
       "nosec": 0
     },
     "celery/bin/events.py": {
@@ -671,7 +647,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 76,
+      "loc": 79,
       "nosec": 0
     },
     "celery/bin/graph.py": {
@@ -683,7 +659,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 157,
+      "loc": 162,
       "nosec": 0
     },
     "celery/bin/list.py": {
@@ -695,7 +671,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 25,
+      "loc": 28,
       "nosec": 0
     },
     "celery/bin/logtool.py": {
@@ -707,7 +683,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 122,
+      "loc": 125,
       "nosec": 0
     },
     "celery/bin/migrate.py": {
@@ -719,7 +695,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 54,
+      "loc": 57,
       "nosec": 0
     },
     "celery/bin/multi.py": {
@@ -731,7 +707,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 372,
+      "loc": 375,
       "nosec": 0
     },
     "celery/bin/purge.py": {
@@ -743,7 +719,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 55,
+      "loc": 60,
       "nosec": 0
     },
     "celery/bin/result.py": {
@@ -755,7 +731,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 22,
+      "loc": 25,
       "nosec": 0
     },
     "celery/bin/shell.py": {
@@ -767,7 +743,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 143,
+      "loc": 144,
       "nosec": 0
     },
     "celery/bin/upgrade.py": {
@@ -779,7 +755,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 69,
+      "loc": 74,
       "nosec": 0
     },
     "celery/bin/worker.py": {
@@ -791,7 +767,7 @@
       "SEVERITY.LOW": 1.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 300,
+      "loc": 306,
       "nosec": 0
     },
     "celery/bootsteps.py": {
@@ -815,7 +791,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 1113,
+      "loc": 1143,
       "nosec": 0
     },
     "celery/concurrency/__init__.py": {
@@ -827,7 +803,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 19,
+      "loc": 22,
       "nosec": 0
     },
     "celery/concurrency/asynpool.py": {
@@ -863,7 +839,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 114,
+      "loc": 145,
       "nosec": 0
     },
     "celery/concurrency/gevent.py": {
@@ -887,7 +863,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 131,
+      "loc": 132,
       "nosec": 0
     },
     "celery/concurrency/solo.py": {
@@ -911,7 +887,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 33,
+      "loc": 30,
       "nosec": 0
     },
     "celery/contrib/__init__.py": {
@@ -959,7 +935,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 146,
+      "loc": 153,
       "nosec": 0
     },
     "celery/contrib/rdb.py": {
@@ -1019,7 +995,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 175,
+      "loc": 176,
       "nosec": 0
     },
     "celery/contrib/testing/mocks.py": {
@@ -1055,7 +1031,7 @@
       "SEVERITY.LOW": 2.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 130,
+      "loc": 141,
       "nosec": 0
     },
     "celery/events/__init__.py": {
@@ -1139,7 +1115,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 87,
+      "loc": 88,
       "nosec": 0
     },
     "celery/events/state.py": {
@@ -1151,7 +1127,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 569,
+      "loc": 570,
       "nosec": 0
     },
     "celery/exceptions.py": {
@@ -1163,19 +1139,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 186,
-      "nosec": 0
-    },
-    "celery/five.py": {
-      "CONFIDENCE.HIGH": 0.0,
-      "CONFIDENCE.LOW": 0.0,
-      "CONFIDENCE.MEDIUM": 0.0,
-      "CONFIDENCE.UNDEFINED": 0.0,
-      "SEVERITY.HIGH": 0.0,
-      "SEVERITY.LOW": 0.0,
-      "SEVERITY.MEDIUM": 0.0,
-      "SEVERITY.UNDEFINED": 0.0,
-      "loc": 4,
+      "loc": 196,
       "nosec": 0
     },
     "celery/fixups/__init__.py": {
@@ -1235,7 +1199,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 202,
+      "loc": 204,
       "nosec": 0
     },
     "celery/loaders/default.py": {
@@ -1259,7 +1223,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 426,
+      "loc": 404,
       "nosec": 0
     },
     "celery/platforms.py": {
@@ -1271,7 +1235,7 @@
       "SEVERITY.LOW": 1.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 623,
+      "loc": 631,
       "nosec": 0
     },
     "celery/result.py": {
@@ -1283,7 +1247,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 866,
+      "loc": 843,
       "nosec": 0
     },
     "celery/schedules.py": {
@@ -1382,30 +1346,6 @@
       "loc": 95,
       "nosec": 0
     },
-    "celery/task/__init__.py": {
-      "CONFIDENCE.HIGH": 0.0,
-      "CONFIDENCE.LOW": 0.0,
-      "CONFIDENCE.MEDIUM": 0.0,
-      "CONFIDENCE.UNDEFINED": 0.0,
-      "SEVERITY.HIGH": 0.0,
-      "SEVERITY.LOW": 0.0,
-      "SEVERITY.MEDIUM": 0.0,
-      "SEVERITY.UNDEFINED": 0.0,
-      "loc": 39,
-      "nosec": 0
-    },
-    "celery/task/base.py": {
-      "CONFIDENCE.HIGH": 0.0,
-      "CONFIDENCE.LOW": 0.0,
-      "CONFIDENCE.MEDIUM": 0.0,
-      "CONFIDENCE.UNDEFINED": 0.0,
-      "SEVERITY.HIGH": 0.0,
-      "SEVERITY.LOW": 0.0,
-      "SEVERITY.MEDIUM": 0.0,
-      "SEVERITY.UNDEFINED": 0.0,
-      "loc": 184,
-      "nosec": 0
-    },
     "celery/utils/__init__.py": {
       "CONFIDENCE.HIGH": 0.0,
       "CONFIDENCE.LOW": 0.0,
@@ -1439,7 +1379,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 611,
+      "loc": 595,
       "nosec": 0
     },
     "celery/utils/debug.py": {
@@ -1490,18 +1430,6 @@
       "loc": 262,
       "nosec": 0
     },
-    "celery/utils/encoding.py": {
-      "CONFIDENCE.HIGH": 0.0,
-      "CONFIDENCE.LOW": 0.0,
-      "CONFIDENCE.MEDIUM": 0.0,
-      "CONFIDENCE.UNDEFINED": 0.0,
-      "SEVERITY.HIGH": 0.0,
-      "SEVERITY.LOW": 0.0,
-      "SEVERITY.MEDIUM": 0.0,
-      "SEVERITY.UNDEFINED": 0.0,
-      "loc": 5,
-      "nosec": 0
-    },
     "celery/utils/functional.py": {
       "CONFIDENCE.HIGH": 1.0,
       "CONFIDENCE.LOW": 0.0,
@@ -1511,7 +1439,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 1.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 261,
+      "loc": 290,
       "nosec": 0
     },
     "celery/utils/graph.py": {
@@ -1535,7 +1463,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 122,
+      "loc": 115,
       "nosec": 0
     },
     "celery/utils/iso8601.py": {
@@ -1559,7 +1487,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 210,
+      "loc": 215,
       "nosec": 0
     },
     "celery/utils/nodenames.py": {
@@ -1595,7 +1523,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 188,
+      "loc": 190,
       "nosec": 0
     },
     "celery/utils/serialization.py": {
@@ -1607,7 +1535,7 @@
       "SEVERITY.LOW": 4.0,
       "SEVERITY.MEDIUM": 1.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 210,
+      "loc": 209,
       "nosec": 0
     },
     "celery/utils/static/__init__.py": {
@@ -1655,7 +1583,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 135,
+      "loc": 136,
       "nosec": 0
     },
     "celery/utils/threads.py": {
@@ -1775,7 +1703,7 @@
       "SEVERITY.LOW": 1.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 470,
+      "loc": 493,
       "nosec": 0
     },
     "celery/worker/consumer/control.py": {
@@ -1859,7 +1787,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 423,
+      "loc": 424,
       "nosec": 0
     },
     "celery/worker/heartbeat.py": {
@@ -1883,7 +1811,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 79,
+      "loc": 92,
       "nosec": 0
     },
     "celery/worker/pidbox.py": {
@@ -1907,19 +1835,19 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 536,
+      "loc": 578,
       "nosec": 0
     },
     "celery/worker/state.py": {
-      "CONFIDENCE.HIGH": 0.0,
+      "CONFIDENCE.HIGH": 1.0,
       "CONFIDENCE.LOW": 0.0,
       "CONFIDENCE.MEDIUM": 0.0,
       "CONFIDENCE.UNDEFINED": 0.0,
       "SEVERITY.HIGH": 0.0,
-      "SEVERITY.LOW": 0.0,
+      "SEVERITY.LOW": 1.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 200,
+      "loc": 208,
       "nosec": 0
     },
     "celery/worker/strategy.py": {
@@ -1931,7 +1859,7 @@
       "SEVERITY.LOW": 0.0,
       "SEVERITY.MEDIUM": 0.0,
       "SEVERITY.UNDEFINED": 0.0,
-      "loc": 166,
+      "loc": 175,
       "nosec": 0
     },
     "celery/worker/worker.py": {
@@ -1963,136 +1891,178 @@
       "test_name": "blacklist"
     },
     {
-      "code": "196         maybe_call(on_spawn, self, argstr=' '.join(argstr), env=env)\n197         pipe = Popen(argstr, env=env)\n198         return self.handle_process_exit(\n",
+      "code": "216         maybe_call(on_spawn, self, argstr=' '.join(argstr), env=env)\n217         pipe = Popen(argstr, env=env)\n218         return self.handle_process_exit(\n",
       "filename": "celery/apps/multi.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "subprocess call - check for execution of untrusted input.",
-      "line_number": 197,
+      "line_number": 217,
       "line_range": [
-        197
+        217
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b603_subprocess_without_shell_equals_true.html",
       "test_id": "B603",
       "test_name": "subprocess_without_shell_equals_true"
     },
     {
-      "code": "322     ])\n323     os.execv(sys.executable, [sys.executable] + sys.argv)\n324 \n",
+      "code": "341     ])\n342     os.execv(sys.executable, [sys.executable] + sys.argv)\n343 \n",
       "filename": "celery/apps/worker.py",
       "issue_confidence": "MEDIUM",
       "issue_severity": "LOW",
       "issue_text": "Starting a process without a shell.",
-      "line_number": 323,
+      "line_number": 342,
       "line_range": [
-        323
+        342
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b606_start_process_with_no_shell.html",
       "test_id": "B606",
       "test_name": "start_process_with_no_shell"
     },
     {
-      "code": "74             self.set(key, b'test value')\n75             assert self.get(key) == b'test value'\n76             self.delete(key)\n",
+      "code": "72             self.set(key, b'test value')\n73             assert self.get(key) == b'test value'\n74             self.delete(key)\n",
       "filename": "celery/backends/filesystem.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 75,
+      "line_number": 73,
       "line_range": [
-        75
+        73
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "89                 path = executable\n90             os.execv(path, [path] + argv)\n91         except Exception:  # pylint: disable=broad-except\n",
-      "filename": "celery/bin/worker.py",
-      "issue_confidence": "MEDIUM",
-      "issue_severity": "LOW",
-      "issue_text": "Starting a process without a shell.",
-      "line_number": 90,
-      "line_range": [
-        90
-      ],
-      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b606_start_process_with_no_shell.html",
-      "test_id": "B606",
-      "test_name": "start_process_with_no_shell"
-    },
-    {
-      "code": "23 from numbers import Integral\n24 from pickle import HIGHEST_PROTOCOL\n25 from time import sleep\n",
-      "filename": "celery/concurrency/asynpool.py",
+      "code": "6 import os\n7 import shelve\n8 import sys\n",
+      "filename": "celery/beat.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
-      "issue_text": "Consider possible security implications associated with HIGHEST_PROTOCOL module.",
-      "line_number": 24,
+      "issue_text": "Consider possible security implications associated with shelve module.",
+      "line_number": 7,
       "line_range": [
-        24
+        7
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_imports.html#b403-import-pickle",
       "test_id": "B403",
       "test_name": "blacklist"
     },
     {
-      "code": "613                     proc in waiting_to_start):\n614                 assert proc.outqR_fd in fileno_to_outq\n615                 assert fileno_to_outq[proc.outqR_fd] is proc\n",
+      "code": "124                 path = executable\n125             os.execv(path, [path] + argv)\n126             return EX_OK\n",
+      "filename": "celery/bin/worker.py",
+      "issue_confidence": "MEDIUM",
+      "issue_severity": "LOW",
+      "issue_text": "Starting a process without a shell.",
+      "line_number": 125,
+      "line_range": [
+        125
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b606_start_process_with_no_shell.html",
+      "test_id": "B606",
+      "test_name": "start_process_with_no_shell"
+    },
+    {
+      "code": "22 from numbers import Integral\n23 from pickle import HIGHEST_PROTOCOL\n24 from struct import pack, unpack, unpack_from\n",
+      "filename": "celery/concurrency/asynpool.py",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Consider possible security implications associated with HIGHEST_PROTOCOL module.",
+      "line_number": 23,
+      "line_range": [
+        23
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_imports.html#b403-import-pickle",
+      "test_id": "B403",
+      "test_name": "blacklist"
+    },
+    {
+      "code": "607                     proc in waiting_to_start):\n608                 assert proc.outqR_fd in fileno_to_outq\n609                 assert fileno_to_outq[proc.outqR_fd] is proc\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 614,
+      "line_number": 608,
       "line_range": [
-        614
+        608
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "614                 assert proc.outqR_fd in fileno_to_outq\n615                 assert fileno_to_outq[proc.outqR_fd] is proc\n616                 assert proc.outqR_fd in hub.readers\n",
+      "code": "608                 assert proc.outqR_fd in fileno_to_outq\n609                 assert fileno_to_outq[proc.outqR_fd] is proc\n610                 assert proc.outqR_fd in hub.readers\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 615,
+      "line_number": 609,
       "line_range": [
-        615
+        609
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "615                 assert fileno_to_outq[proc.outqR_fd] is proc\n616                 assert proc.outqR_fd in hub.readers\n617                 error('Timed out waiting for UP message from %r', proc)\n",
+      "code": "609                 assert fileno_to_outq[proc.outqR_fd] is proc\n610                 assert proc.outqR_fd in hub.readers\n611                 error('Timed out waiting for UP message from %r', proc)\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 616,
+      "line_number": 610,
       "line_range": [
-        616
+        610
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "636 \n637             assert not isblocking(proc.outq._reader)\n638 \n639             # handle_result_event is called when the processes outqueue is\n640             # readable.\n641             add_reader(proc.outqR_fd, handle_result_event, proc.outqR_fd)\n",
+      "code": "630 \n631             assert not isblocking(proc.outq._reader)\n632 \n633             # handle_result_event is called when the processes outqueue is\n634             # readable.\n635             add_reader(proc.outqR_fd, handle_result_event, proc.outqR_fd)\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 637,
+      "line_number": 631,
       "line_range": [
-        637,
-        638,
-        639,
-        640
+        631,
+        632,
+        633,
+        634
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "1090         synq = None\n1091         assert isblocking(inq._reader)\n1092         assert not isblocking(inq._writer)\n",
+      "code": "1088         synq = None\n1089         assert isblocking(inq._reader)\n1090         assert not isblocking(inq._writer)\n",
+      "filename": "celery/concurrency/asynpool.py",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "line_number": 1089,
+      "line_range": [
+        1089
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
+      "test_id": "B101",
+      "test_name": "assert_used"
+    },
+    {
+      "code": "1089         assert isblocking(inq._reader)\n1090         assert not isblocking(inq._writer)\n1091         assert not isblocking(outq._reader)\n",
+      "filename": "celery/concurrency/asynpool.py",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+      "line_number": 1090,
+      "line_range": [
+        1090
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
+      "test_id": "B101",
+      "test_name": "assert_used"
+    },
+    {
+      "code": "1090         assert not isblocking(inq._writer)\n1091         assert not isblocking(outq._reader)\n1092         assert isblocking(outq._writer)\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
@@ -2106,7 +2076,7 @@
       "test_name": "assert_used"
     },
     {
-      "code": "1091         assert isblocking(inq._reader)\n1092         assert not isblocking(inq._writer)\n1093         assert not isblocking(outq._reader)\n",
+      "code": "1091         assert not isblocking(outq._reader)\n1092         assert isblocking(outq._writer)\n1093         if self.synack:\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
@@ -2120,196 +2090,170 @@
       "test_name": "assert_used"
     },
     {
-      "code": "1092         assert not isblocking(inq._writer)\n1093         assert not isblocking(outq._reader)\n1094         assert isblocking(outq._writer)\n",
+      "code": "1094             synq = _SimpleQueue(wnonblock=True)\n1095             assert isblocking(synq._reader)\n1096             assert not isblocking(synq._writer)\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 1093,
+      "line_number": 1095,
       "line_range": [
-        1093
+        1095
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "1093         assert not isblocking(outq._reader)\n1094         assert isblocking(outq._writer)\n1095         if self.synack:\n",
+      "code": "1095             assert isblocking(synq._reader)\n1096             assert not isblocking(synq._writer)\n1097         return inq, outq, synq\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 1094,
+      "line_number": 1096,
       "line_range": [
-        1094
+        1096
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "1096             synq = _SimpleQueue(wnonblock=True)\n1097             assert isblocking(synq._reader)\n1098             assert not isblocking(synq._writer)\n",
+      "code": "1107             return logger.warning('process with pid=%s already exited', pid)\n1108         assert proc.inqW_fd not in self._fileno_to_inq\n1109         assert proc.inqW_fd not in self._all_inqueues\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 1097,
+      "line_number": 1108,
       "line_range": [
-        1097
+        1108
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "1097             assert isblocking(synq._reader)\n1098             assert not isblocking(synq._writer)\n1099         return inq, outq, synq\n",
+      "code": "1108         assert proc.inqW_fd not in self._fileno_to_inq\n1109         assert proc.inqW_fd not in self._all_inqueues\n1110         self._waiting_to_start.discard(proc)\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 1098,
+      "line_number": 1109,
       "line_range": [
-        1098
+        1109
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "1109             return logger.warning('process with pid=%s already exited', pid)\n1110         assert proc.inqW_fd not in self._fileno_to_inq\n1111         assert proc.inqW_fd not in self._all_inqueues\n",
+      "code": "1187         \"\"\"Mark new ownership for ``queues`` to update fileno indices.\"\"\"\n1188         assert queues in self._queues\n1189         b = len(self._queues)\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 1110,
+      "line_number": 1188,
       "line_range": [
-        1110
+        1188
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "1110         assert proc.inqW_fd not in self._fileno_to_inq\n1111         assert proc.inqW_fd not in self._all_inqueues\n1112         self._waiting_to_start.discard(proc)\n",
+      "code": "1190         self._queues[queues] = proc\n1191         assert b == len(self._queues)\n1192 \n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 1111,
+      "line_number": 1191,
       "line_range": [
-        1111
+        1191
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "1189         \"\"\"Mark new ownership for ``queues`` to update fileno indices.\"\"\"\n1190         assert queues in self._queues\n1191         b = len(self._queues)\n",
+      "code": "1270                 pass\n1271             assert len(self._queues) == before\n1272 \n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 1190,
+      "line_number": 1271,
       "line_range": [
-        1190
+        1271
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "1192         self._queues[queues] = proc\n1193         assert b == len(self._queues)\n1194 \n",
+      "code": "1277         \"\"\"\n1278         assert not proc._is_alive()\n1279         self._waiting_to_start.discard(proc)\n",
       "filename": "celery/concurrency/asynpool.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 1193,
+      "line_number": 1278,
       "line_range": [
-        1193
+        1278
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "1272                 pass\n1273             assert len(self._queues) == before\n1274 \n",
-      "filename": "celery/concurrency/asynpool.py",
-      "issue_confidence": "HIGH",
-      "issue_severity": "LOW",
-      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 1273,
-      "line_range": [
-        1273
-      ],
-      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
-      "test_id": "B101",
-      "test_name": "assert_used"
-    },
-    {
-      "code": "1279         \"\"\"\n1280         assert not proc._is_alive()\n1281         self._waiting_to_start.discard(proc)\n",
-      "filename": "celery/concurrency/asynpool.py",
-      "issue_confidence": "HIGH",
-      "issue_severity": "LOW",
-      "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 1280,
-      "line_range": [
-        1280
-      ],
-      "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
-      "test_id": "B101",
-      "test_name": "assert_used"
-    },
-    {
-      "code": "81             with allow_join_result():\n82                 assert ping.delay().get(timeout=ping_task_timeout) == 'pong'\n83 \n",
+      "code": "85             with allow_join_result():\n86                 assert ping.delay().get(timeout=ping_task_timeout) == 'pong'\n87 \n",
       "filename": "celery/contrib/testing/worker.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 82,
+      "line_number": 86,
       "line_range": [
-        82
+        86
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "104     if perform_ping_check:\n105         assert 'celery.ping' in app.tasks\n106     # Make sure we can connect to the broker\n",
+      "code": "109     if perform_ping_check:\n110         assert 'celery.ping' in app.tasks\n111     # Make sure we can connect to the broker\n",
       "filename": "celery/contrib/testing/worker.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-      "line_number": 105,
+      "line_number": 110,
       "line_range": [
-        105
+        110
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b101_assert_used.html",
       "test_id": "B101",
       "test_name": "assert_used"
     },
     {
-      "code": "169                 return self.win.getkey().upper()\n170             except Exception:  # pylint: disable=broad-except\n171                 pass\n",
+      "code": "169                 return self.win.getkey().upper()\n170             except Exception:  # pylint: disable=broad-except\n171                 pass\n172 \n",
       "filename": "celery/events/cursesmon.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Try, Except, Pass detected.",
       "line_number": 170,
       "line_range": [
-        170
+        170,
+        171
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b110_try_except_pass.html",
       "test_id": "B110",
       "test_name": "try_except_pass"
     },
     {
-      "code": "481         max_groups = os.sysconf('SC_NGROUPS_MAX')\n482     except Exception:  # pylint: disable=broad-except\n483         pass\n",
+      "code": "488         max_groups = os.sysconf('SC_NGROUPS_MAX')\n489     except Exception:  # pylint: disable=broad-except\n490         pass\n491     try:\n",
       "filename": "celery/platforms.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Try, Except, Pass detected.",
-      "line_number": 482,
+      "line_number": 489,
       "line_range": [
-        482
+        489,
+        490
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b110_try_except_pass.html",
       "test_id": "B110",
@@ -2386,25 +2330,39 @@
       "test_name": "assert_used"
     },
     {
-      "code": "277     # Tasks are rarely, if ever, created at runtime - exec here is fine.\n278     exec(definition, namespace)\n279     result = namespace[name]\n",
+      "code": "332     # Tasks are rarely, if ever, created at runtime - exec here is fine.\n333     exec(definition, namespace)\n334     result = namespace[name]\n",
       "filename": "celery/utils/functional.py",
       "issue_confidence": "HIGH",
       "issue_severity": "MEDIUM",
       "issue_text": "Use of exec detected.",
-      "line_number": 278,
+      "line_number": 333,
       "line_range": [
-        278
+        333
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b102_exec_used.html",
       "test_id": "B102",
       "test_name": "exec_used"
     },
     {
-      "code": "15 try:\n16     import cPickle as pickle\n17 except ImportError:\n",
+      "code": "13 try:\n14     import cPickle as pickle\n15 except ImportError:\n",
       "filename": "celery/utils/serialization.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Consider possible security implications associated with cPickle module.",
+      "line_number": 14,
+      "line_range": [
+        14
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_imports.html#b403-import-pickle",
+      "test_id": "B403",
+      "test_name": "blacklist"
+    },
+    {
+      "code": "15 except ImportError:\n16     import pickle\n17 \n",
+      "filename": "celery/utils/serialization.py",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Consider possible security implications associated with pickle module.",
       "line_number": 16,
       "line_range": [
         16
@@ -2414,56 +2372,44 @@
       "test_name": "blacklist"
     },
     {
-      "code": "17 except ImportError:\n18     import pickle  # noqa\n19 \n",
-      "filename": "celery/utils/serialization.py",
-      "issue_confidence": "HIGH",
-      "issue_severity": "LOW",
-      "issue_text": "Consider possible security implications associated with pickle module.",
-      "line_number": 18,
-      "line_range": [
-        18
-      ],
-      "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_imports.html#b403-import-pickle",
-      "test_id": "B403",
-      "test_name": "blacklist"
-    },
-    {
-      "code": "64             loads(dumps(superexc))\n65         except Exception:  # pylint: disable=broad-except\n66             pass\n",
+      "code": "62             loads(dumps(superexc))\n63         except Exception:  # pylint: disable=broad-except\n64             pass\n65         else:\n",
       "filename": "celery/utils/serialization.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Try, Except, Pass detected.",
-      "line_number": 65,
+      "line_number": 63,
       "line_range": [
-        65
+        63,
+        64
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b110_try_except_pass.html",
       "test_id": "B110",
       "test_name": "try_except_pass"
     },
     {
-      "code": "158     try:\n159         pickle.loads(pickle.dumps(exc))\n160     except Exception:  # pylint: disable=broad-except\n",
+      "code": "156     try:\n157         pickle.loads(pickle.dumps(exc))\n158     except Exception:  # pylint: disable=broad-except\n",
       "filename": "celery/utils/serialization.py",
       "issue_confidence": "HIGH",
       "issue_severity": "MEDIUM",
       "issue_text": "Pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue.",
-      "line_number": 159,
+      "line_number": 157,
       "line_range": [
-        159
+        157
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_calls.html#b301-pickle",
       "test_id": "B301",
       "test_name": "blacklist"
     },
     {
-      "code": "159         pickle.loads(pickle.dumps(exc))\n160     except Exception:  # pylint: disable=broad-except\n161         pass\n",
+      "code": "157         pickle.loads(pickle.dumps(exc))\n158     except Exception:  # pylint: disable=broad-except\n159         pass\n160     else:\n",
       "filename": "celery/utils/serialization.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Try, Except, Pass detected.",
-      "line_number": 160,
+      "line_number": 158,
       "line_range": [
-        160
+        158,
+        159
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b110_try_except_pass.html",
       "test_id": "B110",
@@ -2498,18 +2444,32 @@
       "test_name": "assert_used"
     },
     {
-      "code": "335             self.connection.collect()\n336         except Exception:  # pylint: disable=broad-except\n337             pass\n",
+      "code": "350             self.connection.collect()\n351         except Exception:  # pylint: disable=broad-except\n352             pass\n353 \n",
       "filename": "celery/worker/consumer/consumer.py",
       "issue_confidence": "HIGH",
       "issue_severity": "LOW",
       "issue_text": "Try, Except, Pass detected.",
-      "line_number": 336,
+      "line_number": 351,
       "line_range": [
-        336
+        351,
+        352
       ],
       "more_info": "https://bandit.readthedocs.io/en/latest/plugins/b110_try_except_pass.html",
       "test_id": "B110",
       "test_name": "try_except_pass"
+    },
+    {
+      "code": "7 import platform\n8 import shelve\n9 import sys\n",
+      "filename": "celery/worker/state.py",
+      "issue_confidence": "HIGH",
+      "issue_severity": "LOW",
+      "issue_text": "Consider possible security implications associated with shelve module.",
+      "line_number": 8,
+      "line_range": [
+        8
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/latest/blacklists/blacklist_imports.html#b403-import-pickle",
+      "test_id": "B403",
+      "test_name": "blacklist"
     }
   ]
-}

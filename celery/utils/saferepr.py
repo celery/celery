@@ -15,6 +15,7 @@ from decimal import Decimal
 from itertools import chain
 from numbers import Number
 from pprint import _recursion
+from typing import Any, AnyStr, Callable, Dict, Iterator, List, Optional, Sequence, Set, Tuple  # noqa
 
 from .text import truncate
 
@@ -40,7 +41,7 @@ _quoted = namedtuple('_quoted', ('value',))
 #: Recursion protection.
 _dirty = namedtuple('_dirty', ('objid',))
 
-#: Types that are repsented as chars.
+#: Types that are represented as chars.
 chars_t = (bytes, str)
 
 #: Types that are regarded as safe to call repr on.
@@ -100,7 +101,7 @@ def _chainlist(it, LIT_LIST_SEP=LIT_LIST_SEP):
 
 def _repr_empty_set(s):
     # type: (Set) -> str
-    return '{}()'.format(type(s).__name__)
+    return f'{type(s).__name__}()'
 
 
 def _safetext(val):
@@ -134,14 +135,7 @@ def _repr_binary_bytes(val):
         return val.decode('utf-8')
     except UnicodeDecodeError:
         # possibly not unicode, but binary data so format as hex.
-        try:
-            ashex = val.hex
-        except AttributeError:  # pragma: no cover
-            # Python 3.4
-            return val.decode('utf-8', errors='replace')
-        else:
-            # Python 3.5+
-            return ashex()
+        return val.hex()
 
 
 def _format_chars(val, maxlen):
@@ -191,7 +185,7 @@ def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
 
 def _reprseq(val, lit_start, lit_end, builtin_type, chainer):
     # type: (Sequence, _literal, _literal, Any, Any) -> Tuple[Any, ...]
-    if type(val) is builtin_type:  # noqa
+    if type(val) is builtin_type:
         return lit_start, lit_end, chainer(val)
     return (
         _literal(f'{type(val).__name__}({lit_start.value}', False, +1),
@@ -200,9 +194,12 @@ def _reprseq(val, lit_start, lit_end, builtin_type, chainer):
     )
 
 
-def reprstream(stack, seen=None, maxlevels=3, level=0, isinstance=isinstance):
+def reprstream(stack: deque,
+               seen: Optional[Set] = None,
+               maxlevels: int = 3,
+               level: int = 0,
+               isinstance: Callable = isinstance) -> Iterator[Any]:
     """Streaming repr, yielding tokens."""
-    # type: (deque, Set, int, int, Callable) -> Iterator[Any]
     seen = seen or set()
     append = stack.append
     popleft = stack.popleft

@@ -2,7 +2,7 @@ import sys
 from time import monotonic
 from unittest.mock import Mock, patch
 
-from case import mock
+import pytest
 
 from celery.concurrency.base import BasePool
 from celery.utils.objects import Bunch
@@ -73,7 +73,7 @@ class test_WorkerComponent:
 
 class test_Autoscaler:
 
-    def setup(self):
+    def setup_method(self):
         self.pool = MockPool(3)
 
     def test_stop(self):
@@ -90,16 +90,18 @@ class test_Autoscaler:
 
         worker = Mock(name='worker')
         x = Scaler(self.pool, 10, 3, worker=worker)
-        x._is_stopped.set()
-        x.stop()
+        # Don't allow thread joining or event waiting to block the test
+        with patch("threading.Thread.join"), patch("threading.Event.wait"):
+            x.stop()
         assert x.joined
         x.joined = False
         x.alive = False
-        x.stop()
+        with patch("threading.Thread.join"), patch("threading.Event.wait"):
+            x.stop()
         assert not x.joined
 
-    @mock.sleepdeprived(module=autoscale)
-    def test_body(self):
+    @pytest.mark.sleepdeprived_patched_module(autoscale)
+    def test_body(self, sleepdeprived):
         worker = Mock(name='worker')
         x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
         x.body()
@@ -123,13 +125,13 @@ class test_Autoscaler:
 
             def body(self):
                 self.scale_called = True
-                self._is_shutdown.set()
+                getattr(self, "_bgThread__is_shutdown").set()
 
         worker = Mock(name='worker')
         x = Scaler(self.pool, 10, 3, worker=worker)
         x.run()
-        assert x._is_shutdown.isSet()
-        assert x._is_stopped.isSet()
+        assert getattr(x, "_bgThread__is_shutdown").is_set()
+        assert getattr(x, "_bgThread__is_stopped").is_set()
         assert x.scale_called
 
     def test_shrink_raises_exception(self):
@@ -200,7 +202,7 @@ class test_Autoscaler:
         class _Autoscaler(autoscale.Autoscaler):
 
             def body(self):
-                self._is_shutdown.set()
+                getattr(self, "_bgThread__is_shutdown").set()
                 raise OSError('foo')
         worker = Mock(name='worker')
         x = _Autoscaler(self.pool, 10, 3, worker=worker)
@@ -214,8 +216,8 @@ class test_Autoscaler:
         _exit.assert_called_with(1)
         stderr.write.assert_called()
 
-    @mock.sleepdeprived(module=autoscale)
-    def test_no_negative_scale(self):
+    @pytest.mark.sleepdeprived_patched_module(autoscale)
+    def test_no_negative_scale(self, sleepdeprived):
         total_num_processes = []
         worker = Mock(name='worker')
         x = autoscale.Autoscaler(self.pool, 10, 3, worker=worker)
@@ -234,3 +236,53 @@ class test_Autoscaler:
 
         assert all(x.min_concurrency <= i <= x.max_concurrency
                    for i in total_num_processes)
+
+    def test_disable_prefetch_respects_max_concurrency(self):
+        """Test that disable_prefetch respects autoscale max_concurrency setting"""
+        from celery.worker.consumer.tasks import Tasks
+
+        # Create a mock consumer with autoscale and disable_prefetch enabled
+        consumer = Mock()
+        consumer.app = Mock()
+        consumer.app.conf.worker_disable_prefetch = True
+        consumer.pool = Mock()
+        consumer.pool.num_processes = 10
+        consumer.controller = Mock()
+        consumer.controller.max_concurrency = 5  # Lower than pool processes
+
+        # Mock task consumer setup
+        consumer.task_consumer = Mock()
+        consumer.task_consumer.channel = Mock()
+        consumer.task_consumer.channel.qos = Mock()
+        consumer.task_consumer.channel.qos.can_consume = Mock(return_value=True)
+
+        # Mock the connection and other required attributes
+        consumer.connection = Mock()
+        consumer.connection.default_channel = Mock()
+        consumer.connection.transport = Mock()
+        consumer.connection.transport.driver_type = 'redis'
+        consumer.initial_prefetch_count = 20
+        consumer.update_strategies = Mock()
+        consumer.on_decode_error = Mock()
+
+        # Mock the amqp TaskConsumer
+        consumer.app.amqp = Mock()
+        consumer.app.amqp.TaskConsumer = Mock(return_value=consumer.task_consumer)
+
+        tasks_instance = Tasks(consumer)
+
+        # Mock 5 reserved requests (at autoscale limit of 5)
+        mock_requests = [Mock() for _ in range(5)]
+        with patch('celery.worker.state.reserved_requests', mock_requests):
+            tasks_instance.start(consumer)
+
+            # Should not be able to consume when at autoscale limit
+            assert consumer.task_consumer.channel.qos.can_consume() is False
+
+        # Test with 4 reserved requests (under autoscale limit of 5)
+        mock_requests = [Mock() for _ in range(4)]
+        with patch('celery.worker.state.reserved_requests', mock_requests):
+            tasks_instance.start(consumer)
+
+            # Should be able to consume when under autoscale limit
+            assert consumer.task_consumer.channel.qos.can_consume() is True

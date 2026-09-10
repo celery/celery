@@ -2,8 +2,6 @@
 
 # pylint: disable=W1202,W0703
 
-import json
-import logging
 from datetime import timedelta
 
 from kombu.utils.objects import cached_property
@@ -17,7 +15,7 @@ try:
     from pyArango import connection as py_arango_connection
     from pyArango.theExceptions import AQLQueryError
 except ImportError:
-    py_arango_connection = AQLQueryError = None   # noqa
+    py_arango_connection = AQLQueryError = None
 
 __all__ = ('ArangoDbBackend',)
 
@@ -48,6 +46,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
     password = None
     # protocol is not supported in backend url (http is taken as default)
     http_protocol = 'http'
+    verify = False
 
     # Use str as arangodb key not bytes
     key_t = str
@@ -88,6 +87,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
         self.host = host or config.get('host', self.host)
         self.port = int(port or config.get('port', self.port))
         self.http_protocol = config.get('http_protocol', self.http_protocol)
+        self.verify = config.get('verify', self.verify)
         self.database = database or config.get('database', self.database)
         self.collection = \
             collection or config.get('collection', self.collection)
@@ -104,7 +104,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
         if self._connection is None:
             self._connection = py_arango_connection.Connection(
                 arangoURL=self.arangodb_url, username=self.username,
-                password=self.password
+                password=self.password, verify=self.verify
             )
         return self._connection
 
@@ -115,116 +115,76 @@ class ArangoDbBackend(KeyValueStoreBackend):
 
     @cached_property
     def expires_delta(self):
-        return timedelta(seconds=self.expires)
+        return timedelta(seconds=0 if self.expires is None else self.expires)
 
     def get(self, key):
-        try:
-            logging.debug(
-                'RETURN DOCUMENT("{collection}/{key}").task'.format(
-                    collection=self.collection, key=key
-                )
-            )
-            query = self.db.AQLQuery(
-                'RETURN DOCUMENT("{collection}/{key}").task'.format(
-                    collection=self.collection, key=key
-                )
-            )
-            result = query.response["result"][0]
-            if result is None:
-                return None
-            return json.dumps(result)
-        except AQLQueryError as aql_err:
-            logging.error(aql_err)
+        if key is None:
             return None
-        except Exception as err:
-            logging.error(err)
-            return None
+        query = self.db.AQLQuery(
+            "RETURN DOCUMENT(@@collection, @key).task",
+            rawResults=True,
+            bindVars={
+                "@collection": self.collection,
+                "key": key,
+            },
+        )
+        return next(query) if len(query) > 0 else None
 
     def set(self, key, value):
-        """Insert a doc with value into task attribute and _key as key."""
-        try:
-            logging.debug(
-                'INSERT {{ task: {task}, _key: "{key}" }} INTO {collection}'
-                .format(
-                    collection=self.collection, key=key, task=value
-                )
-            )
-            self.db.AQLQuery(
-                'INSERT {{ task: {task}, _key: "{key}" }} INTO {collection}'
-                .format(
-                    collection=self.collection, key=key, task=value
-                )
-            )
-        except AQLQueryError as aql_err:
-            logging.error(aql_err)
-        except Exception as err:
-            logging.error(err)
+        self.db.AQLQuery(
+            """
+            UPSERT {_key: @key}
+            INSERT {_key: @key, task: @value}
+            UPDATE {task: @value} IN @@collection
+            """,
+            bindVars={
+                "@collection": self.collection,
+                "key": key,
+                "value": value,
+            },
+        )
 
     def mget(self, keys):
-        try:
-            json_keys = json.dumps(keys)
-            logging.debug(
-                """
-                FOR key in {keys}
-                    RETURN DOCUMENT(CONCAT("{collection}/", key).task
-                """.format(
-                    collection=self.collection, keys=json_keys
-                )
-            )
-            query = self.db.AQLQuery(
-                """
-                FOR key in {keys}
-                    RETURN DOCUMENT(CONCAT("{collection}/", key).task
-                """.format(
-                    collection=self.collection, keys=json_keys
-                )
-            )
-            results = []
-            while True:
-                results.extend(query.response['result'])
+        if keys is None:
+            return
+        query = self.db.AQLQuery(
+            "FOR k IN @keys RETURN DOCUMENT(@@collection, k).task",
+            rawResults=True,
+            bindVars={
+                "@collection": self.collection,
+                "keys": keys if isinstance(keys, list) else list(keys),
+            },
+        )
+        while True:
+            yield from query
+            try:
                 query.nextBatch()
-        except StopIteration:
-            values = [
-                result if result is None else json.dumps(result)
-                for result in results
-            ]
-            return values
-        except AQLQueryError as aql_err:
-            logging.error(aql_err)
-            return [None] * len(keys)
-        except Exception as err:
-            logging.error(err)
-            return [None] * len(keys)
+            except StopIteration:
+                break
 
     def delete(self, key):
-        try:
-            logging.debug(
-                'REMOVE {{ _key: "{key}" }} IN {collection}'.format(
-                    key=key, collection=self.collection
-                )
-            )
-            self.db.AQLQuery(
-                'REMOVE {{ _key: "{key}" }} IN {collection}'.format(
-                    key=key, collection=self.collection
-                )
-            )
-        except AQLQueryError as aql_err:
-            logging.error(aql_err)
-        except Exception as err:
-            logging.error(err)
+        if key is None:
+            return
+        self.db.AQLQuery(
+            "REMOVE {_key: @key} IN @@collection",
+            bindVars={
+                "@collection": self.collection,
+                "key": key,
+            },
+        )
 
     def cleanup(self):
-        """Delete expired meta-data."""
-        remove_before = (self.app.now() - self.expires_delta).isoformat()
-        try:
-            query = (
-                'FOR item IN {collection} '
-                'FILTER item.task.date_done < "{remove_before}" '
-                'REMOVE item IN {collection}'
-            ).format(collection=self.collection, remove_before=remove_before)
-            logging.debug(query)
-            self.db.AQLQuery(query)
-        except AQLQueryError as aql_err:
-            logging.error(aql_err)
-        except Exception as err:
-            logging.error(err)
+        if not self.expires:
+            return
+        checkpoint = (self.app.now() - self.expires_delta).isoformat()
+        self.db.AQLQuery(
+            """
+            FOR record IN @@collection
+                FILTER record.task.date_done < @checkpoint
+                REMOVE record IN @@collection
+            """,
+            bindVars={
+                "@collection": self.collection,
+                "checkpoint": checkpoint,
+            },
+        )

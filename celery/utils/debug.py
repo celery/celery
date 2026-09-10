@@ -12,7 +12,7 @@ from celery.utils.text import WhateverIO
 try:
     from psutil import Process
 except ImportError:
-    Process = None  # noqa
+    Process = None
 
 __all__ = (
     'blockdetection', 'sample_mem', 'memdump', 'sample',

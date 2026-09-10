@@ -64,11 +64,12 @@ consider enabling the :setting:`task_reject_on_worker_lost` setting.
     the process by force so only use them to detect cases where you haven't
     used manual timeouts yet.
 
-    The default prefork pool scheduler is not friendly to long-running tasks,
-    so if you have tasks that run for minutes/hours make sure you enable
-    the :option:`-Ofair <celery worker -O>` command-line argument to
-    the :program:`celery worker`. See :ref:`optimizing-prefetch-limit` for more
-    information, and for the best performance route long-running and
+    In previous versions, the default prefork pool scheduler was not friendly
+    to long-running tasks, so if you had tasks that ran for minutes/hours, it
+    was advised to enable the :option:`-Ofair <celery worker -O>` command-line
+    argument to the :program:`celery worker`. However, as of version 4.0,
+    -Ofair is now the default scheduling strategy. See :ref:`optimizing-prefetch-limit`
+    for more information, and for the best performance route long-running and
     short-running tasks to dedicated workers (:ref:`routing-automatic`).
 
     If your worker hangs then please investigate what tasks are running
@@ -91,7 +92,7 @@ Basics
 ======
 
 You can easily create a task from any callable by using
-the :meth:`~@task` decorator:
+the :meth:`@task` decorator:
 
 .. code-block:: python
 
@@ -112,7 +113,8 @@ these can be specified as arguments to the decorator:
         User.objects.create(username=username, password=password)
 
 
-.. sidebar:: How do I import the task decorator? And what's "app"?
+How do I import the task decorator?
+-----------------------------------
 
     The task decorator is available on your :class:`@Celery` application instance,
     if you don't know what this is then please read :ref:`first-steps`.
@@ -128,7 +130,8 @@ these can be specified as arguments to the decorator:
         def add(x, y):
             return x + y
 
-.. sidebar:: Multiple decorators
+Multiple decorators
+-------------------
 
     When using multiple decorators in combination with the task
     decorator you must make sure that the `task`
@@ -153,7 +156,7 @@ be the task instance (``self``), just like Python bound methods:
 
     logger = get_task_logger(__name__)
 
-    @task(bind=True)
+    @app.task(bind=True)
     def add(self, x, y):
         logger.info(self.request.id)
 
@@ -175,7 +178,7 @@ The ``base`` argument to the task decorator specifies the base class of the task
         def on_failure(self, exc, task_id, args, kwargs, einfo):
             print('{0!r} failed: {1!r}'.format(task_id, exc))
 
-    @task(base=MyTask)
+    @app.task(base=MyTask)
     def add(x, y):
         raise KeyError()
 
@@ -236,91 +239,11 @@ named :file:`tasks.py`:
     >>> add.name
     'tasks.add'
 
-.. _task-naming-relative-imports:
+.. note::
 
-Automatic naming and relative imports
--------------------------------------
-
-.. sidebar:: Absolute Imports
-
-    The best practice for developers targeting Python 2 is to add the
-    following to the top of **every module**:
-
-    .. code-block:: python
-
-        from __future__ import absolute_import
-
-    This will force you to always use absolute imports so you will
-    never have any problems with tasks using relative names.
-
-    Absolute imports are the default in Python 3 so you don't need this
-    if you target that version.
-
-Relative imports and automatic name generation don't go well together,
-so if you're using relative imports you should set the name explicitly.
-
-For example if the client imports the module ``"myapp.tasks"``
-as ``".tasks"``, and the worker imports the module as ``"myapp.tasks"``,
-the generated names won't match and an :exc:`~@NotRegistered` error will
-be raised by the worker.
-
-This is also the case when using Django and using ``project.myapp``-style
-naming in ``INSTALLED_APPS``:
-
-.. code-block:: python
-
-    INSTALLED_APPS = ['project.myapp']
-
-If you install the app under the name ``project.myapp`` then the
-tasks module will be imported as ``project.myapp.tasks``,
-so you must make sure you always import the tasks using the same name:
-
-.. code-block:: pycon
-
-    >>> from project.myapp.tasks import mytask   # << GOOD
-
-    >>> from myapp.tasks import mytask    # << BAD!!!
-
-The second example will cause the task to be named differently
-since the worker and the client imports the modules under different names:
-
-.. code-block:: pycon
-
-    >>> from project.myapp.tasks import mytask
-    >>> mytask.name
-    'project.myapp.tasks.mytask'
-
-    >>> from myapp.tasks import mytask
-    >>> mytask.name
-    'myapp.tasks.mytask'
-
-For this reason you must be consistent in how you
-import modules, and that is also a Python best practice.
-
-Similarly, you shouldn't use old-style relative imports:
-
-.. code-block:: python
-
-    from module import foo   # BAD!
-
-    from proj.module import foo  # GOOD!
-
-New-style relative imports are fine and can be used:
-
-.. code-block:: python
-
-    from .module import foo  # GOOD!
-
-If you want to use Celery with a project already using these patterns
-extensively and you don't have the time to refactor the existing code
-then you can consider specifying the names explicitly instead of relying
-on the automatic naming:
-
-.. code-block:: python
-
-    @task(name='proj.tasks.add')
-    def add(x, y):
-        return x + y
+   You can use the `inspect` command in a worker to view the names of
+   all registered tasks. See the `inspect registered` command in the
+   :ref:`monitoring-control` section of the User Guide.
 
 .. _task-name-generator-info:
 
@@ -425,12 +348,28 @@ The request defines the following attributes:
 :called_directly: This flag is set to true if the task wasn't
                   executed by the worker.
 
-:timelimit: A tuple of the current ``(soft, hard)`` time limits active for
-            this task (if any).
+:timelimit: A 2-item sequence ``(hard, soft)`` of the current time limits
+            active for this task (if any).
+
+:time_limit: The hard time limit (in seconds) active for this task, or :const:`None`
+             if no hard limit is set. This value is unpacked from :attr:`timelimit`
+             and reflects limits configured via :setting:`task_time_limit`,
+             task-level ``time_limit``, or the ``time_limit`` argument passed to
+             :meth:`~@Task.apply_async`.
+
+             .. versionadded:: 5.7
+
+:soft_time_limit: The soft time limit (in seconds) active for this task, or :const:`None`
+                  if no soft limit is set. This value is unpacked from :attr:`timelimit`
+                  and reflects limits configured via :setting:`task_soft_time_limit`,
+                  task-level ``soft_time_limit``, or the ``soft_time_limit`` argument
+                  passed to :meth:`~@Task.apply_async`.
+
+                  .. versionadded:: 5.7
 
 :callbacks: A list of signatures to be called if this task returns successfully.
 
-:errback: A list of signatures to be called if this task fails.
+:errbacks: A list of signatures to be called if this task fails.
 
 :utc: Set to true the caller has UTC enabled (:setting:`enable_utc`).
 
@@ -456,6 +395,14 @@ The request defines the following attributes:
         The last item in this list will be the next task to succeed the
         current task.  If using version one of the task protocol the chain
         tasks will be in ``request.callbacks`` instead.
+
+.. versionadded:: 5.2
+
+:properties: Mapping of message properties received with this task message
+             (may be :const:`None` or :const:`{}`)
+
+:replaced_task_nesting: How many times the task was replaced, if at all.
+                        (may be :const:`0`)
 
 Example
 -------
@@ -742,7 +689,7 @@ Sometimes you just want to retry a task whenever a particular exception
 is raised.
 
 Fortunately, you can tell Celery to automatically retry a task using
-`autoretry_for` argument in the :meth:`~@Celery.task` decorator:
+`autoretry_for` argument in the :meth:`@task` decorator:
 
 .. code-block:: python
 
@@ -753,7 +700,7 @@ Fortunately, you can tell Celery to automatically retry a task using
         return twitter.refresh_timeline(user)
 
 If you want to specify custom arguments for an internal :meth:`~@Task.retry`
-call, pass `retry_kwargs` argument to :meth:`~@Celery.task` decorator:
+call, pass `retry_kwargs` argument to :meth:`@task` decorator:
 
 .. code-block:: python
 
@@ -773,7 +720,7 @@ in a :keyword:`try` ... :keyword:`except` statement:
         try:
             twitter.refresh_timeline(user)
         except FailWhaleError as exc:
-            raise div.retry(exc=exc, max_retries=5)
+            raise refresh_timeline.retry(exc=exc, max_retries=5)
 
 If you want to automatically retry on any error, simply use:
 
@@ -855,6 +802,127 @@ You can also set `autoretry_for`, `max_retries`, `retry_backoff`, `retry_backoff
     value calculated by :attr:`~Task.retry_backoff` is treated as a maximum,
     and the actual delay value will be a random number between zero and that
     maximum. By default, this option is set to ``True``.
+
+.. versionadded:: 5.3.0
+
+.. attribute:: Task.dont_autoretry_for
+
+    A list/tuple of exception classes.  These exceptions won't be autoretried.
+	This allows to exclude some exceptions that match `autoretry_for
+	<Task.autoretry_for>`:attr: but for which you don't want a retry.
+
+.. _task-pydantic:
+
+Argument validation with Pydantic
+=================================
+
+.. versionadded:: 5.5.0
+
+You can use Pydantic_ to validate and convert arguments as well as serializing
+results based on typehints by passing ``pydantic=True``.
+
+.. NOTE::
+
+   Argument validation only covers arguments/return values on the task side. You still have
+   serialize arguments yourself when invoking a task with ``delay()`` or ``apply_async()``.
+
+For example:
+
+.. code-block:: python
+
+    from pydantic import BaseModel
+
+    class ArgModel(BaseModel):
+        value: int
+
+    class ReturnModel(BaseModel):
+        value: str
+
+    @app.task(pydantic=True)
+    def x(arg: ArgModel) -> ReturnModel:
+        # args/kwargs type hinted as Pydantic model will be converted
+        assert isinstance(arg, ArgModel)
+
+        # The returned model will be converted to a dict automatically
+        return ReturnModel(value=f"example: {arg.value}")
+
+The task can then be called using a dict matching the model, and you'll receive
+the returned model "dumped" (serialized using ``BaseModel.model_dump()``):
+
+.. code-block:: python
+
+   >>> result = x.delay({'value': 1})
+   >>> result.get(timeout=1)
+   {'value': 'example: 1'}
+
+Union types, arguments to generics
+----------------------------------
+
+Union types (e.g. ``Union[SomeModel, OtherModel]``) or arguments to generics (e.g.
+``list[SomeModel]``) are **not** supported.
+
+In case you want to support a list or similar types, it is recommended to use
+``pydantic.RootModel``.
+
+
+Optional parameters/return values
+---------------------------------
+
+Optional parameters or return values are also handled properly. For example, given this task:
+
+.. code-block:: python
+
+    from typing import Optional
+
+    # models are the same as above
+
+    @app.task(pydantic=True)
+    def x(arg: Optional[ArgModel] = None) -> Optional[ReturnModel]:
+        if arg is None:
+            return None
+        return ReturnModel(value=f"example: {arg.value}")
+
+You'll get the following behavior:
+
+.. code-block:: python
+
+    >>> result = x.delay()
+   >>> result.get(timeout=1) is None
+   True
+   >>> result = x.delay({'value': 1})
+   >>> result.get(timeout=1)
+   {'value': 'example: 1'}
+
+Return value handling
+---------------------
+
+Return values will only be serialized if the returned model matches the annotation. If you pass a
+model instance of a different type, it will *not* be serialized. ``mypy`` should already catch such
+errors and you should fix your typehints then.
+
+
+Pydantic parameters
+-------------------
+
+There are a few more options influencing Pydantic behavior:
+
+.. attribute:: Task.pydantic_strict
+
+   By default, `strict mode <https://docs.pydantic.dev/dev/concepts/strict_mode/>`_
+   is disabled. You can pass ``True`` to enable strict model validation.
+
+.. attribute:: Task.pydantic_context
+
+   Pass `additional validation context
+   <https://docs.pydantic.dev/dev/concepts/validators/#validation-context>`_ during
+   Pydantic model validation. The context already includes the application object as
+   ``celery_app`` and the task name as ``celery_task_name`` by default.
+
+.. attribute:: Task.pydantic_dump_kwargs
+
+   When serializing a result, pass these additional arguments to ``dump_kwargs()``.
+   By default, only ``mode='json'`` is passed.
+
 
 .. _task-options:
 
@@ -966,6 +1034,28 @@ General
     maximum number of  requests per second), you must restrict to a given
     queue.
 
+    If a task is called with ``countdown`` or ``eta``, the ETA takes
+    precedence: the task will not start before its ETA, and the rate
+    limit is enforced afterwards, once the ETA has passed. In other
+    words, the task starts at the later of the two: its ETA, or the
+    next slot allowed by the rate limit.
+
+.. warning::
+
+    A rate-limited task still counts against the worker's prefetch count
+    while it waits to run. Once all of a worker's prefetched slots are occupied
+    by rate-limited tasks, the worker stops fetching new messages from the broker
+    entirely, including messages for tasks that have no rate limit of their own.
+
+    For example, consider a worker that handles two tasks, ``A`` and ``B``,
+    where ``A`` is rate limited and ``B`` is not. A burst of ``A`` messages
+    can fill the worker's prefetch slots, and ``B`` messages will sit on
+    the broker untouched until those rate-limited ``A`` tasks drain, even
+    though ``B`` has no rate limit of its own.
+
+    To avoid this, rate-limited tasks should be routed to their own
+    dedicated workers (see :ref:`guide-routing`).
+
 .. attribute:: Task.time_limit
 
     The hard time limit, in seconds, for this task.
@@ -976,16 +1066,52 @@ General
     The soft time limit for this task.
     When not set the workers default is used.
 
+.. note::
+
+    **Hard vs soft time limit failure semantics**
+
+    When a *soft* time limit fires, a :exc:`~celery.exceptions.SoftTimeLimitExceeded`
+    exception is raised inside the worker child process. If this exception
+    propagates and causes the task attempt to fail,
+    :meth:`~celery.app.task.Task.on_failure`, errbacks, and the
+    :signal:`task_failure` signal are all invoked as for any other task failure.
+    Task code may also catch :exc:`~celery.exceptions.SoftTimeLimitExceeded`
+    and exit normally, in which case these failure hooks are not triggered.
+
+    When a *hard* time limit fires the child process is killed and the
+    timeout is handled in the parent (main worker) process.
+    :meth:`~celery.app.task.Task.on_failure`, errbacks, and the
+    :signal:`task_failure` signal are also invoked from the parent process
+    so that cleanup hooks fire consistently for both limit types.
+
+    .. versionchanged:: 5.7
+
+        Hard time limits now invoke :meth:`~celery.app.task.Task.on_failure`,
+        errbacks, and :signal:`task_failure` in the parent worker process,
+        matching the behavior of soft time limits.
+        Previously only :meth:`~celery.backends.base.BaseBackend.mark_as_failure`
+        was called.
+
 .. attribute:: Task.ignore_result
 
     Don't store task state. Note that this means you can't use
     :class:`~celery.result.AsyncResult` to check if the task is ready,
     or get its return value.
 
+    Note: Certain features will not work if task results are disabled.
+    For more details check the Canvas documentation.
+
 .. attribute:: Task.store_errors_even_if_ignored
 
     If :const:`True`, errors will be stored even if the task is configured
     to ignore results.
+
+    .. versionchanged:: 5.7
+        Previously, if the ``ignore_result`` key was missing from the request
+        message, ``store_errors`` would default to ``True``, ignoring the
+        task's own ``ignore_result`` setting. The worker now correctly
+        falls back to ``Task.ignore_result`` when no per-request override
+        is present.
 
 .. attribute:: Task.serializer
 
@@ -1354,8 +1480,20 @@ messages are redelivered to.
 
 .. _`Dead Letter Exchanges`: http://www.rabbitmq.com/dlx.html
 
+When a task raises :exc:`~@Reject` without re-queuing (``requeue=False``) it
+will never run again, so its result is stored in the :state:`FAILURE` state
+and the :signal:`task_failure` signal is sent, just like any other failed
+task. This means :meth:`AsyncResult.failed() <celery.result.AsyncResult.failed>`
+returns :const:`True` and the rejection reason is available as the result.
+This terminal result is recorded regardless of :attr:`Task.acks_late`; the
+broker-level ``basic_reject`` (and therefore re-queuing) is the part that only
+takes effect when ``acks_late`` is enabled.
+
 Reject can also be used to re-queue messages, but please be very careful
 when using this as it can easily result in an infinite message loop.
+Re-queuing (``requeue=True``) only takes effect when :attr:`Task.acks_late`
+is enabled; the message is then redelivered and executed again, so no terminal
+result is stored for it.
 
 Example using reject when a task causes an out of memory condition:
 
@@ -1489,9 +1627,11 @@ The above can be added to each task like this:
 .. code-block:: python
 
 
-    @app.task(base=DatabaseTask)
-    def process_rows():
-        for row in process_rows.db.table.all():
+    from celery.app import task
+
+    @app.task(base=DatabaseTask, bind=True)
+    def process_rows(self: task):
+        for row in self.db.table.all():
             process_row(row)
 
 The ``db`` attribute of the ``process_rows`` task will then
@@ -1520,54 +1660,69 @@ The default value is the class provided by Celery: ``'celery.app.task:Task'``.
 Handlers
 --------
 
-.. method:: after_return(self, status, retval, task_id, args, kwargs, einfo)
+Task handlers are methods that execute at specific points in a task's lifecycle.
+All handlers run **synchronously** within the same worker process and thread
+that executes the task.
 
-    Handler called after the task returns.
+Execution timeline
+~~~~~~~~~~~~~~~~~~
 
-    :param status: Current task state.
-    :param retval: Task return value/exception.
-    :param task_id: Unique id of the task.
-    :param args: Original arguments for the task that returned.
-    :param kwargs: Original keyword arguments for the task
-                   that returned.
+The following diagram shows the exact order of execution:
 
-    :keyword einfo: :class:`~billiard.einfo.ExceptionInfo`
-                    instance, containing the traceback (if any).
+.. code-block:: text
 
-    The return value of this handler is ignored.
+    Worker Process Timeline
+    ┌───────────────────────────────────────────────────────────────┐
+    │  1. before_start()      ← Blocks until complete               │
+    │  2. run()               ← Your task function                  │
+    │  3. [Result Backend]    ← State + return value persisted      │
+    │  4. on_success() OR     ← Outcome-specific handler            │
+    │     on_retry() OR       │                                     │
+    │     on_failure()        │                                     │
+    │  5. after_return()      ← Runs last on terminal states        │
+    │                       (skipped for RETRY/REJECTED/IGNORED)    │
+    └───────────────────────────────────────────────────────────────┘
 
-.. method:: on_failure(self, exc, task_id, args, kwargs, einfo)
+.. important::
 
-    This is run by the worker when the task fails.
+   **Key points:**
 
-    :param exc: The exception raised by the task.
-    :param task_id: Unique id of the failed task.
-    :param args: Original arguments for the task that failed.
-    :param kwargs: Original keyword arguments for the task
-                       that failed.
+   - All handlers run in the **same worker process** as your task
+   - ``before_start`` **blocks** the task - ``run()`` won't start until it completes
+   - Result backend is updated **before** ``on_success``/``on_failure`` - other clients can see the task as finished while handlers are still running
+   - ``after_return`` executes when the task reaches a terminal state.
+     It does not run for ``RETRY``, ``REJECTED``, or ``IGNORED``. If you need
+     a hook that fires on every attempt, use the :signal:`task_postrun` signal.
 
-    :keyword einfo: :class:`~billiard.einfo.ExceptionInfo`
-                           instance, containing the traceback.
+Available handlers
+~~~~~~~~~~~~~~~~~~
 
-    The return value of this handler is ignored.
+.. method:: before_start(self, task_id, args, kwargs)
 
-.. method:: on_retry(self, exc, task_id, args, kwargs, einfo)
+    Run by the worker before the task starts executing.
 
-    This is run by the worker when the task is to be retried.
+    .. note::
+       This handler **blocks** the task: the :py:meth:`run` method will *not* begin
+       until ``before_start`` returns.
 
-    :param exc: The exception sent to :meth:`~@Task.retry`.
-    :param task_id: Unique id of the retried task.
-    :param args: Original arguments for the retried task.
-    :param kwargs: Original keyword arguments for the retried task.
+    .. versionadded:: 5.2
 
-    :keyword einfo: :class:`~billiard.einfo.ExceptionInfo`
-                    instance, containing the traceback.
+    :param task_id: Unique id of the task to execute.
+    :param args: Original arguments for the task to execute.
+    :param kwargs: Original keyword arguments for the task to execute.
 
     The return value of this handler is ignored.
 
 .. method:: on_success(self, retval, task_id, args, kwargs)
 
+    Success handler.
+
     Run by the worker if the task executes successfully.
+
+    .. note::
+       Invoked **after** the task result has already been persisted in the
+       result backend. External clients may observe the task as ``SUCCESS``
+       while this handler is still running.
 
     :param retval: The return value of the task.
     :param task_id: Unique id of the executed task.
@@ -1575,6 +1730,95 @@ Handlers
     :param kwargs: Original keyword arguments for the executed task.
 
     The return value of this handler is ignored.
+
+.. method:: on_retry(self, exc, task_id, args, kwargs, einfo)
+
+    Retry handler.
+
+    Run by the worker when the task is to be retried.
+
+    .. note::
+       Invoked **after** the task state has been updated to ``RETRY`` in the
+       result backend but **before** the retry is scheduled.
+
+    :param exc: The exception sent to :meth:`retry`.
+    :param task_id: Unique id of the retried task.
+    :param args: Original arguments for the retried task.
+    :param kwargs: Original keyword arguments for the retried task.
+    :param einfo: :class:`~billiard.einfo.ExceptionInfo` instance.
+
+    The return value of this handler is ignored.
+
+.. method:: on_failure(self, exc, task_id, args, kwargs, einfo)
+
+    Failure handler.
+
+    Run by the worker when the task fails.
+
+    .. note::
+       Invoked **after** the task result has already been persisted in the
+       result backend with ``FAILURE`` state. External clients may observe
+       the task as failed while this handler is still running.
+
+    :param exc: The exception raised by the task.
+    :param task_id: Unique id of the failed task.
+    :param args: Original arguments for the failed task.
+    :param kwargs: Original keyword arguments for the failed task.
+    :param einfo: :class:`~billiard.einfo.ExceptionInfo` instance.
+
+    The return value of this handler is ignored.
+
+.. method:: after_return(self, status, retval, task_id, args, kwargs, einfo)
+
+    Handler called after the task returns.
+
+    .. note::
+        Executes after the outcome-specific handler when the task reaches a
+        terminal state.
+
+        In practice, this means it runs after ``on_success`` or ``on_failure``.
+        It is not executed for ``RETRY``, ``REJECTED``, or ``IGNORED`` states.
+        If a hook is needed for every attempt, consider using the
+        :signal:`task_postrun` signal.
+
+    :param status: Current task state.
+    :param retval: Task return value/exception.
+    :param task_id: Unique id of the task.
+    :param args: Original arguments for the task that returned.
+    :param kwargs: Original keyword arguments for the task that returned.
+    :param einfo: :class:`~billiard.einfo.ExceptionInfo` instance.
+
+    The return value of this handler is ignored.
+
+Example usage
+~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    import time
+    from celery import Task
+
+    class MyTask(Task):
+
+        def before_start(self, task_id, args, kwargs):
+            print(f"Task {task_id} starting with args {args}")
+            # This blocks - run() won't start until this returns
+
+        def on_success(self, retval, task_id, args, kwargs):
+            print(f"Task {task_id} succeeded with result: {retval}")
+            # Result is already visible to clients at this point
+
+        def on_failure(self, exc, task_id, args, kwargs, einfo):
+            print(f"Task {task_id} failed: {exc}")
+            # Task state is already FAILURE in backend
+
+        def after_return(self, status, retval, task_id, args, kwargs, einfo):
+            print(f"Task {task_id} finished with status: {status}")
+            # Always runs last
+
+    @app.task(base=MyTask)
+    def my_task(x, y):
+        return x + y
 
 .. _task-requests-and-custom-requests:
 
@@ -1596,8 +1840,9 @@ strongly recommend to inherit from `celery.worker.request.Request`:class:.
 When using the `pre-forking worker <worker-concurrency>`:ref:, the methods
 `~celery.worker.request.Request.on_timeout`:meth: and
 `~celery.worker.request.Request.on_failure`:meth: are executed in the main
-worker process.  An application may leverage such facility to detect failures
-which are not detected using `celery.app.task.Task.on_failure`:meth:.
+worker process.  An application may leverage this facility to add extra
+observability or side-effects around task failures and timeouts beyond what
+`celery.app.task.Task.on_failure`:meth: provides.
 
 As an example, the following custom request detects and logs hard time
 limits, and other failures.
@@ -1605,6 +1850,7 @@ limits, and other failures.
 .. code-block:: python
 
    import logging
+   from celery import Task
    from celery.worker.request import Request
 
    logger = logging.getLogger('my.package')
@@ -1621,7 +1867,7 @@ limits, and other failures.
               )
 
        def on_failure(self, exc_info, send_failed_event=True, return_ok=False):
-           super(Request, self).on_failure(
+           super().on_failure(
                exc_info,
                send_failed_event=send_failed_event,
                return_ok=return_ok
@@ -1705,7 +1951,7 @@ setting.
 .. versionadded::4.2
 
 Results can be enabled/disabled on a per-execution basis, by passing the ``ignore_result`` boolean parameter,
-when calling ``apply_async`` or ``delay``.
+when calling ``apply_async``.
 
 .. code-block:: python
 
@@ -1714,12 +1960,12 @@ when calling ``apply_async`` or ``delay``.
         return x + y
 
     # No result will be stored
-    result = mytask.apply_async(1, 2, ignore_result=True)
-    print result.get() # -> None
+    result = mytask.apply_async((1, 2), ignore_result=True)
+    print(result.get()) # -> None
 
     # Result will be stored
-    result = mytask.apply_async(1, 2, ignore_result=False)
-    print result.get() # -> 3
+    result = mytask.apply_async((1, 2), ignore_result=False)
+    print(result.get()) # -> 3
 
 By default tasks will *not ignore results* (``ignore_result=False``) when a result backend is configured.
 
@@ -1753,7 +1999,7 @@ Make your design asynchronous instead, for example by using *callbacks*.
     @app.task
     def update_page_info(url):
         page = fetch_page.delay(url).get()
-        info = parse_page.delay(url, page).get()
+        info = parse_page.delay(page).get()
         store_page_info.delay(url, info)
 
     @app.task
@@ -1806,7 +2052,7 @@ enabling subtasks to run synchronously is not recommended!
     @app.task
     def update_page_info(url):
         page = fetch_page.delay(url).get(disable_sync_subtasks=False)
-        info = parse_page.delay(url, page).get(disable_sync_subtasks=False)
+        info = parse_page.delay(page).get(disable_sync_subtasks=False)
         store_page_info.delay(url, info)
 
     @app.task
@@ -1814,7 +2060,7 @@ enabling subtasks to run synchronously is not recommended!
         return myhttplib.get(url)
 
     @app.task
-    def parse_page(url, page):
+    def parse_page(page):
         return myparser.parse_document(page)
 
     @app.task
@@ -1969,20 +2215,45 @@ then passing the primary key to a task. It uses the `transaction.atomic`
 decorator, that will commit the transaction when the view returns, or
 roll back if the view raises an exception.
 
-There's a race condition if the task starts executing
-before the transaction has been committed; The database object doesn't exist
-yet!
+There is a race condition because transactions are atomic. This means the article object is not persisted to the database until after the view function returns a response. If the asynchronous task starts executing before the transaction is committed, it may attempt to query the article object before it exists. To prevent this, we need to ensure that the transaction is committed before triggering the task.
 
-The solution is to use the ``on_commit`` callback to launch your Celery task
-once all transactions have been committed successfully.
+The solution is to use
+:meth:`~celery.contrib.django.task.DjangoTask.delay_on_commit` instead:
 
 .. code-block:: python
 
-    from django.db.transaction import on_commit
+    from django.db import transaction
+    from django.http import HttpResponseRedirect
 
+    @transaction.atomic
     def create_article(request):
         article = Article.objects.create()
-        on_commit(lambda: expand_abbreviations.delay(article.pk))
+        expand_abbreviations.delay_on_commit(article.pk)
+        return HttpResponseRedirect('/articles/')
+
+This method was added in Celery 5.4. It's a shortcut that uses Django's
+``on_commit`` callback to launch your Celery task once all transactions
+have been committed successfully.
+
+With Celery <5.4
+~~~~~~~~~~~~~~~~
+
+If you're using an older version of Celery, you can replicate this behaviour
+using the Django callback directly as follows:
+
+.. code-block:: python
+
+    import functools
+    from django.db import transaction
+    from django.http import HttpResponseRedirect
+
+    @transaction.atomic
+    def create_article(request):
+        article = Article.objects.create()
+        transaction.on_commit(
+            functools.partial(expand_abbreviations.delay, article.pk)
+        )
+        return HttpResponseRedirect('/articles/')
 
 .. note::
     ``on_commit`` is available in Django 1.9 and above, if you are using a
@@ -2130,3 +2401,4 @@ To make API calls to `Akismet`_ I use the `akismet.py`_ library written by
 .. _`Michael Foord`: http://www.voidspace.org.uk/
 .. _`exponential backoff`: https://en.wikipedia.org/wiki/Exponential_backoff
 .. _`jitter`: https://en.wikipedia.org/wiki/Jitter
+.. _`Pydantic`: https://docs.pydantic.dev/

@@ -1,11 +1,12 @@
+import collections
+import sys
+
 import pytest
 from kombu.utils.functional import lazy
 
-from celery.utils.functional import (DummyContext, first, firstmethod,
-                                     fun_accepts_kwargs, fun_takes_argument,
-                                     head_from_fun, maybe_list, mlazy,
-                                     padlist, regen, seq_concat_item,
-                                     seq_concat_seq)
+from celery.utils.functional import (DummyContext, first, firstmethod, fun_accepts_kwargs, fun_takes_argument,
+                                     head_from_fun, is_numeric_value, lookahead, maybe_list, mlazy, padlist, regen,
+                                     seq_concat_item, seq_concat_seq)
 
 
 def test_DummyContext():
@@ -64,6 +65,10 @@ def test_first():
     iterations[0] = 0
     assert first(predicate, range(10, 20)) is None
     assert iterations[0] == 10
+
+
+def test_lookahead():
+    assert list(lookahead(x for x in range(6))) == [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, None)]
 
 
 def test_maybe_list():
@@ -133,27 +138,181 @@ class test_regen:
 
         assert list(iter(g)) == list(range(10))
 
+    def test_gen__index_type(self, g):
+        class Index:
+            def __index__(self):
+                return 2
+
+        # anything list accepts, _regen accepts
+        assert g[Index()] == 2
+        assert g[True] == 1
+
+        for bad_index in ('x', None, 1.0):
+            with pytest.raises(TypeError):
+                g[bad_index]
+
+        assert list(iter(g)) == list(range(10))
+
+    def test_gen__slice(self, g):
+        assert g[:3] == [0, 1, 2]
+        assert g[2:5] == [2, 3, 4]
+        assert g[7:] == [7, 8, 9]
+        assert g[::2] == [0, 2, 4, 6, 8]
+        assert g[-3:] == [7, 8, 9]
+        assert g[::-1] == list(reversed(range(10)))
+        assert g[:] == list(range(10))
+        assert g[5:2] == []
+
+        assert list(iter(g)) == list(range(10))
+
+    def test_gen__slice_matches_list(self):
+        source = list(range(10))
+        for index in (slice(3), slice(2, 5), slice(7, None), slice(None, None, 2),
+                      slice(-3, None), slice(None, None, -1), slice(5, 2)):
+            assert regen(iter(source))[index] == source[index]
+            # regen returns lists untouched, so both paths have to agree
+            assert regen(source)[index] == source[index]
+
     def test_nonzero__does_not_consume_more_than_first_item(self):
         def build_generator():
             yield 1
-            self.consumed_second_item = True
+            pytest.fail("generator should not consume past first item")
             yield 2
 
-        self.consumed_second_item = False
         g = regen(build_generator())
         assert bool(g)
         assert g[0] == 1
-        assert not self.consumed_second_item
 
     def test_nonzero__empty_iter(self):
         assert not regen(iter([]))
+
+    def test_deque(self):
+        original_list = [42]
+        d = collections.deque(original_list)
+        # Confirm that concretising a `regen()` instance repeatedly for an
+        # equality check always returns the original list
+        g = regen(d)
+        assert g == original_list
+        assert g == original_list
+
+    def test_repr(self):
+        def die():
+            raise AssertionError("Generator died")
+            yield None
+
+        # Confirm that `regen()` instances are not concretised when represented
+        g = regen(die())
+        assert "..." in repr(g)
+
+    def test_partial_reconcretisation(self):
+        class WeirdIterator():
+            def __init__(self, iter_):
+                self.iter_ = iter_
+                self._errored = False
+
+            def __iter__(self):
+                yield from self.iter_
+                if not self._errored:
+                    try:
+                        # This should stop the regen instance from marking
+                        # itself as being done
+                        raise AssertionError("Iterator errored")
+                    finally:
+                        self._errored = True
+
+        original_list = list(range(42))
+        g = regen(WeirdIterator(original_list))
+        iter_g = iter(g)
+        for e in original_list:
+            assert e == next(iter_g)
+        with pytest.raises(AssertionError, match="Iterator errored"):
+            next(iter_g)
+        # The following checks are for the known "misbehaviour"
+        assert getattr(g, "_regen__done") is False
+        # If the `regen()` instance doesn't think it's done then it'll dupe the
+        # elements from the underlying iterator if it can be reused
+        iter_g = iter(g)
+        for e in original_list * 2:
+            assert next(iter_g) == e
+        with pytest.raises(StopIteration):
+            next(iter_g)
+        assert getattr(g, "_regen__done") is True
+        # Finally we xfail this test to keep track of it
+        raise pytest.xfail(reason="#6794")
+
+    def test_length_hint_passthrough(self, g):
+        assert g.__length_hint__() == 10
+
+    def test_getitem_repeated(self, g):
+        halfway_idx = g.__length_hint__() // 2
+        assert g[halfway_idx] == halfway_idx
+        # These are now concretised so they should be returned without any work
+        assert g[halfway_idx] == halfway_idx
+        for i in range(halfway_idx + 1):
+            assert g[i] == i
+        # This should only need to concretise one more element
+        assert g[halfway_idx + 1] == halfway_idx + 1
+
+    def test_done_does_not_lag(self, g):
+        """
+        Don't allow regen to return from `__iter__()` and check `__done`.
+        """
+        # The range we zip with here should ensure that the `regen.__iter__`
+        # call never gets to return since we never attempt a failing `next()`
+        len_g = g.__length_hint__()
+        for i, __ in zip(range(len_g), g):
+            assert getattr(g, "_regen__done") is (i == len_g - 1)
+        # Just for sanity, check against a specific `bool` here
+        assert getattr(g, "_regen__done") is True
+
+    def test_lookahead_consume(self, subtests):
+        """
+        Confirm that regen looks ahead by a single item as expected.
+        """
+        def g():
+            yield from ["foo", "bar"]
+            raise pytest.fail("This should never be reached")
+
+        with subtests.test(msg="bool does not overconsume"):
+            assert bool(regen(g()))
+        with subtests.test(msg="getitem 0th does not overconsume"):
+            assert regen(g())[0] == "foo"
+        with subtests.test(msg="single iter does not overconsume"):
+            assert next(iter(regen(g()))) == "foo"
+
+        class ExpectedException(BaseException):
+            pass
+
+        def g2():
+            yield from ["foo", "bar"]
+            raise ExpectedException()
+
+        with subtests.test(msg="getitem 1th does overconsume"):
+            r = regen(g2())
+            with pytest.raises(ExpectedException):
+                r[1]
+            # Confirm that the item was concretised anyway
+            assert r[1] == "bar"
+        with subtests.test(msg="full iter does overconsume"):
+            r = regen(g2())
+            with pytest.raises(ExpectedException):
+                for _ in r:
+                    pass
+            # Confirm that the items were concretised anyway
+            assert r == ["foo", "bar"]
+        with subtests.test(msg="data access does overconsume"):
+            r = regen(g2())
+            with pytest.raises(ExpectedException):
+                r.data
+            # Confirm that the items were concretised anyway
+            assert r == ["foo", "bar"]
 
 
 class test_head_from_fun:
 
     def test_from_cls(self):
         class X:
-            def __call__(x, y, kwarg=1):  # noqa
+            def __call__(x, y, kwarg=1):
                 pass
 
         g = head_from_fun(X())
@@ -223,6 +382,68 @@ class test_head_from_fun:
         fun = head_from_fun(A.f, bound=True)
         assert fun(1) == 1
 
+    def test_kwonly_required_args(self):
+        local = {}
+        fun = ('def f_kwargs_required(*, a="a", b, c=None):'
+               '    return')
+        exec(fun, {}, local)
+        f_kwargs_required = local['f_kwargs_required']
+        g = head_from_fun(f_kwargs_required)
+
+        with pytest.raises(TypeError):
+            g(1)
+
+        with pytest.raises(TypeError):
+            g(a=1)
+
+        with pytest.raises(TypeError):
+            g(c=1)
+
+        with pytest.raises(TypeError):
+            g(a=2, c=1)
+
+        g(b=3)
+
+    @pytest.mark.skipif(sys.version_info < (3, 14), reason="PEP 649 deferred annotations require Python 3.14+")
+    def test_type_checking_annotation(self):
+        # Regression test for https://github.com/celery/celery/discussions/10099
+        # On Python 3.14+, annotations are deferred (PEP 649). Functions with
+        # annotations referencing TYPE_CHECKING-only types must not raise NameError.
+        local = {}
+        exec('def f(args: Sequence[str], x: int = 0): return args', {}, local)
+        f = local['f']
+
+        g = head_from_fun(f)
+        with pytest.raises(TypeError):
+            g()
+        g(1)
+        g(1, 2)
+
+    def test_wraps_variadic_wrapper(self):
+        # Regression test: head_from_fun should introspect the callable it was
+        # handed, not the original function referenced via __wrapped__. This
+        # matters for tasks defined via functools.wraps over a variadic wrapper
+        # (a common pattern for DI decorators that inject extra kwargs at call
+        # time). inspect.getfullargspec ignores __wrapped__; inspect.signature
+        # follows it by default, so the Python 3.14 _getfullargspec shim must
+        # pass follow_wrapped=False to preserve the documented behaviour.
+        from functools import wraps
+
+        def inner(x, y, app, sa_session, kwarg=1):
+            pass
+
+        @wraps(inner)
+        def wrapper(*args, **kwds):
+            pass
+
+        g = head_from_fun(wrapper)
+        # The wrapper accepts anything; head_from_fun should see its signature,
+        # not inner's (which would require app/sa_session as positional args).
+        g()
+        g(1)
+        g(1, 2, 3)
+        g(anything=1, at=2, all=3)
+
 
 class test_fun_takes_argument:
 
@@ -258,7 +479,7 @@ class test_fun_takes_argument:
 ])
 def test_seq_concat_seq(a, b, expected):
     res = seq_concat_seq(a, b)
-    assert type(res) is type(expected)  # noqa
+    assert type(res) is type(expected)
     assert res == expected
 
 
@@ -268,7 +489,7 @@ def test_seq_concat_seq(a, b, expected):
 ])
 def test_seq_concat_item(a, b, expected):
     res = seq_concat_item(a, b)
-    assert type(res) is type(expected)  # noqa
+    assert type(res) is type(expected)
     assert res == expected
 
 
@@ -325,3 +546,39 @@ class test_fun_accepts_kwargs:
     ])
     def test_rejects(self, fun):
         assert not fun_accepts_kwargs(fun)
+
+    @pytest.mark.skipif(sys.version_info < (3, 14), reason="PEP 649 deferred annotations require Python 3.14+")
+    def test_type_checking_annotation(self):
+        # Regression test for https://github.com/celery/celery/discussions/10099
+        # On Python 3.14+, annotations are deferred (PEP 649). Calling
+        # fun_accepts_kwargs on a function whose annotations reference
+        # TYPE_CHECKING-only types must not raise NameError.
+        #
+        # This reproduces the failure seen with on_after_finalize.connect:
+        #   def setup_periodic_tasks(sender: Celery, **kwargs: object) -> None: ...
+        # where 'Celery' is only imported under TYPE_CHECKING.
+        local = {}
+        exec('def f(sender: Celery, **kwargs: object) -> None: pass', {}, local)
+        f = local['f']
+        assert fun_accepts_kwargs(f) is True
+
+        exec('def g(sender: Celery) -> None: pass', {}, local)
+        g = local['g']
+        assert fun_accepts_kwargs(g) is False
+
+
+@pytest.mark.parametrize('value,expected', [
+    (5, True),
+    (5.0, True),
+    (0, True),
+    (0.0, True),
+    (True, False),
+    ('value', False),
+    ('5', False),
+    ('5.0', False),
+    (None, False),
+])
+def test_is_numeric_value(value, expected):
+    res = is_numeric_value(value)
+    assert type(res) is type(expected)
+    assert res == expected

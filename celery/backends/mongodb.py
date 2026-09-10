@@ -1,5 +1,5 @@
 """MongoDB result store backend."""
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from kombu.exceptions import EncodeError
 from kombu.utils.objects import cached_property
@@ -12,19 +12,20 @@ from .base import BaseBackend
 
 try:
     import pymongo
-except ImportError:  # pragma: no cover
-    pymongo = None   # noqa
+except ImportError:
+    pymongo = None
 
 if pymongo:
     try:
         from bson.binary import Binary
-    except ImportError:                     # pragma: no cover
-        from pymongo.binary import Binary  # noqa
-    from pymongo.errors import InvalidDocument  # noqa
+    except ImportError:
+        from pymongo.binary import Binary
+    from pymongo import uri_parser
+    from pymongo.errors import InvalidDocument
 else:                                       # pragma: no cover
-    Binary = None                           # noqa
+    Binary = None
 
-    class InvalidDocument(Exception):       # noqa
+    class InvalidDocument(Exception):
         pass
 
 __all__ = ('MongoBackend',)
@@ -53,6 +54,9 @@ class MongoBackend(BaseBackend):
 
     supports_autoexpire = False
 
+    # Bytes round-trip through BSON as a binary field.
+    supports_result_compression = True
+
     _connection = None
 
     def __init__(self, app=None, **kwargs):
@@ -73,7 +77,7 @@ class MongoBackend(BaseBackend):
         if self.url:
             self.url = self._ensure_mongodb_uri_compliance(self.url)
 
-            uri_data = pymongo.uri_parser.parse_uri(self.url)
+            uri_data = uri_parser.parse_uri(self.url)
             # build the hosts list to create a mongo connection
             hostslist = [
                 f'{x[0]}:{x[1]}' for x in uri_data['nodelist']
@@ -182,14 +186,15 @@ class MongoBackend(BaseBackend):
                       traceback=None, request=None, **kwargs):
         """Store return value and state of an executed task."""
         meta = self._get_result_meta(result=self.encode(result), state=state,
-                                     traceback=traceback, request=request)
+                                     traceback=traceback, request=request,
+                                     format_date=False)
         # Add the _id for mongodb
         meta['_id'] = task_id
 
         try:
             self.collection.replace_one({'_id': task_id}, meta, upsert=True)
         except InvalidDocument as exc:
-            raise EncodeError(exc)
+            raise EncodeError(exc) from exc
 
         return result
 
@@ -197,22 +202,49 @@ class MongoBackend(BaseBackend):
         """Get task meta-data for a task by id."""
         obj = self.collection.find_one({'_id': task_id})
         if obj:
+            if self.app.conf.find_value_for_key('extended', 'result'):
+                # The request-derived fields are only written by
+                # ``_get_result_meta`` when a request is available, so a
+                # document stored without one (for example by
+                # ``AbortableAsyncResult.abort``) does not carry them.
+                # Default them to None instead of raising KeyError.
+                return self.meta_from_decoded({
+                    'name': obj.get('name'),
+                    'args': obj.get('args'),
+                    'task_id': obj['_id'],
+                    'queue': obj.get('queue'),
+                    'kwargs': obj.get('kwargs'),
+                    'status': obj['status'],
+                    'worker': obj.get('worker'),
+                    'retries': obj.get('retries'),
+                    'children': obj['children'],
+                    'date_done': obj['date_done'],
+                    'traceback': obj['traceback'],
+                    'result': self.decode(obj['result']),
+                })
             return self.meta_from_decoded({
                 'task_id': obj['_id'],
                 'status': obj['status'],
                 'result': self.decode(obj['result']),
                 'date_done': obj['date_done'],
-                'traceback': self.decode(obj['traceback']),
-                'children': self.decode(obj['children']),
+                'traceback': obj['traceback'],
+                'children': obj['children'],
             })
         return {'status': states.PENDING, 'result': None}
+
+    def task_result_exists(self, task_id):
+        """Check if a result exists in MongoDB for the given task ID.
+
+        .. versionadded:: 5.7.0
+        """
+        return bool(self.collection.find_one({"_id": task_id}))
 
     def _save_group(self, group_id, result):
         """Save the group result."""
         meta = {
             '_id': group_id,
             'result': self.encode([i.id for i in result]),
-            'date_done': datetime.utcnow(),
+            'date_done': datetime.now(timezone.utc),
         }
         self.group_collection.replace_one({'_id': group_id}, meta, upsert=True)
         return result
@@ -265,16 +297,7 @@ class MongoBackend(BaseBackend):
 
     def _get_database(self):
         conn = self._get_connection()
-        db = conn[self.database_name]
-        if self.user and self.password:
-            source = self.options.get(
-                'authsource',
-                self.database_name or 'admin'
-            )
-            if not db.authenticate(self.user, self.password, source=source):
-                raise ImproperlyConfigured(
-                    'Invalid MongoDB username or password.')
-        return db
+        return conn[self.database_name]
 
     @cached_property
     def database(self):

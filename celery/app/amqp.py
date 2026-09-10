@@ -46,6 +46,13 @@ class Queues(dict):
         create_missing (bool): By default any unknown queues will be
             added automatically, but if this flag is disabled the occurrence
             of unknown queues in `wanted` will raise :exc:`KeyError`.
+        create_missing_queue_type (str): Type of queue to create for missing queues.
+            Must be either 'classic' (default) or 'quorum'. If set to 'quorum',
+            the broker will declare new queues using the quorum type.
+        create_missing_queue_exchange_type (str): Type of exchange to use
+            when creating missing queues. If not set, the default exchange type
+            will be used. If set, the exchange type will be set to this value
+            when creating missing queues.
         max_priority (int): Default x-max-priority for queues with none set.
     """
 
@@ -53,14 +60,19 @@ class Queues(dict):
     #: The rest of the queues are then used for routing only.
     _consume_from = None
 
-    def __init__(self, queues=None, default_exchange=None,
-                 create_missing=True, autoexchange=None,
-                 max_priority=None, default_routing_key=None):
-        dict.__init__(self)
+    def __init__(
+            self, queues=None, default_exchange=None,
+            create_missing=True, create_missing_queue_type=None,
+            create_missing_queue_exchange_type=None, autoexchange=None,
+            max_priority=None, default_routing_key=None,
+    ):
+        super().__init__()
         self.aliases = WeakValueDictionary()
         self.default_exchange = default_exchange
         self.default_routing_key = default_routing_key
         self.create_missing = create_missing
+        self.create_missing_queue_type = create_missing_queue_type
+        self.create_missing_queue_exchange_type = create_missing_queue_exchange_type
         self.autoexchange = Exchange if autoexchange is None else autoexchange
         self.max_priority = max_priority
         if queues is not None and not isinstance(queues, Mapping):
@@ -68,17 +80,19 @@ class Queues(dict):
         queues = queues or {}
         for name, q in queues.items():
             self.add(q) if isinstance(q, Queue) else self.add_compat(name, **q)
+        # The default set of queues to consume from if no -Q option is set.
+        self._default_consume_from = {**self}
 
     def __getitem__(self, name):
         try:
             return self.aliases[name]
         except KeyError:
-            return dict.__getitem__(self, name)
+            return super().__getitem__(name)
 
     def __setitem__(self, name, queue):
         if self.default_exchange and not queue.exchange:
             queue.exchange = self.default_exchange
-        dict.__setitem__(self, name, queue)
+        super().__setitem__(name, queue)
         if queue.alias:
             self.aliases[queue.alias] = queue
 
@@ -151,6 +165,8 @@ class Queues(dict):
         q = self.add(queue, **kwargs)
         if self._consume_from is not None:
             self._consume_from[q.name] = q
+        else:
+            self._default_consume_from[q.name] = q
         return q
 
     def select(self, include):
@@ -160,9 +176,10 @@ class Queues(dict):
             include (Sequence[str], str): Names of queues to consume from.
         """
         if include:
-            self._consume_from = {
-                name: self[name] for name in maybe_list(include)
-            }
+            self._consume_from = {}
+            for name in maybe_list(include):
+                q = self[name]
+                self._consume_from[q.name] = q
 
     def deselect(self, exclude):
         """Deselect queues so that they won't be consumed from.
@@ -174,20 +191,35 @@ class Queues(dict):
         if exclude:
             exclude = maybe_list(exclude)
             if self._consume_from is None:
-                # using all queues
-                return self.select(k for k in self if k not in exclude)
-            # using selection
+                consume_from = self._default_consume_from
+            else:
+                consume_from = self._consume_from
+
             for queue in exclude:
-                self._consume_from.pop(queue, None)
+                consume_from.pop(queue, None)
 
     def new_missing(self, name):
-        return Queue(name, self.autoexchange(name), name)
+        queue_arguments = None
+        if self.create_missing_queue_type and self.create_missing_queue_type != "classic":
+            if self.create_missing_queue_type not in ("classic", "quorum"):
+                raise ValueError(
+                    f"Invalid queue type '{self.create_missing_queue_type}'. "
+                    "Valid types are 'classic' and 'quorum'."
+                )
+            queue_arguments = {"x-queue-type": self.create_missing_queue_type}
+
+        if self.create_missing_queue_exchange_type:
+            exchange = Exchange(name, self.create_missing_queue_exchange_type)
+        else:
+            exchange = self.autoexchange(name)
+
+        return Queue(name, exchange, name, queue_arguments=queue_arguments)
 
     @property
     def consume_from(self):
         if self._consume_from is not None:
             return self._consume_from
-        return self
+        return self._default_consume_from
 
 
 class AMQP:
@@ -238,25 +270,39 @@ class AMQP:
     def send_task_message(self):
         return self._create_task_sender()
 
-    def Queues(self, queues, create_missing=None,
-               autoexchange=None, max_priority=None):
+    def Queues(self, queues, create_missing=None, create_missing_queue_type=None,
+               create_missing_queue_exchange_type=None, autoexchange=None, max_priority=None):
         # Create new :class:`Queues` instance, using queue defaults
         # from the current configuration.
         conf = self.app.conf
         default_routing_key = conf.task_default_routing_key
         if create_missing is None:
             create_missing = conf.task_create_missing_queues
+        if create_missing_queue_type is None:
+            create_missing_queue_type = conf.task_create_missing_queue_type
+        if create_missing_queue_exchange_type is None:
+            create_missing_queue_exchange_type = conf.task_create_missing_queue_exchange_type
         if max_priority is None:
             max_priority = conf.task_queue_max_priority
         if not queues and conf.task_default_queue:
+            queue_arguments = None
+            if conf.task_default_queue_type == 'quorum':
+                queue_arguments = {'x-queue-type': 'quorum'}
             queues = (Queue(conf.task_default_queue,
                             exchange=self.default_exchange,
-                            routing_key=default_routing_key),)
+                            routing_key=default_routing_key,
+                            queue_arguments=queue_arguments),)
         autoexchange = (self.autoexchange if autoexchange is None
                         else autoexchange)
         return self.queues_cls(
-            queues, self.default_exchange, create_missing,
-            autoexchange, max_priority, default_routing_key,
+            queues,
+            default_exchange=self.default_exchange,
+            create_missing=create_missing,
+            create_missing_queue_type=create_missing_queue_type,
+            create_missing_queue_exchange_type=create_missing_queue_exchange_type,
+            autoexchange=autoexchange,
+            max_priority=max_priority,
+            default_routing_key=default_routing_key,
         )
 
     def Router(self, queues=None, create_missing=None):
@@ -284,7 +330,9 @@ class AMQP:
                    time_limit=None, soft_time_limit=None,
                    create_sent_event=False, root_id=None, parent_id=None,
                    shadow=None, chain=None, now=None, timezone=None,
-                   origin=None, argsrepr=None, kwargsrepr=None):
+                   origin=None, ignore_result=False, argsrepr=None, kwargsrepr=None, stamped_headers=None,
+                   replaced_task_nesting=0, **options):
+
         args = args or ()
         kwargs = kwargs or {}
         if not isinstance(args, (list, tuple)):
@@ -312,38 +360,38 @@ class AMQP:
             expires = expires and expires.isoformat()
 
         if argsrepr is None:
-            argsrepr = saferepr(args, self.argsrepr_maxsize)
+            argsrepr = saferepr(args, self.argsrepr_maxsize, maxlevels=self.app.conf.task_repr_maxlevels)
         if kwargsrepr is None:
-            kwargsrepr = saferepr(kwargs, self.kwargsrepr_maxsize)
-
-        if callbacks:
-            callbacks = [utf8dict(callback) for callback in callbacks]
-        if errbacks:
-            errbacks = [utf8dict(errback) for errback in errbacks]
-        if chord:
-            chord = utf8dict(chord)
+            kwargsrepr = saferepr(kwargs, self.kwargsrepr_maxsize, maxlevels=self.app.conf.task_repr_maxlevels)
 
         if not root_id:  # empty root_id defaults to task_id
             root_id = task_id
 
+        stamps = {header: options[header] for header in stamped_headers or []}
+        headers = {
+            'lang': 'py',
+            'task': name,
+            'id': task_id,
+            'shadow': shadow,
+            'eta': eta,
+            'expires': expires,
+            'group': group_id,
+            'group_index': group_index,
+            'retries': retries,
+            'timelimit': [time_limit, soft_time_limit],
+            'root_id': root_id,
+            'parent_id': parent_id,
+            'argsrepr': argsrepr,
+            'kwargsrepr': kwargsrepr,
+            'origin': origin or anon_nodename(),
+            'ignore_result': ignore_result,
+            'replaced_task_nesting': replaced_task_nesting,
+            'stamped_headers': stamped_headers,
+            'stamps': stamps,
+        }
+
         return task_message(
-            headers={
-                'lang': 'py',
-                'task': name,
-                'id': task_id,
-                'shadow': shadow,
-                'eta': eta,
-                'expires': expires,
-                'group': group_id,
-                'group_index': group_index,
-                'retries': retries,
-                'timelimit': [time_limit, soft_time_limit],
-                'root_id': root_id,
-                'parent_id': parent_id,
-                'argsrepr': argsrepr,
-                'kwargsrepr': kwargsrepr,
-                'origin': origin or anon_nodename()
-            },
+            headers=headers,
             properties={
                 'correlation_id': task_id,
                 'reply_to': reply_to or '',
@@ -395,13 +443,6 @@ class AMQP:
         eta = eta and eta.isoformat()
         expires = expires and expires.isoformat()
 
-        if callbacks:
-            callbacks = [utf8dict(callback) for callback in callbacks]
-        if errbacks:
-            errbacks = [utf8dict(errback) for errback in errbacks]
-        if chord:
-            chord = utf8dict(chord)
-
         return task_message(
             headers={},
             properties={
@@ -442,25 +483,25 @@ class AMQP:
         return s
 
     def _create_task_sender(self):
+        amqp = self
         default_retry = self.app.conf.task_publish_retry
         default_policy = self.app.conf.task_publish_retry_policy
         default_delivery_mode = self.app.conf.task_default_delivery_mode
-        default_queue = self.default_queue
         queues = self.queues
         send_before_publish = signals.before_task_publish.send
         before_receivers = signals.before_task_publish.receivers
         send_after_publish = signals.after_task_publish.send
         after_receivers = signals.after_task_publish.receivers
 
-        send_task_sent = signals.task_sent.send   # XXX compat
-        sent_receivers = signals.task_sent.receivers
+        send_task_sent = signals.task_sent.send   # XXX compat (remove 6.0)
+        sent_receivers = signals.task_sent.receivers   # XXX compat (remove 6.0)
 
         default_evd = self._event_dispatcher
         default_exchange = self.default_exchange
 
         default_rkey = self.app.conf.task_default_routing_key
         default_serializer = self.app.conf.task_serializer
-        default_compressor = self.app.conf.result_compression
+        default_compressor = self.app.conf.task_compression
 
         def send_task_message(producer, name, message,
                               exchange=None, routing_key=None, queue=None,
@@ -468,7 +509,8 @@ class AMQP:
                               retry=None, retry_policy=None,
                               serializer=None, delivery_mode=None,
                               compression=None, declare=None,
-                              headers=None, exchange_type=None, **kwargs):
+                              headers=None, exchange_type=None,
+                              timeout=None, confirm_timeout=None, **kwargs):
             retry = default_retry if retry is None else retry
             headers2, properties, body, sent_event = message
             if headers:
@@ -478,7 +520,7 @@ class AMQP:
 
             qname = queue
             if queue is None and exchange is None:
-                queue = default_queue
+                queue = amqp.default_queue
             if queue is not None:
                 if isinstance(queue, str):
                     qname, queue = queue, queues[queue]
@@ -529,6 +571,7 @@ class AMQP:
                 retry=retry, retry_policy=_rp,
                 delivery_mode=delivery_mode, declare=declare,
                 headers=headers2,
+                timeout=timeout, confirm_timeout=confirm_timeout,
                 **properties
             )
             if after_receivers:
@@ -571,7 +614,7 @@ class AMQP:
         """Queue name⇒ declaration mapping."""
         return self.Queues(self.app.conf.task_queues)
 
-    @queues.setter  # noqa
+    @queues.setter
     def queues(self, queues):
         return self.Queues(queues)
 
@@ -610,7 +653,7 @@ class AMQP:
     @cached_property
     def _event_dispatcher(self):
         # We call Dispatcher.publish with a custom producer
-        # so don't need the diuspatcher to be enabled.
+        # so don't need the dispatcher to be enabled.
         return self.app.events.Dispatcher(enabled=False)
 
     def _handle_conf_update(self, *args, **kwargs):

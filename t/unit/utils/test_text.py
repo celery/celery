@@ -1,7 +1,6 @@
 import pytest
 
-from celery.utils.text import (abbr, abbrtask, ensure_newlines, indent,
-                               pretty, truncate)
+from celery.utils.text import abbr, abbrtask, ensure_newlines, indent, pretty, truncate
 
 RANDTEXT = """\
 The quick brown

@@ -10,17 +10,18 @@ from time import monotonic, time
 from weakref import ref
 
 from billiard.common import TERM_SIGNAME
+from billiard.einfo import ExceptionInfo, ExceptionWithTraceback
 from kombu.utils.encoding import safe_repr, safe_str
 from kombu.utils.objects import cached_property
 
-from celery import current_app, signals
+from celery import current_app, signals, states
 from celery.app.task import Context
-from celery.app.trace import fast_trace_task, trace_task, trace_task_ret
-from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry,
-                               TaskRevokedError, Terminated,
+from celery.app.trace import fast_trace_task, task_has_custom, trace_task, trace_task_ret
+from celery.concurrency.base import BasePool
+from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError, Terminated,
                                TimeLimitExceeded, WorkerLostError)
 from celery.platforms import signals as _signals
-from celery.utils.functional import maybe, noop
+from celery.utils.functional import maybe, maybe_list, noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.serialization import get_pickled_exception
@@ -50,15 +51,17 @@ def __optimize__():
     _does_info = logger.isEnabledFor(logging.INFO)
 
 
-__optimize__()  # noqa: E305
+__optimize__()
 
 # Localize
 tz_or_local = timezone.tz_or_local
 send_revoked = signals.task_revoked.send
+send_retry = signals.task_retry.send
 
 task_accepted = state.task_accepted
 task_ready = state.task_ready
 revoked_tasks = state.revoked
+revoked_stamps = state.revoked_stamps
 
 
 class Request:
@@ -69,6 +72,7 @@ class Request:
     worker_pid = None
     time_limits = (None, None)
     _already_revoked = False
+    _already_cancelled = False
     _terminate_on_ack = None
     _apply_result = None
     _tzlocal = None
@@ -91,7 +95,8 @@ class Request:
                  maybe_make_aware=maybe_make_aware,
                  maybe_iso8601=maybe_iso8601, **opts):
         self._message = message
-        self._request_dict = message.headers if headers is None else headers
+        self._request_dict = (message.headers.copy() if headers is None
+                              else headers.copy())
         self._body = message.body if body is None else body
         self._app = app
         self._utc = utc
@@ -120,6 +125,10 @@ class Request:
         self._eventer = eventer
         self._connection_errors = connection_errors or ()
         self._task = task or self._app.tasks[self._type]
+        ignore_result = self._request_dict.get('ignore_result', None)
+        if ignore_result is None:
+            ignore_result = self._task.ignore_result
+        self._ignore_result = ignore_result
 
         # timezone means the message is timezone-aware, and the only timezone
         # supported at this point is UTC.
@@ -151,9 +160,10 @@ class Request:
             'exchange': delivery_info.get('exchange'),
             'routing_key': delivery_info.get('routing_key'),
             'priority': properties.get('priority'),
-            'redelivered': delivery_info.get('redelivered'),
+            'redelivered': delivery_info.get('redelivered', False),
         }
         self._request_dict.update({
+            'properties': properties,
             'reply_to': properties.get('reply_to'),
             'correlation_id': properties.get('correlation_id'),
             'hostname': self._hostname,
@@ -241,6 +251,10 @@ class Request:
         return self._hostname
 
     @property
+    def ignore_result(self):
+        return self._ignore_result
+
+    @property
     def eventer(self):
         return self._eventer
 
@@ -276,7 +290,7 @@ class Request:
 
     @property
     def store_errors(self):
-        return (not self.task.ignore_result or
+        return (not self._ignore_result or
                 self.task.store_errors_even_if_ignored)
 
     @property
@@ -284,7 +298,7 @@ class Request:
         # XXX compat
         return self.id
 
-    @task_id.setter  # noqa
+    @task_id.setter
     def task_id(self, value):
         self.id = value
 
@@ -293,7 +307,7 @@ class Request:
         # XXX compat
         return self.name
 
-    @task_name.setter  # noqa
+    @task_name.setter
     def task_name(self, value):
         self.name = value
 
@@ -303,11 +317,28 @@ class Request:
         return self._request_dict['reply_to']
 
     @property
+    def replaced_task_nesting(self):
+        return self._request_dict.get('replaced_task_nesting', 0)
+
+    @property
+    def groups(self):
+        return self._request_dict.get('groups', [])
+
+    @property
+    def stamped_headers(self) -> list:
+        return self._request_dict.get('stamped_headers') or []
+
+    @property
+    def stamps(self) -> dict:
+        stamps = self._request_dict.get('stamps') or {}
+        return {header: stamps.get(header) for header in self.stamped_headers}
+
+    @property
     def correlation_id(self):
         # used similarly to reply_to
         return self._request_dict['correlation_id']
 
-    def execute_using_pool(self, pool, **kwargs):
+    def execute_using_pool(self, pool: BasePool, **kwargs):
         """Used by the worker to send this task to the pool.
 
         Arguments:
@@ -376,9 +407,9 @@ class Request:
 
     def maybe_expire(self):
         """If expired, mark the task as revoked."""
-        if self._expires:
-            now = datetime.now(self._expires.tzinfo)
-            if now > self._expires:
+        if self.expires:
+            now = datetime.now(self.expires.tzinfo)
+            if now > self.expires:
                 revoked_tasks.add(self.id)
                 return True
 
@@ -393,6 +424,35 @@ class Request:
             obj = self._apply_result()  # is a weakref
             if obj is not None:
                 obj.terminate(signal)
+
+    def cancel(self, pool, signal=None, emit_retry=True):
+        signal = _signals.signum(signal or TERM_SIGNAME)
+        if self.time_start:
+            pool.terminate_job(self.worker_pid, signal)
+            self._announce_cancelled(emit_retry=emit_retry)
+
+        if self._apply_result is not None:
+            obj = self._apply_result()  # is a weakref
+            if obj is not None:
+                obj.terminate(signal)
+
+    def _announce_cancelled(self, emit_retry=True):
+        task_ready(self)
+        self.send_event('task-cancelled')
+
+        if emit_retry:
+            reason = 'cancelled by Celery'
+            exc = Retry(message=reason)
+            self.task.backend.mark_as_retry(self.id,
+                                            exc,
+                                            request=self._context)
+
+            self.task.on_retry(exc, self.id, self.args, self.kwargs, None)
+
+        self._already_cancelled = True
+
+        if emit_retry:
+            send_retry(self.task, request=self._context, einfo=None)
 
     def _announce_revoked(self, reason, terminated, signum, expired):
         task_ready(self)
@@ -412,10 +472,36 @@ class Request:
         expired = False
         if self._already_revoked:
             return True
-        if self._expires:
+        if self.expires:
             expired = self.maybe_expire()
-        if self.id in revoked_tasks:
-            info('Discarding revoked task: %s[%s]', self.name, self.id)
+        revoked_by_id = self.id in revoked_tasks
+        revoked_by_header, revoking_header = False, None
+
+        if not revoked_by_id and self.stamped_headers:
+            for stamp in self.stamped_headers:
+                if stamp in revoked_stamps:
+                    revoked_header = revoked_stamps[stamp]
+                    stamped_header = self._message.headers['stamps'][stamp]
+
+                    if isinstance(stamped_header, (list, tuple)):
+                        for stamped_value in stamped_header:
+                            if stamped_value in maybe_list(revoked_header):
+                                revoked_by_header = True
+                                revoking_header = {stamp: stamped_value}
+                                break
+                    else:
+                        revoked_by_header = any([
+                            stamped_header in maybe_list(revoked_header),
+                            stamped_header == revoked_header,  # When the header is a single set value
+                        ])
+                        revoking_header = {stamp: stamped_header}
+                    break
+
+        if any((expired, revoked_by_id, revoked_by_header)):
+            log_msg = 'Discarding revoked task: %s[%s]'
+            if revoked_by_header:
+                log_msg += ' (revoked by header: %s)' % revoking_header
+            info(log_msg, self.name, self.id)
             self._announce_revoked(
                 'expired' if expired else 'revoked', False, None, expired,
             )
@@ -447,26 +533,87 @@ class Request:
                  timeout, self.name, self.id)
         else:
             task_ready(self)
-            error('Hard time limit (%ss) exceeded for %s[%s]',
-                  timeout, self.name, self.id)
-            exc = TimeLimitExceeded(timeout)
+            # This is a special case where the task timeout handling is done during
+            # the cold shutdown process.
+            if not state.should_terminate:
+                error('Hard time limit (%ss) exceeded for %s[%s]', timeout, self.name, self.id)
+                exc = TimeLimitExceeded(timeout)
 
-            self.task.backend.mark_as_failure(
-                self.id, exc, request=self._context,
-                store_result=self.store_errors,
-            )
+                self.task.backend.mark_as_failure(
+                    self.id, exc, request=self._context,
+                    store_result=self.store_errors,
+                )
 
-            if self.task.acks_late and self.task.acks_on_failure_or_timeout:
-                self.acknowledge()
+                # Invoke the same failure hooks that a normal task failure
+                # triggers so that on_failure callbacks, errbacks, and
+                # the task_failure signal all fire for hard timeouts.
+                einfo = None
+                try:
+                    try:
+                        raise exc
+                    except TimeLimitExceeded:
+                        einfo = ExceptionInfo()
+
+                    self.task.on_failure(exc, self.id, self.args, self.kwargs, einfo)
+
+                    if task_has_custom(self.task, 'after_return'):
+                        self.task.after_return(
+                            states.FAILURE, exc, self.id, self.args, self.kwargs, None,
+                        )
+
+                    signals.task_failure.send(
+                        sender=self.task,
+                        task_id=self.id,
+                        exception=exc,
+                        args=self.args,
+                        kwargs=self.kwargs,
+                        traceback=exc.__traceback__,
+                        einfo=einfo,
+                    )
+
+                    self.send_event(
+                        'task-failed',
+                        exception=safe_repr(get_pickled_exception(einfo.exception)),
+                        traceback=einfo.traceback,
+                    )
+                finally:
+                    # Break the exc → traceback → frame reference cycle
+                    # (this frame's own `exc` local points at exc, and
+                    # exc.__traceback__ points back at this frame) so the
+                    # on_timeout frame — and the Request/self it holds —
+                    # can be garbage-collected promptly.
+                    #
+                    # Note: a `traceback_clear(exc)` call previously lived
+                    # here too, but it is a guaranteed no-op in this
+                    # location: exc is raised and caught within this same
+                    # function, so the only frame in exc.__traceback__ is
+                    # this currently-executing frame, and CPython's
+                    # frame.clear() always raises "cannot clear an
+                    # executing frame" for a frame still on the call
+                    # stack. That RuntimeError was being silently
+                    # swallowed inside traceback_clear(), so the call
+                    # appeared to succeed while doing nothing.
+                    if einfo is not None:
+                        del einfo
+                    exc.__traceback__ = None
+
+            if self.task.acks_late:
+                if self.task.acks_on_timeout:
+                    self.acknowledge()
+                else:
+                    self.reject(requeue=True)
 
     def on_success(self, failed__retval__runtime, **kwargs):
         """Handler called if the task was successfully processed."""
         failed, retval, runtime = failed__retval__runtime
         if failed:
-            if isinstance(retval.exception, (SystemExit, KeyboardInterrupt)):
-                raise retval.exception
+            exc = retval.exception
+            if isinstance(exc, ExceptionWithTraceback):
+                exc = exc.exc
+            if isinstance(exc, (SystemExit, KeyboardInterrupt)):
+                raise exc
             return self.on_failure(retval, return_ok=True)
-        task_ready(self)
+        task_ready(self, successful=True)
 
         if self.task.acks_late:
             self.acknowledge()
@@ -487,9 +634,50 @@ class Request:
         task_ready(self)
         exc = exc_info.exception
 
-        if isinstance(exc, MemoryError):
+        if isinstance(exc, ExceptionWithTraceback):
+            exc = exc.exc
+
+        is_terminated = isinstance(exc, Terminated)
+        if is_terminated:
+            # If the task was terminated and the task was not cancelled due
+            # to a connection loss, it is revoked.
+
+            # We always cancel the tasks inside the master process.
+            # If the request was cancelled, it was not revoked and there's
+            # nothing to be done.
+            # According to the comment below, we need to check if the task
+            # is already revoked and if it wasn't, we should announce that
+            # it was.
+            if not self._already_cancelled and not self._already_revoked:
+                # This is a special case where the process
+                # would not have had time to write the result.
+                self._announce_revoked(
+                    'terminated', True, str(exc), False)
+            return
+        elif isinstance(exc, MemoryError):
             raise MemoryError(f'Process got: {exc}')
         elif isinstance(exc, Reject):
+            if not exc.requeue:
+                # A task that rejects its message without requeueing will
+                # never run again, so record a terminal FAILURE result and
+                # fire the task_failure signal instead of leaving the task
+                # stuck in PENDING/STARTED forever (Issue #4222).
+                self.task.backend.mark_as_failure(
+                    self.id, exc, request=self._context,
+                    store_result=self.store_errors,
+                )
+                signals.task_failure.send(
+                    sender=self.task, task_id=self.id, exception=exc,
+                    args=self.args, kwargs=self.kwargs,
+                    traceback=exc_info.traceback, einfo=exc_info,
+                )
+                if send_failed_event:
+                    self.send_event(
+                        'task-failed',
+                        exception=safe_repr(
+                            get_pickled_exception(exc_info.exception)),
+                        traceback=exc_info.traceback,
+                    )
             return self.reject(requeue=exc.requeue)
         elif isinstance(exc, Ignore):
             return self.acknowledge()
@@ -498,35 +686,45 @@ class Request:
 
         # (acks_late) acknowledge after result stored.
         requeue = False
+        is_worker_lost = isinstance(exc, WorkerLostError)
         if self.task.acks_late:
+            is_timeout = isinstance(exc, TimeLimitExceeded)
+            ack_flag = self.task.acks_on_timeout if is_timeout else self.task.acks_on_failure
             reject = (
-                self.task.reject_on_worker_lost and
-                isinstance(exc, WorkerLostError)
+                (self.task.reject_on_worker_lost and is_worker_lost)
+                or (is_timeout and not ack_flag)
             )
-            ack = self.task.acks_on_failure_or_timeout
             if reject:
                 requeue = True
                 self.reject(requeue=requeue)
                 send_failed_event = False
-            elif ack:
+            elif ack_flag:
                 self.acknowledge()
             else:
                 # supporting the behaviour where a task failed and
                 # need to be removed from prefetched local queue
                 self.reject(requeue=False)
 
-        # These are special cases where the process would not have had time
+        # This is a special case where the task failure handling is done during
+        # the cold shutdown process.
+        if state.should_terminate:
+            return_ok = True
+            send_failed_event = False
+
+        # This is a special case where the process would not have had time
         # to write the result.
-        if isinstance(exc, Terminated):
-            self._announce_revoked(
-                'terminated', True, str(exc), False)
-            send_failed_event = False  # already sent revoked event
-        elif not requeue and (isinstance(exc, WorkerLostError) or not return_ok):
+        if not requeue and (is_worker_lost or not return_ok):
             # only mark as failure if task has not been requeued
             self.task.backend.mark_as_failure(
                 self.id, exc, request=self._context,
                 store_result=self.store_errors,
             )
+
+            signals.task_failure.send(sender=self.task, task_id=self.id,
+                                      exception=exc, args=self.args,
+                                      kwargs=self.kwargs,
+                                      traceback=exc_info.traceback,
+                                      einfo=exc_info)
 
         if send_failed_event:
             self.send_event(
@@ -555,8 +753,8 @@ class Request:
         return {
             'id': self.id,
             'name': self.name,
-            'args': self._args,
-            'kwargs': self._kwargs,
+            'args': self._args if not safe else self._argsrepr,
+            'kwargs': self._kwargs if not safe else self._kwargsrepr,
             'type': self._type,
             'hostname': self._hostname,
             'time_start': self.time_start,
@@ -574,7 +772,7 @@ class Request:
             self.humaninfo(),
             f' ETA:[{self._eta}]' if self._eta else '',
             f' expires:[{self._expires}]' if self._expires else '',
-        ])
+        ]).strip()
 
     def __repr__(self):
         """``repr(self)``."""
@@ -643,7 +841,7 @@ def create_request_cls(base, task, pool, hostname, eventer,
 
         def execute_using_pool(self, pool, **kwargs):
             task_id = self.task_id
-            if (self.expires or task_id in revoked_tasks) and self.revoked():
+            if self.revoked():
                 raise TaskRevokedError(task_id)
 
             time_limit, soft_time_limit = self.time_limits
@@ -667,11 +865,13 @@ def create_request_cls(base, task, pool, hostname, eventer,
         def on_success(self, failed__retval__runtime, **kwargs):
             failed, retval, runtime = failed__retval__runtime
             if failed:
-                if isinstance(retval.exception, (
-                        SystemExit, KeyboardInterrupt)):
-                    raise retval.exception
+                exc = retval.exception
+                if isinstance(exc, ExceptionWithTraceback):
+                    exc = exc.exc
+                if isinstance(exc, (SystemExit, KeyboardInterrupt)):
+                    raise exc
                 return self.on_failure(retval, return_ok=True)
-            task_ready(self)
+            task_ready(self, successful=True)
 
             if acks_late:
                 self.acknowledge()

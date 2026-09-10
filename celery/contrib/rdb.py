@@ -110,8 +110,8 @@ class Rdb(Pdb):
         self.remote_addr = ':'.join(str(v) for v in address)
         self.say(SESSION_STARTED.format(self=self))
         self._handle = sys.stdin = sys.stdout = self._client.makefile('rw')
-        Pdb.__init__(self, completekey='tab',
-                     stdin=self._handle, stdout=self._handle)
+        super().__init__(completekey='tab',
+                         stdin=self._handle, stdout=self._handle)
 
     def get_avail_port(self, host, port, search_limit=100, skew=+0):
         try:
@@ -132,8 +132,7 @@ class Rdb(Pdb):
                 raise
             else:
                 return _sock, this_port
-        else:
-            raise Exception(NO_AVAILABLE_PORT.format(self=self))
+        raise Exception(NO_AVAILABLE_PORT.format(self=self))
 
     def say(self, m):
         print(m, file=self.out)

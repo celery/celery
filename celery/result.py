@@ -2,9 +2,12 @@
 
 import datetime
 import time
+import types
 from collections import deque
 from contextlib import contextmanager
+from weakref import proxy
 
+from dateutil.parser import isoparse
 from kombu.utils.objects import cached_property
 from vine import Thenable, barrier, promise
 
@@ -13,7 +16,6 @@ from ._state import _set_task_join_will_block, task_join_will_block
 from .app import app_or_default
 from .exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
 from .utils.graph import DependencyGraph, GraphFormatter
-from .utils.iso8601 import parse_iso8601
 
 try:
     import tblib
@@ -27,8 +29,8 @@ __all__ = (
 
 E_WOULDBLOCK = """\
 Never call result.get() within a task!
-See http://docs.celeryq.org/en/latest/userguide/tasks.html\
-#task-synchronous-subtasks
+See https://docs.celeryq.dev/en/latest/userguide/tasks.html\
+#avoid-launching-synchronous-subtasks
 """
 
 
@@ -136,6 +138,8 @@ class AsyncResult(ResultBase):
         self._cache = None
         if self.parent:
             self.parent.forget()
+
+        self.backend.remove_pending_result(self)
         self.backend.forget(self.id)
 
     def revoke(self, connection=None, terminate=False, signal=None,
@@ -160,6 +164,30 @@ class AsyncResult(ResultBase):
                                 terminate=terminate, signal=signal,
                                 reply=wait, timeout=timeout)
 
+    def revoke_by_stamped_headers(self, headers, connection=None, terminate=False, signal=None,
+                                  wait=False, timeout=None):
+        """Send revoke signal to all workers only for tasks with matching headers values.
+
+        Any worker receiving the task, or having reserved the
+        task, *must* ignore it.
+        All header fields *must* match.
+
+        Arguments:
+            headers (dict[str, Union(str, list)]): Headers to match when revoking tasks.
+            terminate (bool): Also terminate the process currently working
+                on the task (if any).
+            signal (str): Name of signal to send to process if terminate.
+                Default is TERM.
+            wait (bool): Wait for replies from workers.
+                The ``timeout`` argument specifies the seconds to wait.
+                Disabled by default.
+            timeout (float): Time in seconds to wait for replies when
+                ``wait`` is enabled.
+        """
+        self.app.control.revoke_by_stamped_headers(headers, connection=connection,
+                                                   terminate=terminate, signal=signal,
+                                                   reply=wait, timeout=timeout)
+
     def get(self, timeout=None, propagate=True, interval=0.5,
             no_ack=True, follow_parents=True, callback=None, on_message=None,
             on_interval=None, disable_sync_subtasks=True,
@@ -180,7 +208,10 @@ class AsyncResult(ResultBase):
 
         Arguments:
             timeout (float): How long to wait, in seconds, before the
-                operation times out.
+                operation times out. This is the setting for the publisher
+                (celery client) and is different from `timeout` parameter of
+                `@app.task`, which is the setting for the worker. The task
+                isn't terminated even if timeout occurs.
             propagate (bool): Re-raise exception if the task failed.
             interval (float): Time to wait (in seconds) before retrying to
                 retrieve the result.  Note that this does not have any effect
@@ -201,6 +232,13 @@ class AsyncResult(ResultBase):
                 `timeout` seconds.
             Exception: If the remote call raised an exception then that
                 exception will be re-raised in the caller process.
+
+        Returns:
+            Any: The task's return value on success. If the task failed and
+                ``propagate`` is false, the raised exception instance is
+                returned instead of being re-raised. If the task is configured
+                with ``ignore_result=True``, ``None`` is returned without
+                waiting.
         """
         if self.ignored:
             return
@@ -229,7 +267,7 @@ class AsyncResult(ResultBase):
             callback=callback,
             on_message=on_message,
         )
-    wait = get  # deprecated alias to :meth:`get`.
+    wait = get  # deprecated alias to :meth:`get` (remove 6.0).
 
     def _maybe_reraise_parent_error(self):
         for node in reversed(list(self._parents())):
@@ -299,14 +337,34 @@ class AsyncResult(ResultBase):
     def iterdeps(self, intermediate=False):
         stack = deque([(None, self)])
 
+        is_incomplete_stream = not intermediate
+
         while stack:
             parent, node = stack.popleft()
             yield parent, node
             if node.ready():
                 stack.extend((node, child) for child in node.children or [])
             else:
-                if not intermediate:
+                if is_incomplete_stream:
                     raise IncompleteStream()
+
+    def exists(self):
+        """Return :const:`True` if a result exists in the backend for this task.
+
+        This can be used to distinguish between a task that is truly
+        pending (waiting for execution) and a task ID that has never
+        been submitted or whose result has been forgotten/expired.
+
+        Without this method, both cases return ``PENDING`` as the state,
+        making them indistinguishable.
+
+        .. versionadded:: 5.7.0
+
+        Returns:
+            bool: :const:`True` if the backend has a result stored for
+                this task ID, :const:`False` otherwise.
+        """
+        return self.backend.task_result_exists(self.id)
 
     def ready(self):
         """Return :const:`True` if the task has executed.
@@ -352,6 +410,8 @@ class AsyncResult(ResultBase):
                 graph.add_edge(parent, node)
         return graph
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
     def __str__(self):
         """`str(self) -> self.id`."""
         return str(self.id)
@@ -369,10 +429,6 @@ class AsyncResult(ResultBase):
         elif isinstance(other, str):
             return other == self.id
         return NotImplemented
-
-    def __ne__(self, other):
-        res = self.__eq__(other)
-        return True if res is NotImplemented else not res
 
     def __copy__(self):
         return self.__class__(
@@ -475,15 +531,15 @@ class AsyncResult(ResultBase):
                 then contains the tasks return value.
         """
         return self._get_task_meta()['status']
-    status = state  # XXX compat
+    status = state  # XXX compat (remove 6.0)
 
     @property
-    def task_id(self):
+    def task_id(self):  # XXX compat (remove 6.0)
         """Compat. alias to :attr:`id`."""
         return self.id
 
-    @task_id.setter  # noqa
-    def task_id(self, id):
+    @task_id.setter
+    def task_id(self, id):  # XXX compat (remove 6.0)
         self.id = id
 
     @property
@@ -507,7 +563,7 @@ class AsyncResult(ResultBase):
         """UTC date and time."""
         date_done = self._get_task_meta().get('date_done')
         if date_done and not isinstance(date_done, datetime.datetime):
-            return parse_iso8601(date_done)
+            return isoparse(date_done)
         return date_done
 
     @property
@@ -529,13 +585,13 @@ class ResultSet(ResultBase):
 
     _app = None
 
-    #: List of results in in the set.
+    #: List of results in the set.
     results = None
 
     def __init__(self, results, app=None, ready_barrier=None, **kwargs):
         self._app = app
         self.results = results
-        self.on_ready = promise(args=(self,))
+        self.on_ready = promise(args=(proxy(self),))
         self._on_full = ready_barrier or barrier(results)
         if self._on_full:
             self._on_full.then(promise(self._on_ready, weak=True))
@@ -628,8 +684,11 @@ class ResultSet(ResultBase):
     def completed_count(self):
         """Task completion count.
 
+        Note that `complete` means `successful` in this context. In other words, the
+        return value of this method is the number of ``successful`` tasks.
+
         Returns:
-            int: the number of tasks completed.
+            int: the number of complete (i.e. successful) tasks.
         """
         return sum(int(result.successful()) for result in self.results)
 
@@ -726,6 +785,17 @@ class ResultSet(ResultBase):
             celery.exceptions.TimeoutError: if ``timeout`` isn't
                 :const:`None` and the operation takes longer than ``timeout``
                 seconds.
+
+        Returns:
+            list: A list of task return values in the same order as the
+                results in this set. If ``callback`` is provided, the
+                callback handles each value and no aggregated results are
+                returned (``join()`` returns an empty list; note that
+                :meth:`join_native`, which :meth:`get` may delegate to,
+                returns ``None`` in that case). If any task failed and
+                ``propagate`` is false, the corresponding position in the
+                list contains the exception instance instead of a return
+                value.
         """
         if disable_sync_subtasks:
             assert_will_not_block()
@@ -739,10 +809,10 @@ class ResultSet(ResultBase):
         results = []
         for result in self.results:
             remaining = None
-            if timeout:
-                remaining = timeout - (time.monotonic() - time_start)
-                if remaining <= 0.0:
-                    raise TimeoutError('join operation timed out')
+            if timeout is not None:
+                # A budget of 0, or one already spent, means "do not block":
+                # each result is polled once and raises if it is not ready.
+                remaining = max(timeout - (time.monotonic() - time_start), 0.0)
             value = result.get(
                 timeout=remaining, propagate=propagate,
                 interval=interval, no_ack=no_ack, on_interval=on_interval,
@@ -769,6 +839,7 @@ class ResultSet(ResultBase):
         This is currently only supported by the amqp, Redis and cache
         result backends.
         """
+        self._on_full.finalize()
         return self.backend.iter_native(
             self,
             timeout=timeout, interval=interval, no_ack=no_ack,
@@ -829,10 +900,6 @@ class ResultSet(ResultBase):
             return other.results == self.results
         return NotImplemented
 
-    def __ne__(self, other):
-        res = self.__eq__(other)
-        return True if res is NotImplemented else not res
-
     def __repr__(self):
         return f'<{type(self).__name__}: [{", ".join(r.id for r in self.results)}]>'
 
@@ -851,7 +918,7 @@ class ResultSet(ResultBase):
         return self._app
 
     @app.setter
-    def app(self, app):  # noqa
+    def app(self, app):
         self._app = app
 
     @property
@@ -883,11 +950,11 @@ class GroupResult(ResultSet):
     def __init__(self, id=None, results=None, parent=None, **kwargs):
         self.id = id
         self.parent = parent
-        ResultSet.__init__(self, results, **kwargs)
+        super().__init__(results, **kwargs)
 
     def _on_ready(self):
         self.backend.remove_pending_result(self)
-        ResultSet._on_ready(self)
+        super()._on_ready()
 
     def save(self, backend=None):
         """Save group-result for later retrieval using :meth:`restore`.
@@ -924,10 +991,6 @@ class GroupResult(ResultSet):
             return other == self.id
         return NotImplemented
 
-    def __ne__(self, other):
-        res = self.__eq__(other)
-        return True if res is NotImplemented else not res
-
     def __repr__(self):
         return f'<{type(self).__name__}: {self.id} [{", ".join(r.id for r in self.results)}]>'
 
@@ -963,13 +1026,14 @@ class GroupResult(ResultSet):
 class EagerResult(AsyncResult):
     """Result that we know has already been executed."""
 
-    def __init__(self, id, ret_value, state, traceback=None):
+    def __init__(self, id, ret_value, state, traceback=None, name=None):
         # pylint: disable=super-init-not-called
         # XXX should really not be inheriting from AsyncResult
         self.id = id
         self._result = ret_value
         self._state = state
         self._traceback = traceback
+        self._name = name
         self.on_ready = promise()
         self.on_ready(self)
 
@@ -1004,7 +1068,7 @@ class EagerResult(AsyncResult):
                 raise self.result if isinstance(
                     self.result, Exception) else Exception(self.result)
             return self.result
-    wait = get  # XXX Compat (remove 5.0)
+    wait = get  # XXX Compat (remove 6.0)
 
     def forget(self):
         pass
@@ -1022,6 +1086,7 @@ class EagerResult(AsyncResult):
             'result': self._result,
             'status': self._state,
             'traceback': self._traceback,
+            'name': self._name,
         }
 
     @property
@@ -1033,7 +1098,7 @@ class EagerResult(AsyncResult):
     def state(self):
         """The tasks state."""
         return self._state
-    status = state
+    status = state  # XXX compat (remove 6.0)
 
     @property
     def traceback(self):

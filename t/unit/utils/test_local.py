@@ -1,3 +1,5 @@
+import sys
+from importlib.util import find_spec
 from unittest.mock import Mock
 
 import pytest
@@ -110,7 +112,7 @@ class test_Proxy:
         setattr(x, 'a', 10)
         assert x.a == 10
 
-        del(x.a)
+        del (x.a)
         assert x.a == 1
 
     def test_dictproxy(self):
@@ -120,7 +122,7 @@ class test_Proxy:
         assert x['foo'] == 42
         assert len(x) == 1
         assert 'foo' in x
-        del(x['foo'])
+        del (x['foo'])
         with pytest.raises(KeyError):
             x['foo']
         assert iter(x)
@@ -132,7 +134,7 @@ class test_Proxy:
         x.extend([2, 3, 4])
         assert x[0] == 1
         assert x[:-1] == [1, 2, 3]
-        del(x[-1])
+        del (x[-1])
         assert x[:-1] == [1, 2]
         x[0] = 10
         assert x[0] == 10
@@ -140,7 +142,7 @@ class test_Proxy:
         assert len(x) == 3
         assert iter(x)
         x[0:2] = [1, 2]
-        del(x[0:2])
+        del (x[0:2])
         assert str(x)
 
     def test_complex_cast(self):
@@ -339,3 +341,15 @@ class test_PromiseProxy:
 
         assert maybe_evaluate(30) == 30
         assert x.__evaluated__()
+
+
+class test_celery_import:
+    def test_import_celery(self, monkeypatch):
+        monkeypatch.delitem(sys.modules, "celery", raising=False)
+        spec = find_spec("celery")
+        assert spec
+
+        import celery
+
+        assert celery.__spec__ == spec
+        assert find_spec("celery") == spec

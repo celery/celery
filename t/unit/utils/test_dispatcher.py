@@ -15,13 +15,13 @@ if sys.platform.startswith('java'):
 
 elif hasattr(sys, 'pypy_version_info'):
 
-    def garbage_collect():  # noqa
+    def garbage_collect():
         # Collecting weakreferences can take two collections on PyPy.
         gc.collect()
         gc.collect()
 else:
 
-    def garbage_collect():  # noqa
+    def garbage_collect():
         gc.collect()
 
 
@@ -181,4 +181,17 @@ class test_Signal:
         assert result == expected
         del a, result, expected
         garbage_collect()
+        self._testIsClean(a_signal)
+
+    def test_disconnect_retryable_decorator(self):
+        # Regression test for https://github.com/celery/celery/issues/9119
+
+        @a_signal.connect(sender=self, retry=True)
+        def succeeds_eventually(val, **kwargs):
+            return val
+
+        try:
+            a_signal.send(sender=self, val='test')
+        finally:
+            a_signal.disconnect(succeeds_eventually, sender=self)
         self._testIsClean(a_signal)

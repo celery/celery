@@ -1,6 +1,7 @@
 """The periodic task scheduler."""
 
 import copy
+import dbm
 import errno
 import heapq
 import os
@@ -11,6 +12,7 @@ import traceback
 from calendar import timegm
 from collections import namedtuple
 from functools import total_ordering
+from pickle import UnpicklingError
 from threading import Event, Thread
 
 from billiard import ensure_multiprocessing
@@ -22,6 +24,7 @@ from kombu.utils.objects import cached_property
 from . import __version__, platforms, signals
 from .exceptions import reraise
 from .schedules import crontab, maybe_schedule
+from .utils.functional import is_numeric_value
 from .utils.imports import load_extension_class_names, symbol_by_name
 from .utils.log import get_logger, iter_open_logger_fds
 from .utils.time import humanize_seconds, maybe_make_aware
@@ -45,7 +48,7 @@ class SchedulingError(Exception):
 
 
 class BeatLazyFunc:
-    """An lazy function declared in 'beat_schedule' and called before sending to worker.
+    """A lazy function declared in 'beat_schedule' and called before sending to worker.
 
     Example:
 
@@ -156,7 +159,7 @@ class ScheduleEntry:
         })
 
     def is_due(self):
-        """See :meth:`~celery.schedule.schedule.is_due`."""
+        """See :meth:`~celery.schedules.schedule.is_due`."""
         return self.schedule.is_due(self.last_run_at)
 
     def __iter__(self):
@@ -194,13 +197,23 @@ class ScheduleEntry:
         """
         return self.editable_fields_equal(other)
 
-    def __ne__(self, other):
-        """Test schedule entries inequality.
 
-        Will only compare "editable" fields:
-        ``task``, ``schedule``, ``args``, ``kwargs``, ``options``.
-        """
-        return not self == other
+def _evaluate_entry_args(entry_args):
+    if not entry_args:
+        return []
+    return [
+        v() if isinstance(v, BeatLazyFunc) else v
+        for v in entry_args
+    ]
+
+
+def _evaluate_entry_kwargs(entry_kwargs):
+    if not entry_kwargs:
+        return {}
+    return {
+        k: v() if isinstance(v, BeatLazyFunc) else v
+        for k, v in entry_kwargs.items()
+    }
 
 
 class Scheduler:
@@ -271,7 +284,10 @@ class Scheduler:
             error('Message Error: %s\n%s',
                   exc, traceback.format_stack(), exc_info=True)
         else:
-            debug('%s sent. id->%s', entry.task, result.id)
+            if result and hasattr(result, 'id'):
+                debug('%s sent. id->%s', entry.task, result.id)
+            else:
+                debug('%s sent.', entry.task)
 
     def adjust(self, n, drift=-0.010):
         if n and n > 0:
@@ -282,7 +298,7 @@ class Scheduler:
         return entry.is_due()
 
     def _when(self, entry, next_time_to_run, mktime=timegm):
-        """Return a utc timestamp, make sure heapq in currect order."""
+        """Return a utc timestamp, make sure heapq in correct order."""
         adjust = self.adjust
 
         as_now = maybe_make_aware(entry.default_now())
@@ -331,6 +347,10 @@ class Scheduler:
 
         event = H[0]
         entry = event[2]
+        now = self._when(entry, 0)
+        if event[0] > now:
+            return min(event[0] - now, max_interval)
+
         is_due, next_time_to_run = self.is_due(entry)
         if is_due:
             verify = heappop(H)
@@ -342,8 +362,21 @@ class Scheduler:
                 return 0
             else:
                 heappush(H, verify)
-                return min(verify[0], max_interval)
-        return min(adjust(next_time_to_run) or max_interval, max_interval)
+                return min(verify[0] - self._when(verify[2], 0), max_interval)
+
+        # Heap says this entry should be ready by now, but the entry requests
+        # to retry later.  Reheap it at that retry time, otherwise it just
+        # sits on top and the entries behind it never get their turn.
+        # https://github.com/celery/celery/issues/7649
+        reschedule_delay = next_time_to_run if is_numeric_value(next_time_to_run) else max_interval
+        verify = heappop(H)
+        if verify is event:
+            heappush(H, event_t(self._when(entry, reschedule_delay), event[1], entry))
+            # If another entry is now at the top, run it immediately.
+            return 0 if H and H[0][2] is not entry else min(adjust(reschedule_delay), max_interval)
+        else:
+            heappush(H, verify)
+            return min(verify[0] - self._when(verify[2], 0), max_interval)
 
     def schedules_equal(self, old_schedules, new_schedules):
         if old_schedules is new_schedules is None:
@@ -380,16 +413,21 @@ class Scheduler:
         task = self.app.tasks.get(entry.task)
 
         try:
-            entry_args = [v() if isinstance(v, BeatLazyFunc) else v for v in (entry.args or [])]
-            entry_kwargs = {k: v() if isinstance(v, BeatLazyFunc) else v for k, v in entry.kwargs.items()}
+            entry_args = _evaluate_entry_args(entry.args)
+            entry_kwargs = _evaluate_entry_kwargs(entry.kwargs)
+
+            # Add custom header to identify tasks from Celery Beat
+            options = entry.options.copy()
+            options.setdefault('headers', {})['celery_beat_task'] = True
+
             if task:
                 return task.apply_async(entry_args, entry_kwargs,
                                         producer=producer,
-                                        **entry.options)
+                                        **options)
             else:
                 return self.send_task(entry.task, entry_args, entry_kwargs,
                                       producer=producer,
-                                      **entry.options)
+                                      **options)
         except Exception as exc:  # pylint: disable=broad-except
             reraise(SchedulingError, SchedulingError(
                 "Couldn't apply scheduled task {0.name}: {exc}".format(
@@ -494,7 +532,7 @@ class PersistentScheduler(Scheduler):
 
     def __init__(self, *args, **kwargs):
         self.schedule_filename = kwargs.get('schedule_filename')
-        Scheduler.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def _remove_db(self):
         for suffix in self.known_suffixes:
@@ -552,11 +590,11 @@ class PersistentScheduler(Scheduler):
         for _ in (1, 2):
             try:
                 self._store['entries']
-            except KeyError:
+            except (KeyError, UnicodeDecodeError, TypeError, UnpicklingError):
                 # new schedule db
                 try:
                     self._store['entries'] = {}
-                except KeyError as exc:
+                except (KeyError, UnicodeDecodeError, TypeError, UnpicklingError) + dbm.error as exc:
                     self._store = self._destroy_open_corrupted_schedule(exc)
                     continue
             else:
@@ -609,8 +647,8 @@ class Service:
         self._is_stopped = Event()
 
     def __reduce__(self):
-        return self.__class__, (self.max_interval, self.schedule_filename,
-                                self.scheduler_cls, self.app)
+        return self.__class__, (self.app, self.max_interval,
+                                self.schedule_filename, self.scheduler_cls)
 
     def start(self, embedded_process=False):
         info('beat: Starting...')
@@ -648,8 +686,7 @@ class Service:
     def get_scheduler(self, lazy=False,
                       extension_namespace='celery.beat_schedulers'):
         filename = self.schedule_filename
-        aliases = dict(
-            load_extension_class_names(extension_namespace) or {})
+        aliases = dict(load_extension_class_names(extension_namespace))
         return symbol_by_name(self.scheduler_cls, aliases=aliases)(
             app=self.app,
             schedule_filename=filename,
@@ -685,7 +722,7 @@ try:
 except NotImplementedError:     # pragma: no cover
     _Process = None
 else:
-    class _Process(Process):    # noqa
+    class _Process(Process):
 
         def __init__(self, app, **kwargs):
             super().__init__()

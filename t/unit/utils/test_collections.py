@@ -2,13 +2,13 @@ import pickle
 from collections.abc import Mapping
 from itertools import count
 from time import monotonic
+from unittest.mock import Mock
 
 import pytest
 from billiard.einfo import ExceptionInfo
 
 import t.skip
-from celery.utils.collections import (AttributeDict, BufferMap,
-                                      ConfigurationView, DictAttribute,
+from celery.utils.collections import (AttributeDict, BufferMap, ChainMap, ConfigurationView, DictAttribute,
                                       LimitedSet, Messagebuffer)
 from celery.utils.objects import Bunch
 
@@ -53,7 +53,7 @@ class test_DictAttribute:
 
 class test_ConfigurationView:
 
-    def setup(self):
+    def setup_method(self):
         self.view = ConfigurationView(
             {'changed_key': 1, 'both': 2},
             [
@@ -71,6 +71,14 @@ class test_ConfigurationView:
         assert self.view.get('both') == 2
         sp = object()
         assert self.view.get('nonexisting', sp) is sp
+
+    def test_missing_key_with_prefix(self):
+        view = ConfigurationView({}, prefix='celery')
+        with pytest.raises(KeyError) as exc_info:
+            view['nonexisting']
+        assert exc_info.value.args[0] == (
+            "Key not found: 'nonexisting' (with prefix: 'celery_nonexisting')"
+        )
 
     def test_update(self):
         changes = dict(self.view.changes)
@@ -128,10 +136,6 @@ class test_ConfigurationView:
         self.view.clear()
         assert len(self.view) == 2
 
-    def test_isa_mapping(self):
-        from collections.abc import Mapping
-        assert issubclass(ConfigurationView, Mapping)
-
     def test_isa_mutable_mapping(self):
         from collections.abc import MutableMapping
         assert issubclass(ConfigurationView, MutableMapping)
@@ -146,8 +150,8 @@ class test_ExceptionInfo:
         except Exception:
             einfo = ExceptionInfo()
             assert str(einfo) == einfo.traceback
-            assert isinstance(einfo.exception, LookupError)
-            assert einfo.exception.args == ('The quick brown fox jumps...',)
+            assert isinstance(einfo.exception.exc, LookupError)
+            assert einfo.exception.exc.args == ('The quick brown fox jumps...',)
             assert einfo.traceback
 
             assert repr(einfo)
@@ -178,7 +182,7 @@ class test_LimitedSet:
 
     def test_purge(self):
         # purge now enforces rules
-        # cant purge(1) now. but .purge(now=...) still works
+        # can't purge(1) now. but .purge(now=...) still works
         s = LimitedSet(maxlen=10)
         [s.add(i) for i in range(10)]
         s.maxlen = 2
@@ -449,3 +453,34 @@ class test_BufferMap:
 
     def test_repr(self):
         assert repr(Messagebuffer(10, [1, 2, 3]))
+
+
+class test_ChainMap:
+
+    def test_observers_not_shared(self):
+        a = ChainMap()
+        b = ChainMap()
+        callback = Mock()
+        a.bind_to(callback)
+        b.update(x=1)
+        callback.assert_not_called()
+        a.update(x=1)
+        callback.assert_called_once_with(x=1)
+
+    def test_pop_applies_key_t(self):
+        cm = ChainMap(key_t=lambda key: key + '!')
+        cm['foo'] = 1
+        assert cm.pop('foo') == 1
+        assert 'foo' not in cm
+
+    def test_get_applies_key_t_once(self):
+        cm = ChainMap(key_t=lambda key: key + '!')
+        cm['foo'] = 1
+        assert cm.get('foo') == 1
+
+    def test_setdefault_applies_key_t_once(self):
+        cm = ChainMap(key_t=lambda key: key + '!')
+        cm.setdefault('foo', 1)
+        assert cm.changes == {'foo!': 1}
+        cm.setdefault('foo', 2)
+        assert cm.changes == {'foo!': 1}

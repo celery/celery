@@ -11,13 +11,12 @@ from .base import KeyValueStoreBackend
 try:
     import pydocumentdb
     from pydocumentdb.document_client import DocumentClient
-    from pydocumentdb.documents import (ConnectionPolicy, ConsistencyLevel,
-                                        PartitionKind)
+    from pydocumentdb.documents import ConnectionPolicy, ConsistencyLevel, PartitionKind
     from pydocumentdb.errors import HTTPFailure
     from pydocumentdb.retry_options import RetryOptions
-except ImportError:  # pragma: no cover
+except ImportError:
     pydocumentdb = DocumentClient = ConsistencyLevel = PartitionKind = \
-        HTTPFailure = ConnectionPolicy = RetryOptions = None  # noqa
+        HTTPFailure = ConnectionPolicy = RetryOptions = None
 
 __all__ = ("CosmosDBSQLBackend",)
 

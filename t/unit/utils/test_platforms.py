@@ -1,30 +1,30 @@
 import errno
 import os
+import re
 import signal
+import subprocess
 import sys
 import tempfile
+import time
 from unittest.mock import Mock, call, patch
 
 import pytest
-from case import mock
 
 import t.skip
 from celery import _find_option_with_arg, platforms
-from celery.exceptions import SecurityError
-from celery.platforms import (DaemonContext, LockFailed, Pidfile,
-                              _setgroups_hack, check_privileges,
-                              close_open_fds, create_pidlock, detached,
-                              fd_by_path, get_fdmax, ignore_errno, initgroups,
-                              isatty, maybe_drop_privileges, parse_gid,
-                              parse_uid, set_mp_process_title,
-                              set_process_title, setgid, setgroups, setuid,
-                              signals)
+from celery.exceptions import SecurityError, SecurityWarning
+from celery.platforms import (ASSUMING_ROOT, ROOT_DISALLOWED, ROOT_DISCOURAGED, DaemonContext, LockFailed, Pidfile,
+                              _setgroups_hack, check_privileges, close_open_fds, create_pidlock, detached,
+                              fd_by_path, get_fdmax, ignore_errno, initgroups, isatty, maybe_drop_privileges,
+                              parse_gid, parse_uid, set_mp_process_title, set_pdeathsig, set_process_title, setgid,
+                              setgroups, setuid, signals)
 from celery.utils.text import WhateverIO
+from t.unit import conftest
 
 try:
     import resource
-except ImportError:  # pragma: no cover
-    resource = None  # noqa
+except ImportError:
+    resource = None
 
 
 def test_isatty():
@@ -58,17 +58,165 @@ def test_fd_by_path():
         test_file.close()
 
 
-def test_close_open_fds(patching):
-    _close = patching('os.close')
-    fdmax = patching('billiard.compat.get_fdmax')
-    with patch('os.closerange', create=True) as closerange:
-        fdmax.return_value = 3
+@t.skip.if_win32
+def test_fd_by_path_uses_fd_dir():
+    """The fd directory is listed instead of scanning a numeric range."""
+    test_file = tempfile.NamedTemporaryFile()
+    try:
+        fd_num = test_file.file.fileno()
+        with patch('os.listdir', return_value=['0', '1', '2', str(fd_num)]) as listdir, \
+                patch('celery.platforms.get_fdmax') as get_fdmax_mock:
+            keep = fd_by_path([test_file.name])
+        assert keep == [fd_num]
+        listdir.assert_called_once_with(platforms._FD_DIR)
+        get_fdmax_mock.assert_not_called()
+    finally:
+        test_file.close()
+
+
+@t.skip.if_win32
+@pytest.mark.skipif(resource is None, reason='resource module required')
+def test_fd_by_path_scan_covers_high_numbered_descriptor():
+    """Without an fd directory the scan must cover every open descriptor.
+
+    A bounded scan would silently drop the match and ``DaemonContext.open()``
+    would then close a descriptor it meant to keep.
+    """
+    target = 9000
+    soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+    if hard != resource.RLIM_INFINITY and hard <= target:
+        pytest.skip('RLIMIT_NOFILE hard limit is below the probed descriptor')
+    resource.setrlimit(resource.RLIMIT_NOFILE, (target + 1, hard))
+    test_file = tempfile.NamedTemporaryFile()
+    try:
+        os.dup2(test_file.file.fileno(), target)
+        with patch('os.listdir', side_effect=OSError()):
+            keep = fd_by_path([test_file.name])
+        assert target in keep
+    finally:
+        try:
+            os.close(target)
+        except OSError:
+            pass
+        test_file.close()
+        resource.setrlimit(resource.RLIMIT_NOFILE, (soft, hard))
+
+
+@t.skip.if_win32
+@pytest.mark.skipif(resource is None, reason='resource module required')
+def test_fd_by_path_returns_high_numbered_descriptor():
+    """Matches are returned regardless of how high the descriptor is (#9886)."""
+    target = 9000
+    soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+    if hard != resource.RLIM_INFINITY and hard <= target:
+        pytest.skip('RLIMIT_NOFILE hard limit is below the probed descriptor')
+    resource.setrlimit(resource.RLIMIT_NOFILE, (max(soft, target + 1), hard))
+    test_file = tempfile.NamedTemporaryFile()
+    try:
+        os.dup2(test_file.file.fileno(), target)
+        assert target in fd_by_path([test_file.name])
+    finally:
+        try:
+            os.close(target)
+        except OSError:
+            pass
+        test_file.close()
+        resource.setrlimit(resource.RLIMIT_NOFILE, (soft, hard))
+
+
+def test_dev_fd_is_fdescfs():
+    with patch('os.stat', side_effect=[Mock(st_dev=1), Mock(st_dev=2)]):
+        assert platforms._dev_fd_is_fdescfs()
+    with patch('os.stat', side_effect=[Mock(st_dev=1), Mock(st_dev=1)]):
+        assert not platforms._dev_fd_is_fdescfs()
+    with patch('os.stat', side_effect=OSError()):
+        assert not platforms._dev_fd_is_fdescfs()
+
+
+def test_open_fds_ignores_dev_fd_without_fdescfs():
+    """FreeBSD devfs alone only creates fd/0-2, so it must not be trusted."""
+    with patch('celery.platforms.SYSTEM', 'FreeBSD'), \
+            patch('celery.platforms._dev_fd_is_fdescfs', return_value=False), \
+            patch('os.listdir') as listdir:
+        assert platforms._open_fds() is None
+        listdir.assert_not_called()
+
+
+_DETACH_SCRIPT = """
+import signal
+import sys
+sys.path.insert(0, {root!r})
+import billiard.compat
+from celery import platforms
+
+# The RLIMIT_NOFILE a container can report (issue #9886).  Both scans that
+# used to walk it in Python are patched so any leftover walk stalls the test.
+platforms.get_fdmax = lambda default=None: 1073741816
+billiard.compat.get_fdmax = lambda default=None: 1073741816
+
+# after_chdir runs in the detached grandchild right before the fd scans; the
+# alarm kills it if a scan regresses, so a failing run cannot leave an orphan
+# spinning for the parent's timeout has no reach past the double fork.
+with platforms.DaemonContext(workdir='/', after_chdir=lambda: signal.alarm(20)):
+    with open({done!r}, 'w') as fh:
+        fh.write('ok')
+"""
+
+
+@t.skip.if_win32
+def test_detach_does_not_scan_a_container_sized_fdmax(tmp_path):
+    """Detaching completes promptly even when fdmax is ~1e9 (issue #9886)."""
+    if platforms._open_fds() is None:
+        pytest.skip('no fd directory here: the fallback scan would orphan the child')
+    done = tmp_path / 'detached'
+    root = os.path.dirname(os.path.dirname(os.path.abspath(platforms.__file__)))
+    script = _DETACH_SCRIPT.format(root=root, done=str(done))
+    subprocess.run([sys.executable, '-c', script], check=True, timeout=30)
+    deadline = time.monotonic() + 15
+    while time.monotonic() < deadline and not done.exists():
+        time.sleep(0.05)
+    assert done.exists(), 'detached process did not reach the context body'
+
+
+def test_close_open_fds_closes_only_listed_descriptors():
+    with patch('celery.platforms._open_fds', return_value=[0, 1, 2, 7, 9]), \
+            patch('os.close') as close_mock:
+        close_open_fds([1, 2])
+    assert close_mock.call_args_list == [call(0), call(7), call(9)]
+
+
+def test_close_open_fds_accepts_file_objects():
+    fh = Mock(name='fh')
+    fh.fileno.return_value = 3
+    with patch('celery.platforms._open_fds', return_value=[3, 4]), \
+            patch('os.close') as close_mock:
+        close_open_fds([fh])
+    close_mock.assert_called_once_with(4)
+
+
+def test_close_open_fds_ignores_ebadf():
+    exc = OSError()
+    exc.errno = errno.EBADF
+    with patch('celery.platforms._open_fds', return_value=[5]), \
+            patch('os.close', side_effect=exc) as close_mock:
         close_open_fds()
-        if not closerange.called:
-            _close.assert_has_calls([call(2), call(1), call(0)])
-            _close.side_effect = OSError()
-            _close.side_effect.errno = errno.EBADF
+    close_mock.assert_called_once_with(5)
+
+
+def test_close_open_fds_reraises_other_errors():
+    exc = OSError()
+    exc.errno = errno.EIO
+    with patch('celery.platforms._open_fds', return_value=[5]), \
+            patch('os.close', side_effect=exc), \
+            pytest.raises(OSError):
         close_open_fds()
+
+
+def test_close_open_fds_falls_back_without_fd_dir():
+    with patch('celery.platforms._open_fds', return_value=None), \
+            patch('celery.platforms._billiard_close_open_fds') as fallback:
+        close_open_fds([1])
+    fallback.assert_called_once_with([1])
 
 
 class test_ignore_errno:
@@ -158,6 +306,7 @@ class test_Signals:
     def test_setitem(self, set):
         def handle(*args):
             return args
+
         signals['INT'] = handle
         set.assert_called_with(signal.SIGINT, handle)
 
@@ -165,6 +314,18 @@ class test_Signals:
     def test_setitem_raises(self, set):
         set.side_effect = ValueError()
         signals['INT'] = lambda *a: a
+
+
+class test_set_pdeathsig:
+
+    def test_call(self):
+        set_pdeathsig('SIGKILL')
+
+    @t.skip.if_win32
+    def test_call_with_correct_parameter(self):
+        with patch('celery.platforms._set_pdeathsig') as _set_pdeathsig:
+            set_pdeathsig('SIGKILL')
+            _set_pdeathsig.assert_called_once_with(signal.SIGKILL)
 
 
 @t.skip.if_win32
@@ -218,6 +379,7 @@ class test_maybe_drop_privileges:
         def raise_on_second_call(*args, **kwargs):
             setuid.side_effect = OSError()
             setuid.side_effect.errno = errno.EPERM
+
         setuid.side_effect = raise_on_second_call
         getpwuid.return_value = pw_struct()
         parse_uid.return_value = 5001
@@ -237,7 +399,9 @@ class test_maybe_drop_privileges:
             def on_first_call(*args, **kwargs):
                 ret, return_value[0] = return_value[0], 0
                 return ret
+
             mock.side_effect = on_first_call
+
         to_root_on_second_call(geteuid, 10)
         to_root_on_second_call(getuid, 10)
         with pytest.raises(SecurityError):
@@ -259,6 +423,7 @@ class test_maybe_drop_privileges:
         def raise_on_second_call(*args, **kwargs):
             setuid.side_effect = OSError()
             setuid.side_effect.errno = errno.ENOENT
+
         setuid.side_effect = raise_on_second_call
         with pytest.raises(OSError):
             maybe_drop_privileges(uid='user')
@@ -274,6 +439,7 @@ class test_maybe_drop_privileges:
         def raise_on_second_call(*args, **kwargs):
             setuid.side_effect = OSError()
             setuid.side_effect.errno = errno.EPERM
+
         setuid.side_effect = raise_on_second_call
         parse_uid.return_value = 5001
         parse_gid.return_value = 50001
@@ -327,7 +493,6 @@ class test_setget_uid_gid:
 
     @patch('pwd.getpwnam')
     def test_parse_uid_when_existing_name(self, getpwnam):
-
         class pwent:
             pw_uid = 5001
 
@@ -346,7 +511,6 @@ class test_setget_uid_gid:
 
     @patch('grp.getgrnam')
     def test_parse_gid_when_existing_name(self, getgrnam):
-
         class grent:
             gr_gid = 50001
 
@@ -411,7 +575,7 @@ class test_detached:
     @patch('celery.platforms.signals')
     @patch('celery.platforms.maybe_drop_privileges')
     @patch('os.geteuid')
-    @patch(mock.open_fqdn)
+    @patch('builtins.open')
     def test_default(self, open, geteuid, maybe_drop,
                      signals, pidlock):
         geteuid.return_value = 0
@@ -512,7 +676,7 @@ class test_Pidfile:
         p = Pidfile.return_value = Mock()
         p.is_locked.return_value = True
         p.remove_if_stale.return_value = False
-        with mock.stdouts() as (_, err):
+        with conftest.stdouts() as (_, err):
             with pytest.raises(SystemExit):
                 create_pidlock('/var/pid')
             assert 'already exists' in err.getvalue()
@@ -549,14 +713,14 @@ class test_Pidfile:
         assert not p.is_locked()
 
     def test_read_pid(self):
-        with mock.open() as s:
+        with conftest.open() as s:
             s.write('1816\n')
             s.seek(0)
             p = Pidfile('/var/pid')
             assert p.read_pid() == 1816
 
     def test_read_pid_partially_written(self):
-        with mock.open() as s:
+        with conftest.open() as s:
             s.write('1816')
             s.seek(0)
             p = Pidfile('/var/pid')
@@ -566,20 +730,20 @@ class test_Pidfile:
     def test_read_pid_raises_ENOENT(self):
         exc = IOError()
         exc.errno = errno.ENOENT
-        with mock.open(side_effect=exc):
+        with conftest.open(side_effect=exc):
             p = Pidfile('/var/pid')
             assert p.read_pid() is None
 
     def test_read_pid_raises_IOError(self):
         exc = IOError()
         exc.errno = errno.EAGAIN
-        with mock.open(side_effect=exc):
+        with conftest.open(side_effect=exc):
             p = Pidfile('/var/pid')
             with pytest.raises(IOError):
                 p.read_pid()
 
     def test_read_pid_bogus_pidfile(self):
-        with mock.open() as s:
+        with conftest.open() as s:
             s.write('eighteensixteen\n')
             s.seek(0)
             p = Pidfile('/var/pid')
@@ -637,7 +801,7 @@ class test_Pidfile:
 
     @patch('os.kill')
     def test_remove_if_stale_process_dead(self, kill):
-        with mock.stdouts():
+        with conftest.stdouts():
             p = Pidfile('/var/pid')
             p.read_pid = Mock()
             p.read_pid.return_value = 1816
@@ -650,7 +814,7 @@ class test_Pidfile:
             p.remove.assert_called_with()
 
     def test_remove_if_stale_broken_pid(self):
-        with mock.stdouts():
+        with conftest.stdouts():
             p = Pidfile('/var/pid')
             p.read_pid = Mock()
             p.read_pid.side_effect = ValueError()
@@ -661,7 +825,7 @@ class test_Pidfile:
 
     @patch('os.kill')
     def test_remove_if_stale_unprivileged_user(self, kill):
-        with mock.stdouts():
+        with conftest.stdouts():
             p = Pidfile('/var/pid')
             p.read_pid = Mock()
             p.read_pid.return_value = 1817
@@ -682,11 +846,20 @@ class test_Pidfile:
         assert p.remove_if_stale()
         p.remove.assert_called_with()
 
+    def test_remove_if_stale_same_pid(self):
+        p = Pidfile('/var/pid')
+        p.read_pid = Mock()
+        p.read_pid.return_value = os.getpid()
+        p.remove = Mock()
+
+        assert p.remove_if_stale()
+        p.remove.assert_called_with()
+
     @patch('os.fsync')
     @patch('os.getpid')
     @patch('os.open')
     @patch('os.fdopen')
-    @patch(mock.open_fqdn)
+    @patch('builtins.open')
     def test_write_pid(self, open_, fdopen, osopen, getpid, fsync):
         getpid.return_value = 1816
         osopen.return_value = 13
@@ -713,7 +886,7 @@ class test_Pidfile:
     @patch('os.getpid')
     @patch('os.open')
     @patch('os.fdopen')
-    @patch(mock.open_fqdn)
+    @patch('builtins.open')
     def test_write_reread_fails(self, open_, fdopen,
                                 osopen, getpid, fsync):
         getpid.return_value = 1816
@@ -739,6 +912,7 @@ class test_setgroups:
                 setgroups.return_value = True
                 return
             raise ValueError()
+
         setgroups.side_effect = on_setgroups
         _setgroups_hack(list(range(400)))
 
@@ -756,6 +930,7 @@ class test_setgroups:
                 setgroups.return_value = True
                 return
             raise exc
+
         setgroups.side_effect = on_setgroups
 
         _setgroups_hack(list(range(400)))
@@ -817,17 +992,218 @@ class test_setgroups:
             getgroups.assert_called_with()
 
 
-def test_check_privileges():
-    class Obj:
-        fchown = 13
-    prev, platforms.os = platforms.os, Obj()
-    try:
-        with pytest.raises(SecurityError):
-            check_privileges({'pickle'})
-    finally:
-        platforms.os = prev
-    prev, platforms.os = platforms.os, object()
-    try:
+fails_on_win32 = pytest.mark.xfail(
+    sys.platform == "win32",
+    reason="fails on py38+ windows",
+)
+
+
+@fails_on_win32
+@pytest.mark.parametrize('accept_content', [
+    {'pickle'},
+    {'application/group-python-serialize'},
+    {'pickle', 'application/group-python-serialize'},
+])
+@patch('celery.platforms.os')
+def test_check_privileges_suspicious_platform(os_module, accept_content):
+    del os_module.getuid
+    del os_module.getgid
+    del os_module.geteuid
+    del os_module.getegid
+
+    with pytest.raises(SecurityError,
+                       match=r'suspicious platform, contact support'):
+        check_privileges(accept_content)
+
+
+@pytest.mark.parametrize('accept_content', [
+    {'pickle'},
+    {'application/group-python-serialize'},
+    {'pickle', 'application/group-python-serialize'}
+])
+def test_check_privileges(accept_content, recwarn):
+    check_privileges(accept_content)
+
+    assert len(recwarn) == 0
+
+
+@pytest.mark.parametrize('accept_content', [
+    {'pickle'},
+    {'application/group-python-serialize'},
+    {'pickle', 'application/group-python-serialize'}
+])
+@patch('celery.platforms.os')
+def test_check_privileges_no_fchown(os_module, accept_content, recwarn):
+    del os_module.fchown
+    check_privileges(accept_content)
+
+    assert len(recwarn) == 0
+
+
+@fails_on_win32
+@pytest.mark.parametrize('accept_content', [
+    {'pickle'},
+    {'application/group-python-serialize'},
+    {'pickle', 'application/group-python-serialize'}
+])
+@patch('celery.platforms.os')
+def test_check_privileges_without_c_force_root(os_module, accept_content):
+    os_module.environ = {}
+    os_module.getuid.return_value = 0
+    os_module.getgid.return_value = 0
+    os_module.geteuid.return_value = 0
+    os_module.getegid.return_value = 0
+
+    expected_message = re.escape(ROOT_DISALLOWED.format(uid=0, euid=0,
+                                                        gid=0, egid=0))
+    with pytest.raises(SecurityError,
+                       match=expected_message):
+        check_privileges(accept_content)
+
+
+@fails_on_win32
+@pytest.mark.parametrize('accept_content', [
+    {'pickle'},
+    {'application/group-python-serialize'},
+    {'pickle', 'application/group-python-serialize'}
+])
+@patch('celery.platforms.os')
+def test_check_privileges_with_c_force_root(os_module, accept_content):
+    os_module.environ = {'C_FORCE_ROOT': 'true'}
+    os_module.getuid.return_value = 0
+    os_module.getgid.return_value = 0
+    os_module.geteuid.return_value = 0
+    os_module.getegid.return_value = 0
+
+    with pytest.warns(SecurityWarning):
+        check_privileges(accept_content)
+
+
+@fails_on_win32
+@pytest.mark.parametrize(('accept_content', 'group_name'), [
+    ({'pickle'}, 'sudo'),
+    ({'application/group-python-serialize'}, 'sudo'),
+    ({'pickle', 'application/group-python-serialize'}, 'sudo'),
+    ({'pickle'}, 'wheel'),
+    ({'application/group-python-serialize'}, 'wheel'),
+    ({'pickle', 'application/group-python-serialize'}, 'wheel'),
+])
+@patch('celery.platforms.os')
+@patch('celery.platforms.grp')
+def test_check_privileges_with_c_force_root_and_with_suspicious_group(
+    grp_module, os_module, accept_content, group_name
+):
+    os_module.environ = {'C_FORCE_ROOT': 'true'}
+    os_module.getuid.return_value = 60
+    os_module.getgid.return_value = 60
+    os_module.geteuid.return_value = 60
+    os_module.getegid.return_value = 60
+
+    grp_module.getgrgid.return_value = [group_name]
+    grp_module.getgrgid.return_value = [group_name]
+
+    expected_message = re.escape(ROOT_DISCOURAGED.format(uid=60, euid=60,
+                                                         gid=60, egid=60))
+    with pytest.warns(SecurityWarning, match=expected_message):
+        check_privileges(accept_content)
+
+
+@fails_on_win32
+@pytest.mark.parametrize(('accept_content', 'group_name'), [
+    ({'pickle'}, 'sudo'),
+    ({'application/group-python-serialize'}, 'sudo'),
+    ({'pickle', 'application/group-python-serialize'}, 'sudo'),
+    ({'pickle'}, 'wheel'),
+    ({'application/group-python-serialize'}, 'wheel'),
+    ({'pickle', 'application/group-python-serialize'}, 'wheel'),
+])
+@patch('celery.platforms.os')
+@patch('celery.platforms.grp')
+def test_check_privileges_without_c_force_root_and_with_suspicious_group(
+    grp_module, os_module, accept_content, group_name
+):
+    os_module.environ = {}
+    os_module.getuid.return_value = 60
+    os_module.getgid.return_value = 60
+    os_module.geteuid.return_value = 60
+    os_module.getegid.return_value = 60
+
+    grp_module.getgrgid.return_value = [group_name]
+    grp_module.getgrgid.return_value = [group_name]
+
+    expected_message = re.escape(ROOT_DISALLOWED.format(uid=60, euid=60,
+                                                        gid=60, egid=60))
+    with pytest.raises(SecurityError,
+                       match=expected_message):
+        check_privileges(accept_content)
+
+
+@fails_on_win32
+@pytest.mark.parametrize('accept_content', [
+    {'pickle'},
+    {'application/group-python-serialize'},
+    {'pickle', 'application/group-python-serialize'}
+])
+@patch('celery.platforms.os')
+@patch('celery.platforms.grp')
+def test_check_privileges_with_c_force_root_and_no_group_entry(
+    grp_module, os_module, accept_content, recwarn
+):
+    os_module.environ = {'C_FORCE_ROOT': 'true'}
+    os_module.getuid.return_value = 60
+    os_module.getgid.return_value = 60
+    os_module.geteuid.return_value = 60
+    os_module.getegid.return_value = 60
+
+    grp_module.getgrgid.side_effect = KeyError
+
+    expected_message = ROOT_DISCOURAGED.format(uid=60, euid=60,
+                                               gid=60, egid=60)
+
+    check_privileges(accept_content)
+    assert len(recwarn) == 2
+
+    assert recwarn[0].message.args[0] == ASSUMING_ROOT
+    assert recwarn[1].message.args[0] == expected_message
+
+
+@fails_on_win32
+@pytest.mark.parametrize('accept_content', [
+    {'pickle'},
+    {'application/group-python-serialize'},
+    {'pickle', 'application/group-python-serialize'}
+])
+@patch('celery.platforms.os')
+@patch('celery.platforms.grp')
+def test_check_privileges_without_c_force_root_and_no_group_entry(
+    grp_module, os_module, accept_content, recwarn
+):
+    os_module.environ = {}
+    os_module.getuid.return_value = 60
+    os_module.getgid.return_value = 60
+    os_module.geteuid.return_value = 60
+    os_module.getegid.return_value = 60
+
+    grp_module.getgrgid.side_effect = KeyError
+
+    expected_message = re.escape(ROOT_DISALLOWED.format(uid=60, euid=60,
+                                                        gid=60, egid=60))
+    with pytest.raises(SecurityError,
+                       match=expected_message):
+        check_privileges(accept_content)
+
+    assert recwarn[0].message.args[0] == ASSUMING_ROOT
+
+
+def test_skip_checking_privileges_when_grp_is_unavailable(recwarn):
+    with patch("celery.platforms.grp", new=None):
         check_privileges({'pickle'})
-    finally:
-        platforms.os = prev
+
+    assert len(recwarn) == 0
+
+
+def test_skip_checking_privileges_when_pwd_is_unavailable(recwarn):
+    with patch("celery.platforms.pwd", new=None):
+        check_privileges({'pickle'})
+
+    assert len(recwarn) == 0

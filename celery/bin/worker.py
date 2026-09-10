@@ -8,11 +8,11 @@ from click import ParamType
 from click.types import StringParamType
 
 from celery import concurrency
-from celery.bin.base import (COMMA_SEPARATED_LIST, LOG_LEVEL,
-                             CeleryDaemonCommand, CeleryOption,
+from celery.bin.base import (COMMA_SEPARATED_LIST, LOG_LEVEL, CeleryDaemonCommand, CeleryOption,
                              handle_preload_options)
-from celery.platforms import (EX_FAILURE, EX_OK, detached,
-                              maybe_drop_privileges)
+from celery.concurrency.base import BasePool
+from celery.exceptions import SecurityError
+from celery.platforms import EX_FAILURE, EX_OK, detached, maybe_drop_privileges
 from celery.utils.log import get_logger
 from celery.utils.nodenames import default_nodename, host_format, node_format
 
@@ -39,13 +39,28 @@ class WorkersPool(click.Choice):
 
     def __init__(self):
         """Initialize the workers pool option with the relevant choices."""
-        super().__init__(('prefork', 'eventlet', 'gevent', 'solo'))
+        super().__init__(concurrency.get_available_pool_names())
 
     def convert(self, value, param, ctx):
         # Pools like eventlet/gevent needs to patch libs as early
         # as possible.
-        return concurrency.get_implementation(
-            value) or ctx.obj.app.conf.worker_pool
+        if isinstance(value, type) and issubclass(value, BasePool):
+            return value
+
+        value = super().convert(value, param, ctx)
+        worker_pool = ctx.obj.app.conf.worker_pool
+        if value == 'prefork' and worker_pool:
+            # If we got the default pool through the CLI
+            # we need to check if the worker pool was configured.
+            # If the worker pool was configured, we shouldn't use the default.
+            value = concurrency.get_implementation(worker_pool)
+        else:
+            value = concurrency.get_implementation(value)
+
+            if not value:
+                value = concurrency.get_implementation(worker_pool)
+
+        return value
 
 
 class Hostname(StringParamType):
@@ -139,7 +154,8 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               '--statedb',
               cls=CeleryOption,
               type=click.Path(),
-              callback=lambda ctx, _, value: value or ctx.obj.app.conf.worker_state_db,
+              callback=lambda ctx, _,
+              value: value or ctx.obj.app.conf.worker_state_db,
               help_group="Worker Options",
               help="Path to the state database. The extension '.db' may be "
                    "appended to the filename.")
@@ -150,8 +166,8 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               type=LOG_LEVEL,
               help_group="Worker Options",
               help="Logging level.")
-@click.option('optimization',
-              '-O',
+@click.option('-O',
+              '--optimization',
               default='default',
               cls=CeleryOption,
               type=click.Choice(('default', 'fair')),
@@ -160,21 +176,32 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
 @click.option('--prefetch-multiplier',
               type=int,
               metavar="<prefetch multiplier>",
-              callback=lambda ctx, _, value: value or ctx.obj.app.conf.worker_prefetch_multiplier,
+              callback=lambda ctx, _,
+              value: value or ctx.obj.app.conf.worker_prefetch_multiplier,
               cls=CeleryOption,
               help_group="Worker Options",
-              help="Set custom prefetch multiplier value"
+              help="Set custom prefetch multiplier value "
                    "for this worker instance.")
+@click.option('--disable-prefetch',
+              is_flag=True,
+              default=None,
+              callback=lambda ctx, _,
+              value: ctx.obj.app.conf.worker_disable_prefetch if value is None else value,
+              cls=CeleryOption,
+              help_group="Worker Options",
+              help="Disable broker prefetching. The worker will only fetch a task when a process slot is available. "
+                   "Only supported with Redis brokers.")
 @click.option('-c',
               '--concurrency',
               type=int,
               metavar="<concurrency>",
-              callback=lambda ctx, _, value: value or ctx.obj.app.conf.worker_concurrency,
+              callback=lambda ctx, _,
+              value: value or ctx.obj.app.conf.worker_concurrency,
               cls=CeleryOption,
               help_group="Pool Options",
               help="Number of child processes processing the queue.  "
                    "The default is the number of CPUs available"
-                   "on your system.")
+                   " on your system.")
 @click.option('-P',
               '--pool',
               default='prefork',
@@ -186,6 +213,7 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               '--task-events',
               '--events',
               is_flag=True,
+              default=None,
               cls=CeleryOption,
               help_group="Pool Options",
               help="Send task-related events that can be captured by monitors"
@@ -208,6 +236,14 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               help_group="Pool Options",
               help="Maximum number of tasks a pool worker can execute before "
                    "it's terminated and replaced by a new worker.")
+@click.option('--pool-start-method',
+              type=click.Choice(['fork', 'spawn']),
+              cls=CeleryOption,
+              help_group="Pool Options",
+              help="Start method used to create prefork pool child "
+                   "processes. 'fork' (default) is faster and shares memory "
+                   "copy-on-write but is unsafe with threads/C-extensions; "
+                   "'spawn' starts each child in a fresh interpreter.")
 @click.option('--max-memory-per-child',
               type=int,
               cls=CeleryOption,
@@ -267,7 +303,8 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
 @click.option('-s',
               '--schedule-filename',
               '--schedule',
-              callback=lambda ctx, _, value: value or ctx.obj.app.conf.beat_schedule_filename,
+              callback=lambda ctx, _,
+              value: value or ctx.obj.app.conf.beat_schedule_filename,
               cls=CeleryOption,
               help_group="Embedded Beat Options")
 @click.option('--scheduler',
@@ -280,8 +317,11 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
            **kwargs):
     """Start worker instance.
 
+    \b
     Examples
     --------
+
+    \b
     $ celery --app=proj worker -l INFO
     $ celery -A proj worker -l INFO -Q hipri,lopri
     $ celery -A proj worker --concurrency=4
@@ -289,40 +329,51 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
     $ celery worker --autoscale=10,0
 
     """
-    app = ctx.obj.app
-    if ctx.args:
-        try:
-            app.config_from_cmdline(ctx.args, namespace='worker')
-        except (KeyError, ValueError) as e:
-            # TODO: Improve the error messages
-            raise click.UsageError(
-                "Unable to parse extra configuration from command line.\n"
-                f"Reason: {e}", ctx=ctx)
-    if kwargs.get('detach', False):
-        argv = ['-m', 'celery'] + sys.argv[1:]
-        if '--detach' in argv:
-            argv.remove('--detach')
-        if '-D' in argv:
-            argv.remove('-D')
+    try:
+        app = ctx.obj.app
+        if 'disable_prefetch' in kwargs and kwargs['disable_prefetch'] is not None:
+            app.conf.worker_disable_prefetch = kwargs.pop('disable_prefetch')
+        if ctx.args:
+            try:
+                app.config_from_cmdline(ctx.args, namespace='worker')
+            except (KeyError, ValueError) as e:
+                # TODO: Improve the error messages
+                raise click.UsageError(
+                    "Unable to parse extra configuration from command line.\n"
+                    f"Reason: {e}", ctx=ctx)
+        if kwargs.get('detach', False):
+            argv = ['-m', 'celery'] + sys.argv[1:]
+            if '--detach' in argv:
+                argv.remove('--detach')
+            if '-D' in argv:
+                argv.remove('-D')
+            if "--uid" in argv:
+                argv.remove('--uid')
+            if "--gid" in argv:
+                argv.remove('--gid')
 
-        return detach(sys.executable,
-                      argv,
-                      logfile=logfile,
-                      pidfile=pidfile,
-                      uid=uid, gid=gid,
-                      umask=kwargs.get('umask', None),
-                      workdir=kwargs.get('workdir', None),
-                      app=app,
-                      executable=kwargs.get('executable', None),
-                      hostname=hostname)
+            return detach(sys.executable,
+                          argv,
+                          logfile=logfile,
+                          pidfile=pidfile,
+                          uid=uid, gid=gid,
+                          umask=kwargs.get('umask', None),
+                          workdir=kwargs.get('workdir', None),
+                          app=app,
+                          executable=kwargs.get('executable', None),
+                          hostname=hostname)
 
-    maybe_drop_privileges(uid=uid, gid=gid)
-    worker = app.Worker(
-        hostname=hostname, pool_cls=pool_cls, loglevel=loglevel,
-        logfile=logfile,  # node format handled by celery.app.log.setup
-        pidfile=node_format(pidfile, hostname),
-        statedb=node_format(statedb, hostname),
-        no_color=ctx.obj.no_color,
-        **kwargs)
-    worker.start()
-    return worker.exitcode
+        maybe_drop_privileges(uid=uid, gid=gid)
+        worker = app.Worker(
+            hostname=hostname, pool_cls=pool_cls, loglevel=loglevel,
+            logfile=logfile,  # node format handled by celery.app.log.setup
+            pidfile=node_format(pidfile, hostname),
+            statedb=node_format(statedb, hostname),
+            no_color=ctx.obj.no_color,
+            quiet=ctx.obj.quiet,
+            **kwargs)
+        worker.start()
+        ctx.exit(worker.exitcode)
+    except SecurityError as e:
+        ctx.obj.error(e.args[0])
+        ctx.exit(1)

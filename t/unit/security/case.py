@@ -3,5 +3,5 @@ import pytest
 
 class SecurityCase:
 
-    def setup(self):
+    def setup_method(self):
         pytest.importorskip('cryptography')

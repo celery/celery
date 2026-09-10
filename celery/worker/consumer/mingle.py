@@ -22,7 +22,7 @@ class Mingle(bootsteps.StartStopStep):
 
     label = 'Mingle'
     requires = (Events,)
-    compatible_transports = {'amqp', 'redis'}
+    compatible_transports = {'amqp', 'redis', 'gcpubsub'}
 
     def __init__(self, c, without_mingle=False, **kwargs):
         self.enabled = not without_mingle and self.compatible_transport(c.app)

@@ -1,11 +1,11 @@
-===========================================================
+====================
  ``celery.bin.amqp``
-===========================================================
+====================
 
 .. contents::
-    :local:
+   :local:
 .. currentmodule:: celery.bin.amqp
 
 .. automodule:: celery.bin.amqp
-    :members:
-    :undoc-members:
+   :members:
+   :undoc-members:

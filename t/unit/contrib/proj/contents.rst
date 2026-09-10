@@ -5,3 +5,5 @@ Documentation
 
 .. automodule:: foo
    :members:
+
+Cross-reference test: :task:`foo.bar`

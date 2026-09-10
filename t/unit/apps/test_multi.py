@@ -7,8 +7,7 @@ from unittest.mock import Mock, call, patch
 import pytest
 
 import t.skip
-from celery.apps.multi import (Cluster, MultiParser, NamespacedOptionParser,
-                               Node, format_opt)
+from celery.apps.multi import Cluster, MultiParser, NamespacedOptionParser, Node, format_opt
 
 
 class test_functions:
@@ -173,7 +172,7 @@ class test_multi_args:
 
 class test_Node:
 
-    def setup(self):
+    def setup_method(self):
         self.p = Mock(name='p')
         self.p.options = {
             '--executable': 'python',
@@ -212,6 +211,13 @@ class test_Node:
     def test_send__ESRCH(self, kill):
         kill.side_effect = OSError()
         kill.side_effect.errno = errno.ESRCH
+        assert not self.node.send(9)
+        kill.assert_called_with(self.node.pid, 9)
+
+    @patch('os.kill')
+    def test_send__EPERM(self, kill):
+        kill.side_effect = OSError()
+        kill.side_effect.errno = errno.EPERM
         assert not self.node.send(9)
         kill.assert_called_with(self.node.pid, 9)
 
@@ -309,7 +315,7 @@ class test_Node:
 
 class test_Cluster:
 
-    def setup(self):
+    def setup_method(self):
         self.Popen = self.patching('celery.apps.multi.Popen')
         self.kill = self.patching('os.kill')
         self.gethostname = self.patching('celery.apps.multi.gethostname')

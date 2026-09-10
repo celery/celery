@@ -1,13 +1,18 @@
-"""Functional-style utilties."""
+"""Functional-style utilities."""
 import inspect
+import operator
 import sys
 from collections import UserList
 from functools import partial
-from itertools import islice
+from itertools import islice, tee, zip_longest
+from typing import Any, Callable
 
-from kombu.utils.functional import (LRUCache, dictfilter, is_list, lazy,
-                                    maybe_evaluate, maybe_list, memoize)
+from kombu.utils.functional import LRUCache, dictfilter, is_list, lazy, maybe_evaluate, maybe_list, memoize
 from vine import promise
+
+from celery.utils.log import get_logger
+
+logger = get_logger(__name__)
 
 __all__ = (
     'LRUCache', 'is_list', 'maybe_list', 'memoize', 'mlazy', 'noop',
@@ -90,6 +95,7 @@ def firstmethod(method, on_call=None):
     The list can also contain lazy instances
     (:class:`~kombu.utils.functional.lazy`.)
     """
+
     def _matcher(it, *args, **kwargs):
         for obj in it:
             try:
@@ -101,6 +107,7 @@ def firstmethod(method, on_call=None):
             else:
                 if reply is not None:
                     return reply
+
     return _matcher
 
 
@@ -160,6 +167,19 @@ def uniq(it):
     return (seen.add(obj) or obj for obj in it if obj not in seen)
 
 
+def lookahead(it):
+    """Yield pairs of (current, next) items in `it`.
+
+    `next` is None if `current` is the last item.
+    Example:
+        >>> list(lookahead(x for x in range(6)))
+        [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, None)]
+    """
+    a, b = tee(it)
+    next(b, None)
+    return zip_longest(a, b)
+
+
 def regen(it):
     """Convert iterator to an object that can be consumed multiple times.
 
@@ -180,38 +200,66 @@ class _regen(UserList, list):
         # UserList creates a new list and sets .data, so we don't
         # want to call init here.
         self.__it = it
-        self.__index = 0
         self.__consumed = []
         self.__done = False
 
     def __reduce__(self):
         return list, (self.data,)
 
+    def map(self, func):
+        self.__consumed = [func(el) for el in self.__consumed]
+        self.__it = map(func, self.__it)
+
     def __length_hint__(self):
         return self.__it.__length_hint__()
 
+    def __lookahead_consume(self, limit=None):
+        if not self.__done and (limit is None or limit > 0):
+            it = iter(self.__it)
+            try:
+                now = next(it)
+            except StopIteration:
+                return
+            self.__consumed.append(now)
+            # Maintain a single look-ahead to ensure we set `__done` when the
+            # underlying iterator gets exhausted
+            while not self.__done:
+                try:
+                    next_ = next(it)
+                    self.__consumed.append(next_)
+                except StopIteration:
+                    self.__done = True
+                    break
+                finally:
+                    yield now
+                now = next_
+                # We can break out when `limit` is exhausted
+                if limit is not None:
+                    limit -= 1
+                    if limit <= 0:
+                        break
+
     def __iter__(self):
         yield from self.__consumed
-        if not self.__done:
-            for x in self.__it:
-                self.__consumed.append(x)
-                yield x
-            self.__done = True
+        yield from self.__lookahead_consume()
 
     def __getitem__(self, index):
+        if isinstance(index, slice):
+            # A slice that is not bounded from the front needs the end of the
+            # iterator, so concretise rather than special casing the few that
+            # could stay lazy.
+            return self.data[index]
+        # Accept anything list accepts, and reject the rest with the same error
+        # rather than whatever the comparison below would raise.
+        index = operator.index(index)
         if index < 0:
             return self.data[index]
-        try:
-            return self.__consumed[index]
-        except IndexError:
-            it = iter(self)
-            try:
-                for _ in range(self.__index, index + 1):
-                    next(it)
-            except StopIteration:
-                raise IndexError(index)
-            else:
-                return self.__consumed[index]
+        # Consume elements up to the desired index prior to attempting to
+        # access it from within `__consumed`
+        consume_count = index - len(self.__consumed) + 1
+        for _ in self.__lookahead_consume(limit=consume_count):
+            pass
+        return self.__consumed[index]
 
     def __bool__(self):
         if len(self.__consumed):
@@ -226,11 +274,17 @@ class _regen(UserList, list):
 
     @property
     def data(self):
-        try:
-            self.__consumed.extend(list(self.__it))
-        except StopIteration:
-            pass
+        if not self.__done:
+            self.__consumed.extend(self.__it)
+            self.__done = True
         return self.__consumed
+
+    def __repr__(self):
+        return "<{}: [{}{}]>".format(
+            self.__class__.__name__,
+            ", ".join(repr(e) for e in self.__consumed),
+            "..." if not self.__done else "",
+        )
 
 
 def _argsfromspec(spec, replace_defaults=True):
@@ -246,11 +300,11 @@ def _argsfromspec(spec, replace_defaults=True):
     varargs = spec.varargs
     varkw = spec.varkw
     if spec.kwonlydefaults:
-        split = len(spec.kwonlydefaults)
-        kwonlyargs = spec.kwonlyargs[:-split]
+        kwonlyargs = set(spec.kwonlyargs) - set(spec.kwonlydefaults.keys())
         if replace_defaults:
             kwonlyargs_optional = [
-                (kw, i) for i, kw in enumerate(spec.kwonlyargs[-split:])]
+                (kw, i) for i, kw in enumerate(spec.kwonlydefaults.keys())
+            ]
         else:
             kwonlyargs_optional = list(spec.kwonlydefaults.items())
     else:
@@ -267,7 +321,56 @@ def _argsfromspec(spec, replace_defaults=True):
     ]))
 
 
-def head_from_fun(fun, bound=False, debug=False):
+if sys.version_info >= (3, 14):
+    import annotationlib as _annotationlib
+
+    def _getfullargspec(fun):
+        # In Python 3.14+, inspect.getfullargspec evaluates annotations by default
+        # (PEP 649), raising NameError for TYPE_CHECKING-only types. We don't need
+        # annotations here, so use Format.STRING to avoid evaluation.
+        # For bound methods, use __func__ so that 'self' is included in args,
+        # matching the behaviour of getfullargspec on older Python versions.
+        # Pass follow_wrapped=False to match inspect.getfullargspec's behaviour
+        # of introspecting the callable itself rather than following __wrapped__;
+        # this matters for tasks defined via functools.wraps over a variadic
+        # wrapper (e.g. dependency-injection decorators) where the wrapper's
+        # signature -- not the inner function's -- is what should be validated
+        # against caller-supplied args.
+        target = getattr(fun, '__func__', fun)
+        sig = inspect.signature(
+            target,
+            follow_wrapped=False,
+            annotation_format=_annotationlib.Format.STRING,
+        )
+        args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults = [], None, None, [], [], {}
+        for name, param in sig.parameters.items():
+            kind = param.kind
+            if kind in (param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD):
+                args.append(name)
+                if param.default is not param.empty:
+                    defaults.append(param.default)
+            elif kind == param.VAR_POSITIONAL:
+                varargs = name
+            elif kind == param.KEYWORD_ONLY:
+                kwonlyargs.append(name)
+                if param.default is not param.empty:
+                    kwonlydefaults[name] = param.default
+            elif kind == param.VAR_KEYWORD:
+                varkw = name
+        return inspect.FullArgSpec(
+            args=args,
+            varargs=varargs,
+            varkw=varkw,
+            defaults=tuple(defaults) or None,
+            kwonlyargs=kwonlyargs,
+            kwonlydefaults=kwonlydefaults or None,
+            annotations={},
+        )
+else:
+    _getfullargspec = inspect.getfullargspec
+
+
+def head_from_fun(fun: Callable[..., Any], bound: bool = False) -> str:
     """Generate signature function from actual function."""
     # we could use inspect.Signature here, but that implementation
     # is very slow since it implements the argument checking
@@ -275,7 +378,7 @@ def head_from_fun(fun, bound=False, debug=False):
     # with an empty body, meaning it has the same performance as
     # as just calling a function.
     is_function = inspect.isfunction(fun)
-    is_callable = hasattr(fun, '__call__')
+    is_callable = callable(fun)
     is_cython = fun.__class__.__name__ == 'cython_function_or_method'
     is_method = inspect.ismethod(fun)
 
@@ -285,11 +388,10 @@ def head_from_fun(fun, bound=False, debug=False):
         name = fun.__name__
     definition = FUNHEAD_TEMPLATE.format(
         fun_name=name,
-        fun_args=_argsfromspec(inspect.getfullargspec(fun)),
+        fun_args=_argsfromspec(_getfullargspec(fun)),
         fun_value=1,
     )
-    if debug:  # pragma: no cover
-        print(definition, file=sys.stderr)
+    logger.debug(definition)
     namespace = {'__name__': fun.__module__}
     # pylint: disable=exec-used
     # Tasks are rarely, if ever, created at runtime - exec here is fine.
@@ -314,24 +416,18 @@ def fun_takes_argument(name, fun, position=None):
     )
 
 
-if hasattr(inspect, 'signature'):
-    def fun_accepts_kwargs(fun):
-        """Return true if function accepts arbitrary keyword arguments."""
-        return any(
-            p for p in inspect.signature(fun).parameters.values()
-            if p.kind == p.VAR_KEYWORD
-        )
-else:
-    def fun_accepts_kwargs(fun):  # noqa
-        """Return true if function accepts arbitrary keyword arguments."""
-        try:
-            argspec = inspect.getargspec(fun)
-        except TypeError:
-            try:
-                argspec = inspect.getargspec(fun.__call__)
-            except (TypeError, AttributeError):
-                return
-        return not argspec or argspec[2] is not None
+def fun_accepts_kwargs(fun):
+    """Return true if function accepts arbitrary keyword arguments."""
+    # inspect.signature evaluates annotations in Python 3.14+ (PEP 649),
+    # which raises NameError for types only imported under TYPE_CHECKING.
+    # Check co_flags directly to avoid touching annotations entirely.
+    code = getattr(fun, '__code__', None)
+    if code is not None:
+        return bool(code.co_flags & inspect.CO_VARKEYWORDS)
+    return any(
+        p for p in inspect.signature(fun).parameters.values()
+        if p.kind == p.VAR_KEYWORD
+    )
 
 
 def maybe(typ, val):
@@ -365,3 +461,7 @@ def seq_concat_seq(a, b):
     if not isinstance(b, prefer):
         b = prefer(b)
     return a + b
+
+
+def is_numeric_value(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool)

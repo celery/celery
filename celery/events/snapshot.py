@@ -84,7 +84,8 @@ class Polaroid:
 
 
 def evcam(camera, freq=1.0, maxrate=None, loglevel=0,
-          logfile=None, pidfile=None, timer=None, app=None):
+          logfile=None, pidfile=None, timer=None, app=None,
+          **kwargs):
     """Start snapshot recorder."""
     app = app_or_default(app)
 

@@ -99,10 +99,6 @@ that these improvements will be merged back into Python one day.
 It's also used for compatibility with older Python versions
 that don't come with the multiprocessing module.
 
-- :pypi:`pytz`
-
-The pytz module provides timezone definitions and related tools.
-
 kombu
 ~~~~~
 
@@ -220,7 +216,7 @@ You can do that by adding the following to your :file:`my.cnf`::
     [mysqld]
     transaction-isolation = READ-COMMITTED
 
-For more information about InnoDB`s transaction model see `MySQL - The InnoDB
+For more information about InnoDB’s transaction model see `MySQL - The InnoDB
 Transaction Model and Locking`_ in the MySQL user manual.
 
 (Thanks to Honza Kral and Anton Tsigularov for this solution)
@@ -465,7 +461,7 @@ Can messages be encrypted?
 You can enable this using the :setting:`broker_use_ssl` setting.
 
 It's also possible to add additional encryption and security to messages,
-if you have a need for this then you should contact the :ref:`mailing-list`.
+if you have a need for this then you should contact the :ref:`getting-help`.
 
 Is it safe to run :program:`celery worker` as root?
 ---------------------------------------------------
@@ -792,6 +788,11 @@ to describe the task prefetching *limit*.  There's no actual prefetching involve
 Disabling the prefetch limits is possible, but that means the worker will
 consume as many tasks as it can, as fast as possible.
 
+You can use the :option:`--disable-prefetch <celery worker --disable-prefetch>`
+flag (or set :setting:`worker_disable_prefetch` to ``True``) so that a worker
+only fetches a task when one of its processes is free. This feature is currently
+only supported when using Redis as the broker.
+
 A discussion on prefetch limits, and configuration settings for a worker
 that only reserves one task at a time is found here:
 :ref:`optimizing-prefetch-limit`.
@@ -839,11 +840,13 @@ to use both.
 is catch-able with the :keyword:`try` block. The AMQP transaction isn't used
 for these errors: **if the task raises an exception it's still acknowledged!**
 
-The `acks_late` setting would be used when you need the task to be
-executed again if the worker (for some reason) crashes mid-execution.
-It's important to note that the worker isn't known to crash, and if
-it does it's usually an unrecoverable error that requires human
-intervention (bug in the worker, or task code).
+The `acks_late` setting controls when the message is acknowledged; it does not
+call `Task.retry` and is not an automatic retry policy. A task exception still
+results in an acknowledgment, and the worker also acknowledges the message when
+the child process is terminated by `sys.exit()` or a signal. Redelivery can
+instead occur when the worker loses the message before acknowledging it, for
+example after a worker or broker-connection failure. The exact behavior depends
+on the worker pool and message transport.
 
 In an ideal world you could safely retry any task that's failed, but
 this is rarely the case. Imagine the following task:
@@ -878,9 +881,10 @@ Can I schedule tasks to execute at a specific time?
 ---------------------------------------------------
 
 **Answer**: Yes. You can use the `eta` argument of :meth:`Task.apply_async`.
+Note that using distant `eta` times is not recommended, and in such case
+:ref:`periodic tasks<guide-beat>` should be preferred.
 
-See also :ref:`guide-beat`.
-
+See :ref:`calling-eta` for more details.
 
 .. _faq-safe-worker-shutdown:
 

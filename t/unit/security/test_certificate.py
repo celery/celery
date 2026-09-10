@@ -3,12 +3,15 @@ import os
 from unittest.mock import Mock, patch
 
 import pytest
-from case import mock
+from kombu.utils.encoding import ensure_bytes
 
 from celery.exceptions import SecurityError
 from celery.security.certificate import Certificate, CertStore, FSCertStore
+from celery.security.key import PrivateKey
+from celery.security.utils import get_digest_algorithm
+from t.unit import conftest
 
-from . import CERT1, CERT2, KEY1
+from . import CERT1, CERT2, CERT_ECDSA, KEY1
 from .case import SecurityCase
 
 
@@ -29,6 +32,8 @@ class test_Certificate(SecurityCase):
             Certificate(CERT1[:20] + CERT1[21:])
         with pytest.raises(SecurityError):
             Certificate(KEY1)
+        with pytest.raises(SecurityError):
+            Certificate(CERT_ECDSA)
 
     @pytest.mark.skip('TODO: cert expired')
     def test_has_expired(self):
@@ -38,8 +43,8 @@ class test_Certificate(SecurityCase):
         x = Certificate(CERT1)
 
         x._cert = Mock(name='cert')
-        time_after = datetime.datetime.now() + datetime.timedelta(days=-1)
-        x._cert.not_valid_after = time_after
+        time_after = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=-1)
+        x._cert.not_valid_after_utc = time_after
 
         assert x.has_expired() is True
 
@@ -47,10 +52,26 @@ class test_Certificate(SecurityCase):
         x = Certificate(CERT1)
 
         x._cert = Mock(name='cert')
-        time_after = datetime.datetime.now() + datetime.timedelta(days=1)
-        x._cert.not_valid_after = time_after
+        time_after = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)
+        x._cert.not_valid_after_utc = time_after
 
         assert x.has_expired() is False
+
+    def test_verify_rejects_expired_certificate(self):
+        """Test that expired certificates cannot verify signatures."""
+        cert = Certificate(CERT1)
+        pkey = PrivateKey(KEY1)
+
+        data = ensure_bytes('test data')
+        digest = get_digest_algorithm()
+        signature = pkey.sign(data, digest)
+
+        with patch.object(cert, 'has_expired', return_value=False):
+            cert.verify(data, signature, digest)
+
+        with patch.object(cert, 'has_expired', return_value=True):
+            with pytest.raises(SecurityError, match='Expired certificate'):
+                cert.verify(data, signature, digest)
 
 
 class test_CertStore(SecurityCase):
@@ -84,7 +105,7 @@ class test_FSCertStore(SecurityCase):
         cert.has_expired.return_value = False
         isdir.return_value = True
         glob.return_value = ['foo.cert']
-        with mock.open():
+        with conftest.open():
             cert.get_id.return_value = 1
 
             path = os.path.join('var', 'certs')

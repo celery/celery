@@ -74,7 +74,7 @@ class list2(list):
 class list3(list):
 
     def __repr__(self):
-        return list.__repr__(self)
+        return super().__repr__()
 
 
 class tuple2(tuple):
@@ -84,7 +84,7 @@ class tuple2(tuple):
 class tuple3(tuple):
 
     def __repr__(self):
-        return tuple.__repr__(self)
+        return super().__repr__()
 
 
 class set2(set):
@@ -94,7 +94,7 @@ class set2(set):
 class set3(set):
 
     def __repr__(self):
-        return set.__repr__(self)
+        return super().__repr__()
 
 
 class frozenset2(frozenset):
@@ -104,7 +104,7 @@ class frozenset2(frozenset):
 class frozenset3(frozenset):
 
     def __repr__(self):
-        return frozenset.__repr__(self)
+        return super().__repr__()
 
 
 class dict2(dict):
@@ -114,7 +114,7 @@ class dict2(dict):
 class dict3(dict):
 
     def __repr__(self):
-        return dict.__repr__(self)
+        return super().__repr__()
 
 
 class test_saferepr:

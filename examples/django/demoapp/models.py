@@ -1,4 +1,4 @@
-from django.db import models  # noqa
+from django.db import models
 
 
 class Widget(models.Model):

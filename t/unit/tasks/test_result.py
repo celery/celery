@@ -1,5 +1,6 @@
 import copy
 import datetime
+import platform
 import traceback
 from contextlib import contextmanager
 from unittest.mock import Mock, call, patch
@@ -8,11 +9,9 @@ import pytest
 
 from celery import states, uuid
 from celery.app.task import Context
-from celery.backends.base import SyncBackendMixin
-from celery.exceptions import (ImproperlyConfigured, IncompleteStream,
-                               TimeoutError)
-from celery.result import (AsyncResult, EagerResult, GroupResult, ResultSet,
-                           assert_will_not_block, result_from_tuple)
+from celery.backends.base import Backend, SyncBackendMixin
+from celery.exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
+from celery.result import AsyncResult, EagerResult, GroupResult, ResultSet, assert_will_not_block, result_from_tuple
 from celery.utils.serialization import pickle
 
 PYTRACEBACK = """\
@@ -59,10 +58,13 @@ class _MockBackend:
     def wait_for_pending(self, *args, **kwargs):
         return True
 
+    def remove_pending_result(self, *args, **kwargs):
+        return True
+
 
 class test_AsyncResult:
 
-    def setup(self):
+    def setup_method(self):
         self.app.conf.result_cache_max = 100
         self.app.conf.result_serializer = 'pickle'
         self.app.conf.result_extended = True
@@ -388,12 +390,41 @@ class test_AsyncResult:
 
         assert not self.app.AsyncResult(uuid()).ready()
 
+    def test_exists(self):
+        """Test that exists() returns True for stored results and False for unknown IDs."""
+        # Tasks with stored results should exist (SUCCESS, FAILURE, RETRY)
+        assert self.app.AsyncResult(self.task1["id"]).exists()
+        assert self.app.AsyncResult(self.task2["id"]).exists()
+        assert self.app.AsyncResult(self.task3["id"]).exists()
+
+        # RETRY state should also exist
+        assert self.app.AsyncResult(self.task4["id"]).exists()
+
+        # A random/unknown task ID should not exist
+        assert not self.app.AsyncResult(uuid()).exists()
+
+        # Multiple unknown IDs should all return False
+        assert not self.app.AsyncResult(uuid()).exists()
+        assert not self.app.AsyncResult("totally-fake-id").exists()
+
+    def test_exists_returns_bool(self):
+        """Test that exists() returns a proper boolean type."""
+        result_exists = self.app.AsyncResult(self.task1["id"]).exists()
+        result_missing = self.app.AsyncResult(uuid()).exists()
+        assert isinstance(result_exists, bool)
+        assert isinstance(result_missing, bool)
+
+    @pytest.mark.skipif(
+        platform.python_implementation() == "PyPy",
+        reason="Mocking here doesn't play well with PyPy",
+    )
     def test_del(self):
         with patch('celery.result.AsyncResult.backend') as backend:
             result = self.app.AsyncResult(self.task1['id'])
+            result.backend = backend
             result_clone = copy.copy(result)
             del result
-            assert backend.remove_pending_result.called_once_with(
+            backend.remove_pending_result.assert_called_once_with(
                 result_clone
             )
 
@@ -427,17 +458,34 @@ class test_AsyncResult:
         result = self.app.AsyncResult(self.task4['id'])
         assert result.date_done is None
 
-    @pytest.mark.parametrize('result_dict, date', [
-        ({'date_done': None}, None),
-        ({'date_done': '1991-10-05T05:41:06'},
-         datetime.datetime(1991, 10, 5, 5, 41, 6)),
-        ({'date_done': datetime.datetime(1991, 10, 5, 5, 41, 6)},
-         datetime.datetime(1991, 10, 5, 5, 41, 6))
+    @patch('celery.app.base.to_utc')
+    @pytest.mark.parametrize('timezone, date', [
+        ("UTC", "2024-08-24T00:00:00+00:00"),
+        ("America/Los_Angeles", "2024-08-23T17:00:00-07:00"),
+        ("Pacific/Kwajalein", "2024-08-24T12:00:00+12:00"),
+        ("Europe/Berlin", "2024-08-24T02:00:00+02:00"),
     ])
-    def test_date_done(self, result_dict, date):
-        result = self.app.AsyncResult(uuid())
-        result._cache = result_dict
-        assert result.date_done == date
+    def test_date_done(self, utc_datetime_mock, timezone, date):
+        utc_datetime_mock.return_value = datetime.datetime(2024, 8, 24, 0, 0, 0, 0, datetime.timezone.utc)
+        self.app.conf.timezone = timezone
+        del self.app.timezone  # reset cached timezone
+
+        result = Backend(app=self.app)._get_result_meta(None, states.SUCCESS, None, None)
+        assert result.get('date_done') == date
+
+    def test_forget_remove_pending_result(self):
+        with patch('celery.result.AsyncResult.backend') as backend:
+            result = self.app.AsyncResult(self.task1['id'])
+            result.backend = backend
+            result_clone = copy.copy(result)
+            result.forget()
+            backend.remove_pending_result.assert_called_once_with(
+                result_clone
+            )
+
+        result = self.app.AsyncResult(self.task1['id'])
+        result.backend = None
+        del result
 
 
 class test_ResultSet:
@@ -545,13 +593,20 @@ class test_ResultSet:
         x.add(self.app.AsyncResult(2))
         assert len(x) == 2
 
+    def test_iter_native_finalizes_barrier_when_built_via_add(self):
+        x = self.app.ResultSet([])
+        for _ in range(3):
+            x.add(self.app.AsyncResult(uuid()))
+        x.iter_native()
+        assert x._on_full.finalized
+
     @contextmanager
     def dummy_copy(self):
         with patch('celery.result.copy') as copy:
 
-            def passt(arg):
+            def pass_value(arg):
                 return arg
-            copy.side_effect = passt
+            copy.side_effect = pass_value
 
             yield
 
@@ -627,7 +682,7 @@ class SimpleBackend(SyncBackendMixin):
 
 class test_GroupResult:
 
-    def setup(self):
+    def setup_method(self):
         self.size = 10
         self.ts = self.app.GroupResult(
             uuid(), make_mock_group(self.app, self.size),
@@ -818,6 +873,18 @@ class test_GroupResult:
             backend.ids = [result.id for result in results]
             assert len(list(ts.iter_native())) == 10
 
+    def test_join_timeout_zero(self):
+        """A timeout of 0 must behave as a non-blocking join."""
+        ar = MockAsyncResultSuccess(uuid(), app=self.app, result='r1')
+        ar2 = MockAsyncResultSuccess(uuid(), app=self.app, result='r2')
+        ts_ready = self.app.GroupResult(uuid(), [ar, ar2])
+        assert ts_ready.join(timeout=0) == ['r1', 'r2']
+
+        ar_pending = self.app.AsyncResult(uuid())
+        ts_pending = self.app.GroupResult(uuid(), [ar, ar_pending])
+        with pytest.raises(TimeoutError):
+            ts_pending.join(timeout=0)
+
     def test_join_timeout(self):
         ar = MockAsyncResultSuccess(uuid(), app=self.app)
         ar2 = MockAsyncResultSuccess(uuid(), app=self.app)
@@ -881,7 +948,7 @@ class test_pending_AsyncResult:
 
 class test_failed_AsyncResult:
 
-    def setup(self):
+    def setup_method(self):
         self.size = 11
         self.app.conf.result_serializer = 'pickle'
         results = make_mock_group(self.app, 10)
@@ -906,7 +973,7 @@ class test_failed_AsyncResult:
 
 class test_pending_Group:
 
-    def setup(self):
+    def setup_method(self):
         self.ts = self.app.GroupResult(
             uuid(), [self.app.AsyncResult(uuid()),
                      self.app.AsyncResult(uuid())])
@@ -931,7 +998,7 @@ class test_pending_Group:
 
 class test_EagerResult:
 
-    def setup(self):
+    def setup_method(self):
         @self.app.task(shared=False)
         def raising(x, y):
             raise KeyError(x, y)
@@ -965,6 +1032,13 @@ class test_EagerResult:
         with pytest.raises(RuntimeError):
             res_subtask_async.get()
         res_subtask_async.get(disable_sync_subtasks=False)
+
+    def test_populate_name(self):
+        res = EagerResult('x', 'x', states.SUCCESS, None, 'test_task')
+        assert res.name == 'test_task'
+
+        res = EagerResult('x', 'x', states.SUCCESS, name='test_task_named_argument')
+        assert res.name == 'test_task_named_argument'
 
 
 class test_tuples:
