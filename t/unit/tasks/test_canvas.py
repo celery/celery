@@ -119,6 +119,17 @@ class CanvasCase:
 
         self.replace_with_chain = replace_with_chain
 
+        @self.app.task(shared=False, bind=True)
+        def replace_with_chain_ending_in_group(self, x, y):
+            return self.replace(
+                chain(
+                    add.s(x, y),
+                    group(add.s(1), add.s(1)),
+                )
+            )
+
+        self.replace_with_chain_ending_in_group = replace_with_chain_ending_in_group
+
         @self.app.task(shared=False)
         def xprod(numbers):
             return math.prod(numbers)
