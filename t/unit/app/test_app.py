@@ -280,6 +280,23 @@ class test_App:
             _appbase.USING_EXECV = prev
         assert not _appbase.USING_EXECV
 
+    def test_task_execv_shared_finalizer_does_not_collide(self):
+        finalizers = set(_state._on_app_finalizers)
+        try:
+            with patch('celery.app.base._using_execv', return_value=True):
+                with self.Celery('foozibari', set_as_current=True) as finalized_app:
+                    finalized_app.finalize()
+
+                    with self.Celery('baribaz', set_as_current=True) as app:
+                        @app.task
+                        def duplicate():
+                            return 1
+
+                        app.finalize()
+                        assert duplicate.apply().get() == 1
+        finally:
+            _state._on_app_finalizers = finalizers
+
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_task_execv_env_set_after_import(self):
         # a spawned pool child sets the variable from process_initializer()

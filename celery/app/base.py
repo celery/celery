@@ -561,7 +561,7 @@ class Celery:
             # the task instance from the current app.
             # Really need a better solution for this :(
             from . import shared_task
-            return shared_task(*args, lazy=False, **opts)
+            return shared_task(*args, lazy=False, _shared=True, **opts)
 
         def inner_create_task_cls(shared=True, filter=None, lazy=True, **opts):
             _filt = filter
