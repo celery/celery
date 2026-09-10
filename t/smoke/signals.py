@@ -1,6 +1,7 @@
 """Signal Handlers for the smoke test."""
 
-from celery.signals import worker_init, worker_process_init, worker_process_shutdown, worker_ready, worker_shutdown
+from celery.signals import (task_success, worker_init, worker_process_init,
+                            worker_process_shutdown, worker_ready, worker_shutdown)
 
 
 @worker_init.connect
@@ -26,3 +27,8 @@ def worker_ready_handler(sender, **kwargs):
 @worker_shutdown.connect
 def worker_shutdown_handler(sender, **kwargs):
     print("worker_shutdown_handler")
+
+
+@task_success.connect
+def task_success_handler(runtime, **kwargs):
+    print(f"task_success_runtime={runtime}")
