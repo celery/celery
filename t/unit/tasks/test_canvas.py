@@ -485,6 +485,26 @@ class test_chunks(CanvasCase):
 
 class test_chain(CanvasCase):
 
+    def test_replace_with_chain_ending_in_group(self):
+        task = self.replace_with_chain_ending_in_group
+        task.push_request(id='task-id')
+
+        try:
+            with patch.object(task, 'on_replace') as on_replace:
+                task(1, 2)
+
+            on_replace.assert_called_once()
+            replacement = on_replace.call_args.args[0]
+
+            assert isinstance(replacement, _chain)
+            assert isinstance(replacement.tasks[-1], group)
+
+            accumulate = replacement.tasks[-1].options['link'][0]
+            assert accumulate.name == 'celery.accumulate'
+            assert accumulate.kwargs['index'] == 0
+        finally:
+            task.pop_request()
+
     def test_chain_of_chain_with_a_single_task(self):
         s = self.add.s(1, 1)
         assert chain([chain(s)]).tasks == list(chain(s).tasks)
