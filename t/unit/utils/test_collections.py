@@ -8,6 +8,7 @@ import pytest
 from billiard.einfo import ExceptionInfo
 
 import t.skip
+from celery.app.utils import _new_key_to_old, _old_key_to_new
 from celery.utils.collections import (AttributeDict, BufferMap, ChainMap, ConfigurationView, DictAttribute,
                                       LimitedSet, Messagebuffer)
 from celery.utils.objects import Bunch
@@ -71,6 +72,39 @@ class test_ConfigurationView:
         assert self.view.get('both') == 2
         sp = object()
         assert self.view.get('nonexisting', sp) is sp
+
+    def test_getitem_respects_map_order(self):
+        # Changes are searched before defaults.
+        view = ConfigurationView(
+            {'foo': 1},
+            [{'CELERY_FOO': 2}],
+            prefix='CELERY',
+        )
+        assert view['foo'] == 1
+
+        # Default mappings are also searched in order.
+        view = ConfigurationView(
+            {},
+            [{'foo': 1}, {'CELERY_FOO': 2}],
+            prefix='CELERY',
+        )
+        assert view['foo'] == 1
+
+        # An old key in an earlier map wins over a new key in a later map.
+        view = ConfigurationView(
+            {'CELERY_ALWAYS_EAGER': 1},
+            [{'task_always_eager': 2}],
+            keys=(_old_key_to_new, _new_key_to_old),
+        )
+        assert view['task_always_eager'] == 1
+
+        # The same applies when the earlier map uses the new key.
+        view = ConfigurationView(
+            {'task_always_eager': 1},
+            [{'CELERY_ALWAYS_EAGER': 2}],
+            keys=(_old_key_to_new, _new_key_to_old),
+        )
+        assert view['CELERY_ALWAYS_EAGER'] == 1
 
     def test_missing_key_with_prefix(self):
         view = ConfigurationView({}, prefix='celery')
