@@ -826,8 +826,11 @@ class Signature(dict):
     __class_getitem__ = classmethod(types.GenericAlias)
 
     def __deepcopy__(self, memo):
-        memo[id(self)] = self
-        return dict(self)  # TODO: Potential bug of being a shallow copy
+        clone = dict(self)
+        memo[id(self)] = clone
+        # Canvas preparation mutates execution options, but task arguments may be lazy.
+        clone['options'] = deepcopy(self.options, memo)
+        return clone
 
     def __invert__(self):
         return self.apply_async().get()
