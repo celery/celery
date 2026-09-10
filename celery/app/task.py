@@ -14,7 +14,6 @@ from celery.exceptions import Ignore, ImproperlyConfigured, MaxRetriesExceededEr
 from celery.local import class_property
 from celery.result import EagerResult, allow_join_result, denied_join_result
 from celery.utils import abstract, deprecated
-
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
 from celery.utils.nodenames import gethostname
