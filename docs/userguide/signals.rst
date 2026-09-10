@@ -261,6 +261,8 @@ Provides arguments
     Return value of the task.
 
 * ``runtime``
+    .. versionadded:: 5.8.0
+
     Time in seconds from when tracing started until task execution, callbacks, and result-backend handling completed.
 
 .. signal:: task_failure
