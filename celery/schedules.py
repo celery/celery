@@ -500,7 +500,7 @@ class crontab(BaseSchedule):
         super().__init__(**state)
         self._orig_kwargs = dict(state)
 
-    def _next_occurence(self, current: datetime) -> datetime:
+    def _next_occurrence(self, current: datetime) -> datetime:
         """returns the date of next crontab execution after given current date.
 
         The returned date is timezone aware and uses the same timezone as the given
@@ -644,7 +644,7 @@ class crontab(BaseSchedule):
         last_run_at = self.maybe_make_aware(last_run_at).astimezone(schedule_tz)
         now = self.maybe_make_aware(self.now()).astimezone(schedule_tz)
 
-        _next = self._next_occurence(last_run_at)
+        _next = self._next_occurrence(last_run_at)
         delta = ffwd(
             year=_next.year if last_run_at.year != _next.year else None,
             month=_next.month if last_run_at.month != _next.month else None,
@@ -672,7 +672,7 @@ class crontab(BaseSchedule):
         last_run_at = self.maybe_make_aware(last_run_at).astimezone(schedule_tz)
         now = self.maybe_make_aware(self.now()).astimezone(schedule_tz)
 
-        next_run_at = self._next_occurence(last_run_at)
+        next_run_at = self._next_occurrence(last_run_at)
 
         if C_REMDEBUG:  # pragma: no cover
             print(
