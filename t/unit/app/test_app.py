@@ -260,6 +260,67 @@ class test_App:
 
             assert first is second
 
+    def test_same_task_callable_handles_callable_shapes(self):
+        from celery.app.base import _same_task_callable
+
+        class Service:
+            def handle(self):
+                return 1
+
+            def other(self):
+                return 2
+
+        service = Service()
+        other_service = Service()
+        assert _same_task_callable(service.handle, service.handle)
+        assert not _same_task_callable(service.handle, other_service.handle)
+        assert not _same_task_callable(service.handle, service.other)
+        assert not _same_task_callable(object(), object())
+
+        def make_with_defaults(value):
+            def task(argument=value):
+                return argument
+
+            return task
+
+        assert _same_task_callable(make_with_defaults(1), make_with_defaults(1))
+        assert not _same_task_callable(make_with_defaults(1), make_with_defaults(2))
+
+        def make_with_kwdefaults(value):
+            def task(*, argument=value):
+                return argument
+
+            return task
+
+        assert not _same_task_callable(
+            make_with_kwdefaults(1), make_with_kwdefaults(2)
+        )
+
+        def make_with_closure(value):
+            def task():
+                return value
+
+            return task
+
+        shared_value = ['same']
+        assert _same_task_callable(
+            make_with_closure(shared_value), make_with_closure(shared_value)
+        )
+        assert _same_task_callable(
+            make_with_closure(['same']), make_with_closure(['same'])
+        )
+        assert not _same_task_callable(
+            make_with_closure(['first']), make_with_closure(['second'])
+        )
+
+        class BrokenEquality:
+            def __eq__(self, other):
+                raise RuntimeError('comparison failed')
+
+        assert not _same_task_callable(
+            make_with_closure(BrokenEquality()), make_with_closure(BrokenEquality())
+        )
+
     def test_task_registration_rejects_different_callable_with_same_name(self):
         with self.Celery('foozibari') as app:
             def make_task(value):
@@ -299,6 +360,36 @@ class test_App:
 
             assert first is not second
             assert app.tasks[TaskClass.name] is second
+
+    def test_register_task_generates_name_for_task_class(self):
+        with self.Celery('foozibari') as app:
+            class TaskClass(app.Task):
+                def run(self):
+                    return 1
+
+            task = app.register_task(TaskClass())
+
+            assert task.name == app.gen_task_name(
+                'TaskClass', TaskClass.__module__
+            )
+
+    def test_register_task_rejects_different_task_type_with_same_name(self):
+        with self.Celery('foozibari') as app:
+            class FirstTask(app.Task):
+                name = 'same_task'
+
+                def run(self):
+                    return 1
+
+            class SecondTask(app.Task):
+                name = 'same_task'
+
+                def run(self):
+                    return 2
+
+            app.register_task(FirstTask())
+            with pytest.raises(AlreadyRegistered, match='different task'):
+                app.register_task(SecondTask())
 
     def test_register_task_accepts_shared_task_proxy(self):
         with self.Celery('foozibari') as app:
@@ -2477,6 +2568,20 @@ class test_shared_task:
                 assert first.name != second.name
                 assert first.apply().get() == 1
                 assert second.apply().get() == 2
+        finally:
+            _state._on_app_finalizers = finalizers
+
+    def test_reports_unregistered_shared_task_for_current_app(self, monkeypatch):
+        finalizers = set(_state._on_app_finalizers)
+        try:
+            with self.Celery('foozibari', set_as_current=True) as app:
+                @shared_task
+                def unregistered():
+                    return 1
+
+                monkeypatch.setattr(app, 'finalize', lambda: None)
+                with pytest.raises(RuntimeError, match='not registered'):
+                    unregistered.name
         finally:
             _state._on_app_finalizers = finalizers
 
