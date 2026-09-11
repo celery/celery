@@ -79,6 +79,56 @@ else:
     def _get_annotations(fun):
         return fun.__annotations__
 
+
+def _same_task_callable(first, second):
+    if first is second:
+        return True
+
+    first_self = getattr(first, '__self__', None)
+    second_self = getattr(second, '__self__', None)
+    if first_self is not None or second_self is not None:
+        return (
+            first_self is not None
+            and first_self is second_self
+            and getattr(first, '__func__', None) is getattr(second, '__func__', None)
+        )
+
+    if not inspect.isfunction(first) or not inspect.isfunction(second):
+        return False
+
+    first_code = first.__code__
+    second_code = second.__code__
+    if (
+        first.__module__, first.__qualname__, first_code.co_filename,
+        first_code.co_firstlineno,
+    ) != (
+        second.__module__, second.__qualname__, second_code.co_filename,
+        second_code.co_firstlineno,
+    ):
+        return False
+
+    if first.__defaults__ != second.__defaults__:
+        return False
+    if first.__kwdefaults__ != second.__kwdefaults__:
+        return False
+    if first.__closure__ is None or second.__closure__ is None:
+        return first.__closure__ is second.__closure__
+    if len(first.__closure__) != len(second.__closure__):
+        return False
+
+    for first_cell, second_cell in zip(first.__closure__, second.__closure__):
+        first_value = first_cell.cell_contents
+        second_value = second_cell.cell_contents
+        if first_value is second_value:
+            continue
+        try:
+            if not bool(first_value == second_value):
+                return False
+        except Exception:
+            return False
+    return True
+
+
 BUILTIN_FIXUPS = {
     'celery.fixups.django:fixup',
 }
@@ -617,27 +667,32 @@ class Celery:
         original_fun = fun
         name_provided = name is not None
         task_name = getattr(fun, '__qualname__', fun.__name__)
-        # Keep the historical name for local functions unless it collides with
-        # another callable. In that case, use the qualified name when it can
-        # disambiguate the callables; identical qualified names still fail
-        # loudly instead of silently reusing the first task.
-        default_task_name = fun.__name__ if '<locals>' in task_name else task_name
+        # Keep the historical name unless it collides with another callable.
+        # In that case, use the qualified name when it can disambiguate the
+        # callables; identical qualified names still fail loudly instead of
+        # silently reusing the first task.
+        default_task_name = fun.__name__
         name = name or self.gen_task_name(default_task_name, fun.__module__)
         base = base or self.Task
 
         task = self._tasks.get(name)
         if task is not None:
+            existing_fun = getattr(task, '_task_fun', None)
             if (not _shared and getattr(task, '_app', None) is self
-                    and getattr(task, '_task_fun', None) is not original_fun):
+                    and not _same_task_callable(existing_fun, original_fun)):
                 if not name_provided:
-                    existing_fun = getattr(task, '_task_fun', None)
                     existing_task_name = getattr(
                         existing_fun, '__qualname__',
                         getattr(existing_fun, '__name__', None),
                     )
                     qualified_name = self.gen_task_name(task_name, fun.__module__)
+                    qualified_task = self._tasks.get(qualified_name)
+                    if qualified_task is not None and _same_task_callable(
+                            getattr(qualified_task, '_task_fun', None), original_fun,
+                    ):
+                        return qualified_task
                     if (task_name != existing_task_name
-                            and qualified_name not in self._tasks):
+                            and qualified_task is None):
                         name = qualified_name
                         task = None
                 if task is not None:
@@ -680,6 +735,7 @@ class Celery:
             style task classes, you should not need to use this for
             new projects.
         """
+        task = maybe_evaluate(task)
         task = inspect.isclass(task) and task() or task
         if not task.name:
             task_cls = type(task)

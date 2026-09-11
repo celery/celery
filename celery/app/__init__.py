@@ -73,12 +73,13 @@ def shared_task(*args, **kwargs):
             # apps task registry.
             def task_by_cons():
                 app = _state.get_current_app()
+                if not app.finalized:
+                    app.finalize()
                 registered_name = task_names.get(app)
                 if registered_name is None:
-                    task_name = getattr(fun, '__qualname__', fun.__name__)
-                    if '<locals>' in task_name:
-                        task_name = fun.__name__
-                    registered_name = app.gen_task_name(task_name, fun.__module__)
+                    raise RuntimeError(
+                        'Shared task was not registered with the current app'
+                    )
                 return app.tasks[
                     name or registered_name
                 ]

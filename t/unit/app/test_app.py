@@ -5,6 +5,7 @@ import itertools
 import os
 import ssl
 import sys
+import types
 import typing
 import uuid
 from copy import deepcopy
@@ -198,9 +199,66 @@ class test_App:
             first = app.task(FirstTask.handle)
             second = app.task(SecondTask.handle)
 
-            assert first.name.endswith('.FirstTask.handle')
+            assert first.name.endswith('.handle')
+            assert not first.name.endswith('.FirstTask.handle')
             assert second.name.endswith('.SecondTask.handle')
             assert first.name != second.name
+
+    def test_task_names_reuse_disambiguated_callable(self):
+        with self.Celery('foozibari') as app:
+            app.finalize()
+
+            def make_a():
+                def duplicate():
+                    return 1
+
+                return duplicate
+
+            def make_b():
+                def duplicate():
+                    return 2
+
+                return duplicate
+
+            first_fun = make_a()
+            second_fun = make_b()
+            first = app.task(first_fun)
+            second = app.task(second_fun)
+            repeated = app.task(second_fun)
+
+            assert first.name.endswith('.duplicate')
+            assert second.name.endswith('.make_b.<locals>.duplicate')
+            assert repeated is second
+
+    def test_task_registration_allows_repeated_bound_method(self):
+        with self.Celery('foozibari') as app:
+            app.finalize()
+
+            class Service:
+                def handle(self):
+                    return 1
+
+            service = Service()
+            first = app.task(service.handle)
+            second = app.task(service.handle)
+
+            assert first is second
+
+    def test_task_registration_allows_reloaded_callable(self):
+        with self.Celery('foozibari') as app:
+            app.finalize()
+
+            def task_body():
+                return 1
+
+            first = app.task(task_body)
+            reloaded = types.FunctionType(
+                task_body.__code__, task_body.__globals__, task_body.__name__,
+                task_body.__defaults__, task_body.__closure__,
+            )
+            second = app.task(reloaded)
+
+            assert first is second
 
     def test_task_registration_rejects_different_callable_with_same_name(self):
         with self.Celery('foozibari') as app:
@@ -241,6 +299,17 @@ class test_App:
 
             assert first is not second
             assert app.tasks[TaskClass.name] is second
+
+    def test_register_task_accepts_shared_task_proxy(self):
+        with self.Celery('foozibari') as app:
+            @app.task
+            def shared_registration():
+                return 1
+
+            app.finalize()
+            task = app.register_task(shared_registration)
+
+            assert task is app.tasks[task.name]
 
     def test_shared_task_finalizer_does_not_collide_with_pending_task(self):
         finalizers = set(_state._on_app_finalizers)
