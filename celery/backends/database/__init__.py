@@ -1,10 +1,14 @@
 """SQLAlchemy result store backend."""
 import logging
+import pickle
 from contextlib import contextmanager
+
+from kombu.utils.encoding import ensure_bytes
 
 from celery import states
 from celery.backends.base import BaseBackend
 from celery.exceptions import ImproperlyConfigured
+from celery.result import result_from_tuple
 from celery.utils.imports import symbol_by_name
 from celery.utils.time import maybe_timedelta
 
@@ -151,7 +155,7 @@ class DatabaseBackend(BaseBackend):
     def _update_result(self, task, result, state, traceback=None,
                        request=None):
 
-        meta = self._get_result_meta(result=result, state=state,
+        meta = self._get_result_meta(result=ensure_bytes(self.encode(result)), state=state,
                                      traceback=traceback, request=request,
                                      format_date=False, encode=True)
 
@@ -178,11 +182,42 @@ class DatabaseBackend(BaseBackend):
                 task.status = states.PENDING
                 task.result = None
             data = task.to_dict()
+            data['result'] = self._decode_stored_result(data['result'])
             if data.get('args', None) is not None:
                 data['args'] = self.decode(data['args'])
             if data.get('kwargs', None) is not None:
                 data['kwargs'] = self.decode(data['kwargs'])
             return self.meta_from_decoded(data)
+
+    def _decode_stored_result(self, payload):
+        """Decode a value stored in the ``result`` column.
+
+        Rows written before the fix for celery/celery#3025 always stored a
+        raw pickle blob regardless of the configured ``result_serializer``,
+        so a row that can't be decoded with the current serializer, but
+        looks like a pickle payload (starts with the pickle protocol 2+
+        marker that every pickle Celery/kombu produces starts with), is
+        assumed to be one of those and is unpickled directly instead.
+        Anything else re-raises the original decode error instead of
+        blindly unpickling arbitrary bytes.
+        """
+        if payload is None:
+            return payload
+        payload = ensure_bytes(payload)
+        try:
+            return self.decode(payload)
+        except Exception:
+            # Legacy rows written before celery/celery#3025 were stored via
+            # SQLAlchemy's PickleType, which uses a binary pickle protocol.
+            if payload[:1] != b'\x80':
+                raise
+            logger.warning(
+                'Task result payload could not be decoded using the '
+                'configured result_serializer; falling back to pickle '
+                'for backward compatibility with pre-fix data.',
+                exc_info=True,
+            )
+            return pickle.loads(payload)
 
     def task_result_exists(self, task_id):
         """Check if a result exists in the database for the given task ID.
@@ -203,7 +238,8 @@ class DatabaseBackend(BaseBackend):
         """Store the result of an executed group."""
         session = self.ResultSession()
         with session_cleanup(session):
-            group = self.taskset_cls(group_id, result)
+            value = ensure_bytes(self.encode(self.prepare_value(result)))
+            group = self.taskset_cls(group_id, value)
             session.add(group)
             session.flush()
             session.commit()
@@ -216,7 +252,12 @@ class DatabaseBackend(BaseBackend):
             group = session.query(self.taskset_cls).filter(
                 self.taskset_cls.taskset_id == group_id).first()
             if group:
-                return group.to_dict()
+                data = group.to_dict()
+                value = self._decode_stored_result(data['result'])
+                data['result'] = (
+                    value if value is None else result_from_tuple(value, self.app)
+                )
+                return data
 
     def _delete_group(self, group_id):
         """Delete meta-data for group by id."""

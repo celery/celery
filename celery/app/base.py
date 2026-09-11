@@ -84,6 +84,13 @@ BUILTIN_FIXUPS = {
 }
 USING_EXECV = os.environ.get('FORKED_BY_MULTIPROCESSING')
 
+
+def _using_execv():
+    # Also checked at call time: a spawned pool child only sets the
+    # variable from process_initializer(), after this module was imported.
+    return USING_EXECV or os.environ.get('FORKED_BY_MULTIPROCESSING')
+
+
 ERR_ENVVAR_NOT_SET = """
 The environment variable {0!r} is not set,
 and as such the configuration could not be loaded.
@@ -345,7 +352,7 @@ class Celery:
                  set_as_current=True, tasks=None, broker=None, include=None,
                  changes=None, config_source=None, fixups=None, task_cls=None,
                  autofinalize=True, namespace=None, strict_typing=True,
-                 **kwargs):
+                 config_source_silent=False, **kwargs):
 
         self._local = threading.local()
         self._backend_cache = None
@@ -360,8 +367,8 @@ class Celery:
         self._custom_task_cls_used = (
             # Custom task class provided as argument
             bool(task_cls)
-            # subclass of Celery with a task_cls attribute
-            or self.__class__ is not Celery and hasattr(self.__class__, 'task_cls')
+            # Custom task class set as a class attribute
+            or bool(app_has_custom(self, 'task_cls'))
         )
         self.task_cls = task_cls or self.task_cls
         self.set_as_current = set_as_current
@@ -374,6 +381,11 @@ class Celery:
 
         self.configured = False
         self._config_source = config_source
+        # `silent` from config_from_object(), remembered so the lazy load in
+        # _load_config() honours it too and not only the eager path. Carried
+        # through __reduce_keys__ so an app pickled before its configuration
+        # was read does not lose it.
+        self._config_source_silent = config_source_silent
         self._pending_defaults = deque()
         self._pending_periodic_tasks = deque()
 
@@ -542,7 +554,7 @@ class Celery:
             not access any attributes on the returned object until the
             application is fully set up (finalized).
         """
-        if USING_EXECV and opts.get('lazy', True):
+        if _using_execv() and opts.get('lazy', True):
             # When using execv the task in the original module will point to a
             # different app, so doing things like 'add.request' will point to
             # a different task instance.  This makes sure it will always use
@@ -718,6 +730,7 @@ class Celery:
                 By default the configuration will be read only when required.
         """
         self._config_source = obj
+        self._config_source_silent = silent
         self.namespace = namespace or self.namespace
         if force or self.configured:
             self._conf = None
@@ -1251,7 +1264,8 @@ class Celery:
             # used to be a method pre 4.0
             self.on_configure()
         if self._config_source:
-            self.loader.config_from_object(self._config_source)
+            self.loader.config_from_object(
+                self._config_source, silent=self._config_source_silent)
         self.configured = True
         settings = detect_settings(
             self.prepare_config(self.loader.conf), self._preconf,
@@ -1416,6 +1430,7 @@ class Celery:
             'control': self.control_cls,
             'fixups': self.fixups,
             'config_source': self._config_source,
+            'config_source_silent': self._config_source_silent,
             'task_cls': self.task_cls,
             'namespace': self.namespace,
         }
@@ -1425,7 +1440,7 @@ class Celery:
         return (self.main, self._conf.changes if self.configured else {},
                 self.loader_cls, self.backend_cls, self.amqp_cls,
                 self.events_cls, self.log_cls, self.control_cls,
-                False, self._config_source)
+                False, self._config_source, self._config_source_silent)
 
     @cached_property
     def Worker(self):
