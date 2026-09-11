@@ -80,9 +80,10 @@ class Drainer:
         wait = wait or self.result_consumer.drain_events
         time_start = time.monotonic()
 
-        while 1:
+        # Ready results take precedence over an exhausted timeout.
+        while not p.ready:
             # Total time spent may exceed a single call to wait()
-            if timeout and time.monotonic() - time_start >= timeout:
+            if timeout is not None and time.monotonic() - time_start >= timeout:
                 raise socket.timeout()
             try:
                 yield self.wait_for(p, wait, timeout=interval)
@@ -102,8 +103,6 @@ class Drainer:
 
             if on_interval:
                 on_interval()
-            if p.ready:  # got event on the wanted channel.
-                break
 
     def wait_for(self, p, wait, timeout=None):
         wait(timeout=timeout)

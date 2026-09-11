@@ -55,6 +55,24 @@ class test_Drainer_without_greenlets:
         assert p.ready
         assert calls[0] >= 3
 
+    def test_drain_times_out_immediately_when_timeout_is_zero(self, app):
+        drainer = _make_consumer(app).drainer
+        p = promise()
+        wait = Mock()
+
+        with pytest.raises(socket.timeout):
+            list(drainer.drain_events_until(p, timeout=0, wait=wait))
+        wait.assert_not_called()
+
+    def test_drain_returns_immediately_when_result_is_ready(self, app):
+        drainer = _make_consumer(app).drainer
+        p = promise()
+        p('done')
+        wait = Mock()
+
+        list(drainer.drain_events_until(p, timeout=0, wait=wait))
+        wait.assert_not_called()
+
     def test_drain_calls_on_interval(self, app):
         """on_interval callback is invoked every iteration."""
         consumer = _make_consumer(app)
