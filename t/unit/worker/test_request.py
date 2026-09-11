@@ -464,6 +464,7 @@ class test_Request(RequestCase):
         # Don't assert the request directly, but capture it instead, as
         # errors may be captured differently in signal handlers.
         captured_request = []
+
         def assert_sender_has_request(sender, **kwargs):
             captured_request.append(sender.request)
 
