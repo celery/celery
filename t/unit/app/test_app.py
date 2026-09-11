@@ -256,6 +256,7 @@ class test_App:
                 task_body.__code__, task_body.__globals__, task_body.__name__,
                 task_body.__defaults__, task_body.__closure__,
             )
+            reloaded.__qualname__ = task_body.__qualname__
             second = app.task(reloaded)
 
             assert first is second
