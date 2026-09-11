@@ -159,10 +159,10 @@ class DatabaseBackend(BaseBackend):
                                      traceback=traceback, request=request,
                                      format_date=False, encode=True)
 
-        # Exclude the primary key id and task_id columns
-        # as we should not set it None
+        # Exclude the primary key id, task_id, and stamps columns
+        # as we should not set it None or handle stamps separately
         columns = [column.name for column in self.task_cls.__table__.columns
-                   if column.name not in {'id', 'task_id'}]
+                   if column.name not in {'id', 'task_id', 'stamps'}]
 
         # Iterate through the columns name of the table
         # to set the value from meta.
@@ -170,6 +170,20 @@ class DatabaseBackend(BaseBackend):
         for column in columns:
             value = meta.get(column)
             setattr(task, column, value)
+
+        if hasattr(task, 'stamps'):
+            stamped_headers = meta.get('stamped_headers')
+            if stamped_headers:
+                stamps_data = {
+                    h: meta.get(h) for h in stamped_headers if h in meta
+                }
+                stamps_info = {
+                    'stamped_headers': stamped_headers,
+                    'stamps': stamps_data,
+                }
+                setattr(task, 'stamps', ensure_bytes(self.encode(stamps_info)))
+            else:
+                setattr(task, 'stamps', None)
 
     def _get_task_meta_for(self, task_id):
         """Get task meta-data for a task by id."""
@@ -187,6 +201,14 @@ class DatabaseBackend(BaseBackend):
                 data['args'] = self.decode(data['args'])
             if data.get('kwargs', None) is not None:
                 data['kwargs'] = self.decode(data['kwargs'])
+            if data.get('stamps', None) is not None:
+                stamps_info = self.decode(data['stamps'])
+                if isinstance(stamps_info, dict):
+                    if 'stamped_headers' in stamps_info:
+                        data['stamped_headers'] = stamps_info['stamped_headers']
+                    if 'stamps' in stamps_info:
+                        data.update(stamps_info['stamps'])
+                        data['stamps'] = stamps_info['stamps']
             return self.meta_from_decoded(data)
 
     def _decode_stored_result(self, payload):
