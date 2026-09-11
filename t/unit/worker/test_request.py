@@ -461,8 +461,11 @@ class test_Request(RequestCase):
         req.delivery_info['redelivered'] = True
         req.task.backend = Mock()
 
+        # Don't assert the request directly, but capture it instead, as
+        # errors may be captured differently in signal handlers.
+        captured_request = []
         def assert_sender_has_request(sender, **kwargs):
-            assert sender.request == req._context
+            captured_request.append(sender.request)
 
         on_call = Mock(side_effect=assert_sender_has_request)
         task_failure.connect(on_call)
@@ -482,6 +485,8 @@ class test_Request(RequestCase):
             traceback=einfo.traceback,
             einfo=einfo
         )
+
+        assert captured_request[0] == req._context
 
         # after the on_failure, task request stack is cleared
         assert req.task.request_stack.top is None
