@@ -32,6 +32,12 @@ class test_Settings:
         assert self.app.conf.find_value_for_key(
             'always_eager') is False
 
+    def test_clear_removes_preconfigured_override(self):
+        with self.Celery(task_always_eager=True) as app:
+            assert app.conf.task_always_eager is True
+            app.conf.clear()
+            assert app.conf.task_always_eager is False
+
     def test_table(self):
         assert self.app.conf.table(with_defaults=True)
         assert self.app.conf.table(with_defaults=False)
