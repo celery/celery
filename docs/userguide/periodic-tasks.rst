@@ -479,6 +479,60 @@ location for this file:
 
     To daemonize beat see :ref:`daemonizing`.
 
+.. _beat-health-checks:
+
+Health checks
+-------------
+
+.. versionadded:: 5.7
+
+By default there's no way to check whether a running beat process is
+still healthy. If you enable the
+:setting:`beat_enable_remote_control` setting, beat joins the same
+remote-control exchange the workers use (as a node named
+``celerybeat@hostname``) and answers :program:`celery inspect ping`:
+
+.. code-block:: console
+
+    $ celery -A proj inspect ping -t 5 -d celerybeat@$(hostname)
+    ->  celerybeat@example.com: OK
+            pong
+
+The command exits non-zero when beat doesn't reply within the
+timeout, so it can be used directly as a liveness probe, for example
+in Kubernetes:
+
+.. code-block:: yaml
+
+    livenessProbe:
+      exec:
+        command:
+          - /bin/sh
+          - -c
+          - celery -A proj inspect ping -t 5 -d celerybeat@$(hostname)
+      initialDelaySeconds: 30
+      periodSeconds: 60
+
+Give :option:`--timeout <celery inspect --timeout>` room to spare: it
+defaults to one second, and the probe has to establish a broker
+connection before it can ask anything.
+
+The ping reply also carries a ``last_tick_ago`` field, holding the
+number of seconds since beat last woke up to check the schedule, which
+distinguishes a scheduler that's stuck from one that's merely idle.
+The default output prints only ``pong``, so read the field with
+:option:`--json <celery inspect --json>` or from Python:
+
+.. code-block:: pycon
+
+    >>> app.control.ping(destination=['celerybeat@example.com'])
+    [{'celerybeat@example.com': {'ok': 'pong', 'last_tick_ago': 3.73}}]
+
+Beat stamps the tick time *after* each scheduler pass returns, so an
+idle schedule lets ``last_tick_ago`` climb to the scheduler's maximum
+loop interval (:setting:`beat_max_loop_interval`, five minutes by
+default) before it resets. Pick alerting thresholds accordingly.
+
 .. _beat-custom-schedulers:
 
 Using custom scheduler classes
