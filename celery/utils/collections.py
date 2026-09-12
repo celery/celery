@@ -435,6 +435,7 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
             defaults=defaults,
             key_t=other.__dict__['key_t'],
             prefix=other.__dict__['prefix'],
+            _keys=other.__dict__['_keys'],
             maps=[changes] + defaults
         )
 
