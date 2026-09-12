@@ -664,6 +664,32 @@ class test_DatabaseBackend:
         cols = {c['name'] for c in inspector.get_columns('celery_taskmeta')}
         assert 'children' in cols
 
+    def test_store_result_task_without_children_attribute(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+
+        class TaskWithoutChildren:
+            pass
+
+        dummy = TaskWithoutChildren()
+        tb._update_result(dummy, 42, states.SUCCESS)
+        assert not hasattr(dummy, 'children')
+
+    def test_migrate_missing_columns_ignores_exceptions(self):
+        session_mgr = SessionManager()
+        mock_engine = Mock()
+        with patch('celery.backends.database.session.inspect', side_effect=Exception("inspect error")):
+            # Must not raise
+            session_mgr._migrate_missing_columns(mock_engine)
+
+    def test_migrate_missing_columns_when_table_not_exists(self):
+        session_mgr = SessionManager()
+        mock_engine = Mock()
+        mock_inspector = Mock()
+        mock_inspector.has_table.return_value = False
+        with patch('celery.backends.database.session.inspect', return_value=mock_inspector):
+            session_mgr._migrate_missing_columns(mock_engine)
+        mock_inspector.get_columns.assert_not_called()
+
     def test_mark_as_started(self):
         tb = DatabaseBackend(self.uri, app=self.app)
         tid = uuid()

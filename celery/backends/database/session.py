@@ -115,8 +115,7 @@ class SessionManager:
                     for col in table.columns:
                         if col.name not in existing_cols and col.nullable:
                             col_type = col.type.compile(engine.dialect)
-                            full_name = f"{schema}.{actual_name}" if schema else actual_name
-                            alter_stmt = f"ALTER TABLE {full_name} ADD COLUMN {col.name} {col_type}"
+                            alter_stmt = f"ALTER TABLE {table.fullname} ADD COLUMN {col.name} {col_type}"
                             with engine.begin() as conn:
                                 conn.execute(text(alter_stmt))
         except Exception:
