@@ -63,6 +63,67 @@ LIT_TUPLE_END = _literal(')', False, -1)
 LIT_TUPLE_END_SV = _literal(',)', False, -1)
 
 
+def _fast_scalar(v):
+    # type: (Any) -> Optional[str]
+    """Render a leaf value as `reprstream` would, or return None.
+
+    None means "not a simple leaf", which sends the whole object back to the
+    streaming path.
+    """
+    t = type(v)
+    if t is str:
+        return "'" + (v.replace("'", "\\'") if "'" in v else v) + "'"
+    if t is int or t is bool or t is float or t is complex or v is None:
+        return str(v)
+    if t is Decimal or t is range:
+        return repr(v)
+    return None
+
+
+def _fast_saferepr(o, maxlen):
+    # type: (Any, Optional[int]) -> Optional[str]
+    """Render a leaf, or a flat container of leaves, without the token stream.
+
+    Returns None whenever the streaming path is needed: nested containers,
+    anything whose exact type is not handled (subclasses included, since they
+    render as ``ClassName(...)``), and any result that would have to be
+    truncated. Because only depth-1 structures get here, no value of
+    `maxlevels` can cap them, and because the result is returned only when it
+    fits, the `maxlen` budget can never engage. Neither of those behaviours is
+    reimplemented.
+    """
+    t = type(o)
+    if t is dict:
+        parts = []
+        for k, v in o.items():
+            kr = _fast_scalar(k)
+            if kr is None:
+                return None
+            vr = _fast_scalar(v)
+            if vr is None:
+                return None
+            parts.append(kr + ': ' + vr)
+        res = '{' + ', '.join(parts) + '}'
+    elif t is list or t is tuple:
+        parts = []
+        for v in o:
+            vr = _fast_scalar(v)
+            if vr is None:
+                return None
+            parts.append(vr)
+        if t is list:
+            res = '[' + ', '.join(parts) + ']'
+        elif len(parts) == 1:
+            res = '(' + parts[0] + ',)'
+        else:
+            res = '(' + ', '.join(parts) + ')'
+    else:
+        res = _fast_scalar(o)
+        if res is None:
+            return None
+    return res if maxlen is None or len(res) <= maxlen else None
+
+
 def saferepr(o, maxlen=None, maxlevels=3, seen=None):
     # type: (Any, int, int, Set) -> str
     """Safe version of :func:`repr`.
@@ -72,6 +133,10 @@ def saferepr(o, maxlen=None, maxlevels=3, seen=None):
         for recursive objects.  With the maxlen set, it's often faster
         than built-in repr.
     """
+    if seen is None:
+        fast = _fast_saferepr(o, maxlen)
+        if fast is not None:
+            return fast
     return ''.join(_saferepr(
         o, maxlen=maxlen, maxlevels=maxlevels, seen=seen
     ))
