@@ -2,6 +2,7 @@ import errno
 import logging
 import socket
 from collections import deque
+from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
@@ -494,6 +495,35 @@ class test_Consumer(ConsumerTestCase):
         # blueprint.restart() starts fresh.
         old_conn.close.assert_called_once()
         assert c.connection is None
+
+    def test_bounds_already_open_sockets_before_collect(self):
+        # ``collect(socket_timeout=...)`` only sets the *default* timeout,
+        # which applies to sockets created afterwards.  It cannot bound a
+        # socket that is already open, so cleanup reads on a half-open
+        # connection (e.g. draining a pending BRPOP in the redis transport's
+        # ``Channel.close()``) block forever.  See GH-9705.
+        sock, peer = socket.socketpair()
+        try:
+            # Do not assume the process default; an earlier test may have
+            # changed it.
+            sock.settimeout(None)
+            c = self.get_consumer()
+            c.connection.transport.channels = [
+                SimpleNamespace(client=SimpleNamespace(
+                    connection=SimpleNamespace(_sock=sock))),
+            ]
+            # Record the timeout as seen by collect(), so this also proves the
+            # bound is applied *before* the cleanup reads from the socket.
+            seen = {}
+            c.connection.collect.side_effect = (
+                lambda **kw: seen.update(timeout=sock.gettimeout()))
+
+            c.on_connection_error_after_connected(Mock())
+
+            assert seen['timeout'] == COLLECT_SOCKET_TIMEOUT
+        finally:
+            sock.close()
+            peer.close()
 
     def test_register_with_event_loop(self):
         c = self.get_consumer()
