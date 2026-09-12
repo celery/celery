@@ -197,22 +197,12 @@ Example:
 .. code-block:: python
 
     # Put this in your conftest.py
-    @pytest.fixture(scope='session')
-    def celery_config():
-        return {
-            'broker_url': 'amqp://',
-            'result_backend': 'redis://'
-        }
+    @pytest.fixture(scope="session")
+    def celery_worker_parameters():
+        return {"shutdown_timeout": 30.0}
 
     def test_add(celery_worker):
         mytask.delay()
-
-
-    # If you wish to override some setting in one test cases
-    # only - you can use the ``celery`` mark:
-    @pytest.mark.celery(result_backend='rpc')
-    def test_other(celery_worker):
-        ...
 
 .. note::
 
