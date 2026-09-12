@@ -227,8 +227,9 @@ class ChainMap(MutableMapping):
 
     def pop(self, key, *default):
         # type: (Any, *Any) -> Any
+        _key = self._key(key)
         try:
-            return self.maps[0].pop(key, *default)
+            return self.maps[0].pop(_key, *default)
         except KeyError:
             raise KeyError(
                 f'Key not found in the first mapping: {key!r}')
@@ -269,7 +270,7 @@ class ChainMap(MutableMapping):
     def get(self, key, default=None):
         # type: (Any, Any) -> Any
         try:
-            return self[self._key(key)]
+            return self[key]
         except KeyError:
             return default
 
@@ -292,7 +293,6 @@ class ChainMap(MutableMapping):
 
     def setdefault(self, key, default=None):
         # type: (Any, Any) -> None
-        key = self._key(key)
         if key not in self:
             self[key] = default
 
@@ -397,7 +397,7 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
         except KeyError:
             if len(keys) > 1:
                 raise KeyError(
-                    'Key not found: {0!r} (with prefix: {0!r})'.format(*keys))
+                    'Key not found: {1!r} (with prefix: {0!r})'.format(*keys))
             raise
 
     def __setitem__(self, key, value):
@@ -422,8 +422,9 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
 
     def __contains__(self, key):
         # type: (str) -> bool
-        keys = self._to_keys(key)
-        return any(any(k in m for k in keys) for m in self.maps)
+        contains = super().__contains__
+        all_keys = self._to_keys(key) + (tuple(f(key) for f in self._keys) if self._keys else ())
+        return any(contains(k) for k in all_keys)
 
     def swap_with(self, other):
         # type: (ConfigurationView) -> None

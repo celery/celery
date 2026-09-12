@@ -8,6 +8,7 @@ import pytest
 from billiard.einfo import ExceptionInfo
 
 import t.skip
+from celery.app.utils import _new_key_to_old, _old_key_to_new
 from celery.utils.collections import (AttributeDict, BufferMap, ChainMap, ConfigurationView, DictAttribute,
                                       LimitedSet, Messagebuffer)
 from celery.utils.objects import Bunch
@@ -72,6 +73,14 @@ class test_ConfigurationView:
         sp = object()
         assert self.view.get('nonexisting', sp) is sp
 
+    def test_missing_key_with_prefix(self):
+        view = ConfigurationView({}, prefix='celery')
+        with pytest.raises(KeyError) as exc_info:
+            view['nonexisting']
+        assert exc_info.value.args[0] == (
+            "Key not found: 'nonexisting' (with prefix: 'celery_nonexisting')"
+        )
+
     def test_update(self):
         changes = dict(self.view.changes)
         self.view.update(a=1, b=2, c=3)
@@ -81,6 +90,22 @@ class test_ConfigurationView:
         assert 'changed_key' in self.view
         assert 'default_key' in self.view
         assert 'new' not in self.view
+
+    def test_contains_with_keys(self):
+        view = ConfigurationView(
+            {'task_always_eager': 1},
+            keys=(_old_key_to_new, _new_key_to_old),
+        )
+
+        assert view['CELERY_ALWAYS_EAGER'] == 1
+        assert 'CELERY_ALWAYS_EAGER' in view
+
+    def test_contains_applies_key_t(self):
+        view = ConfigurationView({'FOO': 1})
+        view.__dict__['key_t'] = str.upper
+
+        assert view['foo'] == 1
+        assert 'foo' in view
 
     def test_repr(self):
         assert 'changed_key' in repr(self.view)
@@ -466,3 +491,21 @@ class test_ChainMap:
         callback.assert_not_called()
         a.update(x=1)
         callback.assert_called_once_with(x=1)
+
+    def test_pop_applies_key_t(self):
+        cm = ChainMap(key_t=lambda key: key + '!')
+        cm['foo'] = 1
+        assert cm.pop('foo') == 1
+        assert 'foo' not in cm
+
+    def test_get_applies_key_t_once(self):
+        cm = ChainMap(key_t=lambda key: key + '!')
+        cm['foo'] = 1
+        assert cm.get('foo') == 1
+
+    def test_setdefault_applies_key_t_once(self):
+        cm = ChainMap(key_t=lambda key: key + '!')
+        cm.setdefault('foo', 1)
+        assert cm.changes == {'foo!': 1}
+        cm.setdefault('foo', 2)
+        assert cm.changes == {'foo!': 1}
