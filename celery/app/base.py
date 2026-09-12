@@ -38,7 +38,7 @@ from celery.utils.functional import first, head_from_fun, maybe_list
 from celery.utils.imports import gen_task_name, instantiate, symbol_by_name
 from celery.utils.log import get_logger
 from celery.utils.objects import FallbackContext, mro_lookup
-from celery.utils.time import maybe_make_aware, timezone, to_utc
+from celery.utils.time import maybe_make_aware, maybe_seconds, timezone, to_utc
 
 from ..utils.annotations import annotation_is_class, annotation_issubclass, get_optional_arg
 from ..utils.quorum_queues import detect_quorum_queues
@@ -935,6 +935,14 @@ class Celery:
             expires = options.pop('expires', None)
         else:
             options.pop('expires', None)
+
+        # Durations may be given as a timedelta instead of a number of
+        # seconds; normalise them before anything downstream does
+        # arithmetic or comparisons with them.
+        countdown = maybe_seconds(countdown)
+        expires = maybe_seconds(expires)
+        time_limit = maybe_seconds(time_limit)
+        soft_time_limit = maybe_seconds(soft_time_limit)
 
         ignore_result = options.pop('ignore_result', False)
         options = router.route(

@@ -14,8 +14,8 @@ else:
 from celery.utils.iso8601 import parse_iso8601
 from celery.utils.time import (LocalTimezone, _is_imaginary, delta_resolution, ffwd,
                                get_exponential_backoff_interval, humanize_seconds, localize, make_aware,
-                               maybe_iso8601, maybe_make_aware, maybe_timedelta, rate, remaining, timezone,
-                               utcoffset)
+                               maybe_iso8601, maybe_make_aware, maybe_seconds, maybe_timedelta, rate, remaining,
+                               timezone, utcoffset)
 
 
 class test_LocalTimezone:
@@ -137,6 +137,20 @@ def test_iso8601_string_datetime(date_str, expected):
 ])
 def test_maybe_timedelta(arg, expected):
     assert maybe_timedelta(arg) == expected
+
+
+@pytest.mark.parametrize('arg,expected', [
+    (timedelta(seconds=30), 30.0),
+    (timedelta(hours=2), 7200.0),
+    (timedelta(milliseconds=1500), 1.5),
+    (timedelta(0), 0.0),
+    (timedelta(seconds=-30), -30.0),
+    (30, 30),
+    (30.6, 30.6),
+    (None, None),
+])
+def test_maybe_seconds(arg, expected):
+    assert maybe_seconds(arg) == expected
 
 
 def test_remaining():

@@ -14,7 +14,7 @@ from celery import signals
 from celery.utils.nodenames import anon_nodename
 from celery.utils.saferepr import saferepr
 from celery.utils.text import indent as textindent
-from celery.utils.time import maybe_make_aware
+from celery.utils.time import maybe_make_aware, maybe_seconds
 
 from . import routes as _routes
 
@@ -339,6 +339,10 @@ class AMQP:
             raise TypeError('task args must be a list or tuple')
         if not isinstance(kwargs, Mapping):
             raise TypeError('task keyword arguments must be a mapping')
+        countdown = maybe_seconds(countdown)
+        expires = maybe_seconds(expires)
+        time_limit = maybe_seconds(time_limit)
+        soft_time_limit = maybe_seconds(soft_time_limit)
         if countdown:  # convert countdown to ETA
             self._verify_seconds(countdown, 'countdown')
             now = now or self.app.now()
@@ -432,6 +436,10 @@ class AMQP:
             raise TypeError('task args must be a list or tuple')
         if not isinstance(kwargs, Mapping):
             raise TypeError('task keyword arguments must be a mapping')
+        countdown = maybe_seconds(countdown)
+        expires = maybe_seconds(expires)
+        time_limit = maybe_seconds(time_limit)
+        soft_time_limit = maybe_seconds(soft_time_limit)
         if countdown:  # convert countdown to ETA
             self._verify_seconds(countdown, 'countdown')
             now = now or self.app.now()

@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 
@@ -250,6 +251,26 @@ class test_AMQP_proto1:
         self.app.amqp.utc = False
         self.app.amqp.as_task_v1(uuid(), 'foo', countdown=30, expires=40)
 
+    def test_timedelta_durations_match_seconds(self):
+        now = to_utc(datetime.now(timezone.utc)).astimezone(self.app.timezone)
+        task_id = uuid()
+        as_delta = self.app.amqp.as_task_v1(
+            task_id, 'foo', now=now,
+            countdown=timedelta(seconds=30),
+            expires=timedelta(seconds=40),
+            time_limit=timedelta(minutes=2),
+            soft_time_limit=timedelta(minutes=1),
+        )
+        as_seconds = self.app.amqp.as_task_v1(
+            task_id, 'foo', now=now,
+            countdown=30.0, expires=40.0,
+            time_limit=120.0, soft_time_limit=60.0,
+        )
+        assert as_delta.body == as_seconds.body
+        assert as_delta.properties == as_seconds.properties
+        assert as_delta.body['timelimit'] == (120.0, 60.0)
+        json.dumps(as_delta.body)
+
 
 class test_AMQP_Base:
     def setup_method(self):
@@ -496,6 +517,49 @@ class test_as_task_v2(test_AMQP_Base):
         )
         assert m.headers['expires'] == (
             now + timedelta(seconds=30)).isoformat()
+
+    def test_countdown_as_timedelta_to_eta(self):
+        now = to_utc(datetime.now(timezone.utc)).astimezone(self.app.timezone)
+        m = self.app.amqp.as_task_v2(
+            uuid(), 'foo', countdown=timedelta(minutes=10), now=now,
+        )
+        assert m.headers['eta'] == (now + timedelta(minutes=10)).isoformat()
+
+    def test_expires_as_timedelta_to_datetime(self):
+        now = to_utc(datetime.now(timezone.utc)).astimezone(self.app.timezone)
+        m = self.app.amqp.as_task_v2(
+            uuid(), 'foo', expires=timedelta(minutes=30), now=now,
+        )
+        assert m.headers['expires'] == (
+            now + timedelta(minutes=30)).isoformat()
+
+    def test_timedelta_durations_match_seconds(self):
+        now = to_utc(datetime.now(timezone.utc)).astimezone(self.app.timezone)
+        task_id = uuid()
+        as_delta = self.app.amqp.as_task_v2(
+            task_id, 'foo', now=now,
+            countdown=timedelta(hours=2),
+            expires=timedelta(hours=4),
+            time_limit=timedelta(minutes=61),
+            soft_time_limit=timedelta(minutes=60),
+        )
+        as_seconds = self.app.amqp.as_task_v2(
+            task_id, 'foo', now=now,
+            countdown=7200.0,
+            expires=14400.0,
+            time_limit=3660.0,
+            soft_time_limit=3600.0,
+        )
+        assert as_delta.headers == as_seconds.headers
+
+    def test_timelimit_as_timedelta_is_serializable(self):
+        m = self.app.amqp.as_task_v2(
+            uuid(), 'foo',
+            time_limit=timedelta(hours=2),
+            soft_time_limit=timedelta(hours=1),
+        )
+        assert m.headers['timelimit'] == [7200.0, 3600.0]
+        json.dumps(m.headers)
 
     def test_eta_to_datetime(self):
         eta = datetime.now(timezone.utc)

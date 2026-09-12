@@ -31,7 +31,7 @@ else:
 logger = logging.getLogger(__name__)
 
 __all__ = (
-    'LocalTimezone', 'timezone', 'maybe_timedelta',
+    'LocalTimezone', 'timezone', 'maybe_timedelta', 'maybe_seconds',
     'delta_resolution', 'remaining', 'rate', 'weekday',
     'humanize_seconds', 'maybe_iso8601', 'is_naive',
     'make_aware', 'localize', 'to_utc', 'maybe_make_aware',
@@ -189,6 +189,19 @@ def maybe_timedelta(delta: int) -> timedelta:
     """Convert integer to timedelta, if argument is an integer."""
     if isinstance(delta, numbers.Real):
         return timedelta(seconds=delta)
+    return delta
+
+
+def maybe_seconds(delta: float | timedelta | None) -> float | None:
+    """Convert timedelta to seconds, if argument is a timedelta.
+
+    Any other value (including :const:`None`) is returned unchanged, so this
+    can be applied to duration arguments that are usually given as a number
+    of seconds but may also be expressed as a
+    :class:`~datetime.timedelta`.
+    """
+    if isinstance(delta, timedelta):
+        return delta.total_seconds()
     return delta
 
 

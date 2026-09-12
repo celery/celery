@@ -553,15 +553,18 @@ class Task:
 
             kwargs (Dict): The keyword arguments to pass on to the task.
 
-            countdown (float): Number of seconds into the future that the
-                task should execute.  Defaults to immediate execution.
+            countdown (float, ~datetime.timedelta): Number of seconds into
+                the future that the task should execute, or an equivalent
+                :class:`~datetime.timedelta`.  Defaults to immediate
+                execution.
 
             eta (~datetime.datetime): Absolute time and date of when the task
                 should be executed.  May not be specified if `countdown`
                 is also supplied.
 
-            expires (float, ~datetime.datetime): Datetime or
-                seconds in the future for the task should expire.
+            expires (float, ~datetime.timedelta, ~datetime.datetime):
+                Datetime, :class:`~datetime.timedelta`, or seconds in the
+                future for the task should expire.
                 The task won't be executed after the expiration time.
 
             shadow (str): Override task name used in logs/monitoring.
@@ -579,10 +582,11 @@ class Task:
             retry_policy (Mapping): Override the retry policy used.
                 See the :setting:`task_publish_retry_policy` setting.
 
-            time_limit (int): If set, overrides the default time limit.
+            time_limit (int, ~datetime.timedelta): If set, overrides the
+                default time limit.
 
-            soft_time_limit (int): If set, overrides the default soft
-                time limit.
+            soft_time_limit (int, ~datetime.timedelta): If set, overrides
+                the default soft time limit.
 
             queue (str, kombu.Queue): The queue to route the task to.
                 This must be a key present in :setting:`task_queues`, or
@@ -799,7 +803,9 @@ class Task:
 
                 If no exception was raised it will raise the ``exc``
                 argument provided.
-            countdown (float): Time in seconds to delay the retry for.
+            countdown (float, ~datetime.timedelta): Time in seconds, or an
+                equivalent :class:`~datetime.timedelta`, to delay the retry
+                for.
             eta (~datetime.datetime): Explicit time and date to run the
                 retry at.
             max_retries (int): If set, overrides the default retry limit for

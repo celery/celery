@@ -1630,6 +1630,38 @@ class test_App:
             "expires should not appear in kwargs (passed positionally)"
 
     @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_accepts_timedelta_durations(self, detect_quorum_queues):
+        """Durations may be given as timedeltas instead of seconds."""
+
+        @self.app.task(name='test_task_timedelta_durations')
+        def test_task():
+            pass
+
+        self.app.finalize()
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        self.app.send_task(
+            'test_task_timedelta_durations', (1,),
+            connection=connection, router=router,
+            countdown=timedelta(minutes=5),
+            expires=timedelta(hours=1),
+            time_limit=timedelta(minutes=2),
+            soft_time_limit=timedelta(minutes=1),
+        )
+
+        args, kwargs = self.app.amqp.create_task_message.call_args
+        bound = inspect.signature(AMQP.as_task_v2).bind(None, *args, **kwargs)
+        assert bound.arguments['countdown'] == 300.0
+        assert bound.arguments['expires'] == 3600.0
+        assert bound.arguments['time_limit'] == 120.0
+        assert bound.arguments['soft_time_limit'] == 60.0
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
     def test_send_task_registry_without_get_method(self, detect_quorum_queues):
         """send_task should handle registries that lack a .get() method."""
 

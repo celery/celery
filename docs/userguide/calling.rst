@@ -279,7 +279,16 @@ If the task has a :attr:`~@Task.rate_limit` configured, the rate limit
 is enforced once the ETA has passed: the task starts no earlier than its
 ETA, and rate limiting may delay it further beyond that point.
 
-While `countdown` is an integer, `eta` must be a :class:`~datetime.datetime`
+`countdown` is a number of seconds, but may also be given as a
+:class:`~datetime.timedelta`, which can be clearer for longer delays:
+
+.. code-block:: pycon
+
+    >>> from datetime import timedelta
+
+    >>> add.apply_async((2, 2), countdown=timedelta(hours=2))
+
+`eta` must be a :class:`~datetime.datetime`
 object, specifying an exact date and time (including millisecond precision,
 and timezone information):
 
@@ -339,16 +348,19 @@ Expiration
 ==========
 
 The `expires` argument defines an optional expiry time,
-either as seconds after task publish, or a specific date and time using
-:class:`~datetime.datetime`:
+either as seconds after task publish, as a :class:`~datetime.timedelta`,
+or as a specific date and time using :class:`~datetime.datetime`:
 
 .. code-block:: pycon
 
     >>> # Task expires after one minute from now.
     >>> add.apply_async((10, 10), expires=60)
 
-    >>> # Also supports datetime
+    >>> # Also supports timedelta
     >>> from datetime import datetime, timedelta, timezone
+    >>> add.apply_async((10, 10), expires=timedelta(minutes=1))
+
+    >>> # Also supports datetime
     >>> add.apply_async((10, 10), kwargs,
     ...                 expires=datetime.now(timezone.utc) + timedelta(days=1))
 
