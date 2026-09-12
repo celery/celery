@@ -803,6 +803,82 @@ class test_DatabaseBackend_result_extended():
         assert meta['stamp2'] == 'val2'
         assert meta['stamps'] == {'stamp1': ['val1'], 'stamp2': 'val2'}
 
+    def test_store_result_without_stamps(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+
+        request = Context(args=(1, 2), kwargs={'foo': 'bar'},
+                          task='mytask', retries=2,
+                          hostname='celery@worker_1',
+                          delivery_info={'routing_key': 'celery'})
+
+        tb.store_result(tid, {'fizz': 'buzz'}, states.SUCCESS, request=request)
+        meta = tb.get_task_meta(tid)
+
+        assert meta['result'] == {'fizz': 'buzz'}
+        assert meta.get('stamps') is None
+        assert 'stamped_headers' not in meta
+
+    def test_store_result_stamps_edge_cases(self):
+        from kombu.utils.encoding import ensure_bytes
+
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+
+        # 1. Header declared in stamped_headers but absent in meta
+        request = Context(args=(), kwargs={}, task='mytask',
+                          stamped_headers=['stamp1', 'stamp_missing'],
+                          stamps={'stamp1': 'val1'})
+        tb.store_result(tid, 'res', states.SUCCESS, request=request)
+        meta = tb.get_task_meta(tid)
+        assert meta['stamp1'] == 'val1'
+        assert 'stamp_missing' not in meta
+        assert meta['stamped_headers'] == ['stamp1', 'stamp_missing']
+
+        # 2. Corrupt / non-dict stamps decoded payload
+        tid2 = uuid()
+        tb.store_result(tid2, 'res', states.SUCCESS, request=request)
+        session = tb.ResultSession()
+        task2 = session.query(tb.task_cls).filter(tb.task_cls.task_id == tid2).first()
+        task2.stamps = ensure_bytes(tb.encode("not-a-dict"))
+        session.commit()
+        session.close()
+        tb._cache.clear()
+        meta_non_dict = tb.get_task_meta(tid2)
+        assert meta_non_dict['result'] == 'res'
+
+        # 3. stamps_info dict with stamps but without stamped_headers
+        tid3 = uuid()
+        tb.store_result(tid3, 'res', states.SUCCESS, request=request)
+        session = tb.ResultSession()
+        task3 = session.query(tb.task_cls).filter(tb.task_cls.task_id == tid3).first()
+        task3.stamps = ensure_bytes(tb.encode({'stamps': {'only_stamps': 'value'}}))
+        session.commit()
+        session.close()
+        tb._cache.clear()
+        meta_only_stamps = tb.get_task_meta(tid3)
+        assert meta_only_stamps['only_stamps'] == 'value'
+        assert 'stamped_headers' not in meta_only_stamps
+
+        # 4. stamps_info dict with stamped_headers but without stamps
+        tid4 = uuid()
+        tb.store_result(tid4, 'res', states.SUCCESS, request=request)
+        session = tb.ResultSession()
+        task4 = session.query(tb.task_cls).filter(tb.task_cls.task_id == tid4).first()
+        task4.stamps = ensure_bytes(tb.encode({'stamped_headers': ['only_header']}))
+        session.commit()
+        session.close()
+        tb._cache.clear()
+        meta_only_headers = tb.get_task_meta(tid4)
+        assert meta_only_headers['stamped_headers'] == ['only_header']
+
+        # 5. Task object without stamps attribute (hasattr(task, 'stamps') == False)
+        class TaskWithoutStamps:
+            pass
+        dummy = TaskWithoutStamps()
+        tb._update_result(dummy, 'ok', states.SUCCESS)
+        assert not hasattr(dummy, 'stamps')
+
     @pytest.mark.parametrize(
         'result_serializer, args, kwargs',
         [
