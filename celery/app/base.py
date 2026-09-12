@@ -82,6 +82,9 @@ else:
 BUILTIN_FIXUPS = {
     'celery.fixups.django:fixup',
 }
+# Set from prefork.process_initializer() as well: a pool child started with
+# spawn imports this module before it knows it is one, and @app.task has to
+# bind differently once it does.
 USING_EXECV = os.environ.get('FORKED_BY_MULTIPROCESSING')
 
 ERR_ENVVAR_NOT_SET = """

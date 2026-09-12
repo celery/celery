@@ -73,10 +73,15 @@ class Request:
     time_limits = (None, None)
     _already_revoked = False
     _already_cancelled = False
-    _revoked_in_backend = False
     _terminate_on_ack = None
     _apply_result = None
     _tzlocal = None
+
+    #: Timer entry for this request's pending ETA/countdown callback, set by
+    #: :mod:`celery.worker.strategy` when the request is scheduled so that
+    #: :meth:`celery.worker.consumer.Consumer.on_close` can cancel it on
+    #: connection loss.  ``None`` for requests without an ETA.
+    _eta_timer_entry = None
 
     if not IS_PYPY:  # pragma: no cover
         __slots__ = (
@@ -459,11 +464,10 @@ class Request:
         task_ready(self)
         self.send_event('task-revoked',
                         terminated=terminated, signum=signum, expired=expired)
-        if not self._revoked_in_backend:
-            self.task.backend.mark_as_revoked(
-                self.id, reason, request=self._context,
-                store_result=self.store_errors,
-            )
+        self.task.backend.mark_as_revoked(
+            self.id, reason, request=self._context,
+            store_result=self.store_errors,
+        )
         self.acknowledge()
         self._already_revoked = True
         send_revoked(self.task, request=self._context,
