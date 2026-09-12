@@ -1248,6 +1248,32 @@ class test_result_set:
         assert rs.get(timeout=TIMEOUT) == [2, 4]
 
     @flaky
+    def test_join_exhausted_timeout(self, manager):
+        """A spent positive join budget must not become an unlimited wait."""
+        if not manager.app.conf.result_backend.startswith(('redis', 'rpc')):
+            raise pytest.skip('Requires redis or rpc result backend.')
+
+        assert_ping(manager)
+
+        # Simulate taking 0.3s to handle the first result, exhausting
+        # the 0.2s join timeout before waiting for the second task.
+        completed = add.delay(1, 1)
+        completed.get(timeout=TIMEOUT)
+        rs = ResultSet([completed, delayed_sum.delay([2, 2], pause_time=2)])
+        received = []
+
+        def collect(task_id, value):
+            received.append((task_id, value))
+            sleep(0.3)
+
+        try:
+            with pytest.raises(TimeoutError):
+                rs.join(timeout=0.2, callback=collect)
+            assert received == [(completed.id, 2)]
+        finally:
+            rs.get(timeout=TIMEOUT)
+
+    @flaky
     def test_join_native_timeout_zero_gives_up_on_pending_results(self, manager):
         """timeout=0 means poll once, not poll until the results show up."""
         if not isinstance(manager.app.backend, BaseKeyValueStoreBackend):
