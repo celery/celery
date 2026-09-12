@@ -127,7 +127,8 @@ class test_trace(TraceCase):
             _, _, expected_runtime = self.trace(self.add, (2, 2), {})
             on_success.assert_called()
             runtime = on_success.call_args[1]['runtime']
-            assert expected_runtime == runtime
+            assert isinstance(runtime, float)
+            assert runtime == expected_runtime
         finally:
             signals.task_success.receivers[:] = []
 

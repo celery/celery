@@ -63,4 +63,5 @@ class test_after_task_publish:
 class test_task_success:
     def test_runtime_is_provided(self, celery_setup: CeleryTestSetup):
         noop.s().apply_async(queue=celery_setup.worker.worker_queue)
-        celery_setup.worker.wait_for_log("task_success_runtime=")
+        celery_setup.worker.wait_for_log("task_success_runtime=\d+\.\d+")
+
