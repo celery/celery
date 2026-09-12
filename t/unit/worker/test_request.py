@@ -792,6 +792,22 @@ class test_Request(RequestCase):
             assert job._already_revoked
             assert job.acknowledged
 
+    def test_announce_revoked_skips_backend_when_revoked_via_control(self):
+        # The control revoke path stores the REVOKED result and runs the
+        # chord bookkeeping through mark_as_revoked(request=...). The later
+        # announce must not report the chord member to the backend a second
+        # time, while it still acknowledges the message and fires signals.
+        job = self.xRequest()
+        job._revoked_in_backend = True
+        with patch.object(job.task.backend, 'mark_as_revoked') as mar:
+            with self.assert_signal_called(
+                    task_revoked, sender=job.task, request=job._context,
+                    terminated=False, expired=False, signum=None):
+                job._announce_revoked('revoked', False, None, False)
+        mar.assert_not_called()
+        assert job.acknowledged
+        assert job._already_revoked
+
     @pytest.mark.parametrize(
         "header_to_revoke",
         [
