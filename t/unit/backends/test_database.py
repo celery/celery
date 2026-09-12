@@ -9,6 +9,7 @@ import pytest
 from celery import states, uuid
 from celery.app.task import Context
 from celery.exceptions import ImproperlyConfigured
+from celery.result import result_from_tuple
 
 pytest.importorskip('sqlalchemy')
 
@@ -592,6 +593,76 @@ class test_DatabaseBackend:
 
         with pytest.raises(Exception):
             tb.get_task_meta(tid)
+
+    @pytest.mark.parametrize(
+        'result_serializer',
+        ['pickle', 'json'],
+        ids=['using pickle', 'using json']
+    )
+    def test_store_result_with_children(self, result_serializer):
+        self.app.conf.result_serializer = result_serializer
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        child1 = self.app.AsyncResult(uuid())
+        child2 = self.app.AsyncResult(uuid())
+
+        request = Context()
+        request.children.extend([child1, child2])
+        tb.store_result(tid, 42, states.SUCCESS, request=request)
+        meta = tb.get_task_meta(tid)
+
+        assert meta['result'] == 42
+        assert len(meta['children']) == 2
+        deserialized = [result_from_tuple(c, self.app) for c in meta['children']]
+        assert [c.id for c in deserialized] == [child1.id, child2.id]
+
+    def test_async_result_children(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        child_id = uuid()
+        child = self.app.AsyncResult(child_id)
+
+        request = Context()
+        request.children.append(child)
+        tb.store_result(tid, 42, states.SUCCESS, request=request)
+
+        result = self.app.AsyncResult(tid, backend=tb)
+        children = result.children
+        assert children is not None
+        assert len(children) == 1
+        assert children[0].id == child_id
+
+    def test_store_result_no_children(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        tb.store_result(tid, 42, states.SUCCESS)
+        meta = tb.get_task_meta(tid)
+        assert meta['children'] is None
+        result = self.app.AsyncResult(tid)
+        assert result.children is None
+
+    def test_migrate_missing_columns(self):
+        import sqlalchemy as sa
+        engine = sa.create_engine('sqlite:///:memory:')
+        metadata = sa.MetaData()
+        sa.Table(
+            'celery_taskmeta', metadata,
+            sa.Column('id', sa.Integer, primary_key=True),
+            sa.Column('task_id', sa.String(155), unique=True),
+            sa.Column('status', sa.String(50)),
+            sa.Column('result', sa.LargeBinary, nullable=True),
+            sa.Column('date_done', sa.DateTime, nullable=True),
+            sa.Column('traceback', sa.Text, nullable=True),
+        )
+        metadata.create_all(engine)
+
+        session_mgr = SessionManager()
+        session_mgr.prepare_models(engine)
+
+        from sqlalchemy import inspect
+        inspector = inspect(engine)
+        cols = {c['name'] for c in inspector.get_columns('celery_taskmeta')}
+        assert 'children' in cols
 
     def test_mark_as_started(self):
         tb = DatabaseBackend(self.uri, app=self.app)

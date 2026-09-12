@@ -159,10 +159,10 @@ class DatabaseBackend(BaseBackend):
                                      traceback=traceback, request=request,
                                      format_date=False, encode=True)
 
-        # Exclude the primary key id and task_id columns
-        # as we should not set it None
+        # Exclude the primary key id, task_id, and children columns
+        # as we should not set it None or handle children separately
         columns = [column.name for column in self.task_cls.__table__.columns
-                   if column.name not in {'id', 'task_id'}]
+                   if column.name not in {'id', 'task_id', 'children'}]
 
         # Iterate through the columns name of the table
         # to set the value from meta.
@@ -170,6 +170,13 @@ class DatabaseBackend(BaseBackend):
         for column in columns:
             value = meta.get(column)
             setattr(task, column, value)
+
+        if hasattr(task, 'children'):
+            children = meta.get('children')
+            if children:
+                setattr(task, 'children', ensure_bytes(self.encode(children)))
+            else:
+                setattr(task, 'children', None)
 
     def _get_task_meta_for(self, task_id):
         """Get task meta-data for a task by id."""
@@ -187,6 +194,8 @@ class DatabaseBackend(BaseBackend):
                 data['args'] = self.decode(data['args'])
             if data.get('kwargs', None) is not None:
                 data['kwargs'] = self.decode(data['kwargs'])
+            if data.get('children', None) is not None:
+                data['children'] = self.decode(data['children'])
             return self.meta_from_decoded(data)
 
     def _decode_stored_result(self, payload):

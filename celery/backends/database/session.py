@@ -2,7 +2,7 @@
 import time
 
 from kombu.utils.compat import register_after_fork
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import DatabaseError
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
@@ -98,7 +98,30 @@ class SessionManager:
                         raise
                 else:
                     break
+            self._migrate_missing_columns(engine)
             self.prepared = True
+
+    def _migrate_missing_columns(self, engine):
+        """Add missing nullable columns to existing tables if needed."""
+        try:
+            inspector = inspect(engine)
+            for table in ResultModelBase.metadata.tables.values():
+                actual_name = table.name
+                schema = table.schema
+                if inspector.has_table(actual_name, schema=schema):
+                    existing_cols = {
+                        col['name'] for col in inspector.get_columns(actual_name, schema=schema)
+                    }
+                    for col in table.columns:
+                        if col.name not in existing_cols and col.nullable:
+                            col_type = col.type.compile(engine.dialect)
+                            full_name = f"{schema}.{actual_name}" if schema else actual_name
+                            alter_stmt = f"ALTER TABLE {full_name} ADD COLUMN {col.name} {col_type}"
+                            with engine.begin() as conn:
+                                conn.execute(text(alter_stmt))
+        except Exception:
+            # Ignore errors if dialect or database permissions do not allow ALTER TABLE
+            pass
 
     def session_factory(self, dburi, **kwargs):
         engine, session = self.create_session(dburi, **kwargs)
