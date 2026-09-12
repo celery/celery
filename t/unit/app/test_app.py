@@ -204,6 +204,15 @@ class test_App:
             assert second.name.endswith('.SecondTask.handle')
             assert first.name != second.name
 
+    def test_task_names_preserve_legacy_name_without_collision(self):
+        with self.Celery('foozibari') as app:
+            class Reports:
+                @app.task
+                def nightly():
+                    return 'ok'
+
+            assert Reports.nightly.name == app.gen_task_name('nightly', __name__)
+
     def test_task_names_reuse_disambiguated_callable(self):
         with self.Celery('foozibari') as app:
             app.finalize()
