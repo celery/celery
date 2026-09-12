@@ -102,6 +102,22 @@ class test_ConfigurationView:
         assert 'default_key' in self.view
         assert 'new' not in self.view
 
+    def test_contains_with_keys(self):
+        view = ConfigurationView(
+            {'task_always_eager': 1},
+            keys=(_old_key_to_new, _new_key_to_old),
+        )
+
+        assert view['CELERY_ALWAYS_EAGER'] == 1
+        assert 'CELERY_ALWAYS_EAGER' in view
+
+    def test_contains_applies_key_t(self):
+        view = ConfigurationView({'FOO': 1})
+        view.__dict__['key_t'] = str.upper
+
+        assert view['foo'] == 1
+        assert 'foo' in view
+
     def test_repr(self):
         assert 'changed_key' in repr(self.view)
         assert 'default_key' in repr(self.view)
