@@ -453,7 +453,7 @@ class test_App:
     def test_task_execv_shared_finalizer_does_not_collide(self):
         finalizers = set(_state._on_app_finalizers)
         try:
-            with patch('celery.app.base._using_execv', return_value=True):
+            with patch.object(_appbase, 'USING_EXECV', True):
                 with self.Celery('foozibari', set_as_current=True) as finalized_app:
                     finalized_app.finalize()
 
