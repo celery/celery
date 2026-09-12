@@ -384,13 +384,13 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
     def __getitem__(self, key):
         # type: (str) -> Any
         keys = self._to_keys(key)
-        getitem = super().__getitem__
-        for k in keys + (
-                tuple(f(key) for f in self._keys) if self._keys else ()):
-            try:
-                return getitem(k)
-            except KeyError:
-                pass
+        all_keys = keys + (tuple(f(key) for f in self._keys) if self._keys else ())
+        for mapping in self.maps:
+            for k in all_keys:
+                try:
+                    return mapping[self._key(k)]
+                except KeyError:
+                    pass
         try:
             # support subclasses implementing __missing__
             return self.__missing__(key)
@@ -435,6 +435,7 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
             defaults=defaults,
             key_t=other.__dict__['key_t'],
             prefix=other.__dict__['prefix'],
+            _keys=other.__dict__['_keys'],
             maps=[changes] + defaults
         )
 
