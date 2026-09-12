@@ -84,31 +84,31 @@ class Settings(ConfigurationView):
     @property
     def broker_read_url(self):
         return (
-            os.environ.get('CELERY_BROKER_READ_URL') or
             self.get('broker_read_url') or
+            os.environ.get('CELERY_BROKER_READ_URL') or
             self.broker_url
         )
 
     @property
     def broker_write_url(self):
         return (
-            os.environ.get('CELERY_BROKER_WRITE_URL') or
             self.get('broker_write_url') or
+            os.environ.get('CELERY_BROKER_WRITE_URL') or
             self.broker_url
         )
 
     @property
     def broker_url(self):
         return (
-            os.environ.get('CELERY_BROKER_URL') or
-            self.first('broker_url', 'broker_host')
+            self.first('broker_url', 'broker_host') or
+            os.environ.get('CELERY_BROKER_URL')
         )
 
     @property
     def result_backend(self):
         return (
-            os.environ.get('CELERY_RESULT_BACKEND') or
-            self.first('result_backend', 'CELERY_RESULT_BACKEND')
+            self.first('result_backend', 'CELERY_RESULT_BACKEND') or
+            os.environ.get('CELERY_RESULT_BACKEND')
         )
 
     @property
