@@ -10,11 +10,13 @@ from billiard.pool import ApplyResult
 from kombu.asynchronous import Hub
 
 import t.skip
+from celery.app import base as app_base
 from celery.app.defaults import DEFAULTS
 from celery.concurrency.asynpool import iterate_file_descriptors_safely
 from celery.utils.collections import AttributeDict
 from celery.utils.functional import noop
 from celery.utils.objects import Bunch
+from t.unit.conftest import restore_execv_state
 
 try:
     from celery.concurrency import asynpool
@@ -86,13 +88,11 @@ class test_process_initializer:
                 'celeryd', hostname='awesome.worker.com',
             )
 
-            with patch('celery.app.trace.setup_worker_optimizations') as S:
+            with restore_execv_state(), \
+                    patch('celery.app.trace.setup_worker_optimizations') as S:
                 os.environ['FORKED_BY_MULTIPROCESSING'] = '1'
-                try:
-                    process_initializer(app, 'luke.worker.com')
-                    S.assert_called_with(app, 'luke.worker.com')
-                finally:
-                    os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+                process_initializer(app, 'luke.worker.com')
+                S.assert_called_with(app, 'luke.worker.com')
 
             os.environ['CELERY_LOG_FILE'] = 'worker%I.log'
             app.log.setup = Mock(name='log_setup')
@@ -109,10 +109,15 @@ class test_process_initializer:
 
         with self.Celery(loader=self.Loader) as app:
             app.conf = AttributeDict(DEFAULTS)
-            with patch.dict(os.environ), patch('celery.app.trace.setup_worker_optimizations') as S:
+            with restore_execv_state(), \
+                    patch('celery.app.trace.setup_worker_optimizations') as S:
                 os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+                app_base.USING_EXECV = None
                 process_initializer(app, 'spawned.worker.com')
                 assert os.environ['FORKED_BY_MULTIPROCESSING'] == '1'
+                # base was imported before the child knew it was spawned, so
+                # the flag has to be set too, not just the variable.
+                assert app_base.USING_EXECV
                 S.assert_called_with(app, 'spawned.worker.com')
             assert app.loader.init_worker.call_count
 
@@ -124,10 +129,13 @@ class test_process_initializer:
 
         with self.Celery(loader=self.Loader) as app:
             app.conf = AttributeDict(DEFAULTS)
-            with patch.dict(os.environ), patch('celery.app.trace.setup_worker_optimizations') as S:
+            with restore_execv_state(), \
+                    patch('celery.app.trace.setup_worker_optimizations') as S:
                 os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+                app_base.USING_EXECV = None
                 process_initializer(app, 'forked.worker.com')
                 assert 'FORKED_BY_MULTIPROCESSING' not in os.environ
+                assert not app_base.USING_EXECV
                 S.assert_not_called()
 
     @patch('celery.platforms.set_pdeathsig')

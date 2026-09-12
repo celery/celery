@@ -14,6 +14,7 @@ from kombu.asynchronous import get_event_loop
 
 from celery import platforms, signals
 from celery._state import _set_task_join_will_block, set_default_app
+from celery.app import base as _app_base
 from celery.app import trace
 from celery.concurrency.base import BasePool
 from celery.utils.functional import noop
@@ -51,12 +52,15 @@ def process_initializer(app, hostname):
     platforms.signals.ignore(*WORKER_SIGIGNORE)
     platforms.set_mp_process_title('celeryd', hostname=hostname)
     if get_start_method() != 'fork':
-        # billiard started this child as a fresh interpreter on its own
-        # (for example the macOS default since billiard 4.3), so announce
-        # it the same way the parent does for worker_pool_start_method
-        # 'spawn' -- before init_worker() imports the task modules, which
-        # must bind their tasks to the current app (see celery.app.base).
+        # billiard started this child as a fresh interpreter on its own (for
+        # example the macOS default since billiard 4.3), so announce it the
+        # same way the parent does for worker_pool_start_method 'spawn'.
+        # Both have to be set before init_worker() imports the task modules:
+        # the environment variable for whatever this process starts later,
+        # and the flag in the already-imported module that decides how
+        # @app.task binds.
         os.environ['FORKED_BY_MULTIPROCESSING'] = '1'
+        _app_base.USING_EXECV = True
     # This is for Windows and other platforms not supporting
     # fork().  Note that init_worker makes sure it's only
     # run once per process.
