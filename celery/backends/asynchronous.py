@@ -254,7 +254,10 @@ class AsyncBackendMixin:
                     yield node.id, node._cache
         while bucket:
             node = bucket.popleft()
-            yield node.id, node._cache
+            if not hasattr(node, '_cache'):
+                yield node.id, node.children
+            else:
+                yield node.id, node._cache
 
     def add_pending_result(self, result, weak=False, start_drainer=True):
         if start_drainer:
