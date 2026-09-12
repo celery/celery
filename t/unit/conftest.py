@@ -105,6 +105,27 @@ def reset_cache_backend_state(celery_app):
 
 
 @contextmanager
+def restore_execv_state():
+    """Undo the "this process is a spawned pool child" marks on exit.
+
+    Starting a prefork pool or running ``process_initializer()`` in-process
+    sets ``FORKED_BY_MULTIPROCESSING`` and ``celery.app.base.USING_EXECV``,
+    which change how ``@app.task`` binds for every test that follows.
+    """
+    from celery.app import base as app_base
+    previous_env = os.environ.get('FORKED_BY_MULTIPROCESSING')
+    previous_flag = app_base.USING_EXECV
+    try:
+        yield
+    finally:
+        app_base.USING_EXECV = previous_flag
+        if previous_env is None:
+            os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+        else:
+            os.environ['FORKED_BY_MULTIPROCESSING'] = previous_env
+
+
+@contextmanager
 def assert_signal_called(signal, **expected):
     """Context that verifies signal is called before exiting."""
     handler = Mock()
