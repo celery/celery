@@ -1,1 +1,1 @@
-kombu[redis]
+redis>=6.1.0,<9.0.0
