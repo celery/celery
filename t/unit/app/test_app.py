@@ -1187,6 +1187,15 @@ class test_App:
         self.app.config_from_object(Config(), namespace='celery')
         assert self.app.conf.task_always_eager == 44
 
+    def test_config_from_object__runtime_changes_take_precedence(self):
+        self.app.config_from_object(
+            {'CELERY_WORKER_PREFETCH_MULTIPLIER': 10},
+            namespace='CELERY',
+        )
+        assert self.app.conf.worker_prefetch_multiplier == 10
+        self.app.conf.worker_prefetch_multiplier = 20
+        assert self.app.conf.worker_prefetch_multiplier == 20
+
     def test_config_from_object__mixing_new_and_old(self):
 
         class Config:
