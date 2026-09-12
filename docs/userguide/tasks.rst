@@ -2019,16 +2019,17 @@ Make your design asynchronous instead, for example by using *callbacks*.
 
 .. code-block:: python
 
+    @app.task
     def update_page_info(url):
         # fetch_page -> parse_page -> store_page
         chain = fetch_page.s(url) | parse_page.s() | store_page_info.s(url)
         chain()
 
-    @app.task()
+    @app.task
     def fetch_page(url):
         return myhttplib.get(url)
 
-    @app.task()
+    @app.task
     def parse_page(page):
         return myparser.parse_document(page)
 

@@ -985,6 +985,9 @@ Google Cloud Storage and file-system backends. On any other backend the
 setting is ignored, a warning is emitted when the backend is created, and
 results are stored uncompressed.
 
+For Redis configured with ``decode_responses=True``, this setting is also
+ignored, a warning is emitted, and results are stored uncompressed.
+
 Each compressed result records which method compressed it, so a worker or
 client reads a compressed result correctly whether or not it has this
 setting turned on itself, and results written before the setting was turned
