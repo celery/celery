@@ -1,5 +1,8 @@
+import re
+
 import pytest
-from pytest_celery import CeleryBackendCluster, CeleryTestSetup
+from pytest_celery import RESULT_TIMEOUT, CeleryBackendCluster, CeleryTestSetup
+from pytest_docker_tools.wrappers.container import wait_for_callable
 
 from celery.signals import after_task_publish, before_task_publish
 from t.smoke.tasks import noop
@@ -63,4 +66,8 @@ class test_after_task_publish:
 class test_task_success:
     def test_runtime_is_provided(self, celery_setup: CeleryTestSetup):
         noop.s().apply_async(queue=celery_setup.worker.worker_queue)
-        celery_setup.worker.wait_for_log(r"task_success_runtime=\d+\.\d+")
+        wait_for_callable(
+            message="Waiting for task_success_runtime to have a numeric value",
+            func=lambda: re.search(r"task_success_runtime=\d+\.\d+", celery_setup.worker.logs()) is not None,
+            timeout=RESULT_TIMEOUT,
+        )
