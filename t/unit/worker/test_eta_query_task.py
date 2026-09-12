@@ -1,4 +1,4 @@
-"""Integration tests for the ETA/countdown fix for #5321.
+"""End-to-end tests for the ETA/countdown fix for #5321.
 
 These tests exercise :mod:`celery.worker.strategy`,
 :mod:`celery.worker.state`, :mod:`celery.worker.control` and
@@ -13,6 +13,9 @@ import socket
 from collections import defaultdict
 from unittest.mock import Mock
 
+import pytest
+
+from celery.exceptions import TaskRevokedError
 from celery.utils.functional import maybe_list
 from celery.worker import WorkController as _WC
 from celery.worker import consumer as consumer_module
@@ -122,6 +125,46 @@ class test_query_task_eta_lifecycle:
         assert req.id not in worker_state.requests
         assert req not in worker_state.scheduled_requests
         assert req not in worker_state.reserved_requests
+
+    def test_connection_loss_keeps_task_that_already_started(self):
+        """A request can be in ``scheduled_requests`` *and* already
+        reserved/active: with a threaded timer an ETA in the past fires on
+        the timer thread before the strategy gets to ``task_scheduled()``.
+        ``on_close()`` must not drop such a request from ``state.requests``,
+        or a running task becomes invisible to inspect/revoke.
+        """
+        req = self._schedule()
+        self.consumer.apply_eta_task(req)
+        # the strategy thread catches up only now.
+        worker_state.task_scheduled(req)
+        assert req not in worker_state.scheduled_requests
+
+        # ...and even if something did put it back in both sets:
+        worker_state.task_accepted(req)
+        worker_state.scheduled_requests.add(req)
+
+        self.consumer.on_close()
+
+        assert worker_state.requests.get(req.id) is req
+        assert self._query(req)[0] == 'active'
+
+    def test_revoke_terminate_reaches_pending_eta_task(self):
+        """Behavior change: scheduled requests now live in
+        ``state.requests``, so ``revoke(terminate=True)`` finds them through
+        ``_find_requests_by_id()`` before their ETA elapses. Termination is
+        deferred (the task hasn't started), and the request refuses to run
+        once the timer does fire.
+        """
+        req = self._schedule()
+        assert self._query(req)[0] == 'scheduled'
+
+        self.panel.handle('revoke', {'task_id': req.id, 'terminate': True})
+
+        assert req.id in worker_state.revoked
+        # nothing to kill yet, so terminate is deferred until the ack.
+        assert req._terminate_on_ack is not None
+        with pytest.raises(TaskRevokedError):
+            req.execute_using_pool(self.consumer.pool)
 
     def test_connection_loss_purges_pending_eta_task(self):
         req = self._schedule()

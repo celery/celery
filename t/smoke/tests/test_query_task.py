@@ -40,8 +40,6 @@ class test_query_task:
         # instead of the full default timeout, so this stays fast.
         inspect = celery_setup.app.control.inspect([hostname])
 
-        found = {}
-
         def is_scheduled():
             queried = inspect.query_task(task_id) or {}
             if task_id not in queried.get(hostname, {}):
@@ -55,11 +53,10 @@ class test_query_task:
             # iteration as the query_task() result above so it can't race
             # past the ETA on its own.
             scheduled = inspect.scheduled() or {}
-            found['seen_in_scheduled'] = any(
+            return any(
                 entry.get('request', {}).get('id') == task_id
                 for entry in scheduled.get(hostname, [])
             )
-            return found['seen_in_scheduled']
 
         assert _wait_until(is_scheduled), (
             "query_task()/scheduled() never found the task while it was "

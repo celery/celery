@@ -27,6 +27,39 @@ from celery.worker.consumer.tasks import Tasks
 from celery.worker.state import active_requests, successful_requests
 
 
+class FakeOnCloseRequest:
+    """Minimal stand-in for a Request in the ``on_close()`` tests."""
+
+    def __init__(self, id, entry=None):
+        self.id = id
+        self.name = 'test.task'
+        self._eta_timer_entry = entry
+
+
+@pytest.fixture
+def on_close_ctx():
+    """``(state, Consumer, consumer)`` with clean global worker state.
+
+    ``Consumer.on_close`` is called unbound on a mocked consumer so the
+    global-state bookkeeping can be asserted without standing up a real
+    connection, pool or timer.
+    """
+    from celery.worker import state
+
+    consumer = Mock()
+    consumer.controller = Mock()
+    consumer.controller.semaphore = Mock()
+    consumer.task_buckets = {}
+    consumer.pool = Mock()
+    consumer.pool.flush = Mock()
+
+    state.reset_state()
+    try:
+        yield state, Consumer, consumer
+    finally:
+        state.reset_state()
+
+
 class ConsumerTestCase:
     def get_consumer(self, no_hub=False, **kwargs):
         consumer = Consumer(
@@ -542,162 +575,84 @@ class test_Consumer(ConsumerTestCase):
             c.pool = None
             c.on_close()
 
-    def test_on_close_purges_orphan_reservations_from_requests_dict(self):
-        """Regression: ``on_close()`` must remove ``state.requests[id]``
-        entries for Requests that were reserved but never accepted (e.g.
-        ETA tasks queued in ``reserved_requests`` at the moment of a
-        connection loss). PR #7771 attempted this but iterated
-        ``reserved_requests`` (Request objects) and tested membership in
-        ``requests`` (a ``dict[str, Request]``), so ``Request in requests``
-        was always False and nothing was ever deleted.
+    def test_on_close_purges_orphan_reservations_from_requests_dict(self, on_close_ctx):
+        """A Request reserved but never accepted must be dropped from
+        ``state.requests`` (regression for the broken loop in PR #7771,
+        which compared Request objects against a dict keyed by id).
         """
-        from celery.worker import state
-        from celery.worker.consumer.consumer import Consumer
+        state, Consumer, consumer = on_close_ctx
+        orphan = FakeOnCloseRequest('orphan-1')
+        state.requests[orphan.id] = orphan
+        state.reserved_requests.add(orphan)
 
-        class FakeRequest:
-            def __init__(self, id):
-                self.id = id
+        Consumer.on_close(consumer)
 
-        consumer = Mock()
-        consumer.controller = Mock()
-        consumer.controller.semaphore = Mock()
-        consumer.task_buckets = {}
-        consumer.pool = Mock()
-        consumer.pool.flush = Mock()
+        assert orphan.id not in state.requests
 
-        state.reset_state()
-        try:
-            # Orphan reservation: present in ``requests`` and
-            # ``reserved_requests`` but never moved to ``active_requests``.
-            orphan = FakeRequest('orphan-1')
-            state.requests[orphan.id] = orphan
-            state.reserved_requests.add(orphan)
-
-            Consumer.on_close(consumer)
-
-            assert orphan.id not in state.requests, (
-                "on_close() did not purge an orphan reserved-but-not-"
-                "accepted Request from state.requests; this is the leak "
-                "PR #7771 tried to fix but its loop variable ('request_id') "
-                "actually held Request objects, so the membership check "
-                "never matched."
-            )
-        finally:
-            state.reset_state()
-
-    def test_on_close_purges_scheduled_requests_from_requests_dict(self):
-        """Regression: ``on_close()`` must also remove ``state.requests[id]``
-        entries for Requests scheduled for an ETA/countdown. Unlike reserved
-        requests, scheduled ones never end up in ``reserved_requests``
-        (see ``task_scheduled``), so without dedicated handling they were
-        never purged and leaked in ``state.requests`` indefinitely after a
-        connection loss.
+    def test_on_close_purges_scheduled_requests_from_requests_dict(self, on_close_ctx):
+        """Scheduled (ETA/countdown) Requests never reach
+        ``reserved_requests``, so they need their own cleanup or they leak
+        in ``state.requests`` after a connection loss.
         """
-        from celery.worker import state
-        from celery.worker.consumer.consumer import Consumer
+        state, Consumer, consumer = on_close_ctx
+        scheduled = FakeOnCloseRequest('scheduled-1')
+        state.task_scheduled(scheduled)
 
-        class FakeRequest:
-            def __init__(self, id):
-                self.id = id
+        Consumer.on_close(consumer)
 
-        consumer = Mock()
-        consumer.controller = Mock()
-        consumer.controller.semaphore = Mock()
-        consumer.task_buckets = {}
-        consumer.pool = Mock()
-        consumer.pool.flush = Mock()
+        assert scheduled.id not in state.requests
+        assert scheduled not in state.scheduled_requests
 
-        state.reset_state()
-        try:
-            scheduled = FakeRequest('scheduled-1')
-            state.task_scheduled(scheduled)
+    def test_on_close_cancels_pending_timer_entry_for_scheduled_requests(self, on_close_ctx):
+        """The ETA timer entry must be cancelled too, otherwise the stale
+        callback can still fire on transports whose loop doesn't clear the
+        timer on error (synloop) and re-add the request via
+        ``task_reserved()``.
 
-            Consumer.on_close(consumer)
-
-            assert scheduled.id not in state.requests, (
-                "on_close() did not purge a scheduled (ETA/countdown) "
-                "Request from state.requests."
-            )
-            assert scheduled not in state.scheduled_requests
-        finally:
-            state.reset_state()
-
-    def test_on_close_cancels_pending_timer_entry_for_scheduled_requests(self):
-        """Regression: on_close() must cancel the ETA/countdown timer entry
-        for scheduled requests, not just drop the bookkeeping. Otherwise,
-        on transports whose event loop doesn't clear the timer on error
-        (e.g. synloop, unlike asynloop's hub.reset()/hub.timer.clear()),
-        the stale callback can still fire after on_close(), re-adding the
-        request via task_reserved() and triggering a stale delivery.
-
-        Cancellation must go through ``self.timer.cancel(entry)`` rather
-        than calling ``entry.cancel()`` directly: the Eventlet timer's
-        entries are greenlets, and ``Timer.cancel()`` is what catches the
-        ``GreenletExit`` that cancelling one can raise (see
-        ``celery.concurrency.eventlet.Timer.cancel``). Calling
-        ``entry.cancel()`` directly could let that exception escape and
-        abort ``on_close()`` before it finishes clearing state.
+        Cancellation goes through ``self.timer.cancel(entry)`` rather than
+        ``entry.cancel()``: the Eventlet timer's entries are greenlets and
+        ``Timer.cancel()`` is what swallows the ``GreenletExit`` that
+        cancelling one can raise.
         """
-        from celery.worker import state
-        from celery.worker.consumer.consumer import Consumer
+        state, Consumer, consumer = on_close_ctx
+        scheduled = FakeOnCloseRequest('scheduled-1', entry=Mock())
+        state.task_scheduled(scheduled)
 
-        class FakeRequest:
-            def __init__(self, id):
-                self.id = id
-                self._eta_timer_entry = Mock()
+        Consumer.on_close(consumer)
 
-        consumer = Mock()
-        consumer.controller = Mock()
-        consumer.controller.semaphore = Mock()
-        consumer.task_buckets = {}
-        consumer.pool = Mock()
-        consumer.pool.flush = Mock()
+        consumer.timer.cancel.assert_called_once_with(
+            scheduled._eta_timer_entry)
+        scheduled._eta_timer_entry.cancel.assert_not_called()
 
-        state.reset_state()
-        try:
-            scheduled = FakeRequest('scheduled-1')
-            state.task_scheduled(scheduled)
-
-            Consumer.on_close(consumer)
-
-            consumer.timer.cancel.assert_called_once_with(
-                scheduled._eta_timer_entry)
-            scheduled._eta_timer_entry.cancel.assert_not_called()
-        finally:
-            state.reset_state()
-
-    def test_on_close_logs_and_continues_if_timer_cancel_raises(self):
-        """A failing cancellation (e.g. a stray GreenletExit) must not
-        abort on_close() before it finishes clearing state and dropping
-        the rest of the scheduled requests.
-        """
-        from celery.worker import state
-        from celery.worker.consumer.consumer import Consumer
-
-        class FakeRequest:
-            def __init__(self, id):
-                self.id = id
-                self._eta_timer_entry = Mock()
-
-        consumer = Mock()
-        consumer.controller = Mock()
-        consumer.controller.semaphore = Mock()
-        consumer.task_buckets = {}
-        consumer.pool = Mock()
-        consumer.pool.flush = Mock()
+    def test_on_close_logs_and_continues_if_timer_cancel_raises(self, on_close_ctx):
+        """A failing cancellation must not abort the rest of the cleanup."""
+        state, Consumer, consumer = on_close_ctx
         consumer.timer.cancel.side_effect = RuntimeError('boom')
+        scheduled = FakeOnCloseRequest('scheduled-1', entry=Mock())
+        state.task_scheduled(scheduled)
 
-        state.reset_state()
-        try:
-            scheduled = FakeRequest('scheduled-1')
-            state.task_scheduled(scheduled)
+        Consumer.on_close(consumer)
 
-            Consumer.on_close(consumer)
+        assert scheduled.id not in state.requests
+        assert scheduled not in state.scheduled_requests
 
-            assert scheduled.id not in state.requests
-            assert scheduled not in state.scheduled_requests
-        finally:
-            state.reset_state()
+    def test_on_close_keeps_running_task_that_is_also_scheduled(self, on_close_ctx):
+        """A request can be in both sets: with a threaded timer an ETA
+        already in the past fires straight away, so the request can be
+        reserved/active before the strategy registers it as scheduled.
+        Popping it unconditionally would hide a running task from
+        ``inspect``/``revoke``.
+        """
+        state, Consumer, consumer = on_close_ctx
+        running = FakeOnCloseRequest('running-1', entry=Mock())
+        state.task_accepted(running)
+        state.scheduled_requests.add(running)
+
+        Consumer.on_close(consumer)
+
+        assert state.requests.get(running.id) is running
+        assert running in state.active_requests
+        assert running not in state.scheduled_requests
 
     def test_connect_error_handler(self):
         self.app._connection = _amqp_connection()

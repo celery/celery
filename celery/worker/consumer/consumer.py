@@ -552,14 +552,19 @@ class Consumer:
         # our copies since the broker may redeliver these tasks to another
         # worker on reconnect.
         for r in tuple(scheduled_requests):
-            entry = getattr(r, '_eta_timer_entry', None)
+            entry = r._eta_timer_entry
             if entry is not None and self.timer is not None:
                 try:
                     self.timer.cancel(entry)
                 except Exception as exc:  # pylint: disable=broad-except
                     logger.exception(
                         'Error cancelling ETA timer entry: %r', exc)
-            requests.pop(r.id, None)
+            # A request can be in both sets: with a threaded timer an ETA
+            # already in the past fires immediately, so task_reserved() may
+            # have run before the strategy registered the request as
+            # scheduled.  Never drop one that's reserved/running.
+            if r not in active_requests and r not in reserved_requests:
+                requests.pop(r.id, None)
         scheduled_requests.clear()
         if self.pool and self.pool.flush:
             self.pool.flush()
