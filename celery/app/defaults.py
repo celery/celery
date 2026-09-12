@@ -356,6 +356,7 @@ NAMESPACES = Namespace(
         pool_restarts=Option(False, type='bool'),
         pool_start_method=Option('fork', type='string'),
         proc_alive_timeout=Option(4.0, type='float'),
+        proc_use_process_group=Option(False, type='bool'),
         prefetch_multiplier=Option(4, type='int'),
         eta_task_limit=Option(None, type='int'),
         enable_prefetch_count_reduction=Option(True, type='bool'),
