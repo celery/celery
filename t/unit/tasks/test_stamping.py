@@ -772,6 +772,7 @@ class test_stamping_mechanism(CanvasCase):
         with subtests.test("sig_2 is stamped with custom visitor", header=["value"]):
             assert sig_2_res._get_task_meta()["header"] == ["value"]
 
+    @pytest.mark.usefixtures('depends_on_current_app')
     def test_callback_stamping(self, subtests):
         self.app.conf.task_always_eager = True
         self.app.conf.task_store_eager_result = True
@@ -849,6 +850,7 @@ class test_stamping_mechanism(CanvasCase):
             assert headers["on_errback"] is True
             assert headers["header"] == "value"
 
+    @pytest.mark.usefixtures('depends_on_current_app')
     def test_callback_stamping_link_after_stamp(self, subtests):
         self.app.conf.task_always_eager = True
         self.app.conf.task_store_eager_result = True
@@ -918,6 +920,7 @@ class test_stamping_mechanism(CanvasCase):
             assert "on_callback" not in stamped_headers, "Linking after stamping should not stamp the errback"
             assert stamped_headers == []
 
+    @pytest.mark.usefixtures('depends_on_current_app')
     def test_callback_stamping_link_multiple_visitors(self, subtests):
         self.app.conf.task_always_eager = True
         self.app.conf.task_store_eager_result = True
