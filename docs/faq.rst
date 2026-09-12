@@ -461,7 +461,7 @@ Can messages be encrypted?
 You can enable this using the :setting:`broker_use_ssl` setting.
 
 It's also possible to add additional encryption and security to messages,
-if you have a need for this then you should contact the :ref:`mailing-list`.
+if you have a need for this then you should contact the :ref:`getting-help`.
 
 Is it safe to run :program:`celery worker` as root?
 ---------------------------------------------------

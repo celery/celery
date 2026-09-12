@@ -123,11 +123,14 @@ def _find_requests_by_id(ids,
 
 def _state_of_task(request,
                    is_active=worker_state.active_requests.__contains__,
-                   is_reserved=worker_state.reserved_requests.__contains__):
+                   is_reserved=worker_state.reserved_requests.__contains__,
+                   is_scheduled=worker_state.scheduled_requests.__contains__):
     if is_active(request):
         return 'active'
     elif is_reserved(request):
         return 'reserved'
+    elif is_scheduled(request):
+        return 'scheduled'
     return 'ready'
 
 
@@ -216,10 +219,16 @@ def _revoke(state, task_ids, terminate=False, signal=None, **kwargs):
     terminated = set()
 
     worker_state.revoked.update(task_ids)
+    requests_by_id = {request.id: request for request in _find_requests_by_id(task_ids)}
 
     for task_id in task_ids:
+        request = requests_by_id.get(task_id)
+        if request and request in worker_state.active_requests:
+            continue
+        # Tasks may override their backend.
+        backend = request.task.backend if request else state.app.backend
         try:
-            state.app.backend.mark_as_revoked(task_id, reason='revoked', store_result=True)
+            backend.mark_as_revoked(task_id, reason='revoked', store_result=True)
         except Exception as exc:
             logger.warning('Failed to mark task %s as revoked in backend: %s', task_id, exc)
 

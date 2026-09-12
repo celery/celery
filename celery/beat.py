@@ -376,7 +376,7 @@ class Scheduler:
             return 0 if H and H[0][2] is not entry else min(adjust(reschedule_delay), max_interval)
         else:
             heappush(H, verify)
-            return min(verify[0] - now, max_interval)
+            return min(verify[0] - self._when(verify[2], 0), max_interval)
 
     def schedules_equal(self, old_schedules, new_schedules):
         if old_schedules is new_schedules is None:

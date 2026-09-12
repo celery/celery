@@ -1,9 +1,9 @@
 setuptools>=40.8.0
-wheel>=0.33.1
+wheel>=0.48.0
 flake8>=3.8.3
 flake8-docstrings>=1.7.0
 pydocstyle==6.3.0
-tox>=3.8.4
+tox>=4.61.2
 sphinx2rst>=1.0
 # Disable cyanide until it's fully updated.
 # cyanide>=1.0.1
