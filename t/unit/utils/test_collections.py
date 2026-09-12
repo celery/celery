@@ -119,6 +119,17 @@ class test_ConfigurationView:
         self.view.update(a=1, b=2, c=3)
         assert self.view.changes == dict(changes, a=1, b=2, c=3)
 
+    def test_swap_with_keys(self):
+        view = ConfigurationView({})
+        other = ConfigurationView(
+            {'task_always_eager': 1},
+            keys=(_old_key_to_new, _new_key_to_old),
+        )
+        assert other['CELERY_ALWAYS_EAGER'] == 1
+
+        view.swap_with(other)
+        assert view['CELERY_ALWAYS_EAGER'] == 1
+
     def test_contains(self):
         assert 'changed_key' in self.view
         assert 'default_key' in self.view
