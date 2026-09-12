@@ -23,6 +23,7 @@ BACKEND_ALIASES = {
     'database': 'celery.backends.database:DatabaseBackend',
     'elasticsearch': 'celery.backends.elasticsearch:ElasticsearchBackend',
     'cassandra': 'celery.backends.cassandra:CassandraBackend',
+    'scylladb': 'celery.backends.cassandra:CassandraBackend',
     'couchbase': 'celery.backends.couchbase:CouchbaseBackend',
     'couchdb': 'celery.backends.couchdb:CouchBackend',
     'cosmosdbsql': 'celery.backends.cosmosdbsql:CosmosDBSQLBackend',
