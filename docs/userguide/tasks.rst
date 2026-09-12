@@ -808,7 +808,7 @@ You can also set `autoretry_for`, `max_retries`, `retry_backoff`, `retry_backoff
 .. attribute:: Task.dont_autoretry_for
 
     A list/tuple of exception classes.  These exceptions won't be autoretried.
-	This allows to exclude some exceptions that match `autoretry_for
+	This allows excluding some exceptions that match `autoretry_for
 	<Task.autoretry_for>`:attr: but for which you don't want a retry.
 
 .. _task-pydantic:
