@@ -207,6 +207,17 @@ class test_App:
         assert not _appbase.USING_EXECV
 
     @pytest.mark.usefixtures('depends_on_current_app')
+    def test_task_decorator_accepts_explicit_lazy_in_execv_mode(self):
+        """The execv decorator path must accept an explicit lazy=True option."""
+        with patch.object(_appbase, 'USING_EXECV', True):
+            @self.app.task(lazy=True)
+            def add(x, y):
+                return x + y
+
+            assert add._get_current_object() is self.app.tasks[add.name]
+            assert add(2, 3) == 5
+
+    @pytest.mark.usefixtures('depends_on_current_app')
     def test_task_execv_env_set_after_import(self):
         # a spawned pool child sets the variable from process_initializer()
         with patch.dict(os.environ, {'FORKED_BY_MULTIPROCESSING': '1'}):
