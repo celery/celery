@@ -37,17 +37,23 @@ class Task(ResultModelBase):
     date_done = sa.Column(sa.DateTime, default=_get_utc_now,
                           onupdate=_get_utc_now, nullable=True, index=True)
     traceback = sa.Column(sa.Text, nullable=True)
+    children = sa.Column(sa.LargeBinary, nullable=True)
 
     def __init__(self, task_id):
         self.task_id = task_id
 
     def to_dict(self):
+        try:
+            children = self.children
+        except Exception:
+            children = None
         return {
             'task_id': self.task_id,
             'status': self.status,
             'result': self.result,
             'traceback': self.traceback,
             'date_done': self.date_done,
+            'children': children,
         }
 
     def __repr__(self):
